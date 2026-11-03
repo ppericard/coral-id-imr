@@ -67,3 +67,33 @@ test('a weak player is not over-rated without the step', () => {
   assert.ok(res.e.per.p1.genus < truth + 0.6, `e ${res.e.per.p1.genus.toFixed(2)}`);
   assert.ok(res.e.all.ll <= res.a.all.ll + 0.005, `log-loss e ${res.e.all.ll} a ${res.a.all.ll}`);
 });
+
+// Codex review of #413: the game genera include Millepora (core.js gameOf), as the app's GX; a sheet export is replayed
+// in time order (a stable sort of its text times); the group table takes every group any rule reached.
+test('Millepora wrongly given counts as a game genus (the old penalty and the false-alarm marker)', () => {
+  const {GAME} = require('../tools/abilityeval.js');
+  assert.ok(GAME.has('Millepora'), 'Millepora in the game genera');
+  const e = 1 / 4 + 3 / 4 / (1 + Math.exp(-1)),
+    row = (i, t, a, ok) => ['p1', 1e12 + i * 1e4, t, a, ok, 'quiz', 'x', e, 0, 1, ''];
+  const rows = [row(0, 'Acropora', 'Millepora', 0), row(1, 'Millepora', 'Millepora', 1)],
+    {res} = evaluate(rows, {variants: ['a', 'e'], min: 1});
+  assert.strictEqual((res.e.groups['after a false alarm'] || {}).n, 1);
+  assert.ok(res.a.groups['after a false alarm'].mp < res.e.groups['after a false alarm'].mp, 'the old rule lowered Millepora');
+});
+
+test('a sheet export is replayed in time order, ties in the order logged', () => {
+  const {normalise} = require('../tools/abilityeval.js');
+  const r = (t, g) => ['p1', t, g, g, '1', 'quiz', 'x', 'id', '0.8', '0', '1', ''];
+  // An offline device uploaded its older answers (10:01, 10:02) after a newer one (10:05) from another device.
+  const n = normalise([r('2026-11-03 10:05', 'C'), r('2026-11-03 10:01', 'A'), r('2026-11-03 10:02', 'B1'), r('2026-11-03 10:02', 'B2')]);
+  assert.deepStrictEqual(
+    n.map(x => x.t),
+    ['A', 'B1', 'B2', 'C']
+  );
+});
+
+test('the group table takes the union of the groups of every rule', () => {
+  const {groupsOf} = require('../tools/abilityeval.js');
+  const res = {a: {groups: {k2: {}, 'level>=0.75': {}}}, 'e+L': {groups: {k2: {}, 'level 0-0.75': {}}}};
+  assert.deepStrictEqual(groupsOf(res, ['a', 'e+L']), ['k2', 'level 0-0.75', 'level>=0.75']);
+});

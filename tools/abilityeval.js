@@ -40,7 +40,7 @@ const C = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 
 const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
-  GAME = new Set([...Object.keys(DATA.gen || {}), ...C.BONUS]);
+  GAME = new Set(C.gameOf(DATA)); // the game genera: slate, Millepora (BENTHIC), bonus genera (the app's GX)
 
 // model.js's ELO, ability and abilityStep, as the app runs them (P is this context's global, set per player).
 function model() {
@@ -68,11 +68,22 @@ const kOf = (mode, choices) => {
   return n >= 2 && n < 4 ? n : 4;
 };
 
-// Rows, normalised: readAnswers' rows sorted by time (stable), the sheet's tab in its own order (it appends in time
-// order; its times are to the minute).
+// Rows, normalised and sorted by time, stable (ties keep the log's order): readAnswers' times are ms, the sheet tab's
+// are text ("2026-11-03 18:09", to the minute) or dates; a device that was offline uploads its older answers after
+// newer ones from another device, so the tab's order is not the time order. A time that cannot be read keeps the
+// position of the row before it.
+const timeOf = x => (typeof x === 'number' ? x : x instanceof Date ? x.getTime() : Date.parse(String(x || '').trim().replace(' ', 'T')));
 function normalise(raw) {
   raw = raw.filter(r => r && r[0] && r[0] !== 'Name');
-  if (raw.length && typeof raw[0][1] === 'number') raw = raw.map((r, i) => [r, i]).sort((x, y) => x[0][1] - y[0][1] || x[1] - y[1]).map(x => x[0]);
+  let last = -Infinity;
+  raw = raw
+    .map((r, i) => {
+      const t = timeOf(r[1]);
+      if (isFinite(t)) last = t;
+      return [r, i, last];
+    })
+    .sort((x, y) => x[2] - y[2] || x[1] - y[1])
+    .map(x => x[0]);
   return raw.map((r, i) =>
     typeof r[1] === 'number'
       ? {p: r[0], i, t: r[2], a: r[3], ok: Number(r[4]) ? 1 : 0, mode: r[5], e: r[7], th: r[8], ch: r[10]}
@@ -237,7 +248,8 @@ players.forEach(p => {
 });
 return {players, res, ref, byPlayer};
 }
-module.exports = {evaluate, normalise, kOf};
+const groupsOf = (res, variants) => [...new Set(variants.flatMap(v => Object.keys(res[v].groups)))].sort();
+module.exports = {evaluate, normalise, kOf, groupsOf, GAME};
 if (require.main === module) {
 const args = process.argv.slice(2),
   opt = (k, d) => {
@@ -263,15 +275,17 @@ VARIANTS.forEach(v => {
   const s = res[v].all;
   console.log(`${v.padEnd(9)} ${f(s.ll).padStart(8)} ${f(s.br).padStart(6)} ${f(s.mp, 2).padStart(7)} ${f(s.my, 2).padStart(6)}  ${f(s.lv)}`);
 });
-const G0 = Object.keys(res[VARIANTS[0]].groups).sort();
-console.log('\nCalibration by group: mean predicted / right, log-loss (answers: ' + G0.map(G => G + ' ' + res[VARIANTS[0]].groups[G].n).join(', ') + ')');
+// Every group any rule reached (a rule with +L has its own level bands); a group a rule never reached shows '-'.
+const G0 = groupsOf(res, VARIANTS),
+  nOf = G => (VARIANTS.map(v => res[v].groups[G]).find(Boolean) || {}).n;
+console.log('\nCalibration by group: mean predicted / right, log-loss (answers: ' + G0.map(G => G + ' ' + nOf(G)).join(', ') + ')');
 console.log('group'.padEnd(20) + VARIANTS.map(v => v.padEnd(18)).join(''));
 G0.forEach(G =>
   console.log(
     `${G.padEnd(20)}` +
       VARIANTS.map(v => {
         const s = res[v].groups[G];
-        return `${f(s.mp, 2)}/${f(s.my, 2)} ${f(s.ll, 3)}`.padEnd(18);
+        return (s ? `${f(s.mp, 2)}/${f(s.my, 2)} ${f(s.ll, 3)}` : '-').padEnd(18);
       }).join('')
   )
 );

@@ -443,7 +443,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // wrongly given in the Elo"): as in the Elo learner models of adaptive practice (Pelánek et al. 2017: a learner's
   // knowledge of an item is not updated when it is a distractor), the ability moves on the questions about the genus
   // itself. The step it had (a full miss on an average photo, its uncertainty never shrinking) made the app
-  // under-rate strong players: on the real answers, a strong RA's genera averaged 0.12 against 0.73 fitted, and the
+  // under-rate strong players: on the real answers, a strong RA's genera averaged 0.11 against 0.73 fitted, and the
   // next answer is predicted better without it (log-loss 0.481 -> 0.465). The mix-up itself counts on the pair
   // (s.conf: traps, duels, Again).
   if (!good && GX(c)) {

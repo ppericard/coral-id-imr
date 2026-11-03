@@ -117,8 +117,8 @@ recognising B photos. That information is kept where it belongs: in B's progress
 for B, weighed by `pgMissW`, so B cannot be learned on that run), in the pair's confusion (the player's own `s.conf` and
 the pooled scores: the pair comes back as traps, look-alike duels and "Again: A or B?"), and in A's ability (the miss
 on A). The data agree: on the real answers, the first question on a genus right after it was given wrongly for
-another genus (132 answers) was answered right 81% of the time; with the old step the app expected 0.72 (log-loss
-0.489), without it 0.81 (0.460). A false alarm on B did not make the next B photo harder for the player. Over every
+another genus (141 answers) was answered right 81% of the time; with the old step the app expected 0.72 (log-loss
+0.494), without it 0.81 (0.466). A false alarm on B did not make the next B photo harder for the player. Over every
 genus the prediction improves too (log-loss 0.481 → 0.465, table below). A pair-level term (the chance on A lowered
 when a genus the player confuses with A is among the choices) is the principled home for "they confuse A and B": to
 study (ROADMAP).
@@ -131,7 +131,7 @@ both genera in the progress (`pgObs` with `pgMissW`, the photo against the genus
 
 **Measured on the real answers** (`tools/abilityeval.js`, read-only export of the sheet's Answers tab of 2026-11-03
 18:09, 1,270 answers; the 9 players with 20 answers or more, 1,183 answers with their logged expectation): each
-player's answers replayed in order with the app's own Elo (model.js `abilityStep`, core.js `playerStart`, the question's
+player's answers replayed in time order (a stable sort of the logged times) with the app's own Elo (model.js `abilityStep`, core.js `playerStart`, the question's
 difficulty recovered from the logged expectation and ability), each answer predicted from the replayed ability before
 it. Rules for the genus wrongly given: **a** the old one; **b** a miss step at the photo's difficulty, counted in the
 genus's own uncertainty (as the progress line does); **c** b at half weight; **d** a, with the genus ability planned as
@@ -139,33 +139,33 @@ the global level plus an offset (Pelánek et al.'s global + concept skill); **e*
 answered starts from the full global level (`START.W` 1, not 0.8); **+L**: the global level's step without the floor
 `ELO.kmin`.
 
-| Rule | log-loss | Brier | mean predicted / right | 2 choices (727) | 4 choices (451) | level < 0 (203) | level 0-0.75 (363) | level ≥ 0.75 (617) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| a (before) | 0.481 | 0.151 | 0.76 / 0.83 | 0.76 / 0.87 | 0.75 / 0.78 | 0.71 / 0.83 | 0.74 / 0.80 | 0.78 / 0.86 |
-| b | 0.481 | 0.151 | 0.76 / 0.83 | 0.76 / 0.87 | 0.75 / 0.78 | 0.71 / 0.83 | 0.74 / 0.80 | 0.78 / 0.86 |
-| c | 0.473 | 0.148 | 0.77 / 0.83 | 0.78 / 0.87 | 0.76 / 0.78 | 0.72 / 0.83 | 0.75 / 0.80 | 0.79 / 0.86 |
-| d | 0.469 | 0.148 | 0.78 / 0.83 | 0.78 / 0.87 | 0.77 / 0.78 | 0.70 / 0.83 | 0.75 / 0.80 | 0.82 / 0.86 |
-| **e (now)** | **0.465** | **0.145** | 0.79 / 0.83 | 0.80 / 0.87 | 0.77 / 0.78 | 0.74 / 0.83 | 0.77 / 0.80 | 0.81 / 0.86 |
-| e + W | 0.467 | 0.146 | 0.79 / 0.83 | 0.80 / 0.87 | 0.78 / 0.78 | 0.74 / 0.83 | 0.78 / 0.80 | 0.82 / 0.86 |
+| Rule | log-loss | Brier | mean predicted / right | 2 choices (727) | 4 choices (451) | level < 0 (203) | level 0-0.75 (363) | level ≥ 0.75 (617) | after a false alarm (141) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| a (before) | 0.481 | 0.151 | 0.75 / 0.83 | 0.75 / 0.87 | 0.75 / 0.78 | 0.71 / 0.83 | 0.74 / 0.80 | 0.78 / 0.86 | 0.72 / 0.81 |
+| b | 0.481 | 0.151 | 0.75 / 0.83 | 0.75 / 0.87 | 0.75 / 0.78 | 0.71 / 0.83 | 0.74 / 0.80 | 0.78 / 0.86 | 0.72 / 0.81 |
+| c | 0.472 | 0.148 | 0.77 / 0.83 | 0.77 / 0.87 | 0.76 / 0.78 | 0.72 / 0.83 | 0.75 / 0.80 | 0.79 / 0.86 | 0.76 / 0.81 |
+| d | 0.469 | 0.148 | 0.77 / 0.83 | 0.77 / 0.87 | 0.77 / 0.78 | 0.70 / 0.83 | 0.75 / 0.80 | 0.81 / 0.86 | 0.73 / 0.81 |
+| **e (now)** | **0.465** | **0.145** | 0.79 / 0.83 | 0.80 / 0.87 | 0.77 / 0.78 | 0.74 / 0.83 | 0.77 / 0.80 | 0.81 / 0.86 | 0.81 / 0.81 |
+| e + W | 0.467 | 0.146 | 0.79 / 0.83 | 0.80 / 0.87 | 0.78 / 0.78 | 0.74 / 0.83 | 0.78 / 0.80 | 0.82 / 0.86 | 0.81 / 0.81 |
 
 Per player at the end (mean genus ability over the genera answered, weighed by answers; the static fit: maximum
 likelihood per genus with a normal prior of sd 1 around the player's own fit over every answer):
 
 | Player (answers) | global level | a | c | d | **e** | static fit, genus |
 | --- | --- | --- | --- | --- | --- | --- |
-| strong RA (378) | 1.07 | 0.12 | 0.33 | 0.55 | **0.59** | 0.73 |
-| test account (164) | −0.35 | −0.40 | −0.28 | −0.44 | **−0.11** | −0.22 |
-| player (186) | 1.32 | 1.03 | 1.20 | 0.82 | **1.40** | 1.77 |
-| player (128) | 0.68 | 0.05 | 0.22 | 0.30 | **0.41** | 0.57 |
+| strong RA (378) | 1.07 | 0.11 | 0.33 | 0.54 | **0.59** | 0.73 |
+| test account (164) | −0.35 | −0.42 | −0.29 | −0.45 | **−0.11** | −0.22 |
+| player (186) | 1.32 | 0.96 | 1.17 | 0.76 | **1.40** | 1.77 |
+| player (128) | 0.68 | 0.02 | 0.21 | 0.28 | **0.41** | 0.57 |
 | player (112) | 1.47 | 0.46 | 0.62 | 1.09 | **0.82** | 1.29 |
-| player (85) | −0.41 | 0.42 | 0.50 | −0.62 | **0.60** | 0.71 |
+| player (85) | −0.41 | 0.41 | 0.49 | −0.62 | **0.60** | 0.71 |
 | anonymous (67) | 0.69 | 0.05 | 0.10 | 0.60 | **0.15** | 0.48 |
 | Pierre (40) | 1.54 | 0.60 | 0.69 | 1.27 | **0.81** | 1.91 |
 | player (23) | 0.78 | 0.19 | 0.21 | 0.52 | **0.23** | 1.06 |
 
 - **b changes nothing** against a: the photo's difficulty (easy photos, below 0) makes the step larger while the
   shrinking K makes it smaller; the drag stays.
-- **e predicts best** overall and in every level band, and moves the strong RA's genera from 0.12 to 0.59 (fit 0.73).
+- **e predicts best** overall and in every level band, and moves the strong RA's genera from 0.11 to 0.59 (fit 0.73).
   The rest of the gap is the Elo's usual lag (a step that shrinks as answers come, on a player who learns).
 - **2-choice questions stay under-predicted** (0.80 against 0.87 right with e; the Duel tab 0.85 / 0.93, quiz duels
   0.85 / 1.00 on 16): the 1/k guess rate under-credits a 2-choice question, where players also rule out the other
@@ -206,39 +206,41 @@ right % since the previous row / genera met / learned / entered the exam / true 
 - Expert genera learned by question 600, 7.6 → 4.2 (±3.4 / ±1.6 over 5 seeds; 7.8 and 6.6 with +W and +L, which share
   e's rule; 6.8 → 8.4 on the base below): noise of the exam's last steps, not a trend.
 
-**The rule shipped, on the base it ships on** (`main` after #402, ★ genera after their references, which changed the
-opening; same measures and seeds; a: before, e: now):
+**The rule shipped, on the base it ships on** (`main` after #408: one contrast queue, one opening rule with `OPEN.K` 8,
+one difficulty target `aimOff(k)`, one draw weight; same measures and seeds; a: before, e: now):
 
 | Profile, question | a (before) | **e (now)** |
 | --- | --- | --- |
-| beginner 100 | −1.31 / 1.60 / 85 / 13.2 / 0.0 / 0.0 / 0.24 | −0.05 / 1.12 / 81 / 18.8 / 0.0 / 0.0 / 0.27 |
-| beginner 200 | −1.40 / 1.72 / 86 / 20.0 / 0.0 / 0.0 / 0.38 | −0.11 / 1.07 / 81 / 32.6 / 0.0 / 0.2 / 0.48 |
-| beginner 300 | −1.04 / 1.82 / 88 / 29.2 / 0.0 / 0.2 / 0.52 | −0.44 / 1.01 / 81 / 39.2 / 0.0 / 0.2 / 0.65 |
-| beginner 600 | −1.87 / 2.02 / 87 / 40.0 / 0.2 / 3.0 / 0.84 | −1.41 / 1.45 / 87 / 40.0 / 0.4 / 3.0 / 0.87 |
-| lecture RA 100 | −0.69 / 1.22 / 87 / 19.8 / 0.0 / 0.0 / 0.47 | −0.21 / 0.98 / 86 / 20.8 / 0.0 / 0.0 / 0.47 |
-| lecture RA 200 | −1.01 / 1.41 / 83 / 29.4 / 0.0 / 0.0 / 0.61 | −0.26 / 0.92 / 82 / 37.4 / 0.0 / 0.0 / 0.64 |
-| lecture RA 300 | −1.05 / 1.46 / 88 / 37.6 / 0.0 / 0.2 / 0.72 | −0.60 / 0.94 / 83 / 40.0 / 0.0 / 0.2 / 0.75 |
-| lecture RA 600 | −1.85 / 1.91 / 90 / 40.0 / 0.2 / 4.4 / 0.90 | −1.41 / 1.44 / 89 / 40.0 / 0.2 / 4.8 / 0.90 |
-| strong RA 100 | −1.14 / 1.56 / 90 / 19.6 / 0.0 / 0.0 / 0.66 | −0.82 / 1.33 / 90 / 20.6 / 0.0 / 0.0 / 0.67 |
-| strong RA 200 | −0.95 / 1.55 / 89 / 34.8 / 0.0 / 0.2 / 0.77 | −0.71 / 1.24 / 87 / 37.4 / 0.0 / 0.0 / 0.79 |
-| strong RA 300 | −1.20 / 1.55 / 91 / 39.6 / 0.0 / 0.8 / 0.84 | −1.00 / 1.24 / 89 / 40.0 / 0.0 / 0.6 / 0.85 |
-| strong RA 600 | −2.02 / 2.04 / 93 / 40.0 / 1.2 / 11.0 / 0.94 | −1.61 / 1.64 / 93 / 40.0 / 0.8 / 12.8 / 0.94 |
-| expert 100 | −1.40 / 1.40 / 96 / 20.8 / 0.0 / 0.2 / 0.94 | −1.29 / 1.29 / 96 / 19.6 / 0.0 / 0.4 / 0.94 |
-| expert 200 | −1.29 / 1.29 / 97 / 37.0 / 0.2 / 1.8 / 0.95 | −1.17 / 1.17 / 98 / 36.4 / 0.2 / 1.4 / 0.95 |
-| expert 300 | −1.35 / 1.35 / 95 / 40.0 / 0.8 / 3.6 / 0.95 | −1.16 / 1.16 / 96 / 40.0 / 1.0 / 4.6 / 0.95 |
-| expert 600 | −1.44 / 1.44 / 97 / 40.0 / 6.8 / 25.0 / 0.97 | −1.24 / 1.24 / 97 / 40.0 / 8.4 / 24.2 / 0.97 |
+| beginner 100 | −0.73 / 1.54 / 86 / 15.6 / 0.0 / 0.0 / 0.25 | −0.44 / 1.04 / 79 / 19.2 / 0.0 / 0.0 / 0.29 |
+| beginner 200 | −1.30 / 1.59 / 84 / 22.0 / 0.0 / 0.0 / 0.40 | −0.37 / 1.28 / 82 / 30.4 / 0.0 / 0.2 / 0.47 |
+| beginner 300 | −1.40 / 1.80 / 87 / 28.6 / 0.0 / 0.2 / 0.53 | −0.45 / 1.21 / 83 / 39.6 / 0.0 / 0.4 / 0.64 |
+| beginner 600 | −1.92 / 1.97 / 87 / 40.0 / 0.2 / 3.2 / 0.83 | −1.44 / 1.50 / 88 / 40.0 / 0.6 / 5.0 / 0.87 |
+| lecture RA 100 | −0.79 / 1.28 / 82 / 22.2 / 0.0 / 0.0 / 0.48 | 0.01 / 0.81 / 79 / 33.4 / 0.0 / 0.0 / 0.53 |
+| lecture RA 200 | −0.91 / 1.39 / 85 / 31.4 / 0.0 / 0.2 / 0.62 | −0.48 / 0.79 / 80 / 40.0 / 0.0 / 0.0 / 0.69 |
+| lecture RA 300 | −1.04 / 1.46 / 89 / 36.8 / 0.0 / 0.4 / 0.72 | −0.79 / 0.93 / 87 / 40.0 / 0.0 / 0.0 / 0.77 |
+| lecture RA 600 | −1.90 / 1.94 / 90 / 40.0 / 0.4 / 4.6 / 0.89 | −1.45 / 1.47 / 91 / 40.0 / 1.0 / 8.4 / 0.90 |
+| strong RA 100 | −0.89 / 1.47 / 86 / 27.8 / 0.0 / 0.0 / 0.69 | −0.48 / 1.31 / 84 / 30.6 / 0.0 / 0.0 / 0.70 |
+| strong RA 200 | −1.15 / 1.45 / 87 / 40.0 / 0.0 / 0.0 / 0.80 | −0.82 / 1.28 / 87 / 40.0 / 0.0 / 0.0 / 0.80 |
+| strong RA 300 | −1.46 / 1.60 / 92 / 40.0 / 0.0 / 0.6 / 0.86 | −1.10 / 1.30 / 91 / 40.0 / 0.0 / 0.2 / 0.86 |
+| strong RA 600 | −2.12 / 2.13 / 94 / 40.0 / 1.8 / 13.2 / 0.94 | −1.71 / 1.72 / 93 / 40.0 / 1.8 / 16.4 / 0.94 |
+| expert 100 | −1.36 / 1.36 / 96 / 27.4 / 0.0 / 0.0 / 0.94 | −1.26 / 1.26 / 96 / 27.8 / 0.0 / 0.0 / 0.94 |
+| expert 200 | −1.26 / 1.26 / 97 / 40.0 / 0.0 / 1.2 / 0.95 | −1.19 / 1.19 / 96 / 40.0 / 0.0 / 0.6 / 0.95 |
+| expert 300 | −1.33 / 1.33 / 95 / 40.0 / 0.4 / 3.2 / 0.95 | −1.20 / 1.20 / 96 / 40.0 / 0.0 / 2.6 / 0.95 |
+| expert 600 | −1.41 / 1.41 / 98 / 40.0 / 7.6 / 25.4 / 0.97 | −1.25 / 1.25 / 97 / 40.0 / 6.2 / 26.2 / 0.97 |
 
-- The error of the ability falls for every profile at every checkpoint (at 300: 1.82 → 1.01, 1.46 → 0.94, 1.55 → 1.24,
-  1.35 → 1.16); right % 81-98, true knowledge the same or higher, exams unchanged within the spread.
-- **A watched effect: the beginner opens genera faster** (13.2 → 18.8 genera met by question 100, seeds 10-16 → 14-23;
-  20.0 → 32.6 by 200), at 81% right (85-86%), learning more (true slate knowledge 0.38 → 0.48 by 200, 0.52 → 0.65 by
-  300); the lecture RA 29.4 → 37.4 by 200. The opening rule is unchanged: the old drag had pushed many genera under
-  `OPEN.P` (shaky), which held the opening, and `OPEN.K` was calibrated on it. Recalibrating `OPEN.K` was measured and
-  not adopted: K 8 leaves the beginner at 18.4 by question 100 (31.4 by 200); K 6 at 16.2 (24.4), but slows the
-  lecture RA under its old pace (16.0 by 100, 19.8 before); the strong RA's gain is kept with both. The opening hold
-  (`introHold`) still stops new cards while a player falls behind. ROADMAP, to decide on the players' answers.
-- `tests/profiles.smoke.js` (one seeded run, the same on every run): its beginner meets 19 genera by question 100 (13
-  before) at 71% right (72%); its limit goes from 17 to 21, the reason in the test.
+- The error of the ability falls for every profile at every checkpoint (at 300: 1.80 → 1.21, 1.46 → 0.93, 1.60 → 1.30,
+  1.33 → 1.20); right % 79-97, true knowledge the same or higher (beginner 0.53 → 0.64 at 300), exams entered the same
+  or more (strong RA 13.2 → 16.4, lecture RA 4.6 → 8.4 by 600).
+- **A watched effect: genera open faster** for the learners: the beginner meets 19.2 genera by question 100 (15.6;
+  seeds 12-22 → 17-24) and 30.4 by 200 (22.0), at 79-82% right (84-86%); the lecture RA 33.4 by question 100 (22.2)
+  and all 40 by 200 (31.4), at 79-80% right (82-85%). Both learn more (true slate knowledge at 200: 0.40 → 0.47, 0.62 →
+  0.69). The opening rule is unchanged (#408: a card with the chance 1 − shaky / `OPEN.K`): the old drag had pushed
+  many genera under `OPEN.P` (shaky), which held the opening, and `OPEN.K` was calibrated on it. Before #408 (the
+  share-of-the-draw opening), recalibrating `OPEN.K` was measured and not adopted: K 8 changed nothing for the
+  beginner, K 6 brought it partway back and slowed the lecture RA under its old pace. The opening hold (`introHold`)
+  still stops new cards while a player falls behind. To decide on the players' answers (ROADMAP).
+- `tests/profiles.smoke.js` (one seeded run, the same on every run): its beginner meets 12 genera by question 100
+  with and without the change; its limit stays 17. (Before #408 the same seed read 13 → 19.)
 
 Not changed: the sheet (`Code.gs` `stats_`) and `core.js` `eloReplay` rate the photos and the player's global level,
 never the genus wrongly given, so they need nothing and the app does not wait for a sheet version. Abilities already
@@ -1587,7 +1589,7 @@ is not in the simulation.
 - 2026-11-03, Pierre: the app under-estimates strong players; the principle that a confusion affects both genera stays,
   its weight follows standard practice. The genus wrongly given no longer gets an Elo step (it counts in its progress,
   recent results and runs, as before), as in the Elo learner models of adaptive practice (Pelánek et al. 2017); on the
-  real answers the next answer is predicted better (log-loss 0.481 → 0.465) and a strong RA's genera move from 0.12 to
+  real answers the next answer is predicted better (log-loss 0.481 → 0.465) and a strong RA's genera move from 0.11 to
   0.59 (fit 0.73); simulated, the error of the ability falls for every profile ("The genus wrongly given in the Elo").
 
 - 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a
