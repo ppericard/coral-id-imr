@@ -140,7 +140,8 @@ Later, not agreed yet: Matrix (4 photos matched to 4 names), photo-to-trait (nee
 
 1. **Species progress display**, restated: the fish bar today counts the 27 IMR entries. Where do the species show? **Recommendation:** keep
    the bar for the entries as it is, and add two counts beside it: **"Species named: N"** (a species at Advanced) and **"In Latin: M"** (its
-   all-Latin exam passed). The species never enter the entry bar. To confirm.
+   all-Latin exam passed). The species never enter the entry bar. To confirm. The whole page around it: three layouts to compare
+   in the Lab, `#lab-fishprog|A|a` (ROADMAP "Fish My progress layout").
 2. **"Twospot wrasse"**: Pierre asks IMR; until then both species keep the PDF name.
 3. The display-schedule thresholds and the IMR shift: proposed above, set from learnsim.
 4. A typed **common** name on a species question that asks for Latin: shown as "right fish, now the Latin name" and counted as a miss, or

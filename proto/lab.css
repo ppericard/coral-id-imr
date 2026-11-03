@@ -3644,3 +3644,815 @@ body:has(.fdstart:not([hidden])) footer {
     max-height: 32vh;
   }
 }
+
+/* ---------- Fish progress: three designs (fishprog.js, a mock-up for Pierre) ---------- */
+.fpbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.fpbar .seg button {
+  padding: 4px 12px;
+}
+.fpbar .seg button span {
+  display: none;
+}
+.fp {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+:where(.fp) button {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fp .label {
+  margin: 0 0 4px;
+}
+.fp .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+}
+.fp .chip {
+  min-height: 28px;
+  padding: 0 10px;
+}
+.fp h3.label {
+  font-size: var(--fs-m);
+}
+/* The card: the families' ring, their levels in a line, the species in one sentence. */
+.fpbadge .pbtxt > span {
+  white-space: normal;
+}
+.fpbadge .pbtxt .lvi {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+.fpbadge .fpspl {
+  margin: 2px 0 0;
+  color: var(--ink);
+}
+.fpring b {
+  font-variant-numeric: tabular-nums;
+}
+.fplvl .lvi {
+  width: 16px;
+  height: 16px;
+}
+/* The species of a list as one bar, from Latin (darkest) to not open (the track). */
+.fpsbar {
+  display: flex;
+  gap: 1px;
+  height: 8px;
+  min-width: 0;
+  border-radius: var(--pill);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.fpsbar span {
+  flex-basis: 0;
+  min-width: 2px;
+  background: var(--lvc, var(--surface-2));
+}
+.fpw {
+  --lvc: color-mix(in srgb, var(--muted) 30%, var(--surface));
+}
+.fpl {
+  --lvc: var(--surface-2);
+}
+.fpleg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 6px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fpleg span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.fpleg i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--lvc);
+  border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+}
+.fpleg b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* Counters beside a family: species named · in Latin / all. */
+.fpcnt {
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.fpcnt b {
+  color: var(--ink);
+}
+.fpcnt .fpsep {
+  margin: 0 3px;
+}
+.fpcnt.fpoff {
+  font-style: italic;
+}
+.fp .pct {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+/* Chips coloured by level (a family or a species), red ring = to review. */
+.fpchip {
+  background: var(--lvc, var(--surface));
+  color: var(--lvt, var(--ink));
+  border: 1px solid var(--lvc, var(--line));
+  gap: 4px;
+}
+.fpchip.s0 {
+  border-style: dashed;
+}
+.fpchip small {
+  font-size: var(--fs-xs);
+  opacity: 0.85;
+}
+.fp .weak,
+.fpdrill .weak .fpsl {
+  box-shadow: inset 0 0 0 2px var(--bad);
+}
+.fparow.weak {
+  border: 2px solid var(--bad);
+  box-shadow: none;
+}
+:root[data-cvd='1'] .fp .weak {
+  outline: 2px dashed var(--bad);
+  outline-offset: -2px;
+}
+.fpnone {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.fp .fpimr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 12px;
+}
+.fp .fpimr p {
+  flex: 1;
+  margin: 0;
+  font-size: var(--fs-xs);
+}
+.fp .fpimr .next {
+  flex: none;
+  width: auto;
+  min-height: 34px;
+  padding: 4px 14px;
+}
+/* Phones: the short lists come first under the board, before the levels and the prompt. */
+.fpside .fplist {
+  order: -1;
+}
+.fpside {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.fpspec {
+  min-width: 0;
+}
+.fpkey {
+  margin: 6px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* A: slate rows. Phones: three columns of compact tiles (name and % in the level colour, the species under it);
+   tablet and desktop: two columns of rows, the species and both counters beside the family. */
+.fparows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(9, auto);
+  grid-auto-flow: column;
+  gap: 4px;
+}
+.fparow {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--lvc, var(--line));
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+.fparow.s0 {
+  border-style: dashed;
+}
+.fpaname {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  min-height: 24px;
+  background: var(--lvc, var(--surface));
+  color: var(--lvt, var(--ink));
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.15;
+}
+.fparow.s0 .fpaname {
+  color: var(--muted);
+  font-weight: 400;
+}
+.fpaname > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fpaname .pct {
+  font-size: 0;
+}
+.fpaname .pct::before {
+  width: 12px;
+  height: 12px;
+}
+.fpasp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 2px;
+}
+.fpasp .fpsbar {
+  flex: 1;
+  height: 5px;
+}
+.fpasp .fpcnt.fpoff {
+  font-size: var(--fs-xs);
+}
+.fpA .fpbadge .pring,
+.fpB .fpbadge .pring,
+.fpC .fpbadge .pring {
+  width: 56px;
+  height: 56px;
+}
+@media (min-width: 600px) {
+  .fpbar .seg button span {
+    display: inline;
+  }
+  .fparows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--rows), auto);
+    gap: 4px 10px;
+  }
+  .fparow {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .fpaname {
+    flex: 0 0 52%;
+    min-height: 0;
+    padding: 4px 8px;
+    font-size: var(--fs-s);
+  }
+  .fpaname .pct {
+    font-size: var(--fs-xs);
+  }
+  .fpaname .pct::before {
+    width: 1.25em;
+    height: 1.25em;
+  }
+  .fpbadgeB .fpspl {
+    display: block;
+  }
+  .fpasp {
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 8px;
+  }
+  .fpasp .fpsbar {
+    flex: none;
+  }
+}
+@media (min-width: 1024px) {
+  .fpside .fplist {
+    order: 0;
+  }
+  .fpA,
+  .fpC {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: auto 1fr;
+    gap: 10px 18px;
+    align-items: start;
+  }
+  .fpA > .fpbadge,
+  .fpC > .fpbadge {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .fpA > .fpmain,
+  .fpC > .fpmain {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .fpA > .fpside,
+  .fpC > .fpside {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .fpA .fpbadge .pring,
+  .fpC .fpbadge .pring,
+  .fpB .fpbadge .pring {
+    width: 96px;
+    height: 96px;
+  }
+  .fpA .fpbadge .pring > span,
+  .fpC .fpbadge .pring > span,
+  .fpB .fpbadge .pring > span {
+    width: 74px;
+    height: 74px;
+  }
+  .fpA .fpbadge .pring b,
+  .fpC .fpbadge .pring b,
+  .fpB .fpbadge .pring b {
+    font-size: var(--fs-xl);
+  }
+  .fparow {
+    min-height: 38px;
+  }
+}
+
+/* B: dashboard. The card and the species totals on top, the families as a heat grid, then the short lists. */
+.fptop {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fpnums {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 6px;
+}
+.fpnums span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+.fpnums b {
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+  font-variant-numeric: tabular-nums;
+}
+.fpnums small {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fpnums .fpof b {
+  color: var(--muted);
+}
+/* Phones: the dashboard's card leaves the species to the numbers beside it. */
+.fpbadgeB .fpspl {
+  display: none;
+}
+.fpteaser {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fpto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font-size: var(--fs-s);
+}
+.fpto small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.fpto > small {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+/* A bar to the 80% that opens a family's species. */
+.fptobar {
+  height: 8px;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.fptobar span {
+  display: block;
+  height: 100%;
+  background: var(--lvc);
+  border-right: 2px solid var(--ink);
+}
+.fptobar.big {
+  height: 10px;
+  margin: 4px 0 8px;
+}
+.fpgrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+}
+.fpcell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 3px 4px 7px;
+  border-radius: var(--r-sm);
+  background: var(--lvc, var(--surface));
+  color: var(--lvt, var(--ink));
+  border: 1px solid var(--lvc, var(--line));
+  font-size: var(--fs-xs);
+  line-height: 1.15;
+}
+.fpcell.s0 {
+  border-style: dashed;
+  color: var(--muted);
+}
+.fpcell i {
+  font-style: normal;
+  font-weight: 600;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.fpcell .pct {
+  display: none;
+}
+.fpcell .pct {
+  align-self: flex-end;
+}
+/* The family's species named, as a thin line along the bottom of its cell. */
+.fpcf {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: var(--pill);
+  background: linear-gradient(90deg, var(--lvt) var(--f), color-mix(in srgb, var(--lvt) 22%, transparent) 0);
+}
+.fplists {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+@media (min-width: 600px) {
+  .fptop {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .fptop > .fpbadge {
+    flex: 0 0 auto;
+    max-width: 50%;
+  }
+  .fptop > .fpspec {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  .fpgrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .fpcell {
+    min-height: 46px;
+    padding: 4px 6px 7px;
+  }
+  .fpcell .pct {
+    display: inline-flex;
+  }
+  .fplists {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+@media (min-width: 1024px) {
+  .fptop > .fpbadge {
+    min-width: 380px;
+  }
+  .fpgrid {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .fpcell {
+    min-height: 62px;
+    font-size: var(--fs-s);
+    padding: 6px 8px 9px;
+  }
+}
+
+/* C: mosaic. A block per family, its area by its number of species, a square per species. */
+.fpmos {
+  position: relative;
+  min-height: 300px;
+}
+.fpblk {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--lvc, var(--surface));
+  color: var(--lvt, var(--ink));
+  border: 1px solid var(--lvc, var(--line));
+}
+.fpblk.s0 {
+  border-style: dashed;
+  color: var(--muted);
+}
+.fpblk.on {
+  background: var(--surface);
+  color: var(--ink);
+}
+.fpbl {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 5px;
+  font-size: var(--fs-xs);
+  line-height: 16px;
+  white-space: nowrap;
+}
+.fpblk.two .fpbl {
+  white-space: normal;
+}
+.fpblk.two .fpbl b {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.fpbl b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.fpbl small {
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.fpblk.on .fpbl {
+  background: var(--lvc, var(--surface-2));
+  color: var(--lvt, var(--ink));
+}
+.fpsq {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--gap);
+  padding: 3px;
+}
+.fpsq i {
+  width: var(--sq);
+  height: var(--sq);
+  border-radius: 2px;
+  background: var(--lvc, var(--surface));
+}
+.fpsq i.s0 {
+  --lvc: var(--surface);
+}
+/* A family whose species are not open yet: its squares are a faint texture on its level colour (what is ahead). */
+.fpblk:not(.on) .fpsq i {
+  background: color-mix(in srgb, var(--lvt, var(--muted)) 14%, transparent);
+}
+.fpblk.s0:not(.on) .fpsq i {
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+}
+.fpsq i.fpw {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 60%, transparent);
+  background: var(--surface);
+}
+.fpsq i.weak {
+  box-shadow: 0 0 0 1.5px var(--bad);
+}
+.fpmleg {
+  margin-top: 6px;
+}
+.fpblk.weak {
+  box-shadow: inset 0 0 0 2px var(--bad);
+}
+
+/* Drill-down: a family's species, in a sheet over the page (bottom sheet on phones, a card on wider screens). */
+.fpdrill {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.fpdcard {
+  width: 100%;
+  max-height: 86vh;
+  overflow: auto;
+  padding: 12px 16px 16px;
+  border-radius: var(--r) var(--r) 0 0;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-hover);
+}
+.fpdhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.fpdhead > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fpdt {
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  line-height: 1.1;
+}
+.fpdhead small {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fpdhead .lvi {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 3px;
+}
+.fpbad {
+  color: var(--bad);
+  font-weight: 600;
+}
+.fpring.sm {
+  width: 48px;
+  height: 48px;
+}
+.fpring.sm > span {
+  width: 36px;
+  height: 36px;
+}
+.fpring.sm b {
+  font-size: var(--fs-xs);
+}
+.fpx {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--fs-m);
+  cursor: pointer;
+}
+.fpdsum {
+  margin: 0 0 6px;
+  font-size: var(--fs-s);
+}
+.fpsub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fpsub .chip {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: var(--fs-xs);
+}
+.fpdlist h4 {
+  margin: 12px 0 4px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.fpdlist ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fpsrow {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--line);
+}
+.fpsl {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-xs);
+  display: grid;
+  place-items: center;
+  background: var(--lvc, var(--surface));
+  color: var(--lvt, var(--ink));
+  border: 1px dashed var(--lvc, var(--line));
+}
+.fpsl .lvi {
+  width: 16px;
+  height: 16px;
+}
+.fpsn {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--fs-s);
+  line-height: 1.2;
+}
+.fpsn small {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fpsn i + small,
+.fpsn b + i {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fpsn b {
+  font-weight: 600;
+}
+.fpsp {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.fpnext .fpsn {
+  color: var(--muted);
+}
+.fpdcard:focus {
+  outline: none;
+}
+.fpall summary {
+  margin: 8px 0 4px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+  cursor: pointer;
+}
+.fpmore {
+  margin: 10px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+@media (min-width: 600px) {
+  .fpdrill {
+    align-items: center;
+  }
+  .fpdcard {
+    width: 520px;
+    max-height: 80vh;
+    border-radius: var(--r);
+  }
+}

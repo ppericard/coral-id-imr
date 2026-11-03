@@ -29,6 +29,8 @@ const ROUTES = [
   'board',
   'ach',
   'lab',
+  'lab-fishprog',
+  'lab-fishprog|C|c|t09',
   'quiz-duel|Foo|Bar',
   'g-%E0'
 ]; // the last two are malformed links: they must not crash a page
