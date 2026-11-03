@@ -973,7 +973,8 @@ async function basicsTeach(b, base) {
       const q = s => document.querySelector(s),
         rim = q('.bx-fig .bx-rim'),
         at = (e, k) => Number(e.getAttribute(k));
-      const inRim = d => ((at(d, 'cx') - at(rim, 'cx')) / at(rim, 'rx')) ** 2 + ((at(d, 'cy') - at(rim, 'cy')) / at(rim, 'ry')) ** 2;
+      // distance from the rim's centre in rim radii: < 1 inside the rim, 1 on it
+      const inRim = d => Math.hypot((at(d, 'cx') - at(rim, 'cx')) / at(rim, 'rx'), (at(d, 'cy') - at(rim, 'cy')) / at(rim, 'ry'));
       return {
         rim: !!rim,
         sep: q('.bx-fig .bx-dot.sep') && inRim(q('.bx-fig .bx-dot.sep')),
@@ -987,9 +988,10 @@ async function basicsTeach(b, base) {
     });
     if (!sp.rim) fails.push(`${W} septa: no rim drawn on the photo`);
     else {
-      if (!(sp.sep < 0.6)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
-      if (!(sp.cos > 1.1)) fails.push(`${W} septa: the costae point is not outside the rim (${sp.cos})`);
-      if (!(sp.ctr < 0.01)) fails.push(`${W} septa: the centre point is not at the rim's centre (${sp.ctr})`);
+      if (!(sp.sep < 0.75)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
+      // Costae are immediately outside the wall (Pierre, PR #424): past the rim, by less than a quarter of its radius.
+      if (!(sp.cos > 1.05 && sp.cos < 1.25)) fails.push(`${W} septa: the costae point is not just outside the rim (${sp.cos} rim radii)`);
+      if (!(sp.ctr < 0.4)) fails.push(`${W} septa: the centre point is not near the rim's centre (${sp.ctr})`);
     }
     if (!sp.labs.some(l => /\bsep\b/.test(l) && /septa/.test(l)) || !sp.labs.some(l => /\bcos\b/.test(l) && /costae/.test(l)))
       fails.push(`${W} septa: no septa and costae labels in their colours: ${sp.labs.join(', ')}`);
@@ -1023,6 +1025,35 @@ async function basicsTeach(b, base) {
     });
     if (!lb || lb.d > 2 || lb.labs < 3)
       fails.push(`${W} septa: the enlarged photo has no labels on it, or they are off the photo: ${JSON.stringify(lb)}`);
+    // The drawing of the layer (rim, dots, pointers) fills it like the labels (Codex on PR #424): its box is the layer's and
+    // each dot sits at its photo coordinates, at fit and at actual size.
+    const marks = () =>
+      p.evaluate(() => {
+        const ov = document.querySelector('#lightbox .lb-over'),
+          o = ov.getBoundingClientRect(),
+          sv = ov.querySelector('svg').getBoundingClientRect(),
+          vb = ov.querySelector('svg').viewBox.baseVal;
+        let d = Math.max(
+          Math.abs(sv.left - o.left),
+          Math.abs(sv.top - o.top),
+          Math.abs(sv.width - o.width),
+          Math.abs(sv.height - o.height)
+        );
+        ov.querySelectorAll('.bx-dot').forEach(c => {
+          const r = c.getBoundingClientRect(),
+            x = o.left + (c.cx.baseVal.value / vb.width) * o.width,
+            y = o.top + (c.cy.baseVal.value / vb.height) * o.height;
+          d = Math.max(d, Math.abs(r.left + r.width / 2 - x), Math.abs(r.top + r.height / 2 - y));
+        });
+        return Math.round(d);
+      });
+    const fitD = await marks();
+    if (fitD > 2) fails.push(`${W} septa: the enlarged photo's rings and pointers are ${fitD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.waitForTimeout(800);
+    const fullD = await marks();
+    if (fullD > 2) fails.push(`${W} septa: at actual size, the rings and pointers are ${fullD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
     await p.click('#lightbox [data-ov]').catch(() => fails.push(`${W} septa: no Labels switch in the enlarged view`));
     if (!(await p.evaluate(() => document.querySelector('#lightbox .lb-over').hidden)))
       fails.push(`${W} septa: Labels off left the labels on`);
@@ -1069,7 +1100,16 @@ async function basicsTeach(b, base) {
       const ex = await p.evaluate(() =>
         [...document.querySelectorAll('.bx-fex figure')].map(f => ({
           w: Math.round(f.querySelector('img').getBoundingClientRect().width),
-          g: (f.querySelector('figcaption i') || {}).textContent || ''
+          g: (f.querySelector('figcaption i') || {}).textContent || '',
+          // rule 7: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
+          r: (n => {
+            const fi = (f
+                .querySelector('img')
+                .getAttribute('src')
+                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
+              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
+            return q.imr ? 0 : q.own ? 1 : 2;
+          })((f.querySelector('figcaption i') || {}).textContent)
         }))
       );
       const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
@@ -1078,6 +1118,10 @@ async function basicsTeach(b, base) {
       if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
         fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
       if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
+      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+        fails.push(
+          `${W} forms ${name}: examples not in rule 7's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+        );
     }
     await p.click('.bx-fex .bx-fx');
     const cap = await p
