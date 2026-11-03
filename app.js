@@ -1389,6 +1389,8 @@ function route() {
   document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g));
   // Big photos (sheet cover, lab tools) get the file for the box they got (the quiz and Look-alikes do it in their fit).
   upsize();
+  // Pages opened in the visit (sync.js pagesRoute, sheet v30 'pages'): the page drawn, not a link that sent on to another.
+  if ((hashNow() || 'home') === (h || 'home') && typeof pagesRoute === 'function') pagesRoute(h);
 }
 addEventListener('hashchange', route);
 // Pages open straight on their content: the title is dropped where the header already names the page

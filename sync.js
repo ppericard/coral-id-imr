@@ -26,6 +26,7 @@ function loadStats() {
   fetch(SYNC_URL + '?stats=1&av=' + appVer())
     .then(r => r.json())
     .then(j => {
+      sheetSeen(j);
       if (j && j.ok && j.photos) {
         PSTAT = j.photos;
         GDIFF = {}; // genus difficulties follow the new photo stats and confusions
@@ -670,6 +671,7 @@ function sendAnon() {
   })
     .then(r => r.json())
     .then(j => {
+      sheetSeen(j);
       // A refused send is reported like a failed save (it used to fail silently; Pierre, 2026-11-03), then retried at the
       // next answer, the next visit or when the app is left.
       if (!j || !j.log) return ev('sync', {msg: 'anonymous send refused: ' + String((j && j.error) || 'no reply')});
@@ -693,7 +695,8 @@ function sendAnon() {
 // Events (Pierre, 2026-11-02: most RAs will not report problems, so the app reports what it can by itself; sheet v19
 // events_): app errors, photos that still fail after their retries, saves that fail while online, and the answers to the
 // occasional one-tap question (pulse). Anonymous: a random device id of its own (EVID, never a name or the answers' id),
-// the app version and a short browser name. Queued here (EVQ, at most 50) and sent in small batches; never from a local
+// the app version and a short browser name; only the pages summaries (pagesSend, sheet v30) are tied to the player's
+// answers, under the admin's id of the player. Queued here (EVQ, at most 50) and sent in small batches; never from a local
 // copy (LOCAL) nor without the sync URL. At most EV_MAX reports a visit, the same message once.
 const EVID = 'imr-dev-id',
   EVQ = 'imr-evq',
@@ -727,7 +730,8 @@ const uaShort = () => {
 };
 function ev(k, o = {}) {
   const key = k + '|' + (o.msg || o.f || o.r || '');
-  if (k !== 'pulse' && (evSeen.has(key) || evSeen.size >= EV_MAX)) return;
+  // The one-tap answers and the pages summaries (one a visit, or one each time the app is left) are never deduplicated.
+  if (k !== 'pulse' && k !== 'pages' && (evSeen.has(key) || evSeen.size >= EV_MAX)) return;
   evSeen.add(key);
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   store.set(
@@ -740,14 +744,29 @@ function ev(k, o = {}) {
   clearTimeout(evTimer);
   evTimer = setTimeout(sendEvents, k === 'pulse' ? 2000 : 10000);
 }
+// The next request's events: the queue's, for the player active now (core.js pagesBatch: a pages summary only under
+// the player it was queued for; one queued for another, as after a sign-out, is dropped from the queue, never sent under
+// someone else; Codex review #423). Returns the batch (at most 50) and who it belongs to.
+function evBatch() {
+  const q = store.get(EVQ, []),
+    B = q.some(x => x && x.k === 'pages') ? pagesBatch(q, pvOwner()) : {send: q, drop: []};
+  if (B.drop.length)
+    store.set(
+      EVQ,
+      store.get(EVQ, []).filter(x => !B.drop.includes(x && x.id))
+    );
+  const batch = B.send.slice(0, 50);
+  return {batch, who: pagesWho(batch)};
+}
 function sendEvents() {
-  const q = store.get(EVQ, []);
-  if (!SYNC_URL || LOCAL || evBusy || !q.length || navigator.onLine === false) return;
-  const batch = q.slice(0, 50);
+  if (!SYNC_URL || LOCAL || evBusy || !store.get(EVQ, []).length || navigator.onLine === false) return;
+  const {batch, who} = evBatch();
+  if (!batch.length) return;
   evBusy = true;
-  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch})})
+  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch, ...who})})
     .then(r => r.json())
     .then(j => {
+      sheetSeen(j);
       // Sent, or refused for good (an older sheet answers 'input', a full window 'busy'): either way they leave the queue.
       if (!j || (!j.ev && j.error !== 'input' && j.error !== 'busy')) return;
       const done = new Set(batch.map(x => x.id));
@@ -784,6 +803,70 @@ window.addEventListener('unhandledrejection', e => {
   if (navigator.onLine === false || (r && r.name === 'TypeError' && /fetch|network|load failed/i.test(r.message || ''))) return;
   ev('err', {msg: ('Unhandled: ' + (r && (r.message || r)) || '').slice(0, 300), src: String((r && r.stack) || '').split('\n')[1] || ''});
 });
+// Pages opened in a visit (sheet v30 'pages'; Pierre, 2026-11-03: does anyone open the genus sheets, do beginners use
+// them more, do sheet readers progress faster?). First-party, no outside service: the tally of core.js PAGES (pages and
+// genus sheets opened, times, seconds in view, how a sheet was reached, whether its genus had been asked already) and the
+// answers so far (na), queued as one event when the app is left (hidden) and started again if the player comes back
+// (same visit id vi). Under the id of the player's answers, never the name: the request carries this device's anonymous
+// answer id (ANONID) or, signed in, the name and code, which the sheet checks and turns into the admin's id of the
+// player (Code.gs evWho_), keeping neither. Queued only once the sheet has said v >= PAGES.SHEET (AGENTS.md 7a), and,
+// like every event, never sent from a local copy (LOCAL).
+const SHEETV = 'imr-sheet-v',
+  PVLINK = 'imr-pv-link',
+  PV = pagesNew(),
+  PVI = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+let pvLast = null;
+// The script version of a reply (every reply carries v), remembered for the next visits.
+function sheetSeen(j) {
+  if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
+}
+const pvGenus = h => {
+  const g = String(h || '').replace(/^#/, '');
+  let n = g.slice(2);
+  try {
+    n = decodeURIComponent(n);
+  } catch (e) {}
+  return g.startsWith('g-') && DATA && GX(n) ? n : null;
+};
+// A link to a genus sheet remembers the page it was clicked on: the quiz feedback opens the sheet in a new tab on a
+// computer (quiz.js sheetTab), a new visit that has no page before it.
+document.addEventListener(
+  'click',
+  e => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href^="#g-"]') : null;
+    if (a) store.set(PVLINK, {g: pvGenus(a.getAttribute('href')), from: pageFrom(hashNow()), t: Date.now()});
+  },
+  true
+);
+// A page drawn (app.js route; a redraw of the same page is not a new opening).
+function pagesRoute(h) {
+  if (h === pvLast) return;
+  const prev = pvLast,
+    genus = pvGenus(h);
+  pvLast = h;
+  let from = prev === null ? 'other' : pageFrom(prev);
+  if (genus) {
+    const L = store.get(PVLINK, null);
+    if (L && L.g === genus && Date.now() - L.t < 30000) from = L.from;
+    try {
+      localStorage.removeItem(PVLINK);
+    } catch (e) {}
+  }
+  const s = genus && P[genus];
+  pagesOpen(PV, h, Date.now(), {genus, from, asked: s && (s.ok || 0) + (s.ko || 0) > 0, hidden: document.visibilityState === 'hidden'});
+}
+function pagesSend() {
+  const S = pagesTake(PV, Date.now());
+  if (!S || !(Number(store.get(SHEETV, 0)) >= PAGES.SHEET)) return;
+  ev('pages', {vi: PVI, ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}), ...S, o: pvOwner()});
+}
+// The player active now, as a summary's owner (core.js pagesOwner): no anonymous id is made for a signed-in player.
+const pvOwner = () => (SYNC && SYNC.name && SYNC.pin ? pagesOwner(SYNC) : pagesOwner(null, anonId()));
+// Who the pages summaries of a batch belong to: the name and code when signed in (checked by the sheet, never kept),
+// else this device's anonymous answer id. Nothing for a batch without one. A batch holds only the summaries of the
+// player active now (evBatch).
+const pagesWho = batch =>
+  !batch.some(x => x && x.k === 'pages') ? {} : SYNC && SYNC.name && SYNC.pin ? {ename: SYNC.name, epin: SYNC.pin} : {eanon: anonId()};
 // Load times (app.js loadMark): sent once a visit.
 function loadSend() {
   if (loadSent || !('t0' in LOADM)) return;
@@ -810,9 +893,10 @@ window.addEventListener('online', sendAnon);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     loadSend();
+    pagesSend();
     sendAnon();
     sendEvents();
-  }
+  } else pagesResume(PV, Date.now());
 });
 // Signing in. A new name keeps what this device holds and sends it. A known account (found), once the player has
 // answered "Is it you?" (bindSync, 2026-11-03), is merged with what was played here before signing in: the sheet's settings and quiz state win, the progress of both adds up (mergeProgress
@@ -821,6 +905,8 @@ document.addEventListener('visibilitychange', () => {
 // device's progress, so a beta tester who played first and signed in later lost it.
 function signIn(name, pin, j) {
   SYNC = {name, pin, dirty: true, log: store.get(LOG0, []), ...(store.get(ANONID, '') ? {anon: store.get(ANONID, '')} : {})};
+  // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
+  if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
     [LOG0, ANONQ, ANONID].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
@@ -963,6 +1049,11 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     };
     const signOff = () => {
       SYNC = null;
+      // The pages summaries still queued are the account's: dropped, never sent under the next player (Codex review #423).
+      store.set(
+        EVQ,
+        store.get(EVQ, []).filter(x => !(x && x.k === 'pages'))
+      );
       // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
       // The first-meeting cards too (Codex review #350): the next player meets their own genera.
       [
