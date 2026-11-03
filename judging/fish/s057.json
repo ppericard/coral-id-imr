@@ -68,12 +68,6 @@
    "quality": 2,
    "keep": "best"
   },
-  "fish-s057-cand-607425974": {
-   "view": "whole",
-   "phase": "adult",
-   "quality": 2,
-   "keep": "best"
-  },
   "fish-s057-cand-557992878": {
    "view": "whole",
    "phase": "adult",
@@ -157,26 +151,11 @@
    "cast": "blue",
    "note": "A second fish far behind"
   },
-  "fish-s057-cand-758214610": {
-   "view": "whole",
-   "phase": "adult",
-   "quality": 2,
-   "keep": "best",
-   "note": "Soft"
-  },
   "fish-s057-cand-757116838": {
    "view": "whole",
    "phase": "adult",
    "quality": 2,
    "keep": "best"
-  },
-  "fish-s057-cand-749903258": {
-   "view": "whole",
-   "phase": "adult",
-   "quality": 2,
-   "keep": "best",
-   "cast": "blue",
-   "note": "Seen from below, against open water"
   },
   "fish-s057-cand-757884141": {
    "view": "whole",
@@ -190,19 +169,6 @@
    "quality": 2,
    "keep": "dup",
    "note": "Same fish and framing as the best"
-  },
-  "fish-s057-cand-744247288": {
-   "view": "whole",
-   "phase": "adult",
-   "quality": 2,
-   "keep": "best"
-  },
-  "fish-s057-cand-744247290": {
-   "view": "whole",
-   "phase": "adult",
-   "quality": 2,
-   "keep": "alt",
-   "note": "Other side"
   },
   "fish-s057-cand-755349154": {
    "view": "whole",
@@ -244,66 +210,67 @@
    "keep": "best",
    "note": "Murky brown water: like a poor video frame"
   },
-  "fish-s057-cand-746816383": {
+  "fish-s057-cand-731616968": {
+   "view": "whole",
+   "phase": "unknown",
+   "quality": 1,
+   "keep": "best",
+   "note": "Motion blur; the observer says juvenile, the photo cannot tell"
+  },
+  "fish-s057-cand-731616975": {
+   "view": "whole",
+   "phase": "unknown",
+   "quality": 1,
+   "keep": "alt",
+   "note": "Small, seen from above"
+  },
+  "fish-s057-cand-731169675": {
    "view": "whole",
    "phase": "adult",
    "quality": 2,
-   "keep": "best"
-  },
-  "fish-s057-cand-746796073": {
-   "view": "whole",
-   "phase": "adult",
-   "quality": 1,
    "keep": "best",
-   "cast": "blue",
-   "note": "Motion blur, still readable"
+   "note": "Dark"
   },
-  "fish-s057-cand-746796094": {
+  "fish-s057-cand-751536596": {
    "view": "whole",
-   "phase": "adult",
-   "quality": 1,
-   "keep": "alt",
-   "cast": "blue",
-   "note": "Two fish, small"
-  },
-  "fish-s057-cand-745788977": {
-   "view": "whole",
-   "phase": "adult",
-   "quality": 1,
-   "keep": "dup",
-   "cast": "blue",
-   "note": "Blurred, adds nothing"
-  },
-  "fish-s057-cand-755342378": {
-   "view": "school",
    "phase": "adult",
    "quality": 2,
    "keep": "best",
    "cast": "blue"
   },
-  "fish-s057-cand-755342403": {
+  "fish-s057-cand-728007778": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "note": "Two fish"
+  },
+  "fish-s057-cand-730382601": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-730382570": {
    "view": "whole",
    "phase": "adult",
    "quality": 2,
    "keep": "alt",
-   "cast": "blue",
-   "note": "Two fish closer"
+   "note": "Wider, the fish smaller"
   },
-  "fish-s057-cand-755342430": {
+  "fish-s057-cand-728423827": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 3,
+   "keep": "best",
+   "note": "Two fish"
+  },
+  "fish-s057-cand-525978551": {
    "view": "school",
    "phase": "adult",
    "quality": 2,
-   "keep": "alt",
-   "cast": "blue",
-   "note": "Wider view of the group"
-  },
-  "fish-s057-cand-755342477": {
-   "view": "school",
-   "phase": "adult",
-   "quality": 2,
-   "keep": "dup",
-   "cast": "blue",
-   "note": "Same group and framing as the wider view"
+   "keep": "best",
+   "cast": "blue"
   }
  }
 }
