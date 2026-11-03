@@ -449,7 +449,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // Only photos the player saw during the question: a corallites hint left closed is not "the photo shown".
     const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')),
       G = GX(c),
-      V = Object.fromEntries(Object.entries(G.views).map(([v, L]) => [v, L.filter(p => !G.x || p.own || !p.gid)]));
+      V = Object.fromEntries(Object.entries(G.views).map(([v, L]) => [v, L.filter(p => gamePhotoOk(c, p))]));
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp),

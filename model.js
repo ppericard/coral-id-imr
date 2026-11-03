@@ -52,7 +52,7 @@ function photoSet(n, skip, shift = 0) {
     ok = v => p => v !== 'wide' || p.form !== 'x' || oneForm;
   // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
-  const gameOk = p => !g.x || p.own || !p.gid;
+  const gameOk = p => gamePhotoOk(n, p);
   const pics = v =>
     [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])]
       .filter(ok(v))
@@ -145,7 +145,7 @@ function examSet(n) {
     ps = s.ps || {},
     done = (s.ex || {}).v || [];
   const oneForm = imrFormsOf(n).length === 1,
-    gameOk = p => (!g.x || p.own || !p.gid) && !p.multi;
+    gameOk = p => gamePhotoOk(n, p) && !p.multi;
   const lab = v => (two && v === 'macro' ? 'close' : v);
   const pics = v =>
     [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])]
