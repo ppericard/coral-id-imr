@@ -1414,15 +1414,16 @@ header {
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
   }
 }
+/* Relative on phones only as the frame of its enlarge mark (.zic): its top offset is for the sticky cover from tablets up. */
 .hero-ph {
-  position: static;
-  top: calc(var(--hdr-h, 56px) + 60px);
+  position: relative;
   overflow: hidden;
   box-shadow: var(--shadow);
 }
 @media (min-width: 600px) {
   .hero-ph {
     position: sticky;
+    top: calc(var(--hdr-h, 56px) + 60px);
   }
 }
 .hero-ph img {
@@ -1973,21 +1974,77 @@ body:has(.lk) main {
   background: var(--qbg, var(--photo-bg)) center/cover;
   filter: blur(22px) brightness(0.55);
 }
-.qph .zoom::after {
-  content: '⤢';
+/* The enlarge mark (app.js ZOOMI) in the bottom-right corner of a photo that opens the enlarged view: quiz, duels, genus
+   sheet (Pierre, 2026-11-03: players almost never enlarged a quiz photo). Always there, quiet: the scrim pill of the
+   other marks on photos; the source pill (.psrc) keeps clear of it on the left. */
+.zic {
   position: absolute;
   right: 8px;
   bottom: 8px;
-  width: 30px;
-  height: 30px;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border-radius: var(--pill);
   background: var(--scrim);
   color: var(--on-photo);
-  font-size: var(--fs-m);
-  opacity: 0.8;
   pointer-events: none;
+}
+.zic svg {
+  display: block;
+}
+@media (hover: hover) {
+  .zoom:hover .zic {
+    background: color-mix(in srgb, var(--photo-bg) 80%, transparent);
+  }
+}
+.strip .zoom {
+  position: relative;
+}
+/* One-time coach mark over the first photo of an early quiz question (quiz.js zoomHint): a bubble pointing at the enlarge
+   mark below it. It lets every tap through and goes at the first one, or after ZHINT.MS. */
+.zhint {
+  position: absolute;
+  right: 6px;
+  bottom: 50px;
+  z-index: 3;
+  max-width: calc(100% - 12px);
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-hover);
+  font-size: var(--fs-s);
+  font-weight: 600;
+  line-height: 1.3;
+  pointer-events: none;
+  animation: zhint 0.25s ease-out;
+}
+.zhint::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--surface);
+  transform: rotate(45deg);
+}
+.zhint.out {
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+@keyframes zhint {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zhint {
+    animation: none;
+  }
 }
 .qph figcaption {
   position: absolute;
@@ -4865,7 +4922,7 @@ a.psrc:focus-visible {
   pointer-events: none;
 }
 /* Phone base (mobile-first); larger screens restore below. */
-.q .qstage.qvs .qph .zoom::after {
+.q .qstage.qvs .qph .zic {
   display: none;
 }
 .q .qstage.qvs .qph figcaption {
@@ -4884,7 +4941,7 @@ a.psrc:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .q .qstage.qvs .qph .zoom::after {
+  .q .qstage.qvs .qph .zic {
     display: grid;
   }
   .q .qstage.qvs .qph figcaption {
