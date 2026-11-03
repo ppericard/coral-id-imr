@@ -473,8 +473,20 @@ quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `cus
   it (`quiz.js` `cbIn`).
 - **Picking** (Pierre, 2026-11-03: "not everyone knows the IMR lecture groups"; then "do not group genera by growth
   form": it is not genus-specific, many genera take 3-4 forms or more, only the mushroom corals keep one): every genus
-  is in view as a small photo with its name, A-Z by default, the IMR lecture groups as the other view (for RAs, the
-  genera in view inside each group); quick picks that need no knowledge, My weakest (genera answered, lowest progress
+  is in view as a small photo with its name. Three views (Pierre, the same day: "nobody picks genera alphabetically;
+  you usually know you make mistakes around these kinds of genera, so you go there"):
+  - **IMR groups**, the default: the lecture's groups, their genera in the IMR order, All / None per group;
+  - **My mix-ups**: the genera the player confuses, in clusters, the most confused first, each with its mix-up count
+    (`model.js` `mixEdges`: each pair the player mixed up, both ways, from `s.conf`, the genus given instead of the one
+    shown; `mixClusters`: greedy, the heaviest pair first, two genera in no cluster start one, a genus joins its
+    partner's cluster when it is paired with at least half of it and it has fewer than `CUSTOM.CLUSTER` = 6, clusters
+    never merge, so a chain A like B like C like D does not make one cluster of genera that do not look alike). A player
+    with no mix-up yet gets the same clusters from the declared look-alikes (`lookEdges`: `look`, IMR lecture and Coral
+    Finder, weighed by how much every player confuses each pair, `pooledConf`), and a line says so. It generalises the
+    Look-alikes of … pick, which stays for one genus;
+  - **Progress**: To review, Learning, Not seen yet, Learned (`shownLevel`, the names of My progress).
+  No A-Z view (the search finds a name; it was the default for a few hours on 2026-11-03: a device that kept it, under
+  the old key `imr-custom-view`, opens on IMR groups once, the choice now in `imr-custom-view2`). Quick picks that need no knowledge, My weakest (genera answered, lowest progress
   first, 6), Recently missed (a miss in the last 5 answers, latest first, 8) and Look-alikes of … (a genus and its
   declared or confused look-alikes, `isLook`, `confusable`); a search box. The selection is saved at each change
   (`imr-coral-custom`, synced, the latest wins) and preselected next time.
