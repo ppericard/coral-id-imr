@@ -12,7 +12,9 @@
 //   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
 // - typed questions (model.js TYPED): sometimes on a genus well on its way, never under TYPED.from; logged quiz|t with
 //   the genus read as the answer; a typo read, a word that is no genus refused, a typed miss against both genera, "I
-//   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers.
+//   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers;
+// - the custom quiz (quiz.js planPhoto on its selection): only genera picked are asked, one not met with its card, the
+//   choices from the selection, topped up to 4 only under 4 genera picked.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -265,18 +267,26 @@ const server = http.createServer((req, res) => {
       g = typedQ();
       const other = hi.find(x => x !== g),
         h0 = (P[other].h || '').length,
-        th0 = ability(g);
+        th0 = ability(g),
+        thO = ability(other),
+        pgO = P[other].pg;
       say(other);
       l = logged();
+      // Against both genera (rule 13): the genus shown in its ability and progress, the genus given in its progress and
+      // recent results only, its Elo ability untouched (docs/LEARNING.md "The genus wrongly given in the Elo").
       if (
         !/^quiz\|t(\|x)?$/.test(l.m) ||
         l.a !== other ||
         l.ok ||
         P[other].h.slice(-1) !== '0' ||
         !(ability(g) < th0) ||
+        ability(other) !== thO ||
+        !(P[other].pg < pgO) ||
         !(P[g].conf || {})[other]
       )
-        fails.push(`typed miss naming ${other} for ${g}: logged ${JSON.stringify(l)}, ${other} h ${P[other].h} (was ${h0} long)`);
+        fails.push(
+          `typed miss naming ${other} for ${g}: logged ${JSON.stringify(l)}, ${other} h ${P[other].h} (was ${h0} long), ability ${thO} -> ${ability(other)}, progress ${pgO} -> ${P[other].pg}`
+        );
       if (!document.querySelector('#after h3.ko')) fails.push('a typed miss: the feedback is not a wrong answer');
       g = typedQ();
       const before = JSON.stringify(Object.fromEntries(Object.entries(P).filter(([k]) => k !== g && k !== LEVEL)));
@@ -960,6 +970,92 @@ const server = http.createServer((req, res) => {
       rematch = null; // no "Again" left over from the section before
       HOLDS = h0;
     }
+    // Custom quiz (model.js customDraw, customChoices; quiz.js planPhoto on CUSTOM_H): the real draw on the real data,
+    // a new player and a strong one. Every genus asked is one picked, a genus not met yet comes with its own card (it is
+    // the one asked), the choices come from the selection when it has 4 genera or more, and a 2-genus selection is
+    // topped up to 4 distinct choices with the other picked genus among them; the photo quiz's offers never show there.
+    {
+      const sel4 = ['Pocillopora', 'Stylophora', 'Seriatopora', 'Acropora', 'Porites'],
+        sel2 = ['Fungia', 'Danafungia'];
+      for (const strong of [false, true])
+        for (const sel of [sel4, sel2]) {
+          P = strong ? Object.fromEntries(genera.map(n => [n, {ok: 20, ko: 2, h: '1111011111', th: 2, pg: 0.7}])) : {};
+          if (strong) P[LEVEL] = {ok: 400, ko: 40, th: 2};
+          store.set(INTRO.KEY, {});
+          INTROS = null;
+          rematch = null;
+          NEXTQ = null;
+          store.set(CUSTOM.KEY, {g: sel, t: Date.now()});
+          for (let i = 0; i < 40; i++) {
+            const q = planPhoto(CUSTOM_H),
+              [cur, t, ch] = q,
+              tag = `custom quiz (${strong ? 'strong' : 'new'} player, ${sel.length} picked): ${t} [${ch.join(', ')}]`;
+            if (cur !== CUSTOM_H || !sel.includes(t)) fails.push(`${tag}: genus asked not picked`);
+            if (q.intro && (q.intro.join() !== t || !q.custom)) fails.push(`${tag}: card ${q.intro} with the question`);
+            if (!q.intro && !introduced(t)) fails.push(`${tag}: a genus not met asked without its card`);
+            if (q.intro) introAdd(q.intro, true, 'c');
+            if (!ch.includes(t) || new Set(ch).size !== ch.length) fails.push(`${tag}: choices`);
+            if (ch.length === 4 && sel.length >= 4 && ch.some(n => !sel.includes(n))) fails.push(`${tag}: a choice outside the selection`);
+            if (sel.length === 2 && !q.again && !q.auto && (ch.length !== 4 || !sel.every(n => ch.includes(n))))
+              fails.push(`${tag}: a 2-genus selection not topped up to 4 with both genera`);
+            if (!q.again && !q.auto && !q.typed && ch.length !== 4) fails.push(`${tag}: ${ch.length} choices`);
+          }
+        }
+      // Codex review #411 (1): a selection of genera nobody confuses can't give the traps a strong player's level asks
+      // for; the question is scored with the choices really shown (plausibleK), never as a 4-choice one with traps.
+      // (2): no mastery exam question in the custom quiz (rule 14e: its choices could hold no look-alike); the exam
+      // comes in the photo quiz.
+      {
+        // Four genera no pair of which is confusable, sharing no IMR growth form if the data allows (then plausibleK < 4).
+        const pick4 = ok => {
+          const L = [];
+          for (const n of pool()) if (L.length < 4 && L.every(x => ok(x, n))) L.push(n);
+          return L;
+        };
+        const far = pick4((x, n) => !confusable(x, n) && !confusable(n, x) && !imrFormsOf(x).some(f => imrFormsOf(n).includes(f))),
+          apart = far.length === 4 ? far : pick4((x, n) => !confusable(x, n) && !confusable(n, x));
+        P = Object.fromEntries(genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85}]));
+        P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        rematch = null;
+        NEXTQ = null;
+        store.set(CUSTOM.KEY, {g: apart, t: Date.now()});
+        let exams = 0,
+          scored = 0;
+        for (let i = 0; i < 60; i++) {
+          const q = planPhoto(CUSTOM_H),
+            [, t, ch, , set, kq] = q;
+          if (set.exam) exams++;
+          if (q.again || q.auto || q.typed) continue;
+          scored++;
+          // The k the answer uses (quiz.js answer: 0 = every choice counts).
+          const want = ch.filter(n => n !== t && confusable(t, n)).length < 2 ? plausibleK(t, ch) : ch.length;
+          if ((kq || ch.length) !== want)
+            fails.push(`custom quiz on ${apart.join(', ')}: ${t} [${ch.join(', ')}] scored k ${kq}, ${want} expected`);
+        }
+        if (apart.length < 4 || !scored) fails.push(`custom quiz scoring check did not run (${apart.join(', ')}, ${scored})`);
+        if (exams) fails.push(`custom quiz: ${exams} mastery exam questions in 60 (the exam belongs to the photo quiz)`);
+        // A played custom session (Pierre, 2026-11-03: exams only in the normal quiz): genera one exam question from
+        // Learned, every answer right, typed ones too; never an exam question on screen, never s.mx from it.
+        P = Object.fromEntries(
+          genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.9, ex: {k: EXAM.n - 1, t: TYPED.exam, v: ['wide'], at: -99}}])
+        );
+        P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        NEXTQ = null;
+        let shown = 0;
+        for (let i = 0; i < 30; i++) {
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          quizPhoto(CUSTOM_H);
+          if (EXAMQ || SHOWNQ[4].exam) shown++;
+          say(SHOWNQ[1]);
+        }
+        const mx = apart.filter(n => P[n].mx);
+        if (shown || mx.length) fails.push(`custom quiz session: ${shown} exam questions shown, mastery credited on ${mx.join(', ')}`);
+        if (!(answersSoFar() > 600)) fails.push('custom quiz session: the answers were not counted');
+      }
+      store.set(CUSTOM.KEY, null);
+      store.set(INTRO.KEY, {});
+      INTROS = null;
+    }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   await b.close();
@@ -970,7 +1066,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, starred genera after their references, prompt spacing.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, starred genera after their references, prompt spacing, custom quiz.`
   );
 })().catch(e => {
   console.error(e);

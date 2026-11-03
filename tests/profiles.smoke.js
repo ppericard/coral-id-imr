@@ -253,6 +253,10 @@ const server = http.createServer((req, res) => {
   // 17 (was 16; photo memory, 2026-11-03): this seed went from 16, at the limit, to 17, while 6 other seeds gave 11.5
   // genera on average before and 11.3 after (10-15), and tools/learnsim.js 30 seeds no change either (docs/LEARNING.md
   // "Photo memory"): one draw, not a faster opening.
+  // Kept at 17 with the genus wrongly given out of the Elo (2026-11-03, docs/LEARNING.md "The genus wrongly given in
+  // the Elo"), measured on main after #408 (one opening rule, OPEN.K 8): this seed meets 12 genera by question 100 with
+  // and without the change (margin 5). Over 5 seeds (tools/learnsim.js) the change does open faster: 15.6 -> 19.2 genera
+  // by question 100 (seeds 12-22 -> 17-24), at 79% right (86%); a watched effect (ROADMAP), not hidden by this bound.
   if (b1.met > 17) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
