@@ -6,6 +6,20 @@
 //
 //   node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json]
+//                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20]
+//
+// --breaks (optional; without it nothing changes): the app runs on a virtual clock (10 s an answer), and after the
+// --questions of the first session the player leaves for each break in turn (each from the same state, the generators
+// seeded again per break, so the breaks and two versions of the app compare on the same seeds), forgets (below) and
+// comes back: the second session runs until the comeback is over (questions flagged warm: the comeback after a break,
+// or before it the fixed 10-question gentle restart, which the tool starts at every second session), then --after
+// questions more. Per break: the comeback's length, the answers during which no genus could open (the floor), the
+// success during the comeback and in the --after questions after it, how often the opening hold was on during them,
+// the app's rust at the start and the learner's true loss.
+// Forgetting learner (with --breaks): know[g] falls back towards the profile's starting know (prior knowledge, stable)
+// over the break on the FSRS curve, know' = k0 + (know - k0) (1 + 19/81 t / S)^-0.5, S = LEARNER.S0 days x LEARNER.G for
+// each further day the genus was answered right (spaced successes); our learner, not the app's model (the app reads S
+// from the Elo ability and the days answered right).
 //
 // Each run (profile x seed) opens a fresh browser context (empty storage), seeds the app's Math.random and a separate
 // learner random generator from the seed (runs are reproducible, and the same seeds before and after a change give
@@ -25,7 +39,7 @@
 //   look-alikes.
 // - After each answer, feedback teaches: know[t] += RATE x (1 - know[t]) after a right answer, x MISS after a miss
 //   (the side-by-side montage shows the difference); the genus wrongly picked gains RATE x PICKED (its photo is in the
-//   montage). A first-meeting card teaches like one right answer. No forgetting (no time in the app either).
+//   montage). A first-meeting card teaches like one right answer. No forgetting, except across --breaks (above).
 //
 // Measures, at each checkpoint (50, 100, 200, 300 questions, then every 300), mean +- sd over the seeds:
 // - knowSlate: true mean know over the slate genera (the 39 of the IMR coral slate and Millepora); knowMet: over the
@@ -63,7 +77,7 @@ const PROFILES = {
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
 // half as tempting. MISS 1.5, PICKED 0.5: feedback after a miss teaches more, and a little about the genus picked.
-const LEARNER = {LOOK: 3, ELIM: 0.5, MISS: 1.5, PICKED: 0.5, SINGLE: 0.5, REF_D: 1, REF_OK: 0.9};
+const LEARNER = {LOOK: 3, ELIM: 0.5, MISS: 1.5, PICKED: 0.5, SINGLE: 0.5, REF_D: 1, REF_OK: 0.9, S0: 2, G: 2.5, STEP: 10000};
 
 const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
@@ -74,7 +88,17 @@ const SEEDS = Number(arg('seeds', 30)),
   NAMES = arg('profiles', Object.keys(PROFILES).join(',')).split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
   OUT = arg('out', null),
-  STATS = arg('stats', null);
+  STATS = arg('stats', null),
+  AFTER = Number(arg('after', 20)),
+  UNIT = {m: 60000, h: 3600000, d: 864e5, w: 7 * 864e5, mo: 30 * 864e5},
+  BREAKS = (arg('breaks', '') || '')
+    .split(',')
+    .filter(Boolean)
+    .map(b => {
+      const m = /^(\d+(?:\.\d+)?)(mo|m|h|d|w)$/.exec(b);
+      if (!m) throw new Error(`bad break ${b} (10m, 8h, 3d, 1w, 1mo)`);
+      return [b, Number(m[1]) * UNIT[m[2]]];
+    });
 for (const n of NAMES) if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
 const CPS = [
   ...new Set(
@@ -119,7 +143,11 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
-  const {prof, seed, N, cps, L} = cfg;
+  const {prof, seed, N, cps, L, breaks, after} = cfg;
+  // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
+  let T = Date.parse('2026-11-02T08:00:00Z');
+  if (breaks.length) Date.now = () => T;
+
   const sig = x => 1 / (1 + Math.exp(-x)),
     cl = q => Math.min(0.995, Math.max(0.005, q)),
     logit = q => Math.log(cl(q) / (1 - cl(q))),
@@ -133,7 +161,7 @@ function play(cfg) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
   Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
-  const rnd = gen((seed * 2654435761) ^ 0x9e3779b9);
+  let rnd = gen((seed * 2654435761) ^ 0x9e3779b9);
   const SL = slateGenera(),
     know = {};
   SL.forEach((g, i) => (know[g] = i % 5 < prof.m ? prof.hi : prof.lo));
@@ -142,6 +170,18 @@ function play(cfg) {
   const teach = (g, x) => {
     if (g in know) know[g] += x * (1 - know[g]);
   };
+  const k0 = {...know},
+    LS = {}; // the learner's own stability per genus (breaks): [days, last day answered right]
+  const spaced = g => {
+    const d = Math.floor(T / 864e5),
+      x = (LS[g] = LS[g] || [L.S0, null]);
+    if (x[1] !== null && x[1] !== d) x[0] *= L.G;
+    x[1] = d;
+  };
+  const forget = ms =>
+    Object.keys(know).forEach(g => {
+      if (know[g] > k0[g]) know[g] = k0[g] + (know[g] - k0[g]) * (1 + ((19 / 81) * ms) / 864e5 / (LS[g] || [L.S0])[0]) ** -0.5;
+    });
   // How much choice c looks like a photo of t (1 for t itself), and the chance to pick each choice when t is not
   // recognised.
   const sim = (t, c) => (c === t ? 1 : Math.min(1, pooledConf(t, c) / CONF.LOOK));
@@ -172,7 +212,9 @@ function play(cfg) {
   P = {};
   INTROS = {};
   HOLDS = 0;
-  warmLeft = 0;
+  const old = typeof CB === 'undefined'; // before the comeback replaced the gentle restart (warmLeft)
+  if (old) warmLeft = 0;
+  else CB = {r: 0, t: 0, ok: 0, f: 0};
   // The planner's history too: start-up's own planNext drew with unseeded randomness and left recent genera damped
   // (weight x 0.1), so the same seed gave different runs (Codex review #365).
   dropPlans();
@@ -197,7 +239,8 @@ function play(cfg) {
     nCards = 0;
   const mill = {met: null, asked: null},
     bon = {offer: null, n: 0, q: 0};
-  for (let i = 0; i < N; i++) {
+  // One question, as the player sees it (pre: called once it shows, for the breaks).
+  const ask = (pre, i = -1) => {
     // Achievement toasts have gone by the next question (4 s in the app; no time passes in this loop), and the sign-in
     // card is closed: the out-of-game prompts (the bonus genera offer among them) wait for neither (quiz.js promptOk).
     document.querySelectorAll('.achpop').forEach(x => x.remove());
@@ -209,12 +252,13 @@ function play(cfg) {
     quizPhoto();
     planNext('quiz');
     const q = SHOWNQ;
+    if (pre) pre(q);
     // The first-meeting cards, read through: each teaches like one right answer.
     (q.intro || []).forEach(g => (teach(g, prof.rate), nCards++));
     // The bonus genera offer (every slate genus met): accepted.
     const bo = document.querySelector('.unlock [data-bonus]');
     if (bo) {
-      if (bon.offer === null) bon.offer = i + 1;
+      if (bon.offer === null && i >= 0) bon.offer = i + 1;
       bo.click();
     }
     for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
@@ -223,9 +267,6 @@ function play(cfg) {
       shown = set.shown || [],
       d = mean(shown.map(p => photoDiff(t, p))) || 0,
       single = shown.length === 1;
-    if (set.exam) nEx++;
-    if (q.auto) nDuel++;
-    if (q.again) nAgain++;
     let pick = t;
     if (!(rnd() < sig(logit(kn(t)) - d - (single ? L.SINGLE : 0)))) {
       const ws = ch.map(c => wOf(t, c));
@@ -242,6 +283,15 @@ function play(cfg) {
     planNext('quiz'); // answer()'s top-up after the feedback
     teach(t, prof.rate * (good ? 1 : L.MISS));
     if (!good) teach(pick, prof.rate * L.PICKED);
+    if (good) spaced(t);
+    T += L.STEP;
+    return {q, t, good, set};
+  };
+  for (let i = 0; i < N; i++) {
+    const {q, t, good, set} = ask(null, i);
+    if (set.exam) nEx++;
+    if (q.auto) nDuel++;
+    if (q.again) nAgain++;
     blk.n++;
     blk.ok += good;
     if (mill.met === null && introduced('Millepora')) mill.met = i + 1;
@@ -283,11 +333,94 @@ function play(cfg) {
       blk = {n: 0, ok: 0};
     }
   }
+  // Breaks (--breaks): from the state at the end of the first session, each break in turn.
+  const out = [];
+  if (breaks.length) {
+    const ls = {...localStorage},
+      snap = {
+        P: JSON.stringify(P),
+        Q: JSON.stringify(Q),
+        HOLDS,
+        know: {...know},
+        LS: JSON.stringify(LS),
+        T,
+        last,
+        lastQs: [...lastQs],
+        twoAt,
+        againAt,
+        duelLog: JSON.stringify(duelLog),
+        rematch: JSON.stringify(rematch)
+      };
+    breaks.forEach(([name, ms], bi) => {
+      localStorage.clear();
+      Object.entries(ls).forEach(([k, v]) => localStorage.setItem(k, v));
+      P = JSON.parse(snap.P);
+      Object.keys(Q).forEach(k => delete Q[k]);
+      Object.assign(Q, JSON.parse(snap.Q));
+      INTROS = null;
+      HOLDS = snap.HOLDS;
+      Object.assign(know, snap.know);
+      Object.keys(LS).forEach(k => delete LS[k]);
+      Object.assign(LS, JSON.parse(snap.LS));
+      dropPlans();
+      NEXTQ = null;
+      SHOWNQ = null;
+      last = snap.last;
+      lastQs = [...snap.lastQs];
+      twoAt = snap.twoAt;
+      againAt = snap.againAt;
+      duelLog = JSON.parse(snap.duelLog);
+      rematch = JSON.parse(snap.rematch);
+      if (!old) CB = Object.assign({r: 0, t: 0, ok: 0, f: 0}, store.get(COMEBACK.KEY, {}) || {});
+      Math.random = gen((seed * 2246822519) ^ (0x85ebca6b + 7919 * (bi + 1)));
+      rnd = gen((seed * 2654435761) ^ (0x9e3779b9 + 7919 * (bi + 1)));
+      const metB = SL.filter(introduced),
+        before = mean(metB.map(g => know[g]));
+      T = snap.T + ms;
+      forget(ms);
+      if (old) warmLeft = null; // a new visit: the gentle restart
+      const r = {
+        brk: name,
+        cbLen: 0,
+        cbOk: 0,
+        held: 0,
+        after: 0,
+        afterOk: 0,
+        holdCb: 0,
+        holdAfter: 0,
+        hold0: HOLDS,
+        rust0: null,
+        loss: before - mean(metB.map(g => know[g]))
+      };
+      let inCb = true,
+        inHeld = true;
+      for (let i = 0; i < 200 && r.after < after; i++) {
+        const {q, good} = ask(q0 => {
+          // Openings held: during the gentle restart before (no card), the floor or the comeback now (noOpen).
+          if (r.rust0 === null) r.rust0 = old ? null : CB.r;
+          if (inHeld && (old ? !!q0.warm : noOpen())) r.held++;
+          else inHeld = false;
+        });
+        if (inCb && q.warm) {
+          r.cbLen++;
+          r.cbOk += good;
+          if (introHold()) r.holdCb++;
+        } else {
+          inCb = false;
+          r.after++;
+          r.afterOk += good;
+          if (introHold()) r.holdAfter++;
+        }
+      }
+      out.push(r);
+    });
+  }
   return {
     rows,
     entry,
     learnedAt,
     pairs: PAIRS.length,
+    breaks: out,
     millMet: mill.met,
     millAsked: mill.asked,
     bonusOffer: bon.offer,
@@ -314,7 +447,7 @@ async function run(browser, base, name, seed) {
   // Every script tier in (My progress, the Tools) and the network quiet, so each run starts from the same state.
   await p.evaluate(() => window.loadTier && window.loadTier(5));
   await p.waitForLoadState('networkidle');
-  const r = await p.evaluate(play, {prof: PROFILES[name], seed, N: QN, cps: CPS, L: LEARNER});
+  const r = await p.evaluate(play, {prof: PROFILES[name], seed, N: QN, cps: CPS, L: LEARNER, breaks: BREAKS, after: AFTER});
   await ctx.close();
   return {profile: name, seed, errs, ...r};
 }
@@ -369,6 +502,75 @@ function table(S) {
   return lines.join('\n');
 }
 
+// Breaks (--breaks): per profile and break, over the seeds. Comeback length (questions flagged warm) median [quartiles]
+// min-max; held: answers with no genus opening (floor and comeback), median; right % during the comeback and in the
+// --after questions after it (mean of the runs' rates); hold: runs where the opening hold was on at some answer of the
+// comeback / of the --after questions, and the mean number of such answers; rust: the app's rust at the first question
+// back; loss: the learner's true mean know lost over the genera met.
+const quant = (v, q) => {
+  const a = v.slice().sort((x, y) => x - y),
+    i = (a.length - 1) * q,
+    lo = Math.floor(i);
+  return a.length ? a[lo] + (a[Math.ceil(i)] - a[lo]) * (i - lo) : null;
+};
+function breakSummary(runs) {
+  const out = {};
+  for (const name of NAMES)
+    out[name] = BREAKS.map(([b]) => {
+      const R = runs.filter(r => r.profile === name).map(r => (r.breaks || []).find(x => x.brk === b)).filter(Boolean),
+        m = f => {
+          const v = R.map(f).filter(x => typeof x === 'number' && !isNaN(x));
+          return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null;
+        },
+        len = R.map(r => r.cbLen),
+        held = R.map(r => r.held);
+      return {
+        brk: b,
+        n: R.length,
+        len: {med: quant(len, 0.5), q1: quant(len, 0.25), q3: quant(len, 0.75), min: Math.min(...len), max: Math.max(...len)},
+        held: {med: quant(held, 0.5), min: Math.min(...held), max: Math.max(...held)},
+        cbRight: m(r => (r.cbLen ? (100 * r.cbOk) / r.cbLen : NaN)),
+        afterRight: m(r => (100 * r.afterOk) / r.after),
+        holdCbRuns: R.filter(r => r.holdCb > 0).length,
+        holdCb: m(r => r.holdCb),
+        holdAfterRuns: R.filter(r => r.holdAfter > 0).length,
+        holdAfter: m(r => r.holdAfter),
+        hold0Runs: R.filter(r => r.hold0 >= 1.5).length,
+        rust0: m(r => r.rust0),
+        loss: m(r => r.loss)
+      };
+    });
+  return out;
+}
+function breakTable(BS) {
+  const f = (x, d = 0) => (x === null || x === undefined ? '-' : x.toFixed(d));
+  const lines = [
+    `\nAfter a break (${QN} questions first, then the comeback and ${AFTER} more; ${SEEDS} seeds)`,
+    'len: comeback questions, median [quartiles] min-max; held: answers with no genus opening, median min-max; right%: during the comeback / the ' +
+      AFTER +
+      ' after;\nhold: runs with the opening hold on during the comeback / after it (mean answers held), and already on at the break; rust: app, start; loss: true mean know lost (genera met).'
+  ];
+  for (const name of NAMES) {
+    lines.push(`\n${name}`);
+    const head = ['break', 'len', 'held', 'right% cb/after', 'hold cb', 'hold after', 'hold@0', 'rust', 'loss'],
+      body = BS[name].map(r => [
+        r.brk,
+        `${f(r.len.med, 1)} [${f(r.len.q1, 1)}-${f(r.len.q3, 1)}] ${r.len.min}-${r.len.max}`,
+        `${f(r.held.med, 1)} ${r.held.min}-${r.held.max}`,
+        `${f(r.cbRight)} / ${f(r.afterRight)}`,
+        `${r.holdCbRuns}/${r.n} (${f(r.holdCb, 1)})`,
+        `${r.holdAfterRuns}/${r.n} (${f(r.holdAfter, 1)})`,
+        `${r.hold0Runs}/${r.n}`,
+        f(r.rust0, 2),
+        f(r.loss, 3)
+      ]),
+      w = head.map((h, j) => Math.max(h.length, ...body.map(b => b[j].length)));
+    lines.push(head.map((h, j) => h.padStart(w[j])).join('  '));
+    body.forEach(b => lines.push(b.map((x, j) => x.padStart(w[j])).join('  ')));
+  }
+  return lines.join('\n');
+}
+
 (async () => {
   const t0 = Date.now();
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -413,6 +615,8 @@ function table(S) {
       `  ${name}: met ${med(R.map(r => r.millMet))} (${n('millMet')}/${R.length}), asked ${med(R.map(r => r.millAsked))} (${n('millAsked')}/${R.length}), offer ${med(R.map(r => r.bonusOffer))} (${n('bonusOffer')}/${R.length}), share ${R.some(r => r.bonusShare !== null) ? (100 * med(R.map(r => r.bonusShare))).toFixed(0) + '%' : '-'}, bonus met ${med(R.map(r => r.bonusMet))}`
     );
   }
+  const BS = BREAKS.length ? breakSummary(runs) : null;
+  if (BS) console.log(breakTable(BS));
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
   if (OUT) {
     fs.writeFileSync(
@@ -435,6 +639,7 @@ function table(S) {
           stats: STATS || null,
           seconds: secs,
           summary: S,
+          breaks: BS,
           runs
         },
         null,

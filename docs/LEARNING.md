@@ -35,7 +35,9 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   people already know some facts.
 - **Glicko and Glicko-2** (Glickman 1999, 2012), used in education by Coursera (EDM 2019) and Park (EDM 2021): a rating
   carries its uncertainty (rating deviation); an uncertain rating moves its opponents little; **volatility** grows when
-  results keep surprising, so the rating catches up with a real change.
+  results keep surprising, so the rating catches up with a real change. The deviation also grows with the time a player
+  has not played (Glickman 1999: RD² + c² t): after a break the rating is less certain, not lower, and the first results
+  settle it; the comeback's rust works the same way (expected, then settled by the answers; the rating never decays).
 - **Duolingo**: *Birdbrain* (2020; IEEE Spectrum) estimates exercise difficulty and learner ability together, an Elo
   generalisation updated after every exercise, every answer counted. *Half-life regression* (Settles & Meeder, ACL 2016)
   fits each word's difficulty beside the learner's own counters with that word (times seen, right, wrong): repeats count,
@@ -45,6 +47,15 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 - **Mastery criteria** (Pelánek & Řihák, UMAP 2017; *New Review of Hypermedia and Multimedia* 2018): which answers feed
   the mastery decision and where its threshold sits matter more than the learner model; an exponential moving average of
   the answers is a simple, good criterion. The progress bar since 2026-11-02.
+- **FSRS** (Free Spaced Repetition Scheduler; Ye, Su & Cao, KDD 2022, and the open-spaced-repetition FSRS-4.5/5
+  releases used by Anki): the power-law forgetting curve R = (1 + 19/81 · t / S)^−0.5 (R 0.9 at t = S), first-review
+  stabilities 0.4 / 1.2 / 3.2 / 15.7 days (Again / Hard / Good / Easy), and stability growing at each successful review
+  the more the item had been forgotten (spaced reviews count, massed ones hardly). The comeback's recall model.
+- **SM-2** (Wozniak 1990, SuperMemo, the algorithm Anki started from): intervals multiplied by an ease factor, 2.5 by
+  default, at each successful spaced review.
+- **Warm-up decrement** (Adams 1961, *Psychological Bulletin* 58; Irion 1948): after a rest, performance dips at first
+  and comes back within a few trials, apart from what was forgotten; why a comeback starts on the genera the player is
+  surest of, with photos a little easier.
 - **Urnings** (Hofman et al. 2020; Bolsinova et al. 2022): an Elo alternative with explicit standard errors, robust to
   adaptive item selection, used in Math Garden. **Keeping Elo alive** (Bolsinova et al. 2025): with adaptive selection,
   Elo ratings' variance inflates over time; two parallel chains help. Not adopted (see below), kept in mind.
@@ -159,7 +170,8 @@ time, each on its card, but never as the answer of the question right after its 
   `tests/sync.test.js`); the app adds the answers the sheet has not confirmed yet and takes that as its hold
   (`holdSync`): the same sum over the same answers on every device, so right answers on a phone pay back a hold started
   on a laptop. Players not signed in keep the device's only. Cleared with
-  the progress. Why: an RA from the previous month's programme
+  the progress. Every answer counts, the comeback's after a break too, each with the expectation it really had (below;
+  the gentle restart's, logged `|w` from its start to the comeback, stay left out). Why: an RA from the previous month's programme
   (the lecture, a few ID dives and analyses: good, not an expert) at 86% right after 50 answers declined "open all"
   (Pierre: even trained RAs prefer to meet the genera progressively; experts must still be able to open them fast),
   then met 9 genera in 21 answers (one every 2, the `EVERY` floor), fell to 5 right in 10 where about 8 were expected,
@@ -170,11 +182,10 @@ time, each on its card, but never as the answer of the question right after its 
   ever being held: without it, the simulated expert was held for good. On that RA's answers it holds at answers 11-12
   (three misses in a row) and from answer 67, off and on. Simulated (6 seeds, 200 questions, genera met, without →
   with): beginner 15 → 13, lecture-level RA 14 → 13, strong RA 22 → 23, expert 27 → 28.
-- **Gentle restart** (`WARM` in `quiz.js`, Pierre, 2026-11-02): a player coming back with `WARM.FROM` (10) answers or
-  more first gets `WARM.N` (10; 5 at first, Pierre: too short) questions on genera already answered right, with easy
-  choices: no card, no duel, no exam. The first half leaves out the genera to review (unless fewer than 2 others are left), the second half brings them back; an Again after a miss still comes, counted with the restart; fewer than 2 genera answered right: no restart. A positive start before the harder questions; their answers do not count for the hold
-  (Pierre: easy right answers must not reopen new genera after a run of misses): logged with `|w` in their mode
-  (before `|kN`), which the sheet's hold leaves out too.
+- **After a break** (Pierre, 2026-11-02): a new visit (30 minutes without an answer) opens no genus in its first 10
+  answers, and a comeback planned from the time away and how solid each genus is comes first when the break left rust
+  ("Comeback after a break", below). It replaced the gentle restart (`WARM`, the same day: 10 easy questions at every
+  page load, left out of the hold).
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
   in between; the card says "It comes up in the questions a little later"). The first 4 can be asked at once.
 - **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a
@@ -200,6 +211,112 @@ time, each on its card, but never as the answer of the question right after its 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
 model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met") until one is
 learned, then genera learned. The model itself (`level`) is unchanged.
+
+### Comeback after a break (2026-11-02)
+
+Pierre: a player coming back after a night (6-8 h) already has some rust, after days or weeks much more; an expert needs
+almost none even after a long absence; a 10-minute break needs none. The first version (the same day) was a fixed
+**gentle restart**: 10 easy questions on genera already answered right at every page load (`WARM` in `quiz.js`), left out
+of the opening hold. Replaced by a comeback planned from the time away and how solid each genus is, ended by the answers,
+with no cap and no duration threshold (`model.js`, "Comeback after a break"; `quiz.js` `planPhoto`, `answer`).
+
+**Time, only here** (AGENTS.md rule 12, exception approved by Pierre the same day: "the no-time rule was there because
+the goal is not to bring people back every day like Duolingo; the goal is to learn as fast as possible, in a few hours
+or days. But for the comeback, time must be taken into account"). Time plans the questions after a break; progress
+(`s.pg`), mastery (`s.mx`) and the Elo ability (`s.th`) never decay, only answers move them (as Glicko keeps the rating
+and only widens its uncertainty after inactivity).
+
+- **Recall** of a genus t days after its last answer (`s.at`): the FSRS forgetting curve with its standard constants,
+  R = (1 + 19/81 · t / S)^−0.5, S = the stability in days (R = 0.9 at t = S). `FSRS = {F: 19/81, C: −0.5, ...}`.
+- **Stability** S: FSRS's first-review stabilities, Again 0.4 to Easy 15.7 days, log-linear in how solid the genus is,
+  x = the chance to recognise an average photo of it, sig(ability − genusDiff) (what `shaky` reads), 1 once learned.
+  FSRS's Hard 1.2 and Good 3.2 days fall at x 0.30 and 0.57: the four grades are evenly spread on that scale, so no
+  other point was needed. Times 2.5 (SM-2's default ease factor; FSRS multiplies S by about 2 to 3.5 at a review when
+  due) for each further **day** the genus was answered right (`s.dd`, `s.dl`): spaced days count, a hundred right
+  answers in one sitting count as one day. The ability, not the progress, says how solid: it is the app's estimate of
+  how well the genus is known from its first answer (an expert's genera start from their global level), while the
+  progress needs many answers against look-alikes (what was proven, not what is known).
+- **Rust**: the right answers the break is expected to have cost, summed over the genera answered (those in play: the
+  slate, and the bonus genera when the player has them on): each loses
+  (1 − 1/4)(1 − R)·sig(`TARGET_OFF` − ln R), the success above chance lost on a usual 4-choice question at the photo a
+  comeback shows. Only the gap since the last answer counts (play itself adds nothing). A comeback starts at a new
+  visit (below) whose gap left rust: 30 minutes leave about 0.001 for any player (one easy question ends it), a night
+  some tenths for a beginner, less for a strong player, a month several right answers. A first version started one
+  when a gap's rust rounded to one right answer (0.5): then no break of 8 hours or less brought one in any profile (simulated, 10 seeds), and
+  the visit already gives the moment, so that constant went.
+- **Its questions**: genera answered right; the surest half (highest R) until one is answered right (a positive start:
+  the warm-up decrement, Adams 1961), then the most rusted half; the player's usual choices (`trapsFor`: look-alikes
+  for a strong player; Pierre, 2026-11-03: easy choices in the first version made a right answer prove so little that
+  an expert stayed 22 questions after a month), no card, duel or exam (an "Again" after a miss still comes, as a
+  comeback question); photos aimed at the rusty ability, ability + ln R. Rust
+  multiplies the chance of recognising by R, which lowers its log-odds by at least −ln R, so the photos are a little
+  easier, never more than the rust explains (R 0.9: 0.1 easier; 0.6: 0.5).
+- **When it ends**: by the answers, a CUSUM like the opening hold's (`holdNext`, Page 1954): rust ← max(0, rust + p −
+  right − l), p = 1/k + (1 − 1/k)·R·sig(ability − difficulty) the recall-adjusted chance of the question, l = (1 −
+  1/k)(1 − R)·sig(ability − difficulty) the rust the question itself repairs (its genus is reviewed, its R back to 1). A
+  player doing better than expected melts it fast, worse keeps it going; it ends at 0. A long break while the app stays
+  open counts the same: the gap is checked whenever a question is planned or answered.
+- **Fairness**: a miss in the comeback weighs what it proves with the recall-adjusted chance (`pgMissW(th, d, k, R)`): a
+  miss the rust explains costs less progress. Its logged expectation `e` is the same recall-adjusted chance.
+- **A new visit opens no genus at first** (Pierre, 2026-11-02: "reopening a new genus straight away would be a
+  mistake"; his explicit choice, not a cap): a visit starts after `SESSION.GAP` = 30 minutes without an answer (Pierre,
+  2026-11-02: the standard session timeout of web analytics, Google Analytics, also commonly used to cut learning logs
+  into sessions), never at a page load, so a reload or an update is no new visit and an app left open overnight is one
+  at the next question. From a new visit, and from the start of a comeback, the first `COMEBACK.FLOOR` = 10 answers open
+  no genus (no card, no open-all or bonus genera offer: `noOpen`), and a comeback holds openings as long as it runs.
+  The floor's questions are otherwise ordinary (duels, exams, traps) unless the rust makes them comeback questions.
+- **The opening hold gets every answer** (Pierre, 2026-11-02: "so that the hold algorithm has the full information"),
+  the comeback's too, with the expectation the question really had: the plausible choices k (`plausibleK`, as for any
+  question: easy choices of other growth forms raise it, so an easy right answer pays back little) and the rust (it
+  lowers it, so a miss the rust explains adds less). They are logged `|c` (before `|kN`): a distinct tag for the admin, which the sheet's `hold_`
+  does not leave out (it leaves out `|w`, the gentle restart's answers of 2026-11-02, as before); the sheet replays the
+  logged `e`, the adjusted one, so app and sheet stay in step without a sheet change.
+- **Not for a newcomer**: neither the floor nor a comeback with fewer than 2 genera answered right, nor before any
+  answer time is known (progress saved before this change: the last answer of the device's log, else nothing until the
+  next answer).
+- **Kept**: on the device, `imr-comeback` {r rust, t time accounted, ok right answers in the comeback, f the answer count
+  until which no genus opens}, cleared with the progress; in the synced progress, `s.at` (last answer, ms), `s.dd`
+  (days answered right), `s.dl` (the last of them, local day number), and `P['~level'].at` (the player's last answer);
+  `core.js` `mergeProgress` keeps the latest `at` and `dl` and the larger `dd` of two devices.
+
+Simulated with `tools/learnsim.js --breaks 30m,8h,3d,1w,1mo --after 20` (below), 10 seeds, 300 questions first, then
+the comeback and 20 questions more after each break, the same seeds for every version. Each cell: comeback questions,
+median [min-max]; right % during the comeback / in the 20 questions after it; in brackets the first version (easy
+choices during the comeback, 2026-11-02).
+
+| Break | beginner | lecture RA | strong RA | expert |
+| --- | --- | --- | --- | --- |
+| 30m | 1 [1-6], 95 / 86% (1 [1-16], 98 / 86%) | 1 [1-5], 98 / 88% (1 [1-21], 96 / 84%) | 1 [1-25], 97 / 90% (1 [1-1], 100 / 87%) | 1 [1-1], 100 / 96% (1 [1-10], 99 / 100%) |
+| 8h | 2 [1-20], 94 / 88% (2 [1-8], 96 / 83%) | 4 [1-16], 92 / 86% (2.5 [2-9], 98 / 85%) | 2 [1-11], 97 / 86% (2 [2-6], 98 / 89%) | 1 [1-2], 100 / 97% (2 [1-3], 100 / 96%) |
+| 3d | 13.5 [7-29], 83 / 80% (11.5 [6-29], 88 / 84%) | 12.5 [9-23], 87 / 84% (13.5 [7-23], 91 / 84%) | 10 [6-19], 92 / 82% (9.5 [7-15], 96 / 86%) | 9 [5-12], 94 / 96% (8 [6-16], 99 / 99%) |
+| 1w | 14 [10-35], 88 / 82% (17 [9-44], 89 / 81%) | 19.5 [14-51], 85 / 82% (21 [10-38], 90 / 83%) | 15.5 [10-38], 89 / 86% (25.5 [12-31], 91 / 83%) | 9.5 [8-25], 96 / 95% (13 [12-19], 99 / 98%) |
+| 1mo | 36.5 [19-62], 82 / 78% (48 [31-89], 80 / 79%) | 37 [22-63], 83 / 76% (49 [32-61], 84 / 80%) | 29 [20-39], 83 / 84% (34 [26-58], 88 / 84%) | 15 [13-18], 99 / 96% (22 [20-27], 99 / 97%) |
+
+The gentle restart it replaced (10 easy questions at every page load, 10-13 with an Again, whatever the break), right %
+during it / in the 20 questions after it, same seeds:
+
+| Break | beginner | lecture RA | strong RA | expert |
+| --- | --- | --- | --- | --- |
+| 30m | 91 / 82% | 94 / 88% | 93 / 90% | 98 / 98% |
+| 8h | 94 / 86% | 96 / 82% | 94 / 86% | 99 / 96% |
+| 3d | 84 / 84% | 88 / 80% | 93 / 85% | 100 / 97% |
+| 1w | 86 / 84% | 82 / 88% | 88 / 87% | 99 / 95% |
+| 1mo | 78 / 72% | 79 / 74% | 87 / 82% | 98 / 98% |
+
+- Openings held (the floor): 10 answers after every break of 30 minutes or more, the comeback's length when longer; none
+  after 10 minutes (no new visit; the gentle restart held them 10 answers after any page load).
+- With the usual choices the expert's comeback is shorter: 9 questions after 3 days (8 with easy choices), 9.5 after a
+  week (13), 15 after a month (22), at 94-99% right; still more than "almost none" (Pierre's wish): one session gives at
+  most FSRS's Easy stability (15.7 days, 0.80 recall after a month) to the genera not yet learned. The learners' month
+  comebacks went from 34-49 to 29-37 questions, with their right % during them at 82-83%.
+- **To recalibrate with the players' data** (Pierre, 2026-11-03: kept as they are for now, ROADMAP): the comeback after
+  a night is 1-4 questions (the rust of a night is 0.1-0.25 right answers by the FSRS curve; the learner's true loss
+  0.000-0.013 a genus met), the 10-answer floor covering the rest; after a month a learner's is about 30-40 questions
+  (19-63). Both come from FSRS's standard curve and stabilities and from our simulated learner, not from real answers.
+- The opening hold: on during the comeback in 0-3 runs of 10 (up to 0.8 answers on average), in the 20 questions after it
+  in 0-4 runs of 10, about as often as after the gentle restart (after a month 1-4 against 3-6).
+- After a month, the 20 questions after the comeback: beginner 78% (gentle restart 72%), lecture RA 76% (74%), strong RA
+  84% (82%), expert 96% (98%); after shorter breaks within a few points of each other.
 
 ### Which genus comes next: the progressive path (2026-11-02)
 
@@ -315,7 +432,8 @@ is a good mastery criterion.
   survives one miss** (`mxKept`: lost below `PROG.M` × (1 − A), i.e. on a second miss before it is back up): a single
   miss takes 15% off, so losing it at once (the BKT rule, under which a miss at L 0.99 left the genus above 0.95)
   took learned genera from a simulated expert at every slip (learned genera lost by an expert in 1000 questions:
-  2.5-8.5 depending on A and the entry, 0.5-3.3 with this rule). No time criteria anywhere (rule).
+  2.5-8.5 depending on A and the entry, 0.5-3.3 with this rule). Progress and mastery never depend on time (rule 12;
+  time only plans the questions after a break, "Comeback after a break").
 - **Photo difficulty left out** of `w`: simulated as a third factor (0.5 on an easy photo to 1 on a hard one), it only
   slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which `A` already sets, and the traps
   already come as a genus's photos get harder (both follow its Elo ability). One factor less (rule 14f).
@@ -407,7 +525,8 @@ real learners, not bots, random clicks or test runs (17 anonymous "players" turn
   script. To revisit if the photo ratings drift (the variance inflation "Keeping Elo alive" describes).
 - **Coded tracks or tiers** (beginner / RA / expert modes, a fixed genus order, fixed difficulty per genus): ruled out by
   Pierre. Every threshold above is continuous or performance-driven.
-- **Time criteria** (response time, spacing in days): ruled out (AGENTS.md rule: no time criteria anywhere).
+- **Time criteria** for progress, mastery or ability (response time, spaced-repetition days, decay): ruled out
+  (AGENTS.md rule 12). The one exception, time to plan the questions after a break, is the comeback above.
 
 ## Simulation (`tests/profiles.smoke.js`, CI)
 
@@ -522,7 +641,18 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   unrelated genus): wrong answers fall on look-alikes, an unrecognised photo goes to the right genus about half the
   time among easy choices, a quarter among three look-alikes, and a genus the player knows is ruled out more often.
   After each answer the genus shown gains rate × (1 − know), 1.5 × that after a miss (the side-by-side montage), the
-  genus wrongly picked 0.5 × that; a first-meeting card teaches like one answer. No forgetting.
+  genus wrongly picked 0.5 × that; a first-meeting card teaches like one answer. No forgetting, except across a break
+  (`--breaks`, below).
+- **Breaks** (`--breaks 10m,30m,1h,3h,8h,3d,1w,1mo [--after 20]`, optional; without it nothing changes): the app runs
+  on a virtual clock (10 s an answer); after the first session (`--questions`) the player leaves for each break in turn,
+  each from the same state (the generators seeded again per break), forgets, and comes back: the second session runs
+  until the comeback is over (questions flagged warm: the comeback, or the gentle restart on an older version, which
+  the tool starts at every second session), then `--after` questions more. The learner forgets on the FSRS curve
+  towards its starting knowledge (prior knowledge stays): know' = k0 + (know − k0)(1 + 19/81 · t / S)^−0.5, S =
+  `LEARNER.S0` 2 days × `LEARNER.G` 2.5 for each further day the genus was answered right (our learner; the app reads S
+  from the Elo ability). Measured per profile and break: the comeback's length (median, quartiles, range), the answers
+  with no genus opening, the success during the comeback and in the `--after` questions after it, how often the
+  opening hold was on during them, the app's rust at the first question back and the learner's true loss.
 - **Measures** at questions 50, 100, 200, 300: true mean `know` over the slate genera (`knowSlate`: 40 with Millepora
   since 2026-11-02; `know39` before) and over the genera met; the
   Elo estimate against the truth, |θ − logit(know)| and its sign, over the genera met; the progress bar against the
@@ -533,7 +663,7 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   entered the mastery exam (`examOn`, first time), and their true reference success at that moment and when learned.
 - **Limits**: the learner is ours, a few round numbers, not fitted to real answers; the photo difficulty it meets is the
   app's own estimate (so photo calibration cannot be judged); learning is per genus only (a duel or a montage teaches
-  the two genera, not the pair as such); no forgetting, no fatigue; the RA profiles know a fixed set of genera (every
+  the two genera, not the pair as such); no forgetting (except across `--breaks`), no fatigue; the RA profiles know a fixed set of genera (every
   5th genus in data.json order), so the spread is that of the draws, not of who knows what. θ is clamped to
   `ELO.lo`..`hi` (−1.5..3), so a genus known at 2% always shows an error of about 2.4 there. Since the learner's
   guesses beat 1 in k (choices from other growth forms are ruled out), a θ that fits its answers would sit a little
@@ -603,6 +733,12 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
 - 2026-11-02, Pierre: *Millepora* joins the slate (on the IMR benthic slate; the progress goes over 40 genera, announced
   with a second `RECALC` note); the other bonus genera become opt-in, offered once every slate genus has been asked, and open
   like slate genera, without their thresholds, weight cap or share limit ("Millepora and the bonus genera").
+- 2026-11-02, Pierre: the fixed gentle restart (10 easy questions at every visit, left out of the hold) becomes a
+  comeback planned from the time away (FSRS forgetting curve, stability from how solid each genus is and the days it
+  was answered right), ended by the answers (a CUSUM), with no cap or duration threshold; time is used for that only
+  (AGENTS.md rule 12 exception), progress, mastery and ability never decay. Then: a new visit (30 minutes without an
+  answer, the web-analytics session timeout) opens no genus in its first 10 answers, comeback or not; the comeback's
+  answers feed the opening hold with the expectation they really had (logged `|c`, not left out like `|w`).
 
 ## References
 

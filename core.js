@@ -80,6 +80,13 @@
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
+      // Times for the comeback after a break (model.js): the latest answer (at) and the latest day answered right (dl) of
+      // either device; days answered right (dd) the larger count (two devices on different days count one less: safe side).
+      ['at', 'dl', 'dd'].forEach(k => {
+        const v = Math.max(Number(l[k]) || 0, Number(r[k]) || 0);
+        if (v) out[k] = v;
+        else delete out[k];
+      });
       if (l.cor || r.cor) out.cor = 1;
       if (l.du || r.du) out.du = 1;
       // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices.

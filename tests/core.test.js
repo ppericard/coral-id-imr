@@ -459,3 +459,20 @@ test('mergeProgress: the progress (pg) follows the device that played', () => {
   const old = mergeProgress(B, {Acropora: {ok: 11, ko: 1, h: '11', L: 0.6}}, {Acropora: {ok: 10, ko: 1, h: '1', pg: 0.5}});
   assert.strictEqual(old.Acropora.pg, undefined, 'played here by an app from before s.pg: recomputed from its results');
 });
+
+test('mergeProgress: the comeback times (last answer, days answered right) keep the latest of both devices', () => {
+  const B = {Acropora: {ok: 10, ko: 1, h: '1', at: 100, dd: 2, dl: 20000}};
+  const m = mergeProgress(
+    B,
+    {Acropora: {ok: 11, ko: 1, h: '11', at: 300, dd: 3, dl: 20002}},
+    {Acropora: {ok: 10, ko: 2, h: '10', at: 200, dd: 2, dl: 20000}}
+  );
+  assert.deepStrictEqual([m.Acropora.at, m.Acropora.dd, m.Acropora.dl], [300, 3, 20002]);
+  const r = mergeProgress(
+    B,
+    {Acropora: {ok: 10, ko: 1, h: '1', at: 100, dd: 2, dl: 20000}},
+    {Acropora: {ok: 12, ko: 1, h: '111', at: 400, dd: 4, dl: 20005}}
+  );
+  assert.deepStrictEqual([r.Acropora.at, r.Acropora.dd, r.Acropora.dl], [400, 4, 20005]);
+  assert.strictEqual(mergeProgress({}, {Acropora: {ok: 1, ko: 0, h: '1'}}, {}).Acropora.at, undefined);
+});

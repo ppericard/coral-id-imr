@@ -769,6 +769,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         ACHK,
         'imr-ach-new',
         'imr-hold',
+        'imr-comeback', // model.js COMEBACK.KEY: the visit floor and the comeback belong to this player (Codex review #374)
         BOARD,
         LOG0,
         NUDGE,
