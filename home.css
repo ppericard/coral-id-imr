@@ -657,34 +657,13 @@ body:has(.home-page) main {
     padding-top: 10px;
   }
 }
-/* The subject selector (Corals / Fish, core.js SUBJECTS), above the two doors. */
-.home-page .hdtop {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 6px;
-}
-/* The subject switch (home.js), compact: it shares the Learn door's top line with its kicker. */
-.home-page .hsubj {
-  display: inline-flex;
-  padding: 2px;
-}
-.home-page .hsubj button {
-  padding: 2px 8px;
-  font-size: var(--fs-s);
-}
-.home-page .hsubj .beta {
-  margin-left: 2px;
-  padding: 0 4px;
-}
 /* "New to corals? Start with the basics" (home.js): one quiet line under the door's buttons, only while it helps. */
 .hdnew {
   margin: 10px 0 0;
   font-size: var(--fs-s);
 }
-/* On phones the line takes the place of the door's kicker, beside the subject switch (.hdnewk), so Home still fits one
-   screen from 360 x 640; from tablets it is the line under the buttons (.hdnew). */
+/* On phones a short link takes the place of the door's kicker (.hdnewk), so Home still fits one screen from 360 x 640;
+   from tablets it is the line under the buttons (.hdnew). */
 .hdnewk {
   display: none;
   color: var(--accent);
@@ -697,7 +676,7 @@ body:has(.home-page) main {
     display: none;
   }
   .hdnewk {
-    display: inline;
+    display: block;
   }
 }
 .hdnew a {
