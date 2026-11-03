@@ -111,11 +111,20 @@ const server = http.createServer((req, res) => {
       await p2
         .waitForFunction(() => typeof NEXTQ !== 'undefined' && NEXTQ && NEXTQ.args, null, {timeout: 5000})
         .catch(() => fails.push('No next question planned during the feedback'));
-      const want = await p2.evaluate(() => (NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => resized(img(x), '')) : []));
+      // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
+      // the line measured, Saver): an iNaturalist photo (Millepora's, not downloaded: r: 1) is its 'medium' file for
+      // 480 px and 'large' otherwise, names resized() leaves alone, so comparing resized(…, '') failed whenever
+      // Millepora came up (#376).
+      const want = await p2.evaluate(() =>
+        NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => ({f: x.f, files: [img(x, 's'), img(x, 'm'), img(x, '')]})) : []
+      );
       await p2.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
       await p2.click('#next');
-      const got = await p2.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => resized(i.getAttribute('src'), '')));
-      if (!want.length || want.some((u, k) => got[k] !== u)) fails.push(`Next did not show the planned question (${want[0]} vs ${got[0]})`);
+      const got = await p2.evaluate(() =>
+        [...document.querySelectorAll('#view .qstage img')].map(i => ({f: i.dataset.f, u: i.getAttribute('src').replace(/#.*$/, '')}))
+      );
+      if (!want.length || got.length !== want.length || want.some((w, k) => got[k].f !== w.f || !w.files.includes(got[k].u)))
+        fails.push(`Next did not show the planned question (${want.map(w => w.f)} vs ${got.map(g => `${g.f} ${g.u}`)})`);
     }
     // A curation rebuild (Pierre published while the tab was open) drops the planned question: it could show a photo
     // the new curation excludes or moves.
@@ -188,7 +197,13 @@ const server = http.createServer((req, res) => {
   // 7. Photo sizes: the file fits the box at the screen's density (up to 2x); Saver (asked, or Auto on a slow connection)
   // one size down, the enlarged view at 960 px then 1600 on a click; Full always 1600 px.
   {
-    const tier = u => (/-s\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : 'full');
+    // An iNaturalist photo (Millepora's, not downloaded: r: 1) has two files (app.js img()): 'medium' (500 px) for the
+    // 480 px size, 'large' (1024 px) for both 960 and 1600 px ('m+': passes for either). Read as 1600 px, a Millepora
+    // question failed the Saver checks (#375).
+    const tier = u =>
+        /-s\.webp|\/photos\/\d+\/medium\./.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : /\/photos\/\d+\/large\./.test(u) ? 'm+' : 'full',
+      big = x => x === 'full' || x === 'm+',
+      mid = x => x === 'm' || x === 'm+';
     const run = async (vp, dpr, init, check) => {
       const ctx = await b.newContext({viewport: vp, deviceScaleFactor: dpr, serviceWorkers: 'block'});
       await ctx.route(
@@ -238,13 +253,13 @@ const server = http.createServer((req, res) => {
         localStorage.setItem('imr-photo-q', '"saver"');
       },
       async (p, t) => {
-        if (t.some(x => x === 'full')) fails.push(`Saver still loaded 1600 px quiz photos: ${t}`);
+        if (t.some(big)) fails.push(`Saver still loaded 1600 px quiz photos: ${t}`);
         await p.click('#view .qstage .zoom');
         const lb1 = await p.getAttribute('#lightbox .lb-in img', 'src');
-        if (tier(lb1) !== 'm') fails.push(`Saver enlarged view did not start at 960 px: ${lb1}`);
+        if (!mid(tier(lb1))) fails.push(`Saver enlarged view did not start at 960 px: ${lb1}`);
         await p.click('#lightbox .lb-in img');
         const lb2 = await p.getAttribute('#lightbox .lb-in img', 'src');
-        if (tier(lb2) !== 'full') fails.push(`Saver enlarged view did not load 1600 px on a click: ${lb2}`);
+        if (!big(tier(lb2))) fails.push(`Saver enlarged view did not load 1600 px on a click: ${lb2}`);
       }
     );
     // Auto on a line measured slow (Resource Timing, ~320 kbit/s here, under LINK.SLOW = 500 kbit/s; Chrome reports no slow connection): Saver, and the
@@ -278,12 +293,12 @@ const server = http.createServer((req, res) => {
         localStorage.setItem('imr-photo-q', JSON.stringify('full'));
       },
       async (p, t) => {
-        if (t.some(x => x !== 'full')) fails.push(`Full quality did not load 1600 px: ${t}`);
+        if (!t.length || t.some(x => !big(x))) fails.push(`Full quality did not load 1600 px: ${t}`);
       }
     );
     // Big dense screen: a box bigger than guessed gets the 1600 px file.
     await run({width: 1440, height: 900}, 2, tour, async (p, t) => {
-      if (t.length === 1 && t[0] !== 'full') fails.push(`Big 2x screen single quiz photo not 1600 px: ${t}`);
+      if (t.length === 1 && !big(t[0])) fails.push(`Big 2x screen single quiz photo not 1600 px: ${t}`);
     });
   }
   // 8. Start-up on an unstable line: core.js, app.js, home.js, app.css and data.json fail once each, the app still starts

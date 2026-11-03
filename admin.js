@@ -167,6 +167,17 @@ function saveDraft() {
 }
 let draftLost = false,
   UPDATED = false; // a new version took over in the background (see the init: reloads at the next calm moment)
+// The first install also takes over: that one is no update; any takeover after it is (a tab first opened before any
+// version was installed, then left open, still gets the next ones: Codex review #336). Listened to from the first line,
+// as in app.js: added at the end of start(), after data.json, a version taking over while the admin loaded went unseen
+// and the tab kept the old code (net smoke test, 2026-11-03).
+if ('serviceWorker' in navigator) {
+  let had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (had) UPDATED = true;
+    had = true;
+  });
+}
 // The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.
 // Two admin tabs in one browser share the stored draft (code re-review 2026-11-01, M4). Every write is tagged with this
 // tab's revision and the revision it had last seen (takeTab in core.js), and a draft another tab stored is merged in, against
@@ -3533,13 +3544,6 @@ async function start() {
   // comes into view or at the next page change. Every click is already in the draft, so nothing is lost (the undo
   // history starts again).
   if ('serviceWorker' in navigator) {
-    // The first install also takes over: that one is no update; any takeover after it is (a tab first opened before any
-    // version was installed, then left open, still gets the next ones: Codex review #336).
-    let had = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (had) UPDATED = true;
-      had = true;
-    });
     let swAt = Date.now();
     const swCheck = () => {
       swAt = Date.now();
