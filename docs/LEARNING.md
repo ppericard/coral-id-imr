@@ -331,6 +331,49 @@ questions were expected about 87% on a photo aimed 1.0 below the ability; now th
 real success much; the 4-choice questions, the bulk of the exam and of strong players' questions, are calibrated
 (expected 76%, right 77%, n 496). Typed: 5 answers, too few.
 
+### What the players say about the difficulty (one-tap questions, 2026-11-03)
+
+Why: the success target is moving to one that depends on the player's level. Papoušek, Stanislav & Pelánek (2016)
+found that easier questions keep learners answering at first while harder ones bring them back and teach more, and
+most of their learners judged about 30% errors appropriate. Whether that holds for a given level here is what the
+players can tell us, as they play (Pierre, 2026-11-03: "all the more important to ask from time to time whether it's
+too hard or not hard enough … am I having fun, is it too frustrating, too easy, too hard … slightly different questions
+about roughly the same concept"). The main players are IMR RAs: the challenge must suit strong players without
+overwhelming beginners, and the answers are read by level band for that reason.
+
+**The bank** (`core.js` `PULSEQ`; when and how it is asked: ARCHITECTURE.md "One-tap questions"). Six single items,
+three answers each, one tap; each answer is put on one or two common scales (`pulseScore`): **felt difficulty** d (−1
+too easy, 0 right, +1 too hard) and **feel** f (−1 bad, 0 neutral, +1 good).
+
+| Item | Answers (d / f) | Construct | Source |
+| --- | --- | --- | --- |
+| These questions are | Too easy −1 · About right 0 · Too hard +1 (d) | perceived difficulty | the app's item since sheet v19; the too easy / appropriate / too difficult rating of Papoušek, Stanislav & Pelánek (2016); single-item difficulty ratings hold up against longer scales (Single Ease Question, Sauro & Dumas 2009) |
+| For me, the challenge is | Too low −1 · Just right 0 · Too high +1 (d) | challenge-skill balance | the demand item of the flow short scale (FKS, Rheinberg, Vollmeyer & Engeser 2003: the current demands are "too low / just right / too high"); flow's channel model (Csikszentmihalyi 1990) |
+| Want harder photos? | Yes −1 · Keep it 0 · Easier +1 (d) | challenge-skill balance, asked as a wish | the same balance phrased as what to change (a design choice, no published item); a wish and a judgement can differ, so its own counts stay visible |
+| Having fun? | Not really −1 · It's OK 0 · Yes! +1 (f) | enjoyment | positive affect of the in-game GEQ ("I felt good", "I felt content"; IJsselsteijn, de Kort & Poels 2013) |
+| Frustrating? | Not at all 0/0 · A bit +0.5/−0.5 · Very +1/−1 (d, f) | frustration | tension of the in-game GEQ ("I felt frustrated"); flow's anxiety channel, challenge above skill |
+| Getting boring? | Not at all 0/0 · A bit −0.5/−0.5 · Yes −1/−1 (d, f) | boredom | negative affect of the in-game GEQ ("I felt bored"); flow's boredom channel, skill above challenge |
+
+Choices: three answers, never a 5- or 7-point scale (one tap on a phone row, Pierre: "people answer a tap"); words, not
+emoji faces (DESIGN.md: no pictographs as icons). The two one-sided items say nothing on the other side: a "not at all"
+is 0 (not too hard, not too easy), and as both come equally often (rounds), they pull a band's mean towards 0 without
+tilting it; read each item's own counts beside the mean. PENS (Ryan, Rigby & Przybylski 2006) was considered: its
+competence and autonomy items measure need satisfaction over a session, not whether the difficulty suits the player
+now. Varied wording costs strict comparability (experience sampling usually repeats one item: Csikszentmihalyi & Larson
+1987); it is the price of not wearing the players out, and why every item is mapped to a common scale and still shown
+alone, and why the first item ever is the plain one, the same as the v19 answers.
+
+**How the answers will be used for the level-dependent target** (not built: ROADMAP "Level-dependent target"). Admin
+To do › Errors shows, for each level band (the overall level when they answered: below −0.5, −0.5 to +0.5, above +0.5)
+and each mode, the mean felt difficulty and feel, the answers and devices behind them and the right % of the last 10
+answers. The target is right for a band when its mean felt difficulty sits near 0 with feel not negative. Proposed
+rule, to agree with Pierre once there are answers: read a band only from about 20 answers from 5 devices or more (one
+talkative device must not decide: compare with the mean of each device's mean); a band whose felt difficulty stays
+beyond ±0.25 moves its target success by 0.05 at a time (towards easier for "too hard", towards harder for "too easy",
+the research's ~70% for strong players as the likely end), each move checked in `tools/learnsim.js` and on the real
+answer log as for any change to the algorithm (AGENTS.md rule 14g); a harder target for strong players stands only if
+their feel does not drop. The duels are easier by design (2 choices): read the photo quiz first.
+
 ### Logged for the admin's player journey (2026-11-02)
 
 A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
@@ -1597,6 +1640,11 @@ is not in the simulation.
   (`core.js` `starRefs`, the genera of the card's "★ look-alike of …" line), a weight of 0 in the opening draw until
   they are met, Open all unchanged, no new constant ("Starred genera after their reference").
 
+- 2026-11-03, Pierre: the one-tap question varies (six items on felt difficulty, fun, frustration and boredom, in
+  rounds, never twice in a row) and comes every 40 answers instead of 60 (twice that after a "Not now"), so the
+  level-dependent target can be checked by level band; logged in the existing v19 events, no new sheet version; nothing
+  in the game reads the answers yet ("What the players say about the difficulty").
+
 ## References
 
 - Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*
@@ -1626,5 +1674,16 @@ is not in the simulation.
   *Psychometrika* 49.
 - Ghosh, A., Raspat, J., Lan, A. (2021). Option tracing: beyond correctness analysis in knowledge tracing. *AIED 2021*.
   <https://arxiv.org/abs/2104.09043>
+- Papoušek, J., Stanislav, V., Pelánek, R. (2016). Impact of question difficulty on engagement and learning. *ITS 2016*
+  (Intelligent Tutoring Systems, LNCS 9684).
+- Rheinberg, F., Vollmeyer, R., Engeser, S. (2003). Die Erfassung des Flow-Erlebens [The flow short scale, FKS]. In
+  Stiensmeier-Pelster, J., Rheinberg, F. (eds.), *Diagnostik von Motivation und Selbstkonzept*. Hogrefe.
+- IJsselsteijn, W. A., de Kort, Y. A. W., Poels, K. (2013). *The Game Experience Questionnaire* (in-game module, iGEQ).
+  Technische Universiteit Eindhoven.
+- Ryan, R. M., Rigby, C. S., Przybylski, A. (2006). The motivational pull of video games: a self-determination theory
+  approach (PENS). *Motivation and Emotion* 30.
+- Csikszentmihalyi, M. (1990). *Flow: the psychology of optimal experience*. Harper & Row; Csikszentmihalyi, M., Larson,
+  R. (1987). Validity and reliability of the experience-sampling method. *Journal of Nervous and Mental Disease* 175.
+- Sauro, J., Dumas, J. S. (2009). Comparison of three one-question, post-task usability questionnaires. *CHI 2009*.
 - Bolsinova, M. et al. (2025). Keeping Elo alive. *British Journal of Mathematical and Statistical Psychology*.
   <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12784335/>

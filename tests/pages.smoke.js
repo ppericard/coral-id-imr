@@ -306,6 +306,77 @@ async function overlays(b, base) {
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
     await c.close();
   }
+  // The one-tap question's bank (core.js PULSEQ, 2026-11-03): the first prompt at 35 answers asks the plain question;
+  // each prompt is one row, answered in one tap ("Thank you!" at once), and queues a pulse event with its item (src) and
+  // the code tapped; the next prompt never asks the same item. After the first, each prompt is made due by moving the
+  // device's last-prompt marks back (imr-prompt-at by PROMPT.GAP, imr-pulse by PULSE.EVERY), the real code deciding.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const asked = [];
+    for (let i = 0; i < 60 && asked.length < 8; i++) {
+      await p.waitForSelector('#view [data-c]:not([disabled])');
+      const r = await p.evaluate(
+        ([i, due]) => {
+          document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          if (due) {
+            const a = answersSoFar() + 1;
+            localStorage.setItem('imr-prompt-at', JSON.stringify(a - PROMPT.GAP));
+            localStorage.setItem('imr-pulse', JSON.stringify({...JSON.parse(localStorage.getItem('imr-pulse')), at: a - PULSE.EVERY}));
+          }
+          const t = SHOWNQ[1];
+          document.querySelector(`#view [data-c="${CSS.escape(t)}"]`).click();
+          const box = document.querySelector('#after .pulse');
+          if (!box) return null;
+          const bs = [...box.querySelectorAll('[data-pulse]:not([data-pulse=""])')],
+            b = bs[i % bs.length],
+            it = PULSEQ.find(x => x.id === box.dataset.q);
+          const shown = {
+            a: answersSoFar(),
+            q: box.dataset.q,
+            text: box.querySelector('span').textContent,
+            opts: bs.map(x => x.dataset.pulse),
+            x: !!box.querySelector('[data-pulse=""]'),
+            tap: b.dataset.pulse
+          };
+          b.click();
+          const ev = JSON.parse(localStorage.getItem('imr-evq') || '[]')
+            .filter(x => x.k === 'pulse')
+            .pop();
+          return {
+            ...shown,
+            want: it ? [it.q, it.a.map(x => x[0])] : null,
+            thanks: box.textContent.trim(),
+            ev: ev && {r: ev.r, src: ev.src, m: ev.m, lv: typeof ev.lv}
+          };
+        },
+        [i, asked.length > 0]
+      );
+      if (r) asked.push(r);
+      await p.evaluate(() => document.getElementById('next').click());
+    }
+    const bad = asked.filter(
+      (x, k) =>
+        !x.want ||
+        x.text !== x.want[0] ||
+        x.opts.join() !== x.want[1].join() ||
+        !x.x ||
+        x.thanks !== 'Thank you!' ||
+        !x.ev ||
+        x.ev.src !== x.q ||
+        x.ev.r !== x.tap ||
+        x.ev.m !== 'quiz' ||
+        x.ev.lv !== 'number' ||
+        (k && x.q === asked[k - 1].q)
+    );
+    if (asked.length < 8 || asked[0].a !== 35 || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
+      fails.push(`one-tap bank: ${JSON.stringify(asked.length < 8 || asked[0].a !== 35 ? asked : bad.length ? bad : asked.map(x => x.q))}`);
+    await c.close();
+  }
   // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
   // prefers-reduced-motion; Next is there and focused at once.
   for (const reducedMotion of ['no-preference', 'reduce']) {
@@ -793,8 +864,12 @@ async function basicsFit(b, base) {
           err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
         });
         await q2.waitForTimeout(300);
-        const q = await q2.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg)));
-        if (!q.includes('pulse:hard') || !q.some(x => /smoke test error/.test(x))) fails.push(`${w}px events not queued: ${q.join(' | ')}`);
+        const q = await q2.evaluate(() =>
+          JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
+        );
+        // The first one-tap question ever is the plain one (core.js PULSE0), logged with its item id.
+        if (!q.includes('pulse:hard@are') || !q.some(x => /smoke test error/.test(x)))
+          fails.push(`${w}px events not queued: ${q.join(' | ')}`);
         if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`${w}px noise errors queued: ${q.join(' | ')}`);
       }
       // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).

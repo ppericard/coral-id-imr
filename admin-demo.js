@@ -235,18 +235,29 @@
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home')
     ];
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
+    // One-tap answers (core.js PULSEQ): the item in Where (empty = the first item, as in rows from before the bank), its
+    // code in Message; Detail keeps r only for easy / ok / hard, as the sheet does.
     const events = [];
-    for (let i = 0; i < 24; i++) {
-      const r = ['ok', 'ok', 'hard', 'easy', 'ok', 'hard'][i % 6];
+    for (let i = 0; i < 36; i++) {
+      const it = PULSEQ[i % PULSEQ.length],
+        r = it.a[[1, 1, 2, 0, 1, 2, 0][i % 7]][0],
+        m = i % 4 === 3 ? 'quiz-duel' : 'quiz';
       events.push([
         'demoev' + i,
-        NOW - i * 7 * 3600e3,
+        NOW - i * 5 * 3600e3,
         'demodev' + (i % 5),
         'pulse',
         r,
-        '',
-        'quiz',
-        JSON.stringify({r, m: 'quiz', n: 10 + i, rr: r === 'hard' ? 40 : r === 'easy' ? 100 : 80, lv: -1.2 + (i % 5) * 0.5, met: 6 + i}),
+        i < 6 && it.id === PULSE0 ? '' : it.id,
+        m,
+        JSON.stringify({
+          r: ['easy', 'ok', 'hard'].includes(r) ? r : '',
+          m,
+          n: 10 + i,
+          rr: r === 'hard' || r === 'yes' ? 40 : r === 'easy' ? 100 : 80,
+          lv: -1.2 + (i % 5) * 0.5,
+          met: 6 + i
+        }),
         '159',
         'Chrome 140 mobile'
       ]);

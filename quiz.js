@@ -651,29 +651,41 @@ const promptOk = () => {
 };
 const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
 // One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, under the answer's
-// feedback, "These questions are: Too easy · About right · Too hard" (or × for not now). First after PULSE.FIRST answers
-// in all (35 since 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every
-// PULSE.EVERY answers, never before PULSE.SESSION answers of this visit; counted in answers, never time.
-// The answer goes to the sheet as an event (ev 'pulse') with what the game knew then: the mode, answers this visit, right
-// % of the last 10, overall level, genera met. Nothing in the game changes with it (yet): it tells Pierre whether the
-// adaptive difficulty feels right to the players.
-const PULSE = {FIRST: 35, EVERY: 60, SESSION: 8},
+// feedback, one question answered in one tap (or × for not now). First after PULSE.FIRST answers in all (35 since
+// 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every PULSE.EVERY answers
+// (40 since 2026-11-03, was 60: a target that depends on the level needs a few answers per level band from each player;
+// Pierre: "all the more important to ask from time to time"), PULSE.AFTERX times that after a "Not now", never before
+// PULSE.SESSION answers of this visit; counted in answers, never time. A count that went back (a progress reset) starts
+// the spacing over, as in promptOk.
+// The question varies (Pierre, 2026-11-03: "ask slightly different questions about roughly the same concept"): the bank
+// core.js PULSEQ (too easy or too hard, the challenge, harder photos, fun, frustration, boredom), asked in rounds
+// (pulsePick: never the same wording twice in a row; the first one ever is the plain "These questions are").
+// The answer goes to the sheet as an event (ev 'pulse') with the item (src: the sheet's Where column), its code (r) and
+// what the game knew then: the mode, answers this visit, right % of the last 10, overall level, genera met. Nothing in
+// the game changes with it (yet): it tells Pierre whether the difficulty feels right at each level (docs/LEARNING.md
+// "What the players say about the difficulty").
+const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESSION: 8},
   PULSEK = 'imr-pulse';
-const pulseDue = (h = hashNow()) =>
-  (h === 'quiz' || h.startsWith('quiz-duel')) &&
-  !document.querySelector('#tour, .unlock') &&
-  session.n >= PULSE.SESSION &&
-  answersSoFar() >= PULSE.FIRST &&
-  answersSoFar() - (store.get(PULSEK, {}).at ?? -1e9) >= PULSE.EVERY;
+const pulseDue = (h = hashNow()) => {
+  if (!(h === 'quiz' || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock') || session.n < PULSE.SESSION) return false;
+  const a = answersSoFar(),
+    st = store.get(PULSEK, {}),
+    at = typeof st.at === 'number' ? st.at : -1e9;
+  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1));
+};
 function pulseAsk() {
   const nb = document.getElementById('next');
   if (!nb) return;
+  const pk = pulsePick(store.get(PULSEK, {})),
+    it = pulseItem(pk.q);
   nb.insertAdjacentHTML(
     'beforebegin',
-    `<div class="pulse" role="group" aria-label="How are the questions?"><span>These questions are</span><button type="button" data-pulse="easy">Too easy</button><button type="button" data-pulse="ok">About right</button><button type="button" data-pulse="hard">Too hard</button><button type="button" class="pulsex" data-pulse="" aria-label="Not now" title="Not now">×</button></div>`
+    `<div class="pulse" role="group" aria-label="${esc(it.q)}" data-q="${it.id}"><span>${esc(it.q)}</span>${it.a
+      .map(([k, t]) => `<button type="button" data-pulse="${k}">${esc(t)}</button>`)
+      .join('')}<button type="button" class="pulsex" data-pulse="" aria-label="Not now" title="Not now">×</button></div>`
   );
   const box = document.querySelector('#after .pulse');
-  store.set(PULSEK, {at: answersSoFar()});
+  store.set(PULSEK, {at: answersSoFar(), q: pk.q, left: pk.left});
   // The row makes the phone's feedback sheet taller: the photos above it are sized again (Codex review #343).
   fitStage();
   box.querySelectorAll('[data-pulse]').forEach(
@@ -685,6 +697,7 @@ function pulseAsk() {
           const h = session.h;
           ev('pulse', {
             r,
+            src: it.id,
             m: hashNow().split('|')[0],
             n: session.n,
             rr: h.length ? Math.round((100 * h.filter(Boolean).length) / h.length) : 0,
@@ -692,7 +705,11 @@ function pulseAsk() {
             met: slateGenera().filter(g => P[g]).length
           });
           box.innerHTML = '<span>Thank you!</span>';
-        } else box.remove();
+        } else {
+          // "Not now": the next one waits PULSE.AFTERX times longer.
+          store.set(PULSEK, {...store.get(PULSEK, {}), x: 1});
+          box.remove();
+        }
         fitStage();
         document.getElementById('next')?.focus({preventScroll: true});
       })
