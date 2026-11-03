@@ -4226,8 +4226,15 @@ function renderUsers() {
   const col = UCOLS.find(c => c[0] === SF.us) || UCOLS[UCOLS.length - 1],
     sk = col[0],
     sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
+  // Quiz and Duel tab apart (core.js playSplit), on each row before the sort reads them (Codex review #383); a player whose
+  // answers did not load keeps the sheet's all-games counts.
+  const SPLIT = playSplit(ANS.rows || []),
+    psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]};
   const U = USERS.users
-      .map(u => ({...u, lv: u.id && RAS[u.id] ? RAS[u.id][0] : null}))
+      .map(u => {
+        const p = psOf(u);
+        return {...u, lv: u.id && RAS[u.id] ? RAS[u.id][0] : null, qz: p.q, q50: p.q50, du: p.d};
+      })
       .sort((a, b) => {
         const x = col[2](a),
           y = col[2](b);
@@ -4253,15 +4260,8 @@ function renderUsers() {
         <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
   const LVM = levelMargin(ANS.rows || []), // 95% margin of each player's level (core.js)
-    // Quiz and Duel tab apart (core.js playSplit); a player whose answers did not load keeps the sheet's all-games counts.
-    PS = playSplit(ANS.rows || []),
-    psOf = u => PS[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]},
     named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
-  U.forEach(u => {
-    const p = psOf(u);
-    [u.qz, u.q50, u.du] = [p.q, p.q50, p.d];
-  });
   // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
   if ((USERS.v || 0) >= 13)
     (ANS.rows || []).forEach(r => {
