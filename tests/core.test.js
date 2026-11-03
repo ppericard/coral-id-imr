@@ -1000,6 +1000,26 @@ test('rename: migrateKeys moves an old key, keeps a new one, leaves the rest', (
   assert.deepStrictEqual(d.dump(), {'imr-coral-progress': 'big', 'reefid-sync-theme': '"dark"'});
 });
 
+test('rename: a key the migration could not write is still read under its old name (keyGet; Codex review #439)', () => {
+  const {keyGet, keyBefore} = require('../core.js');
+  // Storage full: the progress stays under its old name; the app reads it there, so the player's progress is not empty.
+  const d = fakeStorage({'imr-coral-progress': '{"Porites":{"ok":3}}'}, k => k === 'reefid-sync-coral-progress');
+  migrateKeys(d);
+  assert.strictEqual(d.getItem('reefid-sync-coral-progress'), null);
+  assert.strictEqual(keyGet(d, 'reefid-sync-coral-progress'), '{"Porites":{"ok":3}}');
+  // The new name wins once it exists (written later, or moved at the next start); a key with no old name reads as before.
+  const e = fakeStorage({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new', 'imr-tour': '"done"'});
+  assert.strictEqual(keyGet(e, 'reefid-sync-coral-progress'), 'new');
+  assert.strictEqual(keyGet(e, 'reefid-tour'), '"done"');
+  assert.strictEqual(keyGet(e, 'reefid-sync-coral-quiz'), null);
+  assert.strictEqual(keyGet(e, 'demo:reefid-admin-vault'), null);
+  // keyBefore is keyRename's reverse on every key of the table.
+  LEGACY_KEYS.forEach(([o, n]) => {
+    const k = o.endsWith('-') ? o + 'x' : o;
+    assert.strictEqual(keyBefore(keyRename(k)), k, k);
+  });
+});
+
 test('rename: data from the sheet or a file is read with the new names; the sheet gets old-name copies', () => {
   // An app from before the rename saved it.
   assert.deepStrictEqual(keysIn({'imr-coral-progress': 'p', 'imr-coral-ach': 'a', 'imr-coral-intro': 'i'}), {
