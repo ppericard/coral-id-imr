@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import load_all  # noqa: E402  (data.json + cand.json, as fetch_local.py reads them)
-from excluded import excluded  # noqa: E402  (photos Pierre excluded for good)
+from excluded import excluded, set_aside  # noqa: E402  (photos Pierre excluded for good, set aside by the pre-sort)
 
 
 def short(minimum=5):
@@ -36,7 +36,7 @@ def short(minimum=5):
     gone = {f for k in gens for f in (k.get("out") or {})} | {k[5:] for k in (cur.get("seen") or {}) if k.startswith("cand:")}
     out = []
     for g in d["gen"]:
-        waiting = [p for p in cand.get(g, []) if p["f"] not in added and p["f"] not in gone and not excluded(p["f"])]
+        waiting = [p for p in cand.get(g, []) if p["f"] not in added and p["f"] not in gone and not excluded(p["f"]) and not set_aside(p["f"])]
         if len(waiting) < minimum:
             out.append((g, len(waiting), dict(collections.Counter(p.get("vg", "unsorted") for p in waiting))))
     return sorted(out, key=lambda r: r[1])

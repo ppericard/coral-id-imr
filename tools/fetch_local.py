@@ -21,7 +21,7 @@
 import json, re, sys, time, urllib.request
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from collections import Counter
-from excluded import excluded, drop_excluded
+from excluded import excluded, drop_excluded, set_aside
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
@@ -59,7 +59,7 @@ CUR = json.load(open('curation.json'))
 ADDED = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('add') or {})}
 GONE = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('out') or {})} | {k[5:] for k in (CUR.get('seen') or {}) if k.startswith('cand:')}
 # Candidates still waiting for Pierre: the caps count only these, so each run refills what he has sorted.
-waiting = lambda p: p['f'] not in ADDED and p['f'] not in GONE and not excluded(p['f'])
+waiting = lambda p: p['f'] not in ADDED and p['f'] not in GONE and not excluded(p['f']) and not set_aside(p['f'])
 def dauin_n(g):
     x = GEN[g]
     return sum(p.get('loc') == 'dauin' or p.get('own') for L in x['views'].values() for p in L) + sum(p.get('loc') == 'dauin' and p['f'] not in GONE and not excluded(p['f']) for p in cand.get(g, []))
@@ -84,7 +84,8 @@ for g in GEN:
         if room <= 0: continue
         q = where if loc == 'world' else f'taxon_id={T[0]["id"]}&{where}'
         grade = 'research' if loc == 'world' else 'research,needs_id'  # abroad: species-level IDs only
-        obs = get(f'https://api.inaturalist.org/v1/observations?{q}&quality_grade={grade}&captive=false&photos=true&photo_license={LIC}&order_by=votes&per_page=200')['results']
+        res = get(f'https://api.inaturalist.org/v1/observations?{q}&quality_grade={grade}&captive=false&photos=true&photo_license={LIC}&order_by=votes&per_page=200')
+        obs, more = res['results'], res.get('total_results', 0) > len(res['results'])
         # Research Grade first, then genus-level community IDs (votes order within each).
         obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if o['quality_grade'] == 'needs_id' and genus_ok(o, T[0]['id'])]
         # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
@@ -105,7 +106,9 @@ for g in GEN:
             for ph in P:
                 usedp.add(str(ph['id']))
                 out.append(dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1})))
-        if where == PHILIPPINES: ph_room = room  # room the whole country could not fill: the genus is short
+        # Room the whole country could not fill, from ALL its observations: when the one page read is not all of them,
+        # later pages may still hold some, so nothing from abroad (Codex review #388).
+        if where == PHILIPPINES: ph_room = 0 if more else room
         time.sleep(0.5)
     if not cand[g]: del cand[g]
     print(g, len(cand.get(g, [])))

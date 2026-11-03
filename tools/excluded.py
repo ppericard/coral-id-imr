@@ -9,6 +9,14 @@ def pid(f):
     m = re.fullmatch(r'(\d+)[cd]?', str(f).rsplit('-', 1)[-1])
     return m and m.group(1)
 IDS = {pid(f) for f in EX} - {None}
+# Set aside by the pre-sort (admin.js aside, Pierre 2026-11-03): candidates the judging agent found unusable, comparison
+# images or near-duplicates, with no doubt. They are not shown to Pierre, so they do not count as waiting either
+# (Codex review #388: they would fill the caps and stop new candidates from being fetched).
+try: SUG = json.load(open(f'{R}/suggest.json')).get('cand') or {}
+except (OSError, ValueError): SUG = {}
+def set_aside(f):
+    j = SUG.get(f) or {}
+    return (j.get('g') in ('exclude', 'cmp') or j.get('k') == 'dup') and not j.get('u')
 def excluded(f=None, photo_id=None):
     return f in EX or (photo_id is not None and str(photo_id) in IDS) or (f is not None and pid(f) in IDS)
 def drop_excluded(d):
