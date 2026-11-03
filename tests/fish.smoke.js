@@ -178,7 +178,93 @@ const server = http.createServer((req, res) => {
     await setSubject('coral');
     return {subj: SUBJ.id, slate: slateGenera().length, ac: (P.Acropora || {}).ok, fish: localStorage.getItem('reefid-sync-subject')};
   });
-  const fails = [...out];
+  // The screens a fish player sees, at 390 and 1280 px (light theme): Home's selector with Fish tagged beta and the beta
+  // line once chosen; a fish question (4 upright names); the enlarged photo before the answer credits its author by name
+  // only (blindCredit: no taxon, no link); after the answer the full credit with its iNaturalist link; My progress; a
+  // wink once; nothing wider than the screen on any of them.
+  const ui = [];
+  for (const width of [390, 1280]) {
+    const c2 = await b.newContext({viewport: {width, height: width < 600 ? 844 : 800}, serviceWorkers: 'block'});
+    await c2.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c2.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-ui')) {
+          sessionStorage.setItem('fish-ui', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+        }
+      } catch (e) {}
+    });
+    const q = await c2.newPage();
+    q.on('pageerror', e => errs.push(`${width}px: ${e.message}`));
+    const wide = async what => {
+      const w = await q.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      if (w > 0) ui.push(`${width}px ${what}: ${w}px wider than the screen`);
+    };
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('.hsubj'), null, {
+      timeout: 30000
+    });
+    const home = await q.evaluate(() => ({
+      fish: (document.querySelector('.hsubj [data-subj="fish"]') || {}).textContent || '',
+      on: (document.querySelector('.hsubj [aria-pressed="true"]') || {}).dataset,
+      beta: (document.querySelector('.hbeta') || {}).textContent || ''
+    }));
+    if (!/Fish\s*beta/.test(home.fish) || !home.on || home.on.subj !== 'fish' || !/Something fishy/.test(home.beta))
+      ui.push(`${width}px Home: selector or beta line ${JSON.stringify(home)}`);
+    await wide('Home');
+    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
+    // The first-meeting cards over the first question: closed one by one with their own button.
+    for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
+    const qs = await q.evaluate(() => {
+      const B = [...document.querySelectorAll('#view .ans [data-c]')];
+      return {n: B.length, plain: B.every(x => x.classList.contains('plain')), fish: B.every(x => GX(x.dataset.c) && GX(x.dataset.c).name)};
+    });
+    if (qs.n !== 4 || !qs.plain || !qs.fish) ui.push(`${width}px question: ${JSON.stringify(qs)}`);
+    await wide('a fish question');
+    await q.click('#view .qph .zoom');
+    const blind = await q.evaluate(() => {
+      const c = document.querySelector('#lightbox .lb-cap');
+      return {t: c ? c.textContent : '', links: c ? c.querySelectorAll('a').length : -1, sp: SHOWNQ ? GX(SHOWNQ[1]).name : ''};
+    });
+    if (!/©\s*\S/.test(blind.t) || blind.links || (blind.sp && blind.t.includes(blind.sp)))
+      ui.push(`${width}px enlarged photo before the answer: ${JSON.stringify(blind)}`);
+    await q.click('#lightbox [data-x]');
+    await q.click('#view .ans [data-c]');
+    const after = await q.evaluate(() => {
+      const fb = document.querySelector('#after .fb'),
+        cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"]');
+      return {fb: !!fb, credit: !!cr, h3: fb ? fb.querySelector('h3').textContent : ''};
+    });
+    if (!after.fb || !after.credit) ui.push(`${width}px answer: no full credit with its link ${JSON.stringify(after)}`);
+    await wide('the answer');
+    await q.evaluate(() => (location.hash = '#progress'));
+    await q.waitForFunction(() => document.querySelector('#view .pgame'), null, {timeout: 15000});
+    await wide('My progress');
+    // A wink, forced due once (WINK.P 1), then never the same again in the visit.
+    const wk = await q.evaluate(() => {
+      location.hash = '#quiz';
+      return new Promise(ok =>
+        setTimeout(() => {
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          WINK.P = 1;
+          WINKS.at = -Infinity;
+          const was = answersSoFar();
+          if (was < WINK.FROM) P['~level'] = {...(P['~level'] || {}), ok: WINK.FROM};
+          quizPhoto();
+          ok({wink: !!document.querySelector('#view .q.wink'), seen: WINKS.seen.size});
+        }, 300)
+      );
+    });
+    if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
+    await wide('a wink');
+    await c2.close();
+  }
+  const fails = [...out, ...ui];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

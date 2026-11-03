@@ -691,7 +691,7 @@ function winkShow(n) {
   WINKS.at = answersSoFar();
   SHOWNQ = null;
   $v.innerHTML = `${gameHelp('quiz')}<div class="q bleed wink">
-    <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify"></button></figure></div>
+    <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify">${ZOOMI}</button></figure></div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">Which ${SUBJ.one}? <span class="wtag">Surprise</span></p>${trail()}</div>
       <div class="ans">${ch.map(([id, label], i) => `<button type="button" class="plain" data-w="${esc(id)}"><kbd>${i + 1}</kbd>${esc(label)}</button>`).join('')}</div>
@@ -1245,7 +1245,7 @@ function introCard(n, o = {}) {
     tips = tipsList(g),
     hinted = !!o.hint && tips.includes('data-gt');
   return {
-    kind: 'genus',
+    kind: SUBJ.card,
     cls: 'intro',
     photo: p ? img(p, 's') : '',
     kick: `${isBonus(n) ? setOf(n).tag : 'New ' + SUBJ.one}${o.pos ? ` · ${o.pos}` : ''}`,

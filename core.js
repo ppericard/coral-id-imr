@@ -109,6 +109,7 @@
   //           lecture). Names of units: app.js uname (a genus in italics, a fish entry by its IMR name)
   //   beta    a subject still in beta: the line Home shows under the selector once it is chosen (HTML), and a "beta" tag
   //           on its buttons
+  //   card    the kind of its first-meeting card (app.js CARD_KINDS: its emoji)
   //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
   //   views   the views a question may show, [code, label] (one view: one photo per question)
   //   optin   the opt-in sets: Q[k] true = on, Q[k + 'T'] when chosen (app.js UNITS[id].sets: units, card, ⚙ row)
@@ -126,6 +127,7 @@
       one: 'genus',
       many: 'genera',
       what: 'Coral',
+      card: 'genus',
       lecture: 'the IMR coral lecture',
       views: [
         ['wide', 'Colony'],
@@ -147,11 +149,12 @@
       one: 'family',
       many: 'families',
       what: 'Fish',
+      card: 'fish',
       lecture: 'the IMR fish presentation',
       remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its button and once
       // chosen, on Home (home.js), as the HTML below.
-      beta: 'Something fishy… <b>Fish is in beta</b>: the 27 IMR survey families, on iNaturalist photos for now. Tell us what you think: <i>Send feedback</i> at the bottom of every page.',
+      beta: 'Something fishy… <b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.',
       views: [['wide', 'Photo']],
       optin: ['c2', 'c3'],
       log: false,
@@ -204,7 +207,12 @@
           sub: (t.sub || []).map(s => s.name),
           cm: Math.round(Math.sqrt(dauin)),
           levels: 1,
-          views: {wide: ((photos || {})[t.id] || []).filter(p => p && p.f && p.src)},
+          // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
+          views: {
+            wide: ((photos || {})[t.id] || [])
+              .filter(p => p && p.f && p.src)
+              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+          },
           ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
           names: fishNames(t)
         };

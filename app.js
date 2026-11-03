@@ -325,7 +325,7 @@ const credit = p =>
     ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
     : p.imr
       ? `IMR Lecture 6, slide ${esc(p.slide)}`
-      : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+      : `<i>${esc(p.t)}</i>${p.own && !p.nd ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 // Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
 // which would give the genus away (rule 11); the full credit comes with the answer.
 const blindCredit = p => {
@@ -595,7 +595,7 @@ function zoom(list, i, opts = {}) {
   const show = () => {
     const p = list[i],
       hide = blind(),
-      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
+      vl = p.view ? (SUBJ.views.find(v => v[0] === p.view) || VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
       over = !hide && opts.over ? opts.over(p) : '';
     const cap = hide
       ? esc(vl || 'Photo') + blindCredit(p)
@@ -1375,6 +1375,7 @@ const CARD_KINDS = {
   update: '🔄',
   feature: '✨',
   genus: '🪸',
+  fish: '🐟',
   tip: '💡',
   bonus: '🎁',
   account: '💾',
