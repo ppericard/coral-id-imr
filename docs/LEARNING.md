@@ -201,10 +201,40 @@ time, each on its card, but never as the answer of the question right after its 
   Simulated at 50 answers: a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2. The
   correct-answer rate does not tell them apart (the game keeps everyone near 80%: 68%, 76%, 86%, 88%). A card, not an
   automatic opening, so a wrong guess costs a tap.
+- **Back to one at a time** (Pierre, 2026-11-03; `backDue`, `introBack`, quiz.js `backShow`). A player had 46 right in
+  51 (90%) on 13 genera opened one at a time, accepted the offer around answer 52, and on the ~27 genera that came at
+  once fell to 21 right in 34 (62%), with a run of 1 right in 8 on look-alikes, where the game expected 0.70-0.88; the player
+  then stopped. Pierre: "if the player then says no, I keep all genera, fine; but offer at least once the option to go
+  back if we detect it really became too hard". So once after Open all (from the first cards, My progress or the offer),
+  a card "Lots of new genera at once: Keep them all, or go back to one at a time?" offers One at a time (the main
+  button) or Keep them all (also Escape). **When**: the record of Open all keeps `h`, the opening hold's own CUSUM
+  (`holdNext`: each answer's expected success `e`, allowance `INTRO.SLACK`) over the answers since Open all, from 0;
+  the card is due as soon as `h` reaches 2 × `INTRO.HOLD` (3.0: about three answers' worth of misses beyond the
+  expected success and the allowance), with the usual prompt gating (`promptOk`: `PROMPT.GAP` answers after another
+  prompt, never with a card, the tour or an achievement; `noOpen`: not in the floor of a visit or a comeback; shown
+  over a new question, never over one being answered). No fixed answer count and no new constant: the hold's own
+  threshold, doubled because undoing a choice needs more evidence than pausing new cards. Replayed on that player's
+  answers (the hold's formula from 0 at Open all): 2.21 at the 7th answer after Open all (three misses in a row), back
+  down, then above 1.5 from the 17th to the last (the 34th), peak 4.98 at the 23rd. A first draft ("30 answers since
+  Open all and the hold on") would have shown the card at the 30th, 4 answers before the player quit; with 2 × HOLD it shows
+  at the 21st (3.53), and the early blip (2.21) does not trigger it. **Keep them all**: nothing changes. **One at a
+  time**: every genus opened by Open all (kind `a`), answered or not, right or not, is closed again (kind `b`, Pierre,
+  same day: "they then reopen one at a time as the normal path's algorithm opens them"): out of the draw, the choices,
+  the duels and the "Again" until the progressive path opens it again on its card (`introduced`, `introReady`: the mark
+  wins over the answers already given); its answers, progress and ability are kept, and it comes back with them. The
+  genera opened before (first cards, own cards) stay open; the question on screen is chosen again. My progress keeps
+  its Open all genera button to reopen them any time; the card is never made again either way (`bk` in the record,
+  kept by a later Open all). Simulated (5 seeds, Open all at about answer 50, see "Open all: the app's expectation
+  against the truth" below): the card showed to a beginner in 5 runs of 5 (10-19 answers after Open all), a
+  lecture-level RA in 2 of 5 (26 and 66), a strong RA and an expert never.
 - Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
-  a duel's), time shown, kind: s first cards / c a card of its own / a Open all]) and the offer (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t}, also written by Open
+  a duel's), time shown, kind: s first cards / c a card of its own / a Open all / b closed again by One at a time]) and the offer
+  (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t, n genera opened at once, h the drop since; the
+  back card's choice bk keep / one, after answer bat, bn genera closed, time bt}, also written by Open
   all genera, for the admin's player journey) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
-  device join this one's (`introMerge`), and a progress reset starts them over (`introReset`). A genus already asked
+  device join this one's (`introMerge`; between a closed mark and an opening of the same genus the later one wins, so a
+  genus closed on one device is closed on the other, and one reopened since by its card is open on both), the offer record
+  goes by its latest decision (`t` or `bt`; `h` counts each device's own answers), and a progress reset starts them over (`introReset`). A genus already asked
   counts as met; the bonus genera, once on, get a first-meeting card like the others. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).
 
@@ -1043,7 +1073,8 @@ untouched; only the player is simulated) and measures what the simulated players
 estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minutes; numbers for reading).
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
-  [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]`. Each run (profile × seed) gets a fresh browser context; seeds
+  [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
+  [--openall offer|N] [--back keep|one]`. Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
   sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI; its `mem`, sheet v26, the app's
@@ -1051,7 +1082,10 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
-  expert (93%, 0.05). The open-all offer is declined (the path is what is measured).
+  expert (93%, 0.05). The open-all offer is declined (the path is what is measured), unless `--openall`: `offer`
+  accepts the offer card, N opens all at question N if the offer has not come by then; the back card is then answered
+  `--back` (default `keep`); the tool prints, after Open all, the app's expected success against the learner's true
+  chance (below).
 - **Learner**: `know[g]` = chance to recognise genus g on an average photo with all its views; on a question it
   recognises the genus with σ(logit(know) − photo difficulty − 0.5 if one view alone), photo difficulty from the
   app's `photoDiff`. Not recognised, it picks a choice with weight (1 + 3 × s) × (1 − 0.5 × know of that choice), s = 1
@@ -1122,6 +1156,36 @@ by about 0.2 for the learners; a beginner's or lecture RA's genus enters the mas
 success on a hard reference question is only about 0.7, an expert's about 0.9 (the review's item 2 asks for ≥ 0.85);
 the exam then keeps the genera learned at 0.82-0.93 true reference success.
 
+#### Open all: the app's expectation against the truth (measured 2026-11-03, no change made)
+
+Why: the player of "Back to one at a time" (above) was expected 0.70-0.88 on the genera opened at once and got 62%.
+A genus never answered starts from the player's global level (`core.js` `playerStart`: `START.W` 0.8 × the global
+Elo, shrunk while the answers are few), and a player who earns the offer has a high global level from the genera met
+one at a time. Measured with `node tools/learnsim.js --seeds 5 --questions 300 --openall 52` (seeds 1-5, no
+`--stats`; the offer accepted at answer 50-51 when the level allowed it, else Open all forced at 51; about 28-29 genera
+at once). Means over the pooled answers: e the app's expected success logged with the answer, p the learner's true
+chance on that question, ok its answers.
+
+| Profile | first question on a genus opened at once: e / p / ok | first 30 answers after Open all, genera opened at once: e / p (e − p) | same, genera met before: e / p (e − p) | back card (Keep them all) |
+| --- | --- | --- | --- | --- |
+| beginner (Open all forced) | 0.74 / 0.56 / 0.47 | 0.74 / 0.60 (+0.13) | 0.74 / 0.81 (−0.08) | 5 of 5 runs, answers 10-19 after Open all |
+| lecture-level RA | 0.78 / 0.64 / 0.69 | 0.78 / 0.65 (+0.12) | 0.74 / 0.84 (−0.09) | 2 of 5, answers 26 and 66 |
+| strong RA | 0.81 / 0.76 / 0.79 | 0.81 / 0.75 (+0.05) | 0.79 / 0.91 (−0.12) | 0 of 5 |
+| expert | 0.86 / 0.95 / 0.93 | 0.85 / 0.95 (−0.11) | 0.82 / 0.96 (−0.15) | 0 of 5 |
+
+What it says: the starting ability over-estimates the genera opened at once for a lecture-level RA by about 0.14 at
+their first question (0.78 expected, 0.64 true; 13-15 points) and 0.12 over the first 30 answers, for a beginner by
+0.13-0.18, a strong RA by 0.04-0.05; an expert is under-estimated (−0.10), as are the genera already met for everyone
+(−0.08 to −0.15, the Elo's usual lag on this learner). The global level is earned on the genera met first (the
+easiest and most common, opened by the path), so 0.8 of it carries too much to the harder genera that come at once;
+the real player's drop (0.70-0.88 expected, 62% right) is of the same size as the lecture-level RA's. Kept as it is
+(Pierre's brief: measure, do not change); the back card catches the players for whom it matters. With `--back one`
+(the card answered One at a time), the lecture-level RA ends at 38 genera met and true slate knowledge 0.72 ± 0.05 at
+question 300 (Keep them all: 40, 0.75 ± 0.01), and the beginner who opened all at 51 at 17 genera met, 0.42 ± 0.08
+(Keep: 40, 0.66 ± 0.01, right 86% against 92%): this learner learns from every question and never gives up, so
+seeing more genera always teaches it more; what the card guards against, a player who quits when it gets too hard,
+is not in the simulation.
+
 ## Decision log
 
 - 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
@@ -1180,6 +1244,12 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
   the room-for-surprise version over-corrected in the simulation), misses weigh the chance the player had; ordinary
   questions weigh a photo already shown e^offset. Point 3 (more photos for the thinnest genera) stays with Pierre.
   Then, after the replay of the real log (bars down 1-3 points): everyone's saved progress recalculated once, silently.
+- 2026-11-03, Pierre: after Open all, offer once to go back to one at a time when the answers fall clearly below
+  expectation (a player at 90% on 13 genera fell to 62% on the ~27 opened at once): the opening hold's CUSUM counted
+  from Open all, due at 2 × `INTRO.HOLD`, no answer count and no new constant (a replay of the answers: at the 21st
+  after Open all; 30 answers + the hold would have come 4 answers before the player quit); One at a time closes every genus
+  opened at once, answered or not, until its card reopens it, answers and progress kept ("First meeting with a genus").
+  The starting ability of those genera measured, not changed ("Open all: the app's expectation against the truth").
 
 ## References
 

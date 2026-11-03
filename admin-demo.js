@@ -146,7 +146,12 @@
         intro[r[2]] = [a, a === 0 || a === openAt ? 1 : 0, at(a), a === openAt ? 'a' : a === 0 ? 's' : 'c'];
       });
       const offer =
-        openAt != null ? {at: openAt, open: 1, via: 'offer', t: at(openAt)} : name === 'Ben Demo' ? {at: 50, open: 0, t: at(50)} : null;
+        openAt != null
+          ? // and answered the back card (model.js backDue) with Keep them all 30 answers later.
+            {at: openAt, open: 1, via: 'offer', t: at(openAt), bk: 'keep', bat: openAt + 30, bn: 0, bt: at(openAt + 30)}
+          : name === 'Ben Demo'
+            ? {at: 50, open: 0, t: at(50)}
+            : null;
       const learned = Object.values(P).filter(s => s.pg >= 0.6).length;
       users[name.toLowerCase()] = {
         name,

@@ -500,6 +500,83 @@ const server = http.createServer((req, res) => {
       }
       if (!shownAt || shownAt < INTRO.OFFER.AT || introLeft().length)
         fails.push(`all right: offer at ${shownAt} answers, ${introLeft().length} genera left after Open all`);
+      // Back to one at a time (model.js backDue, introBack; Pierre 2026-11-03): from that Open all, a player who keeps up
+      // never gets the card; one who then drops gets it once the drop since Open all reaches 2 x INTRO.HOLD. "One at a
+      // time" closes every genus opened at once (answered or not), the others stay open, and they come back through
+      // their cards, one at a time, never asked or offered as a choice while closed.
+      {
+        const nextQ = () => {
+          NEXTQ = null;
+          document.querySelectorAll('.unlock, .achpop').forEach(x => x.remove()); // closed by the player before Next
+          achQ.length = 0;
+          achBusy = false;
+          quizPhoto();
+        };
+        // The sections after this one go on from the state of that Open all.
+        const keep = {P: JSON.stringify(P), I: JSON.stringify(INTROS), o: store.get(INTRO.OFFER.KEY, null), HOLDS, bon: Q.bon};
+        const allSet = Object.keys(INTROS).filter(n => INTROS[n][3] === 'a'),
+          before = Object.keys(INTROS).filter(n => INTROS[n][3] !== 'a');
+        for (let i = 0; i < 40; i++) {
+          nextQ();
+          if (document.querySelector('.unlock [data-back]')) fails.push(`back card for a player who keeps up (answer ${answersSoFar()})`);
+          for (
+            let b;
+            (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not([data-bonus]):not(.sec)'));
+          )
+            b.click();
+          say(tg);
+        }
+        let backAt = null;
+        for (let i = 0; i < 40 && backAt === null; i++) {
+          nextQ();
+          if (document.querySelector('.unlock [data-back]')) backAt = (store.get(INTRO.OFFER.KEY, {}) || {}).h;
+          else say(choices().find(c => c !== tg));
+        }
+        const hb = HOLDS;
+        if (backAt === null || backAt < 2 * INTRO.HOLD)
+          fails.push(`dropping: back card ${backAt === null ? 'never shown' : 'at ' + backAt}`);
+        const t0 = SHOWNQ[1];
+        document.querySelector('.unlock [data-back]').click();
+        const o = store.get(INTRO.OFFER.KEY, {}) || {},
+          shut = allSet.filter(n => INTROS[n] && INTROS[n][3] === 'b');
+        if (o.bk !== 'one' || shut.length !== allSet.length || !before.every(introduced) || allSet.some(introduced))
+          fails.push(`One at a time: closed ${shut.length} of ${allSet.length}, record ${JSON.stringify(o)}`);
+        // The question on screen was chosen again among the genera still open.
+        if (!introReady(SHOWNQ[1]) || !choices().every(introduced))
+          fails.push(`after One at a time: asked ${SHOWNQ[1]} (was ${t0}), choices ${choices().join(', ')}`);
+        const back = new Set();
+        for (let i = 0; i < 200 && back.size < 2; i++) {
+          const was = new Set(allSet.filter(introduced)); // a card shows with the question (quizPhoto)
+          if (i) nextQ();
+          if (document.querySelector('.unlock [data-back]')) fails.push('back card shown twice');
+          for (
+            let b;
+            (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not([data-bonus]):not(.sec)'));
+          )
+            b.click();
+          const now = allSet.filter(n => introduced(n) && !was.has(n));
+          if (now.length > 1) fails.push(`${now.length} closed genera back at once`);
+          now.forEach(n => (INTROS[n][3] !== 'c' ? fails.push(`${n} back without its card`) : back.add(n)));
+          if (!introReady(SHOWNQ[1]) && !SHOWNQ.intro) fails.push(`question ${i}: ${SHOWNQ[1]} asked while closed`);
+          if (!choices().every(c => introduced(c) || (SHOWNQ.intro || []).includes(c)))
+            fails.push(`question ${i}: a closed genus among the choices (${choices().join(', ')})`);
+          say(tg);
+        }
+        if (back.size < 2)
+          fails.push(
+            `One at a time: ${back.size} closed genera came back on their cards in 200 answers (hold ${hb} at the back card, ${HOLDS} now)`
+          );
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        P = JSON.parse(keep.P);
+        INTROS = JSON.parse(keep.I);
+        store.set(INTRO.KEY, INTROS);
+        store.set(INTRO.OFFER.KEY, keep.o);
+        HOLDS = keep.HOLDS;
+        if (keep.bon === undefined) delete Q.bon;
+        else Q.bon = keep.bon;
+        rematch = null;
+        NEXTQ = null;
+      }
       // Synced with the progress: the cards and the offer are imr-coral* keys (sent by progData), and the cards seen on
       // another device join this one's (introMerge), ready; a progress reset starts them over.
       {

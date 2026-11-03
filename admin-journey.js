@@ -12,10 +12,12 @@ const JOURNEY = {
   DAYS: 60 // at most this many days in the per-day chart (the last ones)
 };
 let JSORT = 'met';
-// First-meeting cards and Open all genera, from the player's saved progress (admin.js savedOf: sheet userData, admin
-// token): the app keeps them as imr-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown]}
-// and imr-coral-intro-offer {at, open, via, t} (model.js INTRO; times and via from 2026-11-02). null while loading.
+// First-meeting cards and Open all genera, from the player's saved progress (sheet userData, admin token): the app keeps
+// them as imr-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown, kind]} and
+// imr-coral-intro-offer {at, open, via, t, n} (model.js INTRO; times and via from 2026-11-02), with the back card's choice
+// (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03). name -> null while loading.
 // The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
+const JDATA = {};
 function journeyCards(name) {
   const S = savedOf(name);
   return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer};
@@ -190,7 +192,7 @@ function renderJourney(name, anonId = '') {
       !e
         ? ''
         : e[3]
-          ? {s: 'start', c: 'card', a: 'all'}[e[3]] || 'card'
+          ? {s: 'start', c: 'card', a: 'all', b: 'back'}[e[3]] || 'card'
           : !e[1]
             ? 'card'
             : openAt != null && e[0] === openAt
@@ -200,7 +202,8 @@ function renderJourney(name, anonId = '') {
     byKind = k => Object.keys(CM).filter(g => kindOf(CM[g]) === k && J.slate.has(g));
   const first = byKind('start').sort((a, b) => CM[a][0] - CM[b][0]),
     singles = byKind('card'),
-    alls = byKind('all');
+    alls = byKind('all'),
+    backs = byKind('back');
   const cardsLine = !C
     ? '<p class="note">Cards: loading…</p>'
     : C.anon
@@ -213,7 +216,13 @@ function renderJourney(name, anonId = '') {
               : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
           }<li><b>Cards one at a time</b> ${singles.length}</li>${
             openAt != null
-              ? `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${alls.length} genera at once</li>`
+              ? `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} genera at once</li>${
+                  offer.bk === 'one'
+                    ? `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)} · ${offer.bn} genera closed, ${backs.length} still closed</li>`
+                    : offer.bk === 'keep'
+                      ? `<li><b>Kept all genera</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)}</li>`
+                      : ''
+                }`
               : offer
                 ? `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
                 : '<li><b>Open all genera</b> not used</li>'
@@ -342,6 +351,7 @@ function renderJourney(name, anonId = '') {
     if (!e) return '–';
     if (k === 'start') return `<span title="${esc(jTime(cardT(e)))}">first cards</span>`;
     if (k === 'all') return `<span title="${esc(jTime(cardT(e)))}">opened all</span>`;
+    if (k === 'back') return `<span title="Closed by One at a time: ${esc(jTime(cardT(e)))}">closed again</span>`;
     const n = before(e[2], e[0]),
       later = J.G[g].first + 1 - n;
     return `<span title="${esc(jTime(cardT(e)))} · asked ${later === 1 ? 'at the next question' : `${later} questions later`}">#${n} · ${jDate(cardT(e))}</span>`;
