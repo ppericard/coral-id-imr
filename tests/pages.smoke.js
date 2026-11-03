@@ -571,6 +571,32 @@ async function signin(base) {
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
     }
+    // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
+    // classified photo opens the enlarged view.
+    for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
+      errs.length = 0;
+      await p.evaluate(s => {
+        localStorage.removeItem('imr-basics');
+        location.hash = 'lab-basics|' + s;
+      }, st);
+      await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
+      if (st === 'corallite')
+        await p.evaluate(() => {
+          const ph = document.querySelector('.bx-tap'),
+            r = ph.getBoundingClientRect();
+          ph.dispatchEvent(new MouseEvent('click', {clientX: r.left + r.width * 0.587, clientY: r.top + r.height * 0.485, bubbles: true}));
+        });
+      // DOM clicks: in this context the welcome tour may still be open over the page.
+      else await p.evaluate(() => document.querySelector('.bx-q .choice').click());
+      if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}px Coral basics ${st}: no report button after the answer`);
+      if (st === 'walls') {
+        await p.evaluate(() => document.querySelector('.bx-q .bx-cph').click());
+        const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden && !!document.querySelector('#lightbox [data-rep]'));
+        if (!lb) fails.push(`${w}px Coral basics walls: the check photo does not open the enlarged view with its report`);
+        await p.evaluate(() => document.querySelector('#lightbox [data-x]')?.click());
+      }
+      if (errs.length) fails.push(`${w}px Coral basics ${st}: ${errs.slice(0, 3).join(' | ')}`);
+    }
     // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
     // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
     await p.evaluate(() => (location.hash = 'genera'));

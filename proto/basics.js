@@ -8,7 +8,12 @@
   /* ---------- photos: coordinates are pixels of the 960 px file (w 960, h given), crops are [x, y, w, h] ---------- */
   const PH = {
     colony: {g: 'Diploastrea', f: 'diploastrea-wide-746238202', h: 768},
-    polyps: {g: 'Goniopora', f: 'goniopora-medium-745205676', h: 768},
+    // Day-extended polyps: only an aside on the polyp step now (Pierre, 2026-11-03: too special to explain a polyp).
+    polypsDay: {g: 'Goniopora', f: 'goniopora-medium-745205676', h: 768},
+    galaxea: {g: 'Galaxea', f: 'galaxea-medium-745206102', h: 768},
+    stylophora: {g: 'Stylophora', f: 'stylophora-macro-745205068', h: 768},
+    disc: {g: 'Dipsastraea', f: 'dipsastraea-macro-723438755', h: 768},
+    nowall: {g: 'Pavona', f: 'pavona-macro-745204888', h: 768},
     cups: {g: 'Dipsastraea', f: 'dipsastraea-macro-746236818', h: 720},
     cupsMed: {g: 'Diploastrea', f: 'diploastrea-medium-746238185', h: 768},
     bigTeeth: {g: 'Danafungia', f: 'danafungia-macro-746236636', h: 720},
@@ -137,6 +142,32 @@
           s += `<circle class="ctr" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3"/>`;
         }
       s = `<rect class="cupf" width="140" height="140"/><path class="wl hl" d="${d}"/>` + s;
+    } else if (kind === 'nowall') {
+      // No wall: from each centre the lines run on until they meet the lines of the next centre.
+      const C = [
+        [26, 24],
+        [84, 16],
+        [130, 50],
+        [56, 72],
+        [108, 104],
+        [18, 118],
+        [70, 132]
+      ];
+      let d = '';
+      C.forEach(([x, y]) => {
+        for (let i = 0; i < 16; i++) {
+          const a = (i / 16) * 2 * Math.PI,
+            c = Math.cos(a),
+            sn = Math.sin(a);
+          let L = 60;
+          C.forEach(([x2, y2]) => {
+            const dot = (x2 - x) * c + (y2 - y) * sn;
+            if (dot > 0) L = Math.min(L, ((x2 - x) ** 2 + (y2 - y) ** 2) / 2 / dot);
+          });
+          d += `M${P(x + 4 * c, y + 4 * sn)}L${P(x + L * c, y + L * sn)}`;
+        }
+      });
+      s = `<rect class="cupf" width="140" height="140"/><path class="wl hl" d="${d}"/>${C.map(([x, y]) => `<circle class="ctr" cx="${x}" cy="${y}" r="3"/>`).join('')}`;
     } else {
       let d = '',
         m = '';
@@ -148,7 +179,7 @@
       }
       s = `<rect class="cupf" width="140" height="140"/><path class="wl hl" d="${d}"/>${m}`;
     }
-    return `<svg viewBox="0 0 140 140" class="bxd" role="img" aria-label="${{separate: 'Cups with their own walls and a gap between them', shared: 'Cups sharing their walls, like a honeycomb', valleys: 'Walls as ridges between valleys with several mouths'}[kind]}"><rect class="bg" width="140" height="140"/>${s}</svg>`;
+    return `<svg viewBox="0 0 140 140" class="bxd" role="img" aria-label="${{separate: 'Cups with their own walls and a gap between them', shared: 'Cups sharing their walls, like a honeycomb', valleys: 'Walls as ridges between valleys with several mouths', nowall: 'No walls: lines run from one centre to the next'}[kind]}"><rect class="bg" width="140" height="140"/>${s}</svg>`;
   };
 
   /* ---------- the steps ---------- */
@@ -156,6 +187,7 @@
   const WALLS = {
     separate: {
       t: 'Separate walls',
+      b: 'Separate',
       s: PH.cups,
       marks: [
         ['ell', 470, 420, 150, 128],
@@ -169,6 +201,7 @@
     },
     shared: {
       t: 'Shared walls',
+      b: 'Shared',
       s: PH.shared,
       marks: [
         ['dot', 445, 470, 11],
@@ -180,12 +213,74 @@
     },
     valleys: {
       t: 'Valleys',
+      b: 'Valleys',
       s: PH.valleys,
       marks: [],
       labels: [
         ['valley', 562, 252],
         ['wall (ridge)', 300, 104]
       ]
+    },
+    // IMR's third wall type (Pierre, 2026-11-03): Pavona, whose IMR tip is "smooth, star-like septo-costae between corallites".
+    nowall: {
+      t: 'Indistinguishable walls',
+      b: 'No wall',
+      s: PH.nowall,
+      marks: [
+        ['dot', 478, 578, 10],
+        ['dot', 665, 435, 10]
+      ],
+      labels: [
+        ['centre', 478, 625],
+        ['centre', 665, 390],
+        ['no wall between them', 572, 506]
+      ],
+      term: 'Septo-costae'
+    }
+  };
+  // The polyp step's photo (Pierre, 2026-11-03: a standard coral whose polyp is clearly coming out of its cup, not a
+  // day-extended one). Three candidates for Pierre to choose from: #lab-basics|polyp|a (default), |b, |c.
+  const POLYP = {
+    a: {
+      s: PH.galaxea,
+      box: [450, 460, 300, 240],
+      marks: [
+        ['ell', 602, 600, 60, 88],
+        ['line', 512, 568, 550, 592],
+        ['line', 690, 532, 602, 592]
+      ],
+      labels: [
+        ['one polyp', 602, 488],
+        ['tentacles', 490, 560],
+        ['mouth', 705, 522]
+      ],
+      note: 'Each polyp comes out of its own tall cup, tentacles out.'
+    },
+    b: {
+      s: PH.stylophora,
+      box: [380, 290, 240, 192],
+      marks: [
+        ['ell', 467, 372, 36, 32],
+        ['line', 548, 458, 490, 386]
+      ],
+      labels: [
+        ['one polyp', 467, 322],
+        ['tentacles', 565, 466]
+      ],
+      note: 'Tiny polyps, tentacles out, each from its own cup on the branch.'
+    },
+    c: {
+      s: PH.disc,
+      box: [200, 110, 600, 480],
+      marks: [
+        ['ell', 512, 352, 120, 100],
+        ['line', 640, 498, 503, 374]
+      ],
+      labels: [
+        ['centre of one polyp', 512, 226],
+        ['mouth', 652, 512]
+      ],
+      note: 'Tentacles pulled in: the soft disc and the mouth of one polyp, over its cup.'
     }
   };
   const FORMS7 = [
@@ -235,23 +330,15 @@
     {
       id: 'polyp',
       t: 'The polyp: one tiny animal',
-      fig: () =>
-        photo(PH.polyps, {
-          box: [60, 0, 480, 384],
-          marks: [
-            ['ell', 220, 86, 50, 42],
-            ['line', 232, 122, 236, 200],
-            ['line', 336, 52, 262, 74]
-          ],
-          labels: [
-            ['one polyp', 220, 26],
-            ['tentacles', 338, 46, 'l'],
-            ['body', 250, 175, 'l']
-          ]
-        }) + cap(PH.polyps, 0),
+      term: 'Polyp',
+      fig: v => {
+        const c = POLYP[v] || POLYP.a;
+        return `${photo(c.s, c)}<figcaption><a href="${genLink(c.s.g)}"><i>${esc(c.s.g)}</i></a> · ${esc(c.note)} <button type="button" class="linkish" data-z="0">Enlarge</button></figcaption>
+          <p class="bx-aside">Some corals keep long polyps out by day, like <i>Goniopora</i> (IMR Lecture 6). <button type="button" class="linkish" data-z="1">See it</button></p>`;
+      },
+      photos: v => [(POLYP[v] || POLYP.a).s, PH.polypsDay],
       draw: polypSide,
-      say: 'A polyp is a soft tube with one mouth in the middle of a ring of tentacles, which catch food. Many corals pull their tentacles in by day; Goniopora keeps them out.',
-      src: 'Goniopora: “large, elongated polyps extended by day” (IMR Lecture 6).',
+      say: 'A polyp is a soft tube with one mouth in the middle of a ring of tentacles, which catch food. It sits on the stony cup it builds. By day, many corals pull their tentacles in.',
       check: {
         type: 'choice',
         q: 'Where is the polyp’s mouth?',
@@ -345,25 +432,27 @@
     },
     {
       id: 'walls',
-      t: 'Walls: separate, shared or valleys',
+      t: 'Walls: separate, shared, valleys or none',
       term: 'Wall',
       walls: true,
-      say: 'Each cup has a wall. Neighbours keep their own walls with a gap between them, share one wall like a honeycomb, or merge into long valleys with several mouths in a row (brain corals).',
+      say: 'Each cup has a wall. Neighbours keep their own walls with a gap between them, share one wall like a honeycomb, or merge into long valleys with several mouths in a row (brain corals). In some corals you cannot see any wall: the lines run straight from one centre to the next.',
       src: 'IMR Lecture 6: “Read the wall structure: shared, separate, or indistinguishable.”',
-      also: ['Coenosteum'],
+      also: ['Coenosteum', 'Septo-costae'],
       check: {
         type: 'photo',
         q: 'How do these cups sit together?',
-        opts: ['Separate walls', 'Shared walls', 'Valleys'],
+        opts: ['Separate walls', 'Shared walls', 'Valleys', 'Indistinguishable walls'],
         pool: [
           [0, 'Astreopora', 'astreopora-macro-745206461'],
           [1, 'Porites', 'porites-macro-745675630'],
-          [2, 'Platygyra', 'platygyra-macro-745204310']
+          [2, 'Platygyra', 'platygyra-macro-745204310'],
+          [3, 'Pavona', 'pavona-macro-745206230']
         ],
         why: [
           'Astreopora: separate walls (IMR).',
           'Porites: shared walls in a honeycomb pattern (IMR).',
-          'Platygyra: a classic brain coral, valleys between ridges (IMR).'
+          'Platygyra: a classic brain coral, valleys between ridges (IMR).',
+          'Pavona: smooth, star-like septo-costae between corallites, no clear wall (IMR).'
         ]
       }
     },
@@ -379,6 +468,7 @@
     }
   ];
   // Glossary words (data.json terms and plain words) → the step that shows them, or a card of Corallite anatomy.
+  // The plain line here is used only for words the glossary has no plain sentence for (data.json terms[3] wins).
   const WORDS = [
     ['Colony', 'colony', 'Many polyps living together on one skeleton.'],
     ['Polyp', 'polyp', 'One tiny coral animal: a soft tube, a mouth, a ring of tentacles.'],
@@ -387,11 +477,12 @@
     ['Septa', 'septa', 'Thin blades inside the cup, from the rim to the centre.'],
     ['Costae', 'septa', 'The same blades, carrying on outside the cup’s wall.'],
     ['Septal teeth', 'teeth', 'Teeth on the top edge of the septa: fine or large.'],
-    ['Wall', 'walls', 'The rim around each cup: separate, shared, or forming valleys.'],
-    ['Coenosteum', 'walls', 'The skeleton in the gap between cups with separate walls.'],
-    ['Valleys', 'walls', 'Cups merged into long rows with several mouths (brain corals).'],
+    ['Wall', 'walls', 'The rim around each cup: separate, shared, forming valleys, or not visible at all.'],
+    ['Coenosteum', 'walls|separate', 'The skeleton in the gap between cups with separate walls.'],
+    ['Valleys', 'walls|valleys', 'Cups merged into long rows with several mouths (brain corals).'],
+    ['Indistinguishable walls', 'walls|nowall', 'No wall to see: the lines run from one centre to the next.'],
+    ['Septo-costae', 'walls|nowall', 'Those lines, running from one centre to the next when there is no wall.'],
     ['Growth form', 'forms', 'The colony’s shape: branching, massive, plating…'],
-    ['Septo-costae', '@con|sc', 'No visible wall: the blades run on from one centre to the next.'],
     ['Paliform lobes', '@con|pali', 'A crown of small knobs around the centre of the cup.'],
     ['Columella', '@con|columella', 'What fills the very centre of the cup.'],
     ['Axial corallite', '@con|axial', 'The cup at the tip of a branch, bigger than the others.'],
@@ -418,12 +509,16 @@
     lede: 'For anyone who never had the coral lecture: the words used in the ID tips, one at a time, on real photos (Pierre Pericard, CC BY) and simple drawings. Every step is optional; the little check under each one is too. Words lists every term and where it is shown.',
     render(root, ...args) {
       const edit = args.includes('edit'),
-        arg = args.filter(x => x !== 'edit')[0] || '',
+        rest = args.filter(x => x !== 'edit'),
+        arg = rest[0] || '',
         sfx = edit ? '|edit' : '';
       const st = store.get(KEY, {}) || {},
         done = st.done || {};
+      // A term opens its step, and its view of the step when it has one (Septo-costae → walls, No wall).
       const byTerm = WORDS.find(w => w[0].toLowerCase() === decodeURIComponent(arg).toLowerCase() && w[1] && w[1][0] !== '@');
-      const id = arg === 'words' ? 'words' : STEPS.some(s => s.id === arg) ? arg : byTerm ? byTerm[1] : st.last || STEPS[0].id;
+      const [tId, tSub] = byTerm ? byTerm[1].split('|') : [];
+      const id = arg === 'words' ? 'words' : STEPS.some(s => s.id === arg) ? arg : tId || st.last || STEPS[0].id;
+      const sub = rest[1] || tSub || '';
       if (id !== 'words') store.set(KEY, {...st, last: id});
       const steps = `<nav class="bx-steps" aria-label="Steps">${STEPS.map(
         (s, i) =>
@@ -434,7 +529,7 @@
         root.innerHTML = `<div class="bx">${steps}<dl class="bx-words">${WORDS.map(([t, r, plain]) => {
           const o = official(t),
             href = routeOf(t);
-          return `<div><dt>${href ? `<a href="${href}">${esc(t)}</a>` : esc(t)}${r && r[0] === '@' ? ' <small>Corallite anatomy</small>' : ''}</dt><dd>${esc(plain)}${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}</dd></div>`;
+          return `<div><dt>${href ? `<a href="${href}">${esc(t)}</a>` : esc(t)}${r && r[0] === '@' ? ' <small>Corallite anatomy</small>' : ''}</dt><dd>${esc((o && o[3]) || plain)}${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}</dd></div>`;
         }).join('')}</dl></div>`;
         return;
       }
@@ -448,7 +543,7 @@
         .map(x => `<small class="bx-off"><b>${esc(x[0])}</b> · ${esc(x[2])}: “${esc(x[1])}”</small>`)
         .join('');
       root.innerHTML = `<div class="bx">${steps}<div class="bx-lay">
-        <figure class="bx-fig">${s.walls ? '' : s.forms ? '' : s.fig()}</figure>
+        <figure class="bx-fig">${s.walls ? '' : s.forms ? '' : s.fig(sub)}</figure>
         <div class="bx-side"><h3 class="bx-t"><small>Step ${i + 1} of ${STEPS.length}</small>${esc(s.t)}</h3>
           <div class="bx-say">${s.draw || s.walls ? `<span class="bx-draw">${s.draw ? s.draw() : ''}</span>` : ''}<p>${esc(s.say)}</p></div>
           ${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}${also}${s.src ? `<small class="bx-off">${esc(s.src)}</small>` : ''}
@@ -465,7 +560,7 @@
         const show = k => {
           const w = WALLS[k];
           fig.innerHTML = `<div class="seg bx-seg" role="group" aria-label="Wall type">${Object.entries(WALLS)
-            .map(([kk, x]) => `<button type="button" data-w="${kk}" aria-pressed="${kk === k}">${esc(x.t)}</button>`)
+            .map(([kk, x]) => `<button type="button" data-w="${kk}" aria-pressed="${kk === k}" title="${esc(x.t)}">${esc(x.b)}</button>`)
             .join('')}</div>${photo(w.s, {marks: w.marks, labels: w.labels})}${cap(w.s, 0)}`;
           root.querySelector('.bx-draw').innerHTML = wallsDraw(k);
           list.length = 0;
@@ -473,7 +568,7 @@
           fig.querySelectorAll('[data-w]').forEach(b => (b.onclick = () => show(b.dataset.w)));
           fig.querySelector('[data-z]').onclick = () => zoom(list, 0);
         };
-        show('separate');
+        show(WALLS[sub] ? sub : 'separate');
       } else if (s.forms) {
         const show = k => {
           const f = FORMS7[k];
@@ -488,10 +583,8 @@
         show(0);
       } else {
         if (s.id === 'teeth') list.push(pobj(PH.bigTeeth), pobj(PH.fineTeeth));
-        else {
-          const ph = {colony: PH.colony, polyp: PH.polyps, corallite: PH.cups, septa: PH.cups}[s.id];
-          list.push(pobj(ph));
-        }
+        else if (s.photos) list.push(...s.photos(sub).map(pobj));
+        else list.push(pobj({colony: PH.colony, corallite: PH.cups, septa: PH.cups}[s.id]));
         fig.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(list, Number(b.dataset.z))));
       }
       if (edit)
@@ -507,16 +600,21 @@
               );
             })
         );
-      ask(root.querySelector('.bx-q'), s.check, markDone, edit);
+      ask(root.querySelector('.bx-q'), s.check, markDone, edit, s.id);
     }
   });
 
   /* ---------- the optional check under each step ---------- */
-  const fb = (box, ok, text) => {
-    box.querySelector('.bx-fb').innerHTML = `${ok ? '<b class="ok">✓ Yes.</b>' : '<b class="ko">✗ No.</b>'} ${text}`;
+  // Once answered, every check offers the app's report (rule 11b): the step, the answer given and the photos shown, and
+  // its photos open in the enlarged view (with its own report and the credit).
+  const rep = ctx => (typeof repBtn === 'function' ? ' ' + repBtn(ctx) : '');
+  const fb = (box, ok, text, ctx) => {
+    box.querySelector('.bx-fb').innerHTML =
+      `${ok ? '<b class="ok">✓ Yes.</b>' : '<b class="ko">✗ No.</b>'} ${text}${ctx ? `<span class="bx-rep">${rep(ctx)}</span>` : ''}`;
   };
-  function ask(box, c, markDone, edit) {
-    const again = '<button type="button" class="linkish bx-again">Another one</button>';
+  function ask(box, c, markDone, edit, sid) {
+    const m = 'basics-' + sid,
+      again = '<button type="button" class="linkish bx-again">Another one</button>';
     if (c.type === 'choice' || c.type === 'draw') {
       box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><div class="choices${c.type === 'draw' ? ' bx-dch' : ' col'}">${c.opts
         .map((t, j) => `<button type="button" class="choice" data-j="${j}">${c.type === 'draw' ? cupTop(t) : esc(t)}</button>`)
@@ -525,16 +623,18 @@
         b =>
           (b.onclick = () => {
             if (box.querySelector('.choice.right')) return;
-            const ok = Number(b.dataset.j) === c.a;
+            const j = Number(b.dataset.j),
+              ok = j === c.a;
             box
               .querySelectorAll('[data-j]')
               .forEach(x => x.classList.add(Number(x.dataset.j) === c.a ? 'right' : x === b ? 'wrong' : 'off'));
-            fb(box, ok, esc(c.why));
+            fb(box, ok, esc(c.why), {a: c.opts[j], m});
             if (ok) markDone();
           })
       );
     } else if (c.type === 'pick') {
       const opts = shuffle(c.opts.map((o, j) => [...o, j]));
+      const shown = opts.map(([g, f]) => pobj({g, f}));
       box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><div class="bx-pick">${opts
         .map(
           ([g, f, j]) =>
@@ -542,14 +642,21 @@
         )
         .join('')}</div><p class="bx-fb" aria-live="polite"></p>`;
       box.querySelectorAll('[data-j]').forEach(
-        b =>
+        (b, k) =>
           (b.onclick = () => {
-            if (box.querySelector('.choice.right')) return;
-            const ok = Number(b.dataset.j) === c.a;
+            // Answered: a photo now opens in the enlarged view, genus and credit shown.
+            if (box.querySelector('.choice.right')) return zoom(shown, k);
+            const j = Number(b.dataset.j),
+              ok = j === c.a;
             box
               .querySelectorAll('[data-j]')
               .forEach(x => x.classList.add(Number(x.dataset.j) === c.a ? 'right' : x === b ? 'wrong' : 'off'));
-            fb(box, ok, esc(c.why));
+            fb(box, ok, esc(c.why) + ' <span class="note">Tap a photo to enlarge it.</span>', {
+              g: c.opts[c.a][0],
+              a: c.opts[j][0],
+              ph: c.opts.map(o => o[1]),
+              m
+            });
             if (ok) markDone();
           })
       );
@@ -571,7 +678,10 @@
         const ok = d <= HIT;
         taps.innerHTML = `<circle class="bx-tapm ${ok ? 'ok' : 'ko'}" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="10"/>${ok ? '' : `<circle class="bx-ring" cx="${best[0]}" cy="${best[1]}" r="${HIT + 8}"/>`}`;
         if (right) return;
-        fb(box, ok, ok ? esc(c.why) : 'That is a wall between cups. The centre of the nearest cup is ringed: try again.');
+        const ctx = {g: c.s.g, a: `tap ${Math.round(x)},${Math.round(y)}`, ph: [c.s.f], m};
+        fb(box, ok, ok ? esc(c.why) : 'That is a wall between cups. The centre of the nearest cup is ringed: try again.', ctx);
+        box.querySelector('.bx-fb').insertAdjacentHTML('beforeend', ' <button type="button" class="linkish bx-enl">Enlarge</button>');
+        box.querySelector('.bx-enl').onclick = () => zoom([pobj(c.s)], 0);
         if (ok) {
           right = true;
           markDone();
@@ -583,21 +693,24 @@
       const [a, g, f] = pick(pool);
       const opts =
         c.type === 'form' ? shuffle([a, ...shuffle(names.map((_, j) => j).filter(j => j !== a)).slice(0, 2)]) : names.map((_, j) => j);
-      box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><div class="bx-cph"><img src="${img({f}, 'm')}" alt="Photo to classify" loading="lazy"></div><div class="choices col">${opts
+      box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><button type="button" class="bx-cph" aria-label="Enlarge photo"><img src="${img({f}, 'm')}" alt="Photo to classify" loading="lazy"></button><div class="choices col">${opts
         .map(j => `<button type="button" class="choice" data-j="${j}">${esc(names[j])}</button>`)
         .join('')}</div><p class="bx-fb" aria-live="polite"></p>`;
+      // Before the answer the enlarged view hides the genus (blind), as in the games.
+      box.querySelector('.bx-cph').onclick = () => zoom([pobj({g, f})], 0, {blind: () => !box.querySelector('.choice.right')});
       box.querySelectorAll('[data-j]').forEach(
         b =>
           (b.onclick = () => {
             if (box.querySelector('.choice.right')) return;
-            const ok = Number(b.dataset.j) === a;
+            const j = Number(b.dataset.j),
+              ok = j === a;
             box.querySelectorAll('[data-j]').forEach(x => x.classList.add(Number(x.dataset.j) === a ? 'right' : x === b ? 'wrong' : 'off'));
             const why =
               c.type === 'form'
                 ? `<a href="${genLink(g)}"><i>${esc(g)}</i></a>: ${esc(names[a])}. ${esc(formDef(FORMS7[a][0]))}`
                 : esc(c.why[a]);
-            fb(box, ok, why + ' ' + again);
-            box.querySelector('.bx-again').onclick = () => ask(box, c, markDone, edit);
+            fb(box, ok, why + ' ' + again, {g, a: names[j], ph: [f], m});
+            box.querySelector('.bx-again').onclick = () => ask(box, c, markDone, edit, sid);
             if (ok) markDone();
           })
       );

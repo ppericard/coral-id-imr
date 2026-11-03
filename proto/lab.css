@@ -3884,6 +3884,24 @@ body:has(.fdstart:not([hidden])) footer {
   max-height: 34vh;
   border-radius: var(--r);
 }
+.bx-cph {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.bx-aside {
+  margin: 6px 0 0;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.bx-rep {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fs-s);
+}
 .bx-tap {
   max-width: 460px;
   cursor: crosshair;
