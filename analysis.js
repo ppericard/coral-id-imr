@@ -1035,7 +1035,9 @@
     );
     return {M, F};
   }
-  const toMaster = (b0, b1, u) => (b1 > 0 ? clamp(Math.exp((logit(MASTER) - b0 - u) / b1) - 1, 0, 999) : 999);
+  // Answers to reach MASTER: 0 when the start is already there, whatever the slope (Codex review #441); 999 = not
+  // reached (a flat or falling slope below it).
+  const toMaster = (b0, b1, u) => (b0 + u >= logit(MASTER) ? 0 : b1 > 0 ? clamp(Math.exp((logit(MASTER) - b0 - u) / b1) - 1, 0, 999) : 999);
   function learning(A, B, seed) {
     const D = A;
     if (D.length < 200) return thin(D.length, 200);
@@ -1145,16 +1147,10 @@
     const M = backFit(D),
       n = D.length,
       C = A.filter(a => a.back && a.E != null),
-      bi = boot(
-        D,
-        S => {
-          const m = backFit(S),
-            c = S.filter(a => a.back && a.E != null);
-          return {slope: m.b[1], calib: c.length ? mean(c.map(a => a.y - a.E)) : NaN};
-        },
-        B,
-        seed
-      );
+      bi = boot(D, S => ({slope: backFit(S).b[1]}), B, seed),
+      // the calibration over every comeback question, its own bootstrap (Codex review #441: the slope's sample keeps
+      // only answers after a right one, the estimate takes them all)
+      bc = boot(C, S => ({calib: mean(S.map(a => a.y - a.E))}), B, seed + 1);
     const effects = [eff('slope', 'Forgetting slope (logit per log(1 + days))', M.b[1], M.se[1], bi, 'logit', 0.1, n)];
     if (C.length >= 10) {
       const oe = C.map(a => a.y - a.E);
@@ -1164,7 +1160,7 @@
           'Comeback questions: right − app’s expected',
           mean(oe),
           Math.sqrt(mean(oe.map(v => (v - mean(oe)) ** 2)) / C.length),
-          bi,
+          bc,
           'p',
           0.05,
           C.length
@@ -1200,7 +1196,8 @@
     ['pos', 'Later in the session (log position)']
   ];
   function sessRows(A) {
-    const end = Math.max(...A.map(a => a.t)),
+    // a loop, not Math.max(...): a spread of the whole log overflows the stack past about 150,000 answers (Codex review #441)
+    const end = A.reduce((m, a) => (a.t > m ? a.t : m), -Infinity),
       S = new Map();
     A.forEach(a => (S.get(a.sess) || S.set(a.sess, []).get(a.sess)).push(a));
     const med = {};
@@ -1247,7 +1244,7 @@
   // Kaplan-Meier: share of sessions still going after n answers; a session still open (last answer under 30 min before
   // the log's end) is censored.
   function km(lens) {
-    const max = Math.max(0, ...lens.map(l => l.n)),
+    const max = lens.reduce((m, l) => Math.max(m, l.n), 0),
       out = [{n: 0, s: 1}];
     let s = 1;
     for (let n = 1; n <= max; n++) {
@@ -1543,12 +1540,18 @@
     for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
     return h.toString(36);
   }
+  // Who answered each row too (Codex review #441): a renamed player gets a new anonymous id, and a milestone holding
+  // the old one must be refitted, not reused under ids that no longer exist.
   function fpOf(rows, M, mh = '') {
     const S = rows.slice(0, M);
-    return [AV, M, S.length ? S[S.length - 1][1] : 0, S.reduce((s, r) => s + (r[4] ? 1 : 0), 0), new Set(S.map(r => r[0])).size, mh].join(
-      ':'
-    );
+    let h = 2166136261;
+    S.forEach(r => {
+      const t = String(r[0]) + '|';
+      for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+    });
+    return [AV, M, S.length ? S[S.length - 1][1] : 0, S.reduce((s, r) => s + (r[4] ? 1 : 0), 0), h.toString(36), mh].join(':');
   }
+
   // rows: the whole answer log; prev: the stored report (or null); o: {B, seed, progress, now}. Returns {AV, made,
   // answers, M: [milestones], R: {milestone: result}}; a result carries its fingerprint fp.
   function report(rows, meta, prev, o = {}) {
@@ -1602,6 +1605,8 @@
     boot,
     verdictOf,
     km,
+    toMaster,
+    sessRows,
     TRUTH,
     synth,
     DEMO_PLAYERS,

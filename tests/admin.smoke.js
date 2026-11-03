@@ -205,13 +205,14 @@ const server = http.createServer((req, res) => {
       await go(h);
       const v = await p.evaluate(() => ({
         svg: document.querySelectorAll('#view svg.adm-an-svg').length,
-        thin: /Not enough data yet: \d/.test(document.querySelector('.adm-an').textContent),
+        thin: /Not enough data yet: \d/.test((document.querySelector('.adm-an') || {}).textContent || ''),
+        none: !document.querySelector('.adm-an') && document.getElementById('view').textContent.slice(0, 80),
         wide: document.documentElement.scrollWidth - innerWidth,
         cards: [...document.querySelectorAll('.adm-an .adm-scard')].filter(
           c => c.scrollWidth > c.clientWidth + 1 && !c.querySelector('.adm-tscroll')
         ).length
       }));
-      if (v.svg < 2 || v.thin || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+      if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
     }
     await go('~an-fmt');
     const anf = await p.evaluate(async () => {

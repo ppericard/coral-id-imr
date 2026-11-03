@@ -330,3 +330,65 @@ test('confusions: a player who mixes up often reads as observed / expected', () 
   assert.ok(p0.oe < 2.5 && p0.or > p0.oe, `obs/exp ${p0.oe.toFixed(2)}, odds ratio ${p0.or.toFixed(2)}`);
   assert.ok(p0.lo < p0.oe && p0.oe < p0.hi);
 });
+
+// Codex review #441 (second pass): a renamed player has a new anonymous id: the milestones holding the old one are refitted.
+test('a milestone is refitted when a player’s id changes', () => {
+  const rows = A.demoLog(
+      JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'))),
+      Date.UTC(2026, 10, 1),
+      {
+        days: 400,
+        players: A.DEMO_PLAYERS.slice(0, 3).map(p => [p[0], p[1], 400, p[3]])
+      }
+    ),
+    meta = {ph: {}},
+    r1 = A.report(rows, meta, null, {B: 0}),
+    renamed = rows.map(r => (r[0] === A.DEMO_PLAYERS[0][0] ? ['renamed', ...r.slice(1)] : r)),
+    r2 = A.report(renamed, meta, r1, {B: 0});
+  assert.notStrictEqual(r2.R[1000], r1.R[1000]);
+  assert.strictEqual(A.report(rows, meta, r1, {B: 0}).R[1000], r1.R[1000]);
+});
+
+// Codex review #441: the comeback calibration's bootstrap draws the same questions as its estimate (all the comeback
+// questions, after a right or a wrong answer), not only the slope's sample.
+test('comeback calibration: estimate and interval over the same questions', () => {
+  const rows = [],
+    D2 = 2 * 864e5;
+  for (let p = 0; p < 6; p++)
+    for (let c = 0; c < 15; c++) {
+      const t0 = (p * 100 + c) * 4 * D2,
+        r = (k, m, ok, E) => ['p' + p, t0 + k * D2, 'A', ok ? 'A' : 'B', ok, m, 'f1', E, 0, 0, 'A B C D', 0, 5, 0];
+      // a comeback question after a right answer, 1 for 0.5 expected; one after a wrong answer, 0 for 0.5 expected
+      rows.push(r(0, 'quiz', 1, 0.8), r(1, 'quiz|c', 1, 0.5), r(2, 'quiz', 0, 0.8), r(3, 'quiz|c', 0, 0.5));
+    }
+  const b = A.comeback(A.prep(rows), 40, 3),
+    e = b.effects.find(x => x.k === 'calib');
+  assert.ok(Math.abs(e.est) < 1e-9, String(e.est));
+  assert.ok(e.hi < 0.3, `interval [${e.lo}, ${e.hi}]`);
+});
+
+// Codex review #441: a start already above 80% reaches it at 0 answers, whatever the slope.
+test('answers to mastery: 0 when the start is already there', () => {
+  assert.strictEqual(A.toMaster(1.747, -0.116, 0), 0);
+  assert.strictEqual(A.toMaster(-1, -0.1, 0), 999);
+  assert.ok(A.toMaster(-1, 0.5, 0) > 0 && A.toMaster(-1, 0.5, 0) < 999);
+});
+
+// Codex review #441: Sessions on a very long log (no Math.max over a spread of every answer).
+test('sessions: 200,000 answers do not overflow the stack', () => {
+  const A2 = [];
+  for (let i = 0; i < 200000; i++)
+    A2.push({
+      p: 'p' + (i % 7),
+      t: i * 60e3,
+      y: i % 3 ? 1 : 0,
+      x: 0.5,
+      s: 5,
+      pos: 1 + (i % 30),
+      streak: 0,
+      sess: 'p' + (i % 7) + '#' + Math.floor(i / 210)
+    });
+  const r = A.sessRows(A2);
+  assert.ok(r.rows.length > 190000 && r.lens.length > 0);
+  assert.ok(A.km(r.lens).length > 1);
+});
