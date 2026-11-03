@@ -167,6 +167,7 @@ What is public, what protects what (code review, 2026-11-01).
 - **Templates**: every data string goes through `esc()` (escapes `& < > " '`); links from data go through `safeUrl()` (https only).
 - **Sync sheet**: anyone can call the Apps Script URL. A name + 4-digit code only prevents accidental overwrites; v6 throttles wrong codes, never writes a user string as a formula, and keeps anonymous ids unguessable (secret salt). RA data is low-sensitivity (first names and quiz answers).
 - **GitHub Action** (`approved-photos.yml`, `contents: write`): downloads photos only from iNaturalist hosts (`tools/fetch_approved.py` `HOSTS`).
+- **Photos to R2** (`photos-r2.yml` and the last step of `approved-photos.yml`, `tools/r2_sync.sh`; Pierre, 2026-11-03): `img/` mirrored to the Cloudflare R2 bucket (public address `https://pub-934250f83b884a4f890497f2027ce251.r2.dev`, CORS for the site and localhost) with rclone and an R2 API token limited to that bucket (Object Read & Write), from the repo's secrets; files compared by checksum, a file removed from `img/` removed from the bucket. Step 1 of "Photos out of the repo" (ROADMAP): the app still reads `img/` until the switch is checked.
 
 ## Tools (`tools/`)
 

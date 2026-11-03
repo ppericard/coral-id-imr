@@ -1,0 +1,24 @@
+# Mirror img/ to Cloudflare R2 (tools/r2_sync.sh): on a push that changes img/, and by hand (Actions > Photos to R2 >
+# Run workflow). The candidate-photos workflow runs the same script after its own commits.
+name: Photos to R2
+on:
+  push:
+    branches: [main]
+    paths: ['img/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: photos-r2
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: tools/r2_sync.sh
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
