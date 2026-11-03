@@ -601,7 +601,8 @@
         "goniopora-cand-48750732": "medium",
         "goniopora-cand-487812568": "medium",
         "goniopora-cand-46494036": "macro",
-        "goniopora-cand-136801368": "macro"
+        "goniopora-cand-136801368": "macro",
+        "goniopora-cand-40645178": "wide"
       }
     },
     "Plerogyra": {
@@ -1154,7 +1155,8 @@
         "isopora-cand-697680251": "medium",
         "isopora-cand-239866186": "wide",
         "isopora-cand-265444993": "wide",
-        "isopora-cand-305280964": "wide"
+        "isopora-cand-305280964": "wide",
+        "isopora-cand-265445083": "wide"
       }
     },
     "Leptoseris": {
@@ -1647,6 +1649,7 @@
     "goniopora-cand-269731988": 2,
     "goniopora-cand-269734400": 2,
     "goniopora-cand-270585095": 2,
+    "goniopora-cand-40645178": 2,
     "goniopora-cand-454066558": 2,
     "goniopora-cand-46494036": 2,
     "goniopora-cand-48750732": 2,
@@ -1721,6 +1724,7 @@
     "isopora-cand-260174893": 3,
     "isopora-cand-260174906": 3,
     "isopora-cand-265444993": 2,
+    "isopora-cand-265445083": 2,
     "isopora-cand-271269161": 2,
     "isopora-cand-305280964": 2,
     "isopora-cand-379745054": 2,
@@ -2337,6 +2341,7 @@
     "goniopora-cand-269731988": "Mp",
     "goniopora-cand-269734400": "Mp",
     "goniopora-cand-270585095": "Mp",
+    "goniopora-cand-40645178": "xp",
     "goniopora-cand-454066558": "M",
     "goniopora-cand-46494036": "x",
     "goniopora-cand-48750732": "xp",
@@ -2401,6 +2406,7 @@
     "isopora-cand-260174893": "B",
     "isopora-cand-260174906": "B",
     "isopora-cand-265444993": "S",
+    "isopora-cand-265445083": "B",
     "isopora-cand-271269161": "B",
     "isopora-cand-305280964": "B",
     "isopora-cand-379745054": "B",
@@ -3645,6 +3651,12 @@
       0,
       0.925,
       1
+    ],
+    "goniopora-cand-40645178": [
+      0.05,
+      0.05,
+      0.85,
+      0.975
     ],
     "goniopora-cand-606656904": [
       0.075,
@@ -5258,6 +5270,7 @@
       "goniopora-cand-270585095": "aw2Mp",
       "goniopora-cand-270585223": "r",
       "goniopora-cand-337134835": "r",
+      "goniopora-cand-40645178": "aw2xp#",
       "goniopora-cand-454066558": "aw2M",
       "goniopora-cand-454069189": "r",
       "goniopora-cand-46494036": "ac2x",
@@ -5388,6 +5401,7 @@
       "isopora-cand-260174906": "am3B",
       "isopora-cand-260175013": "r",
       "isopora-cand-265444993": "aw2S",
+      "isopora-cand-265445083": "aw2B",
       "isopora-cand-271269161": "aw2B",
       "isopora-cand-305278119": "r",
       "isopora-cand-305280964": "aw2B",
