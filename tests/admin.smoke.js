@@ -551,8 +551,8 @@ const server = http.createServer((req, res) => {
     if (
       !sa ||
       sa.rows !== 9 ||
-      !/before first asked/.test(sa.t) ||
-      !/after first asked/.test(sa.t) ||
+      !/before asked/.test(sa.t) ||
+      !/after asked/.test(sa.t) ||
       !/Learn/.test(sa.t) ||
       !/4 visits recorded/.test(sa.t)
     )

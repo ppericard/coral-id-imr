@@ -485,7 +485,7 @@ function renderJourney(name, anonId = '') {
               SH.G.length
                 ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Times</th><th class="n">Time</th><th>First opened</th><th>From</th></tr></thead><tbody>${SH.G.map(
                     o =>
-                      `<tr><td><a class="adm-gen" href="#${esc(o.g)}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td>${o.asked ? 'after first asked' : '<b>before first asked</b>'} <small>${jTime(o.first)}</small></td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
+                      `<tr><td><a class="adm-gen" href="#${esc(o.g)}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td title="Opened first ${esc(jTime(o.first))}">${o.asked ? 'after asked' : '<b>before asked</b>'}</td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
                   ).join('')}</tbody></table></div>`
                 : '<p class="note">None opened.</p>'
             }<p class="note">${SH.visits} visit${SH.visits === 1 ? '' : 's'} recorded · most time on ${pagesTop.map(([k, [n, sc]]) => `${esc(k)} ${secs(sc)} (${n}×)`).join(', ')}</p>`
