@@ -24,6 +24,17 @@ function model({P = {}} = {}) {
       PSTAT: {},
       slateGenera: () => Object.keys(P).filter(n => n !== '~level'),
       syncSoon: () => {},
+      // The first-launch question (core.js CHOICE; model.js startSet and its window, in the same block).
+      ...(({CHOICE, startOpt, startVars, startCheck, startNext, startInfer}) => ({
+        CHOICE,
+        startOpt,
+        startVars,
+        startCheck,
+        startNext,
+        startInfer
+      }))(C),
+      basicsDone: () => false,
+      document: {querySelectorAll: () => []},
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.answersSoFar = () => ctx.n;
