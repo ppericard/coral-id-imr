@@ -3344,6 +3344,37 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
           last: !!sw && !sw.nextElementSibling && sw.getBoundingClientRect().top >= b.getBoundingClientRect().bottom
         };
       });
+      // The genus name is a tile's key information, never cut (design review 2026-11-01; new-player walkthrough 2026-11-04:
+      // "Duncanopsa…" on the phone's Slate view, once its % shows beside it): every slate genus played, in a page of its own.
+      {
+        for (const vw of w === 390 ? [360, 390] : [w]) {
+          const cx = await b.newContext({viewport: {width: vw, height: 800}, serviceWorkers: 'block'});
+          await cx.route(
+            u => !u.href.startsWith(base),
+            r => r.abort()
+          );
+          await cx.addInitScript(
+            G => {
+              localStorage.setItem('reefid-tour', '"done"');
+              localStorage.setItem('reefid-nudge', '1');
+              localStorage.setItem(
+                'reefid-sync-coral-progress',
+                JSON.stringify(Object.fromEntries(G.map(n => [n, {ok: 4, ko: 2, h: '110101', pg: 0.62}])))
+              );
+            },
+            [...Object.keys(require('../data.json').gen), 'Millepora']
+          );
+          const px = await cx.newPage();
+          await px.goto(base + '#progress');
+          await px.waitForSelector('#view .pslate .ps', {timeout: 15000}).catch(() => {});
+          const cut = await px.evaluate(() =>
+            [...document.querySelectorAll('#view .pslate .ps i')].filter(i => i.scrollWidth > i.clientWidth + 1).map(i => i.textContent)
+          );
+          const n = await px.evaluate(() => document.querySelectorAll('#view .pslate .ps .pct').length);
+          if (cut.length || !n) fails.push(`${vw}px My progress Slate: names cut ${cut.join(', ')} (${n} with their %)`);
+          await cx.close();
+        }
+      }
       if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
       else {
         await q2.click('#openall');

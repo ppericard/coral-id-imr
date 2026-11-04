@@ -3568,6 +3568,33 @@ a.lt:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The genus name is the tile's key information, never cut (new-player walkthrough 2026-11-04: "Duncanopsa…" on a
+   phone): a slate tile too narrow for its name and its % keeps the ring alone (the % stays in its title), as the narrow
+   tiles of the other views do; a name of 13 letters or more also keeps the ring alone and, on a phone, takes one step
+   down the type scale. The ellipsis stays a last resort. */
+@container (max-width: 169px) {
+  .pslate .ps .pct {
+    font-size: 0 !important;
+    padding-left: 2px !important;
+  }
+}
+.pslate .ps i.lg ~ .pct {
+  font-size: 0 !important;
+  padding-left: 2px !important;
+}
+.pslate .ps i.lg ~ .pct::before {
+  width: 14px;
+  height: 14px;
+}
+@media (max-width: 599.98px) {
+  .pslate .ps i.lg {
+    font-size: var(--fs-xs);
+  }
+  .pslate .ps:has(i.lg) {
+    padding: 0 4px;
+    gap: 2px;
+  }
+}
 .pslate .ps:hover,
 .pseg a:hover {
   filter: brightness(1.06);
