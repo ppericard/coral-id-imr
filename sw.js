@@ -12,6 +12,12 @@ const VER_ASK = ['reefid-ver?', 'imr-ver?']; // rename-app: keep
 // start empty anyway (docs/ROADMAP.md).
 const PH = 'imr-photos-v1',
   PH_MAX = 2500;
+// The admin's own files (Pierre, 2026-11-04: admin pages slow on his phone) live in a cache of their own that no deploy
+// deletes either: a new app version used to drop them with the old shell cache, so the first admin visit after each
+// deploy downloaded them all again (about 240 kB gzipped), even unchanged. One entry per file: a new ?v= replaces the
+// older one. Only the admin's code: no player data is ever kept here.
+const ADM = 'reefid-admin-files',
+  ADM_FILE = /\/(admin[\w-]*\.(js|css)|autosort\.js|analysis\.js)$/;
 // The R2 bucket the pages read the photos from (core.js PHOTO_BASE, where the switch is; this only lets the worker cache
 // them and fall back to the site): same paths as the site's img/.
 const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
@@ -210,7 +216,12 @@ self.addEventListener('fetch', e => {
           fetch(e.request).then(res => {
             if (res.ok) {
               const c = res.clone();
-              caches.open(V).then(x => x.put(e.request, c));
+              if (!ADM_FILE.test(u.pathname)) caches.open(V).then(x => x.put(e.request, c));
+              else
+                caches.open(ADM).then(async x => {
+                  for (const k of await x.keys()) if (new URL(k.url).pathname === u.pathname) await x.delete(k);
+                  await x.put(e.request, c);
+                });
             }
             return res;
           })
