@@ -438,6 +438,12 @@ const introReady = n => {
 // once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
 // The bonus genera are not opened with them: they open one at a time once on (opt-in, app.js BONUS).
 const introLeft = () => slateGenera().filter(n => !introduced(n));
+// One progression path for every game (Pierre, 2026-11-04: "one path for the quiz, the duels, Memory and any future game
+// or mode, no exceptions"): the genera this player has unlocked, met on the path (a card, an answer, Open all) and ready
+// (introReady), among the genera in play. The photo quiz is the path: it opens genera one at a time (its cards, the ★ rule
+// after their reference, core.js starWaits). Every other game draws from these only and opens none, so the ★ rule holds
+// there by construction.
+const unlocked = (list = pool()) => list.filter(introReady);
 // via: where the player opened them ('card' the first cards, 'progress' My progress, 'offer' the offer card), kept
 // with the offer (which is then never made) for the admin's player journey.
 // n: how many opened at once; h: the drop since then (holdStep, below); a choice already made on the back card (bk, bat,
