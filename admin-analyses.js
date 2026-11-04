@@ -763,6 +763,13 @@ const ANV = {
     ...(a.desc ? anSessDesc(a.desc) : [])
   ]
 };
+// A y range around the values (10 points of margin, within 0-100%), so a flat line still shows its changes.
+const anYr = V => {
+  const L = V.filter(v => v != null && isFinite(v));
+  return L.length
+    ? {ymin: Math.max(0, Math.floor((Math.min(...L) - 0.1) * 10) / 10), ymax: Math.min(1, Math.ceil((Math.max(...L) + 0.1) * 10) / 10)}
+    : {};
+};
 // Sessions in figures (analysis.js sessDesc; the study of 2026-11-04): counts and means, in words.
 const anOf = (k, n) => (n ? `${k} of ${n} (${pc(k / n)})` : '–');
 function anSessDesc(d) {
@@ -798,7 +805,8 @@ function anSessDesc(d) {
         lf: i => String(i).padStart(2, '0') + 'h',
         xlab: 'Hour the session starts',
         title: 'Sessions by starting hour, Manila time'
-      })
+      }),
+      'wide'
     ),
     anCard(
       'Right answers along a session',
@@ -812,6 +820,7 @@ function anSessDesc(d) {
           xf: i => ['Start', '', 'Middle', '', 'End'][i] ?? '',
           xmin: 0,
           xmax: 4,
+          ...anYr(d.fifths.flatMap(b => [b.right, b.E])),
           title: 'Right answers along a session (sessions of 20 answers or more)'
         }
       ) +
@@ -830,12 +839,12 @@ function anSessDesc(d) {
       anTable(
         ['Sessions that ended', '#'],
         [
-          `<tr><td>On a wrong answer</td><td class="n">${anOf(E.miss, E.sessions)}</td></tr>`,
-          `<tr><td>Wrong answers overall, for comparison</td><td class="n">${pc(E.missRate)}</td></tr>`,
-          `<tr><td>On 2 or more misses in a row</td><td class="n">${anOf(E.miss2, E.sessions)}</td></tr>`,
-          `<tr><td>On a genus met for the first time</td><td class="n">${anOf(E.lastNew, E.sessions)}</td></tr>`,
-          `<tr><td>First meetings overall, for comparison</td><td class="n">${pc(E.newRate)}</td></tr>`,
-          `<tr><td>Last answer’s game</td><td class="n">${esc(modes(E.lastMode)) || '–'}</td></tr>`
+          `<tr><td class="an-w">On a wrong answer</td><td class="n">${anOf(E.miss, E.sessions)}</td></tr>`,
+          `<tr><td class="an-w">Wrong answers overall, for comparison</td><td class="n">${pc(E.missRate)}</td></tr>`,
+          `<tr><td class="an-w">On 2 or more misses in a row</td><td class="n">${anOf(E.miss2, E.sessions)}</td></tr>`,
+          `<tr><td class="an-w">On a genus met for the first time</td><td class="n">${anOf(E.lastNew, E.sessions)}</td></tr>`,
+          `<tr><td class="an-w">First meetings overall, for comparison</td><td class="n">${pc(E.newRate)}</td></tr>`,
+          `<tr><td class="an-w">Last answer’s game</td><td class="n">${esc(modes(E.lastMode)) || '–'}</td></tr>`
         ]
       )
     ),
@@ -867,7 +876,8 @@ function anSessDesc(d) {
           (g, i) =>
             `<tr><td>${['First', 'Second', 'Third and later'][i]}</td><td class="n">${g.sessions}</td><td class="n">${g.answers == null ? '–' : anInt(g.answers)}</td><td class="n">${g.min == null ? '–' : anInt(g.min)}</td><td class="n">${pc(g.right)}</td><td class="n">${anPts(g.oe)}</td><td class="n">${g.newg == null ? '–' : anInt(g.newg)}</td></tr>`
         )
-      )
+      ),
+      'wide'
     ),
     anCard(
       'Every session',
