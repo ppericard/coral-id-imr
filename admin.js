@@ -1267,7 +1267,7 @@ function navs(tn, xn) {
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || '~users'))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || '~stats'))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     sw.hidden = false;
   }
@@ -4803,10 +4803,10 @@ async function start() {
       redo();
     }
   });
-  // The page opens on Players, phone and desktop (Pierre, 2026-11-04: with the photo choice mostly automated, Players is
-  // the page he opens first; it was the candidates on a phone, the first genus on a desktop).
+  // The page opens on Players › Activity, the recent sessions, phone and desktop (Pierre, 2026-11-05: what he looks at
+  // first; Players › List from 2026-11-04, the candidates or the first genus before).
   [ASUBJ, cur] = subjOfHash(hashNow());
-  cur = cur || '~users';
+  cur = cur || '~stats';
   // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs (Codex review
   // #492). A link without a prefix clicked on a subject's page (a player's journey from Players) is given that
   // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject.
@@ -4826,7 +4826,7 @@ async function start() {
   window.onhashchange = () => {
     if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
     [ASUBJ, cur] = subjOfHash(hashNow());
-    cur = cur || '~users';
+    cur = cur || '~stats';
     const h = $('admhelp');
     if (h) h.remove();
     render();
@@ -4903,7 +4903,7 @@ function signOut() {
 // The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
 // names exist then). A token refused drops them all, so nothing read with it is kept.
 const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'reports'];
-const early = () => queueMicrotask(() => TOKEN && sheetEarly(hashNow() || '~users'));
+const early = () => queueMicrotask(() => TOKEN && sheetEarly(hashNow() || '~stats'));
 (async () => {
   if (DEMO) {
     TOKEN = 'demo';

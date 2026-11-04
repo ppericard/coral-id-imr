@@ -78,7 +78,7 @@ nothing reaches the game without Pierre's Publish); #537 night questions.
 (1) Journey › "Cards" list: items are not in time order (Nov 4 rows before Nov 2 ones), "inferred" is said twice, and
 two identical "Changed to I had the IMR coral course · after answer 160 · in the welcome tour" rows appear 4 min apart
 (duplicate event or two real changes: check the data path); check every time is the player's local time (UTC offset
-logged per answer since sheet v44). (2) The admin opens on Players › Activity (recent sessions), not Players › List.
+logged per answer since sheet v44). (2) Done (#554 when merged): the admin opens on Players › Activity.
 (3) Activity: tapping a session unfolds a mini-summary under it, on the same page: the session's success chart, start /
 end / length, answers and % right, genera met or opened, notable events, a link to the full Journey; tap again folds it. Its content (Pierre, same morning): what the player made of the session: the most improved genera, the main
 difficulties met (the genera or pairs missed most, the hardest photos), achievements unlocked, genera opened; a
