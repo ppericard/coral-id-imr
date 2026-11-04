@@ -17,18 +17,9 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      # Depth 1: the whole history with every photo cost ~300 s of checkout. The cache-busting check compares with the
-      # commit this PR's merge commit was built on (its first parent), fetched below without its blobs (git fetches the few
-      # it reads, the files this PR changed, on demand). Not the base branch's tip: when main moves while the run waits,
-      # the tip has changes the merge commit lacks, and every file they bumped read as "not above" (test-suite review,
-      # 2026-11-04: #459's checks failed so when #453 merged a minute after its push).
+      # Depth 1: the whole history with every photo cost ~300 s of checkout. Nothing here compares with a base any more:
+      # the version numbers are stamped at deploy (tools/stamp_versions.py, Pierre 2026-11-04), never bumped in a PR.
       - uses: actions/checkout@v7
-      - name: The base the merge commit was built on, for the cache-busting check (one commit, no blobs until read)
-        if: github.event_name == 'pull_request'
-        run: |
-          base=$(git cat-file -p HEAD | awk '/^parent /{print $2; exit}')
-          git fetch --no-tags --depth=1 --filter=blob:none origin "$base"
-          echo "VERSIONS_BASE=$base" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
@@ -59,10 +50,9 @@ jobs:
       - name: The rename to IMR Reef ID is complete (tools/rename_app.py; an old name kept on purpose carries rename-app keep)
         run: |
           python3 tools/rename_app.py --check
-      - name: Cache-busting versions
+      - name: Cache-busting versions consistent (stamped at deploy; tests/versions.test.js stamps a copy as the deploy does)
         run: |
-          # The merge commit's base on a pull request; a manual run has none fetched (the default origin/main is not there).
-          if [ -n "$VERSIONS_BASE" ]; then python3 tools/check_versions.py --base "$VERSIONS_BASE"; else python3 tools/check_versions.py --no-base; fi
+          python3 tools/check_versions.py
   smoke:
     name: smoke (${{ matrix.name }})
     runs-on: ubuntu-latest
