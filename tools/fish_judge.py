@@ -35,8 +35,8 @@ WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos pe
 
 
 def cap(code, phase, juv_ok=False):
-    """(ease after the caps, tags with the phase flag): judging/FISH.md "Caps". juv_ok: the entry's juveniles are
-    distinct and recognisable (fish.json juv "distinct": Spadefish, Sweetlips), so the juvenile flag caps nothing."""
+    """(ease after the caps, tags with the phase flag): judging/FISH.md "Caps". juv_ok: the photo's juveniles show early
+    (juv_early: its entry's class A, or its species in the entry's early list), so the juvenile flag caps nothing."""
     m = CODE.match(code)
     if not m:
         raise ValueError(f"bad code {code!r}")
@@ -52,6 +52,17 @@ def cap(code, phase, juv_ok=False):
     return e, code[:7] + fl
 
 
+def juv_early(juv, names):
+    """True when a juvenile of these species names (its fish.json name and WoRMS name) is judged without the juvenile
+    cap: the entry's juv class is A, or a name is, or is in, a genus or species of its early list (fish.json juv,
+    from tools/fish_source.json: the juvenile classes of 2026-11-04). Everything else keeps the cap."""
+    if not isinstance(juv, dict):
+        return False
+    if juv.get("cls") == "A":
+        return True
+    return any(n == x or n.startswith(x + " ") for x in juv.get("early", []) for n in names if n)
+
+
 def load_src():
     s = json.loads(SRC.read_text(encoding="utf-8"))
     return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {}), s.get("add", {})
@@ -61,7 +72,8 @@ def apply(photos, fish=None):
     """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
     fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     dim = {t["id"] for t in fish["teach"] if t.get("dimorph")}
-    juv = {t["id"] for t in fish["teach"] if t.get("juv") == "distinct"}
+    juv = {t["id"]: t.get("juv") for t in fish["teach"]}
+    sp = {s["id"]: (s.get("name"), s.get("now")) for s in fish.get("species", [])}
     J, C, A = load_src()
     for tid, extra in A.items():
         L = photos.setdefault(tid, [])
@@ -73,7 +85,7 @@ def apply(photos, fish=None):
             for x in ("e", "jt", "c"):
                 p.pop(x, None)
             if p["f"] in J:
-                p["e"], p["jt"] = cap(J[p["f"]], tid in dim, tid in juv)
+                p["e"], p["jt"] = cap(J[p["f"]], tid in dim, juv_early(juv.get(tid), sp.get(p.get("sp"), ())))
                 if p["f"] in C:
                     p["c"] = C[p["f"]]
                 k += 1
