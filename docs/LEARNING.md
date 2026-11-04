@@ -2906,6 +2906,12 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (later the same day; design only, docs/FISH_PATH.md): the global fish score is **non-linear**, fast
+  at the start, about 75-80% for every entry and species known by common name, scientific names filling the last 20-25%
+  slowly (the curve set by simulation), the Elo level kept alongside; the half fault must not be gameable (common
+  names never advance the scientific-name progress; options listed, none chosen); the fish exams to rethink (per
+  species or per family, e.g. about 20 hard questions answered with the scientific name); milestone cards for species
+  names and scientific names; juveniles, colour phases and dimorphism introduced with an explanation card.
 - 2026-11-04, Pierre (fish beta feedback; decided in principle, nothing built, docs/FISH_PATH.md): on a species question
   that asks for Latin, a typed common name counts **as half a fault** (a graded outcome 0.5: its effect on `eloStep`,
   `pgStep`, the expected success, the all-Latin exam and the replay to study first, starting values from
