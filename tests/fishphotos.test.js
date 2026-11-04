@@ -189,7 +189,7 @@ test('species of the game: circle 1 in teaching order, out species and other cir
 test('room: what Pierre rejected, excluded or sent elsewhere and what the pre-sort set aside for sure frees it', () => {
   const out = J(`
 cur = {'exclude': {'acropora-cand-55': 'x'}, 'fish': {'add': {'a': 1, 'e': 1}, 'seen': {'b': 1}, 'exclude': {'fish-s1-cand-77': 'excluded'}, 'out': {'c': 'x'}}}
-sug = {'fish': {'d': {'g': 'exclude', 'n': 'market'}, 'e': {'k': 'dup'}, 'f': {'k': 'dup', 'u': ['keep'], 'n': '?'}, 'g': {'m': 1}, 'h': {'k': 'best'}}}
+sug = {'fish': {'d': {'jt': 'p1g0sm1a', 'e': 3, 'k': 'best'}, 'e': {'k': 'dup'}, 'f': {'k': 'dup', 'u': ['keep'], 'n': '?'}, 'g': {'jt': 'p1g0smx', 'e': 1, 'k': 'best'}, 'h': {'jt': 'p1g0sm1', 'e': 5, 'k': 'best'}}}
 gone, excl = state(cur, sug)
 print(json.dumps([[x for x in 'abcdefgh' if gone(x)], sorted(excl)]))`);
   assert.deepStrictEqual(out, [
@@ -198,44 +198,40 @@ print(json.dumps([[x for x in 'abcdefgh' if gone(x)], sorted(excl)]))`);
   ]);
 });
 
-test('autosort.js fishSure: the pass decides only when sure; Poor and alt photos go in; python sure_out is its reject / exclude', () => {
-  const tags = {v: 'whole', ph: 'adult'};
+test('autosort.js fishSure: one visual vocabulary, sure decisions only; hard photos go in; python sure_out is its rejects', () => {
+  // suggest.json "fish": jt the rubric's tags after the caps (judging/FISH.md), e the ease, k best / alt / dup.
   const J0 = [
     null,
-    {...tags, k: 'best', q: 1}, // Poor: kept on purpose (SVS video frames)
-    {...tags, k: 'alt', q: 2, cl: 'strong'},
-    {...tags, k: 'best', q: 3, c: [0.1, 0, 0.9, 1]},
-    {...tags, k: 'dup', q: 3},
-    {g: 'exclude', n: 'fish market'},
-    {g: 'not', n: 'a goby'},
-    {g: 's123', n: 'the juvenile of s123'},
-    {...tags, k: 'best', q: 2, m: 1},
-    {...tags, k: 'best', q: 2, u: ['phase'], n: '?'},
-    {g: 'exclude', u: ['species'], n: '?'},
-    {k: 'best', q: 2}, // no framing or phase: not a complete judgment
-    {...tags, k: 'best'} // no quality
+    {jt: 'p1g0sm1', e: 5, k: 'best'},
+    {jt: 'o1d3bs1', e: 1, k: 'alt', ph: 'terminal'}, // monochrome, blurred, small: hard, still in (SVS video frames)
+    {jt: 'p1g0sl1j', e: 2, k: 'best', c: [0.1, 0, 0.9, 1]},
+    {jt: 'p1g0sm1', e: 4, k: 'dup'},
+    {jt: 'p1g0smx', e: 1, k: 'best'}, // which fish is asked about?
+    {jt: 'p1g0sm1a', e: 3, k: 'best'}, // out of the water
+    {jt: 'p1g0sm1', e: 4, k: 'best', u: ['code'], n: '?'},
+    {jt: 'p1g0sm1', k: 'best'}, // no ease
+    {jt: 'bad', e: 3, k: 'best'},
+    {g: 's123', k: 'best'} // the old "not this species" field: never read (the species is the experts' identification)
   ];
   const S = J0.map(fishSure);
   assert.deepStrictEqual(S, [
     null,
-    {keep: 'add', framing: 'whole', phase: 'adult', quality: 1, loss: 'none', crop: null},
-    {keep: 'add', framing: 'whole', phase: 'adult', quality: 2, loss: 'strong', crop: null},
-    {keep: 'add', framing: 'whole', phase: 'adult', quality: 3, loss: 'none', crop: [0.1, 0, 0.9, 1]},
+    {keep: 'add', tags: 'p1g0sm1', ease: 5, phase: null, crop: null},
+    {keep: 'add', tags: 'o1d3bs1', ease: 1, phase: 'terminal', crop: null},
+    {keep: 'add', tags: 'p1g0sl1j', ease: 2, phase: null, crop: [0.1, 0, 0.9, 1]},
     {keep: 'reject', why: 'dup'},
-    {keep: 'exclude'},
-    {keep: 'reject', why: 'not'},
-    {keep: 'reject', why: 'species', to: 's123'},
-    {keep: 'reject', why: 'multi'},
+    {keep: 'reject', why: 'unclear'},
+    {keep: 'reject', why: 'out of water'},
     null,
     null,
     null,
     null
   ]);
-  // fetch_fish.py frees the room of what the pass sets aside for sure: exactly fishSure's rejects and excludes.
-  const pyv = J(`print(json.dumps([sure_out(j) for j in json.loads(sys.argv[1])]))`, JSON.stringify(J0.slice(0, 11)));
+  // fetch_fish.py frees the room of what the pass sets aside for sure: exactly fishSure's rejects.
+  const pyv = J(`print(json.dumps([sure_out(j) for j in json.loads(sys.argv[1])]))`, JSON.stringify(J0));
   assert.deepStrictEqual(
     pyv,
-    S.slice(0, 11).map(x => !!x && x.keep !== 'add')
+    S.map(x => !!x && x.keep === 'reject')
   );
   // The Checks: the coral sampler, 1 candidate in AUTO.every, the same for fish ids.
   const fs0 = Array.from({length: 2000}, (_, i) => `fish-s1-cand-${1000 + i}`),
@@ -243,40 +239,44 @@ test('autosort.js fishSure: the pass decides only when sure; Poor and alt photos
   assert.ok(Math.abs(n / fs0.length - 1 / AUTO.every) < 0.015, `check share ${n / fs0.length}`);
 });
 
-test('judging_fish.py: colour loss levels, crops calibrated as the coral pass, phases and framing checked', () => {
+test('judging_fish.py: the rubric code of judging/FISH.md, its caps, keep, phase and crop; never a species judgement', () => {
   const out = J(
     `import judging_fish as JF
-JF.SP = {'s1': {'id': 's1'}, 's2': {'id': 's2'}}
+JF.SP = {'s1': {'id': 's1', 'name': 'Fishus fishii'}}
+JF.ENTRY = {'s1': {'id': 't1', 'dimorph': True, 'juv': {'cls': 'C'}}}
 JF.CUR = {'seen': {'fish-s1-cand-30': 1}}
 JF.CAND = {'s1': [{'f': f'fish-s1-cand-{i}', 'o': f'obs{i // 20}'} for i in (10, 11, 20, 30)]}
-ok = {'view': 'whole', 'phase': 'adult', 'quality': 1, 'loss': 'strong', 'keep': 'best'}
 files = {
-  'good': {'species': 's1', 'photos': {'fish-s1-cand-10': ok, 'fish-s1-cand-11': {**ok, 'keep': 'alt', 'loss': 'none', 'crop': [0.2, 0.1, 0.8, 0.9]},
-                                        'fish-s1-cand-20': {'species': 's2', 'note': 'the juvenile of s2'}}},
-  'bad': {'species': 's1', 'photos': {'fish-s1-cand-10': {**ok, 'loss': 'blue', 'phase': 'baby', 'crop': [0.5, 0, 0.4, 1]},
-                                       'fish-s1-cand-11': {**ok, 'cast': 'green'}, 'fish-s1-cand-30': ok}},
+  'good': {'photos': {'fish-s1-cand-10': {'code': 'p1g0sm1j5', 'keep': 'best', 'phase': 'female'},
+                      'fish-s1-cand-11': {'code': 'o1g2sm14', 'keep': 'alt', 'crop': [0.2, 0.1, 0.8, 0.9]},
+                      'fish-s1-cand-20': {'code': 'p1g0sl15', 'keep': 'best', 'unsure': ['crop'], 'note': 'tail cut?'}}},
+  'bad': {'species': 's1', 'photos': {'fish-s1-cand-10': {'code': 'p1g0sm19', 'keep': 'best', 'phase': 'adult', 'crop': [0.5, 0, 0.4, 1]},
+                                       'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'best', 'species': 'not', 'quality': 2},
+                                       'fish-s1-cand-30': {'code': 'p1g0sm14', 'keep': 'best'}}},
 }
 JF.load = lambda p, d=None: files[mode] if p.startswith('judging/fish/') else d
 mode = 'good'; E1, j = JF.check('s1')
 mode = 'bad'; E2, _ = JF.check('s1')
-print(json.dumps([E1, [JF.entry(x) for x in j['photos'].values()], E2, JF.LOSS, JF.CROP_K]))`
+print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2]))`
   );
-  const [E1, entries, E2, LOSS, K] = out;
+  const [E1, entries, E2] = out;
   assert.deepStrictEqual(E1, []);
-  assert.deepStrictEqual(LOSS, ['none', 'slight', 'strong', 'monochrome']); // Pierre, 2026-11-04: a level of colour loss
-  assert.strictEqual(K, 0.5);
+  // The caps of tools/fish_judge.py: a juvenile of a class-C entry at most 2, strong colour loss at most 3; the phase
+  // flag p of a dimorph entry added, capping nothing.
   assert.deepStrictEqual(entries, [
-    {v: 'whole', ph: 'adult', q: 1, k: 'best', cl: 'strong'},
-    {v: 'whole', ph: 'adult', q: 1, k: 'alt', c: [0.1, 0.05, 0.9, 0.95]}, // each trim halved (CROP_K), no "cl" when none
-    {g: 's2', n: 'the juvenile of s2'}
+    {jt: 'p1g0sm1jp', e: 2, k: 'best', ph: 'female'},
+    {jt: 'o1g2sm1p', e: 3, k: 'alt', c: [0.2, 0.1, 0.8, 0.9]}, // the crop as proposed, as the game photos'
+    {jt: 'p1g0sl1p', e: 5, k: 'best', u: ['crop'], n: 'tail cut?'}
   ]);
   const bad = E2.join('\n');
-  assert.match(bad, /loss must be one of/);
-  assert.match(bad, /phase must be one of/);
+  assert.match(bad, /unknown top-level keys \['species'\]/);
+  assert.match(bad, /code must follow judging\/FISH.md/);
+  assert.match(bad, /phase is one of/);
   assert.match(bad, /crop must be \[left, top, right, bottom\]/);
-  assert.match(bad, /unknown fields \['cast'\]/); // the old blue / green cast is gone
+  assert.match(bad, /unknown fields \['quality', 'species'\]/); // no species judgement, no old fields (rule 24b)
   assert.match(bad, /fish-s1-cand-30: not a candidate waiting/); // Pierre rejected it
   assert.match(bad, /1 candidate\(s\) not judged yet/);
+  assert.match(bad, /2 photos marked best/);
 });
 
 test('confirmed near Dauin (build_fish near_dauin): Pierre own there, 2+ Research Grade observers, or the IMR list; one observer is not enough', () => {

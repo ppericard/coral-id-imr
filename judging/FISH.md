@@ -119,6 +119,38 @@ Pierre to accept or change, as for coral candidates (ROADMAP).
   most common first (`openPick`): an entry's difficulty is the mean of its photos' difficulty, so the judged ease
   orders it too.
 
+## Candidates (`fish-cand.json`): the same code, plus three fields
+
+One fish judging vocabulary (Pierre, 2026-11-04): the candidate photos waiting in `fish-cand.json` (`tools/fetch_fish.py`)
+are judged with the code above, its caps and its crop rule, **visual criteria only**, so a photo keeps its tags when it
+moves from the candidates to the game. The species is the iNaturalist identification by human experts (Research Grade,
+or Pierre's own), taken as given: no field says whether a photo shows the right species.
+
+1. `python3 tools/judging_fish.py sheets <id>` (a species `s091` or a whole entry `t01`) downloads the candidates still
+   waiting (500 px, `judging/fish/img/`, not in git) and draws contact sheets observation by observation
+   (`judging/fish/sheets/<species>/`, 12 tiles each); it prints tile number → photo, observation, source, licence and
+   the observer's iNaturalist annotation (`iNat: juvenile`...: a hint for the `j` flag, checked on the photo).
+   `python3 tools/judging_fish.py big <f>` gives the 1024 px photo, for a tag the tile does not settle and for a crop.
+2. Write `judging/fish/<species id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed:
+   - `code`: the code of "Tags" above, ease included (`p1g0sm14`). The tool adds the phase flag `p` and applies the caps.
+   - `keep`: `best` (exactly one per observation: its most useful photo), `alt` (the same fish, adding something:
+     another side, another phase or pose, other light), `dup` (adds nothing over the best: a burst, the same framing).
+   - `phase` (optional): the sex or colour phase the IMR fish presentation names for the entry (`fish.json`
+     `teach[].phase`) when the photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile
+     is the code's `j` flag; an adult needs no tag.
+   - `crop` (optional): as "A proposed crop" above.
+   - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`) and `note` (140 characters at most; required with
+     `unsure`).
+3. `python3 tools/judging_fish.py --check <id>` until it passes, then `python3 tools/judging_fish.py` imports every
+   passing species into `suggest.json` `"fish"`: `{jt, e, k, ph, c, u, n}`, `jt` and `e` after the caps as in
+   `fish-photos.json`. Commit only `judging/fish/*.json` and `suggest.json`.
+
+**What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`, through the admin's auto-sort once the fish
+curation exists, admin plan PR 4): `best` or `alt` → proposed in, with its tags, ease, phase and crop, whatever its ease
+(hard photos stand in for SVS video frames); `dup`, an unclear subject (count `x`) or a fish out of the water (flag `a`)
+→ set aside. About 1 candidate in 20 goes to Pierre as a Check instead, and his answers measure the agreement. So add
+`unsure` at the least doubt: it costs Pierre one swipe, a wrong sure decision costs the players.
+
 ## Agreement with other sources
 
 - iNaturalist's Life Stage annotations could check the juvenile flag, but on the 648 circle-1 photos no observer gave
