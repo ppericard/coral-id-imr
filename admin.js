@@ -1913,7 +1913,7 @@ const HELP = {
   users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
   stats: `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Health and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
     <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
-    <p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
+    <p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no Coral Finder book, several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
@@ -1938,7 +1938,7 @@ const HELP = {
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
-  health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. <b>Without me</b> drops your answers everywhere on the page: the account this browser is signed in with and those you marked "This is also me" (Players > a player > Manage).</p>
+  health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
     <p><b>Genera that don't take off.</b> Per slate genus, from the answers where it was shown: players who met it, the median of their right rates on it, and Stuck = players with ${HEALTH.G_MIN}+ answers on it still under ${Math.round(HEALTH.G_LOW * 100)}% over their last ${HEALTH.G_MIN} (out of the players with ${HEALTH.G_MIN}+ answers). Most stuck first.</p>
@@ -2481,14 +2481,13 @@ const XP_BANDS = [
   ['Over 300 answers', 301, Infinity]
 ];
 // Health › Genus sheets: of the visits and the players of each band, the share that opened at least one genus sheet.
-function healthSheets(noMe) {
+function healthSheets() {
   const head = '<h3>Genus sheets opened</h3>';
   if (!PGS) return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}<p class="note">Loading…</p></section>`;
   if (PGS.err) return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}<p class="note">${esc(PGS.err)}</p></section>`;
   // One visit = the summaries with the same visit id; a player = the admin's id, else the device.
   const VS = Object.create(null);
   PGS.rows.forEach(x => {
-    if (noMe && isMe(x.id)) return; // Without me: your own visits too
     const who = x.id || 'dev:' + x.dev,
       v = (VS[who + '|' + x.vi] = VS[who + '|' + x.vi] || {who, na: x.na, sheet: false, s: 0});
     if (x.na != null && (v.na == null || x.na < v.na)) v.na = x.na;
@@ -4907,7 +4906,7 @@ function renderDiff() {
     [3, '≥3'],
     [10, '≥10']
   ])}<span class="note">answers</span>
-    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span>${eloSeg()}</div>
+    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
     ${L.length ? `<div class="adm-grid adm-qgrid">${L.map(card).join('')}</div>` : '<p class="note">No answers yet.</p>'}</section>`;
   $v.querySelectorAll('[data-do]').forEach(
     b =>
@@ -5530,7 +5529,7 @@ let ANS = null,
   SMEM = memOf(null),
   SCONF = {},
   MEID = null,
-  SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('reefid-admin-stats', {}));
+  SF = Object.assign({min: 1, nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('reefid-admin-stats', {}));
 // Numbers replayed over the whole answer log (playSplit, levelMargin, confusionOf): once per log loaded, not at every
 // render, sort or filter click (Pierre, 2026-11-03: admin pages load slower and slower, and the log keeps growing). ANS is
 // replaced, never changed in place, whenever the log is loaded again.
@@ -5662,7 +5661,6 @@ function loadStats(ratingsOnly) {
           gs
         ]).then(([a]) => {
           if (!fresh()) return;
-          ELO_NOME = null;
           if (a && a.me) MEID = a.me;
           ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
           ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
@@ -5670,40 +5668,15 @@ function loadStats(ratingsOnly) {
       );
   return Promise.all([ga, gs, digest]).then(() => {});
 }
-// Your accounts (Pierre, 2026-11-03: his old account, renamed Pierre-test, and the new one): the one this browser is signed
-// in with (MEID) and the others marked "This is also me" in Players > Manage (kept in this browser, ME_KEY). Every
-// "Without me" / "Me" filter and the "you" marks use the whole set. No name is written in the code.
-const ME_KEY = 'reefid-admin-me',
-  myIds = () => new Set([MEID, ...(store.get(ME_KEY, []) || [])].filter(Boolean)),
-  isMe = id => !!id && myIds().has(id);
-// Photo Elo with or without this browser's own answers (Pierre, 2026-11-01: the author knows the photos, so his answers
-// bias their difficulty). "All" is the sheet's ?stats=1, the ratings the games use. "Without me" replays the same Elo
-// (eloOf, a copy of stats_ in tools/sync/Code.gs: keep the two in step) over the answer log minus your accounts' answers.
-// Nothing is reset or stored: the log is kept, so any filter is a fresh replay.
-// eloOf(rows) lives in core.js (tests/core.test.js checks it against Code.gs stats_).
-let ELO_NOME = null;
+// "you" beside the account this browser is signed in with (MEID): a mark only. Every account counts in every page
+// (Pierre, 2026-11-04: his account is a real player's; the switches that left his own answers out, and the list of his
+// other accounts, are gone, and no page leaves anyone's answers out, the leaderboard's "hidden" included).
+const isMe = id => !!id && id === MEID;
 // Answers that rated a photo (sheet v18's 4th field); the weighed count before v18. The filters use it: a photo answered
 // once weighs under 1 (n / (n + 10)) and "≥1" hid it (Pierre, 2026-11-02: only ~100 photos of the ~300 answered).
 const nAns = s => (s ? (s[3] ?? s[1]) : 0);
-const photoStats = () =>
-  SF.elo !== 'others' || !myIds().size || !ANS ? STATS : (ELO_NOME = ELO_NOME || eloOf(ANS.rows.filter(r => !isMe(r[0]))));
-const eloSeg = () =>
-  myIds().size
-    ? segBtns('elo', [
-        ['all', 'All'],
-        ['others', 'Without me']
-      ])
-    : '';
-// Empty view with "Without me" / "Others": say why (all the answers are this browser's) instead of "No answers yet".
-const noneButMe = () => {
-  const n = ANS.rows.length,
-    mine = ANS.rows.filter(r => isMe(r[0])).length;
-  return !n
-    ? 'No answers yet.'
-    : mine === n
-      ? `All ${n} answers are yours: nothing to show without them yet. Switch to All.`
-      : 'No answers from other players with enough answers yet.';
-};
+// The photo ratings: the sheet's ?stats=1, the ones the games use.
+const photoStats = () => STATS;
 const pct = (r, n) => (n ? Math.round((100 * r) / n) + '%' : '–');
 const sgn = d => (d > 0 ? '+' : '') + d.toFixed(2);
 const days = t => {
@@ -6040,7 +6013,6 @@ function renderUsers() {
       <a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a>
       ${u.pg ? `<span class="adm-uprog">Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
-      ${u.id && u.id !== MEID ? `<span>${isMe(u.id) ? 'Counted as you (left out by Without me / Others)' : 'Another player'} <button type="button" class="adm-fchip" data-ume="${esc(u.id)}">${isMe(u.id) ? 'Not me' : 'This is also me'}</button></span>` : ''}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
       <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
       <button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></div></td></tr>`;
@@ -6157,18 +6129,6 @@ function bindUsers() {
   };
   // Leaderboard (sheet v20, Pierre 2026-11-02: a test account must not show there): hidden by an admin, which the
   // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.
-  // Your other accounts (myIds): kept in this browser; the filtered views are replayed (ELO_NOME) with the new set.
-  $v.querySelectorAll('[data-ume]').forEach(
-    b =>
-      (b.onclick = () => {
-        const id = b.dataset.ume,
-          L = (store.get(ME_KEY, []) || []).filter(x => x !== id);
-        if (!isMe(id)) L.push(id);
-        store.set(ME_KEY, L);
-        ELO_NOME = null;
-        render();
-      })
-  );
   $v.querySelectorAll('[data-uboard]').forEach(
     b =>
       (b.onclick = () => {
@@ -6292,8 +6252,8 @@ function renderStats() {
   }
   return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-conf' ? statsConf() : cur === '~health' ? statsHealth() : statsPlayers();
 }
-// Rows kept by the player filter (all, others than your accounts, or only them: myIds).
-const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !myIds().size || (SF.who === 'me') === isMe(r[0]));
+// Every answer of every account (Pierre, 2026-11-04: no player filter).
+const statRows = () => ANS.rows;
 // Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
 // now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
@@ -6347,15 +6307,7 @@ function recentSessions(R) {
   }</section>`;
 }
 function statsPlayers() {
-  const head = `<div class="adm-shead"><h2>Activity</h2>${
-    myIds().size
-      ? segBtns('who', [
-          ['all', 'All'],
-          ['others', 'Others'],
-          ['me', 'Me']
-        ])
-      : ''
-  }<button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
+  const head = `<div class="adm-shead"><h2>Activity</h2><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -6467,7 +6419,7 @@ function statsPlayers() {
     ]) +
     (R.length ? recentSessions(R) : '') +
     (!R.length
-      ? `<p class="note">${SF.who === 'others' ? noneButMe() : 'No answers yet.'}</p>`
+      ? '<p class="note">No answers yet.</p>'
       : `
     <div class="adm-sgrid">
     <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"${b[1] < 10 ? ' class="few"' : ''}><i style="height:${Math.round((100 * b[0]) / b[1])}%"></i><small>${Math.round((100 * b[0]) / b[1])}</small></div>`).join('')}</div>
@@ -6505,14 +6457,9 @@ function statsPlayers() {
 function needsOf() {
   const OFF = 1.0,
     PS = photoStats();
-  // "Without me" drops this browser's own answers and level everywhere on the page (repeats, mix-ups, too easy), not only from the photo Elo.
-  const noMe = SF.elo === 'others' && myIds().size,
-    R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0]));
+  const R = ANS.rows || [];
   const TH = {};
-  Object.entries(ANS.players || {})
-    .filter(([id]) => !noMe || !isMe(id))
-    .map(([, p]) => p)
-    .forEach(p => Object.entries(p[3] || {}).forEach(([g, t]) => (TH[g] = TH[g] || []).push(t)));
+  Object.values(ANS.players || {}).forEach(p => Object.entries(p[3] || {}).forEach(([g, t]) => (TH[g] = TH[g] || []).push(t)));
   const SEEN = {};
   R.forEach(r =>
     r[6]
@@ -6601,7 +6548,7 @@ function needsOf() {
 }
 // Where to look, in full: into el (the banner above Coverage › Games, open on ~stats-needs).
 function statsNeeds(el) {
-  const head = `<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}<a class="adm-link" href="#~cov">Fold</a></div>`,
+  const head = `<div class="adm-shead"><h2>Where to look for photos</h2><a class="adm-link" href="#~cov">Fold</a></div>`,
     out = needsOf();
   NEEDS = out;
   NGEN = NGEN || '';
@@ -6693,7 +6640,7 @@ function healthBad(R) {
   const H = HEALTH,
     median = healthMedian;
   // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
-  // from the photo Elo (with or without me) against the median of the genus's rated photos.
+  // from the photo Elo against the median of the genus's rated photos.
   const PS = photoStats(),
     META = Object.create(null);
   allPhotos()
@@ -6758,18 +6705,17 @@ const healthMedian = a => {
 };
 // To do › All: one red line at the top when Health finds something wrong (Pierre, 2026-11-03): photos everyone misses,
 // genera players are stuck on. Nothing when all is well, or until the answers are loaded.
-// Computed once per answer log, photo ratings, draft and "Without me" choice (MEMO, emptied when the draft changes): To do
+// Computed once per answer log, photo ratings and draft (MEMO, emptied when the draft changes): To do
 // draws itself again as its reads come in, and each draw went over the whole log (Pierre, 2026-11-04: admin speed).
 function healthLine() {
   if (!ANS || ANS.old) return '';
-  const k = 'hline|' + SF.elo + '|' + [...myIds()].sort().join(' '),
+  const k = 'hline',
     m = MEMO[k];
   if (m && m.a === ANS && m.s === STATS) return m.v;
   return (MEMO[k] = {a: ANS, s: STATS, v: healthLine0()}).v;
 }
 function healthLine0() {
-  const noMe = SF.elo === 'others' && myIds().size,
-    R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
+  const R = ANS.rows || [],
     BY = Object.create(null);
   R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
   Object.values(BY).forEach(L => L.sort((a, b) => a[1] - b[1]));
@@ -6785,10 +6731,10 @@ function healthLine0() {
 // app works for players, with no new data. Where players stop (sessions = answers less than GAP minutes apart; how long
 // they last; what the short ones ended on), photos everyone misses (maybe mislabelled or bad: a link to the genus page),
 // genera that don't take off for players, and activity over the last DAYS days. Anonymous ids only, like the other
-// stats pages; "Without me" drops this browser's own answers everywhere on the page, as on Where to look.
+// stats pages; every account counts (Pierre, 2026-11-04).
 function statsHealth() {
   const H = HEALTH,
-    head = `<div class="adm-shead"><h2>Health</h2>${eloSeg()}</div>`;
+    head = `<div class="adm-shead"><h2>Health</h2></div>`;
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -6796,10 +6742,9 @@ function statsHealth() {
     bindStats();
     return;
   }
-  const noMe = SF.elo === 'others' && myIds().size,
-    R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0]));
+  const R = ANS.rows || [];
   if (!R.length) {
-    $v.innerHTML = head + `<p class="note">${noMe ? noneButMe() : 'No answers yet.'}</p>`;
+    $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindStats();
     return;
   }
@@ -6965,7 +6910,7 @@ function statsHealth() {
       ['Sessions / player', Math.round(median(perP) * 10) / 10],
       ['Answers / session', Math.round(median(S.map(s => s.L.length)) * 10) / 10]
     ]) +
-    `<div class="adm-sgrid adm-health">${stopSec}${phSec}${gSec}${tSec}${healthSheets(noMe)}</div>`;
+    `<div class="adm-sgrid adm-health">${stopSec}${phSec}${gSec}${tSec}${healthSheets()}</div>`;
   bindStats();
   // The pages summaries (sheet v30) come with their own read: the section fills in when they arrive, and is read again
   // once stale.
@@ -6979,16 +6924,15 @@ const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philipp
 // by the same score (app.js confOf, which also gives a shared growth form a slightly higher start). Answers from before
 // v10 only add to "Before v10" (mix-ups without the choices offered).
 function statsConf() {
-  const noMe = SF.elo === 'others' && myIds().size,
-    R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
-    C = ofAns('conf|' + (noMe ? [...myIds()].sort().join(' ') : ''), () => confusionOf(R));
+  const R = ANS.rows || [],
+    C = ofAns('conf', () => confusionOf(R));
   const head = `<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
-  ])}<span class="note">offered / shown</span>${eloSeg()}</div>`;
+  ])}<span class="note">offered / shown</span></div>`;
   if (!R.length) {
-    $v.innerHTML = head + `<p class="note">${noMe ? noneButMe() : 'No answers yet.'}</p>`;
+    $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindStats();
     return;
   }
@@ -7117,9 +7061,9 @@ function statsPhotos() {
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
-  ])}<span class="note">answers</span>${eloSeg()}</div>`;
+  ])}<span class="note">answers</span></div>`;
   if (!L.length) {
-    $v.innerHTML = head + `<p class="note">${SF.elo === 'others' ? noneButMe() : 'No answers yet.'}</p>`;
+    $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindStats();
     return;
   }
