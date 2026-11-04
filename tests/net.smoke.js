@@ -16,9 +16,17 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json'
 };
 let SWV = 0;
+// Every request for admin.html that reached this server, with the time it came and the time it was answered: printed
+// with the pending list if the admin page of test 9 never reaches DOMContentLoaded (did the worker's fetch get here?).
+const ADMIN_HITS = [];
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
+  if (u === '/admin.html') {
+    const hit = {url: req.url, at: Date.now(), done: 0};
+    ADMIN_HITS.push(hit);
+    res.on('finish', () => (hit.done = Date.now()));
+  }
   if (!f.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end();
@@ -540,7 +548,8 @@ const server = http.createServer((req, res) => {
     ctx.on('request', r => pend.set(r, `${r.url().replace(base, '')}${r.serviceWorker && r.serviceWorker() ? ' (worker)' : ''}`));
     ctx.on('requestfinished', r => pend.delete(r));
     ctx.on('requestfailed', r => pend.delete(r));
-    const q2 = await ctx.newPage();
+    const q2At = Date.now(),
+      q2 = await ctx.newPage();
     await q2.addInitScript(() => {
       const add = ServiceWorkerContainer.prototype.addEventListener;
       ServiceWorkerContainer.prototype.addEventListener = function (t, ...a) {
@@ -554,7 +563,11 @@ const server = http.createServer((req, res) => {
         `Admin page never reached DOMContentLoaded. Requests pending: ${[...pend.values()].join(', ') || 'none'}. Workers: ${ctx
           .serviceWorkers()
           .map(w => w.url().replace(base, ''))
-          .join(', ')}.`
+          .join(', ')}. admin.html requests the server got since q2 opened: ${
+          ADMIN_HITS.filter(h => h.at >= q2At)
+            .map(h => `${h.url} at +${h.at - q2At} ms, ${h.done ? `answered at +${h.done - q2At} ms` : 'never answered'}`)
+            .join('; ') || 'none'
+        }.`
       );
       throw e;
     });
