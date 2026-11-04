@@ -1819,7 +1819,7 @@
       sd_pair: {name: 'How much pairs of genera differ from each other', o: 'mix', who: 'pair of genera'}
     },
     learn: {
-      n_all: {name: 'Answers on a genus to reach 80% right (a typical genus and player)', o: 'n'},
+      n_all: {name: 'Answers on a genus to reach 80% beyond guessing (a typical genus and player)', o: 'n'},
       slope: {
         name: 'More practice on a genus: twice as many answers on it',
         o: 'right',
@@ -1909,6 +1909,9 @@
       q0 = clamp((p0 - g1) / (1 - g1), 0.001, 0.999);
     return g1 + (1 - g1) * sig(logit(q0) + d);
   };
+  // How many times as often, from an odds ratio exp(u) at the base chance p (Codex review #495: the odds ratio is not
+  // a frequency ratio when the chance is not small; doubling the odds at 30% gives 46%, 1.54 times as often).
+  const freqRatio = (p, u) => shiftP(p, 0, u) / clamp(p, 1e-6, 1);
   // One effect read in words: {name, verdict, tone ('good' | 'bad' | 'info' | 'none' | 'thin'), dir ('up' | 'down' |
   // ''), text (direction and size), range (the 95% range in words), advice, scale ('p' | 's' | 'pts'), base, val, lo, hi}.
   // a: the analysis (its typ: typical values); o.row: the format's row (Formats: its own expected chance and guess rate).
@@ -2154,7 +2157,10 @@
       const r = rep.R[M];
       Object.keys(r.A).forEach(k => {
         const a = r.A[k];
+        // what the plain reading needs stays: the typical values, and each format's own expected chance and guess rate
+        // (Codex review #495: without them a lean milestone read its formats at 75% and 25%)
         r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, typ: a.typ, effects: a.effects, lean: 1};
+        if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
       });
       body -= len[M];
       body += measure(M);
@@ -2216,6 +2222,7 @@
     FMT_PLAIN,
     plainOf,
     shiftP,
+    freqRatio,
     rt,
     zoom,
     photo,

@@ -722,6 +722,10 @@
     if (url.startsWith('https://script.google.com/')) {
       await build();
       await new Promise(r => setTimeout(r, 150)); // a little of the real wait, so "Loading…" states show
+      // ?demo&slow=stats: the photo ratings answer a second after the rest (tests/admin.smoke.js: the answer log is not
+      // published before them).
+      if (/[?&]slow=stats\b/.test(location.search) && /readStats|[?&]stats=/.test(String(opts.body || '') + url))
+        await new Promise(r => setTimeout(r, 1000));
       if ((opts.method || 'GET') !== 'POST') {
         const q = new URL(url).searchParams;
         return ok(q.get('stats') ? stats() : q.get('answers') ? answers() : {ok: false, error: 'input'});

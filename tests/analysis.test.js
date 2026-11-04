@@ -459,7 +459,8 @@ test('compact: the running size gives the same report as measuring it at every s
         const r = rep.R[M];
         Object.keys(r.A).forEach(k => {
           const a = r.A[k];
-          r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, effects: a.effects, lean: 1};
+          r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, typ: a.typ, effects: a.effects, lean: 1};
+          if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
         });
       }
       while (J() > max && rep.M.length > 6) {
@@ -671,4 +672,35 @@ test('sessDesc: sessions, ends, breaks and returns from a small log', () => {
   assert.strictEqual(d.table[0].p, 'A', 'newest first');
   assert.strictEqual(d.table[0].k, 3);
   assert.strictEqual(d.table[0].tail, '111');
+// Codex review #495: a compacted milestone keeps each format's own expected chance and guess rate, so its plain
+// reading does not change when the Formats table is dropped.
+test('compact keeps the formats’ baselines: the plain reading of a lean milestone is unchanged', () => {
+  const fmt = () => ({
+    n: 200,
+    players: 3,
+    effects: [{k: 'd_duel', est: 1, lo: 0.5, hi: 1.5, v: 'clear', unit: 'logit'}],
+    table: [{k: 'duel', label: 'Duel tab', n: 200, right: 0.8, E: 0.9, g0: 0.5, fit: {c: 0.5, d: -1}, pad: 'x'.repeat(4000)}]
+  });
+  const rep = {AV: 1, made: 0, answers: 2000, M: [1000, 2000], R: {1000: {n: 1000, A: {fmt: fmt()}}, 2000: {n: 2000, A: {fmt: fmt()}}}};
+  const full = rep.R[1000].A.fmt,
+    rowOf = a => (a.table || []).find(r => r.k === 'duel'),
+    before = A.plainOf('fmt', full.effects[0], full, {row: rowOf(full)}).text;
+  A.compact(rep, JSON.stringify(rep).length - 3000);
+  const lean = rep.R[1000].A.fmt;
+  assert.ok(lean.lean, 'the first milestone was compacted');
+  assert.strictEqual(A.plainOf('fmt', lean.effects[0], lean, {row: rowOf(lean)}).text, before);
+});
+
+// Codex review #495: a pair's model effect is a change in the odds; "times as often" is the ratio of the chances at the
+// typical mix-up rate (doubling the odds at 30% is 1.54 times as often, not twice).
+test('freqRatio: an odds ratio read as how many times as often, at a given base rate', () => {
+  near(A.freqRatio(0.3, Math.log(2)), 1.54, 0.01, 'odds ×2 at 30%');
+  near(A.freqRatio(0.01, Math.log(2)), 1.98, 0.01, 'odds ×2 at 1%: about twice');
+  near(A.freqRatio(0.3, 0), 1, 1e-9, 'no effect');
+});
+
+// Codex review #495: the answers to mastery solve for 80% recognised beyond guessing (MASTER on sig(eta)), not 80%
+// raw right answers: every label says "beyond guessing".
+test('the answers-to-mastery label says beyond guessing', () => {
+  assert.match(A.PLAIN.learn.n_all.name, /beyond guessing/);
 });

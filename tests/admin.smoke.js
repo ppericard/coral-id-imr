@@ -585,6 +585,71 @@ const WIDTHS = [390, 1280];
         .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
       await q.close();
     }
+    // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
+    // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
+    // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
+    // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
+    // pages opened (Health) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
+    if (w === ws[0]) {
+      const q = await p.context().newPage();
+      q.on('pageerror', e => fails.push(`${w}px sheet reads page error: ${e.message}`));
+      const calls = () => q.evaluate(() => window.DEMO_CALLS.map(c => ({...c})));
+      const count = L => L.reduce((o, c) => ((o[c.k] = (o[c.k] || 0) + 1), o), {});
+      const quiet = () =>
+        q
+          .waitForFunction(
+            () =>
+              window.DEMO_PENDING === 0 &&
+              typeof DRAFT !== 'undefined' &&
+              DRAFT &&
+              DRAFT.genera &&
+              !/^\s*Loading/.test(document.getElementById('view').innerText),
+            null,
+            {timeout: 20000}
+          )
+          .then(() => q.waitForTimeout(1500))
+          .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
+      await q.goto(base + 'admin.html?demo#~todo');
+      await quiet();
+      const n = count(await calls());
+      if (n.answers !== 1 || n.stats !== 1 || n.events !== 1 || n.reports !== 1)
+        fails.push(`sheet reads: To do asked ${JSON.stringify(n)}, once each expected`);
+      await q.route(/\/cand\.json$/, r => setTimeout(() => r.continue().catch(() => {}), 2000));
+      await q.goto(base + 'admin.html?demo&load=2#~users');
+      await quiet();
+      const [a] = (await calls()).filter(c => c.k === 'answers'),
+        cj = await q.evaluate(() => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart);
+      if (!a || !(cj > 0) || !(a.t0 < cj))
+        fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
+      await q.unroute(/\/cand\.json$/);
+      await q.goto(base + 'admin.html?demo&load=3#~cand');
+      await quiet();
+      const before = (await calls()).length;
+      await q.evaluate(() => (location.hash = '~health'));
+      await quiet();
+      const L = (await calls()).slice(before),
+        ans = L.find(c => c.k === 'answers'),
+        pg = L.find(c => c.k === 'pages');
+      if (!ans || !pg || !(pg.t0 < ans.t1))
+        fails.push(
+          `sheet reads: Health asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
+        );
+      // (4) The answer log is never published before the photo ratings (Codex review #488): Health and To do's Health line
+      // read both once the log is there. The ratings answer a second late here (admin-demo.js slow=stats).
+      await q.addInitScript(() => {
+        window.__early = 0;
+        const t = setInterval(() => {
+          try {
+            if (ANS && !STATS) window.__early++;
+            if (ANS && STATS) clearInterval(t);
+          } catch (e) {} // before admin.js has run
+        }, 10);
+      });
+      await q.goto(base + 'admin.html?demo&slow=stats&load=4#~health');
+      await quiet();
+      if (await q.evaluate(() => window.__early)) fails.push('sheet reads: the answer log was published before the photo ratings');
+      await q.close();
+    }
     await go('~users');
     await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
     await settle();
