@@ -103,15 +103,20 @@
   // iNaturalist experts got the species wrong; only his click writes it, never an agent or the auto-sort, and a photo he
   // marked so is never proposed again), tags {f: jt}, ease {f: 1-5}, phase {f}, crop {f: [l, t, r, b]} (the judging
   // rubric's fields, judging/FISH.md), auto {day: {f: code}} (the fish auto-sort's log). Coral keys are never touched.
-  // Fish log codes: [?|-] a|r [@t]: a proposed in, r set aside; ? a Check (not applied, shown to Pierre blind), - undone
-  // by Pierre (never applied again), @t when he answered or corrected it (Unix seconds in base 36, as the coral codes).
+  // Fish log codes: [?|-] a|r [tepc] [@t]: a proposed in, r set aside; ? a Check (not applied, shown to Pierre blind), -
+  // undone by Pierre (never applied again); after an a, the fields the run wrote (t tags, e ease, p phase, c crop: a value
+  // Pierre had already given is not written, so not listed, and an Undo leaves it alone; Codex review #479); @t when he
+  // answered or corrected it (Unix seconds in base 36, as the coral codes).
+  const FISHW = {tags: 't', ease: 'e', phase: 'p', crop: 'c'};
   // Observations in play per species (Pierre, 2026-11-04): 8 per circle-1 species, 12 for the PDF's 24 most sighted
   // (fish.json cs, the cheatsheet), at most 20 for now. The auto-sort proposes up to the target; Pierre adds beyond it.
   const FISHT = {obs: 8, top: 12, cap: 20};
   const fishTarget = sp => (sp && sp.cs ? FISHT.top : FISHT.obs);
   function fishParse(code) {
-    const m = /^([?-]?)([ar])(?:@([0-9a-z]+))?$/.exec(code || '');
-    return m && {check: m[1] === '?', undone: m[1] === '-', kind: m[2], ...(m[3] ? {t: parseInt(m[3], 36)} : {})};
+    const m = /^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
+    if (!m || (m[3] && (m[2] !== 'a' || m[1] === '?'))) return null;
+    const w = Object.keys(FISHW).filter(k => m[3].includes(FISHW[k]));
+    return {check: m[1] === '?', undone: m[1] === '-', kind: m[2], ...(w.length ? {w} : {}), ...(m[4] ? {t: parseInt(m[4], 36)} : {})};
   }
   // Every logged fish photo: {f: {day, code, d}} (the latest day wins, as autoIdx).
   function fishIdx(F) {
@@ -189,8 +194,9 @@
     const N = {...F, add: {...(F.add || {})}, seen: {...(F.seen || {})}},
       L = {...((F.auto || {})[day] || {})},
       put = (k, f, v) => {
-        if (v == null || (F[k] || {})[f] != null) return;
+        if (v == null || (F[k] || {})[f] != null) return '';
         N[k] = {...(N[k] || {}), [f]: v};
+        return FISHW[k];
       };
     plan.forEach(({sid, p, s, check}) => {
       const f = p.f;
@@ -207,11 +213,7 @@
           r.add(o);
         }
         N.add[f] = sid;
-        put('tags', f, s.tags);
-        put('ease', f, s.ease);
-        put('phase', f, s.phase);
-        put('crop', f, s.crop);
-        L[f] = 'a';
+        L[f] = 'a' + put('tags', f, s.tags) + put('ease', f, s.ease) + put('phase', f, s.phase) + put('crop', f, s.crop);
         R.add++;
       } else {
         N.seen[f] = 1;
@@ -241,8 +243,10 @@
       };
     if (x.d.kind === 'a') {
       drop('add');
-      if (s && s.keep === 'add')
-        ['tags', 'ease', 'phase', 'crop'].forEach(k => drop(k, {tags: s.tags, ease: s.ease, phase: s.phase, crop: s.crop}[k]));
+      // Only the fields the run wrote (the code lists them), and only while they still hold its value: a value Pierre had
+      // given before the run, or changed since, stays his.
+      const v = s && s.keep === 'add' ? {tags: s.tags, ease: s.ease, phase: s.phase, crop: s.crop} : {};
+      (x.d.w || []).forEach(k => k in v && drop(k, v[k]));
     } else drop('seen', 1);
     N.auto = {...N.auto, [x.day]: {...N.auto[x.day], [f]: '-' + x.code}};
     return N;

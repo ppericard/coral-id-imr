@@ -1747,8 +1747,32 @@ const WIDTHS = [390, 1280];
           r.again = !!(DRAFT.fish.add || {})[f];
           return r;
         }, FF[0][1]);
-        if (fu.add || fu.code !== '-a' || fu.again) fails.push(`${w}px Fish auto-sort: Undo ${JSON.stringify(fu)}`);
+        if (fu.add || !/^-a[tepc]*$/.test(fu.code) || fu.again) fails.push(`${w}px Fish auto-sort: Undo ${JSON.stringify(fu)}`);
       }
+      // Over 30 fish decisions: the latest 30, then "All N" shows every one (Codex review #479).
+      const fl = await p.evaluate(() => {
+        const keep = DRAFT.fish,
+          day = '2026-11-01',
+          L = Object.fromEntries(Array.from({length: 35}, (_, i) => [`fish-test-cand-${i}`, 'r']));
+        DRAFT.fish = {...keep, auto: {...keep.auto, [day]: L}};
+        AALL = false;
+        render();
+        const n0 = document.querySelectorAll('[data-ff]').length,
+          b = [...document.querySelectorAll('[data-aall]')].find(
+            x =>
+              x.closest('.adm-autodet') &&
+              /All \d+/.test(x.textContent) &&
+              x.previousElementSibling &&
+              x.previousElementSibling.querySelector('[data-ff]')
+          );
+        if (b) b.click();
+        const n1 = document.querySelectorAll('[data-ff]').length;
+        DRAFT.fish = keep;
+        AALL = false;
+        render();
+        return {n0, b: !!b, n1};
+      });
+      if (fl.n0 !== 30 || !fl.b || fl.n1 < 36) fails.push(`${w}px Fish auto-sort: All for over 30 decisions ${JSON.stringify(fl)}`);
       await p.evaluate(() => {
         ADET = false;
       });

@@ -3640,7 +3640,9 @@ function autoBlock(det) {
                 const p = (FISHC && FISHC.byF[f]) || {f};
                 return `<figure class="adm-repl-tile adm-atile" data-ff="${esc(f)}">${p.src ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : ''}<figcaption>${esc(p.t || '')} · ${x.d.kind === 'a' ? 'in' : 'set aside'} · ${x.day}</figcaption><button type="button" class="adm-link" data-faundo>Undo</button></figure>`;
               })
-              .join('')}</div>`
+              .join(
+                ''
+              )}</div>${FA.length > 30 && !AALL ? `<button type="button" class="adm-link" data-aall>All ${FA.length}</button>` : ''}`
           : ''
       }</div>`;
   }
@@ -3653,12 +3655,14 @@ function bindAuto(scope) {
       ADET = !ADET;
       render();
     };
-  const al = scope.querySelector('[data-aall]');
-  if (al)
-    al.onclick = () => {
-      AALL = true;
-      render();
-    };
+  // "All N" under the coral and under the fish decisions (Codex review #479: the fish list showed its latest 30 only).
+  scope.querySelectorAll('[data-aall]').forEach(
+    al =>
+      (al.onclick = () => {
+        AALL = true;
+        render();
+      })
+  );
   scope.querySelectorAll('[data-af]').forEach(el => {
     const f = el.dataset.af,
       u = el.querySelector('[data-aundo]'),

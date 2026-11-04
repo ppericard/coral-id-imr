@@ -169,9 +169,24 @@ test('fishUndo: one fish auto decision taken back, never applied again; a value 
     U = fishUndo(fishUndo(mine, a, fishSure(sug[a])), b, fishSure(sug[b]));
   assert.ok(!U.add && !U.seen, 'the add and the reject leave');
   assert.deepStrictEqual([U.tags, U.phase, U.ease], [undefined, undefined, {[a]: 2}], 'his ease stays his');
-  assert.deepStrictEqual(U.auto[day], {[a]: '-a', [b]: '-r'});
+  assert.deepStrictEqual(U.auto[day], {[a]: '-atep', [b]: '-r'});
   assert.strictEqual(fishUndo(U, a, fishSure(sug[a])), U, 'an undone decision is not undone twice');
   const again = fishRun(cands, sug, {}, U, day);
   assert.strictEqual(again.F, U, 'never applied again');
   assert.deepStrictEqual(fishCompare(U), [], 'an undone decision counts in no agreement');
+});
+
+test("fishUndo leaves alone a value Pierre had given before the run, even one equal to the pass's (Codex review #479)", () => {
+  const [a] = ids,
+    sug = {[a]: {...sure(5), ph: 'male', c: [0.1, 0, 0.9, 1]}},
+    day = '2026-11-04',
+    before = {tags: {[a]: 'p1g0sm1'}, ease: {[a]: 5}}; // his, the same values the pass gives
+  const {F} = fishRun({s1: [{f: a, o: 'oa'}]}, sug, {}, before, day);
+  assert.strictEqual(F.auto[day][a], 'apc', 'the run wrote the phase and the crop only');
+  const U = fishUndo(F, a, fishSure(sug[a]));
+  assert.deepStrictEqual([U.tags, U.ease], [before.tags, before.ease], 'his tags and ease stay');
+  assert.deepStrictEqual([U.phase, U.crop, U.add], [undefined, undefined, undefined], 'what the run wrote leaves');
+  assert.strictEqual(U.auto[day][a], '-apc');
+  assert.deepStrictEqual(fishParse('-apc'), {check: false, undone: true, kind: 'a', w: ['phase', 'crop']});
+  ['rt', '?at', 'ax'].forEach(c => assert.strictEqual(fishParse(c), null, c));
 });
