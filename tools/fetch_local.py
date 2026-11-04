@@ -25,7 +25,7 @@
 # by tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
 # --plan: offline, prints as JSON what a run would refill (new observations it may add per genus and source, and a
 # Key-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
-import json, re, sys, time, urllib.request
+import json, re, sys, time, urllib.error, urllib.request
 from collections import Counter
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from excluded import excluded, drop_excluded, set_aside, SUG
@@ -45,7 +45,29 @@ def flag(name, default):
     return int(a[a.index(name) + 1]) if name in a else default
 PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
-get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
+# iNaturalist slows clients down with HTTP 429 ("normal_throttling"): the Candidate photos Action of 2026-11-04 died on
+# one after a curation publish, so Pierre's added photos were not downloaded. Every request now waits PACE seconds after
+# the last (iNaturalist asks for about one a second) and, on 429, 5xx or a network error, waits (Retry-After when given,
+# else WAITS) and tries again, failing only after the last wait.
+PACE, WAITS = 1.0, (5, 15, 30, 60, 120)
+_last = [0.0]
+
+
+def get(u):
+    for k in range(len(WAITS) + 1):
+        time.sleep(max(0.0, _last[0] + PACE - time.time()))
+        _last[0] = time.time()
+        try:
+            return json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
+        except urllib.error.HTTPError as e:
+            if k == len(WAITS) or not (e.code == 429 or e.code >= 500): raise
+            ra = (e.headers or {}).get('Retry-After') if hasattr(e, 'headers') else None
+            wait = int(ra) if ra and str(ra).isdigit() else WAITS[k]
+        except (urllib.error.URLError, TimeoutError):
+            if k == len(WAITS): raise
+            wait = WAITS[k]
+        print(f'  iNaturalist busy, waiting {wait} s (try {k + 2} of {len(WAITS) + 1})', file=sys.stderr)
+        time.sleep(wait)
 
 
 def kept_views(g, G, cur):
@@ -219,7 +241,6 @@ def main():
             # Room the whole country could not fill, from ALL its observations: when the one page read is not all of them,
             # later pages may still hold some, so nothing from abroad (Codex review #388).
             if where == PHILIPPINES: ph_room = 0 if more else r
-            time.sleep(0.5)
         if g in cand and not cand[g]: del cand[g]
         print(g, len(cand.get(g, [])))
     d['cand'] = cand

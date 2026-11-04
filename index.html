@@ -26,7 +26,7 @@
 <link rel="preload" href="fonts/source-sans-3-normal.woff2" as="font" type="font/woff2" crossorigin>
 <!-- Slow first visit (beginner RA review, 2026-11-02): data.json, the biggest start-up file, downloads alongside the
      scripts instead of after app.js has run (same URL as the fetch in app.js; crossorigin so the fetch can reuse it). -->
-<link rel="preload" href="data.json?v=38" as="fetch" crossorigin>
+<link rel="preload" href="data.json?v=37" as="fetch" crossorigin>
 <!-- Load order (Pierre, 2026-11-02; field HAR: ~86 kbit/s from the IMR field station, everything asked at once, so every
      file got a sliver of the line and all came at 20-25 s). The files come in tiers, one tier after the other:
      1 Home (preloaded below, with the stylesheets, the main font and data.json; proto/lab.css also holds the layout of

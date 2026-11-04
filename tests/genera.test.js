@@ -198,3 +198,37 @@ test('starWaits: a starred genus is not eligible before its references are met, 
   // A reference never waits itself; nor does a genus unknown to the data.
   ['R1', 'R2', 'O', 'W', 'Z'].forEach(n => assert.strictEqual(starWaits(D, n, list, met([])), false, n));
 });
+
+// iNaturalist's HTTP 429 (Candidate photos Action, 2026-11-04: the run died on one and Pierre's added photos were not
+// downloaded): fetch_local's get waits and tries again (Retry-After when given), and gives up only after its last wait.
+test('fetch_local get: waits and retries on 429 and 5xx, honours Retry-After, raises after the last wait', () => {
+  const out = JSON.parse(
+    py(`
+import io, urllib.error, fetch_local as fl
+slept, calls = [], []
+fl.time.sleep = lambda s: slept.append(round(s))
+def fail(code, ra=None):
+  h = {'Retry-After': ra} if ra else {}
+  return urllib.error.HTTPError('u', code, 'x', h, None)
+def run(seq):
+  slept.clear(); calls.clear(); it = iter(seq)
+  def op(req, timeout=60):
+    calls.append(1); x = next(it)
+    if isinstance(x, Exception): raise x
+    return io.BytesIO(json.dumps(x).encode())
+  fl.urllib.request.urlopen = op
+  try: return {'ok': fl.get('https://x/u'), 'calls': len(calls), 'waits': [s for s in slept if s >= 5]}
+  except urllib.error.HTTPError as e: return {'raised': e.code, 'calls': len(calls)}
+print(json.dumps({
+  'r429': run([fail(429), fail(429, '7'), {'a': 1}]),
+  'r503': run([fail(503), {'b': 2}]),
+  'r404': run([fail(404)]),
+  'gaveup': run([fail(429)] * 6),
+}))
+`)
+  );
+  assert.deepStrictEqual(out.r429, {ok: {a: 1}, calls: 3, waits: [5, 7]});
+  assert.deepStrictEqual(out.r503, {ok: {b: 2}, calls: 2, waits: [5]});
+  assert.deepStrictEqual(out.r404, {raised: 404, calls: 1});
+  assert.deepStrictEqual(out.gaveup, {raised: 429, calls: 6});
+});
