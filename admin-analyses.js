@@ -15,13 +15,13 @@ const anSave = () => store.set('reefid-admin-an', {m: AN.m});
 // Views: [address, analysis key in the report, title]
 const AN_VIEWS = [
   ['~an', null, 'Overview'],
-  ['~an-rt', 'rt', 'Response time'],
-  ['~an-zoom', 'zoom', 'Zoom'],
-  ['~an-photo', 'photo', 'Photo factors'],
-  ['~an-fmt', 'fmt', 'Formats'],
-  ['~an-conf', 'conf', 'Confusions'],
-  ['~an-learn', 'learn', 'Learning curves'],
-  ['~an-back', 'back', 'Comeback'],
+  ['~an-rt', 'rt', 'Answer time'],
+  ['~an-zoom', 'zoom', 'Enlarging photos'],
+  ['~an-photo', 'photo', 'What makes a photo hard'],
+  ['~an-fmt', 'fmt', 'Question formats'],
+  ['~an-conf', 'conf', 'Genera mixed up'],
+  ['~an-learn', 'learn', 'Learning with practice'],
+  ['~an-back', 'back', 'After a break'],
   ['~an-sess', 'sess', 'Sessions']
 ];
 const anKey = h => (AN_VIEWS.find(v => v[0] === h) || [])[1];
@@ -52,43 +52,46 @@ const anM = rep => (AN.m !== 'all' && rep.R[AN.m] ? Number(AN.m) : rep.M[rep.M.l
 /* ---------- Formatting ---------- */
 const anNum = (v, d = 2) => (v == null || !isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d));
 const anInt = v => (v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('en-US'));
-// One effect's value in its unit: log time as a % change in time, a rate as %, a difference of rates in points.
-function anFmt(e, v) {
-  if (v == null || !isFinite(v)) return '–';
-  if (e.sd) return v.toFixed(2);
-  if (e.unit === 'log') return anNum((Math.exp(v) - 1) * 100, 0) + '%';
-  if (e.unit === 'p') return /^g_/.test(e.k) ? Math.round(v * 100) + '%' : anNum(v * 100, 1) + ' pts';
-  if (e.unit === 'n') return v >= 999 ? '999+' : anInt(v);
-  return anNum(v);
-}
-// The smallest effect that matters, in the effect's unit (a rate's in points).
-const anSes = (e, v) =>
-  e.unit === 'log'
-    ? `${Math.round((Math.exp(v) - 1) * 100)}%`
-    : e.unit === 'p'
-      ? `${Math.round(v * 100)} pts`
-      : e.unit === 'n'
-        ? anInt(v)
-        : v.toFixed(2);
-const anCI = e => (e.lo == null ? '' : `[${anFmt(e, e.lo)}, ${anFmt(e, e.hi)}]`);
-const VERD = {
-  clear: ['✓', 'Clear'],
-  margin: ['≈', 'Within the margin'],
-  thin: ['…', 'Not enough data yet'],
-  none: ['–', 'No such answers yet'],
-  nolog: ['∅', 'Not in the answer log']
+/* ---------- The plain reading (analysis.js plainOf; Pierre, 2026-11-04: "a non-statistician must understand it at a
+// glance"): each effect says what is compared, which way it goes and how much, as a chance of a right answer (or
+// seconds, or a chance to stop) for a typical player and photo, with its likely range; one colour per reading. ---------- */
+const AN_TONE = {
+  good: ['▲', 'Helps'],
+  bad: ['▼', 'Hurts'],
+  info: ['●', 'Clear'],
+  none: ['–', 'No clear effect'],
+  thin: ['…', 'Not enough data yet']
 };
-// The verdict line (Pierre, 2026-11-04): what the data can and cannot say yet.
-function anVerdict(e) {
-  if (e.v === 'clear') return `Clear: ${anFmt(e, e.est)} ${anCI(e)}`;
-  if (e.v === 'margin') return `Within the margin of error: no effect beyond ±${anSes(e, e.sesoi)} ${anCI(e)}`;
-  if (e.v === 'thin')
-    return `Not enough data yet — CI includes ${e.nul != null ? anFmt(e, e.nul) : '0'} (n = ${anInt(e.n)}${e.need ? `, needs ≈ ${anInt(e.need)} answers${e.hw != null ? ` for a ±${anSes(e, e.hw)} CI` : ''}` : ''})`;
-  return VERD[e.v] ? VERD[e.v][1] : '';
+// The outcome each chart is drawn on, in words.
+const AN_OUT = {
+  right: 'Chance of a right answer',
+  time: 'Seconds to answer',
+  stop: 'Chance to end the session after the answer',
+  mix: 'Chance to pick a given wrong genus when it is offered',
+  pts: 'Right answers against the app’s expectation',
+  beyond: 'Chance of recognising it, beyond guessing',
+  guess: 'Success of a pure guess'
+};
+const anSpec = (key, e) => (ANALYSIS.PLAIN[key] || {})[e.k] || {o: 'right'};
+// The format row of a Formats effect (its own expected chance and guess rate are the typical values).
+const anRowOf = (a, key, e) => (key === 'fmt' ? (a.table || []).find(r => e.k.replace(/^(g|d|oe)_/, '') === r.k) : null);
+const anPlain = (key, e, a) => ANALYSIS.plainOf(key, e, a, {row: anRowOf(a, key, e)});
+const anPc = v =>
+  v == null || !isFinite(v) ? '–' : v > 0 && v < 0.095 ? (Math.round(v * 1000) / 10).toFixed(1) + '%' : Math.round(v * 100) + '%';
+const anSec = v => (v == null || !isFinite(v) ? '–' : (v < 10 ? v.toFixed(1) : Math.round(v)) + ' s');
+const anPts = v => (v == null || !isFinite(v) ? '–' : Math.round(v * 100) === 0 ? '0 pts' : anNum(v * 100, 0) + ' pts');
+const anTf = P => (P.scale === 's' ? anSec : P.scale === 'pts' ? anPts : anPc);
+// The verdict pill: helps / hurts / clear (neither good nor bad: time, the app's own calibration) / no clear effect /
+// not enough data yet; "new" when it became clear at this milestone.
+function anPill(P, e, fresh) {
+  const t = AN_TONE[P.tone] || AN_TONE.thin,
+    label = e.v === 'none' || e.v === 'nolog' ? P.verdict : t[1],
+    need = e.v === 'thin' && e.need ? ` title="About ${anInt(e.need)} answers would settle it"` : '';
+  return `<span class="adm-an-v t-${P.tone}"${need}>${t[0]} ${esc(label)}</span>${fresh ? ' <span class="adm-src new" title="Clear since the previous milestone">new</span>' : ''}`;
 }
-const anPill = (e, fresh) =>
-  `<span class="adm-an-v v-${e.v}" title="${esc(anVerdict(e))}">${VERD[e.v] ? VERD[e.v][0] + ' ' + VERD[e.v][1] : ''}</span>${fresh ? ' <span class="adm-src new" title="Clear since the previous milestone">new</span>' : ''}`;
-const anNeed = e => (e.v === 'thin' && e.need ? `≈ ${anInt(e.need)}` : '');
+// What it does, in words, with its likely range and what it suggests when it is clear.
+const anSays = P =>
+  `${esc(P.text)}${P.tone !== 'thin' && P.tone !== 'none' && P.range ? `<small class="adm-an-ci">Likely ${esc(P.range)}</small>` : ''}${P.advice ? `<small class="adm-an-adv">→ ${esc(P.advice)}</small>` : ''}`;
 
 /* ---------- Charts: inline SVG at the real pixel width, tokens only (admin.css .adm-an-*) ---------- */
 const anW = () => Math.max(280, Math.min(($v.clientWidth || 600) - 26, 1220));
@@ -134,12 +137,66 @@ function forest(rows, o = {}) {
     s += `<g><title>${esc(r.title || `${r.label}: ${tf(r.est)}`)}</title><rect class="an-hit" x="0" y="${y - rh / 2}" width="${w}" height="${rh}"/><text class="an-lab" x="${lw}" y="${y + 4}" text-anchor="end">${esc(fit(r.label, lw))}</text>`;
     if (isFinite(r.lo) && isFinite(r.hi)) s += `<line class="an-ci" x1="${X(r.lo)}" x2="${X(r.hi)}" y1="${y}" y2="${y}"/>`;
     if (r.ref != null) s += `<path class="an-ref" d="M${X(r.ref)} ${y - 6}l6 6-6 6-6-6z"/>`;
-    s += `<circle class="an-dot${r.dim ? ' dim' : ''}" cx="${X(r.est)}" cy="${y}" r="5"/></g>`;
+    s += `<circle class="an-dot${r.dim ? ' dim' : ''}${r.tone ? ' t-' + r.tone : ''}" cx="${X(r.est)}" cy="${y}" r="5"/></g>`;
   });
-  return svg(w, h, o.title || 'Estimates with 95% intervals', s);
+  return svg(w, h, o.title || 'Estimates with their likely range', s);
 }
-// A log-time axis read as % time.
-const LOGAX = {fwd: v => Math.exp(v) - 1, df: d => anNum(d * 100, 0) + '%'};
+// Dot and range, one row per effect, its name above its line (whole on a phone): the dot = the estimate, the line = its
+// likely range (95%), the dashed line = the typical value it is compared with, a diamond = a row's own reference.
+// rows: [{label, est, lo, hi, ref, tone, title}]; o: {tf, nul, lab (the dashed line's name), title, a, b (axis ends)}.
+function dotRange(rows, o = {}) {
+  rows = rows.filter(r => r.est != null && isFinite(r.est));
+  if (!rows.length) return '';
+  const w = o.w || anW(),
+    x0 = 10,
+    x1 = w - 14,
+    top = 6,
+    per = Math.max(12, Math.floor((x1 - x0) / 6.6)),
+    wrap = t => {
+      const L = [''];
+      String(t)
+        .split(' ')
+        .forEach(wd =>
+          L[L.length - 1].length + wd.length + 1 > per && L[L.length - 1]
+            ? L.push(wd)
+            : (L[L.length - 1] += (L[L.length - 1] ? ' ' : '') + wd)
+        );
+      return L;
+    },
+    labs = rows.map(r => wrap(r.label)),
+    hs = labs.map(L => 26 + 14 * L.length),
+    y0s = hs.map((v, i) => top + hs.slice(0, i).reduce((x, z) => x + z, 0)),
+    h = top + hs.reduce((x, z) => x + z, 0) + 30,
+    vals = rows
+      .flatMap(r => [r.est, r.lo, r.hi, r.ref])
+      .concat(o.nul == null ? [] : [o.nul])
+      .filter(v => v != null && isFinite(v));
+  let a = o.a ?? Math.min(...vals),
+    b = o.b ?? Math.max(...vals);
+  const pad = (b - a) * 0.08 || 0.05;
+  ((a = o.a ?? a - pad), (b = o.b ?? b + pad));
+  if (o.clamp) ((a = Math.max(o.clamp[0], a)), (b = Math.min(o.clamp[1], b)));
+  const X = v => x0 + ((Math.max(a, Math.min(b, v)) - a) / (b - a || 1)) * (x1 - x0),
+    tf = o.tf || (v => anNum(v, 1)),
+    yb = h - 26;
+  let s = '';
+  ticks(a, b).forEach(
+    t =>
+      (s += `<line class="an-grid" x1="${X(t)}" x2="${X(t)}" y1="${top}" y2="${yb}"/><text class="an-tick" x="${X(t)}" y="${yb + 16}" text-anchor="middle">${esc(tf(t))}</text>`)
+  );
+  if (o.nul != null)
+    s += `<line class="an-zero" x1="${X(o.nul)}" x2="${X(o.nul)}" y1="${top}" y2="${yb}"/><text class="an-tick an-nul" x="${Math.min(X(o.nul) + 4, x1 - 60)}" y="${h - 1}">${esc(o.lab || 'typical')}: ${esc(tf(o.nul))}</text>`;
+  rows.forEach((r, i) => {
+    const L = labs[i],
+      y = y0s[i] + 14 * L.length;
+    s += `<g><title>${esc(r.title || r.label)}</title><rect class="an-hit" x="0" y="${y0s[i]}" width="${w}" height="${hs[i]}"/><text class="an-lab" x="${x0}" y="${y0s[i] + 12}">${L.map((t, j) => `<tspan x="${x0}" dy="${j ? 14 : 0}">${esc(t)}</tspan>`).join('')}</text>`;
+    if (isFinite(r.lo) && isFinite(r.hi))
+      s += `<line class="an-ci${r.tone ? ' t-' + r.tone : ''}" x1="${X(r.lo)}" x2="${X(r.hi)}" y1="${y + 14}" y2="${y + 14}"/>`;
+    if (r.ref != null) s += `<path class="an-ref" d="M${X(r.ref)} ${y + 8}l6 6-6 6-6-6z"/>`;
+    s += `<circle class="an-dot${r.tone ? ' t-' + r.tone : ''}" cx="${X(r.est)}" cy="${y + 14}" r="5"/></g>`;
+  });
+  return svg(w, h, o.title || 'Effects and their likely range', s);
+}
 // Lines on a 0-1 (or given) y scale: series [{label, pts: [[x, y]], dash, step, dots}], one axis only.
 function lines(series, o = {}) {
   const w = o.w || anW(),
@@ -218,58 +275,80 @@ function anWho(id, i) {
   const u = ((USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
   return u ? cut(u.name) : `<span class="adm-cut" title="${esc(id)}">P${i + 1}</span>`;
 }
-// The effects of one analysis: the verdict table (exact numbers) beside its forest plots, one per unit.
+// The effects of one analysis: one dot-and-range chart per outcome (on the scale it is read on, labelled in words), then
+// the table: what is compared, what it does (direction, size, likely range, what it suggests), the verdict. The spreads
+// (how much players, genera, photos differ) get their own table, in words.
 function anEffects(a, key, fresh) {
-  const E = a.effects || [],
-    rows = E.map(
-      e =>
-        `<tr data-ek="${esc(key + ':' + e.k)}"><td>${esc(e.label)}</td><td class="n">${anFmt(e, e.est)}<small class="adm-an-ci">${anCI(e)}</small></td><td>${anPill(e, fresh.has(key + ':' + e.k))}</td><td class="n" title="Answers that would resolve it">${anNeed(e)}</td></tr>`
-    );
-  const units = [
-    ...new Set(E.filter(e => e.est != null && e.unit !== 'n').map(e => (e.sd ? 'sd' : e.unit + (/^g_/.test(e.k) ? 'g' : ''))))
+  const E = (a.effects || []).map(e => [e, anPlain(key, e, a), anSpec(key, e)]),
+    main = E.filter(([e]) => !e.sd),
+    sds = E.filter(([e]) => e.sd);
+  const outs = [
+    ...new Set(main.filter(([e, P, S]) => P.val != null && e.v !== 'none' && ANALYSIS.outOf(S) !== 'n').map(([, , S]) => ANALYSIS.outOf(S)))
   ];
-  const plot = units
-    .map(u => {
-      // an estimate the fit could not hold (an interval wider than 20) stays in the table only, so the axis stays readable
-      const L = E.filter(e => e.est != null && !(e.hi - e.lo > 20) && (e.sd ? 'sd' : e.unit + (/^g_/.test(e.k) ? 'g' : '')) === u);
+  const plots = outs
+    .map(o => {
+      // a range the fit could not hold (wider than 20 on its own scale) stays in the table only
+      const L = main.filter(([e, P, S]) => ANALYSIS.outOf(S) === o && P.val != null && !(e.hi - e.lo > 20));
       if (!L.length) return '';
-      const tf = v => anFmt(L[0], v);
-      return forest(
-        L.map(e => ({label: e.label, est: e.est, lo: e.lo, hi: e.hi, ref: e.ref, title: `${e.label}: ${anVerdict(e)}`})),
+      const P0 = L[0][1],
+        same = L.every(([, P]) => P.base === P0.base),
+        pscale = P0.scale === 'p';
+      return `<h4 class="adm-an-out">${esc(AN_OUT[o])}</h4>${dotRange(
+        L.map(([e, P]) => ({
+          label: P.name,
+          est: P.val,
+          lo: P.lo,
+          hi: P.scale === 's' && P.hi > P.base * 10 ? P.base * 10 : P.hi,
+          ref: same ? null : P.base,
+          tone: P.tone,
+          title: `${P.name}: ${P.text}`
+        })),
         {
-          tf,
-          nul: u === 'pg' ? null : 0,
-          title: `${anTitle(key)}: ${u === 'sd' ? 'spread between levels' : 'effects'}`,
-          ...(u === 'log' ? LOGAX : {})
+          tf: anTf(P0),
+          nul: same ? P0.base : null,
+          lab: o === 'pts' ? 'as the app expects' : o === 'guess' ? 'app' : 'typical',
+          title: `${anTitle(key)}: ${AN_OUT[o]}`,
+          ...(pscale ? {clamp: [0, 1]} : {})
         }
-      );
+      )}`;
     })
     .join('');
-  return anCard('Effects', plot + anTable(['Effect', '#Estimate [95% CI]', 'Verdict', '#Needs'], rows, 'adm-an-eff'), 'wide');
+  const row = ([e, P]) =>
+    `<tr data-ek="${esc(key + ':' + e.k)}"><td class="an-c">${esc(P.name)}</td><td class="adm-an-says">${anSays(P)}</td><td class="an-v">${anPill(P, e, fresh.has(key + ':' + e.k))}</td></tr>`;
+  const head = ['Compared', 'What it does', 'Verdict'];
+  return (
+    anCard('What changes the result', plots + anTable(head, main.map(row), 'adm-an-eff'), 'wide') +
+    (sds.length ? anCard('How much they differ', anTable(['Between', 'In words', 'Verdict'], sds.map(row), 'adm-an-eff'), 'wide') : '')
+  );
 }
-// How each estimate moved from milestone to milestone (est and its interval), small multiples.
+// How each estimate moved from milestone to milestone, read on its own scale (small multiples).
 function anConv(rep, key) {
   const Ms = rep.M.filter(M => rep.R[M].A[key]);
   if (Ms.length < 2) return '';
-  const last = rep.R[Ms[Ms.length - 1]].A[key].effects.filter(e => e.est != null && e.unit !== 'n' && !(e.hi - e.lo > 20));
+  const lastA = rep.R[Ms[Ms.length - 1]].A[key],
+    last = (lastA.effects || []).filter(e => e.est != null && !e.sd && e.unit !== 'n' && !(e.hi - e.lo > 20));
   const W = anW(),
     // the grid's columns follow the size classes (admin.css .adm-an-convs: 1 on phones, 2 on tablets, 3 on desktops)
     cols = matchMedia('(min-width: 1024px)').matches ? 3 : matchMedia('(min-width: 600px)').matches ? 2 : 1,
     w = Math.floor((W - (cols - 1) * 12) / cols) - 4;
   const cells = last.map(e => {
-    const P = Ms.map(M => [M, (rep.R[M].A[key].effects || []).find(x => x.k === e.k)]).filter(
-      ([, x]) => x && x.est != null && isFinite(x.est)
-    );
+    const P = Ms.map(M => {
+      const A = rep.R[M].A[key],
+        x = ((A && A.effects) || []).find(y => y.k === e.k);
+      return [M, x && x.est != null && isFinite(x.est) ? anPlain(key, x, A) : null];
+    }).filter(([, x]) => x && x.val != null && isFinite(x.val));
     if (P.length < 2) return '';
-    const vs = P.flatMap(([, x]) => [x.lo, x.hi, x.est]).filter(isFinite),
-      ya = Math.min(e.sd ? 0 : Math.min(0, ...vs), ...vs),
-      yb = Math.max(e.sd ? 0 : Math.max(0, ...vs), ...vs);
-    return `<div class="adm-an-conv"><b title="${esc(e.label)}">${esc(e.label)}</b>${lines(
+    const name = P[P.length - 1][1].name,
+      tf = anTf(P[0][1]),
+      vs = P.flatMap(([, x]) => [x.lo, x.hi, x.val, x.base]).filter(v => v != null && isFinite(v)),
+      ya = Math.min(...vs),
+      yb = Math.max(...vs);
+    return `<div class="adm-an-conv"><b title="${esc(name)}">${esc(name)}</b>${lines(
       [
         {
-          label: e.label,
-          pts: P.map(([M, x]) => [M, x.est]),
-          band: P.map(([M, x]) => [M, isFinite(x.lo) ? x.lo : x.est, isFinite(x.hi) ? x.hi : x.est]),
+          label: name,
+          pts: P.map(([M, x]) => [M, x.val]),
+          band: P.map(([M, x]) => [M, x.lo != null && isFinite(x.lo) ? x.lo : x.val, x.hi != null && isFinite(x.hi) ? x.hi : x.val]),
           dots: true
         }
       ],
@@ -277,15 +356,15 @@ function anConv(rep, key) {
         w,
         h: 130,
         ymin: ya,
-        ymax: yb === ya ? ya + 1 : yb,
-        yf: v => anFmt(e, v),
+        ymax: yb === ya ? ya + 0.01 : yb,
+        yf: tf,
         xf: v => (v >= 1000 ? (v / 1000).toFixed(v % 1000 ? 1 : 0) + 'k' : v),
         xticks: [P[0][0], P[P.length - 1][0]],
-        title: `${e.label} by milestone`
+        title: `${name} by milestone`
       }
     )}</div>`;
   });
-  return anCard('By milestone', `<div class="adm-an-convs">${cells.join('')}</div>`, 'wide');
+  return anCard('As the answers came in', `<div class="adm-an-convs">${cells.join('')}</div>`, 'wide');
 }
 // Photo thumbnails that open the photo (Photo factors, Response time).
 function anThumbs(L, val) {
@@ -299,48 +378,51 @@ function anThumbs(L, val) {
 /* ---------- Views ---------- */
 function anOverview(rep, R, prevR) {
   const fresh = ANALYSIS.newly(R, prevR),
-    rows = [],
-    all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => [k, e]));
-  all.forEach(([k, e]) =>
-    rows.push(
-      `<tr><td><a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a></td><td>${esc(e.label)}</td><td class="n">${anFmt(e, e.est)}<small class="adm-an-ci">${anCI(e)}</small></td><td>${anPill(e, fresh.has(k + ':' + e.k))}</td><td class="n">${anNeed(e)}</td></tr>`
-    )
+    all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => [k, e, anPlain(k, e, a)])),
+    link = k => `<a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a>`;
+  const order = {bad: 0, good: 1, info: 2},
+    clear = all.filter(([, , P]) => P.v === 'clear'),
+    // the clear results that change something (the spreads stay on their own pages), what hurts first
+    says_ = clear.filter(([, e]) => !e.sd).sort((x, y) => (order[x[2].tone] ?? 3) - (order[y[2].tone] ?? 3));
+  const says = says_.length
+    ? `<ul class="adm-an-says-l">${says_
+        .map(
+          ([k, e, P]) =>
+            `<li><span class="adm-an-v t-${P.tone}">${AN_TONE[P.tone][0]}</span> <b>${esc(P.name)}</b> <small class="note">${link(k)}</small><br>${esc(P.text)}${P.advice ? `<small class="adm-an-adv">→ ${esc(P.advice)}</small>` : ''}${fresh.has(k + ':' + e.k) ? ' <span class="adm-src new">new</span>' : ''}</li>`
+        )
+        .join('')}</ul>`
+    : '<p class="note">Nothing is clear yet: more answers are needed.</p>';
+  const rows = all.map(
+    ([k, e, P]) =>
+      `<tr><td class="an-t">${link(k)}</td><td class="an-c">${esc(P.name)}</td><td class="adm-an-says">${anSays(P)}</td><td class="an-v">${anPill(P, e, fresh.has(k + ':' + e.k))}</td></tr>`
   );
-  const clear = all.filter(([, e]) => e.v === 'clear').length;
+  const nClear = R2 => Object.values(R2.A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length;
   const ms = rep.M.map((M, i) => {
     const r = rep.R[M],
-      c = Object.values(r.A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length,
       nw = i ? ANALYSIS.newly(r, rep.R[rep.M[i - 1]]).size : 0;
-    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#~an" data-anm="${i === rep.M.length - 1 ? 'all' : M}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${c}</td><td class="n">${nw ? `+${nw}` : ''}</td></tr>`;
+    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#~an" data-anm="${i === rep.M.length - 1 ? 'all' : M}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${nClear(r)}</td><td class="n">${nw ? `+${nw}` : ''}</td></tr>`;
   });
   return (
     kpis([
       ['Answers', anInt(R.M)],
       ['Players', R.players],
       ['Milestones', rep.M.length],
-      ['Clear effects', `${clear} / ${all.filter(([, e]) => e.v !== 'nolog').length}`]
+      ['Clear results', `${clear.length} / ${all.filter(([, e]) => e.v !== 'nolog').length}`]
     ]) +
-    `<div class="adm-sgrid adm-an-grid">${anCard('Verdicts', anTable(['Analysis', 'Effect', '#Estimate [95% CI]', 'Verdict', '#Needs'], rows, 'adm-an-eff'), 'wide')}${anCard(
+    `<div class="adm-sgrid adm-an-grid">${anCard('What the data says clearly', says, 'wide')}${anCard(
+      'Every result',
+      anTable(['Topic', 'Compared', 'What it does', 'Verdict'], rows, 'adm-an-eff adm-an-all'),
+      'wide'
+    )}${anCard(
       'Milestones',
-      lines(
-        [
-          {
-            label: 'Clear effects',
-            pts: rep.M.map(M => [M, Object.values(rep.R[M].A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length]),
-            dots: true
-          }
-        ],
-        {
-          h: 150,
-          ymin: 0,
-          ymax: Math.max(
-            4,
-            ...rep.M.map(M => Object.values(rep.R[M].A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length)
-          ),
-          yf: v => String(v),
-          title: 'Clear effects by milestone'
-        }
-      ) + anTable(['Milestone', 'Last answer', '#Players', '#Clear', '#New'], ms),
+      lines([{label: 'Clear results', pts: rep.M.map(M => [M, nClear(rep.R[M])]), dots: true}], {
+        h: 150,
+        ymin: 0,
+        ymax: Math.max(4, ...rep.M.map(M => nClear(rep.R[M]))),
+        yf: v => String(v),
+        xlab: 'Answers in the log',
+        title: 'Clear results by milestone'
+      }) + anTable(['Answers', 'Last answer', '#Players', '#Clear', '#New'], ms),
       'wide'
     )}</div>`
   );
@@ -353,15 +435,15 @@ function anView(key, rep, R, prevR) {
   const head = kpis([
     ['Answers used', anInt(a.n)],
     ['Players', a.players ?? '–'],
-    ...(a.thin ? [['Needs', `≥ ${anInt(a.min)}`]] : []),
-    ...(key === 'zoom' && a.enlarged != null ? [['Enlarged', anInt(a.enlarged)]] : []),
+    ...(a.thin ? [['Answers needed', `≥ ${anInt(a.min)}`]] : []),
+    ...(key === 'zoom' && a.enlarged != null ? [['Photos enlarged', anInt(a.enlarged)]] : []),
     ...(key === 'photo' && a.photos ? [['Photos', anInt(a.photos)]] : []),
     ...(key === 'conf' && a.mixed != null ? [['Mixed up', anInt(a.mixed)]] : []),
     ...(key === 'back' && a.far != null ? [['After a break', anInt(a.far)]] : []),
     ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : [])
   ]);
   if (a.thin) return head + `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} answers this analysis needs.</p>`;
-  const lean = a.lean ? '<p class="note">Only the effects are kept for this milestone.</p>' : '';
+  const lean = a.lean ? '<p class="note">Only the main results are kept for this milestone.</p>' : '';
   const parts = [anEffects(a, key, fresh)];
   if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []));
   parts.push(anConv(rep, key));
@@ -369,48 +451,58 @@ function anView(key, rep, R, prevR) {
 }
 const pc = v => (v == null || !isFinite(v) ? '–' : Math.round(v * 100) + '%');
 // The cards of each analysis beyond its effects.
+const AN_PART = {
+  player: 'Players',
+  genus: 'Genera',
+  photo: 'Photos',
+  residual: 'From one answer to the next (same player, genus, photo)'
+};
+const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
+const anS = (a, u) => anTyp(a).s * Math.exp(u);
 const ANV = {
   rt: a => [
     anCard(
-      'Where the time varies',
-      sharesBar(a.shares, {title: 'Share of the variance of log time'}) +
+      'What makes answer times differ',
+      sharesBar(
+        a.shares.map(p => ({...p, k: AN_PART[p.k] || p.k})),
+        {title: 'Share of the differences in answer time'}
+      ) +
         anTable(
-          ['Part', '#SD (log)', '#Share'],
+          ['Differences between', '#Share'],
           a.shares.map(
-            (p, i) =>
-              `<tr><td><span class="adm-an-key s${i}"></span>${esc(p.k)}</td><td class="n">${Math.sqrt(p.v).toFixed(2)}</td><td class="n">${pc(p.share)}</td></tr>`
+            (p, i) => `<tr><td><span class="adm-an-key s${i}"></span>${esc(AN_PART[p.k] || p.k)}</td><td class="n">${pc(p.share)}</td></tr>`
           )
         ) +
-        `<p class="note">Typical answer: ${a.base.toFixed(1)} s</p>`
+        `<p class="note">Typical answer: ${anSec(anTyp(a).s)}</p>`
     ),
     anCard(
-      'Genera (time, shrunk)',
+      'Seconds to answer, by genus',
       forest(
         a.genus.map(g => ({
           label: g.k,
-          est: g.u,
-          lo: g.lo,
-          hi: g.hi,
-          title: `${g.k}: ${anNum((Math.exp(g.u) - 1) * 100, 0)}% (${g.n} answers)`
+          est: anS(a, g.u),
+          lo: anS(a, g.lo),
+          hi: anS(a, g.hi),
+          title: `${g.k}: about ${anSec(anS(a, g.u))} (${g.n} answers)`
         })),
-        {tf: v => anNum((Math.exp(v) - 1) * 100, 0) + '%', title: 'Time by genus, against the average', ...LOGAX}
+        {nul: anTyp(a).s, tf: anSec, title: 'Seconds to answer a typical photo of each genus'}
       ),
       'wide'
     ),
     anCard(
-      'Players (time, shrunk)',
+      'Seconds to answer, by player',
       anTable(
-        ['Player', '#Answers', '#Time', '#95% CI'],
+        ['Player', '#Answers', '#Typical time', '#Likely between'],
         a.player.map(
           (p, i) =>
-            `<tr><td>${anWho(p.k, i)}</td><td class="n">${anInt(p.n)}</td><td class="n">${anNum((Math.exp(p.u) - 1) * 100, 0)}%</td><td class="n">[${anNum((Math.exp(p.lo) - 1) * 100, 0)}%, ${anNum((Math.exp(p.hi) - 1) * 100, 0)}%]</td></tr>`
+            `<tr><td>${anWho(p.k, i)}</td><td class="n">${anInt(p.n)}</td><td class="n">${anSec(anS(a, p.u))}</td><td class="n">${anSec(anS(a, p.lo))} – ${anSec(anS(a, p.hi))}</td></tr>`
         )
       )
     ),
     a.photos && a.photos.length
       ? anCard(
           'Slowest and fastest photos',
-          anThumbs(a.photos, x => `${anNum((Math.exp(x.u) - 1) * 100, 0)}% · ${anInt(x.n)}`),
+          anThumbs(a.photos, x => `${anSec(anS(a, x.u))} · ${anInt(x.n)} answers`),
           'wide'
         )
       : ''
@@ -419,81 +511,85 @@ const ANV = {
     anCard(
       'Players',
       anTable(
-        ['Player', '#Answers', '#Enlarged', '#Right enl.', '#Right not', '#O−E enl.', '#O−E not'],
+        [
+          'Player',
+          '#Answers',
+          '#Photos enlarged',
+          '#Right, enlarged',
+          '#Right, not enlarged',
+          '#Against expected, enlarged',
+          '#Against expected, not'
+        ],
         a.player.map(
           (p, i) =>
-            `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${pc(p.z / p.n)}</td><td class="n">${p.z ? pc(p.yz / p.z) : '–'}</td><td class="n">${pc(p.y0 / Math.max(1, p.n - p.z))}</td><td class="n">${p.z ? anNum(((p.yz - p.ez) / p.z) * 100, 1) : '–'}</td><td class="n">${anNum(((p.y0 - p.e0) / Math.max(1, p.n - p.z)) * 100, 1)}</td></tr>`
+            `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${pc(p.z / p.n)}</td><td class="n">${p.z ? pc(p.yz / p.z) : '–'}</td><td class="n">${pc(p.y0 / Math.max(1, p.n - p.z))}</td><td class="n">${p.z ? anPts((p.yz - p.ez) / p.z) : '–'}</td><td class="n">${anPts((p.y0 - p.e0) / Math.max(1, p.n - p.z))}</td></tr>`
         )
       ),
       'wide'
     ),
     anCard(
-      'By view shown',
+      'How often each view is enlarged',
       anTable(
-        ['View', '#Answers', '#Enlarged'],
+        ['View shown', '#Answers', '#Enlarged'],
         a.views.map(
           v =>
-            `<tr><td>${esc({wide: 'Colony', medium: 'Close-up', macro: 'Corallites', multi: 'Several'}[v.k] || v.k)}</td><td class="n">${v.n}</td><td class="n">${pc(v.z / v.n)}</td></tr>`
+            `<tr><td>${esc({wide: 'Colony', medium: 'Close-up', macro: 'Corallites', multi: 'Several views'}[v.k] || v.k)}</td><td class="n">${v.n}</td><td class="n">${pc(v.z / v.n)}</td></tr>`
         )
       )
     )
   ],
   photo: a => {
-    const tab = (t, L) =>
-      anCard(
-        t,
-        anTable(
-          [t.split(' ')[1] ? 'Group' : t, '#Answers', '#Photos', '#Right'],
-          L.map(
-            r =>
-              `<tr><td>${esc(r.label)}</td><td class="n">${anInt(r.n)}</td><td class="n">${r.ph}</td><td class="n">${pc(r.y / r.n)}</td></tr>`
+    const T = anTyp(a),
+      right = d => anPc(ANALYSIS.shiftP(T.p, T.g, -d)),
+      tab = (t, L) =>
+        anCard(
+          t,
+          anTable(
+            [t, '#Answers', '#Photos', '#Right'],
+            L.map(
+              r =>
+                `<tr><td>${esc(r.label)}</td><td class="n">${anInt(r.n)}</td><td class="n">${r.ph}</td><td class="n">${pc(r.y / r.n)}</td></tr>`
+            )
           )
-        )
-      );
+        );
     return [
       tab('View', a.views),
       tab('Source', a.sources),
       tab('Quality', a.quality),
       anCard(
-        'Harder than their features say',
-        anThumbs(a.harder, x => `${anNum(x.d)} · ${anInt(x.n)}`),
+        'Harder than their view, quality and source say',
+        anThumbs(a.harder, x => `${right(x.d)} right · ${anInt(x.n)} answers`),
         'wide'
       ),
       anCard(
-        'Easier than their features say',
-        anThumbs(a.easier, x => `${anNum(x.d)} · ${anInt(x.n)}`),
+        'Easier than their view, quality and source say',
+        anThumbs(a.easier, x => `${right(x.d)} right · ${anInt(x.n)} answers`),
         'wide'
       )
     ];
   },
   fmt: a => [
     anCard(
-      'Guess rate: real (●) against the app’s (◇)',
-      forest(
+      'Success of a pure guess: measured (dot) against the app’s value (diamond)',
+      dotRange(
         a.table
           .filter(r => r.fit)
           .map(r => {
-            const e = (a.effects || []).find(x => x.k === 'g_' + r.k) || {};
-            return {
-              label: r.label,
-              est: e.est,
-              lo: e.lo,
-              hi: e.hi,
-              ref: r.g0,
-              title: `${r.label}: ${anVerdict(e)}; the app uses ${pc(r.g0)}`
-            };
+            const e = (a.effects || []).find(x => x.k === 'g_' + r.k) || {},
+              P = e.k ? anPlain('fmt', e, a) : {tone: 'thin', text: ''};
+            return {label: ANALYSIS.FMT_PLAIN[r.k] || r.label, est: e.est, lo: e.lo, hi: e.hi, ref: r.g0, tone: P.tone, title: P.text};
           }),
-        {tf: v => Math.round(v * 100) + '%', title: 'Guess rate by format'}
+        {tf: anPc, clamp: [0, 1], title: 'Success of a pure guess, by question format'}
       ),
       'wide'
     ),
     anCard(
-      'Formats',
+      'Question formats',
       anTable(
-        ['Format', '#Answers', '#Right', '#Expected', '#App guess', '#Real guess', '#Difficulty'],
+        ['Format', '#Answers', '#Right', '#App expected', '#App’s guess rate', '#Measured guess rate', '#Right − expected'],
         a.table.map(
           r =>
-            `<tr><td>${esc(r.label)}</td><td class="n">${anInt(r.n)}</td><td class="n">${r.n ? pc(r.right) : '–'}</td><td class="n">${r.n ? pc(r.E) : '–'}</td><td class="n">${r.n ? pc(r.g0) : '–'}</td><td class="n">${r.fit ? pc(r.fit.c) : '–'}</td><td class="n">${r.fit ? anNum(-r.fit.d) : '–'}</td></tr>`
+            `<tr><td>${esc(ANALYSIS.FMT_PLAIN[r.k] || r.label)}</td><td class="n">${anInt(r.n)}</td><td class="n">${r.n ? pc(r.right) : '–'}</td><td class="n">${r.n ? pc(r.E) : '–'}</td><td class="n">${r.n ? pc(r.g0) : '–'}</td><td class="n">${r.fit ? pc(r.fit.c) : '–'}</td><td class="n">${r.n ? anPts(r.right - r.E) : '–'}</td></tr>`
         )
       ),
       'wide'
@@ -503,54 +599,65 @@ const ANV = {
     anCard(
       'Pairs most mixed up',
       anTable(
-        ['Pair', '#Offered', '#Mixed', '#Rate', '#Colony', '#Close-up', '#Corallites', '#Several', '#Pair effect'],
+        [
+          'Pair',
+          '#Offered together',
+          '#Mixed up',
+          '#Rate',
+          '#Colony',
+          '#Close-up',
+          '#Corallites',
+          '#Several views',
+          '#Against a typical pair'
+        ],
         a.pairs.map(p => {
-          const v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
+          // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio (Codex review #495)
+          const fr = u => ANALYSIS.freqRatio(anTyp(a).p, u),
+            v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
           return `<tr><td>${p.k
             .split('|')
             .map(g => `<i>${esc(g)}</i>`)
             .join(
               ' · '
-            )}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n">${anNum(p.u)} <small class="adm-an-ci">[${anNum(p.lo)}, ${anNum(p.hi)}]</small></td></tr>`;
+            )}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n" title="How many times as often as a typical pair, at the typical mix-up rate">×${fr(p.u).toFixed(1)} <small class="adm-an-ci">×${fr(p.lo).toFixed(1)} – ×${fr(p.hi).toFixed(1)}</small></td></tr>`;
         })
       ),
       'wide'
     ),
     anCard(
-      'Each player against the pooled rates',
+      'Each player against everyone’s rates',
       forest(
         a.player.map((p, i) => ({
           label: (anWho(p.k, i).match(/>([^<]*)</) || [])[1] || `P${i + 1}`,
           est: p.oe,
           lo: p.lo,
           hi: p.hi,
-          title: `${p.mix} mixed up, ${p.exp.toFixed(1)} expected`
+          title: `${p.mix} mixed up where everyone’s rates expect ${p.exp.toFixed(1)}`
         })),
-        {nul: 1, tf: v => '×' + v.toFixed(2), title: 'Mix-ups observed / expected, by player'}
+        {nul: 1, tf: v => '×' + v.toFixed(1), title: 'Mix-ups: how many times as many as everyone’s rates expect, by player'}
       ) +
         anTable(
-          ['Player', '#Chances', '#Mixed', '#Expected', '#Obs. / exp.', '#Odds ×'],
+          ['Player', '#Chances', '#Mixed up', '#Expected from everyone', '#Times as many'],
           a.player.map(
             (p, i) =>
-              `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${p.mix}</td><td class="n">${p.exp.toFixed(1)}</td><td class="n">×${p.oe.toFixed(2)}<small class="adm-an-ci">[${p.lo.toFixed(2)}, ${p.hi.toFixed(2)}]</small></td><td class="n" title="The player's own effect in the model, as an odds ratio">${p.or != null ? `×${p.or.toFixed(2)}<small class="adm-an-ci">[${p.orLo.toFixed(2)}, ${p.orHi.toFixed(2)}]</small>` : '–'}</td></tr>`
-          ),
-          'adm-an-eff'
+              `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${p.mix}</td><td class="n">${p.exp.toFixed(1)}</td><td class="n">×${p.oe.toFixed(1)}<small class="adm-an-ci">×${p.lo.toFixed(1)} – ×${p.hi.toFixed(1)}</small></td></tr>`
+          )
         ),
       'wide'
     )
   ],
   learn: a => [
     anCard(
-      'Right answers by exposure',
+      'Right answers with practice on the genus',
       lines(
         [
-          {label: 'Observed', pts: a.curve.map(b => [b.lo, b.right, b.n]), dots: true},
-          {label: 'Model', pts: a.curve.map(b => [b.lo, b.fit]), dash: true}
+          {label: 'Players', pts: a.curve.map(b => [b.lo, b.right, b.n]), dots: true},
+          {label: 'Fitted curve', pts: a.curve.map(b => [b.lo, b.fit]), dash: true}
         ],
-        {xlog: true, xlab: 'Answers on the genus before', xticks: a.curve.map(b => b.lo), title: 'Right answers by exposure'}
+        {xlog: true, xlab: 'Answers already given on the genus', xticks: a.curve.map(b => b.lo), title: 'Right answers with practice'}
       ) +
         anTable(
-          ['Answers before', '#Answers', '#Right', '#Model'],
+          ['Answers already given', '#Answers', '#Right', '#Fitted'],
           a.curve.map(
             b =>
               `<tr><td>${b.lo === b.hi ? b.lo : b.hi > 1e8 ? b.lo + '+' : `${b.lo}–${b.hi}`}</td><td class="n">${anInt(b.n)}</td><td class="n">${pc(b.right)}</td><td class="n">${pc(b.fit)}</td></tr>`
@@ -559,22 +666,22 @@ const ANV = {
       'wide'
     ),
     anCard(
-      'Answers to reach 80%, by genus',
+      'Answers needed to reach 80% beyond guessing, by genus',
       forest(
         a.genus.map(g => ({
           label: g.k,
           est: Math.log(1 + Math.min(g.est, 999)),
           lo: Math.log(1 + Math.min(g.lo, 999)),
           hi: Math.log(1 + Math.min(g.hi, 999)),
-          title: `${g.k}: ${anInt(g.est)} answers [${anInt(g.lo)}, ${g.hi >= 999 ? '999+' : anInt(g.hi)}]`
+          title: `${g.k}: about ${anInt(g.est)} answers (likely ${anInt(g.lo)} to ${g.hi >= 999 ? '999+' : anInt(g.hi)})`
         })),
-        {nul: 0, tf: v => anInt(Math.exp(v) - 1), title: 'Answers to reach 80% by genus (log scale)'}
+        {nul: 0, tf: v => anInt(Math.exp(v) - 1), title: 'Answers needed to reach 80% beyond guessing, by genus'}
       ) +
         anTable(
-          ['Genus', '#Answers', '#Players', '#Right', '#To 80%', '#95% CI'],
+          ['Genus', '#Answers', '#Players', '#Right', '#Answers to 80% beyond guessing', '#Likely between'],
           a.genus.map(
             g =>
-              `<tr><td><i>${esc(g.k)}</i></td><td class="n">${g.n}</td><td class="n">${g.players}</td><td class="n">${pc(g.right)}</td><td class="n">${g.est >= 999 ? '999+' : anInt(g.est)}</td><td class="n">[${anInt(g.lo)}, ${g.hi >= 999 ? '999+' : anInt(g.hi)}]</td></tr>`
+              `<tr><td><i>${esc(g.k)}</i></td><td class="n">${g.n}</td><td class="n">${g.players}</td><td class="n">${pc(g.right)}</td><td class="n">${g.est >= 999 ? '999+' : anInt(g.est)}</td><td class="n">${anInt(g.lo)} – ${g.hi >= 999 ? '999+' : anInt(g.hi)}</td></tr>`
           ),
           'tall'
         ),
@@ -586,7 +693,7 @@ const ANV = {
       'Right after a break, by its length',
       lines(
         [
-          {label: 'Observed', pts: a.bands.map((b, i) => [i, b.right, b.n]).filter((p, i) => a.bands[i].n), dots: true},
+          {label: 'Players', pts: a.bands.map((b, i) => [i, b.right, b.n]).filter((p, i) => a.bands[i].n), dots: true},
           {label: 'App expected', pts: a.bands.map((b, i) => [i, b.E]).filter((p, i) => a.bands[i].n), dash: true}
         ],
         {
@@ -598,7 +705,7 @@ const ANV = {
         }
       ) +
         anTable(
-          ['Since the last answer on the genus', '#Answers', '#Right', '#App expected', '#Expected before'],
+          ['Time since the last answer on the genus', '#Answers', '#Right', '#App expected now', '#App expected before the break'],
           a.bands.map(
             b =>
               `<tr><td>${esc(b.label)}</td><td class="n">${anInt(b.n)}</td><td class="n">${b.n ? pc(b.right) : '–'}</td><td class="n">${b.n ? pc(b.E) : '–'}</td><td class="n">${b.n ? pc(b.prevE) : '–'}</td></tr>`
@@ -610,15 +717,15 @@ const ANV = {
   sess: a => [
     anCard(
       'Sessions still going after n answers',
-      lines([{label: 'Sessions going', pts: a.km.map(k => [k.n, k.s]), step: true}], {
+      lines([{label: 'Sessions still going', pts: a.km.map(k => [k.n, k.s]), step: true}], {
         xlab: 'Answers in the session',
-        title: 'Sessions still going (Kaplan-Meier)'
+        title: 'Sessions still going after n answers'
       }) +
         anTable(
           ['After', '#Still going'],
           a.at
             .map(x => `<tr><td>${x.k} answers</td><td class="n">${pc(x.s)}</td></tr>`)
-            .concat(`<tr><td>Median length</td><td class="n">${a.median ? a.median + ' answers' : '–'}</td></tr>`)
+            .concat(`<tr><td>Half the sessions end by</td><td class="n">${a.median ? a.median + ' answers' : '–'}</td></tr>`)
         ),
       'wide'
     )
@@ -728,19 +835,20 @@ addEventListener('resize', () => {
   anRz = setTimeout(() => /^~an(-|$)/.test(cur) && render(), 200);
 });
 
-// Help ("?"), per view: the method notes stay off the page (AGENTS.md rule 23).
-const AN_HELP_COMMON = `<p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet with the admin token every hour and, once 1000 new answers have come in (or the code changed), refits every analysis on the first 1000, 2000, … answers in time order (the milestones) and on all of them, then stores the report in the sheet (Analyses tab, private). This page only draws it. <b>Recompute here</b> (desktop) runs the same code in this tab on the answers this page reads; its result stays in this tab. The switch picks a milestone; the badge says how many answers came since the last milestone and when the next one is.</p>
-  <p><b>Verdicts.</b> Each estimate has a 95% interval: the model's own (Wald) and, from 6 players, a cluster bootstrap over players (players drawn with replacement, every answer of a player drawn twice counted twice), whichever is wider. <b>Clear</b>: the interval excludes 0 (or the app's value). <b>Within the margin</b>: it includes it but is narrower than the smallest effect that would matter (±0.1 log time ≈ 10%, ±0.25 logit, ±5 points), so no effect that size. <b>Not enough data yet</b>: it includes it and is wider; <b>Needs</b> = the answers for an interval as narrow as the current estimate (or that smallest effect), from the interval shrinking as 1/√n (rough: more players matter as much as more answers). <b>new</b> = clear since the previous milestone. <b>By milestone</b>: each estimate and its interval at every milestone (convergence).</p>`;
+// Help ("?"), per view: the definitions and the methods stay off the page (AGENTS.md rule 23).
+const AN_HELP_COMMON = `<p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>new</b>: clear since the previous milestone. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
+  <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once 1000 new answers have come in (or the code changed), redoes every analysis on the first 1000, 2000, … answers in time order (the milestones) and on all of them, then stores the report in the sheet (private). This page only draws it. <b>Recompute here</b> (desktop) runs the same code in this tab; its result stays in this tab. The switch picks a milestone; the badge says how many answers came since the last one. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
+  <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
-  an: `<p>Every analysis of the answer log in one table: the effect, its estimate and 95% interval, the verdict and the answers it would need. Milestones: one per 1000 answers; the line counts the clear effects at each.</p>${AN_HELP_COMMON}`,
-  'an-rt': `<p><b>Response time.</b> Log seconds to answer (from the photos in view to the answer, 0-600 s; answers with an expectation logged) as a linear mixed model with crossed random effects: player, genus and photo (a question's photos share it equally), and fixed effects: right answer, typed, a photo enlarged, 2 choices, the app's expected difficulty (−logit of Expected beyond guessing) and the log position in the session. Fitted by alternating updates of the effects with EM variance components (REML-like shrinkage: a genus with few answers is pulled to the average). Effects read as % time (+20% = 1.2 × slower). Where the time varies: the share of each part in the variance of log time. Genera, players and photos: their shrunk effects with 95% conditional intervals.</p>${AN_HELP_COMMON}`,
-  'an-zoom': `<p><b>Zoom.</b> Does enlarging a photo go with a right answer, beyond the app's expectation? Logistic model with each question's guess rate, the app's expectation as offset and a player random effect; the effect of enlarging is measured against each player's own habit (enlarged − their rate), apart from how much they enlarge (between players). Players: their answers, how often they enlarge, right % and right − expected with and without enlarging. By view: how often each view shown gets enlarged. Since 2026-11-03 20:24 the enlarge mark is visible: compare milestones after it.</p>${AN_HELP_COMMON}`,
-  'an-photo': `<p><b>Photo factors</b> (explanatory IRT, LLTM with a photo random effect). Right / wrong with each question's guess rate; random effects player (ability), genus, photo (a question's photos share it); fixed effects the photos' features, averaged over the photos shown: view (close-up, corallites against colony), quality (fair, poor against good; Pierre's rating else the automatic one), sharpness (log, per SD; metrics.json), source (Pierre's, other iNaturalist against IMR lecture), one view alone, typed. Read as difficulty: + = harder. Harder / easier than their features say: the photos whose own effect is furthest from what their features predict (click to enlarge).</p>${AN_HELP_COMMON}`,
-  'an-fmt': `<p><b>Formats.</b> For each question format (4 choices, 4 shown with 3 or 2 plausible, Again, duel in the quiz, Duel tab, exam, typed): P(right) = c + (1 − c) sig(x + d), x the app's own log-odds for the answer (its Expected without its guess floor), fitted per format: c the real guess rate (◇ = the fixed value the app uses: 1/k, ½ for a duel, 0 typed), d the extra difficulty the app's expectation misses (+ = harder than the app thinks). Right − expected: the plain gap. The guess rate is pinned by the weakest answers: its interval stays wide until there are many.</p>${AN_HELP_COMMON}`,
-  'an-conf': `<p><b>Confusions.</b> Each wrong choice offered is a chance to be picked (typed answers left out). Logistic model: random effects the pair of genera and the player, fixed effects the view shown (close-up, corallites, several views against colony) and the number of wrong choices. SD player = how much players differ from the pooled rates (each player against the pooled: mix-ups observed / expected from the pooled rates of the pairs, views and choices they met, ×1 = like everyone, interval from the count's Poisson spread; Odds × = the player's own effect in the model, an odds ratio, larger than observed / expected when mix-ups are common). Pairs: offered together, mixed up, the rate by view shown (answers under it) and the pair's own effect.</p>${AN_HELP_COMMON}`,
-  'an-learn': `<p><b>Learning curves.</b> Right / wrong with the guess rate, random effects player and genus, fixed effects the log of answers already given on the genus (the slope), right after a miss on it, an Again asked after that miss (its extra effect), typed, exam and comeback questions. Answers to reach 80% (recognised beyond guessing, the app's target) for an average player, overall and by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
-  'an-back': `<p><b>Comeback.</b> Answers after a right answer on the same genus: the forgetting slope, logit per log(1 + days since), with the expectation of that previous answer as offset and a player random effect; and the comeback questions (|c): right − the app's expected (its FSRS curve, model.js comebackOf). By band: how many, right %, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
-  'an-sess': `<p><b>Sessions</b> (answers less than 30 minutes apart). Sessions still going after n answers (Kaplan-Meier; a session whose last answer is under 30 minutes before the log's end is still open, censored). What ends a session: a discrete-time survival model (logistic, player random effect) on each answer, stop after it or not: the answer wrong, 2+ misses in a row, the question's expected difficulty, a slow answer against the player's usual, the position.</p>${AN_HELP_COMMON}`
+  an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers) with how many results were clear at each.</p>${AN_HELP_COMMON}`,
+  'an-rt': `<p><b>Answer time.</b> Seconds from the moment the photos are in view to the answer (0-600 s). Each line says how much faster or slower answers are in one situation than a typical answer, the others held equal: right against wrong answers, typed against picked, a photo enlarged, 2 choices against 4, a question the app rates harder, later in a session. <b>What makes answer times differ</b>: how much of the differences in time come from who answers (players), from the genus, from the photo, and from one time to the next. By genus and by player: the typical time, after pulling those with few answers towards the average.</p>${AN_HELP_COMMON}`,
+  'an-zoom': `<p><b>Enlarging photos.</b> Is an answer more often right when the player enlarged a photo first, compared with the same player not enlarging, beyond what the app expected? And are players who enlarge often better or worse? Players: how often each enlarges, right when enlarging or not, and right answers against the app's expectation. Since 2026-11-03 20:24 the enlarge button is visible: compare milestones after it.</p>${AN_HELP_COMMON}`,
+  'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p>${AN_HELP_COMMON}`,
+  'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects, beyond guessing (the format's own guess rate set aside); and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p>${AN_HELP_COMMON}`,
+  'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p>${AN_HELP_COMMON}`,
+  'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
+  'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
+  'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in.
 if (typeof DATA !== 'undefined' && DATA && /^~an(-|$)/.test(cur)) render();

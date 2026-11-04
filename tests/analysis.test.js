@@ -459,7 +459,8 @@ test('compact: the running size gives the same report as measuring it at every s
         const r = rep.R[M];
         Object.keys(r.A).forEach(k => {
           const a = r.A[k];
-          r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, effects: a.effects, lean: 1};
+          r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, typ: a.typ, effects: a.effects, lean: 1};
+          if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
         });
       }
       while (J() > max && rep.M.length > 6) {
@@ -540,4 +541,163 @@ test('photo views follow the game pipeline (2 zoom levels)', () => {
     const fs2 = [...Object.values(data.gen[g].views || {}).flat(), ...((data.course || {})[g] || [])].map(p => p.f).filter(f => meta[f]);
     assert.ok(!fs2.some(f => meta[f][0] === 'medium'), `${g}: no Close-up view in the games`);
   });
+});
+
+// The plain reading (plainOf, Pierre 2026-11-04: "a non-statistician must understand it at a glance"): every effect has
+// a name in words, its direction says which way the chance of a right answer (or the time, the stops, the mix-ups) goes,
+// and its colour (tone) says whether that helps or hurts.
+test('plainOf: names in words, directions and tones', () => {
+  const P = (key, e, a, o) => A.plainOf(key, {v: 'clear', ...e}, a, o);
+  // more likely to stop after a wrong answer: odds up on "stop" = hurts
+  let r = P('sess', {k: 'wrong', est: 1.2, lo: 0.6, hi: 1.8}, {typ: {p: 0.02}});
+  assert.match(r.text, /^More likely to stop/);
+  assert.strictEqual(r.tone, 'bad');
+  assert.ok(r.val > r.base && r.lo > r.base, 'the range is above the typical chance');
+  // a difficulty (+ = harder) on the photos reads as more likely WRONG, with the chance of a right answer
+  r = P('photo', {k: 'poor', est: 0.7, lo: 0.3, hi: 1.1}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^More likely wrong: about \d+% right instead of 80%/);
+  assert.strictEqual(r.tone, 'bad');
+  assert.ok(r.advice, 'a clear result says what it suggests');
+  // a negative difficulty = easier = helps
+  r = P('photo', {k: 'sharp', est: -0.4, lo: -0.7, hi: -0.1}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^More likely right/);
+  assert.strictEqual(r.tone, 'good');
+  // log-odds of a right answer: + = more likely right
+  r = P('zoom', {k: 'rel', est: -0.9, lo: -1.5, hi: -0.3}, {typ: {p: 0.78, g: 0.2}});
+  assert.match(r.text, /^More likely wrong/);
+  // mix-ups: + = mixed up more often = hurts
+  r = P('conf', {k: 'macro', est: 0.5, lo: 0.2, hi: 0.8}, {typ: {p: 0.06}});
+  assert.match(r.text, /^Mixed up more often/);
+  assert.strictEqual(r.tone, 'bad');
+  // time: + = slower, neither good nor bad
+  r = P('rt', {k: 'enl', est: 0.93, lo: 0.6, hi: 1.2}, {typ: {s: 6}});
+  assert.match(r.text, /^Slower: about 15 s instead of 6.0 s/);
+  assert.strictEqual(r.tone, 'info');
+  assert.strictEqual(r.scale, 's');
+  // the app's own calibration: neither good nor bad, in points
+  r = P('back', {k: 'calib', est: 0.15, lo: 0.05, hi: 0.25}, {});
+  assert.match(r.text, /^Players do better than the app expects: \+15 points/);
+  assert.strictEqual(r.tone, 'info');
+  // no clear effect and not enough data say so, with no advice
+  r = A.plainOf('photo', {k: 'poor', est: 0.05, lo: -0.1, hi: 0.2, v: 'margin'}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^No clear effect/);
+  assert.strictEqual(r.tone, 'none');
+  assert.strictEqual(r.advice, '');
+  r = A.plainOf('photo', {k: 'poor', est: 0.4, lo: -0.5, hi: 1.3, v: 'thin'}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^Too early to tell/);
+  assert.strictEqual(r.tone, 'thin');
+  // a spread in words
+  r = A.plainOf('photo', {k: 'sd_genus', est: 0.6, lo: 0.3, hi: 0.9, v: 'clear', sd: true}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^They differ: a typical genus gets between \d+% and \d+% right/);
+  // a format reads against its own expected chance
+  r = A.plainOf('fmt', {k: 'd_k4', est: 0.5, lo: 0.2, hi: 0.8, v: 'clear'}, {}, {row: {n: 100, E: 0.7, g0: 0.25}});
+  assert.match(r.text, /^Harder than the app expects: about \d+% recognised beyond guessing where it expects 60%/); // E 70%, floor 25%
+});
+
+test('plainOf: every effect of every analysis has a plain name, no code or model term', () => {
+  const rows = A.demoLog(require('../data.json'), Date.now() - 3 * 864e5, {
+    cur: require('../curation.json'),
+    qual: require('../quality.json'),
+    met: require('../metrics.json')
+  });
+  const meta = A.photoMeta(require('../data.json'), require('../curation.json'), require('../quality.json'), require('../metrics.json'));
+  const R = A.runAll(rows, meta, {B: 4, seed: 1});
+  let n = 0;
+  Object.entries(R.A).forEach(([k, a]) =>
+    (a.effects || []).forEach(e => {
+      const row = k === 'fmt' ? (a.table || []).find(r => e.k.replace(/^(g|d|oe)_/, '') === r.k) : null,
+        p = A.plainOf(k, e, a, {row});
+      n++;
+      assert.ok(A.PLAIN[k] && A.PLAIN[k][e.k], `${k}:${e.k} has a plain entry`);
+      assert.doesNotMatch(p.name + ' ' + p.text, /logit|\bSD\b|log position|\(log\)|odds/i, `${k}:${e.k}: ${p.name} / ${p.text}`);
+      assert.ok(p.text.length > 10, `${k}:${e.k} says something`);
+      assert.ok(['good', 'bad', 'info', 'none', 'thin'].includes(p.tone), `${k}:${e.k} tone ${p.tone}`);
+      if (a.typ) assert.ok(isFinite(a.typ.p), `${k} carries its typical values`);
+    })
+  );
+  assert.ok(n > 40, `${n} effects read`);
+});
+
+// Codex review #495: a compacted milestone keeps each format's own expected chance and guess rate, so its plain
+// reading does not change when the Formats table is dropped.
+test('compact keeps the formats’ baselines: the plain reading of a lean milestone is unchanged', () => {
+  const fmt = () => ({
+    n: 200,
+    players: 3,
+    effects: [{k: 'd_duel', est: 1, lo: 0.5, hi: 1.5, v: 'clear', unit: 'logit'}],
+    table: [{k: 'duel', label: 'Duel tab', n: 200, right: 0.8, E: 0.9, g0: 0.5, fit: {c: 0.5, d: -1}, pad: 'x'.repeat(4000)}]
+  });
+  const rep = {AV: 1, made: 0, answers: 2000, M: [1000, 2000], R: {1000: {n: 1000, A: {fmt: fmt()}}, 2000: {n: 2000, A: {fmt: fmt()}}}};
+  const full = rep.R[1000].A.fmt,
+    rowOf = a => (a.table || []).find(r => r.k === 'duel'),
+    before = A.plainOf('fmt', full.effects[0], full, {row: rowOf(full)}).text;
+  A.compact(rep, JSON.stringify(rep).length - 3000);
+  const lean = rep.R[1000].A.fmt;
+  assert.ok(lean.lean, 'the first milestone was compacted');
+  assert.strictEqual(A.plainOf('fmt', lean.effects[0], lean, {row: rowOf(lean)}).text, before);
+});
+
+// Codex review #495: a pair's model effect is a change in the odds; "times as often" is the ratio of the chances at the
+// typical mix-up rate (doubling the odds at 30% is 1.54 times as often, not twice).
+test('freqRatio: an odds ratio read as how many times as often, at a given base rate', () => {
+  near(A.freqRatio(0.3, Math.log(2)), 1.54, 0.01, 'odds ×2 at 30%');
+  near(A.freqRatio(0.01, Math.log(2)), 1.98, 0.01, 'odds ×2 at 1%: about twice');
+  near(A.freqRatio(0.3, 0), 1, 1e-9, 'no effect');
+});
+
+// Codex review #495: the answers to mastery solve for 80% recognised beyond guessing (MASTER on sig(eta)), not 80%
+// raw right answers: every label says "beyond guessing".
+test('the answers-to-mastery label says beyond guessing', () => {
+  assert.match(A.PLAIN.learn.n_all.name, /beyond guessing/);
+});
+
+// Codex review #495 (2nd pass): typed answers have no guess floor, so the typed-versus-choices contrast moves from the
+// choices' floor to none (80% right with 4 choices, +0.2 beyond guessing → about 77% right typed, not 83%).
+test('plainOf: typed answers are read without the guess floor', () => {
+  const r = A.plainOf('learn', {k: 'typed', est: 0.2, lo: 0.1, hi: 0.3, v: 'clear'}, {typ: {p: 0.8, g: 0.25}});
+  near(r.val, 0.77, 0.01, 'typed at +0.2');
+  assert.match(r.text, /^More likely wrong: about 77% right instead of 80%/);
+});
+
+// Codex review #495 (2nd pass): the difficulty contrast is on recognition beyond guessing; the Again effect is measured
+// on the next ordinary question after a miss, with an Again in between.
+test('plainOf: the difficulty and Again labels say what the model measures', () => {
+  for (const k of ['rt', 'sess']) assert.match(A.PLAIN[k].diff.name, /beyond guessing/);
+  assert.match(A.PLAIN.learn.again.name, /next ordinary question after a miss/i);
+});
+
+// Codex review #495 (3rd pass): the typed contrast's verdict is judged on the accuracy shown (a clear change in
+// recognition whose range of right answers still includes the baseline is not a clear change in right answers); an
+// effect with too few answers to estimate says so, not "no such answers".
+test('plainOf: typed verdict on the accuracy shown; no estimate yet reads as not enough data', () => {
+  const r = A.plainOf('learn', {k: 'typed', est: 0.5, lo: 0.1, hi: 0.9, v: 'clear'}, {typ: {p: 0.8, g: 0.25}});
+  assert.ok(r.lo < 0.8 && r.hi > 0.8, 'the range of right answers includes 80%');
+  assert.notStrictEqual(r.v, 'clear');
+  assert.notStrictEqual(r.tone, 'good');
+  const c = A.plainOf('back', {k: 'calib', v: 'thin', n: 1, need: null}, {});
+  assert.match(c.text, /^Not enough data yet/);
+  assert.strictEqual(c.tone, 'thin');
+});
+
+// Codex review #495 (4th pass): a format's difficulty is fitted with its own guess rate, so it is read as recognition
+// beyond guessing (the app's expectation without its guess floor), never as raw right answers on the app's floor; the
+// raw comparison is the format's "right answers against the app's expectation".
+test('plainOf: a format difficulty reads as recognition beyond guessing', () => {
+  const row = {k: 'k4', n: 500, E: 0.75, g0: 0.25, fit: {c: 0.5, d: -0.195}};
+  const r = A.plainOf('fmt', {k: 'd_k4', est: 0.195, lo: 0.1, hi: 0.3, v: 'clear'}, {}, {row});
+  near(r.base, 2 / 3, 0.001, 'the app expects 2/3 recognised beyond its 25% floor');
+  near(r.val, 1 / (1 + Math.exp(-(Math.log(2) - 0.195))), 0.001, 'shifted on recognition, no floor');
+  assert.match(r.text, /recognised beyond guessing/);
+  assert.match(A.PLAIN.fmt.d_k4.name, /beyond guessing/);
+});
+
+// Codex review #495 (5th pass): a chart of format difficulties is drawn on recognition beyond guessing, so it has its
+// own outcome heading, not "Chance of a right answer".
+test('outOf: format difficulties chart on their own beyond-guessing outcome', () => {
+  assert.strictEqual(A.outOf(A.PLAIN.fmt.d_k4), 'beyond');
+  assert.strictEqual(A.outOf(A.PLAIN.fmt.oe_k4), 'pts');
+  assert.strictEqual(A.outOf(undefined), 'right');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
+  assert.match(src, /beyond: '[^']*beyond guessing[^']*'/);
+  assert.ok(!/S\.o\b/.test(src), 'charts group by ANALYSIS.outOf, not the raw outcome');
 });

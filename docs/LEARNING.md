@@ -1979,7 +1979,7 @@ photos (*Acropora*, *Porites*, *Pocillopora*, *Montipora*, *Millepora*) should c
 exceptions kept by hand. Until then how common a genus is played no part: once the photo stats passed `OPEN.DATA`,
 the order was difficulty only.
 
-- **The measure** (`tools/commonness.py`, run once offline, never on the phones: AGENTS.md rule 14g): for every game
+- **The measure** (`tools/commonness.py`, run once offline, never on the phones: AGENTS.md rule 14i): for every game
   genus (the slate, Millepora and the bonus genera), iNaturalist's verifiable observations of the genus taxon (by
   name, inside Cnidaria) within 40 km of Dauin, and the distinct observers of the same. **`cm` = √(observations ×
   observers)**, the geometric mean, written to the genus's `data.json` record. Pierre's compromise: near Dauin the top
@@ -2378,6 +2378,38 @@ judged ease (rubric 3, the 37 added photos included; main had moved to #428 for 
 
 The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
 replay (rule 14g) cannot judge it either: the sheet holds no fish answer.
+
+### Fish: species order, the commonness index (2026-11-04)
+
+Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
+will meet underwater, and "common beats easy" for the start; the players' answers adjust the difficulty later (the Elo, as
+for every unit). The order is data (`fish.json`: each entry's `species` list, species `cmi`), computed once offline
+(AGENTS.md rule 14g) by `tools/fish_commonness.py`; nothing in the engine changes and no constant enters the model.
+
+- **Signals and weights** (approved by Pierre, strongest first): standardised field counts near Dauin **3** (CCEF Siquijor
+  2025 census, presence per MPA; Ferrandis 2021 Dauin stereo-video counts of the fisheries species), the IMR PDF's 24 most
+  sighted **2**, iNaturalist distinct observers in three rings (40 km, 250 km, the Philippines) **1**, each scaled 0-1
+  within the entry; index = their weighted mean. Distinct observers rather than observations: a keen photographer of a
+  rare species inflates the photo count, not the observer count. Needs ID observations count (more data; some
+  misidentifications among look-alikes).
+- **Shrinkage, M = 5 pseudo-observers per step**, from the entry's mean to the Philippines to 250 km to 40 km
+  (docs/FISH_PATH.md "Species order: the commonness index" has the formulas): a species with few observers anywhere is
+  pulled toward its family's mean, a local count toward the regional share. M = 5 barely moves an entry with hundreds of
+  local observers (Damselfish: 735, summed over its species) and lets the wider rings carry a thin one. **The log scale (2 decades)**: the iNat
+  and the count scores are 1 + log10(value / the entry's top) / 2, floored at 0; ratios rather than ranks, so a
+  two-species entry is not forced to 0 and 1 (Anthias: 24 and 25 local observers).
+- **Why these choices, and what was not done**: no fit (there is no ground truth of abundance at Dauin to fit to); the
+  weights follow the order of trust Pierre gave. The field signal is relative to the entry's best, so families the census
+  under-records (cardinalfish: best 3 of 11 MPAs) still spread. Not used: the Liloan (Cebu) 2016 census (one place, one
+  year, ~140 km), sources with family-level data only (west Leyte, Muallil et al. 2019, Russ's Apo series). Reef Life
+  Survey's Siquijor 2025 counts are not published yet (checked on the AODN portal and GBIF, 2026-11-04): one more field
+  record when they are (ROADMAP).
+- **Checked by Pierre** on photo cards of every family (top 10 and bottom 10, the disagreements flagged), 2026-11-04:
+  "very coherent; the criterion isn't crazy at all". His remarks: unicornfish probably lifted by what photographers
+  shoot; the blue-and-yellow fusilier perhaps a bit more common than shown (maybe his own spotting bias); the red-tooth
+  triggerfish rare at Dauin (very common at Puerto Galera), so its low local rank is right.
+- **Effect now**: the order of the species lists in `fish.json`; species questions (level 2) are not built yet, so no
+  player sees a change until they are. No learnsim run: no fish profile exists and nothing the simulation reads moved.
 
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
@@ -3238,7 +3270,7 @@ the logged ability minus the question's difficulty (th − d, from Expected and 
   surprise moves both sides). No new state per photo, no constant per photo or genus; k_P one number chosen by the
   replay (leave one player out, as PR #431's k). The additive form (a separate time rating, T_f = Σ residual z /
   (n_f + 3), 3 = residual variance / photo variance, added to the Elo with a weight) was worse today.
-- **Genus, if it ever helps**: the sheet (compute once, AGENTS.md 14g) would serve each genus's time effect, the
+- **Genus, if it ever helps**: the sheet (compute once, AGENTS.md 14i) would serve each genus's time effect, the
   shrunk mean over players of each player's mean residual z on it, â_g = Σ_p w_p z̄_pg / (Σ_p w_p + 1/τ_g²), w_p =
   1 / (τ_pg² + σ² / n_pg), the variances refitted by `tools/rtdecomp.py` (today τ_g 0.12, τ_pg 0.27, σ 0.51), and the
   app would add `OPEN.TIME` × â_g to `genusDiff` only from that sheet version (AGENTS.md 7a); `OPEN.TIME` one number
@@ -3526,6 +3558,10 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (approved after review of every family's ranking): the fish species inside an entry open in
+  commonness order, the index of field counts near Dauin (weight 3), the IMR 24 most sighted (2) and iNaturalist distinct
+  observers in three rings (1), shrunk toward the entry's mean with M = 5, log scale over 2 decades
+  (`tools/fish_commonness.py`, `fish.json` `cmi`; "Fish: species order, the commonness index").
 - 2026-11-04, Pierre (approved; design only, docs/FISH_PATH.md "My progress (fish)"): the global fish score's formula. Per species,
   C = mean mastery of its listed common names, S = max(species mastery, ½ × genus mastery), credit = a·C + b·S + (1 − a − b)·C·S
   with b = 0.80, a ≈ 0.73; global = 25% × mean entry mastery + 75% × mean species credit over circle 1. Entries only 25%, every
