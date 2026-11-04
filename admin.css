@@ -3815,6 +3815,12 @@ button.adm-chip[aria-pressed='true'] {
 }
 .adm-actv .adm-cols {
   height: 90px;
+  gap: 1px;
+}
+/* Up to 60 periods a chart, at every width (Codex review #501): the bars shrink instead of keeping the 4 px minimum of
+   the other column charts, so a chart never spills out of its column on a phone or in the three-chart row. */
+.adm-actv .adm-cols > div {
+  min-width: 0;
 }
 @media (max-width: 599px) {
   .adm-acols {

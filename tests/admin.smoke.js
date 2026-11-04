@@ -1128,6 +1128,25 @@ const WIDTHS = [390, 1280];
       await p.click('.adm-actv [data-v="day"]');
       await settle();
     }
+    // 60 periods (the most the card draws) fit their chart at every width: the bars shrink, none spills out of its chart
+    // (Codex review #501: a 4 px minimum and 3 px gaps needed 417 px a chart).
+    const fit = await p.evaluate(() => {
+      const t0 = Date.now() - 90 * 864e5,
+        R = Array.from({length: 90}, (_, i) => [`p${i % 7}`, t0 + i * 864e5]),
+        box = document.createElement('div');
+      box.id = 'fittest';
+      box.innerHTML = activityCard(R);
+      document.getElementById('view').prepend(box);
+      const C = [...box.querySelectorAll('.adm-acol .adm-cols')],
+        r = {
+          bars: C[0].children.length,
+          over: C.filter(c => c.scrollWidth > c.clientWidth + 1).length,
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      box.remove();
+      return r;
+    });
+    if (fit.bars !== 60 || fit.over || fit.wide > 0) fails.push(`${w}px Activity over time: 60 periods do not fit ${JSON.stringify(fit)}`);
     // ↻ reads the answers again (no timer): the page comes back with its sessions.
     const before = await p.evaluate(() => ANS.at);
     await p.click('[data-sload]');
