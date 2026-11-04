@@ -256,8 +256,11 @@ $v.addEventListener(
       i.dataset.low = 1;
       i.dataset.retry = 2;
       i.src = i.dataset.lo;
-    } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
+    } else if (i.closest('.qstage')) {
+      // Every photo that gave up is a plain tile, the second of a question too (Codex review #490); the note, the report
+      // and the closing of the answers come once.
       i.classList.add('fail');
+      if ($v.querySelector('.q.done, #qfail')) return;
       if (navigator.onLine !== false)
         // By the photo's name (data-f, quiz.js): an iNaturalist URL (a candidate just added, r: 1) is not one admin can look up.
         ev('photo', {
@@ -278,17 +281,30 @@ $v.addEventListener(
           route();
         };
       }
-      // Another photo of the question still trying may come later: the answers open again then.
-      const q = $v.querySelector('.q'),
-        ims = q ? [...q.querySelectorAll('.qstage img')] : [];
-      if (q && !ims.some(x => x.complete && x.naturalWidth)) {
-        const ans = (on, bs = q.querySelectorAll('[data-c], [data-w], .tyform input, .tyform button')) =>
-          bs.forEach(b => (b.disabled = !on));
-        ans(false);
-        ims.forEach(x => x.addEventListener('load', () => q.isConnected && !q.classList.contains('done') && ans(true), {once: true}));
+      // Another photo of the question may come later, one still trying or one added since (the hint, Codex review
+      // #490): the answers open again then (the load listener below).
+      const q = $v.querySelector('.q');
+      if (q && ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth)) {
+        q.classList.add('qnone');
+        qAnswers(q, false);
       }
       if (typeof fitStage === 'function') fitStage();
     }
+  },
+  true
+);
+const qAnswers = (q, on) => q.querySelectorAll('[data-c], [data-w], .tyform input, .tyform button').forEach(b => (b.disabled = !on));
+$v.addEventListener(
+  'load',
+  e => {
+    const q =
+      e.target instanceof HTMLImageElement &&
+      e.target.naturalWidth &&
+      e.target.closest('.q.qnone:not(.done) .qstage') &&
+      e.target.closest('.q');
+    if (!q) return;
+    q.classList.remove('qnone');
+    qAnswers(q, true);
   },
   true
 );

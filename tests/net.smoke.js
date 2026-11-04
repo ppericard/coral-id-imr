@@ -210,6 +210,13 @@ const server = http.createServer((req, res) => {
     if (await p.$('#qfail button')) {
       // With none of its photos shown, the question takes no answer (new-player walkthrough 2026-11-04: one given to the
       // blank frame counted); its note is on the question's one screen, its frame a plain tile (no broken-image icon).
+      // Every photo of the question settled first (each one gives up after its retries and its 480 px file): a second
+      // photo can still be trying when the note comes (Codex review #490).
+      await p
+        .waitForFunction(() => [...document.querySelectorAll('#view .qstage img')].every(i => i.classList.contains('fail')), null, {
+          timeout: 20000
+        })
+        .catch(() => {});
       const st = await p.evaluate(() => {
         const n = document.getElementById('qfail').getBoundingClientRect(),
           at = document.elementFromPoint(n.left + 4, n.top + n.height / 2);
@@ -228,6 +235,23 @@ const server = http.createServer((req, res) => {
       if (b1) await b1.click({force: true}).catch(() => {});
       await p.keyboard.press('1');
       if ((await p.evaluate(() => answersSoFar())) !== n0) fails.push('An answer to a question with no photo shown counted');
+      // A photo of the question that comes later opens the answers again: the hint if the question has one, else one
+      // added as the hint is (Codex review #490: the hint, added after the answers closed, left them closed).
+      await ctx.unroute(/\/img\/.*\.webp/);
+      if (await p.$('#hintb')) await p.click('#hintb');
+      else
+        await p.evaluate(
+          src => {
+            const st = document.querySelector('#view .qstage');
+            st.insertAdjacentHTML('beforeend', `<figure class="qph"><img src="${src}" alt=""></figure>`);
+          },
+          'img/' + fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'))
+        );
+      await p
+        .waitForSelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform input:not([disabled])', {
+          timeout: 10000
+        })
+        .catch(() => fails.push('A photo of the question that came later did not open its answers'));
       await p.click('#qfail button', {timeout: 5000}).catch(() => fails.push('"Another question" could not be clicked'));
       if ((await p.evaluate(() => answersSoFar())) !== n0) fails.push('Skipping a photo that did not load counted an answer');
       if (!(await p.$('#view [data-c]'))) fails.push('"Another question" did not show a question');
