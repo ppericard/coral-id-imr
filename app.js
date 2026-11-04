@@ -537,9 +537,11 @@ function inSubject(id, fn) {
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
   }
 }
-// The subject switch (Tools, the admin's only while a subject is in beta: proto/lab.js): the subject's data first, then
-// everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A subject the player
-// may not have (subjAt) brings the corals.
+// The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): two places, one state, the Corals | Fish row
+// at the top of Home (home.js) and the subject chip next to the logo in the header (#subjc, showSubj), shown only while
+// the player has more than one subject (subjMine: the admin's only while a subject is in beta). The subject's data
+// first, then everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A
+// subject the player may not have (subjAt) brings the corals.
 function setSubject(id) {
   const S = subjAt(id);
   if (S === SUBJ) return Promise.resolve();
@@ -558,27 +560,56 @@ function setSubject(id) {
     route();
   });
 }
-// Everything that names the subject on screen: the switches (Tools: [data-subj] buttons), ⚙ rows of one subject only
-// (setrow[data-for]), the section tabs' words. A subject in beta on screen (the admin's only) puts its card emoji on the
-// links to Tools (the header's Tools tab, the phones' hammer), where it is switched back.
+// The subjects this player can switch between (subjOpen): the switches show only when there are two or more.
+const subjMine = () => SUBJECTS.filter(subjOpen);
+// A subject's icon (UNITS icon: the one SVG set, 24 px grid) and its switch buttons ([data-subj], aria-pressed: the
+// subject on screen), each with its icon, its name and, for a subject in beta, a small beta tag.
+const subjIcon = (S, px = 18) =>
+  `<svg class="sji" viewBox="0 0 24 24" width="${px}" height="${px}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UNITS[S.id].icon}</svg>`;
+const subjBtns = () =>
+  subjMine()
+    .map(
+      S =>
+        `<button type="button" data-subj="${S.id}" aria-pressed="${S === SUBJ}">${subjIcon(S)}<span>${esc(S.name)}</span>${S.beta ? '<small class="beta">beta</small>' : ''}</button>`
+    )
+    .join('');
+// Everything that names the subject on screen: the switches ([data-subj] buttons: Home's row, the header chip's menu),
+// the header chip itself (the subject on screen, its icon and name; the name steps aside on phones while the Sign in pill
+// shows, app.css), ⚙ rows of one subject only (setrow[data-for]), the section tabs' words.
+const $subjc = document.getElementById('subjc');
 function showSubj() {
   document.documentElement.dataset.subject = SUBJ.id;
+  const two = subjMine().length > 1;
+  $subjc.hidden = !two;
+  $subjc.innerHTML = two
+    ? `<button type="button" class="subjb" id="subjb" aria-haspopup="true" aria-expanded="false" aria-controls="subjmenu" aria-label="Subject: ${esc(SUBJ.name)}. Switch" title="Subject: ${esc(SUBJ.name)}">${subjIcon(SUBJ)}<span class="sjn">${esc(SUBJ.name)}</span><svg class="sjc" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="subjmenu" id="subjmenu" role="group" aria-label="Subject" hidden>${subjBtns()}</div>`
+    : '';
   document.querySelectorAll('[data-subj]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.subj === SUBJ.id)));
   document.querySelectorAll('[data-for]').forEach(r => (r.hidden = r.dataset.for !== SUBJ.id));
-  document.querySelectorAll('.labgo, .sections a[data-tab="lab"]').forEach(a => {
-    if (SUBJ.beta) {
-      a.dataset.badge = CARD_KINDS[SUBJ.card] || '•';
-      a.title = `Tools · ${SUBJ.name} (beta) on`;
-    } else {
-      delete a.dataset.badge;
-      a.title = 'Tools';
-    }
-  });
 }
-// Every subject switch on any page ([data-subj]: the Tools hub's, admin only).
+// The header chip's menu: opened and closed by the chip, closed by a choice, Escape or a tap elsewhere (as ⚙).
+function subjMenu(open) {
+  const m = document.getElementById('subjmenu'),
+    b = document.getElementById('subjb');
+  if (!m || !b || m.hidden === !open) return;
+  m.hidden = !open;
+  b.setAttribute('aria-expanded', String(open));
+  if (open) (m.querySelector('[aria-pressed="true"]') || m.querySelector('button')).focus();
+}
+// Every subject switch on any page ([data-subj]: Home's row, the header chip's menu).
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-subj]');
-  if (b) setSubject(b.dataset.subj);
+  if (b) {
+    subjMenu(false);
+    setSubject(b.dataset.subj);
+  } else if (e.target.closest('#subjb')) subjMenu(document.getElementById('subjmenu').hidden);
+  else if (!e.target.closest('#subjmenu')) subjMenu(false);
+});
+document.addEventListener('keydown', e => {
+  const m = document.getElementById('subjmenu');
+  if (e.key !== 'Escape' || !m || m.hidden) return;
+  subjMenu(false);
+  document.getElementById('subjb').focus();
 });
 // A page of the Learn or Practice section that the subject does not have (core.js SUBJECTS pages: fish have no genus
 // sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead. Identify (the
@@ -1071,12 +1102,12 @@ const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
 /* ---------- quiz ---------- */
-// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen in Tools (the admin, while Fish is in beta),
-// remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
+// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen on Home or with the header chip (setSubject;
+// the admin's only while Fish is in beta), remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
 // subject's; code that must read another subject's state runs inside inSubject() (sync.js: the sheet's summary and
 // the merge of every subject's progress). setSubject() switches (subjectLoad: each file's per-subject state).
-// A subject in beta (core.js SUBJECTS beta: fish) is the admin's only (Pierre, 2026-11-04: "take it off Home, some things
-// clearly aren't ready; in Tools, visible only to admins"): anyone else opens on the corals whatever this device or the
+// A subject in beta (core.js SUBJECTS beta: fish) is the admin's only (Pierre, 2026-11-04: "some things clearly aren't
+// ready"; its switches on Home and in the header are shown only to the admin until fish opens): anyone else opens on the corals whatever this device or the
 // account saved, and nothing switches them to it (setSubject, a link to a sheet: subjAt). The saved choice and that
 // subject's progress stay as they are (synced, merged: inSubject), back on screen if the admin view comes back.
 const subjOpen = S => !S.beta || IS_ADMIN;
@@ -1138,6 +1169,8 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 const FISH_C3 = 0.5;
 const UNITS = {
   coral: {
+    // The subject's icon in its switches (app.js subjIcon): a branching coral.
+    icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
     load: () => Promise.resolve(),
     slate: () => slateOf(DATA),
     // Every name a player may type (quiz.js typeNames) and how a typed text is read (core.js typeMatchIn).
@@ -1174,6 +1207,7 @@ const UNITS = {
     ]
   },
   fish: {
+    icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
     slate: () => (FISH ? FISH.c1 : []),
     names: () => fishTypeNames(FISH ? FISH.gen : {}),

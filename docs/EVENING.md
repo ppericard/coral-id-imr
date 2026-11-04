@@ -17,6 +17,17 @@ _(none)_
 Asked by agents working without Pierre (AGENTS.md Rule 0): the question, its context, the agent's recommendation. Ask
 them first thing, then clear them.
 
+- **Fish common names: confirm the proposal, and how many names (2026-11-04 night, PR #522).** Context:
+  `tools/fish_common.json` proposes 1 to 3 names per game species (the PDF name first; the FishBase and iNaturalist main
+  English names when both references have them; a third when both have it and FishBase records it 3+ times): 184 species
+  with 1 name, 158 with 2, 100 with 3. Every listed name is needed for common-name mastery, and the score simulation puts a
+  common-names-only player at 80% after about 2.6 times as many answers as with one name each. Recommendation: confirm the
+  first two rules and drop the third (then 252 / 170 / 20 species with 1 / 2 / 3 names); review the per-entry tables in the
+  PR for single names you would cut (e.g. "Talbot's demoiselle" beside the PDF's "Talbot's damsel").
+- **Fish common names: the two PDF slips (same PR).** Context: rule 6a keeps a likely PDF slip as written and flags it, so
+  the proposal shows "Russelss's snapper" and "Eastern triangular" first, with "Russell's snapper" and "Eastern triangular
+  butterflyfish" as accepted spellings. Recommendation: show the FishBase spelling and keep the PDF form accepted when
+  typed (both are spellings of one name, not a different name).
 - **Fish score: the second kind of names is slow (2026-11-04 night, fish score simulation).** Context: `tools/fishscore.js`
   (docs/LEARNING.md "Fish: the global score, simulated"): with the agreed anchors (80% common only, 85% scientific only, 100%
   both), a player who finishes one kind of names and then starts the other gains its last 15-20 points 7-12 times slower
@@ -57,6 +68,17 @@ them first thing, then clear them.
   for the net.smoke step-9 hang that came back after #513 (the log shows the browser's Cache Storage had stopped
   answering, so the page never loaded; why it stalls is not known; a test that wedges it failed before the fix). #520 (smokes in reduced motion, tests only) waits on
   #524: its CI found that bug. **Recommendation: merge #524, then #531 and #520 once green and Codex-clean.**
+- **Subject switch: the header chip on phones (2026-11-04 night, PR "Subject switch", not merged).** Context: the chip
+  next to the logo with its icon and name did not fit a 390 px phone header with the Sign in pill (27 px too wide). Built:
+  on phones the chip shows its icon and a small caret only (its name is its label), and while the Sign in pill shows the
+  logotype text steps aside too, as it already does under 380 px for everyone; under 380 px the logotype steps aside
+  whenever the chip shows and the chip drops its caret (it then fits from 320 px, signed in or out); on tablets and
+  desktops icon + name + caret. Question: keep this, or another trade (e.g. the chip replaces the logotype on phones)?
+  **Recommendation: keep** (signed in, the logotype shows from 380 px; screenshots in the PR).
+- **Subject switch: the Home row's look (same PR).** Built as DESIGN.md says: one full-width segmented row above the
+  doors, each subject with its icon and name, Fish with a small *beta* tag, the Tools tile and the fish emoji on the
+  Tools links removed (the chip is the way back). Question: OK as it is, or a quieter row on desktop (it spans the
+  page)? **Recommendation: OK as it is**; merge the PR once you have looked at the screenshots.
 
 - **Fish common names (#522, open).** 442 species: 184 with 1 name, 158 with 2, 100 with 3 (full list in a PR comment).
   Q: drop the third-name rule (gives 252 / 170 / 20)? Recommendation: yes. Q: the two PDF slips ("Russelss's snapper",

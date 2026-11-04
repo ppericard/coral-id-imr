@@ -75,6 +75,16 @@ is the design's shorthand, and internal identifiers may keep it.
   free text accepts only the listed names.
 - **Selection** (a proposal, validated by Pierre in the admin): the names that recur across public sources (the iNaturalist default
   English name, the FishBase main English name, other public references), at most 3.
+- **The proposal** (2026-11-04 night, waiting on Pierre: `tools/fish_common.json`, written by `tools/fish_common.py`, every name
+  with its sources): the PDF name first (rule 1, kept as written, a likely slip flagged), then the FishBase main English name
+  and the iNaturalist default English name when each is found in both references, then a third only if both record it and
+  FishBase 3 times or more (countries, references); at most 3. Spellings of one name count once (Pearl-scaled / Pearlscale
+  angelfish; Neon damsel / damselfish), the others kept to accept when typed. A name two game species share is dropped from the
+  one that does not own it; a PDF name shared stays, flagged ("Twospot wrasse"). 442 game species: 252 with 1 name, 170 with 2,
+  20 with 3 (circle 1: 184 / 136 / 20; Pierre, 2026-11-05: no third rule, and a PDF slip shows FishBase's spelling,
+  the PDF form accepted when typed). Since every listed name is needed, more names make the common-name branch longer:
+  in the score simulation (`tools/fishscore.js --names tools/fish_common.json`) a common-names-only player reaches 80% after
+  about 2.6 times as many answers as with one name each.
 
 ## The very start (fish beta feedback, Pierre, 2026-11-04)
 
@@ -266,7 +276,7 @@ Gaps before species questions ship:
 - **Duplicate common name**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question).
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
-- The curated common names per species (1 to 3, "Common names"); today `common` holds one English name each.
+- The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
 - Fish answers are not logged to the sheet yet (no subject column): no pooled photo difficulty or confusion scores for fish until they are.
   Pierre, 2026-11-04: they are logged **from the start**, as soon as curated photos enter the game.
 

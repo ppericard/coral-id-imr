@@ -8,9 +8,10 @@
 // - typed answers: the entry's names (IMR name, family, sub-entries) read as the entry;
 // - progress per subject kept apart: fish answers in reefid-sync-fish-progress only, the corals' untouched; switching
 //   back to corals brings the coral slate and progress back;
-// - the fish beta is the admin's only (Pierre, 2026-11-04: off Home, in Tools, visible only to admins): a player who is
-//   not the admin sees no subject switch (Home, header, ⚙, Tools) and stays on the corals even with Fish saved, its fish
-//   progress kept; the admin switches in Tools and back. Every context below but that one holds an admin token.
+// - the fish beta is the admin's only (Pierre, 2026-11-04): a player who is not the admin sees no subject switch (Home,
+//   header, ⚙, Tools) and stays on the corals even with Fish saved, its fish progress kept; the admin switches on Home
+//   (the Corals | Fish row) and in the header (the subject chip), one state. Every context below but that one holds an
+//   admin token.
 // iNaturalist photos are not fetched (every other host is aborted): the logic only. Needs Playwright, like
 // draw.smoke.js. Locally: node tests/fish.smoke.js
 const http = require('http'),
@@ -239,11 +240,13 @@ const server = http.createServer((req, res) => {
     await setSubject('coral');
     return {subj: SUBJ.id, slate: slateGenera().length, ac: (P.Acropora || {}).ok, fish: localStorage.getItem('reefid-sync-subject')};
   });
-  // The screens the admin sees in the fish beta, at 390 and 1280 px (light theme): Fish in Tools (tagged beta, switched
-  // there), the fish emoji on the link to Tools while it is on, Home with no subject switch; a fish question (4 upright
-  // names); the enlarged photo before the answer credits its author by name only (blindCredit: no taxon, no link); after
-  // the answer the full credit with its iNaturalist link; My progress; a wink once; back to the corals in Tools; nothing
-  // wider than the screen on any of them.
+  // The screens the admin sees in the fish beta, at 390 and 1280 px (light theme): the subject switch in its two places,
+  // one state (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): a Corals | Fish row at the top of Home and a chip
+  // next to the logo in the header, on every page, its small menu with both subjects; the header keeps its size and Home
+  // still fits one screen; no Tools tile and no emoji on the links to Tools any more (the chip is the way back). Then a
+  // fish question (4 upright names); the enlarged photo before the answer credits its author by name only (blindCredit:
+  // no taxon, no link); after the answer the full credit with its iNaturalist link; My progress; a wink once; back to the
+  // corals through the header chip; nothing wider than the screen on any of them.
   const ui = [];
   for (const width of [390, 1280]) {
     const c2 = await b.newContext({viewport: {width, height: width < 600 ? 844 : 800}, serviceWorkers: 'block'});
@@ -266,50 +269,74 @@ const server = http.createServer((req, res) => {
       const w = await q.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       if (w > 0) ui.push(`${width}px ${what}: ${w}px wider than the screen`);
     };
-    // The tile and the badge on the link to Tools the screen shows (the hammer on phones, the Tools tab above).
-    const toolsLink = () =>
+    // The two switches and the header: which subject each one shows, the chip's place (next to the logo, inside the
+    // header's one line, clear of the controls), the header's height with and without the chip (rule 18), Home's height.
+    const look = () =>
       q.evaluate(() => {
-        const a = [...document.querySelectorAll('.labgo, .sections a[data-tab="lab"]')].find(x => x.offsetParent);
-        return a ? {badge: a.dataset.badge || '', title: a.title} : null;
+        const row = document.querySelector('#view .hsubj'),
+          chip = document.getElementById('subjb'),
+          hdr = document.querySelector('header'),
+          box = e => e && e.getBoundingClientRect(),
+          home = box(document.querySelector('.brand .home')),
+          cb = box(chip),
+          tools = [...document.querySelectorAll('.hdr-tools > :not([hidden]):not(.setpop)')].filter(e => e.offsetParent).map(box),
+          h1 = hdr.offsetHeight,
+          wrap = document.getElementById('subjc');
+        if (wrap) wrap.hidden = true;
+        const h0 = hdr.offsetHeight;
+        if (wrap) wrap.hidden = false;
+        return {
+          subj: SUBJ.id,
+          row: row
+            ? [...row.querySelectorAll('[data-subj]')]
+                .map(x => x.dataset.subj + (x.getAttribute('aria-pressed') === 'true' ? '*' : ''))
+                .join()
+            : '',
+          rowFull: row
+            ? Math.abs(row.getBoundingClientRect().width - document.querySelector('#view .hdoors').getBoundingClientRect().width) < 2
+            : false,
+          rowFirst: row ? row.getBoundingClientRect().bottom <= document.querySelector('#view .hdoors').getBoundingClientRect().top : false,
+          chip: chip && chip.offsetParent ? chip.getAttribute('aria-label') : '',
+          nextToLogo: !!(cb && home && cb.left >= home.right - 1 && cb.left - home.right < 24),
+          clear: !!cb && tools.every(t => cb.right <= t.left || cb.left >= t.right),
+          inLine: !!cb && cb.top >= hdr.getBoundingClientRect().top && cb.bottom <= hdr.getBoundingClientRect().top + h0,
+          hdr: [h0, h1],
+          fits: document.documentElement.scrollHeight <= innerHeight + 1
+        };
       });
-    await q.goto(base + '#lab');
-    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .labhub'), null, {timeout: 30000});
-    const tile = await q.evaluate(() => {
-      const t = document.querySelector('#view .labsubj');
-      return {
-        subj: SUBJ.id,
-        text: t ? t.textContent.replace(/\s+/g, ' ') : '',
-        on: t ? (t.querySelector('[aria-pressed="true"]') || {}).textContent : ''
-      };
-    });
-    if (tile.subj !== 'coral' || !/Fish\s*beta/.test(tile.text) || tile.on !== 'Corals')
-      ui.push(`${width}px Tools: no Fish beta tile ${JSON.stringify(tile)}`);
-    if (!tile.text) {
+    // Home, corals on: the row (Corals pressed), the chip (Corals), Home one screen, the header's size unchanged.
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    const h0 = await look();
+    if (h0.subj !== 'coral' || !/coral\*/.test(h0.row) || !/fish(?!\*)/.test(h0.row) || !h0.rowFull || !h0.rowFirst)
+      ui.push(`${width}px Home, Corals on: no Corals | Fish row at the top ${JSON.stringify(h0)}`);
+    if (!/Corals/.test(h0.chip) || !h0.nextToLogo || !h0.clear || !h0.inLine || h0.hdr[0] !== h0.hdr[1])
+      ui.push(`${width}px header chip, Corals on: ${JSON.stringify(h0)}`);
+    if (!h0.fits) ui.push(`${width}px Home with the subject row: more than one screen ${JSON.stringify(h0)}`);
+    await wide('Home');
+    // Fish chosen on Home: saved, everything follows (the row, the chip, the Learn door's photos are fish).
+    if (!(await q.$('#view .hsubj [data-subj="fish"]'))) {
       await c2.close();
       continue;
     }
-    const off = await toolsLink();
-    if (!off || off.badge) ui.push(`${width}px Tools link with Corals on: ${JSON.stringify(off)}`);
-    await wide('Tools');
-    await q.click('#view .labsubj [data-subj="fish"]');
-    await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000});
-    const on = await q.evaluate(() => ({
-      pressed: (document.querySelector('#view .labsubj [aria-pressed="true"]') || {}).textContent,
-      saved: localStorage.getItem('reefid-sync-subject')
-    }));
-    const onl = await toolsLink();
-    if (on.pressed !== 'Fish' || on.saved !== '"fish"' || !onl || !onl.badge || !/Fish \(beta\)/.test(onl.title))
-      ui.push(`${width}px Fish switched on in Tools: ${JSON.stringify({...on, link: onl})}`);
-    await wide('Tools, Fish on');
-    // Home: no subject switch, no beta line, even for the admin in Fish (the doors follow the subject on screen).
-    await q.evaluate(() => (location.hash = '#home'));
-    await q.waitForFunction(() => document.querySelector('#view .home-page'), null, {timeout: 15000});
-    const home = await q.evaluate(() => ({
-      sw: document.querySelectorAll('[data-subj], .hsubj, #subjb, #subjset').length,
-      beta: /beta|fishy/i.test(document.querySelector('#view').textContent)
-    }));
-    if (home.sw || home.beta) ui.push(`${width}px Home with Fish on: a subject switch or a beta line ${JSON.stringify(home)}`);
+    await q.click('#view .hsubj [data-subj="fish"]');
+    await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH && document.querySelector('#view .hsubj'), null, {
+      timeout: 30000
+    });
+    const h1 = await look();
+    const saved = await q.evaluate(() => localStorage.getItem('reefid-sync-subject'));
+    if (saved !== '"fish"' || !/fish\*/.test(h1.row) || !/Fish/.test(h1.chip) || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
+      ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
     await wide('Home, Fish on');
+    // Tools: no subject tile and no emoji on the links to Tools any more; the chip is there, on every page.
+    await q.evaluate(() => (location.hash = '#lab'));
+    await q.waitForFunction(() => document.querySelector('#view .labhub'), null, {timeout: 15000});
+    const tl = await q.evaluate(() => ({
+      tile: !!document.querySelector('#view .labsubj, #view [data-subj]'),
+      badge: [...document.querySelectorAll('.labgo, .sections a[data-tab="lab"]')].some(a => a.dataset.badge),
+      chip: (document.getElementById('subjb') || {}).offsetParent ? document.getElementById('subjb').getAttribute('aria-label') : ''
+    }));
+    if (tl.tile || tl.badge || !/Fish/.test(tl.chip)) ui.push(`${width}px Tools with Fish on: ${JSON.stringify(tl)}`);
     // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key, AGENTS.md
     // rule 6c), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
     // them, every entry under its own group; the key credited in full under the list.
@@ -383,20 +410,76 @@ const server = http.createServer((req, res) => {
     });
     if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
     await wide('a wink');
-    // Back to the corals in Tools: the badge goes.
-    await q.evaluate(() => (location.hash = '#lab'));
-    await q.waitForSelector('#view .labsubj [data-subj="coral"]', {timeout: 15000});
-    await q.click('#view .labsubj [data-subj="coral"]');
+    // Back to the corals through the header chip: its menu holds both subjects; a choice closes it.
+    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
+    for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
+    await q.click('#subjb');
+    const menu = await q.evaluate(() => {
+      const m = document.getElementById('subjmenu');
+      return {
+        open: !!m && !m.hidden && !!m.offsetParent,
+        expanded: document.getElementById('subjb').getAttribute('aria-expanded'),
+        items: m
+          ? [...m.querySelectorAll('[data-subj]')].map(x => x.dataset.subj + (x.getAttribute('aria-pressed') === 'true' ? '*' : '')).join()
+          : '',
+        inside: !!m && m.getBoundingClientRect().right <= innerWidth && m.getBoundingClientRect().left >= 0
+      };
+    });
+    if (!menu.open || menu.expanded !== 'true' || !/fish\*/.test(menu.items) || !/coral(?!\*)/.test(menu.items) || !menu.inside)
+      ui.push(`${width}px header chip's menu: ${JSON.stringify(menu)}`);
+    await wide('the chip menu open');
+    await q.click('#subjmenu [data-subj="coral"]');
     await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000});
     const bk = await q.evaluate(() => ({
       slate: slateGenera().length,
       saved: localStorage.getItem('reefid-sync-subject'),
-      pressed: (document.querySelector('#view .labsubj [aria-pressed="true"]') || {}).textContent
+      chip: document.getElementById('subjb').getAttribute('aria-label'),
+      closed: document.getElementById('subjmenu').hidden,
+      expanded: document.getElementById('subjb').getAttribute('aria-expanded')
     }));
-    const bl = await toolsLink();
-    if (bk.slate < 39 || bk.saved !== '"coral"' || bk.pressed !== 'Corals' || !bl || bl.badge)
-      ui.push(`${width}px back to Corals in Tools: ${JSON.stringify({...bk, link: bl})}`);
+    if (bk.slate < 39 || bk.saved !== '"coral"' || !/Corals/.test(bk.chip) || !bk.closed || bk.expanded !== 'false')
+      ui.push(`${width}px back to Corals through the header chip: ${JSON.stringify(bk)}`);
+    // The menu closes with Escape and with a tap elsewhere, choosing nothing.
+    await q.evaluate(() => (location.hash = '#about'));
+    await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});
+    await q.click('#subjb');
+    await q.keyboard.press('Escape');
+    const esc1 = await q.evaluate(() => document.getElementById('subjmenu').hidden);
+    await q.click('#subjb');
+    await q.click('#view .about p');
+    const out1 = await q.evaluate(() => ({closed: document.getElementById('subjmenu').hidden, subj: SUBJ.id}));
+    if (!esc1 || !out1.closed || out1.subj !== 'coral')
+      ui.push(`${width}px chip menu: Escape ${esc1}, a tap elsewhere ${JSON.stringify(out1)}`);
     await c2.close();
+  }
+  // The admin's header with the subject chip fits one line on the narrowest phones, signed out (the Sign in pill shown)
+  // and signed in: no sideways scroll at 320 and 360 px (the logotype and the chip's caret step aside there, app.css).
+  for (const width of [320, 360]) {
+    const c4 = await b.newContext({viewport: {width, height: 640}, serviceWorkers: 'block'});
+    await c4.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c4.addInitScript(() => {
+      try {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-admin-vault', 'smoke');
+      } catch (e) {}
+    });
+    const q = await c4.newPage();
+    q.on('pageerror', e => errs.push(`${width}px narrow header: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    for (const signed of [false, true]) {
+      const m = await q.evaluate(s => {
+        document.getElementById('signb').hidden = s;
+        const c = document.getElementById('subjb');
+        return {chip: !!(c && c.offsetParent), over: document.documentElement.scrollWidth - innerWidth};
+      }, signed);
+      if (!m.chip || m.over > 0) ui.push(`${width}px admin header ${signed ? 'signed in' : 'signed out'}: ${JSON.stringify(m)}`);
+    }
+    await c4.close();
   }
   // A player who is not the admin (no admin token; or the admin token in ⚙ View: User), with Fish saved on this device
   // (chosen when the switch was on Home) and fish progress: the corals on screen, fish.json not even loaded, no subject
