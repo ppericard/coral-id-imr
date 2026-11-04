@@ -7,9 +7,9 @@ Decided with Pierre, 2026-11-03: one engine for corals and fish, with a taxonomy
    or odd clades are kept, missing ranks are simply skipped. A node is {name: accepted name, rank, parent, syn: WoRMS
    synonyms (old names stay accepted when typed), inat: iNaturalist taxon id (photos), iname: iNaturalist's name when it
    differs from WoRMS}. Nodes run from the WoRMS class (Teleostei, Elasmobranchii...) down to the species.
-2. Teaching tree (`teach`), what the game asks: level 1 = the 27 family-level entries of the IMR fish presentation in the
-   order of its 10 shape groups (chapters), then the other circles; level 2 = species. Each teaching node points to one
-   or more reference nodes (`ref`, minus `not`): Unicornfish = genus Naso, Surgeonfish = the rest of Acanthuridae,
+2. Teaching tree (`teach`), what the game asks: level 1 = the 27 family-level entries of the IMR fish presentation in its
+   order, then the other circles; level 2 = species. Each teaching node points to one or more reference nodes (`ref`,
+   minus `not`): Unicornfish = genus Naso, Surgeonfish = the rest of Acanthuridae,
    Parrotfish = subfamily Scarinae, Wrasse = Labridae without Scarinae, Sweetlips = Plectorhinchus + Diagramma...
    A species belongs to the teaching node whose `ref` holds its nearest ancestor (the most specific wins), its genus
    being the genus of its PDF name: Chromis agilis stays under Chromis though WoRMS now has it in Pycnochromis.
@@ -19,6 +19,14 @@ cheatsheet first, and the species the slides name); 2 = seen sometimes on SVS vi
 "beyond IMR", not PDF-based (Pierre, 2026-11-03): the fish families divers want to recognise, muck diving above all
 (sources in the source file's `sources`, reason in each node's `why`), with their species confirmed near Dauin (near_dauin), plus winks
 (`wink`: unmistakable species, fun to meet, a light bonus rather than ID training). Silvery/pelagic groups are not circle 1.
+
+Identification groups (Pierre, 2026-11-04; AGENTS.md rule 6c): the regional identification key in force (the source's
+`deploy.key`, one of its `keys`; for the Indo-Pacific, the index of a reef fish ID book) is the reference for fish groups.
+Every teaching node gets the group of its key (`group`, the key's group number): the first key label met walking up WoRMS
+from each of its references (a subfamily label wins over its family's), the same for all of them. The build fails, naming
+the node, when a node in the game (any circle, winks aside) has no group or spans two groups, unless the source makes the
+choice explicit (`keyGroup`; null with `keyWhy` while a node waits for a decision, listed by the build). A region with no
+key has no such rule. fish.json `key` = the key in force (id, region, cite, short, groups without their labels).
 
 Names (Pierre, 2026-11-03): the name shown and expected is the PDF's, i.e. EventMeasure's (a fixed pick list that may lag
 WoRMS). The WoRMS accepted name goes beside it in `now` ("now X in WoRMS"); both are accepted when typed, and the WoRMS
@@ -54,6 +62,8 @@ tools/.cache/fish.json (git-ignored), so a rerun is offline and gives the same f
 names move over time), --offline fails instead of asking. The output is deterministic: one record per line, sorted.
 
 Usage: python3 tools/build_fish.py [--offline | --refresh] [--dry]   (--dry: print the report, leave fish.json as it is)
+       python3 tools/build_fish.py --regroup   (offline, no WoRMS call: re-applies the key in force to fish.json as it is,
+       from its own reference tree; after an edit of `keys`, `deploy` or `keyGroup`, or to settle a merge of fish.json)
 Check: node --test tests/fish.test.js
 """
 import argparse
@@ -314,6 +324,136 @@ def resolve_ref(x, report):
     return acc["AphiaID"]
 
 
+def key_in_force(src):
+    """The identification key of this deployment's region (source `deploy.key` among `keys`), or None when the region has
+    none (then no group rule). Its labels' names must be unique across groups."""
+    kid = (src.get("deploy") or {}).get("key")
+    if not kid:
+        return None
+    key = next((k for k in src.get("keys", []) if k["id"] == kid), None)
+    if key is None:
+        sys.exit(f"deploy.key {kid!r}: no such key in keys")
+    seen = {}
+    for g in key["groups"]:
+        for lab in g["labels"]:
+            for name in lab[1]:
+                if seen.setdefault(name, g["n"]) != g["n"]:
+                    sys.exit(f"key {kid}: {name} is under groups {seen[name]} and {g['n']}")
+    return key
+
+
+def key_out(key):
+    """The key as fish.json carries it: the app shows group numbers and titles and credits the key (no labels)."""
+    if key is None:
+        return None
+    o = {k: key[k] for k in ("id", "region", "cite", "short")}
+    o["groups"] = [{"n": g["n"], "title": g["title"], "pages": g["pages"]} for g in key["groups"]]
+    return o
+
+
+def key_groups(key, units, tree):
+    """{unit id: group n or None} under the key in force. units: [{id, name, refs (AphiaIDs), subs: [{id, name, refs}],
+    game (in the game: any circle, winks aside), choice (the source's keyGroup for this key, absent: no entry), why}];
+    tree: AphiaID -> {name, parent}. A reference's group: the first key label met walking up from it. Fails, naming every
+    offending node, when a node in the game has no group, a reference with none, or two groups, without an explicit choice;
+    a sub-entry must fall in its entry's group. Returns ({id: n}, [waiting: "id name: why"])."""
+    if key is None:
+        return {}, []
+    label = {name: g["n"] for g in key["groups"] for lab in g["labels"] for name in lab[1]}
+    nums = {g["n"] for g in key["groups"]}
+
+    def of(aid):
+        while aid is not None:
+            n = tree[aid]
+            if n["name"] in label:
+                return label[n["name"]]
+            aid = n["parent"]
+        return None
+
+    out, waiting, bad = {}, [], []
+    for u in units:
+        gs = [of(a) for a in u["refs"]]
+        if "choice" in u:
+            c = u["choice"]
+            if c is None and not u.get("why"):
+                bad.append(f"{u['id']} {u['name']}: keyGroup null needs a keyWhy")
+            elif c is not None and c not in nums:
+                bad.append(f"{u['id']} {u['name']}: keyGroup {c} is not a group of key {key['id']}")
+            elif c is None:
+                waiting.append(f"{u['id']} {u['name']}: {u['why']}")
+            out[u["id"]] = c
+        elif None not in gs and len(set(gs)) == 1:
+            out[u["id"]] = gs[0]
+        else:
+            out[u["id"]] = None
+            hit = sorted(set(gs) - {None})
+            if u["game"]:
+                lost = [tree[a]["name"] for a, g in zip(u["refs"], gs) if g is None]
+                why = (f"two groups {', '.join(map(str, hit))}" if len(hit) > 1
+                       else f"no group for {', '.join(lost)}" if hit else "no group")
+                bad.append(f"{u['id']} {u['name']}: {why} in key {key['id']} (add its family to the key, or a keyGroup)")
+        for sub in u.get("subs", []):
+            sg = {of(a) for a in sub["refs"]}
+            if out[u["id"]] is not None and sg != {out[u["id"]]}:
+                bad.append(f"{sub['id']} {sub['name']}: group {sorted(sg, key=str)}, its entry {u['id']} {out[u['id']]}")
+    if bad:
+        sys.exit("identification groups (AGENTS.md rule 6c):\n  " + "\n  ".join(bad))
+    return out, waiting
+
+
+def regroup(src_path, check):
+    """--regroup: the key in force applied again to fish.json as it is, from its own reference tree (no network).
+    --check: write nothing, fail when fish.json differs (tests/fish.test.js runs it)."""
+    src = json.loads(src_path.read_text(encoding="utf-8"))
+    o = json.loads(OUT.read_text(encoding="utf-8"))
+    key = key_in_force(src)
+    tree = {int(a): {"name": n["name"], "parent": n["parent"]} for a, n in o["ref"].items()}
+    by = {t["id"]: t for t in src["teach"]}
+    kid = key["id"] if key else None
+    units = [unit(t["ref"], [(u["id"], u["name"], u["ref"]) for u in t.get("sub", [])], by[t["id"]], not t.get("wink"), kid)
+             for t in o["teach"]]
+    groups, waiting = key_groups(key, units, tree)
+    teach = []
+    for t in o["teach"]:
+        t = {k: v for k, v in t.items() if k != "group"}
+        put_group(t, groups.get(t["id"]))
+        teach.append(t)
+    o["teach"], o["key"] = teach, key_out(key)
+    o.pop("groups", None)
+    if check:
+        if render(o) != OUT.read_text(encoding="utf-8"):
+            kid = key["id"] if key else "(none)"
+            sys.exit(f"{OUT.relative_to(ROOT)} is not as key {kid} gives it: run python3 tools/build_fish.py --regroup")
+        print("fish.json groups: as the key gives them")
+        return
+    write(o)
+    print(f"regrouped {OUT.relative_to(ROOT)} with key {key['id'] if key else '(none)'}")
+    for w in waiting:
+        print("  waiting on Pierre: " + w)
+
+
+def unit(refs, subs, s, game, kid):
+    """A teaching node as key_groups reads it (refs: AphiaIDs; s: its source node, whose keyGroup for key kid is the
+    explicit choice)."""
+    u = {"id": s["id"], "name": s["name"], "refs": refs, "game": game,
+         "subs": [{"id": i, "name": n, "refs": r} for i, n, r in subs]}
+    kg = s.get("keyGroup") or {}
+    if kid in kg:
+        u["choice"], u["why"] = kg[kid], s.get("keyWhy", "")
+    return u
+
+
+def put_group(o, g):
+    """Insert `group` right after fam / wfam (the record's layout), when the node has one."""
+    if g is None:
+        return
+    items = list(o.items())
+    at = next((i + 1 for i, (k, _) in reversed(list(enumerate(items))) if k in ("fam", "wfam")), len(items))
+    items.insert(at, ("group", g))
+    o.clear()
+    o.update(items)
+
+
 def dumps(o):
     return json.dumps(o, ensure_ascii=False, separators=(",", ":"))
 
@@ -325,7 +465,13 @@ def main():
     ap.add_argument("--refresh", action="store_true")
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--near", action="store_true", help="only (re)compute present.near on the existing fish.json")
+    ap.add_argument("--regroup", action="store_true")
+    ap.add_argument("--check", action="store_true", help="with --regroup: fail when fish.json is not as the key gives it")
+    ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another source file
     a = ap.parse_args()
+    if a.regroup:
+        regroup(Path(a.src) if a.src else SRC, a.check)
+        return
     NET = Net(a.offline, a.refresh)
     if a.near:
         try:
@@ -343,7 +489,7 @@ def main():
             print(f"wrote {OUT.relative_to(ROOT)}")
         return
     src = json.loads(SRC.read_text(encoding="utf-8"))
-    report = {"refnames": [], "renamed": [], "typo": [], "lumped": [], "empty": [], "pierre": [], "out": [], "drop": [], "mismatch": [], "noinat": [], "pdf": [], "unplaced": []}
+    report = {"waiting": [], "refnames": [], "renamed": [], "typo": [], "lumped": [], "empty": [], "pierre": [], "out": [], "drop": [], "mismatch": [], "noinat": [], "pdf": [], "unplaced": []}
     try:
         out = build(src, report)
     finally:
@@ -374,6 +520,14 @@ def build(src, report):
             for aid in u["_ref"] + u["_not"]:
                 add_chain(aid)
         nodes.append(t)
+    # The key in force: every label names a WoRMS accepted taxon, as written (a key is matched by name on the tree).
+    key = key_in_force(src)
+    for g in (key or {}).get("groups", []):
+        for lab in g["labels"]:
+            for name in lab[1]:
+                rec, how = worms_name(name)
+                if not rec or how != "exact" or accepted(rec)["scientificname"] != name:
+                    sys.exit(f"key {key['id']} group {g['n']} {lab[0]}: {name} is not a WoRMS accepted name ({how})")
 
     def place(anc, cands):
         best = None
@@ -527,8 +681,6 @@ def build(src, report):
             wf = fams(u)
             if u.get("fam") and wf != [u["fam"]]:
                 o["wfam"] = wf
-            if u.get("group"):
-                o["group"] = u["group"]
             o["level"] = 1
             o["circle"] = u.get("circle", 1)
             o["src"] = u.get("src", "imr")
@@ -571,15 +723,29 @@ def build(src, report):
         if n.get("iname"):
             o["iname"] = n["iname"]
         ref[aid] = o
+    # Identification groups under the key in force (AGENTS.md rule 6c): every node in the game has one, or the build stops.
+    kept_ids = {o["id"] for o in out_t}
+    units = [unit(t["_ref"], [(u["id"], u["name"], u["_ref"]) for u in t.get("sub", [])], t, not t.get("wink"), key["id"] if key else None)
+             for t in nodes if t["id"] in kept_ids]
+    groups, report["waiting"] = key_groups(key, units, tree)
+    for o in out_t:
+        put_group(o, groups.get(o["id"]))
     # start: the starter core (fish_source.json _doc), circle-1 entries met first; checked to be kept entries.
     start = [t for t in src.get("start", []) if any(o["id"] == t and o["circle"] == 1 for o in out_t)]
-    return {"v": V, "start": start, "groups": src["groups"], "teach": out_t, "species": out_sp, "ref": ref}
+    return {"v": V, "start": start, "key": key_out(key), "teach": out_t, "species": out_sp, "ref": ref}
 
 
 def write(o):
-    lines = ["{", f'"v":{o["v"]},', f'"start":{dumps(o.get("start", []))},', '"groups":[']
-    lines.append(",\n".join(dumps(g) for g in o["groups"]))
-    lines.append("],")
+    OUT.write_text(render(o), encoding="utf-8")
+
+
+def render(o):
+    lines = ["{", f'"v":{o["v"]},', f'"start":{dumps(o.get("start", []))},']
+    if o.get("key"):  # the key in force, one group per line
+        k = o["key"]
+        lines.append('"key":' + dumps({x: k[x] for x in k if x != "groups"})[:-1] + ',"groups":[')
+        lines.append(",\n".join(dumps(g) for g in k["groups"]))
+        lines.append("]},")
     for k in ("teach", "species"):
         lines.append(f'"{k}":[')
         lines.append(",\n".join(dumps(x) for x in o[k]))
@@ -588,7 +754,7 @@ def write(o):
     lines.append(",\n".join(f'"{aid}":{dumps(n)}' for aid, n in o["ref"].items()))
     lines.append("}")
     lines.append("}")
-    OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return "\n".join(lines) + "\n"
 
 
 def show(o, rep):
@@ -601,7 +767,8 @@ def show(o, rep):
         print(f"  circle {c}: {sum(1 for t in o['teach'] if t['circle'] == c)} teaching nodes, {len(cs)} species, "
               f"{sum(1 for s in cs if s['present'].get('near'))} confirmed near Dauin, "
               f"{sum(1 for s in cs if not s['present'].get('near') and (s['present']['dauin'] or s['present']['dauinNI']))} more seen there, not confirmed")
-    for k, title in (("refnames", "teaching refs resolved to another accepted name"),
+    for k, title in (("waiting", "teaching nodes in the game waiting for an identification group (keyGroup null)"),
+                     ("refnames", "teaching refs resolved to another accepted name"),
                      ("renamed", "PDF names WoRMS has since changed (PDF name kept, WoRMS name in `now`)"),
                      ("typo", "likely slips in the PDF, to check against EventMeasure (PDF text kept)"),
                      ("lumped", "PDF species WoRMS treats as one (both kept)"),
