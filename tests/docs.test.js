@@ -25,3 +25,10 @@ test('the archived done list stays frozen', () => {
     'docs/archive/DONE-until-2026-11-04.md is frozen: never add to or edit it'
   );
 });
+
+// Codex review #502: since #499 the deploy stamps the version numbers; no doc may tell a PR to bump them by hand or to
+// run the retired check_versions.py flags (--fix, --base, --no-base).
+test('the docs never tell a PR to bump version numbers by hand', () => {
+  for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md'])
+    assert.ok(!/check_versions\.py --fix|--no-base|`--fix` bumps|so bump `\?v=`/.test(read(f)), f + ': a manual version bump');
+});
