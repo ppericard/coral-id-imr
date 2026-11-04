@@ -17,87 +17,8 @@ _(none)_
 Asked by agents working without Pierre (AGENTS.md Rule 0): the question, its context, the agent's recommendation. Ask
 them first thing, then clear them.
 
-- **Fish common names: confirm the proposal, and how many names (2026-11-04 night, PR #522).** Context:
-  `tools/fish_common.json` proposes 1 to 3 names per game species (the PDF name first; the FishBase and iNaturalist main
-  English names when both references have them; a third when both have it and FishBase records it 3+ times): 184 species
-  with 1 name, 158 with 2, 100 with 3. Every listed name is needed for common-name mastery, and the score simulation puts a
-  common-names-only player at 80% after about 2.6 times as many answers as with one name each. Recommendation: confirm the
-  first two rules and drop the third (then 252 / 170 / 20 species with 1 / 2 / 3 names); review the per-entry tables in the
-  PR for single names you would cut (e.g. "Talbot's demoiselle" beside the PDF's "Talbot's damsel").
-- **Fish common names: the two PDF slips (same PR).** Context: rule 6a keeps a likely PDF slip as written and flags it, so
-  the proposal shows "Russelss's snapper" and "Eastern triangular" first, with "Russell's snapper" and "Eastern triangular
-  butterflyfish" as accepted spellings. Recommendation: show the FishBase spelling and keep the PDF form accepted when
-  typed (both are spellings of one name, not a different name).
-- **Fish score: the second kind of names is slow (2026-11-04 night, fish score simulation).** Context: `tools/fishscore.js`
-  (docs/LEARNING.md "Fish: the global score, simulated"): with the agreed anchors (80% common only, 85% scientific only, 100%
-  both), a player who finishes one kind of names and then starts the other gains its last 15-20 points 7-12 times slower
-  per answer than before (each species' scientific name adds about 0.06 points to someone who knows its common names). This
-  comes from the anchors, not from *a* or *b*. Is that what you want? Recommendation: yes, keep the formula as agreed; the
-  three bars under the headline (Entries, Common names, Scientific names) show the progress the headline hides.
-- **Fish score: the leaderboard at equal effort (same simulation).** Context: at 30,000 simulated answers a player learning
-  common names only shows 80%, scientific only 72%, both names side by side 62% (96% at 100,000). On the fish
-  leaderboard (ranked by this score) an RA learning both names sits below a diver learning common names only, for most of
-  the path. Recommendation: keep the one scale you chose; look again once fish answers are logged (the real pace per kind
-  of names will replace the simulation's assumed learning rates).
-- **Fish judging, circles 2 and 3: a family exception to the caps?** (fish photos track, 2026-11-04 night.) The 475
-  photos of circles 2 and 3 and the winks were judged on the rubric as written (judging/FISH.md). Several of these
-  families are almost never shown the way the rubric calls very easy: morays, snake eels, garden eels and jawfishes
-  live with most of the body in a hole (partial: at most 3), frogfishes, scorpionfishes, stonefishes and seamoths are
-  camouflaged (at most 3), rays and seamoths are mostly seen from above (at most 3). Seven entries have no photo at 4-5
-  (Morays, Garden eels, Frogfishes, Snake eels, Jawfishes, Reef sharks and the Thresher sharks wink), so their
-  first questions take their 3 easiest (`model.js` `easyFirst`, as designed). Question: keep the caps for them, or add
-  a per-entry "natural view" exception like the juvenile classes (e.g. head out of a hole is the normal view of a
-  moray)? **Recommendation: keep the caps** (circles 2 and 3 are opt-in, met after circle 1; the fallback to the 3
-  easiest already works), and revisit when fish answers are logged.
-- **Admin page roles, the rest: the places and names (#535, open; 2026-11-04 night, admin track).** Context: the
-  ROADMAP row you agreed (Health = what needs action, Activity = who plays, Analyses = what we learn; nothing removed,
-  only moved) left these choices open; #535 made them (before/after screenshots listed in it): Activity's five analysis
-  cards are **Analyses › Learning › Answer log**; the Mix-ups view (pairs, photos, colonies, species) is **Analyses ›
-  Difficulty › Pairs** (next to the model's Mix-ups); Health's "Where players stop" and "Genus sheets opened" are
-  **Analyses › Learning › Stops**; Health's 30-day answers and players per day went (Activity over time shows them per
-  day). Question: these places and names, and dropping that card? **Recommendation: yes as built, then merge #535**;
-  later, one Mix-ups view (the model's and the live tables together) if two read as one too many.
-- **Health: alerts for what needs action, each linking to its detail? (same PR.)** Context: the row lists for Health app
-  errors, photos failing, failed saves, old app versions, slow loads and alerts such as a calibration that drifts; today
-  those live in To do › Errors (and All), and #535's Health keeps only its two answer-log alerts (photos everyone misses,
-  genera that don't take off). Question: should Health also show a short line per such alert (a count linking to Errors
-  or Analyses)? **Recommendation: yes, in a small follow-up PR** once #535 is in (not built: it is new UI).
-- **Two fixes players will feel, waiting for your eye (merging was refused at night as a production deploy).** #524:
-  a card photo that fails once on R2 no longer shows a broken-image icon for about a second while it is retried (your
-  rule: never a broken-image icon on a card); #531: `sw.js` never waits on the browser's Cache Storage more than 3 s,
-  for the net.smoke step-9 hang that came back after #513 (the log shows the browser's Cache Storage had stopped
-  answering, so the page never loaded; why it stalls is not known; a test that wedges it failed before the fix). #520 (smokes in reduced motion, tests only) waits on
-  #524: its CI found that bug. **Recommendation: merge #524, then #531 and #520 once green and Codex-clean.**
-- **Subject switch: the header chip on phones (2026-11-04 night, PR "Subject switch", not merged).** Context: the chip
-  next to the logo with its icon and name did not fit a 390 px phone header with the Sign in pill (27 px too wide). Built:
-  on phones the chip shows its icon and a small caret only (its name is its label), and while the Sign in pill shows the
-  logotype text steps aside too, as it already does under 380 px for everyone; under 380 px the logotype steps aside
-  whenever the chip shows and the chip drops its caret (it then fits from 320 px, signed in or out); on tablets and
-  desktops icon + name + caret. Question: keep this, or another trade (e.g. the chip replaces the logotype on phones)?
-  **Recommendation: keep** (signed in, the logotype shows from 380 px; screenshots in the PR).
-- **Subject switch: the Home row's look (same PR).** Built as DESIGN.md says: one full-width segmented row above the
-  doors, each subject with its icon and name, Fish with a small *beta* tag, the Tools tile and the fish emoji on the
-  Tools links removed (the chip is the way back). Question: OK as it is, or a quieter row on desktop (it spans the
-  page)? **Recommendation: OK as it is**; merge the PR once you have looked at the screenshots.
+_(none: all answered on 2026-11-05 morning; the notes for later are in "Where the night stopped")_
 
-- **Fish common names (#522, open).** 442 species: 184 with 1 name, 158 with 2, 100 with 3 (full list in a PR comment).
-  Q: drop the third-name rule (gives 252 / 170 / 20)? Recommendation: yes. Q: the two PDF slips ("Russelss's snapper",
-  "Eastern triangular"): show the FishBase spelling and still accept the PDF form when typed? Recommendation: yes.
-- **Fish genus step (#526, open, sheet v46).** Q: an opt-in "Scientific names" set now, the welcome question later?
-  Q: a family's genera join at its Advanced? Q: the offer card and genus card wording (screens in the PR)? Q: genera stay
-  out of the progress % until the global score ships? Recommendation: yes to all, as built.
-- **Subject switch (#533, open).** Q: on phones the header chip shows icon + caret only and the logotype steps aside
-  while Sign in shows (always under 380 px)? Q: the Home row's look (full width, icon, name, *beta* tag)?
-  Recommendation: keep both as built.
-- **Identify per subject (#536, open).** Q: the fish wording ("On the SVS videos · or a photo from your dive"; SVS or
-  EventMeasure?), the "coming soon" card and the fish photo on the Home door. Recommendation: keep until the Fish ID Key
-  is designed.
-- **Fish welcome question (#538, open, sheet v47).** Q: the line under each answer (agent's wording)? Q: start values
-  = the corals' (level 0 / 0.5 / 1.25, open-all card from answer 50 / 30 / 20) until learnsim has fish profiles?
-  Recommendation: keep; learnsim fish profiles next.
-- **Fish open to a group (#540, open, sheet v48).** Q: the group lives on the Fish side of Players (Beta column, Add /
-  Remove, Add all)? Q: "Add all" adds existing players only, later sign-ups are added by hand? Q: the wording.
-  Recommendation: keep as built.
 ## Where the day stopped
 
 Overwritten by the end-of-day protocol (16:30-17:30 Manila): date; done today; unfinished work (branch, PR, state, next
@@ -149,23 +70,11 @@ winks (all 1,160 fish game photos judged); #523, #525, #527, #528, #529, #532, #
 every game species (fish-cand.json 8,667 → 12,073) and judged into suggest.json `fish` (8,573 judged, ~70 `unsure`;
 nothing reaches the game without Pierre's Publish); #537 night questions.
 
-**Open, waiting for Pierre** (all green and Codex-clean unless said; screenshots listed in each PR; they were saved in
-the night session's scratchpad, which a new session cannot see, so re-take them if needed):
-
-| PR | What | Note |
-|---|---|---|
-| #520 | Smokes in reduced motion by default | Red until #524 merges; then merge main and re-request Codex. |
-| #535 | Admin page roles, the rest | Questions above. |
-| #522 | Fish common names, 1-3 per species | Editorial; questions above. |
-| #526 | Fish genus step | Sheet v46; questions above. |
-| #533 | Subject switch, Home row + header chip | Questions above. |
-| #536 | Identify per subject | Questions above. |
-| #538 | Fish welcome question | Sheet v47; questions above. |
-| #540 | Fish opens to a group | Sheet v48; questions above. |
+**Open PRs: none** (2026-11-05 morning: every night PR merged with Pierre's OK: #520, #522, #524, #526, #531, #533, #535, #536, #538, #540, #549, #551; sheet v46-v48 deploy in that order).
 
 **Morning 2026-11-05 (coordinator):** merged #531 (Cache Storage waits bounded), #551 (admin reads curation.json past 1 MB from its blob; the admin loads again, checked live), #524 (no broken-image flash on cards), #549 (fish candidates batch). #520 brought onto main, CI running. Still open: #520, then Pierre's choices on #535, #522, #526, #533, #536, #538, #540 (questions above).
 
-**Next for the following agent (Pierre, 2026-11-05 morning; not started, to build after the open PRs are merged):**
+**Next for the following agent (Pierre, 2026-11-05 morning; not started; all PRs are merged, so this is the next work):**
 (1) Journey › "Cards" list: items are not in time order (Nov 4 rows before Nov 2 ones), "inferred" is said twice, and
 two identical "Changed to I had the IMR coral course · after answer 160 · in the welcome tour" rows appear 4 min apart
 (duplicate event or two real changes: check the data path); check every time is the player's local time (UTC offset
@@ -180,11 +89,6 @@ especially), #526, #533, #536, #538, #540 as recommended. Notes for later: (1) #
 again once a player has said no; (2) the fish global score (formula agreed, simulated in #519) is still to build;
 (3) Identify in fish mode: the tool is used in front of EventMeasure (IMR's fish data-analysis software), not "SVS
 videos" (wording fixed in #536).
-
-**Merge-order traps:** the sheet versions 46 / 47 / 48 are reserved by #526 / #538 / #540: merged in another order, the
-later ones take the next free number (Code.gs header, ARCHITECTURE's version list, tests). `tests/fish.smoke.js` is
-touched by #533, #536, #538 and #540: the second to merge needs a small manual merge; #540 edits the Tools tile that #533
-removes (take #533's side).
 
 **Left to do on the fish candidates:** about 3,500 unjudged in 114 species (`python3 tools/judging_fish.py todo`: the
 last 25 Wrasse species from s270 *Labroides bicolor*, then circles 2 and 3); same process as #523-#549.
