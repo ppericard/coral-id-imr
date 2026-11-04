@@ -220,9 +220,12 @@ const upsize = (root = $v) =>
 const photoFail = e => {
   const i = e.target;
   if (!(i instanceof HTMLImageElement)) return;
+  // A card's photo stays out of sight while it is asked again (the cards' own error listener, quiz.js, which this one
+  // stops, does the same for the retries after it: never a broken-image icon on a card); its load shows it again.
+  const hide = () => i.closest('.unlock') && i.classList.add('fail');
   // R2 once more first (core.js photoRetry: a passing error), then the site.
-  if (photoRetry(i, toSite)) return e.stopImmediatePropagation();
-  toSite(i) && e.stopImmediatePropagation();
+  if (photoRetry(i, toSite)) return (hide(), e.stopImmediatePropagation());
+  if (toSite(i)) (hide(), e.stopImmediatePropagation());
 };
 const toSite = i => {
   if (!photoToSite(i)) return false;
@@ -399,6 +402,91 @@ function build() {
   }
   DATA = d;
 }
+// The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
+// with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of the circle-1 species of each
+// IMR entry, the genus being the first word of the PDF name (no grouping invented, rule 2; a genus never spans two
+// entries). Its record, beside the entries in FISH.gen under the key 'g:' + genus (ids and names never meet): rank
+// 'genus' (its questions and typed answers stay among genera: model.js sameRank), its entry (parent: it opens once the
+// entry is at Advanced, the set's units below), its entry's group as its form (easy wrong choices from other groups
+// first) and family, its sibling genera as look-alikes (the traps, as the species level's "same entry" choices), the
+// IMR cues of the IMR sub-entry of the same name (Chromis, Dascyllus, Pomacentrus) when there is one, its species in the
+// game (scientific and common names, commonness order) and the entry's photos of those species. FISH.sci: every genus,
+// in the IMR entries' order. App only: the admin's fishGen stays the entries'.
+function fishGenera(X, F) {
+  const sp = new Map((F.species || []).map(s => [s.id, s])),
+    sci = [];
+  (F.teach || [])
+    .filter(t => t.level === 1 && t.circle === 1 && X.gen[t.id])
+    .forEach(t => {
+      const E = X.gen[t.id],
+        by = new Map();
+      t.species
+        .map(id => sp.get(id))
+        .filter(s => s && s.circle === 1)
+        .forEach(s => {
+          const g = s.name.split(/\s+/)[0];
+          if (!by.has(g)) by.set(g, []);
+          by.get(g).push(s);
+        });
+      const ids = [...by.keys()].map(g => 'g:' + g);
+      by.forEach((L, g) => {
+        const id = 'g:' + g,
+          own = new Set(L.map(s => s.id)),
+          sub = (t.sub || []).find(u => u.name === g),
+          wide = E.views.wide.filter(p => own.has(p.sp));
+        X.gen[id] = {
+          id,
+          name: g,
+          rank: 'genus',
+          one: 'genus',
+          parent: t.id,
+          fam: E.name + ' · ' + t.fam, // the card's and the feedback's family line names its IMR entry
+          wfam: E.wfam,
+          fish: 1,
+          circle: 1,
+          group: E.group,
+          ig: E.ig,
+          forms: E.forms,
+          look: ids.filter(o => o !== id),
+          lk: [],
+          lsrc: {},
+          qt: sub && sub.cues && sub.cues.length ? sub.cues : null,
+          tl: sub && sub.cues && sub.cues.length ? 'ID tips (IMR, ' + g + ')' : 'Its species here',
+          // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, then the count.
+          sum:
+            (L.length > 3 ? 'Most met here: ' : '') +
+            L.slice(0, 3)
+              .map(s => s.name.replace(/^\S+/, g[0] + '.') + (s.common ? ' (' + s.common + ')' : ''))
+              .join(', ') +
+            (L.length > 3 ? `; ${L.length} species in the game.` : ''),
+          species: L.map(s => s.id),
+          phase: [],
+          sub: [],
+          cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {}).dauin || 0), 0))),
+          levels: 1,
+          views: {wide},
+          // the PDF genus shown; its species' WoRMS-accepted genera accepted when typed (Codex review #526: Mirolabrichthys)
+          names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
+        };
+        // The card's photo as fishGen picks an entry's: the highest source tier first (Pierre's own, rule 7), then the
+        // easiest judged one (Codex review #526).
+        if (wide.some(p => p.e)) {
+          const tier = Math.min(...wide.map(p => (p.own ? 0 : 1))),
+            T = wide.filter(p => (p.own ? 0 : 1) === tier);
+          X.gen[id].cover = T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
+        }
+        sci.push(id);
+      });
+    });
+  X.sci = sci;
+  return X;
+}
+// A unit's rank inside its subject: '' for the corals' genera and the fish entries, 'genus' for a fish scientific genus.
+// A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
+const rankOf = n => (GX(n) || {}).rank || '';
+// Every unit of a rank in the subject's opt-in sets, opened or not: the wrong choices a question of that rank may name
+// (as a quiz's wrong choices may name any genus), so a family with a single genus in play still gets 4 choices.
+const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => rankOf(n) === rk);
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (FISH, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
@@ -414,7 +502,7 @@ const fishLoad = () =>
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
       if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      return (FISH = fishGen(f, ph.photos));
+      return (FISH = fishGenera(fishGen(f, ph.photos), f));
     })
     .catch(e => {
       FISHP = null;
@@ -450,9 +538,11 @@ function inSubject(id, fn) {
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
   }
 }
-// The subject switch (Tools, the admin's only while a subject is in beta: proto/lab.js): the subject's data first, then
-// everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A subject the player
-// may not have (subjAt) brings the corals.
+// The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): two places, one state, the Corals | Fish row
+// at the top of Home (home.js) and the subject chip next to the logo in the header (#subjc, showSubj), shown only while
+// the player has more than one subject (subjMine: the admin's only while a subject is in beta). The subject's data
+// first, then everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A
+// subject the player may not have (subjAt) brings the corals.
 function setSubject(id) {
   const S = subjAt(id);
   if (S === SUBJ) return Promise.resolve();
@@ -471,34 +561,65 @@ function setSubject(id) {
     route();
   });
 }
-// Everything that names the subject on screen: the switches (Tools: [data-subj] buttons), ⚙ rows of one subject only
-// (setrow[data-for]), the section tabs' words. A subject in beta on screen (the admin's only) puts its card emoji on the
-// links to Tools (the header's Tools tab, the phones' hammer), where it is switched back.
+// The subjects this player can switch between (subjOpen): the switches show only when there are two or more.
+const subjMine = () => SUBJECTS.filter(subjOpen);
+// A subject's icon (UNITS icon: the one SVG set, 24 px grid) and its switch buttons ([data-subj], aria-pressed: the
+// subject on screen), each with its icon, its name and, for a subject in beta, a small beta tag.
+const subjIcon = (S, px = 18) =>
+  `<svg class="sji" viewBox="0 0 24 24" width="${px}" height="${px}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UNITS[S.id].icon}</svg>`;
+const subjBtns = () =>
+  subjMine()
+    .map(
+      S =>
+        `<button type="button" data-subj="${S.id}" aria-pressed="${S === SUBJ}">${subjIcon(S)}<span>${esc(S.name)}</span>${S.beta ? '<small class="beta">beta</small>' : ''}</button>`
+    )
+    .join('');
+// Everything that names the subject on screen: the switches ([data-subj] buttons: Home's row, the header chip's menu),
+// the header chip itself (the subject on screen, its icon and name; the name steps aside on phones while the Sign in pill
+// shows, app.css), ⚙ rows of one subject only (setrow[data-for]), the section tabs' words.
+const $subjc = document.getElementById('subjc');
 function showSubj() {
   document.documentElement.dataset.subject = SUBJ.id;
+  const two = subjMine().length > 1;
+  $subjc.hidden = !two;
+  $subjc.innerHTML = two
+    ? `<button type="button" class="subjb" id="subjb" aria-haspopup="true" aria-expanded="false" aria-controls="subjmenu" aria-label="Subject: ${esc(SUBJ.name)}. Switch" title="Subject: ${esc(SUBJ.name)}">${subjIcon(SUBJ)}<span class="sjn">${esc(SUBJ.name)}</span><svg class="sjc" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="subjmenu" id="subjmenu" role="group" aria-label="Subject" hidden>${subjBtns()}</div>`
+    : '';
   document.querySelectorAll('[data-subj]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.subj === SUBJ.id)));
   document.querySelectorAll('[data-for]').forEach(r => (r.hidden = r.dataset.for !== SUBJ.id));
-  document.querySelectorAll('.labgo, .sections a[data-tab="lab"]').forEach(a => {
-    if (SUBJ.beta) {
-      a.dataset.badge = CARD_KINDS[SUBJ.card] || '•';
-      a.title = `Tools · ${SUBJ.name} (beta) on`;
-    } else {
-      delete a.dataset.badge;
-      a.title = 'Tools';
-    }
-  });
 }
-// Every subject switch on any page ([data-subj]: the Tools hub's, admin only).
+// The header chip's menu: opened and closed by the chip, closed by a choice, Escape or a tap elsewhere (as ⚙).
+function subjMenu(open) {
+  const m = document.getElementById('subjmenu'),
+    b = document.getElementById('subjb');
+  if (!m || !b || m.hidden === !open) return;
+  m.hidden = !open;
+  b.setAttribute('aria-expanded', String(open));
+  if (open) (m.querySelector('[aria-pressed="true"]') || m.querySelector('button')).focus();
+}
+// Every subject switch on any page ([data-subj]: Home's row, the header chip's menu).
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-subj]');
-  if (b) setSubject(b.dataset.subj);
+  if (b) {
+    subjMenu(false);
+    setSubject(b.dataset.subj);
+  } else if (e.target.closest('#subjb')) subjMenu(document.getElementById('subjmenu').hidden);
+  else if (!e.target.closest('#subjmenu')) subjMenu(false);
+});
+document.addEventListener('keydown', e => {
+  const m = document.getElementById('subjmenu');
+  if (e.key !== 'Escape' || !m || m.hidden) return;
+  subjMenu(false);
+  document.getElementById('subjb').focus();
 });
 // A page of the Learn or Practice section that the subject does not have (core.js SUBJECTS pages: fish have no genus
-// sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead. Identify (the
-// Coral ID Key) and the Tools are the corals' whatever the subject.
+// sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead; Identify opens
+// the subject's own tool (UNITS identify: the Coral ID Key, the Fish ID Key), never the other subject's. The Tools are
+// the corals' whatever the subject.
 const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
+  if (tab === 'identify') return m === UNITS[SUBJ.id].identify ? h : UNITS[SUBJ.id].identify;
   if ((tab !== 'learn' && tab !== 'practice') || SUBJ.pages.includes(m) || !(m === 'sheet' || MODES[tab].some(x => x[0] === m))) return h;
   return MODES[tab].map(x => x[0]).find(k => SUBJ.pages.includes(k)) || '';
 };
@@ -984,12 +1105,12 @@ const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
 /* ---------- quiz ---------- */
-// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen in Tools (the admin, while Fish is in beta),
-// remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
+// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen on Home or with the header chip (setSubject;
+// the admin's only while Fish is in beta), remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
 // subject's; code that must read another subject's state runs inside inSubject() (sync.js: the sheet's summary and
 // the merge of every subject's progress). setSubject() switches (subjectLoad: each file's per-subject state).
-// A subject in beta (core.js SUBJECTS beta: fish) is the admin's only (Pierre, 2026-11-04: "take it off Home, some things
-// clearly aren't ready; in Tools, visible only to admins"): anyone else opens on the corals whatever this device or the
+// A subject in beta (core.js SUBJECTS beta: fish) is the admin's only (Pierre, 2026-11-04: "some things clearly aren't
+// ready"; its switches on Home and in the header are shown only to the admin until fish opens): anyone else opens on the corals whatever this device or the
 // account saved, and nothing switches them to it (setSubject, a link to a sheet: subjAt). The saved choice and that
 // subject's progress stay as they are (synced, merged: inSubject), back on screen if the admin view comes back.
 const subjOpen = S => !S.beta || IS_ADMIN;
@@ -1051,6 +1172,10 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 const FISH_C3 = 0.5;
 const UNITS = {
   coral: {
+    // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
+    identify: 'idkey',
+    // The subject's icon in its switches (app.js subjIcon): a branching coral.
+    icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
     load: () => Promise.resolve(),
     slate: () => slateOf(DATA),
     // Every name a player may type (quiz.js typeNames) and how a typed text is read (core.js typeMatchIn).
@@ -1087,15 +1212,18 @@ const UNITS = {
     ]
   },
   fish: {
+    // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
+    identify: 'fishkey',
+    icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
     slate: () => (FISH ? FISH.c1 : []),
     names: () => fishTypeNames(FISH ? FISH.gen : {}),
     norm: typeNormAll,
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
-      Object.values(FISH ? FISH.gen : {}).flatMap(g =>
-        g.look.filter(o => FISH.gen[o] && (g.id < o || !FISH.gen[o].look.includes(g.id))).map(o => [g.id, o])
-      ),
+      Object.values(FISH ? FISH.gen : {})
+        .filter(g => !g.rank) // the scientific genera's siblings are traps, not duels
+        .flatMap(g => g.look.filter(o => FISH.gen[o] && (g.id < o || !FISH.gen[o].look.includes(g.id))).map(o => [g.id, o])),
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the
     // people working on the IMR course), whatever opt-in circles are on.
     winks: () => (FISH ? FISH.winks.filter(n => FISH.gen[n].views.wide.length) : []),
@@ -1130,6 +1258,25 @@ const UNITS = {
         tag: 'Beyond IMR',
         name: 'Beyond IMR',
         card: 'Beyond IMR: a family divers look for at Dauin.'
+      },
+      // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once an IMR family is at
+      // Advanced, the level at which its species open (FISH_PATH "Unlock rules"); on, a family's genera join the game
+      // when the family reaches Advanced, then open one at a time like any unit (a genus met stays in). all: every genus,
+      // for setOf. Not in the progress yet (the global fish score, FISH_PATH "My progress (fish)", is not built).
+      {
+        k: 'sci',
+        all: () => (FISH ? FISH.sci || [] : []),
+        units: () =>
+          (FISH ? FISH.sci || [] : []).filter(n => typeof genScore === 'function' && (introduced(n) || genScore(GX(n).parent) >= LV_AT[1])),
+        due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
+        page: false, // not on the families page
+        kick: 'Scientific names',
+        title: () => 'Scientific genus names?',
+        body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.',
+        note: "⚙ Settings, Scientific names, any time. They don't count in your progress yet.",
+        tag: 'Scientific genus',
+        name: 'Scientific names',
+        card: ''
       }
     ]
   }
@@ -1138,7 +1285,7 @@ const SETS = () => UNITS[SUBJ.id].sets;
 // The genera the games teach and the progress counts (the units of the subject): "the slate" in the code means this list.
 const slateGenera = () => UNITS[SUBJ.id].slate();
 // The opt-in set a unit belongs to (bonus genera, fish circles 2 and 3), or null.
-const setOf = n => SETS().find(S => S.units().includes(n)) || null;
+const setOf = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;
 const isBonus = n => !!setOf(n);
 // Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
 // on, so nothing disappears under them; Millepora alone (Q.bu 1) is now a slate genus, so not an opt-in.
@@ -1182,9 +1329,12 @@ const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // A unit's name as shown: a genus (its key is its name) in italics, a fish entry (its key is a stable id, fish.json) by
 // its IMR name. unameT: the plain text (tooltips, aria labels).
 const unameT = n => (GX(n) || {}).name || n;
-const uname = n => ((GX(n) || {}).name ? esc(GX(n).name) : `<i>${esc(n)}</i>`);
+const uname = n => {
+  const g = GX(n) || {};
+  return g.name && !g.rank ? esc(g.name) : `<i>${esc(g.name || n)}</i>`; // a fish scientific genus in italics, as a coral genus
+};
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
-const tipsLabel = g => (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
+const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';
@@ -1406,7 +1556,12 @@ const MODES = {
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
     ['pairs', 'Memory', 'Match colony and corallites']
   ],
-  identify: [['idkey', 'Coral ID Key', 'Tap the clues you see, get a ranked shortlist']]
+  // Identify shows the current subject's tool only (Pierre, 2026-11-04): each subject names its own (app.js UNITS
+  // identify); the other subject's tool is reached through the subject switch.
+  identify: [
+    ['idkey', 'Coral ID Key', 'Tap the clues you see, get a ranked shortlist'],
+    ['fishkey', 'Fish ID Key', 'Coming soon']
+  ]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
@@ -1460,8 +1615,14 @@ function showModes(tab, h) {
       pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : 'cmp');
     return;
   }
-  // A section with a single tool needs no tab bar. Learn and Practice show the subject's pages only (SUBJECTS pages).
-  const M = MODES[tab] && (tab === 'learn' || tab === 'practice') ? MODES[tab].filter(x => SUBJ.pages.includes(x[0])) : MODES[tab];
+  // A section with a single tool needs no tab bar. Learn and Practice show the subject's pages only (SUBJECTS pages),
+  // Identify the subject's own tool (UNITS identify).
+  const M =
+    MODES[tab] && (tab === 'learn' || tab === 'practice')
+      ? MODES[tab].filter(x => SUBJ.pages.includes(x[0]))
+      : tab === 'identify'
+        ? MODES[tab].filter(x => x[0] === UNITS[SUBJ.id].identify)
+        : MODES[tab];
   const L = M && M.length > 1 ? M : null;
   $modes.hidden = !L;
   if (!L) {
@@ -1661,8 +1822,12 @@ function route() {
   const sp = subjPage(h);
   if (sp !== h) {
     // A genus sheet or a comparison of another subject (opened from Identify, the Coral ID Key, with Fish chosen; Codex
-    // review #442): that subject comes on screen (setSubject routes again), never the subject's list instead.
-    const S = /^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'));
+    // review #442), or a link into another subject's Identify tool with its clues (#idkey|form=…): that subject comes on
+    // screen (setSubject routes again), never the subject's list or tool instead. A bare Identify address opens the
+    // subject's own tool.
+    const S =
+      (/^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'))) ||
+      (sectionOf(h) === 'identify' && h.includes('|') && SUBJECTS.find(x => subjOpen(x) && UNITS[x.id].identify === modeOf(h)));
     if (S && S !== SUBJ) return void setSubject(S.id);
     return location.replace('#' + sp);
   }
@@ -1732,6 +1897,8 @@ function route() {
   // About and credits (home.js); #credits is another name for it.
   else if (h === 'credits') location.replace('#about');
   else if (h === 'about' && window.viewAbout) viewAbout();
+  // The Fish ID Key, coming soon (home.js): Identify in fish mode.
+  else if (h === 'fishkey' && window.viewFishKey) viewFishKey();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
     quizDuel(a, b, left, from); // a page just opened starts a new duel run (quiz.js DUELRUN), unless back from its comparison

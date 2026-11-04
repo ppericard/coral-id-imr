@@ -1,0 +1,108 @@
+{
+ "photos": {
+  "fish-s235-cand-554521134": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-241713892": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-303390270": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s235-cand-293544281": {
+   "code": "o1g2slm2",
+   "keep": "best"
+  },
+  "fish-s235-cand-585482202": {
+   "code": "p1g2ss12",
+   "keep": "best"
+  },
+  "fish-s235-cand-244512346": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-244512352": {
+   "code": "d1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s235-cand-529008389": {
+   "code": "o1g2sl12",
+   "keep": "best"
+  },
+  "fish-s235-cand-244211297": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-244211289": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s235-cand-244211322": {
+   "code": "p1g1ml13",
+   "keep": "dup"
+  },
+  "fish-s235-cand-244211277": {
+   "code": "p1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s235-cand-105765981": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "iNat says juvenile; it looks like the adult"
+  },
+  "fish-s235-cand-261944099": {
+   "code": "p1g1ssm2",
+   "keep": "best"
+  },
+  "fish-s235-cand-256057799": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s235-cand-233449203": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s235-cand-476250599": {
+   "code": "p1g2ss1j1",
+   "keep": "best"
+  },
+  "fish-s235-cand-574452793": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-243105052": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-302374587": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-302376157": {
+   "code": "p1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s235-cand-277887862": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s235-cand-587045747": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-438030250": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s235-cand-746490820": {
+   "code": "p1d1sm13",
+   "keep": "best"
+  }
+ }
+}

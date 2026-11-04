@@ -13,9 +13,11 @@
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
     const names = Object.keys(DATA.gen),
       fish = !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
-    // No subject switch here (Pierre, 2026-11-04: the fish beta came off Home, "some things clearly aren't ready"): a
-    // subject in beta is the admin's only, switched in Tools (proto/lab.js); Home is the corals' for every player and
-    // only follows the subject on screen for the admin who switched.
+    // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
+    // the doors, the one relaxation of "two doors only" (AGENTS.md rule 21), the twin of the header chip (app.js
+    // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is
+    // in beta); the doors follow the subject on screen.
+    const subj = subjMine().length > 1 ? `<div class="seg hsubj" role="group" aria-label="Subject">${subjBtns()}</div>` : '';
     // Door 1 art: a band of corallite close-ups, an illustration only (Pierre, 2026-11-03): its two buttons carry the door
     // (fish: a photo of each of 12 IMR families). Door 2 art: a real ReefCloud photo with its 5 points (Pierre's,
     // 2026-10-31), centred on the active point.
@@ -35,7 +37,37 @@
           .slice(0, 12)
           .map(g => `<img ${ph(g, 'macro')} alt="" loading="lazy">`)
           .join('');
-    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive.</p><div class="home-page">
+    // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
+    // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
+    const key = UNITS[SUBJ.id].identify,
+      fp = fish && (GX(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || {views: {wide: []}}).views.wide[0],
+      fishArt = fp ? `<img ${thumb(fp, '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">` : '';
+    const idoor = fish
+      ? `
+        <section class="hdoor identify">
+          <a class="hdart rc" href="#${key}" tabindex="-1" aria-hidden="true">${fishArt}</a>
+          <div class="hdbody">
+            <p class="hdwhen">In EventMeasure<span class="wide"> · or a photo from your dive</span></p>
+            <h2>Identify a fish</h2>
+            <p class="hddesc">The Fish ID Key is on its way: it will help you name the fish on the IMR survey videos, or in your own photos.</p>
+            <div class="hdacts">
+              <a class="hdbtn" href="#${key}"><b>Fish ID Key</b><small>Coming soon</small></a>
+            </div>
+          </div>
+        </section>`
+      : `
+        <section class="hdoor identify">
+          <a class="hdart rc" href="#${key}" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
+          <div class="hdbody">
+            <p class="hdwhen">On ReefCloud<span class="wide"> · or a photo from your dive</span></p>
+            <h2>Identify a coral</h2>
+            <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the ReefCloud point, or in your own photo.</p>
+            <div class="hdacts">
+              <a class="hdbtn" href="#${key}"><b>Open the Coral ID Key</b><small>Growth form, clues, then a visual comparison</small></a>
+            </div>
+          </div>
+        </section>`;
+    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? 'a fish on a survey video' : 'a coral on a ReefCloud photo'}, or one you photographed on a dive.</p><div class="home-page">${subj}
       <div class="hdoors">
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
@@ -49,19 +81,20 @@
             </div>${newb ? '<p class="hdnew"><a href="#basics">New to corals? Start with the basics (5 min) ›</a></p>' : ''}
           </div>
         </section>
-        <section class="hdoor identify">
-          <a class="hdart rc" href="#idkey" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
-          <div class="hdbody">
-            <p class="hdwhen">On ReefCloud<span class="wide"> · or a photo from your dive</span></p>
-            <h2>Identify a coral</h2>
-            <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the ReefCloud point, or in your own photo.</p>
-            <div class="hdacts">
-              <a class="hdbtn" href="#idkey"><b>Open the Coral ID Key</b><small>Growth form, clues, then a visual comparison</small></a>
-            </div>
-          </div>
-        </section>
+${idoor}
       </div>
       <p class="hcred">By Pierre Pericard · for ${esc(ORG.short)} · <a href="#about">Credits</a></p>
+    </div>`;
+  };
+  // The Fish ID Key, coming soon (Pierre, 2026-11-04: Identify shows the current subject's tool only, "Fish ID Key, coming
+  // soon" in fish mode; ROADMAP "Fish ID Key for EventMeasure"). The Coral ID Key is reached through the subject switch.
+  window.viewFishKey = function () {
+    $v.innerHTML = `<div class="keysoon">
+      <svg class="ksi" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg>
+      <h3>Fish ID Key</h3>
+      <p class="kswhen">Coming soon</p>
+      <p>A key to name the fish on the IMR survey videos and in your own photos, as the Coral ID Key does for corals.</p>
+      <p><a class="next" href="#genera">Learn the fish families</a></p>
     </div>`;
   };
   // About and credits (Pierre, 2026-11-03): no credits block on the pages, only the one-line credit at the bottom of Home

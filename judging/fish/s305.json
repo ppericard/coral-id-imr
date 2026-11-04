@@ -1,0 +1,120 @@
+{
+ "photos": {
+  "fish-s305-cand-734111299": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s305-cand-385257144": {
+   "code": "p1g1sl1a2",
+   "keep": "best"
+  },
+  "fish-s305-cand-467201605": {
+   "code": "p1g2bmx1",
+   "keep": "best"
+  },
+  "fish-s305-cand-441750427": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s305-cand-256665007": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s305-cand-756737131": {
+   "code": "p1g1sl1a2",
+   "keep": "best"
+  },
+  "fish-s305-cand-756737703": {
+   "code": "d1g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s305-cand-756737718": {
+   "code": "h0g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s305-cand-756737733": {
+   "code": "d1g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s305-cand-747409377": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s305-cand-13348521": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s305-cand-319526915": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  },
+  "fish-s305-cand-543033945": {
+   "code": "p1n0sm13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Grabbed by another creature or dead?"
+  },
+  "fish-s305-cand-327233009": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s305-cand-327233005": {
+   "code": "p1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s305-cand-327233007": {
+   "code": "p1g2sl13",
+   "keep": "alt"
+  },
+  "fish-s305-cand-666461051": {
+   "code": "p1g1sl1a2",
+   "keep": "best"
+  },
+  "fish-s305-cand-666461046": {
+   "code": "h0g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s305-cand-253212362": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s305-cand-4846819": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s305-cand-624482522": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s305-cand-472303284": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s305-cand-454450140": {
+   "code": "p1g1ssm2",
+   "keep": "best"
+  },
+  "fish-s305-cand-262260363": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s305-cand-542074417": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s305-cand-378094137": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s305-cand-704620316": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s305-cand-704620329": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  }
+ }
+}

@@ -1,0 +1,108 @@
+{
+ "photos": {
+  "fish-s468-cand-603843186": {
+   "code": "h0g1sl1a2",
+   "keep": "best"
+  },
+  "fish-s468-cand-696137846": {
+   "code": "p1g2slm2",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "A large jack beside a sweetlips, behind pillars: maybe in an aquarium"
+  },
+  "fish-s468-cand-603740175": {
+   "code": "o1n0bm11",
+   "keep": "best"
+  },
+  "fish-s468-cand-606374952": {
+   "code": "o1g3sm12",
+   "keep": "best"
+  },
+  "fish-s468-cand-652392433": {
+   "code": "p0g3sl12",
+   "keep": "best"
+  },
+  "fish-s468-cand-753136084": {
+   "code": "d1g2ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "From a jetty above the water; the fish is hard to make out"
+  },
+  "fish-s468-cand-753136088": {
+   "code": "d1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s468-cand-676630327": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s468-cand-676634204": {
+   "code": "o1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s468-cand-676634218": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s468-cand-428504685": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s468-cand-635481270": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s468-cand-723971320": {
+   "code": "p0g2sl12",
+   "keep": "best"
+  },
+  "fish-s468-cand-622612977": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s468-cand-746186151": {
+   "code": "p1g2bmx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Milky water; I cannot find the jack for sure"
+  },
+  "fish-s468-cand-622110491": {
+   "code": "p1g3sls2",
+   "keep": "best"
+  },
+  "fish-s468-cand-327738539": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s468-cand-603728822": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s468-cand-597638488": {
+   "code": "p1g3bmm1",
+   "keep": "best"
+  },
+  "fish-s468-cand-621818186": {
+   "code": "p1g3smm1",
+   "keep": "best"
+  },
+  "fish-s468-cand-606364771": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s468-cand-618047304": {
+   "code": "p1g3smm1",
+   "keep": "best"
+  },
+  "fish-s468-cand-602876381": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  }
+ }
+}

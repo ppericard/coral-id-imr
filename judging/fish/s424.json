@@ -1,0 +1,124 @@
+{
+ "photos": {
+  "fish-s424-cand-724608480": {
+   "code": "d0n0sl12",
+   "keep": "best"
+  },
+  "fish-s424-cand-724608470": {
+   "code": "o0n0sl12",
+   "keep": "dup"
+  },
+  "fish-s424-cand-724608498": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s424-cand-724608458": {
+   "code": "o0g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s424-cand-353330371": {
+   "code": "o0g1ss11",
+   "keep": "best"
+  },
+  "fish-s424-cand-353330398": {
+   "code": "o0g1sm12",
+   "keep": "dup"
+  },
+  "fish-s424-cand-655247386": {
+   "code": "o0g1ss11",
+   "keep": "best"
+  },
+  "fish-s424-cand-655247387": {
+   "code": "o0g1ss11",
+   "keep": "dup"
+  },
+  "fish-s424-cand-605881813": {
+   "code": "o0g1ss12",
+   "keep": "best"
+  },
+  "fish-s424-cand-258084941": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-710155151": {
+   "code": "o0g1ss11",
+   "keep": "best"
+  },
+  "fish-s424-cand-150373251": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-150373305": {
+   "code": "o0g1ss11",
+   "keep": "dup"
+  },
+  "fish-s424-cand-177547520": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s424-cand-89246160": {
+   "code": "o0g1ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the pipefish for sure among the tentacles"
+  },
+  "fish-s424-cand-18921198": {
+   "code": "o0g1ss11",
+   "keep": "best"
+  },
+  "fish-s424-cand-356914079": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-356914175": {
+   "code": "o0g1sm12",
+   "keep": "dup"
+  },
+  "fish-s424-cand-394670199": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-492175127": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-492175170": {
+   "code": "o0g1sm12",
+   "keep": "dup"
+  },
+  "fish-s424-cand-172859512": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s424-cand-256578024": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-115873611": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-31435677": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s424-cand-256372847": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s424-cand-626415279": {
+   "code": "o1g1ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Whole mushroom coral; I cannot find the pipefish for sure"
+  },
+  "fish-s424-cand-169148887": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  }
+ }
+}

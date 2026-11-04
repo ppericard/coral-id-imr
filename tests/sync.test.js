@@ -200,6 +200,10 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r3', {g: 't01', a: 't05', fix: '', ph: 'fi464458713'})]});
   const f = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r3');
   assert.deepStrictEqual([f[5], f[6], f[10]], ['t01', 't05', 'fi464458713']);
+  // v46: a scientific-genus question's units (g:Platax) are kept too (Codex review #526: they were stored empty).
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r4', {g: 'g:Platax', a: 'g:Chromis', fix: '', ph: 'fi1'})]});
+  const gq = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r4');
+  assert.deepStrictEqual([gq[5], gq[6]], ['g:Platax', 'g:Chromis']);
   const n = s.fetched.length;
   s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');

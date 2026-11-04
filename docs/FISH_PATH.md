@@ -49,6 +49,13 @@ is the design's shorthand, and internal identifiers may keep it.
   level" of 2026-11-03): an intermediate step before knowing every species's scientific name, e.g. a photo, then 4 genus names
   (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
   invented: rule 2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
+- **Built for review** (2026-11-04 night, its own PR, admin-only beta, waiting on Pierre): the genus step as an opt-in set of the fish,
+  "Scientific names" (offer card once an entry is at Advanced, ⚙ row): a family's genera join the game when the family reaches
+  Advanced and open one at a time; a photo, then 4 genus names (other identification groups first, then the sibling genera of the
+  same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
+  one (Chromis, Dascyllus, Pomacentrus), else its most met species; not counted in the progress yet (the global score is not built).
+  Photos: the stopgap entry photos of its species, so 18 of the 94 genera have none and stay out until species photos are curated.
+  Choices made without Pierre are in docs/EVENING.md "Questions for the morning".
 - **A right genus is partial credit** (Pierre, 2026-11-04; replaces "Right genus, still a miss on the species"): when a species'
   scientific name is asked and the player types the right genus only, it is genuine partial learning (unlike a common name typed
   instead: open question 3), so it counts as partial credit. How much, and its thresholds, by simulation.
@@ -68,6 +75,16 @@ is the design's shorthand, and internal identifiers may keep it.
   free text accepts only the listed names.
 - **Selection** (a proposal, validated by Pierre in the admin): the names that recur across public sources (the iNaturalist default
   English name, the FishBase main English name, other public references), at most 3.
+- **The proposal** (2026-11-04 night, waiting on Pierre: `tools/fish_common.json`, written by `tools/fish_common.py`, every name
+  with its sources): the PDF name first (rule 1, kept as written, a likely slip flagged), then the FishBase main English name
+  and the iNaturalist default English name when each is found in both references, then a third only if both record it and
+  FishBase 3 times or more (countries, references); at most 3. Spellings of one name count once (Pearl-scaled / Pearlscale
+  angelfish; Neon damsel / damselfish), the others kept to accept when typed. A name two game species share is dropped from the
+  one that does not own it; a PDF name shared stays, flagged ("Twospot wrasse"). 442 game species: 252 with 1 name, 170 with 2,
+  20 with 3 (circle 1: 184 / 136 / 20; Pierre, 2026-11-05: no third rule, and a PDF slip shows FishBase's spelling,
+  the PDF form accepted when typed). Since every listed name is needed, more names make the common-name branch longer:
+  in the score simulation (`tools/fishscore.js --names tools/fish_common.json`) a common-names-only player reaches 80% after
+  about 2.6 times as many answers as with one name each.
 
 ## The very start (fish beta feedback, Pierre, 2026-11-04)
 
@@ -262,7 +279,7 @@ Gaps before species questions ship:
 - **Duplicate common name**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question).
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
-- The curated common names per species (1 to 3, "Common names"); today `common` holds one English name each.
+- The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
 - Fish answers are not logged to the sheet yet (no subject column): no pooled photo difficulty or confusion scores for fish until they are.
   Pierre, 2026-11-04: they are logged **from the start**, as soon as curated photos enter the game.
 

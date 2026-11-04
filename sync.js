@@ -931,7 +931,7 @@ document.addEventListener(
   true
 );
 // A page drawn (app.js route; a redraw of the same page is not a new opening).
-// A page is the hash and the subject on screen (SUBJECTS pv): a subject switched on the same hash (Tools) closes the page
+// A page is the hash and the subject on screen (SUBJECTS pv): a subject switched on the same hash (the header chip) closes the page
 // of one and opens the page of the other (Codex review #466).
 function pagesRoute(h) {
   if (h === pvLast && SUBJ.pv === pvPre) return;

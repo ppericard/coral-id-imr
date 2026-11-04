@@ -1,0 +1,168 @@
+{
+ "photos": {
+  "fish-s400-cand-676378491": {
+   "code": "h0g2sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-676620632": {
+   "code": "h0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-676620644": {
+   "code": "h0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-676620652": {
+   "code": "p0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-184284545": {
+   "code": "d0g2bl11",
+   "keep": "best"
+  },
+  "fish-s400-cand-184284565": {
+   "code": "o1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-394675486": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-629096851": {
+   "code": "p0g3sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-629097042": {
+   "code": "p1g3bmx1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-629097084": {
+   "code": "d0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-679551348": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s400-cand-706286104": {
+   "code": "o0g2sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-706286142": {
+   "code": "p1g1ss11",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Seen from a boat through the surface; the shark is hard to make out"
+  },
+  "fish-s400-cand-706286177": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s400-cand-706286216": {
+   "code": "d0g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-452166632": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-669422936": {
+   "code": "o0g3sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-614678957": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s400-cand-290574994": {
+   "code": "o0g2sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-60647429": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s400-cand-756792577": {
+   "code": "d0g2ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Seen from a boat through the surface; I cannot find the shark for sure"
+  },
+  "fish-s400-cand-709337243": {
+   "code": "p1g3bsx1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Murky blue; I cannot find the shark for sure"
+  },
+  "fish-s400-cand-709337334": {
+   "code": "p1g3bsx1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-709337396": {
+   "code": "p1g3ssx1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "A small strip of photo between black borders; the shark is tiny"
+  },
+  "fish-s400-cand-710892035": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  },
+  "fish-s400-cand-577947886": {
+   "code": "h0d2sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-577947909": {
+   "code": "h0d2sl12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-444950060": {
+   "code": "o1g2sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-583575081": {
+   "code": "h1g3sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-676378482": {
+   "code": "o1g2sl13",
+   "keep": "best"
+  },
+  "fish-s400-cand-676615627": {
+   "code": "h1g3sl12",
+   "keep": "alt"
+  },
+  "fish-s400-cand-676615644": {
+   "code": "h1g3sm12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-676615656": {
+   "code": "h0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-394675491": {
+   "code": "o0g3sl12",
+   "keep": "best"
+  },
+  "fish-s400-cand-394675492": {
+   "code": "d0g3sl12",
+   "keep": "dup"
+  },
+  "fish-s400-cand-290575043": {
+   "code": "o1g2slm2",
+   "keep": "best"
+  },
+  "fish-s400-cand-60433616": {
+   "code": "o0g2sl12",
+   "keep": "best"
+  }
+ }
+}

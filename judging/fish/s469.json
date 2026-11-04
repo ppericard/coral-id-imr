@@ -1,0 +1,108 @@
+{
+ "photos": {
+  "fish-s469-cand-518685572": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s469-cand-580747947": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s469-cand-580747689": {
+   "code": "p1g1sms3",
+   "keep": "dup"
+  },
+  "fish-s469-cand-577215607": {
+   "code": "o1g2sss2",
+   "keep": "best"
+  },
+  "fish-s469-cand-596365823": {
+   "code": "d1g1sm13",
+   "keep": "best"
+  },
+  "fish-s469-cand-420032331": {
+   "code": "p0d2sl11",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dim, colour-less fish seen in a tank or through glass: hard to read"
+  },
+  "fish-s469-cand-420032349": {
+   "code": "d1d2sm11",
+   "keep": "dup"
+  },
+  "fish-s469-cand-556001647": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s469-cand-618045824": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s469-cand-694496529": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s469-cand-510087705": {
+   "code": "o1g3sm12",
+   "keep": "best"
+  },
+  "fish-s469-cand-758995635": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s469-cand-463666278": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s469-cand-602638367": {
+   "code": "p1d2sm12",
+   "keep": "best"
+  },
+  "fish-s469-cand-602638372": {
+   "code": "p1d2sm12",
+   "keep": "dup"
+  },
+  "fish-s469-cand-602638379": {
+   "code": "p1g2ssm1",
+   "keep": "dup"
+  },
+  "fish-s469-cand-471471104": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s469-cand-471471099": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s469-cand-656426894": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s469-cand-625753727": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s469-cand-556928333": {
+   "code": "o1g2smm2",
+   "keep": "best"
+  },
+  "fish-s469-cand-419703660": {
+   "code": "p1d2sl12",
+   "keep": "best"
+  },
+  "fish-s469-cand-597401900": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s469-cand-381120204": {
+   "code": "p1g3bss1",
+   "keep": "best"
+  },
+  "fish-s469-cand-480620294": {
+   "code": "p1g2smm2",
+   "keep": "best"
+  }
+ }
+}

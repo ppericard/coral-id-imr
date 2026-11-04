@@ -5,7 +5,7 @@ const http = require('http'),
   fs = require('fs'),
   path = require('path'),
   {execFileSync} = require('child_process');
-const {chromium} = require('playwright');
+const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
@@ -176,21 +176,27 @@ async function overlays(b, base) {
     )
       fails.push(`achievement toast over a card: ${JSON.stringify([s1, s2, s3, s4, b4])}`);
     // K10: a card photo that fails (as offline: here its files are cut off on R2 and on the site; Millepora's used to
-    // come from iNaturalist, cut off like every outside host) never shows a broken-image icon.
+    // come from iNaturalist, cut off like every outside host) never shows a broken-image icon: neither while it is asked
+    // from R2 once more (app.js photoFail, core.js PHOTO_RETRY: R2 still on, as before any photo of the visit failed
+    // there; the pages smoke caught one there on CI) nor when it comes from the site (R2 off) and gives up.
     const off = await p.evaluate(() => BENTHIC[0]),
       offF = await p.evaluate(n => cover(GX(n)).f, off);
     await c.route(
       u => u.pathname.includes(`/img/${offF}`),
       r => r.abort()
     );
-    await p.evaluate(n => introShow([n], false), off);
-    {
-      await p.waitForTimeout(500);
-      const v = await p.evaluate(() => {
-        const i = document.querySelector('.unlock img');
-        return i && (i.naturalWidth > 0 || getComputedStyle(i).visibility === 'hidden');
-      });
-      if (!v) fails.push(`broken-image icon on the card of ${off}`);
+    for (const r2 of [true, false]) {
+      await p.evaluate(r2 => ((R2 = r2), introShow([BENTHIC[0]], false)), r2);
+      // Checked as it fails and through its retries: each 100 ms for 2.5 s (past PHOTO_RETRY and the first card retry).
+      let bad = 0;
+      for (let t = 0; t < 25; t++) {
+        await p.waitForTimeout(100);
+        bad += await p.evaluate(() => {
+          const i = document.querySelector('.unlock img');
+          return i && i.complete && !(i.naturalWidth > 0 || getComputedStyle(i).visibility === 'hidden') ? 1 : 0;
+        });
+      }
+      if (bad) fails.push(`broken-image icon on the card of ${off} (R2 ${r2 ? 'on' : 'off'}), seen ${bad} times in 2.5 s`);
       await p.keyboard.press('Escape');
     }
     await c.close();
@@ -3085,7 +3091,7 @@ async function basicsTeach(b, base) {
 // on screen, every card closable, no page error. Returns the failures.
 async function newPlayer(b, base) {
   const fails = [],
-    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true}),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true, reducedMotion: 'no-preference'}),
     errs = [],
     seen = {};
   await c.route(

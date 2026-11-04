@@ -36,6 +36,7 @@ function model({P = {}, ab = {}} = {}) {
     confScore: core.confScore,
     pairConf: core.pairConf,
     GX: n => GEN[n],
+    rankOf: n => (GEN[n] || {}).rank || '', // app.js rankOf
     imrFormsOf: n => GEN[n].forms,
     ability: n => ab[n] ?? 0,
     formatAt: a => [Math.min(3, Math.max(0, a / 0.18))], // model.js FORMAT schedule, stubbed (trapsFor's default)
