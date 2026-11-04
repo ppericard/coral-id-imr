@@ -1025,6 +1025,63 @@ async function signin(base) {
       prog: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
+  // The sign-in card is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not
+  // the game mode"): a player who plays only fish meets it at their 20th answer, as a coral player does (it counted the
+  // answers queued for the sheet, which takes no fish answers, so it never came). Fish is opened to this player in the
+  // page, as the admin's group will (core.js SUBJECTS beta).
+  await run(
+    () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-subject', '"fish"')),
+    async p => {
+      // The visit log on the way (Codex review #466): Fish switched on the same page (Tools) closes the coral page and opens
+      // the fish one, fish.lab (it kept counting the coral one: the tally knew the hash only).
+      await p.evaluate(() => go('lab'));
+      await p.waitForFunction(() => hashNow() === 'lab' && PV.cur && PV.cur.n === 'lab', null, {timeout: 15000});
+      await p.evaluate(() => {
+        SUBJECTS.find(S => S.id === 'fish').beta = false;
+        return setSubject('fish');
+      });
+      await p.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 15000});
+      const pv = await p.evaluate(() => ({cur: PV.cur && PV.cur.n, r: Object.keys(PV.r).sort()}));
+      if (pv.cur !== 'fish.lab' || !pv.r.includes('lab') || !pv.r.includes('fish.lab'))
+        fails.push('visit log, Fish switched on the same page: ' + JSON.stringify(pv));
+      await p.evaluate(() => go('quiz'));
+      await p.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000});
+      const r = await p.evaluate(async () => {
+        // Waits on what the app draws, never a fixed sleep (a loaded machine runs it slower).
+        const at = [],
+          until = async f => {
+            for (let k = 0; k < 300 && !f(); k++) await new Promise(ok => setTimeout(ok, 10));
+            return f();
+          };
+        for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
+          if (!(await until(() => document.querySelector('#view .q:not(.done) :is([data-c], .tyform, [data-w])')))) break;
+          const n0 = answersSoFar();
+          if (document.querySelector('#view .q.wink')) document.querySelector('#view [data-w]').click();
+          else {
+            const t = SHOWNQ[1],
+              b = [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c === t);
+            if (b) b.click();
+            else {
+              const f = document.querySelector('#view .tyform');
+              f.querySelector('input').value = GX(t).name;
+              f.requestSubmit();
+            }
+          }
+          // The answer's feedback drawn (or the wink's): the sign-in card, when due, is up by then (quiz.js answer).
+          await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
+          if (document.querySelector('.unlock.signnudge')) at.push(answersSoFar());
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          if (answersSoFar() === n0 && !document.querySelector('#view .q.wink')) break; // no answer taken: stop, reported below
+          route();
+        }
+        return {at, n: answersSoFar(), subj: SUBJ.id, used: localStorage.getItem('reefid-nudge'), log0: store.get(LOG0, []).length};
+      });
+      if (r.subj !== 'fish' || r.at.length !== 1 || r.at[0] !== 20 || r.used !== '1' || r.log0)
+        fails.push('sign-in card for a fish-only player: ' + JSON.stringify(r));
+    }
+  );
   // The apology card greets a signed-in player by the first word of their sign-in name (core.js sorryText); asked here
   // with the clock on the morning after, the device's own answer in the window, the account from the stub sheet.
   await run(
