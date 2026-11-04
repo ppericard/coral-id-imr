@@ -1251,7 +1251,7 @@ function quizPhoto(cur = 'quiz') {
 // From CHOICE.ASK answers on (an existing player, Pierre 2026-11-03), the choice is inferred from the global level
 // (core.js startInfer) and recorded as "inferred", never asked.
 const startGate = () => {
-  if (!startOn() || startOf()) return false; // corals only (CHOICE.SUBJ)
+  if (!startOn() || startOf()) return false; // the subject on screen's question (SUBJECTS start)
   if (answersSoFar() >= CHOICE.ASK) return (startSet(startInfer(P), 'inferred'), false);
   return true;
 };
@@ -1264,8 +1264,8 @@ function startAskShow(cur) {
     kind: 'feature',
     cls: 'startq',
     kick: 'Before you start',
-    title: 'How well do you know corals?',
-    label: 'How well do you know corals?',
+    title: SUBJ.start.q,
+    label: SUBJ.start.q,
     body: `<p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(null)}`,
     esc: () => go(''),
     bind: d =>
@@ -1281,9 +1281,9 @@ function startAskShow(cur) {
   d.ulDone = () => (d.close('sync'), quizPhoto(cur));
 }
 // "I'm new to corals" (CHOICE v.basics): Coral basics offered first, about 5 minutes, then the quiz. Only while the module
-// is not done (app.js basicsDone). Returns whether it showed.
+// is not done, and only for a subject that has one (app.js basicsDue: no Fish basics yet). Returns whether it showed.
 function startBasicsOffer(cur) {
-  if (!startV().basics || basicsDone()) return false;
+  if (!startV().basics || !basicsDue()) return false;
   cardShow({
     kind: 'tip',
     cls: 'startq basicsq',
@@ -1306,7 +1306,7 @@ function startBasicsOffer(cur) {
 function startFbShow(dir) {
   const o = startOf(),
     next = startNext(o.c, dir),
-    said = `said “${esc(startOpt(o.c)[1])}”`,
+    said = `said “${esc(startText(SUBJ.id, o.c)[0])}”`,
     // Everything opened at once (Open all): the "first genera" are all of them (Pierre, 2026-11-04: the same card, its text
     // about the whole set, no number: the counts change; worded from the subject, rule 13b).
     all = Object.values(introMap()).some(e => (e || [])[3] === 'a');

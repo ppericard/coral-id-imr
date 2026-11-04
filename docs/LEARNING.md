@@ -983,7 +983,13 @@ than 50 answers are asked once, those with 50 or more are never asked, their ans
 (Pierre's call the same day). Code: `core.js` `CHOICE`, `playerStart`, `startCheck`, `startNext`, `startInfer`;
 `model.js` `startSet`, `startV`, `startStep`, `startDue`; `quiz.js` `startAskShow`, `startFbShow`; `tour.js`.
 
-**The variables, all of the existing model** (`CHOICE.opts[i][3]`):
+**Per subject** (2026-11-04, the fish welcome question, Pierre: "works exactly like the coral one"): each subject asks
+its own question in its own words (`core.js` `SUBJECTS` `start`), with these answers and, for now, these variables
+(`CHOICE.opts`), in its own record (`startKey`). Fish: "How well do you know reef fish?", *I'm new to reef fish*, *I'm at
+IMR (Research Assistant programme)*, *I know reef fish well*. The fish values are the corals' until learnsim has fish
+profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at once (fish answers are not replayed).
+
+**The variables, all of the existing model** (`CHOICE.opts[i][1]`):
 
 | Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer | Coral basics first |
 | --- | --- | --- | --- |
