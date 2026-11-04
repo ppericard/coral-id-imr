@@ -690,3 +690,14 @@ test('plainOf: a format difficulty reads as recognition beyond guessing', () => 
   assert.match(r.text, /recognised beyond guessing/);
   assert.match(A.PLAIN.fmt.d_k4.name, /beyond guessing/);
 });
+
+// Codex review #495 (5th pass): a chart of format difficulties is drawn on recognition beyond guessing, so it has its
+// own outcome heading, not "Chance of a right answer".
+test('outOf: format difficulties chart on their own beyond-guessing outcome', () => {
+  assert.strictEqual(A.outOf(A.PLAIN.fmt.d_k4), 'beyond');
+  assert.strictEqual(A.outOf(A.PLAIN.fmt.oe_k4), 'pts');
+  assert.strictEqual(A.outOf(undefined), 'right');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
+  assert.match(src, /beyond: '[^']*beyond guessing[^']*'/);
+  assert.ok(!/S\.o\b/.test(src), 'charts group by ANALYSIS.outOf, not the raw outcome');
+});

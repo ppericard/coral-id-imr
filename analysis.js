@@ -1785,6 +1785,10 @@
     return out;
   }
 
+  // The outcome a chart draws an effect on: its own (right, time, …), except a difficulty read beyond guessing, which is
+  // not a chance of a right answer (Codex review #495).
+  const outOf = P => (!P ? 'right' : P.beyond ? 'beyond' : P.o || 'right');
+
   /* ---------- All of them, for one milestone ---------- */
   const ANALYSES = [
     ['rt', 'Response time', rt],
@@ -1988,6 +1992,7 @@
     factor,
     lmm,
     glmm,
+    outOf,
     fmtFit,
     guessOf,
     fmtOf,

@@ -69,6 +69,7 @@ const AN_OUT = {
   stop: 'Chance to end the session after the answer',
   mix: 'Chance to pick a given wrong genus when it is offered',
   pts: 'Right answers against the app’s expectation',
+  beyond: 'Chance of recognising it, beyond guessing',
   guess: 'Success of a pure guess'
 };
 const anSpec = (key, e) => (ANALYSIS.PLAIN[key] || {})[e.k] || {o: 'right'};
@@ -281,11 +282,13 @@ function anEffects(a, key, fresh) {
   const E = (a.effects || []).map(e => [e, anPlain(key, e, a), anSpec(key, e)]),
     main = E.filter(([e]) => !e.sd),
     sds = E.filter(([e]) => e.sd);
-  const outs = [...new Set(main.filter(([e, P, S]) => P.val != null && e.v !== 'none' && S.o !== 'n').map(([, , S]) => S.o))];
+  const outs = [
+    ...new Set(main.filter(([e, P, S]) => P.val != null && e.v !== 'none' && ANALYSIS.outOf(S) !== 'n').map(([, , S]) => ANALYSIS.outOf(S)))
+  ];
   const plots = outs
     .map(o => {
       // a range the fit could not hold (wider than 20 on its own scale) stays in the table only
-      const L = main.filter(([e, P, S]) => S.o === o && P.val != null && !(e.hi - e.lo > 20));
+      const L = main.filter(([e, P, S]) => ANALYSIS.outOf(S) === o && P.val != null && !(e.hi - e.lo > 20));
       if (!L.length) return '';
       const P0 = L[0][1],
         same = L.every(([, P]) => P.base === P0.base),
