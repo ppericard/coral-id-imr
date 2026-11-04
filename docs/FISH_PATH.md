@@ -189,6 +189,11 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 - **The shape groups are the book's** (Pierre, 2026-11-04): those of *Reef Fish Identification – Tropical Pacific* (2nd edition, Allen,
   Steene, Humann & DeLoach, New World Publications), which the IMR course follows. The book is credited for the groups, not IMR (the
   code and these docs still say "IMR shape groups" for them).
+- **The app shows the book's group names and numbers** (Pierre, 2026-11-04), e.g. "7. Heavy Bodies/Large Lips", only the groups that
+  hold entries in the game, in the book's order. A later code PR replaces the 10 IMR groups in `tools/fish_source.json` (and so
+  `fish.json` `group`, the wrong-choice order and the families page) with the book's groups, and renames "IMR shape groups" in the
+  code and docs (rule 24b: clean names, data migrated once). Where IMR's wording differs from the book's title, the book's title is
+  shown.
 - **Body shape first** (Pierre, 2026-11-04): identification always starts with the body shape, which is what separates the
   identification groups (the book above groups fish by body shape). The module starts with body shape and the shape groups, then
   the vocabulary.
