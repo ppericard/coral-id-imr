@@ -621,9 +621,12 @@ function viewCompare(a, b) {
   bindCards();
   bindGo();
 }
-// Fish families (#genera with the fish subject, app.js UNITS list): the IMR entries in the order of the presentation's
-// 10 shape groups, each with a photo, its IMR cues and how IMR tells its look-alikes apart, then the opt-in circles the
-// player has on. The winks stay a surprise. No sheet per family yet (ROADMAP "Fish mode").
+// Fish families (#genera with the fish subject, app.js UNITS list): the IMR entries by the groups of the identification
+// key in force (fish.json key: for the Indo-Pacific, the index of a reef fish ID book; AGENTS.md rule 6c), in the key's order, only the
+// groups that hold an entry, each under its number and title as the key prints them; each entry with a photo, its IMR cues
+// and how IMR tells its look-alikes apart; then the opt-in circles the player has on. The key is credited in full under the
+// list (its short form in the help). A region with no key: the entries in one block. The winks stay a surprise. No sheet
+// per family yet (ROADMAP "Fish mode").
 function viewFishList() {
   const tip = n => {
     const g = GX(n),
@@ -635,15 +638,26 @@ function viewFishList() {
     }${g.sub.length ? `<p class="note">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}</div></article>`;
   };
   const blk = (head, L) => (L.length ? `<section class="gblk" data-n="${L.length}">${head}${L.map(tip).join('')}</section>` : '');
-  const groups = FISH.groups.map(gr =>
-    blk(
-      `<h3 class="gdiv" style="--g:${groupHue(gr.n)}"><span class="gn">${gr.n}</span><span class="gt">${esc(gr.name)}</span></h3>`,
-      FISH.c1.filter(n => GX(n).group === gr.n)
-    )
-  );
+  const key = FISH.key,
+    head = (n, t) =>
+      `<h3 class="gdiv"${typeof n === 'number' ? ` style="--g:${groupHue(n)}"` : ''}><span class="gn">${n}</span><span class="gt">${esc(t)}</span></h3>`,
+    groups = key
+      ? [
+          ...FISH.groups.map(gr =>
+            blk(
+              head(gr.n, gr.title),
+              FISH.c1.filter(n => GX(n).group === gr.n)
+            )
+          ),
+          blk(
+            head('?', 'Not in a group yet'),
+            FISH.c1.filter(n => !GX(n).group)
+          )
+        ]
+      : [blk('', FISH.c1)];
   const sets = SETS().map(S =>
     Q[S.k] ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units()) : ''
   );
-  $v.innerHTML = `<p class="lede">The fish families of the IMR fish presentation, by its shape groups, with the IMR cues. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>`;
+  $v.innerHTML = `<p class="lede">The fish families of the IMR fish presentation${key ? `, by the identification groups of ${esc(key.short)}` : ''}, with the IMR cues. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
 }

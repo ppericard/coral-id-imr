@@ -280,9 +280,12 @@
   // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). Level 1 of the game = the teaching
   // entries of level 1 (the 27 IMR entries of circle 1, then circles 2 and 3), each made into a record the engine reads
   // like a coral genus's (app.js GX): {id, name, fam, look (teaching ids, sub-entries folded into their entry), lk (how to
-  // tell each apart, IMR's words), qt (the IMR cues), forms (its IMR shape group: the wrong choices start in other groups,
+  // tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, fish.json key:
+  // the index of a reef fish ID book for the Indo-Pacific; AGENTS.md rule 6c), forms (that group: the wrong choices start in other groups,
   // as coral growth forms), ig (the same group), cm (how common near Dauin), views {wide: photos}, levels 1, circle, wink,
   // names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
+  // key: the identification key in force ({id, region, cite (full), short}, null for a region with none) and groups its
+  // groups in its order ({n, title, pages}).
   // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
   // surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
@@ -347,7 +350,8 @@
       c2: ids.filter(n => play(n) && gen[n].circle === 2),
       c3: ids.filter(n => play(n) && gen[n].circle === 3),
       winks: ids.filter(n => !play(n)),
-      groups: F.groups || []
+      key: F.key ? {id: F.key.id, region: F.key.region, cite: F.key.cite, short: F.key.short} : null,
+      groups: (F.key && F.key.groups) || []
     };
   }
   // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, AGENTS.md rule 6a): its IMR name,

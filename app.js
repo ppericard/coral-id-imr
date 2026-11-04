@@ -535,7 +535,8 @@ const imrFormPhotos = (n, id) => {
 // IMR growth forms a genus takes (IMR Lecture 6 forms, forms.json "forms"): those seen on its classified photos (one
 // photo Pierre or the first guess is sure of, or two unsure ones), plus those the Coral Finder front page gives it
 // (forms.json "cf" maps each front-page box to IMR forms; Meandering, which maps to every form, is left out).
-// A unit with forms of its own (a fish entry: its IMR shape group, core.js fishGen) takes them as they are.
+// A unit with forms of its own (a fish entry: its group in the identification key in force, core.js fishGen) takes them
+// as they are.
 const imrFormsOf = n => {
   const g = GX(n),
     cnt = {},
@@ -1068,7 +1069,7 @@ const UNITS = {
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from 95%, Instructor once the exam is passed. The IMR families count in your progress; the SVS video extras and the families beyond IMR (⚙ Settings) and the surprise cards don't. The leaderboard and the achievements count the corals only, for now.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
-    help: () => `<p class="lede">Name the fish family in the photo, as IMR names it on the survey slate. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other IMR shape groups and the look-alikes come in as you get a family right.</p>
+    help: () => `<p class="lede">Name the fish family in the photo, as IMR names it on the survey slate. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other identification groups${FISH && FISH.key ? ` (those of ${esc(FISH.key.short)})` : ''} and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the IMR name, the family's scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Once every IMR family is met, the barracudas seen on the SVS videos can be added; once you are good on the IMR families, the families divers look for at Dauin (⚙ Settings, any time). Neither counts in your progress. <b>Photos</b>: iNaturalist observations for now (Pierre's first), as iNaturalist ranks them.</p>`,
     sets: [
       {
