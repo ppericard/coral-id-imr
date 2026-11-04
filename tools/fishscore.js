@@ -310,17 +310,21 @@ function plateau(trace, ceiling) {
   const pts = [];
   let last = null,
     done = false;
+  const cut = 0.95 * ceiling;
   for (const t of trace) {
     const sc = t.score * 100;
-    if (sc >= 0.95 * ceiling) {
-      done = true;
-      break;
-    }
     if (sc < 26) continue;
-    if (last === null) last = {a: t.a, p: Math.floor(sc)};
-    while (sc >= last.p + PLATEAU.PTS) {
+    if (last === null) last = {a: t.a, p: Math.floor(Math.min(sc, cut))};
+    // The points completed up to the cutoff, the last one before it included (Codex review #519: a slow point that
+    // ends at the cutoff is the stall the measure is for).
+    while (Math.min(sc, cut) >= last.p + PLATEAU.PTS) {
       pts.push({len: t.a - last.a, at: last.p});
       last = {a: t.a, p: last.p + PLATEAU.PTS};
+    }
+    if (sc >= cut) {
+      if (t.a > last.a) pts.push({len: t.a - last.a, at: last.p}); // the part point up to the cutoff
+      done = true;
+      break;
     }
   }
   if (!done && last && trace.length && trace[trace.length - 1].a > last.a)

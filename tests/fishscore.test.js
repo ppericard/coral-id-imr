@@ -49,3 +49,13 @@ test('plateau: a run that stalls before its ceiling reports the stall (Codex rev
   assert.strictEqual(p.len, 9900);
   assert.strictEqual(p.at, 27);
 });
+
+test('plateau: a slow point that ends at the cutoff is counted (Codex review #519)', () => {
+  // Ceiling 80 (cutoff 76): 26% to 75% by answer 2,500 (one point every 50 answers), then 76% only at answer 10,000.
+  const trace = [];
+  for (let a = 50, p = 26; p <= 75; a += 50, p++) trace.push({a, score: p / 100});
+  trace.push({a: 10000, score: 0.76});
+  const p = F.plateau(trace, 80);
+  assert.strictEqual(p.len, 7500);
+  assert.strictEqual(p.at, 75);
+});

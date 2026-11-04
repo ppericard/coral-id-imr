@@ -2475,11 +2475,11 @@ What it shows:
   spent on the genera earn nothing until their species come, a flat stretch at 49% in every seed. The ceiling is the same
   (85% at the same answer). The half credit does what it was meant to do.
 - **Plateaus** (the answers each point of the score takes, from 26% to 95% of the profile's ceiling; median / longest):
-  common names only 490 / 850; scientific only 650 / 1,760; both side by side 1,260 / 3,370; both, slow scientific 1,670 /
-  4,610 (a run that ends below 95% of its ceiling counts its last, unfinished point). No long plateau for a player on one branch, nor for one learning both names side by side (the longest point
-  takes 2-3 times the median, near 85%, where the last species of the largest entries finish).
+  common names only 500 / 850; scientific only 650 / 1,760; both side by side 1,260 / 3,500; both, slow scientific 1,670 /
+  4,610 (a run that ends below 95% of its ceiling counts its last, unfinished point; the point that reaches the cutoff counts too). No long plateau for a player on one branch, nor for one learning both names side by side (the longest point
+  takes 2-3 times the median, at 85-94%, where the last species of the largest entries finish).
 - **One branch, then the other: the pace drops by 7 to 12 times** (common then scientific: median 580, longest 7,010 answers,
-  at 90-93%; scientific then common: 760 / 5,060 at 92-93%). Once one kind of names is complete (80% or 85%), the other
+  at 90-93%; scientific then common: 760 / 5,120 at 92-94%). Once one kind of names is complete (80% or 85%), the other
   kind is worth 20 or 15 points for as many units as the first kind's 55 or 60: each species' scientific name adds
   0.267 × 75 / 340 ≈ 0.06 points to a player who knows its common names (0.18 to one who does not). This follows from the
   anchors (80 / 85 / 100%), not from a or b: any formula with these three points gives the second kind of names
