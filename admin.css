@@ -3928,3 +3928,104 @@ button.adm-chip[aria-pressed='true'] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Analyses, visual (Pierre, 2026-11-04: "very visual; I can't scroll through everything"): the show / sort controls and
+   the jump list under the header, cards that fold on their title, diverging bars coloured by verdict, sparklines. */
+.adm-an-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.adm-an-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.adm-an-jump .adm-chip {
+  font-size: var(--fs-xs);
+}
+.adm-an-fold {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.adm-an-fold::after {
+  content: '▾';
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.adm-an-fold:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.adm-an-card.folded .adm-an-fold::after {
+  content: '▸';
+}
+.adm-an-card.folded > .adm-an-body {
+  display: none;
+}
+.adm-an-card.folded > h3 {
+  margin: 0;
+}
+.adm-an-svg .an-dbar {
+  fill: var(--ink);
+}
+.adm-an-svg .an-dbar.t-good {
+  fill: var(--good);
+}
+.adm-an-svg .an-dbar.t-bad {
+  fill: var(--bad);
+}
+.adm-an-svg .an-dbar.t-info {
+  fill: var(--accent);
+}
+.adm-an-svg .an-dbar.t-none {
+  fill: var(--muted);
+}
+.adm-an-svg .an-dbar.t-thin {
+  fill: transparent;
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.adm-an-svg .an-val {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+.adm-an-svg .an-val.t-good {
+  fill: var(--good);
+}
+.adm-an-svg .an-val.t-bad {
+  fill: var(--bad);
+}
+.adm-an-svg .an-val.t-thin,
+.adm-an-svg .an-val.t-none {
+  fill: var(--muted);
+  font-weight: 400;
+}
+.adm-an-svg .an-sub {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.adm-an-spark path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.adm-an-spark circle {
+  fill: var(--accent);
+}
+.adm-tbl td.an-sp {
+  max-width: none;
+}
+@media (max-width: 599px) {
+  .adm-an-eff td.an-sp {
+    display: none;
+  }
+}
