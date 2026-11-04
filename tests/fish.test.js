@@ -560,6 +560,14 @@ test('fish-photos.json (the stopgap game photos) shows only species in the game'
 // Curated common names, the proposal (Pierre, 2026-11-04: 1 to 3 per species; docs/FISH_PATH.md "Common names";
 // tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule 1), each with its
 // sources, no two spellings of one name listed apart, and the file is what the selection gives.
+test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
+  const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;
+  assert.strictEqual(P.s132.names[0].name, "Russell's snapper");
+  assert.ok(P.s132.names[0].alt.includes('Russelss’s snapper'));
+  assert.strictEqual(P.s008.names[0].name, 'Eastern triangular butterflyfish');
+  assert.ok(P.s008.names[0].alt.includes('Eastern triangular'));
+});
+
 test('common names proposal: 1 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
   const P = read('tools/fish_common.json').species;
   const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
@@ -570,7 +578,11 @@ test('common names proposal: 1 to 3 per game species, the PDF name first, source
       assert.ok(p, `${s.id} ${s.name}: no proposal`);
       assert.strictEqual(p.sp, s.name);
       assert.ok(p.names.length >= 1 && p.names.length <= 3, `${s.name}: ${p.names.length} names`);
-      if (s.common) assert.strictEqual(p.names[0].name, s.common, `${s.name}: the PDF name first, as written`);
+      // The PDF name first, as written; a PDF name flagged as a likely slip (check) shows FishBase's spelling, the PDF form
+      // still accepted when typed (Pierre, 2026-11-05).
+      if (s.common && !(s.check && (p.names[0].alt || []).includes(s.common)))
+        assert.strictEqual(p.names[0].name, s.common, `${s.name}: the PDF name first, as written`);
+      else if (s.common) assert.ok(p.names[0].alt.includes(s.common), `${s.name}: the PDF form accepted when typed`);
       p.names.forEach(n => assert.ok(n.from.length, `${s.name}: ${n.name} has no source`));
       const keys = p.names.map(n => norm(n.name));
       assert.strictEqual(new Set(keys).size, keys.length, `${s.name}: a name listed twice`);

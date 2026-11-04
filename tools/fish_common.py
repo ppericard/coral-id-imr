@@ -20,8 +20,7 @@ Selection, in order, at most 3 names (names compared without case, spaces, hyphe
 2. the FishBase main English name and the iNaturalist default English name, when not already listed (each is the main
    name of a major public reference), but only when it recurs: found in both FishBase (its main name counts, with or
    without a comnames record) and iNaturalist;
-3. another name only if it recurs in both and FishBase records it FB_MIN (3) times or more (countries, references);
-   the most FishBase records first.
+(no other name: Pierre, 2026-11-05, dropped the rule that added a name recorded 3+ times by FishBase).
 Spellings of one name count as one name (2 letters apart at most, a trailing "fish", or one the other's first words:
 Pearl-scaled / Pearlscale angelfish, Neon damsel / damselfish, Indo-Pacific sergeant / sergeant major; a spelling
 that links two groups merges them): the form shown
@@ -33,7 +32,8 @@ PDF's nor the only name (`dropped`); a name still shared then is flagged `shared
 open question 1). Spelling and capitals: FishBase's
 form when it has the name (sentence case: "Ternate chromis"), else iNaturalist's with the words after the first in
 lower case unless capitalised in a FishBase name of these species (a person or place: "Bennett's"). A PDF name flagged
-`check` in fish.json (a likely slip) is kept as written and flagged for Pierre (rule 6a).
+`check` in fish.json (a likely slip) shows FishBase's spelling, the PDF form kept in alt (accepted when typed; Pierre,
+2026-11-05).
 
 Usage:
   python3 tools/fish_common.py --inat               iNaturalist names of every game species (about 1 request a second,
@@ -59,7 +59,6 @@ API = "https://api.inaturalist.org/v1/taxa/"
 UA = {"User-Agent": "coral-id-imr/1.0 (fish common names)", "Accept": "application/json"}
 MAX = 3
 OWN = ("pdf", "slides", "dauin", "wink")  # fish.json `common` by its species' src: kept as written, listed first
-FB_MIN = 3  # FishBase English records for a name beyond the main ones to count as recurring
 
 
 def norm(name):
@@ -244,7 +243,9 @@ def select():
         for g in groups:
             # The form shown: the species' own (PDF) name as written, else FishBase's main name, else its most recorded
             # spelling; the other spellings stay as alt (accepted when typed).
-            if g["own"]:
+            # A PDF name flagged as a likely slip (fish.json `check`) shows FishBase's spelling instead, the PDF form kept
+            # in alt so it is still accepted when typed (Pierre, 2026-11-05).
+            if g["own"] and not (s.get("check") and g["alt"]):
                 continue
             forms = [g["name"]] + g["alt"]
             best = max(forms, key=lambda f: (norm(f) == norm(fb.get("main") or ""), fbRec.get(norm(f), 0)))
@@ -253,9 +254,10 @@ def select():
 
         def keep(g):
             # A name besides the species' own: one that recurs in both references (FishBase and iNaturalist), the main
-            # name of one of them, or recorded FB_MIN times or more by FishBase.
+            # name of one of them.
             # FishBase's main name is FishBase evidence even with no comnames record (Codex review #522, Chromis agilis).
-            return (g["fb"] > 0 or g["fbMain"]) and g["inat"] and (g["fbMain"] or g["inatMain"] or g["fb"] >= FB_MIN)
+            # No third rule for other recorded names (Pierre, 2026-11-05: only the main names of the two references).
+            return (g["fb"] > 0 or g["fbMain"]) and g["inat"] and (g["fbMain"] or g["inatMain"])
 
         rank = sorted(groups, key=lambda g: (not g["own"], not (g["fbMain"] or g["inatMain"]), -g["fb"]))
         pick = [g for g in rank if g["own"] or keep(g)][:MAX]
