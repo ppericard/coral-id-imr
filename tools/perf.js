@@ -146,6 +146,7 @@ async function field() {
       await ctx.addInitScript(() => {
         try {
           localStorage.setItem('reefid-tour', '1');
+localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         } catch (e) {}
       });
       const p = await ctx.newPage();
@@ -282,6 +283,7 @@ const ms = x => Math.round(x) + ' ms';
       // The welcome tour would cover the pages: marked as seen.
       try {
         localStorage.setItem('reefid-tour', '1');
+localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       } catch (e) {}
     });
     const out = [];

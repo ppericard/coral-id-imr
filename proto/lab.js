@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 79;
+const LAB_V = 80;
 // One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
 // 24 px grid, 1.75 stroke, currentColor; a tool without an entry falls back to its `icon` text.
 const LAB_ICONS = {
@@ -10,8 +10,7 @@ const LAB_ICONS = {
   anatomy:
     '<path d="M12 2.8 20 7.4v9.2L12 21.2 4 16.6V7.4z"/><circle cx="12" cy="12" r="3.2"/><path d="M12 5.5v3.3M12 15.2v3.3M6.4 8.8l2.8 1.6M14.8 13.6l2.8 1.6M6.4 15.2l2.8-1.6M14.8 10.4l2.8-1.6"/>',
   // A polyp on its cup: ring of tentacles over a stony cup.
-  basics:
-    '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>',
+  basics: BASICS_ICON, // app.js (the Learn path's step 0 card draws it too)
   zoom: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.5-4.5M11 8v6M8 11h6"/>',
   elim: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18M10.5 10.5l3 3M13.5 10.5l-3 3"/>',
   matrix:
@@ -61,7 +60,7 @@ const LAB = {
   }
 };
 // Graduated prototypes and the section of MODES (app.js) they now live in.
-const GRADUATED = {finder: 'identify', pairs: 'practice'};
+const GRADUATED = {finder: 'identify', pairs: 'practice', basics: 'learn'};
 // Where each Lab prototype is meant to go once it is ready; the home page already shows it there, marked Beta.
 const PLANNED = {
   basics: 'learn',
