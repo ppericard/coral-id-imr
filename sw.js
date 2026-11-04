@@ -22,17 +22,17 @@ const SHELL = [
   'index.html',
   'app.css?v=139',
   'core.js?v=50',
-  'app.js?v=210',
+  'app.js?v=211',
   'sync.js?v=30',
   'progress.js?v=25',
   'model.js?v=38',
   'tips.js?v=3',
-  'quiz.js?v=51',
-  'learn.js?v=19',
+  'quiz.js?v=52',
+  'learn.js?v=20',
   'flag.js?v=11',
   'quality.json?v=3',
   'picks.json?v=1',
-  'data.json?v=37',
+  'data.json?v=38',
   'fish.json?v=6',
   'fish-photos.json?v=6',
   'forms.json?v=7',
@@ -42,9 +42,9 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=83',
+  'proto/lab.js?v=84',
   'proto/lab.css?v=57',
-  'home-art.js?v=5',
+  'home-art.js?v=6',
   'home.js?v=38',
   'home.css?v=26',
   'tour.js?v=22',
@@ -65,7 +65,7 @@ const SHELL = [
     'pairs',
     'gallery',
     'cards'
-  ].map(f => `proto/${f}.js?v=82`)
+  ].map(f => `proto/${f}.js?v=83`)
 ];
 const get = async (c, u, n = 3) => {
   for (let i = 1; ; i++) {

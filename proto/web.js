@@ -47,7 +47,7 @@ LAB.add({
       root.querySelector('#weblegend').innerHTML = keys
         .map(
           k =>
-            `<span><i style="background:${colorBy === 'fam' ? famColor(k) : igColor(k)}"></i>${esc(colorBy === 'fam' ? k : k ? k + '. ' + DATA.imrg[k - 1].t : '★ not in the lecture')}</span>`
+            `<span><i style="background:${colorBy === 'fam' ? famColor(k) : igColor(k)}"></i>${esc(colorBy === 'fam' ? altName(k) : k ? k + '. ' + DATA.imrg[k - 1].t : '★ not in the lecture')}</span>`
         )
         .join('');
     };
@@ -130,7 +130,7 @@ LAB.add({
         return;
       }
       const g = DATA.gen[n];
-      side.innerHTML = `<img src="${thumbSrc(n, 'macro', 'l')}" alt="${esc(n)} corallites"><h3><a href="${genLink(n)}"><i>${esc(n)}</i></a></h3><p class="note">${esc(tag(n))} · ${esc(g.fam)}</p><p>${whyLine(n)}</p>
+      side.innerHTML = `<img src="${thumbSrc(n, 'macro', 'l')}" alt="${esc(n)} corallites"><h3><a href="${genLink(n)}"><i>${esc(n)}</i></a></h3><p class="note">${esc(tag(n))} · ${esc(altName(g.fam))}</p><p>${whyLine(n)}</p>
         <p class="note">Compare with:</p><div class="mapthumbs">${[...new Set(near)].map(b => `<a href="#cmp-${encodeURIComponent(n + '|' + b)}"><img src="${thumbSrc(b)}" alt="" loading="lazy"><i>${esc(b)}</i></a>`).join('')}</div>`;
     };
     const pt = e => {
