@@ -1,0 +1,132 @@
+{
+ "photos": {
+  "fish-s064-cand-694906259": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s064-cand-89555815": {
+   "code": "p1g3bss1",
+   "keep": "best"
+  },
+  "fish-s064-cand-89555865": {
+   "code": "p1g3bss1",
+   "keep": "dup"
+  },
+  "fish-s064-cand-89555876": {
+   "code": "p1g3bsx1",
+   "keep": "dup"
+  },
+  "fish-s064-cand-378871544": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s064-cand-664035188": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s064-cand-420785355": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s064-cand-545631681": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s064-cand-168774336": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s064-cand-690940585": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s064-cand-420712851": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s064-cand-617695951": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s064-cand-617695954": {
+   "code": "p1g1sms3",
+   "keep": "dup"
+  },
+  "fish-s064-cand-617695957": {
+   "code": "p1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s064-cand-617695970": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s064-cand-168774440": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s064-cand-168774447": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s064-cand-301887525": {
+   "code": "o1d1sl13",
+   "keep": "best"
+  },
+  "fish-s064-cand-301893991": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s064-cand-301894041": {
+   "code": "p1g1sl14",
+   "keep": "dup"
+  },
+  "fish-s064-cand-641412398": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s064-cand-500493456": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s064-cand-449051022": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s064-cand-450592641": {
+   "code": "p1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s064-cand-168057900": {
+   "code": "p1g2bmm1",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "A drawn arrow points at the fish"
+  },
+  "fish-s064-cand-581931636": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s064-cand-581931663": {
+   "code": "p1g0sl1a2",
+   "keep": "dup"
+  },
+  "fish-s064-cand-602498600": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s064-cand-164698253": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s064-cand-65535896": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s064-cand-65535903": {
+   "code": "p1g0sl14",
+   "keep": "dup"
+  }
+ }
+}

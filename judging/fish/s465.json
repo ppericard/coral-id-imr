@@ -1,0 +1,136 @@
+{
+ "photos": {
+  "fish-s465-cand-568091361": {
+   "code": "p1g2smm2",
+   "keep": "best"
+  },
+  "fish-s465-cand-486966210": {
+   "code": "o1g2sss2",
+   "keep": "best"
+  },
+  "fish-s465-cand-688420295": {
+   "code": "o1g3sss1",
+   "keep": "best"
+  },
+  "fish-s465-cand-605474034": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s465-cand-605474026": {
+   "code": "p0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s465-cand-605474051": {
+   "code": "p1g2sss2",
+   "keep": "dup"
+  },
+  "fish-s465-cand-723807319": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s465-cand-723807320": {
+   "code": "p1g2sms2",
+   "keep": "dup"
+  },
+  "fish-s465-cand-618248394": {
+   "code": "p1g1ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the jack for sure among the reef fish"
+  },
+  "fish-s465-cand-744161783": {
+   "code": "p1g2sl12",
+   "keep": "best"
+  },
+  "fish-s465-cand-682750088": {
+   "code": "o1g3sms1",
+   "keep": "best"
+  },
+  "fish-s465-cand-682748613": {
+   "code": "o1g3sss1",
+   "keep": "dup"
+  },
+  "fish-s465-cand-682748697": {
+   "code": "o1g3sss1",
+   "keep": "dup"
+  },
+  "fish-s465-cand-682748802": {
+   "code": "o1g3sss1",
+   "keep": "dup"
+  },
+  "fish-s465-cand-50673211": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s465-cand-747337046": {
+   "code": "p1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s465-cand-605474030": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s465-cand-618248283": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s465-cand-618249725": {
+   "code": "p1g2sms2",
+   "keep": "dup"
+  },
+  "fish-s465-cand-58905461": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s465-cand-659738564": {
+   "code": "p1g1sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Small yellow-finned fish on sand: maybe a juvenile"
+  },
+  "fish-s465-cand-659738577": {
+   "code": "p1g2sm1j2",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Small yellow-finned fish on sand: maybe a juvenile"
+  },
+  "fish-s465-cand-621818190": {
+   "code": "p1g2ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Murky; I cannot find the jacks for sure on the photo"
+  },
+  "fish-s465-cand-621818197": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s465-cand-606707259": {
+   "code": "o1d2sms2",
+   "keep": "best"
+  },
+  "fish-s465-cand-618043227": {
+   "code": "o1g3sms1",
+   "keep": "best"
+  },
+  "fish-s465-cand-325247793": {
+   "code": "p1g1smm3",
+   "keep": "best"
+  },
+  "fish-s465-cand-381128990": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s465-cand-327030495": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  }
+ }
+}

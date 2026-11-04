@@ -1,0 +1,92 @@
+{
+ "photos": {
+  "fish-s116-cand-39984295": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s116-cand-573565089": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s116-cand-573565371": {
+   "code": "p1g2sm13",
+   "keep": "alt"
+  },
+  "fish-s116-cand-599410266": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s116-cand-463098041": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s116-cand-694584305": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s116-cand-335757773": {
+   "code": "p1d1ssx1",
+   "keep": "best"
+  },
+  "fish-s116-cand-336789111": {
+   "code": "p0g2sm12",
+   "keep": "best"
+  },
+  "fish-s116-cand-586182152": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s116-cand-331810124": {
+   "code": "o0g2sl12",
+   "keep": "best"
+  },
+  "fish-s116-cand-595786121": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s116-cand-336790215": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s116-cand-695340173": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s116-cand-336790359": {
+   "code": "p0g2bl11",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A red-brown fish in the foreground: check which is the subject"
+  },
+  "fish-s116-cand-596642361": {
+   "code": "p1g2smm2",
+   "keep": "best"
+  },
+  "fish-s116-cand-332415780": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s116-cand-13210401": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s116-cand-60224669": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s116-cand-3006407": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s116-cand-275295365": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s116-cand-504290347": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  }
+ }
+}

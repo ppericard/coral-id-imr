@@ -1,0 +1,128 @@
+{
+ "photos": {
+  "fish-s417-cand-513280013": {
+   "code": "d1g3sm12",
+   "keep": "best"
+  },
+  "fish-s417-cand-513267084": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s417-cand-513267433": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s417-cand-513904213": {
+   "code": "d1g2smm2",
+   "keep": "best"
+  },
+  "fish-s417-cand-138995955": {
+   "code": "d1g1sl1ja2",
+   "keep": "best"
+  },
+  "fish-s417-cand-593010301": {
+   "code": "o1g3sl12",
+   "keep": "best"
+  },
+  "fish-s417-cand-243970431": {
+   "code": "p1g3bl11",
+   "keep": "best"
+  },
+  "fish-s417-cand-654691432": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s417-cand-654691483": {
+   "code": "p1g3sl12",
+   "keep": "dup"
+  },
+  "fish-s417-cand-654691536": {
+   "code": "o1g3sm12",
+   "keep": "dup"
+  },
+  "fish-s417-cand-654691587": {
+   "code": "o1g3ss11",
+   "keep": "dup"
+  },
+  "fish-s417-cand-56277294": {
+   "code": "d1g1sl1ja2",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "A drawn arrow on the photo"
+  },
+  "fish-s417-cand-357894137": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s417-cand-357894152": {
+   "code": "p1d2sm12",
+   "keep": "dup"
+  },
+  "fish-s417-cand-386716795": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s417-cand-386716842": {
+   "code": "d1g2ss1c1",
+   "keep": "dup"
+  },
+  "fish-s417-cand-350302362": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s417-cand-633486796": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s417-cand-593018125": {
+   "code": "o1g3sl12",
+   "keep": "best"
+  },
+  "fish-s417-cand-59876728": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s417-cand-360175951": {
+   "code": "o0g3sl12",
+   "keep": "best"
+  },
+  "fish-s417-cand-357894409": {
+   "code": "p1d3ss11",
+   "keep": "best"
+  },
+  "fish-s417-cand-357894566": {
+   "code": "p1d3sm11",
+   "keep": "best"
+  },
+  "fish-s417-cand-357894571": {
+   "code": "p1d3sm11",
+   "keep": "dup"
+  },
+  "fish-s417-cand-57049634": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s417-cand-551066103": {
+   "code": "h0g2sl12",
+   "keep": "alt"
+  },
+  "fish-s417-cand-551066141": {
+   "code": "o0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s417-cand-551066204": {
+   "code": "o1g2sl13",
+   "keep": "best"
+  },
+  "fish-s417-cand-551066255": {
+   "code": "p0g2sl1c2",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Lying on the sand with marks on it: maybe a dead or dying shark"
+  }
+ }
+}

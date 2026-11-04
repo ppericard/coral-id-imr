@@ -1,0 +1,184 @@
+{
+ "photos": {
+  "fish-s448-cand-596176817": {
+   "code": "d0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-596176820": {
+   "code": "d0g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-413589812": {
+   "code": "d0g1ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the moray for sure among the seagrass"
+  },
+  "fish-s448-cand-106235102": {
+   "code": "d0g1sm13",
+   "keep": "best"
+  },
+  "fish-s448-cand-545403304": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s448-cand-244084466": {
+   "code": "o0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-599486125": {
+   "code": "d0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-599486147": {
+   "code": "d0g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s448-cand-699046496": {
+   "code": "d0g1sl1a3",
+   "keep": "best"
+  },
+  "fish-s448-cand-699046553": {
+   "code": "d0g1sl1a3",
+   "keep": "dup"
+  },
+  "fish-s448-cand-699046599": {
+   "code": "d0g1sl1a3",
+   "keep": "dup"
+  },
+  "fish-s448-cand-699046674": {
+   "code": "d1g1sm1a3",
+   "keep": "dup"
+  },
+  "fish-s448-cand-541754479": {
+   "code": "p0g1sl13",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "In a clear container, not in the wild"
+  },
+  "fish-s448-cand-541754582": {
+   "code": "p0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-541754623": {
+   "code": "p0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-541754658": {
+   "code": "p0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-435446693": {
+   "code": "d0n0sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-435446928": {
+   "code": "d0n0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s448-cand-63251986": {
+   "code": "d0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-63252003": {
+   "code": "d0g2bm1c1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-63252025": {
+   "code": "d0g2bm1c1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-63252043": {
+   "code": "d0g2bm1c1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-110739050": {
+   "code": "o0n0sl13",
+   "keep": "best"
+  },
+  "fish-s448-cand-110739062": {
+   "code": "o0n0sl13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-388424401": {
+   "code": "o0g1sl1a3",
+   "keep": "best"
+  },
+  "fish-s448-cand-388424428": {
+   "code": "o0g1sl1a3",
+   "keep": "dup"
+  },
+  "fish-s448-cand-264996787": {
+   "code": "d0g1sm13",
+   "keep": "best"
+  },
+  "fish-s448-cand-264996803": {
+   "code": "d0g1sm13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-745333844": {
+   "code": "o0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-745339716": {
+   "code": "o0g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s448-cand-745339729": {
+   "code": "o0g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s448-cand-745339739": {
+   "code": "o0g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-596178967": {
+   "code": "d0g1sl13",
+   "keep": "best"
+  },
+  "fish-s448-cand-596178942": {
+   "code": "o0d1sm13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-325225427": {
+   "code": "o0g2sm1c1",
+   "keep": "best"
+  },
+  "fish-s448-cand-327688526": {
+   "code": "d0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-77934850": {
+   "code": "d1g1sm1ja2",
+   "keep": "best"
+  },
+  "fish-s448-cand-77815889": {
+   "code": "d0g1sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s448-cand-732910778": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s448-cand-732910785": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-594697587": {
+   "code": "d0g1ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the moray for sure among the seagrass"
+  },
+  "fish-s448-cand-594697590": {
+   "code": "d0g1ssxc1",
+   "keep": "dup"
+  }
+ }
+}

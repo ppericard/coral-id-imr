@@ -1,0 +1,166 @@
+{
+ "photos": {
+  "fish-s443-cand-500759044": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s443-cand-459640565": {
+   "code": "o0d1smm2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A yellow fish in front of the moray: the subject may not be obvious"
+  },
+  "fish-s443-cand-459640581": {
+   "code": "o0d1smm2",
+   "keep": "dup"
+  },
+  "fish-s443-cand-69053757": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-564505410": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-564505719": {
+   "code": "o0g1sms3",
+   "keep": "dup"
+  },
+  "fish-s443-cand-564505744": {
+   "code": "o0g1sms3",
+   "keep": "dup"
+  },
+  "fish-s443-cand-655738377": {
+   "code": "o0d1sm1c1",
+   "keep": "best"
+  },
+  "fish-s443-cand-681555780": {
+   "code": "o0d2sm12",
+   "keep": "best"
+  },
+  "fish-s443-cand-681555157": {
+   "code": "o0d2sm12",
+   "keep": "dup"
+  },
+  "fish-s443-cand-681555888": {
+   "code": "o0d2sm12",
+   "keep": "dup"
+  },
+  "fish-s443-cand-617417577": {
+   "code": "h0g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s443-cand-403633177": {
+   "code": "o0d1sm12",
+   "keep": "best"
+  },
+  "fish-s443-cand-689826186": {
+   "code": "o0n0sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-487806245": {
+   "code": "h0g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s443-cand-501072783": {
+   "code": "h0g1sl13",
+   "keep": "alt"
+  },
+  "fish-s443-cand-501072818": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s443-cand-501072959": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-501072907": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-95332911": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-564519018": {
+   "code": "o0n0sm13",
+   "keep": "best"
+  },
+  "fish-s443-cand-564519096": {
+   "code": "o0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-564519170": {
+   "code": "o0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-564519222": {
+   "code": "o0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-459640671": {
+   "code": "o0d1ss1c1",
+   "keep": "best"
+  },
+  "fish-s443-cand-459640685": {
+   "code": "o0d1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s443-cand-459640687": {
+   "code": "o0d1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s443-cand-459640612": {
+   "code": "o0d1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s443-cand-428999547": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-428999516": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-428999641": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-428999633": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-61036802": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-568107522": {
+   "code": "h0g1sm13",
+   "keep": "best"
+  },
+  "fish-s443-cand-568107581": {
+   "code": "o0g1sm13",
+   "keep": "dup"
+  },
+  "fish-s443-cand-347833897": {
+   "code": "o0n0sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-460463790": {
+   "code": "h0g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s443-cand-267289101": {
+   "code": "h0g1slx1",
+   "keep": "best",
+   "note": "Two morays of different colours: which one is the subject is not obvious"
+  },
+  "fish-s443-cand-267289117": {
+   "code": "h0g1slx1",
+   "keep": "dup",
+   "note": "Two morays of different colours: which one is the subject is not obvious"
+  }
+ }
+}
