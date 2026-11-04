@@ -1851,6 +1851,13 @@ header {
 .lahead:hover i {
   color: var(--accent);
 }
+/* Back to the duel on a comparison opened from the Duel tab's relief card (learn.js viewCompare, quiz.js DUELBACK). */
+.cmpback {
+  margin: 0 0 12px;
+}
+.cmpback:last-child {
+  margin: 16px 0 12px;
+}
 .cmprow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -5881,20 +5888,36 @@ html.touring .unlock {
   bottom: 6px;
   box-shadow: 0 0 0 3px var(--k);
 }
-.tipcard h3:focus {
+.tipcard h3:focus,
+.reliefcard h3:focus {
   outline: none;
 }
-.tipcard [data-b] {
+.tipcard [data-b],
+.reliefcard [data-b],
+.reliefcard .reliefx {
   transition: opacity 0.25s ease-out;
 }
-.tipcard [data-b]:disabled {
+.tipcard [data-b]:disabled,
+.reliefcard [data-b]:disabled,
+.reliefcard .reliefx:disabled {
   opacity: 0.35;
   cursor: default;
 }
 @media (prefers-reduced-motion: reduce) {
-  .tipcard [data-b] {
+  .tipcard [data-b],
+  .reliefcard [data-b],
+  .reliefcard .reliefx {
     transition: none;
   }
+}
+/* The Duel tab's relief card (quiz.js reliefShow): its quiet third choice, Keep drilling, under the two buttons, as the
+   one-tap question's Not now. */
+.reliefcard .reliefx {
+  margin-top: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: var(--fs-s);
 }
 /* The first meeting with a genus (quiz.js introShow): the photo as a full-width band, at most a third of the screen's
    height (the tips stay in view), the kind's emoji and the kicker on a chip at its edge. */
