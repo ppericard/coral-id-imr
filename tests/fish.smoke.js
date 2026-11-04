@@ -215,6 +215,21 @@ const server = http.createServer((req, res) => {
     );
     ok(!UNITS.fish.pairs().some(pr => pr.some(n => GX(n).rank)), 'sci: no duel pair of genera');
     ok(typeMatch('Chromis').g === 't01' && typeMatch('Chromis', 'genus').g === 'g:Chromis', 'sci: typed Chromis by rank');
+    // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
+    // wrong choice, as in the quiz); a genus card's photo comes from the highest source tier (Pierre's own first, rule 7).
+    st('t02').pg = 0.2;
+    st('t04').pg = 0.72;
+    const pl = pool().filter(n => GX(n).rank);
+    ok(pl.length === 1 && GX(pl[0]).parent === 't04', 'sci: Spadefish alone, one genus in play');
+    ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
+    ok(
+      G.every(n => {
+        const w = GX(n).views.wide,
+          c = w.find(p => p.f === GX(n).cover);
+        return !c || c.own || !w.some(p => p.own && p.e);
+      }),
+      "sci: a genus card's photo is Pierre's own when he has a judged one"
+    );
     bonusSet(false, 'sci');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
     return fails;

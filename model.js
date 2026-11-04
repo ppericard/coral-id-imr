@@ -1270,8 +1270,11 @@ const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
     .map(p => p.sort());
 function distractors(t, list, traps = trapsFor(t), known = introduced) {
   // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
+  // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
+  // genera met, the others make up the three (Codex review #526: a family with one genus at Advanced had one choice).
   const rk = rankOf(t);
   list = list.filter(n => rankOf(n) === rk);
+  if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])

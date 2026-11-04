@@ -464,9 +464,12 @@ function fishGenera(X, F) {
           views: {wide},
           names: [g]
         };
+        // The card's photo as fishGen picks an entry's: the highest source tier first (Pierre's own, rule 7), then the
+        // easiest judged one (Codex review #526).
         if (wide.some(p => p.e)) {
-          const best = wide.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), wide[0]);
-          X.gen[id].cover = best.f;
+          const tier = Math.min(...wide.map(p => (p.own ? 0 : 1))),
+            T = wide.filter(p => (p.own ? 0 : 1) === tier);
+          X.gen[id].cover = T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
         }
         sci.push(id);
       });
@@ -477,6 +480,9 @@ function fishGenera(X, F) {
 // A unit's rank inside its subject: '' for the corals' genera and the fish entries, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
 const rankOf = n => (GX(n) || {}).rank || '';
+// Every unit of a rank in the subject's opt-in sets, opened or not: the wrong choices a question of that rank may name
+// (as a quiz's wrong choices may name any genus), so a family with a single genus in play still gets 4 choices.
+const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => rankOf(n) === rk);
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (FISH, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
