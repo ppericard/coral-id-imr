@@ -1733,6 +1733,17 @@ async function startSmoke(b, base) {
         document.querySelector(`[data-gv="${v}"]`).click();
       }, v);
       await p.waitForSelector(v === 'tips' ? '#azgrid .bxtip' : '#azgrid .bxcard', {timeout: 8000});
+      // Its picture, the trail of the seven steps (learn.js basicsArt), from the stored progress: the four seen with a ✓,
+      // Teeth next with its word, the last two not reached.
+      const trail = await p.evaluate(() =>
+        [...document.querySelectorAll('#azgrid .bxart .bxt-stop')].map(
+          g => `${g.dataset.step}:${g.classList[1]}${g.querySelector('.bxt-tick') ? '✓' : ''}`
+        )
+      );
+      const nextLab = await p.evaluate(() => document.querySelector('#azgrid .bxart .bxt-lab.is-next')?.textContent);
+      const want = 'colony:is-seen✓ polyp:is-seen✓ corallite:is-seen✓ septa:is-seen✓ teeth:is-next walls:is-todo forms:is-todo';
+      if (trail.join(' ') !== want || nextLab !== 'Next: Teeth')
+        fails.push(`Genera (${v}): the Coral basics trail ${JSON.stringify({trail: trail.join(' '), nextLab})}`);
       await p.evaluate(() => (document.querySelector('#azgrid a.bxcard') || document.querySelector('#azgrid .bxtip a')).click());
       await drawn(p);
       const at = await p.evaluate(() => ({h: location.hash, step: document.querySelector('.bx-t small')?.textContent}));
@@ -1794,6 +1805,10 @@ async function startSmoke(b, base) {
     await p.waitForSelector('#azgrid .bxcard', {timeout: 8000});
     if (!(await p.evaluate(() => /Done/.test(document.querySelector('#azgrid .bxcard small').textContent))))
       fails.push('Genera: Coral basics not shown as done');
+    const allSeen = await p.evaluate(
+      () => [...document.querySelectorAll('#azgrid .bxart .bxt-stop')].filter(g => g.matches('.is-seen')).length
+    );
+    if (allSeen !== 7) fails.push(`Genera: Coral basics done but ${allSeen} of 7 trail stops seen`);
     await c.close();
   }
   // What the start answer changes on screen (Pierre, 2026-11-04): "new" gets no "Open all" box on the first cards (My
