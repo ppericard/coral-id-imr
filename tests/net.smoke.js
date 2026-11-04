@@ -200,7 +200,7 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('Fallback: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
-  // 3b. Everything failing: another question is offered, nothing counted.
+  // 3b. Everything failing: another question is offered, nothing counted, no answer taken.
   {
     const {ctx, p, errs} = await ctxOf({failAll: true});
     await p.goto(base + '#quiz');
@@ -208,7 +208,51 @@ const server = http.createServer((req, res) => {
     const n0 = await p.evaluate(() => answersSoFar());
     await p.waitForSelector('#qfail button', {timeout: 15000}).catch(() => fails.push('No "Another question" when the photos cannot load'));
     if (await p.$('#qfail button')) {
-      await p.click('#qfail button');
+      // With none of its photos shown, the question takes no answer (new-player walkthrough 2026-11-04: one given to the
+      // blank frame counted); its note is on the question's one screen, its frame a plain tile (no broken-image icon).
+      // Every photo of the question settled first (each one gives up after its retries and its 480 px file): a second
+      // photo can still be trying when the note comes (Codex review #490).
+      await p
+        .waitForFunction(() => [...document.querySelectorAll('#view .qstage img')].every(i => i.classList.contains('fail')), null, {
+          timeout: 20000
+        })
+        .catch(() => {});
+      const st = await p.evaluate(() => {
+        const n = document.getElementById('qfail').getBoundingClientRect(),
+          at = document.elementFromPoint(n.left + 4, n.top + n.height / 2);
+        return {
+          open: [...document.querySelectorAll('#view [data-c], #view [data-w], #view .tyform input')].filter(b => !b.disabled).length,
+          seen: !!at && !!at.closest('#qfail'),
+          icon: [...document.querySelectorAll('#view .qstage img')].filter(i => getComputedStyle(i).visibility !== 'hidden').length,
+          figs: [...document.querySelectorAll('#view .qstage .qph')].map(f => Math.round(f.getBoundingClientRect().height))
+        };
+      });
+      if (st.open) fails.push(`A question with no photo shown still took answers (${st.open} open)`);
+      if (!st.seen) fails.push('The note "A photo did not load" is not in view');
+      if (st.icon) fails.push(`A question photo that did not load shows a broken-image frame (${st.icon})`);
+      if (!st.figs.length || st.figs.some(h => h < 150)) fails.push(`The question stage collapsed: ${st.figs}`);
+      const b1 = await p.$('#view [data-c]');
+      if (b1) await b1.click({force: true}).catch(() => {});
+      await p.keyboard.press('1');
+      if ((await p.evaluate(() => answersSoFar())) !== n0) fails.push('An answer to a question with no photo shown counted');
+      // A photo of the question that comes later opens the answers again: the hint if the question has one, else one
+      // added as the hint is (Codex review #490: the hint, added after the answers closed, left them closed).
+      await ctx.unroute(/\/img\/.*\.webp/);
+      if (await p.$('#hintb')) await p.click('#hintb');
+      else
+        await p.evaluate(
+          src => {
+            const st = document.querySelector('#view .qstage');
+            st.insertAdjacentHTML('beforeend', `<figure class="qph"><img src="${src}" alt=""></figure>`);
+          },
+          'img/' + fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'))
+        );
+      await p
+        .waitForSelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform input:not([disabled])', {
+          timeout: 10000
+        })
+        .catch(() => fails.push('A photo of the question that came later did not open its answers'));
+      await p.click('#qfail button', {timeout: 5000}).catch(() => fails.push('"Another question" could not be clicked'));
       if ((await p.evaluate(() => answersSoFar())) !== n0) fails.push('Skipping a photo that did not load counted an answer');
       if (!(await p.$('#view [data-c]'))) fails.push('"Another question" did not show a question');
     }
