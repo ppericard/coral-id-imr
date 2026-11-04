@@ -11,7 +11,7 @@ The slate lists 39 genera (34 numbered + 5 starred) in 11 families. Only two nam
 - **7. Tubastrea** → *Tubastraea*
 - **15. Pachyserls** → *Pachyseris* (the “i” was printed as an “l”)
 
-All others are correct as written, including *Astreopora*, *Pectinia*, *Plerogyra*, *Mycedium*, *Diploastrea* and *Astrea* (a valid genus since the 2016 Merulinidae revision; not the mollusc *Astraea*). Families below follow current WoRMS classification from memory: check them on [WoRMS](https://www.marinespecies.org) before learning them by heart.
+All others are correct as written, including *Astreopora*, *Pectinia*, *Plerogyra*, *Mycedium*, *Diploastrea* and *Astrea* (a valid genus again since the 2014 Merulinidae revision, Huang et al. 2014; not the mollusc *Astraea*). Families below follow current WoRMS classification from memory: check them on [WoRMS](https://www.marinespecies.org) before learning them by heart.
 
 ## The 39 genera by family
 
@@ -105,9 +105,9 @@ The IMR lecture (Lecture 6) sorts the genera into 11 groups by corallite type, n
 
 - *Plerogyra*: the lecture puts it in Euphylliidae; this doc and current WoRMS use Plerogyridae.
 - *Herpolitha*: the lecture lists it as solitary; the Coral Finder describes it as colonial with many mouths along the furrow. Treat it as a free-living, elongate mushroom coral either way.
-- *Favites*: the lecture gives it its own group because shared and separate walls can occur in one colony (e.g. F. rotundata).
+- *Favites*: the lecture gives it its own group because shared and separate walls can occur in one colony (e.g. F. rotundata, F. magnistellata).
 - *Duncanopsammia*: the species at Dauin is D. peltata (plates), not the branching form shown in the Coral Finder; look under Turbinaria peltata (Coral Finder p50) and on Corals of the World.
-- Corals of the World factsheets still use old names for some genera: look up *Dipsastraea* under Favia, *Danafungia* and *Lobactis* under Fungia, and *Astrea* under Astrea or Phymastrea.
+- Corals of the World factsheets still use old names for some genera: look up *Dipsastraea* under Favia, *Danafungia* and *Lobactis* under Fungia, and *Astrea* under Astrea; its Phymastrea pages are *Favites* species in WoRMS (*F. colemani*, *F. valenciennesii*, *F. magnistellata*; Huang et al. 2014), and some *Favites* are under Favia (e.g. *F. rotundata*). Corrected 2026-11-04 (checked on Corals of the World and WoRMS).
 
 These notes come from the slide text and the instructor's speaker notes. Some points are probably made orally during the lecture, or shown only in a photo with no caption, so a gap or a difference here may be settled in class: check it with an IMR instructor.
 
