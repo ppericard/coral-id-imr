@@ -172,6 +172,8 @@ function renderJourney(name, anonId = '') {
     Promise.all([USERS ? null : loadUsers(), ANS ? null : loadStats()]).then(() => {
       if (cur === here) render();
     });
+    // The pages opened leave with them, not after (the journey's Pages opened; drawn when the page is).
+    if (pagesStale()) loadPages().catch(() => {});
     return;
   }
   // A device that never signed in (Pierre, 2026-11-03): #~anon/<its anonymous id>, from Players > Not signed in. Its
@@ -578,10 +580,7 @@ function bindJReload() {
   if (b)
     b.onclick = () => {
       savedClear();
-      USERS = null;
-      ANS = null;
-      STATS = null;
-      PGS = null;
+      sheetAgain('users', 'ans', 'stats', 'pages');
       render();
     };
 }

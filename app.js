@@ -233,7 +233,10 @@ const toSite = i => {
 document.addEventListener('error', photoFail, true);
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
 // then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
-// question offers another one instead of a blank frame (nothing is counted).
+// question offers another one instead of a blank frame (nothing is counted). With none of its photos shown, its answers
+// are closed (new-player walkthrough 2026-11-04, offline: an answer given to a blank frame counted, and the note was
+// below the fold): a guess is no answer. The note is brought into the question's one screen, and the frame left is a
+// plain tile, never a broken-image icon (as a card's, quiz.js).
 $v.addEventListener(
   'error',
   e => {
@@ -253,7 +256,11 @@ $v.addEventListener(
       i.dataset.low = 1;
       i.dataset.retry = 2;
       i.src = i.dataset.lo;
-    } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
+    } else if (i.closest('.qstage')) {
+      // Every photo that gave up is a plain tile, the second of a question too (Codex review #490); the note, the report
+      // and the closing of the answers come once.
+      i.classList.add('fail');
+      if ($v.querySelector('.q.done, #qfail')) return;
       if (navigator.onLine !== false)
         // By the photo's name (data-f, quiz.js): an iNaturalist URL (a candidate just added, r: 1) is not one admin can look up.
         ev('photo', {
@@ -274,7 +281,30 @@ $v.addEventListener(
           route();
         };
       }
+      // Another photo of the question may come later, one still trying or one added since (the hint, Codex review
+      // #490): the answers open again then (the load listener below).
+      const q = $v.querySelector('.q');
+      if (q && ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth)) {
+        q.classList.add('qnone');
+        qAnswers(q, false);
+      }
+      if (typeof fitStage === 'function') fitStage();
     }
+  },
+  true
+);
+const qAnswers = (q, on) => q.querySelectorAll('[data-c], [data-w], .tyform input, .tyform button').forEach(b => (b.disabled = !on));
+$v.addEventListener(
+  'load',
+  e => {
+    const q =
+      e.target instanceof HTMLImageElement &&
+      e.target.naturalWidth &&
+      e.target.closest('.q.qnone:not(.done) .qstage') &&
+      e.target.closest('.q');
+    if (!q) return;
+    q.classList.remove('qnone');
+    qAnswers(q, true);
   },
   true
 );
