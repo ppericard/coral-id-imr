@@ -198,7 +198,8 @@ async function overlays(b, base) {
   // Cards (2026-11-03, app.js cardShow): every kind comes from the one builder, through its real caller where it has one
   // (the apology and the update card with a former %, which wait on other branches, through cardShow itself): one
   // overlay, role dialog, aria-modal, labelled by its title (an h3), the kind's medallion (or the genus photo band), the
-  // focus inside and kept there on Tab, Escape closes it and the focus goes back where it was.
+  // focus inside and kept there on Tab, Escape closes it and the focus goes back where it was. Every kind fits the screen
+  // at both widths; the rest is not layout and runs once, on the phone (test-suite review D4, 2026-11-04).
   for (const w of [390, 1280]) {
     const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
       localStorage.setItem('reefid-tour', '"done"');
@@ -234,6 +235,29 @@ async function overlays(b, base) {
         document.getElementById('smokeopener').focus();
       });
       await p.evaluate(`(${CASES[i][1]})()`);
+      await p.waitForSelector('.unlock .ulcard', {timeout: 15000}).catch(() => {});
+      // Fits the screen: the card (medallion included) inside the viewport, no sideways scroll; measured once its entrance
+      // is over (ulrise moves it up from below; the infinite ones, such as a medallion's bob, do not move the card).
+      const fit = await p.evaluate(() => {
+        const u = document.querySelector('.unlock'),
+          card = u && u.querySelector('.ulcard');
+        if (!card) return {card: false};
+        u.getAnimations({subtree: true})
+          .filter(a => a.effect && a.effect.getTiming().iterations !== Infinity)
+          .forEach(a => a.finish());
+        const r = card.getBoundingClientRect();
+        return {
+          card: true,
+          inside: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight,
+          wide: document.documentElement.scrollWidth > innerWidth,
+          box: [r.left, r.top, r.right, r.bottom].map(Math.round)
+        };
+      });
+      if (!fit.card || !fit.inside || fit.wide) fails.push(`${w}px card ${i} (${kind}) does not fit the screen: ${JSON.stringify(fit)}`);
+      if (w !== 390) {
+        await p.evaluate(() => document.querySelectorAll('.unlock').forEach(x => x.ulClose()));
+        continue;
+      }
       // The card moves the focus into itself on a timer (cardShow): wait for it, not for a fixed time (a busy page ran the
       // timer after the 150 ms this waited, and the focus was still outside: pages smoke, 2026-11-03).
       await p
