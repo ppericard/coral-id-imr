@@ -1519,7 +1519,7 @@
       typed: {name: 'Answers typed instead of picked from choices', o: 'time'},
       enl: {name: 'Photo enlarged before answering', o: 'time'},
       two: {name: 'Questions with 2 choices instead of 4', o: 'time'},
-      diff: {name: 'A question the app rates harder (73% → 50% expected right)', o: 'time'},
+      diff: {name: 'A question the app rates harder (73% → 50% recognised, beyond guessing)', o: 'time'},
       pos: {
         name: 'Later in a session: the 40th answer against the 10th',
         o: 'time',
@@ -1580,12 +1580,12 @@
       },
       afterMiss: {name: 'The next question on a genus just missed', o: 'right'},
       again: {
-        name: 'An “Again” question right after the miss (its extra effect)',
+        name: 'The next ordinary question after a miss, with an “Again” in between (its extra effect)',
         o: 'right',
         up: '“Again” after a miss helps: keep it.',
         down: '“Again” after a miss does not help: reconsider it.'
       },
-      typed: {name: 'Answers typed instead of picked from choices', o: 'right'},
+      typed: {name: 'Answers typed instead of picked from choices', o: 'right', g1: 0},
       exam: {name: 'Mastery exam questions instead of ordinary ones', o: 'right'},
       back: {name: 'Comeback questions after a break instead of ordinary ones', o: 'right'},
       card: {name: 'The first-meeting card', o: 'right'},
@@ -1618,7 +1618,7 @@
         o: 'stop',
         up: 'Runs of misses end sessions: watch for players stuck on hard genera.'
       },
-      diff: {name: 'After a question the app rates harder (73% → 50% expected right)', o: 'stop'},
+      diff: {name: 'After a question the app rates harder (73% → 50% recognised, beyond guessing)', o: 'stop'},
       slow: {name: 'After a slow answer (twice the player’s usual time)', o: 'stop', s: LN2},
       pos: {
         name: 'Later in a session: after the 40th answer against the 10th',
@@ -1711,7 +1711,12 @@
     if (P.o === 'time') ((out.scale = 's'), (base = T.s), (at = v => T.s * Math.exp(s * v)), (f = secOf));
     else if (P.o === 'pts') ((out.scale = 'pts'), (base = 0), (at = v => v), (f = ptsOf));
     else if (P.o === 'guess') ((base = e.ref != null ? e.ref : T.g), (at = v => v), (f = pctOf));
-    else ((base = T.p), (at = v => shiftP(T.p, g, sg * s * v)), (f = pctOf));
+    else if (P.g1 != null) {
+      // the other side has its own guess floor (typed answers: none; Codex review #495): the same recognition, then
+      // the change, read with that floor
+      const q0 = clamp((T.p - g) / (1 - g), 0.001, 0.999);
+      ((base = T.p), (at = v => shiftP(P.g1 + (1 - P.g1) * q0, P.g1, sg * s * v)), (f = pctOf));
+    } else ((base = T.p), (at = v => shiftP(T.p, g, sg * s * v)), (f = pctOf));
     const val = at(e.est),
       a1 = fin(e.lo) ? at(e.lo) : null,
       a2 = fin(e.hi) ? at(e.hi) : null,

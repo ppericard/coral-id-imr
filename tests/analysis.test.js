@@ -650,3 +650,18 @@ test('freqRatio: an odds ratio read as how many times as often, at a given base 
 test('the answers-to-mastery label says beyond guessing', () => {
   assert.match(A.PLAIN.learn.n_all.name, /beyond guessing/);
 });
+
+// Codex review #495 (2nd pass): typed answers have no guess floor, so the typed-versus-choices contrast moves from the
+// choices' floor to none (80% right with 4 choices, +0.2 beyond guessing → about 77% right typed, not 83%).
+test('plainOf: typed answers are read without the guess floor', () => {
+  const r = A.plainOf('learn', {k: 'typed', est: 0.2, lo: 0.1, hi: 0.3, v: 'clear'}, {typ: {p: 0.8, g: 0.25}});
+  near(r.val, 0.77, 0.01, 'typed at +0.2');
+  assert.match(r.text, /^More likely wrong: about 77% right instead of 80%/);
+});
+
+// Codex review #495 (2nd pass): the difficulty contrast is on recognition beyond guessing; the Again effect is measured
+// on the next ordinary question after a miss, with an Again in between.
+test('plainOf: the difficulty and Again labels say what the model measures', () => {
+  for (const k of ['rt', 'sess']) assert.match(A.PLAIN[k].diff.name, /beyond guessing/);
+  assert.match(A.PLAIN.learn.again.name, /next ordinary question after a miss/i);
+});
