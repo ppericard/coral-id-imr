@@ -622,11 +622,11 @@ function viewCompare(a, b) {
   bindGo();
 }
 // Fish families (#genera with the fish subject, app.js UNITS list): the IMR entries by the groups of the identification
-// key in force (fish.json key: for the Indo-Pacific, the index of a reef fish ID book; AGENTS.md rule 6c), in the key's order, only the
-// groups that hold an entry, each under its number and title as the key prints them; each entry with a photo, its IMR cues
-// and how IMR tells its look-alikes apart; then the opt-in circles the player has on. The key is credited in full under the
-// list (its short form in the help). A region with no key: the entries in one block. The winks stay a surprise. No sheet
-// per family yet (ROADMAP "Fish mode").
+// key in force (fish.json key: for the Indo-Pacific, the index of a reef fish ID book; AGENTS.md rule 6c), in the key's
+// order, only the groups that hold an entry, each under its number and title as the key prints them; each entry with a
+// photo, its IMR cues and how IMR tells its look-alikes apart; then the opt-in circles the player has on. The key is
+// credited in full under the list (its short form in the help). A region with no key: the entries in one block. The winks
+// stay a surprise. No sheet per family yet (ROADMAP "Fish mode").
 function viewFishList() {
   const tip = n => {
     const g = GX(n),
