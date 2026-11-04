@@ -38,6 +38,25 @@ them first thing, then clear them.
   a per-entry "natural view" exception like the juvenile classes (e.g. head out of a hole is the normal view of a
   moray)? **Recommendation: keep the caps** (circles 2 and 3 are opt-in, met after circle 1; the fallback to the 3
   easiest already works), and revisit when fish answers are logged.
+- **Admin page roles, the rest: the places and names (#535, open; 2026-11-04 night, admin track).** Context: the
+  ROADMAP row you agreed (Health = what needs action, Activity = who plays, Analyses = what we learn; nothing removed,
+  only moved) left these choices open; #535 made them (before/after screenshots listed in it): Activity's five analysis
+  cards are **Analyses › Learning › Answer log**; the Mix-ups view (pairs, photos, colonies, species) is **Analyses ›
+  Difficulty › Pairs** (next to the model's Mix-ups); Health's "Where players stop" and "Genus sheets opened" are
+  **Analyses › Learning › Stops**; Health's 30-day answers and players per day went (Activity over time shows them per
+  day). Question: these places and names, and dropping that card? **Recommendation: yes as built, then merge #535**;
+  later, one Mix-ups view (the model's and the live tables together) if two read as one too many.
+- **Health: alerts for what needs action, each linking to its detail? (same PR.)** Context: the row lists for Health app
+  errors, photos failing, failed saves, old app versions, slow loads and alerts such as a calibration that drifts; today
+  those live in To do › Errors (and All), and #535's Health keeps only its two answer-log alerts (photos everyone misses,
+  genera that don't take off). Question: should Health also show a short line per such alert (a count linking to Errors
+  or Analyses)? **Recommendation: yes, in a small follow-up PR** once #535 is in (not built: it is new UI).
+- **Two fixes players will feel, waiting for your eye (merging was refused at night as a production deploy).** #524:
+  a card photo that fails once on R2 no longer shows a broken-image icon for about a second while it is retried (your
+  rule: never a broken-image icon on a card); #531: `sw.js` never waits on the browser's Cache Storage more than 3 s,
+  for the net.smoke step-9 hang that came back after #513 (the log shows the browser's Cache Storage had stopped
+  answering, so the page never loaded; why it stalls is not known; a test that wedges it failed before the fix). #520 (smokes in reduced motion, tests only) waits on
+  #524: its CI found that bug. **Recommendation: merge #524, then #531 and #520 once green and Codex-clean.**
 - **Fish species with no candidate photo at all** (fish photos track, 2026-11-04 night). The candidate search
   (`tools/fetch_fish.py`, its rules unchanged) now covers every game species of circles 1-3 (#523): 417 of 442 have 20
   observations, but five circle-1 species have none, because iNaturalist holds no usable photo under the rules

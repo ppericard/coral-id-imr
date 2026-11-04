@@ -1,0 +1,52 @@
+{
+ "photos": {
+  "fish-s147-cand-60304924": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s147-cand-14756122": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s147-cand-462473627": {
+   "code": "p1g0ss1a1",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Dead fish on a board, drawn circle"
+  },
+  "fish-s147-cand-462473624": {
+   "code": "p1g0sl1a2",
+   "keep": "alt",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Studio photo on white: maybe not in the wild"
+  },
+  "fish-s147-cand-479548337": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s147-cand-469150078": {
+   "code": "p1g2ssm1",
+   "keep": "best"
+  },
+  "fish-s147-cand-469150098": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s147-cand-469150110": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s147-cand-469150118": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s147-cand-611671444": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  }
+ }
+}

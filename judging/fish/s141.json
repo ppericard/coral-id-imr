@@ -1,0 +1,104 @@
+{
+ "photos": {
+  "fish-s141-cand-518685936": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s141-cand-524360297": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s141-cand-513856088": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s141-cand-347748810": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s141-cand-347748806": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s141-cand-322429604": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s141-cand-322429622": {
+   "code": "p1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s141-cand-322429649": {
+   "code": "p1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s141-cand-391862172": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s141-cand-244191567": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s141-cand-603483769": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s141-cand-428504373": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s141-cand-563657582": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s141-cand-545239883": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s141-cand-545239904": {
+   "code": "p1g1sss2",
+   "keep": "alt"
+  },
+  "fish-s141-cand-46725473": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s141-cand-330508121": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s141-cand-284794423": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s141-cand-414443746": {
+   "code": "d1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s141-cand-688045986": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s141-cand-688046008": {
+   "code": "o1d1sl13",
+   "keep": "dup"
+  },
+  "fish-s141-cand-515111902": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s141-cand-472455675": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s141-cand-359445364": {
+   "code": "p1d0sm13",
+   "keep": "best"
+  },
+  "fish-s141-cand-500789885": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  }
+ }
+}
