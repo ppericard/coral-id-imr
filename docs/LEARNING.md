@@ -122,8 +122,8 @@ on A). The data agree: on the real answers, the first question on a genus right 
 another genus (141 answers) was answered right 81% of the time; with the old step the app expected 0.72 (log-loss
 0.494), without it 0.81 (0.466). A false alarm on B did not make the next B photo harder for the player. Over every
 genus the prediction improves too (log-loss 0.481 → 0.465, table below). A pair-level term (the chance on A lowered
-when a genus the player confuses with A is among the choices) is the principled home for "they confuse A and B": to
-study (ROADMAP).
+when a genus the player confuses with A is among the choices) is the principled home for "they confuse A and B":
+measured the same day, it predicts nothing more ("Second phase", below).
 
 So no standard model penalises the chosen distractor's own knowledge with a miss. The confusion itself is kept where
 those systems keep it, on the pair: the player's own mix-ups (`s.conf`) bring the pair back as traps, duels and
@@ -252,6 +252,72 @@ Not changed: the sheet (`Code.gs` `stats_`) and `core.js` `eloReplay` rate the p
 never the genus wrongly given, so they need nothing and the app does not wait for a sheet version. Abilities already
 saved keep the drag they took until their genus is answered again (a replay of the sheet's log would correct them:
 ROADMAP).
+
+### Second phase: the pair term, the 2-choice guess, the success target (2026-11-03, measured, nothing changed then)
+
+Pierre, after the fix above: study, on the real answers and in the simulation (AGENTS.md 14g), (a) a pair-level
+confusion term, the principled home for "picking B says something"; (b) a hierarchical ability, genus = global level +
+offset; (c) a guess on 2-choice questions that lets the player rule out the names they know; (d) a success target that
+depends on the level; (e) a short placement phase for a new player. Measured on that day's rules (before "Global level
+and genus", the level-dependent target `AIM` and the answer-time weight of #444); the study's `tools/abilityeval.js`
+options (P\<λ\>, X, h) and its `tools/learnsim.js` runs are in commit `7a4ccae` (branch `calib-study`), not on `main`.
+What the later rules changed: (b) and (d) were adopted afterwards in other forms ("Global level and genus"; "The success
+aimed for follows the global level"); (a), (c) and (e) were not, for the reasons below.
+
+**What the literature says about the success target** (checked at the sources, 2026-11-03):
+
+- Wilson, Shenhav, Straccia & Cohen (2019), "The Eighty Five Percent Rule for optimal learning", *Nature
+  Communications* 10:4646: for learning by gradient descent on a binary classification with Gaussian noise, the optimal
+  training error rate is 15.87%, accuracy about 85%. Shown on artificial neural networks and a model of perceptual
+  learning, not on classroom or fact learning.
+- Papoušek, Stanislav & Pelánek (ITS 2016; FI MU report FIMU-RS-2016-02), the geography system: target error rates 5,
+  20, 35 and 50% (success 95, 80, 65, 50%). Easier questions kept more learners in the short term, harder ones brought
+  more of them back and more learning (the main difference between the easiest condition and the others); survival
+  after 100 answers 26.0-26.5% in every condition; most learners rated the difficulty "appropriate" at about 30% of
+  their own answers wrong. Their conclusion: "start with easy questions to hook learners up and then switch to more
+  difficult questions".
+- Pelánek et al. (UMUAI 2017): 50% gives the most information about a learner, "however, a 50% success rate is rather
+  low and for many learners it could decrease their motivation"; their system aims at 75%. They cite Jansen et al.
+  (2013, Math Garden): targets 60, 75 and 90%, the easiest giving the best learning, through more problems solved.
+- Duolingo publishes no target success rate (the Birdbrain post and the IEEE Spectrum article give none; "about 80%"
+  appears only in unsourced secondary sites).
+- Why it matters here: the Fisher information of an answer, ((1 − g) σ (1 − σ))² / (P (1 − P)), is largest near 50%
+  (a little higher with a guess rate), so at the app's 80% a right answer moves the ability little: one reason strong
+  players are recognised slowly.
+
+**On the real answers** (`tools/abilityeval.js`, same log and players as above; P*λ*: the pair term, the question on A
+made harder by λ × the player's own mix-up rate with the most confused genus among the choices, mixed up / (offered + 8);
+X: the guess counts the names the player can rule out, each wrong choice ruled out with σ(θ_j − d); h: level + offset with
+rule e). Mean predicted / right, log-loss:
+
+| Rule | log-loss | 2 choices (727) | 4 choices (451) | level < 0 (203) | level ≥ 0.75 (617) | after a false alarm (141) |
+| --- | --- | --- | --- | --- | --- | --- |
+| e (that day) | 0.465 | 0.80 / 0.87, 0.412 | 0.77 / 0.78, 0.551 | 0.74 / 0.83, 0.470 | 0.81 / 0.86, 0.429 | 0.81 / 0.81, 0.466 |
+| h | **0.458** | 0.81 / 0.87, 0.410 | 0.79 / 0.78, 0.535 | 0.72 / 0.83, 0.490 | 0.84 / 0.86, 0.408 | 0.80 / 0.81, 0.488 |
+| e + P1 | 0.465 | 0.79 / 0.87, 0.412 | 0.77 / 0.78, 0.549 | 0.74 / 0.83, 0.470 | 0.81 / 0.86, 0.429 | 0.80 / 0.81, 0.465 |
+| e + P2 | 0.466 | 0.79 / 0.87, 0.414 | 0.77 / 0.78, 0.548 | 0.73 / 0.83, 0.471 | 0.80 / 0.86, 0.430 | 0.80 / 0.81, 0.464 |
+| e + P4 | 0.467 | 0.78 / 0.87, 0.417 | 0.76 / 0.78, 0.547 | 0.73 / 0.83, 0.473 | 0.80 / 0.86, 0.431 | 0.78 / 0.81, 0.465 |
+| e + X | 0.465 | 0.87 / 0.87, 0.402 | 0.81 / 0.78, 0.565 | 0.80 / 0.83, 0.444 | 0.86 / 0.86, 0.432 | 0.86 / 0.81, 0.474 |
+| h + X | 0.470 | 0.88 / 0.87, 0.410 | 0.84 / 0.78, 0.566 | 0.77 / 0.83, 0.460 | 0.90 / 0.86, 0.428 | 0.85 / 0.81, 0.501 |
+
+- **(a) The pair term predicts nothing more** (0.465-0.467 for λ 1-4): on these answers, a genus the player has mixed
+  up with A among the choices does not make A's question harder than its ability and photo already say. The mix-ups
+  are already used where they help (traps, duels, Again); no term is needed in the ability.
+- **(b) Level + offset** (h) predicted best overall (0.458) and for strong players, worse under 0 and after a false
+  alarm: adopted later the same day in a different form, the global level's move weighted by the genus's own
+  uncertainty ("Global level and genus", below).
+- **(c) Ruling out known names** calibrates the 2-choice questions (0.87 / 0.87; the Duel tab 0.91 / 0.93) and the
+  players under 0, but over-predicts the 4-choice questions (0.81 / 0.78): overall no better. And it credits the right
+  answers to the ruling out, so the abilities fall (the strong RA's genera 0.59 → 0.23): the opposite of the goal. A
+  guess between 1/k and this (players rule out some names, not all they know) may fit both; not tried (it needs a
+  constant).
+- **(e) A placement phase** (the first 20 answers aimed at 65%, then 80%) changed nothing in the simulation
+  (`tools/learnsim.js`, 5 seeds × 600 questions) after the
+  first 50 questions (strong RA |θ − logit k| 1.32 against 1.30 at question 300): 20 answers are too few for the genus
+  abilities, which start from the level anyway.
+- **(d) A level-dependent target**, as tried that day (85% at a level of 0 down to 72% at 1.5, alone), changed nothing
+  beyond the spread; the rule adopted later moves the shaky bar and the photo's aim with it ("The success aimed for
+  follows the global level").
 
 ### Global level and genus (2026-11-03)
 
@@ -2313,6 +2379,38 @@ judged ease (rubric 3, the 37 added photos included; main had moved to #428 for 
 The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
 replay (rule 14g) cannot judge it either: the sheet holds no fish answer.
 
+### Fish: species order, the commonness index (2026-11-04)
+
+Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
+will meet underwater, and "common beats easy" for the start; the players' answers adjust the difficulty later (the Elo, as
+for every unit). The order is data (`fish.json`: each entry's `species` list, species `cmi`), computed once offline
+(AGENTS.md rule 14g) by `tools/fish_commonness.py`; nothing in the engine changes and no constant enters the model.
+
+- **Signals and weights** (approved by Pierre, strongest first): standardised field counts near Dauin **3** (CCEF Siquijor
+  2025 census, presence per MPA; Ferrandis 2021 Dauin stereo-video counts of the fisheries species), the IMR PDF's 24 most
+  sighted **2**, iNaturalist distinct observers in three rings (40 km, 250 km, the Philippines) **1**, each scaled 0-1
+  within the entry; index = their weighted mean. Distinct observers rather than observations: a keen photographer of a
+  rare species inflates the photo count, not the observer count. Needs ID observations count (more data; some
+  misidentifications among look-alikes).
+- **Shrinkage, M = 5 pseudo-observers per step**, from the entry's mean to the Philippines to 250 km to 40 km
+  (docs/FISH_PATH.md "Species order: the commonness index" has the formulas): a species with few observers anywhere is
+  pulled toward its family's mean, a local count toward the regional share. M = 5 barely moves an entry with hundreds of
+  local observers (Damselfish: 735, summed over its species) and lets the wider rings carry a thin one. **The log scale (2 decades)**: the iNat
+  and the count scores are 1 + log10(value / the entry's top) / 2, floored at 0; ratios rather than ranks, so a
+  two-species entry is not forced to 0 and 1 (Anthias: 24 and 25 local observers).
+- **Why these choices, and what was not done**: no fit (there is no ground truth of abundance at Dauin to fit to); the
+  weights follow the order of trust Pierre gave. The field signal is relative to the entry's best, so families the census
+  under-records (cardinalfish: best 3 of 11 MPAs) still spread. Not used: the Liloan (Cebu) 2016 census (one place, one
+  year, ~140 km), sources with family-level data only (west Leyte, Muallil et al. 2019, Russ's Apo series). Reef Life
+  Survey's Siquijor 2025 counts are not published yet (checked on the AODN portal and GBIF, 2026-11-04): one more field
+  record when they are (ROADMAP).
+- **Checked by Pierre** on photo cards of every family (top 10 and bottom 10, the disagreements flagged), 2026-11-04:
+  "very coherent; the criterion isn't crazy at all". His remarks: unicornfish probably lifted by what photographers
+  shoot; the blue-and-yellow fusilier perhaps a bit more common than shown (maybe his own spotting bias); the red-tooth
+  triggerfish rare at Dauin (very common at Puerto Galera), so its low local rank is right.
+- **Effect now**: the order of the species lists in `fish.json`; species questions (level 2) are not built yet, so no
+  player sees a change until they are. No learnsim run: no fish profile exists and nothing the simulation reads moved.
+
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
 Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard
@@ -3460,6 +3558,10 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (approved after review of every family's ranking): the fish species inside an entry open in
+  commonness order, the index of field counts near Dauin (weight 3), the IMR 24 most sighted (2) and iNaturalist distinct
+  observers in three rings (1), shrunk toward the entry's mean with M = 5, log scale over 2 decades
+  (`tools/fish_commonness.py`, `fish.json` `cmi`; "Fish: species order, the commonness index").
 - 2026-11-04, Pierre (approved; design only, docs/FISH_PATH.md "My progress (fish)"): the global fish score's formula. Per species,
   C = mean mastery of its listed common names, S = max(species mastery, ½ × genus mastery), credit = a·C + b·S + (1 − a − b)·C·S
   with b = 0.80, a ≈ 0.73; global = 25% × mean entry mastery + 75% × mean species credit over circle 1. Entries only 25%, every

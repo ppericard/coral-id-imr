@@ -14,37 +14,6 @@
   content: ' ›';
   color: var(--accent);
 }
-.htools {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 8px;
-}
-@media (min-width: 600px) {
-  .htools {
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  }
-}
-.htool {
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  overflow: hidden;
-  color: var(--ink);
-  text-decoration: none;
-}
-.htool b {
-  font-family: var(--display);
-  font-size: var(--fs-m);
-  padding: 8px 12px 0;
-}
-.htool small {
-  color: var(--muted);
-  padding: 0 12px 10px;
-  font-size: var(--fs-s);
-}
 .hpv {
   display: grid;
   aspect-ratio: 16/9;
@@ -64,10 +33,6 @@
     transform 0.4s,
     filter 0.6s;
 }
-.htool:hover .hpv img {
-  transform: scale(1.06);
-}
-
 /* Schematic previews (home-art.js): flat shapes in theme colours. */
 .hpv.art {
   background: var(--surface-2);
@@ -77,9 +42,6 @@
   height: 100%;
   display: block;
   transition: transform 0.4s;
-}
-.htool:hover .hpv.art svg {
-  transform: scale(1.04);
 }
 .hpv.art text {
   font-family: var(--body);
@@ -96,11 +58,6 @@
   font-size: 22px;
   font-weight: 700;
   fill: var(--accent);
-}
-.hpv.art .big2 {
-  font-size: 13px;
-  font-weight: 700;
-  fill: var(--ink);
 }
 .hpv.art .a {
   fill: var(--accent);
@@ -120,18 +77,6 @@
 }
 .hpv.art .f1 {
   fill: var(--plate);
-}
-.hpv.art .f2 {
-  fill: var(--massive);
-}
-.hpv.art .f3 {
-  fill: var(--meander);
-}
-.hpv.art .f4 {
-  fill: var(--branch);
-}
-.hpv.art .f5 {
-  fill: var(--solo);
 }
 .hpv.art .cr {
   fill: none;
@@ -188,11 +133,6 @@
   stroke-width: 1.5;
   stroke-dasharray: 3 2;
 }
-.hpv.art .cr2 {
-  fill: none;
-  stroke: var(--line);
-  stroke-width: 3;
-}
 .hpv.art .arc {
   fill: none;
   stroke: var(--accent);
@@ -229,42 +169,6 @@
   --bad: #b23a2a;
   filter: brightness(0.88);
 }
-.betatag {
-  font-style: normal;
-  font-family: var(--body);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--plate);
-  color: var(--band-ink);
-  border-radius: var(--r-xs);
-  padding: 1px 6px;
-  vertical-align: 2px;
-}
-.htool.beta .hpv img {
-  opacity: 0.85;
-}
-.htool:hover {
-  border-color: var(--accent);
-}
-.htools.small {
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-}
-.htools.small small {
-  display: none;
-}
-.htools.small b {
-  font-size: var(--fs-m);
-  padding-bottom: 8px;
-}
-.htools:not(.small) .htool b {
-  font-size: var(--fs-l);
-}
-.htools:not(.small) .htool small {
-  font-size: var(--fs-s);
-}
-
 /* Home: two entry doors (Learn & practise, Identify), side by side, stacked on narrow screens. */
 .hdoors {
   margin-top: 10px;
@@ -329,24 +233,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-}
-.hdpt {
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px #0008;
-}
-.hdpt.on {
-  width: 26px;
-  height: 26px;
-  margin: -13px 0 0 -13px;
-  border-color: #ffd54a;
-  box-shadow:
-    0 0 0 2px #0009,
-    0 0 0 9px #ffd54a40;
 }
 .hdbody {
   display: flex;
