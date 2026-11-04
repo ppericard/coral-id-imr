@@ -1873,13 +1873,14 @@ async function tipsCheck(b, base) {
   }
   return fails;
 }
-// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), on a phone and a desktop,
+// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), at 390, 1024 and 1280 px,
 // on "Drill this pair" (#quiz-duel|Pocillopora|Stylophora). The hold's sum is set just under INTRO.HOLD, as a run of misses
 // would leave it. Checks: the miss that takes it across shows the card at Next, never with the answer itself; one card
 // on screen, its kind, words (no number) and buttons (Mix in other genera first), faded at first; Keep drilling goes on to
 // the next duel and the card never comes again in that run, even when the hold falls back under INTRO.HOLD and crosses
 // it again; Mix in other genera opens the photo quiz, Compare them the side-by-side comparison of the two genera with
-// Back to the duel at its top and end, which, as the browser's Back, returns to the same duel and the same run (no
+// Back to the duel (phones: floating at the bottom centre; from 1024 px: a light band under the page bar; in view and on
+// top wherever the page is scrolled), which, as the browser's Back, returns to the same duel and the same run (no
 // second card); a comparison opened any other way has none; each showing logged with its choice and the return (item
 // tip:duelhold); a new run that starts with the hold already on gets none (no crossing from below); never
 // in the photo quiz; never over an achievement toast (it waits for the next break while the hold is on). The photo of
@@ -1976,6 +1977,7 @@ async function duelReliefCheck(b, base) {
   };
   for (const [w, h] of [
     [390, 844],
+    [1024, 768],
     [1280, 800]
   ]) {
     const W = `${w}px duel relief:`;
@@ -2019,7 +2021,8 @@ async function duelReliefCheck(b, base) {
           k.kind !== 'tip' ||
           k.kick !== 'Tough pair today' ||
           k.title !== 'Take a step back?' ||
-          k.body !== 'These two are hard right now. Seeing them side by side often helps more than more photos.' ||
+          k.body !==
+            'These two are hard right now. Mixing in other genera for a while, or seeing these two side by side, often helps more than more of the same.' ||
           k.btns.join() !== 'Mix in other genera,Compare them,Keep drilling' ||
           k.digits ||
           !r.dis ||
@@ -2060,20 +2063,62 @@ async function duelReliefCheck(b, base) {
         const at = await p.evaluate(() => ({
           h: decodeURIComponent(location.hash),
           cmp: !!document.querySelector('#view .cmprow'),
-          back: [...document.querySelectorAll('#view [data-duelback]')].map(x => x.textContent),
-          drill: !!document.querySelector('#view a[href^="#quiz-duel"]'),
-          first: !!document.querySelector('#view .cmpback + .cmprow')
+          // The way back shown (the other one is hidden by the size class): its text and where it sits.
+          back: [...document.querySelectorAll('#view [data-duelback]')]
+            .filter(x => x.getClientRects().length)
+            .map(x => x.textContent + (x.closest('.duelband') ? ' (band)' : x.matches('.next.cmpfab') ? ' (floating)' : ' (inline)')),
+          drill: !!document.querySelector('#view a[href^="#quiz-duel"]')
         }));
+        // Desktop (from 1024 px): the light band under the page bar; phones and tablets: the floating button.
+        const desk = w >= 1024;
         if (
           at.h !== '#cmp-Pocillopora|Stylophora' ||
           !at.cmp ||
-          at.back.join() !== 'Back to the duel,Back to the duel' ||
+          at.back.join() !== (desk ? 'Back to the duel (band)' : 'Back to the duel (floating)') ||
           at.drill ||
-          !at.first ||
           (await p.$('.unlock'))
         )
           fails.push(`${W} Compare them: ${JSON.stringify(at)}`);
-        if (way === 'button') await p.click('#view [data-duelback]');
+        // In view and on top at the top, in the middle and at the bottom of the comparison. The floating button: centred,
+        // above the phone tab bar, the last photos ending above it. The band: right under the page bar once the page
+        // scrolls, slim, its button on top.
+        for (const at of ['top', 'bottom', 'middle']) {
+          await p.evaluate(at => {
+            const max = document.documentElement.scrollHeight - innerHeight;
+            scrollTo(0, at === 'top' ? 0 : at === 'bottom' ? max : max / 2);
+          }, at);
+          await p.waitForTimeout(250);
+          const f = await p.evaluate(desk => {
+            const b = [...document.querySelectorAll('#view [data-duelback]')].find(x => x.getClientRects().length),
+              r = b.getBoundingClientRect(),
+              tab = document.querySelector('.sections'),
+              tr = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect() : null,
+              floor = tr && tr.top > innerHeight / 2 ? tr.top : innerHeight,
+              hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2),
+              max = document.documentElement.scrollHeight - innerHeight,
+              o = {
+                inView: r.top >= 0 && r.bottom <= floor && r.height > 0,
+                onTop: !!hit && b.contains(hit),
+                scrolls: max > 0,
+                wide: document.documentElement.scrollWidth > innerWidth
+              };
+            if (desk) {
+              const band = b.closest('.duelband').getBoundingClientRect(),
+                bar = document.getElementById('modes').getBoundingClientRect();
+              o.under = scrollY < 200 || Math.abs(band.top - bar.bottom - 6) < 3;
+              o.slim = band.height <= 46;
+            } else {
+              const rows = [...document.querySelectorAll('#view .cmprow, #view .cmplab ~ *:not(.cmpfab):not(.cmpfabpad):not(.duelband)')],
+                last = rows.length ? rows[rows.length - 1].getBoundingClientRect().bottom : 0;
+              o.centred = Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2;
+              o.clear = scrollY < max - 2 || last <= r.top;
+            }
+            return o;
+          }, desk);
+          if (Object.entries(f).some(([k, v]) => (k === 'wide' ? v : !v)))
+            fails.push(`${W} Back to the duel, page scrolled to the ${at}: ${JSON.stringify(f)}`);
+        }
+        if (way === 'button') await p.locator('#view [data-duelback]:visible').click();
         else await p.goBack();
         await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000}).catch(() => {});
         const bk = await p.evaluate(() => ({h: decodeURIComponent(location.hash), run: {...DUELRUN}, back: DUELBACK}));
@@ -2155,6 +2200,38 @@ async function duelReliefCheck(b, base) {
       if (n) fails.push(`${W} shown in the photo quiz`);
       await c.close();
     }
+  }
+  // A short phone screen (Codex review #460): the settings pop-up, opened over the comparison, reaches down to the
+  // floating Back to the duel; a tap there is the setting's, not the button's (the page stays, the way back is kept).
+  {
+    const W = '390x640 duel relief:',
+      [c, p, errs] = await open(390, 640);
+    await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
+    if (!(await play(p)).next) fails.push(`${W} not shown`);
+    else {
+      await pick(p, '[data-b="2"]');
+      await p.click('#setb');
+      await p.waitForTimeout(300);
+      const o = await p.evaluate(() => {
+        const f = document.querySelector('#view .cmpfab').getBoundingClientRect(),
+          s = document.getElementById('settings').getBoundingClientRect(),
+          box = [Math.max(f.left, s.left), Math.max(f.top, s.top), Math.min(f.right, s.right), Math.min(f.bottom, s.bottom)],
+          x = (box[0] + box[2]) / 2,
+          y = (box[1] + box[3]) / 2,
+          hit = document.elementFromPoint(x, y);
+        return {over: box[0] < box[2] && box[1] < box[3], x, y, settings: !!(hit && hit.closest('#settings'))};
+      });
+      if (!o.over) fails.push(`${W} the settings pop-up no longer reaches the floating button: the check needs a shorter screen`);
+      else {
+        await p.mouse.click(o.x, o.y);
+        await p.waitForTimeout(400);
+        const a = await p.evaluate(() => ({h: decodeURIComponent(location.hash), back: !!DUELBACK}));
+        if (!o.settings || a.h !== '#cmp-Pocillopora|Stylophora' || !a.back)
+          fails.push(`${W} a tap on the settings pop-up over Back to the duel: ${JSON.stringify({...o, ...a})}`);
+      }
+    }
+    if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
   }
   return fails;
 }

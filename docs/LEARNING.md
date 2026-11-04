@@ -1703,12 +1703,13 @@ ratings from the sheet. `tests/pages.smoke.js` `duelReliefCheck` checks the drop
 
 **2. A relief card** (`quiz.js` `reliefNote`, `reliefDue`, `reliefArm`, `reliefShow`): the first time in a duel run an
 answer takes the hold's sum h from below `INTRO.HOLD` to `INTRO.HOLD` or more, the next break at Next shows a card
-(💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Seeing them side by
-side often helps more than more photos." and three choices, in Pierre's order: **Mix in other genera** (the main button,
+(💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Mixing in other genera for
+a while, or seeing these two side by side, often helps more than more of the same." (Pierre, 2026-11-04: the line
+first spoke of the comparison only, the second choice since the order changed) and three choices, in Pierre's order: **Mix in other genera** (the main button,
 the photo quiz, `#quiz`), **Compare them** (the side-by-side comparison of the duel's two genera, `#cmp-A|B`, as
 `learn.js` links it), **Keep drilling** (the next duel; Escape too). No numbers on it (Pierre's rule for these cards).
 Compare them does not end the drill for good (Pierre, 2026-11-04): the comparison it opens shows **Back to the duel**
-(top and end), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
+(in view however far the page scrolls: a floating button at the bottom centre on phones and tablets, a light "Duel paused" band under the page bar on desktop), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
 card in it; the easing applies as usual). The comparison opened any other way is unchanged.
 
 - **The same detector**: the opening hold's CUSUM (`holdStep`), no new one and no new constant. The crossing is read in
