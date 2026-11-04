@@ -151,6 +151,12 @@ logged per answer since sheet v44). (2) The admin opens on Players › Activity 
 (3) Activity: tapping a session unfolds a mini-summary under it, on the same page: the session's success chart, start /
 end / length, answers and % right, genera met or opened, notable events, a link to the full Journey; tap again folds it.
 
+**Pierre's answers (2026-11-05 morning):** yes to #535, #522 (and accept the misspelled forms when typed, the PDF's
+especially), #526, #533, #536, #538, #540 as recommended. Notes for later: (1) #526: how to offer the genus step
+again once a player has said no; (2) the fish global score (formula agreed, simulated in #519) is still to build;
+(3) Identify in fish mode: the tool is used in front of EventMeasure (IMR's fish data-analysis software), not "SVS
+videos" (wording fixed in #536).
+
 **Merge-order traps:** the sheet versions 46 / 47 / 48 are reserved by #526 / #538 / #540: merged in another order, the
 later ones take the next free number (Code.gs header, ARCHITECTURE's version list, tests). `tests/fish.smoke.js` is
 touched by #533, #536, #538 and #540: the second to merge needs a small manual merge; #540 edits the Tools tile that #533
