@@ -1625,12 +1625,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     traps = ex ? 3 : trapsFor(t, ease),
     // A genus met on a card of its own now is not among this question's choices either: its card says it comes up a
     // little later (beginner review 2026-11-03: its name was a choice on the question behind the card). The custom
-    // quiz: from its selection first, topped up from the other genera in play under 4 (customChoices); its card's genus
-    // is the one asked.
+    // quiz: from its selection first, topped up under 4 from the other genera unlocked only (customChoices; one
+    // progression path, AGENTS.md rule 6d, Codex review #482: a locked genus, a ★ one included, as a choice).
     ch = shuffle([
       t,
       ...(sel
-        ? customChoices(t, sel, play, traps, known)
+        ? customChoices(t, sel, unlocked(play), traps, known)
         : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, known))
     ]),
     // Typed (model.js TYPED): with the genus's typed share, from its progress (never on a genus under TYPED.from: no
