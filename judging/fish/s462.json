@@ -1,0 +1,164 @@
+{
+ "photos": {
+  "fish-s462-cand-552118235": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  },
+  "fish-s462-cand-518685458": {
+   "code": "h1g2sm12",
+   "keep": "best"
+  },
+  "fish-s462-cand-78397959": {
+   "code": "d1g2ss1c1",
+   "keep": "best"
+  },
+  "fish-s462-cand-78395985": {
+   "code": "d1d2ss11",
+   "keep": "dup"
+  },
+  "fish-s462-cand-78395999": {
+   "code": "d1d2ssxc1",
+   "keep": "dup"
+  },
+  "fish-s462-cand-472625584": {
+   "code": "d1g2sl12",
+   "keep": "best"
+  },
+  "fish-s462-cand-472625840": {
+   "code": "d0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s462-cand-731169344": {
+   "code": "d1g2bs1c1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Blurry; I cannot find the ray for sure on the sand"
+  },
+  "fish-s462-cand-313188141": {
+   "code": "d1g1sl13",
+   "keep": "best"
+  },
+  "fish-s462-cand-313189187": {
+   "code": "d1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s462-cand-303759563": {
+   "code": "o1g3sl12",
+   "keep": "best"
+  },
+  "fish-s462-cand-303759562": {
+   "code": "o1g3sl12",
+   "keep": "dup"
+  },
+  "fish-s462-cand-303759560": {
+   "code": "o1g3sl12",
+   "keep": "dup"
+  },
+  "fish-s462-cand-303759596": {
+   "code": "o0g3sl12",
+   "keep": "dup"
+  },
+  "fish-s462-cand-650454403": {
+   "code": "d1g3sm12",
+   "keep": "best"
+  },
+  "fish-s462-cand-620776310": {
+   "code": "d1n0ss11",
+   "keep": "best"
+  },
+  "fish-s462-cand-620776311": {
+   "code": "d1n0ss11",
+   "keep": "dup"
+  },
+  "fish-s462-cand-620776322": {
+   "code": "d1n0ss11",
+   "keep": "dup"
+  },
+  "fish-s462-cand-620776324": {
+   "code": "d1n0ss11",
+   "keep": "dup"
+  },
+  "fish-s462-cand-352669003": {
+   "code": "d1g1sm13",
+   "keep": "best"
+  },
+  "fish-s462-cand-352669226": {
+   "code": "d1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s462-cand-352669034": {
+   "code": "h1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s462-cand-352669051": {
+   "code": "h1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s462-cand-385018975": {
+   "code": "d1g3sm12",
+   "keep": "best"
+  },
+  "fish-s462-cand-431478322": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s462-cand-60591427": {
+   "code": "h0n0sl12",
+   "keep": "best"
+  },
+  "fish-s462-cand-625299290": {
+   "code": "d1g3ss11",
+   "keep": "best"
+  },
+  "fish-s462-cand-625299305": {
+   "code": "d1g3ss11",
+   "keep": "dup"
+  },
+  "fish-s462-cand-500438939": {
+   "code": "d1g1sl13",
+   "keep": "best"
+  },
+  "fish-s462-cand-500438970": {
+   "code": "h0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s462-cand-733436263": {
+   "code": "h0g1sm1c2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Only the eyes show out of the sand; the ray is hard to make out"
+  },
+  "fish-s462-cand-733436268": {
+   "code": "h0g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s462-cand-2172206": {
+   "code": "d1g2ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the ray for sure on the sand"
+  },
+  "fish-s462-cand-472624349": {
+   "code": "d0g3sl12",
+   "keep": "best"
+  },
+  "fish-s462-cand-472624360": {
+   "code": "d0g3sl12",
+   "keep": "dup"
+  },
+  "fish-s462-cand-333783074": {
+   "code": "h1n0sl13",
+   "keep": "best"
+  },
+  "fish-s462-cand-716055834": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  }
+ }
+}
