@@ -244,7 +244,7 @@ const server = http.createServer((req, res) => {
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
   const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg;
-  if (typeof CHOICE !== 'undefined') CHOICE.opts.forEach(o => Object.assign(o[3], vars[o[0]] || {}));
+  if (typeof CHOICE !== 'undefined') CHOICE.opts.forEach(o => Object.assign(o[1], vars[o[0]] || {}));
   // The learner's difficulty of a photo of genus t: --truth when given, else the app's own (photoDiff).
   const trueD = (t, p) => (truth ? (truth.photos || {})[p.f] ?? ((truth.gd || {})[t] || 0) : photoDiff(t, p));
   // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).

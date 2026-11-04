@@ -28,6 +28,8 @@ const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: '
 const JSTART = {tour: 'in the welcome tour', card: 'on the card before the quiz', fallback: 'from the fallback card', inferred: 'inferred'},
   JFB = {lo: 'harder than predicted by', hi: 'easier than predicted by'};
 // "I know corals well" etc.; inferred (an existing player with CHOICE.ASK answers or more, never asked): said so.
+// An answer's words (core.js startText): the corals' question, whose record (reefid-sync-coral-start) the journey reads.
+const jSaid = c => (startText(SUBJECTS[0].id, c) || [c])[0];
 const jStart = (S, before) => {
   if (!S || !startOpt(S.c)) return '<li><b>Start</b> not answered yet</li>';
   // The history's events (core.js startEvents): the answers given, and the eases taken with Coral basics.
@@ -37,20 +39,20 @@ const jStart = (S, before) => {
     h
       .map(
         ([c, a, t, via], i) =>
-          `<li><b>${i ? 'Changed to' : 'Start'}</b> ${esc((startOpt(c) || [0, c])[1])} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)}`} · ${JSTART[via] || esc(via || '')}${t ? ' · ' + jTime(t) : ''}</li>`
+          `<li><b>${i ? 'Changed to' : 'Start'}</b> ${esc(jSaid(c))} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)}`} · ${JSTART[via] || esc(via || '')}${t ? ' · ' + jTime(t) : ''}</li>`
       )
       .join('') +
     ev
       .filter(x => x[3] === 'ease')
       .map(
         ([c, a, t, , of]) =>
-          `<li><b>Eased</b> to the start of ${esc(startOpt(c)[1])} (said “${esc((startOpt(of) || [0, of])[1])}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
+          `<li><b>Eased</b> to the start of ${esc(jSaid(c))} (said “${esc(jSaid(of))}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
       )
       .join('') +
     Object.entries(S.fb || {})
       .map(([k, [a, t]]) => {
         const [c, d] = k.split('-');
-        return `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc((startOpt(c) || [0, c])[1])}”, after answer ${before(t, a)}${t ? ' · ' + jTime(t) : ''}</li>`;
+        return `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc(jSaid(c))}”, after answer ${before(t, a)}${t ? ' · ' + jTime(t) : ''}</li>`;
       })
       .join('')
   );
