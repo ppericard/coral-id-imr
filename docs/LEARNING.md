@@ -3424,6 +3424,12 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (latest; design only, docs/FISH_PATH.md): the fish path is a **tree** (trunk: families; branch A: species
+  by common name; branch B: scientific genus names, then species scientific names), and the players choose common, scientific
+  or both names; the global fish score reaches 100% only with both names of every species, about 80% with every common name
+  and no scientific one, about 85% with every scientific name and no common one, non-linear per species (credit a < b < 1, the
+  genus partial credit inside b; a, b and the families' share set by simulation, rule 14f), never additive. Replaces the 80 / 20
+  split below.
 - 2026-11-04, Pierre (later the same day; design only, docs/FISH_PATH.md): the global fish score is **non-linear**, fast
   at the start, 80% for every entry and species known by common name, scientific names filling the last 20% slowly (the curve set by simulation), the Elo level kept alongside; the half fault must not be gameable (common
   names never advance the scientific-name progress; options listed, none chosen); the fish exams to rethink (per
