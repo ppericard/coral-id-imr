@@ -2769,13 +2769,18 @@ header {
    logotype then steps aside, still the home link's name for screen readers; the logo stays, and no control is dropped.
    The one width query outside the three size classes (AGENTS.md rule 19), for the header only. */
 @media (max-width: 379.98px) {
-  header:has(#signb:not([hidden])) .brand .home span {
+  header:has(#signb:not([hidden])) .brand .home span,
+  header:has(#subjc:not([hidden])) .brand .home span {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+  }
+  /* The subject chip (the admin's while fish is in beta): the logotype steps aside whenever it shows, and its caret too. */
+  .subjb .sjc {
+    display: none;
   }
 }
 .helpbox {
@@ -6664,21 +6669,119 @@ html.touring .unlock {
 .mpl .lvi {
   margin-right: 3px;
 }
-/* A subject in beta on screen (the admin's only, app.js showSubj): its emoji on the links to Tools, where it is switched
-   back to the corals. Outside the link's box: the header never changes size. */
-.labgo[data-badge],
-.sections a[data-badge] {
+/* The subject chip (app.js showSubj; docs/DESIGN.md "Subject switch"): next to the logo on every page, the subject on
+   screen (its icon and name, a small caret), a small menu with every subject the player has under it. Shown only to a
+   player with two subjects or more (the admin's only while fish is in beta). The header never changes size (rule 18):
+   the chip is no taller than the header's other controls. Phones: the header's grid gets a column for it, and the chip
+   shows its icon and caret only (its name stays its label); while the Sign in (or Not saved) pill shows, the logotype
+   text steps aside too, as it does under 380 px for everyone (below): the logo stays, and no control is dropped. */
+.subjc {
   position: relative;
+  display: flex;
+  align-items: center;
 }
-.labgo[data-badge]::after,
-.sections a[data-badge]::after {
-  content: attr(data-badge);
+.subjc[hidden] {
+  display: none;
+}
+.subjb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 9px 0 8px;
+  font: inherit;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.subjb .sji {
+  color: var(--accent);
+  flex: none;
+}
+.subjb .sjc {
+  color: var(--muted);
+  flex: none;
+}
+.subjb[aria-expanded='true'] .sjc {
+  transform: rotate(180deg);
+}
+@media (hover: hover) {
+  .subjb:hover {
+    border-color: var(--accent);
+  }
+}
+.subjmenu {
   position: absolute;
-  right: -5px;
-  top: -5px;
-  font-size: var(--fs-xs);
-  line-height: 1;
-  pointer-events: none;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  display: grid;
+  gap: 2px;
+  min-width: 168px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-hover);
+}
+.subjmenu[hidden] {
+  display: none;
+}
+.subjmenu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: var(--fs-m);
+  color: var(--ink);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.subjmenu button .sji {
+  color: var(--accent);
+}
+.subjmenu button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .subjmenu button:hover {
+    background: var(--surface-2);
+  }
+}
+@media (max-width: 599.98px) {
+  header:has(#subjc:not([hidden])) {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: 'title subj tools' 'help help help';
+  }
+  .subjc {
+    grid-area: subj;
+    justify-self: start;
+  }
+  .subjb {
+    height: 30px;
+    padding: 0 7px;
+    gap: 3px;
+  }
+  .subjb .sjn,
+  header:has(#subjc:not([hidden])):has(#signb:not([hidden])) .brand .home span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 /* A fish entry's family under its name on its first-meeting card. */
 .ulcard .ulfam {
@@ -6702,7 +6805,7 @@ html.touring .unlock {
 .ans button.plain {
   font-style: normal;
 }
-/* A subject in beta (core.js SUBJECTS beta): a small tag on its name (the Tools hub's subject switch, admin only). */
+/* A subject in beta (core.js SUBJECTS beta): a small tag on its name in the subject switches (Home, the header chip's menu). */
 small.beta {
   display: inline-block;
   margin-left: 4px;

@@ -38,6 +38,17 @@ them first thing, then clear them.
   a per-entry "natural view" exception like the juvenile classes (e.g. head out of a hole is the normal view of a
   moray)? **Recommendation: keep the caps** (circles 2 and 3 are opt-in, met after circle 1; the fallback to the 3
   easiest already works), and revisit when fish answers are logged.
+- **Subject switch: the header chip on phones (2026-11-04 night, PR "Subject switch", not merged).** Context: the chip
+  next to the logo with its icon and name did not fit a 390 px phone header with the Sign in pill (27 px too wide). Built:
+  on phones the chip shows its icon and a small caret only (its name is its label), and while the Sign in pill shows the
+  logotype text steps aside too, as it already does under 380 px for everyone; under 380 px the logotype steps aside
+  whenever the chip shows and the chip drops its caret (it then fits from 320 px, signed in or out); on tablets and
+  desktops icon + name + caret. Question: keep this, or another trade (e.g. the chip replaces the logotype on phones)?
+  **Recommendation: keep** (signed in, the logotype shows from 380 px; screenshots in the PR).
+- **Subject switch: the Home row's look (same PR).** Built as DESIGN.md says: one full-width segmented row above the
+  doors, each subject with its icon and name, Fish with a small *beta* tag, the Tools tile and the fish emoji on the
+  Tools links removed (the chip is the way back). Question: OK as it is, or a quieter row on desktop (it spans the
+  page)? **Recommendation: OK as it is**; merge the PR once you have looked at the screenshots.
 
 ## Where the day stopped
 
