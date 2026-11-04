@@ -62,16 +62,22 @@ const server = http.createServer((req, res) => {
 // "Did you know?" tips off (tips.js): a player who has enlarged 3 photos is never targeted. For the tests of the other
 // cards and prompts, which play dozens of questions and click Next; tipsCheck (below) checks the tips with them.
 // Waits until the app has drawn the page at the current address (app.js route() sets window.ROUTED once done; a link
-// that sends on routes again), no fetch is in flight (counted in every context of the main browser, below), both for
-// three frames in a row: instead of a fixed sleep after each navigation (test-suite review, 2026-11-04). Resolves false
-// when that never happens within the timeout; the caller says what it then fails.
+// that sends on routes again), no fetch is in flight (counted in every context of the main browser, below) and no Lab
+// module is still loading (proto/lab.js LAB.pending: its <script>s are no fetch, and a Lab page or tool drawn before
+// they are in is a "Loading…" placeholder, redrawn by route() once they are; Codex review #454), all for three frames in
+// a row: instead of a fixed sleep after each navigation (test-suite review, 2026-11-04). Resolves false when that never
+// happens within the timeout; the caller says what it then fails.
 const drawn = (p, timeout = 15000) =>
   p
     .evaluate(() => (window.__calm = 0))
     .then(() =>
       p.waitForFunction(
         () => {
-          const ok = typeof hashNow === 'function' && window.ROUTED === hashNow() && !(window.__inflight > 0);
+          const ok =
+            typeof hashNow === 'function' &&
+            window.ROUTED === hashNow() &&
+            !(window.__inflight > 0) &&
+            !(typeof LAB !== 'undefined' && LAB.pending > 0);
           window.__calm = ok ? (window.__calm || 0) + 1 : 0;
           return window.__calm >= 3;
         },
@@ -2269,6 +2275,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'signin
         location.hash = h;
       }, h);
       if (!(await drawn(p))) fails.push(`${w}px #${h}: the page was not drawn within 15 s`);
+      // Drawn means the page itself, not a placeholder waiting for its files (a Lab page before its modules, Codex #454).
+      else if (await p.evaluate(() => /^\s*Loading/.test(document.querySelector('#view .note')?.textContent || '')))
+        fails.push(`${w}px #${h}: still a "Loading…" placeholder once drawn`);
       // A short window for errors a page throws just after it is drawn (a timer, a late photo).
       await p.waitForTimeout(150);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
