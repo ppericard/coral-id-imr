@@ -291,13 +291,98 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
     [...cs.map(s => s.cs)].sort((a, b) => a - b)
   );
   assert.ok(F.species.slice(0, cs.length).every(s => s.cs));
-  F.teach.forEach(t =>
-    assert.deepStrictEqual(
-      t.species,
-      [...t.species].sort((a, b) => SP.get(a).r - SP.get(b).r),
-      t.name
-    )
-  );
+});
+
+// Species order inside an entry: the commonness index (Pierre, 2026-11-04; docs/FISH_PATH.md "Species order: the commonness
+// index", tools/fish_commonness.py): the most commonly met around Dauin first, each species of a teaching node with its
+// index (cmi, 0-1), its sub-entries in the same order; fish.json is as `build_fish.py --commonness` gives it.
+test('species order inside an entry follows the commonness index', () => {
+  F.teach.forEach(t => {
+    t.species.forEach(id => {
+      const c = SP.get(id).cmi;
+      assert.ok(typeof c === 'number' && c >= 0 && c <= 1, `${t.name}: ${id} has no commonness index`);
+    });
+    t.species
+      .slice(1)
+      .forEach((id, i) => assert.ok(SP.get(id).cmi <= SP.get(t.species[i]).cmi, `${t.name}: ${id} after a less common species`));
+    (t.sub || []).forEach(u =>
+      assert.deepStrictEqual(
+        u.species,
+        t.species.filter(id => u.species.includes(id)),
+        `${t.name} / ${u.name}`
+      )
+    );
+  });
+  // The IMR 24 most sighted lead their entries unless the field counts say otherwise (weights 3 / 2 / 1): Pierre's
+  // examples from the review, the threespot dascyllus and the lemon damsel first among damselfish, the threadfin anthias
+  // before the purple one.
+  const name = id => SP.get(id).name;
+  const dams = F.teach.find(t => t.id === 't01').species.map(name);
+  assert.deepStrictEqual(dams.slice(0, 2), ['Dascyllus trimaculatus', 'Pomacentrus moluccensis']);
+  assert.deepStrictEqual(F.teach.find(t => t.id === 't15').species.map(name), ['Pseudanthias huchtii', 'Pseudanthias tuka']);
+  const r = require('child_process').spawnSync('python3', [BUILD, '--commonness', '--check'], {encoding: 'utf8'});
+  assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
+});
+
+// The commonness index's rules on a small made-up entry (tools/fish_commonness.py, offline): an IMR 24 species first, a
+// field census that records every species scores an absent one 0, a partial list scores only what it lists, observers
+// are shrunk toward the entry's mean (M), and a rerun gives the same numbers.
+test('commonness index: the rules on a made-up entry', () => {
+  const code = `
+import json, sys
+sys.path.insert(0, ${JSON.stringify(path.join(__dirname, '..', 'tools'))})
+import fish_commonness as fc
+sp = lambda i, n, r, cs=None: dict(id=i, name=n, r=r, ref=0, **({'cs': cs} if cs else {}))
+fish = {'species': [sp('s1', 'Aa one', 1, 24), sp('s2', 'Aa two', 2), sp('s3', 'Aa three', 3), sp('s4', 'Aa four', 4)],
+        'teach': [{'id': 't1', 'name': 'T', 'species': ['s4', 's3', 's2', 's1']}], 'ref': {}}
+inputs = {'params': {'weights': {'field': 3, 'imr': 2, 'inat': 1}, 'M': 5, 'decades': 2},
+          'field': {'census': {'kind': 'presence', 'absent': 0, 'values': {'Aa one': 2, 'Aa two': 4}},
+                    'partial': {'kind': 'count', 'absent': None, 'values': {'Aa three': 10}},
+                    'off': {'kind': 'count', 'absent': 0, 'use': False, 'values': {'Aa four': 99}}}}
+inat = {'species': {'s1': [1, 1, 2, 3], 's2': [2, 9, 20, 40], 's3': [3, 9, 20, 40], 's4': [4, 0, 0, 0]}}
+a = fc.compute(fish, inputs, inat)['t1']
+b = fc.compute(fish, inputs, inat)['t1']
+print(json.dumps({'order': [i for i, _, _ in a], 'idx': {i: round(x, 4) for i, x, _ in a},
+                  'sig': {i: r['signals'] for i, _, r in a}, 'same': a == b}))
+`;
+  const r = require('child_process').spawnSync('python3', ['-c', code], {encoding: 'utf8'});
+  assert.strictEqual(r.status, 0, r.stderr);
+  const o = JSON.parse(r.stdout);
+  assert.ok(o.same, 'a rerun gives the same numbers');
+  // s1: IMR 24, half the census's best, few observers; s2: the census's best, many observers.
+  assert.deepStrictEqual(o.order, ['s2', 's1', 's3', 's4']);
+  assert.strictEqual(o.sig.s2.field, 1);
+  assert.strictEqual(o.sig.s1.field, 0.5);
+  assert.strictEqual(o.sig.s3.field, 0, 'absent from the full census: 0; the partial list alone (one species) does not count');
+  assert.strictEqual(o.sig.s4.field, 0, 'a source with use false is ignored');
+  assert.strictEqual(o.sig.s1.imr, 0.904);
+  assert.strictEqual(o.sig.s2.inat, 1);
+  assert.ok(o.sig.s3.inat === 1 && o.idx.s3 < o.idx.s1, 'same observers as s2, but no field record and no IMR 24');
+  assert.ok(o.sig.s4.inat === 0, 'no observer anywhere: 100x below the top or more');
+});
+
+// Two species of the index on one iNaturalist taxon (Codex #497: s104 / s105 both on 559534) get the same counts, in
+// whatever order they come; fetch() uses the client it is given.
+test('commonness fetch: species sharing an iNaturalist taxon all get its counts', () => {
+  const code = `
+import json, sys
+sys.path.insert(0, ${JSON.stringify(path.join(__dirname, '..', 'tools'))})
+import fish_commonness as fc
+class Fake:
+    def get(self, url):
+        if 'species_counts' in url:
+            return {'total_results': 1, 'results': [{'count': 5, 'taxon': {'id': 7, 'ancestor_ids': [1, 7]}}]}
+        return {'total_results': 3}
+out = {}
+for order in (['a', 'b'], ['b', 'a']):
+    fish = {'species': [{'id': 'a', 'inat': 7}, {'id': 'b', 'inat': 7}], 'teach': [{'id': 't', 'name': 'T', 'species': order}]}
+    out[''.join(order)] = fc.fetch(fish, Fake())
+print(json.dumps(out))
+`;
+  const r = require('child_process').spawnSync('python3', ['-c', code], {encoding: 'utf8'});
+  assert.strictEqual(r.status, 0, r.stderr);
+  const o = JSON.parse(r.stdout);
+  for (const k of ['ab', 'ba']) assert.deepStrictEqual(o[k], {a: [7, 3, 3, 3], b: [7, 3, 3, 3]}, k);
 });
 
 // The starter core and the judged photos (Pierre, 2026-11-04: the fish beta opened on the wrong families and on photos

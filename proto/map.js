@@ -21,7 +21,7 @@ LAB.add({
       [
         'wall',
         'Wall type',
-        n => DATA.gen[n].tr.filter(t => trSet('wall').includes(t)),
+        n => trAll(DATA.gen[n]).filter(t => trSet('wall').includes(t)),
         k => trName(k),
         k => WALLSHORT[k],
         (k, i) => `hsl(${i * 72 + 20} 55% 50%)`
@@ -29,7 +29,7 @@ LAB.add({
       [
         'size',
         'Corallite size',
-        n => DATA.gen[n].tr.filter(t => trSet('size').includes(t)),
+        n => trAll(DATA.gen[n]).filter(t => trSet('size').includes(t)),
         k => 'Corallites ' + trName(k),
         k => trName(k),
         (k, i) => `hsl(${200 - i * 45} 55% 50%)`
