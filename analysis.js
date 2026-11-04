@@ -1633,7 +1633,8 @@
     const F = FMT_PLAIN[k];
     PLAIN.fmt = PLAIN.fmt || {};
     PLAIN.fmt['g_' + k] = {name: `${F}: success of a pure guess`, o: 'guess', fmt: k, cal: true};
-    PLAIN.fmt['d_' + k] = {name: `${F}: easier or harder than the app expects`, o: 'right', inv: true, fmt: k, cal: true};
+    // fitted with the format's own guess rate (fmtFit), so read beyond guessing (Codex review #495)
+    PLAIN.fmt['d_' + k] = {name: `${F}: easier or harder than the app expects, beyond guessing`, o: 'right', inv: true, fmt: k, cal: true, beyond: true};
     PLAIN.fmt['oe_' + k] = {
       name: `${F}: right answers against the app’s expectation`,
       o: 'pts',
@@ -1732,6 +1733,11 @@
       // the change, read with that floor
       const q0 = clamp((T.p - g) / (1 - g), 0.001, 0.999);
       ((base = T.p), (at = v => shiftP(P.g1 + (1 - P.g1) * q0, P.g1, sg * s * v)), (f = pctOf));
+    } else if (P.beyond) {
+      // recognition beyond guessing: the app's expectation without its guess floor, shifted with no floor (the fit has
+      // its own guess rate; the raw right answers are the format's "against the app's expectation", Codex review #495)
+      const q0 = clamp((T.p - T.g) / (1 - T.g), 0.001, 0.999);
+      ((base = q0), (at = v => shiftP(q0, 0, sg * s * v)), (f = pctOf));
     } else ((base = T.p), (at = v => shiftP(T.p, g, sg * s * v)), (f = pctOf));
     const val = at(e.est),
       a1 = fin(e.lo) ? at(e.lo) : null,
@@ -1756,6 +1762,8 @@
       say = `Mixed up ${up ? 'more' : 'less'} often: a wrong genus picked ${f(val)} of the times it is offered, instead of ${f(base)}`;
     else if (P.o === 'pts') say = `Players do ${up ? 'better' : 'worse'} than the app expects: ${f(val)} of right answers`;
     else if (P.o === 'guess') say = `About ${f(val)} right by pure guessing; the app assumes ${f(base)}`;
+    else if (P.beyond)
+      say = `${up ? 'Easier' : 'Harder'} than the app expects: about ${f(val)} recognised beyond guessing where it expects ${f(base)}`;
     else if (P.cal) say = `${up ? 'Easier' : 'Harder'} than the app expects: about ${f(val)} right where it expects ${f(base)}`;
     else say = `More likely ${up ? 'right' : 'wrong'}: about ${f(val)} right instead of ${f(base)}`;
     if (v === 'clear') {
