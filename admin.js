@@ -1163,25 +1163,25 @@ const GROUPS = [
         'anspeed',
         'Speed',
         [
-          ['~an-rt', 'Response time'],
-          ['~an-zoom', 'Zoom']
+          ['~an-rt', 'Answer time'],
+          ['~an-zoom', 'Enlarging']
         ]
       ],
       [
         'andiff',
         'Difficulty',
         [
-          ['~an-photo', 'Photo factors'],
+          ['~an-photo', 'Photos'],
           ['~an-fmt', 'Formats'],
-          ['~an-conf', 'Confusions']
+          ['~an-conf', 'Mix-ups']
         ]
       ],
       [
         'anlearn',
         'Learning',
         [
-          ['~an-learn', 'Curves'],
-          ['~an-back', 'Comeback'],
+          ['~an-learn', 'Practice'],
+          ['~an-back', 'After a break'],
           ['~an-sess', 'Sessions']
         ]
       ]
