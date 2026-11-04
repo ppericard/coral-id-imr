@@ -1,0 +1,120 @@
+{
+ "photos": {
+  "fish-s117-cand-573564918": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s117-cand-435188446": {
+   "code": "p1g1ssm2",
+   "keep": "best"
+  },
+  "fish-s117-cand-537385099": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-537385079": {
+   "code": "p1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s117-cand-537385113": {
+   "code": "p1d2bs1j1",
+   "keep": "dup"
+  },
+  "fish-s117-cand-615499310": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s117-cand-354374633": {
+   "code": "p1d2bmm1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "The obvious fish is another kind; the damselfish is small"
+  },
+  "fish-s117-cand-724375522": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s117-cand-724375524": {
+   "code": "p1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s117-cand-530163513": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s117-cand-360975247": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s117-cand-168043325": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s117-cand-168043597": {
+   "code": "p0g1sl13",
+   "keep": "alt"
+  },
+  "fish-s117-cand-168043600": {
+   "code": "p1g2bl11",
+   "keep": "dup"
+  },
+  "fish-s117-cand-168043670": {
+   "code": "p0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s117-cand-643300600": {
+   "code": "p1g3ss11",
+   "keep": "best"
+  },
+  "fish-s117-cand-753191532": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-753191542": {
+   "code": "p1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s117-cand-619503109": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s117-cand-724106013": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s117-cand-573566501": {
+   "code": "p1g1bm1j1",
+   "keep": "best"
+  },
+  "fish-s117-cand-573566514": {
+   "code": "p1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s117-cand-606350838": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s117-cand-724794782": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s117-cand-542195139": {
+   "code": "o1d1sm13",
+   "keep": "best"
+  },
+  "fish-s117-cand-324387759": {
+   "code": "p1g2ssm1",
+   "keep": "best"
+  },
+  "fish-s117-cand-576051666": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-425163355": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  }
+ }
+}

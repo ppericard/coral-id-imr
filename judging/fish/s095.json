@@ -1,0 +1,96 @@
+{
+ "photos": {
+  "fish-s095-cand-350290161": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s095-cand-350290162": {
+   "code": "o1d1sl13",
+   "keep": "dup"
+  },
+  "fish-s095-cand-160809786": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s095-cand-389921584": {
+   "code": "d1d1sm12",
+   "keep": "best"
+  },
+  "fish-s095-cand-244187520": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s095-cand-515100871": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s095-cand-515100915": {
+   "code": "p1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s095-cand-730593218": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s095-cand-284115064": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s095-cand-516332532": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s095-cand-243366105": {
+   "code": "o0d1sl12",
+   "keep": "best"
+  },
+  "fish-s095-cand-556862152": {
+   "code": "o1g1ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "The obvious fish is a moray; the damselfish is small"
+  },
+  "fish-s095-cand-581222371": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s095-cand-207013613": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s095-cand-75834546": {
+   "code": "p1d1ss1j1",
+   "keep": "best"
+  },
+  "fish-s095-cand-531574896": {
+   "code": "p0d1sl12",
+   "keep": "best"
+  },
+  "fish-s095-cand-438547826": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s095-cand-450950199": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s095-cand-2381197": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s095-cand-674739468": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s095-cand-715929967": {
+   "code": "d1g2ss11",
+   "keep": "best"
+  },
+  "fish-s095-cand-609871835": {
+   "code": "p1d0sms3",
+   "keep": "best"
+  }
+ }
+}
