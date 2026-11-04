@@ -442,7 +442,7 @@ def build(src, report):
         if u["_not"]:
             o["not"] = u["_not"]
         o["species"] = [x["s"]["id"] for x in sorted(members, key=lambda x: x["r"])]
-        for k in ("sl", "cues", "look", "phase", "dimorph", "why", "note"):
+        for k in ("sl", "cues", "look", "phase", "dimorph", "juv", "why", "note"):
             if u.get(k):
                 o[k] = u[k]
         return o

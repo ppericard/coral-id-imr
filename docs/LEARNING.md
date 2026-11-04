@@ -2220,8 +2220,12 @@ changes, all data the engine reads generically (the corals have none of these fi
   or tail view, a partial fish or camouflage at most 3), plus a proposed crop for 140 of them (a proposal for the admin,
   never applied). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
   difficulty (an Anthias is easy to call an Anthias, a parrotfish a parrotfish: its family-level difficulty is the
-  wrasse); the flag stays for the species questions and the explanation cards. The juvenile cap stays: many juveniles
-  look nothing like their family's adults (spadefish, sweetlips, emperors), a family-level difficulty.
+  wrasse); the flag stays for the species questions and the explanation cards. **The juvenile cap is per entry**
+  (Pierre, 2026-11-04): Spadefish and Sweetlips juveniles look nothing like their adults but are themselves very
+  recognisable (Sweetlips juveniles more than the adults) and help learn the family, so those entries carry `juv:
+  "distinct"` (`tools/fish_source.json`) and their juvenile photos are judged on the other criteria only (18 photos
+  looked at again: Spadefish now 8 very easy photos, Sweetlips 10). The other entries keep the cap provisionally, with
+  no source either way; it goes with the bootstrap below. The juvenile tag stays on every photo.
 - **At least 5 very easy photos per circle-1 entry** (Pierre's target, 2026-11-04): 11 entries had fewer (Spadefish 0,
   Fusilier 0, Sandperch 1, Emperor 2, Anthias 2, Lizardfish 3, Moorish Idol, Goatfish, Triggerfish, Filefish, Lionfish
   4). 214 research-grade candidates of `fish-cand.json` (PR #463: CC0, CC BY or CC BY-NC, Indo-West Pacific) were looked
@@ -2241,7 +2245,8 @@ changes, all data the engine reads generically (the corals have none of these fi
   50%: the first level earned, an existing threshold; the exam's entry and every later question are untouched), only
   its very easy photos (ease `PDIFF.EARLY` 4 or 5, Pierre's "very easy first"), or its `PICKD.VARIETY` (3) easiest when
   it has fewer, so a few still take turns (the rule that keeps 3 colonies in rotation; no circle-1 entry needs it now).
-  By the caps above no juvenile, night, partial or head-on photo is ever among them. Juveniles are not a late stage
+  By the caps above no night, partial or head-on photo is ever among them, nor a juvenile outside Spadefish and
+  Sweetlips. Juveniles are not a late stage
   (FISH_PATH): they come in at Open Water on each entry, a few dozen answers in, and will later get their explanation
   cards. **Temporary** (Pierre, 2026-11-04: an arbitrary bootstrap threshold): the gate stands in for the photo
   ratings fish do not have yet; remove it once fish answers are logged and the automatic difficulty engine can rank the

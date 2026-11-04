@@ -1045,8 +1045,8 @@ function photoDiff(n, p) {
 }
 // The first questions on a unit (Pierre, 2026-11-04, after the fish beta opened on photos too hard for a beginner): until
 // the unit reaches Open Water (LV_AT[0], 50%: the first level earned), only its very easy photos (ease PDIFF.EARLY or
-// more: judging/FISH.md, where juveniles, night shots, partial fish, head-on or tail views and camouflage are capped at
-// 3 or less), or its PICKD.VARIETY easiest when it has fewer, so a few still take turns. A unit with no judged photo
+// more: judging/FISH.md, where night shots, partial fish, head-on or tail views, camouflage and the juveniles of most
+// entries are capped at 3 or less), or its PICKD.VARIETY easiest when it has fewer, so a few still take turns. A unit with no judged photo
 // (the corals) is not touched; nor is the exam (95%). TEMPORARY (Pierre, 2026-11-04: an arbitrary bootstrap
 // threshold): remove it once fish answers are logged and the photo ratings can rank the photos (docs/ROADMAP.md).
 function easyFirst(n, L) {

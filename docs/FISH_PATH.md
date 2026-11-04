@@ -115,10 +115,12 @@ Gaps before species questions ship:
 
 ## Juveniles and colour phases
 
-- Early, never a late stage (Pierre's ReefRecall rule), but juveniles not in an entry's first questions (Pierre, 2026-11-04): until
-  an entry reaches Open Water its questions show only its very easy photos, and a juvenile never is one (judged ease capped,
-  `judging/FISH.md`; `model.js` `easyFirst`, a temporary bootstrap until fish answers are logged; docs/LEARNING.md "Fish: the starter
-  core and judged photos"). From Open Water they are in the pool at every level.
+- Early, never a late stage (Pierre's ReefRecall rule). Until an entry reaches Open Water its questions show only its very easy photos
+  (`model.js` `easyFirst`, a temporary bootstrap until fish answers are logged; docs/LEARNING.md "Fish: the starter core and judged
+  photos"). A juvenile is one only where its entry's juveniles are distinct and recognisable (Pierre, 2026-11-04: Spadefish and
+  Sweetlips, `fish.json` `juv: "distinct"`; Sweetlips juveniles are more recognisable than the adults), so they help learn the family
+  early; elsewhere its judged ease is capped, provisionally, until real answers say otherwise. From Open Water every juvenile is in
+  the pool.
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
   (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.

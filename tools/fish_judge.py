@@ -34,15 +34,16 @@ VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos show
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
 
 
-def cap(code, phase):
-    """(ease after the caps, tags with the phase flag): judging/FISH.md "Caps"."""
+def cap(code, phase, juv_ok=False):
+    """(ease after the caps, tags with the phase flag): judging/FISH.md "Caps". juv_ok: the entry's juveniles are
+    distinct and recognisable (fish.json juv "distinct": Spadefish, Sweetlips), so the juvenile flag caps nothing."""
     m = CODE.match(code)
     if not m:
         raise ValueError(f"bad code {code!r}")
     v, w, light, loss, _c, _z, n, fl, e = m.groups()
     fl = fl + ("p" if phase and "p" not in fl else "")
     e = int(e)
-    if "j" in fl or n == "x" or loss == "3":
+    if ("j" in fl and not juv_ok) or n == "x" or loss == "3":
         e = min(e, 2)
     # The phase flag p caps nothing (Pierre, 2026-11-04: a sex or colour phase is a species-level difficulty; an Anthias
     # or a parrotfish is easy to call one at the family level), kept for the species questions and explanation cards.
@@ -60,6 +61,7 @@ def apply(photos, fish=None):
     """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
     fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     dim = {t["id"] for t in fish["teach"] if t.get("dimorph")}
+    juv = {t["id"] for t in fish["teach"] if t.get("juv") == "distinct"}
     J, C, A = load_src()
     for tid, extra in A.items():
         L = photos.setdefault(tid, [])
@@ -71,7 +73,7 @@ def apply(photos, fish=None):
             for x in ("e", "jt", "c"):
                 p.pop(x, None)
             if p["f"] in J:
-                p["e"], p["jt"] = cap(J[p["f"]], tid in dim)
+                p["e"], p["jt"] = cap(J[p["f"]], tid in dim, tid in juv)
                 if p["f"] in C:
                     p["c"] = C[p["f"]]
                 k += 1

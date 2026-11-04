@@ -235,16 +235,17 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
 });
 // judging/FISH.md "Caps", the same rule as tools/fish_judge.py cap().
 const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$/;
-const capOf = (code, phase) => {
+const capOf = (code, phase, juvOk) => {
   const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
     fl = fl0 + (phase ? 'p' : '');
   let e = +e0;
-  if (/j/.test(fl) || n === 'x' || k === '3') e = Math.min(e, 2);
+  if ((/j/.test(fl) && !juvOk) || n === 'x' || k === '3') e = Math.min(e, 2);
   if (/[ca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
   return {e, jt: code.slice(0, 7) + fl};
 };
 test('judged photos: every circle-1 game photo judged with a valid code, written into fish-photos.json with its caps', () => {
   const dim = new Set(F.teach.filter(t => t.dimorph).map(t => t.id)),
+    juv = new Set(F.teach.filter(t => t.juv === 'distinct').map(t => t.id)),
     c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink).map(t => t.id),
     codes = {};
   Object.entries(JUDGE.photos).forEach(([tid, m]) =>
@@ -259,11 +260,23 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
     L.forEach(p => {
       if (!(p.f in codes)) return assert.ok(p.e === undefined && p.jt === undefined && !p.c, `${p.f}: e without a judgement`);
       assert.strictEqual(codes[p.f][0], tid, `${p.f}: judged under another entry`);
-      assert.deepStrictEqual({e: p.e, jt: p.jt}, capOf(codes[p.f][1], dim.has(tid)), `${p.f}: run python3 tools/fish_judge.py`);
+      assert.deepStrictEqual(
+        {e: p.e, jt: p.jt},
+        capOf(codes[p.f][1], dim.has(tid), juv.has(tid)),
+        `${p.f}: run python3 tools/fish_judge.py`
+      );
       assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
       // Never among the very easy photos of the first questions: juveniles, night, partial, head / tail / top views,
       // camouflage, out of water, an unclear subject.
-      if (/[jca]/.test(p.jt.slice(7)) || /[htd]/.test(p.jt[0]) || p.jt[1] === '0' || p.jt[2] === 'n' || p.jt[3] >= '2' || p.jt[6] === 'x')
+      if (
+        (/j/.test(p.jt.slice(7)) && !juv.has(tid)) ||
+        /[ca]/.test(p.jt.slice(7)) ||
+        /[htd]/.test(p.jt[0]) ||
+        p.jt[1] === '0' ||
+        p.jt[2] === 'n' ||
+        p.jt[3] >= '2' ||
+        p.jt[6] === 'x'
+      )
         assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
     })
   );
@@ -282,6 +295,21 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
       assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(a.lic), `${a.f}: licence ${a.lic}`);
     })
   );
+  // Juveniles (Pierre, 2026-11-04): capped unless the entry's juveniles are distinct and recognisable (fish.json juv
+  // "distinct", from the source: Spadefish and Sweetlips), where a juvenile photo can be very easy.
+  assert.deepStrictEqual([...juv].sort(), ['t04', 't14']);
+  assert.deepStrictEqual(
+    F.teach.filter(t => t.juv).map(t => t.id),
+    SRC.teach.filter(t => t.juv).map(t => t.id)
+  );
+  ['t04', 't14'].forEach(id =>
+    assert.ok(
+      PH[id].some(p => /j/.test(p.jt.slice(7)) && p.e >= 4),
+      `${id}: no very easy juvenile`
+    )
+  );
+  const capped = Object.entries(PH).flatMap(([tid, L]) => (juv.has(tid) ? [] : L.filter(p => p.jt && /j/.test(p.jt.slice(7)))));
+  assert.ok(capped.length && capped.every(p => p.e <= 2), 'another entry’s juvenile is capped at 2');
   // The phase flag (sex or colour phase: a species-level difficulty) caps nothing at the family level.
   assert.ok(
     Object.values(PH)

@@ -63,15 +63,21 @@ several species in the frame.
 - **1 very hard**: the fish is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
 **Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`), an unclear subject (`x`) or a
-monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a night shot (`n`), a strong
+monochrome photo (colour loss `3`) is at most 2 (a juvenile: unless its entry is marked `juv: "distinct"`, below); camouflage (`c`), out of water (`a`), a night shot (`n`), a strong
 colour loss (`2`), a head-on, tail or top view (`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or
 5 ("very easy", the first questions' photos) is never one Pierre wants kept from the start.
 
 **The phase flag caps nothing** (rubric 3, Pierre, 2026-11-04): a sex or colour phase is a species-level difficulty. An
 Anthias is easy to call an Anthias whatever its sex, a parrotfish easy to call a parrotfish (its family-level difficulty
 is telling it from a wrasse, a look-alike pair); it gets hard only when the species is asked. The flag stays on the
-photos for the species questions and the explanation cards. The juvenile cap stays: many juveniles look nothing like
-their family's adults (spadefish, sweetlips, angelfish, emperors), which is a family-level difficulty.
+photos for the species questions and the explanation cards.
+
+**The juvenile cap is per entry** (rubric 4, Pierre, 2026-11-04): Spadefish and Sweetlips juveniles look nothing like
+their adults but are themselves very recognisable (Sweetlips juveniles more than the adults), so they help learn the
+family and may come early: those entries carry `juv: "distinct"` in `tools/fish_source.json`, and their juvenile photos
+are judged on the other criteria only. Every other entry keeps the cap, **provisionally**: no source says how
+recognisable its juveniles are, so it stays until real answers say otherwise and goes with the bootstrap (ROADMAP). The
+juvenile tag stays on every photo (explanation cards later).
 
 ## A proposed crop
 

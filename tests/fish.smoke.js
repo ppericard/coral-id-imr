@@ -596,7 +596,8 @@ const server = http.createServer((req, res) => {
   // (9) A brand-new fish player (Pierre, 2026-11-04: the first families and the first photos were the wrong ones): the
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
   // entry reaches Open Water its photos are only the very easy ones (judged ease 4-5, judging/FISH.md), never a
-  // juvenile; past Open Water the others come in. (A sex / colour phase is no family-level difficulty: Pierre,
+  // juvenile of the starter entries (their juveniles are capped; only Spadefish and Sweetlips, fish.json juv, are not);
+  // past Open Water the others come in. (A sex / colour phase is no family-level difficulty: Pierre,
   // 2026-11-04.) Five seeds.
   const fresh = [];
   for (const seed of [11, 222, 3333, 44444, 555555]) {
