@@ -894,7 +894,13 @@ unlocked, `model.js` `unlocked(list)`, the one source for it (met on the path an
   look-alike pair is unlocked, a line sends the player to the quiz;
 - Memory (`proto/pairs.js` `memoryGenera`): only genera unlocked, fewer pairs than the level holds when fewer are
   unlocked (fewer rows), a line before two are;
-- the custom quiz (`quiz.js` `viewCustom`, `customSel`): only genera unlocked are offered and kept.
+- the custom quiz (`quiz.js` `viewCustom`, `customSel`): only genera unlocked are offered and kept;
+- the Tools' games (`proto/lab.js` `labPlay`, same day): Blur reveal, Spot the feature, Type the genus, the Zoom ladder's
+  game, the Elimination board's mystery photo and the anatomy photo drill ask only about genera unlocked (a line sends
+  a player with none to the quiz); their wrong choices may name any genus, as the quiz's do (`model.js` `distractors`),
+  and the reference tools (map, matrix, gallery, Coral ID Key, the board itself, sizes, the zoom explorer) keep every
+  genus. Checked: `onePath` reads the genus of every game photo over 6 rounds each (failed before: Porites, Ctenactis,
+  Duncanopsammia… for the beginner with 4 genera met).
 The relief card of the Duel tab is unchanged (it speaks of the pair on screen); the false trigger came from the hold that
 the genera opened by duels pushed up. Not measured with `tools/learnsim.js` or the replay (rule 14f/14g): both play the
 photo quiz, which this does not change. Checked: `tests/pages.smoke.js` `onePath` (a beginner with 4 genera met: 15 duels
