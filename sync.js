@@ -1215,15 +1215,15 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     return;
   }
   // Two players of one first name (Pierre, 2026-11-03): the name is the account key, so the form asks from the start for
-  // the first name and the surname's initial, and a name taken with another code says so in plain words. A nickname is
-  // welcome too (Pierre, 2026-11-04: "as long as they remember it and their code"), said in the note.
+  // the first name and the surname's initial, and a name taken with another code says so in plain words. A nickname or
+  // alias is just as welcome (Pierre, 2026-11-04: the point is no two players with one name), said in the label itself.
   const tail = name => (/\s/.test(name) ? 'add more of your surname' : `add your surname's initial (${name} B.)`);
   const form = (name = '', pin = '', hint = '') => {
     box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device. Learning on your own? Sign in too, to keep your progress on all your devices.</p>
-    <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name" placeholder="First name + initial"></label>
+    <form class="sform"><label>Your name or nickname <input name="n" required maxlength="40" autocomplete="name" placeholder="First name + initial"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>
-    <p class="note">Your first name and your surname's initial (e.g. Anna B.), so no one else has your name. A nickname is fine too, as long as you remember it. New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
+    <p class="note">Your first name and your surname's initial (e.g. Anna B.), or a nickname or alias: any name no one else has, that you will remember. New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
     const f = box.querySelector('form');
     f.n.value = name;
     f.p.value = pin;
