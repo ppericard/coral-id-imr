@@ -378,7 +378,7 @@ let FISH = null,
   FISHP = null;
 const fishLoad = () =>
   FISHP ||
-  (FISHP = Promise.all([json('fish.json?v=2'), json('fish-photos.json?v=3')])
+  (FISHP = Promise.all([json('fish.json?v=3'), json('fish-photos.json?v=4')])
     .then(([f, ph]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
