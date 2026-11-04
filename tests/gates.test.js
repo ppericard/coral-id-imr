@@ -31,6 +31,9 @@ const GATES = {
   // The app adopts the sheet's full replay (sync.js replayAdopt) and the admin shows replayed progress: from v28. Checked
   // here on the admin's switch; the app's side runs in tests/pages.smoke.js (replayAdoptCheck at RV_SHEET - 1).
   RV_SHEET: (v, N) => fn('admin.js', 'const replayOn = ', '\n', 'replayOn', {ANS: v === undefined ? {} : {v}, USERS: null, RV_SHEET: N})(),
+  // Players takes each player's replayed progress from the player list (admin.js rpOn, Code.gs replayedAll_ rp): from v42;
+  // before, it reads every player's saved copy and replays here.
+  RP_SHEET: (v, N) => fn('admin.js', 'const rpOn = ', '\n', 'rpOn', {USERS: v === undefined ? {} : {v}, RP_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
   // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0.
