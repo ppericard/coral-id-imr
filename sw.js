@@ -20,11 +20,11 @@ const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=138',
+  'app.css?v=139',
   'core.js?v=49',
   'app.js?v=210',
   'sync.js?v=30',
-  'progress.js?v=24',
+  'progress.js?v=25',
   'model.js?v=38',
   'tips.js?v=3',
   'quiz.js?v=51',
