@@ -132,9 +132,6 @@ the night session's scratchpad, which a new session cannot see, so re-take them 
 
 | PR | What | Note |
 |---|---|---|
-| #551 | Admin: read curation.json from its blob past 1 MB | **Incident**: the admin stopped loading at about 19:42 ("Unexpected end of JSON input"); merge first. |
-| #524 | Cards: no broken-image flash when an R2 photo fails | Fix; the night merge was refused as a production deploy. Merge right after #551. |
-| #531 | sw.js: no reply waits on Cache Storage more than 3 s | The net.smoke step-9 hang came back after #513 (Cache Storage stalls; cause not established). Merge after #524. |
 | #520 | Smokes in reduced motion by default | Red until #524 merges; then merge main and re-request Codex. |
 | #535 | Admin page roles, the rest | Questions above. |
 | #522 | Fish common names, 1-3 per species | Editorial; questions above. |
@@ -143,7 +140,8 @@ the night session's scratchpad, which a new session cannot see, so re-take them 
 | #536 | Identify per subject | Questions above. |
 | #538 | Fish welcome question | Sheet v47; questions above. |
 | #540 | Fish opens to a group | Sheet v48; questions above. |
-| #549 | Fish candidates judged: Porcupinefishes, Jacks, Whale shark, Thresher shark | A judging batch whose agent was stopped mid-way: check CI and Codex, then merge (decided process). |
+
+**Morning 2026-11-05 (coordinator):** merged #531 (Cache Storage waits bounded), #551 (admin reads curation.json past 1 MB from its blob; the admin loads again, checked live), #524 (no broken-image flash on cards), #549 (fish candidates batch). #520 brought onto main, CI running. Still open: #520, then Pierre's choices on #535, #522, #526, #533, #536, #538, #540 (questions above).
 
 **Merge-order traps:** the sheet versions 46 / 47 / 48 are reserved by #526 / #538 / #540: merged in another order, the
 later ones take the next free number (Code.gs header, ARCHITECTURE's version list, tests). `tests/fish.smoke.js` is
