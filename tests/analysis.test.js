@@ -721,3 +721,16 @@ test('plainOf: the difficulty and Again labels say what the model measures', () 
   for (const k of ['rt', 'sess']) assert.match(A.PLAIN[k].diff.name, /beyond guessing/);
   assert.match(A.PLAIN.learn.again.name, /next ordinary question after a miss/i);
 });
+
+// Codex review #495 (3rd pass): the typed contrast's verdict is judged on the accuracy shown (a clear change in
+// recognition whose range of right answers still includes the baseline is not a clear change in right answers); an
+// effect with too few answers to estimate says so, not "no such answers".
+test('plainOf: typed verdict on the accuracy shown; no estimate yet reads as not enough data', () => {
+  const r = A.plainOf('learn', {k: 'typed', est: 0.5, lo: 0.1, hi: 0.9, v: 'clear'}, {typ: {p: 0.8, g: 0.25}});
+  assert.ok(r.lo < 0.8 && r.hi > 0.8, 'the range of right answers includes 80%');
+  assert.notStrictEqual(r.v, 'clear');
+  assert.notStrictEqual(r.tone, 'good');
+  const c = A.plainOf('back', {k: 'calib', v: 'thin', n: 1, need: null}, {});
+  assert.match(c.text, /^Not enough data yet/);
+  assert.strictEqual(c.tone, 'thin');
+});

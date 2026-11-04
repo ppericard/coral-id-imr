@@ -407,7 +407,7 @@ function anOverview(rep, R, prevR) {
     all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => [k, e, anPlain(k, e, a)])),
     link = k => `<a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a>`;
   const order = {bad: 0, good: 1, info: 2},
-    clear = all.filter(([, e]) => e.v === 'clear'),
+    clear = all.filter(([, , P]) => P.v === 'clear'),
     // the clear results that change something (the spreads stay on their own pages), what hurts first
     says_ = clear.filter(([, e]) => !e.sd).sort((x, y) => (order[x[2].tone] ?? 3) - (order[y[2].tone] ?? 3));
   const says = says_.length
