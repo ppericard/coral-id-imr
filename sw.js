@@ -230,21 +230,17 @@ self.addEventListener('fetch', e => {
   // The other app files (the page itself, curation.json, the manifest): revalidated with the server. On a slow link
   // (field, boat) a file already cached is served after SLOW ms instead of waiting for the network, which still refreshes
   // the cache in the background (code re-review 2026-11-01, L1).
+  // The page's reply never waits for its cache copy (2026-11-04, net.smoke step 9: the admin page never reached
+  // DOMContentLoaded although the server had answered in 1 ms; the reply waited for a write into the shell cache that
+  // never ended, the old worker writing into the cache a new version's activation was replacing). The copy, taken
+  // before the reply is read, is written in the event's lifetime instead.
   else {
+    let copy = null;
     const net = fetch(e.request, {cache: 'no-cache'}).then(res => {
-      if (res.ok) {
-        const c = res.clone();
-        return caches
-          .open(V)
-          .then(x => x.put(e.request, c))
-          .then(
-            () => res,
-            () => res
-          );
-      }
+      if (res.ok) copy = res.clone();
       return res;
     });
-    e.waitUntil(net.catch(() => {}));
+    e.waitUntil(net.then(() => copy && caches.open(V).then(x => x.put(e.request, copy))).catch(() => {}));
     e.respondWith(
       caches.match(e.request).then(hit =>
         !hit
