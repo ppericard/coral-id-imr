@@ -1703,12 +1703,13 @@ ratings from the sheet. `tests/pages.smoke.js` `duelReliefCheck` checks the drop
 
 **2. A relief card** (`quiz.js` `reliefNote`, `reliefDue`, `reliefArm`, `reliefShow`): the first time in a duel run an
 answer takes the hold's sum h from below `INTRO.HOLD` to `INTRO.HOLD` or more, the next break at Next shows a card
-(💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Seeing them side by
-side often helps more than more photos." and three choices, in Pierre's order: **Mix in other genera** (the main button,
+(💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Mixing in other genera for
+a while, or seeing these two side by side, often helps more than more of the same." (Pierre, 2026-11-04: the line
+first spoke of the comparison only, the second choice since the order changed) and three choices, in Pierre's order: **Mix in other genera** (the main button,
 the photo quiz, `#quiz`), **Compare them** (the side-by-side comparison of the duel's two genera, `#cmp-A|B`, as
 `learn.js` links it), **Keep drilling** (the next duel; Escape too). No numbers on it (Pierre's rule for these cards).
 Compare them does not end the drill for good (Pierre, 2026-11-04): the comparison it opens shows **Back to the duel**
-(top and end), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
+(in view however far the page scrolls: a floating button at the bottom centre on phones and tablets, a light "Duel paused" band under the page bar on desktop), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
 card in it; the easing applies as usual). The comparison opened any other way is unchanged.
 
 - **The same detector**: the opening hold's CUSUM (`holdStep`), no new one and no new constant. The crossing is read in
@@ -2269,7 +2270,7 @@ judged ease (rubric 3, the 37 added photos included; main had moved to #428 for 
 | very easy (4-5) in questions 1-15 | 39% | 100% |
 | juvenile photos shown | 9 | 0 |
 | phase photos shown (no longer kept back) | 11 | 3 (very easy Anthias, opened at answer 22 or 27) |
-| the starter cards' photo (ease) | 4 / 5 / 4 / 4 | 5 / 5 / 5 / 5 (`fishGen` `cover`: the easiest judged photo) |
+| the starter cards' photo (ease) | 4 / 5 / 4 / 4 | 5 / 5 / 5 / 5 (`fishGen` `cover`: the easiest judged photo of the highest source tier, Pierre's own first) |
 
 The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
 replay (rule 14g) cannot judge it either: the sheet holds no fish answer.
@@ -3421,6 +3422,19 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (later the same day; design only, docs/FISH_PATH.md): the global fish score is **non-linear**, fast
+  at the start, 80% for every entry and species known by common name, scientific names filling the last 20% slowly (the curve set by simulation), the Elo level kept alongside; the half fault must not be gameable (common
+  names never advance the scientific-name progress; options listed, none chosen); the fish exams to rethink (per
+  species or per family, e.g. about 20 hard questions answered with the scientific name); milestone cards for species
+  names and scientific names; juveniles, colour phases and dimorphism introduced with an explanation card.
+- 2026-11-04, Pierre (fish beta feedback; decided in principle, nothing built, docs/FISH_PATH.md): on a species question
+  that asks for Latin, a typed common name counts **as half a fault** (a graded outcome 0.5: its effect on `eloStep`,
+  `pgStep`, the expected success, the all-Latin exam and the replay to study first, starting values from
+  `tools/learnsim.js`); **one global fish progress score** from 0 to every species in Latin (entries, species named,
+  species in Latin as stages of one scale, the weights set by simulation), used by the fish leaderboard; the
+  name-display thresholds start from learnsim, then are computed per species from the measured difficulty of the
+  common against the Latin name; the first fish entries are a starter core of easy families and the first photos
+  very easy (no juveniles or colour phases at the very start).
 - 2026-11-04, Pierre (after a player's "Drill this pair" run fell to 6 misses in 13 with the hold on and nothing
   changed in the duel): the hold's easing reaches the Duel tab (`planDuel`), and a relief card the first time a duel
   run's answer takes the hold across `INTRO.HOLD`: Mix in other genera / Compare them (with Back to the duel, the same

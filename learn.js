@@ -593,19 +593,30 @@ function viewCompare(a, b) {
     };
     return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
-  // Opened from the Duel tab's relief card (quiz.js DUELBACK): Back to the duel, at the top and at the end (in place of
-  // Drill this pair), to the same duel and run (Pierre, 2026-11-04).
-  const back = typeof duelBackFor === 'function' && !!duelBackFor(hashNow()),
-    backB = cls => `<p class="cmpback"><button type="button" class="${cls}" data-duelback>Back to the duel</button></p>`;
+  // Opened from the Duel tab's relief card (quiz.js DUELBACK): Back to the duel, to the same duel and run (Pierre,
+  // 2026-11-04), in view however far the page scrolls (Pierre, the same day: an inline one at the top and the end was not
+  // seen); it replaces Drill this pair, which leads to the same duel. Phones and tablets: a floating button at the bottom
+  // centre (.cmpfab). Desktop (from 1024 px): a light sticky band under the page bar, "Duel paused: A or B" and the
+  // button (.duelband; Pierre picked it among four desktop placements: in the page bar it got lost, a side column was too
+  // big, a floating button covered the photos). CSS shows one or the other.
+  const back = typeof duelBackFor === 'function' && !!duelBackFor(hashNow());
   // The cues sit above the photos, each under its genus, so they can be read while comparing.
   $v.innerHTML = `<p class="lede">Two genera that are often confused, side by side: their ID tips, then the same view of each. <b>Drill this pair</b> at the bottom turns it into a quick duel.</p>
-  ${back ? backB('next sec') : ''}<div class="cmprow text">${col(a, A)}${col(b, B)}</div>
+  ${back ? `<div class="duelband" role="region" aria-label="Duel paused"><span>Duel paused: <i>${esc(a)}</i> or <i>${esc(b)}</i></span><button type="button" class="next" data-duelback>Back to the duel</button></div>` : ''}<div class="cmprow text">${col(a, A)}${col(b, B)}</div>
   ${VIEWS.filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length)
     .map(row)
     .join('')}
   ${(DATA.cmp || []).some(c => c.imr && c.g.includes(a) && c.g.includes(b)) ? `<h3 class="cmplab">IMR lecture</h3>${cmpShots([a, b])}` : ''}
-  ${back ? backB('next') : `<p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`}`;
+  ${
+    back
+      ? '<div class="cmpfabpad" aria-hidden="true"></div><button type="button" class="next cmpfab" data-duelback>Back to the duel</button>'
+      : `<p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`
+  }`;
   $v.querySelectorAll('[data-duelback]').forEach(x => (x.onclick = duelBack));
+  // The band sticks right under the page bar, whose height it reads (app.js showModes drew it before this page).
+  const bar = document.getElementById('modes'),
+    band = $v.querySelector('.duelband');
+  if (band && bar && bar.offsetHeight) band.style.setProperty('--ctx-h', bar.offsetHeight + 'px');
   $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
   bindCards();
   bindGo();
