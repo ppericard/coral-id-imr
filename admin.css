@@ -3846,6 +3846,9 @@ button.adm-chip[aria-pressed='true'] {
 .adm-an-svg .an-ci.t-thin {
   stroke-dasharray: 2 3;
 }
+.adm-an-svg .an-bar {
+  fill: var(--accent);
+}
 .adm-an-svg .an-nul {
   font-size: 11px;
 }

@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 2; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf)
+  const AV = 3; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc)
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -1295,11 +1295,259 @@
     }
     return out;
   }
+  // Sessions in figures (Pierre, 2026-11-04: "what can we learn from each play session, and from sessions in general?"):
+  // every session in a table, when sessions start (Manila time), the result along a session and at its end, how
+  // sessions end, the start of a session against the end of the one before by the length of the break, and the players
+  // who come back. Counts and means only (no model); the ranges along a session by a bootstrap over sessions.
+  const SS_GAPS = [
+    [0, 3, 'Under 3 h'],
+    [3, 12, '3 – 12 h'],
+    [12, 36, '12 – 36 h'],
+    [36, Infinity, 'Over 36 h']
+  ];
+  const SS_POS = [
+    [1, 10],
+    [11, 25],
+    [26, 50],
+    [51, 100],
+    [101, Infinity]
+  ];
+  const SS_END = [
+    [1, 3, 'Last 3 answers'],
+    [4, 10, '4th to 10th from the end'],
+    [11, 20, '11th to 20th from the end']
+  ];
+  const ssMode = a => (a.typed ? 'typed' : /^quiz-duel/.test(a.m) ? 'duel' : /^quiz\|s(\||$)/.test(a.m) ? 'custom' : 'quiz');
+  function sessDesc(A, B = 40, seed = 1) {
+    if (!A.length) return null;
+    const end = A.reduce((m, a) => (a.t > m ? a.t : m), -Infinity),
+      S = new Map();
+    A.forEach(a => (S.get(a.sess) || S.set(a.sess, []).get(a.sess)).push(a));
+    const oe = L => {
+      const E = L.filter(a => a.E != null);
+      return E.length ? mean(E.map(a => a.y - a.E)) : null;
+    };
+    const L = [...S.values()].map(R => {
+      const md = {quiz: 0, duel: 0, typed: 0, custom: 0};
+      R.forEach(a => (md[ssMode(a)] += 1));
+      const last = R[R.length - 1];
+      return {
+        p: R[0].p,
+        t0: R[0].t,
+        t1: last.t,
+        R,
+        n: R.length,
+        md,
+        right: mean(R.map(a => a.y)),
+        oe: oe(R),
+        newg: R.filter(a => a.n === 0).length,
+        back: R.filter(a => a.back).length,
+        tail: R.slice(-3)
+          .map(a => a.y)
+          .join(''),
+        miss: last.y ? 0 : 1,
+        miss2: !last.y && last.streak >= 2 ? 1 : 0,
+        lastNew: last.n === 0 ? 1 : 0,
+        open: end - last.t < GAP ? 1 : 0
+      };
+    });
+    // each player's sessions in time order: their number and the hours since the one before
+    const byP = new Map();
+    L.forEach(s => (byP.get(s.p) || byP.set(s.p, []).get(s.p)).push(s));
+    byP.forEach(Q => {
+      Q.sort((a, b) => a.t0 - b.t0);
+      Q.forEach((s, i) => ((s.k = i + 1), (s.gap = i ? (s.t0 - Q[i - 1].t1) / 36e5 : null)));
+    });
+    const r2 = v => (v == null ? null : Math.round(v * 1000) / 1000);
+    const table = L.slice()
+      .sort((a, b) => b.t0 - a.t0)
+      .slice(0, 300)
+      .map(s => ({
+        p: s.p,
+        k: s.k,
+        t0: s.t0,
+        min: Math.round((s.t1 - s.t0) / 6e3) / 10,
+        n: s.n,
+        md: s.md,
+        right: r2(s.right),
+        oe: r2(s.oe),
+        newg: s.newg,
+        back: s.back,
+        tail: s.tail,
+        gap: s.gap == null ? null : Math.round(s.gap * 10) / 10,
+        open: s.open
+      }));
+    // when sessions start, Manila time (UTC+8, no daylight saving)
+    const hours = Array(24).fill(0);
+    L.forEach(s => (hours[Math.floor(((s.t0 / 36e5 + 8) % 24) + 24) % 24] += 1));
+    // right − expected along a session (sessions of 20+ answers, by fifth) and at its end (closed sessions of 30+),
+    // with a bootstrap over sessions: each session gives its sums per bin
+    const R0 = rng(seed);
+    function binned(sessions, binOf, nb) {
+      const per = sessions.map(s => {
+        const b = Array.from({length: nb}, () => ({n: 0, y: 0, e: 0, ne: 0}));
+        s.R.forEach((a, i) => {
+          const j = binOf(a, i, s);
+          if (j == null) return;
+          const o = b[j];
+          o.n += 1;
+          o.y += a.y;
+          if (a.E != null) ((o.ne += 1), (o.e += a.y - a.E), (o.E = (o.E || 0) + a.E));
+        });
+        return b;
+      });
+      const agg = P => {
+        const t = Array.from({length: nb}, () => ({n: 0, y: 0, e: 0, ne: 0, E: 0}));
+        P.forEach(b => b.forEach((o, j) => ((t[j].n += o.n), (t[j].y += o.y), (t[j].e += o.e), (t[j].ne += o.ne), (t[j].E += o.E || 0))));
+        return t;
+      };
+      const all = agg(per),
+        draws = [];
+      for (let k = 0; k < (per.length >= 5 ? B : 0); k++) draws.push(agg(per.map(() => per[Math.floor(R0() * per.length)])));
+      return all.map((o, j) => {
+        const v = draws.map(d => (d[j].ne ? d[j].e / d[j].ne : null)).filter(x => x != null);
+        return {
+          n: o.n,
+          right: o.n ? r2(o.y / o.n) : null,
+          E: o.ne ? r2(o.E / o.ne) : null,
+          oe: o.ne ? r2(o.e / o.ne) : null,
+          lo: v.length >= 10 ? r2(q(v, 0.025)) : null,
+          hi: v.length >= 10 ? r2(q(v, 0.975)) : null
+        };
+      });
+    }
+    const long = L.filter(s => s.n >= 20),
+      fifths = binned(long, (a, i, s) => Math.min(4, Math.floor((i / s.n) * 5)), 5),
+      closed30 = L.filter(s => s.n >= 30 && !s.open),
+      fromEnd = binned(
+        closed30,
+        (a, i, s) => {
+          const e = s.n - i;
+          const j = SS_END.findIndex(([lo, hi]) => e >= lo && e <= hi);
+          return j < 0 ? null : j;
+        },
+        SS_END.length
+      );
+    // median seconds by position, photo quiz answers only (duels and typed answers are much faster or slower)
+    const secs = SS_POS.map(([lo, hi]) => {
+      const V = A.filter(a => a.s && a.pos >= lo && a.pos <= hi && ssMode(a) === 'quiz').map(a => a.s);
+      return {lo, hi, n: V.length, s: V.length ? r2(q(V, 0.5)) : null};
+    });
+    // how sessions end (closed sessions only: one still going has not ended)
+    const C = L.filter(s => !s.open),
+      CA = C.flatMap(s => s.R);
+    const ends = {
+      sessions: C.length,
+      miss: sum(C.map(s => s.miss)),
+      miss2: sum(C.map(s => s.miss2)),
+      missRate: CA.length ? r2(1 - mean(CA.map(a => a.y))) : null,
+      lastNew: sum(C.map(s => s.lastNew)),
+      newRate: CA.length ? r2(mean(CA.map(a => (a.n === 0 ? 1 : 0)))) : null,
+      lastMode: C.reduce((o, s) => ((o[ssMode(s.R[s.R.length - 1])] = (o[ssMode(s.R[s.R.length - 1])] || 0) + 1), o), {})
+    };
+    // the last 10 answers of a session against the first 10 of the player's next one, by the length of the break
+    const pairs = [];
+    byP.forEach(Q =>
+      Q.forEach((s, i) => {
+        const nx = Q[i + 1];
+        if (!nx || s.n < 5 || nx.n < 5) return;
+        const a = s.R.slice(-10),
+          b = nx.R.slice(0, 10),
+          E = X => X.filter(x => x.E != null);
+        pairs.push({
+          h: nx.gap,
+          before: mean(a.map(x => x.y)),
+          after: mean(b.map(x => x.y)),
+          Eb: E(a).length ? mean(E(a).map(x => x.E)) : null,
+          Ea: E(b).length ? mean(E(b).map(x => x.E)) : null
+        });
+      })
+    );
+    const avg = L2 => (L2.filter(v => v != null).length ? r2(mean(L2.filter(v => v != null))) : null);
+    const gaps = SS_GAPS.map(([lo, hi, label]) => {
+      const P = pairs.filter(x => x.h >= lo && x.h < hi);
+      return {
+        label,
+        n: P.length,
+        before: avg(P.map(x => x.before)),
+        after: avg(P.map(x => x.after)),
+        Eb: avg(P.map(x => x.Eb)),
+        Ea: avg(P.map(x => x.Ea)),
+        up: P.filter(x => x.after > x.before).length
+      };
+    });
+    // players coming back: after their 1st, 2nd, 3rd session; a player whose last session was that one and ended less
+    // than a day before the log ends may still come back: not counted
+    const returns = [1, 2, 3].map(k => {
+      let at = 0,
+        back = 0;
+      byP.forEach(Q => {
+        if (Q.length < k) return;
+        if (Q.length === k && end - Q[k - 1].t1 < DAY) return;
+        at += 1;
+        if (Q.length > k) back += 1;
+      });
+      return {k, at, back};
+    });
+    // first sessions against later ones
+    const grp = Q => ({
+      sessions: Q.length,
+      answers: Q.length
+        ? q(
+            Q.map(s => s.n),
+            0.5
+          )
+        : null,
+      min: Q.length
+        ? r2(
+            q(
+              Q.map(s => (s.t1 - s.t0) / 6e4),
+              0.5
+            )
+          )
+        : null,
+      right: Q.length ? r2(sum(Q.map(s => s.right * s.n)) / sum(Q.map(s => s.n))) : null,
+      oe: Q.length ? r2(oe(Q.flatMap(s => s.R))) : null,
+      newg: Q.length
+        ? q(
+            Q.map(s => s.newg),
+            0.5
+          )
+        : null
+    });
+    const first = [grp(L.filter(s => s.k === 1)), grp(L.filter(s => s.k === 2)), grp(L.filter(s => s.k >= 3))];
+    return {
+      sessions: L.length,
+      players: byP.size,
+      table,
+      hours,
+      fifths,
+      fromEnd,
+      secs,
+      ends,
+      gaps,
+      returns,
+      first,
+      len: {
+        answers: q(
+          L.map(s => s.n),
+          0.5
+        ),
+        min: r2(
+          q(
+            L.map(s => (s.t1 - s.t0) / 6e4),
+            0.5
+          )
+        )
+      }
+    };
+  }
   function sessions(A, B, seed) {
-    if (A.length < 100) return thin(A.length, 100);
+    const desc = sessDesc(A, B, seed + 3);
+    if (A.length < 100) return thin(A.length, 100, {desc});
     const {rows, lens} = sessRows(A),
       ends = sum(rows.map(r => r.y));
-    if (ends < 10) return thin(rows.length, 100, {sessions: lens.length});
+    if (ends < 10) return thin(rows.length, 100, {sessions: lens.length, desc});
     const M = ssFit(rows),
       n = rows.length,
       bi = boot(
@@ -1325,7 +1573,8 @@
       median: med,
       effects: SS_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]})),
       km: curve,
-      at: [5, 10, 20, 40, 80].map(k => ({k, s: at(k)}))
+      at: [5, 10, 20, 40, 80].map(k => ({k, s: at(k)})),
+      desc
     };
   }
 
@@ -1951,6 +2200,7 @@
     toMaster,
     masterCI,
     sessRows,
+    sessDesc,
     TRUTH,
     synth,
     DEMO_PLAYERS,
