@@ -5776,8 +5776,25 @@ function savedClear() {
 const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
 const PROGM = new Map();
 let ROWSBY = null;
-function progOf(u) {
+// From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
+// time, about 15 s on a phone for 40 players) the player list carries that same replay, computed by the sheet (Code.gs
+// replayedAll_: rp = [progress %, learned, the saved copy's %]), and Players reads no saved copy. The Journey (full) still
+// replays here: it shows the replayed record genus by genus. A player without rp (the sheet could not read data.json or
+// their copy) is replayed here as before.
+const RP_SHEET = 42;
+const rpOn = () => ((USERS && USERS.v) || 0) >= RP_SHEET;
+function progOf(u, full) {
   if (!ANS || !DATA || !u || !u.id) return null;
+  if (!full && !u.anon && rpOn() && Array.isArray(u.rp) && replayOn()) {
+    const [pct, learned, spct] = u.rp;
+    return {
+      pct,
+      learned,
+      total: slateOf(DATA).length,
+      saved: {pct: spct, learned: u.learned},
+      stale: spct !== pct || u.learned !== learned
+    };
+  }
   const S = u.anon ? {P: {}} : savedOf(u.name);
   if (!S) return null;
   if (!replayOn()) return {off: 1, G: S.err ? {} : S.P || {}, err: S.err};

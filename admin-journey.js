@@ -212,7 +212,7 @@ function renderJourney(name, anonId = '') {
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
     // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
-    PG = progOf(anonId ? {id: anonId, anon: 1} : u),
+    PG = progOf(anonId ? {id: anonId, anon: 1} : u, true),
     RP = replayOn(),
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,

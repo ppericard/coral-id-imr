@@ -15,10 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
+    // The script version the demo answers as: the current one (v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
     // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 35,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 42,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -430,7 +430,7 @@
       pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], genera: [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
     pages.sort((a, b) => b[1] - a[1]);
-    S = {rows, users, reports, events, pages, removed: [], list};
+    S = {rows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D)};
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
@@ -590,6 +590,24 @@
       const u = by[lc(r[2])];
       if (u) u.reports++;
     });
+    // v42 (Code.gs replayedAll_): each player's full replay, [progress %, learned, the saved copy's %] over the slate.
+    if (V >= 42) {
+      const st = stats(),
+        A = answers().rows;
+      Object.keys(by).forEach(k => {
+        const su = S.users[k],
+          id = aid(su.name),
+          json = x => JSON.parse(su.data[x] || 'null'),
+          P = json('reefid-sync-coral-progress') || {},
+          start = json('reefid-sync-coral-start'),
+          rep = replayProgress(
+            A.filter(r => r[0] === id),
+            {gen: S.gen, mem: st.mem, conf: st.conf, starts: start ? {[id]: start} : {}}
+          )[id],
+          G = replayedOf(rep, P);
+        by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
+      });
+    }
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
   }
   function users(p) {
