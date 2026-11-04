@@ -672,6 +672,8 @@ test('sessDesc: sessions, ends, breaks and returns from a small log', () => {
   assert.strictEqual(d.table[0].p, 'A', 'newest first');
   assert.strictEqual(d.table[0].k, 3);
   assert.strictEqual(d.table[0].tail, '111');
+});
+
 // Codex review #495: a compacted milestone keeps each format's own expected chance and guess rate, so its plain
 // reading does not change when the Formats table is dropped.
 test('compact keeps the formats’ baselines: the plain reading of a lean milestone is unchanged', () => {
