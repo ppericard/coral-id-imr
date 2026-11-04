@@ -50,7 +50,7 @@ const SHELL = [
   'tour.js?v=20',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...[
-    'finder',
+    'idkey',
     'basics',
     'map',
     'anatomy',

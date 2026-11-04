@@ -187,7 +187,7 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
     assert.strictEqual(s.r, i + 1, `${s.name}: species not in rank order`);
     if (!s.src || s.src === 'slides') assert.ok(s.common, `${s.name}: no common name`);
   });
-  // Every species of the IMR reference PDF stays in fish.json, in the game or not (the future Fish Finder needs them all).
+  // Every species of the IMR reference PDF stays in fish.json, in the game or not (the future Fish ID Key needs them all).
   SRC.species.filter(s => !s.src).forEach(s => assert.ok(names.has(s.name), `PDF species ${s.name} missing`));
   // Cheatsheet species come first, in cheatsheet order.
   const cs = F.species.filter(s => s.cs);

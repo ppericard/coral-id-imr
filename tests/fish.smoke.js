@@ -402,7 +402,7 @@ const server = http.createServer((req, res) => {
   // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
   //     sync does not add it again (10/2 stayed 10/2, was 20/4);
   // (3) a wink takes no planned question and leaves the Again / duel spacing alone;
-  // (4) a genus sheet or a comparison opened with Fish chosen (Identify, the Coral Finder) brings the corals on screen.
+  // (4) a genus sheet or a comparison opened with Fish chosen (Identify, the Coral ID Key) brings the corals on screen.
   const rv = [];
   {
     const c3 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});

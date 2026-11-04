@@ -1,14 +1,14 @@
-// Coral Finder: one page to keep open beside ReefCloud. It only cross-references existing sources (no categories of
-// its own): Coral Finder growth form and box, corallite size, walls, other features, IMR lecture group, name) is a filter
+// Coral ID Key: one page to keep open beside ReefCloud. It only cross-references existing sources (no categories of
+// its own): the Coral Finder book's growth form and box, corallite size, walls, other features, IMR lecture group, name) is a filter
 // that can be used in any order; the shortlist updates at once and shows every candidate with its local photos.
 // Clues rank, they never eliminate: a clue can be wrong or misjudged (size, shape), so a genus that misses one
 // clue stays in view under "One clue off", and a size one class away counts as half a match.
 // It replaced the growth-form key and the corallite filters in Identify (#key, #key-tr, #k-, #l- redirect here).
-// State lives in the hash (#finder|<state>), so a reload or a shared link keeps the shortlist.
+// State lives in the hash (#idkey|<state>), so a reload or a shared link keeps the shortlist.
 LAB.add({
-  id: 'finder',
+  id: 'idkey',
   icon: '⌕',
-  title: 'Coral Finder',
+  title: 'Coral ID Key',
   blurb:
     'Start from whatever you can see, in any order: growth form, corallites or IMR lecture group. The shortlist updates at once, with all local photos.',
   lede: 'Tap the clues you can see on your photo, in any order. Genera are ranked by how well they fit: one wrong or misjudged clue only moves a genus down, it never hides it. Made to stay open beside ReefCloud.',
@@ -37,7 +37,7 @@ LAB.add({
       .map(f => ({id: f.id, t: f.name, s: f.def, g: names.filter(n => imrFormsOf(n).includes(f.id)), color: IMRCOL[f.id] || 'massive'}));
     // Two entry points: the paper Coral Finder's path (default: Pierre, 2026-10-31, it is the reference for ReefCloud)
     // or the IMR Lecture 6 growth forms. New key so the new default reaches browsers that stored the old one.
-    let startV = store.get('reefid-finder-start2', 'c');
+    let startV = store.get('reefid-idkey-start2', 'c');
     if (startV !== 'a') startV = 'c';
     const facets = () => {
       // Each family's note shows as a tooltip on its title (Pierre: no explanatory text on the page).
@@ -47,15 +47,15 @@ LAB.add({
       const imrF = {
         id: 'imrf',
         name: cf ? 'IMR growth form' : 'Growth form',
-        note: "The 7 growth forms of IMR Lecture 6, as seen on each genus's photos and in the Coral Finder. Form is plastic: it ranks, never rules out.",
+        note: "The 7 growth forms of IMR Lecture 6, as seen on each genus's photos and in the Coral Finder book. Form is plastic: it ranks, never rules out.",
         thumbs: true,
         closed: cf,
         opts: IMRF
       };
       const cfF = {
         id: 'form',
-        name: 'Coral Finder growth form',
-        note: "The Coral Finder's front page. Many genera take several forms.",
+        name: 'Coral Finder book growth form',
+        note: "The Coral Finder book's front page. Many genera take several forms.",
         thumbs: true,
         closed: !cf,
         opts: CFF
@@ -67,7 +67,7 @@ LAB.add({
               {
                 id: 'box',
                 name: forms.map(f => f.t).join(' / ') + ' ›',
-                note: 'Coral Finder, second step: the boxes of the growth form picked above.',
+                note: 'Coral Finder book, second step: the boxes of the growth form picked above.',
                 // Titled by its form, as on the genus sheet's key path (Pierre: "Coral Finder box" said nothing to RAs).
                 opts: forms.flatMap(f =>
                   KEY.find(k => k.id === f.id)
@@ -100,8 +100,8 @@ LAB.add({
     FIDS.forEach(f => (S[f] = new Set()));
     // Two display controls that combine: layout (Auto = Mosaic up to 12 genera, Cards beyond; Cards = one photo per genus; Mosaic;
     // Contact sheet) and which photos (Mix of colony / closer / corallites, or one view only).
-    let lay = store.get('reefid-finder-lay', 'auto'),
-      pv = store.get('reefid-finder-pv', 'mix');
+    let lay = store.get('reefid-idkey-lay', 'auto'),
+      pv = store.get('reefid-idkey-pv', 'mix');
     (arg || '').split(';').forEach(kv => {
       const [k, v] = kv.split('=');
       if (!v) return;
@@ -118,7 +118,7 @@ LAB.add({
     });
     // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
     if (FIDS.some(f => S[f].size) || S.q || S.out.size || S.not.size) S.home = false;
-    const base = location.hash.startsWith('#lab-') ? '#lab-finder' : '#finder';
+    const base = location.hash.startsWith('#lab-') ? '#lab-idkey' : '#idkey';
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
       if (S.out.size) parts.push('out=' + [...S.out].join(','));
@@ -239,12 +239,12 @@ LAB.add({
           tilePics['imrf:' + f.id] = pick;
         });
     })();
-    root.innerHTML = `<section class="fdstart" id="fdstart" hidden></section><div class="fdlayout"><aside class="fdside" id="fdside"></aside><section class="fdmain" id="fdmain"></section></div><div class="fdcmp" id="fdcmp" hidden></div>`;
-    const $start = root.querySelector('#fdstart'),
-      $lay = root.querySelector('.fdlayout');
-    const $side = root.querySelector('#fdside'),
-      $main = root.querySelector('#fdmain'),
-      $cmp = root.querySelector('#fdcmp');
+    root.innerHTML = `<section class="ikstart" id="ikstart" hidden></section><div class="iklayout"><aside class="ikside" id="ikside"></aside><section class="ikmain" id="ikmain"></section></div><div class="ikcmp" id="ikcmp" hidden></div>`;
+    const $start = root.querySelector('#ikstart'),
+      $lay = root.querySelector('.iklayout');
+    const $side = root.querySelector('#ikside'),
+      $main = root.querySelector('#ikmain'),
+      $cmp = root.querySelector('#ikcmp');
     // One Start over only: the prominent button beside the chosen clues (Pierre, 2026-10-31). Escape does the same.
     const reset = () => {
       FIDS.forEach(f => S[f].clear());
@@ -265,13 +265,13 @@ LAB.add({
       $side.innerHTML = `${F.map(f => {
         const picked = S[f.id].size,
           open = picked || S.open.has(f.id) || (narrow ? f.id === (startV === 'c' ? 'form' : 'imrf') : !f.closed);
-        return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
-        <div class="fdopts${f.thumbs ? ' th' : ''}">${f.opts
+        return `<details class="ikfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="ikn">${picked}</span>` : ''}</summary>
+        <div class="ikopts${f.thumbs ? ' th' : ''}">${f.opts
           .map(o => {
             const on = S[f.id].has(o.id),
               n = names.filter(x => !S.out.has(x) && fits(x, F, f.id) && o.g.includes(x)).length;
             const pv = f.thumbs
-              ? `<span class="fdth">${(f.id === 'form' || f.id === 'imrf'
+              ? `<span class="ikth">${(f.id === 'form' || f.id === 'imrf'
                   ? (tilePics[f.id === 'imrf' ? 'imrf:' + o.id : o.id] || []).slice(0, 3).map(p => img(p, 's'))
                   : bySlate(o.g)
                       .slice(0, 3)
@@ -280,14 +280,14 @@ LAB.add({
                   .map(u => `<img src="${u}" alt="" loading="lazy">`)
                   .join('')}</span>`
               : '';
-            return `<button type="button" class="fdopt${f.id === 'form' || f.id === 'imrf' ? ' c-' + o.color : ''}${f.id === 'ig' ? ' gchip' : ''}"${f.id === 'ig' ? ` style="--g:${groupHue(+o.id.slice(1))}"` : ''} data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}">${pv}<span class="fdt">${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
+            return `<button type="button" class="ikopt${f.id === 'form' || f.id === 'imrf' ? ' c-' + o.color : ''}${f.id === 'ig' ? ' gchip' : ''}"${f.id === 'ig' ? ` style="--g:${groupHue(+o.id.slice(1))}"` : ''} data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}">${pv}<span class="ikt">${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="ikc">${n}</span></button>`;
           })
           .join('')}</div>${ANDF.includes(f.id) ? andSw(f.id) : ''}</details>`;
       }).join(
         ''
-      )}${narrow ? `<p><a class="next fdjump" href="#fdmain">See the ${left.length} best ${left.length === 1 ? 'fit' : 'fits'} ↓</a></p>` : ''}`;
+      )}${narrow ? `<p><a class="next ikjump" href="#ikmain">See the ${left.length} best ${left.length === 1 ? 'fit' : 'fits'} ↓</a></p>` : ''}`;
       andWire($side);
-      const jump = $side.querySelector('.fdjump');
+      const jump = $side.querySelector('.ikjump');
       if (jump)
         jump.onclick = e => {
           e.preventDefault();
@@ -296,7 +296,7 @@ LAB.add({
           $main.scrollIntoView({block: 'start'});
         };
       $side
-        .querySelectorAll('details.fdfacet')
+        .querySelectorAll('details.ikfacet')
         .forEach(d => (d.ontoggle = () => (d.open ? S.open.add(d.dataset.f) : S.open.delete(d.dataset.f))));
       $side.querySelectorAll('[data-o]').forEach(
         b =>
@@ -333,7 +333,7 @@ LAB.add({
         .filter((x, i, L) => L.findIndex(y => y.f === x.f) === i)
         .slice(0, 2); // one question per family
       if (!cands.length)
-        return `<p class="note fdhint">The Coral Finder criteria cannot split these any further: compare the photos below.</p>`;
+        return `<p class="note ikhint">The Coral ID Key criteria cannot split these any further: compare the photos below.</p>`;
       // Corallite clues show corallite photos; form and box clues the closer view. At most 8 cells: 7 photos and "+N" beyond.
       const side = (L, x) => {
         const v = ['size', 'wall', 'feat'].includes(x.f.id) ? 'macro' : 'medium',
@@ -341,15 +341,15 @@ LAB.add({
         return (
           L.slice(0, k)
             .map(n => `<img src="${thumb(n, v)}" alt="${esc(n)}" title="${esc(n)}" loading="lazy">`)
-            .join('') + (L.length > k ? `<span class="fdplus">+${L.length - k}</span>` : '')
+            .join('') + (L.length > k ? `<span class="ikplus">+${L.length - k}</span>` : '')
         );
       };
       const q = x => (x.f.id === 'size' ? 'Corallites ' : '') + x.o.t + '?';
       const ans = (x, yes) => {
         const L = yes ? x.yes : x.no;
-        return `<button type="button" class="fdans ${yes ? 'yes' : 'no'}" data-${yes ? 'yes' : 'no'}="${x.f.id}.${x.o.id}" aria-label="${yes ? 'Yes' : 'No'}: ${L.length} genera"><span class="fdal">${yes ? 'Yes' : 'No'} <span class="fdc">${L.length}</span></span><span class="fdat">${side(L, x)}</span></button>`;
+        return `<button type="button" class="ikans ${yes ? 'yes' : 'no'}" data-${yes ? 'yes' : 'no'}="${x.f.id}.${x.o.id}" aria-label="${yes ? 'Yes' : 'No'}: ${L.length} genera"><span class="ikal">${yes ? 'Yes' : 'No'} <span class="ikc">${L.length}</span></span><span class="ikat">${side(L, x)}</span></button>`;
       };
-      return `<div class="fdnext">${cands.map(x => `<div class="fdq"><div class="fdqh"><b${x.o.s ? ` title="${esc(x.o.s)}"` : ''}>${gloss(q(x))}</b><button type="button" class="linkish fdskip" data-skip="${x.f.id}.${x.o.id}">Can't tell</button></div><div class="fdqa">${ans(x, true)}${ans(x, false)}</div></div>`).join('')}</div>`;
+      return `<div class="iknext">${cands.map(x => `<div class="ikq"><div class="ikqh"><b${x.o.s ? ` title="${esc(x.o.s)}"` : ''}>${gloss(q(x))}</b><button type="button" class="linkish ikskip" data-skip="${x.f.id}.${x.o.id}">Can't tell</button></div><div class="ikqa">${ans(x, true)}${ans(x, false)}</div></div>`).join('')}</div>`;
     }
 
     // Where a photo comes from (same split as the admin's origin tags), for the Dauin count; the credit itself is in the lightbox.
@@ -359,14 +359,14 @@ LAB.add({
         mode = lay === 'auto' ? (left.length <= 12 ? 'mosaic' : 'cover') : lay;
       const ph = (n, p, v) => {
         flat.push({...p, genus: n, view: v});
-        return `<button type="button" class="zoom fdph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy"></button>`;
+        return `<button type="button" class="zoom ikph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy"></button>`;
       };
       const tools = n =>
-        `<span class="fdtools"><button type="button" class="chip" data-out="${esc(n)}" title="Rule out ${esc(n)}">Rule out</button>${notIMR(n) ? '' : `<button type="button" class="chip" data-cmpk="${esc(n)}" aria-pressed="${S.cmp.includes(n)}">Compare</button>`}</span>`;
+        `<span class="iktools"><button type="button" class="chip" data-out="${esc(n)}" title="Rule out ${esc(n)}">Rule out</button>${notIMR(n) ? '' : `<button type="button" class="chip" data-cmpk="${esc(n)}" aria-pressed="${S.cmp.includes(n)}">Compare</button>`}</span>`;
       // Clicking a genus name opens it in place (all its photos, bigger, with the ID cues); the sheet is a small link.
       const isX = n => S.open.has('x:' + n);
       const head = n =>
-        `<span class="fdhead"><button type="button" class="fdname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="fdsheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${notIMR(n) ? `<b class="fdxtag">${xtag(n)}</b>` : tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
+        `<span class="ikhead"><button type="button" class="ikname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="iksheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${notIMR(n) ? `<b class="ikxtag">${xtag(n)}</b>` : tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
       // Many varied examples at a glance, as on the paper Coral Finder's pages: cover first, then round-robin over
       // colony / closer / corallites (featured photos lead each view), a different observation each time when possible.
       // With one view picked, only that view's photos (all views when the genus has none of it).
@@ -376,7 +376,7 @@ LAB.add({
         // Coral Finder book photos (g.book) alternate with the field photos of the same view.
         // Capped set per view (applySlots in app.js): featured photos, then up to 3 approved book photos.
         const mix = v => {
-          const F = ((g.sl || {})[v] || {}).finder || [],
+          const F = ((g.sl || {})[v] || {}).idkey || [],
             A = F.filter(p => !p.cf && (!c || p.f !== c.f)).map(p => ({...p, view: v})),
             B = F.filter(p => p.cf),
             o = [];
@@ -415,30 +415,30 @@ LAB.add({
         return c && P.some(p => p === c || (p.f && p.f === c.f)) ? c : P[0];
       };
       const more = n => {
-        const all = VIEWS.flatMap(([v]) => ((G[n].sl || {})[v] || {}).finder || []),
+        const all = VIEWS.flatMap(([v]) => ((G[n].sl || {})[v] || {}).idkey || []),
           own = all.filter(p => src(p) === 'dauin').length;
         return all.length > 8
-          ? `<button type="button" class="linkish fdmore" data-x="${esc(n)}">All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}</button>`
+          ? `<button type="button" class="linkish ikmore" data-x="${esc(n)}">All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}</button>`
           : '';
       };
       const mosaic = n => {
         const g = G[n];
-        return `<article class="fdrow"><div class="fdinfo">${head(n)}<p class="fdtip">${gloss(tipsText(g))}</p>${tools(n)}${more(n)}</div>
-          <div class="fdmos">${varied(g, 8, n)
+        return `<article class="ikrow"><div class="ikinfo">${head(n)}<p class="iktip">${gloss(tipsText(g))}</p>${tools(n)}${more(n)}</div>
+          <div class="ikmos">${varied(g, 8, n)
             .map(p => ph(n, p, p.view))
             .join('')}</div></article>`;
       };
       // Opened genus: photos dominate; a narrow side column holds the name, the IMR cue, the tools and (folded) the
-      // Coral Finder features.
+      // Coral ID Key criteria (the Coral Finder book's text, cited by page).
       const big = (n, off) => {
         const g = G[n];
-        return `<article class="fdbig${off ? ' off' : ''}"><div class="fdinfo fdbigside">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
-          <p class="fdcue fdtip">${gloss(tipsText(g))}</p><details class="fdcrit"${notIMR(n) ? ' open' : ''}><summary>Coral Finder${notIMR(n) ? ` <small>p. ${g.pages.join(', ')}</small>` : ''}</summary><ul>${glossAll(
+        return `<article class="ikbig${off ? ' off' : ''}"><div class="ikinfo ikbigside">${head(n)}${off ? `<small class="ikmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
+          <p class="ikcue iktip">${gloss(tipsText(g))}</p><details class="ikcrit"${notIMR(n) ? ' open' : ''}><summary>Criteria <small>Coral Finder p. ${g.pages.join(', ')}</small></summary><ul>${glossAll(
             g.crit
           )
             .map(c => `<li>${c}</li>`)
             .join('')}</ul></details>${tools(n)}</div>
-          <div class="fdbigph">${varied(g, 99, n)
+          <div class="ikbigph">${varied(g, 99, n)
             .map(p => ph(n, p, p.view))
             .join('')}</div></article>`;
       };
@@ -446,7 +446,7 @@ LAB.add({
       const sheet = n =>
         isX(n)
           ? big(n)
-          : `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99, n)
+          : `<article class="iksheet"><div class="ikinfo">${head(n)}</div><div class="ikall">${varied(G[n], 99, n)
               .map(p => ph(n, p, p.view))
               .join('')}</div></article>`;
       // Photos follow the admin's curation (applied to DATA in app.js): hidden ones are gone, featured ones lead each
@@ -456,7 +456,7 @@ LAB.add({
         const g = G[n],
           v = pv === 'mix' ? null : pv,
           p = v ? (g.views[v] || [])[0] || cover(g) : formCover(n) || cover(g);
-        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p class="fdtip">${gloss(tipsText(g))}</p>${tools(n)}</div></article>`;
+        return `<article class="iktile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="ikinfo">${head(n)}${off ? `<small class="ikmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p class="iktip">${gloss(tipsText(g))}</p>${tools(n)}</div></article>`;
       };
       // Look-alikes outside the shortlist: worth a glance before deciding.
       const near =
@@ -467,7 +467,7 @@ LAB.add({
       // Phones: with genera fitting every clue, "One clue off" starts folded (one tap opens it) so the best fits are not buried.
       const foldOff = left.length && isPhone() && !S.open.has('off');
       const any = used(F).length + S.not.size;
-      const hd = `<div class="fdhd"><h3 class="fdgrp">${any ? 'Fits every clue' : XON ? 'Genera' : 'IMR genera'} <span class="fdn">${left.length}</span></h3><span class="fdsegs"><span class="seg" role="group" aria-label="Layout">${[
+      const hd = `<div class="ikhd"><h3 class="ikgrp">${any ? 'Fits every clue' : XON ? 'Genera' : 'IMR genera'} <span class="ikn">${left.length}</span></h3><span class="iksegs"><span class="seg" role="group" aria-label="Layout">${[
         ['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'],
         ['cover', 'Cards', 'One photo and the key features per genus'],
         ['mosaic', 'Mosaic', '8 varied photos per genus'],
@@ -480,30 +480,30 @@ LAB.add({
         .join('')}</span>
         <span class="seg" role="group" aria-label="Photos">${[['mix', 'Mix'], ...VIEWS].map(([v, t]) => `<button type="button" data-pv="${v}" aria-pressed="${pv === v}">${t}</button>`).join('')}</span></span></div>`;
       // Chips wrap on the left, Start over stays on their first line at the right (no row of its own on phones).
-      $main.innerHTML = `<div class="fdbar"><span class="fdchips">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${nots(
+      $main.innerHTML = `<div class="ikbar"><span class="ikchips">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${nots(
         F
       )
         .map(
           ({f, o}) =>
-            `<button type="button" class="chip fdnot" data-unnot="${f.id}.${o.id}" title="Remove">No: ${esc((f.id === 'size' ? 'corallites ' : '') + o.t)} ×</button>`
+            `<button type="button" class="chip iknot" data-unnot="${f.id}.${o.id}" title="Remove">No: ${esc((f.id === 'size' ? 'corallites ' : '') + o.t)} ×</button>`
         )
         .join(
           ''
-        )}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}${isPhone() ? `<button type="button" class="chip fdadd" data-side aria-pressed="${S.open.has('side')}">${S.open.has('side') ? 'Hide clues' : '+ Clue'}</button>` : ''}</span>${chosen.length || S.q || S.out.size || S.not.size ? `<button type="button" class="next fdreset2" data-reset>↺ Start over</button>` : ''}</div>
+        )}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}${isPhone() ? `<button type="button" class="chip ikadd" data-side aria-pressed="${S.open.has('side')}">${S.open.has('side') ? 'Hide clues' : '+ Clue'}</button>` : ''}</span>${chosen.length || S.q || S.out.size || S.not.size ? `<button type="button" class="next ikreset2" data-reset>↺ Start over</button>` : ''}</div>
         ${any ? nextChecks(F, left.length ? left : close) : ''}
-        ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => (isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n))).join('')}</div>` : `<p class="note">No ${XON ? '' : 'IMR '}genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
-        ${close.length ? (foldOff ? `<details class="fdoff"><summary class="fdgrp">${close.length} genera one clue off <small>in case a clue was misjudged</small></summary><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div></details>` : `<h3 class="fdgrp">One clue off <span class="fdn">${close.length}</span> <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>`) : ''}
-        ${rest.length ? `<details class="fdrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="fdchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
-        ${near.length ? `<p class="fdnear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="${notIMR(n) || notIMR(left[0]) ? genLink(n) : `#cmp-${esc(left[0])}|${esc(n)}`}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
-        ${S.out.size ? `<p class="fdouts"><span class="label">Ruled out</span>${[...S.out].map(n => `<button type="button" class="chip" data-back="${esc(n)}" title="Bring back"><i>${esc(n)}</i> ↺</button>`).join('')}</p>` : ''}`;
+        ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'ikrows' : mode === 'sheet' ? 'iksheets' : 'ikgrid'}">${left.map(n => (isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n))).join('')}</div>` : `<p class="note">No ${XON ? '' : 'IMR '}genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
+        ${close.length ? (foldOff ? `<details class="ikoff"><summary class="ikgrp">${close.length} genera one clue off <small>in case a clue was misjudged</small></summary><div class="ikgrid">${close.map(n => tile(n, true)).join('')}</div></details>` : `<h3 class="ikgrp">One clue off <span class="ikn">${close.length}</span> <small>in case a clue was misjudged</small></h3><div class="ikgrid">${close.map(n => tile(n, true)).join('')}</div>`) : ''}
+        ${rest.length ? `<details class="ikrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="ikchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
+        ${near.length ? `<p class="iknear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="${notIMR(n) || notIMR(left[0]) ? genLink(n) : `#cmp-${esc(left[0])}|${esc(n)}`}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
+        ${S.out.size ? `<p class="ikouts"><span class="label">Ruled out</span>${[...S.out].map(n => `<button type="button" class="chip" data-back="${esc(n)}" title="Bring back"><i>${esc(n)}</i> ↺</button>`).join('')}</p>` : ''}`;
       $main.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.z))));
-      const off = $main.querySelector('.fdoff');
+      const off = $main.querySelector('.ikoff');
       if (off) off.ontoggle = () => (off.open ? S.open.add('off') : S.open.delete('off'));
       $main.querySelectorAll('[data-lay]').forEach(
         b =>
           (b.onclick = () => {
             lay = b.dataset.lay;
-            store.set('reefid-finder-lay', lay);
+            store.set('reefid-idkey-lay', lay);
             draw();
           })
       );
@@ -511,7 +511,7 @@ LAB.add({
         b =>
           (b.onclick = () => {
             pv = b.dataset.pv;
-            store.set('reefid-finder-pv', pv);
+            store.set('reefid-idkey-pv', pv);
             draw();
           })
       );
@@ -583,15 +583,15 @@ LAB.add({
     // (front-page form, then the box of that form); A = IMR growth forms, polyps out, corallite size, walls, as a discreet link.
     const formTile = (fid, o, on, n) => {
       const P = tilePics[fid === 'imrf' ? 'imrf:' + o.id : o.id] || [];
-      return `<button type="button" class="fdtileb c-${o.color}" data-o="${fid}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || '')}">
-      <span class="fdtq n${P.length}">${P.map(p => `<img src="${img(p, 's')}" alt="" loading="lazy">`).join('')}</span>
-      <span class="fdtt"><b>${esc(o.t)}</b>${fid === 'form' ? `<small>${esc(o.s || '')}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
+      return `<button type="button" class="iktileb c-${o.color}" data-o="${fid}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || '')}">
+      <span class="iktq n${P.length}">${P.map(p => `<img src="${img(p, 's')}" alt="" loading="lazy">`).join('')}</span>
+      <span class="iktt"><b>${esc(o.t)}</b>${fid === 'form' ? `<small>${esc(o.s || '')}</small>` : ''}</span><span class="ikc">${n}</span></button>`;
     };
     // Shown once two or more forms are picked: what two forms mean on the one colony being identified.
     const andSw = fid =>
       S[fid].size < 2
         ? ''
-        : `<div class="seg fdand" role="group" aria-label="Several forms"><button type="button" data-and="${fid}|0" aria-pressed="${!S.all.has(fid)}">Not sure which form</button><button type="button" data-and="${fid}|1" aria-pressed="${S.all.has(fid)}">Both on this colony</button></div>`;
+        : `<div class="seg ikand" role="group" aria-label="Several forms"><button type="button" data-and="${fid}|0" aria-pressed="${!S.all.has(fid)}">Not sure which form</button><button type="button" data-and="${fid}|1" aria-pressed="${S.all.has(fid)}">Both on this colony</button></div>`;
     const andWire = el =>
       el.querySelectorAll('[data-and]').forEach(
         b =>
@@ -602,7 +602,7 @@ LAB.add({
           })
       );
     const optBtn = (f, o, on, n) =>
-      `<button type="button" class="fdbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${gloss(o.t, undefined, true)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
+      `<button type="button" class="ikbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${gloss(o.t, undefined, true)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="ikc">${n}</span></button>`;
     // Coral Finder box illustrations (Pierre 2026-11-01: the photos must show the box's criterion, or use a drawing).
     // 1. The book's own photos of that box: crops of its box pages picked by eye (data.json key leaves "ph",
     //    tools/box_photos.txt), at most 3 (one large + two small); a crop Pierre excluded or the book switched off drops out.
@@ -630,7 +630,7 @@ LAB.add({
       // Isolated and attached (CF p.69): one large polyp or cup, fixed to the reef, on its own.
       F4: '<path class="f" d="M62 104 C62 84 54 74 44 62 C60 66 70 60 80 50 C90 60 100 66 116 62 C106 74 98 84 98 104 Z"/><ellipse class="f" cx="80" cy="54" rx="40" ry="12"/><path class="st" d="M50 52 L58 56 M62 46 L66 52 M80 43 L80 50 M98 46 L94 52 M110 52 L102 56 M56 60 L64 58 M104 60 L96 58"/><ellipse class="w" cx="80" cy="54" rx="6" ry="2.5"/><path class="b" d="M10 104 C40 98 60 106 80 102 C100 98 120 106 150 102"/>'
     };
-    const boxArt = id => (BOXART[id] ? `<svg class="fdsch" viewBox="0 0 160 120" aria-hidden="true">${BOXART[id]}</svg>` : '');
+    const boxArt = id => (BOXART[id] ? `<svg class="iksch" viewBox="0 0 160 120" aria-hidden="true">${BOXART[id]}</svg>` : '');
     const XCL = (CUR && CUR.exclude) || {},
       BOOKON = !(CUR && CUR.book === false);
     const boxPics = o => {
@@ -648,7 +648,7 @@ LAB.add({
     };
     // Shortlist card: closer view and corallites side by side, big enough to compare at a glance.
     const genCard = n =>
-      `<button type="button" class="fdgc" data-gx="${esc(n)}"><span class="fdgp"><img src="${thumb(n, 'medium')}" alt="" loading="lazy"><img src="${thumb(n, 'macro')}" alt="" loading="lazy"></span><i>${esc(n)}</i></button>`;
+      `<button type="button" class="ikgc" data-gx="${esc(n)}"><span class="ikgp"><img src="${thumb(n, 'medium')}" alt="" loading="lazy"><img src="${thumb(n, 'macro')}" alt="" loading="lazy"></span><i>${esc(n)}</i></button>`;
     function drawStart(F) {
       const pool = names.filter(n => !S.out.has(n)),
         left = pool.filter(n => pen(n, F) === 0);
@@ -657,25 +657,25 @@ LAB.add({
       const row = id => {
         const f = fam(id);
         return f
-          ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>`
+          ? `<div class="iksrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="iksopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>`
           : '';
       };
       // Once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up (phones and desktop).
       const forms = f =>
-        `<div class="fdforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
-      const show = `<button type="button" class="next fdshow${used(F).length ? '' : ' sec'}" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(n => !slate.has(n)) ? ` (${left.filter(n => slate.has(n)).length} on the slate)` : ''}`} →</button>`;
+        `<div class="ikforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
+      const show = `<button type="button" class="next ikshow${used(F).length ? '' : ' sec'}" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(n => !slate.has(n)) ? ` (${left.filter(n => slate.has(n)).length} on the slate)` : ''}`} →</button>`;
       // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (Pierre: it took room for nothing).
-      const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
+      const switcher = `<button type="button" class="linkish iksv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder book path →'}</button>`;
       let body;
       if (startV === 'c') {
         // The paper Coral Finder's own path: growth form, then the box of that form, then the shortlist.
         const fb = fam('box');
         body = `${forms(fam('form'))}${
           fb
-            ? `<div class="fdsrow stack"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdforms boxes">${fb.opts
+            ? `<div class="iksrow stack"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="ikforms boxes">${fb.opts
                 .map(o => {
                   const P = boxPics(o);
-                  return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length || 1}">${P.length ? P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('') : boxArt(o.id)}</span><span class="fdtt"><b>${gloss(o.t, undefined, true)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`;
+                  return `<button type="button" class="iktileb ikboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="iktq n${P.length || 1}">${P.length ? P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('') : boxArt(o.id)}</span><span class="iktt"><b>${gloss(o.t, undefined, true)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="ikc">${cnt(fb, o)}</span></button>`;
                 })
                 .join('')}</div></div>`
             : ''
@@ -684,28 +684,28 @@ LAB.add({
         // Polyps out by day is its own clue (IMR lecture group 6), taken from Other features.
         const ft = fam('feat'),
           po = ft && ft.opts.find(o => o.id === 'polyp');
-        body = `${forms(fam('imrf'))}${po ? `<div class="fdsrow"><h3>Polyps</h3><div class="fdsopts">${optBtn(ft, po, S.feat.has('polyp'), cnt(ft, po))}</div></div>` : ''}${row('size')}${row('wall')}`;
+        body = `${forms(fam('imrf'))}${po ? `<div class="iksrow"><h3>Polyps</h3><div class="iksopts">${optBtn(ft, po, S.feat.has('polyp'), cnt(ft, po))}</div></div>` : ''}${row('size')}${row('wall')}`;
       }
       // Live shortlist under the clues from the first ticked clue: the genera that fit every clue (those one clue off are
       // only counted; the full results page lists them).
       const close = pool.filter(n => pen(n, F) === 1);
       const live = !used(F).length
         ? ''
-        : `<div class="fdlive"><h3 class="fdgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
-        <div class="fdgcs">${left.map(genCard).join('')}</div></div>`;
+        : `<div class="iklive"><h3 class="ikgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
+        <div class="ikgcs">${left.map(genCard).join('')}</div></div>`;
       $start.classList.toggle('used', !!used(F).length);
       // One-line prompt (design review 2026-11-01, Pierre OK): the start screen says what to do; before any clue, "Show all" is a
       // secondary way out, not the main action.
       const prompt = used(F).length
         ? ''
-        : `<p class="fdprompt">${startV === 'c' ? 'What growth form do you see?' : 'What do you see?'}</p>`;
-      $start.innerHTML = `<div class="fdstop">${prompt}${show}</div>${body}${live}<p class="fdsvrow">${switcher}</p>`;
+        : `<p class="ikprompt">${startV === 'c' ? 'What growth form do you see?' : 'What do you see?'}</p>`;
+      $start.innerHTML = `<div class="ikstop">${prompt}${show}</div>${body}${live}<p class="iksvrow">${switcher}</p>`;
       andWire($start);
       $start.querySelectorAll('[data-sv]').forEach(
         b =>
           (b.onclick = () => {
             startV = b.dataset.sv;
-            store.set('reefid-finder-start2', startV);
+            store.set('reefid-idkey-start2', startV);
             FIDS.forEach(f => S[f].clear());
             draw();
           })
@@ -811,7 +811,7 @@ LAB.add({
           })
       );
     }
-    // No genus-name box: the Coral Finder is for corals you don't know yet (Pierre). Escape (outside the photo viewer) starts over.
+    // No genus-name box: the Coral ID Key is for corals you don't know yet (Pierre). Escape (outside the photo viewer) starts over.
     const key = e => {
       if (!document.body.contains(root)) return document.removeEventListener('keydown', key);
       if (!lb.hidden || (e.target.closest && e.target.closest('input,textarea'))) return;

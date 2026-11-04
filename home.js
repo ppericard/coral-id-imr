@@ -1,6 +1,6 @@
 // Home page: two entry doors, nothing else.
 //  1. Learn & practise: the learning phase (Learn the genera, then Practice on photos).
-//  2. Identify: the tool for naming a coral under a ReefCloud point (the Coral Finder).
+//  2. Identify: the tool for naming a coral under a ReefCloud point (the Coral ID Key).
 // The section tabs and the Tools page (#lab) list every other tool.
 (function () {
   const ph = (n, v) => {
@@ -48,13 +48,13 @@
           </div>
         </section>
         <section class="hdoor identify">
-          <a class="hdart rc" href="#finder" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
+          <a class="hdart rc" href="#idkey" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
           <div class="hdbody">
             <p class="hdwhen">On ReefCloud<span class="wide"> · or a photo from your dive</span></p>
             <h2>Identify a coral</h2>
             <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the ReefCloud point, or in your own photo.</p>
             <div class="hdacts">
-              <a class="hdbtn" href="#finder"><b>Open the Coral Finder</b><small>Growth form, clues, then a visual comparison</small></a>
+              <a class="hdbtn" href="#idkey"><b>Open the Coral ID Key</b><small>Growth form, clues, then a visual comparison</small></a>
             </div>
           </div>
         </section>

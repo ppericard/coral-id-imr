@@ -62,7 +62,7 @@ PLAIN = {
     'Merulina': 'Thin plates in tiers, with frilly upgrowths. Short ridges split and spread towards the edge, like the ribs of a hand fan.',
     'Cyphastrea': 'Lumps or crusts dotted with small, neat round cups, each like a tiny volcano, with a grainy surface between them.',
     'Halomitra': 'A big loose dome lying on the bottom, like an upturned bowl, with ridges radiating out. The edge is often purple or pink.',
-    # Millepora (IMR benthic slate), the bonus genera and the Finder-only genera (data.json x.gen)
+    # Millepora (IMR benthic slate), the bonus genera and the Key-only genera (data.json x.gen)
     'Euphyllia': 'A cluster of long, simple tube-shaped tentacles with rounded tips, out by day and hiding the stalked cups below.',
     'Fimbriaphyllia': 'Like Euphyllia, but the tentacle tips are shaped like hammers or anchors, or covered in little bubbles.',
     'Isopora': 'Stubby, thick branches, ridges or crusts, nearly always cream-brown, with jumbled cups. Unlike Acropora, no single bigger cup marks each tip.',
