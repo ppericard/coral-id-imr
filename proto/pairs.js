@@ -1,14 +1,14 @@
 // Memory pairs: match each colony photo with the corallites of the same genus. Links the two scales in memory.
-// The np genera of a game: those the player has met (met: model.js introduced, a card or an answer) first, genera not met
-// yet only to fill the grid when too few are met (beginner review 2026-11-03: a beginner got names never seen). Look-alike
-// set: a seed and the genera that look like those already in, met ones first too. Pure (tests/pairs.test.js).
+// The np genera of a game: only those the player has unlocked (met: model.js unlocked, one progression path for every
+// game, Pierre 2026-11-04; until then genera not met filled the grid), fewer than np when fewer are unlocked. Look-alike
+// set: a seed and the genera that look like those already in, then the other genera unlocked. Pure (tests/pairs.test.js).
 function memoryGenera(names, np, look, met) {
-  const order = [...shuffle(names.filter(met)), ...shuffle(names.filter(n => !met(n)))];
+  const order = shuffle(names.filter(met));
   if (!look) return order.slice(0, np);
-  const gens = [order[0]],
+  const gens = order.slice(0, 1),
     like = n => lookAlikes(n).some(b => gens.includes(b)) || gens.some(b => lookAlikes(b).includes(n));
-  // Met look-alikes, then any genus met, then look-alikes not met, then the rest.
-  for (const keep of [n => met(n) && like(n), met, like, () => true])
+  // Look-alikes, then any genus unlocked.
+  for (const keep of [like, () => true])
     for (let more = true; more;) {
       more = false; // again while one comes in: a look-alike of the genus just added may come earlier in the order
       order.forEach(n => {
@@ -31,7 +31,17 @@ LAB.add({
     const setup = () => {
       const [ga, gb] = LEVELS[level],
         np = (ga * gb) / 2;
-      const gens = memoryGenera(labNames(), np, mode === 'look', typeof introduced === 'function' ? introduced : () => true);
+      const gens = memoryGenera(
+        labNames(),
+        np,
+        mode === 'look',
+        typeof unlocked === 'function' ? n => unlocked([n]).length > 0 : () => true
+      );
+      // Too few genera unlocked for a game (a new player): the quiz opens them first.
+      if (gens.length < 2) {
+        root.innerHTML = `<p class="note">Memory pairs the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+        return;
+      }
       const cards = shuffle(
         gens.flatMap(n => [
           {n, v: 'wide'},
@@ -68,7 +78,9 @@ LAB.add({
           })
       );
       root.querySelector('#pnew').onclick = setup;
-      window.fitTiles && fitTiles(root.querySelector('.pgrid'), level === 'hard' ? 6 : 10, [ga, gb]);
+      // Fewer genera unlocked than the level holds: the same columns, fewer rows.
+      window.fitTiles &&
+        fitTiles(root.querySelector('.pgrid'), level === 'hard' ? 6 : 10, [ga, Math.min(gb, Math.ceil(cards.length / ga))]);
       const els = [...root.querySelectorAll('.pcard')];
       els.forEach(
         e =>

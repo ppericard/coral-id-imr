@@ -637,7 +637,8 @@ questions (one or more a question) and more than a beginner's at 100, the mean o
 ### Custom quiz: the photo quiz on the genera the player picks (2026-11-03)
 
 Pierre: a game mode next to the quiz where the player selects the genera to work on, and the quiz is exactly the photo
-quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `customOf`, `customDraw`, `customChoices`;
+quiz, all its formats included, limited to them (since 2026-11-04, Pierre: one path for every game, the genera the
+player has unlocked only: `model.js` `unlocked`; it opens none). Code: `model.js` `CUSTOM`, `customOf`, `customDraw`, `customChoices`;
 `quiz.js` `quizCustom`, `viewCustom`, `planPhoto(cur)`; tests `tests/custom.test.js`, `tests/pages.smoke.js`.
 
 - **What changes** is only the genus asked and the wrong choices. Photos (level, calibration, memory, one colony),
@@ -823,9 +824,13 @@ time, each on its card, but never as the answer of the question right after its 
   The first 4 can be asked at once.
 - **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a
   look-alike already met beats a name never seen; genera never met only make up the three when too few are met.
-- **Duels**: both genera are named on the buttons, so the cards of those not met yet come together before the duel.
+- **Duels** (changed 2026-11-04, Pierre: one path for every game): the Duel tab draws only look-alike pairs of genera
+  the player has unlocked (`model.js` `unlocked`), and so does "Drill this pair" (shown only for an unlocked pair); it
+  opens no genus. Until then both genera were named on the buttons and the cards of those not met came together before
+  the duel: a beginner who declined Open all went from 8 to 28 genera in 15 duels.
 - **"I've had the IMR lecture: open all genera"** (Pierre, same day: the first users are RAs who saw every genus in the
-  lecture and have little time): a button on the first cards, and in My progress while genera are still unopened,
+  lecture and have little time): a button on the first cards (not for a player who answered "I'm new to corals", Pierre
+  2026-11-04), and in My progress while genera are still unopened,
   opens every slate genus at once, without cards (`introAll`). The draw then asks first the genera never asked, with
   choices from the whole slate. A tinted box with a real button, not a chip (Pierre: white on white was easy to miss).
 - **Offer to open all** (Pierre, same day: 10 answers on 4 genera are too few to decide): between the 50th and the
@@ -872,8 +877,29 @@ time, each on its card, but never as the answer of the question right after its 
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
-model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met") until one is
-learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
+model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met": a card or an
+answer, since 2026-11-04, so it agrees with "N not open yet"; a genus met on a card but not asked yet reads "Met, not
+asked yet", and the level legend's first step "Not asked yet") until one is learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
+
+### One progression path for every game (2026-11-04)
+
+Pierre (2026-11-04, after a walkthrough of a brand-new player: 15 duels took a beginner who had declined Open all from 8
+to 28 genera, ★ genera before their references): "one progression path for every game: the quiz, the Duel tab, Memory
+and any future game or mode, no exceptions". The photo quiz is the path: it opens genera one at a time (its cards, the
+opening rule, the ★ rule after their reference, Open all). Every other game draws only from the genera the player has
+unlocked, `model.js` `unlocked(list)`, the one source for it (met on the path and ready, `introReady`), and opens none:
+
+- the Duel tab (`quiz.js` `planDuel`): look-alike pairs of unlocked genera; `#quiz-duel|A|B` only when both are
+  unlocked (else a normal duel); "Drill this pair" shown only for an unlocked pair (`learn.js` `drillOk`); before any
+  look-alike pair is unlocked, a line sends the player to the quiz;
+- Memory (`proto/pairs.js` `memoryGenera`): only genera unlocked, fewer pairs than the level holds when fewer are
+  unlocked (fewer rows), a line before two are;
+- the custom quiz (`quiz.js` `viewCustom`, `customSel`): only genera unlocked are offered and kept.
+The relief card of the Duel tab is unchanged (it speaks of the pair on screen); the false trigger came from the hold that
+the genera opened by duels pushed up. Not measured with `tools/learnsim.js` or the replay (rule 14f/14g): both play the
+photo quiz, which this does not change. Checked: `tests/pages.smoke.js` `onePath` (a beginner with 4 genera met: 15 duels
+from those 4 only, no card, no ★; a link to a pair not unlocked; Memory deals 8 cards; the custom quiz offers 4), which
+failed before (13 other genera and 3 ★ genera in the duels, 20 Memory cards, 40 custom-quiz genera); `tests/pairs.test.js`.
 
 ### The first-launch question (2026-11-03)
 
@@ -1191,7 +1217,9 @@ to 60 answers, `startDue` the verdict until its card):
 
 **The "lower" card is a gentle offer** (`quiz.js` `startFbShow`; Pierre, 2026-11-04: an RA or an expert who gets it by
 mistake must not feel judged): 💡 "A tip", "The first genera feel hard?", "They do for most people. Coral basics shows,
-on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes."; two buttons of equal weight
+on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes." (for a player who opened every
+genus at once, Pierre 2026-11-04: "All the genera at once is a lot" and "Coral basics in 5 minutes? …", from the subject's
+words, never a number of genera); two buttons of equal weight
 (both outlined): **Coral basics in 5 minutes** and **No thanks, I know the basics** (Escape). Nothing says what the
 player answered or that their level is low. "No thanks" changes nothing (the answer, the variables and the progress
 stay) and the card never comes back in that direction for that answer. **Coral basics** opens Coral basics and, silently,
@@ -1757,9 +1785,9 @@ it as usual. Nothing else about the pace changes (`openChance`, `openPace` `OPEN
   the path: one planned before a miss is planned again (the same check as the hold's), so a card planned earlier never
   shows after a miss.
 - **Not openings by the path, unchanged**: the first cards (fewer than `INTRO.START` slate genera met: the game cannot
-  ask anything without them), Open all, the cards that come with a genus the player picked in the custom quiz, and the
-  cards of the Duel tab's pair (both genera are named on its buttons). The Again and the duels slipped into the quiz
-  never ask a genus not met.
+  ask anything without them) and Open all. The Again and the duels slipped into the quiz never ask a genus not met.
+  Changed 2026-11-04 (Pierre: one path for every game): the custom quiz offers only the genera unlocked and the Duel
+  tab draws only them, so neither brings cards any more ("One progression path for every game", below).
 
 Simulated (`tools/learnsim.js`, 5 seeds × 300 questions, the four profiles, `main` and the rule on the same seeds;
 mean ± sd over the seeds): genera met (cards and asked) and true knowledge of the slate:
@@ -1958,9 +1986,11 @@ AGENTS.md rule 6b) opens only once the genus its card compares it to has been me
   card or an answer). The genera met, the pace (`OPEN`), the
   easy and common first order are unchanged; the ★ genus simply waits its turn behind its references. It applies
   wherever genera open one at a time: the first 4 cards (`introStart`: a reference drawn earlier among them counts as
-  met, so its card shows first), a card of its own, a genus closed again by One at a time. A duel of the Duel tab that
-  brings both cards shows the reference's first. **Open all** still opens everything at once (the rule only orders the
-  one-at-a-time path), and the choices are unchanged (genera met).
+  met, so its card shows first), a card of its own, a genus closed again by One at a time. **Open all** still opens
+  everything at once (the rule only orders the one-at-a-time path), and the choices are unchanged (genera met). Changed
+  2026-11-04 (Pierre: one path for every game): the Duel tab, Memory and the custom quiz draw only genera unlocked, so a
+  ★ genus reaches them only after the path opened it behind its references (until then a duel could bring a ★ genus's
+  card before its reference's: *Cyphastrea*, *Duncanopsammia*, *Merulina* in a beginner's walkthrough).
 - **Never blocked for ever**: a reference is always a surveyed genus, which never waits itself (no cycle, even if a ★
   genus listed another ★ genus as a look-alike); a reference not in the list (not in the game, no photos) never holds a
   genus back; should every genus left wait, they all open as before. No new constant.
