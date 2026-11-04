@@ -1,0 +1,84 @@
+{
+ "photos": {
+  "fish-s421-cand-650442872": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s421-cand-661450039": {
+   "code": "o1g3bs1c1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Blurry blue scene; the fish is hard to find"
+  },
+  "fish-s421-cand-661450115": {
+   "code": "o1g3bs1c1",
+   "keep": "dup"
+  },
+  "fish-s421-cand-661514715": {
+   "code": "o1g3bs1c1",
+   "keep": "dup"
+  },
+  "fish-s421-cand-661514817": {
+   "code": "o1g3bs1c1",
+   "keep": "dup"
+  },
+  "fish-s421-cand-345649201": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s421-cand-345500407": {
+   "code": "o1g1ssxc1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the fish for sure among the hairy algae"
+  },
+  "fish-s421-cand-345500419": {
+   "code": "o1g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s421-cand-345500432": {
+   "code": "o1g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s421-cand-639404142": {
+   "code": "o0d1sl1c2",
+   "keep": "best"
+  },
+  "fish-s421-cand-579137592": {
+   "code": "o1g2bm1c1",
+   "keep": "best"
+  },
+  "fish-s421-cand-579139162": {
+   "code": "o1d2sm1c1",
+   "keep": "dup"
+  },
+  "fish-s421-cand-622285767": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s421-cand-455254802": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s421-cand-639404343": {
+   "code": "o1g2sm1c1",
+   "keep": "best"
+  },
+  "fish-s421-cand-350280218": {
+   "code": "p1n0sm13",
+   "keep": "best"
+  },
+  "fish-s421-cand-639404368": {
+   "code": "d0g1sl12",
+   "keep": "best"
+  },
+  "fish-s421-cand-620509879": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  }
+ }
+}
