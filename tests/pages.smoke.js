@@ -3440,6 +3440,33 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     await p.waitForSelector('#view [data-show]', {timeout: 15000}).catch(() => {});
     const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
     if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral ID Key slate count: "${fd[0]}", expected ${fd[1]}`);
+    // Traits of some species only (data.json `trs`, lab.js trHas): never eliminated on, a row and a ring of their own.
+    // The genus and trait come from the data, the first `trs` found (2026-11-04: paliform lobes in some Favites).
+    const SOME = await p.evaluate(() => {
+      const n = Object.keys(DATA.gen).find(k => (DATA.gen[k].trs || []).length);
+      return n && [n, DATA.gen[n].trs[0]];
+    });
+    if (!SOME) fails.push('no genus with a some-species trait (data.json trs)');
+    else {
+      await p.evaluate(() => (location.hash = 'lab-elim'));
+      await p.waitForSelector('#view [data-t]', {timeout: 15000}).catch(() => {});
+      const el = await p.evaluate(([n, id]) => {
+        document.querySelector(`[data-t="${id}"]`).click();
+        return [document.querySelector(`.etile[data-n="${n}"]`).classList.contains('out'), document.querySelectorAll('.etile.out').length];
+      }, SOME);
+      if (el[0] || !el[1])
+        fails.push(`${w}px Elimination board: ticking ${SOME[1]} ${el[0] ? `eliminated ${SOME[0]}` : 'eliminated nothing'}`);
+      await p.evaluate(id => (location.hash = 'lab-gallery|' + id), SOME[1]);
+      await p.waitForSelector('#view .galh', {timeout: 15000}).catch(() => {});
+      const gs = await p.evaluate(
+        n => [...document.querySelectorAll('.galh.some + .galgrid i')].map(e => e.textContent).includes(n),
+        SOME[0]
+      );
+      if (!gs) fails.push(`${w}px Feature gallery: ${SOME[0]} not in the "In some species" row of ${SOME[1]}`);
+      await p.evaluate(() => (location.hash = 'lab-matrix'));
+      await p.waitForSelector('#view .mx .dot', {timeout: 15000}).catch(() => {});
+      if (!(await p.locator('#view .mx .dot.some').count())) fails.push(`${w}px Feature matrix: no ring for a some-species trait`);
+    }
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {

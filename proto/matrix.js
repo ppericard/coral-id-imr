@@ -10,13 +10,13 @@ LAB.add({
     const cols = DATA.traits.flatMap(c => c.opts.map(o => ({...o, c: c.id})));
     let sortBy = null,
       focus = null;
-    const uniq = id => labNames().filter(n => DATA.gen[n].tr.includes(id)).length;
+    const uniq = id => labNames().filter(n => trHas(DATA.gen[n], id) > 0).length;
     root.innerHTML = `<div class="mxlayout"><div class="tablewrap mxwrap"><table class="mx"><thead><tr><th class="mxg">Genus</th>${cols.map((o, i) => `<th class="mxc c-${o.c}${i && cols[i - 1].c !== o.c ? ' sep' : ''}"><button type="button" data-col="${o.id}" title="${esc(o.t)}"><span>${esc(o.t)}</span><small>${uniq(o.id)}</small></button></th>`).join('')}</tr></thead><tbody id="mxb"></tbody></table></div>
-      <div id="mxinfo" class="mxinfo"><p class="note">Tap a genus name to see what separates it from its look-alikes.</p></div></div><div class="mxpeek" id="mxpeek" hidden></div>`;
+      <div id="mxinfo" class="mxinfo"><p class="note">Tap a genus name to see what separates it from its look-alikes. A ring: in ${SOME_SP} only.</p></div></div><div class="mxpeek" id="mxpeek" hidden></div>`;
     const peek = root.querySelector('#mxpeek');
     const draw = () => {
       let rows = labNames();
-      if (sortBy) rows = [...rows.filter(n => DATA.gen[n].tr.includes(sortBy)), ...rows.filter(n => !DATA.gen[n].tr.includes(sortBy))];
+      if (sortBy) rows = [...rows].sort((a, b) => trHas(DATA.gen[b], sortBy) - trHas(DATA.gen[a], sortBy));
       const near = focus ? lookAlikes(focus) : [];
       if (focus) rows = [focus, ...near, ...rows.filter(n => n !== focus && !near.includes(n))];
       root.querySelector('#mxb').innerHTML = rows
@@ -25,9 +25,9 @@ LAB.add({
             role = n === focus ? 'focus' : near.includes(n) ? 'near' : focus ? 'far' : '';
           return `<tr class="${role}"><th class="mxg" style="--fc:${famColor(g.fam)}"><button type="button" data-row="${esc(n)}"><i>${esc(n)}</i>${g.n ? '' : ' ★'}</button></th>${cols
             .map((o, i) => {
-              const has = g.tr.includes(o.id),
-                diff = role === 'near' && has !== DATA.gen[focus].tr.includes(o.id);
-              return `<td class="c-${o.c}${i && cols[i - 1].c !== o.c ? ' sep' : ''}${o.id === sortBy ? ' sorted' : ''}${diff ? ' diff' : ''}">${has ? '<span class="dot"></span>' : ''}</td>`;
+              const has = trHas(g, o.id),
+                diff = role === 'near' && has !== trHas(DATA.gen[focus], o.id);
+              return `<td class="c-${o.c}${i && cols[i - 1].c !== o.c ? ' sep' : ''}${o.id === sortBy ? ' sorted' : ''}${diff ? ' diff' : ''}">${has === 1 ? '<span class="dot"></span>' : has ? `<span class="dot some" title="In ${SOME_SP}" aria-label="In ${SOME_SP}"></span>` : ''}</td>`;
             })
             .join('')}</tr>`;
         })
@@ -51,10 +51,16 @@ LAB.add({
         };
       });
     };
+    // The traits genus a shows more than genus b (has it where b has it in some species only, or not at all), labelled
+    // "(some species)" when a has it in some species only, "(in some b too)" when b has it in some species.
+    const moreIn = (a, b) =>
+      trAll(DATA.gen[a])
+        .filter(id => trHas(DATA.gen[a], id) > trHas(DATA.gen[b], id))
+        .map(id => (trHas(DATA.gen[b], id) ? `${trName(id)} (in some ${b} too)` : trLabel(DATA.gen[a], id)));
     const info = () => {
       const el = root.querySelector('#mxinfo');
       if (!focus) {
-        el.innerHTML = '<p class="note">Tap a genus name to see what separates it from its look-alikes.</p>';
+        el.innerHTML = `<p class="note">Tap a genus name to see what separates it from its look-alikes. A ring: in ${SOME_SP} only.</p>`;
         return;
       }
       const F = DATA.gen[focus];
@@ -62,8 +68,8 @@ LAB.add({
         focus
       )
         .map(n => {
-          const only = F.tr.filter(t => !DATA.gen[n].tr.includes(t)).map(trName),
-            other = DATA.gen[n].tr.filter(t => !F.tr.includes(t)).map(trName);
+          const only = moreIn(focus, n),
+            other = moreIn(n, focus);
           return `<div class="mxcard"><div class="mxpair"><img src="${thumbSrc(focus)}" alt="${esc(focus)} corallites"><img src="${thumbSrc(n)}" alt="${esc(n)} corallites"></div>
           <p><b><i>${esc(focus)}</i> only:</b> ${only.length ? only.map(esc).join(', ') : '<span class="note">nothing in this grid</span>'}</p>
           <p><b><i>${esc(n)}</i> only:</b> ${other.length ? other.map(esc).join(', ') : '<span class="note">nothing in this grid</span>'}</p>
