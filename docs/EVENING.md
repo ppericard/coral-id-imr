@@ -58,6 +58,30 @@ them first thing, then clear them.
   answering, so the page never loaded; why it stalls is not known; a test that wedges it failed before the fix). #520 (smokes in reduced motion, tests only) waits on
   #524: its CI found that bug. **Recommendation: merge #524, then #531 and #520 once green and Codex-clean.**
 
+- **Fish common names (#522, open).** 442 species: 184 with 1 name, 158 with 2, 100 with 3 (full list in a PR comment).
+  Q: drop the third-name rule (gives 252 / 170 / 20)? Recommendation: yes. Q: the two PDF slips ("Russelss's snapper",
+  "Eastern triangular"): show the FishBase spelling and still accept the PDF form when typed? Recommendation: yes.
+- **Fish genus step (#526, open, sheet v46).** Q: an opt-in "Scientific names" set now, the welcome question later?
+  Q: a family's genera join at its Advanced? Q: the offer card and genus card wording (screens in the PR)? Q: genera stay
+  out of the progress % until the global score ships? Recommendation: yes to all, as built.
+- **Subject switch (#533, open).** Q: on phones the header chip shows icon + caret only and the logotype steps aside
+  while Sign in shows (always under 380 px)? Q: the Home row's look (full width, icon, name, *beta* tag)?
+  Recommendation: keep both as built.
+- **Identify per subject (#536, open).** Q: the fish wording ("On the SVS videos · or a photo from your dive"; SVS or
+  EventMeasure?), the "coming soon" card and the fish photo on the Home door. Recommendation: keep until the Fish ID Key
+  is designed.
+- **Fish welcome question (#538, open, sheet v47).** Q: the line under each answer (agent's wording)? Q: start values
+  = the corals' (level 0 / 0.5 / 1.25, open-all card from answer 50 / 30 / 20) until learnsim has fish profiles?
+  Recommendation: keep; learnsim fish profiles next.
+- **Fish open to a group (#540, open, sheet v48).** Q: the group lives on the Fish side of Players (Beta column, Add /
+  Remove, Add all)? Q: "Add all" adds existing players only, later sign-ups are added by hand? Q: the wording.
+  Recommendation: keep as built.
+- **Five circle-1 fish species have no candidate photo** (*Chromis agilis*, *Halichoeres chlorocephalus*,
+  *H. marginatus*, *Siganus margaritiferus*; *Pomacentrus armillatus* is lumped with *P. opisthostigma* by iNaturalist
+  and WoRMS). Recommendation: no rule change; your own photos of them would be fetched first if you have any.
+- ***Plectropomus laevis*:** its saddled adult looks like the juvenile; those candidates are marked `unsure` for you to
+  settle in the admin.
+
 ## Where the day stopped
 
 Overwritten by the end-of-day protocol (16:30-17:30 Manila): date; done today; unfinished work (branch, PR, state, next
@@ -97,3 +121,39 @@ net.smoke step 12b reports instead of stopping.
 the net.smoke hang; then the fish track toward the beta (ROADMAP "Next": judging of circles 2-3 and species photo
 pre-proposals, the path as a tree with a genus level, 1-3 common names per species, fish basics, welcome question,
 subject switch, opening fish to a group, fish leaderboard), with the admin page roles and lab.css alongside.
+
+## Where the night stopped
+
+**2026-11-04 night, stopped at about 19:00 Manila: Pierre's Claude quota was nearly used up (about 6% left), so the
+coordinator stopped the agents and wrote this handover; work may continue in another account (docs/HANDOVER.md).**
+
+**Merged tonight:** #516 lab.css dead classes; #517 D3, #518 D4, #534 D6 (test backlog; admin smoke at 390 from 68 s to
+12 s); #519 fish score simulation (`tools/fishscore.js`, docs/LEARNING.md); #521 fish photo judging, circles 2-3 and the
+winks (all 1,160 fish game photos judged); #523, #525, #527, #528, #529, #532, #539, #541 fish candidates fetched for
+every game species (fish-cand.json 8,667 → 12,073) and judged into suggest.json `fish` (8,573 judged, ~70 `unsure`;
+nothing reaches the game without Pierre's Publish); #537 night questions.
+
+**Open, waiting for Pierre** (all green and Codex-clean unless said; screenshots listed in each PR; they were saved in
+the night session's scratchpad, which a new session cannot see, so re-take them if needed):
+
+| PR | What | Note |
+|---|---|---|
+| #524 | Cards: no broken-image flash when an R2 photo fails | Fix; the night merge was refused as a production deploy. Merge first. |
+| #531 | sw.js: no reply waits on Cache Storage more than 3 s | The net.smoke step-9 hang came back after #513 (Cache Storage stalls; cause not established). Merge after #524. |
+| #520 | Smokes in reduced motion by default | Red until #524 merges; then merge main and re-request Codex. |
+| #535 | Admin page roles, the rest | Questions above. |
+| #522 | Fish common names, 1-3 per species | Editorial; questions above. |
+| #526 | Fish genus step | Sheet v46; questions above. |
+| #533 | Subject switch, Home row + header chip | Questions above. |
+| #536 | Identify per subject | Questions above. |
+| #538 | Fish welcome question | Sheet v47; questions above. |
+| #540 | Fish opens to a group | Sheet v48; questions above. |
+| #549 | Fish candidates judged: Porcupinefishes, Jacks, Whale shark, Thresher shark | A judging batch whose agent was stopped mid-way: check CI and Codex, then merge (decided process). |
+
+**Merge-order traps:** the sheet versions 46 / 47 / 48 are reserved by #526 / #538 / #540: merged in another order, the
+later ones take the next free number (Code.gs header, ARCHITECTURE's version list, tests). `tests/fish.smoke.js` is
+touched by #533, #536, #538 and #540: the second to merge needs a small manual merge; #540 edits the Tools tile that #533
+removes (take #533's side).
+
+**Left to do on the fish candidates:** about 3,500 unjudged in 114 species (`python3 tools/judging_fish.py todo`: the
+last 25 Wrasse species from s270 *Labroides bicolor*, then circles 2 and 3); same process as #523-#549.
