@@ -16,7 +16,7 @@
 const http = require('http'),
   fs = require('fs'),
   path = require('path');
-const {chromium} = require('playwright');
+const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
