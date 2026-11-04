@@ -472,18 +472,29 @@ const gh = (path, opts = {}) =>
   });
 const fromB64 = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ''))));
 const toB64 = s => btoa(unescape(encodeURIComponent(s)));
+// ghfile: begin
+// A repository file's text and sha. The contents API sends a file's text only up to 1 MB: above that `content` is empty
+// (encoding "none"), so the text comes from its blob (up to 100 MB). curation.json passed 1 MB on 2026-11-04 and the
+// admin stopped loading ("Unexpected end of JSON input"). null when the file does not exist.
+async function ghFile(path) {
+  const f = await gh(`/contents/${path}?ref=${BRANCH}`).catch(e => {
+    if (/Not Found/.test(e.message)) return null;
+    throw e;
+  });
+  if (!f) return null;
+  const b64 = f.content ? f.content : (await gh(`/git/blobs/${f.sha}`)).content;
+  return {text: fromB64(b64), sha: f.sha};
+}
+// ghfile: end
 async function checkToken() {
   const r = await gh('');
   if (!(r.permissions && r.permissions.push)) throw new Error('This token cannot write to the repository.');
 }
 async function loadSaved() {
   if (TOKEN) {
-    const f = await gh(`/contents/${FILE}?ref=${BRANCH}`).catch(e => {
-      if (/Not Found/.test(e.message)) return null;
-      throw e;
-    });
+    const f = await ghFile(FILE);
     if (f) {
-      SAVED = JSON.parse(fromB64(f.content));
+      SAVED = JSON.parse(f.text);
       SHA = f.sha;
     }
   } else
@@ -4502,12 +4513,9 @@ async function save() {
   const conf = [];
   // Never overwrite what was published from elsewhere since this page loaded: re-read it and merge first.
   const fresh = async () => {
-    const f = await gh(`/contents/${FILE}?ref=${BRANCH}`).catch(e => {
-      if (/Not Found/.test(e.message)) return null;
-      throw e;
-    });
+    const f = await ghFile(FILE);
     if (f && f.sha !== SHA) {
-      conf.push(...rebase(JSON.parse(fromB64(f.content))));
+      conf.push(...rebase(JSON.parse(f.text)));
       SHA = f.sha;
     }
   };
