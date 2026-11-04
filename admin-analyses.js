@@ -866,7 +866,7 @@ function anSessDesc(d) {
           r =>
             `<tr><td>${['', '1st', '2nd', '3rd'][r.k]} session</td><td class="n">${r.at}</td><td class="n">${anOf(r.back, r.at)}</td></tr>`
         )
-      ) + '<p class="note">A player last seen less than a day ago is not counted yet.</p>'
+      ) + '<p class="note">A session that ended less than a day ago is not counted yet, either way.</p>'
     ),
     anCard(
       'First session against later ones',

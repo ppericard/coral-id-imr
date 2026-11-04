@@ -1346,7 +1346,8 @@
           .map(a => a.y)
           .join(''),
         miss: last.y ? 0 : 1,
-        miss2: !last.y && last.streak >= 2 ? 1 : 0,
+        // two misses in a row within this session (prep's streak runs across sessions; Codex review #500)
+        miss2: R.length >= 2 && !last.y && !R[R.length - 2].y ? 1 : 0,
         lastNew: last.n === 0 ? 1 : 0,
         open: end - last.t < GAP ? 1 : 0
       };
@@ -1481,9 +1482,10 @@
     const returns = [1, 2, 3].map(k => {
       let at = 0,
         back = 0;
+      // one observation window for both outcomes (Codex review #500): a kth session that ended less than a day before
+      // the log ends counts neither as a return nor as a player who did not come back
       byP.forEach(Q => {
-        if (Q.length < k) return;
-        if (Q.length === k && end - Q[k - 1].t1 < DAY) return;
+        if (Q.length < k || end - Q[k - 1].t1 < DAY) return;
         at += 1;
         if (Q.length > k) back += 1;
       });
