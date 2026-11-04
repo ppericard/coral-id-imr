@@ -17,7 +17,7 @@ const {
   fishCompare,
   fishRun,
   fishUndo,
-  fishSure,
+  fishOwn,
   autoCheck,
   autoState
 } = require('../autosort.js');
@@ -165,12 +165,13 @@ test('fishUndo: one fish auto decision taken back, never applied again; a value 
     day = '2026-11-04';
   const {F} = fishRun(cands, sug, {}, {}, day);
   assert.deepStrictEqual([F.add[a], F.seen[b]], ['s1', 1]);
-  const mine = {...F, ease: {...F.ease, [a]: 2}}, // Pierre changed the ease since
-    U = fishUndo(fishUndo(mine, a, fishSure(sug[a])), b, fishSure(sug[b]));
-  assert.ok(!U.add && !U.seen, 'the add and the reject leave');
-  assert.deepStrictEqual([U.tags, U.phase, U.ease], [undefined, undefined, {[a]: 2}], 'his ease stays his');
-  assert.deepStrictEqual(U.auto[day], {[a]: '-atep', [b]: '-r'});
-  assert.strictEqual(fishUndo(U, a, fishSure(sug[a])), U, 'an undone decision is not undone twice');
+  // Pierre set the ease since (his edit goes through fishOwn: the field becomes his).
+  const mine = {...fishOwn(F, a, 'ease'), ease: {...F.ease, [a]: 2}},
+    U = fishUndo(fishUndo(mine, a, 's1'), b, 's1');
+  assert.deepStrictEqual([U.add, U.seen], [{}, {}], 'the add and the reject leave (the maps stay, empty)');
+  assert.deepStrictEqual([U.tags, U.phase, U.ease], [{}, {}, {[a]: 2}], 'his ease stays his');
+  assert.deepStrictEqual(U.auto[day], {[a]: '-atp', [b]: '-r'});
+  assert.strictEqual(fishUndo(U, a, 's1'), U, 'an undone decision is not undone twice');
   const again = fishRun(cands, sug, {}, U, day);
   assert.strictEqual(again.F, U, 'never applied again');
   assert.deepStrictEqual(fishCompare(U), [], 'an undone decision counts in no agreement');
@@ -183,10 +184,39 @@ test("fishUndo leaves alone a value Pierre had given before the run, even one eq
     before = {tags: {[a]: 'p1g0sm1'}, ease: {[a]: 5}}; // his, the same values the pass gives
   const {F} = fishRun({s1: [{f: a, o: 'oa'}]}, sug, {}, before, day);
   assert.strictEqual(F.auto[day][a], 'apc', 'the run wrote the phase and the crop only');
-  const U = fishUndo(F, a, fishSure(sug[a]));
+  const U = fishUndo(F, a, 's1');
   assert.deepStrictEqual([U.tags, U.ease], [before.tags, before.ease], 'his tags and ease stay');
-  assert.deepStrictEqual([U.phase, U.crop, U.add], [undefined, undefined, undefined], 'what the run wrote leaves');
+  assert.deepStrictEqual([U.phase, U.crop, U.add], [{}, {}, {}], 'what the run wrote leaves');
   assert.strictEqual(U.auto[day][a], '-apc');
   assert.deepStrictEqual(fishParse('-apc'), {check: false, undone: true, kind: 'a', w: ['phase', 'crop']});
   ['rt', '?at', 'ax'].forEach(c => assert.strictEqual(fishParse(c), null, c));
+});
+
+test('fishUndo after a new judging pass, a Not this, a partial edit, a publish (Codex review #479)', () => {
+  const [a, b, c] = ids,
+    day = '2026-11-04',
+    cands = {s1: [a, b, c].map((f, i) => ({f, o: `o${i}`}))},
+    sug = Object.fromEntries([a, b, c].map(f => [f, {...sure(5), ph: 'male', c: [0.1, 0, 0.9, 1]}])),
+    {F} = fishRun(cands, sug, {}, {}, day);
+  // A new judging pass replaced the judgment (ease 2, no phase) or removed it: the Undo takes back what the run wrote,
+  // the values it applied (ease 5, the phase, the crop), not the new judgment's.
+  const U1 = fishUndo(F, a, 's1');
+  assert.deepStrictEqual([a in U1.add, a in U1.tags, a in U1.ease, a in U1.phase, a in U1.crop], [false, false, false, false, false]);
+  // Pierre sent the photo to another species since (the add names it): his choice stays; the run's fields leave.
+  const moved = {...F, add: {...F.add, [b]: 's2'}},
+    U2 = fishUndo(moved, b, 's1');
+  assert.strictEqual(U2.add[b], 's2');
+  assert.ok(!(b in U2.ease));
+  // He removed the crop by hand first (partial): the Undo removes the rest, nothing fails.
+  const part = {...F, crop: {}},
+    U3 = fishUndo(part, c, 's1');
+  assert.ok(!(c in U3.add) && !(c in U3.tags) && U3.auto[day][c].startsWith('-a'));
+  // Published, then undone on this device while another device published another add and ease: the Publish merge keeps
+  // theirs and removes only this photo's entries.
+  const theirs = {...F, add: {...F.add, x: 's9'}, ease: {...F.ease, x: 3}},
+    m = merge3({fish: F}, {fish: U1}, {fish: theirs}).fish;
+  assert.deepStrictEqual([m.add.x, m.ease.x, a in m.add, a in m.ease], ['s9', 3, false, false]);
+  assert.strictEqual(m.auto[day][a].slice(0, 2), '-a');
+  // An unknown species (the candidate gone): the add is not taken.
+  assert.strictEqual(fishUndo(F, a, undefined).add[a], 's1');
 });
