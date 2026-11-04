@@ -5,11 +5,14 @@
 #   python3 tools/apply_favites.py
 #
 # What was checked, 2026-11-04:
-# - Presence (iNaturalist API, observations/species_counts for Merulinidae, taxon 85893, in the Philippines,
-#   place 6873, and within 50 km of Dauin; all grades, then Research Grade only): F. colemani 12 (6 RG), F. pentagona
-#   11 (6 RG; 1 RG near Dauin), F. vasta 4 (2 RG), F. valenciennesi 4 (2 RG; 1 RG near Dauin), F. rotundata 4 (4 RG),
-#   F. magnistellata 3 (2 RG), F. flexuosa 2 (1 RG), F. abdita 3 (none RG); Paragoniastrea russelli 3 (2 RG),
-#   Goniastrea stelligera 2 (2 RG), G. pectinata 7 (6 RG), G. minuta 1 (1 RG).
+# - Presence in the Philippines, by Pierre's rule (AGENTS.md rule 6e: (1) Research Grade by >= 3 distinct observers in
+#   the country, (2) >= 1 Research Grade there and the Corals of the World Philippine ecoregions, (3) confirmed near
+#   Dauin). iNaturalist Research Grade observations / distinct observers in the Philippines (place 6873), from the
+#   presence study of 2026-11-04; every species below is in Corals of the World's Philippine ecoregions:
+#   F. pentagona 6 / 3 (rule 1), F. rotundata 4 / 3 (rule 1), F. colemani 6 / 2, F. valenciennesi 2 / 2, F. vasta 2 / 2,
+#   F. magnistellata 2 / 1, Paragoniastrea russelli 2 / 2, Goniastrea stelligera 2 / 2 (all rule 2). Not cited:
+#   F. abdita (no Research Grade record), Dipsastraea matthaii (none). Also named in ROADMAP's IMR flags: Coelastrea
+#   aspera 5 / 5 (rule 1), Paramontastraea salebrosa 1 / 1 and Dipsastraea pallida 1 / 1 (rule 2).
 # - Corals of the World species factsheets (Veron; "Characters"): F. pentagona "Paliform lobes are well developed,
 #   commonly forming a conspicuous crown ... Goniastrea-like"; Phymastrea colemani "A paliform crown is well developed",
 #   5-8 mm; Phymastrea magnistellata 6-13 mm, "small paliform lobes are usually developed"; Phymastrea valenciennesi

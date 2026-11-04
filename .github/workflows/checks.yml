@@ -56,9 +56,13 @@ jobs:
       - name: core.js embedded in the sync script (tools/sync_core.py; the sheet replays progress with the app's engine)
         run: |
           python3 tools/sync_core.py --check
+      - name: The rename to IMR Reef ID is complete (tools/rename_app.py; an old name kept on purpose carries rename-app keep)
+        run: |
+          python3 tools/rename_app.py --check
       - name: Cache-busting versions
         run: |
-          python3 tools/check_versions.py ${VERSIONS_BASE:+--base "$VERSIONS_BASE"}
+          # The merge commit's base on a pull request; a manual run has none fetched (the default origin/main is not there).
+          if [ -n "$VERSIONS_BASE" ]; then python3 tools/check_versions.py --base "$VERSIONS_BASE"; else python3 tools/check_versions.py --no-base; fi
   smoke:
     name: smoke (${{ matrix.name }})
     runs-on: ubuntu-latest
