@@ -725,12 +725,36 @@
   // Calls in flight through the demo (its sync script and GitHub answers, and the site's own files): tests/admin.smoke.js
   // waits for none before reading a page, the way the app's tests wait for APP_READY, instead of a fixed time.
   window.DEMO_PENDING = 0;
+  // The sync script calls, in order: {k: what was asked, t0: sent, t1: answered} (performance.now()). tests/admin.smoke.js
+  // checks that a read on its way is not asked again and that the reads leave without waiting for the data files.
+  window.DEMO_CALLS = [];
+  const kindOf = (url, opts) => {
+    if ((opts.method || 'GET') !== 'POST') return new URL(url).searchParams.get('stats') ? 'stats' : 'get';
+    const p = JSON.parse(opts.body || '{}');
+    return p.readAnswers
+      ? 'answers'
+      : p.readStats
+        ? 'stats'
+        : p.readEvents
+          ? p.pages
+            ? 'pages'
+            : 'events'
+          : p.readReports
+            ? 'reports'
+            : Object.keys(p)
+                .filter(k => k !== 'token')
+                .join(',');
+  };
   window.fetch = async (u, opts = {}) => {
     window.DEMO_PENDING++;
+    const url = String(u && u.url ? u.url : u),
+      c = url.startsWith('https://script.google.com/') ? {k: kindOf(url, opts), t0: performance.now()} : null;
+    if (c) window.DEMO_CALLS.push(c);
     try {
       return await demoFetch(u, opts);
     } finally {
       window.DEMO_PENDING--;
+      if (c) c.t1 = performance.now();
     }
   };
   // A banner on every page: this is not the real admin.
