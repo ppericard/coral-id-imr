@@ -103,21 +103,6 @@
   color: var(--bad);
   font-weight: 600;
 }
-/* The subject switch of a subject in beta (lab.js viewLab, admin only): a tile that is no link, its switch below. */
-.labsubj .labopen:hover {
-  background: none;
-}
-.labsubj .labopen span b {
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-.labvote button[data-subj][aria-pressed='true'] {
-  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-  color: var(--ink);
-  font-weight: 600;
-}
-
 /* shared quiz bits */
 .lab .choices {
   display: grid;

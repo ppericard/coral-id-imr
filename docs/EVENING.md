@@ -68,6 +68,17 @@ them first thing, then clear them.
   for the net.smoke step-9 hang that came back after #513 (the log shows the browser's Cache Storage had stopped
   answering, so the page never loaded; why it stalls is not known; a test that wedges it failed before the fix). #520 (smokes in reduced motion, tests only) waits on
   #524: its CI found that bug. **Recommendation: merge #524, then #531 and #520 once green and Codex-clean.**
+- **Subject switch: the header chip on phones (2026-11-04 night, PR "Subject switch", not merged).** Context: the chip
+  next to the logo with its icon and name did not fit a 390 px phone header with the Sign in pill (27 px too wide). Built:
+  on phones the chip shows its icon and a small caret only (its name is its label), and while the Sign in pill shows the
+  logotype text steps aside too, as it already does under 380 px for everyone; under 380 px the logotype steps aside
+  whenever the chip shows and the chip drops its caret (it then fits from 320 px, signed in or out); on tablets and
+  desktops icon + name + caret. Question: keep this, or another trade (e.g. the chip replaces the logotype on phones)?
+  **Recommendation: keep** (signed in, the logotype shows from 380 px; screenshots in the PR).
+- **Subject switch: the Home row's look (same PR).** Built as DESIGN.md says: one full-width segmented row above the
+  doors, each subject with its icon and name, Fish with a small *beta* tag, the Tools tile and the fish emoji on the
+  Tools links removed (the chip is the way back). Question: OK as it is, or a quieter row on desktop (it spans the
+  page)? **Recommendation: OK as it is**; merge the PR once you have looked at the screenshots.
 
 - **Fish common names (#522, open).** 442 species: 184 with 1 name, 158 with 2, 100 with 3 (full list in a PR comment).
   Q: drop the third-name rule (gives 252 / 170 / 20)? Recommendation: yes. Q: the two PDF slips ("Russelss's snapper",
