@@ -2201,6 +2201,38 @@ async function duelReliefCheck(b, base) {
       await c.close();
     }
   }
+  // A short phone screen (Codex review #460): the settings pop-up, opened over the comparison, reaches down to the
+  // floating Back to the duel; a tap there is the setting's, not the button's (the page stays, the way back is kept).
+  {
+    const W = '390x640 duel relief:',
+      [c, p, errs] = await open(390, 640);
+    await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
+    if (!(await play(p)).next) fails.push(`${W} not shown`);
+    else {
+      await pick(p, '[data-b="2"]');
+      await p.click('#setb');
+      await p.waitForTimeout(300);
+      const o = await p.evaluate(() => {
+        const f = document.querySelector('#view .cmpfab').getBoundingClientRect(),
+          s = document.getElementById('settings').getBoundingClientRect(),
+          box = [Math.max(f.left, s.left), Math.max(f.top, s.top), Math.min(f.right, s.right), Math.min(f.bottom, s.bottom)],
+          x = (box[0] + box[2]) / 2,
+          y = (box[1] + box[3]) / 2,
+          hit = document.elementFromPoint(x, y);
+        return {over: box[0] < box[2] && box[1] < box[3], x, y, settings: !!(hit && hit.closest('#settings'))};
+      });
+      if (!o.over) fails.push(`${W} the settings pop-up no longer reaches the floating button: the check needs a shorter screen`);
+      else {
+        await p.mouse.click(o.x, o.y);
+        await p.waitForTimeout(400);
+        const a = await p.evaluate(() => ({h: decodeURIComponent(location.hash), back: !!DUELBACK}));
+        if (!o.settings || a.h !== '#cmp-Pocillopora|Stylophora' || !a.back)
+          fails.push(`${W} a tap on the settings pop-up over Back to the duel: ${JSON.stringify({...o, ...a})}`);
+      }
+    }
+    if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
   return fails;
 }
 async function credits(b, base) {
