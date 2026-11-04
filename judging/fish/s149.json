@@ -1,0 +1,140 @@
+{
+ "photos": {
+  "fish-s149-cand-724939420": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s149-cand-468548035": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s149-cand-349980332": {
+   "code": "o1g3sm12",
+   "keep": "best"
+  },
+  "fish-s149-cand-349980341": {
+   "code": "o1g3sm12",
+   "keep": "dup"
+  },
+  "fish-s149-cand-349980352": {
+   "code": "p1g3smm1",
+   "keep": "dup"
+  },
+  "fish-s149-cand-675043953": {
+   "code": "p1g2ss12",
+   "keep": "best"
+  },
+  "fish-s149-cand-408406162": {
+   "code": "p0g2sl12",
+   "keep": "best"
+  },
+  "fish-s149-cand-624866006": {
+   "code": "p1g3bm11",
+   "keep": "best"
+  },
+  "fish-s149-cand-624866010": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s149-cand-206757855": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s149-cand-206757860": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s149-cand-206757867": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s149-cand-206757874": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s149-cand-477514430": {
+   "code": "o1g3bmx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Murky green water; the jacks are hard to make out"
+  },
+  "fish-s149-cand-262592048": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s149-cand-597566209": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s149-cand-485342358": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s149-cand-485342366": {
+   "code": "p1g3sl12",
+   "keep": "dup"
+  },
+  "fish-s149-cand-697731197": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s149-cand-697731214": {
+   "code": "p1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s149-cand-697731204": {
+   "code": "p1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s149-cand-556003832": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s149-cand-597643593": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s149-cand-327736055": {
+   "code": "p1g2smx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Several kinds of fish: which one is the jack is not obvious"
+  },
+  "fish-s149-cand-480278181": {
+   "code": "o1g3sm12",
+   "keep": "best"
+  },
+  "fish-s149-cand-697731413": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s149-cand-697731463": {
+   "code": "p1g3sm12",
+   "keep": "dup"
+  },
+  "fish-s149-cand-697731420": {
+   "code": "p1g3sm12",
+   "keep": "dup"
+  },
+  "fish-s149-cand-477521083": {
+   "code": "o1g2sl12",
+   "keep": "best"
+  },
+  "fish-s149-cand-477521112": {
+   "code": "p1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s149-cand-618043226": {
+   "code": "o0g2smm2",
+   "keep": "best"
+  },
+  "fish-s149-cand-331047009": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  }
+ }
+}

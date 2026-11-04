@@ -1,0 +1,128 @@
+{
+ "photos": {
+  "fish-s397-cand-552119165": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s397-cand-552118304": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  },
+  "fish-s397-cand-716933061": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-742208334": {
+   "code": "d1g3sm12",
+   "keep": "best"
+  },
+  "fish-s397-cand-598190346": {
+   "code": "p1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s397-cand-713516211": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s397-cand-563593418": {
+   "code": "h0g1sl12",
+   "keep": "best"
+  },
+  "fish-s397-cand-668778642": {
+   "code": "d1g2ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the porcupinefish for sure on the photo"
+  },
+  "fish-s397-cand-724739229": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-724739230": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s397-cand-681608173": {
+   "code": "d1g1ss11",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Seen from above at the surface: maybe at the surface or in a net"
+  },
+  "fish-s397-cand-681608201": {
+   "code": "d1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s397-cand-681611560": {
+   "code": "d1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s397-cand-681612261": {
+   "code": "d1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s397-cand-635563424": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s397-cand-635563488": {
+   "code": "o1g1ssm1",
+   "keep": "dup"
+  },
+  "fish-s397-cand-635563528": {
+   "code": "o1g1sms3",
+   "keep": "dup"
+  },
+  "fish-s397-cand-682626791": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s397-cand-682626817": {
+   "code": "d1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s397-cand-47217914": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-675746135": {
+   "code": "h1g1sm13",
+   "keep": "best"
+  },
+  "fish-s397-cand-610204748": {
+   "code": "h1g2bmm1",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Murky, among other fish: maybe in a tank"
+  },
+  "fish-s397-cand-632010816": {
+   "code": "d0g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s397-cand-574118937": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s397-cand-585566793": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  },
+  "fish-s397-cand-716531172": {
+   "code": "h1g1sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-602116314": {
+   "code": "o1g2sl12",
+   "keep": "best"
+  },
+  "fish-s397-cand-602116309": {
+   "code": "o1g2sl12",
+   "keep": "dup"
+  }
+ }
+}
