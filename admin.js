@@ -1148,18 +1148,16 @@ const GROUPS = [
     'Players',
     [
       ['players', 'List', [['~users', 'List']]],
-      [
-        'activity',
-        'Activity',
-        [
-          ['~stats', 'Recent sessions'],
-          ['~stats-conf', 'Mix-ups']
-        ]
-      ]
+      // Activity = who plays and how much (Pierre, 2026-11-04, one role per admin page): its analysis cards and the
+      // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs), their addresses unchanged.
+      ['activity', 'Activity', [['~stats', 'Recent sessions']]]
     ]
   ],
   // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
-  // every 1000 answers): the one group added after the nine tabs (AGENTS.md rule 23); drawn by admin-analyses.js.
+  // every 1000 answers): the one group added after the nine tabs (AGENTS.md rule 23); drawn by admin-analyses.js. Analyses
+  // = what we learn (Pierre, 2026-11-04, one role per admin page): the views read live from the answer log (~stats-*,
+  // admin.js renderStats) sit here too: Pairs (formerly Players › Activity › Mix-ups), Answer log (Activity's analysis
+  // cards) and Stops (Health's "where players stop" and genus sheets opened).
   [
     'analyses',
     'Analyses',
@@ -1179,7 +1177,8 @@ const GROUPS = [
         [
           ['~an-photo', 'Photos'],
           ['~an-fmt', 'Formats'],
-          ['~an-conf', 'Mix-ups']
+          ['~an-conf', 'Mix-ups'],
+          ['~stats-conf', 'Pairs']
         ]
       ],
       [
@@ -1188,7 +1187,9 @@ const GROUPS = [
         [
           ['~an-learn', 'Practice'],
           ['~an-back', 'After a break'],
-          ['~an-sess', 'Sessions']
+          ['~an-sess', 'Sessions'],
+          ['~stats-log', 'Answer log'],
+          ['~stats-stop', 'Stops']
         ]
       ]
     ]
@@ -1908,7 +1909,7 @@ function renderQuality() {
   );
 }
 
-// Thresholds of the Health page (statsHealth), here because its help text quotes them.
+// Thresholds of Health and Stops (statsHealth), here because their help texts quote them.
 const HEALTH = {
   GAP: 30, // minutes between two answers that start a new session
   EARLY: 10, // a session of at most this many answers ended early
@@ -1916,10 +1917,9 @@ const HEALTH = {
   PH_LOW: 0.4, // right rate under which a photo is one everyone misses
   PH_FAR: 1, // difficulty this far above its genus median (1 = clearly harder)
   G_MIN: 10, // answers on a genus before a player counts as stuck on it
-  G_LOW: 0.5, // right rate over a player's last G_MIN answers on a genus under which they are stuck
-  DAYS: 30
+  G_LOW: 0.5 // right rate over a player's last G_MIN answers on a genus under which they are stuck
 };
-// Sessions, one definition for Health, a player's Journey and Activity's Recent sessions: one player's answers, oldest
+// Sessions, one definition for Stops, a player's Journey and Activity's Recent sessions: one player's answers, oldest
 // first, cut where two answers are HEALTH.GAP minutes apart or more. [{id, L: rows in time order}], each player's in
 // time order.
 function sessionsOf(rows) {
@@ -1952,7 +1952,7 @@ const HELP = {
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). <b>Analyses</b>: what the answer log says, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Response time, Zoom), <b>Difficulty</b> (Photo factors, Formats, Confusions), <b>Learning</b> (Curves, Comeback, Sessions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, the photos and genera that need a look) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
@@ -1962,9 +1962,9 @@ const HELP = {
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
-  stats: `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Health and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
-    <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
-    <p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
+  stats: `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
+    <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>`,
+  statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no Coral Finder book, several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
@@ -1990,11 +1990,11 @@ const HELP = {
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
-    <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
-    <p><b>Genera that don't take off.</b> Per slate genus, from the answers where it was shown: players who met it, the median of their right rates on it, and Stuck = players with ${HEALTH.G_MIN}+ answers on it still under ${Math.round(HEALTH.G_LOW * 100)}% over their last ${HEALTH.G_MIN} (out of the players with ${HEALTH.G_MIN}+ answers). Most stuck first.</p>
-    <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>
-    <p><b>Activity.</b> Answers and players with at least one answer per day (this browser's time zone), the last ${HEALTH.DAYS} days; hover a bar for its day and count.</p>`,
+    <p><b>Genera that don't take off.</b> Per slate genus, from the answers where it was shown: players who met it, the median of their right rates on it, and Stuck = players with ${HEALTH.G_MIN}+ answers on it still under ${Math.round(HEALTH.G_LOW * 100)}% over their last ${HEALTH.G_MIN} (out of the players with ${HEALTH.G_MIN}+ answers). Most stuck first.</p>`,
+  statsstop: `<p>Where players stop and the genus sheets they open, from the answers already logged and the visits' summaries. Anonymous ids only, counts, no names. Every account counts, yours too.</p>
+    <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
+    <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp() {
@@ -2009,6 +2009,8 @@ function toggleHelp() {
       '~stats-photos': 'statsph',
       '~pstats': 'pstats',
       '~stats-conf': 'statsconf',
+      '~stats-log': 'statslog',
+      '~stats-stop': 'statsstop',
       '~stats-needs': 'statsneeds',
       '~diff': 'diff'
     }[cur] || modeKey();
@@ -2531,7 +2533,7 @@ const XP_BANDS = [
   ['50-300 answers', 50, 300],
   ['Over 300 answers', 301, Infinity]
 ];
-// Health › Genus sheets: of the visits and the players of each band, the share that opened at least one genus sheet.
+// Analyses › Learning › Stops › Genus sheets: of the visits and the players of each band, the share that opened at least one genus sheet.
 function healthSheets() {
   const head = '<h3>Genus sheets opened</h3>';
   if (!PGS) return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}<p class="note">Loading…</p></section>`;
@@ -5595,7 +5597,7 @@ function renderHidden() {
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
-// The views of Activity, Photo stats and To do › Health; their tab and view switch are in #subnav (navs()).
+// The views of Activity, Photo stats, To do › Health and the live Analyses views (~stats-*); their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
   SMEM = memOf(null),
@@ -5655,7 +5657,7 @@ function sheetEarly(h) {
         ? ['users', 'ans', 'pages']
         : h === '~stats'
           ? ['users', 'ans']
-          : h === '~health'
+          : h === '~stats-stop'
             ? ['ans', 'pages']
             : h === '~todo'
               ? ['ans', 'events', 'reports']
@@ -5663,7 +5665,7 @@ function sheetEarly(h) {
                 ? ['reports']
                 : h === '~events'
                   ? ['events']
-                  : /^~(stats-|cov$|diff$)/.test(h)
+                  : /^~(stats-|cov$|diff$|health$)/.test(h)
                     ? ['ans']
                     : h === '~pstats'
                       ? ['ratings']
@@ -5810,7 +5812,7 @@ function bindStats() {
   const rl = $v.querySelector('[data-sload]');
   if (rl)
     rl.onclick = () => {
-      sheetAgain('ans', 'users', 'pages'); // the pages opened too (Health, Journey)
+      sheetAgain('ans', 'users', 'pages'); // the pages opened too (Stops, Journey)
       render();
     };
 }
@@ -6318,11 +6320,17 @@ function renderStats() {
     Promise.all([ANS ? null : loadStats(), named ? loadUsers() : null]).then(() => {
       if (cur.startsWith('~stats') || cur === '~health') render();
     });
-    // Health's pages opened leave with the answer log, not after it.
-    if (cur === '~health' && pagesStale()) loadPages().catch(() => {});
+    // Stops' pages opened leave with the answer log, not after it.
+    if (cur === '~stats-stop' && pagesStale()) loadPages().catch(() => {});
     return;
   }
-  return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-conf' ? statsConf() : cur === '~health' ? statsHealth() : statsPlayers();
+  return cur === '~stats-photos'
+    ? statsPhotos()
+    : cur === '~stats-conf'
+      ? statsConf()
+      : cur === '~health' || cur === '~stats-stop'
+        ? statsHealth()
+        : statsPlayers();
 }
 // Every answer of every account (Pierre, 2026-11-04: no player filter).
 const statRows = () => ANS.rows;
@@ -6447,8 +6455,11 @@ function activityCard(R) {
     (n, h) => `<div title="${h}:00-${h + 1}:00: ${n} answers"><i style="height:${Math.round((100 * n) / hm)}%"></i></div>`
   ).join('')}</div><p class="adm-axis"><span>0 h</span><span>12 h</span><span>23 h</span></p></section>`;
 }
+// Players › Activity (~stats: who plays and how much) and Analyses › Learning › Answer log (~stats-log: what the answers
+// say, live; Pierre, 2026-11-04, one role per admin page): one reading of the answer log, each view its own cards.
 function statsPlayers() {
-  const head = `<div class="adm-shead"><h2>Activity</h2><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
+  const log = cur === '~stats-log',
+    head = `<div class="adm-shead"><h2>${log ? 'Answer log' : 'Activity'}</h2><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -6558,11 +6569,12 @@ function statsPlayers() {
       ['Right', pct(ok, R.length)],
       ['Active 7 d', wk]
     ]) +
-    (R.length ? recentSessions(R) : '') +
-    (R.length ? activityCard(R) : '') +
+    (R.length && !log ? recentSessions(R) + activityCard(R) : '') +
     (!R.length
       ? '<p class="note">No answers yet.</p>'
-      : `
+      : !log
+        ? ''
+        : `
     <div class="adm-sgrid">
     <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"${b[1] < 10 ? ' class="few"' : ''}><i style="height:${Math.round((100 * b[0]) / b[1])}%"></i><small>${Math.round((100 * b[0]) / b[1])}</small></div>`).join('')}</div>
       <p class="adm-axis"><span>Answer 1</span><span>${blk} per bar</span><span>${cv.length * blk}</span></p></section>
@@ -6870,13 +6882,17 @@ function healthLine0() {
   return L.length ? `<p class="warn adm-hline" data-hline><a href="#~health"><b>Health</b></a>: ${L.join(' · ')}</p>` : '';
 }
 // Health (Pierre, 2026-11-02: "most RAs will not send feedback"): what the answers already logged say about how the
-// app works for players, with no new data. Where players stop (sessions = answers less than GAP minutes apart; how long
-// they last; what the short ones ended on), photos everyone misses (maybe mislabelled or bad: a link to the genus page),
-// genera that don't take off for players, and activity over the last DAYS days. Anonymous ids only, like the other
-// stats pages; every account counts (Pierre, 2026-11-04).
+// app works for players, with no new data. One role per admin page (Pierre, 2026-11-04): Inbox › To do › Health
+// (~health, is something wrong?) keeps what needs action: photos everyone misses (maybe mislabelled or bad: a link to
+// the genus page) and genera that don't take off for players; Analyses › Learning › Stops (~stats-stop, what we learn)
+// has where players stop (sessions = answers less than GAP minutes apart; how long they last; what the short ones
+// ended on) and the genus sheets they open. One reading of the answer log, each view its own sections. The answers and
+// players per day went with Players › Activity (activityCard). Anonymous ids only, like the other stats pages; every
+// account counts (Pierre, 2026-11-04).
 function statsHealth() {
   const H = HEALTH,
-    head = `<div class="adm-shead"><h2>Health</h2></div>`;
+    stops = cur === '~stats-stop',
+    head = `<div class="adm-shead"><h2>${stops ? 'Stops' : 'Health'}</h2></div>`;
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -7016,47 +7032,20 @@ function statsHealth() {
     )
   )}</div></section>`;
 
-  // 4. Activity over time: answers and active players per local day, the last DAYS days (today last).
-  const D = [];
-  for (let i = H.DAYS - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    D.push({t: d.getTime(), n: 0, p: new Set()});
-  }
-  const end = new Date(D[D.length - 1].t);
-  end.setDate(end.getDate() + 1);
-  R.forEach(r => {
-    if (r[1] < D[0].t || r[1] >= end.getTime()) return;
-    let k = D.length - 1;
-    while (k > 0 && r[1] < D[k].t) k--;
-    D[k].n++;
-    D[k].p.add(r[0]);
-  });
-  const day = t => dateText(t, 'dm'),
-    cols = (v, w) => {
-      const mx = Math.max(1, ...D.map(v));
-      return `<div class="adm-cols adm-hcols">${D.map(d => `<div title="${day(d.t)}: ${plural(v(d), w)}"><i style="height:${((100 * v(d)) / mx).toFixed(1)}%"></i></div>`).join('')}</div>
-      <p class="adm-axis"><span>${day(D[0].t)}</span><span>max ${mx}</span><span>today</span></p>`;
-    },
-    in30 = D.reduce((t, d) => t + d.n, 0);
-  const tSec = `<section class="adm-scard adm-hsec t" data-health="time"><h3>Activity, last ${H.DAYS} days <small>${in30}</small></h3>
-    <h4>Answers per day</h4>${cols(d => d.n, 'answer')}
-    <h4>Players per day</h4>${cols(d => d.p.size, 'player')}</section>`;
-
-  $v.innerHTML =
-    head +
-    kpis([
-      ['Players', nP],
-      ['Sessions', S.length],
-      ['Sessions / player', Math.round(median(perP) * 10) / 10],
-      ['Answers / session', Math.round(median(S.map(s => s.L.length)) * 10) / 10]
-    ]) +
-    `<div class="adm-sgrid adm-health">${stopSec}${phSec}${gSec}${tSec}${healthSheets()}</div>`;
+  $v.innerHTML = stops
+    ? head +
+      kpis([
+        ['Players', nP],
+        ['Sessions', S.length],
+        ['Sessions / player', Math.round(median(perP) * 10) / 10],
+        ['Answers / session', Math.round(median(S.map(s => s.L.length)) * 10) / 10]
+      ]) +
+      `<div class="adm-sgrid adm-health">${stopSec}${healthSheets()}</div>`
+    : head + `<div class="adm-sgrid adm-health">${phSec}${gSec}</div>`;
   bindStats();
   // The pages summaries (sheet v30) come with their own read: the section fills in when they arrive, and is read again
   // once stale.
-  pagesFresh('~health');
+  if (stops) pagesFresh('~stats-stop');
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
