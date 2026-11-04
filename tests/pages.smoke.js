@@ -1590,25 +1590,54 @@ async function tipsCheck(b, base) {
     }
     // The Duel tab, no genus met yet: a duel whose genera are not all met brings their cards itself (quizDuel, not in its
     // plan): the tip waits for a later break, never a genus card right after it (Codex review of PR #440). Both sides are
-    // checked, not left to the draw (test-suite review, 2026-11-04: with no genus met nearly every next duel brings a card,
-    // so in 10 duels a tip often never came and nothing was checked): first a break whose next duel brings a card, where
-    // the tip must wait; then every genus met, so the next break brings no card: the tip comes, and no card after it.
+    // checked, neither left to the draw (test-suite review, 2026-11-04: with the draw deciding, a tip often never came in
+    // 10 duels and nothing was checked; and a repeated pair of met genera could come first, Codex review #456):
+    // 1. the next duel is planned with a genus not met yet (NEXTQ, as planNext would): at the break the tip must wait, and
+    //    that duel comes with the genus's card;
+    // 2. then every genus met, so no duel brings a card: at the next armed break the tip comes, and no card after it.
     {
       const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#quiz-duel', true); // q 60: any break will do
-      let waited = 0,
+      let waited = null,
         shown = 0;
-      for (let i = 0; i < 12 && !shown; i++) {
-        // Once the tip has waited at a break with a card: every genus met, so the next duel brings none.
-        if (waited) await p.evaluate(() => introAdd(slateGenera(), false));
+      // 1. A break armed for the tip (an achievement toast at the answer arms none: then the next duel is tried).
+      for (let i = 0; i < 6 && !waited; i++) {
+        await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+        const r = await p.evaluate(() => {
+          const clear = () => {
+            document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+            document.querySelectorAll('.achpop').forEach(x => x.remove());
+            achQ.length = 0;
+            achBusy = false;
+          };
+          clear();
+          document.querySelector('#view [data-c]').click();
+          const nb = document.getElementById('next'),
+            armed = nb.onclick !== route,
+            cur = hashNow(),
+            pair = duelPick(pool(), ([x, y]) => !introduced(x) || !introduced(y));
+          if (armed && pair)
+            NEXTQ = {k: planKey(cur), args: planDuel(...pair), snap: planState(), stop: false, urls: [], held: [], next: null};
+          clear();
+          nb.click();
+          return {armed, pair, tip: !!document.querySelector('.tipcard')};
+        });
+        if (!r.armed) continue;
+        if (!r.pair) {
+          fails.push(`${W} duel: no look-alike pair with a genus not met yet`);
+          break;
+        }
+        await p.waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000}).catch(() => {});
+        const card = await p.evaluate(() => !!document.querySelector('.unlock.intro'));
+        waited = {...r, card};
+        if (r.tip || !card) fails.push(`${W} duel: the next duel brings a genus card, yet ${JSON.stringify(waited)}`);
+      }
+      // 2. Every genus met: the next armed break takes the tip, and no card comes after it.
+      await p.evaluate(() => introAdd(slateGenera(), false));
+      for (let i = 0; i < 6 && waited && !shown; i++) {
         const r = await play(p);
         if (!r.next) {
           // Not armed at the answer (a toast was up then, as after a first duel won): the tip waits; nothing to check here.
-          if (!r.armed) continue;
-          // Armed, and no tip at the tap: the next duel must bring a genus card (drawn with the duel, quizDuel).
-          await p.waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000}).catch(() => {});
-          const card = await p.evaluate(() => !!document.querySelector('.unlock.intro'));
-          if (card) waited++;
-          else fails.push(`${W} duel: the tip did not take a break whose next duel brings no genus card (duel ${i + 1})`);
+          if (r.armed) fails.push(`${W} duel: no tip at a break armed for it, every genus met (duel ${i + 1})`);
           continue;
         }
         shown++;
@@ -1624,8 +1653,8 @@ async function tipsCheck(b, base) {
         }));
         if (after.intro || after.tip) fails.push(`${W} duel: a card right after the tip: ${JSON.stringify(after)}`);
       }
-      if (!waited) fails.push(`${W} duel: the tip never met a break with a genus card after it (shown ${shown})`);
-      if (!shown) fails.push(`${W} duel: no tip once every genus was met (waited ${waited})`);
+      if (!waited) fails.push(`${W} duel: no break armed for the tip in 6 duels`);
+      else if (!shown) fails.push(`${W} duel: no tip in 6 duels once every genus was met`);
       if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
       await c.close();
     }
