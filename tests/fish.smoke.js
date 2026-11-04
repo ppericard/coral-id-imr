@@ -57,6 +57,7 @@ const server = http.createServer((req, res) => {
         localStorage.setItem('reefid-tour', '"done"');
         localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
         localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify(coral));
       }
     } catch (e) {}
@@ -262,6 +263,7 @@ const server = http.createServer((req, res) => {
           sessionStorage.setItem('fish-ui', '1');
           localStorage.setItem('reefid-tour', '"done"');
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
         }
       } catch (e) {}
     });
@@ -597,6 +599,7 @@ const server = http.createServer((req, res) => {
           sessionStorage.setItem('fish-ra', '1');
           localStorage.setItem('reefid-tour', '"done"');
           localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
           localStorage.setItem('reefid-sync-fish-progress', JSON.stringify({t01: {ok: 4, ko: 1}}));
           if (asUser) {
             localStorage.setItem('reefid-admin-vault', 'smoke');
@@ -678,6 +681,7 @@ const server = http.createServer((req, res) => {
           localStorage.setItem('reefid-tour', '"done"');
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
           localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
         }
       } catch (e) {}
       // The sheet: the account (coral and fish progress), a hold of 5 on every load; saves recorded.
@@ -777,6 +781,7 @@ const server = http.createServer((req, res) => {
           localStorage.setItem('reefid-tour', '"done"');
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
           localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
           localStorage.setItem('reefid-sync-fish-progress', JSON.stringify(F));
           localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', log: [], base: {}, fbase: F, srv: 1}));
         }
@@ -836,6 +841,7 @@ const server = http.createServer((req, res) => {
           localStorage.setItem('reefid-tour', '"done"');
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
           localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
         }
       } catch (e) {}
     });
@@ -874,6 +880,7 @@ const server = http.createServer((req, res) => {
           localStorage.setItem('reefid-tour', '"done"');
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
           localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
         }
       } catch (e) {}
       let s = sd;
@@ -950,7 +957,73 @@ const server = http.createServer((req, res) => {
     fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
     await c6.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh];
+  // (10) The fish welcome question (Pierre, 2026-11-04; docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
+  // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
+  // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
+  // basics module (no Fish basics yet): the quiz comes at once. Each answer sets the fish starting values (startV).
+  const welcome = [];
+  for (const pick of ['new', 'imr', 'know']) {
+    const c7 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c7.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c7.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-welcome')) {
+          sessionStorage.setItem('fish-welcome', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour'}));
+        }
+      } catch (e) {}
+    });
+    const q = await c7.newPage();
+    q.on('pageerror', e => errs.push(`welcome ${pick}: ${e.message}`));
+    await q.goto(base + '#quiz');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('.unlock.startq'), null, {timeout: 30000});
+    const card = await q.evaluate(() => {
+      const d = document.querySelector('.unlock.startq');
+      return {
+        subj: SUBJ.id,
+        title: (d.querySelector('h2, h3, .ultitle') || {}).textContent || '',
+        opts: [...d.querySelectorAll('[data-start]')].map(b => [b.dataset.start, b.querySelector('b').textContent]),
+        q: !!document.querySelector('#view .q')
+      };
+    });
+    const want = [
+      ['new', 'I’m new to reef fish'],
+      ['imr', 'I’m at IMR (Research Assistant programme)'],
+      ['know', 'I know reef fish well']
+    ];
+    if (
+      card.subj !== 'fish' ||
+      !/How well do you know reef fish\?/.test(card.title) ||
+      JSON.stringify(card.opts) !== JSON.stringify(want) ||
+      card.q
+    )
+      welcome.push(`welcome card: ${JSON.stringify(card)}`);
+    await q.click(`.unlock.startq [data-start="${pick}"]`);
+    await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000}).catch(() => {});
+    const after = await q.evaluate(() => ({
+      fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
+      coral: JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'),
+      p: startV().p,
+      at: startV().at,
+      basics: !!document.querySelector('.unlock.basicsq'),
+      card: !!document.querySelector('.unlock.startq'),
+      q: !!document.querySelector('#view .q')
+    }));
+    const v = await q.evaluate(c => startVars(c), pick);
+    if (!after.fish || after.fish.c !== pick || after.fish.via !== 'card')
+      welcome.push(`${pick}: the fish record ${JSON.stringify(after.fish)}`);
+    if (!after.coral || after.coral.c !== 'know') welcome.push(`${pick}: the coral answer changed ${JSON.stringify(after.coral)}`);
+    if (after.p !== v.p || after.at !== v.at) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, after.at, v])}`);
+    if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
+    await c7.close();
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh, ...welcome];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

@@ -23,11 +23,11 @@
     // 2026-10-31), centred on the active point.
     // A quiet line in the Learn & practise door (Pierre, 2026-11-03): Coral basics for a player who has not done it and
     // has few answers (under CHOICE.ASK, core.js, the same bar as the first-launch question); gone once it is done.
-    // Corals only (CHOICE.SUBJ): Coral basics teaches coral words.
+    // Only for a subject that has a basics module (app.js basicsDue: Coral basics teaches coral words).
     const G = P[LEVEL] || {},
       // Not for a player who said they had the IMR course or know corals well (Pierre, 2026-11-04).
-      said = (store.get(CHOICE.KEY, null) || {}).c,
-      newb = SUBJ.id === CHOICE.SUBJ && !basicsDone() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
+      said = (store.get(startKey(SUBJ.id), null) || {}).c,
+      newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)

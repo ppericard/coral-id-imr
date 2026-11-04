@@ -1383,12 +1383,18 @@ const BASICS_KEY = 'reefid-basics';
 const BASICS_ICON =
   '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
 const basicsDone = () => !!((store.get(BASICS_KEY, {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})._basics);
-// The answers to the first-launch question (core.js CHOICE) as big buttons, one per row, with a line each: the tour, the
-// card that asks it, and the fallback card (only: the choices it offers). cur: the current answer, marked.
+// The basics module of the subject on screen (SUBJECTS pages 'basics': Coral basics; no Fish basics yet) not done yet:
+// what "I'm new" and the first-launch question's "lower" card offer, and the Home line. A subject without one offers none.
+const basicsDue = () => SUBJ.pages.includes('basics') && !basicsDone();
+// The answers to the first-launch question (core.js CHOICE) as big buttons, one per row, with a line each, in the words
+// of the subject on screen (SUBJECTS start): the tour, the card that asks it, and the fallback card (only: the choices it
+// offers). cur: the current answer, marked.
 const startOptsHtml = (cur, only) =>
-  `<div class="startopts" role="group" aria-label="How well do you know corals?">${(only ? only.map(startOpt).filter(Boolean) : CHOICE.opts)
+  `<div class="startopts" role="group" aria-label="${esc(SUBJ.start.q)}">${(only || CHOICE.opts.map(o => o[0]))
+    .map(c => [c, startText(SUBJ.id, c)])
+    .filter(([, x]) => x)
     .map(
-      ([c, t, d]) =>
+      ([c, [t, d]]) =>
         `<button type="button" class="startopt" data-start="${c}" aria-pressed="${c === cur}"><b>${esc(t)}</b><small>${esc(d)}</small></button>`
     )
     .join('')}</div>`;

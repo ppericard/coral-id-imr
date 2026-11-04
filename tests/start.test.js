@@ -25,7 +25,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
       Date: {now: () => ++CLOCK},
       slateGenera: () => slate,
       syncSoon: () => {},
-      basicsDone: () => basics,
+      basicsDue: () => !basics && ctx.SUBJ.pages.includes('basics'), // app.js: the subject's basics module not done yet
       document: {querySelectorAll: () => []},
       ...C,
       ...require('./subj.stub.js')(),
@@ -60,7 +60,7 @@ test('the question: three answers, in order, each with its variables; "new" is t
     CHOICE.opts.map(o => o[0]),
     ['new', 'imr', 'know']
   );
-  CHOICE.opts.forEach(o => assert.ok(o[1] && o[2] && typeof o[3].p === 'number' && typeof o[3].at === 'number', o[0]));
+  CHOICE.opts.forEach(o => assert.ok(typeof o[1].p === 'number' && typeof o[1].at === 'number', o[0]));
   assert.deepStrictEqual(startVars(), startVars('new'), 'no answer: the default player');
   assert.strictEqual(startVars('new').p, 0, 'new: the level of before');
   assert.strictEqual(startVars('new').at, 50, 'new: the offer when it came before');
@@ -321,7 +321,7 @@ test('synced: the ease is merged by its own time, and a change of the variables 
     B = model();
   A.startSet('know', 'tour');
   const rec = A.startOf();
-  B.ctx.store.set(CHOICE.KEY, rec); // the same answer on both devices
+  B.ctx.store.set(C.startKey('coral'), rec); // the same answer on both devices
   A.play(N, 0, false, true, 0.5); // the longer window on A
   B.startEase(); // Coral basics taken on B
   const drops = A.ctx.drops;
@@ -357,7 +357,7 @@ test('synced: a window saved before a progress reset never wins over the new one
   assert.strictEqual(A.startOf().v, 'lo');
   // The post-reset record reaches another device that still holds the old window: the new window wins there too.
   const B = model();
-  B.ctx.store.set(CHOICE.KEY, JSON.parse(saved));
+  B.ctx.store.set(C.startKey('coral'), JSON.parse(saved));
   B.startMerge(JSON.stringify(A.startOf()));
   assert.strictEqual(B.startOf().w.length, N);
   assert.strictEqual(B.startOf().wt, A.startOf().wt);
@@ -370,7 +370,7 @@ test('synced: a remote progress reset keeps the window counted since it, with it
   const A = model(),
     B = model();
   A.startSet('know', 'tour');
-  B.ctx.store.set(CHOICE.KEY, A.startOf()); // the same answer on both devices
+  B.ctx.store.set(C.startKey('coral'), A.startOf()); // the same answer on both devices
   B.play(30, 0, true, true, 0.5); // B's window before A's reset
   A.introReset(); // a reset made on A
   const wt = A.startOf().wt,
@@ -434,7 +434,7 @@ test('synced: both histories of answers are merged, oldest first, whichever answ
   assert.strictEqual(C.startPriorAt(o, T2), startVars('know').p);
   // The other way (the account's device gets the new answer): the same history, no duplicate on a second merge.
   const A = model();
-  A.ctx.store.set(CHOICE.KEY, acct);
+  A.ctx.store.set(C.startKey('coral'), acct);
   A.startMerge(JSON.stringify(o));
   A.startMerge(JSON.stringify(o));
   assert.deepStrictEqual(A.startOf().h, o.h);
@@ -629,7 +629,8 @@ test('sign-out clears the first-launch answer and Coral basics with the progress
     i = src.indexOf('const signOff = () => {'),
     list = src.slice(i, src.indexOf('].forEach', i));
   assert.ok(i > 0, 'signOff found');
-  assert.match(list, /\bCHOICE\.KEY\b/);
+  // Every subject's record (reefid-sync-<subject>-start, core.js startKey) goes with that subject's other keys.
+  assert.match(list, /\[[^\]]*'start'[^\]]*\]\.map\(k => subjKey\(S\.id, k\)\)/);
   assert.match(list, /\bBASICS_KEY\b/);
 });
 
@@ -727,18 +728,57 @@ test('rules version: the first-launch prior has its RVS entry, with RV_CARD', ()
   assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
 });
 
-// The question is about corals (CHOICE.SUBJ): on another subject (fish, its own state) the player plays as the default
-// player, and no window, verdict or card runs (model.js startOn).
-test('corals only: on the fish subject the default prior, no window, no card', () => {
+// The fish welcome question (Pierre, 2026-11-04; docs/FISH_PATH.md): each subject asks its own question, in its own
+// words (SUBJECTS start: the same answers, in the same order), kept in its own record (startKey): the coral answer stays
+// the corals', the fish one sets the fish starting values, its window counts fish answers, and a subject without a basics
+// module (no Fish basics yet) has no "lower" card and no basics offer.
+test('per subject: the fish welcome question, its own record, window and cards', () => {
+  ['coral', 'fish'].forEach(id => {
+    const S = C.subjectOf(id);
+    assert.ok(S.start && S.start.q, `${id}: a question`);
+    assert.deepStrictEqual(
+      Object.keys(S.start.opts),
+      CHOICE.opts.map(o => o[0]),
+      `${id}: the answers of CHOICE, in order`
+    );
+    CHOICE.opts.forEach(([c]) => assert.ok(C.startText(id, c)[0] && C.startText(id, c)[1], `${id} ${c}: words`));
+  });
+  assert.strictEqual(C.subjectOf('fish').start.q, 'How well do you know reef fish?');
+  assert.deepStrictEqual(
+    CHOICE.opts.map(([c]) => C.startText('fish', c)[0]),
+    ['I’m new to reef fish', 'I’m at IMR (Research Assistant programme)', 'I know reef fish well'],
+    "Pierre's three answers"
+  );
+  assert.strictEqual(C.startText('fish', 'nope'), null);
+  assert.strictEqual(C.startKey('fish'), 'reefid-sync-fish-start');
+  assert.strictEqual(C.startKey('coral'), 'reefid-sync-coral-start', 'the corals keep their key');
   const M = model();
   M.startSet('know', 'tour');
   assert.deepStrictEqual(M.startV(), startVars('know'), "corals: the answer's prior");
   M.ctx.SUBJ = C.subjectOf('fish');
-  assert.notStrictEqual(M.ctx.SUBJ.id, CHOICE.SUBJ);
-  assert.deepStrictEqual(M.startV(), startVars('new'), 'fish: the default player');
+  assert.strictEqual(M.startOf(), null, "fish: not answered yet (the coral answer is the corals' own)");
+  assert.deepStrictEqual(M.startV(), startVars('new'), 'fish, no answer: the default player');
+  M.startSet('imr', 'card');
+  assert.deepStrictEqual(M.startV(), startVars('imr'), "fish: its own answer's prior");
+  assert.strictEqual(M.saved[C.startKey('fish')] && JSON.parse(M.saved[C.startKey('fish')]).c, 'imr');
+  assert.strictEqual(JSON.parse(M.saved[C.startKey('coral')]).c, 'know', 'the coral answer untouched');
+  // The window counts the fish answers in the fish record only; a "lower" verdict has no card (no Fish basics).
+  M.setHold(2);
   M.play(CHOICE.AT[0], 0, false, true, -1);
-  assert.strictEqual((M.startOf().w || []).length, 0, 'no window on fish answers');
-  assert.strictEqual(M.startDue(), null);
+  assert.strictEqual(M.startOf().w.length, CHOICE.AT[0], 'fish: its own window');
+  assert.strictEqual(M.startOf().v, 'lo');
+  assert.strictEqual(M.startDue(), null, 'no Fish basics: no "lower" card');
   M.ctx.SUBJ = C.subjectOf('coral');
+  assert.deepStrictEqual(M.startV(), startVars('know'), 'back on the corals: their answer');
+  assert.strictEqual((M.startOf().w || []).length, 0, 'the coral window untouched by fish answers');
+  // A record from another device merges into its own subject's record, whichever subject is on screen.
+  const B = model();
+  B.ctx.SUBJ = C.subjectOf('fish');
+  B.startSet('know', 'card');
+  const drops = M.ctx.drops;
+  M.startMerge(JSON.stringify(B.startOf()), 'fish');
+  assert.strictEqual(M.startOf().c, 'know', 'still the coral record on screen');
+  assert.strictEqual(JSON.parse(M.saved[C.startKey('fish')]).c, 'know', 'the fish record merged: the latest answer');
+  assert.strictEqual(M.ctx.drops, drops, "another subject's record: the plans on screen stay");
   assert.ok(C.subjectOf('coral').pages.includes('basics') && !C.subjectOf('fish').pages.includes('basics'), 'Coral basics: corals only');
 });
