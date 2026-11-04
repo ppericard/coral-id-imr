@@ -40,7 +40,7 @@
      per script run and one for data.json (bootTick; bootTick.n() = steps so far), and after 6 s a line says only the
      first visit is this slow (beginner RA review, 2026-11-02: a blank "Loading…" for 5-8 s on a slow line looked stuck). -->
 <script>(function(){addEventListener("error",function(e){var t=e.target,n;if(!t||t.tagName!=="LINK"||t.rel!=="stylesheet")return;n=+(t.dataset.r||0);if(n<3)setTimeout(function(){var c=t.cloneNode();c.dataset.r=n+1;t.replaceWith(c)},1000*(n+1))},true);var D=0,T={},dom=new Promise(function(r){addEventListener("DOMContentLoaded",r)});function tick(){var p=document.getElementById("bootp");D++;if(p)p.value=D}tick.n=function(){return D};window.bootTick=tick;function go(L,i,n,ok){if(i>=L.length)return ok();var s=document.createElement("script");s.src=L[i];s.onload=function(){tick();go(L,i+1,0,ok)};s.onerror=function(){s.remove();n<3?setTimeout(function(){go(L,i,n+1,ok)},1000*(n+1)):go(L,i+1,0,ok)};document.body.appendChild(s)}function tier(k){if(T[k])return T[k];var got=dom.then(function(){return[].map.call(document.querySelectorAll('link[data-tier="'+k+'"]'),function(l){if(k>1){var c=document.createElement("link");c.rel="preload";c.as="script";c.href=l.href;document.head.appendChild(c)}return l.href})});return T[k]=Promise.all([got,k>1?tier(k-1):dom]).then(function(a){return new Promise(function(ok){go(a[0],0,0,ok)})})}window.loadTier=tier;dom.then(function(){var p=document.getElementById("bootp");if(p)p.max=document.querySelectorAll('link[data-tier="1"]').length+1;setTimeout(function(){var s=document.getElementById("boots");if(s)s.hidden=false},6000)});window.BOOT=tier(1)})()</script>
-<link rel="preload" href="core.js?v=49" as="script" data-tier="1">
+<link rel="preload" href="core.js?v=50" as="script" data-tier="1">
 <link rel="preload" href="app.js?v=210" as="script" data-tier="1">
 <link rel="preload" href="sync.js?v=30" as="script" data-tier="1">
 <link rel="preload" href="home-art.js?v=5" as="script" data-tier="1">
@@ -50,10 +50,10 @@
 <link data-tier="2" href="tips.js?v=3">
 <link data-tier="2" href="quiz.js?v=51">
 <link data-tier="2" href="learn.js?v=19">
-<link data-tier="2" href="progress.js?v=24">
+<link data-tier="2" href="progress.js?v=26">
 <link data-tier="5" href="flag.js?v=11">
 <link data-tier="5" href="proto/lab.js?v=83">
-<link rel="stylesheet" href="app.css?v=138">
+<link rel="stylesheet" href="app.css?v=140">
 <link rel="stylesheet" href="proto/lab.css?v=57">
 <link rel="stylesheet" href="home.css?v=26">
 </head>

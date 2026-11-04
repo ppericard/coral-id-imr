@@ -181,7 +181,7 @@ const WIDTHS = [390, 1280];
     {
       const tab = await p.evaluate(() => (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '');
       const menu = await p.evaluate(() => ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '');
-      if (!/Players/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players`);
+      if (!/List/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players › List`);
     }
     // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
     // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
@@ -202,9 +202,15 @@ const WIDTHS = [390, 1280];
         ...L,
         {h: '~mont', tab: 'Look-alikes', view: null, n: 1},
         {h: '~stats-needs', tab: 'Coverage', view: '~cov', n: 2},
-        {h: '~journey/Ana Demo', tab: 'Players', view: null, n: 1}
+        {h: '~journey/Ana Demo', tab: 'List', view: null, n: 1}
       ];
     });
+    // Pierre, 2026-11-04: no tab holds a view of its own name, no group a tab of its own name.
+    const same = await p.evaluate(() => [
+      ...TABS.filter(t => t[2].length > 1 && t[2].some(([, v]) => v === t[1])).map(t => t[1]),
+      ...GROUPS.filter(([, g, L]) => L.some(t => t[1] === g)).map(([, g]) => g)
+    ]);
+    if (same.length) fails.push(`${w}px: a tab or group named like what it holds: ${same.join(', ')}`);
     const OLD = ['~triage', '~stats-needs', '~cov', '~kcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
     OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
     const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
@@ -718,7 +724,7 @@ const WIDTHS = [390, 1280];
         )
       };
     });
-    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'Players' || jo.small)
+    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'List' || jo.small)
       fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
     // The first-meeting cards from the player's saved progress (userData): Ana's first cards and single cards; Carla
     // opened all from the offer card (an orange line on the genera chart).
