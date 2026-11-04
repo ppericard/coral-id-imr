@@ -375,7 +375,8 @@
     // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
     // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
     // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
-    // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code).
+    // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code); Ana
+    // also played the fish quiz once.
     let ps = 7;
     const prnd = () => (ps = (ps * 1103515245 + 12345) % 2147483648) / 2147483648,
       pages = [],
@@ -405,7 +406,13 @@
         const nG = Object.keys(g).length;
         pages.push(
           pageRow(pi++, NOW - (d0 - v * (d0 / 4)) * DAY, aid(name), {
-            r: {home: [1, 4 + Math.round(prnd() * 10)], quiz: [1 + nG, 300 + Math.round(prnd() * 900)], ...(nG ? {genus: [nG, 60]} : {})},
+            r: {
+              home: [1, 4 + Math.round(prnd() * 10)],
+              quiz: [1 + nG, 300 + Math.round(prnd() * 900)],
+              ...(nG ? {genus: [nG, 60]} : {}),
+              // Ana's last visit went on with Fish on screen (core.js pageName: fish.<page>).
+              ...(name === 'Ana Demo' && v === 3 ? {'fish.quiz': [2, 420], 'fish.genera': [1, 35]} : {})
+            },
             g,
             vi: 'demovi' + pi,
             na

@@ -702,7 +702,8 @@ const WIDTHS = [390, 1280];
       !/before asked/.test(sa.t) ||
       !/after asked/.test(sa.t) ||
       !/Learn/.test(sa.t) ||
-      !/4 visits recorded/.test(sa.t)
+      !/4 visits recorded/.test(sa.t) ||
+      !/quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.quiz) read back with its subject
     )
       fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
     await go('~journey/' + encodeURIComponent('Dio Demo'));

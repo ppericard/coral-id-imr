@@ -687,7 +687,7 @@ function reportDialog(c, btn) {
   d.showModal();
   d.querySelector('input[name="why"]').focus();
 }
-// Answers played before signing in (LOG0) and the one-time sign-in card (NUDGE): outside the reefid-sync-* keys, so they
+// Answers played before signing in (LOG0) and the one-time sign-in card (NUDGE, once used): outside the reefid-sync-* keys, so they
 // never travel in the progress data sent to the sheet.
 const LOG0 = 'reefid-log0',
   NUDGE = 'reefid-nudge',
@@ -936,7 +936,13 @@ function pagesRoute(h) {
     } catch (e) {}
   }
   const s = genus && P[genus];
-  pagesOpen(PV, h, Date.now(), {genus, from, asked: s && (s.ok || 0) + (s.ko || 0) > 0, hidden: document.visibilityState === 'hidden'});
+  pagesOpen(PV, h, Date.now(), {
+    genus,
+    from,
+    asked: s && (s.ok || 0) + (s.ko || 0) > 0,
+    hidden: document.visibilityState === 'hidden',
+    subj: SUBJ.id // a fish page is named fish.<page> (core.js pageName)
+  });
 }
 function pagesSend() {
   const S = pagesTake(PV, Date.now());
@@ -1060,14 +1066,19 @@ function signIn(name, pin, j) {
 // early so their progress reaches the sheet; 20 since 2026-11-02, was 10, "fewer, better pop-ups": nothing is lost by
 // waiting, the answers played before signing in (LOG0) join the account at sign-in). Spaced from the other prompts
 // (quiz.js promptOk). Never in Pierre's admin browser. "Later" closes it for good.
+// The account is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not the
+// game mode"): the answers count in every subject (answersAll), so a fish-only player meets it too (it counted LOG0,
+// the answers queued for the sheet, which holds no fish answers).
 const NUDGE_AT = 20;
+// Answers played on this device in every subject: each subject's global level record (core.js LEVEL, ok + ko), the one
+// on screen from memory. Signed out, that is what was played here without an account (signing out clears them).
+const answersAll = () =>
+  SUBJECTS.reduce((n, S) => {
+    const L = ((S.id === SUBJ.id ? P : store.get(subjKey(S.id, 'progress'), {})) || {})[LEVEL] || {};
+    return n + (Number(L.ok) || 0) + (Number(L.ko) || 0);
+  }, 0);
 const nudgeDue = () =>
-  !SYNC &&
-  SYNC_URL &&
-  !HAS_ADMIN_TOKEN &&
-  !document.querySelector('#tour, .unlock') &&
-  !store.get(NUDGE, 0) &&
-  store.get(LOG0, []).length >= NUDGE_AT;
+  !SYNC && SYNC_URL && !HAS_ADMIN_TOKEN && !document.querySelector('#tour, .unlock') && !store.get(NUDGE, 0) && answersAll() >= NUDGE_AT;
 // once = the one-time card (marks it used); play = once signed in, its button opens the photo quiz (skipped tour).
 // The header's Sign in button opens it with neither: it closes with "Close" or "Done".
 // The card (app.js cardShow) holds the account box (bindSync), which draws its own title and redraws itself as the player

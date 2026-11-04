@@ -950,6 +950,48 @@ async function signin(base) {
       prog: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
+  // The sign-in card is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not
+  // the game mode"): a player who plays only fish meets it at their 20th answer, as a coral player does (it counted the
+  // answers queued for the sheet, which takes no fish answers, so it never came). Fish is opened to this player in the
+  // page, as the admin's group will (core.js SUBJECTS beta).
+  await run(
+    () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-subject', '"fish"')),
+    async p => {
+      await p.evaluate(() => {
+        SUBJECTS.find(S => S.id === 'fish').beta = false;
+        return setSubject('fish').then(() => go('quiz'));
+      });
+      await p.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000});
+      const r = await p.evaluate(async () => {
+        const at = [],
+          wait = ms => new Promise(ok => setTimeout(ok, ms));
+        for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
+          await wait(20);
+          if (document.querySelector('#view .q.wink')) document.querySelector('#view [data-w]').click();
+          else {
+            const t = SHOWNQ[1],
+              b = [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c === t);
+            if (b) b.click();
+            else {
+              const f = document.querySelector('#view .tyform');
+              f.querySelector('input').value = GX(t).name;
+              f.requestSubmit();
+            }
+          }
+          await wait(50);
+          if (document.querySelector('.unlock.signnudge')) at.push(answersSoFar());
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          route();
+          await wait(20);
+        }
+        return {at, n: answersSoFar(), subj: SUBJ.id, used: localStorage.getItem('reefid-nudge'), log0: store.get(LOG0, []).length};
+      });
+      if (r.subj !== 'fish' || r.at.length !== 1 || r.at[0] !== 20 || r.used !== '1' || r.log0)
+        fails.push('sign-in card for a fish-only player: ' + JSON.stringify(r));
+    }
+  );
   // The apology card greets a signed-in player by the first word of their sign-in name (core.js sorryText); asked here
   // with the clock on the morning after, the device's own answer in the window, the account from the stub sheet.
   await run(
