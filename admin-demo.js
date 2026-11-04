@@ -160,6 +160,27 @@
           : name === 'Ben Demo'
             ? {at: 50, open: 0, t: at(50)}
             : null;
+      // The first-launch question (app core.js CHOICE, model.js startSet): Carla said she had the IMR course in the tour
+      // and moved up to "I know corals well" on the fallback card after her 20th answer; Ben is new to corals and got the
+      // Coral basics card; the others answered in the tour.
+      const st0 =
+        name === 'Carla Demo'
+          ? {
+              c: 'know',
+              t: at(20),
+              at: 20,
+              via: 'fallback',
+              n: 0,
+              s: 0,
+              fb: {'reefid-hi': [20, at(20)]},
+              h: [
+                ['imr', 0, at(0), 'tour'],
+                ['know', 20, at(20), 'fallback']
+              ]
+            }
+          : name === 'Ben Demo'
+            ? {c: 'new', t: at(0), at: 0, via: 'card', n: 20, s: -4.6, fb: {'new-lo': [20, at(20)]}, h: [['new', 0, at(0), 'card']]}
+            : {c: 'imr', t: at(0), at: 0, via: 'tour', n: 20, s: 0.4, fb: {}, h: [['imr', 0, at(0), 'tour']]};
       const learned = Object.values(P).filter(s => s.pg >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
@@ -178,7 +199,8 @@
           'reefid-sync-coral-progress': JSON.stringify(P),
           'reefid-sync-settings': '{}',
           'reefid-sync-coral-intro': JSON.stringify(intro),
-          ...(offer ? {'reefid-sync-coral-intro-offer': JSON.stringify(offer)} : {})
+          ...(offer ? {'reefid-sync-coral-intro-offer': JSON.stringify(offer)} : {}),
+          'reefid-sync-coral-start': JSON.stringify(st0)
         }
       };
     });
