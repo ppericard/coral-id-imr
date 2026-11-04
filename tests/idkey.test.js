@@ -82,7 +82,7 @@ test('the device data moves once to the new names (core.js migrateIdKey)', () =>
   const s = store({
     'reefid-finder-x': 'false',
     'reefid-finder-lay': '"grid"',
-    'imr-finder-pv': '"book"', // from before the app's rename: migrateKeys, then migrateIdKey
+    'imr-finder-pv': '"book"', // from before the app's rename: migrateKeys, then migrateIdKey (rename-app: keep)
     'reefid-admin-fcov': '{"set":"x"}',
     'reefid-sync-size': '{"finder":"l","lab-finder":"s","genera":"m"}',
     'reefid-lab-votes': '{"finder":"keep","size":"trim"}',
