@@ -634,6 +634,20 @@ const WIDTHS = [390, 1280];
         fails.push(
           `sheet reads: Health asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
         );
+      // (4) The answer log is never published before the photo ratings (Codex review #488): Health and To do's Health line
+      // read both once the log is there. The ratings answer a second late here (admin-demo.js slow=stats).
+      await q.addInitScript(() => {
+        window.__early = 0;
+        const t = setInterval(() => {
+          try {
+            if (ANS && !STATS) window.__early++;
+            if (ANS && STATS) clearInterval(t);
+          } catch (e) {} // before admin.js has run
+        }, 10);
+      });
+      await q.goto(base + 'admin.html?demo&slow=stats&load=4#~health');
+      await quiet();
+      if (await q.evaluate(() => window.__early)) fails.push('sheet reads: the answer log was published before the photo ratings');
       await q.close();
     }
     await go('~users');
