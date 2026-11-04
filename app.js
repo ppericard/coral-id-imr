@@ -1712,6 +1712,8 @@ function route() {
   upsize();
   // Pages opened in the visit (sync.js pagesRoute, sheet v30 'pages'): the page drawn, not a link that sent on to another.
   if ((hashNow() || 'home') === (h || 'home') && typeof pagesRoute === 'function') pagesRoute(h);
+  // The page of address h is drawn: the tests wait for this instead of a fixed time (tests/pages.smoke.js drawn()).
+  window.ROUTED = h;
 }
 addEventListener('hashchange', route);
 // Pages open straight on their content: the title is dropped where the header already names the page
