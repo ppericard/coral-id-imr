@@ -11,13 +11,15 @@ Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `to
 `python3 tools/fish_judge.py` writes them into `fish-photos.json` (`e`, `jt` and a proposed crop `c` on each photo) and
 prints the summary;
 `tools/fish_photos.py` re-applies them whenever it rebuilds the photo list. `tests/fish.test.js` checks that every
-circle-1 game photo is judged, that every code is valid and that the caps below hold.
+game photo is judged (every circle and the winks), that every code is valid and that the caps below hold.
 
 ## How to look
 
 1. `python3 tools/fish_judge.py --sheets <dir>` downloads every game photo at iNaturalist's `medium` size (500 px)
    into `<dir>/img` and draws contact sheets of 12 (4 x 3, each photo in a 300 x 225 cell, its number and the
-   observer's species name above it) into `<dir>/sheets`. Keep `<dir>` outside the repository; delete it after.
+   observer's species name above it, a 5 x 5 grid over it for the crops) into `<dir>/sheets`. Keep `<dir>` outside the
+   repository; delete it after. `--only t28,t29` limits the sheets to some entries, `--todo` to the photos not judged
+   yet (a new photo after a rebuild, a new entry).
 2. Open every sheet and judge every photo on it. Open a photo on its own (`<dir>/img/<f>.jpg`) whenever the sheet does
    not settle a tag.
 3. Judge what the photo shows, not the species: the same species can be easy on one photo and hopeless on another.
@@ -161,13 +163,23 @@ curation exists, admin plan PR 4): `best` or `alt` → proposed in, with its tag
 
 ## How the first pass went (2026-11-04)
 
-Circle 1 (648 photos) only: circles 2 and 3 and the winks are opt-in, met after the IMR entries, and not judged yet (no
-`e`, so as before). The first look gave view, whole, light (with a "cast" letter), clarity, size, count, flags and ease;
+Circle 1 (648 photos) first: circles 2 and 3 and the winks are opt-in, met after the IMR entries, and were judged
+next (below). The first look gave view, whole, light (with a "cast" letter), clarity, size, count, flags and ease;
 Pierre then asked for colour loss in place of the cast and for crop proposals, so every photo was looked at a second
 time for those two and the light letter (rubric 2). Then (rubric 3) the phase flag stopped capping the ease, and the 11
 circle-1 entries under 5 very easy photos got more: 214 research-grade candidates of `fish-cand.json` (PR #463) looked at
 and judged the same way, 37 very easy ones added (`tools/fish_judge.json` `add`; the tool appends them to
 `fish-photos.json`, once per observation).
+
+Circles 2 and 3 and the winks (2026-11-04, later; ROADMAP "Fish photo judging, next"): the 475 photos of the 20
+entries out of circle 1 (Barracuda; the 17 circle-3 entries; the Whale shark and Thresher sharks winks) judged the same
+way on rubric 5, the small fish looked at again on a 10 x 10 grid for 48 crops. No juvenile class exists for these entries
+(`juv` covers circle 1), so every juvenile there keeps the cap. Many of these families are rarely shown as the rubric's
+very easy photo: the morays, snake eels, garden eels and jawfishes live with most of their body in a hole (partial, at
+most 3), the frogfishes, scorpionfishes, stonefishes and seamoths are camouflaged, the rays and seamoths are mostly seen
+from above, the sharks in blue water; seven entries have no photo at 4 or 5 and take their 3 easiest at the start
+(`model.js` `easyFirst`). The rubric was applied as written (no family exception): a question for Pierre in
+docs/EVENING.md.
 
 ## A temporary use
 
