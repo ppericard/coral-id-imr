@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 1;
+  const AV = 2; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf)
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -593,6 +593,12 @@
     return L.map(v => v - m);
   };
   const thin = (n, min, extra) => ({thin: true, n, min, effects: [], ...extra});
+  // The typical values an effect is read against (plainOf): the share of right answers, the questions' mean guess rate
+  // and the median seconds to answer.
+  const typOf = D => {
+    const S = D.filter(a => a.s).map(a => a.s);
+    return {p: mean(D.map(a => a.y)), g: mean(D.map(a => a.g0 || 0)), s: S.length ? q(S, 0.5) : null};
+  };
 
   /* ---------- 1. Response time: player, genus and photo effects ---------- */
   const RT_X = [
@@ -657,6 +663,7 @@
       n,
       players: players(D),
       base: Math.exp(M.b[0]),
+      typ: typOf(D),
       shares: parts.map(([k, v]) => ({k, v, share: v / tot})),
       effects,
       genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
@@ -718,6 +725,7 @@
       n,
       players: players(D),
       enlarged: zn,
+      typ: typOf(D),
       effects: [
         eff('rel', 'Enlarged, against the player’s own habit (logit)', M.b[1], M.se[1], bi, 'logit', 0.25, n),
         eff('hab', 'Players who enlarge more (logit per share)', M.b[2], M.se[2], bi, 'logit', 0.25, n)
@@ -838,6 +846,7 @@
       n,
       players: players(D),
       photos: P.n,
+      typ: typOf(D),
       effects,
       views: tab(
         x => x[0],
@@ -1009,7 +1018,7 @@
       };
     });
     void X;
-    return {n, mixed, players: players(E), effects, pairs, player: plist.sort((a, b) => b.n - a.n)};
+    return {n, mixed, players: players(E), typ: {p: mixed / n}, effects, pairs, player: plist.sort((a, b) => b.n - a.n)};
   }
 
   /* ---------- 6. Learning curves: exposures to mastery, and what follows a miss ---------- */
@@ -1140,7 +1149,7 @@
         })()
       )
     );
-    return {n, players: players(D), effects, genus, curve, b0: M.b[0], b1: M.b[1]};
+    return {n, players: players(D), typ: typOf(D), effects, genus, curve, b0: M.b[0], b1: M.b[1]};
   }
 
   /* ---------- 7. Comeback: the forgetting curve on real returns ---------- */
@@ -1213,7 +1222,7 @@
         prevE: mean(S.map(a => a.prev.E))
       };
     });
-    return {n, far: far.length, back: C.length, players: players(D), effects, bands, b0: M.b[0], b1: M.b[1]};
+    return {n, far: far.length, back: C.length, players: players(D), typ: typOf(D), effects, bands, b0: M.b[0], b1: M.b[1]};
   }
 
   /* ---------- 8. Sessions: how long they last and what ends them (discrete-time survival) ---------- */
@@ -1311,6 +1320,7 @@
       n,
       players: players(rows),
       sessions: lens.length,
+      typ: {p: ends / rows.length},
       open: lens.filter(l => l.open).length,
       median: med,
       effects: SS_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]})),
@@ -1484,6 +1494,301 @@
     return synth({players: o.players || DEMO_PLAYERS, photos, look, start: end - (o.days || 40) * DAY, end, seed: o.seed || 20261104});
   }
 
+  /* ---------- The plain reading of each effect (Pierre, 2026-11-04: "a non-statistician must understand it at a glance") ---------- */
+  // For each effect: what is compared (name), the outcome it moves (o), the contrast its estimate is read at (s: the
+  // estimate times s is the change shown), whether the estimate is a difficulty (inv: + = fewer right answers), whether it
+  // says how far the app's own estimate is off (cal), and what a clear result suggests for the app (up / down: the
+  // outcome going up or down). Outcomes: right = the chance of a right answer; time = seconds to answer; stop = the
+  // chance to end the session after this answer; mix = the chance to pick a given wrong genus when it is offered;
+  // pts = right answers against the app's expectation, in points; guess = the success of a pure guess.
+  const LN2 = Math.log(2),
+    LN4 = Math.log(4);
+  const FMT_PLAIN = {
+    k4: '4 choices',
+    k3: '4 choices, one easy to rule out',
+    k2: '4 choices, two easy to rule out',
+    again: '“Again” after a miss (2 choices)',
+    qduel: 'Duel inside the quiz (2 choices)',
+    duel: 'Duel tab (2 choices)',
+    exam: 'Mastery exam question',
+    typed: 'Typed answer (no choices)'
+  };
+  const PLAIN = {
+    rt: {
+      right: {name: 'Right answers, compared with wrong ones', o: 'time'},
+      typed: {name: 'Answers typed instead of picked from choices', o: 'time'},
+      enl: {name: 'Photo enlarged before answering', o: 'time'},
+      two: {name: 'Questions with 2 choices instead of 4', o: 'time'},
+      diff: {name: 'A question the app rates harder (73% → 50% recognised, beyond guessing)', o: 'time'},
+      pos: {
+        name: 'Later in a session: the 40th answer against the 10th',
+        o: 'time',
+        s: LN4,
+        up: 'Players slow down as a session goes on: a sign of fatigue.',
+        down: 'Players get faster as a session goes on: no sign of fatigue.'
+      },
+      sd_player: {name: 'How much players differ from each other', o: 'time', who: 'player'},
+      sd_genus: {name: 'How much genera differ from each other', o: 'time', who: 'genus'},
+      sd_photo: {name: 'How much photos differ from each other', o: 'time', who: 'photo'}
+    },
+    zoom: {
+      rel: {
+        name: 'Photo enlarged before answering (same player, with or without)',
+        o: 'right',
+        up: 'Enlarging helps: keep the enlarge button easy to find.',
+        down: 'Players enlarge when a photo is hard for them: an enlarged photo signals a hard question.'
+      },
+      hab: {name: 'Players who enlarge often (10% more of their answers)', o: 'right', s: 0.1}
+    },
+    photo: {
+      medium: {name: 'A close-up instead of a colony photo', o: 'right', inv: true},
+      macro: {name: 'Corallites (macro) instead of a colony photo', o: 'right', inv: true},
+      fair: {name: 'A fair-quality photo instead of a good one', o: 'right', inv: true},
+      poor: {
+        name: 'A poor-quality photo instead of a good one',
+        o: 'right',
+        inv: true,
+        down: 'Poor photos make questions harder: replace the poorest game photos.'
+      },
+      sharp: {
+        name: 'A sharper photo (one typical step sharper)',
+        o: 'right',
+        inv: true,
+        up: 'Sharp photos are easier: prefer sharp photos in the games.'
+      },
+      own: {name: 'Pierre’s photo instead of an IMR lecture photo', o: 'right', inv: true},
+      inat: {name: 'Another iNaturalist photo instead of an IMR lecture photo', o: 'right', inv: true},
+      alone: {name: 'One view shown alone instead of several views', o: 'right', inv: true},
+      sd_photo: {name: 'How much photos differ, beyond these features', o: 'right', who: 'photo'},
+      sd_genus: {name: 'How much genera differ from each other', o: 'right', who: 'genus'}
+    },
+    conf: {
+      medium: {name: 'A close-up shown instead of a colony', o: 'mix'},
+      macro: {name: 'Corallites shown instead of a colony', o: 'mix'},
+      multi: {name: 'Several views shown instead of a colony', o: 'mix'},
+      sd_player: {name: 'How much players differ from each other', o: 'mix', who: 'player'},
+      sd_pair: {name: 'How much pairs of genera differ from each other', o: 'mix', who: 'pair of genera'}
+    },
+    learn: {
+      n_all: {name: 'Answers on a genus to reach 80% beyond guessing (a typical genus and player)', o: 'n'},
+      slope: {
+        name: 'More practice on a genus: twice as many answers on it',
+        o: 'right',
+        s: LN2,
+        up: 'Practice works: each answer on a genus makes the next one more likely right.',
+        down: 'Answers on a genus do not make the next ones easier: check the questions.'
+      },
+      afterMiss: {name: 'The next question on a genus just missed', o: 'right'},
+      again: {
+        name: 'The next ordinary question after a miss, with an “Again” in between (its extra effect)',
+        o: 'right',
+        up: '“Again” after a miss helps: keep it.',
+        down: '“Again” after a miss does not help: reconsider it.'
+      },
+      typed: {name: 'Answers typed instead of picked from choices', o: 'right', g1: 0},
+      exam: {name: 'Mastery exam questions instead of ordinary ones', o: 'right'},
+      back: {name: 'Comeback questions after a break instead of ordinary ones', o: 'right'},
+      card: {name: 'The first-meeting card', o: 'right'},
+      side: {name: 'The side-by-side comparison', o: 'right'}
+    },
+    back: {
+      slope: {
+        name: 'Time away from a genus: a week against a day',
+        o: 'right',
+        s: LN4,
+        down: 'Players forget over days: the comeback after a break is needed.',
+        up: 'No forgetting over days: the comeback after a break could be lighter.'
+      },
+      calib: {
+        name: 'Comeback questions: right answers against the app’s expectation',
+        o: 'pts',
+        cal: true,
+        up: 'Players remember more than the app expects after a break: its comeback could be shorter or harder.',
+        down: 'Players remember less than the app expects after a break: its comeback could be longer or easier.'
+      }
+    },
+    sess: {
+      wrong: {
+        name: 'After a wrong answer instead of a right one',
+        o: 'stop',
+        up: 'Misses end sessions: make the screen after a miss a good place to go on (an easier next question, a “so far” line).'
+      },
+      streak: {
+        name: 'After 2 or more misses in a row',
+        o: 'stop',
+        up: 'Runs of misses end sessions: watch for players stuck on hard genera.'
+      },
+      diff: {name: 'After a question the app rates harder (73% → 50% recognised, beyond guessing)', o: 'stop'},
+      slow: {name: 'After a slow answer (twice the player’s usual time)', o: 'stop', s: LN2},
+      pos: {
+        name: 'Later in a session: after the 40th answer against the 10th',
+        o: 'stop',
+        s: LN4,
+        up: 'Players tire as a session goes on.'
+      }
+    }
+  };
+  // Question formats: one entry per format and part (guess rate, difficulty, right − expected).
+  Object.keys(FMT_PLAIN).forEach(k => {
+    const F = FMT_PLAIN[k];
+    PLAIN.fmt = PLAIN.fmt || {};
+    PLAIN.fmt['g_' + k] = {name: `${F}: success of a pure guess`, o: 'guess', fmt: k, cal: true};
+    // fitted with the format's own guess rate (fmtFit), so read beyond guessing (Codex review #495)
+    PLAIN.fmt['d_' + k] = {
+      name: `${F}: easier or harder than the app expects, beyond guessing`,
+      o: 'right',
+      inv: true,
+      fmt: k,
+      cal: true,
+      beyond: true
+    };
+    PLAIN.fmt['oe_' + k] = {
+      name: `${F}: right answers against the app’s expectation`,
+      o: 'pts',
+      fmt: k,
+      cal: true,
+      up: 'The app underrates players on this format: its expected chance here could be raised.',
+      down: 'The app overrates players on this format: its expected chance here could be lowered.'
+    };
+  });
+  const PLAIN_VERDICT = {
+    clear: 'Clear',
+    margin: 'No clear effect',
+    thin: 'Not enough data yet',
+    none: 'No such answers yet',
+    nolog: 'Not in the answer log'
+  };
+  const pctOf = v =>
+    v == null || !isFinite(v) ? '–' : v < 0.095 && v > 0 ? (Math.round(v * 1000) / 10).toFixed(1) + '%' : Math.round(v * 100) + '%';
+  const secOf = v => (v == null || !isFinite(v) ? '–' : (v < 10 ? v.toFixed(1) : Math.round(v)) + ' s');
+  const ptsOf = v => (v == null || !isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(Math.round(v * 100)) + ' points');
+  // The chance of a right answer after a shift d on the log-odds of knowing (the part above the guess floor g).
+  const shiftP = (p0, g, d) => {
+    const g1 = clamp(g || 0, 0, 0.95),
+      q0 = clamp((p0 - g1) / (1 - g1), 0.001, 0.999);
+    return g1 + (1 - g1) * sig(logit(q0) + d);
+  };
+  // How many times as often, from an odds ratio exp(u) at the base chance p (Codex review #495: the odds ratio is not
+  // a frequency ratio when the chance is not small; doubling the odds at 30% gives 46%, 1.54 times as often).
+  const freqRatio = (p, u) => shiftP(p, 0, u) / clamp(p, 1e-6, 1);
+  // One effect read in words: {name, verdict, tone ('good' | 'bad' | 'info' | 'none' | 'thin'), dir ('up' | 'down' |
+  // ''), text (direction and size), range (the 95% range in words), advice, scale ('p' | 's' | 'pts'), base, val, lo, hi}.
+  // a: the analysis (its typ: typical values); o.row: the format's row (Formats: its own expected chance and guess rate).
+  function plainOf(key, e, a = {}, o = {}) {
+    const P = (PLAIN[key] || {})[e.k] || {name: e.label, o: 'right'},
+      T = Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {}),
+      row = o.row || null;
+    if (row && row.n) ((T.p = row.E), (T.g = row.g0));
+    // v: the verdict on the scale shown (the model's, except where the reading changes scale: typed answers)
+    const out = {
+      name: P.name,
+      v: e.v,
+      verdict: PLAIN_VERDICT[e.v] || '',
+      tone: 'thin',
+      dir: '',
+      text: '',
+      range: '',
+      advice: '',
+      scale: 'p'
+    };
+    if (e.v === 'none' || e.v === 'nolog') {
+      out.text = e.v === 'nolog' ? 'It leaves no row in the answer log, so it cannot be measured yet.' : 'No such answers yet.';
+      return out;
+    }
+    // too few answers to estimate anything yet (Codex review #495: not "no such answers")
+    if (e.est == null || !isFinite(e.est)) {
+      Object.assign(out, {v: 'thin', verdict: PLAIN_VERDICT.thin, text: 'Not enough data yet: too few answers to estimate it.'});
+      return out;
+    }
+    const s = P.s || 1,
+      sg = P.inv ? -1 : 1,
+      g = P.o === 'right' ? T.g : 0,
+      fin = v => v != null && isFinite(v);
+    // A spread between players, genera, photos or pairs: the typical range, one spread either side of the average.
+    if (e.sd) {
+      const who = P.who || 'one';
+      let lo, hi, f;
+      if (P.o === 'time') ((lo = T.s * Math.exp(-e.est)), (hi = T.s * Math.exp(e.est)), (f = secOf), (out.scale = 's'));
+      else ((lo = shiftP(P.o === 'mix' ? T.p : T.p, g, -e.est)), (hi = shiftP(T.p, g, e.est)), (f = pctOf));
+      const what =
+        P.o === 'time'
+          ? `a typical ${who} takes between ${f(lo)} and ${f(hi)} to answer`
+          : P.o === 'mix'
+            ? `a typical ${who} picks a wrong genus between ${f(lo)} and ${f(hi)} of the times it is offered`
+            : `a typical ${who} gets between ${f(lo)} and ${f(hi)} right`;
+      Object.assign(out, {base: P.o === 'time' ? T.s : T.p, val: e.est, lo, hi});
+      if (e.v === 'clear') ((out.tone = 'info'), (out.text = `They differ: ${what}.`));
+      else if (e.v === 'margin') ((out.tone = 'none'), (out.text = `They hardly differ: ${what}.`));
+      else out.text = `Too early to tell how much they differ (${what}, if the estimate holds).`;
+      return out;
+    }
+    // A number of answers (to reach the app's 80% target): no comparison, its value and range.
+    if (P.o === 'n') {
+      const f = v => (v >= 999 ? '999+' : String(Math.round(v)));
+      Object.assign(out, {scale: 'n', val: e.est, lo: e.lo, hi: e.hi, base: null});
+      out.range = fin(e.lo) && fin(e.hi) ? `between ${f(e.lo)} and ${f(e.hi)}` : '';
+      out.tone = e.v === 'clear' ? 'info' : 'thin';
+      out.text = e.v === 'clear' ? `About ${f(e.est)} answers.` : `Too early to tell${out.range ? ': ' + out.range + ' answers' : ''}.`;
+      return out;
+    }
+    let base, at, f;
+    if (P.o === 'time') ((out.scale = 's'), (base = T.s), (at = v => T.s * Math.exp(s * v)), (f = secOf));
+    else if (P.o === 'pts') ((out.scale = 'pts'), (base = 0), (at = v => v), (f = ptsOf));
+    else if (P.o === 'guess') ((base = e.ref != null ? e.ref : T.g), (at = v => v), (f = pctOf));
+    else if (P.g1 != null) {
+      // the other side has its own guess floor (typed answers: none; Codex review #495): the same recognition, then
+      // the change, read with that floor
+      const q0 = clamp((T.p - g) / (1 - g), 0.001, 0.999);
+      ((base = T.p), (at = v => shiftP(P.g1 + (1 - P.g1) * q0, P.g1, sg * s * v)), (f = pctOf));
+    } else if (P.beyond) {
+      // recognition beyond guessing: the app's expectation without its guess floor, shifted with no floor (the fit has
+      // its own guess rate; the raw right answers are the format's "against the app's expectation", Codex review #495)
+      const q0 = clamp((T.p - T.g) / (1 - T.g), 0.001, 0.999);
+      ((base = q0), (at = v => shiftP(q0, 0, sg * s * v)), (f = pctOf));
+    } else ((base = T.p), (at = v => shiftP(T.p, g, sg * s * v)), (f = pctOf));
+    const val = at(e.est),
+      a1 = fin(e.lo) ? at(e.lo) : null,
+      a2 = fin(e.hi) ? at(e.hi) : null,
+      lo = a1 == null || a2 == null ? null : Math.min(a1, a2),
+      hi = a1 == null || a2 == null ? null : Math.max(a1, a2),
+      up = val > base,
+      dir = val === base ? '' : up ? 'up' : 'down';
+    Object.assign(out, {base, val, lo, hi, dir});
+    out.range = lo == null ? '' : `between ${f(lo)} and ${f(hi)}`;
+    // a contrast read on another guess floor (typed answers) is judged on the right answers shown: clear only when their
+    // range leaves the baseline out, no clear effect when it stays within 5 points of it (Codex review #495)
+    let v = e.v;
+    if (P.g1 != null && lo != null && v !== 'none')
+      v = lo > base || hi < base ? 'clear' : lo >= base - 0.05 && hi <= base + 0.05 ? 'margin' : 'thin';
+    Object.assign(out, {v, verdict: PLAIN_VERDICT[v] || ''});
+    let say;
+    if (P.o === 'time') say = `${up ? 'Slower' : 'Faster'}: about ${f(val)} instead of ${f(base)}`;
+    else if (P.o === 'stop')
+      say = `${up ? 'More' : 'Less'} likely to stop: a ${f(val)} chance to end the session after it, instead of ${f(base)}`;
+    else if (P.o === 'mix')
+      say = `Mixed up ${up ? 'more' : 'less'} often: a wrong genus picked ${f(val)} of the times it is offered, instead of ${f(base)}`;
+    else if (P.o === 'pts') say = `Players do ${up ? 'better' : 'worse'} than the app expects: ${f(val)} of right answers`;
+    else if (P.o === 'guess') say = `About ${f(val)} right by pure guessing; the app assumes ${f(base)}`;
+    else if (P.beyond)
+      say = `${up ? 'Easier' : 'Harder'} than the app expects: about ${f(val)} recognised beyond guessing where it expects ${f(base)}`;
+    else if (P.cal) say = `${up ? 'Easier' : 'Harder'} than the app expects: about ${f(val)} right where it expects ${f(base)}`;
+    else say = `More likely ${up ? 'right' : 'wrong'}: about ${f(val)} right instead of ${f(base)}`;
+    if (v === 'clear') {
+      out.tone = P.cal || P.o === 'time' || P.o === 'guess' ? 'info' : (P.o === 'stop' || P.o === 'mix') === up ? 'bad' : 'good';
+      out.text = say + '.';
+      out.advice = (up ? P.up : P.down) || (P.o === 'guess' ? `The app’s guess rate for this format could be about ${f(val)}.` : '');
+    } else {
+      const ref = P.o === 'pts' ? 'the app’s expectation' : f(base);
+      if (v === 'margin') ((out.tone = 'none'), (out.text = `No clear effect: if any, it is small (${out.range} against ${ref}).`));
+      else out.text = `Too early to tell: ${out.range ? out.range + ' against ' + ref : 'too uncertain to say'}.`;
+    }
+    return out;
+  }
+
+  // The outcome a chart draws an effect on: its own (right, time, …), except a difficulty read beyond guessing, which is
+  // not a chance of a right answer (Codex review #495).
+  const outOf = P => (!P ? 'right' : P.beyond ? 'beyond' : P.o || 'right');
+
   /* ---------- All of them, for one milestone ---------- */
   const ANALYSES = [
     ['rt', 'Response time', rt],
@@ -1649,7 +1954,10 @@
       const r = rep.R[M];
       Object.keys(r.A).forEach(k => {
         const a = r.A[k];
-        r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, effects: a.effects, lean: 1};
+        // what the plain reading needs stays: the typical values, and each format's own expected chance and guess rate
+        // (Codex review #495: without them a lean milestone read its formats at 75% and 25%)
+        r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, typ: a.typ, effects: a.effects, lean: 1};
+        if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
       });
       body -= len[M];
       body += measure(M);
@@ -1684,6 +1992,7 @@
     factor,
     lmm,
     glmm,
+    outOf,
     fmtFit,
     guessOf,
     fmtOf,
@@ -1706,6 +2015,11 @@
     hashOf,
     report,
     compact,
+    PLAIN,
+    FMT_PLAIN,
+    plainOf,
+    shiftP,
+    freqRatio,
     rt,
     zoom,
     photo,
