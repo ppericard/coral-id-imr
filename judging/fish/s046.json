@@ -1,0 +1,96 @@
+{
+ "photos": {
+  "fish-s046-cand-513904284": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s046-cand-459046515": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s046-cand-756242745": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s046-cand-467757340": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s046-cand-731321290": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s046-cand-713618174": {
+   "code": "o1g1sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Pale small fish: juvenile tag from its look"
+  },
+  "fish-s046-cand-501056734": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s046-cand-597050276": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s046-cand-244199324": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s046-cand-244199328": {
+   "code": "o1g1sm1j2",
+   "keep": "alt"
+  },
+  "fish-s046-cand-332491642": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s046-cand-726173346": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s046-cand-641646991": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s046-cand-328915041": {
+   "code": "p1g0slm4",
+   "keep": "best"
+  },
+  "fish-s046-cand-328915037": {
+   "code": "o1g1sl13",
+   "keep": "alt"
+  },
+  "fish-s046-cand-342100349": {
+   "code": "p1g2ml12",
+   "keep": "best"
+  },
+  "fish-s046-cand-401102535": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s046-cand-59090409": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s046-cand-649127475": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s046-cand-527006333": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s046-cand-331794937": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s046-cand-597050278": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  }
+ }
+}

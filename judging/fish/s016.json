@@ -1,0 +1,104 @@
+{
+ "photos": {
+  "fish-s016-cand-620504128": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s016-cand-613793482": {
+   "code": "p1g0sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "iNat says juvenile; the photo looks adult-like"
+  },
+  "fish-s016-cand-696137899": {
+   "code": "p1g2sms3",
+   "keep": "best"
+  },
+  "fish-s016-cand-654099543": {
+   "code": "p1g2ssm1",
+   "keep": "best"
+  },
+  "fish-s016-cand-635944354": {
+   "code": "o1g1smm3",
+   "keep": "best"
+  },
+  "fish-s016-cand-635944399": {
+   "code": "p1g1ssm2",
+   "keep": "dup"
+  },
+  "fish-s016-cand-635944421": {
+   "code": "p1g1ssm2",
+   "keep": "dup"
+  },
+  "fish-s016-cand-688444097": {
+   "code": "o1g1sss2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "iNat says juvenile; not settled on the photo"
+  },
+  "fish-s016-cand-664979100": {
+   "code": "p1g3bs11",
+   "keep": "best"
+  },
+  "fish-s016-cand-753581613": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s016-cand-745824293": {
+   "code": "d1d2ss11",
+   "keep": "best"
+  },
+  "fish-s016-cand-675209766": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s016-cand-596651258": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s016-cand-674473420": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s016-cand-429792665": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s016-cand-622345452": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s016-cand-620503911": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s016-cand-701668228": {
+   "code": "p1d2sl12",
+   "keep": "best"
+  },
+  "fish-s016-cand-606878237": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s016-cand-606878264": {
+   "code": "o1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s016-cand-624627541": {
+   "code": "p1g2sms3",
+   "keep": "best"
+  },
+  "fish-s016-cand-601575181": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s016-cand-637588179": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  }
+ }
+}

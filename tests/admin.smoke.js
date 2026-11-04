@@ -38,7 +38,8 @@ const server = http.createServer((req, res) => {
 
 // Admin smoke test in demo mode (admin.html?demo, admin-demo.js; Pierre, 2026-11-01: agents must be able to see and test
 // the admin): every view of the 9 tabs and every old address at 390 and 1280 px with no page error, each landing on its
-// tab and view, the view remembered per tab, then the main actions on made-up data: open a player, merge two names,
+// tab and view, the view remembered per tab, then (once, at 1280: the layout checks alone run at both widths) the main
+// actions on made-up data: open a player, merge two names,
 // delete a test account, the reports in To do, the Photo stats Overview's numbers, Skip and Reject in Candidates, the auto-sort (decisions, a
 // blind Check, the agreement block, undo, the auto tag, a retest), Publish.
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
@@ -54,6 +55,13 @@ const WIDTHS = [390, 1280];
     fails = [],
     out = [];
   for (const w of ws) {
+    // Behaviour once, layout at both widths (test-suite review D6, 2026-11-04, approved by Pierre): every check whose result
+    // can depend on the width (each view and old address landing on its tab or phone menu with no sideways scroll, the
+    // subject switch, the Analyses charts and their cards, Players' "yest.", a long name on a phone, a journey's chart
+    // labels, Activity's charts, Overview and Health with no sideways scroll, no page error, the demo's storage keys) runs at
+    // 390 and 1280; the actions and data checks (sorting, replays, rename, merge, delete, journeys, events, Candidates,
+    // the auto-sort, Publish…) run once, at 1280. SMOKE_W=390 runs the layout checks alone.
+    const once = w === 1280;
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
     await ctx.route(
       u => !u.href.startsWith(base),
@@ -327,181 +335,187 @@ const WIDTHS = [390, 1280];
       }));
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
     }
-    await go('~an-fmt');
-    const anf = await p.evaluate(async () => {
-      const rows = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows;
-      // 4 choices, 4 plausible: a photo-quiz answer that is not typed, not a duel, not an exam, with 4 genera offered and
-      // no |k2 or |k3, with the app's expectation logged
-      const direct = rows.filter(
-        r =>
-          /^quiz/.test(r[5]) &&
-          !/^quiz-duel/.test(r[5]) &&
-          !/\|(t|d|x)(\||$)/.test(r[5]) &&
-          !/\|k[123]/.test(r[5]) &&
-          String(r[10] || '')
-            .split(/\s+/)
-            .filter(Boolean).length !== 2 &&
-          r[7] != null
-      ).length;
-      const row = [...document.querySelectorAll('.adm-an tbody tr')].find(
-        tr => tr.cells[0] && tr.cells[0].textContent === '4 choices' && tr.cells.length === 7
-      );
-      return {direct, shown: row ? Number(row.cells[1].textContent.replace(/,/g, '')) : null};
-    });
-    if (anf.shown !== anf.direct) fails.push(`${w}px Analyses Formats: 4 choices ${anf.shown}, direct count ${anf.direct}`);
-    await p.click('[data-anm="1000"]');
-    await settle();
-    const anm = await p.evaluate(() => ({
-      pressed: (document.querySelector('[data-anm][aria-pressed="true"]') || {}).dataset?.anm,
-      kpi: (document.querySelector('.adm-kpis b') || {}).textContent
-    }));
-    await p.click('[data-anm="all"]');
-    await settle();
-    if (anm.pressed !== '1000' || !/^[\d,]+$/.test(anm.kpi || '') || Number(anm.kpi.replace(/,/g, '')) > 1000)
-      fails.push(`${w}px Analyses: the milestone switch ${JSON.stringify(anm)}`);
-    if (errs.length) fails.push(`${w}px Analyses: ${errs.slice(0, 3).join(' | ')}`);
-    // A sync script before v35 has no report: the views say so, nothing breaks (AGENTS.md 7a).
-    if (w === 390) {
-      const aq = await ctx.newPage(),
-        aqe = [];
-      aq.on('pageerror', e => aqe.push(e.message));
-      await aq.goto(base + 'admin.html?demo&v=30#~an-rt');
-      await aq
-        .waitForFunction(() => /No report yet/.test(document.getElementById('view').textContent), null, {timeout: 30000})
-        .catch(() => aqe.push('no "No report yet"'));
-      if (aqe.length) fails.push(`${w}px Analyses with script v30: ${aqe.join(' | ')}`);
-      await aq.close();
-    }
-
-    // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
-    await go('~kcov');
-    await go('~triage');
-    const mem = await p.evaluate(() => ({
-      cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
-      todo: document.querySelector('#modes [data-mode="todo"]').getAttribute('href'),
-      players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
-      kept: (store.get('reefid-admin-view', {}) || {}).cov
-    }));
-    if (mem.cov !== '#~kcov' || mem.todo !== '#~triage' || mem.kept !== '~kcov' || mem.players !== '#~users')
-      fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
-    await p.reload();
-    await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
-    await settle();
-    if ((await p.evaluate(() => document.querySelector('#modes [data-mode="todo"]').getAttribute('href'))) !== '#~triage')
-      fails.push(`${w}px: the To do group forgot its last view after a reload`);
-    // To do › All: Health's red line (the demo has photos everyone misses), the reports, the devices' errors, suggestions last.
-    await go('~todo');
-    await p
-      .waitForFunction(() => document.querySelector('[data-hline]') && /Errors/.test(document.getElementById('view').innerText), null, {
-        timeout: 15000
-      })
-      .catch(() => {});
-    const all = await p.evaluate(() => {
-      const v = document.getElementById('view'),
-        t = v.innerText;
-      return {
-        line: !!v.querySelector('[data-hline] a[href="#~health"]'),
-        rep: /Demo report/.test(t),
-        err: !!v.querySelector('.adm-tderr'),
-        first: v.querySelector('section > *')?.matches('[data-hline]')
-      };
-    });
-    if (!all.line || !all.rep || !all.err || !all.first) fails.push(`${w}px To do › All: ${JSON.stringify(all)}`);
-    // Genera › Hidden: Put back takes a removed photo back.
-    const hid = await p.evaluate(() => {
-      const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
-        f = photos(n)[0].f;
-      ACT.hide(n, f);
-      location.hash = '~hidden';
-      return {n, f};
-    });
-    await settle();
-    if (!(await p.$(`#view [data-f="${hid.f}"] [data-unhide]`))) fails.push(`${w}px Hidden: the removed photo is not listed`);
-    else {
-      await p.click(`#view [data-f="${hid.f}"] [data-unhide]`);
+    if (once) {
+      // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
+      await go('~an-fmt');
+      const anf = await p.evaluate(async () => {
+        const rows = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows;
+        // 4 choices, 4 plausible: a photo-quiz answer that is not typed, not a duel, not an exam, with 4 genera offered and
+        // no |k2 or |k3, with the app's expectation logged
+        const direct = rows.filter(
+          r =>
+            /^quiz/.test(r[5]) &&
+            !/^quiz-duel/.test(r[5]) &&
+            !/\|(t|d|x)(\||$)/.test(r[5]) &&
+            !/\|k[123]/.test(r[5]) &&
+            String(r[10] || '')
+              .split(/\s+/)
+              .filter(Boolean).length !== 2 &&
+            r[7] != null
+        ).length;
+        const row = [...document.querySelectorAll('.adm-an tbody tr')].find(
+          tr => tr.cells[0] && tr.cells[0].textContent === '4 choices' && tr.cells.length === 7
+        );
+        return {direct, shown: row ? Number(row.cells[1].textContent.replace(/,/g, '')) : null};
+      });
+      if (anf.shown !== anf.direct) fails.push(`${w}px Analyses Formats: 4 choices ${anf.shown}, direct count ${anf.direct}`);
+      await p.click('[data-anm="1000"]');
       await settle();
-      if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid)) fails.push(`${w}px Hidden: Put back left the photo removed`);
-    }
-    // Genera: the view filter of the sticky bar (Pierre, 2026-11-04). Corallites shows that section alone (Candidates and
-    // Not this genus hidden, counted in one line), is remembered from genus to genus, falls back to All on a 2-zoom genus
-    // without a Close-up row when Close-up is saved, and All (or the line's All views) brings the whole page back.
-    const gg = await p.evaluate(() => {
-      const N = Object.keys(DATA.gen);
-      return {
-        three: N.filter(n => rows(n).length === 3 && unused(n).length).slice(0, 2),
-        two: N.find(n => !rows(n).some(([v]) => v === 'medium'))
-      };
-    });
-    const gstate = () =>
-      p.evaluate(() => ({
-        btns: [...document.querySelectorAll('.adm-sticky [data-gv]')].map(b => b.textContent),
-        on: [...document.querySelectorAll('.adm-sticky [data-gv][aria-pressed="true"]')].map(b => b.dataset.gv),
-        rows: [...document.querySelectorAll('.adm-main > section.adm-row:not(.adm-out) h3')].map(h => h.firstChild.textContent.trim()),
-        drops: [...document.querySelectorAll('.adm-main [data-drop]')].map(g => g.dataset.drop),
-        cands: !!document.querySelector('.adm-main .adm-cands'),
-        note: (document.querySelector('.adm-gvnote') || {}).textContent || '',
-        saved: localStorage.getItem('demo:reefid-admin-gview'),
-        all: rows(cur).map(([v]) => label(cur, v)),
-        nc: unused(cur).length
+      const anm = await p.evaluate(() => ({
+        pressed: (document.querySelector('[data-anm][aria-pressed="true"]') || {}).dataset?.anm,
+        kpi: (document.querySelector('.adm-kpis b') || {}).textContent
       }));
-    // A missing button is a failure, not a 30 s wait: the checks after it then fail too.
-    const pick = async sel => ((await p.$(sel)) ? p.click(sel) : fails.push(`${w}px View filter: no ${sel}`));
-    if (gg.three.length < 2 || !gg.two) fails.push(`${w}px View filter: no test genera ${JSON.stringify(gg)}`);
-    else {
-      await go(gg.three[0]);
-      let s = await gstate();
-      if (s.btns.join('|') !== 'All|Colony|Close-up|Corallites' || s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands)
-        fails.push(`${w}px View filter: All on ${gg.three[0]} ${JSON.stringify(s)}`);
-      await pick('.adm-sticky [data-gv="macro"]');
+      await p.click('[data-anm="all"]');
       await settle();
-      s = await gstate();
-      if (
-        s.on.join() !== 'macro' ||
-        s.rows.join() !== 'Corallites' ||
-        s.drops.join() !== 'macro' ||
-        s.cands ||
-        !s.note.includes(`${s.nc} candidate`)
-      )
-        fails.push(`${w}px View filter: Corallites on ${gg.three[0]} ${JSON.stringify(s)}`);
-      if (s.saved !== '"macro"') fails.push(`${w}px View filter: Corallites not remembered (${s.saved})`);
-      await go(gg.three[1]);
-      s = await gstate();
-      if (s.on.join() !== 'macro' || s.rows.join() !== 'Corallites' || s.cands)
-        fails.push(`${w}px View filter: Corallites not kept on ${gg.three[1]} ${JSON.stringify(s)}`);
-      await pick('.adm-sticky [data-gv="medium"]');
-      await settle();
-      await go(gg.two);
-      s = await gstate();
-      if (
-        s.btns.join('|') !== ['All', ...s.all].join('|') ||
-        s.btns.length !== 3 ||
-        s.on.join() !== 'all' ||
-        s.rows.join() !== s.all.join() ||
-        s.note
-      )
-        fails.push(`${w}px View filter: a saved Close-up on 2-zoom ${gg.two} ${JSON.stringify(s)}`);
-      if (s.saved !== '"medium"') fails.push(`${w}px View filter: the fallback overwrote the saved view (${s.saved})`);
-      await go(gg.three[0]);
-      s = await gstate();
-      if (s.rows.join() !== 'Close-up') fails.push(`${w}px View filter: Close-up not back on ${gg.three[0]} ${JSON.stringify(s)}`);
-      await pick('.adm-gvnote [data-gv="all"]');
-      await settle();
-      s = await gstate();
-      if (s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands || s.note || s.saved !== '"all"')
-        fails.push(`${w}px View filter: All views ${JSON.stringify(s)}`);
-    }
+      if (anm.pressed !== '1000' || !/^[\d,]+$/.test(anm.kpi || '') || Number(anm.kpi.replace(/,/g, '')) > 1000)
+        fails.push(`${w}px Analyses: the milestone switch ${JSON.stringify(anm)}`);
+      if (errs.length) fails.push(`${w}px Analyses: ${errs.slice(0, 3).join(' | ')}`);
+      // A sync script before v35 has no report: the views say so, nothing breaks (AGENTS.md 7a).
+      {
+        const aq = await ctx.newPage(),
+          aqe = [];
+        aq.on('pageerror', e => aqe.push(e.message));
+        await aq.goto(base + 'admin.html?demo&v=30#~an-rt');
+        await aq
+          .waitForFunction(() => /No report yet/.test(document.getElementById('view').textContent), null, {timeout: 30000})
+          .catch(() => aqe.push('no "No report yet"'));
+        if (aqe.length) fails.push(`${w}px Analyses with script v30: ${aqe.join(' | ')}`);
+        await aq.close();
+      }
 
+      // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
+      await go('~kcov');
+      await go('~triage');
+      const mem = await p.evaluate(() => ({
+        cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
+        todo: document.querySelector('#modes [data-mode="todo"]').getAttribute('href'),
+        players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
+        kept: (store.get('reefid-admin-view', {}) || {}).cov
+      }));
+      if (mem.cov !== '#~kcov' || mem.todo !== '#~triage' || mem.kept !== '~kcov' || mem.players !== '#~users')
+        fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
+      await p.reload();
+      await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
+      await settle();
+      if ((await p.evaluate(() => document.querySelector('#modes [data-mode="todo"]').getAttribute('href'))) !== '#~triage')
+        fails.push(`${w}px: the To do group forgot its last view after a reload`);
+      // To do › All: Health's red line (the demo has photos everyone misses), the reports, the devices' errors, suggestions last.
+      await go('~todo');
+      await p
+        .waitForFunction(() => document.querySelector('[data-hline]') && /Errors/.test(document.getElementById('view').innerText), null, {
+          timeout: 15000
+        })
+        .catch(() => {});
+      const all = await p.evaluate(() => {
+        const v = document.getElementById('view'),
+          t = v.innerText;
+        return {
+          line: !!v.querySelector('[data-hline] a[href="#~health"]'),
+          rep: /Demo report/.test(t),
+          err: !!v.querySelector('.adm-tderr'),
+          first: v.querySelector('section > *')?.matches('[data-hline]')
+        };
+      });
+      if (!all.line || !all.rep || !all.err || !all.first) fails.push(`${w}px To do › All: ${JSON.stringify(all)}`);
+      // Genera › Hidden: Put back takes a removed photo back.
+      const hid = await p.evaluate(() => {
+        const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
+          f = photos(n)[0].f;
+        ACT.hide(n, f);
+        location.hash = '~hidden';
+        return {n, f};
+      });
+      await settle();
+      if (!(await p.$(`#view [data-f="${hid.f}"] [data-unhide]`))) fails.push(`${w}px Hidden: the removed photo is not listed`);
+      else {
+        await p.click(`#view [data-f="${hid.f}"] [data-unhide]`);
+        await settle();
+        if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid)) fails.push(`${w}px Hidden: Put back left the photo removed`);
+      }
+      // Genera: the view filter of the sticky bar (Pierre, 2026-11-04). Corallites shows that section alone (Candidates and
+      // Not this genus hidden, counted in one line), is remembered from genus to genus, falls back to All on a 2-zoom genus
+      // without a Close-up row when Close-up is saved, and All (or the line's All views) brings the whole page back.
+      const gg = await p.evaluate(() => {
+        const N = Object.keys(DATA.gen);
+        return {
+          three: N.filter(n => rows(n).length === 3 && unused(n).length).slice(0, 2),
+          two: N.find(n => !rows(n).some(([v]) => v === 'medium'))
+        };
+      });
+      const gstate = () =>
+        p.evaluate(() => ({
+          btns: [...document.querySelectorAll('.adm-sticky [data-gv]')].map(b => b.textContent),
+          on: [...document.querySelectorAll('.adm-sticky [data-gv][aria-pressed="true"]')].map(b => b.dataset.gv),
+          rows: [...document.querySelectorAll('.adm-main > section.adm-row:not(.adm-out) h3')].map(h => h.firstChild.textContent.trim()),
+          drops: [...document.querySelectorAll('.adm-main [data-drop]')].map(g => g.dataset.drop),
+          cands: !!document.querySelector('.adm-main .adm-cands'),
+          note: (document.querySelector('.adm-gvnote') || {}).textContent || '',
+          saved: localStorage.getItem('demo:reefid-admin-gview'),
+          all: rows(cur).map(([v]) => label(cur, v)),
+          nc: unused(cur).length
+        }));
+      // A missing button is a failure, not a 30 s wait: the checks after it then fail too.
+      const pick = async sel => ((await p.$(sel)) ? p.click(sel) : fails.push(`${w}px View filter: no ${sel}`));
+      if (gg.three.length < 2 || !gg.two) fails.push(`${w}px View filter: no test genera ${JSON.stringify(gg)}`);
+      else {
+        await go(gg.three[0]);
+        let s = await gstate();
+        if (s.btns.join('|') !== 'All|Colony|Close-up|Corallites' || s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands)
+          fails.push(`${w}px View filter: All on ${gg.three[0]} ${JSON.stringify(s)}`);
+        await pick('.adm-sticky [data-gv="macro"]');
+        await settle();
+        s = await gstate();
+        if (
+          s.on.join() !== 'macro' ||
+          s.rows.join() !== 'Corallites' ||
+          s.drops.join() !== 'macro' ||
+          s.cands ||
+          !s.note.includes(`${s.nc} candidate`)
+        )
+          fails.push(`${w}px View filter: Corallites on ${gg.three[0]} ${JSON.stringify(s)}`);
+        if (s.saved !== '"macro"') fails.push(`${w}px View filter: Corallites not remembered (${s.saved})`);
+        await go(gg.three[1]);
+        s = await gstate();
+        if (s.on.join() !== 'macro' || s.rows.join() !== 'Corallites' || s.cands)
+          fails.push(`${w}px View filter: Corallites not kept on ${gg.three[1]} ${JSON.stringify(s)}`);
+        await pick('.adm-sticky [data-gv="medium"]');
+        await settle();
+        await go(gg.two);
+        s = await gstate();
+        if (
+          s.btns.join('|') !== ['All', ...s.all].join('|') ||
+          s.btns.length !== 3 ||
+          s.on.join() !== 'all' ||
+          s.rows.join() !== s.all.join() ||
+          s.note
+        )
+          fails.push(`${w}px View filter: a saved Close-up on 2-zoom ${gg.two} ${JSON.stringify(s)}`);
+        if (s.saved !== '"medium"') fails.push(`${w}px View filter: the fallback overwrote the saved view (${s.saved})`);
+        await go(gg.three[0]);
+        s = await gstate();
+        if (s.rows.join() !== 'Close-up') fails.push(`${w}px View filter: Close-up not back on ${gg.three[0]} ${JSON.stringify(s)}`);
+        await pick('.adm-gvnote [data-gv="all"]');
+        await settle();
+        s = await gstate();
+        if (s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands || s.note || s.saved !== '"all"')
+          fails.push(`${w}px View filter: All views ${JSON.stringify(s)}`);
+      }
+    }
     // Users: the made-up players, one opened, a merge and a delete.
     await go('~users');
     let t = await text();
     if (!/Ana Demo/.test(t) || !/mara demo2/.test(t)) fails.push(`${w}px Users: demo players missing`);
-    // Each anonymous id opens its own Journey (#~anon/<id>, so a name starting with @ keeps its own; Codex review #375).
-    const anon = await p.$eval('a[href^="#~anon/"]', a => a.getAttribute('href')).catch(() => null);
-    if (!anon) fails.push(`${w}px Users: no Journey link on the anonymous ids`);
-    else {
-      await go(anon.slice(1));
-      if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text())) fails.push(`${w}px ${anon}: anonymous Journey missing`);
-      await go('~users');
+    if (once) {
+      // Once: an anonymous id's Journey.
+      // Each anonymous id opens its own Journey (#~anon/<id>, so a name starting with @ keeps its own; Codex review #375).
+      const anon = await p.$eval('a[href^="#~anon/"]', a => a.getAttribute('href')).catch(() => null);
+      if (!anon) fails.push(`${w}px Users: no Journey link on the anonymous ids`);
+      else {
+        await go(anon.slice(1));
+        if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text()))
+          fails.push(`${w}px ${anon}: anonymous Journey missing`);
+        await go('~users');
+      }
     }
     // Who played last (Pierre, 2026-11-03): Last is the second column, to the minute, and the default sort, most recent
     // first by the exact time of the last answer; Carla (the demo's player now) first, with the "now" pill.
@@ -528,272 +542,279 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
     };
     await checkLast('default sort');
-    if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
-    // Names joined with the anonymous stats: every demo player has a level; sorting by name puts Ana first, reversed last.
-    const lv = await p.$$eval('.adm-urow td:nth-child(3)', L => L.map(td => td.textContent.trim()));
-    if (!lv.length || lv.some(x => x === '–')) fails.push(`${w}px Players: a level is missing (${lv.join(' ')})`);
-    if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
-    const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
-    await p.click('[data-usort="name"]');
-    await settle();
-    if ((await firstName()) !== 'Ana Demo') fails.push(`${w}px Players: sort by name, first is ${await firstName()}`);
-    await p.click('[data-usort="name"]');
-    await settle();
-    if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
-    // The quiz / Duel-tab columns sort too (Codex review #383: they were filled after the sort, which threw).
-    for (const k of ['right', 'recent', 'duels']) {
-      await p.click(`[data-usort="${k}"]`);
+    if (once) {
+      // Once: sorts, the replayed progress, scripts before v42 and v28, sheet reads, the leaderboard, rename, greyed names.
+      if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
+      // Names joined with the anonymous stats: every demo player has a level; sorting by name puts Ana first, reversed last.
+      const lv = await p.$$eval('.adm-urow td:nth-child(3)', L => L.map(td => td.textContent.trim()));
+      if (!lv.length || lv.some(x => x === '–')) fails.push(`${w}px Players: a level is missing (${lv.join(' ')})`);
+      if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
+      const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
+      await p.click('[data-usort="name"]');
       await settle();
-      if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
-    }
-    // One tap on Last brings back most recent first.
-    await p.click('[data-usort="last"]');
-    await settle();
-    await checkLast('Last tapped');
-    await p.click('[data-usort="name"]');
-    await settle();
-    // Full replay (core.js replayProgress; docs/LEARNING.md "Full replay"): Progress and Learned replayed from the log, and
-    // "↻ saved …" where the saved copy differs: Dio's is from the former model (a genus learned under BKT, taken back),
-    // Ben's is 20 answers behind; Ana's matches the replay (no mark). Her journey says the same, Dio's too.
-    await p
-      .waitForFunction(() => !/…/.test(document.querySelector('.adm-utbl').innerText), null, {timeout: 10000})
-      .catch(() => fails.push(`${w}px Players: Progress still reading the saved copies`));
-    const rp = await p.evaluate(() => {
-      const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === k),
-        row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n),
-        cell = (n, k) => row(n).querySelectorAll('td')[col(k)];
-      return Object.fromEntries(
-        ['Ana Demo', 'Ben Demo', 'Dio Demo'].map(n => [
-          n,
-          {
-            prog: cell(n, 'prog').innerText.trim(),
-            learned: cell(n, 'learned').innerText.trim(),
-            marks: row(n).querySelectorAll('.adm-saved').length
-          }
-        ])
-      );
-    });
-    if (
-      rp['Ana Demo'].marks ||
-      !/^\d+%$/.test(rp['Ana Demo'].prog) ||
-      !/^\d+%\s*↻ saved \d+%$/.test(rp['Dio Demo'].prog) ||
-      !/^0\/40\s*↻ saved 1\/40$/.test(rp['Dio Demo'].learned) ||
-      !/↻ saved/.test(rp['Ben Demo'].prog)
-    )
-      fails.push(`${w}px Players: replayed progress ${JSON.stringify(rp)}`);
-    await p.click('[data-uopen="Dio Demo"]');
-    await settle();
-    if (!/Progress \d+%\s*↻ saved \d+% · Learned 0\s*↻ saved 1/.test(await p.$eval('.adm-ubar', x => x.innerText)))
-      fails.push(`${w}px Players: Dio's bar without the replayed progress`);
-    for (const [n, mark] of [
-      ['Dio Demo', true],
-      ['Ana Demo', false]
-    ]) {
-      await go('~journey/' + encodeURIComponent(n));
-      await p.waitForFunction(() => !/…/.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000}).catch(() => {});
-      const k = await p.evaluate(() => ({
-        kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
-        genus: document.querySelectorAll('.adm-jtbl .adm-saved').length,
-        col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress')
-      }));
-      if (!/\d+% (↻ saved \d+% )?Progress/i.test(k.kpis) || /↻ saved/.test(k.kpis) !== mark || !!k.genus !== mark || !k.col)
-        fails.push(`${w}px journey (${n}) replayed progress: ${JSON.stringify(k)}`);
-    }
-    // Players reads no saved copy one player at a time (sheet v42, Pierre 2026-11-04: about 15 s on a phone for 40
-    // players): the player list carries each player's replay (rp), the same numbers the admin gets when it replays them
-    // itself from their saved copies, which it still does with a script before v42 (one userData call each, AGENTS.md 7a).
-    if (w === ws[0]) {
-      const open = async v => {
-        const q = await p.context().newPage();
-        q.on('pageerror', e => fails.push(`${w}px Players v${v} page error: ${e.message}`));
-        await q.goto(base + `admin.html?demo&v=${v}#~users`);
-        await q
-          .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
-          .then(() => q.waitForTimeout(1000))
-          .catch(() => fails.push(`${w}px Players v${v}: never drawn`));
-        return q;
-      };
-      const reads = q => q.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'userData').length);
-      const q = await open(42);
-      if (await reads(q)) fails.push(`${w}px Players (v42): ${await reads(q)} saved copies read one by one`);
-      // The admin's own replay of every player (their saved copies read now), against the sheet's rp.
-      const diff = await q.evaluate(async () => {
-        USERS.users.forEach(u => savedOf(u.name));
-        for (let i = 0; i < 100 && USERS.users.some(u => !PSAVED[u.name]); i++) await new Promise(r => setTimeout(r, 100));
-        return USERS.users
-          .map(u => {
-            const f = progOf(u, true);
-            return [u.name, JSON.stringify(u.rp), JSON.stringify(f && [f.pct, f.learned, f.saved && f.saved.pct])];
-          })
-          .filter(([, a, b]) => a !== b);
-      });
-      if (diff.length) fails.push(`${w}px Players (v42): rp differs from the admin's own replay: ${JSON.stringify(diff.slice(0, 3))}`);
-      await q.close();
-      const q41 = await open(41);
-      if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
-      await q41.close();
-    }
-    // The admin never gets ahead of the sheet script (AGENTS.md 7a): answering as v27, the demo's Players and Journey
-    // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
-    // Journey's learned genera from the saved copy).
-    {
-      const q = await p.context().newPage();
-      q.on('pageerror', e => fails.push(`${w}px v27 page error: ${e.message}`));
-      await q.goto(base + 'admin.html?demo&v=27#~users');
-      await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
-      await q.waitForTimeout(1500);
-      const o = await q.evaluate(() => {
+      if ((await firstName()) !== 'Ana Demo') fails.push(`${w}px Players: sort by name, first is ${await firstName()}`);
+      await p.click('[data-usort="name"]');
+      await settle();
+      if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
+      // The quiz / Duel-tab columns sort too (Codex review #383: they were filled after the sort, which threw).
+      for (const k of ['right', 'recent', 'duels']) {
+        await p.click(`[data-usort="${k}"]`);
+        await settle();
+        if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
+      }
+      // One tap on Last brings back most recent first.
+      await p.click('[data-usort="last"]');
+      await settle();
+      await checkLast('Last tapped');
+      await p.click('[data-usort="name"]');
+      await settle();
+      // Full replay (core.js replayProgress; docs/LEARNING.md "Full replay"): Progress and Learned replayed from the log, and
+      // "↻ saved …" where the saved copy differs: Dio's is from the former model (a genus learned under BKT, taken back),
+      // Ben's is 20 answers behind; Ana's matches the replay (no mark). Her journey says the same, Dio's too.
+      await p
+        .waitForFunction(() => !/…/.test(document.querySelector('.adm-utbl').innerText), null, {timeout: 10000})
+        .catch(() => fails.push(`${w}px Players: Progress still reading the saved copies`));
+      const rp = await p.evaluate(() => {
         const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === k),
-          row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Dio Demo');
-        return {
-          prog: col('prog'),
-          marks: document.querySelectorAll('.adm-saved').length,
-          learned: row && row.querySelectorAll('td')[col('learned')].innerText.trim(),
-          anonProg: [...document.querySelectorAll('.adm-uremoved th')].some(t => t.textContent === 'Progress')
-        };
-      });
-      if (o.prog !== -1 || o.marks || !/^1\/\d+$/.test(o.learned) || o.anonProg)
-        fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
-      await q.goto(base + 'admin.html?demo&v=27#~journey/' + encodeURIComponent('Dio Demo'));
-      await q.waitForSelector('.adm-kpis', {timeout: 20000}).catch(() => {});
-      // The learned genus (under BKT) comes with the saved copy, read after the page is drawn.
-      await q.waitForSelector('.adm-jlearn', {timeout: 10000}).catch(() => {});
-      const j = await q.evaluate(() => ({
-        kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
-        col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
-        learned: document.querySelectorAll('.adm-jlearn').length
-      }));
-      if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
-        fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
-      // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
-      await q
-        .waitForFunction(() => /v30 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
-          timeout: 10000
-        })
-        .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
-      await q.close();
-    }
-    // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
-    // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
-    // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
-    // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
-    // pages opened (Health) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
-    if (w === ws[0]) {
-      const q = await p.context().newPage();
-      q.on('pageerror', e => fails.push(`${w}px sheet reads page error: ${e.message}`));
-      const calls = () => q.evaluate(() => window.DEMO_CALLS.map(c => ({...c})));
-      const count = L => L.reduce((o, c) => ((o[c.k] = (o[c.k] || 0) + 1), o), {});
-      const quiet = () =>
-        q
-          .waitForFunction(
-            () =>
-              window.DEMO_PENDING === 0 &&
-              typeof DRAFT !== 'undefined' &&
-              DRAFT &&
-              DRAFT.genera &&
-              !/^\s*Loading/.test(document.getElementById('view').innerText),
-            null,
-            {timeout: 20000}
-          )
-          .then(() => q.waitForTimeout(1500))
-          .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
-      await q.goto(base + 'admin.html?demo#~todo');
-      await quiet();
-      const n = count(await calls());
-      if (n.answers !== 1 || n.stats !== 1 || n.events !== 1 || n.reports !== 1)
-        fails.push(`sheet reads: To do asked ${JSON.stringify(n)}, once each expected`);
-      await q.route(/\/cand\.json$/, r => setTimeout(() => r.continue().catch(() => {}), 2000));
-      await q.goto(base + 'admin.html?demo&load=2#~users');
-      await quiet();
-      const [a] = (await calls()).filter(c => c.k === 'answers'),
-        cj = await q.evaluate(() => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart);
-      if (!a || !(cj > 0) || !(a.t0 < cj))
-        fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
-      await q.unroute(/\/cand\.json$/);
-      await q.goto(base + 'admin.html?demo&load=3#~cand');
-      await quiet();
-      const before = (await calls()).length;
-      await q.evaluate(() => (location.hash = '~health'));
-      await quiet();
-      const L = (await calls()).slice(before),
-        ans = L.find(c => c.k === 'answers'),
-        pg = L.find(c => c.k === 'pages');
-      if (!ans || !pg || !(pg.t0 < ans.t1))
-        fails.push(
-          `sheet reads: Health asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
+          row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n),
+          cell = (n, k) => row(n).querySelectorAll('td')[col(k)];
+        return Object.fromEntries(
+          ['Ana Demo', 'Ben Demo', 'Dio Demo'].map(n => [
+            n,
+            {
+              prog: cell(n, 'prog').innerText.trim(),
+              learned: cell(n, 'learned').innerText.trim(),
+              marks: row(n).querySelectorAll('.adm-saved').length
+            }
+          ])
         );
-      // (4) The answer log is never published before the photo ratings (Codex review #488): Health and To do's Health line
-      // read both once the log is there. The ratings answer a second late here (admin-demo.js slow=stats).
-      await q.addInitScript(() => {
-        window.__early = 0;
-        const t = setInterval(() => {
-          try {
-            if (ANS && !STATS) window.__early++;
-            if (ANS && STATS) clearInterval(t);
-          } catch (e) {} // before admin.js has run
-        }, 10);
       });
-      await q.goto(base + 'admin.html?demo&slow=stats&load=4#~health');
-      await quiet();
-      if (await q.evaluate(() => window.__early)) fails.push('sheet reads: the answer log was published before the photo ratings');
-      await q.close();
-    }
-    await go('~users');
-    await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
-    await settle();
-    // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
-    await p.click('[data-uopen="Dio Demo"]');
-    await settle();
-    await p.click('[data-uboard="Dio Demo"]');
-    await settle();
-    if (!/Hidden from the leaderboard/.test(await text())) fails.push(`${w}px Players: Hide did not hide Dio from the leaderboard`);
-    await p.click('[data-uboard="Dio Demo"]');
-    await settle();
-    if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
-    // Rename (sheet v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted, above), hidden
-    // from the leaderboard.
-    await p.click('[data-uopen="Ben Demo"]');
-    await settle();
-    await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
-    await p.click('[data-uren="Ben Demo"]');
-    await p.waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
-    // The rename reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
-    // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
-    await settle();
-    const ren = await text();
-    if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
-      fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
-    // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
-    // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
-    const nameOf = n =>
-      p
-        .$eval(`.adm-urow[data-uopen="${n}"]`, tr => {
-          const b = tr.querySelector('td:first-child .adm-cut'),
-            cs = b && getComputedStyle(b),
-            probe = document.createElement('span');
-          probe.style.color = 'var(--muted)';
-          tr.appendChild(probe);
-          const muted = getComputedStyle(probe).color;
-          probe.remove();
+      if (
+        rp['Ana Demo'].marks ||
+        !/^\d+%$/.test(rp['Ana Demo'].prog) ||
+        !/^\d+%\s*↻ saved \d+%$/.test(rp['Dio Demo'].prog) ||
+        !/^0\/40\s*↻ saved 1\/40$/.test(rp['Dio Demo'].learned) ||
+        !/↻ saved/.test(rp['Ben Demo'].prog)
+      )
+        fails.push(`${w}px Players: replayed progress ${JSON.stringify(rp)}`);
+      await p.click('[data-uopen="Dio Demo"]');
+      await settle();
+      if (!/Progress \d+%\s*↻ saved \d+% · Learned 0\s*↻ saved 1/.test(await p.$eval('.adm-ubar', x => x.innerText)))
+        fails.push(`${w}px Players: Dio's bar without the replayed progress`);
+      for (const [n, mark] of [
+        ['Dio Demo', true],
+        ['Ana Demo', false]
+      ]) {
+        await go('~journey/' + encodeURIComponent(n));
+        await p.waitForFunction(() => !/…/.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000}).catch(() => {});
+        const k = await p.evaluate(() => ({
+          kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+          genus: document.querySelectorAll('.adm-jtbl .adm-saved').length,
+          col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress')
+        }));
+        if (!/\d+% (↻ saved \d+% )?Progress/i.test(k.kpis) || /↻ saved/.test(k.kpis) !== mark || !!k.genus !== mark || !k.col)
+          fails.push(`${w}px journey (${n}) replayed progress: ${JSON.stringify(k)}`);
+      }
+      // Players reads no saved copy one player at a time (sheet v42, Pierre 2026-11-04: about 15 s on a phone for 40
+      // players): the player list carries each player's replay (rp), the same numbers the admin gets when it replays them
+      // itself from their saved copies, which it still does with a script before v42 (one userData call each, AGENTS.md 7a).
+      {
+        const open = async v => {
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px Players v${v} page error: ${e.message}`));
+          await q.goto(base + `admin.html?demo&v=${v}#~users`);
+          await q
+            .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
+            .then(() => q.waitForTimeout(1000))
+            .catch(() => fails.push(`${w}px Players v${v}: never drawn`));
+          return q;
+        };
+        const reads = q => q.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'userData').length);
+        const q = await open(42);
+        if (await reads(q)) fails.push(`${w}px Players (v42): ${await reads(q)} saved copies read one by one`);
+        // The admin's own replay of every player (their saved copies read now), against the sheet's rp.
+        const diff = await q.evaluate(async () => {
+          USERS.users.forEach(u => savedOf(u.name));
+          for (let i = 0; i < 100 && USERS.users.some(u => !PSAVED[u.name]); i++) await new Promise(r => setTimeout(r, 100));
+          return USERS.users
+            .map(u => {
+              const f = progOf(u, true);
+              return [u.name, JSON.stringify(u.rp), JSON.stringify(f && [f.pct, f.learned, f.saved && f.saved.pct])];
+            })
+            .filter(([, a, b]) => a !== b);
+        });
+        if (diff.length) fails.push(`${w}px Players (v42): rp differs from the admin's own replay: ${JSON.stringify(diff.slice(0, 3))}`);
+        await q.close();
+        const q41 = await open(41);
+        if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
+        await q41.close();
+      }
+      // The admin never gets ahead of the sheet script (AGENTS.md 7a): answering as v27, the demo's Players and Journey
+      // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
+      // Journey's learned genera from the saved copy).
+      {
+        const q = await p.context().newPage();
+        q.on('pageerror', e => fails.push(`${w}px v27 page error: ${e.message}`));
+        await q.goto(base + 'admin.html?demo&v=27#~users');
+        await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+        await q.waitForTimeout(1500);
+        const o = await q.evaluate(() => {
+          const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === k),
+            row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Dio Demo');
           return {
-            tag: /\bhidden\b/.test(tr.cells[0].innerText),
-            color: cs && cs.color,
-            muted,
-            italic: cs && cs.fontStyle,
-            title: b && b.title
+            prog: col('prog'),
+            marks: document.querySelectorAll('.adm-saved').length,
+            learned: row && row.querySelectorAll('td')[col('learned')].innerText.trim(),
+            anonProg: [...document.querySelectorAll('.adm-uremoved th')].some(t => t.textContent === 'Progress')
           };
-        })
-        .catch(() => null);
-    for (const n of ['Ben Demo-test', 'Test Demo']) {
-      const h = await nameOf(n);
-      if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
-      else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
-        fails.push(`${w}px Players: hidden player ${n} not greyed without a tag (${JSON.stringify(h)})`);
+        });
+        if (o.prog !== -1 || o.marks || !/^1\/\d+$/.test(o.learned) || o.anonProg)
+          fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
+        await q.goto(base + 'admin.html?demo&v=27#~journey/' + encodeURIComponent('Dio Demo'));
+        await q.waitForSelector('.adm-kpis', {timeout: 20000}).catch(() => {});
+        // The learned genus (under BKT) comes with the saved copy, read after the page is drawn.
+        await q.waitForSelector('.adm-jlearn', {timeout: 10000}).catch(() => {});
+        const j = await q.evaluate(() => ({
+          kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+          col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
+          learned: document.querySelectorAll('.adm-jlearn').length
+        }));
+        if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
+          fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
+        // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
+        await q
+          .waitForFunction(() => /v30 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
+            timeout: 10000
+          })
+          .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
+        await q.close();
+      }
+      // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
+      // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
+      // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
+      // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
+      // pages opened (Health) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
+      {
+        const q = await p.context().newPage();
+        q.on('pageerror', e => fails.push(`${w}px sheet reads page error: ${e.message}`));
+        const calls = () => q.evaluate(() => window.DEMO_CALLS.map(c => ({...c})));
+        const count = L => L.reduce((o, c) => ((o[c.k] = (o[c.k] || 0) + 1), o), {});
+        const quiet = () =>
+          q
+            .waitForFunction(
+              () =>
+                window.DEMO_PENDING === 0 &&
+                typeof DRAFT !== 'undefined' &&
+                DRAFT &&
+                DRAFT.genera &&
+                !/^\s*Loading/.test(document.getElementById('view').innerText),
+              null,
+              {timeout: 20000}
+            )
+            .then(() => q.waitForTimeout(1500))
+            .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
+        await q.goto(base + 'admin.html?demo#~todo');
+        await quiet();
+        const n = count(await calls());
+        if (n.answers !== 1 || n.stats !== 1 || n.events !== 1 || n.reports !== 1)
+          fails.push(`sheet reads: To do asked ${JSON.stringify(n)}, once each expected`);
+        await q.route(/\/cand\.json$/, r => setTimeout(() => r.continue().catch(() => {}), 2000));
+        await q.goto(base + 'admin.html?demo&load=2#~users');
+        await quiet();
+        const [a] = (await calls()).filter(c => c.k === 'answers'),
+          cj = await q.evaluate(
+            () => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart
+          );
+        if (!a || !(cj > 0) || !(a.t0 < cj))
+          fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
+        await q.unroute(/\/cand\.json$/);
+        await q.goto(base + 'admin.html?demo&load=3#~cand');
+        await quiet();
+        const before = (await calls()).length;
+        await q.evaluate(() => (location.hash = '~health'));
+        await quiet();
+        const L = (await calls()).slice(before),
+          ans = L.find(c => c.k === 'answers'),
+          pg = L.find(c => c.k === 'pages');
+        if (!ans || !pg || !(pg.t0 < ans.t1))
+          fails.push(
+            `sheet reads: Health asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
+          );
+        // (4) The answer log is never published before the photo ratings (Codex review #488): Health and To do's Health line
+        // read both once the log is there. The ratings answer a second late here (admin-demo.js slow=stats).
+        await q.addInitScript(() => {
+          window.__early = 0;
+          const t = setInterval(() => {
+            try {
+              if (ANS && !STATS) window.__early++;
+              if (ANS && STATS) clearInterval(t);
+            } catch (e) {} // before admin.js has run
+          }, 10);
+        });
+        await q.goto(base + 'admin.html?demo&slow=stats&load=4#~health');
+        await quiet();
+        if (await q.evaluate(() => window.__early)) fails.push('sheet reads: the answer log was published before the photo ratings');
+        await q.close();
+      }
+      await go('~users');
+      await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
+      await settle();
+      // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
+      await p.click('[data-uopen="Dio Demo"]');
+      await settle();
+      await p.click('[data-uboard="Dio Demo"]');
+      await settle();
+      if (!/Hidden from the leaderboard/.test(await text())) fails.push(`${w}px Players: Hide did not hide Dio from the leaderboard`);
+      await p.click('[data-uboard="Dio Demo"]');
+      await settle();
+      if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
+      // Rename (sheet v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted, above), hidden
+      // from the leaderboard.
+      await p.click('[data-uopen="Ben Demo"]');
+      await settle();
+      await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
+      await p.click('[data-uren="Ben Demo"]');
+      await p
+        .waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+        .catch(() => {});
+      // The rename reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
+      // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
+      await settle();
+      const ren = await text();
+      if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
+        fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
+      // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
+      // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
+      const nameOf = n =>
+        p
+          .$eval(`.adm-urow[data-uopen="${n}"]`, tr => {
+            const b = tr.querySelector('td:first-child .adm-cut'),
+              cs = b && getComputedStyle(b),
+              probe = document.createElement('span');
+            probe.style.color = 'var(--muted)';
+            tr.appendChild(probe);
+            const muted = getComputedStyle(probe).color;
+            probe.remove();
+            return {
+              tag: /\bhidden\b/.test(tr.cells[0].innerText),
+              color: cs && cs.color,
+              muted,
+              italic: cs && cs.fontStyle,
+              title: b && b.title
+            };
+          })
+          .catch(() => null);
+      for (const n of ['Ben Demo-test', 'Test Demo']) {
+        const h = await nameOf(n);
+        if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
+        else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
+          fails.push(`${w}px Players: hidden player ${n} not greyed without a tag (${JSON.stringify(h)})`);
+      }
+      const shown = await nameOf('Carla Demo');
+      if (!shown) fails.push(`${w}px Players: Carla's row not found`);
+      else if (shown.color === shown.muted || shown.italic === 'italic')
+        fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
     }
-    const shown = await nameOf('Carla Demo');
-    if (!shown) fails.push(`${w}px Players: Carla's row not found`);
-    else if (shown.color === shown.muted || shown.italic === 'italic')
-      fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
     // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
     // (admin.css --cut), the name ends in "…" and its title holds it whole.
     if (w === 390) {
@@ -805,10 +826,10 @@ const WIDTHS = [390, 1280];
         });
       const LONG = 'Bartholomew Alexander Montgomery-Fitzgerald Demo LongName-60';
       const before = await size();
-      await p.click('[data-uopen="Ben Demo-test"]');
+      await p.click('[data-uopen="Ben Demo"]');
       await settle();
       await p.evaluate(n => (window.prompt = () => n), LONG);
-      await p.click('[data-uren="Ben Demo-test"]');
+      await p.click('[data-uren="Ben Demo"]');
       await p.waitForFunction(n => document.querySelector(`[data-uopen="${n}"]`), LONG, {timeout: 10000}).catch(() => {});
       const after = await size(),
         cut = await p
@@ -819,17 +840,19 @@ const WIDTHS = [390, 1280];
       if (!cut || !cut.cut || !cut.title.startsWith(LONG))
         fails.push(`${w}px Players: the 60-character name is not cut with its title (${JSON.stringify(cut)})`);
     }
-    await p.click('[data-uopen="mara demo2"]');
-    await settle();
-    await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');
-    await p.waitForFunction(() => !/mara demo2/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
-    if (/mara demo2/.test(await text())) fails.push(`${w}px Users: merge did not remove "mara demo2"`);
-    await p.click('[data-uopen="Test Demo"]');
-    await settle();
-    await p.click('[data-udel="Test Demo"]');
-    await p.waitForFunction(() => !/Test Demo/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
-    if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
-
+    if (once) {
+      // Once: merge and delete.
+      await p.click('[data-uopen="mara demo2"]');
+      await settle();
+      await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');
+      await p.waitForFunction(() => !/mara demo2/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+      if (/mara demo2/.test(await text())) fails.push(`${w}px Users: merge did not remove "mara demo2"`);
+      await p.click('[data-uopen="Test Demo"]');
+      await settle();
+      await p.click('[data-udel="Test Demo"]');
+      await p.waitForFunction(() => !/Test Demo/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+      if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
+    }
     // A player's journey (admin-journey.js), opened from their row: numbers, both curves, the genera in the order met.
     await p.click('[data-uopen="Ana Demo"]');
     await settle();
@@ -853,219 +876,228 @@ const WIDTHS = [390, 1280];
     });
     if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'List' || jo.small)
       fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
-    // The first-meeting cards from the player's saved progress (userData): Ana's first cards and single cards; Carla
-    // opened all from the offer card (an orange line on the genera chart).
-    await p.waitForFunction(() => /First cards/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
-    const cards = await p.evaluate(() => ({
-      t: (document.querySelector('.adm-jcards') || {}).innerText || '',
-      col: [...document.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => td.textContent.trim())
-    }));
-    // Learned genera (from the saved progress): a tag in the list, a ★ on the genera chart; the games with their modes.
-    const lrn = await p.evaluate(() => ({
-      tags: document.querySelectorAll('.adm-jtbl .adm-jlearn').length,
-      stars: document.querySelectorAll('svg.adm-jl text.s').length,
-      games:
-        [...document.querySelectorAll('#view td')].some(td => td.textContent === 'Quiz') &&
-        /Look-alike duels/.test(document.getElementById('view').innerText)
-    }));
-    if (!lrn.tags || !lrn.stars || !lrn.games) fails.push(`${w}px journey learned / games: ${JSON.stringify(lrn)}`);
-    if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
-      fails.push(`${w}px journey cards (Ana): ${JSON.stringify(cards).slice(0, 300)}`);
-    await go('~journey/' + encodeURIComponent('Carla Demo'));
-    await p
-      .waitForFunction(() => /Opened all genera/.test(document.getElementById('view').innerText), null, {timeout: 10000})
-      .catch(() => {});
-    const carla = await p.evaluate(() => ({
-      t: (document.querySelector('.adm-jcards') || {}).innerText || '',
-      line: !!document.querySelector('svg.adm-jl line.o')
-    }));
-    if (
-      !/Opened all genera after answer 40.*offer card/.test(carla.t) ||
-      !/Kept all genera when asked after answer 70/.test(carla.t) ||
-      !carla.line
-    )
-      fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
-    await go('~journey/' + encodeURIComponent('Ana Demo'));
-    await p.click('[data-jsort="hard"]');
-    await settle();
-    const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
-    if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
-    // Genus sheets opened (sheet v30 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
-    // first opened before it was asked, from Learn; Dio opened none; one device not signed in opened one.
-    const jsheets = () =>
-      p
-        .waitForFunction(
-          () => /visits? recorded|None opened|No visit/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''),
-          null,
-          {
-            timeout: 10000
-          }
-        )
-        .catch(() => {})
-        .then(() =>
-          p.evaluate(() => {
-            const s = document.querySelector('[data-jsheets]');
-            return s ? {rows: s.querySelectorAll('tbody tr').length, t: s.innerText.replace(/\s+/g, ' ')} : null;
-          })
-        );
-    const sa = await jsheets();
-    if (
-      !sa ||
-      sa.rows !== 9 ||
-      !/before asked/.test(sa.t) ||
-      !/after asked/.test(sa.t) ||
-      !/Learn/.test(sa.t) ||
-      !/4 visits recorded/.test(sa.t) ||
-      !/quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.quiz) read back with its subject
-    )
-      fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
-    await go('~journey/' + encodeURIComponent('Dio Demo'));
-    const sd = await jsheets();
-    if (!sd || sd.rows || !/None opened/.test(sd.t)) fails.push(`${w}px journey sheets (Dio): ${JSON.stringify(sd)}`);
-    await go('~users');
-    const anonIds = await p.$$eval('a[href^="#~anon/"]', L => [...new Set(L.map(a => a.getAttribute('href').slice(7)))]);
-    const anonSheets = [];
-    for (const id of anonIds) {
-      await go('~anon/' + id);
-      const x = await jsheets();
-      anonSheets.push(x ? x.rows : -1);
-    }
-    if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
-      fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
+    if (once) {
+      // Once: the journey's cards, learned genera, Carla's, sorts, sheets opened; Errors & feedback; To do › Reports.
+      // The first-meeting cards from the player's saved progress (userData): Ana's first cards and single cards; Carla
+      // opened all from the offer card (an orange line on the genera chart).
+      await p.waitForFunction(() => /First cards/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+      const cards = await p.evaluate(() => ({
+        t: (document.querySelector('.adm-jcards') || {}).innerText || '',
+        col: [...document.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => td.textContent.trim())
+      }));
+      // Learned genera (from the saved progress): a tag in the list, a ★ on the genera chart; the games with their modes.
+      const lrn = await p.evaluate(() => ({
+        tags: document.querySelectorAll('.adm-jtbl .adm-jlearn').length,
+        stars: document.querySelectorAll('svg.adm-jl text.s').length,
+        games:
+          [...document.querySelectorAll('#view td')].some(td => td.textContent === 'Quiz') &&
+          /Look-alike duels/.test(document.getElementById('view').innerText)
+      }));
+      if (!lrn.tags || !lrn.stars || !lrn.games) fails.push(`${w}px journey learned / games: ${JSON.stringify(lrn)}`);
+      if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
+        fails.push(`${w}px journey cards (Ana): ${JSON.stringify(cards).slice(0, 300)}`);
+      await go('~journey/' + encodeURIComponent('Carla Demo'));
+      await p
+        .waitForFunction(() => /Opened all genera/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+        .catch(() => {});
+      const carla = await p.evaluate(() => ({
+        t: (document.querySelector('.adm-jcards') || {}).innerText || '',
+        line: !!document.querySelector('svg.adm-jl line.o')
+      }));
+      if (
+        !/Opened all genera after answer 40.*offer card/.test(carla.t) ||
+        !/Kept all genera when asked after answer 70/.test(carla.t) ||
+        !carla.line
+      )
+        fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
+      await go('~journey/' + encodeURIComponent('Ana Demo'));
+      await p.click('[data-jsort="hard"]');
+      await settle();
+      const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
+      if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
+      // Genus sheets opened (sheet v30 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
+      // first opened before it was asked, from Learn; Dio opened none; one device not signed in opened one.
+      const jsheets = () =>
+        p
+          .waitForFunction(
+            () => /visits? recorded|None opened|No visit/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''),
+            null,
+            {
+              timeout: 10000
+            }
+          )
+          .catch(() => {})
+          .then(() =>
+            p.evaluate(() => {
+              const s = document.querySelector('[data-jsheets]');
+              return s ? {rows: s.querySelectorAll('tbody tr').length, t: s.innerText.replace(/\s+/g, ' ')} : null;
+            })
+          );
+      const sa = await jsheets();
+      if (
+        !sa ||
+        sa.rows !== 9 ||
+        !/before asked/.test(sa.t) ||
+        !/after asked/.test(sa.t) ||
+        !/Learn/.test(sa.t) ||
+        !/4 visits recorded/.test(sa.t) ||
+        !/quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.quiz) read back with its subject
+      )
+        fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
+      await go('~journey/' + encodeURIComponent('Dio Demo'));
+      const sd = await jsheets();
+      if (!sd || sd.rows || !/None opened/.test(sd.t)) fails.push(`${w}px journey sheets (Dio): ${JSON.stringify(sd)}`);
+      await go('~users');
+      const anonIds = await p.$$eval('a[href^="#~anon/"]', L => [...new Set(L.map(a => a.getAttribute('href').slice(7)))]);
+      const anonSheets = [];
+      for (const id of anonIds) {
+        await go('~anon/' + id);
+        const x = await jsheets();
+        anonSheets.push(x ? x.rows : -1);
+      }
+      if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
+        fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
 
-    // To do › Reports lists the demo reports; Activity shows the demo players' answers.
-    // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
-    await go('~events');
-    await p
-      .waitForFunction(() => /Saves that failed/i.test(document.getElementById('view').innerText), null, {timeout: 10000})
-      .catch(() => {});
-    const evt = await text();
-    if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
-      fails.push(`${w}px Errors & feedback: demo events missing`);
-    // One-tap questions (core.js PULSEQ): every item of the bank under its wording, its answers counted by level band
-    // and by mode as the demo's rows say (rows with no item id are the first item's), and the common scales table.
-    const pq = await p.evaluate(() => {
-      const since = Date.now() - 30 * 864e5,
-        R = EVS.rows.filter(r => r[3] === 'pulse' && r[1] >= since),
-        tb = document.querySelector('.adm-pitems'),
-        heads = [...tb.querySelectorAll('thead th')].map(th => th.textContent),
-        col = t => heads.indexOf(t),
-        cell = (q, label, c) => {
-          const body = [...tb.tBodies].find(b => b.querySelector('.adm-pq th').firstChild.textContent.trim() === q);
-          const row = body && [...body.rows].find(tr => tr.cells[0].textContent === label);
-          return row ? parseInt(row.cells[c].textContent, 10) || 0 : -1;
-        },
-        bandOf = lv => (lv < -0.5 ? 'Beginner' : lv < 0.5 ? 'Middle' : 'Strong'),
-        bad = [];
-      for (const it of PULSEQ)
-        for (const [k, t] of it.a) {
-          const L = R.filter(r => (r[5] || PULSE0) === it.id && r[4] === k),
-            want = {
-              All: L.length,
-              Beginner: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Beginner').length,
-              Strong: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Strong').length,
-              Quiz: L.filter(r => JSON.parse(r[7]).m === 'quiz').length,
-              Duel: L.filter(r => JSON.parse(r[7]).m === 'quiz-duel').length
-            };
-          for (const [h, n] of Object.entries(want))
-            if (cell(it.q, t, col(h)) !== n) bad.push(`${it.q} ${t} ${h}: ${cell(it.q, t, col(h))} ≠ ${n}`);
-        }
-      // The response under each item (2026-11-03): shown, Not now, and no answer = shown − answered − Not now, counted
-      // over the rows with an item id, by band and mode as above.
-      const codes = new Set(PULSEQ.flatMap(it => it.a.map(a => a[0])));
-      let ign = 0;
-      for (const it of PULSEQ) {
-        const L = R.filter(r => r[5] === it.id),
-          per = f => {
-            const C = L.filter(r => f(JSON.parse(r[7]))),
-              sh = C.filter(r => r[4] === PULSE_SHOWN).length,
-              an = C.filter(r => codes.has(r[4])).length,
-              sk = C.filter(r => r[4] === PULSE_SKIP).length;
-            return {Shown: sh, 'Not now': sk, 'No answer': Math.max(0, sh - an - sk)};
+      // To do › Reports lists the demo reports; Activity shows the demo players' answers.
+      // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
+      await go('~events');
+      await p
+        .waitForFunction(() => /Saves that failed/i.test(document.getElementById('view').innerText), null, {timeout: 10000})
+        .catch(() => {});
+      const evt = await text();
+      if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
+        fails.push(`${w}px Errors & feedback: demo events missing`);
+      // One-tap questions (core.js PULSEQ): every item of the bank under its wording, its answers counted by level band
+      // and by mode as the demo's rows say (rows with no item id are the first item's), and the common scales table.
+      const pq = await p.evaluate(() => {
+        const since = Date.now() - 30 * 864e5,
+          R = EVS.rows.filter(r => r[3] === 'pulse' && r[1] >= since),
+          tb = document.querySelector('.adm-pitems'),
+          heads = [...tb.querySelectorAll('thead th')].map(th => th.textContent),
+          col = t => heads.indexOf(t),
+          cell = (q, label, c) => {
+            const body = [...tb.tBodies].find(b => b.querySelector('.adm-pq th').firstChild.textContent.trim() === q);
+            const row = body && [...body.rows].find(tr => tr.cells[0].textContent === label);
+            return row ? parseInt(row.cells[c].textContent, 10) || 0 : -1;
           },
-          cols = {All: () => true, Beginner: d => bandOf(d.lv) === 'Beginner', Duel: d => d.m === 'quiz-duel'};
-        for (const [h, f] of Object.entries(cols))
-          for (const [label, n] of Object.entries(per(f))) {
-            if (h === 'All' && label === 'No answer') ign += n;
-            if (cell(it.q, label, col(h)) !== n) bad.push(`${it.q} ${label} ${h}: ${cell(it.q, label, col(h))} ≠ ${n}`);
+          bandOf = lv => (lv < -0.5 ? 'Beginner' : lv < 0.5 ? 'Middle' : 'Strong'),
+          bad = [];
+        for (const it of PULSEQ)
+          for (const [k, t] of it.a) {
+            const L = R.filter(r => (r[5] || PULSE0) === it.id && r[4] === k),
+              want = {
+                All: L.length,
+                Beginner: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Beginner').length,
+                Strong: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Strong').length,
+                Quiz: L.filter(r => JSON.parse(r[7]).m === 'quiz').length,
+                Duel: L.filter(r => JSON.parse(r[7]).m === 'quiz-duel').length
+              };
+            for (const [h, n] of Object.entries(want))
+              if (cell(it.q, t, col(h)) !== n) bad.push(`${it.q} ${t} ${h}: ${cell(it.q, t, col(h))} ≠ ${n}`);
           }
+        // The response under each item (2026-11-03): shown, Not now, and no answer = shown − answered − Not now, counted
+        // over the rows with an item id, by band and mode as above.
+        const codes = new Set(PULSEQ.flatMap(it => it.a.map(a => a[0])));
+        let ign = 0;
+        for (const it of PULSEQ) {
+          const L = R.filter(r => r[5] === it.id),
+            per = f => {
+              const C = L.filter(r => f(JSON.parse(r[7]))),
+                sh = C.filter(r => r[4] === PULSE_SHOWN).length,
+                an = C.filter(r => codes.has(r[4])).length,
+                sk = C.filter(r => r[4] === PULSE_SKIP).length;
+              return {Shown: sh, 'Not now': sk, 'No answer': Math.max(0, sh - an - sk)};
+            },
+            cols = {All: () => true, Beginner: d => bandOf(d.lv) === 'Beginner', Duel: d => d.m === 'quiz-duel'};
+          for (const [h, f] of Object.entries(cols))
+            for (const [label, n] of Object.entries(per(f))) {
+              if (h === 'All' && label === 'No answer') ign += n;
+              if (cell(it.q, label, col(h)) !== n) bad.push(`${it.q} ${label} ${h}: ${cell(it.q, label, col(h))} ≠ ${n}`);
+            }
+        }
+        const sc = document.querySelector('.adm-pscale');
+        return {
+          heads,
+          bad,
+          ign,
+          scale:
+            !!sc &&
+            /Difficulty/.test(sc.textContent) &&
+            /Feel/.test(sc.textContent) &&
+            /Beginner/.test(sc.textContent) &&
+            /Shown/.test(sc.textContent) &&
+            /Answered/.test(sc.textContent),
+          title: document.querySelector('.adm-pulse h3')?.textContent || ''
+        };
+      });
+      if (
+        !pq.scale ||
+        !/One-tap questions/i.test(pq.title) ||
+        ['All', 'Beginner', 'Middle', 'Strong', 'Quiz', 'Duel'].some(h => !pq.heads.includes(h)) ||
+        pq.bad.length ||
+        !pq.ign
+      )
+        fails.push(`${w}px Errors & feedback, one-tap questions: ${JSON.stringify(pq)}`);
+      // Load times (sheet v21): the demo's three visits, their median line and the CDN server.
+      if (!/Load times/i.test(evt) || !/640 kbit\/s/.test(evt) || !/MNL/.test(evt))
+        fails.push(`${w}px Errors & feedback: load times missing`);
+      // Keys come from anyone's device: "__proto__" as a photo or a message must not break the page (Codex review #343).
+      const proto = await p.evaluate(() => {
+        EVS.rows.unshift(
+          ['protox', Date.now(), 'devx', 'photo', '__proto__', '', 'quiz', '', '1', 'x'],
+          ['protoy', Date.now(), 'devx', 'err', '__proto__', '', 'quiz', '', '1', 'x']
+        );
+        try {
+          renderEvents();
+          return /__proto__/.test(document.getElementById('view').innerText);
+        } catch (e) {
+          return e.message;
+        }
+      });
+      if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
+      await go('~triage');
+      if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
+      // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
+      {
+        const fr = await p
+          .waitForFunction(
+            () => {
+              const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
+              const im = c && c.querySelector('.adm-tile img');
+              return c && im && /Damselfish \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
+            },
+            null,
+            {timeout: 10000}
+          )
+          .then(h => h.jsonValue())
+          .catch(() => null);
+        if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
       }
-      const sc = document.querySelector('.adm-pscale');
-      return {
-        heads,
-        bad,
-        ign,
-        scale:
-          !!sc &&
-          /Difficulty/.test(sc.textContent) &&
-          /Feel/.test(sc.textContent) &&
-          /Beginner/.test(sc.textContent) &&
-          /Shown/.test(sc.textContent) &&
-          /Answered/.test(sc.textContent),
-        title: document.querySelector('.adm-pulse h3')?.textContent || ''
-      };
-    });
-    if (
-      !pq.scale ||
-      !/One-tap questions/i.test(pq.title) ||
-      ['All', 'Beginner', 'Middle', 'Strong', 'Quiz', 'Duel'].some(h => !pq.heads.includes(h)) ||
-      pq.bad.length ||
-      !pq.ign
-    )
-      fails.push(`${w}px Errors & feedback, one-tap questions: ${JSON.stringify(pq)}`);
-    // Load times (sheet v21): the demo's three visits, their median line and the CDN server.
-    if (!/Load times/i.test(evt) || !/640 kbit\/s/.test(evt) || !/MNL/.test(evt))
-      fails.push(`${w}px Errors & feedback: load times missing`);
-    // Keys come from anyone's device: "__proto__" as a photo or a message must not break the page (Codex review #343).
-    const proto = await p.evaluate(() => {
-      EVS.rows.unshift(
-        ['protox', Date.now(), 'devx', 'photo', '__proto__', '', 'quiz', '', '1', 'x'],
-        ['protoy', Date.now(), 'devx', 'err', '__proto__', '', 'quiz', '', '1', 'x']
-      );
-      try {
-        renderEvents();
-        return /__proto__/.test(document.getElementById('view').innerText);
-      } catch (e) {
-        return e.message;
-      }
-    });
-    if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
-    await go('~triage');
-    if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
-    // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
-    {
-      const fr = await p
-        .waitForFunction(
-          () => {
-            const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
-            const im = c && c.querySelector('.adm-tile img');
-            return c && im && /Damselfish \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
-          },
-          null,
-          {timeout: 10000}
-        )
-        .then(h => h.jsonValue())
-        .catch(() => null);
-      if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
     }
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
-    // Every account counts (Pierre, 2026-11-04): the answers and players on Activity are the whole log's, the account
-    // this browser is signed in with included; no Others / Me switch.
-    const every = await p.evaluate(() => {
-      const k = Object.fromEntries(
-        [...document.querySelectorAll('.adm-kpis > div')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])
-      );
-      return {
-        answers: Number(k.Answers),
-        players: Number(k.Players),
-        all: ANS.rows.length,
-        ids: new Set(ANS.rows.map(r => r[0])).size,
-        sw: !!document.querySelector('[data-sf="who"]')
-      };
-    });
-    if (every.answers !== every.all || every.players !== every.ids || every.sw)
-      fails.push(`${w}px Activity: not every account counts ${JSON.stringify(every)}`);
+    if (once) {
+      // Once: every account counts.
+      // Every account counts (Pierre, 2026-11-04): the answers and players on Activity are the whole log's, the account
+      // this browser is signed in with included; no Others / Me switch.
+      const every = await p.evaluate(() => {
+        const k = Object.fromEntries(
+          [...document.querySelectorAll('.adm-kpis > div')].map(d => [
+            d.querySelector('span').textContent,
+            d.querySelector('b').textContent
+          ])
+        );
+        return {
+          answers: Number(k.Answers),
+          players: Number(k.Players),
+          all: ANS.rows.length,
+          ids: new Set(ANS.rows.map(r => r[0])).size,
+          sw: !!document.querySelector('[data-sf="who"]')
+        };
+      });
+      if (every.answers !== every.all || every.players !== every.ids || every.sw)
+        fails.push(`${w}px Activity: not every account counts ${JSON.stringify(every)}`);
+    }
     // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
     // Carla playing now (quiz, custom quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
     const recent = () =>
@@ -1084,22 +1116,26 @@ const WIDTHS = [390, 1280];
         }));
         return {first: c === document.querySelector('#view section'), head: c.querySelector('h3').textContent, R};
       });
-    const rs = await recent();
-    if (!rs) fails.push(`${w}px Activity: no Recent sessions`);
-    else {
-      const R = rs.R,
-        c = R[0] || {},
-        an = R.find(x => x.anon) || {};
-      if (!rs.first || R.length !== 10) fails.push(`${w}px Recent sessions: not first or ${R.length} rows, expected 10`);
-      if (R.some((x, i) => i && x.t > R[i - 1].t)) fails.push(`${w}px Recent sessions: not newest first`);
-      if (c.who !== 'Carla Demo' || !c.now || c.last !== 'now' || c.n !== 24 || !/1 playing now/.test(rs.head))
-        fails.push(`${w}px Recent sessions: Carla not playing now ${JSON.stringify(c)} ${rs.head}`);
-      if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes) || !/custom 8/.test(c.modes))
-        fails.push(`${w}px Recent sessions: modes ${c.modes}`);
-      if (R.filter(x => x.now).length !== 1) fails.push(`${w}px Recent sessions: ${R.filter(x => x.now).length} sessions now, expected 1`);
-      if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)
-        fails.push(`${w}px Recent sessions: the device not signed in ${JSON.stringify(an)}`);
-      if (!R.some(x => /^#~journey\//.test(x.link) && !x.now)) fails.push(`${w}px Recent sessions: no other signed-in player`);
+    if (once) {
+      // Once: Recent sessions.
+      const rs = await recent();
+      if (!rs) fails.push(`${w}px Activity: no Recent sessions`);
+      else {
+        const R = rs.R,
+          c = R[0] || {},
+          an = R.find(x => x.anon) || {};
+        if (!rs.first || R.length !== 10) fails.push(`${w}px Recent sessions: not first or ${R.length} rows, expected 10`);
+        if (R.some((x, i) => i && x.t > R[i - 1].t)) fails.push(`${w}px Recent sessions: not newest first`);
+        if (c.who !== 'Carla Demo' || !c.now || c.last !== 'now' || c.n !== 24 || !/1 playing now/.test(rs.head))
+          fails.push(`${w}px Recent sessions: Carla not playing now ${JSON.stringify(c)} ${rs.head}`);
+        if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes) || !/custom 8/.test(c.modes))
+          fails.push(`${w}px Recent sessions: modes ${c.modes}`);
+        if (R.filter(x => x.now).length !== 1)
+          fails.push(`${w}px Recent sessions: ${R.filter(x => x.now).length} sessions now, expected 1`);
+        if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)
+          fails.push(`${w}px Recent sessions: the device not signed in ${JSON.stringify(an)}`);
+        if (!R.some(x => /^#~journey\//.test(x.link) && !x.now)) fails.push(`${w}px Recent sessions: no other signed-in player`);
+      }
     }
     // Activity over time (Pierre, 2026-11-04: "who plays and how much"): answers, active players and new players per day,
     // week or month (the switch), and the play hours (24 bars).
@@ -1147,25 +1183,28 @@ const WIDTHS = [390, 1280];
       return r;
     });
     if (fit.bars !== 60 || fit.over || fit.wide > 0) fails.push(`${w}px Activity over time: 60 periods do not fit ${JSON.stringify(fit)}`);
-    // ↻ reads the answers again (no timer): the page comes back with its sessions.
-    const before = await p.evaluate(() => ANS.at);
-    await p.click('[data-sload]');
-    await settle();
-    const re = await recent();
-    if (!re || re.R.length !== 10 || !(await p.evaluate(b => ANS && ANS.at > b, before)))
-      fails.push(`${w}px Activity ↻: the answers were not read again`);
-    // Photo difficulty by genus: one lane per view, a median bar in every lane that has photos.
-    await go('~stats-photos');
-    const ln = await p.evaluate(() => {
-      const rows = [...document.querySelectorAll('.adm-gstrips .adm-lanes')];
-      return {
-        rows: rows.length,
-        lanes: rows.length ? rows[0].querySelectorAll('.adm-strip').length : 0,
-        noMedian: [...document.querySelectorAll('.adm-lanes .adm-strip')].filter(x => x.querySelector('button') && !x.querySelector('i'))
-          .length
-      };
-    });
-    if (!ln.rows || ln.lanes < 2 || ln.noMedian) fails.push(`${w}px Photo difficulty: lanes per view missing ${JSON.stringify(ln)}`);
+    if (once) {
+      // Once: ↻, photo difficulty lanes.
+      // ↻ reads the answers again (no timer): the page comes back with its sessions.
+      const before = await p.evaluate(() => ANS.at);
+      await p.click('[data-sload]');
+      await settle();
+      const re = await recent();
+      if (!re || re.R.length !== 10 || !(await p.evaluate(b => ANS && ANS.at > b, before)))
+        fails.push(`${w}px Activity ↻: the answers were not read again`);
+      // Photo difficulty by genus: one lane per view, a median bar in every lane that has photos.
+      await go('~stats-photos');
+      const ln = await p.evaluate(() => {
+        const rows = [...document.querySelectorAll('.adm-gstrips .adm-lanes')];
+        return {
+          rows: rows.length,
+          lanes: rows.length ? rows[0].querySelectorAll('.adm-strip').length : 0,
+          noMedian: [...document.querySelectorAll('.adm-lanes .adm-strip')].filter(x => x.querySelector('button') && !x.querySelector('i'))
+            .length
+        };
+      });
+      if (!ln.rows || ln.lanes < 2 || ln.noMedian) fails.push(`${w}px Photo difficulty: lanes per view missing ${JSON.stringify(ln)}`);
+    }
     // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
     // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
     // marks, and a plain median (sort, middle value); nothing wider than the window.
@@ -1239,55 +1278,58 @@ const WIDTHS = [390, 1280];
     if (ov.never !== ov.wantNever) fails.push(`${w}px Overview: ${ov.never} photos never rated instead of ${ov.wantNever}`);
     if (ov.ends !== 10) fails.push(`${w}px Overview: ${ov.ends} genus links in Fewest and most`);
     if (ov.wide > 0) fails.push(`${w}px Overview: page ${ov.wide} px wider than the window`);
-    // A photo in play and a candidate sent to Not this genus › Look-alike comparison (curation out 'cmp') leave their genus
-    // for no other one: they move to the Comparison only row, once each, and the total stays (Codex review #430: they fell
-    // out of the inventory). Two Undo steps put them back.
-    const poolRows = () =>
-      p.evaluate(() =>
-        Object.fromEntries(
-          [...document.querySelectorAll('[data-pov="pool"] tbody tr')].map(r => [
-            r.children[0].innerText.trim(),
-            Number(r.children[1].innerText)
-          ])
-        )
+    if (once) {
+      // Once: comparison-only and its Undo, the Photo list's move.
+      // A photo in play and a candidate sent to Not this genus › Look-alike comparison (curation out 'cmp') leave their genus
+      // for no other one: they move to the Comparison only row, once each, and the total stays (Codex review #430: they fell
+      // out of the inventory). Two Undo steps put them back.
+      const poolRows = () =>
+        p.evaluate(() =>
+          Object.fromEntries(
+            [...document.querySelectorAll('[data-pov="pool"] tbody tr')].map(r => [
+              r.children[0].innerText.trim(),
+              Number(r.children[1].innerText)
+            ])
+          )
+        );
+      const cm0 = await poolRows(),
+        cmp = await p.evaluate(() => {
+          const n = [...GAME].find(m => covOf(m, 'wide').L.some(x => !x.from && !x.cand) && pending(m).some(x => !x.from)),
+            f = covOf(n, 'wide').L.find(x => !x.from && !x.cand).f,
+            c = pending(n).find(x => !x.from);
+          ACT.out(n, f, null, 'cmp');
+          ACT.out(n, c.f, null, 'cmp');
+          return {n, f, c: c.f, rej: rejected(c.f)};
+        });
+      await settle();
+      const cm1 = await poolRows();
+      if (
+        cm1.Total !== cm0.Total ||
+        cm1['Comparison only'] !== cm0['Comparison only'] + 2 ||
+        cm1['In play'] !== cm0['In play'] - 1 ||
+        cm1[cmp.rej ? 'Rejected' : 'Candidates'] !== cm0[cmp.rej ? 'Rejected' : 'Candidates'] - 1
+      )
+        fails.push(`${w}px Overview: comparison only ${JSON.stringify({cmp, before: cm0, after: cm1})}`);
+      await p.evaluate(() => (undo(), undo()));
+      await settle();
+      const cm2 = await poolRows();
+      if (JSON.stringify(cm2) !== JSON.stringify(cm0)) fails.push(`${w}px Overview: undo of comparison only ${JSON.stringify(cm2)}`);
+      // Photo list moved to Photo review (By difficulty) and kept its address; the Photo stats tab opens on Overview, also
+      // in a browser that remembered Photo list as its view.
+      const mv = await p.evaluate(() => ({
+        diff: tabOf('~diff')[1],
+        diffs: tabOf('~stats-photos')[1],
+        first: TABS.find(t => t[0] === 'pstats')[2][0][0]
+      }));
+      if (mv.diff !== 'Photo review' || mv.diffs !== 'Photo stats' || mv.first !== '~pstats')
+        fails.push(`${w}px Photo stats tabs: ${JSON.stringify(mv)}`);
+      await p.evaluate(() => store.set('reefid-admin-view', {...store.get('reefid-admin-view', {}), pstats: '~diff'}));
+      await go('~quality');
+      const ps = await p.evaluate(() =>
+        [...document.querySelectorAll('#subnav .adm-subtabs a')].find(a => /Photo stats/.test(a.textContent)).getAttribute('href')
       );
-    const cm0 = await poolRows(),
-      cmp = await p.evaluate(() => {
-        const n = [...GAME].find(m => covOf(m, 'wide').L.some(x => !x.from && !x.cand) && pending(m).some(x => !x.from)),
-          f = covOf(n, 'wide').L.find(x => !x.from && !x.cand).f,
-          c = pending(n).find(x => !x.from);
-        ACT.out(n, f, null, 'cmp');
-        ACT.out(n, c.f, null, 'cmp');
-        return {n, f, c: c.f, rej: rejected(c.f)};
-      });
-    await settle();
-    const cm1 = await poolRows();
-    if (
-      cm1.Total !== cm0.Total ||
-      cm1['Comparison only'] !== cm0['Comparison only'] + 2 ||
-      cm1['In play'] !== cm0['In play'] - 1 ||
-      cm1[cmp.rej ? 'Rejected' : 'Candidates'] !== cm0[cmp.rej ? 'Rejected' : 'Candidates'] - 1
-    )
-      fails.push(`${w}px Overview: comparison only ${JSON.stringify({cmp, before: cm0, after: cm1})}`);
-    await p.evaluate(() => (undo(), undo()));
-    await settle();
-    const cm2 = await poolRows();
-    if (JSON.stringify(cm2) !== JSON.stringify(cm0)) fails.push(`${w}px Overview: undo of comparison only ${JSON.stringify(cm2)}`);
-    // Photo list moved to Photo review (By difficulty) and kept its address; the Photo stats tab opens on Overview, also
-    // in a browser that remembered Photo list as its view.
-    const mv = await p.evaluate(() => ({
-      diff: tabOf('~diff')[1],
-      diffs: tabOf('~stats-photos')[1],
-      first: TABS.find(t => t[0] === 'pstats')[2][0][0]
-    }));
-    if (mv.diff !== 'Photo review' || mv.diffs !== 'Photo stats' || mv.first !== '~pstats')
-      fails.push(`${w}px Photo stats tabs: ${JSON.stringify(mv)}`);
-    await p.evaluate(() => store.set('reefid-admin-view', {...store.get('reefid-admin-view', {}), pstats: '~diff'}));
-    await go('~quality');
-    const ps = await p.evaluate(() =>
-      [...document.querySelectorAll('#subnav .adm-subtabs a')].find(a => /Photo stats/.test(a.textContent)).getAttribute('href')
-    );
-    if (ps !== '#~pstats') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
+      if (ps !== '#~pstats') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
+    }
     // Health (To do): its four sections from the demo answers, with and without this browser's own answers, no sideways
     // page scroll; a photo everyone misses opens in the lightbox.
     const health = () =>
@@ -1315,672 +1357,689 @@ const WIDTHS = [390, 1280];
       if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
       if (v === 'all' && hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Health genus sheets: ${JSON.stringify(hs.sheets)}`);
     }
-    // The page summaries are read again once stale (Codex review #423): a first read's error (offline, a script before
-    // v30) does not stay on Health; ↻ on Activity reads them again; and a visit reads them once at most (no
-    // render / read loop).
-    {
-      const sheetsText = () => p.evaluate(() => (document.querySelector('[data-health="sheets"]') || {}).innerText || '');
-      await p.evaluate(() => {
-        window.PGREADS = 0;
-        const f = window.fetch;
-        window.fetch = (u, o) => {
-          if (o && /"pages":1/.test(String(o.body || ''))) window.PGREADS++;
-          return f(u, o);
+    if (once) {
+      // Once: stale page summaries, the lightboxes' source links.
+      // The page summaries are read again once stale (Codex review #423): a first read's error (offline, a script before
+      // v30) does not stay on Health; ↻ on Activity reads them again; and a visit reads them once at most (no
+      // render / read loop).
+      {
+        const sheetsText = () => p.evaluate(() => (document.querySelector('[data-health="sheets"]') || {}).innerText || '');
+        await p.evaluate(() => {
+          window.PGREADS = 0;
+          const f = window.fetch;
+          window.fetch = (u, o) => {
+            if (o && /"pages":1/.test(String(o.body || ''))) window.PGREADS++;
+            return f(u, o);
+          };
+        });
+        const stale = async (label, prep) => {
+          await go('~stats');
+          await p.evaluate(prep);
+          if (label === 'reload') {
+            await p.click('[data-sload]');
+            await settle();
+          }
+          await go('~health');
+          await p
+            .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
+              timeout: 8000
+            })
+            .catch(() => {});
+          await p.waitForTimeout(1500);
+          const t = await sheetsText();
+          if (!/Over 300/.test(t) || /Offline/.test(t)) fails.push(`${w}px Health genus sheets after ${label}: ${t.replace(/\s+/g, ' ')}`);
         };
-      });
-      const stale = async (label, prep) => {
+        await stale('a stale error', () => {
+          PGS = {err: 'Offline'};
+          pgsAt = Date.now() - 600000;
+        });
+        await stale('reload', () => {
+          PGS = {err: 'Offline'};
+          pgsAt = Date.now();
+        });
+        const n0 = await p.evaluate(() => PGREADS);
         await go('~stats');
-        await p.evaluate(prep);
-        if (label === 'reload') {
-          await p.click('[data-sload]');
-          await settle();
-        }
         await go('~health');
-        await p
-          .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
-            timeout: 8000
-          })
-          .catch(() => {});
         await p.waitForTimeout(1500);
-        const t = await sheetsText();
-        if (!/Over 300/.test(t) || /Offline/.test(t)) fails.push(`${w}px Health genus sheets after ${label}: ${t.replace(/\s+/g, ' ')}`);
-      };
-      await stale('a stale error', () => {
-        PGS = {err: 'Offline'};
-        pgsAt = Date.now() - 600000;
-      });
-      await stale('reload', () => {
-        PGS = {err: 'Offline'};
-        pgsAt = Date.now();
-      });
-      const n0 = await p.evaluate(() => PGREADS);
-      await go('~stats');
-      await go('~health');
-      await p.waitForTimeout(1500);
-      const reads = (await p.evaluate(() => PGREADS)) - n0;
-      if (n0 !== 2 || reads) fails.push(`${w}px Health genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
-    }
-    // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
-    // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
-    // photo's observation (new tab, noopener) and the genus sheet; a Coral Finder book photo keeps its © line, no link.
-    const lbSrc = f =>
-      p.evaluate(f => {
-        const ph = PHOTOS[f],
-          cap = document.querySelector('#lightbox:not([hidden]) .lb-cap');
-        if (!cap) return 'no lightbox';
-        if (!cap.querySelector(`code`) || cap.querySelector('code').textContent !== f) return 'caption names another photo';
-        const a = [...cap.querySelectorAll('a.lb-src')];
-        if (ph.cf)
-          return a.length ? 'a book photo has a source link' : /Coral Finder/.test(cap.textContent) ? '' : 'book photo without its © line';
-        if (!/inaturalist\.org\/observations\//.test(ph.o || '')) return a.length ? 'a link on a photo with no iNat page' : '';
-        if (a.length !== 1 || a[0].href !== ph.o) return `no link to ${ph.o}`;
-        if (a[0].target !== '_blank' || !/noopener/.test(a[0].rel)) return 'source link not in a new tab with noopener';
-        if (!cap.querySelector(`a[href$="#g-${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
-        return '';
-      }, f);
-    if (await p.$('[data-health="photos"] [data-zf]')) {
-      await p.click('[data-health="photos"] [data-zf]');
-      if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
-      else {
-        const e = await lbSrc(await p.$eval('[data-health="photos"] [data-zf]', b => b.dataset.zf));
-        if (e) fails.push(`${w}px Health lightbox: ${e}`);
+        const reads = (await p.evaluate(() => PGREADS)) - n0;
+        if (n0 !== 2 || reads) fails.push(`${w}px Health genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
       }
-      await p.keyboard.press('Escape');
-    }
-    // Both admin lightboxes (zoom: a genus's photos; zoomOne: Excluded, Flags, Candidates, auto-sort), on Pierre's photo
-    // of the report, a candidate and a Coral Finder book photo.
-    for (const [how, f] of await p.evaluate(() => {
-      const own = 'lobactis-medium-746236519',
-        cand = Object.values(DATA.cand)
-          .flat()
-          .find(x => !x.cf),
-        book = Object.values(PHOTOS).find(x => x.cf);
-      return [
-        ['zoom', PHOTOS[own] ? own : Object.values(PHOTOS).find(x => x.own).f],
-        ['zoomOne', cand.f],
-        ['zoomOne', book.f]
-      ];
-    })) {
-      await p.evaluate(([how, f]) => (how === 'zoom' ? zoom(PHOTOS[f].genus, f) : zoomOne(PHOTOS[f])), [how, f]);
-      const e = await lbSrc(f);
-      if (e) fails.push(`${w}px Lightbox (${how}, ${f}): ${e}`);
-      await p.keyboard.press('Escape');
+      // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
+      // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
+      // photo's observation (new tab, noopener) and the genus sheet; a Coral Finder book photo keeps its © line, no link.
+      const lbSrc = f =>
+        p.evaluate(f => {
+          const ph = PHOTOS[f],
+            cap = document.querySelector('#lightbox:not([hidden]) .lb-cap');
+          if (!cap) return 'no lightbox';
+          if (!cap.querySelector(`code`) || cap.querySelector('code').textContent !== f) return 'caption names another photo';
+          const a = [...cap.querySelectorAll('a.lb-src')];
+          if (ph.cf)
+            return a.length
+              ? 'a book photo has a source link'
+              : /Coral Finder/.test(cap.textContent)
+                ? ''
+                : 'book photo without its © line';
+          if (!/inaturalist\.org\/observations\//.test(ph.o || '')) return a.length ? 'a link on a photo with no iNat page' : '';
+          if (a.length !== 1 || a[0].href !== ph.o) return `no link to ${ph.o}`;
+          if (a[0].target !== '_blank' || !/noopener/.test(a[0].rel)) return 'source link not in a new tab with noopener';
+          if (!cap.querySelector(`a[href$="#g-${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
+          return '';
+        }, f);
+      if (await p.$('[data-health="photos"] [data-zf]')) {
+        await p.click('[data-health="photos"] [data-zf]');
+        if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
+        else {
+          const e = await lbSrc(await p.$eval('[data-health="photos"] [data-zf]', b => b.dataset.zf));
+          if (e) fails.push(`${w}px Health lightbox: ${e}`);
+        }
+        await p.keyboard.press('Escape');
+      }
+      // Both admin lightboxes (zoom: a genus's photos; zoomOne: Excluded, Flags, Candidates, auto-sort), on Pierre's photo
+      // of the report, a candidate and a Coral Finder book photo.
+      for (const [how, f] of await p.evaluate(() => {
+        const own = 'lobactis-medium-746236519',
+          cand = Object.values(DATA.cand)
+            .flat()
+            .find(x => !x.cf),
+          book = Object.values(PHOTOS).find(x => x.cf);
+        return [
+          ['zoom', PHOTOS[own] ? own : Object.values(PHOTOS).find(x => x.own).f],
+          ['zoomOne', cand.f],
+          ['zoomOne', book.f]
+        ];
+      })) {
+        await p.evaluate(([how, f]) => (how === 'zoom' ? zoom(PHOTOS[f].genus, f) : zoomOne(PHOTOS[f])), [how, f]);
+        const e = await lbSrc(f);
+        if (e) fails.push(`${w}px Lightbox (${how}, ${f}): ${e}`);
+        await p.keyboard.press('Escape');
+      }
     }
     if (errs.length) fails.push(`${w}px Health: ${errs.slice(0, 3).join(' | ')}`);
 
-    // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
-    // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
-    // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.
-    await go('~form');
-    const fag = () =>
-      p.evaluate(() => {
-        const d = document.getElementById('fagree');
-        if (!d) return null;
+    if (once) {
+      // Once: Growth form, game genera, Candidates, the cap, judgments, the pre-sort, the auto-sort, retests, the fish auto-sort, Publish.
+      // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
+      // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
+      // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.
+      await go('~form');
+      const fag = () =>
+        p.evaluate(() => {
+          const d = document.getElementById('fagree');
+          if (!d) return null;
+          return {
+            txt: d.querySelector('summary').innerText,
+            set: +d.dataset.set,
+            both: +d.dataset.both,
+            ok: +d.dataset.ok,
+            un: +d.dataset.un
+          };
+        });
+      const a0 = await fag();
+      if (
+        !a0 ||
+        !/^Your forms: \d+ set · agreement with the automatic guess: (\d+%|–) \(of \d+ where both exist\) · unsure guesses: \d+$/.test(
+          a0.txt
+        )
+      )
+        fails.push(`${w}px Growth form: agreement line ${JSON.stringify(a0)}`);
+      const rate = a => (a.both ? a.ok / a.both : 0);
+      // Two tiles still on a guess: the first is confirmed (its dashed form clicked), the second given another form.
+      const gt = await p.evaluate(() =>
+        [...document.querySelectorAll('.adm-qt')]
+          .filter(t => t.querySelector('.adm-fseg.auto [data-fm][aria-pressed="true"]:not([data-fm="x"])'))
+          .slice(0, 2)
+          .map(t => t.dataset.f)
+      );
+      if (a0 && gt.length === 2) {
+        const sel = f => `.adm-qt[data-f="${f}"]`;
+        await p.click(`${sel(gt[0])} .adm-fseg [data-fm][aria-pressed="true"]`);
+        const a1 = await fag();
+        if (a1.set !== a0.set + 1 || a1.both !== a0.both + 1 || a1.ok !== a0.ok + 1 || !(rate(a1) > rate(a0) || rate(a0) === 1))
+          fails.push(`${w}px Growth form: confirming a guess did not raise agreement ${JSON.stringify([a0, a1])}`);
+        await p.click(`${sel(gt[1])} .adm-fseg [data-fm]:not([aria-pressed="true"]):not([data-fm="x"])`);
+        const a2 = await fag();
+        if (a2.both !== a1.both + 1 || a2.ok !== a1.ok || !(rate(a2) < rate(a1)))
+          fails.push(`${w}px Growth form: changing a guess did not lower agreement ${JSON.stringify([a1, a2])}`);
+        if (!(await p.evaluate(() => document.querySelectorAll('#fagree .adm-fag-t td.ko').length)))
+          fails.push(`${w}px Growth form: the guess → yours table shows no disagreement after a change`);
+        await p.evaluate(() => {
+          undo();
+          undo();
+        });
+        await settle();
+        const a3 = await fag();
+        if (a3.ok !== a0.ok || a3.both !== a0.both)
+          fails.push(`${w}px Growth form: Undo did not bring agreement back ${JSON.stringify([a0, a3])}`);
+      } else fails.push(`${w}px Growth form: fewer than 2 photos on a guess`);
+      await p.check('#fgfirst');
+      await settle();
+      const gord = await p.evaluate(() =>
+        [...document.querySelectorAll('.adm-qgrid')].map(g =>
+          [...g.querySelectorAll('.adm-fseg')].map(s => (!s.classList.contains('auto') ? 2 : s.classList.contains('unsure') ? 0 : 1))
+        )
+      );
+      const badRow = gord.findIndex(R => R.some((r, i) => i && r < R[i - 1]));
+      if (badRow >= 0) fails.push(`${w}px Growth form › Guesses first: row ${badRow} not guesses first, unsure first`);
+      if (!gord.some(R => R.length && R[0] < 2 && R.includes(2)))
+        fails.push(`${w}px Growth form › Guesses first: no row with guesses before your forms`);
+      await p.uncheck('#fgfirst');
+      await settle();
+
+      // Game genera first (Pierre, 2026-11-03; core.js gameOf): Game coverage lists every genus a game asks, Millepora and
+      // the bonus genera included; in Candidates no Key-only genus comes before a game genus of the same source, none
+      // is proposed for Corallites, and a Key-only genus is full at CAP.sheet colonies.
+      await go('~cov');
+      const gq = await p.evaluate(() => {
+        const rows = [...document.querySelectorAll('.cov-t tbody tr')].map(tr => tr.dataset.g),
+          game = gameOf(DATA),
+          fo = Object.keys(DATA.x.gen).filter(n => !isGame(n)),
+          order = {};
+        ['dauin', 'ph', 'all'].forEach(s => {
+          const Q = candQueue(s);
+          order[s] = [Q.findIndex(x => !isGame(x.n)), Q.map(x => isGame(x.n)).lastIndexOf(true), Q.length];
+        });
         return {
-          txt: d.querySelector('summary').innerText,
-          set: +d.dataset.set,
-          both: +d.dataset.both,
-          ok: +d.dataset.ok,
-          un: +d.dataset.un
+          rows: rows.slice().sort().join() === game.slice().sort().join(),
+          mill: rows.includes('Millepora') && BONUS.every(n => rows.includes(n)),
+          fo: fo.length,
+          order,
+          macro: candQueue('all').filter(x => !isGame(x.n) && cellView(x.n, x.p) === 'macro' && lv(x.n) !== 2).length,
+          cap: fo.every(n => capOf(n) === CAP.sheet) && game.every(n => capOf(n) === CELL_MAX)
         };
       });
-    const a0 = await fag();
-    if (
-      !a0 ||
-      !/^Your forms: \d+ set · agreement with the automatic guess: (\d+%|–) \(of \d+ where both exist\) · unsure guesses: \d+$/.test(a0.txt)
-    )
-      fails.push(`${w}px Growth form: agreement line ${JSON.stringify(a0)}`);
-    const rate = a => (a.both ? a.ok / a.both : 0);
-    // Two tiles still on a guess: the first is confirmed (its dashed form clicked), the second given another form.
-    const gt = await p.evaluate(() =>
-      [...document.querySelectorAll('.adm-qt')]
-        .filter(t => t.querySelector('.adm-fseg.auto [data-fm][aria-pressed="true"]:not([data-fm="x"])'))
-        .slice(0, 2)
-        .map(t => t.dataset.f)
-    );
-    if (a0 && gt.length === 2) {
-      const sel = f => `.adm-qt[data-f="${f}"]`;
-      await p.click(`${sel(gt[0])} .adm-fseg [data-fm][aria-pressed="true"]`);
-      const a1 = await fag();
-      if (a1.set !== a0.set + 1 || a1.both !== a0.both + 1 || a1.ok !== a0.ok + 1 || !(rate(a1) > rate(a0) || rate(a0) === 1))
-        fails.push(`${w}px Growth form: confirming a guess did not raise agreement ${JSON.stringify([a0, a1])}`);
-      await p.click(`${sel(gt[1])} .adm-fseg [data-fm]:not([aria-pressed="true"]):not([data-fm="x"])`);
-      const a2 = await fag();
-      if (a2.both !== a1.both + 1 || a2.ok !== a1.ok || !(rate(a2) < rate(a1)))
-        fails.push(`${w}px Growth form: changing a guess did not lower agreement ${JSON.stringify([a1, a2])}`);
-      if (!(await p.evaluate(() => document.querySelectorAll('#fagree .adm-fag-t td.ko').length)))
-        fails.push(`${w}px Growth form: the guess → yours table shows no disagreement after a change`);
-      await p.evaluate(() => {
-        undo();
-        undo();
+      if (!gq.rows || !gq.mill) fails.push(`${w}px Game coverage: rows are not the game genera (Millepora and bonus: ${gq.mill})`);
+      if (!gq.fo) fails.push(`${w}px Game genera: no Key-only genus in the data`);
+      Object.entries(gq.order).forEach(([s, [first, lastGame, n]]) => {
+        if (first >= 0 && first < lastGame)
+          fails.push(`${w}px Candidates ${s}: a Key-only genus at ${first}, before a game genus at ${lastGame} (${n})`);
       });
-      await settle();
-      const a3 = await fag();
-      if (a3.ok !== a0.ok || a3.both !== a0.both)
-        fails.push(`${w}px Growth form: Undo did not bring agreement back ${JSON.stringify([a0, a3])}`);
-    } else fails.push(`${w}px Growth form: fewer than 2 photos on a guess`);
-    await p.check('#fgfirst');
-    await settle();
-    const gord = await p.evaluate(() =>
-      [...document.querySelectorAll('.adm-qgrid')].map(g =>
-        [...g.querySelectorAll('.adm-fseg')].map(s => (!s.classList.contains('auto') ? 2 : s.classList.contains('unsure') ? 0 : 1))
-      )
-    );
-    const badRow = gord.findIndex(R => R.some((r, i) => i && r < R[i - 1]));
-    if (badRow >= 0) fails.push(`${w}px Growth form › Guesses first: row ${badRow} not guesses first, unsure first`);
-    if (!gord.some(R => R.length && R[0] < 2 && R.includes(2)))
-      fails.push(`${w}px Growth form › Guesses first: no row with guesses before your forms`);
-    await p.uncheck('#fgfirst');
-    await settle();
-
-    // Game genera first (Pierre, 2026-11-03; core.js gameOf): Game coverage lists every genus a game asks, Millepora and
-    // the bonus genera included; in Candidates no Key-only genus comes before a game genus of the same source, none
-    // is proposed for Corallites, and a Key-only genus is full at CAP.sheet colonies.
-    await go('~cov');
-    const gq = await p.evaluate(() => {
-      const rows = [...document.querySelectorAll('.cov-t tbody tr')].map(tr => tr.dataset.g),
-        game = gameOf(DATA),
-        fo = Object.keys(DATA.x.gen).filter(n => !isGame(n)),
-        order = {};
-      ['dauin', 'ph', 'all'].forEach(s => {
-        const Q = candQueue(s);
-        order[s] = [Q.findIndex(x => !isGame(x.n)), Q.map(x => isGame(x.n)).lastIndexOf(true), Q.length];
+      if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Key-only genera`);
+      if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Key-only ones`);
+      // Where to look: a banner above the Games grid (its first cells), open in full on its old address.
+      const lk = await p.evaluate(() => ({
+        links: document.querySelectorAll('#cov-look .cov-lk').length,
+        grid: !!document.querySelector('.cov-t')
+      }));
+      if (!lk.links || !lk.grid) fails.push(`${w}px Coverage › Games: Where to look banner ${JSON.stringify(lk)}`);
+      await go('~stats-needs');
+      if (!(await p.evaluate(() => (NEEDS || []).length && NEEDS.every(r => isGame(r.n)))))
+        fails.push(`${w}px Where to look: empty, or a row for a genus no game asks`);
+      if (!(await p.evaluate(() => !!document.querySelector('#cov-look.open .adm-needs') && !!document.querySelector('.cov-t'))))
+        fails.push(`${w}px Where to look: not open above the Games grid`);
+      // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
+      await go('~cand');
+      if (await p.$('[data-skip]')) {
+        await p.click('[data-skip]');
+        await settle();
+        const rf = await p.$eval('.adm-sw[data-f]', e => e.dataset.f);
+        await p.click('[data-rej]');
+        await settle();
+        if (!(await p.evaluate(f => (DRAFT.seen || {})['cand:' + f], rf)))
+          fails.push(`${w}px Candidates: Reject left no mark in the draft`);
+      } else fails.push(`${w}px Candidates: no candidate to try Skip and Reject on`);
+      // Cap per genus x view: candidates of full cells are left out of the queue; adding one asks which colony it replaces,
+      // that colony's photos become sheet only, the candidate is added, and one Undo takes both back.
+      const cap = await p.evaluate(() => {
+        // The real data has full cells at 10 colonies (the cap was 10 first): lowered here so the test has some.
+        CELL_MAX = 10;
+        render();
+        const cur = document.querySelector('.adm-sw[data-f]'),
+          Q = candQueue(CSRC),
+          x = candQueue('all').find(y => y.full && isGame(y.n));
+        if (!x) return {none: true};
+        if (candQueue('all').some(y => y.p.cf && y.full)) return {bookFull: true};
+        const shownFull = cur && (Q.find(y => y.p.f === cur.dataset.f) || {}).full;
+        CREPL = {n: x.n, f: x.p.f, w: cellView(x.n, x.p)};
+        render();
+        return {
+          shownFull,
+          n: x.n,
+          f: x.p.f,
+          w: CREPL.w,
+          tiles: document.querySelectorAll('[data-repl]').length,
+          refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length,
+          // Suggested colony first (unless every colony is one to keep), kept colonies last.
+          order: [...document.querySelectorAll('[data-repl]')]
+            .map(b => (b.classList.contains('sug') ? 's' : /keep \(/.test(b.textContent) ? 'k' : 'o'))
+            .join(''),
+          over: OVER.n,
+          warn: /⚠/.test(document.querySelector('#modes [data-mode="todo"]').textContent)
+        };
       });
-      return {
-        rows: rows.slice().sort().join() === game.slice().sort().join(),
-        mill: rows.includes('Millepora') && BONUS.every(n => rows.includes(n)),
-        fo: fo.length,
-        order,
-        macro: candQueue('all').filter(x => !isGame(x.n) && cellView(x.n, x.p) === 'macro' && lv(x.n) !== 2).length,
-        cap: fo.every(n => capOf(n) === CAP.sheet) && game.every(n => capOf(n) === CELL_MAX)
-      };
-    });
-    if (!gq.rows || !gq.mill) fails.push(`${w}px Game coverage: rows are not the game genera (Millepora and bonus: ${gq.mill})`);
-    if (!gq.fo) fails.push(`${w}px Game genera: no Key-only genus in the data`);
-    Object.entries(gq.order).forEach(([s, [first, lastGame, n]]) => {
-      if (first >= 0 && first < lastGame)
-        fails.push(`${w}px Candidates ${s}: a Key-only genus at ${first}, before a game genus at ${lastGame} (${n})`);
-    });
-    if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Key-only genera`);
-    if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Key-only ones`);
-    // Where to look: a banner above the Games grid (its first cells), open in full on its old address.
-    const lk = await p.evaluate(() => ({
-      links: document.querySelectorAll('#cov-look .cov-lk').length,
-      grid: !!document.querySelector('.cov-t')
-    }));
-    if (!lk.links || !lk.grid) fails.push(`${w}px Coverage › Games: Where to look banner ${JSON.stringify(lk)}`);
-    await go('~stats-needs');
-    if (!(await p.evaluate(() => (NEEDS || []).length && NEEDS.every(r => isGame(r.n)))))
-      fails.push(`${w}px Where to look: empty, or a row for a genus no game asks`);
-    if (!(await p.evaluate(() => !!document.querySelector('#cov-look.open .adm-needs') && !!document.querySelector('.cov-t'))))
-      fails.push(`${w}px Where to look: not open above the Games grid`);
-    // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
-    await go('~cand');
-    if (await p.$('[data-skip]')) {
-      await p.click('[data-skip]');
-      await settle();
-      const rf = await p.$eval('.adm-sw[data-f]', e => e.dataset.f);
-      await p.click('[data-rej]');
-      await settle();
-      if (!(await p.evaluate(f => (DRAFT.seen || {})['cand:' + f], rf))) fails.push(`${w}px Candidates: Reject left no mark in the draft`);
-    } else fails.push(`${w}px Candidates: no candidate to try Skip and Reject on`);
-    // Cap per genus x view: candidates of full cells are left out of the queue; adding one asks which colony it replaces,
-    // that colony's photos become sheet only, the candidate is added, and one Undo takes both back.
-    const cap = await p.evaluate(() => {
-      // The real data has full cells at 10 colonies (the cap was 10 first): lowered here so the test has some.
-      CELL_MAX = 10;
-      render();
-      const cur = document.querySelector('.adm-sw[data-f]'),
-        Q = candQueue(CSRC),
-        x = candQueue('all').find(y => y.full && isGame(y.n));
-      if (!x) return {none: true};
-      if (candQueue('all').some(y => y.p.cf && y.full)) return {bookFull: true};
-      const shownFull = cur && (Q.find(y => y.p.f === cur.dataset.f) || {}).full;
-      CREPL = {n: x.n, f: x.p.f, w: cellView(x.n, x.p)};
-      render();
-      return {
-        shownFull,
-        n: x.n,
-        f: x.p.f,
-        w: CREPL.w,
-        tiles: document.querySelectorAll('[data-repl]').length,
-        refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length,
-        // Suggested colony first (unless every colony is one to keep), kept colonies last.
-        order: [...document.querySelectorAll('[data-repl]')]
-          .map(b => (b.classList.contains('sug') ? 's' : /keep \(/.test(b.textContent) ? 'k' : 'o'))
-          .join(''),
-        over: OVER.n,
-        warn: /⚠/.test(document.querySelector('#modes [data-mode="todo"]').textContent)
-      };
-    });
-    if (cap.bookFull) fails.push(`${w}px Cap: a Coral Finder book candidate (never in games) counted as full`);
-    else if (cap.none) fails.push(`${w}px Cap: no candidate waits in a full cell (expected with the real data)`);
-    else {
-      if (cap.shownFull) fails.push(`${w}px Cap: the swiper shows a candidate of a full cell`);
-      if (cap.tiles < 10) fails.push(`${w}px Cap: replace screen shows ${cap.tiles} colonies`);
-      if (!/^(s[ok]*|k+)$/.test(cap.order) || /k.*o/.test(cap.order))
-        fails.push(`${w}px Cap: suggested colony not first or kept ones not last (${cap.order})`);
-      if (!!cap.over !== cap.warn) fails.push(`${w}px Cap: ${cap.over} cells over the cap, To do warning ${cap.warn}`);
-      await p.click('[data-repl]');
-      await settle();
-      const after = await p.evaluate(
-        c => ({added: (entry(c.n).add || {})[c.f], refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length}),
-        cap
-      );
-      if (after.added !== cap.w || after.refs <= cap.refs)
-        fails.push(`${w}px Cap: replace did not add the photo and move a colony to sheet only`);
+      if (cap.bookFull) fails.push(`${w}px Cap: a Coral Finder book candidate (never in games) counted as full`);
+      else if (cap.none) fails.push(`${w}px Cap: no candidate waits in a full cell (expected with the real data)`);
+      else {
+        if (cap.shownFull) fails.push(`${w}px Cap: the swiper shows a candidate of a full cell`);
+        if (cap.tiles < 10) fails.push(`${w}px Cap: replace screen shows ${cap.tiles} colonies`);
+        if (!/^(s[ok]*|k+)$/.test(cap.order) || /k.*o/.test(cap.order))
+          fails.push(`${w}px Cap: suggested colony not first or kept ones not last (${cap.order})`);
+        if (!!cap.over !== cap.warn) fails.push(`${w}px Cap: ${cap.over} cells over the cap, To do warning ${cap.warn}`);
+        await p.click('[data-repl]');
+        await settle();
+        const after = await p.evaluate(
+          c => ({added: (entry(c.n).add || {})[c.f], refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length}),
+          cap
+        );
+        if (after.added !== cap.w || after.refs <= cap.refs)
+          fails.push(`${w}px Cap: replace did not add the photo and move a colony to sheet only`);
+        await p.click('#undo');
+        await settle();
+        if (await p.evaluate(c => (entry(c.n).add || {})[c.f], cap)) fails.push(`${w}px Cap: Undo did not take the replacement back`);
+      }
+      // The judgments reach the candidates: view, dashed quality guess, swiper weight and line, reminder of the ones left.
+      const jd = await p.evaluate(F => {
+        const P = Object.values(DATA.cand).flat(),
+          a = P.find(x => x.f === F[0]),
+          b = P.find(x => x.f === F[1]);
+        return {v: a.vg, q: AUTOQ[a.f], wa: jw(a), wb: jw(b), line: jLine(b), left: candQueue('all').filter(x => !x.p.cf && !x.p.j).length};
+      }, CF);
+      if (jd.v !== 'macro' || jd.q !== 3) fails.push(`${w}px Judged: view or quality guess not applied (${jd.v}, ${jd.q})`);
+      if (!(jd.wb < jd.wa / 10)) fails.push(`${w}px Judged: a Poor near-duplicate is not pushed back (${jd.wa} vs ${jd.wb})`);
+      if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
+      await go('~cand');
+      if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
+      // A suggested crop (suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
+      const sc = await p.evaluate(F => {
+        const n = Object.keys(DATA.cand).find(g => DATA.cand[g].some(x => x.f === F[0])),
+          q = DATA.cand[n].find(x => x.f === F[0]),
+          had = (DRAFT.crop || {})[F[0]];
+        q.j = {...q.j, c: [0.05, 0.04, 0.95, 0.97]};
+        const shown = /object-view-box/.test(crSrc(q, 1));
+        ACT.addc(n, F[0], null, 'macro');
+        const saved = JSON.stringify((DRAFT.crop || {})[F[0]]);
+        return {had: !!had, shown, saved};
+      }, CF);
+      if (!sc.had && (!sc.shown || sc.saved !== '[0.05,0.04,0.95,0.97]'))
+        fails.push(`${w}px Suggested crop: not shown or not saved with the add (${JSON.stringify(sc)})`);
       await p.click('#undo');
       await settle();
-      if (await p.evaluate(c => (entry(c.n).add || {})[c.f], cap)) fails.push(`${w}px Cap: Undo did not take the replacement back`);
-    }
-    // The judgments reach the candidates: view, dashed quality guess, swiper weight and line, reminder of the ones left.
-    const jd = await p.evaluate(F => {
-      const P = Object.values(DATA.cand).flat(),
-        a = P.find(x => x.f === F[0]),
-        b = P.find(x => x.f === F[1]);
-      return {v: a.vg, q: AUTOQ[a.f], wa: jw(a), wb: jw(b), line: jLine(b), left: candQueue('all').filter(x => !x.p.cf && !x.p.j).length};
-    }, CF);
-    if (jd.v !== 'macro' || jd.q !== 3) fails.push(`${w}px Judged: view or quality guess not applied (${jd.v}, ${jd.q})`);
-    if (!(jd.wb < jd.wa / 10)) fails.push(`${w}px Judged: a Poor near-duplicate is not pushed back (${jd.wa} vs ${jd.wb})`);
-    if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
-    await go('~cand');
-    if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
-    // A suggested crop (suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
-    const sc = await p.evaluate(F => {
-      const n = Object.keys(DATA.cand).find(g => DATA.cand[g].some(x => x.f === F[0])),
-        q = DATA.cand[n].find(x => x.f === F[0]),
-        had = (DRAFT.crop || {})[F[0]];
-      q.j = {...q.j, c: [0.05, 0.04, 0.95, 0.97]};
-      const shown = /object-view-box/.test(crSrc(q, 1));
-      ACT.addc(n, F[0], null, 'macro');
-      const saved = JSON.stringify((DRAFT.crop || {})[F[0]]);
-      return {had: !!had, shown, saved};
-    }, CF);
-    if (!sc.had && (!sc.shown || sc.saved !== '[0.05,0.04,0.95,0.97]'))
-      fails.push(`${w}px Suggested crop: not shown or not saved with the add (${JSON.stringify(sc)})`);
-    await p.click('#undo');
-    await settle();
-    // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
-    // the queue, counted, back on Show.
-    const as = await p.evaluate(F => {
-      const inQ = () => candQueue('all').some(x => x.p.f === F[2] && !x.aside);
-      return {aside: !inQ(), note: !!document.querySelector('.adm-caside')};
-    }, CF);
-    if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the comparison image is not set aside (${JSON.stringify(as)})`);
-    // The rule (same as tools/excluded.py set_aside): several corals and Poor are set aside too, unless unsure.
-    const rule = await p.evaluate(() =>
-      [
-        {g: 'exclude'},
-        {g: 'cmp'},
-        {k: 'dup', q: 2},
-        {k: 'best', q: 2, m: 1},
-        {k: 'best', q: 1},
-        {k: 'best', q: 2},
-        {k: 'alt', q: 3},
-        {g: 'Porites', q: 2},
-        {k: 'best', q: 1, m: 1, u: ['quality']},
-        {g: 'exclude', u: ['genus']}
-      ].map(j => aside({j}))
-    );
-    if (rule.join() !== 'true,true,true,true,true,false,false,false,false,false') fails.push(`${w}px Pre-sort rule: ${rule.join()}`);
-    if (as.note) {
-      await p.click('[data-caside]');
-      await settle();
-      if (
-        (await p.$eval('.adm-caside', e => e.getAttribute('aria-pressed'))) !== 'true' ||
-        !(await p.evaluate(F => candQueue('all').some(x => x.p.f === F[2]), CF))
-      )
-        fails.push(`${w}px Pre-sort: Show did not bring them back`);
-      await p.click('[data-caside]');
-      await settle();
-    }
-    // Auto-sort (Pierre, 2026-11-03): the sure judgments were decided at load, logged as auto, the Check waits for him.
-    const au = await p.evaluate(
-      ([F, C]) => {
-        const code = f => (aOf(f) || {}).code || null,
-          q = candQueue('all');
-        return {
-          add: code(F[0]),
-          added: !!Object.values(DRAFT.genera).some(k => (k.add || {})[F[0]]),
-          full: q.some(x => x.p.f === F[0] && x.full),
-          rej: code(F[1]),
-          seen: !!(DRAFT.seen || {})['cand:' + F[1]],
-          cmp: code(F[2]),
-          unsure: code(F[3]),
-          chk: code(C),
-          chkQ: q.some(x => x.p.f === C && x.chk)
-        };
-      },
-      [CF, CHK]
-    );
-    if (!((au.add === 'ac3x' && au.added) || (!au.add && au.full)))
-      fails.push(`${w}px Auto: the sure add was not added (${JSON.stringify(au)})`);
-    if (au.rej !== 'r' || !au.seen) fails.push(`${w}px Auto: the sure near-duplicate was not rejected (${JSON.stringify(au)})`);
-    if (au.cmp || au.unsure) fails.push(`${w}px Auto: decided a comparison image or an unsure judgment (${JSON.stringify(au)})`);
-    if (au.chk !== '?aw2B' || !au.chkQ) fails.push(`${w}px Auto: the Check is not logged or not in the queue (${JSON.stringify(au)})`);
-    // Source priority in a cell with fewer free slots than sure adds (AGENTS.md rule 7, Codex review #400): Pierre's own
-    // Fair photo takes the last slot ahead of another observer's Good one; quality and sharpness only break ties.
-    const pri = await p.evaluate(() => {
-      const free = m =>
-          cands(m).filter(x => !x.cf && !x.from && !aOf(x.f) && !autoCheck(x.f) && !rejected(x.f) && !(entry(m).add || {})[x.f]),
-        n = [...GAME].find(m => free(m).length >= 2),
-        [a, b] = free(n),
-        keep = Object.values(DATA.cand)
-          .flat()
-          .map(x => [x, {j: x.j, mf: x.mf, own: x.own, imr: x.imr, loc: x.loc, o: x.o}]),
-        cm = CELL_MAX;
-      keep.forEach(([x]) => delete x.j);
-      Object.assign(a, {j: {v: 'wide', q: 3, k: 'best', fm: 'B'}, own: false, imr: false, loc: 'dauin', o: 'test-obs-a'});
-      Object.assign(b, {j: {v: 'wide', q: 2, k: 'best', fm: 'B'}, own: true, imr: false, o: 'test-obs-b'});
-      delete a.mf;
-      delete b.mf;
-      memoReset();
-      CELL_MAX = covOf(n, 'wide').obs + 1;
-      const R = autoRun(),
-        r = {n, R, other: !!(entry(n).add || {})[a.f], mine: !!(entry(n).add || {})[b.f]};
-      if (R && R.add + R.reject + R.exclude + R.check) undo();
-      CELL_MAX = cm;
-      keep.forEach(([x, o]) => Object.entries(o).forEach(([k, v]) => (v === undefined ? delete x[k] : (x[k] = v))));
-      memoReset();
-      return r;
-    });
-    if (!pri.mine || pri.other) fails.push(`${w}px Auto: source priority in a nearly full cell ${JSON.stringify(pri)}`);
-    // The Check card: tagged, blind (no judgment line, no suggested view, no dashed quality), answered like any other;
-    // rated Good where the pass said Fair, form not given (so not compared).
-    await go('~cand');
-    const ck = await p.evaluate(C => {
-      CSRC = 'all';
-      candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
-      render();
-      const S = document.querySelector('.adm-sw[data-f]');
-      return {
-        f: S && S.dataset.f,
-        tag: !!S.querySelector('.adm-chk'),
-        judge: !!S.querySelector('.adm-judge'),
-        sug: !!S.querySelector('.adm-swbar .sug'),
-        q: !!S.querySelector('.adm-swacts [data-q][aria-pressed="true"]')
-      };
-    }, CHK);
-    if (ck.f !== CHK || !ck.tag || ck.judge || ck.sug || ck.q)
-      fails.push(`${w}px Auto: Check card not shown blind with its tag (${JSON.stringify(ck)})`);
-    else {
-      // Crop on the Check stays blind (Codex review #400): the editor opens on the full photo, not the agent's crop, and
-      // saving it keeps an explicit no-crop, so the add does not write the suggestion behind his back (ACT.addc).
-      await p.click('.adm-sw [data-crop]');
-      await p.click('[data-c="save"]');
-      await settle();
-      const crc = await p.evaluate(C => {
-        const r = JSON.stringify((DRAFT.crop || {})[C]);
-        undo();
-        return r;
-      }, CHK);
-      if (crc !== '[0,0,1,1]') fails.push(`${w}px Auto: crop editor on a Check not blind (saved ${crc})`);
-      await settle();
-      await p.click('.adm-swacts [data-q="3"]');
-      await p.click('.adm-swbar [data-add="wide"]');
-      await settle();
-      if (await p.$('[data-ranyway]')) {
-        // A full cell: add it anyway (the Check is answered the same way).
-        await p.click('[data-ranyway]');
+      // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
+      // the queue, counted, back on Show.
+      const as = await p.evaluate(F => {
+        const inQ = () => candQueue('all').some(x => x.p.f === F[2] && !x.aside);
+        return {aside: !inQ(), note: !!document.querySelector('.adm-caside')};
+      }, CF);
+      if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the comparison image is not set aside (${JSON.stringify(as)})`);
+      // The rule (same as tools/excluded.py set_aside): several corals and Poor are set aside too, unless unsure.
+      const rule = await p.evaluate(() =>
+        [
+          {g: 'exclude'},
+          {g: 'cmp'},
+          {k: 'dup', q: 2},
+          {k: 'best', q: 2, m: 1},
+          {k: 'best', q: 1},
+          {k: 'best', q: 2},
+          {k: 'alt', q: 3},
+          {g: 'Porites', q: 2},
+          {k: 'best', q: 1, m: 1, u: ['quality']},
+          {g: 'exclude', u: ['genus']}
+        ].map(j => aside({j}))
+      );
+      if (rule.join() !== 'true,true,true,true,true,false,false,false,false,false') fails.push(`${w}px Pre-sort rule: ${rule.join()}`);
+      if (as.note) {
+        await p.click('[data-caside]');
+        await settle();
+        if (
+          (await p.$eval('.adm-caside', e => e.getAttribute('aria-pressed'))) !== 'true' ||
+          !(await p.evaluate(F => candQueue('all').some(x => x.p.f === F[2]), CF))
+        )
+          fails.push(`${w}px Pre-sort: Show did not bring them back`);
+        await p.click('[data-caside]');
         await settle();
       }
-      const res = await p.evaluate(C => {
-        const L = aCmp().filter(c => c.f === C && c.how === 'check');
+      // Auto-sort (Pierre, 2026-11-03): the sure judgments were decided at load, logged as auto, the Check waits for him.
+      const au = await p.evaluate(
+        ([F, C]) => {
+          const code = f => (aOf(f) || {}).code || null,
+            q = candQueue('all');
+          return {
+            add: code(F[0]),
+            added: !!Object.values(DRAFT.genera).some(k => (k.add || {})[F[0]]),
+            full: q.some(x => x.p.f === F[0] && x.full),
+            rej: code(F[1]),
+            seen: !!(DRAFT.seen || {})['cand:' + F[1]],
+            cmp: code(F[2]),
+            unsure: code(F[3]),
+            chk: code(C),
+            chkQ: q.some(x => x.p.f === C && x.chk)
+          };
+        },
+        [CF, CHK]
+      );
+      if (!((au.add === 'ac3x' && au.added) || (!au.add && au.full)))
+        fails.push(`${w}px Auto: the sure add was not added (${JSON.stringify(au)})`);
+      if (au.rej !== 'r' || !au.seen) fails.push(`${w}px Auto: the sure near-duplicate was not rejected (${JSON.stringify(au)})`);
+      if (au.cmp || au.unsure) fails.push(`${w}px Auto: decided a comparison image or an unsure judgment (${JSON.stringify(au)})`);
+      if (au.chk !== '?aw2B' || !au.chkQ) fails.push(`${w}px Auto: the Check is not logged or not in the queue (${JSON.stringify(au)})`);
+      // Source priority in a cell with fewer free slots than sure adds (AGENTS.md rule 7, Codex review #400): Pierre's own
+      // Fair photo takes the last slot ahead of another observer's Good one; quality and sharpness only break ties.
+      const pri = await p.evaluate(() => {
+        const free = m =>
+            cands(m).filter(x => !x.cf && !x.from && !aOf(x.f) && !autoCheck(x.f) && !rejected(x.f) && !(entry(m).add || {})[x.f]),
+          n = [...GAME].find(m => free(m).length >= 2),
+          [a, b] = free(n),
+          keep = Object.values(DATA.cand)
+            .flat()
+            .map(x => [x, {j: x.j, mf: x.mf, own: x.own, imr: x.imr, loc: x.loc, o: x.o}]),
+          cm = CELL_MAX;
+        keep.forEach(([x]) => delete x.j);
+        Object.assign(a, {j: {v: 'wide', q: 3, k: 'best', fm: 'B'}, own: false, imr: false, loc: 'dauin', o: 'test-obs-a'});
+        Object.assign(b, {j: {v: 'wide', q: 2, k: 'best', fm: 'B'}, own: true, imr: false, o: 'test-obs-b'});
+        delete a.mf;
+        delete b.mf;
+        memoReset();
+        CELL_MAX = covOf(n, 'wide').obs + 1;
+        const R = autoRun(),
+          r = {n, R, other: !!(entry(n).add || {})[a.f], mine: !!(entry(n).add || {})[b.f]};
+        if (R && R.add + R.reject + R.exclude + R.check) undo();
+        CELL_MAX = cm;
+        keep.forEach(([x, o]) => Object.entries(o).forEach(([k, v]) => (v === undefined ? delete x[k] : (x[k] = v))));
+        memoReset();
+        return r;
+      });
+      if (!pri.mine || pri.other) fails.push(`${w}px Auto: source priority in a nearly full cell ${JSON.stringify(pri)}`);
+      // The Check card: tagged, blind (no judgment line, no suggested view, no dashed quality), answered like any other;
+      // rated Good where the pass said Fair, form not given (so not compared).
+      await go('~cand');
+      const ck = await p.evaluate(C => {
+        CSRC = 'all';
+        candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
+        render();
+        const S = document.querySelector('.adm-sw[data-f]');
         return {
-          toast: document.querySelector('.adm-toast').textContent,
-          L: L.map(c => c.field + (c.ok ? '+' : '-')).join(' '),
-          t: aOf(C).d.t,
-          last: aCmp().slice(-1)[0].f
+          f: S && S.dataset.f,
+          tag: !!S.querySelector('.adm-chk'),
+          judge: !!S.querySelector('.adm-judge'),
+          sug: !!S.querySelector('.adm-swbar .sug'),
+          q: !!S.querySelector('.adm-swacts [data-q][aria-pressed="true"]')
         };
       }, CHK);
-      if (!/Check: the agent said add/.test(res.toast) || res.L !== 'keep+ view+ quality-')
-        fails.push(`${w}px Auto: Check answer not compared (${JSON.stringify(res)})`);
-      // The time of his answer is logged, and his answer is the latest comparison (Codex review #400).
-      if (!(res.t > Date.now() / 1000 - 600) || res.last !== CHK)
-        fails.push(`${w}px Auto: Check answer not timed (${JSON.stringify(res)})`);
-    }
-    // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
-    await p.evaluate(() => {
-      CSKIP.clear();
-      render();
-    });
-    const line = await p.$eval('.adm-auto', e => e.textContent).catch(() => '');
-    if (!/Keep 100%/.test(line) || !/Quality 0%/.test(line)) fails.push(`${w}px Auto: agreement line ${line}`);
-    if (line) await p.click('[data-adet]');
-    await settle();
-    const det = await p.evaluate(
-      F => ({
-        rows: document.querySelectorAll('.adm-autodet tbody tr').length,
-        undo: !!document.querySelector(`[data-af="${F[1]}"] [data-aundo]`),
-        dis: document.querySelectorAll('.adm-autodet [data-af]:not(:has([data-aundo]))').length
-      }),
-      CF
-    );
-    if (det.rows !== 4 || !det.undo || !det.dis) fails.push(`${w}px Auto: details ${JSON.stringify(det)}`);
-    if (det.undo) {
-      await p.click(`[data-af="${CF[1]}"] [data-aundo]`);
+      if (ck.f !== CHK || !ck.tag || ck.judge || ck.sug || ck.q)
+        fails.push(`${w}px Auto: Check card not shown blind with its tag (${JSON.stringify(ck)})`);
+      else {
+        // Crop on the Check stays blind (Codex review #400): the editor opens on the full photo, not the agent's crop, and
+        // saving it keeps an explicit no-crop, so the add does not write the suggestion behind his back (ACT.addc).
+        await p.click('.adm-sw [data-crop]');
+        await p.click('[data-c="save"]');
+        await settle();
+        const crc = await p.evaluate(C => {
+          const r = JSON.stringify((DRAFT.crop || {})[C]);
+          undo();
+          return r;
+        }, CHK);
+        if (crc !== '[0,0,1,1]') fails.push(`${w}px Auto: crop editor on a Check not blind (saved ${crc})`);
+        await settle();
+        await p.click('.adm-swacts [data-q="3"]');
+        await p.click('.adm-swbar [data-add="wide"]');
+        await settle();
+        if (await p.$('[data-ranyway]')) {
+          // A full cell: add it anyway (the Check is answered the same way).
+          await p.click('[data-ranyway]');
+          await settle();
+        }
+        const res = await p.evaluate(C => {
+          const L = aCmp().filter(c => c.f === C && c.how === 'check');
+          return {
+            toast: document.querySelector('.adm-toast').textContent,
+            L: L.map(c => c.field + (c.ok ? '+' : '-')).join(' '),
+            t: aOf(C).d.t,
+            last: aCmp().slice(-1)[0].f
+          };
+        }, CHK);
+        if (!/Check: the agent said add/.test(res.toast) || res.L !== 'keep+ view+ quality-')
+          fails.push(`${w}px Auto: Check answer not compared (${JSON.stringify(res)})`);
+        // The time of his answer is logged, and his answer is the latest comparison (Codex review #400).
+        if (!(res.t > Date.now() / 1000 - 600) || res.last !== CHK)
+          fails.push(`${w}px Auto: Check answer not timed (${JSON.stringify(res)})`);
+      }
+      // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
+      await p.evaluate(() => {
+        CSKIP.clear();
+        render();
+      });
+      const line = await p.$eval('.adm-auto', e => e.textContent).catch(() => '');
+      if (!/Keep 100%/.test(line) || !/Quality 0%/.test(line)) fails.push(`${w}px Auto: agreement line ${line}`);
+      if (line) await p.click('[data-adet]');
       await settle();
-      const un = await p.evaluate(
+      const det = await p.evaluate(
         F => ({
-          code: aOf(F[1]).code,
-          seen: !!(DRAFT.seen || {})['cand:' + F[1]],
-          inQ: candQueue('all').some(x => x.p.f === F[1] && !x.aside)
+          rows: document.querySelectorAll('.adm-autodet tbody tr').length,
+          undo: !!document.querySelector(`[data-af="${F[1]}"] [data-aundo]`),
+          dis: document.querySelectorAll('.adm-autodet [data-af]:not(:has([data-aundo]))').length
         }),
         CF
       );
-      if (un.code !== '-r' || un.seen || !un.inQ) fails.push(`${w}px Auto: Undo of an auto decision ${JSON.stringify(un)}`);
-      await p.click('#undo');
-      await settle();
-      if ((await p.evaluate(F => aOf(F[1]).code, CF)) !== 'r') fails.push(`${w}px Auto: Undo did not bring the auto decision back`);
-    }
-    // Undo of an auto add takes back only the add it wrote (Codex review #400): Pierre's approval in the genus he sent the
-    // photo to with Not this genus, or a view he moved it to, stays.
-    const ua = await p.evaluate(F => {
-      const f = F[2],
-        g = PHOTOS[f].genus,
-        to = Object.keys(DATA.gen).find(x => x !== g),
-        day = Object.keys(DRAFT.auto).sort().pop(),
-        one = (mine, view) => {
-          DRAFT.genera[g] = {...(DRAFT.genera[g] || {}), add: {...((DRAFT.genera[g] || {}).add || {}), [f]: view}};
-          if (mine) DRAFT.genera[to] = {...(DRAFT.genera[to] || {}), add: {...((DRAFT.genera[to] || {}).add || {}), [f]: 'medium'}};
-          DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'aw2B'}};
-          saveDraft();
-          autoUndo(f);
-          const r = {own: ((DRAFT.genera[g] || {}).add || {})[f] || null, other: ((DRAFT.genera[to] || {}).add || {})[f] || null};
-          undo();
-          undo();
-          return r;
-        };
-      return {plain: one(false, 'wide'), notThis: one(true, 'wide'), moved: one(false, 'medium')};
-    }, CF);
-    if (ua.plain.own || ua.notThis.own || ua.notThis.other !== 'medium' || ua.moved.own !== 'medium')
-      fails.push(`${w}px Auto: Undo of an auto add ${JSON.stringify(ua)}`);
-    // Undo of an auto exclusion (Codex review #400): a candidate whose entry is still in the candidate files is back in
-    // Candidates; one whose entry is gone is not, and the toast does not claim it is.
-    const ux = await p.evaluate(F => {
-      const day = Object.keys(DRAFT.auto).sort().pop(),
-        one = f => {
-          DRAFT.exclude = {...(DRAFT.exclude || {}), [f]: 'auto'};
-          DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'x'}};
-          saveDraft();
-          autoUndo(f);
-          const r = {toast: document.querySelector('.adm-toast').textContent, ex: !!excl(f), inQ: candQueue('all').some(x => x.p.f === f)};
-          undo();
-          undo();
-          return r;
-        };
-      return {here: one(F[3]), gone: PHOTOS['acropora-cand-1'] ? null : one('acropora-cand-1')};
-    }, CF);
-    if (ux.here.ex || !ux.here.inQ || !/back in Candidates/.test(ux.here.toast))
-      fails.push(`${w}px Auto: Undo of an auto exclusion ${JSON.stringify(ux.here)}`);
-    if (!ux.gone || ux.gone.ex || /back in Candidates/.test(ux.gone.toast) || !/no longer in the candidate files/.test(ux.gone.toast))
-      fails.push(`${w}px Auto: Undo of an auto exclusion whose candidate entry is gone ${JSON.stringify(ux.gone)}`);
-    if (line) await p.click('[data-adet]');
-    await settle();
-    // An auto-added photo carries an "auto" tag on its genus page.
-    if (au.added) {
-      const g = await p.evaluate(F => Object.keys(DRAFT.genera).find(n => (DRAFT.genera[n].add || {})[F[0]]), CF);
-      await go(g);
-      if (!(await p.$(`[data-f="${CF[0]}"] .adm-autot`))) fails.push(`${w}px Auto: no auto tag on ${g}`);
-      // Remove on the genus page of a photo the auto-sort added: rejected, a Keep disagreement, timed as the latest
-      // comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is unchanged.
-      await p.$eval(`[data-f="${CF[0]}"] [data-act="hide"]`, b => b.click());
-      await settle();
-      const rm = await p.evaluate(
-        ([F, g]) => {
-          const K = aCmp().filter(c => c.field === 'keep');
-          return {
-            added: !!(entry(g).add || {})[F],
-            rej: rejected(F),
-            fix: K.some(c => c.f === F && !c.ok && c.how === 'fix'),
-            last: (K.slice(-1)[0] || {}).f,
-            t: !!aOf(F).d.t
-          };
-        },
-        [CF[0], g]
-      );
-      if (rm.added || !rm.rej || !rm.fix || rm.last !== CF[0] || !rm.t)
-        fails.push(`${w}px Auto: Remove of an auto-added photo is not a Keep disagreement ${JSON.stringify(rm)}`);
-      await p.click('#undo');
-      await settle();
-      const back = await p.evaluate(([F, g]) => ({added: !!(entry(g).add || {})[F], rej: rejected(F), t: !!aOf(F).d.t}), [CF[0], g]);
-      if (!back.added || back.rej || back.t) fails.push(`${w}px Auto: Undo of that Remove ${JSON.stringify(back)}`);
-      const own = await p.evaluate(g => {
-        const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f));
-        if (!c) return null;
-        ACT.addc(g, c.f, null, 'wide');
-        ACT.hide(g, c.f);
-        const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
-        undo();
-        undo();
-        return r;
-      }, g);
-      if (own && (own.rej || own.added)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
-    }
-    // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.
-    await go('~cand');
-    const rt = await p.evaluate(() => {
-      CDONE = AUTO.retest;
-      render();
-      const S = document.querySelector('.adm-blind[data-f]');
-      return (
-        S && {
-          f: S.dataset.f,
-          tag: (S.querySelector('.adm-chk') || {}).textContent,
-          q: (DRAFT.quality || {})[S.dataset.f],
-          pressed: !!S.querySelector('[data-rq][aria-pressed="true"]')
-        }
-      );
-    });
-    if (!rt || rt.tag !== 'Retest' || rt.pressed) fails.push(`${w}px Retest: card ${JSON.stringify(rt)}`);
-    else {
-      await p.click('[data-rq="1"]');
-      await p.click('[data-rtdone]');
-      await settle();
-      const r2 = await p.evaluate(f => ({e: (DRAFT.retest || {})[f], q: DRAFT.quality[f]}), rt.f);
-      if (!r2.e || r2.e.q[0] !== rt.q || r2.e.q[1] !== 1 || r2.q !== rt.q) fails.push(`${w}px Retest: answer ${JSON.stringify(r2)}`);
-    }
-    // The fish auto-sort ran at load into DRAFT.fish (not a coral key), and Publish counts and sends it.
-    const fa = await p
-      .waitForFunction(() => DRAFT.fish && DRAFT.fish.auto, null, {timeout: 15000})
-      .then(() =>
-        p.evaluate(
-          F => ({
-            fish: DRAFT.fish,
-            sum: pubSummary(),
-            coral: F.some(([, f]) => JSON.stringify(DRAFT.genera).includes(f)),
-            // A draft with fish changes only still enables Publish (status counts the fish curation).
-            alone: (() => {
-              const keep = DRAFT;
-              DRAFT = {...clone(SAVED), fish: DRAFT.fish};
-              status();
-              const r = {dis: $('save').disabled, title: $('save').title};
-              DRAFT = keep;
-              status();
-              return !r.dis && /fish curation/.test(r.title) ? true : r;
-            })()
-          }),
-          FF
-        )
-      )
-      .catch(() => null);
-    if (
-      !fa ||
-      fa.fish.add[FF[0][1]] !== FF[0][0] ||
-      fa.fish.tags[FF[0][1]] !== 'p1g0sm1' ||
-      fa.fish.phase[FF[0][1]] !== 'female' ||
-      fa.fish.seen[FF[1][1]] !== 1 ||
-      FF[2][1] in fa.fish.add ||
-      fa.fish.out[FF[2][1]] !== 'x' ||
-      fa.coral ||
-      fa.alone !== true ||
-      !/fish photo in play/.test(fa.sum) ||
-      !/fish auto-sort decision/.test(fa.sum)
-    )
-      fails.push(
-        `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone})}`
-      );
-    // One fish auto decision undone in the Auto details (Codex review #479, AGENTS.md rule 8): gone from the draft, logged
-    // undone, never applied again at the next run.
-    if (fa) {
-      await go('~cand');
-      await p.evaluate(() => {
-        ADET = true;
-        render();
-      });
-      const fb = await p.$(`[data-ff="${FF[0][1]}"] [data-faundo]`);
-      if (!fb) fails.push(`${w}px Fish auto-sort: no Undo for ${FF[0][1]} in the Auto details`);
-      else {
-        await fb.click();
+      if (det.rows !== 4 || !det.undo || !det.dis) fails.push(`${w}px Auto: details ${JSON.stringify(det)}`);
+      if (det.undo) {
+        await p.click(`[data-af="${CF[1]}"] [data-aundo]`);
         await settle();
-        const fu = await p.evaluate(async f => {
-          const day = Object.keys(DRAFT.fish.auto).sort().pop(),
-            r = {add: !!(DRAFT.fish.add || {})[f], code: DRAFT.fish.auto[day][f]};
-          await fishAutoRun();
-          r.again = !!(DRAFT.fish.add || {})[f];
-          return r;
-        }, FF[0][1]);
-        if (fu.add || !/^-a[tepc]*$/.test(fu.code) || fu.again) fails.push(`${w}px Fish auto-sort: Undo ${JSON.stringify(fu)}`);
+        const un = await p.evaluate(
+          F => ({
+            code: aOf(F[1]).code,
+            seen: !!(DRAFT.seen || {})['cand:' + F[1]],
+            inQ: candQueue('all').some(x => x.p.f === F[1] && !x.aside)
+          }),
+          CF
+        );
+        if (un.code !== '-r' || un.seen || !un.inQ) fails.push(`${w}px Auto: Undo of an auto decision ${JSON.stringify(un)}`);
+        await p.click('#undo');
+        await settle();
+        if ((await p.evaluate(F => aOf(F[1]).code, CF)) !== 'r') fails.push(`${w}px Auto: Undo did not bring the auto decision back`);
       }
-      // Over 30 fish decisions: the latest 30, then "All N" shows every one (Codex review #479).
-      const fl = await p.evaluate(() => {
-        const keep = DRAFT.fish,
-          day = '2026-11-01',
-          L = Object.fromEntries(Array.from({length: 35}, (_, i) => [`fish-test-cand-${i}`, 'r']));
-        DRAFT.fish = {...keep, auto: {...keep.auto, [day]: L}};
-        AALL = false;
+      // Undo of an auto add takes back only the add it wrote (Codex review #400): Pierre's approval in the genus he sent the
+      // photo to with Not this genus, or a view he moved it to, stays.
+      const ua = await p.evaluate(F => {
+        const f = F[2],
+          g = PHOTOS[f].genus,
+          to = Object.keys(DATA.gen).find(x => x !== g),
+          day = Object.keys(DRAFT.auto).sort().pop(),
+          one = (mine, view) => {
+            DRAFT.genera[g] = {...(DRAFT.genera[g] || {}), add: {...((DRAFT.genera[g] || {}).add || {}), [f]: view}};
+            if (mine) DRAFT.genera[to] = {...(DRAFT.genera[to] || {}), add: {...((DRAFT.genera[to] || {}).add || {}), [f]: 'medium'}};
+            DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'aw2B'}};
+            saveDraft();
+            autoUndo(f);
+            const r = {own: ((DRAFT.genera[g] || {}).add || {})[f] || null, other: ((DRAFT.genera[to] || {}).add || {})[f] || null};
+            undo();
+            undo();
+            return r;
+          };
+        return {plain: one(false, 'wide'), notThis: one(true, 'wide'), moved: one(false, 'medium')};
+      }, CF);
+      if (ua.plain.own || ua.notThis.own || ua.notThis.other !== 'medium' || ua.moved.own !== 'medium')
+        fails.push(`${w}px Auto: Undo of an auto add ${JSON.stringify(ua)}`);
+      // Undo of an auto exclusion (Codex review #400): a candidate whose entry is still in the candidate files is back in
+      // Candidates; one whose entry is gone is not, and the toast does not claim it is.
+      const ux = await p.evaluate(F => {
+        const day = Object.keys(DRAFT.auto).sort().pop(),
+          one = f => {
+            DRAFT.exclude = {...(DRAFT.exclude || {}), [f]: 'auto'};
+            DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'x'}};
+            saveDraft();
+            autoUndo(f);
+            const r = {
+              toast: document.querySelector('.adm-toast').textContent,
+              ex: !!excl(f),
+              inQ: candQueue('all').some(x => x.p.f === f)
+            };
+            undo();
+            undo();
+            return r;
+          };
+        return {here: one(F[3]), gone: PHOTOS['acropora-cand-1'] ? null : one('acropora-cand-1')};
+      }, CF);
+      if (ux.here.ex || !ux.here.inQ || !/back in Candidates/.test(ux.here.toast))
+        fails.push(`${w}px Auto: Undo of an auto exclusion ${JSON.stringify(ux.here)}`);
+      if (!ux.gone || ux.gone.ex || /back in Candidates/.test(ux.gone.toast) || !/no longer in the candidate files/.test(ux.gone.toast))
+        fails.push(`${w}px Auto: Undo of an auto exclusion whose candidate entry is gone ${JSON.stringify(ux.gone)}`);
+      if (line) await p.click('[data-adet]');
+      await settle();
+      // An auto-added photo carries an "auto" tag on its genus page.
+      if (au.added) {
+        const g = await p.evaluate(F => Object.keys(DRAFT.genera).find(n => (DRAFT.genera[n].add || {})[F[0]]), CF);
+        await go(g);
+        if (!(await p.$(`[data-f="${CF[0]}"] .adm-autot`))) fails.push(`${w}px Auto: no auto tag on ${g}`);
+        // Remove on the genus page of a photo the auto-sort added: rejected, a Keep disagreement, timed as the latest
+        // comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is unchanged.
+        await p.$eval(`[data-f="${CF[0]}"] [data-act="hide"]`, b => b.click());
+        await settle();
+        const rm = await p.evaluate(
+          ([F, g]) => {
+            const K = aCmp().filter(c => c.field === 'keep');
+            return {
+              added: !!(entry(g).add || {})[F],
+              rej: rejected(F),
+              fix: K.some(c => c.f === F && !c.ok && c.how === 'fix'),
+              last: (K.slice(-1)[0] || {}).f,
+              t: !!aOf(F).d.t
+            };
+          },
+          [CF[0], g]
+        );
+        if (rm.added || !rm.rej || !rm.fix || rm.last !== CF[0] || !rm.t)
+          fails.push(`${w}px Auto: Remove of an auto-added photo is not a Keep disagreement ${JSON.stringify(rm)}`);
+        await p.click('#undo');
+        await settle();
+        const back = await p.evaluate(([F, g]) => ({added: !!(entry(g).add || {})[F], rej: rejected(F), t: !!aOf(F).d.t}), [CF[0], g]);
+        if (!back.added || back.rej || back.t) fails.push(`${w}px Auto: Undo of that Remove ${JSON.stringify(back)}`);
+        const own = await p.evaluate(g => {
+          const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f));
+          if (!c) return null;
+          ACT.addc(g, c.f, null, 'wide');
+          ACT.hide(g, c.f);
+          const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
+          undo();
+          undo();
+          return r;
+        }, g);
+        if (own && (own.rej || own.added)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
+      }
+      // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.
+      await go('~cand');
+      const rt = await p.evaluate(() => {
+        CDONE = AUTO.retest;
         render();
-        const n0 = document.querySelectorAll('[data-ff]').length,
-          b = [...document.querySelectorAll('[data-aall]')].find(
-            x =>
-              x.closest('.adm-autodet') &&
-              /All \d+/.test(x.textContent) &&
-              x.previousElementSibling &&
-              x.previousElementSibling.querySelector('[data-ff]')
-          );
-        if (b) b.click();
-        const n1 = document.querySelectorAll('[data-ff]').length;
-        DRAFT.fish = keep;
-        AALL = false;
-        render();
-        return {n0, b: !!b, n1};
+        const S = document.querySelector('.adm-blind[data-f]');
+        return (
+          S && {
+            f: S.dataset.f,
+            tag: (S.querySelector('.adm-chk') || {}).textContent,
+            q: (DRAFT.quality || {})[S.dataset.f],
+            pressed: !!S.querySelector('[data-rq][aria-pressed="true"]')
+          }
+        );
       });
-      if (fl.n0 !== 30 || !fl.b || fl.n1 < 36) fails.push(`${w}px Fish auto-sort: All for over 30 decisions ${JSON.stringify(fl)}`);
-      await p.evaluate(() => {
-        ADET = false;
-      });
+      if (!rt || rt.tag !== 'Retest' || rt.pressed) fails.push(`${w}px Retest: card ${JSON.stringify(rt)}`);
+      else {
+        await p.click('[data-rq="1"]');
+        await p.click('[data-rtdone]');
+        await settle();
+        const r2 = await p.evaluate(f => ({e: (DRAFT.retest || {})[f], q: DRAFT.quality[f]}), rt.f);
+        if (!r2.e || r2.e.q[0] !== rt.q || r2.e.q[1] !== 1 || r2.q !== rt.q) fails.push(`${w}px Retest: answer ${JSON.stringify(r2)}`);
+      }
+      // The fish auto-sort ran at load into DRAFT.fish (not a coral key), and Publish counts and sends it.
+      const fa = await p
+        .waitForFunction(() => DRAFT.fish && DRAFT.fish.auto, null, {timeout: 15000})
+        .then(() =>
+          p.evaluate(
+            F => ({
+              fish: DRAFT.fish,
+              sum: pubSummary(),
+              coral: F.some(([, f]) => JSON.stringify(DRAFT.genera).includes(f)),
+              // A draft with fish changes only still enables Publish (status counts the fish curation).
+              alone: (() => {
+                const keep = DRAFT;
+                DRAFT = {...clone(SAVED), fish: DRAFT.fish};
+                status();
+                const r = {dis: $('save').disabled, title: $('save').title};
+                DRAFT = keep;
+                status();
+                return !r.dis && /fish curation/.test(r.title) ? true : r;
+              })()
+            }),
+            FF
+          )
+        )
+        .catch(() => null);
+      if (
+        !fa ||
+        fa.fish.add[FF[0][1]] !== FF[0][0] ||
+        fa.fish.tags[FF[0][1]] !== 'p1g0sm1' ||
+        fa.fish.phase[FF[0][1]] !== 'female' ||
+        fa.fish.seen[FF[1][1]] !== 1 ||
+        FF[2][1] in fa.fish.add ||
+        fa.fish.out[FF[2][1]] !== 'x' ||
+        fa.coral ||
+        fa.alone !== true ||
+        !/fish photo in play/.test(fa.sum) ||
+        !/fish auto-sort decision/.test(fa.sum)
+      )
+        fails.push(
+          `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone})}`
+        );
+      // One fish auto decision undone in the Auto details (Codex review #479, AGENTS.md rule 8): gone from the draft, logged
+      // undone, never applied again at the next run.
+      if (fa) {
+        await go('~cand');
+        await p.evaluate(() => {
+          ADET = true;
+          render();
+        });
+        const fb = await p.$(`[data-ff="${FF[0][1]}"] [data-faundo]`);
+        if (!fb) fails.push(`${w}px Fish auto-sort: no Undo for ${FF[0][1]} in the Auto details`);
+        else {
+          await fb.click();
+          await settle();
+          const fu = await p.evaluate(async f => {
+            const day = Object.keys(DRAFT.fish.auto).sort().pop(),
+              r = {add: !!(DRAFT.fish.add || {})[f], code: DRAFT.fish.auto[day][f]};
+            await fishAutoRun();
+            r.again = !!(DRAFT.fish.add || {})[f];
+            return r;
+          }, FF[0][1]);
+          if (fu.add || !/^-a[tepc]*$/.test(fu.code) || fu.again) fails.push(`${w}px Fish auto-sort: Undo ${JSON.stringify(fu)}`);
+        }
+        // Over 30 fish decisions: the latest 30, then "All N" shows every one (Codex review #479).
+        const fl = await p.evaluate(() => {
+          const keep = DRAFT.fish,
+            day = '2026-11-01',
+            L = Object.fromEntries(Array.from({length: 35}, (_, i) => [`fish-test-cand-${i}`, 'r']));
+          DRAFT.fish = {...keep, auto: {...keep.auto, [day]: L}};
+          AALL = false;
+          render();
+          const n0 = document.querySelectorAll('[data-ff]').length,
+            b = [...document.querySelectorAll('[data-aall]')].find(
+              x =>
+                x.closest('.adm-autodet') &&
+                /All \d+/.test(x.textContent) &&
+                x.previousElementSibling &&
+                x.previousElementSibling.querySelector('[data-ff]')
+            );
+          if (b) b.click();
+          const n1 = document.querySelectorAll('[data-ff]').length;
+          DRAFT.fish = keep;
+          AALL = false;
+          render();
+          return {n0, b: !!b, n1};
+        });
+        if (fl.n0 !== 30 || !fl.b || fl.n1 < 36) fails.push(`${w}px Fish auto-sort: All for over 30 decisions ${JSON.stringify(fl)}`);
+        await p.evaluate(() => {
+          ADET = false;
+        });
+      }
+      errs.length = 0;
+      if (await p.isEnabled('#save')) {
+        await p.click('#save');
+        await p
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 10000})
+          .catch(() => fails.push(`${w}px Publish: no "Published" toast`));
+        if (!(await p.evaluate(() => Object.keys(output().auto || {}).length && Object.keys(output().retest || {}).length)))
+          fails.push(`${w}px Publish: the auto-sort log or the retests are not published`);
+        if (!(await p.evaluate(() => Object.keys((output().fish || {}).auto || {}).length && (output().fish || {}).out)))
+          fails.push(`${w}px Publish: the fish curation is not published`);
+      } else fails.push(`${w}px Publish: button still disabled after a change`);
     }
-    errs.length = 0;
-    if (await p.isEnabled('#save')) {
-      await p.click('#save');
-      await p
-        .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 10000})
-        .catch(() => fails.push(`${w}px Publish: no "Published" toast`));
-      if (!(await p.evaluate(() => Object.keys(output().auto || {}).length && Object.keys(output().retest || {}).length)))
-        fails.push(`${w}px Publish: the auto-sort log or the retests are not published`);
-      if (!(await p.evaluate(() => Object.keys((output().fish || {}).auto || {}).length && (output().fish || {}).out)))
-        fails.push(`${w}px Publish: the fish curation is not published`);
-    } else fails.push(`${w}px Publish: button still disabled after a change`);
     if (errs.length) fails.push(`${w}px actions: ${errs.slice(0, 3).join(' | ')}`);
 
     const keys = await p.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]);
@@ -1999,7 +2058,7 @@ const WIDTHS = [390, 1280];
   console.log(
     part
       ? 'Admin demo OK' + part + '; nothing sent.'
-      : 'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, auto-sort, fish auto-sort, retest, publish; nothing sent.'
+      : 'Admin demo OK: every tab, view and old address at 390 and 1280 px; at 1280 merge, delete, reports, health, skip, reject, cap, auto-sort, fish auto-sort, retest, publish; nothing sent.'
   );
 })().catch(e => {
   console.error(e);

@@ -1,0 +1,112 @@
+{
+ "photos": {
+  "fish-s414-cand-513881381": {
+   "code": "d1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-541086087": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-519190752": {
+   "code": "d1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-716933782": {
+   "code": "d1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-505610363": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-505610379": {
+   "code": "d1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-311322516": {
+   "code": "d1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-47106515": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-47106525": {
+   "code": "o1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s414-cand-452104196": {
+   "code": "d1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-467095576": {
+   "code": "d1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-458256664": {
+   "code": "d1g2sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-657109087": {
+   "code": "d1g1ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the seamoth for sure among the rubble"
+  },
+  "fish-s414-cand-503766410": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-500789769": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-658539785": {
+   "code": "d1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-283973745": {
+   "code": "d1g2bm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-283973731": {
+   "code": "d1g2bs1c1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-283973737": {
+   "code": "d1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s414-cand-487806084": {
+   "code": "d1g2sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-487806108": {
+   "code": "d1g2sm1c1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-487806115": {
+   "code": "d1g2sm1c1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-487806136": {
+   "code": "d1g2sm1c1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-171671931": {
+   "code": "o1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-310976126": {
+   "code": "o1d1sl1jc2",
+   "keep": "best"
+  },
+  "fish-s414-cand-47105714": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  }
+ }
+}

@@ -2321,7 +2321,8 @@ changes, all data the engine reads generically (the corals have none of these fi
   the sex / colour phase flag for the entries the presentation says change, `dimorph`: Parrotfish, Anthias) and an ease
   from 1 to 5, capped by rule (a juvenile or a monochrome photo at most 2; a night shot, a strong colour loss, a head-on
   or tail view, a partial fish or camouflage at most 3), plus a proposed crop for 140 of them (a proposal for the admin,
-  never applied). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
+  never applied). The photos of circles 2 and 3 and the winks were judged the same way next (475 photos, 48 crops;
+  judging/FISH.md). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
   difficulty (an Anthias is easy to call an Anthias, a parrotfish a parrotfish: its family-level difficulty is the
   wrasse); the flag stays for the species questions and the explanation cards. **The juvenile cap follows the
   juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `tools/fish_source.json`
@@ -2410,6 +2411,92 @@ for every unit). The order is data (`fish.json`: each entry's `species` list, sp
   triggerfish rare at Dauin (very common at Puerto Galera), so its low local rank is right.
 - **Effect now**: the order of the species lists in `fish.json`; species questions (level 2) are not built yet, so no
   player sees a change until they are. No learnsim run: no fish profile exists and nothing the simulation reads moved.
+
+### Fish: the global score, simulated (2026-11-04)
+
+The global fish score's formula (Pierre, 2026-11-04; docs/FISH_PATH.md "My progress (fish)", unchanged here): per species
+C = the mean mastery of its listed common names, S = max(species mastery, ½ × genus mastery), credit = a·C + b·S +
+(1 − a − b)·C·S with b = 0.80 and a = 11/15 ≈ 0.733 (so 1 − a − b ≈ −0.533: the second name of a species adds less than the
+first); global = 25% × the entries' mean mastery + 75% × the mean credit over circle 1. The design asked for a simulation
+before it ships (rule 14f): the anchors, the entries' 25% share, the genus's half credit, no long plateau. `node
+tools/fishscore.js` runs it (about 2 minutes; `tests/fishscore.test.js` checks the anchors). The species level is not built,
+so `tools/learnsim.js`, which drives the real app, cannot play it: the tool has a deliberately simple model of the path
+instead (the tree of FISH_PATH "Levels": species names and scientific genera of an entry from Advanced, a species'
+scientific name from its genus's Advanced, and for a player learning both names from its common names half-way; one unit
+opened at a time while fewer than 3 are shaky; weak units drawn first; a learner with a true chance per unit that each
+answer's feedback raises, scientific names learned more slowly than common ones), and the app's own progress engine on
+each unit (`core.js` `pgStep`, `scoreOf`, the exam). Its learning rates are assumptions (no fish species answer exists),
+so the answer counts below are a scale, not a forecast; what the formula does with them (shares, ratios, where the
+curve flattens) is the result. World: the 27 circle-1 entries, 94 scientific genera, 340 species of circle 1 (an IMR entry's Dauin species of circle 3 never count), one common name each
+(the curated lists of 1 to 3 names are not chosen yet; `--names` reads a proposal file).
+
+**Fixed states** (every unit of a set at mastery 1, the rest 0; exact):
+
+| What the player knows | Score |
+| --- | --- |
+| Entries only | 25.0% |
+| Entries + every genus | 55.0% |
+| Every common name | 80.0% |
+| Every scientific name | 85.0% |
+| Every common name + every genus | 90.0% |
+| Both names of every species | 100.0% |
+| Every unit at the exam's entry (bar 95%), no exam passed | 96.9% |
+| Entries + common names of the IMR 24 most sighted | 28.9% |
+| Entries + both names of the IMR 24 most sighted | 30.3% |
+| Entries + common names of the most common half of each entry | 53.3% |
+| Entries + both names of the most common half | 76.5% |
+| Entries + every genus + scientific names of the most common half | 70.4% |
+| Every common name + scientific names of the most common half | 90.3% |
+
+The anchors hold exactly. Because the interaction term is negative, partial mastery of both names scores more than its
+mean (every unit at 95% on the bar: 96.9%).
+
+**Simulated players** (5 seeds, 120,000 answers; the answer at which the score first reaches each level, mean over the seeds,
+the spread under 2% of it):
+
+| Profile | 25% | 50% | 75% | 80% | 85% | 95% |
+| --- | --- | --- | --- | --- | --- | --- |
+| Common names only | 910 | 9,560 | 25,120 | 33,840 (ceiling) | | |
+| Scientific names only | 780 | 11,950 | 33,410 | 38,040 | 51,790 (ceiling) | |
+| Both names, side by side (an IMR RA) | 720 | 18,670 | 54,310 | 64,400 | 74,020 | 97,320 |
+| Both, scientific names at half the rate | 760 | 25,110 | 73,310 | 87,130 | 100,750 | not by 120,000 |
+| Common names, then scientific names | 910 | 9,560 | 25,120 | 28,960 | 44,210 | 85,750 |
+| Scientific names, then common names | 780 | 11,950 | 33,410 | 38,040 | 45,740 | 87,660 |
+| Scientific names only, without the genus's half credit | 1,030 | 13,920 | 34,270 | 39,700 | 51,790 (ceiling) | |
+
+What it shows:
+
+- **The entries' 25% share**: every entry reaches Advanced around answer 750-930, and the score is then 25-26%, 93-96% of
+  it from the entries. So the first ~1,000 answers (about 3% of a common-names path, under 1% of a both-names path) earn a
+  quarter of the score: the fast start Pierre asked for ("fast at the start"), with no step: the score rises about 4 points
+  per 100 answers while the entries are learned, then about 1 point per 500-700 answers.
+- **The genus's half credit**: with it, the scientific-names player reaches 25% at 780 answers instead of 1,030, 50% at
+  11,950 instead of 13,920, and the longest point (below) falls from 2,320 answers to 1,760: without it, the answers
+  spent on the genera earn nothing until their species come, a flat stretch at 49% in every seed. The ceiling is the same
+  (85% at the same answer). The half credit does what it was meant to do.
+- **Plateaus** (the answers each point of the score takes, from 26% to 95% of the profile's ceiling; median / longest):
+  common names only 500 / 850; scientific only 650 / 1,760; both side by side 1,260 / 3,500; both, slow scientific 1,670 /
+  4,610 (a run that ends below 95% of its ceiling counts its last, unfinished point; the point that reaches the cutoff counts too). No long plateau for a player on one branch, nor for one learning both names side by side (the longest point
+  takes 2-3 times the median, at 85-94%, where the last species of the largest entries finish).
+- **One branch, then the other: the pace drops by 7 to 12 times** (common then scientific: median 580, longest 7,010 answers,
+  at 90-93%; scientific then common: 760 / 5,120 at 92-94%). Once one kind of names is complete (80% or 85%), the other
+  kind is worth 20 or 15 points for as many units as the first kind's 55 or 60: each species' scientific name adds
+  0.267 × 75 / 340 ≈ 0.06 points to a player who knows its common names (0.18 to one who does not). This follows from the
+  anchors (80 / 85 / 100%), not from a or b: any formula with these three points gives the second kind of names
+  15-20 points. With the half credit, the second half of a species' scientific progress is also hidden until its bar
+  passes its genus's half (S = max(...)): the longest points come right after the genera (90%).
+- **At the same effort, a player learning both names scores lower for a long time**: at 30,000 answers, common names only
+  80%, scientific only 72%, both side by side 62%; the both-names player catches up only near the end (96% at 100,000,
+  100% by 120,000). The fish leaderboard ranks by this score (FISH_PATH), so mid-path an RA learning both names sits below a diver
+  learning common names only with the same answers.
+- The three bars FISH_PATH proposes under the headline % (Entries, Common names, Scientific names) are the means the tool
+  prints (entries, C, S); on the side-by-side path both rise together, so the bars show progress where the headline moves
+  slowly.
+
+Not changed: the formula, a and b, the 25% share (nothing here argues against them). Questions it leaves for Pierre are
+in docs/EVENING.md ("Questions for the morning"): whether the slow second branch and the leaderboard order at equal effort
+are what he wants. Rerun when a constant of the formula changes, when the curated common names are chosen (`--names`),
+and with the real app (`tools/learnsim.js` fish profiles) once the species level exists.
 
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 

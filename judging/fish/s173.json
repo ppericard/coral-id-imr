@@ -1,0 +1,116 @@
+{
+ "photos": {
+  "fish-s173-cand-458236856": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s173-cand-458239546": {
+   "code": "d1g1sm12",
+   "keep": "alt"
+  },
+  "fish-s173-cand-467755912": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s173-cand-464458765": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s173-cand-464458773": {
+   "code": "p1g1sm1c3",
+   "keep": "dup"
+  },
+  "fish-s173-cand-748261555": {
+   "code": "p1g2sm1c2",
+   "keep": "best"
+  },
+  "fish-s173-cand-748261554": {
+   "code": "p1g2sm1c2",
+   "keep": "dup"
+  },
+  "fish-s173-cand-618216610": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s173-cand-714267541": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s173-cand-680457075": {
+   "code": "p1g1ssxc1",
+   "keep": "best"
+  },
+  "fish-s173-cand-616625028": {
+   "code": "p1g2bs1c1",
+   "keep": "best"
+  },
+  "fish-s173-cand-728007708": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s173-cand-662715263": {
+   "code": "d1g0sm1a2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dead on the ground? Out of water by its look"
+  },
+  "fish-s173-cand-42194449": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s173-cand-731169730": {
+   "code": "p1g2bm1c1",
+   "keep": "best"
+  },
+  "fish-s173-cand-723337890": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s173-cand-601114252": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s173-cand-601114263": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s173-cand-755327670": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s173-cand-705189217": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s173-cand-605647726": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s173-cand-605647740": {
+   "code": "d0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s173-cand-605647942": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s173-cand-605648333": {
+   "code": "p1g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s173-cand-525977897": {
+   "code": "p1g2bm1c1",
+   "keep": "best"
+  },
+  "fish-s173-cand-678710390": {
+   "code": "p1g1ssxc1",
+   "keep": "best"
+  },
+  "fish-s173-cand-408312292": {
+   "code": "p1g1ssm2",
+   "keep": "best"
+  }
+ }
+}

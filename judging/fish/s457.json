@@ -1,0 +1,72 @@
+{
+ "photos": {
+  "fish-s457-cand-49212232": {
+   "code": "o0g2sms2",
+   "keep": "best"
+  },
+  "fish-s457-cand-684095071": {
+   "code": "o0g2ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the garden eel for sure on the photo"
+  },
+  "fish-s457-cand-62101751": {
+   "code": "o0g1sss2",
+   "keep": "best"
+  },
+  "fish-s457-cand-257440704": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s457-cand-304014546": {
+   "code": "o0g2sss1",
+   "keep": "best"
+  },
+  "fish-s457-cand-304014489": {
+   "code": "h0g1ss11",
+   "keep": "dup"
+  },
+  "fish-s457-cand-752088053": {
+   "code": "o0g2sms2",
+   "keep": "dup"
+  },
+  "fish-s457-cand-752088144": {
+   "code": "o0g2sms2",
+   "keep": "best"
+  },
+  "fish-s457-cand-752088226": {
+   "code": "o0g2sms2",
+   "keep": "dup"
+  },
+  "fish-s457-cand-753661076": {
+   "code": "o0g2sm12",
+   "keep": "dup"
+  },
+  "fish-s457-cand-750865067": {
+   "code": "o0g2sm12",
+   "keep": "best"
+  },
+  "fish-s457-cand-333117821": {
+   "code": "o0g2sss2",
+   "keep": "best"
+  },
+  "fish-s457-cand-577696326": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s457-cand-708305884": {
+   "code": "o0g2ss11",
+   "keep": "best"
+  },
+  "fish-s457-cand-61381615": {
+   "code": "o0g2sss1",
+   "keep": "best"
+  },
+  "fish-s457-cand-66429507": {
+   "code": "o0g2sss1",
+   "keep": "best"
+  }
+ }
+}

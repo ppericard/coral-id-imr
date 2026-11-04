@@ -1,0 +1,132 @@
+{
+ "photos": {
+  "fish-s172-cand-361046125": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s172-cand-361046109": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s172-cand-8931228": {
+   "code": "p1g1sm1aj2",
+   "keep": "best"
+  },
+  "fish-s172-cand-43779568": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s172-cand-181047004": {
+   "code": "p1g2sm1c2",
+   "keep": "best"
+  },
+  "fish-s172-cand-21000552": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s172-cand-709448521": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s172-cand-709448899": {
+   "code": "o1g2sl13",
+   "keep": "alt"
+  },
+  "fish-s172-cand-609294645": {
+   "code": "p1g1sl1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Among shells: maybe in a tank or a market tray"
+  },
+  "fish-s172-cand-73055229": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s172-cand-292603314": {
+   "code": "p1g3bm11",
+   "keep": "best"
+  },
+  "fish-s172-cand-402363634": {
+   "code": "p1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s172-cand-266161785": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s172-cand-546202103": {
+   "code": "p1g1sl1a2",
+   "keep": "best"
+  },
+  "fish-s172-cand-546202515": {
+   "code": "p1g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s172-cand-546202516": {
+   "code": "p0g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s172-cand-628489721": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s172-cand-628489722": {
+   "code": "p1g1sm1c3",
+   "keep": "alt"
+  },
+  "fish-s172-cand-241200490": {
+   "code": "p1g3bs1c1",
+   "keep": "best"
+  },
+  "fish-s172-cand-367791470": {
+   "code": "p1g2sm1c2",
+   "keep": "best"
+  },
+  "fish-s172-cand-360814597": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s172-cand-591157822": {
+   "code": "d1g1sm1a2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "In a tank with other fish"
+  },
+  "fish-s172-cand-591157862": {
+   "code": "d1g1sm1a2",
+   "keep": "dup"
+  },
+  "fish-s172-cand-591157879": {
+   "code": "d1g1sm1a2",
+   "keep": "dup"
+  },
+  "fish-s172-cand-311925971": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s172-cand-236275232": {
+   "code": "h1g1sl1a2",
+   "keep": "best"
+  },
+  "fish-s172-cand-236275255": {
+   "code": "h1g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s172-cand-236275244": {
+   "code": "h1g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s172-cand-236275267": {
+   "code": "h1g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s172-cand-81327467": {
+   "code": "d1g0sl1a2",
+   "keep": "best"
+  }
+ }
+}

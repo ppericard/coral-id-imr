@@ -147,6 +147,32 @@ self.addEventListener('activate', e =>
   )
 );
 const SLOW = 2000;
+// Cache Storage can stop answering (2026-11-04, net.smoke step 9 on CI now and then, even after #513: the server
+// answered admin.html in 1 ms, yet the worker's own request for it never finished: nothing read its body, neither the
+// reply, waiting on caches.match, nor the cache copy, waiting on caches.open; why the browser's Cache Storage stalls is
+// not known). A reply never waits on it more than CACHE_WAIT ms: then it is served as if nothing were cached, from the
+// network, and the copies kept for offline wait in the background; and for CACHE_PAUSE ms the next replies do not ask it
+// at all (a page's parser-blocking scripts would each wait CACHE_WAIT in turn). soon(p): what p gives, or undefined
+// once CACHE_WAIT ms have passed without it (Cache Storage then paused), or at once while it is paused.
+const CACHE_WAIT = 3000,
+  CACHE_PAUSE = 60e3;
+let cacheOff = 0;
+const soon = p => {
+  if (Date.now() - cacheOff < CACHE_PAUSE) return Promise.resolve();
+  let done = false;
+  return Promise.race([
+    p.finally(() => (done = true)),
+    new Promise(ok =>
+      setTimeout(() => {
+        if (!done) cacheOff = Date.now();
+        ok();
+      }, CACHE_WAIT)
+    )
+  ]);
+};
+// Offline, the network fails at once: the cache is then asked with no time limit (it is the only copy left), even while
+// paused.
+const late = req => caches.match(req).then(h => h || Response.error());
 let trimAt = 0;
 const trim = async c => {
   if (Date.now() - trimAt < 60000) return;
@@ -159,15 +185,21 @@ const trim = async c => {
 // stay offline, and back again if the switch is undone). From R2 it is asked in CORS mode whatever the page asked: an
 // <img> asks no-cors, whose opaque reply cannot be checked (a 404 would be kept) and weighs ~7 MB of quota each in
 // Chrome; the bucket allows the site (CORS). If R2 fails (out of reach, an error), the site's copy is served instead.
+// The same file at its other address (R2 for a site photo, the site for an R2 one), and a photo looked up under both.
+const twinOf = u => {
+  const r2 = u.origin === R2,
+    path = r2 ? u.pathname.slice(1) + u.search : u.href.startsWith(SITE + 'img/') ? u.href.slice(SITE.length).replace(/#.*$/, '') : '';
+  return path && (r2 ? SITE : R2 + '/') + path;
+};
+const photoHit = (c, req, twin) => c.match(req, {ignoreVary: true}).then(h => h || (twin && c.match(twin, {ignoreVary: true})));
 const photo = async (req, u) => {
-  const c = await caches.open(PH),
+  const c = await soon(caches.open(PH)),
     r2 = u.origin === R2,
-    path = r2 ? u.pathname.slice(1) + u.search : u.href.startsWith(SITE + 'img/') ? u.href.slice(SITE.length).replace(/#.*$/, '') : '',
-    twin = path && (r2 ? SITE : R2 + '/') + path,
-    hit = (await c.match(req, {ignoreVary: true})) || (twin && (await c.match(twin, {ignoreVary: true})));
+    twin = twinOf(u),
+    hit = c && (await soon(photoHit(c, req, twin)));
   if (hit) return hit;
   const keep = res => {
-    if (res.ok) {
+    if (res.ok && c) {
       const cl = res.clone();
       c.put(req.url, cl).then(() => trim(c));
     }
@@ -204,27 +236,38 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
   if (u.origin === R2 ? u.pathname.startsWith('/img/') : u.origin === location.origin && u.pathname.includes('/img/'))
-    e.respondWith(photo(e.request, u));
+    // Offline (the network failed), the photo cache is asked with no time limit, under both addresses (late() for photos).
+    e.respondWith(
+      photo(e.request, u).catch(() =>
+        caches
+          .open(PH)
+          .then(c => photoHit(c, e.request, twinOf(u)))
+          .then(h => h || Response.error())
+      )
+    );
   else if (u.origin !== location.origin) return;
   // Versioned files (?v= in the URL: a new version is a new URL) and the fonts never change: cache first, no network at
   // all once cached (Pierre, 2026-11-01: fluid on poor connections; each launch used to revalidate every file).
   else if (u.searchParams.has('v') || u.pathname.includes('/fonts/'))
     e.respondWith(
-      caches.match(e.request).then(
+      soon(caches.match(e.request)).then(
         hit =>
           hit ||
-          fetch(e.request).then(res => {
-            if (res.ok) {
-              const c = res.clone();
-              if (!ADM_FILE.test(u.pathname)) caches.open(V).then(x => x.put(e.request, c));
-              else
-                caches.open(ADM).then(async x => {
-                  for (const k of await x.keys()) if (new URL(k.url).pathname === u.pathname) await x.delete(k);
-                  await x.put(e.request, c);
-                });
-            }
-            return res;
-          })
+          fetch(e.request).then(
+            res => {
+              if (res.ok) {
+                const c = res.clone();
+                if (!ADM_FILE.test(u.pathname)) caches.open(V).then(x => x.put(e.request, c));
+                else
+                  caches.open(ADM).then(async x => {
+                    for (const k of await x.keys()) if (new URL(k.url).pathname === u.pathname) await x.delete(k);
+                    await x.put(e.request, c);
+                  });
+              }
+              return res;
+            },
+            () => late(e.request)
+          )
       )
     );
   // The other app files (the page itself, curation.json, the manifest): revalidated with the server. On a slow link
@@ -240,11 +283,17 @@ self.addEventListener('fetch', e => {
       if (res.ok) copy = res.clone();
       return res;
     });
-    e.waitUntil(net.then(() => copy && caches.open(V).then(x => x.put(e.request, copy))).catch(() => {}));
+    // The copy waits at most 30 s (a stalled Cache Storage must not keep the event open for good).
+    e.waitUntil(
+      Promise.race([
+        net.then(() => copy && caches.open(V).then(x => x.put(e.request, copy))),
+        new Promise(ok => setTimeout(ok, 30000))
+      ]).catch(() => {})
+    );
     e.respondWith(
-      caches.match(e.request).then(hit =>
+      soon(caches.match(e.request)).then(hit =>
         !hit
-          ? net
+          ? net.catch(() => late(e.request))
           : Promise.race([
               net.then(
                 r => (r.ok ? r : hit),

@@ -1,0 +1,132 @@
+{
+ "photos": {
+  "fish-s442-cand-518685871": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s442-cand-540579154": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-540579051": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s442-cand-551679043": {
+   "code": "d1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s442-cand-625295985": {
+   "code": "h0g3sm12",
+   "keep": "best"
+  },
+  "fish-s442-cand-586183838": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-565328616": {
+   "code": "h0g1ss11",
+   "keep": "best"
+  },
+  "fish-s442-cand-565328693": {
+   "code": "h0g1sm12",
+   "keep": "dup"
+  },
+  "fish-s442-cand-565328744": {
+   "code": "h0g1ss11",
+   "keep": "dup"
+  },
+  "fish-s442-cand-565328765": {
+   "code": "h0g1ss11",
+   "keep": "dup"
+  },
+  "fish-s442-cand-525905891": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-662484331": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s442-cand-624703581": {
+   "code": "o0d2ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the moray for sure among the rocks"
+  },
+  "fish-s442-cand-469858575": {
+   "code": "o0d1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-469858573": {
+   "code": "o0d1sm13",
+   "keep": "dup"
+  },
+  "fish-s442-cand-469858578": {
+   "code": "o0d1sm13",
+   "keep": "dup"
+  },
+  "fish-s442-cand-469858574": {
+   "code": "o0d1sm13",
+   "keep": "dup"
+  },
+  "fish-s442-cand-554164113": {
+   "code": "h0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-582793258": {
+   "code": "o0g1smm2",
+   "keep": "best"
+  },
+  "fish-s442-cand-607866197": {
+   "code": "h0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-611612159": {
+   "code": "o0d1sm12",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Flat black shape with a yellow rim: I cannot read a moray on the photo"
+  },
+  "fish-s442-cand-620518592": {
+   "code": "o0d1sm13",
+   "keep": "best"
+  },
+  "fish-s442-cand-45706316": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-599103534": {
+   "code": "o0g2sm12",
+   "keep": "best"
+  },
+  "fish-s442-cand-599103555": {
+   "code": "o0g2smm2",
+   "keep": "dup"
+  },
+  "fish-s442-cand-757127771": {
+   "code": "o0g1ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Shallow and murky; I cannot find the moray for sure in the hole"
+  },
+  "fish-s442-cand-757130477": {
+   "code": "o0g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s442-cand-625751563": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s442-cand-568074734": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  }
+ }
+}

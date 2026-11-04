@@ -14,9 +14,10 @@ This script:
     candidates of fish-cand.json, same licence rules), each once (one photo per observation), at the end of its list;
   - prints the summary: counts per tag, very easy photos (ease 4-5) per entry, entries short of them;
   - with --sheets DIR: downloads every game photo at iNaturalist's medium size into DIR/img and draws contact sheets of
-    12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after).
+    12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after); --only t28,t47
+    limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid for the crops.
 tools/fish_photos.py calls apply() whenever it rebuilds the photo list, so a rebuild keeps the judgements.
-Usage: python3 tools/fish_judge.py [--check] [--sheets DIR]
+Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo]]
 """
 import argparse
 import json
@@ -125,11 +126,16 @@ def summary(doc, fish):
     print("circle-1 entries with fewer than %d very easy photos (better photos needed): %s" % (WANT, ", ".join(short) or "none"))
 
 
-def sheets(out):
-    """Downloads the game photos (iNaturalist medium size) and draws contact sheets of 12, as judging/FISH.md says."""
+def sheets(out, only=(), todo=False):
+    """Downloads the game photos (iNaturalist medium size) and draws contact sheets of 12, as judging/FISH.md says: only
+    the entries `only` names (all when empty), only the photos not judged yet with `todo`. A 5 x 5 grid over each photo
+    reads the crop fractions to a tenth (judging/FISH.md "A proposed crop")."""
+    import time
     import urllib.request
     from PIL import Image, ImageDraw, ImageFont
     doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
+    J = load_src()[0] if todo else {}
+    doc["photos"] = {t: [p for p in L if p["f"] not in J] for t, L in doc["photos"].items() if not only or t in only}
     (out / "img").mkdir(parents=True, exist_ok=True)
     (out / "sheets").mkdir(parents=True, exist_ok=True)
     CW, CH, BAR, COLS, ROWS = 300, 225, 20, 4, 3
@@ -145,11 +151,18 @@ def sheets(out):
             for i, p in enumerate(L[s:s + COLS * ROWS]):
                 f = out / "img" / f"{p['f']}.jpg"
                 if not f.exists():
-                    urllib.request.urlretrieve(p["src"].replace("/original.", "/medium."), f)
+                    req = urllib.request.Request(p["src"].replace("/original.", "/medium."), headers={"User-Agent": "coral-id-imr/1.0"})
+                    with urllib.request.urlopen(req, timeout=60) as r:
+                        f.write_bytes(r.read())
+                    time.sleep(0.5)  # gentle on iNaturalist's photo host
                 im = Image.open(f).convert("RGB")
                 im.thumbnail((CW, CH))
                 cx, cy = (i % COLS) * CW, (i // COLS) * (CH + BAR)
-                sheet.paste(im, (cx + (CW - im.width) // 2, cy + BAR + (CH - im.height) // 2))
+                x0, y0 = cx + (CW - im.width) // 2, cy + BAR + (CH - im.height) // 2
+                sheet.paste(im, (x0, y0))
+                for k in range(1, 5):  # the 5 x 5 crop grid
+                    d.line([x0 + im.width * k // 5, y0, x0 + im.width * k // 5, y0 + im.height - 1], fill=(255, 255, 255))
+                    d.line([x0, y0 + im.height * k // 5, x0 + im.width - 1, y0 + im.height * k // 5], fill=(255, 255, 255))
                 d.rectangle([cx, cy, cx + CW - 1, cy + BAR - 1], fill=(255, 255, 210))
                 d.text((cx + 4, cy + 3), f"{s + i + 1}  {p.get('t', '')[:34]}", fill=(0, 0, 0), font=font)
                 index.append({"sheet": f"{tid}_{s // 12 + 1}", "k": s + i + 1, "f": p["f"], "t": p.get("t")})
@@ -162,9 +175,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="exit 1 when fish-photos.json is not up to date")
     ap.add_argument("--sheets", type=Path, help="download the photos and draw contact sheets into this folder")
+    ap.add_argument("--only", default="", help="with --sheets: these entries only (comma-separated teaching ids)")
+    ap.add_argument("--todo", action="store_true", help="with --sheets: only the photos not judged yet")
     a = ap.parse_args()
     if a.sheets:
-        return sheets(a.sheets)
+        return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo)
     fish = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
     before = json.dumps(doc, sort_keys=True)
