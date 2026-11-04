@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Cache-busting check (code review 2026-11-01, M7). Run from the repo root.
 
-    python3 tools/check_versions.py                    # consistency only
-    python3 tools/check_versions.py --base origin/main # also: every changed file has a new ?v
-    python3 tools/check_versions.py --base origin/main --fix   # bump what is missing, everywhere
+    python3 tools/check_versions.py              # against origin/main: every changed file has a new ?v
+    python3 tools/check_versions.py --fix        # bump what is missing, everywhere
+    python3 tools/check_versions.py --base REF   # against another commit (CI: the one its merge commit was built on)
+    python3 tools/check_versions.py --no-base    # consistency only (rules 1-3)
+
+The base is origin/main unless told otherwise: run without --base, the check said "Versions OK" on files changed without
+a new number (coordinator, 2026-11-04). A base that is not there (no origin/main fetched) is an error, not a skip.
 
 Rules checked:
 1. One file has one ?v=N everywhere: index.html, admin.html, sw.js SHELL and the fetches in app.js.
@@ -56,9 +60,16 @@ def changed(base, path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--base')
+    ap.add_argument('--base', default='origin/main')
+    ap.add_argument('--no-base', action='store_true', help='consistency only, no comparison with a base')
     ap.add_argument('--fix', action='store_true')
     a = ap.parse_args()
+    if a.no_base:
+        a.base = None
+    elif subprocess.run(['git', 'rev-parse', '--verify', '-q', a.base + '^{commit}'], capture_output=True).returncode:
+        print(f'✗ base {a.base} not found: fetch it (git fetch origin main), name another with --base, or check the')
+        print('  consistency only with --no-base')
+        return 2
     refs, labv, files, (swfiles, swlabv), V = state()
     errs, fixes = [], {}  # fixes: {file: new v}
 
@@ -100,26 +111,29 @@ def main():
             errs.append(f'shell files changed but sw.js V=v{V} is not above {a.base} (v{bV})')
             newV = bV + 1
 
-    if a.fix and (fixes or newlab or newV):
+    # The sw.js Lab list follows LAB_V: the one the script bumps, or the current one when only the list lags (a sw.js
+    # conflict resolved by taking main's copy while LAB_V was already bumped).
+    swlab = newlab or (labv if swlabv != labv else None)
+    if a.fix and (fixes or swlab or newV):
         for p in PAGES + ['app.js', 'sw.js']:
             s = read(p)  # read before open(p, 'w') truncates it
             for f, v in fixes.items():
                 s = re.sub(re.escape(f) + r'\?v=\d+', f'{f}?v={v}', s)
             if p == 'sw.js' and newV:
                 s = re.sub(r"reefid-shell-v\d+", f'reefid-shell-v{newV}', s, count=1)
-            if p == 'sw.js' and newlab:
-                s = re.sub(r"(`proto/\$\{f\}\.js\?v=)\d+", rf'\g<1>{newlab}', s)
+            if p == 'sw.js' and swlab:
+                s = re.sub(r"(`proto/\$\{f\}\.js\?v=)\d+", rf'\g<1>{swlab}', s)
             open(p, 'w', encoding='utf-8').write(s)
         if newlab:
             p = 'proto/lab.js'
             t = re.sub(r'const LAB_V = \d+;', f'const LAB_V = {newlab};', read(p))
             open(p, 'w', encoding='utf-8').write(t)
-        print('Fixed:', ', '.join([f'{f} -> v{v}' for f, v in fixes.items()] + ([f'LAB_V -> {newlab}'] if newlab else []) + ([f'sw V -> v{newV}'] if newV else [])))
+        print('Fixed:', ', '.join([f'{f} -> v{v}' for f, v in fixes.items()] + ([f'LAB_V -> {newlab}'] if newlab else [f'sw.js Lab files -> v{swlab}'] if swlab else []) + ([f'sw V -> v{newV}'] if newV else [])))
         return main_again()
     for e in errs:
         print('✗', e)
     if errs:
-        print('\nRun: python3 tools/check_versions.py --base origin/main --fix')
+        print('\nRun: python3 tools/check_versions.py' + (f' --base {a.base}' if a.base and a.base != 'origin/main' else '') + ' --fix')
         return 1
     print('Versions OK')
     return 0
