@@ -995,12 +995,17 @@ async function signin(base) {
       });
       await p.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000});
       const r = await p.evaluate(async () => {
+        // Waits on what the app draws, never a fixed sleep (a loaded machine runs it slower).
         const at = [],
-          wait = ms => new Promise(ok => setTimeout(ok, ms));
+          until = async f => {
+            for (let k = 0; k < 300 && !f(); k++) await new Promise(ok => setTimeout(ok, 10));
+            return f();
+          };
         for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
           if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-          await wait(20);
+          if (!(await until(() => document.querySelector('#view .q:not(.done) :is([data-c], .tyform, [data-w])')))) break;
+          const n0 = answersSoFar();
           if (document.querySelector('#view .q.wink')) document.querySelector('#view [data-w]').click();
           else {
             const t = SHOWNQ[1],
@@ -1012,11 +1017,12 @@ async function signin(base) {
               f.requestSubmit();
             }
           }
-          await wait(50);
+          // The answer's feedback drawn (or the wink's): the sign-in card, when due, is up by then (quiz.js answer).
+          await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
           if (document.querySelector('.unlock.signnudge')) at.push(answersSoFar());
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          if (answersSoFar() === n0 && !document.querySelector('#view .q.wink')) break; // no answer taken: stop, reported below
           route();
-          await wait(20);
         }
         return {at, n: answersSoFar(), subj: SUBJ.id, used: localStorage.getItem('reefid-nudge'), log0: store.get(LOG0, []).length};
       });
