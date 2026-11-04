@@ -21,7 +21,7 @@ const SHELL = [
   './',
   'index.html',
   'app.css?v=139',
-  'core.js?v=49',
+  'core.js?v=50',
   'app.js?v=210',
   'sync.js?v=30',
   'progress.js?v=25',

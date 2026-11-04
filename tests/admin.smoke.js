@@ -511,6 +511,40 @@ const WIDTHS = [390, 1280];
       if (!/\d+% (↻ saved \d+% )?Progress/i.test(k.kpis) || /↻ saved/.test(k.kpis) !== mark || !!k.genus !== mark || !k.col)
         fails.push(`${w}px journey (${n}) replayed progress: ${JSON.stringify(k)}`);
     }
+    // Players reads no saved copy one player at a time (sheet v42, Pierre 2026-11-04: about 15 s on a phone for 40
+    // players): the player list carries each player's replay (rp), the same numbers the admin gets when it replays them
+    // itself from their saved copies, which it still does with a script before v42 (one userData call each, AGENTS.md 7a).
+    if (w === ws[0]) {
+      const open = async v => {
+        const q = await p.context().newPage();
+        q.on('pageerror', e => fails.push(`${w}px Players v${v} page error: ${e.message}`));
+        await q.goto(base + `admin.html?demo&v=${v}#~users`);
+        await q
+          .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
+          .then(() => q.waitForTimeout(1000))
+          .catch(() => fails.push(`${w}px Players v${v}: never drawn`));
+        return q;
+      };
+      const reads = q => q.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'userData').length);
+      const q = await open(42);
+      if (await reads(q)) fails.push(`${w}px Players (v42): ${await reads(q)} saved copies read one by one`);
+      // The admin's own replay of every player (their saved copies read now), against the sheet's rp.
+      const diff = await q.evaluate(async () => {
+        USERS.users.forEach(u => savedOf(u.name));
+        for (let i = 0; i < 100 && USERS.users.some(u => !PSAVED[u.name]); i++) await new Promise(r => setTimeout(r, 100));
+        return USERS.users
+          .map(u => {
+            const f = progOf(u, true);
+            return [u.name, JSON.stringify(u.rp), JSON.stringify(f && [f.pct, f.learned, f.saved && f.saved.pct])];
+          })
+          .filter(([, a, b]) => a !== b);
+      });
+      if (diff.length) fails.push(`${w}px Players (v42): rp differs from the admin's own replay: ${JSON.stringify(diff.slice(0, 3))}`);
+      await q.close();
+      const q41 = await open(41);
+      if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
+      await q41.close();
+    }
     // The admin never gets ahead of the sheet script (AGENTS.md 7a): answering as v27, the demo's Players and Journey
     // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
     // Journey's learned genera from the saved copy).
