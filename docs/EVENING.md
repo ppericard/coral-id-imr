@@ -17,15 +17,6 @@ _(none)_
 Asked by agents working without Pierre (AGENTS.md Rule 0): the question, its context, the agent's recommendation. Ask
 them first thing, then clear them.
 
-- **Fish welcome question (#538, open; 2026-11-04 night, fish track).** Context: built as the ROADMAP row says, the
-  coral question's code per subject; your question and three answers word for word; screenshots in the PR. Choices it
-  made that are yours: (1) the line under each answer: "Start from scratch: a few easy families first." / "You are
-  learning the IMR survey families." / "A diver or a guide: you can already name many families."; (2) the fish values
-  are the corals' (level 0 / 0.5 / 1.25, open-all offer from answer 50 / 30 / 20) until learnsim has fish profiles;
-  (3) with no Fish basics yet, "I'm new to reef fish" offers nothing more and the gentle "lower" card does not show for
-  fish (its offer is the basics module): both come with Fish basics. **Recommendation: yes as built, then merge**;
-  learnsim fish profiles next, to set the fish values.
-
 - **Fish score: the second kind of names is slow (2026-11-04 night, fish score simulation).** Context: `tools/fishscore.js`
   (docs/LEARNING.md "Fish: the global score, simulated"): with the agreed anchors (80% common only, 85% scientific only, 100%
   both), a player who finishes one kind of names and then starts the other gains its last 15-20 points 7-12 times slower
