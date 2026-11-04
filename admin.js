@@ -6248,15 +6248,16 @@ function bindUsers() {
   // The beta group (sheet v48, groupOn): one player in or out (one click, no confirmation: Remove undoes Add), or every
   // player not in it yet (Add all, confirmed: a bulk action). Only the group changes; the player's app follows at its next
   // load or save.
-  const group = (names, on, msg) =>
-    userPost({userGroup: names, group: ASUBJ.id, on})
+  // The group id is taken when the request leaves: the admin may switch subjects before it returns (Codex review #540).
+  const group = (names, on, msg, gid = ASUBJ.id) =>
+    userPost({userGroup: names, group: gid, on})
       .then(j => {
         if (!j || !j.ok) return toast(`Not done (${(j && j.error) || 'offline'}).`);
         const L = new Set((Array.isArray(names) ? names : [names]).map(x => x.toLowerCase()));
         USERS.users.forEach(u => {
           if (!L.has(u.name.toLowerCase())) return;
-          const g = (u.groups || []).filter(x => x !== ASUBJ.id);
-          u.groups = on ? [...g, ASUBJ.id] : g;
+          const g = (u.groups || []).filter(x => x !== gid);
+          u.groups = on ? [...g, gid] : g;
         });
         toast(msg);
         render();

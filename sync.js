@@ -921,7 +921,8 @@ function groupsSeen(j, name, live = true) {
   if (!live || subjGroups().join() === before) return;
   if (!subjOpen(SUBJ)) return location.reload();
   showSubj();
-  if (!SUBJ_VISIT && /^#?(lab)?$/.test(location.hash)) route(); // the Tools hub's subject tile (proto/lab.js)
+  // Home draws its subject row in viewHome (showSubj only updates existing buttons): redraw Home too (Codex review #540).
+  if (!SUBJ_VISIT && /^#?(lab|home)?$/.test(location.hash)) route();
 }
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));

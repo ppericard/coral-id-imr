@@ -709,6 +709,19 @@ const server = http.createServer((req, res) => {
       continue;
     }
     if (!t1.tile || t1.admin || !t1.open) grp.push(`in the fish group: the Home subject row ${JSON.stringify(t1)}`);
+    // On Home, a change of the group redraws the subject row at once, both ways (Codex review #540).
+    for (const [g, want] of [
+      [[], false],
+      [['fish'], true]
+    ]) {
+      await q.evaluate(g => localStorage.setItem('fish-groups', JSON.stringify(g)), g);
+      await q.evaluate(() => syncPull());
+      const has = await q
+        .waitForFunction(w => !!document.querySelector('#view .hsubj') === w, want, {timeout: 10000})
+        .then(() => true)
+        .catch(() => false);
+      if (!has) grp.push(`on Home, group ${JSON.stringify(g)}: the subject row did not follow`);
+    }
     await q.click('#view .hsubj [data-subj="fish"]');
     await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000}).catch(() => {});
     if ((await q.evaluate(() => SUBJ.id)) !== 'fish') grp.push('in the fish group: Fish did not switch on');
