@@ -3853,9 +3853,6 @@ button.adm-chip[aria-pressed='true'] {
 .adm-an-svg .an-bar {
   fill: var(--accent);
 }
-.adm-an-svg .an-nul {
-  font-size: 11px;
-}
 .adm-an-out {
   margin: 10px 0 0;
   font-size: var(--fs-s);
