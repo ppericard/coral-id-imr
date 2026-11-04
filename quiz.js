@@ -547,7 +547,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // Seconds to answer (they weighed the steps above: rtWeight; the replay reads them back from the log, Code.gs v32)
     // and a photo enlarged before answering (logged only), QCLOCK in question (sheet v23).
     ...(typeof tm.rt === 'number' ? {rt: tm.rt} : {}),
-    zm: tm.zm ? 1 : 0
+    zm: tm.zm ? 1 : 0,
+    // The device's UTC offset now, in minutes east of UTC (Manila +480): the time of day at home for the analyses (Pierre,
+    // 2026-11-04; sheet v44 stores it, an older script ignores the field: Code.gs logAnswers_ keeps only the fields it
+    // knows, so it needs no *_SHEET gate, AGENTS.md 7a).
+    tz: -new Date().getTimezoneOffset()
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
