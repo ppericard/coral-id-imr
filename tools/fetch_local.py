@@ -14,22 +14,22 @@
 # observer may take five photos at one zoom; sorting by view, quality and near-duplicates is for the judging pass
 # afterwards (judging/AGENTS.md), so that what Pierre sees keeps a real variety. Until then it was 2 photos per
 # observation (its first and last) and the caps counted photos.
-# Finder-only genera (Pierre, 2026-11-03: "quiz first"; data.json "x" genera no game asks, tools/genera.py): a sheet and
-# the Coral Finder show at most CAP.sheet (core.js, 6) photos of a view, and only Colony and Close-up matter ("nobody uses
-# the Coral Finder on a corallite close-up"). So such a genus keeps at most as many observations waiting, over all
-# sources, as the colonies it still lacks (finder_need: 6 per Colony and Close-up view, minus the colonies it already has
+# Key-only genera (Pierre, 2026-11-03: "quiz first"; data.json "x" genera no game asks, tools/genera.py): a sheet and
+# the Coral ID Key show at most CAP.sheet (core.js, 6) photos of a view, and only Colony and Close-up matter ("nobody uses
+# the [Coral ID Key] on a corallite close-up"). So such a genus keeps at most as many observations waiting, over all
+# sources, as the colonies it still lacks (key_need: 6 per Colony and Close-up view, minus the colonies it already has
 # there), and a genus that lacks none gets no new candidates. Game genera keep the caps above.
 # Only waiting candidates count, so a re-run (GitHub Action after each publish) refills what Pierre sorted. Lists them in data.json "cand".
 # The app ignores "cand"; Pierre approves candidates in admin.html. Run from the repo root.
 # New candidates are NOT downloaded (r: 1 = shown straight from iNaturalist, from src): only the ones Pierre adds are,
 # by tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
 # --plan: offline, prints as JSON what a run would refill (new observations it may add per genus and source, and a
-# Finder-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
+# Key-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
 import json, re, sys, time, urllib.request
 from collections import Counter
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from excluded import excluded, drop_excluded, set_aside, SUG
-from genera import finder_only, cap_sheet
+from genera import key_only, cap_sheet
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
@@ -49,7 +49,7 @@ get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, heade
 
 
 def kept_views(g, G, cur):
-    """A Finder-only genus's Colony and Close-up views: wide + medium, or wide + macro for a 2-level genus (curation lv,
+    """A Key-only genus's Colony and Close-up views: wide + medium, or wide + macro for a 2-level genus (curation lv,
     else data.json levels), whose macro photos are its close-ups (admin.js label, capViews)."""
     lv = ((cur.get('genera') or {}).get(g) or {}).get('lv') or (2 if G[g].get('levels') == 2 else 3)
     return ('wide', 'macro') if lv == 2 else ('wide', 'medium')
@@ -107,8 +107,8 @@ def colonies(g, G, cand, cur, excl=lambda f: False):
     return {v: len(s) for v, s in by.items()}
 
 
-def finder_need(g, G, cand, cur, excl=lambda f: False, cap=None):
-    """Colonies a Finder-only genus still lacks: cap (core.js CAP.sheet) per Colony and Close-up view, minus those it has."""
+def key_need(g, G, cand, cur, excl=lambda f: False, cap=None):
+    """Colonies a Key-only genus still lacks: cap (core.js CAP.sheet) per Colony and Close-up view, minus those it has."""
     cap = cap_sheet() if cap is None else cap
     have = colonies(g, G, cand, cur, excl)
     return sum(max(0, cap - have.get(v, 0)) for v in kept_views(g, G, cur))
@@ -116,7 +116,7 @@ def finder_need(g, G, cand, cur, excl=lambda f: False, cap=None):
 
 def room(cap, waiting_here, need=None, waiting_all=0):
     """New observations a run may add for one genus and source: up to the source's cap of observations waiting; for a
-    Finder-only genus (need not None) also no more, over all sources, than the colonies it lacks."""
+    Key-only genus (need not None) also no more, over all sources, than the colonies it lacks."""
     r = cap - waiting_here
     return r if need is None else min(r, need - waiting_all)
 
@@ -129,7 +129,7 @@ def main():
     # The Coral Finder's extra genera (data.json x, tools/build_extra.py) get candidates too; the three that are not
     # stony corals (fire, blue, organ pipe coral) are matched as animals instead of under Scleractinia.
     GEN = {**d['gen'], **((d.get('x') or {}).get('gen') or {})}
-    FINDER = set(finder_only(d))
+    KEY_ONLY = set(key_only(d))
     NONSCL = {n for n, g in GEN.items() if (g.get('x') or {}).get('nonscl')}
     ONLY = {a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith('--') and sys.argv[i - 1] not in ('--dauin', '--ph')}
     used = {p.get('o') for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
@@ -150,13 +150,13 @@ def main():
         x = GEN[g]
         return sum(p.get('loc') == 'dauin' or p.get('own') for L in x['views'].values() for p in L) + sum(p.get('loc') == 'dauin' and p['f'] not in GONE and not excluded(p['f']) for p in cand.get(g, []))
     # Observations waiting for genus g: from one source (loc) or all.
-    # A Finder-only genus's candidates guessed to be in a view it does not keep (Corallites) are not shown (admin.js
+    # A Key-only genus's candidates guessed to be in a view it does not keep (Corallites) are not shown (admin.js
     # candQueue, capViews): they do not count as waiting either (Codex review #390), or they would hold the room.
     # Nor do those of a view that already has its colonies (Codex review #390): admin.js candQueue marks them full and
     # hides them, and they would hold the room another view lacks.
     HAVE, CAPS = {}, cap_sheet()
     def shown(g, p):
-        if g not in FINDER: return True
+        if g not in KEY_ONLY: return True
         v = (SUG.get(p['f']) or {}).get('v') or p.get('vg')
         keep = kept_views(g, GEN, CUR)
         if keep[1] == 'macro' and v == 'medium': v = 'wide'
@@ -165,18 +165,18 @@ def main():
         return v in keep and HAVE[g].get(v, 0) < CAPS
     def waiting_obs(g, loc=None):
         return {p.get('o') for p in cand.get(g, []) if (loc is None or p.get('loc') == loc) and waiting(p) and shown(g, p)}
-    need = lambda g: finder_need(g, GEN, cand, CUR, excluded) if g in FINDER else None
+    need = lambda g: key_need(g, GEN, cand, CUR, excluded) if g in KEY_ONLY else None
     def room_for(g, where):
         loc = 'dauin' if where == DAUIN else 'world' if where == 'world' else 'ph'
         if where != DAUIN and dauin_n(g) >= POOR and not PH_ALL: return loc, 0
         return loc, room({'dauin': DAUIN_CAP_, 'ph': PH_CAP_, 'world': WORLD_CAP}[loc], len(waiting_obs(g, loc)), need(g), len(waiting_obs(g)))
     if PLAN:
-        print(json.dumps({g: {'finder': g in FINDER, 'need': need(g), **{k: max(0, r) for k, r in (room_for(g, w) for w in (DAUIN, PHILIPPINES))}} for g in GEN if not ONLY or g in ONLY}))
+        print(json.dumps({g: {'keyonly': g in KEY_ONLY, 'need': need(g), **{k: max(0, r) for k, r in (room_for(g, w) for w in (DAUIN, PHILIPPINES))}} for g in GEN if not ONLY or g in ONLY}))
         return
     for g in GEN:
         if ONLY and g not in ONLY: continue
         if need(g) == 0:
-            print(g, 'enough for a Finder-only genus, not refilled'); continue
+            print(g, 'enough for a Key-only genus, not refilled'); continue
         T = [t for t in get(f'https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10')['results'] if t['name'] == g and (SCLERACTINIA in t.get('ancestor_ids', []) or (g in NONSCL and t.get('iconic_taxon_name') == 'Animalia'))]
         if not T: print('no taxon', g); continue
         # The region around Dauin fills the Philippines room first; the whole country only takes what room is left.

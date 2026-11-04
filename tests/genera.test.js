@@ -1,6 +1,6 @@
 // The game genera, defined once (core.js BENTHIC, BONUS, slateOf, gameOf; Pierre, 2026-11-03: no genus-specific case),
-// and the candidate refill for the Finder-only genera (tools/fetch_local.py, offline: tools/genera.py reads the lists
-// from core.js; finder_need, room and --plan never ask iNaturalist). Needs python3, like the other checks.
+// and the candidate refill for the Key-only genera (tools/fetch_local.py, offline: tools/genera.py reads the lists
+// from core.js; key_need, room and --plan never ask iNaturalist). Needs python3, like the other checks.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -31,7 +31,7 @@ test('slateOf / gameOf: the slate, then Millepora (BENTHIC), then the bonus gene
 test('tools/genera.py reads the same lists and CAP.sheet from core.js', () => {
   const out = JSON.parse(
     py(
-      `from genera import game_genera, finder_only, cap_sheet, lists\nfrom datajson import load\nd = load()\nprint(json.dumps([game_genera(d), finder_only(d), cap_sheet(), lists()]))`
+      `from genera import game_genera, key_only, cap_sheet, lists\nfrom datajson import load\nd = load()\nprint(json.dumps([game_genera(d), key_only(d), cap_sheet(), lists()]))`
     )
   );
   assert.deepStrictEqual(out[0], gameOf(RAW));
@@ -43,10 +43,10 @@ test('tools/genera.py reads the same lists and CAP.sheet from core.js', () => {
   assert.deepStrictEqual(out[3], [BENTHIC, BONUS]);
 });
 
-test('fetch_local finder_need: colonies a Finder-only genus lacks in Colony and Close-up, as curated', () => {
+test('fetch_local key_need: colonies a Key-only genus lacks in Colony and Close-up, as curated', () => {
   const out = JSON.parse(
     py(`
-from fetch_local import finder_need, room, kept_views
+from fetch_local import key_need, room, kept_views
 o = lambda f, obs, **k: dict(f=f, o=obs, **k)
 G = {
   'A': {'views': {'wide': [o('a1', 1), o('a2', 1), o('a3', 2), o('a4', 3, multi=1)], 'medium': [o('a5', 4)], 'macro': [o('a6', 5), o('a7', 6)]}},
@@ -55,13 +55,13 @@ G = {
 cand = {'A': [o('c1', 7), o('c2', 8)], 'Z': [o('c3', 9)]}
 cur = {'genera': {'A': {'hide': ['a3'], 'move': {'a6': 'medium'}, 'add': {'c1': 'wide', 'c3': 'medium'}}}}
 print(json.dumps({
-  'A': finder_need('A', G, cand, cur, cap=6),
+  'A': key_need('A', G, cand, cur, cap=6),
   'Aviews': kept_views('A', G, cur),
-  'Aex': finder_need('A', G, cand, cur, excl=lambda f: f == 'c1', cap=6),
-  'B': finder_need('B', G, cand, cur, cap=6),
+  'Aex': key_need('A', G, cand, cur, excl=lambda f: f == 'c1', cap=6),
+  'B': key_need('B', G, cand, cur, cap=6),
   'Bviews': kept_views('B', G, cur),
-  'Blv3': finder_need('B', G, cand, {'genera': {'B': {'lv': 3}}}, cap=6),
-  'full': finder_need('A', G, cand, cur, cap=2),
+  'Blv3': key_need('B', G, cand, {'genera': {'B': {'lv': 3}}}, cap=6),
+  'full': key_need('A', G, cand, cur, cap=2),
   'room': [room(15, 3), room(15, 3, 2, 1), room(6, 0, 4, 6), room(15, 3, 0, 0)],
 }))`)
   );
@@ -76,7 +76,7 @@ print(json.dumps({
   assert.strictEqual(out.B, 5 + 5);
   assert.strictEqual(out.Blv3, 5 + 5, 'curation lv 3: Colony and Close-up (medium)');
   assert.strictEqual(out.full, 0, 'enough colonies: nothing to refill');
-  // Game genus: the source cap only; Finder-only: also no more than its need over all sources.
+  // Game genus: the source cap only; Key-only: also no more than its need over all sources.
   assert.deepStrictEqual(out.room, [12, 1, -2, 0]);
 });
 
@@ -111,7 +111,7 @@ print(json.dumps([fl.colonies('C', G, {}, {'genera': {'C': {'lv': 2}}}), fl.colo
 });
 
 test('fetch_local --plan: a waiting candidate of a view that has its colonies holds no room (Codex review #390)', () => {
-  // Finder-only A: Colony full (6 colonies), Close-up 5 of 6. One candidate waits, guessed Colony: the admin hides it
+  // Key-only A: Colony full (6 colonies), Close-up 5 of 6. One candidate waits, guessed Colony: the admin hides it
   // (full cell), so it must not use the one place Close-up still needs.
   const r = JSON.parse(
     py(`import importlib.util, io, contextlib
@@ -121,7 +121,7 @@ o = lambda f, obs, v=None: dict(f=f, o=obs, own=False, loc='dauin', **({'vg': v}
 G = {'A': {'views': {'wide': [o(f'w{i}', f'w{i}') for i in range(6)], 'medium': [o(f'm{i}', f'm{i}') for i in range(5)]}}}
 def run(c):
     fl.load_all = lambda: {'gen': {}, 'x': {'gen': G}, 'cand': {'A': c}}
-    fl.finder_only = lambda d: ['A']
+    fl.key_only = lambda d: ['A']
     fl.open = lambda *a, **k: io.StringIO('{}')
     fl.excluded = lambda *a, **k: False
     fl.set_aside = lambda f: False
@@ -131,17 +131,17 @@ def run(c):
     return json.loads(out.getvalue())['A']
 print(json.dumps([run([o('c1', 'c1', 'wide')]), run([o('c1', 'c1', 'medium')]), run([o('c1', 'c1')])]))`)
   );
-  assert.deepStrictEqual(r[0], {finder: true, need: 1, dauin: 1, ph: 1}, "a full view's candidate holds no room");
-  assert.deepStrictEqual(r[1], {finder: true, need: 1, dauin: 0, ph: 0}, 'a candidate of the view that lacks one does');
-  assert.deepStrictEqual(r[2], {finder: true, need: 1, dauin: 0, ph: 0}, 'no guessed view: it may fill the gap, it counts');
+  assert.deepStrictEqual(r[0], {keyonly: true, need: 1, dauin: 1, ph: 1}, "a full view's candidate holds no room");
+  assert.deepStrictEqual(r[1], {keyonly: true, need: 1, dauin: 0, ph: 0}, 'a candidate of the view that lacks one does');
+  assert.deepStrictEqual(r[2], {keyonly: true, need: 1, dauin: 0, ph: 0}, 'no guessed view: it may fill the gap, it counts');
 });
 
-test('fetch_local --plan on the real data: game genera keep their caps, a Finder-only genus refills only what it lacks', () => {
+test('fetch_local --plan on the real data: game genera keep their caps, a Key-only genus refills only what it lacks', () => {
   const P = JSON.parse(execFileSync('python3', ['tools/fetch_local.py', '--plan'], {cwd: ROOT, encoding: 'utf8'}));
   const game = new Set(gameOf(RAW));
   assert.deepStrictEqual(Object.keys(P).sort(), [...Object.keys(RAW.gen), ...Object.keys(RAW.x.gen)].sort());
   Object.entries(P).forEach(([g, r]) => {
-    assert.strictEqual(r.finder, !game.has(g), g);
+    assert.strictEqual(r.keyonly, !game.has(g), g);
     if (game.has(g)) assert.strictEqual(r.need, null, g);
     else {
       assert.ok(Number.isInteger(r.need) && r.need >= 0, g);

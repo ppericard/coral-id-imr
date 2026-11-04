@@ -216,7 +216,7 @@
       T(129, 24, 'walls?', 'k') +
       [0, 1, 2].map(i => R(104, 36 + i * 15, 50, 11, i === 0 ? 'a' : 'l', 4)).join('')
   };
-  ART.finder = ART.key;
+  ART.idkey = ART.key;
   window.homeArt = id =>
     ART[id]
       ? `<svg viewBox="0 0 160 90" role="img" aria-hidden="true"><defs><filter id="hblur"><feGaussianBlur stdDeviation="3"/></filter></defs>${ART[id]}</svg>`

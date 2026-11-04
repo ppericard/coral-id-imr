@@ -4196,7 +4196,7 @@ a.psrc:focus-visible {
   background: hsl(var(--g) 40% 92%);
   color: hsl(var(--g) 50% 24%);
 }
-.fdopt.gchip {
+.ikopt.gchip {
   background: var(--surface);
   box-shadow: inset 3px 0 0 hsl(var(--g) 32% 58%);
 }
@@ -4222,7 +4222,7 @@ a.psrc:focus-visible {
   border-color: hsl(var(--g) 35% 60%);
   color: hsl(var(--g) 60% 90%);
 }
-.fdopt.gchip[aria-pressed='true'] {
+.ikopt.gchip[aria-pressed='true'] {
   color: inherit;
   background: hsl(var(--g) 32% 58% / 0.18);
 }
@@ -5525,7 +5525,7 @@ html.touring body::after {
    buttons that were 20-23 px tall get vertical padding on touch screens only, so mouse layouts do not change. */
 @media (pointer: coarse) {
   #hintb,
-  .fdsv {
+  .iksv {
     padding-block: 10px;
   }
   .lktip a {
@@ -5577,7 +5577,7 @@ html.touring body::after {
   }
 }
 
-/* Genera page: the Coral Finder's extra genera, folded under the 39 */
+/* Genera page: the Coral Finder book's extra genera, folded under the 39 */
 .xgen {
   grid-column: 1/-1;
   margin-top: 24px;
