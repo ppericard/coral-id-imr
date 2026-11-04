@@ -462,6 +462,9 @@ const srcTag = src =>
     : `<b class="lect cf">Coral Finder</b> ${esc(src.replace(/^Coral Finder /, ''))}`;
 // Learn > Look-alikes: a deck of the classic pairs, one montage per screen, the reader's mix-ups first.
 // #cmp opens the first one, #cmp|A|B a given pair; arrows, keys and swipes go through the deck.
+// "Drill this pair" only for two genera the player has unlocked (model.js unlocked: the Duel tab opens none, one
+// progression path for every game, Pierre 2026-11-04).
+const drillOk = (a, b) => typeof unlocked !== 'function' || unlocked([a, b]).length === 2;
 function viewLookalikes(a, b) {
   const L = classics()
       .map(p => montage(...p))
@@ -497,7 +500,7 @@ function viewLookalikes(a, b) {
         <div class="lkm${dir ? ' in' + (dir > 0 ? 'r' : 'l') : ''}">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}<button type="button" class="lkarr prev" data-lstep="-1" aria-label="Previous pair">‹</button><button type="button" class="lkarr nxt" data-lstep="1" aria-label="Next pair">›</button>${hint ? '<span class="lkhint" aria-hidden="true">Swipe for the next pair</span>' : ''}</div>
         <div class="lktips">${tip(m.A, gA)}${tip(m.B, gB)}</div>
         <div class="lknav"><span class="lkn">Pair ${i + 1} / ${L.length}</span>
-          <a class="linkish lkall" href="#cmp-${esc(m.A)}|${esc(m.B)}">All views</a><a class="next" href="#quiz-duel|${esc(m.A)}|${esc(m.B)}">Drill this pair</a></div>
+          <a class="linkish lkall" href="#cmp-${esc(m.A)}|${esc(m.B)}">All views</a>${drillOk(m.A, m.B) ? `<a class="next" href="#quiz-duel|${esc(m.A)}|${esc(m.B)}">Drill this pair</a>` : ''}</div>
       </div>
       <aside class="lkdeck" aria-label="Classic look-alikes">${deck}</aside>
     </div>`;
@@ -610,7 +613,9 @@ function viewCompare(a, b) {
   ${
     back
       ? '<div class="cmpfabpad" aria-hidden="true"></div><button type="button" class="next cmpfab" data-duelback>Back to the duel</button>'
-      : `<p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`
+      : drillOk(a, b)
+        ? `<p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`
+        : ''
   }`;
   $v.querySelectorAll('[data-duelback]').forEach(x => (x.onclick = duelBack));
   // The band sticks right under the page bar, whose height it reads (app.js showModes drew it before this page).

@@ -177,6 +177,7 @@ test('the Duel tab: its photo eased by the opening hold, as every question of th
     calls = [],
     ctx = {
       pool: () => ['A', 'B', 'C'],
+      unlocked: () => ['A', 'B', 'C'], // model.js: the genera unlocked, the Duel tab's only source
       GX: n => ({n}),
       photoSet: (...a) => (calls.push(a), {shown: [{f: 'x'}]}),
       duelPick: () => ['A', 'B'],

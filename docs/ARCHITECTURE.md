@@ -319,7 +319,7 @@ Still useful / re-runnable:
 | `judging_manifest.py`, `judging_import.py`, `judging_cand.py` | Outside photo-judging agent package (`judging/`); `--check` validates. |
 | `apply_id_tips.py` | `tools/id_tips.txt` → `gen[g].qt`. |
 | `apply_imr_corrections.py` | Four IMR wordings corrected by Pierre after the plain sentences' sources (2026-11-03): Seriatopora, Lobactis, Heliofungia, Herpolitha (lecture notes, review slides, mnemonic, `sum`, `check` → `info`; the ID tips in `id_tips.txt`). |
-| `apply_favites.py` | Favites and its neighbours (Pierre, 2026-11-04, after a research report): sourced "Other sources" notes on Favites and Goniastrea (species recorded in the Philippines only, AGENTS.md rule 6d), Favites `sum` and size class `s3`, *F. magnistellata* restored in the slide 65 line, `spell` for Diploastreidae. Its header lists what was checked (iNaturalist counts, Corals of the World, WoRMS). |
+| `apply_favites.py` | Favites and its neighbours (Pierre, 2026-11-04, after a research report): sourced "Other sources" notes on Favites and Goniastrea (species recorded in the Philippines only, AGENTS.md rule 6e), Favites `sum` and size class `s3`, *F. magnistellata* restored in the slide 65 line, `spell` for Diploastreidae. Its header lists what was checked (iNaturalist counts, Corals of the World, WoRMS). |
 | `apply_plain_sheets.py` | The plain sentence of every genus (`gen` and `x.gen`) → `plain` (re-runnable; `build_extra.py` keeps it on a rebuild). Its sources per genus: `tools/plain_sources.json`. |
 | `apply_imr_forms.py` | IMR growth form definitions into `forms.json`. |
 | `build_extra.py` | Extra Dauin genera for the Coral ID Key (`data.json` `x`). |

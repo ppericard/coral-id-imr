@@ -834,9 +834,9 @@ const tipZoomed = () => tipDemo || store.set(TIPR.KEY, tipUse(tipsLoad(), 'z'));
 // the break at Next. Everything is checked again at the tap, and the tip waits for a later break when the next question
 // brings a genus's card (never two cards back to back). hold: the mastery toast is due in a moment.
 const TIP = {WAIT: 600};
-// Whether the planned next question opens with a genus's first-meeting card: the photo quiz's plan carries them (.intro);
-// a duel of the Duel tab shows the cards of its genera not met yet itself (quizDuel), its plan does not.
-const nextCards = (cur, q) => !!q.intro || (cur.split('|')[0] === 'quiz-duel' && q[2].some(n => !introduced(n)));
+// Whether the planned next question opens with a genus's first-meeting card: the photo quiz's plan carries them (.intro).
+// (A Duel tab duel brought the cards of its genera not met yet until 2026-11-04; it now draws only genera unlocked.)
+const nextCards = (cur, q) => !!q.intro;
 function tipAfter(nb, cur, miss, zm, hold) {
   const raw = store.get(TIPR.KEY, null);
   let st = tipsLoad(raw);
@@ -1182,8 +1182,9 @@ function planNext(cur) {
     const snap = planState(),
       // planPhoto gets the answers count at which the question will show (its place in the queue): the contrast
       // questions' spacing is counted on it.
-      args = photoQuiz(cur) ? planPhoto(cur, answersSoFar() + o + n) : planDuel(),
-      x = {k: key(n++), args, snap, stop: !plain(args), urls: pfUrls(args), held: [], next: null};
+      args = photoQuiz(cur) ? planPhoto(cur, answersSoFar() + o + n) : planDuel();
+    if (!args) break; // the Duel tab with no look-alike pair unlocked
+    const x = {k: key(n++), args, snap, stop: !plain(args), urls: pfUrls(args), held: [], next: null};
     if (end) end.next = x;
     else NEXTQ = x;
     end = x;
@@ -1634,12 +1635,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     traps = ex ? 3 : trapsFor(t, ease),
     // A genus met on a card of its own now is not among this question's choices either: its card says it comes up a
     // little later (beginner review 2026-11-03: its name was a choice on the question behind the card). The custom
-    // quiz: from its selection first, topped up from the other genera in play under 4 (customChoices); its card's genus
-    // is the one asked.
+    // quiz: from its selection first, topped up under 4 from the other genera unlocked only (customChoices; one
+    // progression path, AGENTS.md rule 6d, Codex review #482: a locked genus, a ★ one included, as a choice).
     ch = shuffle([
       t,
       ...(sel
-        ? customChoices(t, sel, play, traps, known)
+        ? customChoices(t, sel, unlocked(play), traps, known)
         : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, known))
     ]),
     // Typed (model.js TYPED): with the genus's typed share, from its progress (never on a genus under TYPED.from: no
@@ -1682,12 +1683,12 @@ function quizDuel(a, b, fresh = true, from = '') {
     if (bk) ev('pulse', {r: 'back', src: 'tip:duelhold', m: 'quiz-duel', n: session.n});
   }
   const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
+  // No look-alike pair unlocked yet (a new player): the duels come once the quiz has opened two look-alikes.
+  if (!q) {
+    $v.innerHTML = `<p class="note duelnone">Duels pit two look-alike ${SUBJ.many} against each other. They start once you have met two of them in the quiz.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+    return;
+  }
   question(...q);
-  // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer;
-  // a ★ genus's card after the card of the genus it is compared to (core.js starRefs).
-  const L = q[2].filter(n => !introduced(n)).sort((a, b) => starRefs(DATA, a).length - starRefs(DATA, b).length);
-  // Ready at once (the duel names them), never the "Open all" box: that is the first cards' (and My progress's) offer.
-  if (L.length) introShow(L, true, 'c', false);
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.
@@ -1710,11 +1711,15 @@ function duelPick(list, keep = () => true) {
   return ps[ps.length - 1];
 }
 function planDuel(a, b) {
-  const list = pool();
-  // A pair from a link (#quiz-duel|A|B) must name two genera with game photos; anything else gets a normal duel (code re-review L2).
-  if (a && b && !(a !== b && GX(a) && GX(b) && photoSet(a).shown.length && photoSet(b).shown.length)) a = b = undefined;
+  // Only the genera the player has unlocked (model.js unlocked: one progression path for every game, Pierre 2026-11-04):
+  // the Duel tab opens none. A pair from a link (#quiz-duel|A|B, "Drill this pair") must name two unlocked genera with game
+  // photos; anything else gets a normal duel (code re-review L2). Null when no look-alike pair is unlocked yet.
+  const list = unlocked();
+  if (a && b && !(a !== b && list.includes(a) && list.includes(b) && photoSet(a).shown.length && photoSet(b).shown.length))
+    a = b = undefined;
   let pair = a && b ? [a, b] : null;
   if (!pair) pair = duelPick(list);
+  if (!pair) return null;
   const t = pick(pair);
   // A genus not met yet gets its card with this duel (quizDuel): not with the card's own photo. Easier while the opening
   // hold is on (model.js holdEase), as every question of the photo quiz but an exam: the photo and the single views aim
@@ -1818,7 +1823,7 @@ const customSaved = () => {
   const o = store.get(CUSTOM.KEY, null);
   return o && Array.isArray(o.g) ? o.g : [];
 };
-const customSel = () => customOf(customSaved(), pool());
+const customSel = () => customOf(customSaved(), unlocked());
 // A comeback runs in this game: always in the photo quiz while there is rust (CB.r); in the custom quiz only when at
 // least 2 of its genera were answered right (model.js comebackOf), else it plays as usual and leaves the comeback alone.
 const cbIn = cur => CB.r > 0 && (cur !== CUSTOM_H || (customSel() || []).filter(n => introReady(n) && (P[n] || {}).ok > 0).length >= 2);
@@ -1909,7 +1914,8 @@ function cqGroups(view, play) {
   };
 }
 function viewCustom() {
-  const play = pool(),
+  // The genera unlocked only (model.js unlocked: one progression path, Pierre 2026-11-04): picking opens none.
+  const play = unlocked(),
     on = new Set(customSaved().filter(n => play.includes(n))),
     qp = cqPicks(play),
     lk = play.filter(n => cqLooks(n, play).length > 1);
