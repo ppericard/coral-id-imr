@@ -1,7 +1,7 @@
 const http = require('http'),
   fs = require('fs'),
   path = require('path');
-const {chromium} = require('playwright');
+const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 // Health › Genus sheets opened on the demo's Pages tab (admin-demo.js: 4 visits a player at 0, 1/4, 1/2 and 3/4 of
