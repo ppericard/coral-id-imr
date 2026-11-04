@@ -731,7 +731,7 @@ test('response time: the median of the earlier times, the weight, and the record
 test('the first-launch prior in the live ability only from sheet v36 (Codex review #428)', () => {
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length);
+    cut = (a, b) => block(src, a, b, {through: true});
   const at = sheet => {
     const M = {...C, P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}}, sheetV: () => sheet, startV: () => C.startVars('know')};
     vm.createContext(M);
