@@ -5529,34 +5529,37 @@ function loadStats(ratingsOnly) {
   const old = (j, q) => (j && j.error === 'input' ? get(q) : j);
   // The answer log and the photo ratings are two reads, each reused while on its way (sheetRead): a page drawn again
   // before they are in, or another page asking for them, starts no second read.
+  const gs = STATS
+    ? null
+    : sheetRead('stats', fresh =>
+        (TOKEN ? post({readStats: 1}).then(j => old(j, '?stats=1')) : get('?stats=1')).then(s => {
+          if (!fresh() || !s) return;
+          STATS = s.ok ? s.photos || {} : {};
+          RAS = s.ok ? s.ras || {} : {};
+          // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
+          SMEM = memOf(s.ok && s.mem);
+          SCONF = (s.ok && s.conf) || {};
+        })
+      );
   const ga = ratingsOnly
-      ? null
-      : sheetRead('ans', fresh =>
-          Promise.all([
-            TOKEN
-              ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
-              : {ok: false, error: 'token'},
-            digest
-          ]).then(([a]) => {
-            if (!fresh()) return;
-            ELO_NOME = null;
-            if (a && a.me) MEID = a.me;
-            ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
-            ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
-          })
-        ),
-    gs = STATS
-      ? null
-      : sheetRead('stats', fresh =>
-          (TOKEN ? post({readStats: 1}).then(j => old(j, '?stats=1')) : get('?stats=1')).then(s => {
-            if (!fresh() || !s) return;
-            STATS = s.ok ? s.photos || {} : {};
-            RAS = s.ok ? s.ras || {} : {};
-            // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
-            SMEM = memOf(s.ok && s.mem);
-            SCONF = (s.ok && s.conf) || {};
-          })
-        );
+    ? null
+    : sheetRead('ans', fresh =>
+        Promise.all([
+          TOKEN
+            ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
+            : {ok: false, error: 'token'},
+          digest,
+          // The answer log is published with the photo ratings, never before them (Codex review #488): the pages that
+          // read it (Health, To do's Health line) take the ratings as read with it.
+          gs
+        ]).then(([a]) => {
+          if (!fresh()) return;
+          ELO_NOME = null;
+          if (a && a.me) MEID = a.me;
+          ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+          ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
+        })
+      );
   return Promise.all([ga, gs, digest]).then(() => {});
 }
 // Your accounts (Pierre, 2026-11-03: his old account, renamed Pierre-test, and the new one): the one this browser is signed
