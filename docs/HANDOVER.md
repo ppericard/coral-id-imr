@@ -25,17 +25,21 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account;
 | Deploy | `.github/workflows/pages.yml` (stamps the version numbers, then publishes), [`PAGES.md`](PAGES.md) |
 | What is next, what was declined | [`ROADMAP.md`](ROADMAP.md); where yesterday stopped: [`EVENING.md`](EVENING.md) |
 
-## State of play (2026-11-04)
+## State of play (2026-11-04, evening)
+
+**Start with [`EVENING.md`](EVENING.md) "Where the night stopped"**: the open PRs, their order and the questions for Pierre.
+
 
 - **The app** is IMR Reef ID, live at <https://ppericard.github.io/coral-id-imr/>, used by Pierre and a first group of beta RAs, mostly on phones. About 500 PRs merged since 2026-10-31.
-- **Subjects**: corals (the 40-genus slate with *Millepora*, plus 5 opt-in bonus genera) for everyone; **fish in beta, the admin's only** (`app.js` `subjOpen`: switched in Tools; 27 IMR survey families, iNaturalist photos for now; the path to build is [`FISH_PATH.md`](FISH_PATH.md); fish answers are not logged to the sheet yet). One engine for both (AGENTS.md 13b).
+- **Subjects**: corals (the 40-genus slate with *Millepora*, plus 5 opt-in bonus genera) for everyone; **fish in beta, the admin's only** (`app.js` `subjOpen`: switched on Home and with the header's subject chip, the admin's only; 27 IMR survey families, iNaturalist photos for now; the path to build is [`FISH_PATH.md`](FISH_PATH.md); fish answers are not logged to the sheet yet). One engine for both (AGENTS.md 13b).
 - **Learning**: one progression path for every game (AGENTS.md 6d: the photo quiz opens genera; the Duel tab, Memory, the custom quiz and the Tools' games draw only from the genera unlocked, `model.js` `unlocked()`); a first-launch question that sets variables, never a path (14h); learned = the silent mastery exam (14e); every player's progress is replayed from the whole answer log by the sheet whenever a progress rule changes (rules versions, `core.js` `RVS`; How to make a change 14).
-- **The sheet** (`tools/sync/Code.gs`): **VERSION 42** live on `main`; it updates itself within about 15 minutes of a merge that raises `VERSION` (`autoUpdate`), and its **Deploy log** tab lists every install and every one-shot data migration (`ONCE_`, run once by the new script itself). Open PRs bring v43 (#492, the admin's subject switch) and v44 (#498, each answer's UTC offset, with a one-shot backfill): one number per PR, in merge order. The app never needs a newer script than the live one (How to make a change 7a).
+- **The sheet** (`tools/sync/Code.gs`): **VERSION 45** live on `main` (v44 added each answer's UTC offset; its one-shot filled +480 into the 1,494 older rows); open PRs reserve v46 (#526), v47 (#538), v48 (#540); it updates itself within about 15 minutes of a merge that raises `VERSION` (`autoUpdate`), and its **Deploy log** tab lists every install and every one-shot data migration (`ONCE_`, run once by the new script itself).
 - **Version numbers are stamped at deploy** (#499): no PR edits `?v=`, `LAB_V` or the `sw.js` cache name; `pages.yml` stamps content hashes and the build number (How to make a change 3). The sheet's `VERSION` stays manual.
-- **Presence of a species** (AGENTS.md 6e): Research Grade by 3 observers in the Philippines, or 1 plus an independent checklist, or confirmed near Dauin; cues and their doubts come only from species found here. #496 (open) makes Pierre's own observations follow the same rule.
-- **The admin plan** "Admin for every subject" (ROADMAP): one admin for corals and fish in twelve small PRs; PR 1 (#463) and PR 4 (#479) are merged, PR 2 is #492 (open); admin speed: #493 merged, #494 (its own service-worker cache) open; the Analyses group (sessions, plain words, visual) has #495, #500, #502 open.
+- **Presence of a species** (AGENTS.md 6e): Research Grade by 3 observers in the Philippines, or 1 plus an independent checklist, or confirmed near Dauin; cues and their doubts come only from species found here. #496 (merged) applies it to Pierre's own observations too, and to the fish (29 IMR-PDF species entered the game).
+- **The admin plan** "Admin for every subject" (ROADMAP): one admin for corals and fish in twelve small PRs; PR 1 (#463) and PR 4 (#479) are merged, PR 2 (#492) is merged; admin speed #493 and #494 merged; the Analyses group (#495 plain words, #500 Sessions, #502 charts) merged; Players › Activity over time (#501) merged; #535 (page roles, the rest) open.
 - **Agents**: Pierre runs a coordinator session that dispatches a few agents at once; the workflow, resource and review rules are in AGENTS.md, How to make a change 16-17 (worktrees, one smoke at a time, the Codex review loop).
-- **Watching**: the `net.smoke.js` step-9 hang (ROADMAP, open investigation: about 30 CI runs without a hang since #489 close it).
+- **Watching**: the `net.smoke.js` step-9 hang (ROADMAP, open investigation): #513 did not end it; #531 (open) bounds every Cache Storage wait.
+- **Night work** (AGENTS.md Rule 0, 2026-11-04): agents keep working without Pierre on decided work and never solicit him; anything with a choice of his stays on its branch.
 
 ## State of play at the account switch (2026-11-01)
 

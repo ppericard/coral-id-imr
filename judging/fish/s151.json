@@ -1,0 +1,160 @@
+{
+ "photos": {
+  "fish-s151-cand-357963551": {
+   "code": "p0g1slsa2",
+   "keep": "best"
+  },
+  "fish-s151-cand-357963568": {
+   "code": "p0g1slsa2",
+   "keep": "dup"
+  },
+  "fish-s151-cand-78472260": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s151-cand-78472290": {
+   "code": "p1g2sms2",
+   "keep": "dup"
+  },
+  "fish-s151-cand-78472337": {
+   "code": "p1g2sss2",
+   "keep": "dup"
+  },
+  "fish-s151-cand-78472321": {
+   "code": "p1g2sss2",
+   "keep": "dup"
+  },
+  "fish-s151-cand-292554323": {
+   "code": "p1g2sl12",
+   "keep": "best"
+  },
+  "fish-s151-cand-570081672": {
+   "code": "p1g1smsja2",
+   "keep": "best"
+  },
+  "fish-s151-cand-570081765": {
+   "code": "p1g1smsja2",
+   "keep": "dup"
+  },
+  "fish-s151-cand-58079649": {
+   "code": "o1g2bl1j1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Banded fish: iNat says adult; the bands look like a juvenile's"
+  },
+  "fish-s151-cand-58079652": {
+   "code": "o0g2bl1j1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Banded fish: iNat says adult; the bands look like a juvenile's"
+  },
+  "fish-s151-cand-58079653": {
+   "code": "o0g2sl1j2",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Banded fish: iNat says adult; the bands look like a juvenile's"
+  },
+  "fish-s151-cand-58079655": {
+   "code": "p1g2sl1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Banded fish: iNat says adult; the bands look like a juvenile's"
+  },
+  "fish-s151-cand-364756012": {
+   "code": "p1n0sl1j2",
+   "keep": "best"
+  },
+  "fish-s151-cand-324693424": {
+   "code": "p1g2bsx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Murky; several fish, the subject is not obvious"
+  },
+  "fish-s151-cand-475131410": {
+   "code": "p1g1sl1a3",
+   "keep": "best"
+  },
+  "fish-s151-cand-475131424": {
+   "code": "p0g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s151-cand-475131438": {
+   "code": "h0g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s151-cand-470131822": {
+   "code": "o1d3sl12",
+   "keep": "best"
+  },
+  "fish-s151-cand-687067609": {
+   "code": "p1g2bsx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Green and murky; I cannot find the fish for sure"
+  },
+  "fish-s151-cand-687067652": {
+   "code": "p1g2bsx1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Green and murky; I cannot find the fish for sure"
+  },
+  "fish-s151-cand-709706378": {
+   "code": "p1d2sm12",
+   "keep": "best"
+  },
+  "fish-s151-cand-11975995": {
+   "code": "p1g2bss1",
+   "keep": "best"
+  },
+  "fish-s151-cand-666452521": {
+   "code": "p1g2bms1",
+   "keep": "best"
+  },
+  "fish-s151-cand-338974060": {
+   "code": "p1g1slsa3",
+   "keep": "best"
+  },
+  "fish-s151-cand-58372241": {
+   "code": "p1g1slsa3",
+   "keep": "best"
+  },
+  "fish-s151-cand-493934329": {
+   "code": "p1g1slsa3",
+   "keep": "best"
+  },
+  "fish-s151-cand-13957231": {
+   "code": "p1g1sl1a3",
+   "keep": "best"
+  },
+  "fish-s151-cand-13957244": {
+   "code": "p1g1sl1a3",
+   "keep": "dup"
+  },
+  "fish-s151-cand-356197359": {
+   "code": "o1g3sss1",
+   "keep": "best"
+  },
+  "fish-s151-cand-675089002": {
+   "code": "p1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s151-cand-396278655": {
+   "code": "p1n0sls3",
+   "keep": "best"
+  }
+ }
+}

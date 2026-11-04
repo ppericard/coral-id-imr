@@ -902,7 +902,7 @@ test('a replay adopted from a script before v36 replays the pending answers with
     [C.START_SHEET - 1, false],
     [C.START_SHEET, true]
   ]) {
-    const a = app({ls: {[C.CHOICE.KEY]: JSON.stringify(start)}});
+    const a = app({ls: {[C.startKey('coral')]: JSON.stringify(start)}});
     // From v36 the replay says which history it applied (the same as this device's here).
     assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: [], ...(on ? {fp: C.startFp(start)} : {})}, pending, v), true);
     assert.strictEqual(a.ctx.P.Pocillopora.th, th(on), `script v${v}: ability ${a.ctx.P.Pocillopora.th}`);
@@ -914,9 +914,9 @@ test('a replay adopted from a script before v36 replays the pending answers with
 test("signing in keeps the first-launch answer given here before, and the account's history (Codex review #428)", () => {
   const here = {c: 'know', t: 200, at: 0, via: 'tour', w: [], fb: {}, h: [['know', 0, 200, 'tour']]},
     acct = {c: 'new', t: 100, at: 0, via: 'tour', w: [], fb: {}, h: [['new', 0, 100, 'tour']]},
-    a = app({ls: {[C.CHOICE.KEY]: JSON.stringify(here)}});
-  a.signIn('Ana', '1234', {found: true, data: {[C.CHOICE.KEY]: JSON.stringify(acct), 'reefid-sync-coral-progress': '{}'}});
-  const o = JSON.parse(JSON.stringify(a.store.get(C.CHOICE.KEY, null))); // out of the page's realm
+    a = app({ls: {[C.startKey('coral')]: JSON.stringify(here)}});
+  a.signIn('Ana', '1234', {found: true, data: {[C.startKey('coral')]: JSON.stringify(acct), 'reefid-sync-coral-progress': '{}'}});
+  const o = JSON.parse(JSON.stringify(a.store.get(C.startKey('coral'), null))); // out of the page's realm
   assert.strictEqual(o.c, 'know', "this device's newer answer");
   assert.deepStrictEqual(
     o.h.map(x => [x[0], x[2]]),
@@ -934,7 +934,7 @@ test("signing in keeps the first-launch answer given here before, and the accoun
 // its reply brings the replay made with it.
 test('a replay made with another first-launch history is not adopted; the next save brings the right one (Codex review #428)', async () => {
   const s = loadCodeGs(withData()),
-    K = C.CHOICE.KEY,
+    K = C.startKey('coral'),
     L = Array.from({length: 12}, (_, i) => qa('h' + i, i)),
     acct = {c: 'new', t: 1, at: 0, via: 'tour', w: [], fb: {}, h: [['new', 0, 1, 'tour']]},
     here = {c: 'know', t: 2, at: 0, via: 'card', w: [], fb: {}, h: [['know', 0, 2, 'card']]};

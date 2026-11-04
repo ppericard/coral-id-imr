@@ -40,9 +40,15 @@ const GATES = {
     fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {ASUBJ: {beta: {}}, USERS: v === undefined ? {} : {v}, GROUP_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
-  // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0.
+  // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0. On
+  // the corals, the subject the sheet logs and replays (a subject it does not log, fish, has no replay to wait for).
   START_SHEET: (v, N) =>
-    fn('model.js', 'const startP = ', '\n', 'startP', {sheetV: () => v, START_SHEET: N, startV: () => ({p: 0.7})})() !== 0,
+    fn('model.js', 'const startP = ', '\n', 'startP', {
+      sheetV: () => v,
+      START_SHEET: N,
+      startV: () => ({p: 0.7}),
+      startS: () => ({log: true})
+    })() !== 0,
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   PGD_SHEET: (v, N) => {
     const gdOf = fn('model.js', 'const gdOf = ', '\n', 'gdOf', {PGD_SHEET: N});

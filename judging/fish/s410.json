@@ -1,0 +1,192 @@
+{
+ "photos": {
+  "fish-s410-cand-331992166": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s410-cand-90760555": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s410-cand-161338241": {
+   "code": "o1n0ss13",
+   "keep": "best"
+  },
+  "fish-s410-cand-161338739": {
+   "code": "o1g1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s410-cand-161338746": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-161338754": {
+   "code": "p1n0ss12",
+   "keep": "dup"
+  },
+  "fish-s410-cand-718391540": {
+   "code": "o1d2sms2",
+   "keep": "best"
+  },
+  "fish-s410-cand-718391538": {
+   "code": "p1d2sm12",
+   "keep": "dup"
+  },
+  "fish-s410-cand-718391539": {
+   "code": "o1d2sm12",
+   "keep": "dup"
+  },
+  "fish-s410-cand-472614061": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s410-cand-472614084": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-472614083": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-734224877": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s410-cand-734224908": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  },
+  "fish-s410-cand-734224935": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-255388324": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s410-cand-453137776": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s410-cand-646441039": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s410-cand-646441051": {
+   "code": "o1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s410-cand-646441042": {
+   "code": "o1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s410-cand-646441276": {
+   "code": "d1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s410-cand-287836388": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s410-cand-733945135": {
+   "code": "o1d1ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the mandarinfish for sure among the coral"
+  },
+  "fish-s410-cand-733945136": {
+   "code": "o1d1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s410-cand-733945133": {
+   "code": "o1d1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s410-cand-291251586": {
+   "code": "o1n0sls3",
+   "keep": "best"
+  },
+  "fish-s410-cand-291252080": {
+   "code": "o1n0sls3",
+   "keep": "dup"
+  },
+  "fish-s410-cand-291252078": {
+   "code": "o1n0sls3",
+   "keep": "dup"
+  },
+  "fish-s410-cand-291252079": {
+   "code": "o1n0sls3",
+   "keep": "dup"
+  },
+  "fish-s410-cand-657093264": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s410-cand-472489630": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s410-cand-472489611": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s410-cand-70667251": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s410-cand-350069866": {
+   "code": "h1n0sls2",
+   "keep": "best"
+  },
+  "fish-s410-cand-350070857": {
+   "code": "o1n0sls3",
+   "keep": "dup"
+  },
+  "fish-s410-cand-350070862": {
+   "code": "p1n0sl13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-350070875": {
+   "code": "p1n0sls3",
+   "keep": "dup"
+  },
+  "fish-s410-cand-657092824": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s410-cand-472489749": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s410-cand-472489784": {
+   "code": "o1n0sl13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-291251548": {
+   "code": "o1n0sl13",
+   "keep": "best"
+  },
+  "fish-s410-cand-291252455": {
+   "code": "p1n0sl13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-291252457": {
+   "code": "o1n0sl13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-291252461": {
+   "code": "h1n0sl12",
+   "keep": "dup"
+  },
+  "fish-s410-cand-713587118": {
+   "code": "o1d1sm12",
+   "keep": "best"
+  },
+  "fish-s410-cand-713587157": {
+   "code": "o1d1sm12",
+   "keep": "dup"
+  }
+ }
+}

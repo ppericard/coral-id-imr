@@ -556,24 +556,27 @@ const introReset = at => {
   store.set(COMEBACK.KEY, CB);
   store.set(INTRO.KEY, {});
   store.set(INTRO.OFFER.KEY, null);
-  // The first-launch question's answer is kept; its fallback window starts over with the answers, on a coral reset only
-  // (the window counts coral answers: a fish reset leaves it; Codex review #428).
+  // The first-launch question's answer is kept; its fallback window starts over with the answers (each subject's own: a
+  // fish reset leaves the corals' window, which counts coral answers; Codex review #428).
   if (startOn()) startRestart(at);
 };
-// The first-launch question (Pierre, 2026-11-03; core.js CHOICE, docs/LEARNING.md "The first-launch question"): the
-// player's answer in reefid-sync-coral-start (synced with the progress, like every reefid-sync* key): {c the choice, t its time,
+// The first-launch question (Pierre, 2026-11-03; core.js CHOICE, docs/LEARNING.md "The first-launch question"), one per
+// subject (SUBJECTS start: the fish welcome question, Pierre 2026-11-04): the player's answer in
+// reefid-sync-<subject>-start (startK; synced with the progress, like every reefid-sync* key): {c the choice, t its time,
 // at the answers count then, via (tour, card, fallback, inferred), ease the silent band below taken with Coral basics on
 // the "lower" card ([c, answers, time], startEase), n and s the fallback window (answers counted since
 // the choice, up to the last of CHOICE.AT, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
 // time]), h the choices made, [c, at, t, via], for the admin's player journey}. Its variables (startV) are read where
 // the model uses them: the level a genus never answered starts from (ability, core.js playerStart) and when the offer
 // to open all genera can come (introOffer). Nothing else is coded per choice.
+const startS = () => SUBJ || SUBJECTS[0]; // the subject on screen
+const startK = () => startKey(startS().id); // its record (core.js startKey)
 const startOf = () => {
-  const o = store.get(CHOICE.KEY, null);
+  const o = store.get(startK(), null);
   return o && typeof o === 'object' && startOpt(o.c) ? o : null;
 };
-// The question is about corals (CHOICE.SUBJ): another subject (fish, its own state) plays as the default player.
-const startOn = () => typeof SUBJ === 'undefined' || !SUBJ || SUBJ.id === CHOICE.SUBJ;
+// A subject without a question of its own (no SUBJECTS start) plays as the default player.
+const startOn = () => !!startS().start;
 // The variables in force: the answer given, or the band below it once the gentle "lower" card's Coral basics was taken
 // (startEase: ease [c, answers, time], kept apart from the answer, which is never relabelled).
 const startEff = o => (o && Array.isArray(o.ease) && startOpt(o.ease[0]) ? o.ease[0] : o && o.c);
@@ -587,7 +590,7 @@ function startEase() {
   // An ease event in the history (core.js startEvents): from now until the next answer given, bound to this answer's
   // choice event (its time).
   store.set(
-    CHOICE.KEY,
+    startK(),
     startNorm({...o, h: startEventsOf({...o, h: [...startEvents(o), [d, answersSoFar(), Date.now(), 'ease', o.c, o.t]]})})
   );
   if (typeof dropPlans === 'function') dropPlans();
@@ -600,7 +603,7 @@ function startSet(c, via) {
     t = Date.now();
   // A choice event appended to the history (core.js startEvents; an earlier ease does not carry over: startNorm).
   store.set(
-    CHOICE.KEY,
+    startK(),
     startNorm({c, t, at: a, via, w: [], fb: (o && o.fb) || {}, h: startEventsOf({h: [...startEvents(o), [c, a, t, via]]})})
   );
   // The questions chosen ahead were planned with the old starting level.
@@ -617,7 +620,7 @@ function startRestart(at) {
   if (!o) return;
   const e = typeof at === 'number' && isFinite(at) ? at : Math.max(Date.now(), startWt(o) + 1);
   if (startWt(o) >= e) return; // the window already counts from that reset, or from an answer given after it
-  store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0, wt: e});
+  store.set(startK(), {...o, at: 0, w: [], v: null, hd: 0, wt: e});
 }
 // startWt, the window's epoch: core.js.
 // The fallback window (quiz.js answer): each answer after the choice, up to the last of CHOICE.AT, as [its difficulty (dm, as the
@@ -626,28 +629,29 @@ function startRestart(at) {
 // the slate genera met then, is kept as v until its card shows (startDue).
 function startStep(d, k, good, first) {
   const o = startOf();
-  if (!o || !startOn() || typeof d !== 'number' || !isFinite(d)) return; // a coral answer (CHOICE.SUBJ) only
+  if (!o || !startOn() || typeof d !== 'number' || !isFinite(d)) return; // an answer of the subject on screen (startK)
   const w = Array.isArray(o.w) ? o.w : [];
   if (w.length >= Math.max(...CHOICE.AT)) return;
   const W = [...w, [Math.round(d * 100) / 100, k > 0 && isFinite(k) ? Math.round(1000 / k) / 1000 : 0, good ? 1 : 0, first ? 1 : 0]],
     hd = o.hd || (introHold() ? 1 : 0),
     v = startCheck(W, o.c, (P[LEVEL] || {}).th, slateGenera().filter(introduced).length, hd);
-  store.set(CHOICE.KEY, {...o, w: W, hd, ...(v ? {v} : {})});
+  store.set(startK(), {...o, w: W, hd, ...(v ? {v} : {})});
 }
 // The fallback card due: 'lo' (clearly harder than the choice predicts) or 'hi' (clearly easier), once per inconsistency:
 // once per answer and direction (fb '<choice>-lo'), so a player who moved from "I know corals well" to "I had the IMR
 // coral course" and still struggles is told once more, never twice about the same answer; and only when it has
 // something to offer: a lower choice or Coral basics not done yet ('lo'), a higher choice ('hi').
 const startDue = () => {
-  if (!startOn()) return null; // corals only (CHOICE.SUBJ)
+  if (!startOn()) return null;
   const o = startOf(),
     d = o && o.v;
   // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct. After an
   // answer changed on a fallback card, never the other way back (simulated, a lecture-level RA moved up at 60 answers was
   // then told to go back down on the harder genera opened next: a contradiction, not a correction).
   if (!d || o.via === 'inferred' || (o.fb || {})[o.c + '-' + d] || startBack(o, d)) return null;
-  // 'lo' is the Coral basics offer (quiz.js startFbShow): none once it is done; 'hi' offers the higher answers.
-  return d === 'lo' ? (basicsDone() ? null : d) : startNext(o.c, d).length ? d : null;
+  // 'lo' is the basics offer (quiz.js startFbShow): none once it is done, nor for a subject without one (app.js basicsDue);
+  // 'hi' offers the higher answers.
+  return d === 'lo' ? (basicsDue() ? d : null) : startNext(o.c, d).length ? d : null;
 };
 // The opposite of the last move made on a fallback card ('lo' after moving up, 'hi' after moving down, the silent
 // move down of Coral basics on the "lower" card included).
@@ -663,24 +667,27 @@ const startBack = (o, d) => {
 // Marked when shown, so it never comes again even if left unanswered.
 const startShown = d => {
   const o = startOf();
-  if (o) store.set(CHOICE.KEY, {...o, v: null, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
+  if (o) store.set(startK(), {...o, v: null, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
 };
 // Another device's record (sync.js mergeSaved): the union of the two histories (core.js startUnion: the latest answer,
 // the ease in force on it, every earlier answer and ease kept with its time, so the replay keeps each one's prior; the
 // window of the record that holds the current answer, on the same answer the later reset epoch then the longer window;
 // the fallback cards shown on either). The questions planned ahead are dropped when the variables in force change.
-function startMerge(json) {
+// id: the subject whose record it is (each has its own, core.js startKey), the one on screen by default.
+function startMerge(json, id = startS().id) {
   let r = null;
   try {
     r = JSON.parse(json || 'null');
   } catch (e) {}
   if (!r || typeof r !== 'object' || !startOpt(r.c)) return;
-  const o = startOf(),
+  const k = startKey(id),
+    h = store.get(k, null),
+    o = h && typeof h === 'object' && startOpt(h.c) ? h : null,
     m = startUnion(o, r),
     before = o && startEff(o);
   if (!m) return;
-  store.set(CHOICE.KEY, m);
-  if ((!o || before !== startEff(m)) && typeof dropPlans === 'function') dropPlans();
+  store.set(k, m);
+  if (id === startS().id && (!o || before !== startEff(m)) && typeof dropPlans === 'function') dropPlans();
 }
 // The question waiting on its card (quiz.js startAskShow) answered on another device: the quiz goes on. Called by
 // sync.js mergeSaved once every record is merged (never from startMerge, which runs before the progress and cards are).
@@ -933,10 +940,11 @@ const misses = h => [...h].filter(x => x === '0').length;
 // docs/LEARNING.md "Global level and genus") and eloStep (the level's step without the kmin floor, kept to 4 decimals;
 // the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay. A genus never
 // answered starts from the global level shrunk towards the first-launch answer's level (startV().p, core.js
-// playerStart; corals only).
+// playerStart; each subject's own answer).
 // The prior only once the sync script replays it (core.js START_SHEET; AGENTS.md 7a, Codex review #428): before, 0, the
-// default player's, so an adopted replay never takes back what the game did live.
-const startP = () => (typeof sheetV === 'function' && sheetV() >= START_SHEET ? startV().p : 0);
+// default player's, so an adopted replay never takes back what the game did live. A subject whose answers are not logged
+// (SUBJECTS log: fish) has no replay to wait for: its prior applies at once.
+const startP = () => (!startS().log || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
 const ability = n => abilityOf(P, n, startP());
 const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
@@ -1269,6 +1277,12 @@ const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
     .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
     .map(p => p.sort());
 function distractors(t, list, traps = trapsFor(t), known = introduced) {
+  // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
+  // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
+  // genera met, the others make up the three (Codex review #526: a family with one genus at Advanced had one choice).
+  const rk = rankOf(t);
+  list = list.filter(n => rankOf(n) === rk);
+  if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])

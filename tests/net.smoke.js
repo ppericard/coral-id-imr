@@ -2,7 +2,7 @@ const http = require('http'),
   fs = require('fs'),
   path = require('path'),
   zlib = require('zlib');
-const {chromium} = require('playwright');
+const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
@@ -628,6 +628,45 @@ const server = http.createServer((req, res) => {
     HOLD = null;
     HELD.splice(0).forEach(x => x.destroy());
     await b9.close();
+  }
+  // 9c. A Cache Storage that stops answering never holds a page (2026-11-04, the step-9 hang that came back after #513:
+  // the server answered admin.html in 1 ms, yet the worker's own request for it never finished, so nothing ever read its
+  // body: neither the reply, which waited on caches.match, nor the cache copy, which waited on caches.open; the browser's
+  // Cache Storage itself had stopped answering, why is not known). Every Cache Storage call of the worker is wedged here
+  // (never answers): the admin page and the app still open and start, from the network.
+  {
+    const bw = introsOn(await chromium.launch({args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']}));
+    const ctx = await bw.newContext({viewport: {width: 390, height: 800}});
+    await ctx.addInitScript(
+      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
+    const p = await ctx.newPage();
+    await p.goto(base + 'admin.html?demo');
+    await p.evaluate(() => navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready)); // https only in the app
+    await p.reload();
+    await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
+      timeout: 20000
+    });
+    const [w] = ctx.serviceWorkers();
+    await w.evaluate(() => {
+      const never = () => new Promise(() => {});
+      ['match', 'open', 'has', 'keys', 'delete'].forEach(k => (caches[k] = never));
+    });
+    for (const [what, url, up] of [
+      ['the admin page', 'admin.html?demo', () => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera],
+      ['the app', '', () => window.APP_READY]
+    ]) {
+      const q = await ctx.newPage(),
+        t0 = Date.now();
+      const ok = await q
+        .goto(base + url, {waitUntil: 'domcontentloaded', timeout: 15000})
+        .then(() => q.waitForFunction(up, null, {timeout: 20000}))
+        .then(() => true)
+        .catch(() => false);
+      if (!ok) fails.push(`Cache Storage not answering: ${what} never started (${Math.round((Date.now() - t0) / 1000)} s)`);
+      await q.close();
+    }
+    await bw.close();
   }
   // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
   // then My progress, then the Tools, one tier after the other.

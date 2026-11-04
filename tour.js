@@ -130,14 +130,14 @@
     const s = STEPS[step],
       last = step === STEPS.length - 1,
       b = root.querySelector('.tbub'),
-      cur = (store.get(CHOICE.KEY, null) || {}).c,
+      cur = (store.get(startKey(SUBJ.id), null) || {}).c,
       // The last step of a player new to corals: Coral basics first (5 min), the quiz beside it.
-      bas = last && cur && startVars(cur).basics && !basicsDone();
+      bas = last && cur && startVars(cur).basics && basicsDue();
     // The sign-in step holds the real sign-in box (bindSync in app.js); its Next reads "Later" until the RA has signed in.
     const body = s.signin
       ? '<section class="sync tsync"></section>'
       : s.ask
-        ? `<h3>How well do you know corals?</h3><p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(cur)}`
+        ? `<h3>${esc(SUBJ.start.q)}</h3><p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(cur)}`
         : `<h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>`;
     b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${body}
       <div class="tnav">${s.ask ? '<span></span>' : `<button type="button" class="linkish tskip">${last ? (bas ? 'Start playing' : 'Close') : 'Skip tour'}</button>`}<span>

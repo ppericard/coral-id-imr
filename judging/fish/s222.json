@@ -1,0 +1,124 @@
+{
+ "photos": {
+  "fish-s222-cand-552607614": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s222-cand-44155526": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s222-cand-411722910": {
+   "code": "p1g1sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "All dark fish: not the spotted adult or juvenile shown elsewhere"
+  },
+  "fish-s222-cand-408459469": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s222-cand-450273079": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s222-cand-406538692": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s222-cand-406538739": {
+   "code": "p1g3bsx1",
+   "keep": "dup"
+  },
+  "fish-s222-cand-731400324": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s222-cand-731400382": {
+   "code": "p1g1sm14",
+   "keep": "alt"
+  },
+  "fish-s222-cand-556364652": {
+   "code": "p1g1ssm2",
+   "keep": "best"
+  },
+  "fish-s222-cand-336905335": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  },
+  "fish-s222-cand-336905352": {
+   "code": "d1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s222-cand-602726196": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s222-cand-602726202": {
+   "code": "p1g1sm14",
+   "keep": "alt"
+  },
+  "fish-s222-cand-440943091": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s222-cand-330374657": {
+   "code": "p1g1smm3",
+   "keep": "best"
+  },
+  "fish-s222-cand-674549805": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s222-cand-674610687": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s222-cand-674610710": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s222-cand-752786500": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s222-cand-498678359": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s222-cand-58901735": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s222-cand-287827400": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s222-cand-32212818": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s222-cand-732413331": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s222-cand-78470494": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s222-cand-78470500": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s222-cand-78470548": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s222-cand-78470568": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  }
+ }
+}

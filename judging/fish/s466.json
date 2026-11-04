@@ -1,0 +1,152 @@
+{
+ "photos": {
+  "fish-s466-cand-513903408": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s466-cand-675043993": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s466-cand-485152252": {
+   "code": "p1g2sl12",
+   "keep": "best"
+  },
+  "fish-s466-cand-485152259": {
+   "code": "p1g3bss1",
+   "keep": "dup"
+  },
+  "fish-s466-cand-716056080": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s466-cand-261372689": {
+   "code": "d1g2sss2",
+   "keep": "best"
+  },
+  "fish-s466-cand-471525807": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s466-cand-471525811": {
+   "code": "h1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s466-cand-471525879": {
+   "code": "p1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s466-cand-471525867": {
+   "code": "p1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s466-cand-174984341": {
+   "code": "p1g2sl12",
+   "keep": "best"
+  },
+  "fish-s466-cand-174984307": {
+   "code": "o0g3sl12",
+   "keep": "dup"
+  },
+  "fish-s466-cand-174984296": {
+   "code": "p0g3sl12",
+   "keep": "dup"
+  },
+  "fish-s466-cand-174984324": {
+   "code": "p1g1slm3",
+   "keep": "dup"
+  },
+  "fish-s466-cand-305739688": {
+   "code": "d1g1sms3",
+   "keep": "best"
+  },
+  "fish-s466-cand-305739823": {
+   "code": "p1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s466-cand-650829029": {
+   "code": "p1g2ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Distant over the reef; I cannot find the jack for sure"
+  },
+  "fish-s466-cand-650834911": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s466-cand-711966766": {
+   "code": "p1g2sl12",
+   "keep": "best"
+  },
+  "fish-s466-cand-58354659": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s466-cand-184272482": {
+   "code": "o1g2sms2",
+   "keep": "best"
+  },
+  "fish-s466-cand-664956790": {
+   "code": "d1g2bsx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Green and murky over seagrass; I cannot find the jack for sure"
+  },
+  "fish-s466-cand-664956852": {
+   "code": "d1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s466-cand-664956943": {
+   "code": "d1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s466-cand-594570146": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s466-cand-594570156": {
+   "code": "p1g2sms2",
+   "keep": "dup"
+  },
+  "fish-s466-cand-65344530": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s466-cand-329624456": {
+   "code": "o1g2sms2",
+   "keep": "best"
+  },
+  "fish-s466-cand-732467917": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s466-cand-120512085": {
+   "code": "p1g1slm3",
+   "keep": "best"
+  },
+  "fish-s466-cand-668815431": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s466-cand-664956649": {
+   "code": "d1g2bm11",
+   "keep": "best"
+  },
+  "fish-s466-cand-664957046": {
+   "code": "d1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s466-cand-664957119": {
+   "code": "d1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s466-cand-664957166": {
+   "code": "d1g2bm11",
+   "keep": "dup"
+  }
+ }
+}

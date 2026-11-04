@@ -52,7 +52,14 @@ const typeNames = () => {
   if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ) TYPEN = {d: DATA, s: SUBJ, L: UNITS[SUBJ.id].names()};
   return TYPEN.L;
 };
-const typeMatch = text => typeMatchIn(typeNames(), text, UNITS[SUBJ.id].norm);
+// rk: the rank of the unit asked (app.js rankOf): a typed answer is read among the names of that rank only (a fish
+// scientific genus, Chromis, against the genera; the IMR sub-entry Chromis names the Damselfish entry on an entry question).
+const typeMatch = (text, rk = '') =>
+  typeMatchIn(
+    typeNames().filter(o => rankOf(o.g) === rk),
+    text,
+    UNITS[SUBJ.id].norm
+  );
 // S: the subject the form names and reads (the quiz's own; Tools › Type the genus is the corals', whatever is on screen).
 const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
     <label for="tyin">${S.one[0].toUpperCase() + S.one.slice(1)}</label>
@@ -62,7 +69,8 @@ const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
 // Binds a typed form: done(m, text) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
 // word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it.
 // After the answer the field is locked; after "I don't know" it is emptied (a word rejected earlier is no answer).
-function typeBind(form, done, S = SUBJ) {
+// rk, one: the rank of the unit asked and its word ("genus" for a fish scientific genus): see typeMatch.
+function typeBind(form, done, S = SUBJ, rk, one = S.one) {
   const inp = form.querySelector('input'),
     msg = form.querySelector('.tymsg');
   let over = false;
@@ -80,8 +88,8 @@ function typeBind(form, done, S = SUBJ) {
     if (over) return;
     const text = inp.value.trim();
     if (!text) return inp.focus();
-    const m = S === SUBJ ? typeMatch(text) : inSubject(S.id, () => typeMatch(text));
-    if (!m) msg.textContent = `“${text}” is not a ${S.one} in the game: check the spelling.`;
+    const m = S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk));
+    if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
     else return end(m, text);
     inp.focus();
@@ -133,7 +141,7 @@ function question(cur, target, choices, prompt, set, kq) {
     <div class="qstage">${ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
-      ${set.typed ? `<div class="tyq">${typeForm()}</div>` : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${GX(c) && GX(c).name ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${esc(unameT(c))}</button>`).join('')}</div>`}
+      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${GX(c) && GX(c).name && !GX(c).rank ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${esc(unameT(c))}</button>`).join('')}</div>`}
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
@@ -207,10 +215,16 @@ function question(cur, target, choices, prompt, set, kq) {
   // A typed question: the genus read is the answer ('' for "I don't know"), what was typed goes with it (TYPEDQ).
   const tf = $v.querySelector('.tyform');
   if (tf)
-    typeBind(tf, (m, text) => {
-      Object.assign(TYPEDQ || {}, {m, text});
-      go(m ? m.g : '');
-    });
+    typeBind(
+      tf,
+      (m, text) => {
+        Object.assign(TYPEDQ || {}, {m, text});
+        go(m ? m.g : '');
+      },
+      SUBJ,
+      rankOf(target),
+      GX(target).one || SUBJ.one
+    );
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -1251,7 +1265,7 @@ function quizPhoto(cur = 'quiz') {
 // From CHOICE.ASK answers on (an existing player, Pierre 2026-11-03), the choice is inferred from the global level
 // (core.js startInfer) and recorded as "inferred", never asked.
 const startGate = () => {
-  if (!startOn() || startOf()) return false; // corals only (CHOICE.SUBJ)
+  if (!startOn() || startOf()) return false; // the subject on screen's question (SUBJECTS start)
   if (answersSoFar() >= CHOICE.ASK) return (startSet(startInfer(P), 'inferred'), false);
   return true;
 };
@@ -1264,8 +1278,8 @@ function startAskShow(cur) {
     kind: 'feature',
     cls: 'startq',
     kick: 'Before you start',
-    title: 'How well do you know corals?',
-    label: 'How well do you know corals?',
+    title: SUBJ.start.q,
+    label: SUBJ.start.q,
     body: `<p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(null)}`,
     esc: () => go(''),
     bind: d =>
@@ -1281,9 +1295,9 @@ function startAskShow(cur) {
   d.ulDone = () => (d.close('sync'), quizPhoto(cur));
 }
 // "I'm new to corals" (CHOICE v.basics): Coral basics offered first, about 5 minutes, then the quiz. Only while the module
-// is not done (app.js basicsDone). Returns whether it showed.
+// is not done, and only for a subject that has one (app.js basicsDue: no Fish basics yet). Returns whether it showed.
 function startBasicsOffer(cur) {
-  if (!startV().basics || basicsDone()) return false;
+  if (!startV().basics || !basicsDue()) return false;
   cardShow({
     kind: 'tip',
     cls: 'startq basicsq',
@@ -1306,7 +1320,7 @@ function startBasicsOffer(cur) {
 function startFbShow(dir) {
   const o = startOf(),
     next = startNext(o.c, dir),
-    said = `said “${esc(startOpt(o.c)[1])}”`,
+    said = `said “${esc(startText(SUBJ.id, o.c)[0])}”`,
     // Everything opened at once (Open all): the "first genera" are all of them (Pierre, 2026-11-04: the same card, its text
     // about the whole set, no number: the counts change; worded from the subject, rule 13b).
     all = Object.values(introMap()).some(e => (e || [])[3] === 'a');
@@ -1503,7 +1517,7 @@ function introCard(n, o = {}) {
     title: uname(n),
     body: `${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
-      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? `<p class="ulnote">${setOf(n).card}</p>` : ''}
+      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) && setOf(n).card ? `<p class="ulnote">${setOf(n).card}</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
       ${o.note ? `<p class="ulnote">${o.note}</p>` : ''}`,
     primary: {text: o.btn || 'Got it'},
@@ -1666,7 +1680,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       cur,
       t,
       ch,
-      typed ? `Which ${SUBJ.one}? Type it` : `Which ${SUBJ.one}?`,
+      typed ? `Which ${GX(t).one || SUBJ.one}? Type it` : `Which ${GX(t).one || SUBJ.one}?`,
       typed ? {...set, typed: 1} : set,
       few ? plausibleK(t, ch) : 0
     ];

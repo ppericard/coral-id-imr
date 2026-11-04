@@ -983,7 +983,13 @@ than 50 answers are asked once, those with 50 or more are never asked, their ans
 (Pierre's call the same day). Code: `core.js` `CHOICE`, `playerStart`, `startCheck`, `startNext`, `startInfer`;
 `model.js` `startSet`, `startV`, `startStep`, `startDue`; `quiz.js` `startAskShow`, `startFbShow`; `tour.js`.
 
-**The variables, all of the existing model** (`CHOICE.opts[i][3]`):
+**Per subject** (2026-11-04, the fish welcome question, Pierre: "works exactly like the coral one"): each subject asks
+its own question in its own words (`core.js` `SUBJECTS` `start`), with these answers and, for now, these variables
+(`CHOICE.opts`), in its own record (`startKey`). Fish: "How well do you know reef fish?", *I'm new to reef fish*, *I'm at
+IMR (Research Assistant programme)*, *I know reef fish well*. The fish values are the corals' until learnsim has fish
+profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at once (fish answers are not replayed).
+
+**The variables, all of the existing model** (`CHOICE.opts[i][1]`):
 
 | Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer | Coral basics first |
 | --- | --- | --- | --- |
@@ -2379,6 +2385,24 @@ judged ease (rubric 3, the 37 added photos included; main had moved to #428 for 
 
 The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
 replay (rule 14g) cannot judge it either: the sheet holds no fish answer.
+
+### Fish: scientific genera, the first step of branch B (2026-11-04 night, in review)
+
+Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
+photo, then 4 genus names". Built on its own branch for his review (admin-only beta), on the engine as it is: a genus is one
+more unit (`app.js` `fishGenera`), with its own Elo, progress, mastery exam, typed share, opening and comeback; no new
+constant. What is new is structural: a unit has a rank (`rankOf`), and a question's choices and typed answers stay within the
+rank of the unit asked (`model.js` `distractors`, `quiz.js` `typeMatch`). Its wrong choices follow rule 14c as an entry's do:
+genera of other identification groups first (the entry's group as the genus's form), then its sibling genera in the same IMR
+entry as traps (`look`), then the player's own mix-ups. A family's genera come into play at Advanced, the level at which its
+species open (FISH_PATH "Unlock rules"), as an opt-in set ("Scientific names"), and open one at a time by the usual rule.
+
+Measured (rule 14f: no learnsim fish profile exists; the real app in Chromium instead, a scratch run, one seed): an admin
+player with the four starter entries at Advanced, answering right, 300 more answers: 130-144 genus questions and 154-168
+entry questions, 27-37 genera met (the Parrotfish and Wrasse genera joining when those entries reached Advanced), every genus
+question's choices genera and every entry question's entries. Not measured: what players learn (no fish answers are logged);
+how the genus share of the questions should be paced against the entries (the draw weighs every unit alike, so many genera
+take many questions). To check with learnsim fish profiles once they exist.
 
 ### Fish: species order, the commonness index (2026-11-04)
 

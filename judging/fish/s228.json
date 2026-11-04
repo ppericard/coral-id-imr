@@ -1,0 +1,128 @@
+{
+ "photos": {
+  "fish-s228-cand-467756121": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s228-cand-606197441": {
+   "code": "p1g2sm1jc2",
+   "keep": "best"
+  },
+  "fish-s228-cand-631824030": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s228-cand-265923314": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s228-cand-265923333": {
+   "code": "p1g2smm2",
+   "keep": "dup"
+  },
+  "fish-s228-cand-674547273": {
+   "code": "p1g2bsx1",
+   "keep": "best"
+  },
+  "fish-s228-cand-674600327": {
+   "code": "p1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s228-cand-674600348": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-674600609": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-471399588": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s228-cand-682706011": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s228-cand-682706101": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-655727506": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s228-cand-542673362": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s228-cand-542673406": {
+   "code": "p1g1sm1c3",
+   "keep": "dup"
+  },
+  "fish-s228-cand-530110506": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s228-cand-408425650": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s228-cand-408425671": {
+   "code": "p1g2ss1c1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-454682566": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s228-cand-548239230": {
+   "code": "p1g1sm1c3",
+   "keep": "best"
+  },
+  "fish-s228-cand-615721131": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s228-cand-535848373": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s228-cand-605103316": {
+   "code": "p1g1sm1a2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Lying dead on sand? Looks out of water"
+  },
+  "fish-s228-cand-605103323": {
+   "code": "d1g1sm1a2",
+   "keep": "dup"
+  },
+  "fish-s228-cand-605103337": {
+   "code": "d1g1sm1a2",
+   "keep": "dup"
+  },
+  "fish-s228-cand-605103346": {
+   "code": "d1g1sm1a2",
+   "keep": "dup"
+  },
+  "fish-s228-cand-654139452": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s228-cand-674473956": {
+   "code": "p1g1smm3",
+   "keep": "best"
+  },
+  "fish-s228-cand-511336837": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s228-cand-450086994": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  }
+ }
+}

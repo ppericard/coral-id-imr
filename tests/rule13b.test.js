@@ -23,15 +23,9 @@ const core = read('core.js'),
 // The exceptions, each with its reason: [file, the line's text, the docs/ROADMAP.md row that removes it (if any)]. An
 // entry whose line is gone fails (the exception went: drop it), and so does one whose ROADMAP row is gone (the row was
 // done or dropped without the code): an exception never outlives its reason.
-const RM13B = 'Rule 13b: the first-launch question names its subject';
 const ALLOWED = [
   // The recalculations announced so far were the corals' (the first subject): their pop-up is shown in that subject.
-  ['progress.js', 'if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice);'],
-  // The first-launch question (#428) is about the corals: CHOICE.SUBJ names the subject, startOn and Home test it. Fixed
-  // with the fish welcome question (the same code), ROADMAP "Next" row below.
-  ['core.js', "SUBJ: 'coral', // the subject the question is about", RM13B],
-  ['model.js', "const startOn = () => typeof SUBJ === 'undefined' || !SUBJ || SUBJ.id === CHOICE.SUBJ;", RM13B],
-  ['home.js', 'newb = SUBJ.id === CHOICE.SUBJ && !basicsDone()', RM13B]
+  ['progress.js', 'if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice);']
 ];
 const allowed = (f, line) => ALLOWED.some(([af, l]) => af === f && line.includes(l));
 

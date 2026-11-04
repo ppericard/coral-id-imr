@@ -242,6 +242,15 @@
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       progress: ['slate', 'photos', 'groups'],
+      // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
+      start: {
+        q: 'How well do you know corals?',
+        opts: {
+          new: ['I’m new to corals', 'Start from scratch: the app shows you the basics first.'],
+          imr: ['I had the IMR coral course', 'You have met the genera in the IMR lecture.'],
+          know: ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']
+        }
+      },
       // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin). hash: the
       // prefix of the subject's admin addresses ('' keeps every coral address as it was); cur: its part of curation.json
       // ('' = the top level, as before); pages: the admin pages it has (null = every page).
@@ -267,12 +276,23 @@
         line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
       },
       views: [['wide', 'Photo']],
-      optin: ['c2', 'c3'],
+      optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
       log: false,
       ach: false,
       board: false,
       pages: ['genera', 'quiz'],
       progress: ['photos'],
+      // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
+      // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
+      // profiles later). No Fish basics yet (pages): "new" offers none until it exists.
+      start: {
+        q: 'How well do you know reef fish?',
+        opts: {
+          new: ['I’m new to reef fish', 'Start from scratch: a few easy families first.'],
+          imr: ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.'],
+          know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
+        }
+      },
       // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
       // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
       admin: {hash: 'fish/', cur: 'fish', pages: ['~triage', '~events', '~users', '~journey/', '~anon/']}
@@ -283,6 +303,10 @@
   const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
+  // A subject's first-launch answer (CHOICE): reefid-sync-<subject>-start, synced with the player's progress.
+  const startKey = s => subjKey(s, 'start');
+  // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
+  const startText = (s, c) => ((subjectOf(s).start || {}).opts || {})[c] || null;
 
   // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). Level 1 of the game = the teaching
   // entries of level 1 (the 27 IMR entries of circle 1, then circles 2 and 3), each made into a record the engine reads
@@ -546,12 +570,13 @@
       }
     };
     const out = {...A, ...B};
-    // The first-launch record: the union of both accounts' histories (startUnion, Codex review #428), so the replay after
-    // the merge applies each account's answers' priors at their times.
-    const sa = J(A, CHOICE.KEY),
-      sb = J(B, CHOICE.KEY);
-    if (sa || sb) out[CHOICE.KEY] = JSON.stringify(startUnion(sa, sb));
     SUBJECTS.forEach((S, i) => {
+      // The subject's first-launch record: the union of both accounts' histories (startUnion, Codex review #428), so the
+      // replay after the merge applies each account's answers' priors at their times.
+      const sk = startKey(S.id),
+        sa = J(A, sk),
+        sb = J(B, sk);
+      if (sa || sb) out[sk] = JSON.stringify(startUnion(sa, sb));
       const pk = subjKey(S.id, 'progress'),
         qk = subjKey(S.id, 'quiz');
       if (!i || pk in A || pk in B) out[pk] = JSON.stringify(mergeUserP(J(A, pk) || {}, J(B, pk) || {}));
@@ -1336,7 +1361,9 @@
   // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
   // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
-  // launch question". Stored in reefid-sync-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
+  // launch question". Each subject asks its own (SUBJECTS start: its words; the fish welcome question, Pierre 2026-11-04),
+  // with these answers and variables, stored per subject in reefid-sync-<subject>-start (startKey, synced with the
+  // progress): {c, t, at, via, w, v, hd, fb, h}.
   // Fallback (for everyone, also those who answered: they may have picked wrong): the answers after the choice (w:
   // [difficulty, guess rate, right, first answer on its genus], kept up to the last checkpoint) are checked at AT (40
   // and 60) answers only (Pierre, 2026-11-04: no card before 40 answers in either direction, "an expert, 20 answers
@@ -1354,26 +1381,25 @@
   // only on the few genera they have learned is not moved up. The simulation, the real log and the variants compared:
   // docs/LEARNING.md "The fallback test, redesigned".
   const CHOICE = {
-    KEY: 'reefid-sync-coral-start',
     ASK: 50,
     AT: [40, 60], // the checkpoints of the fallback window (answers after the choice); the window ends at the last
     Z: 1.96,
     ZL: 0.84, // "lower": one-sided 80%
     MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
-    SUBJ: 'coral', // the subject the question is about (core.js SUBJECTS): fish keeps its own state
+    // [id, variables], in order from the lowest level to the highest (startBand); their words per subject: SUBJECTS start.
     opts: [
-      ['new', 'I’m new to corals', 'Start from scratch: the app shows you the basics first.', {p: 0, at: 50, basics: 1}],
-      ['imr', 'I had the IMR coral course', 'You have met the genera in the IMR lecture.', {p: 0.5, at: 30, basics: 0}],
-      ['know', 'I know corals well', 'At IMR or elsewhere: you can already name many genera.', {p: 1.25, at: 20, basics: 0}]
+      ['new', {p: 0, at: 50, basics: 1}],
+      ['imr', {p: 0.5, at: 30, basics: 0}],
+      ['know', {p: 1.25, at: 20, basics: 0}]
     ]
   };
   const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
   // The variables of a choice (none yet, or an unknown one: the default player's).
-  const startVars = c => (startOpt(c) || CHOICE.opts[0])[3];
+  const startVars = c => (startOpt(c) || CHOICE.opts[0])[1];
   // The band of levels an answer predicts: [floor, ceiling], the edges midway between its prior and its neighbours'.
   function startBand(c) {
     const i = CHOICE.opts.findIndex(o => o[0] === c),
-      p = j => CHOICE.opts[j][3].p;
+      p = j => CHOICE.opts[j][1].p;
     return [i > 0 ? (p(i - 1) + p(i)) / 2 : -Infinity, i >= 0 && i < CHOICE.opts.length - 1 ? (p(i) + p(i + 1)) / 2 : Infinity];
   }
   // The level that best explains answers A ([difficulty, guess rate, right]) on the ability scale (the app's
@@ -1429,7 +1455,7 @@
   function startInfer(P) {
     const G = (P || {})[LEVEL],
       t = G && typeof G.th === 'number' ? G.th : 0;
-    return CHOICE.opts.reduce((b, o) => (Math.abs(START.W * o[3].p - t) < Math.abs(START.W * b[3].p - t) ? o : b))[0];
+    return CHOICE.opts.reduce((b, o) => (Math.abs(START.W * o[1].p - t) < Math.abs(START.W * b[1].p - t) ? o : b))[0];
   }
   // The global record made at the first answer after this change: it starts from the player's history (every answer so
   // far, the answer-weighted mean ability of the genera), so their earlier answers keep counting (code review, #320).
@@ -2893,6 +2919,8 @@
     START,
     playerStart,
     CHOICE,
+    startKey,
+    startText,
     startOpt,
     startVars,
     startCheck,

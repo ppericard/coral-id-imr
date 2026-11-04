@@ -200,6 +200,10 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r3', {g: 't01', a: 't05', fix: '', ph: 'fi464458713'})]});
   const f = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r3');
   assert.deepStrictEqual([f[5], f[6], f[10]], ['t01', 't05', 'fi464458713']);
+  // v46: a scientific-genus question's units (g:Platax) are kept too (Codex review #526: they were stored empty).
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r4', {g: 'g:Platax', a: 'g:Chromis', fix: '', ph: 'fi1'})]});
+  const gq = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r4');
+  assert.deepStrictEqual([gq[5], gq[6]], ['g:Platax', 'g:Chromis']);
   const n = s.fetched.length;
   s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');
@@ -1596,7 +1600,7 @@ test('v36: the stored replay is not reused when the first-launch history changes
   const f = withData(),
     s = loadCodeGs({fetch: f.fetch}),
     L = Array.from({length: 12}, (_, i) => qa('r' + i, i)),
-    K = C.CHOICE.KEY,
+    K = C.startKey('coral'),
     rec = c => ({c, t: 1, at: 0, via: 'tour', w: [], fb: {}, h: [[c, 0, 1, 'tour']]}),
     data = c => ({...prog(9), [K]: JSON.stringify(rec(c))});
   const r1 = s.post({name: 'Ana', pin: '1234', data: data('new'), summary: {}, answers: L, rv: 0});

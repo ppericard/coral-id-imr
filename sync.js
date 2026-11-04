@@ -142,7 +142,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
   // A replay made with another first-launch history than this device's (Codex review #428: a history merged here and not
   // saved yet): not adopted, nor its rules version marked applied; the save that follows carries the merged history, and
   // its reply brings the replay made with it (Code.gs v36 sends the fingerprint it used, core.js startFp).
-  if (Number(v) >= START_SHEET && (rp.fp || '') !== startFp(store.get(CHOICE.KEY, null))) {
+  if (Number(v) >= START_SHEET && (rp.fp || '') !== startFp(store.get(startKey(SUBJ.id), null))) {
     if (SYNC) ((SYNC.dirty = true), store.set('reefid-account', SYNC));
     return false;
   }
@@ -165,7 +165,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
             time: Number(v) >= RT_SHEET,
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
-            starts: Number(v) >= START_SHEET ? {[me]: store.get(CHOICE.KEY, null)} : {}
+            starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {}
           })[me].P
         : rp.rec,
       before = copy(P),
@@ -244,7 +244,8 @@ function mergeSavedIn(j) {
     if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set('reefid-sync-coral-custom', rc);
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
-  startMerge(d[CHOICE.KEY]); // the first-launch question answered on another device (model.js; the latest answer wins)
+  // Each subject's first-launch question answered on another device (model.js startMerge; the latest answer wins).
+  SUBJECTS.forEach(S => S.start && startMerge(d[startKey(S.id)], S.id));
   // Each subject's progress on its own (core.js SUBJECTS), as if it were on screen (inSubject): its cards, reset, opt-in
   // sets and opening hold. A subject the saved copy does not hold is left alone (the first, the corals, always runs):
   // absent is not empty (Codex review #442: a copy saved by an app from before fish has no fish keys, and merged as an
@@ -732,6 +733,7 @@ function sendAnon() {
   if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
   const batch = q.slice(0, 100),
     cut = store.get('reefid-sync-coral-reset', '') || '', // the replay's cutoff, as sent (replayAdopt)
+    sk = startKey((SUBJECTS.find(x => x.log) || SUBJECTS[0]).id), // the logged subject's first-launch answer (the replay's)
     who = anonId(); // the anonymous player the send is for
   anonBusy = true;
   fetch(SYNC_URL, {
@@ -748,7 +750,7 @@ function sendAnon() {
       rv: rvApplied(),
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
       ...(cut ? {reset: cut} : {}),
-      ...(store.get(CHOICE.KEY, null) ? {start: store.get(CHOICE.KEY, null)} : {})
+      ...(store.get(sk, null) ? {start: store.get(sk, null)} : {})
     })
   })
     .then(r => r.json())
@@ -947,7 +949,7 @@ document.addEventListener(
   true
 );
 // A page drawn (app.js route; a redraw of the same page is not a new opening).
-// A page is the hash and the subject on screen (SUBJECTS pv): a subject switched on the same hash (Tools) closes the page
+// A page is the hash and the subject on screen (SUBJECTS pv): a subject switched on the same hash (the header chip) closes the page
 // of one and opens the page of the other (Codex review #466).
 function pagesRoute(h) {
   if (h === pvLast && SUBJ.pv === pvPre) return;
@@ -1063,9 +1065,9 @@ function signIn(name, pin, j) {
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's (code review #324).
   const ach = store.get(ACHK, null),
-    // The first-launch record made here before signing in joins the account's (core.js startUnion, Codex review #428):
-    // the account's earlier answers and this device's newer one both stay in the history.
-    st = store.get(CHOICE.KEY, null);
+    // Each subject's first-launch record made here before signing in joins the account's (core.js startUnion, Codex
+    // review #428): the account's earlier answers and this device's newer one both stay in the history.
+    st = SUBJECTS.map(S => [startKey(S.id), store.get(startKey(S.id), null)]);
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
@@ -1082,7 +1084,7 @@ function signIn(name, pin, j) {
       localStorage.removeItem(RVK);
     } catch (e) {}
   if (ach) achMerge(JSON.stringify(ach));
-  if (st) store.set(CHOICE.KEY, startUnion(store.get(CHOICE.KEY, null), st));
+  st.forEach(([k, r]) => r && store.set(k, startUnion(store.get(k, null), r)));
   Object.entries(M).forEach(([k, v]) => store.set(k, v));
   if (!anon && !mine) delete SYNC.dirty;
   store.set('reefid-account', SYNC);
@@ -1202,10 +1204,10 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
         // the comeback belong to this player, Codex review #374).
         ...SUBJECTS.flatMap(S => [
-          ...['progress', 'quiz', 'reset', 'intro', 'intro-offer'].map(k => subjKey(S.id, k)),
+          // the first-launch question's answer is the player's too (model.js startSet)
+          ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)),
           ...['hold', 'comeback'].map(k => subjDev(S.id, k))
         ]),
-        CHOICE.KEY, // the first-launch question's answer is the player's too (model.js startSet)
         BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
         ACHK,
         'reefid-ach-new',

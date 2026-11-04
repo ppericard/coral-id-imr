@@ -1117,7 +1117,7 @@ test('rename: data from the sheet or a file is read with the new names; the shee
 // after the merge applies each account's answers' priors (know@100 merged into imr@300: know's at 200).
 test('mergeUsers merges the first-launch histories (Codex review #428)', () => {
   const C = require('../core.js');
-  const K = C.CHOICE.KEY,
+  const K = C.startKey('coral'),
     A = {[K]: JSON.stringify({c: 'know', t: 100, at: 0, via: 'tour', w: [], fb: {}, h: [['know', 0, 100, 'tour']]})},
     B = {[K]: JSON.stringify({c: 'imr', t: 300, at: 0, via: 'tour', w: [], fb: {}, h: [['imr', 0, 300, 'tour']]})};
   for (const m of [C.mergeUsers(A, B), C.mergeUsers(B, A)]) {

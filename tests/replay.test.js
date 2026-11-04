@@ -401,6 +401,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       pooledConf: (a, b) => C.confScore(undefined, prior(a, b)),
       confusable: (t, n) => GEN[t].look.includes(n),
       startV: () => C.startVars(), // the first-launch answer: none here, the default player's prior
+      startS: () => C.subjectOf('coral'), // the subject on screen (model.js): the corals, whose answers the sheet replays
       P: {}
     };
   vm.createContext(M);
@@ -595,7 +596,8 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   assert.ok(quiz.includes('abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);'));
   assert.ok(quiz.includes('rtAdd(P[LEVEL], tm.rt, k);'));
   const live = sheet => {
-    const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars()}; // no first-launch answer: the default prior
+    // No first-launch answer: the default prior; the corals on screen (model.js startS).
+    const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars(), startS: () => C.subjectOf('coral')};
     vm.createContext(M);
     vm.runInContext(
       cut('const startP = ', ';\n') +
@@ -763,8 +765,8 @@ test('the first-launch prior in the live ability only from sheet v36 (Codex revi
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     cut = (a, b) => block(src, a, b, {through: true});
-  const at = sheet => {
-    const M = {...C, P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}}, sheetV: () => sheet, startV: () => C.startVars('know')};
+  const at = (sheet, S = C.subjectOf('coral')) => {
+    const M = {...C, P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}}, sheetV: () => sheet, startV: () => C.startVars('know'), startS: () => S};
     vm.createContext(M);
     vm.runInContext(cut('const startP = ', ';\n') + cut('const ability = ', ';\n') + '\nthis.T = {ability};', M);
     return M.T.ability('Pocillopora');
@@ -773,4 +775,6 @@ test('the first-launch prior in the live ability only from sheet v36 (Codex revi
   assert.strictEqual(at(C.START_SHEET - 1), C.playerStart(P, 'Pocillopora', 0), 'before v36: the default prior');
   assert.strictEqual(at(C.START_SHEET), C.playerStart(P, 'Pocillopora', C.startVars('know').p), "from v36: the answer's");
   assert.notStrictEqual(at(C.START_SHEET - 1), at(C.START_SHEET));
+  // A subject whose answers are not logged (fish) is never replayed: its welcome answer's prior applies at once.
+  assert.strictEqual(at(C.START_SHEET - 1, C.subjectOf('fish')), at(C.START_SHEET), 'fish: the prior with any sheet');
 });
