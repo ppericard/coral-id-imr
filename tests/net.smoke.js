@@ -764,12 +764,18 @@ const server = http.createServer((req, res) => {
       if (!s.length || !s.every(u => u.startsWith('img/')) || (await p.$('#qfail')))
         fails.push(`R2 cut off: the game photos did not fall back to the site (${s})`);
       const n = asked;
-      await p.click('#view [data-c]');
-      await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
-      await p.click('#next');
-      const s2 = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
-      if (!s2.length || !s2.every(u => u.startsWith('img/')) || asked !== n)
-        fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${s2})`);
+      // A question none of whose photos showed takes no answer (#490: its answers are closed): said as a failure of this
+      // check, never a click that waits 30 s and stops every check after it (2026-11-04, a local run).
+      const b = await p.$('#view .q:not(.done) [data-c]:not([disabled])');
+      if (!b) fails.push('R2 cut off: the question took no answer (none of its photos showed, so its answers were closed)');
+      else {
+        await b.click();
+        await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
+        await p.click('#next', {timeout: 10000}).catch(() => fails.push('R2 cut off: no Next after the answer'));
+        const s2 = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
+        if (!s2.length || !s2.every(u => u.startsWith('img/')) || asked !== n)
+          fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${s2})`);
+      }
       if (errs.length) fails.push('R2 cut off: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
