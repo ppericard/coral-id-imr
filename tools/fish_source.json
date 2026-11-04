@@ -45,9 +45,9 @@
  "divernet": "Divernet, Atlantis Dumaguete muck diving: https://divernet.com/world-dives/asia/discovering-atlantis-dumaguete-world-class-muck-diving-in-the-philippines/",
  "inat": "iNaturalist, Research Grade observations within 40 km of Dauin (species kept: at least 2)"
  },
-"leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish ID Key."},
+"leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish ID Key.", "Gobiesocidae": "Clingfishes: taken out of circle 3 (Pierre, 2026-11-04): not among the family labels of the identification key in force (AGENTS.md rule 6c). No PDF species; their two Dauin species were retired with them."},
 "start": ["t02", "t03", "t01", "t06"],
-"retired": {"teach": ["t30", "t31", "t32", "t33", "t34", "t35", "t36", "t37", "t38", "t39", "t40", "t41", "t53", "t55", "t56"], "species": ["s404", "s405", "s406", "s407", "s411", "s412", "s413", "s471", "s476", "s477"]},
+"retired": {"teach": ["t30", "t31", "t32", "t33", "t34", "t35", "t36", "t37", "t38", "t39", "t40", "t41", "t53", "t55", "t56", "t62"], "species": ["s404", "s405", "s406", "s407", "s411", "s412", "s413", "s460", "s461", "s471", "s476", "s477"]},
 "deploy": {"region": "Dauin, Negros Oriental, Philippines", "key": "tropical-pacific-2015"},
 "keys": [
   {"id": "tropical-pacific-2015", "region": {"name": "Indo-Pacific", "area": "tropical Indo-West Pacific"}, "cite": "Allen, G., Steene, R., Humann, P. & DeLoach, N. (2015). Reef Fish Identification – Tropical Pacific, 2nd ed. New World Publications. ISBN 978-1-878348-60-9", "short": "Allen et al. 2015", "src": "the book's index of its Twenty Identification Groups (group title, pages, the family labels under its drawings), transcribed 2026-11-04 from Pierre's screenshots (Drive, 01_ReefRecall/01_Ressources/Fish ID Groups - Indo Pacific)", "groups": [
@@ -115,7 +115,6 @@
   {"id": "t49", "name": "Snake eels", "fam": "Ophichthidae", "circle": 3, "src": "diver", "ref": ["Ophichthidae"], "why": "heads out of the sand", "srcs": ["pierre", "dtw", "divernet"]},
   {"id": "t42", "name": "Morays & ribbon eels", "fam": "Muraenidae", "circle": 3, "src": "diver", "ref": ["Muraenidae"], "pdf": ["MURAENIDAE"], "why": "morays and ribbon eels", "srcs": ["pierre", "dtw", "dan", "divernet"]},
   {"id": "t43", "name": "Garden eels", "fam": "Congridae", "circle": 3, "src": "diver", "ref": ["Congridae"], "pdf": ["CONGRIDAE"], "why": "spotted and spaghetti garden eels on the sand slopes", "srcs": ["dtw", "dan"]},
-  {"id": "t62", "name": "Clingfishes", "fam": "Gobiesocidae", "circle": 3, "src": "diver", "ref": ["Gobiesocidae"], "keyGroup": {"tropical-pacific-2015": null}, "keyWhy": "the clingfishes are not among the family labels of the key's index: waiting on Pierre (2026-11-04)", "why": "clingfishes on crinoids", "srcs": ["dtw"]},
   {"id": "t44", "name": "Rays", "fam": "Dasyatidae", "circle": 3, "src": "diver", "ref": ["Dasyatidae"], "pdf": ["DASYATIDAE"], "why": "stingrays on the sand", "srcs": ["pierre"]},
   {"id": "t63", "name": "Reef sharks", "fam": "Carcharhinidae", "circle": 3, "src": "diver", "ref": ["Carcharhinidae"], "why": "reef sharks", "srcs": ["pierre"]},
   {"id": "t50", "name": "Porcupinefishes", "fam": "Diodontidae", "circle": 3, "src": "diver", "ref": ["Diodontidae"], "why": "porcupinefishes and burrfishes", "srcs": ["pierre"]},
@@ -576,8 +575,6 @@
   {"id": "s457", "name": "Heteroconger polyzona", "common": "Banded garden eel", "src": "dauin"},
   {"id": "s458", "name": "Ariosoma fasciatum", "common": "Barred sand conger", "src": "dauin"},
   {"id": "s459", "name": "Heteroconger taylori", "common": "Taylor's garden eel", "src": "dauin"},
-  {"id": "s460", "name": "Discotrema crinophilum", "common": "Crinoid clingfish", "src": "dauin"},
-  {"id": "s461", "name": "Discotrema monogrammum", "common": "Oneline clingfish", "src": "dauin"},
   {"id": "s462", "name": "Neotrygon orientale", "common": "Oriental bluespotted maskray", "src": "dauin"},
   {"id": "s463", "name": "Carcharhinus melanopterus", "common": "Blacktip reef shark", "src": "dauin"},
   {"id": "s464", "name": "Triaenodon obesus", "common": "Whitetip reef shark", "src": "dauin"},
