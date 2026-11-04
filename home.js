@@ -45,7 +45,7 @@
         <section class="hdoor identify">
           <a class="hdart rc" href="#${key}" tabindex="-1" aria-hidden="true">${fishArt}</a>
           <div class="hdbody">
-            <p class="hdwhen">On the SVS videos<span class="wide"> · or a photo from your dive</span></p>
+            <p class="hdwhen">In EventMeasure<span class="wide"> · or a photo from your dive</span></p>
             <h2>Identify a fish</h2>
             <p class="hddesc">The Fish ID Key is on its way: it will help you name the fish on the IMR survey videos, or in your own photos.</p>
             <div class="hdacts">
