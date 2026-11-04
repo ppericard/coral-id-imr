@@ -1,0 +1,144 @@
+{
+ "photos": {
+  "fish-s366-cand-485729306": {
+   "code": "d1g1sm13",
+   "keep": "best"
+  },
+  "fish-s366-cand-568090157": {
+   "code": "d1g1sl13",
+   "keep": "best"
+  },
+  "fish-s366-cand-723998077": {
+   "code": "o1g1mlm2",
+   "keep": "best"
+  },
+  "fish-s366-cand-723998080": {
+   "code": "o1g1mlm2",
+   "keep": "dup"
+  },
+  "fish-s366-cand-723998060": {
+   "code": "o1g1mlm2",
+   "keep": "dup"
+  },
+  "fish-s366-cand-736789205": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  },
+  "fish-s366-cand-744735427": {
+   "code": "o1g1ss11",
+   "keep": "best"
+  },
+  "fish-s366-cand-708880417": {
+   "code": "o1d3smx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A dark fish in blue water: I cannot read the ray on the photo"
+  },
+  "fish-s366-cand-712565160": {
+   "code": "d1g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s366-cand-712565353": {
+   "code": "d1g1ss11",
+   "keep": "best"
+  },
+  "fish-s366-cand-712565327": {
+   "code": "d1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s366-cand-688442862": {
+   "code": "h1g1sl13",
+   "keep": "best"
+  },
+  "fish-s366-cand-732419435": {
+   "code": "d0g2sm12",
+   "keep": "best"
+  },
+  "fish-s366-cand-698224599": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s366-cand-698224607": {
+   "code": "d1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s366-cand-721148192": {
+   "code": "h0g1sl12",
+   "keep": "best"
+  },
+  "fish-s366-cand-721148175": {
+   "code": "d1g1sm13",
+   "keep": "alt"
+  },
+  "fish-s366-cand-721148185": {
+   "code": "h0d1sl12",
+   "keep": "dup"
+  },
+  "fish-s366-cand-608568266": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s366-cand-728735020": {
+   "code": "d0g1bl11",
+   "keep": "best"
+  },
+  "fish-s366-cand-728735018": {
+   "code": "d0g1bl11",
+   "keep": "dup"
+  },
+  "fish-s366-cand-728735022": {
+   "code": "d0g1bl11",
+   "keep": "dup"
+  },
+  "fish-s366-cand-728735113": {
+   "code": "d0g1bl11",
+   "keep": "dup"
+  },
+  "fish-s366-cand-685829224": {
+   "code": "d1g1sl13",
+   "keep": "best"
+  },
+  "fish-s366-cand-688444627": {
+   "code": "d1g1sl13",
+   "keep": "best"
+  },
+  "fish-s366-cand-712514495": {
+   "code": "d1g1ssm1",
+   "keep": "best"
+  },
+  "fish-s366-cand-744733472": {
+   "code": "d1g1sm13",
+   "keep": "best"
+  },
+  "fish-s366-cand-698224593": {
+   "code": "d1g1sl13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Wrapped in an octopus's arms; the ray's shape is hard to read"
+  },
+  "fish-s366-cand-712560043": {
+   "code": "d1g2ssxc1",
+   "keep": "dup"
+  },
+  "fish-s366-cand-712560205": {
+   "code": "d1g2ssxc1",
+   "keep": "dup"
+  },
+  "fish-s366-cand-712560236": {
+   "code": "d1g2ss11",
+   "keep": "best"
+  },
+  "fish-s366-cand-712560264": {
+   "code": "d1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s366-cand-688442820": {
+   "code": "o1g1smm3",
+   "keep": "best"
+  }
+ }
+}
