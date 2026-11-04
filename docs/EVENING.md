@@ -17,6 +17,17 @@ _(none)_
 Asked by agents working without Pierre (AGENTS.md Rule 0): the question, its context, the agent's recommendation. Ask
 them first thing, then clear them.
 
+- **Fish score: the second kind of names is slow (2026-11-04 night, fish score simulation).** Context: `tools/fishscore.js`
+  (docs/LEARNING.md "Fish: the global score, simulated"): with the agreed anchors (80% common only, 85% scientific only, 100%
+  both), a player who finishes one kind of names and then starts the other gains its last 15-20 points 7-12 times slower
+  per answer than before (each species' scientific name adds about 0.06 points to someone who knows its common names). This
+  comes from the anchors, not from *a* or *b*. Is that what you want? Recommendation: yes, keep the formula as agreed; the
+  three bars under the headline (Entries, Common names, Scientific names) show the progress the headline hides.
+- **Fish score: the leaderboard at equal effort (same simulation).** Context: at 30,000 simulated answers a player learning
+  common names only shows 80%, scientific only 72%, both names side by side 62% (96% at 100,000). On the fish
+  leaderboard (ranked by this score) an RA learning both names sits below a diver learning common names only, for most of
+  the path. Recommendation: keep the one scale you chose; look again once fish answers are logged (the real pace per kind
+  of names will replace the simulation's assumed learning rates).
 - **Fish judging, circles 2 and 3: a family exception to the caps?** (fish photos track, 2026-11-04 night.) The 475
   photos of circles 2 and 3 and the winks were judged on the rubric as written (judging/FISH.md). Several of these
   families are almost never shown the way the rubric calls very easy: morays, snake eels, garden eels and jawfishes
