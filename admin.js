@@ -3510,20 +3510,24 @@ function autoRun() {
 // only when the pass has judged fish candidates, so the 2.6 MB candidate list is fetched only then. Never writes "out"
 // (Pierre's Not this) and never touches a photo he decided. Its keep agreement (fishCompare, autoState) turns it off.
 let FISHC = null; // {cand, species} once loaded
+// The fish candidates and species, fetched once (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, or an
+// Undo needs a candidate's species).
+async function fishLoad() {
+  if (FISHC) return FISHC;
+  const get = u =>
+    fetch(u, {cache: 'no-cache'})
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+  const [C, F] = await Promise.all([get('fish-cand.json'), get('fish.json')]);
+  return (FISHC = {
+    cand: C.cand || {},
+    species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
+    byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
+  });
+}
 async function fishAutoRun() {
   if (!TOKEN || !DRAFT || !Object.keys((SUG && SUG.fish) || {}).length) return null;
-  if (!FISHC) {
-    const get = u =>
-      fetch(u, {cache: 'no-cache'})
-        .then(r => (r.ok ? r.json() : {}))
-        .catch(() => ({}));
-    const [C, F] = await Promise.all([get('fish-cand.json'), get('fish.json')]);
-    FISHC = {
-      cand: C.cand || {},
-      species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
-      byF: Object.fromEntries(Object.values(C.cand || {}).flatMap(L => L.map(p => [p.f, p])))
-    };
-  }
+  await fishLoad();
   const keepOn = autoState(fishCompare(DRAFT.fish)).keep.on,
     {F, R} = fishRun(FISHC.cand, SUG.fish, FISHC.species, DRAFT.fish, localDay(), keepOn);
   if (F === DRAFT.fish) return R;
@@ -3533,8 +3537,11 @@ async function fishAutoRun() {
   return R;
 }
 // One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again. One Undo step.
-function fishAutoUndo(f) {
-  const F = fishUndo(DRAFT.fish, f, fishSure(((SUG && SUG.fish) || {})[f]));
+async function fishAutoUndo(f) {
+  const p = (await fishLoad()).byF[f];
+  // A candidate no longer in fish-cand.json: its species is unknown, so the add cannot be checked; left to Pierre.
+  if (!p) return toast('This photo is no longer a fish candidate: its auto decision cannot be undone here.');
+  const F = fishUndo(DRAFT.fish, f, p.sid);
   if (F === DRAFT.fish) return;
   DRAFT.fish = F;
   saveDraft();

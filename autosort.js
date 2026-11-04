@@ -221,35 +221,45 @@
         R.reject++;
       }
     });
-    if (!Object.keys(N.add).length) delete N.add;
-    if (!Object.keys(N.seen).length) delete N.seen;
+    // A map the run created and left empty goes; one that was there stays (as {}: merge3 reads a missing map as removed).
+    if (!F.add && !Object.keys(N.add).length) delete N.add;
+    if (!F.seen && !Object.keys(N.seen).length) delete N.seen;
     if (R.add + R.reject + R.check) N.auto = {...(F.auto || {}), [day]: L};
     return {F: R.add + R.reject + R.check ? N : F, R};
   }
 
   // One fish auto decision taken back (Pierre's Undo on it in the Auto details; the coral autoUndo's counterpart; Codex
-  // review #479: AGENTS.md rule 8, every auto decision undoable one by one): what the run wrote leaves the fish part
-  // unless Pierre changed it since (s: the decision as fishSure gives it, to compare the tags, ease, phase and crop), and
-  // the log keeps it marked undone ('-'), so it is never applied again and the photo waits for him as a candidate.
-  function fishUndo(F, f, s) {
+  // review #479: AGENTS.md rule 8, every auto decision undoable one by one). sid: the species of the candidate (its
+  // fish-cand.json list). What the run wrote leaves the fish part, and only that: the add while it still names that
+  // species, and the fields its code lists (a value Pierre gave before the run was never written, so never listed; a
+  // value he sets since takes its field off the list, fishOwn). Nothing is compared with the pass's judgment, which a new
+  // judging pass may have replaced (Codex review #479). The log keeps the decision marked undone ('-'): never applied
+  // again, the photo waits for him as a candidate. Emptied maps stay as {} (fishOut leaves them out of the file): the
+  // Publish merge (merge3) then removes these entries only, never what another device published in the same map.
+  function fishUndo(F, f, sid) {
     const x = fishIdx(F)[f];
     if (!x || x.d.check || x.d.undone) return F;
     const N = {...F},
-      drop = (k, v) => {
-        if (!N[k] || !(f in N[k]) || (v !== undefined && JSON.stringify(N[k][f]) !== JSON.stringify(v))) return;
+      drop = (k, ok = () => true) => {
+        if (!N[k] || !(f in N[k]) || !ok(N[k][f])) return;
         N[k] = {...N[k]};
         delete N[k][f];
-        if (!Object.keys(N[k]).length) delete N[k];
       };
     if (x.d.kind === 'a') {
-      drop('add');
-      // Only the fields the run wrote (the code lists them), and only while they still hold its value: a value Pierre had
-      // given before the run, or changed since, stays his.
-      const v = s && s.keep === 'add' ? {tags: s.tags, ease: s.ease, phase: s.phase, crop: s.crop} : {};
-      (x.d.w || []).forEach(k => k in v && drop(k, v[k]));
-    } else drop('seen', 1);
+      drop('add', v => v === sid);
+      (x.d.w || []).forEach(k => drop(k));
+    } else drop('seen', v => v === 1);
     N.auto = {...N.auto, [x.day]: {...N.auto[x.day], [f]: '-' + x.code}};
     return N;
+  }
+  // A fish field Pierre sets on a photo the auto-sort decided (his tags, ease, phase or crop, admin plan PR 5b) becomes
+  // his: its letter leaves the photo's log code, so an Undo of the decision never takes his value away. Every admin action
+  // that writes one of these fields goes through it.
+  function fishOwn(F, f, field) {
+    const x = fishIdx(F)[f],
+      c = FISHW[field];
+    if (!x || !c || !(x.d.w || []).includes(field)) return F;
+    return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[ar][tepc]*?)${c}`), '$1')}}};
   }
 
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
@@ -436,6 +446,7 @@
     fishCompare,
     fishRun,
     fishUndo,
+    fishOwn,
     autoCode,
     autoParse,
     autoIdx,
