@@ -3273,6 +3273,31 @@ async function onePath(b, base) {
     if (none.length) fails.push(`one path, Tools games with no genus unlocked: no line to the quiz in ${none.join(', ')}`);
     await c0.close();
   }
+  // Genera unlocked but none with a ringed photo (Pocillopora alone): the anatomy drill says so instead of an empty
+  // question (Codex review #491).
+  {
+    const c1 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true});
+    await c1.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c1.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+      localStorage.setItem('reefid-sync-coral-intro', JSON.stringify({Pocillopora: [0, 1, 1, 's']}));
+    });
+    const p1 = await c1.newPage();
+    p1.on('pageerror', e => errs.push(e.message));
+    await p1.goto(base + '#lab-anatomy|drill');
+    await p1.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const said = await p1
+      .waitForFunction(() => /ringed photo here yet/.test((document.getElementById('a2q') || {}).textContent || ''), null, {timeout: 10000})
+      .then(() => true)
+      .catch(() => false);
+    if (!said) fails.push('one path, anatomy drill with genera unlocked but none ringed: no word for the player');
+    await c1.close();
+  }
   if (errs.length) fails.push(`one path: page errors ${errs.slice(0, 3).join(' | ')}`);
   await c.close();
   return fails;
