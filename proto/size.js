@@ -12,7 +12,9 @@ LAB.add({
       CLS = {s1: [0.5, 2], s2: [2, 8], s3: [8, 50]};
     const X = mm => ((Math.log(mm / MIN) / Math.log(MAX / MIN)) * 100).toFixed(2) + '%';
     const span = n => {
-      const s = DATA.gen[n].tr.filter(t => CLS[t]).map(t => CLS[t]);
+      const s = trAll(DATA.gen[n])
+        .filter(t => CLS[t])
+        .map(t => CLS[t]);
       return s.length ? [Math.min(...s.map(x => x[0])), Math.max(...s.map(x => x[1]))] : null;
     };
     const rows = labNames()
