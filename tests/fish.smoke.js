@@ -693,14 +693,14 @@ const server = http.createServer((req, res) => {
     }, old);
     const q = await c8.newPage();
     q.on('pageerror', e => errs.push(`group${old ? ' (v45)' : ''}: ${e.message}`));
-    await q.goto(base + '#lab');
-    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .labhub'), null, {timeout: 30000});
-    const t0 = await q.evaluate(() => !!document.querySelector('#view .labsubj'));
-    if (t0) grp.push(`signed out: a fish tile ${old ? '(v45)' : ''}`);
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    const t0 = await q.evaluate(() => !!document.querySelector('#view .hsubj'));
+    if (t0) grp.push(`signed out: a subject row ${old ? '(v45)' : ''}`);
     await Promise.all([q.waitForNavigation(), q.evaluate(() => syncGet({name: 'Ana', pin: '1234'}).then(j => signIn('Ana', '1234', j)))]);
-    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .labhub'), null, {timeout: 30000});
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
     const t1 = await q.evaluate(() => {
-      const t = document.querySelector('#view .labsubj');
+      const t = document.querySelector('#view .hsubj');
       return {tile: !!t, admin: !!t && /Admin/.test(t.textContent), open: subjOpen(SUBJECTS.find(S => S.beta))};
     });
     if (old) {
@@ -708,8 +708,8 @@ const server = http.createServer((req, res) => {
       await c8.close();
       continue;
     }
-    if (!t1.tile || t1.admin || !t1.open) grp.push(`in the fish group: the Tools tile ${JSON.stringify(t1)}`);
-    await q.click('#view .labsubj [data-subj="fish"]');
+    if (!t1.tile || t1.admin || !t1.open) grp.push(`in the fish group: the Home subject row ${JSON.stringify(t1)}`);
+    await q.click('#view .hsubj [data-subj="fish"]');
     await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000}).catch(() => {});
     if ((await q.evaluate(() => SUBJ.id)) !== 'fish') grp.push('in the fish group: Fish did not switch on');
     // Another account on this device: in no group.
