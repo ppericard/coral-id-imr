@@ -1837,6 +1837,9 @@ header {
 .cmpback {
   margin: 0 0 12px;
 }
+.cmpback:last-child {
+  margin: 16px 0 12px;
+}
 .cmprow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
