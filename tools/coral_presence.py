@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import load_all  # noqa: E402
-from presence import species_presence  # noqa: E402
+from presence import listed, species_presence  # noqa: E402
 
 OUT = ROOT / "presence.json"
 CACHE = ROOT / "tools" / ".cache" / "presence.json"
@@ -90,7 +90,7 @@ def build(net):
              if t["name"] == g and (SCLERACTINIA in t.get("ancestor_ids", []) or (nonscl and t.get("iconic_taxon_name") == "Animalia"))]
         pres = species_presence(net.get, T[0]["id"], "coral", "&captive=false") if T else {}
         for n in sorted(names[g]):
-            v = pres.get(n) or {"rg": 0, "chk": False, "by": []}
+            v = pres.get(n) or {"rg": 0, "chk": listed("coral", [n]), "by": []}
             sp[n] = {"ok": bool(v["by"]), "by": v["by"], "rg": v["rg"], "chk": v["chk"]}
     return sp
 
