@@ -771,6 +771,10 @@ let SHOW = new Set(
   )
 );
 const shown = p => SHOW.has(origin(p));
+// View filter of the genus page (Pierre, 2026-11-04): All, or one view's section alone, so the close-ups and corallites
+// are reached without scrolling past every colony photo. Kept across genera and visits; on a genus without the saved
+// view (a 2-zoom genus has no Close-up row) the page shows All, and the choice stays for the next genus.
+let GVIEW = store.get('reefid-admin-gview', 'all');
 // A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
   const o = origin(p),
@@ -1302,7 +1306,10 @@ function render() {
       <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} waiting` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`;
     })
     .join('');
-  const body = rows(n)
+  const R = rows(n),
+    gv = R.some(([v]) => v === GVIEW) ? GVIEW : 'all',
+    one = gv !== 'all';
+  const body = R.filter(([v]) => !one || v === gv)
     .map(([v]) => {
       const r = rowOf(n, v),
         out = [...r.feat, ...r.rest].filter(p => !shown(p)).length;
@@ -1341,7 +1348,27 @@ function render() {
     ).join('')}</div></section>`
       : '';
   const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
-  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
+  // One view shown: Candidates and Not this genus are not per view, so they hide too, with one line saying what is hidden.
+  const hidRow = one
+    ? (L =>
+        L.length
+          ? `<p class="note adm-gvnote">Hidden: ${L.join(' · ')} <button type="button" class="adm-link" data-gv="all">All views</button></p>`
+          : '')(
+        [
+          [P.length, 'candidate', 'candidates'],
+          [O.length, 'not this genus', 'not this genus']
+        ]
+          .filter(x => x[0])
+          .map(([c, a, b]) => `${c} ${c === 1 ? a : b}`)
+      )
+    : '';
+  const gvSeg = `<span class="adm-qseg adm-lvseg adm-gview" role="group" aria-label="Show view">${[
+    ['all', 'All'],
+    ...R.map(([v]) => [v, label(n, v)])
+  ]
+    .map(([v, t]) => `<button type="button" data-gv="${v}" aria-pressed="${gv === v}">${t}</button>`)
+    .join('')}</span>`;
+  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
@@ -1356,7 +1383,7 @@ function render() {
               )}. Kept but no longer applied. <button type="button" class="adm-link" data-forget>Forget them</button> (Undo brings them back), or ask Pierre.</p>`
           : ''
       }
-      ${filter}${body}${candRow}${outRow}
+      ${filter}${hidRow}${body}${one ? '' : candRow + outRow}
     </section></div>`;
   $v.querySelectorAll('[data-o]').forEach(
     b =>
@@ -1365,6 +1392,14 @@ function render() {
         if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0]));
         else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
         store.set('reefid-admin-origins', [...SHOW]);
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-gv]').forEach(
+    b =>
+      (b.onclick = () => {
+        GVIEW = b.dataset.gv;
+        store.set('reefid-admin-gview', GVIEW);
         render();
       })
   );
@@ -1877,7 +1912,8 @@ const HELP = {
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>
-    <p><b>Symbols.</b> Genus list: <b>✓</b> validated and complete; <b>!</b> validated but something is missing again; <b>●</b> draft not published; <b>⚠ check</b> a choice names a photo no longer in the data; <b>N waiting</b> candidates not reviewed yet; <b>macro cover</b> the cover is a close-up. Photos: <b>filled number 1-3</b> featured; <b>outlined number 4-6</b> also on the genus sheet; <b>dashed frame</b> a candidate, not on the site yet; <b>faded dashed frame</b> removed (back with the candidates); <b>added</b> a candidate you added; <b>Cover</b> the cover photo. Dashed tags or buttons are guesses, solid ones are your choices. <b>3 zooms / 2 zooms</b>: with 2, Close-up photos join Colony.</p>`,
+    <p><b>Symbols.</b> Genus list: <b>✓</b> validated and complete; <b>!</b> validated but something is missing again; <b>●</b> draft not published; <b>⚠ check</b> a choice names a photo no longer in the data; <b>N waiting</b> candidates not reviewed yet; <b>macro cover</b> the cover is a close-up. Photos: <b>filled number 1-3</b> featured; <b>outlined number 4-6</b> also on the genus sheet; <b>dashed frame</b> a candidate, not on the site yet; <b>faded dashed frame</b> removed (back with the candidates); <b>added</b> a candidate you added; <b>Cover</b> the cover photo. Dashed tags or buttons are guesses, solid ones are your choices. <b>3 zooms / 2 zooms</b>: with 2, Close-up photos join Colony.</p>
+    <p><b>All · Colony · Close-up · Corallites</b> (top bar) shows one view alone, kept from genus to genus; Candidates and Not this genus are hidden then (the line under the bar counts them, <b>All views</b> brings everything back).</p>`,
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p><b>📌</b> makes a photo a lead photo of its form's tile on the site's Coral Finder start (up to 3 per form, number = place; a 4th drops the oldest); the tile's other places stay automatic. Br leads Branching, En Thin plates and crusts, Ma Massive, Sm Columns, Mu Solitary.</p>
@@ -2531,18 +2567,35 @@ function pulseResp(L) {
 }
 // "Did you know?" tips (quiz.js tipShow; tips.js TIPS): per tip, the devices it showed on, its showings and how each one
 // ended: Show me, Got it (or Escape), or the page left with it up; a tip left open when the app closed counts in none.
+// The Duel tab's relief card (quiz.js reliefShow, item duelhold) is logged the same way, its choices Compare them,
+// Mix in other genera and Keep drilling (or Escape), and back: the player came back to the duel from the comparison; a
+// column each, shown when some row has one.
+const TIPC = [
+  ['show', 'Show me'],
+  ['ok', 'Got it'],
+  ['cmp', 'Compare'],
+  ['mix', 'Mix in'],
+  ['keep', 'Keep drilling'],
+  ['back', 'Back to the duel']
+];
 function tipsView(L) {
   const T = {};
   L.forEach(r => {
-    const t = (T[String(r[5]).slice(4)] = T[String(r[5]).slice(4)] || {dev: new Set(), shown: 0, show: 0, ok: 0, none: 0});
+    const t = (T[String(r[5]).slice(4)] = T[String(r[5]).slice(4)] || {
+      dev: new Set(),
+      shown: 0,
+      none: 0,
+      ...Object.fromEntries(TIPC.map(([k]) => [k, 0]))
+    });
     t.dev.add(r[2]);
     if (r[4] in t && r[4] !== 'dev') t[r[4]]++;
   });
-  const K = Object.keys(T);
+  const K = Object.keys(T),
+    C = TIPC.filter(([k], i) => i < 2 || K.some(x => T[x][k]));
   return K.length
-    ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Tip</th><th>Devices</th><th>Shown</th><th>Show me</th><th>Got it</th><th>Left</th></tr></thead><tbody>${K.map(
+    ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Tip</th><th>Devices</th><th>Shown</th>${C.map(([, t]) => `<th>${t}</th>`).join('')}<th>Left</th></tr></thead><tbody>${K.map(
         k =>
-          `<tr><td>${esc(k)}</td><td class="n">${T[k].dev.size}</td><td class="n">${T[k].shown}</td><td class="n">${T[k].show}</td><td class="n">${T[k].ok}</td><td class="n">${T[k].none}</td></tr>`
+          `<tr><td>${esc(k)}</td><td class="n">${T[k].dev.size}</td><td class="n">${T[k].shown}</td>${C.map(([c]) => `<td class="n">${T[k][c]}</td>`).join('')}<td class="n">${T[k].none}</td></tr>`
       ).join('')}</tbody></table></div>`
     : '<p class="note">None yet.</p>';
 }
