@@ -1340,8 +1340,7 @@ header {
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   .card,
   .group,
-  .leaf,
-  .lahead .laph {
+  .leaf {
     transition:
       transform 0.14s ease,
       box-shadow 0.14s ease;
@@ -1661,31 +1660,6 @@ header {
   cursor: default;
 }
 /* Key levels: numbered steps; a finished step shrinks to a row of links (current one marked). */
-.klevel {
-  margin: 0 0 18px;
-}
-.klab {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 8px;
-}
-.kn {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: var(--fs-xs);
-  letter-spacing: 0;
-}
-.klevel.done .kn {
-  background: var(--surface-2);
-  color: var(--muted);
-  border: 1px solid var(--line);
-}
 .kpick {
   display: flex;
   flex-wrap: wrap;
@@ -1718,26 +1692,6 @@ header {
   font-weight: 400;
   font-size: var(--fs-xs);
   opacity: 0.8;
-}
-.kthumbs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
-  align-items: center;
-  grid-column: 1/-1;
-}
-.kthumbs img {
-  width: 44px;
-  height: 44px;
-  object-fit: cover;
-  border-radius: var(--r-sm);
-  display: block;
-}
-.kthumbs .more {
-  font-size: var(--fs-xs);
-  opacity: 0.75;
-  padding-left: 2px;
 }
 .trset {
   margin: 0 0 14px;
@@ -1808,49 +1762,6 @@ header {
 }
 
 /* ---------- Look-alikes and side-by-side comparison ---------- */
-.lablock {
-  margin: 26px 0 8px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-}
-.lahead {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  margin: 0 0 12px;
-  color: var(--ink);
-  text-decoration: none;
-}
-.lahead .laph {
-  width: 76px;
-  height: 76px;
-  object-fit: cover;
-  border-radius: var(--r);
-  flex: none;
-  background: var(--surface-2);
-  box-shadow: var(--shadow);
-}
-.lahead > span {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.lahead i {
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: var(--fs-xl);
-}
-.lahead small {
-  color: var(--muted);
-  font-size: var(--fs-xs);
-}
-.lahead .lacrit {
-  font-size: var(--fs-s);
-}
-.lahead:hover i {
-  color: var(--accent);
-}
 /* Back to the duel on a comparison opened from the Duel tab's relief card (learn.js viewCompare, quiz.js DUELBACK): a
    floating main button at the bottom centre, over the page however far it scrolls, above the phone tab bar and the
    home indicator; under the settings pop-up, the enlarged view and the cards. The page ends with room for it, so it
@@ -2588,31 +2499,6 @@ td i {
   height: 100%;
   background: var(--accent);
 }
-.lvl {
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  padding: 2px 9px;
-  border-radius: var(--pill);
-  white-space: nowrap;
-}
-.lvl.new {
-  background: var(--surface-2);
-  color: var(--muted);
-}
-.lvl.weak {
-  background: var(--bad-bg);
-  color: var(--bad);
-}
-.lvl.mid {
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line);
-}
-.lvl.ok {
-  background: var(--good-bg);
-  color: var(--good);
-}
-
 /* ---------- Lightbox ---------- */
 #lightbox {
   position: fixed;
@@ -2986,33 +2872,6 @@ body {
 }
 
 /* ---------- Progress board ---------- */
-.pstack {
-  display: flex;
-  height: 14px;
-  border-radius: var(--pill);
-  overflow: hidden;
-  background: var(--surface-2);
-  margin: 10px 0 8px;
-  max-width: 640px;
-}
-.pstack .ok {
-  background: var(--good);
-}
-.pstack .mid {
-  background: var(--accent);
-}
-.pstack .weak {
-  background: var(--bad);
-}
-.pstack .new {
-  background: var(--line);
-}
-.plegend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 8px;
-}
 .pgrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -3087,29 +2946,6 @@ body {
 .pt.weak .pbar span {
   background: var(--bad);
 }
-.pconf {
-  display: block;
-  padding: 0 8px 8px;
-  font-size: var(--fs-xs);
-  color: var(--bad);
-}
-.pfocus {
-  background: var(--bad-bg);
-  border-radius: var(--r);
-  padding: 12px 14px;
-  margin: 14px 0;
-}
-.pfocus h3 {
-  margin: 0;
-  font-size: var(--fs-m);
-  color: var(--bad);
-}
-.pdone {
-  margin-left: auto;
-  font-weight: 400;
-  color: var(--muted);
-  font-size: var(--fs-s);
-}
 .srcs {
   margin: 0.2rem 0 0;
   padding-left: 1.1rem;
@@ -3174,30 +3010,6 @@ body {
 }
 /* Look-alikes: families (Look-alikes page) and the "Don't confuse with" section of a genus sheet.
    Every genus at the same size and in the same view, so they can be compared at a glance. */
-.lfam {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  padding: 14px 16px 6px;
-  margin: 0 0 16px;
-  box-shadow: var(--shadow);
-}
-.lfam h3 {
-  margin: 0 0 2px;
-  font-size: var(--fs-m);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-}
-.lfam h3 small {
-  font-size: var(--fs-xs);
-  font-weight: 400;
-  color: var(--muted);
-}
-.lfam > .note {
-  margin: 0 0 10px;
-}
 .lrow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3304,16 +3116,6 @@ a.lt:hover {
   border-radius: var(--pill);
   background: var(--bad-bg);
   color: var(--bad);
-}
-.lpairs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 12px;
-}
-.lpairs .label {
-  margin-right: 4px;
 }
 .chip.mix {
   border-color: var(--bad);
@@ -3466,10 +3268,6 @@ a.lt:hover {
   font-size: var(--fs-s);
   line-height: 1;
   color: var(--ink);
-}
-.pboard .plegend {
-  justify-content: center;
-  margin: 0;
 }
 .pboard .gside .label {
   margin: 0 0 6px;
@@ -4078,9 +3876,6 @@ a.lt:hover {
 .gdiv[id] {
   scroll-margin-top: calc(var(--hdr-h, 64px) + 12px);
 }
-.tipsec {
-  margin-top: 18px;
-}
 .tipg {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);
@@ -4456,7 +4251,6 @@ a.psrc:focus-visible {
   text-decoration: none;
 }
 /* ID tips: two genera per row (one on phones), larger photos. */
-.tipsec,
 .tiplist {
   display: grid;
   column-gap: 28px;
@@ -4465,18 +4259,11 @@ a.psrc:focus-visible {
 .tiplist {
   grid-template-columns: minmax(0, 1fr);
 }
-.tipsec {
-  grid-template-columns: minmax(0, 1fr);
-}
 @media (min-width: 1024px) {
-  .tipsec {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .tiplist {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-.tipsec > h3,
 .tiplist > h3,
 .tiplist > .note {
   grid-column: 1/-1;
@@ -4494,7 +4281,6 @@ a.psrc:focus-visible {
 :root[data-size='s'] .tipg {
   grid-template-columns: 130px minmax(0, 1fr);
 }
-:root[data-size='l'] .tipsec,
 :root[data-size='l'] .tiplist {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -4622,10 +4408,6 @@ a.psrc:focus-visible {
   color: var(--surface);
   opacity: 1;
 }
-.qlvl {
-  margin-bottom: 6px;
-}
-
 /* Glossary terms: dotted underline, tap for the definition (gloss() in app.js). */
 .gt {
   text-decoration: underline dotted;
@@ -4730,15 +4512,6 @@ a.psrc:focus-visible {
   margin-top: 20px;
 }
 
-/* My progress: what "learned" means, one line under the legend. */
-.pnote {
-  margin: 0;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-  line-height: 1.35;
-}
-
-/* Look-alikes page: one card per pair, both genera at the same size. */
 /* Learn > Look-alikes: one classic pair per screen (montage + ID tips), the deck of pairs in a right column. */
 .lk {
   display: grid;
@@ -4865,12 +4638,6 @@ a.psrc:focus-visible {
     transform: translateX(calc(-50% - 14px));
   }
 }
-.lkm.inr .lkph {
-  animation: lkinr 0.22s ease-out;
-}
-.lkm.inl .lkph {
-  animation: lkinl 0.22s ease-out;
-}
 @keyframes lkinr {
   from {
     transform: translateX(40px);
@@ -4884,9 +4651,7 @@ a.psrc:focus-visible {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lkhint,
-  .lkm.inr .lkph,
-  .lkm.inl .lkph {
+  .lkhint {
     animation: none;
   }
 }
@@ -6405,17 +6170,6 @@ html.touring .unlock {
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
-}
-.pboardl {
-  display: block;
-  margin: 8px 0;
-  text-align: center;
-  color: var(--ink);
-  text-decoration: none;
-  font-size: var(--fs-s);
-}
-.pboardl:hover {
-  text-decoration: underline;
 }
 /* A short note (progress.js appToast): the cards' look, the kind's tint at its left. */
 .apptoast {

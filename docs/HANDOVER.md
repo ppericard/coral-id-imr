@@ -1,6 +1,6 @@
 # Handover: picking up IMR Reef ID in a new Claude account
 
-Written 2026-11-01 when Pierre moved development to another Claude Code account. Until then the project ran in a Claude "project" with a shared memory, many parallel threads and private claude.ai docs. **None of that is reachable from the new account.** Everything that mattered has been copied into this repository; this file is the map.
+Written 2026-11-01 when Pierre moved development to another Claude Code account; **state of play updated 2026-11-04** (the next two sections). If you pick the project up cold, read "Where things are" and "State of play" first. Until then the project ran in a Claude "project" with a shared memory, many parallel threads and private claude.ai docs. **None of that is reachable from the new account.** Everything that mattered has been copied into this repository; this file is the map.
 
 ## Read in this order (15 minutes)
 
@@ -10,7 +10,34 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 4. [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`DESIGN.md`](DESIGN.md) when you touch code or UI.
 5. [`reviews/`](reviews/README.md): the last expert reviews (code, admin, first-time RA, design) with what is still open.
 
-## State of play (2026-11-01)
+## Where things are (for a newcomer)
+
+| You want | Look at |
+|---|---|
+| The rules you must not break | [`AGENTS.md`](../AGENTS.md): Rule 0 (Pierre's hours, Manila time), the standing rules 1-28, "How to make a change" 1-17 |
+| The app's code | `index.html` + `app.js` (start-up, routing, shared helpers), `quiz.js` (screens), `model.js` (what to ask next), `learn.js`, `progress.js`, `home.js`, `tour.js`, `tips.js`, `sync.js` (the sheet), `core.js` (pure functions shared with the admin and the sheet), `sw.js` (offline cache); AGENTS.md "Repository map" |
+| How the learning works, and why | [`LEARNING.md`](LEARNING.md) (each rule with its measurements; `tools/learnsim.js` simulates, `tools/abilityeval.js` replays the real answers) |
+| The subjects (corals, fish) | `core.js` `SUBJECTS`, `app.js` `UNITS`; fish content `fish.json` (built by `tools/build_fish.py`), the fish path spec [`FISH_PATH.md`](FISH_PATH.md), ARCHITECTURE.md "Subjects" and "Fish content" |
+| The admin | `admin.html`, `admin*.js`, `autosort.js`, `analysis.js`; try it with `admin.html?demo`; ARCHITECTURE.md "Admin" and ROADMAP "Admin for every subject" |
+| The progress sheet | `tools/sync/Code.gs` (self-updating Apps Script; "Code.gs" below), its tests `tests/sync.test.js` on an in-memory sheet (`tests/gas.js`) |
+| Photos | `data.json` photo lists, `curation.json` (Pierre's choices), `img/` mirrored to Cloudflare R2 (`core.js` `PHOTO_BASE`), the tools in `tools/` (ARCHITECTURE.md "Photos") |
+| Tests and CI | `tests/*.test.js` (Node), `tests/*.smoke.js` (Playwright, one CI job each), `.github/workflows/checks.yml`; AGENTS.md "How to make a change" 2b |
+| Deploy | `.github/workflows/pages.yml` (stamps the version numbers, then publishes), [`PAGES.md`](PAGES.md) |
+| What is next, what was declined | [`ROADMAP.md`](ROADMAP.md); where yesterday stopped: [`EVENING.md`](EVENING.md) |
+
+## State of play (2026-11-04)
+
+- **The app** is IMR Reef ID, live at <https://ppericard.github.io/coral-id-imr/>, used by Pierre and a first group of beta RAs, mostly on phones. About 500 PRs merged since 2026-10-31.
+- **Subjects**: corals (the 40-genus slate with *Millepora*, plus 5 opt-in bonus genera) for everyone; **fish in beta, the admin's only** (`app.js` `subjOpen`: switched in Tools; 27 IMR survey families, iNaturalist photos for now; the path to build is [`FISH_PATH.md`](FISH_PATH.md); fish answers are not logged to the sheet yet). One engine for both (AGENTS.md 13b).
+- **Learning**: one progression path for every game (AGENTS.md 6d: the photo quiz opens genera; the Duel tab, Memory, the custom quiz and the Tools' games draw only from the genera unlocked, `model.js` `unlocked()`); a first-launch question that sets variables, never a path (14h); learned = the silent mastery exam (14e); every player's progress is replayed from the whole answer log by the sheet whenever a progress rule changes (rules versions, `core.js` `RVS`; How to make a change 14).
+- **The sheet** (`tools/sync/Code.gs`): **VERSION 42** live on `main`; it updates itself within about 15 minutes of a merge that raises `VERSION` (`autoUpdate`), and its **Deploy log** tab lists every install and every one-shot data migration (`ONCE_`, run once by the new script itself). Open PRs bring v43 (#492, the admin's subject switch) and v44 (#498, each answer's UTC offset, with a one-shot backfill): one number per PR, in merge order. The app never needs a newer script than the live one (How to make a change 7a).
+- **Version numbers are stamped at deploy** (#499): no PR edits `?v=`, `LAB_V` or the `sw.js` cache name; `pages.yml` stamps content hashes and the build number (How to make a change 3). The sheet's `VERSION` stays manual.
+- **Presence of a species** (AGENTS.md 6e): Research Grade by 3 observers in the Philippines, or 1 plus an independent checklist, or confirmed near Dauin; cues and their doubts come only from species found here. #496 (open) makes Pierre's own observations follow the same rule.
+- **The admin plan** "Admin for every subject" (ROADMAP): one admin for corals and fish in twelve small PRs; PR 1 (#463) and PR 4 (#479) are merged, PR 2 is #492 (open); admin speed: #493 merged, #494 (its own service-worker cache) open; the Analyses group (sessions, plain words, visual) has #495, #500, #502 open.
+- **Agents**: Pierre runs a coordinator session that dispatches a few agents at once; the workflow, resource and review rules are in AGENTS.md, How to make a change 16-17 (worktrees, one smoke at a time, the Codex review loop).
+- **Watching**: the `net.smoke.js` step-9 hang (ROADMAP, open investigation: about 30 CI runs without a hang since #489 close it).
+
+## State of play at the account switch (2026-11-01)
 
 - The app was renamed **IMR Reef ID** (approved by Pierre on 2026-11-03, shipped 2026-11-04) (IMR Coral ID before; Pierre: corals now, fish and benthos next), internal names with it (storage keys `reefid-`, sheet v33 reads both key names; ARCHITECTURE.md "Names, storage keys and caches"). The address, the repository name, the Google Sheet "IMR Coral ID – RA progress" and the Cloud project "IMR Coral ID sync" kept their names; the address and repository move later with a migration for players (ROADMAP "Domain and repository rename"). <!-- rename-app: keep -->
 - Live app: <https://ppericard.github.io/coral-id-imr/> (GitHub Pages from `main`). Admin: <https://ppericard.github.io/coral-id-imr/admin.html>.
@@ -60,7 +87,7 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 1. New Google Sheet > Extensions > Apps Script > paste [`tools/sync/Code.gs`](../tools/sync/Code.gs) > save.
 2. Project Settings > Script Properties: add `ANON_SALT` = any long random string (keeps anonymous player ids unguessable; never commit it).
 3. Deploy > New deployment > type **Web app**, Execute as **Me**, Who has access **Anyone** > Deploy, accept the permissions. Run once in the editor a function that calls `UrlFetchApp` (see "Code.gs" below) so the admins' GitHub token check works.
-4. Put the `/exec` URL in `SYNC_URL` in `app.js` (the deploy stamps the version numbers). The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`, `Removed`) are created on first use. Old progress lives in the old Sheet only.
+4. Put the `/exec` URL in `SYNC_URL` in `app.js`. The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`, `Removed`) are created on first use. Old progress lives in the old Sheet only.
 
 **Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script, and write it with `tools/datajson.py` (one genus per line; the PR check fails on any other layout). The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools"). **The lecture photos' rights are uncertain** (Pierre, 2026-11-04): many are not IMR's own (from iNaturalist or the web without a proper source); they stay preferred for corals but are to be traced to their original and credited or replaced (ROADMAP, AGENTS.md rule 7). The IMR fish presentation's photos are mostly not IMR's own either (likely from ID books): fish never use them.
 
