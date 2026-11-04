@@ -139,6 +139,13 @@ function replayAdopt(rp, pending, v, cut, pre) {
   // Signed in with anonymous answers not moved to the account yet (signIn; the first save's reply clears SYNC.anon before
   // it adopts): a replay of the account's log alone would leave them out.
   if (SYNC && SYNC.anon) return false;
+  // A replay made with another first-launch history than this device's (Codex review #428: a history merged here and not
+  // saved yet): not adopted, nor its rules version marked applied; the save that follows carries the merged history, and
+  // its reply brings the replay made with it (Code.gs v36 sends the fingerprint it used, core.js startFp).
+  if (Number(v) >= START_SHEET && (rp.fp || '') !== startFp(store.get(CHOICE.KEY, null))) {
+    if (SYNC) ((SYNC.dirty = true), store.set('reefid-account', SYNC));
+    return false;
+  }
   try {
     const from = rvApplied(),
       played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && (s.ok || 0) + (s.ko || 0) > 0),
@@ -156,7 +163,9 @@ function replayAdopt(rp, pending, v, cut, pre) {
             mem: PMEM,
             conf: PCONF,
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
-            time: Number(v) >= RT_SHEET
+            time: Number(v) >= RT_SHEET,
+            // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
+            starts: Number(v) >= START_SHEET ? {[me]: store.get(CHOICE.KEY, null)} : {}
           })[me].P
         : rp.rec,
       before = copy(P),
@@ -204,7 +213,17 @@ function replayAdopt(rp, pending, v, cut, pre) {
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (reefid-sync-coral-reset, a time) wins over older progress.
 const copy = o => JSON.parse(JSON.stringify(o));
+// Once everything is merged, a first-launch question card left waiting gets the answer given on another device and the
+// quiz goes on (model.js startResume; Codex review #428: resumed inside the merge, the quiz drew on the progress and
+// cards from before it).
 function mergeSaved(j) {
+  try {
+    return mergeSavedIn(j);
+  } finally {
+    if (typeof startResume === 'function') setTimeout(startResume, 0);
+  }
+}
+function mergeSavedIn(j) {
   // The saved copy is the one this device saved or loaded last: the sheet's revision counts every write, any app's.
   const mine = typeof j.rev === 'number' && j.rev === SYNC.srv;
   if (typeof j.rev === 'number') SYNC.srv = j.rev; // the sheet's revision this merge is based on (sent back as at, v6)
@@ -225,6 +244,7 @@ function mergeSaved(j) {
     if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set('reefid-sync-coral-custom', rc);
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
+  startMerge(d[CHOICE.KEY]); // the first-launch question answered on another device (model.js; the latest answer wins)
   // Each subject's progress on its own (core.js SUBJECTS), as if it were on screen (inSubject): its cards, reset, opt-in
   // sets and opening hold. A subject the saved copy does not hold is left alone (the first, the corals, always runs):
   // absent is not empty (Codex review #442: a copy saved by an app from before fish has no fish keys, and merged as an
@@ -282,7 +302,7 @@ function mergeSubject(j, d, S, mine) {
   // the fish one).
   const holdIn = () => S.log && holdAdopt(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
-    introReset();
+    introReset(Date.parse(rr)); // made on another device: its time (model.js startRestart keeps a window counted since)
     introIn();
     P = R;
     SYNC[BK] = copy(R);
@@ -667,7 +687,7 @@ function reportDialog(c, btn) {
   d.showModal();
   d.querySelector('input[name="why"]').focus();
 }
-// Answers played before signing in (LOG0) and the one-time sign-in card (NUDGE): outside the reefid-sync-* keys, so they
+// Answers played before signing in (LOG0) and the one-time sign-in card (NUDGE, once used): outside the reefid-sync-* keys, so they
 // never travel in the progress data sent to the sheet.
 const LOG0 = 'reefid-log0',
   NUDGE = 'reefid-nudge',
@@ -716,13 +736,16 @@ function sendAnon() {
     keepalive: true,
     // pt: the oldest answer of the whole queue (pendingFrom), as answers left in it after a lost reply may be logged already.
     // reset: this device's progress reset (app.js), the replay's cutoff, as a signed-in player's saved data gives it (v28).
+    // start: the first-launch answer (model.js startSet), whose prior the replay applies, as a signed-in player's saved data
+    // gives it (v29); an older script ignores it.
     body: JSON.stringify({
       anon: who,
       anonAnswers: batch,
       av: appVer(),
       rv: rvApplied(),
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
-      ...(cut ? {reset: cut} : {})
+      ...(cut ? {reset: cut} : {}),
+      ...(store.get(CHOICE.KEY, null) ? {start: store.get(CHOICE.KEY, null)} : {})
     })
   })
     .then(r => r.json())
@@ -871,7 +894,8 @@ const SHEETV = 'reefid-sheet-v',
   PVLINK = 'reefid-pv-link',
   PV = pagesNew(),
   PVI = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
-let pvLast = null;
+let pvLast = null,
+  pvPre = null;
 // The script version of a reply (every reply carries v), remembered for the next visits.
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
@@ -899,11 +923,14 @@ document.addEventListener(
   true
 );
 // A page drawn (app.js route; a redraw of the same page is not a new opening).
+// A page is the hash and the subject on screen (SUBJECTS pv): a subject switched on the same hash (Tools) closes the page
+// of one and opens the page of the other (Codex review #466).
 function pagesRoute(h) {
-  if (h === pvLast) return;
+  if (h === pvLast && SUBJ.pv === pvPre) return;
   const prev = pvLast,
     genus = pvGenus(h);
   pvLast = h;
+  pvPre = SUBJ.pv;
   let from = prev === null ? 'other' : pageFrom(prev);
   if (genus) {
     const L = store.get(PVLINK, null);
@@ -913,7 +940,13 @@ function pagesRoute(h) {
     } catch (e) {}
   }
   const s = genus && P[genus];
-  pagesOpen(PV, h, Date.now(), {genus, from, asked: s && (s.ok || 0) + (s.ko || 0) > 0, hidden: document.visibilityState === 'hidden'});
+  pagesOpen(PV, h, Date.now(), {
+    genus,
+    from,
+    asked: s && (s.ok || 0) + (s.ko || 0) > 0,
+    hidden: document.visibilityState === 'hidden',
+    pre: SUBJ.pv // a fish page is named fish.<page> (core.js pageName)
+  });
 }
 function pagesSend() {
   const S = pagesTake(PV, Date.now());
@@ -1004,7 +1037,10 @@ function signIn(name, pin, j) {
   } catch (e) {}
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's (code review #324).
-  const ach = store.get(ACHK, null);
+  const ach = store.get(ACHK, null),
+    // The first-launch record made here before signing in joins the account's (core.js startUnion, Codex review #428):
+    // the account's earlier answers and this device's newer one both stay in the history.
+    st = store.get(CHOICE.KEY, null);
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
@@ -1021,6 +1057,7 @@ function signIn(name, pin, j) {
       localStorage.removeItem(RVK);
     } catch (e) {}
   if (ach) achMerge(JSON.stringify(ach));
+  if (st) store.set(CHOICE.KEY, startUnion(store.get(CHOICE.KEY, null), st));
   Object.entries(M).forEach(([k, v]) => store.set(k, v));
   if (!anon && !mine) delete SYNC.dirty;
   store.set('reefid-account', SYNC);
@@ -1033,14 +1070,19 @@ function signIn(name, pin, j) {
 // early so their progress reaches the sheet; 20 since 2026-11-02, was 10, "fewer, better pop-ups": nothing is lost by
 // waiting, the answers played before signing in (LOG0) join the account at sign-in). Spaced from the other prompts
 // (quiz.js promptOk). Never in Pierre's admin browser. "Later" closes it for good.
+// The account is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not the
+// game mode"): the answers count in every subject (answersAll), so a fish-only player meets it too (it counted LOG0,
+// the answers queued for the sheet, which holds no fish answers).
 const NUDGE_AT = 20;
+// Answers played on this device in every subject: each subject's global level record (core.js LEVEL, ok + ko), the one
+// on screen from memory. Signed out, that is what was played here without an account (signing out clears them).
+const answersAll = () =>
+  SUBJECTS.reduce((n, S) => {
+    const L = ((S.id === SUBJ.id ? P : store.get(subjKey(S.id, 'progress'), {})) || {})[LEVEL] || {};
+    return n + (Number(L.ok) || 0) + (Number(L.ko) || 0);
+  }, 0);
 const nudgeDue = () =>
-  !SYNC &&
-  SYNC_URL &&
-  !HAS_ADMIN_TOKEN &&
-  !document.querySelector('#tour, .unlock') &&
-  !store.get(NUDGE, 0) &&
-  store.get(LOG0, []).length >= NUDGE_AT;
+  !SYNC && SYNC_URL && !HAS_ADMIN_TOKEN && !document.querySelector('#tour, .unlock') && !store.get(NUDGE, 0) && answersAll() >= NUDGE_AT;
 // once = the one-time card (marks it used); play = once signed in, its button opens the photo quiz (skipped tour).
 // The header's Sign in button opens it with neither: it closes with "Close" or "Done".
 // The card (app.js cardShow) holds the account box (bindSync), which draws its own title and redraws itself as the player
@@ -1137,6 +1179,8 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
           ...['progress', 'quiz', 'reset', 'intro', 'intro-offer'].map(k => subjKey(S.id, k)),
           ...['hold', 'comeback'].map(k => subjDev(S.id, k))
         ]),
+        CHOICE.KEY, // the first-launch question's answer is the player's too (model.js startSet)
+        BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
         ACHK,
         'reefid-ach-new',
         CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too

@@ -14,9 +14,9 @@ Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assi
 
 ## What's inside
 
-- **Learn**: the Genera page (photos or short ID tips, in IMR lecture-group or slate order); a genus sheet per genus with your level on it and what it still needs, three photo views (colony, close-up, corallites), the IMR lecture notes, a mnemonic, Coral Finder features and "Don't confuse with"; Look-alikes, a deck of classic pair montages.
+- **Learn**: the Genera page (photos or short ID tips, in IMR lecture-group or slate order); a genus sheet per genus with your level on it and what it still needs, three photo views (colony, close-up, corallites), the IMR lecture notes, a mnemonic, the Coral ID Key criteria (from the Coral Finder book, by page) and "Don't confuse with"; Look-alikes, a deck of classic pair montages.
 - **Practice**: Quiz (name the genus from photos, adaptive difficulty), Custom quiz (the same quiz on the genera you pick), look-alike duels and Memory (colony ↔ corallites). Once every slate genus is met, a card offers 5 bonus genera off the slate that are common at Dauin (⚙ Bonus genera, any time); they join the quiz and duels one at a time, outside the slate score.
-- **Identify**: the Coral Finder, a clue-based ranking that follows the Coral Finder 2022 book (growth form, then box, then corallite clues), also listing 27 non-IMR genera seen at Dauin.
+- **Identify**: the Coral ID Key, a clue-based ranking that follows the Coral Finder 2022 book (growth form, then box, then corallite clues), also listing 27 non-IMR genera seen at Dauin.
 - **My progress**: learned / learning / review per genus on a 6-step colour scale, synced to a Google Sheet when an RA signs in.
 - **Settings** (⚙): light/dark theme, five colour palettes (Depth by default), colour-blind mode (blue/orange instead of green/red).
 - **Tools**: prototypes (mind map, corallite anatomy, look-alike web…) that graduate to the main app only once Pierre approves.
@@ -34,7 +34,7 @@ The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus dat
 
 - IMR Lecture 6 photos, used with IMR permission for internal training. Do not reuse outside IMR. They come first everywhere and are used in games.
 - Pierre's own iNaturalist photos (user `ppericard`), then other iNaturalist observers (CC licences), credited in the enlarged view and, in games, after the answer.
-- Coral Finder 2022 book crops (© R. Kelley / BYOGUIDES): never in games; on a genus sheet only when pinned or to fill a gap after the field photos; a few in the Coral Finder. Switchable off site-wide from the admin.
+- Coral Finder 2022 book crops (© R. Kelley / BYOGUIDES): never in games; on a genus sheet only when pinned or to fill a gap after the field photos; a few in the Coral ID Key. Switchable off site-wide from the admin.
 
 `tools/` holds the build and import scripts; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for which ones are still re-runnable.
 

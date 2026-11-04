@@ -81,7 +81,7 @@ const FIELD_DEV = [
   {name: 'phone', ctx: {viewport: {width: 390, height: 800}, deviceScaleFactor: 2, isMobile: true, hasTouch: true}},
   {name: 'desktop', ctx: {viewport: {width: 1280, height: 800}}}
 ];
-const ASKED = ['data.json', 'quiz.js', 'progress.js', 'learn.js', 'proto/lab.js', 'proto/lab.css', 'forms.json', 'proto/finder.js', 'sw.js'];
+const ASKED = ['data.json', 'quiz.js', 'progress.js', 'learn.js', 'proto/lab.js', 'proto/lab.css', 'forms.json', 'proto/idkey.js', 'sw.js'];
 // One line of FIELD.rate bytes/s shared evenly by the replies in flight (20 ms slices), each reply starting FIELD.lat
 // ms after its request.
 function shaper(st) {
@@ -146,6 +146,7 @@ async function field() {
       await ctx.addInitScript(() => {
         try {
           localStorage.setItem('reefid-tour', '1');
+localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         } catch (e) {}
       });
       const p = await ctx.newPage();
@@ -221,7 +222,7 @@ async function field() {
   await b.close();
   h2.close();
 }
-const PAGES = ['genera', 'g-Acropora', 'quiz', 'progress', 'board', 'ach', 'finder', 'lab', 'home'];
+const PAGES = ['genera', 'g-Acropora', 'quiz', 'progress', 'board', 'ach', 'idkey', 'lab', 'home'];
 const s1 = ms => (ms / 1000).toFixed(1) + ' s';
 const ms = x => Math.round(x) + ' ms';
 
@@ -282,6 +283,7 @@ const ms = x => Math.round(x) + ' ms';
       // The welcome tour would cover the pages: marked as seen.
       try {
         localStorage.setItem('reefid-tour', '1');
+localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       } catch (e) {}
     });
     const out = [];

@@ -160,6 +160,27 @@
           : name === 'Ben Demo'
             ? {at: 50, open: 0, t: at(50)}
             : null;
+      // The first-launch question (app core.js CHOICE, model.js startSet): Carla said she had the IMR course in the tour
+      // and moved up to "I know corals well" on the fallback card after her 20th answer; Ben is new to corals and got the
+      // Coral basics card; the others answered in the tour.
+      const st0 =
+        name === 'Carla Demo'
+          ? {
+              c: 'know',
+              t: at(20),
+              at: 20,
+              via: 'fallback',
+              n: 0,
+              s: 0,
+              fb: {'reefid-hi': [20, at(20)]},
+              h: [
+                ['imr', 0, at(0), 'tour'],
+                ['know', 20, at(20), 'fallback']
+              ]
+            }
+          : name === 'Ben Demo'
+            ? {c: 'new', t: at(0), at: 0, via: 'card', n: 20, s: -4.6, fb: {'new-lo': [20, at(20)]}, h: [['new', 0, at(0), 'card']]}
+            : {c: 'imr', t: at(0), at: 0, via: 'tour', n: 20, s: 0.4, fb: {}, h: [['imr', 0, at(0), 'tour']]};
       const learned = Object.values(P).filter(s => s.pg >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
@@ -178,7 +199,8 @@
           'reefid-sync-coral-progress': JSON.stringify(P),
           'reefid-sync-settings': '{}',
           'reefid-sync-coral-intro': JSON.stringify(intro),
-          ...(offer ? {'reefid-sync-coral-intro-offer': JSON.stringify(offer)} : {})
+          ...(offer ? {'reefid-sync-coral-intro-offer': JSON.stringify(offer)} : {}),
+          'reefid-sync-coral-start': JSON.stringify(st0)
         }
       };
     });
@@ -353,7 +375,8 @@
     // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
     // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
     // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
-    // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code).
+    // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code); Ana
+    // also played the fish quiz once.
     let ps = 7;
     const prnd = () => (ps = (ps * 1103515245 + 12345) % 2147483648) / 2147483648,
       pages = [],
@@ -383,7 +406,13 @@
         const nG = Object.keys(g).length;
         pages.push(
           pageRow(pi++, NOW - (d0 - v * (d0 / 4)) * DAY, aid(name), {
-            r: {home: [1, 4 + Math.round(prnd() * 10)], quiz: [1 + nG, 300 + Math.round(prnd() * 900)], ...(nG ? {genus: [nG, 60]} : {})},
+            r: {
+              home: [1, 4 + Math.round(prnd() * 10)],
+              quiz: [1 + nG, 300 + Math.round(prnd() * 900)],
+              ...(nG ? {genus: [nG, 60]} : {}),
+              // Ana's last visit went on with Fish on screen (core.js pageName: fish.<page>).
+              ...(name === 'Ana Demo' && v === 3 ? {'fish.quiz': [2, 420], 'fish.genera': [1, 35]} : {})
+            },
             g,
             vi: 'demovi' + pi,
             na
@@ -667,7 +696,7 @@
       return head || !text ? {ok: true, answers: n, stored} : {ok: true, answers: n, stored, report: text};
     });
   };
-  window.fetch = async (u, opts = {}) => {
+  const demoFetch = async (u, opts) => {
     const url = String(u && u.url ? u.url : u);
     if (url.startsWith('https://api.github.com/user')) return ok({login: 'demo'});
     if (url.startsWith('https://api.github.com/repos/'))
@@ -692,6 +721,17 @@
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));
     return real(u, opts);
+  };
+  // Calls in flight through the demo (its sync script and GitHub answers, and the site's own files): tests/admin.smoke.js
+  // waits for none before reading a page, the way the app's tests wait for APP_READY, instead of a fixed time.
+  window.DEMO_PENDING = 0;
+  window.fetch = async (u, opts = {}) => {
+    window.DEMO_PENDING++;
+    try {
+      return await demoFetch(u, opts);
+    } finally {
+      window.DEMO_PENDING--;
+    }
   };
   // A banner on every page: this is not the real admin.
   const bar = document.createElement('p');

@@ -67,6 +67,7 @@ const server = http.createServer((req, res) => {
   await ctx.addInitScript(() => {
     try {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     } catch (e) {}
     // Same draws every run (as profiles.smoke.js): unseeded, the mastery-exam check failed once on CI (PR #362: the 5th
     // exam question of a 97% genus, drawn rarely, did not come within the 400 answers; not reproduced in 48 local runs).
@@ -466,7 +467,7 @@ const server = http.createServer((req, res) => {
         document.querySelectorAll('.unlock').forEach(x => x.remove()); // closed by the player before Next
         quizPhoto();
         // The player reads the cards through (each genus is met when its card shows).
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
         const now = Object.keys(INTROS).filter(n => !before.has(n));
         if (now.length) cardsAt.push([a, now.length]);
         // A starred genus opens only after the genera its card compares it to (core.js starRefs; Pierre, 2026-11-03).
@@ -580,7 +581,7 @@ const server = http.createServer((req, res) => {
         achQ.length = 0;
         achBusy = false;
         quizPhoto();
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
         const o = document.querySelector('.unlock.intro [data-open]');
         if (o) {
           shownAt = answersSoFar();
@@ -612,7 +613,9 @@ const server = http.createServer((req, res) => {
           if (document.querySelector('.unlock [data-back]')) fails.push(`back card for a player who keeps up (answer ${answersSoFar()})`);
           for (
             let b;
-            (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not([data-bonus]):not(.sec)'));
+            (b = document.querySelector(
+              '.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not([data-back]):not([data-bonus]):not(.sec)'
+            ));
           )
             b.click();
           say(tg);
@@ -654,7 +657,9 @@ const server = http.createServer((req, res) => {
           if (document.querySelector('.unlock [data-back]')) fails.push('back card shown twice');
           for (
             let b;
-            (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not([data-bonus]):not(.sec)'));
+            (b = document.querySelector(
+              '.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not([data-back]):not([data-bonus]):not(.sec)'
+            ));
           )
             b.click();
           const now = allSet.filter(n => introduced(n) && !was.has(n));
@@ -1040,7 +1045,7 @@ const server = http.createServer((req, res) => {
           const a = answersSoFar(),
             before = new Set(Object.keys(INTROS));
           quizPhoto();
-          for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+          for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
           if (document.querySelector('.unlock [data-bonus]')) fails.push('bonus offer made again');
           const now = Object.keys(INTROS).filter(n => !before.has(n));
           if (now.length) cards.push([a, now]);

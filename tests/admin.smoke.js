@@ -133,12 +133,26 @@ const WIDTHS = [390, 1280];
       if (m.type() === 'error' && !/Failed to load resource|net::ERR_/.test(m.text())) errs.push(m.text());
     });
     p.on('dialog', d => d.accept());
+    // Waits for the page's state, not a fixed time (test-suite review, 2026-11-04: 300 + 200 ms at each of ~90 steps per
+    // width): no demo call in flight (admin-demo.js DEMO_PENDING), no "Loading…" note, both for three frames in a row
+    // (the hash change and the render a reply starts land within a frame).
     const settle = async () => {
-      await p.waitForTimeout(300);
+      await p.evaluate(() => (window.__calm = 0));
       await p
-        .waitForFunction(() => !/^\s*Loading/.test((document.querySelector('#view .note') || {}).textContent || ''), null, {timeout: 15000})
-        .catch(async () => fails.push(`${w}px ${await p.evaluate(() => location.hash)}: still loading`));
-      await p.waitForTimeout(200);
+        .waitForFunction(
+          () => {
+            const busy = window.DEMO_PENDING > 0 || /^\s*Loading/.test((document.querySelector('#view .note') || {}).textContent || '');
+            window.__calm = busy ? 0 : (window.__calm || 0) + 1;
+            return window.__calm >= 3;
+          },
+          null,
+          {timeout: 15000, polling: 'raf'}
+        )
+        .catch(async () =>
+          fails.push(
+            `${w}px ${await p.evaluate(() => location.hash)}: still loading (${await p.evaluate(() => window.DEMO_PENDING)} demo call(s) in flight)`
+          )
+        );
     };
     const go = async h => {
       errs.length = 0;
@@ -173,7 +187,7 @@ const WIDTHS = [390, 1280];
         {h: '~journey/Ana Demo', tab: 'Players', view: null, n: 1}
       ];
     });
-    const OLD = ['~triage', '~stats-needs', '~cov', '~fcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
+    const OLD = ['~triage', '~stats-needs', '~cov', '~kcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
     OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
     const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
     if (miss.length) fails.push(`${w}px: old addresses without a tab: ${miss.join(' ')}`);
@@ -266,7 +280,7 @@ const WIDTHS = [390, 1280];
     }
 
     // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
-    await go('~fcov');
+    await go('~kcov');
     await go('~triage');
     const mem = await p.evaluate(() => ({
       cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
@@ -274,7 +288,7 @@ const WIDTHS = [390, 1280];
       players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
       kept: (store.get('reefid-admin-view', {}) || {}).cov
     }));
-    if (mem.cov !== '#~fcov' || mem.todo !== '#~triage' || mem.kept !== '~fcov' || mem.players !== '#~users')
+    if (mem.cov !== '#~kcov' || mem.todo !== '#~triage' || mem.kept !== '~kcov' || mem.players !== '#~users')
       fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
     await p.reload();
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
@@ -550,6 +564,9 @@ const WIDTHS = [390, 1280];
     await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
     await p.click('[data-uren="Ben Demo"]');
     await p.waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+    // The rename reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
+    // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
+    await settle();
     const ren = await text();
     if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
       fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
@@ -576,11 +593,14 @@ const WIDTHS = [390, 1280];
         .catch(() => null);
     for (const n of ['Ben Demo-test', 'Test Demo']) {
       const h = await nameOf(n);
-      if (!h || h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
+      if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
+      else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
         fails.push(`${w}px Players: hidden player ${n} not greyed without a tag (${JSON.stringify(h)})`);
     }
     const shown = await nameOf('Carla Demo');
-    if (!shown || shown.color === shown.muted || shown.italic === 'italic') fails.push(`${w}px Players: Carla's name is greyed`);
+    if (!shown) fails.push(`${w}px Players: Carla's row not found`);
+    else if (shown.color === shown.muted || shown.italic === 'italic')
+      fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
     // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
     // (admin.css --cut), the name ends in "…" and its title holds it whole.
     if (w === 390) {
@@ -702,7 +722,8 @@ const WIDTHS = [390, 1280];
       !/before asked/.test(sa.t) ||
       !/after asked/.test(sa.t) ||
       !/Learn/.test(sa.t) ||
-      !/4 visits recorded/.test(sa.t)
+      !/4 visits recorded/.test(sa.t) ||
+      !/quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.quiz) read back with its subject
     )
       fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
     await go('~journey/' + encodeURIComponent('Dio Demo'));
@@ -1208,8 +1229,8 @@ const WIDTHS = [390, 1280];
     await settle();
 
     // Game genera first (Pierre, 2026-11-03; core.js gameOf): Game coverage lists every genus a game asks, Millepora and
-    // the bonus genera included; in Candidates no Finder-only genus comes before a game genus of the same source, none
-    // is proposed for Corallites, and a Finder-only genus is full at CAP.sheet colonies.
+    // the bonus genera included; in Candidates no Key-only genus comes before a game genus of the same source, none
+    // is proposed for Corallites, and a Key-only genus is full at CAP.sheet colonies.
     await go('~cov');
     const gq = await p.evaluate(() => {
       const rows = [...document.querySelectorAll('.cov-t tbody tr')].map(tr => tr.dataset.g),
@@ -1230,13 +1251,13 @@ const WIDTHS = [390, 1280];
       };
     });
     if (!gq.rows || !gq.mill) fails.push(`${w}px Game coverage: rows are not the game genera (Millepora and bonus: ${gq.mill})`);
-    if (!gq.fo) fails.push(`${w}px Game genera: no Finder-only genus in the data`);
+    if (!gq.fo) fails.push(`${w}px Game genera: no Key-only genus in the data`);
     Object.entries(gq.order).forEach(([s, [first, lastGame, n]]) => {
       if (first >= 0 && first < lastGame)
-        fails.push(`${w}px Candidates ${s}: a Finder-only genus at ${first}, before a game genus at ${lastGame} (${n})`);
+        fails.push(`${w}px Candidates ${s}: a Key-only genus at ${first}, before a game genus at ${lastGame} (${n})`);
     });
-    if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Finder-only genera`);
-    if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Finder-only ones`);
+    if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Key-only genera`);
+    if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Key-only ones`);
     // Where to look: a banner above the Games grid (its first cells), open in full on its old address.
     const lk = await p.evaluate(() => ({
       links: document.querySelectorAll('#cov-look .cov-lk').length,
