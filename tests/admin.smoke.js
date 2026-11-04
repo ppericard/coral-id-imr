@@ -260,15 +260,43 @@ const WIDTHS = [390, 1280];
       at = await seg();
       if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
         fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
-      await go('~users');
+      // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
+      await p.evaluate(() => {
+        const a = document.createElement('a');
+        a.href = '#~users';
+        a.id = 'subjtest';
+        a.textContent = 'test';
+        document.getElementById('view').prepend(a);
+      });
+      await p.click('#subjtest');
+      await settle();
       at = await seg();
       if (at.hash !== '#' + other.hash + '~users' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
         fails.push(`${w}px Subjects: a shared page without prefix left the ${other.id} side ${JSON.stringify(at)}`);
+      // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
+      // (Codex review #492): #~users, then #fish/~triage, then Back.
+      await go('~users');
+      at = await seg();
+      const n0 = await p.evaluate(() => history.length);
+      if (at.hash !== '#~users' || at.subj[0][1] !== 'true')
+        fails.push(`${w}px Subjects: #~users not on the corals' side ${JSON.stringify(at)}`);
+      await go(other.hash + '~triage');
+      await p.evaluate(() => history.back());
+      await settle();
+      at = await seg();
+      const n1 = await p.evaluate(() => history.length);
+      if (at.hash !== '#~users' || at.subj[0][1] !== 'true' || n1 !== n0 + 1)
+        fails.push(`${w}px Subjects: Back to #~users ${JSON.stringify({...at, n0, n1})}`);
+      await p.evaluate(() => history.forward());
+      await settle();
+      at = await seg();
+      if (at.hash !== '#' + other.hash + '~triage' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
       if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
       await p.click(`#subj [data-subj="${S[0].id}"]`);
       await settle();
       at = await seg();
-      if (at.subj[0][1] !== 'true' || at.hash !== '#~quality') fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
+      if (at.subj[0][1] !== 'true' || at.hash !== '#~users') fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
     }
     // Analyses (Pierre, 2026-11-04): the stored report (the demo computes it as the GitHub Action would, tools/analyses.js)
     // drawn in every view, with charts and no sideways scroll; the 4-choice count of Formats equals a direct count of the
