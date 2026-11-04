@@ -170,10 +170,10 @@ Decided from the admin pooling study:
 - **Look-alike pairs** from the data (same genus, same IMR sub-entry), from IMR, from the players' confusions, **and from reference
   sites**. The **ID cues** that tell two species apart are searched online (FishBase and other references), triaged, the most relevant
   kept, and **always sourced** (rule 2).
-- **How cues are taught** (Pierre, 2026-11-04): inspired by Marine Conservation Philippines' fish ID course, which Pierre finds very well
-  made: cues about a family itself, and cues taught **by comparison** with another family or species (learning by contrast). Inspiration
-  for how to teach only (structure, comparisons): it is not cited, and its text and images are never copied; the cue content comes from
-  public, sourced references.
+- **How cues are taught** (Pierre, 2026-11-04): inspired by a local fish ID course Pierre finds very well made: cues about
+  a family itself, and cues taught **by comparison** with another family or species (learning by contrast). Inspiration for how to teach
+  only (structure, comparisons): it is not cited, and its text and images are never copied; the cue content comes from public, sourced
+  references.
 - **Fish answers logged to the sheet from the start**, as soon as curated photos enter the game.
 
 ## Juveniles and colour phases
