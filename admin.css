@@ -3796,6 +3796,13 @@ button.adm-chip[aria-pressed='true'] {
 .adm-an-svg .an-ci.t-thin {
   stroke-dasharray: 2 3;
 }
+.adm-tbl td.an-w {
+  max-width: none;
+  white-space: normal;
+}
+.adm-an-svg .an-bar {
+  fill: var(--accent);
+}
 .adm-an-out {
   margin: 10px 0 0;
   font-size: var(--fs-s);
