@@ -39,6 +39,11 @@ test('parts: everything by default; SMOKE_ONLY, PAGES_ONLY (older name) and SMOK
     as({SMOKE_PART: 'other'}, () => parts(all, groups)),
     /no such group/
   );
+  // The CI shards cover every part: a part in no group fails every run, the full one too.
+  await assert.rejects(
+    as({}, () => parts(all, {main: ['main'], rest: ['tips', 'replay']})),
+    /leave out overlays/
+  );
 });
 
 test('widths: the default, or the ones SMOKE_W names in the default order; a width the smoke has not fails', async () => {
