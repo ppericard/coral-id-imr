@@ -16,7 +16,10 @@ an explanation, a half fault that cannot be gamed, a non-linear global scale, an
 
 Later still (Pierre, 2026-11-04, answering the fish UX study): a scientific genus level ("Levels"), the fish welcome question, which replaces the IMR prompt's "Yes opens
 everything at once" ("The fish welcome question and the IMR answer"); Fish basics; achievements; and the frame both subjects share
-(subject switch, Identify, opening fish to players, the app icon, leaderboards: "Both subjects in one app").
+(subject switch, Identify, opening fish to players, the app icon, leaderboards: "Both subjects in one app"). Then (Pierre, 2026-11-04,
+later): the path is a tree, not a line ("Levels"); the names a player chooses to learn ("Which names a player learns"); curated common
+names ("Common names"); the open-all card in two steps; the global score's targets ("My progress (fish)"); the Fish basics shape groups
+credited to their book.
 
 **Wording** (Pierre, 2026-11-04): player-facing text says **"scientific name"**, never "Latin" (more understandable). In this file "Latin"
 is the design's shorthand, and internal identifiers may keep it.
@@ -36,14 +39,35 @@ is the design's shorthand, and internal identifiers may keep it.
   - Otherwise an optional level, offered like the opt-in circles: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
     a ⚙ On / Off row. Never counted in the progress bar.
 - **Level 2, species**: the species of an entry (`teach[].species`), shown with the name-display schedule below.
-- **Scientific genus names, between common names and species scientific names** (Pierre, 2026-11-04, decided in principle, to design;
-  replaces "No Latin genus level" of 2026-11-03): an intermediate step before knowing every species, e.g. a photo, then 4 genus names
+- **The path is a tree, not a line** (Pierre, 2026-11-04, later; replaces the linear "families, then common names, then genus, then
+  species" wording of the same day):
+  - **trunk**: the families (the IMR entries, level 1);
+  - **branch A**: the species by **common name**;
+  - **branch B**: the **scientific genus names**, then the **species scientific names**.
+  A player goes along one branch or both, by the names they chose ("Which names a player learns").
+- **Scientific genus names, the first step of branch B** (Pierre, 2026-11-04, decided in principle, to design; replaces "No Latin genus
+  level" of 2026-11-03): an intermediate step before knowing every species's scientific name, e.g. a photo, then 4 genus names
   (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
   invented: rule 2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
 - **A right genus is partial credit** (Pierre, 2026-11-04; replaces "Right genus, still a miss on the species"): when a species'
   scientific name is asked and the player types the right genus only, it is genuine partial learning (unlike a common name typed
   instead: open question 3), so it counts as partial credit. How much, and its thresholds, by simulation.
-- Species scientific names then come as a question format whose share rises with each species' progress (schedule below).
+- In branch B the species scientific names then come as a question format whose share rises with each species' progress (schedule
+  below, for a player learning both names; a player learning scientific names only sees them alone).
+
+## Which names a player learns (Pierre, 2026-11-04)
+
+- The player chooses, at the fish welcome and any time in ⚙: **common names**, **scientific names**, or **both**.
+- **"I'm at IMR (Research Assistant programme)"** = both, with scientific names early (EventMeasure takes scientific names).
+- **One score scale for everyone**, whatever the choice, so the leaderboards stay comparable ("My progress (fish)").
+
+## Common names: a short curated list per species (Pierre, 2026-11-04)
+
+- Per species, a curated list of **1 to 3 well-used common names, never more**, never a full reference list.
+- **Common-name mastery of a species needs all its listed names**: a multiple-choice question shows one listed name at a time, rotating;
+  free text accepts only the listed names.
+- **Selection** (a proposal, validated by Pierre in the admin): the names that recur across public sources (the iNaturalist default
+  English name, the FishBase main English name, other public references), at most 3.
 
 ## The very start (fish beta feedback, Pierre, 2026-11-04)
 
@@ -79,7 +103,7 @@ The first fish questions must be easy and readable. Two decisions, each built in
 
 ## Name-display schedule (common to Latin)
 
-Pierre's sequence, as a difficulty that rises with the species' progress, like the typed share (`TYPED`), never as an on/off mode:
+For a player learning both names (a player learning one kind sees only that one). Pierre's sequence, as a difficulty that rises with the species' progress, like the typed share (`TYPED`), never as an on/off mode:
 
 1. **Common + Latin underneath** (so the two get associated).
 2. **Latin + common underneath.**
@@ -140,12 +164,13 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   existing fish player past 50 fish answers, the 40 / 60 checkpoints (a "lower" verdict offers **Fish basics**), the back card after
   Open all, the "Had the IMR …? Open all" box on the first cards and in My progress. Its own state per subject (the coral answer stays
   the corals').
-- **"I'm at IMR" brings scientific names earlier** (Pierre, 2026-11-04); the adaptive difficulty still holds them back, since they are
-  hard.
-- **What the open-all card opens** for fish, once species exist (Claude's recommendation, recorded as a proposal; Pierre undecided): all
-  the remaining **families**, as now, **never all species at once** (a wall of 300+ never-asked species is the collapse pattern already
-  seen); species and scientific names then unlock family by family, earlier for the IMR answer. Until species exist it opens the
-  entries, as today.
+- **"I'm at IMR" brings scientific names earlier** (Pierre, 2026-11-04): both names, scientific names early ("Which names a player
+  learns"); the adaptive difficulty still holds them back, since they are hard.
+- **Open all in two steps** (Pierre, 2026-11-04, later; replaces Claude's one-step proposal), both always optional and declinable:
+  1. **"Danger zone"**: all the families and all the scientific genera (for a player learning common names only: all the families).
+  2. Later, **only if the results show it is still too easy** (e.g. a high success over all the open genera after enough answers):
+     **"Super Hyper Mega Danger Zone"**, all the species at once.
+  Until species exist the first step opens the entries, as today.
 - **Not now**: the calmer path above (entries, then species at Advanced, scientific names later because they are hard).
 - The answer and the open-all choice are synced with the player's fish progress (the offer as the corals' does: `reefid-sync-fish-intro-offer`), shown in the admin player journey; Open all can still be taken later from My progress.
 - **No struggling once everything is open.** The dynamic difficulty must hold an IMR player near the usual target:
@@ -159,11 +184,15 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps on real photos, one plain sentence
 each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card.
 
-- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the IMR shape groups), so rule 2
+- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the shape groups), so rule 2
   holds and the IMR wording is kept (rule 1).
+- **The shape groups are the book's** (Pierre, 2026-11-04): those of *Reef Fish Identification – Tropical Pacific* (2nd edition, Allen,
+  Steene, Humann & DeLoach, New World Publications), which the IMR course follows. The book is credited for the groups, not IMR (the
+  code and these docs still say "IMR shape groups" for them).
 - **Body shape first** (Pierre, 2026-11-04): identification always starts with the body shape, which is what separates the
-  identification groups (the most-used local ID book groups fish by body shape). The module starts with body shape and the IMR shape
-  groups, then the vocabulary.
+  identification groups (the book above groups fish by body shape). The module starts with body shape and the shape groups, then
+  the vocabulary.
+- **The dorsal fin is not a step of its own**: it is the second screen of the "Fins" step (Pierre, 2026-11-04).
 - **IMR terms kept**: "Band", with a discreet "sources differ" note; the "heart-shaped" tail, a good *Dascyllus* indicator (IMR's term).
 - **Photos and figures** (Pierre, 2026-11-04): never the IMR slide photos (most are not IMR's own, likely from ID books); photos with
   known rights (Pierre's, iNaturalist), diagrams and figures our own drawings.
@@ -193,7 +222,7 @@ Gaps before species questions ship:
 - **Duplicate common name**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question).
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
-- Optional: other common names (iNaturalist, FishBase) accepted when typed, never shown.
+- The curated common names per species (1 to 3, "Common names"); today `common` holds one English name each.
 - Fish answers are not logged to the sheet yet (no subject column): no pooled photo difficulty or confusion scores for fish until they are.
   Pierre, 2026-11-04: they are logged **from the start**, as soon as curated photos enter the game.
 
@@ -300,17 +329,21 @@ Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#lab-fishprog
 on families only to an IMR RA with every species open:
 
 - **One global fish progress score** (Pierre, 2026-11-04; replaces "the entry bar counts the entries only; species never enter it"): the
-  headline % covers the whole path, from 0 (nothing known, nothing opened) to 100% (every species known in Latin, or nearly every one).
+  headline % covers the whole path, from 0 (nothing known, nothing opened) to 100%.
   Reaching 100% on fish is expected to be much harder than on corals. The fish leaderboard uses it. The per-entry bars and the "Species
   named" / "Scientific name" counters stay, as detail.
-  - **The scale** (Pierre, 2026-11-04, later; replaces a 20 / 30 / 50 split proposed that morning): **non-linear, fast at the start**
-    (recognising the families is already great). A player who knows every entry and every species by its common name is at **80%**;
-    scientific names are the real difficulty and fill the last **20%** slowly, point by point: **scientific genus names, then species
-    scientific names** (Pierre, 2026-11-04). The stages: the circle-1 entries (27), their species by common name (323), their genera by
-    scientific name, the species by scientific name; unopened units at 0; circles 2 and 3 never count (as
-    now). The exact curve is set by simulation (`tools/learnsim.js` fish profiles).
-  - What counts for the scientific stage (the exam passed, or the progress on the questions shown in Latin) and what "nearly every one"
-    means are part of the same study.
+  - **The scale** (Pierre, 2026-11-04, latest; replaces the 80 / 20 split of earlier that day, itself replacing a 20 / 30 / 50 split of
+    the morning): **100% only for a player who masters both the common and the scientific names of every species** (the "fish god").
+    Targets: every common name of every species and no scientific name ≈ **80%**; every scientific name and no common name ≈ **85%**.
+  - **Non-linear per species**: credit *a* for its common names only < *b* for its scientific name only < 1 for both; its genus known
+    is partial credit inside *b*. The families' share and the exact *a* and *b* are set by simulation (rule 14f: `tools/learnsim.js`
+    fish profiles), then tuned.
+  - **Not additive**: an additive split (families + common + scientific) would put families alone near 65%. The families still count
+    fast at the start (recognising the families is already great).
+  - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the circle-1 entries
+    (27) and their species (323); unopened units at 0; circles 2 and 3 never count (as now).
+  - What counts as a species' scientific name known (the exam passed, or the progress on the questions shown in Latin) is part of the
+    same study.
   - **The Elo level stays alongside** as the player's overall level.
 - **Default view, Slate rows (A)**: the 27 IMR entries in IMR order, each with its level bar, a thin bar of its species and the two
   counters, **"Species named: N"** (a species at Advanced) and **"Scientific name: M"** (its all-Latin exam passed; "In Latin" in the
@@ -370,9 +403,9 @@ on families only to an IMR RA with every species open:
    later ("Both subjects in one app").
 5. **The fish exams, to be rethought** (Pierre, 2026-11-04; open, to design): an exam per species, or per entry (family)? Pierre's idea:
    a family's exam is about 20 questions on only the hard fish of that family, answered directly with the scientific name.
-6. **The fish open-all card and the IMR answer.** **Answered in part (Pierre, 2026-11-04)**: "I'm at IMR" brings scientific names
-   earlier (the adaptive difficulty still holds them back). What the card opens once species exist: proposal, Pierre undecided (all the
-   remaining families, never all species at once; "The fish welcome question and the IMR answer").
+6. **The fish open-all card and the IMR answer.** **Answered (Pierre, 2026-11-04)**: "I'm at IMR" = both names, scientific names early
+   (the adaptive difficulty still holds them back); Open all in two steps, "Danger zone" (families and genera) then, only if still too
+   easy, "Super Hyper Mega Danger Zone" (all species) ("The fish welcome question and the IMR answer").
 
 ## Checks before release
 
