@@ -2,7 +2,7 @@
 
 Status: design agreed with Pierre on 2026-11-03, not built. Level 1 (the 27 IMR entries) is built on this branch (docs/ARCHITECTURE.md
 "Subjects", docs/LEARNING.md "Fish on the same model"). This file says what comes next: species names, common then Latin, and the IMR
-shortcut. It reuses the engine as it is (Elo per unit, progress, mastery levels and exam, opening, typed share); nothing here is a coded
+shortcut (since 2026-11-04 the fish welcome question and the open-all card). It reuses the engine as it is (Elo per unit, progress, mastery levels and exam, opening, typed share); nothing here is a coded
 track: every unlock is a performance threshold or a share that rises with progress (docs/LEARNING.md "Considered and not adopted").
 
 Origin: Pierre's own ReefRecall design (founding proposal, June 2026: "start with family names, then common names, then scientific names";
@@ -13,6 +13,10 @@ Updated 2026-11-04 with Pierre's decisions on the first fish beta feedback: the 
 name as half a fault, one global fish progress score, and the display schedule's thresholds (sections below, "Open questions for Pierre").
 Later the same day: milestone cards, the exams to rethink, "scientific name" in player-facing text, juveniles and phases introduced with
 an explanation, a half fault that cannot be gamed, a non-linear global scale, and the fish photos and admin ("Fish photos and the admin").
+
+Later still (Pierre, 2026-11-04, answering the fish UX study): the fish welcome question, which replaces the IMR prompt's "Yes opens
+everything at once" ("The fish welcome question and the IMR answer"); Fish basics; achievements; and the frame both subjects share
+(subject switch, Identify, opening fish to players, the app icon, leaderboards: "Both subjects in one app").
 
 **Wording** (Pierre, 2026-11-04): player-facing text says **"scientific name"**, never "Latin" (more understandable). In this file "Latin"
 is the design's shorthand, and internal identifiers may keep it.
@@ -28,7 +32,7 @@ is the design's shorthand, and internal identifiers may keep it.
 - **Level 1, entry**: the 27 IMR entries (circle 1), as built. Unchanged.
 - **Level 1b, IMR sub-entry** (optional): the sub-entries IMR names inside an entry (`fish.json` `sub`): Chromis, Dascyllus, Pomacentrus,
   Anemonefish (Damselfish); Bannerfish (Butterflyfish); Surgeonfish, Unicornfish (Surgeonfish & Unicornfish).
-  - Opened at once by the IMR prompt (below).
+  - Opened with the others by the open-all card ("The fish welcome question and the IMR answer", below).
   - Otherwise an optional level, offered like the opt-in circles: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
     a ⚙ On / Off row. Never counted in the progress bar.
 - **Level 2, species**: the species of an entry (`teach[].species`), shown with the name-display schedule below.
@@ -110,26 +114,51 @@ Pierre's sequence, as a difficulty that rises with the species' progress, like t
   2026-11-04): typing common names must never advance the scientific-name progress. Accepting a common name sometimes shows partial
   learning, but when the scientific name is what is tested, it must be given at some point.
 
-## The IMR prompt
+## The fish welcome question and the IMR answer (Pierre, 2026-11-04)
 
-Mirrors the corals' "I've had the IMR lecture: open all genera" (docs/LEARNING.md, `introAll`, `introOffer`). Same pattern, same places:
-a tinted box with a real button on the first fish cards, and in My progress (fish) while entries or species are still unopened.
+Replaces the earlier "IMR prompt" (2026-11-03: a box asking "Are you at IMR / following the Research Assistant programme?" whose **Yes
+opened everything at once**: every circle-1 entry, their species, the IMR sub-entries, typed Latin early). Pierre, 2026-11-04, answering
+the fish UX study: the fish get a welcome question that **works exactly like the coral one** (PR #428, the first-launch question,
+`core.js` `CHOICE`; docs/LEARNING.md), and the answer opens nothing.
 
-- Wording: **"Are you at IMR / following the Research Assistant programme?"**
-- **Yes** opens in one go, without cards:
-  - every circle-1 entry;
-  - every species of those entries;
-  - the IMR sub-entries;
-  - **typed Latin early**: the name-display schedule shifted earlier on the progress axis (one shift, not a second schedule), so Latin
-    first and typed Latin come from the first answers on a species.
-- **Not now**: the calmer path above (entries, then species at Advanced, Latin later because it is hard).
-- The choice is synced like the coral offer (`reefid-sync-fish-intro-offer`), shown in the admin player journey, and can be taken later
-  from My progress.
+- **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three
+  answers, a forced choice:
+  1. *I'm new to reef fish*;
+  2. *I'm at IMR (Research Assistant programme)*;
+  3. *I know reef fish well*.
+- **The answer only sets starting values**, as for corals: the starting level, the answer from which the open-all offer may come, and
+  whether Fish basics is offered first (for "new"). It never opens an entry, a species or a scientific name by itself.
+- **Opening everything comes later**, with the same "danger zone" open-all card as the corals ("A big step: open all … at once?", Not now
+  on top; `model.js` `introOffer`, `INTRO.OFFER`), after a number of answers that depends on the answer. Corals: from answer **50 / 30 /
+  20** (new / IMR course / know well: `core.js` `CHOICE.opts` `at`), until answer 150, once 10 slate genera are met and the overall level
+  is 0.5 or more. The fish values start from the corals' and are set with the learnsim fish profiles ("Checks before release").
+- Everything else of the coral question comes too: the card before the quiz for a player who skipped it, the silent inference for an
+  existing fish player past 50 fish answers, the 40 / 60 checkpoints (a "lower" verdict offers **Fish basics**), the back card after
+  Open all, the "Had the IMR …? Open all" box on the first cards and in My progress. Its own state per subject (the coral answer stays
+  the corals').
+- **What the open-all card opens** for fish, once species exist: the earlier prompt's list (every circle-1 entry, their species, the IMR
+  sub-entries) is the starting proposal; whether the IMR answer also starts the name-display schedule earlier (scientific names sooner)
+  is open (question 6). Until species exist it opens the entries, as today.
+- **Not now**: the calmer path above (entries, then species at Advanced, scientific names later because they are hard).
+- The answer and the open-all choice are synced with the player's fish progress (the offer as the corals' does: `reefid-sync-fish-intro-offer`), shown in the admin player journey; Open all can still be taken later from My progress.
 - **No struggling once everything is open.** The dynamic difficulty must hold an IMR player near the usual target:
   - photo difficulty, traps and the display schedule start from the player's level (`playerStart`), not from the hardest setting;
   - the draw keeps the `OPEN` share for units never asked (new species come in as results allow, not as a wall of 300 never-asked
     species);
   - checked with a learnsim fish profile before release (Checks).
+
+## Fish basics (Pierre, 2026-11-04)
+
+The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps on real photos, one plain sentence
+each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card.
+
+- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the IMR shape groups), so rule 2
+  holds and the IMR wording is kept (rule 1).
+- **Inspiration, never citation**: a local fish ID course Pierre has may inspire the order and the explanations; it is never quoted,
+  cited or named, in the app or in the repo.
+- **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule 1).
+- Its words become the fish glossary (underlined in cues and feedback), as Coral basics' words are for corals. Same component and
+  format as Coral basics; Pierre's own photos first (rule 7).
 
 ## What `fish.json` supports, and the gaps
 
@@ -274,11 +303,30 @@ on families only to an IMR RA with every species open:
   (Review first, Almost there, Just met), so a player with 300 species open still sees what to do next without scrolling them all.
 - **Second view, Mosaic (C)**: one square per species inside its entry, for the collection effect, picked from the view selector at the
   bottom as the coral page's views.
-- Shared by all three: the card (its ring shows the global score; levels, a one-line species summary), the IMR prompt while entries or
+- Shared by all three: the card (its ring shows the global score; levels, a one-line species summary), the "Open all" box while entries or
   species are still unopened, and a drill-down per entry (review and latest first, the rest capped; species not open counted, not listed).
 - **"Mystery" tiles for units not met yet** (Pierre, 2026-11-04; ROADMAP): an entry or species the player has not met shows as a masked
   tile, for everyone on fish. On corals only for beginners (the first-launch answer "I'm new to corals"); RAs who had the IMR course and
   players who know corals well see the genera as today.
+
+## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
+
+- **Subject switch: two places, one state.** A Corals | Fish switch on Home **and** a subject chip in the header next to the logo on
+  every page; both read and set the same subject (`SUBJECT_KEY`). Shown **only to Pierre (the admin) until fish opens** to players.
+  This relaxes AGENTS.md rule 21 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
+- **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
+  other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
+- **Opening fish to players**: to a group Pierre picks in the admin (for now he will put everyone in it), not one site-wide switch.
+- **Leaderboards separate per subject**, no merged ranking: corals as today (coral %, then Elo); fish by the global fish score ("My
+  progress (fish)"), then the fish Elo. Needs fish answers logged in the sheet first.
+- **Achievements** (rule 14d: learning milestones, never time or days played; designed later, each one's timing checked with the real
+  game before it is added):
+  - about **14 general fish achievements** to start (families met, levels, mastery, species named, scientific names, Fish basics: the
+    study's proposal, to design);
+  - plus a **separate set of harder, specific "hunt" achievements** for players who like to chase them: mastering a precise look-alike
+    pair (Pierre's example: the pearlscale angelfish, *Centropyge vrolikii*, against the mimic surgeonfish, the juvenile of *Acanthurus
+    pyroferus*), hard combinations, and tongue-in-cheek / wink ones. Kept apart from the general set so they never crowd it.
+- **App icon**: the current icon is coral-based; rethink it once the app has corals and fish (a design task, later).
 
 ## Open questions for Pierre
 
@@ -301,14 +349,18 @@ on families only to an IMR RA with every species open:
    - **Constraint: not gameable** (Pierre, 2026-11-04): typing common names must never advance the scientific-name progress. Ideas to
      weigh, none decided: the half credit counts for the species' common-name stage but never for its scientific stage; a "now type the
      scientific name" retry on the same question; a credit that shrinks for repeated common answers on the same species.
-4. Species in the leaderboard and achievements. **Leaderboard answered (Pierre, 2026-11-04)**: the global fish score ("My progress
-   (fish)"). Achievements: a proposal to make, inside the existing scheme (ROADMAP "An achievement for species named in Latin").
+4. Species in the leaderboard and achievements. **Answered (Pierre, 2026-11-04)**: the fish leaderboard ranks by the global fish score
+   ("My progress (fish)"), then the fish Elo; achievements: about 14 general fish ones plus a separate set of harder "hunt" ones, designed
+   later ("Both subjects in one app").
 5. **The fish exams, to be rethought** (Pierre, 2026-11-04; open, to design): an exam per species, or per entry (family)? Pierre's idea:
    a family's exam is about 20 questions on only the hard fish of that family, answered directly with the scientific name.
+6. **The fish open-all card and the IMR answer** (open, to settle with the species level): what the card opens once species exist (the
+   earlier IMR prompt's list is the starting proposal), and whether "I'm at IMR" also starts the name-display schedule earlier.
 
 ## Checks before release
 
-- **learnsim fish profiles** (rule 14f-14g, 5 seeds each): a beginner diver, an IMR RA who takes the IMR prompt, an expert.
+- **learnsim fish profiles** (rule 14f-14g, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
+  they also set the fish welcome answers' starting values and the answer from which each may get the open-all card.
   - IMR profile with everything open: right rate stays near the target (no lasting drop below the corals' range), Latin and typed Latin
     reached sooner than on the calm path.
   - RA level-1 path not slowed: entries reach Advanced at the same pace as on level 1 alone, within the seeds' spread.
@@ -317,5 +369,5 @@ on families only to an IMR RA with every species open:
   the start and later) and to keep the exam honest. Pierre, 2026-11-04: fish first (many photos), corals later (few photos per genus);
   ROADMAP "A held-out photo set".
 - **Real-log replay** once fish answers reach the sheet (rule 14g); until then, say what was measured instead.
-- Tests: `tests/draw.smoke.js` for the species draw (choices, display, IMR prompt), `tests/fish.test.js` for the data (no duplicate name
+- Tests: `tests/draw.smoke.js` for the species draw (choices, display, the welcome answers and the open-all card), `tests/fish.test.js` for the data (no duplicate name
   among the choices of one question).
