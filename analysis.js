@@ -1634,7 +1634,14 @@
     PLAIN.fmt = PLAIN.fmt || {};
     PLAIN.fmt['g_' + k] = {name: `${F}: success of a pure guess`, o: 'guess', fmt: k, cal: true};
     // fitted with the format's own guess rate (fmtFit), so read beyond guessing (Codex review #495)
-    PLAIN.fmt['d_' + k] = {name: `${F}: easier or harder than the app expects, beyond guessing`, o: 'right', inv: true, fmt: k, cal: true, beyond: true};
+    PLAIN.fmt['d_' + k] = {
+      name: `${F}: easier or harder than the app expects, beyond guessing`,
+      o: 'right',
+      inv: true,
+      fmt: k,
+      cal: true,
+      beyond: true
+    };
     PLAIN.fmt['oe_' + k] = {
       name: `${F}: right answers against the app’s expectation`,
       o: 'pts',
