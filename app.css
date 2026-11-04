@@ -3577,6 +3577,11 @@ a.lt:hover {
     font-size: 0 !important;
     padding-left: 2px !important;
   }
+  /* The ring is sized in em: a fixed size, or it goes with the % (Codex review #486). */
+  .pslate .ps .pct::before {
+    width: 14px;
+    height: 14px;
+  }
 }
 .pslate .ps i.lg ~ .pct {
   font-size: 0 !important;

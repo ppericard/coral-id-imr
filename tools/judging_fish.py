@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Fish candidate pass of the judging agent: the pre-sort of fish-cand.json (judging/AGENTS.md "Fish candidate pass").
+"""Fish candidate pass: the pre-sort of fish-cand.json, on the fish judging rubric (judging/FISH.md).
 
-The coral candidate pass (tools/judging_cand.py) adapted to fish (Pierre, 2026-11-03; tags settled 2026-11-04). Per
-photo: the framing (whole fish, part of it, a school), the phase (a tag, never a section), the quality, the colour loss
-(none / slight / strong / monochrome), best / alt / dup within its observation, several species, not this species or
-unusable, and a suggested crop. Poor photos are NOT set aside: they stand in for SVS video frames (EventMeasure
-identifications are made on video frames), so the pass tags quality and keeps a spread. Its sure decisions
-(autosort.js fishSure) are meant to apply by themselves through the admin's auto-sort, with 1 candidate in 20 shown to
-Pierre as a Check (autoCheck), once the fish Candidates page exists (admin plan PR 5); nothing here writes
-curation.json.
+One fish judging vocabulary (Pierre, 2026-11-04): a candidate is judged on the same visual code as the game photos
+(judging/FISH.md "Tags": view, whole, light, colour loss, clarity, size in the frame, count / subject obvious, the
+juvenile, camouflage and out-of-water flags, ease 1-5), plus what only a candidate needs: keep (best / alt / dup within
+its observation), the IMR phase when the photo shows one, a suggested crop. **Visual criteria only**: the species is the
+iNaturalist identification by human experts (Research Grade, or Pierre's own), taken as given; the pass never says
+whether a photo shows the right species. Its sure decisions (autosort.js fishSure) go through the admin's auto-sort once
+the fish curation exists (admin plan PR 4); nothing here writes curation.json.
 
     python3 tools/judging_fish.py sheets [id ...]   download the photos (judging/fish/img/, not in git) and build contact
                                                    sheets per species (judging/fish/sheets/<species id>/), 12 tiles each,
@@ -19,10 +18,9 @@ curation.json.
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
     python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
 
-judging/fish/<species id>.json = {"species": id, "photos": {photo: {view, phase, quality, loss, keep, species, multi,
-crop, unsure, note}}}; suggest.json "fish" {photo: {v, ph, q, cl, k, g, m, c, u, n}} (autosort.js fishSure reads it;
-cl omitted when no colour loss, c a crop [l, t, r, b] as the coral pass's), "by" {species: {fish: {by, at, n}}}.
-Re-importing a species replaces its candidates' entries; the rest is kept.
+judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, unsure, note}}}; suggest.json "fish"
+{photo: {jt, e, k, ph, c, u, n}} (autosort.js fishSure reads it): jt the tags and e the ease after the rubric's caps
+(tools/fish_judge.py cap, the same as the game photos' jt and e in fish-photos.json), c the proposed crop; "by" {species: {fish: {by, at, n}}}. Re-importing a species replaces its candidates' entries; the rest is kept.
 """
 import datetime
 import json
@@ -30,6 +28,9 @@ import os
 import sys
 import urllib.request
 from collections import OrderedDict, defaultdict
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fish_judge import CODE, cap, juv_early  # noqa: E402  the rubric's code and caps, one for game photos and candidates
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = lambda *a: os.path.join(ROOT, *a)  # noqa: E731
@@ -46,19 +47,18 @@ FISH = load("fish.json", {"species": [], "teach": []})
 SP = {s["id"]: s for s in FISH["species"]}
 CAND = (load("fish-cand.json", {}) or {}).get("cand", {})
 CUR = (load("curation.json", {}) or {}).get("fish") or {}
-VIEWS = ("whole", "part", "school")
-# Phases named in the IMR fish presentation (fish.json teach "phase": juveniles, sub-adults, adults, males, females,
-# intermediate and terminal phases); "unknown" when the photo cannot tell. Never another category (AGENTS.md rule 2).
-PHASES = ("juvenile", "subadult", "adult", "intermediate", "terminal", "female", "male", "unknown")
-# Colour loss (Pierre, 2026-11-04: the "cast" is a level of colour loss, whatever its hue): how much of the fish's own
-# colours the water or the light took away.
-LOSS = ("none", "slight", "strong", "monochrome")
+TEACH = {t["id"]: t for t in FISH["teach"]}
+# The teaching entry of each species (its first level-1 entry): the dimorph flag and the juvenile classes of the caps.
+ENTRY = {}
+for _t in FISH["teach"]:
+    if _t.get("level") == 1:
+        for _s in _t.get("species") or []:
+            ENTRY.setdefault(_s, _t)
+# The sex and colour phases the IMR fish presentation names (fish.json teach "phase"), when the photo shows one; a
+# juvenile is the code's j flag, an adult needs no tag. Never another category (AGENTS.md rule 2).
+PHASES = ("subadult", "intermediate", "terminal", "female", "male")
 KEEP = ("best", "alt", "dup")
-FIELDS = {"view", "phase", "quality", "loss", "keep", "species", "multi", "crop", "unsure", "note"}
-# Crop calibration, as tools/judging_cand.py CROP_K (measured on 79 of Pierre's coral crops, 2026-11-03: the agent cut
-# about twice as much as he does; halving each trim brought the overlap from 0.75 to 0.86). Re-measure on his first fish
-# crops before changing it.
-CROP_K = 0.5
+FIELDS = {"code", "keep", "phase", "crop", "unsure", "note"}
 
 
 def ids(args):
@@ -149,11 +149,9 @@ def check(sid):
     if j is None:
         return [f"{sid}: no judging/fish/{sid}.json"], None
     if not isinstance(j, dict) or not isinstance(j.get("photos"), dict):
-        return [f'{sid}: must be {{"species": ..., "photos": {{photo: judgment}}}}'], None
-    if set(j) - {"species", "photos"}:
-        E.append(f"{sid}: unknown top-level keys {sorted(set(j) - {'species', 'photos'})}")
-    if j.get("species") != sid:
-        E.append(f'{sid}: "species" must be "{sid}" (the file name)')
+        return [f'{sid}: must be {{"photos": {{photo: judgment}}}}'], None
+    if set(j) - {"photos"}:
+        E.append(f"{sid}: unknown top-level keys {sorted(set(j) - {'photos'})}")
     mine = {p["f"]: p for p in cands(sid)}
     best = defaultdict(list)
     for f, x in j["photos"].items():
@@ -166,31 +164,14 @@ def check(sid):
             continue
         if set(x) - FIELDS:
             E.append(f"{at}: unknown fields {sorted(set(x) - FIELDS)}")
-        g = x.get("species")
-        if g is not None:
-            if g == sid:
-                E.append(f'{at}: omit "species" when the photo shows {sid}')
-            elif g not in ("exclude", "not") and g not in SP:
-                E.append(f'{at}: species must be "exclude", "not" or a species id of fish.json, not {g!r}')
-            if "keep" in x:
-                E.append(f'{at}: omit "keep" when "species" is set')
-            if not x.get("note"):
-                E.append(f'{at}: note required when "species" is set')
-        else:
-            if x.get("view") not in VIEWS:
-                E.append(f"{at}: view must be one of {VIEWS}")
-            if x.get("phase") not in PHASES:
-                E.append(f"{at}: phase must be one of {PHASES}")
-            if x.get("quality") not in (1, 2, 3):
-                E.append(f"{at}: quality must be 1, 2 or 3")
-            if x.get("loss") not in LOSS:
-                E.append(f"{at}: loss must be one of {LOSS}")
-            if x.get("keep") not in KEEP:
-                E.append(f"{at}: keep must be one of {KEEP}")
-            elif x["keep"] == "best":
-                best[mine[f]["o"]].append(f)
-        if "multi" in x and x["multi"] is not True:
-            E.append(f"{at}: multi is true or omitted")
+        if not CODE.match(str(x.get("code", ""))):
+            E.append(f"{at}: code must follow judging/FISH.md \"Tags\" (e.g. p1g0sm14), not {x.get('code')!r}")
+        if x.get("keep") not in KEEP:
+            E.append(f"{at}: keep must be one of {KEEP}")
+        elif x["keep"] == "best":
+            best[mine[f]["o"]].append(f)
+        if "phase" in x and x["phase"] not in PHASES:
+            E.append(f"{at}: phase is one of {PHASES}, or omitted")
         u = x.get("unsure", [])
         if not isinstance(u, list) or set(u) - (FIELDS - {"unsure", "note"}):
             E.append(f"{at}: unsure must be a list of field names")
@@ -206,30 +187,24 @@ def check(sid):
     missing = [f for f in mine if f not in j["photos"]]
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")
-    obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict) and not x.get("species")}
+    obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict)}
     for o in obs:
         if len(best.get(o, [])) != 1:
             E.append(f"{sid}: observation {o}: {len(best.get(o, []))} photos marked best; exactly one")
     return E, j
 
 
-def entry(x):
-    """judging file fields -> suggest.json "fish" short keys (autosort.js fishSure)."""
-    e = {}
-    if x.get("species"):
-        e["g"] = x["species"]
-    else:
-        e.update(v=x["view"], ph=x["phase"], q=x["quality"], k=x["keep"])
-        if x.get("loss", "none") != "none":
-            e["cl"] = x["loss"]
-    c = x.get("crop")
-    if c and c != [0, 0, 1, 1]:
-        l, t, r, b = c  # calibrated toward Pierre's crops (CROP_K): each trim kept at CROP_K of its size
-        c = [round(l * CROP_K, 3), round(t * CROP_K, 3), round(1 - (1 - r) * CROP_K, 3), round(1 - (1 - b) * CROP_K, 3)]
-        if (c[2] - c[0]) * (c[3] - c[1]) < 0.97:  # a trim of a few % is no crop
-            e["c"] = c
-    if x.get("multi"):
-        e["m"] = 1
+def entry(sid, x):
+    """A judging file's record -> suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
+    (tools/fish_judge.py cap: the phase flag for a dimorph entry, the juvenile classes of the species' entry)."""
+    t = ENTRY.get(sid) or {}
+    s = SP.get(sid) or {}
+    ease, tags = cap(x["code"], bool(t.get("dimorph")), juv_early(t.get("juv"), (s.get("name"), s.get("now"))))
+    e = {"jt": tags, "e": ease, "k": x["keep"]}
+    if x.get("phase"):
+        e["ph"] = x["phase"]
+    if x.get("crop") and x["crop"] != [0, 0, 1, 1]:
+        e["c"] = x["crop"]  # a proposal, as the game photos' (judging/FISH.md "A proposed crop")
     if x.get("unsure"):
         e["u"] = sorted(x["unsure"])
     if x.get("note"):
@@ -259,7 +234,7 @@ def cmd_import(names, only_check, by):
         for p in CAND.get(sid, []):
             Sf.pop(p["f"], None)
         for f, x in j["photos"].items():
-            Sf[f] = entry(x)
+            Sf[f] = entry(sid, x)
         S["by"].setdefault(sid, {})["fish"] = {"by": by, "at": stamp, "n": len(j["photos"])}
     S["fish"] = dict(sorted(Sf.items()))
     with open(P("suggest.json"), "w", encoding="utf-8") as fh:

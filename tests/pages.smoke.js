@@ -3469,8 +3469,16 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
           const cut = await px.evaluate(() =>
             [...document.querySelectorAll('#view .pslate .ps i')].filter(i => i.scrollWidth > i.clientWidth + 1).map(i => i.textContent)
           );
-          const n = await px.evaluate(() => document.querySelectorAll('#view .pslate .ps .pct').length);
-          if (cut.length || !n) fails.push(`${vw}px My progress Slate: names cut ${cut.join(', ')} (${n} with their %)`);
+          // Every tile keeps its ring, drawn (Codex review #486: a % hidden with font-size 0 took its em-sized ring along).
+          const rings = await px.evaluate(() =>
+            [...document.querySelectorAll('#view .pslate .ps .pct')].map(e => {
+              const b = getComputedStyle(e, '::before');
+              return Math.min(parseFloat(b.width), parseFloat(b.height));
+            })
+          );
+          const flat = rings.filter(x => !(x >= 10)).length;
+          if (cut.length || !rings.length || flat)
+            fails.push(`${vw}px My progress Slate: names cut ${cut.join(', ')} (${rings.length} rings, ${flat} not drawn)`);
           await cx.close();
         }
       }
