@@ -569,3 +569,33 @@ body:has(.home-page) main {
   color: var(--accent);
   font-weight: 600;
 }
+/* The Fish ID Key, coming soon (home.js viewFishKey): Identify in fish mode, one quiet centred card. */
+.keysoon {
+  max-width: 34rem;
+  margin: 24px auto;
+  padding: 28px 24px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.keysoon .ksi {
+  color: var(--accent);
+}
+.keysoon h3 {
+  margin: 8px 0 2px;
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+}
+.keysoon .kswhen {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.keysoon p {
+  margin-inline: auto;
+}

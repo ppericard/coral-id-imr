@@ -344,6 +344,100 @@ const server = http.createServer((req, res) => {
       ui.push(`${width}px back to Corals in Tools: ${JSON.stringify({...bk, link: bl})}`);
     await c2.close();
   }
+  // Identify per subject (Pierre, 2026-11-04; ROADMAP "Identify per subject"): Identify shows the current subject's tool
+  // only. Fish on: the Identify tab (#idkey) opens the Fish ID Key, "coming soon", never the Coral ID Key; Home's
+  // Identify door names the fish and leads there; the corals chosen on that page bring the Coral ID Key, and the Fish ID
+  // Key's address with the corals on opens the Coral ID Key. A link into the Coral ID Key with its clues (#idkey|...)
+  // brings the corals on screen, as a genus sheet's does. 390 and 1280 px, nothing wider than the screen.
+  for (const width of [390, 1280]) {
+    const c5 = await b.newContext({viewport: {width, height: width < 600 ? 844 : 800}, serviceWorkers: 'block'});
+    await c5.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c5.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-id')) {
+          sessionStorage.setItem('fish-id', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+        }
+      } catch (e) {}
+    });
+    const q = await c5.newPage();
+    q.on('pageerror', e => errs.push(`${width}px Identify: ${e.message}`));
+    const wide = async what => {
+      const w = await q.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      if (w > 0) ui.push(`${width}px ${what}: ${w}px wider than the screen`);
+    };
+    const page = () =>
+      q.evaluate(() => ({
+        subj: SUBJ.id,
+        hash: location.hash,
+        soon: !!document.querySelector('#view .keysoon'),
+        text: (document.querySelector('#view') || {}).textContent.replace(/\s+/g, ' '),
+        coralKey: !!document.querySelector('#view #labroot'),
+        tab: (document.querySelector('nav [data-tab="identify"][aria-current="page"]') || {}).textContent || ''
+      }));
+    await q.goto(base + '#home');
+    await q.waitForFunction(
+      () => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('#view .home-page'),
+      null,
+      {
+        timeout: 30000
+      }
+    );
+    const door = await q.evaluate(() => {
+      const d = document.querySelector('#view .hdoor.identify');
+      return {
+        title: d ? d.querySelector('h2').textContent : '',
+        links: d ? [...new Set([...d.querySelectorAll('a')].map(a => a.getAttribute('href')))].join() : '',
+        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
+      };
+    });
+    if (door.title !== 'Identify a fish' || door.links !== '#fishkey' || door.coral)
+      ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
+    await wide('Home, Fish on');
+    await q.evaluate(() => (location.hash = '#idkey'));
+    await q.waitForFunction(() => window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
+    const f = await page();
+    if (
+      f.subj !== 'fish' ||
+      f.hash !== '#fishkey' ||
+      !f.soon ||
+      !/Fish ID Key/.test(f.text) ||
+      !/coming soon/i.test(f.text) ||
+      f.coralKey ||
+      !f.tab
+    )
+      ui.push(`${width}px Identify, Fish on: ${JSON.stringify({...f, text: f.text.slice(0, 160)})}`);
+    await wide('the Fish ID Key');
+    // The corals chosen on that page: the Coral ID Key.
+    await q.evaluate(() => setSubject('coral'));
+    await q.waitForFunction(() => SUBJ.id === 'coral' && window.ROUTED === 'idkey', null, {timeout: 15000}).catch(() => {});
+    const c = await page();
+    if (c.hash !== '#idkey' || c.soon || !/Coral ID Key|growth form/i.test(c.text))
+      ui.push(`${width}px corals chosen on the Fish ID Key: ${JSON.stringify({...c, text: c.text.slice(0, 160)})}`);
+    // The Fish ID Key's address with the corals on: the Coral ID Key.
+    await q.evaluate(() => (location.hash = '#fishkey'));
+    await q.waitForFunction(() => window.ROUTED === 'idkey', null, {timeout: 15000}).catch(() => {});
+    const c2b = await page();
+    if (c2b.subj !== 'coral' || c2b.hash !== '#idkey' || c2b.soon)
+      ui.push(`${width}px #fishkey with the corals on: ${JSON.stringify({...c2b, text: ''})}`);
+    // Back to fish; then a link into the Coral ID Key with its clues brings the corals.
+    await q.evaluate(() => setSubject('fish'));
+    await q.waitForFunction(() => SUBJ.id === 'fish' && window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
+    const f2 = await page();
+    if (f2.hash !== '#fishkey' || !f2.soon) ui.push(`${width}px Fish chosen on the Coral ID Key: ${JSON.stringify({...f2, text: ''})}`);
+    await q.evaluate(() => (location.hash = '#idkey|form=B'));
+    await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
+    await q.waitForTimeout(400);
+    const d = await page();
+    if (d.subj !== 'coral' || !d.hash.startsWith('#idkey|form=B') || d.soon)
+      ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    await c5.close();
+  }
   // A player who is not the admin (no admin token; or the admin token in ⚙ View: User), with Fish saved on this device
   // (chosen when the switch was on Home) and fish progress: the corals on screen, fish.json not even loaded, no subject
   // switch on Home, in the header, in ⚙ or in Tools, no fish emoji on the link to Tools; a switch or a link asking for

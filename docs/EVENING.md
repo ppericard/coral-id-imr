@@ -38,6 +38,12 @@ them first thing, then clear them.
   a per-entry "natural view" exception like the juvenile classes (e.g. head out of a hole is the normal view of a
   moray)? **Recommendation: keep the caps** (circles 2 and 3 are opt-in, met after circle 1; the fallback to the 3
   easiest already works), and revisit when fish answers are logged.
+- **Identify per subject: the fish words (2026-11-04 night, PR "Identify per subject", not merged).** Context: in fish
+  mode Identify now shows the Fish ID Key, coming soon (a card: "A key to name the fish on the IMR survey videos and in
+  your own photos, as the Coral ID Key does for corals", a link to the fish families), and Home's Identify door follows
+  the subject: a random IMR family photo, kicker "On the SVS videos · or a photo from your dive", "Identify a fish", a
+  "Fish ID Key · Coming soon" button. Question: are these words and that art right (SVS videos, or EventMeasure)?
+  **Recommendation: keep them** until the Fish ID Key is designed; merge once you have seen the screenshots.
 
 ## Where the day stopped
 
