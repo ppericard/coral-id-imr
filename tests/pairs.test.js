@@ -26,7 +26,9 @@ function memoryGenera() {
 }
 const names = Object.keys(LOOK);
 
-test('met genera first; genera not met only to fill the grid', () => {
+// One progression path for every game (Pierre, 2026-11-04): only genera unlocked, fewer than the grid holds when fewer
+// are; until then genera not met filled the grid.
+test('only the genera unlocked; fewer than the grid when fewer are unlocked', () => {
   const f = memoryGenera();
   for (let k = 0; k < 50; k++) {
     const met = new Set(['A', 'D', 'G']);
@@ -38,14 +40,14 @@ test('met genera first; genera not met only to fill the grid', () => {
         `${look}: ${two}`
       );
       const five = [...f(names, 5, look, n => met.has(n))];
-      assert.strictEqual(new Set(five).size, 5);
-      assert.ok(
-        ['A', 'D', 'G'].every(n => five.includes(n)),
-        `${look}: every met genus in: ${five}`
-      );
+      assert.deepStrictEqual(five.slice().sort(), ['A', 'D', 'G'], `${look}: the 3 unlocked only: ${five}`);
     }
-    // Nobody met (a new player) or everyone met: any genera, all different.
-    for (const met of [() => false, () => true]) assert.strictEqual(new Set(f(names, 6, false, met)).size, 6);
+    // Nobody unlocked (a new player): none; everyone: any genera, all different.
+    assert.deepStrictEqual(
+      f(names, 6, false, () => false),
+      []
+    );
+    assert.strictEqual(new Set(f(names, 6, false, () => true)).size, 6);
   }
 });
 
