@@ -782,13 +782,8 @@ let GVIEW = store.get('reefid-admin-gview', 'all');
 // A photo taken abroad of a species the presence rule does not confirm in the Philippines (presence.js outOfRule;
 // Pierre, 2026-11-04): an "out of rule" tag next to its source, and a part of To do. Never removed automatically.
 const ruleTag = p => (outOfRule(p, PRES) ? `<span class="adm-src multi adm-rule" title="${esc(ruleWhy(p, PRES))}">out of rule</span>` : '');
-// Game and sheet photos out of the rule (not candidates: those wait in Candidates), for To do.
-const outOfRuleList = () =>
-  Object.entries(DATA.gen).flatMap(([n, g]) =>
-    [...Object.entries(g.views || {}), ...Object.entries(g.more || {})].flatMap(([v, L]) =>
-      L.filter(p => outOfRule(p, PRES) && !offSlot(p)).map(p => ({...p, genus: n, fv: v}))
-    )
-  );
+// Photos out of the rule still needing a decision, from the curated photo lists (presence.js ruleQueue), for To do.
+const outOfRuleList = () => ruleQueue(Object.keys(DATA.gen), photos, hidden, offSlot, PRES);
 // A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
   const o = origin(p),
@@ -2914,7 +2909,7 @@ function renderTriage() {
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
     ${all ? evSummary() : ''}
-    ${(oor => (oor.length ? `<div class="adm-qhead"><h2>Out of the presence rule <small>${oor.length}</small></h2></div><p class="note">Photos taken abroad of a species not confirmed in the Philippines (3+ Research Grade observers there, or 1+ and the checklist, or 2+ near Dauin): yours to keep or remove on the genus page.</p><div class="adm-grid adm-qgrid">${oor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>` : ''))(outOfRuleList())}
+    ${(oor => (oor.length ? `<div class="adm-qhead"><h2>Out of the presence rule <small>${oor.length}</small></h2></div><div class="adm-grid adm-qgrid">${oor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>` : ''))(outOfRuleList())}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     ${sugHtml(tile)}
   </section>`;

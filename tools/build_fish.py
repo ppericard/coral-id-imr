@@ -45,7 +45,8 @@ own observations (user ppericard), two halves: photos identified to the species 
 Needs ID (rule 6a: he names a species only when nearly sure); presence: he is one observer like anyone, Research Grade
 only, and his observations no longer confirm anything on their own (until 2026-11-04 they did). present = {dauin, dauinNI,
 dauinU, near, nearBy, rg, phU, chk, ph, phBy, own} (presence()); circle 3 also needs near. --near recomputes dauinU and
-near on the existing fish.json only (the rest of the build and its counts unchanged). A species not confirmed
+near on the existing fish.json, then ph and phBy (they depend on near), taking out of the game a species no
+longer confirmed (the rest of the build and its counts unchanged). A species not confirmed
 in the Philippines leaves the game but stays in fish.json with `out` (a future Fish ID Key for EventMeasure must hold
 every PDF species, unfiltered), as does a PDF species whose family is in no circle.
 
@@ -267,8 +268,9 @@ def near_fields(tid, p, imr=False):
 
 
 def update_near(path=OUT):
-    """--near: (re)compute present.dauinU, near and nearBy on the species of an existing fish.json, and take out of the
-    game a circle-3 species not confirmed near Dauin (out: C3_OUT, also out of its teaching node's lists), nothing else
+    """--near: (re)compute present.dauinU, near and nearBy on the species of an existing fish.json, then ph and phBy
+    (rule 6g: they depend on near), take out of the game a species no longer confirmed in the Philippines and a circle-3
+    species not confirmed near Dauin (out: C3_OUT, also out of its teaching node's lists), nothing else
     (the rest of the build unchanged, so its WoRMS and iNaturalist counts do not move). A species taken out comes back
     with a full build once confirmed. Returns (fish.json, changes of near, circle-3 species and nodes taken out)."""
     o = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -281,6 +283,19 @@ def update_near(path=OUT):
         p.pop("near", None)
         p.pop("nearBy", None)
         p.update(near_fields(s["inat"], p, "pdf" in s))
+        # National presence depends on near (rule 6g): recompute it from the stored rg and chk, asking the national
+        # observers when the rule needs them; a species no longer confirmed leaves the game (Codex review #496). A species
+        # newly confirmed comes in with a full build (its circle comes from the source).
+        if "rg" in p:
+            u = p.get("phU")
+            if u is None and p["rg"] >= PH_OBSERVERS and not (p["chk"] or p["near"]):
+                u = p["phU"] = observers(s["inat"], PH)[0]
+            why = ph_confirmed(p["rg"], u, p["chk"], p["near"])
+            if s.get("circle") and not why:
+                left.append(f"{s['id']} {s['name']}: no longer confirmed in the Philippines")
+                del s["circle"]
+                s["out"] = "not confirmed in the Philippines"
+            p["ph"], p["phBy"] = bool(why), why
         who = None
         if p["near"] != old or (s.get("circle") == 3 and not p["near"]):
             _, who = observers(s["inat"], DAUIN) if p.get("dauin") else (0, [])

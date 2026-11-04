@@ -108,3 +108,66 @@ test('presence.json: the rule per photo species, and the photos it flags in data
     photos.filter(p => (p.o || '').endsWith('/' + o)).forEach(p => assert.strictEqual(p.loc, 'world', p.f))
   );
 });
+
+test('build_fish --near: a species whose only branch was near Dauin leaves the game when near falls (Codex review #496)', () => {
+  // One circle-1 species, 2 Research Grade observations in the country, no checklist, confirmed only by 2 observers near
+  // Dauin; the refreshed count finds 1 observer there: no branch of the rule holds any more.
+  const R = JSON.parse(
+    execFileSync(
+      'python3',
+      [
+        '-c',
+        `import sys, json, tempfile, os; sys.path.insert(0, 'tools')
+import build_fish as B
+class Stub:
+    def get(self, u):
+        return {"total_results": 1, "results": [{"user": {"login": "a"}}]}
+B.NET = Stub()
+sp = {"id": "s1", "name": "Xus one", "inat": 9, "circle": 1, "present": {"dauin": 2, "dauinNI": 0, "dauinU": 2, "near": True,
+      "nearBy": ["observers"], "rg": 2, "chk": False, "ph": True, "phBy": ["near"]}}
+f = {"species": [sp], "teach": [{"id": "t1", "name": "T", "species": ["s1"]}]}
+d = tempfile.mkdtemp(); path = os.path.join(d, "fish.json"); json.dump(f, open(path, "w"))
+o, changed, left = B.update_near(path)
+s = o["species"][0]
+print(json.dumps({"ph": s["present"]["ph"], "phBy": s["present"]["phBy"], "near": s["present"]["near"], "out": s.get("out"), "circle": s.get("circle"), "teach": [t["id"] for t in o["teach"]]}))`
+      ],
+      {cwd: ROOT, encoding: 'utf8'}
+    )
+  );
+  assert.deepStrictEqual(R, {ph: false, phBy: [], near: false, out: 'not confirmed in the Philippines', circle: null, teach: []});
+});
+
+test('admin To do: the out-of-rule queue follows the curated photos (removed out, hidden out, approved candidates in)', () => {
+  const {ruleQueue} = require('../presence.js');
+  const sp = {'Astrea curta': {ok: false, by: [], rg: 0, chk: true}};
+  // photosOf: what the genus sheet shows now (admin.js photos: removed photos already gone, approved candidates in).
+  const shown = {
+    Astrea: [
+      {f: 'kept', loc: 'world', t: 'Astrea curta', base: 'wide'},
+      {f: 'hid', loc: 'world', t: 'Astrea curta', base: 'wide'},
+      {f: 'cand', loc: 'world', t: 'Astrea curta', base: 'macro', cand: true},
+      {f: 'extra', loc: 'world', t: 'Astrea curta', base: 'wide', extra: true},
+      {f: 'here', loc: 'ph', t: 'Astrea curta', base: 'wide'}
+    ]
+  };
+  const Q = ruleQueue(
+    ['Astrea'],
+    n => shown[n] || [],
+    (n, p) => p.f === 'hid',
+    p => !!p.extra,
+    sp
+  );
+  assert.deepStrictEqual(
+    Q.map(p => [p.f, p.genus, p.fv]),
+    [
+      ['kept', 'Astrea', 'wide'],
+      ['cand', 'Astrea', 'macro']
+    ]
+  );
+  // The admin builds it from those helpers, and the page keeps only heading, count and actions (rule 23: the
+  // explanation stays behind ?).
+  const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
+  assert.match(A, /outOfRuleList = \(\) => ruleQueue\(Object\.keys\(DATA\.gen\), photos, hidden, offSlot, PRES\)/);
+  const sec = A.slice(A.indexOf('<h2>Out of the presence rule'), A.indexOf('<h2>Out of the presence rule') + 400);
+  assert.ok(!/<p[ >]/.test(sec.split('${oor.map')[0]), 'an explanatory paragraph on the page');
+});

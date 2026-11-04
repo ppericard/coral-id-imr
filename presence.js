@@ -18,7 +18,16 @@
     if (!r) return '';
     return `${w[0]} ${w[1]}: ${r.rg} Research Grade observation${r.rg === 1 ? '' : 's'} in the Philippines${r.chk ? ', listed by Corals of the World' : ', not listed by Corals of the World'}; not confirmed there by the presence rule (3+ observers, or 1+ and the checklist, or 2+ observers near Dauin)`;
   };
-  const API = {outOfRule, ruleWhy};
+  // The photos still needing Pierre's decision (To do): those a genus sheet shows now (photosOf(n): the curated list,
+  // removed and "not this genus" photos gone, approved candidates in), not hidden, not off the games' slots (several
+  // corals in the extra list, Coral Finder book), that are out of the rule. Codex review #496.
+  const ruleQueue = (genera, photosOf, isHidden, offSlot, sp) =>
+    genera.flatMap(n =>
+      photosOf(n)
+        .filter(p => !isHidden(n, p) && !offSlot(p) && outOfRule(p, sp))
+        .map(p => ({...p, genus: n, fv: p.base}))
+    );
+  const API = {outOfRule, ruleWhy, ruleQueue};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);
