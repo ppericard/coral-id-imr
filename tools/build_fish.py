@@ -53,8 +53,10 @@ every PDF species, unfiltered), as does a PDF species whose family is in no circ
 Each species: {id, name (PDF / source), now (WoRMS accepted, when it differs), common, ref (AphiaID), inat (iNaturalist
 taxon of its PDF name, else of the WoRMS name), circle (in the game) or out (why not), r (rank order: the PDF
 cheatsheet's 24 most sighted first, then the source order, i.e. PDF order, then the slides, winks, Dauin species),
-present, src (slides, dauin, wink; PDF when absent), sec (PDF section), pdf (pages), cs (cheatsheet rank), sl (slide),
-check}. Ids are stable and never names: they live in the source file (teaching nodes t01..., species s001...), never
+cmi (commonness index, 0-1, within its teaching entry: tools/fish_commonness.py), present, src (slides, dauin, wink; PDF when absent), sec (PDF section), pdf (pages), cs (cheatsheet rank), sl (slide),
+check}. A teaching node's `species` (and its sub-entries') are in commonness order, the most commonly met around Dauin
+first (Pierre, 2026-11-04: "common beats easy" to start; fish_commonness.apply(), its inputs in
+tools/fish_commonness.json and tools/fish_commonness_inat.json; docs/FISH_PATH.md). Ids are stable and never names: they live in the source file (teaching nodes t01..., species s001...), never
 reuse or renumber one (`retired` lists the ids taken out).
 
 Network: WoRMS and iNaturalist, read only, a short pause between calls, generic User-Agent. Every reply is cached in
@@ -64,6 +66,8 @@ names move over time), --offline fails instead of asking. The output is determin
 Usage: python3 tools/build_fish.py [--offline | --refresh] [--dry]   (--dry: print the report, leave fish.json as it is)
        python3 tools/build_fish.py --regroup   (offline, no WoRMS call: re-applies the key in force to fish.json as it is,
        from its own reference tree; after an edit of `keys`, `deploy` or `keyGroup`, or to settle a merge of fish.json)
+       python3 tools/build_fish.py --commonness   (offline: re-applies the commonness index and order to fish.json as it is,
+       after an edit of tools/fish_commonness.json or a fish_commonness.py --fetch; --check: fail when fish.json differs)
 Check: node --test tests/fish.test.js
 """
 import argparse
@@ -74,6 +78,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+import fish_commonness
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_source.json"
@@ -443,6 +449,28 @@ def regroup(src_path, check):
         print("  waiting on Pierre: " + w)
 
 
+def commonness(check):
+    """--commonness: the commonness index (species cmi) and the order of every teaching node's species re-applied to
+    fish.json as it is (offline). --check: write nothing, fail when fish.json differs (tests/fish.test.js runs it)."""
+    o = json.loads(OUT.read_text(encoding="utf-8"))
+    missing = fish_commonness.apply(o)
+    if check:
+        if render(o) != OUT.read_text(encoding="utf-8"):
+            sys.exit(f"{OUT.relative_to(ROOT)} is not as the commonness index gives it: run python3 tools/build_fish.py --commonness")
+        print("fish.json species order: as the commonness index gives it")
+        return
+    write(o)
+    print(f"applied the commonness index to {OUT.relative_to(ROOT)}")
+    show_missing(missing)
+
+
+def show_missing(missing):
+    if missing:
+        print(f"species with no iNaturalist counts for the commonness index (run python3 tools/fish_commonness.py --fetch): {len(missing)}")
+        for x in missing:
+            print("  " + x)
+
+
 def unit(refs, subs, s, game, kid):
     """A teaching node as key_groups reads it (refs: AphiaIDs; s: its source node, whose keyGroup for key kid is the
     explicit choice)."""
@@ -477,11 +505,15 @@ def main():
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--near", action="store_true", help="only (re)compute present.near on the existing fish.json")
     ap.add_argument("--regroup", action="store_true")
-    ap.add_argument("--check", action="store_true", help="with --regroup: fail when fish.json is not as the key gives it")
+    ap.add_argument("--commonness", action="store_true", help="only re-apply the commonness index and order to fish.json")
+    ap.add_argument("--check", action="store_true", help="with --regroup / --commonness: fail when fish.json differs")
     ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another source file
     a = ap.parse_args()
     if a.regroup:
         regroup(Path(a.src) if a.src else SRC, a.check)
+        return
+    if a.commonness:
+        commonness(a.check)
         return
     NET = Net(a.offline, a.refresh)
     if a.near:
@@ -495,6 +527,7 @@ def main():
         print(f"out of circle 3 (not confirmed near Dauin): {len(left)}")
         for x in left:
             print("  " + x)
+        show_missing(fish_commonness.apply(o))
         if not a.dry:
             write(o)
             print(f"wrote {OUT.relative_to(ROOT)}")
@@ -505,6 +538,7 @@ def main():
         out = build(src, report)
     finally:
         NET.save()
+    show_missing(fish_commonness.apply(out))
     show(out, report)
     if not a.dry:
         write(out)
