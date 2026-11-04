@@ -528,11 +528,13 @@ document.addEventListener('keydown', e => {
   document.getElementById('subjb').focus();
 });
 // A page of the Learn or Practice section that the subject does not have (core.js SUBJECTS pages: fish have no genus
-// sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead. Identify (the
-// Coral ID Key) and the Tools are the corals' whatever the subject.
+// sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead; Identify opens
+// the subject's own tool (UNITS identify: the Coral ID Key, the Fish ID Key), never the other subject's. The Tools are
+// the corals' whatever the subject.
 const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
+  if (tab === 'identify') return m === UNITS[SUBJ.id].identify ? h : UNITS[SUBJ.id].identify;
   if ((tab !== 'learn' && tab !== 'practice') || SUBJ.pages.includes(m) || !(m === 'sheet' || MODES[tab].some(x => x[0] === m))) return h;
   return MODES[tab].map(x => x[0]).find(k => SUBJ.pages.includes(k)) || '';
 };
@@ -1085,6 +1087,8 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 const FISH_C3 = 0.5;
 const UNITS = {
   coral: {
+    // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
+    identify: 'idkey',
     // The subject's icon in its switches (app.js subjIcon): a branching coral.
     icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
     load: () => Promise.resolve(),
@@ -1123,6 +1127,8 @@ const UNITS = {
     ]
   },
   fish: {
+    // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
+    identify: 'fishkey',
     icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
     slate: () => (FISH ? FISH.c1 : []),
@@ -1437,7 +1443,12 @@ const MODES = {
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
     ['pairs', 'Memory', 'Match colony and corallites']
   ],
-  identify: [['idkey', 'Coral ID Key', 'Tap the clues you see, get a ranked shortlist']]
+  // Identify shows the current subject's tool only (Pierre, 2026-11-04): each subject names its own (app.js UNITS
+  // identify); the other subject's tool is reached through the subject switch.
+  identify: [
+    ['idkey', 'Coral ID Key', 'Tap the clues you see, get a ranked shortlist'],
+    ['fishkey', 'Fish ID Key', 'Coming soon']
+  ]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
@@ -1491,8 +1502,14 @@ function showModes(tab, h) {
       pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : 'cmp');
     return;
   }
-  // A section with a single tool needs no tab bar. Learn and Practice show the subject's pages only (SUBJECTS pages).
-  const M = MODES[tab] && (tab === 'learn' || tab === 'practice') ? MODES[tab].filter(x => SUBJ.pages.includes(x[0])) : MODES[tab];
+  // A section with a single tool needs no tab bar. Learn and Practice show the subject's pages only (SUBJECTS pages),
+  // Identify the subject's own tool (UNITS identify).
+  const M =
+    MODES[tab] && (tab === 'learn' || tab === 'practice')
+      ? MODES[tab].filter(x => SUBJ.pages.includes(x[0]))
+      : tab === 'identify'
+        ? MODES[tab].filter(x => x[0] === UNITS[SUBJ.id].identify)
+        : MODES[tab];
   const L = M && M.length > 1 ? M : null;
   $modes.hidden = !L;
   if (!L) {
@@ -1692,8 +1709,12 @@ function route() {
   const sp = subjPage(h);
   if (sp !== h) {
     // A genus sheet or a comparison of another subject (opened from Identify, the Coral ID Key, with Fish chosen; Codex
-    // review #442): that subject comes on screen (setSubject routes again), never the subject's list instead.
-    const S = /^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'));
+    // review #442), or a link into another subject's Identify tool with its clues (#idkey|form=…): that subject comes on
+    // screen (setSubject routes again), never the subject's list or tool instead. A bare Identify address opens the
+    // subject's own tool.
+    const S =
+      (/^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'))) ||
+      (sectionOf(h) === 'identify' && h.includes('|') && SUBJECTS.find(x => subjOpen(x) && UNITS[x.id].identify === modeOf(h)));
     if (S && S !== SUBJ) return void setSubject(S.id);
     return location.replace('#' + sp);
   }
@@ -1763,6 +1784,8 @@ function route() {
   // About and credits (home.js); #credits is another name for it.
   else if (h === 'credits') location.replace('#about');
   else if (h === 'about' && window.viewAbout) viewAbout();
+  // The Fish ID Key, coming soon (home.js): Identify in fish mode.
+  else if (h === 'fishkey' && window.viewFishKey) viewFishKey();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
     quizDuel(a, b, left, from); // a page just opened starts a new duel run (quiz.js DUELRUN), unless back from its comparison
