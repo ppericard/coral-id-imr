@@ -108,10 +108,9 @@ function photoSet(n, skip, shift = 0, k = 4) {
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
   const gameOk = p => gamePhotoOk(n, p);
   const pics = v =>
-    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
-      .filter(ok(v))
-      .filter(gameOk)
-      .filter(p => p.f !== skip);
+    easyFirst(n, [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])].filter(ok(v)).filter(gameOk)).filter(
+      p => p.f !== skip
+    );
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
@@ -277,8 +276,16 @@ const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 3, WIN: 15};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the declared look-alikes (until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
-// easy): the order then stays random until the answers can say (2026-11-02).
-const easyTrust = () => Math.min(1, Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) / OPEN.DATA);
+// easy): the order then stays random until the answers can say (2026-11-02). A judged photo (p.e, the fish: judging/FISH.md,
+// 2026-11-04) counts PDIFF.W answers, the weight its prior has in photoDiff, so the fish entries open easiest first from
+// the first card on (648 judged photos: trusted in full); the corals have none, so nothing changes for them.
+const easyTrust = () =>
+  Math.min(
+    1,
+    (Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) +
+      PDIFF.W * slateGenera().reduce((t, n) => t + VIEWS.reduce((u, [v]) => u + gamePics(n, v).filter(p => p.e).length, 0), 0)) /
+      OPEN.DATA
+  );
 // Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: the
 // players' answers, sheet v17; from sheet v31 a photo with few or no answers leans on its genus's offset, learned from
 // every answer on the genus, so the genus difficulty is data-driven from the first answers on it) plus how much it gets
@@ -350,6 +357,11 @@ function openRight(at = answersSoFar()) {
 // and a reference never waits itself); should every genus left wait (not possible with today's data), they all open.
 // met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
 function openPick(fresh, list = fresh, met = introduced) {
+  // The starter core first (Pierre, 2026-11-04: the fish beta opened on the wrong families): units whose record says
+  // `first` (fish.json start: Butterflyfish, Angelfish, Damselfish, Surgeonfish & Unicornfish) open before any other,
+  // as long as one is left; then the rule below. Data, not code: the corals have none.
+  const first = fresh.filter(n => (GX(n) || {}).first);
+  if (first.length) fresh = first;
   const ok = fresh.filter(n => !starWaits(DATA, n, list, met));
   if (ok.length) fresh = ok;
   const gd = fresh.map(genusDiff),
@@ -1018,11 +1030,30 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // offset as prior, weighing PDIFF.W answers (partial pooling: the photo keeps n / (n + W) of its own residual). A photo
 // nobody has answered is its genus's offset; 0 with an older sheet. W 5: the real answer log scores 2 to 20 alike
 // (docs/LEARNING.md "Hierarchical photo Elo").
-const PDIFF = {W: 5};
+// A judged photo (p.e, its ease 1-5: the fish photos, judged by an agent on judging/FISH.md's rubric while fish answers
+// are not logged; Pierre, 2026-11-04) adds its own prior to its genus's: (PDIFF.MID - ease) x PDIFF.EASE, so ease 5
+// starts 1 below its unit, ease 1 one above. EASE 0.5: one standard deviation of a photo's own difficulty around its
+// genus (the hierarchical photo Elo study, docs/LEARNING.md), so the 5 steps span the spread real photos show. Like every
+// prior it fades as answers come (PDIFF.W). A photo with no ease (every coral photo) is as before. docs/LEARNING.md
+// "Fish photos judged".
+const PDIFF = {W: 5, EASE: 0.5, MID: 3, EARLY: 4};
+const easeOf = p => p.e || PDIFF.MID;
 function photoDiff(n, p) {
-  const prior = (PGD[n] || [0])[0] || 0,
+  const prior = ((PGD[n] || [0])[0] || 0) + (p.e ? (PDIFF.MID - p.e) * PDIFF.EASE : 0),
     o = PSTAT[p.f];
   return o ? (o[1] * o[0] + PDIFF.W * prior) / (o[1] + PDIFF.W) : prior;
+}
+// The first questions on a unit (Pierre, 2026-11-04, after the fish beta opened on photos too hard for a beginner): until
+// the unit reaches Open Water (LV_AT[0], 50%: the first level earned), only its very easy photos (ease PDIFF.EARLY or
+// more: judging/FISH.md, where night shots, partial fish, head-on or tail views, camouflage and the juveniles of most
+// entries are capped at 3 or less), or its PICKD.VARIETY easiest when it has fewer, so a few still take turns. A unit with no judged photo
+// (the corals) is not touched; nor is the exam (95%). TEMPORARY (Pierre, 2026-11-04: an arbitrary bootstrap
+// threshold): remove it once fish answers are logged and the photo ratings can rank the photos (docs/ROADMAP.md).
+function easyFirst(n, L) {
+  if (!L.some(p => p.e) || genScore(n) >= LV_AT[0]) return L;
+  const es = L.map(easeOf).sort((a, b) => b - a),
+    cut = Math.min(PDIFF.EARLY, es[Math.min(PICKD.VARIETY, es.length) - 1]);
+  return L.filter(p => easeOf(p) >= cut);
 }
 // Progress of a genus (2026-11-02, replaces Bayesian Knowledge Tracing): s.pg, a moving average of its answers, each
 // weighed by what it proves (core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress (moving average) and mastery").
@@ -1119,7 +1150,8 @@ const genScore = n => scoreOf(P[n]);
 // every RA knows, one icon each): the step of a genus on the learning scale, from its % (genScore), the same colours on
 // My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%; 3 Advanced from 80%; 4 Divemaster from 95%
 // (the mastery exam's entry); 5 Instructor, the exam passed (s.mx, "learned" in the code). The thresholds only name
-// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100); the game itself never reads them.
+// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100); the game reads only Open Water, where an
+// entry's judged hard photos come in (easyFirst, 2026-11-04).
 const MASTERY = [
   ['Not seen', ''],
   ['Snorkeler', '<rect x="2.5" y="8" width="13" height="7.5" rx="3.2"/><path d="M9 15.5v-2.2M19.5 3v11a4.5 4.5 0 0 1-4.5 4.5h-1.5"/>'],

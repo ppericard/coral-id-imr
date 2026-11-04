@@ -21,7 +21,8 @@ the observer chose), since a quiz question shows one observation (AGENTS.md rule
 
 Photo object, as data.json's: {f: 'fi<photo id>' (unique, never a file), o: observation URL, src: the original photo
 URL (app.js inat() swaps the size), r: 1 (remote), a: attribution, lic, t: species name as iNaturalist has it, sp:
-fish.json species id, own: true for Pierre's, loc: dauin (within 40 km) / ph / world, ar: width / height}.
+fish.json species id, own: true for Pierre's, loc: dauin (within 40 km) / ph / world, ar: width / height, e / jt: the
+judged ease 1-5 and tags (tools/fish_judge.py, judging/FISH.md)}.
 
 Every iNaturalist reply is cached in tools/.cache/fish-photos.json (git-ignored): a rerun is offline and identical;
 --refresh asks again. Usage: python3 tools/fish_photos.py [--offline | --refresh] [--per 24]
@@ -35,6 +36,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_fish as bf  # noqa: E402  (its cached, paced Net)
+import fish_judge  # noqa: E402  (the judged ease of each photo)
 
 ROOT = bf.ROOT
 OUT = ROOT / "fish-photos.json"
@@ -147,6 +149,8 @@ def main():
             print(f"{t['id']} {t['name']}: {len(photos[t['id']])} photos ({own} Pierre's)")
     finally:
         bf.NET.save()
+    # The judged ease of each photo (judging/FISH.md; tools/fish_judge.json), kept through a rebuild.
+    print(f"judged photos: {fish_judge.apply(photos, F)}")
     lines = ["{", f'"v":{V},', f'"built":"{date.today().isoformat()}",', '"stopgap":"remote iNaturalist photos until the fish photo pipeline exists (tools/fish_photos.py)",', '"photos":{']
     lines.append(",\n".join(f'"{k}":{bf.dumps(v)}' for k, v in photos.items()))
     lines += ["}", "}"]

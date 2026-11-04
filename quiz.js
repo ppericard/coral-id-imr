@@ -1769,7 +1769,7 @@ function reliefShow(cur, pair) {
     cls: 'reliefcard',
     kick: 'Tough pair today',
     title: 'Take a step back?',
-    body: '<p>These two are hard right now. Seeing them side by side often helps more than more photos.</p>',
+    body: '<p>These two are hard right now. Mixing in other genera for a while, or seeing these two side by side, often helps more than more of the same.</p>',
     primary: {text: 'Mix in other genera', attr: 'disabled'},
     secondary: {text: 'Compare them', attr: 'disabled'},
     after: '<button type="button" class="linkish reliefx" data-keep disabled>Keep drilling</button>',

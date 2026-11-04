@@ -378,7 +378,7 @@ let FISH = null,
   FISHP = null;
 const fishLoad = () =>
   FISHP ||
-  (FISHP = Promise.all([json('fish.json?v=1'), json('fish-photos.json?v=2')])
+  (FISHP = Promise.all([json('fish.json?v=3'), json('fish-photos.json?v=4')])
     .then(([f, ph]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
@@ -1712,6 +1712,8 @@ function route() {
   upsize();
   // Pages opened in the visit (sync.js pagesRoute, sheet v30 'pages'): the page drawn, not a link that sent on to another.
   if ((hashNow() || 'home') === (h || 'home') && typeof pagesRoute === 'function') pagesRoute(h);
+  // The page of address h is drawn: the tests wait for this instead of a fixed time (tests/pages.smoke.js drawn()).
+  window.ROUTED = h;
 }
 addEventListener('hashchange', route);
 // Pages open straight on their content: the title is dropped where the header already names the page
