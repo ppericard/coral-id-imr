@@ -555,3 +555,27 @@ test('fish-photos.json (the stopgap game photos) shows only species in the game'
     L.forEach(p => assert.ok(p.sp && SP.get(p.sp) && SP.get(p.sp).circle, `${t} ${p.f}: ${p.t} (${p.sp}) is not in the game`))
   );
 });
+
+// Curated common names, the proposal (Pierre, 2026-11-04: 1 to 3 per species; docs/FISH_PATH.md "Common names";
+// tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule 1), each with its
+// sources, no two spellings of one name listed apart, and the file is what the selection gives.
+test('common names proposal: 1 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
+  const P = read('tools/fish_common.json').species;
+  const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
+  F.species
+    .filter(s => s.circle)
+    .forEach(s => {
+      const p = P[s.id];
+      assert.ok(p, `${s.id} ${s.name}: no proposal`);
+      assert.strictEqual(p.sp, s.name);
+      assert.ok(p.names.length >= 1 && p.names.length <= 3, `${s.name}: ${p.names.length} names`);
+      if (s.common) assert.strictEqual(p.names[0].name, s.common, `${s.name}: the PDF name first, as written`);
+      p.names.forEach(n => assert.ok(n.from.length, `${s.name}: ${n.name} has no source`));
+      const keys = p.names.map(n => norm(n.name));
+      assert.strictEqual(new Set(keys).size, keys.length, `${s.name}: a name listed twice`);
+    });
+  const r = require('child_process').spawnSync('python3', [path.join(__dirname, '..', 'tools', 'fish_common.py'), '--check'], {
+    encoding: 'utf8'
+  });
+  assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
+});
