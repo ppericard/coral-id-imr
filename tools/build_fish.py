@@ -442,7 +442,7 @@ def build(src, report):
         if u["_not"]:
             o["not"] = u["_not"]
         o["species"] = [x["s"]["id"] for x in sorted(members, key=lambda x: x["r"])]
-        for k in ("sl", "cues", "look", "phase", "why", "note"):
+        for k in ("sl", "cues", "look", "phase", "dimorph", "juv", "why", "note"):
             if u.get(k):
                 o[k] = u[k]
         return o
@@ -473,11 +473,13 @@ def build(src, report):
         if n.get("iname"):
             o["iname"] = n["iname"]
         ref[aid] = o
-    return {"v": V, "groups": src["groups"], "teach": out_t, "species": out_sp, "ref": ref}
+    # start: the starter core (fish_source.json _doc), circle-1 entries met first; checked to be kept entries.
+    start = [t for t in src.get("start", []) if any(o["id"] == t and o["circle"] == 1 for o in out_t)]
+    return {"v": V, "start": start, "groups": src["groups"], "teach": out_t, "species": out_sp, "ref": ref}
 
 
 def write(o):
-    lines = ["{", f'"v":{o["v"]},', '"groups":[']
+    lines = ["{", f'"v":{o["v"]},', f'"start":{dumps(o.get("start", []))},', '"groups":[']
     lines.append(",\n".join(dumps(g) for g in o["groups"]))
     lines.append("],")
     for k in ("teach", "species"):
