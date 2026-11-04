@@ -12,6 +12,13 @@ plan: that waits for the morning.
 
 _(none)_
 
+## Questions for the morning
+
+Asked by agents working without Pierre (AGENTS.md Rule 0): the question, its context, the agent's recommendation. Ask
+them first thing, then clear them.
+
+_(none)_
+
 ## Where the day stopped
 
 Overwritten by the end-of-day protocol (16:30-17:30 Manila): date; done today; unfinished work (branch, PR, state, next
@@ -28,9 +35,7 @@ Rule 0 reworded; #513 sw.js answers a page before its cache copy is written (roo
 net.smoke step 12b reports instead of stopping.
 
 **Unfinished:**
-- **#507 Coral basics card** (branch `claude/admiring-ramanujan-nw3mxr-basicscard`): the A3 coloured trail Pierre chose,
-  "Septa / costae" label, always opens step 1. Last change asked by Pierre: "Start: Colony" while no step is seen, then
-  each player's own "Next: <step>". Merge it once CI is green and Codex is clean (screens in the PR thread).
+- **#507 Coral basics card**: merged at 16:24 (A3 coloured trail, "Septa / costae", "Start: Colony" until a step is seen).
 - **net.smoke hang** (ROADMAP row stays open): fixed by #513 from the CI log; not reproduced locally. Watch CI runs; if
   it comes back, the cache-write contention theory is wrong.
 - **lab.css dead classes** not done (list in the cleanup agent's notes: a2arrs, a2chips, anatgrid, anatpanel, ikboxb,
@@ -49,7 +54,7 @@ net.smoke step 12b reports instead of stopping.
 - The three fish book mappings (Grunters, Basslets, Flounders) to the identification key's groups.
 - Older items in ROADMAP "Waiting on Pierre" (lecture wording points, Merulina, Lab Keep / Trim votes, benthic deck).
 
-**First thing tomorrow:** read this; check #507 merged and live (the card on Learn › Genera); check the last CI runs for
+**First thing tomorrow:** read this and "Where the night stopped" (agents work on their own tonight, Rule 0); check the card on Learn › Genera is live; check the last CI runs for
 the net.smoke hang; then the fish track toward the beta (ROADMAP "Next": judging of circles 2-3 and species photo
 pre-proposals, the path as a tree with a genus level, 1-3 common names per species, fish basics, welcome question,
 subject switch, opening fish to a group, fish leaderboard), with the admin page roles and lab.css alongside.
