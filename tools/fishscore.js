@@ -305,11 +305,17 @@ function plateau(trace, ceiling) {
   // The answers each point of the score took, from 1 point after the entries are done (the entries' 25% come fast by
   // design) up to 95% of the ceiling: the longest and the median, and where the longest was. A plateau is a point that
   // takes many times the median.
+  // A run that ends before 95% of its ceiling counts its last, unfinished point too, up to its last answer (Codex
+  // review #519: a run stalled there is exactly what the measure is for).
   const pts = [];
-  let last = null;
+  let last = null,
+    done = false;
   for (const t of trace) {
     const sc = t.score * 100;
-    if (sc >= 0.95 * ceiling) break;
+    if (sc >= 0.95 * ceiling) {
+      done = true;
+      break;
+    }
     if (sc < 26) continue;
     if (last === null) last = {a: t.a, p: Math.floor(sc)};
     while (sc >= last.p + PLATEAU.PTS) {
@@ -317,6 +323,8 @@ function plateau(trace, ceiling) {
       last = {a: t.a, p: last.p + PLATEAU.PTS};
     }
   }
+  if (!done && last && trace.length && trace[trace.length - 1].a > last.a)
+    pts.push({len: trace[trace.length - 1].a - last.a, at: last.p, open: true});
   if (!pts.length) return {len: 0, median: 0, at: null};
   const lens = pts.map(x => x.len).sort((x, y) => x - y);
   const top = pts.reduce((b, x) => (x.len > b.len ? x : b));
@@ -401,4 +409,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = {credit, parts, world, fixed, simulate, A_COM, B_SCI, W_ENTRY};
+module.exports = {credit, parts, world, fixed, simulate, plateau, A_COM, B_SCI, W_ENTRY};

@@ -37,3 +37,15 @@ test('the simulation is reproducible from its seed', () => {
   assert.deepStrictEqual(a.trace, b.trace);
   assert.ok(a.trace.at(-1).score > 0.15);
 });
+
+test('plateau: a run that stalls before its ceiling reports the stall (Codex review #519)', () => {
+  // 26% at answer 50, 27% at 100, then 27% until answer 10,000: the open stretch is the longest.
+  const trace = [
+    {a: 50, score: 0.26},
+    {a: 100, score: 0.27}
+  ];
+  for (let a = 150; a <= 10000; a += 50) trace.push({a, score: 0.27});
+  const p = F.plateau(trace, 80);
+  assert.strictEqual(p.len, 9900);
+  assert.strictEqual(p.at, 27);
+});

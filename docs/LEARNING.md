@@ -2476,7 +2476,7 @@ What it shows:
   (85% at the same answer). The half credit does what it was meant to do.
 - **Plateaus** (the answers each point of the score takes, from 26% to 95% of the profile's ceiling; median / longest):
   common names only 490 / 850; scientific only 650 / 1,760; both side by side 1,260 / 3,370; both, slow scientific 1,670 /
-  4,550. No long plateau for a player on one branch, nor for one learning both names side by side (the longest point
+  4,610 (a run that ends below 95% of its ceiling counts its last, unfinished point). No long plateau for a player on one branch, nor for one learning both names side by side (the longest point
   takes 2-3 times the median, near 85%, where the last species of the largest entries finish).
 - **One branch, then the other: the pace drops by 7 to 12 times** (common then scientific: median 580, longest 7,010 answers,
   at 90-93%; scientific then common: 760 / 5,060 at 92-93%). Once one kind of names is complete (80% or 85%), the other
