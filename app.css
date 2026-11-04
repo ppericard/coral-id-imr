@@ -1248,6 +1248,24 @@ header {
   object-fit: cover;
   display: block;
 }
+/* Step 0 of the Learn path (learn.js basicsCard): Coral basics' icon on a pale accent tint in the photo's place. */
+.card .ph.bxart,
+.bxart {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
+}
+.bxart svg {
+  width: 42%;
+  height: 42%;
+}
+.bxcard b {
+  font-size: var(--fs-m);
+}
+.bxcard.done small {
+  color: var(--good);
+}
 .card .ph.none,
 .cmpph.none {
   display: flex;
@@ -4058,6 +4076,14 @@ a.lt:hover {
   object-fit: cover;
   border-radius: var(--r);
 }
+.tipph .bxart {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--r);
+}
+.bxtip p {
+  margin: 0 0 4px;
+}
 
 .psrc {
   position: absolute;
@@ -4591,6 +4617,13 @@ a.psrc:focus-visible {
   box-shadow: var(--shadow);
   font-size: var(--fs-s);
   line-height: 1.4;
+}
+/* The term on a photo (app.js basicsHref): Coral basics' step, Corallite anatomy or the Words list. */
+.gpop .gbx {
+  display: block;
+  margin-top: 6px;
+  color: var(--accent);
+  font-weight: 600;
 }
 .gpop[hidden] {
   display: none;
@@ -5765,8 +5798,30 @@ html.touring .unlock {
   --kt2: color-mix(in srgb, var(--k) 24%, var(--surface));
   --kink: color-mix(in srgb, var(--k) 62%, var(--ink));
 }
-[data-k='apology'] {
+[data-k='apology'],
+[data-k='step'] {
   --k: var(--warn);
+}
+/* A big step (the open-all offer, quiz.js introOfferShow): what changes as a short list, the step itself the outlined
+   button in the warn hue under the safe "Not now". */
+.ulchg {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  text-align: left;
+  font-size: var(--fs-s);
+}
+.ulchg li + li {
+  margin-top: 4px;
+}
+.ulcard[data-k='step'] .next.sec {
+  color: var(--kink);
+  box-shadow: inset 0 0 0 1.5px var(--k);
+}
+/* The gentle offer (quiz.js startFbShow, 'lo'): Coral basics and "No thanks" carry the same weight, both outlined. */
+.unlock.startfb[data-dir='lo'] .ulbtns .next:not(.sec) {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 /* The card: a medallion over the top edge of its panel; the panel scrolls when taller than the screen, under the
    medallion, which stays in view. */
@@ -6054,6 +6109,47 @@ html.touring .unlock {
   font-family: var(--display);
   font-weight: 700;
   font-size: 17px;
+}
+/* The first-launch question (core.js CHOICE; tour.js, quiz.js startAskShow / startFbShow): the answers as big buttons, one
+   per row, each with its line; the current answer (Back in the tour) has the accent ring. */
+.startopts {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  text-align: left;
+}
+.startopt {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.startopt b {
+  display: block;
+  font-size: var(--fs-m);
+}
+.startopt small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+.startopt[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+@media (hover: hover) {
+  .startopt:hover {
+    border-color: var(--accent);
+  }
 }
 @keyframes ulfade {
   from {

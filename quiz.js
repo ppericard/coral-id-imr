@@ -379,6 +379,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const good = c === target,
     s = st(target),
     chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+  const first = !((s.ok || 0) + (s.ko || 0)); // the genus's first answer (model.js startStep)
   // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
   // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
   const nc = $v.querySelectorAll('[data-c]').length || 4,
@@ -553,6 +554,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // any question, and for the rust, so a miss the rust explains adds less).
   const h0 = HOLDS;
   holdStep(ans.e, good);
+  startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
   // The Duel tab's relief card (reliefShow): this answer took the hold's sum across INTRO.HOLD, from below.
   if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
   if (warm) comebackStep(rT, th0, dm, k, good);
@@ -1195,6 +1197,9 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto(cur = 'quiz') {
+  // The first-launch question first (model.js startOf): a player with no answer to it (tour skipped, or an existing
+  // player) is asked on a card before the next quiz question; from CHOICE.ASK answers on it is inferred, silently.
+  if (cur === 'quiz' && startGate()) return startAskShow(cur);
   // Now and then a wink instead (winkShow): not a question of the game. Decided before any question is taken or chosen,
   // so the planned ones and the Again / duel spacing wait for the next (Codex review #442). The photo quiz only.
   const wk = cur === 'quiz' && winkDue();
@@ -1219,15 +1224,118 @@ function quizPhoto(cur = 'quiz') {
   if (q.intro) q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start);
   // The offers about which genera are in play (open all, back to one at a time, bonus genera) belong to the photo quiz.
   else if (cur !== 'quiz') {
-  } else if (!noOpen() && promptOk() && introOffer())
+  } else if (!noOpen() && promptOk() && startDue())
+    (promptMark(), startFbShow(startDue())); // the first answers do not fit the first-launch answer (model.js startDue)
+  else if (!noOpen() && promptOk() && introOffer())
     (promptMark(), introOfferShow()); // never over another card: next question
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
-// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now (Escape).
-// Leaving the page closes it unanswered (route): the offer can come back.
+// The first-launch question's cards (Pierre, 2026-11-03; core.js CHOICE, model.js startSet): the question, the Coral
+// basics offer and the fallback card, through app.js cardShow like every card.
+// Asked on a card when the quiz opens (the tour asks it as its first step): no answer yet, fewer than CHOICE.ASK answers.
+// From CHOICE.ASK answers on (an existing player, Pierre 2026-11-03), the choice is inferred from the global level
+// (core.js startInfer) and recorded as "inferred", never asked.
+const startGate = () => {
+  if (!startOn() || startOf()) return false; // corals only (CHOICE.SUBJ)
+  if (answersSoFar() >= CHOICE.ASK) return (startSet(startInfer(P), 'inferred'), false);
+  return true;
+};
+// Forced: the three answers and nothing else (Escape goes back to Home; the quiz asks again next time). Another device's
+// answer arriving meanwhile (sync, model.js startMerge) closes it and the quiz goes on.
+function startAskShow(cur) {
+  if (document.querySelector('.unlock.startq')) return;
+  $v.innerHTML = '';
+  const d = cardShow({
+    kind: 'feature',
+    cls: 'startq',
+    kick: 'Before you start',
+    title: 'How well do you know corals?',
+    label: 'How well do you know corals?',
+    body: `<p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(null)}`,
+    esc: () => go(''),
+    bind: d =>
+      d.querySelectorAll('[data-start]').forEach(
+        b =>
+          (b.onclick = () => {
+            startSet(b.dataset.start, 'card');
+            d.close('pick');
+            startBasicsOffer(cur) || quizPhoto(cur);
+          })
+      )
+  });
+  d.ulDone = () => (d.close('sync'), quizPhoto(cur));
+}
+// "I'm new to corals" (CHOICE v.basics): Coral basics offered first, about 5 minutes, then the quiz. Only while the module
+// is not done (app.js basicsDone). Returns whether it showed.
+function startBasicsOffer(cur) {
+  if (!startV().basics || basicsDone()) return false;
+  cardShow({
+    kind: 'tip',
+    cls: 'startq basicsq',
+    kick: 'New to corals',
+    title: 'Start with Coral basics?',
+    body: '<p>Seven short steps on real photos, about 5 minutes: a polyp, a corallite, septa and walls, the words the ID tips use. Then the quiz.</p>',
+    primary: {text: 'Coral basics (5 min)', attr: 'data-basics', on: () => go('basics')},
+    secondary: {text: 'Start the quiz', on: () => quizPhoto(cur)},
+    esc: 2, // Escape: the quiz
+    note: 'Learn › Coral basics, any time.'
+  });
+  return true;
+}
+// The fallback card (model.js startDue), once per direction, over a new question. 'lo' (the answers clearly below what
+// the choice predicts) is a gentle offer, never a verdict (Pierre, 2026-11-04: an RA or an expert who gets it by mistake
+// must not feel judged): "The first genera feel hard?", Coral basics in 5 minutes and "No thanks, I know the basics" as
+// two equal buttons. Coral basics also moves the start variables one band down, silently (model.js startEase: the answer
+// given stays, nothing on screen says so); "No thanks" changes nothing, and the card never comes back that way. 'hi'
+// (clearly above): the higher choices to pick from (startOptsHtml), or keep. The answers are kept either way.
+function startFbShow(dir) {
+  const o = startOf(),
+    next = startNext(o.c, dir),
+    said = `said “${esc(startOpt(o.c)[1])}”`;
+  startShown(dir);
+  const d = cardShow(
+    dir === 'lo'
+      ? {
+          kind: 'tip',
+          cls: 'startfb',
+          kick: 'A tip',
+          title: 'The first genera feel hard?',
+          label: 'Your start',
+          body: '<p>They do for most people. Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.</p>',
+          primary: {text: 'Coral basics in 5 minutes', attr: 'data-basics', on: () => (startEase(), go('basics'))},
+          secondary: {text: 'No thanks, I know the basics', attr: 'data-keep'},
+          esc: 2, // Escape: no thanks
+          onClose: () => topUp()
+        }
+      : {
+          kind: 'tip',
+          cls: 'startfb',
+          kick: 'Your start',
+          title: 'You know more than you said',
+          label: 'Your start',
+          body: `<p>Your answers beat what the game expects from someone who ${said}. Move faster? Your answers are kept.</p>${startOptsHtml(null, next)}`,
+          secondary: {text: 'Keep my answer', attr: 'data-keep'},
+          onClose: () => topUp(),
+          bind: d =>
+            d.querySelectorAll('[data-start]').forEach(
+              b =>
+                (b.onclick = () => {
+                  startSet(b.dataset.start, 'fallback');
+                  d.close('pick');
+                })
+            )
+        }
+  );
+  d.dataset.dir = dir;
+}
+// The offer to open all genera (model.js introOffer), over the question, once. A big step, and shown as one (Pierre,
+// 2026-11-04: a beginner who misclicked their level must see it is risky, an expert can confirm calmly): the "step"
+// kind (the warm --warn hue), what changes in three short lines, "Not now" the safe default on top (Escape and Enter),
+// "Open all genera" under it, outlined in the warn hue; no number. Leaving the page closes it unanswered (route): the offer can
+// come back.
 function introOfferShow() {
   const a = answersSoFar(),
     pick = open => {
@@ -1238,16 +1346,18 @@ function introOfferShow() {
       }
       save();
     };
+  // No number on this card (Pierre, 2026-11-04): counts go stale or miscount what the player already has open.
   cardShow({
-    kind: 'tip',
+    kind: 'step',
     cls: 'intro',
-    kick: `${a} answers in`,
-    title: `You seem to know your ${SUBJ.name.toLowerCase()} already`,
-    body: `<p>Open all ${slateGenera().length} ${SUBJ.many} at once, instead of one at a time? ${introLeft().length} are still to come.</p>`,
-    primary: {text: `Open all ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
-    secondary: {text: 'Not now', on: () => pick(false)},
-    esc: 2,
-    note: 'Also in My progress, any time.',
+    kick: 'A big step',
+    title: `Open all the ${SUBJ.many} at once?`,
+    body: `<p>You are doing well. Opening them all is the hard way:</p><ul class="ulchg"><li>All the remaining ${SUBJ.many} in the questions at once, without a card for each</li><li>Harder questions sooner: look-alikes side by side</li><li>More mix-ups at first, before it settles</li></ul>`,
+    primary: {text: 'Not now, one at a time', attr: 'data-notnow', on: () => pick(false)},
+    secondary: {text: `Open all ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
+    esc: 1,
+    enter: 1,
+    note: 'Also in My progress, any time. If it gets too hard, the game offers to go back.',
     onClose: topUp
   });
 }
