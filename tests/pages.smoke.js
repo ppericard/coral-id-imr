@@ -3096,7 +3096,8 @@ async function newPlayer(b, base) {
 // One progression path for every game (Pierre, 2026-11-04): a beginner who met 4 genera on the path (Pocillopora,
 // Stylophora, Favites, Dipsastraea; Open all declined) plays 15 duels of the Duel tab: they come only from those 4, no
 // genus card opens, no ★ genus (whose reference is not met) ever shows; "Drill this pair" on a pair not unlocked falls back
-// to an unlocked duel; Memory deals only those 4 genera; the custom quiz offers only them. Returns the failures.
+// to an unlocked duel; Memory deals only those 4 genera; the custom quiz offers only them; the Tools' games ask about
+// them only. Returns the failures.
 async function onePath(b, base) {
   const fails = [],
     MET = ['Pocillopora', 'Stylophora', 'Favites', 'Dipsastraea'],
@@ -3195,6 +3196,108 @@ async function onePath(b, base) {
   const cq = await p.evaluate(() => [...document.querySelectorAll('#view .cqtile')].map(x => x.dataset.g));
   if (cq.length !== MET.length || cq.some(n => !MET.includes(n)))
     fails.push(`one path, custom quiz offers ${cq.length}: ${cq.slice(0, 6).join(', ')}`);
+  // The Tools' games (proto/*.js, lab.js labPlay): each round's photo is of a genus unlocked, 6 rounds each. The reference
+  // tools keep every genus (not checked here).
+  const GAMES = [
+    ['lab-reveal', null, '#rvimg', null],
+    ['lab-spot', null, '.spotph img', null],
+    ['lab-type', null, '.tystage img', null],
+    ['lab-zoom', '#zmgame', '.zlayout img', '#zmgame'],
+    ['lab-elim', '#elimm', '#elimmyst img', '#elimm'],
+    ['lab-anatomy|drill', null, '#a2q img', '#a2next'],
+    ['lab-anatomy|drill', '[data-t="arr"]', '#a2q img', '#a2next']
+  ];
+  const labOut = {};
+  for (const [h, start, sel, again] of GAMES) {
+    const seen = [];
+    for (let k = 0; k < 6; k++) {
+      if (k === 0 || !again) {
+        await p.evaluate(() => (location.hash = 'home'));
+        await p.waitForSelector('#view > *', {timeout: 10000}).catch(() => {});
+        await p.evaluate(x => (location.hash = x), h);
+        await p.waitForSelector(start || sel, {timeout: 15000}).catch(() => {});
+        if (start) await p.click(start).catch(() => {});
+      } else await p.click(again).catch(() => {});
+      await p.waitForSelector(sel, {timeout: 10000}).catch(() => {});
+      // The genus of each photo shown, from the data (an IMR lecture photo's file name does not name it).
+      seen.push(
+        ...(await p.evaluate(sel => {
+          const of = {};
+          // Its views and its game slates (app.js gamePics: the curated photos the games may use).
+          Object.keys(DATA.gen).forEach(n =>
+            [...Object.values(GX(n).views), ...Object.values(GX(n).sl || {}).map(x => x.game || [])].forEach(L =>
+              L.forEach(x => (of[x.f] = n))
+            )
+          );
+          return [...document.querySelectorAll('#view ' + sel)].map(i => {
+            const f = decodeURIComponent((i.getAttribute('src') || '').split('/').pop()).replace(/(-[smt])?\.webp.*$/, '');
+            return of[f] || f;
+          });
+        }, sel))
+      );
+    }
+    const out = seen.filter(n => !MET.includes(n));
+    if (!seen.length || out.length) labOut[h + (start ? ' ' + start : '')] = {photos: seen.length, out: out.slice(0, 3)};
+  }
+  if (Object.keys(labOut).length) fails.push(`one path, Tools games: ${JSON.stringify(labOut)}`);
+  // A player with no genus unlocked yet: each game sends to the quiz instead of asking about a genus never met.
+  {
+    const c0 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true});
+    await c0.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c0.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+    });
+    const p0 = await c0.newPage();
+    p0.on('pageerror', e => errs.push(e.message));
+    const none = [];
+    for (const [h, start] of GAMES) {
+      await p0.goto(base + '#' + h);
+      await p0.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      if (start) {
+        await p0.waitForSelector(start, {timeout: 15000}).catch(() => {});
+        await p0.click(start).catch(() => {});
+      }
+      const ok = await p0
+        .waitForFunction(() => /Meet a few in the quiz first/.test(document.getElementById('view').textContent), null, {timeout: 10000})
+        .then(() => true)
+        .catch(() => false);
+      if (!ok) none.push(h + (start ? ' ' + start : ''));
+      // The tool's own controls stay (Codex review #491: the Zoom ladder's note replaced its Explore switch).
+      else if (start && !(await p0.$(start))) none.push(h + ' (its controls gone)');
+    }
+    if (none.length) fails.push(`one path, Tools games with no genus unlocked: no line to the quiz in ${none.join(', ')}`);
+    await c0.close();
+  }
+  // Genera unlocked but none with a ringed photo (Pocillopora alone): the anatomy drill says so instead of an empty
+  // question (Codex review #491).
+  {
+    const c1 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true});
+    await c1.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c1.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+      localStorage.setItem('reefid-sync-coral-intro', JSON.stringify({Pocillopora: [0, 1, 1, 's']}));
+    });
+    const p1 = await c1.newPage();
+    p1.on('pageerror', e => errs.push(e.message));
+    await p1.goto(base + '#lab-anatomy|drill');
+    await p1.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const said = await p1
+      .waitForFunction(() => /ringed photo here yet/.test((document.getElementById('a2q') || {}).textContent || ''), null, {timeout: 10000})
+      .then(() => true)
+      .catch(() => false);
+    if (!said) fails.push('one path, anatomy drill with genera unlocked but none ringed: no word for the player');
+    await c1.close();
+  }
   if (errs.length) fails.push(`one path: page errors ${errs.slice(0, 3).join(' | ')}`);
   await c.close();
   return fails;
