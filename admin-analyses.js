@@ -266,6 +266,35 @@ function sharesBar(parts, o = {}) {
   return svg(w, h, o.title || 'Shares', s);
 }
 
+// Bars (counts by hour of the day): one bar a value, a label under every 3rd.
+function bars(vals, o = {}) {
+  const w = o.w || anW(),
+    h = o.h || 140,
+    l = 28,
+    r = 8,
+    t = 8,
+    bt = 30,
+    mx = Math.max(1, ...vals),
+    bw = (w - l - r) / vals.length,
+    Y = v => t + (1 - v / mx) * (h - t - bt);
+  let s = '';
+  ticks(0, mx, 3)
+    .filter(v => Number.isInteger(v))
+    .forEach(
+      v =>
+        (s += `<line class="an-grid" x1="${l}" x2="${w - r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="an-tick" x="${l - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`)
+    );
+  vals.forEach((v, i) => {
+    const x = l + i * bw;
+    if (v)
+      s += `<rect class="an-bar" x="${x + 1}" y="${Y(v)}" width="${Math.max(1, bw - 2)}" height="${Y(0) - Y(v)}"><title>${esc((o.lf || String)(i))}: ${v}</title></rect>`;
+    if (i % (o.every || 3) === 0)
+      s += `<text class="an-tick" x="${x + bw / 2}" y="${h - bt + 14}" text-anchor="middle">${esc((o.lf || String)(i))}</text>`;
+  });
+  if (o.xlab) s += `<text class="an-tick" x="${(l + w - r) / 2}" y="${h - 2}" text-anchor="middle">${esc(o.xlab)}</text>`;
+  return svg(w, h, o.title || 'Counts', s);
+}
+
 /* ---------- Page pieces ---------- */
 const anCard = (t, body, cls = '') => `<section class="adm-scard${cls ? ' ' + cls : ''}"><h3>${t}</h3>${body}</section>`;
 const anTable = (head, rows, cls = '') =>
@@ -442,7 +471,12 @@ function anView(key, rep, R, prevR) {
     ...(key === 'back' && a.far != null ? [['After a break', anInt(a.far)]] : []),
     ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : [])
   ]);
-  if (a.thin) return head + `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} answers this analysis needs.</p>`;
+  if (a.thin)
+    return (
+      head +
+      `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} answers this analysis needs.</p>` +
+      (key === 'sess' && a.desc ? `<div class="adm-sgrid adm-an-grid">${anSessDesc(a.desc).join('')}</div>` : '')
+    );
   const lean = a.lean ? '<p class="note">Only the main results are kept for this milestone.</p>' : '';
   const parts = [anEffects(a, key, fresh)];
   if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []));
@@ -728,9 +762,151 @@ const ANV = {
             .concat(`<tr><td>Half the sessions end by</td><td class="n">${a.median ? a.median + ' answers' : '–'}</td></tr>`)
         ),
       'wide'
-    )
+    ),
+    ...(a.desc ? anSessDesc(a.desc) : [])
   ]
 };
+// A y range around the values (10 points of margin, within 0-100%), so a flat line still shows its changes.
+const anYr = V => {
+  const L = V.filter(v => v != null && isFinite(v));
+  return L.length
+    ? {ymin: Math.max(0, Math.floor((Math.min(...L) - 0.1) * 10) / 10), ymax: Math.min(1, Math.ceil((Math.max(...L) + 0.1) * 10) / 10)}
+    : {};
+};
+// Sessions in figures (analysis.js sessDesc; the study of 2026-11-04): counts and means, in words.
+const anOf = (k, n) => (n ? `${k} of ${n} (${pc(k / n)})` : '–');
+function anSessDesc(d) {
+  const ids = [...new Set(d.table.map(s => s.p))].sort(),
+    who = id => anWho(id, ids.indexOf(id)),
+    modes = md =>
+      Object.entries(md)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `${{quiz: 'quiz', duel: 'duel', typed: 'typed', custom: 'custom'}[k]} ${v}`)
+        .join(' · '),
+    dots = t => [...String(t)].map(c => (c === '1' ? '<b class="adm-an-v t-good">●</b>' : '<b class="adm-an-v t-bad">○</b>')).join(''),
+    E = d.ends;
+  const posLab = b => (b.hi == null ? `${b.lo}+` : `${b.lo}–${b.hi}`),
+    fifth = ['First fifth', 'Second fifth', 'Middle fifth', 'Fourth fifth', 'Last fifth'],
+    endLab = ['Last 3 answers', '4th to 10th from the end', '11th to 20th from the end'];
+  const binRow = (lab, b) =>
+    `<tr><td>${lab}</td><td class="n">${anInt(b.n)}</td><td class="n">${pc(b.right)}</td><td class="n">${pc(b.E)}</td><td class="n">${anPts(b.oe)}${b.lo != null ? `<small class="adm-an-ci">${anPts(b.lo)} to ${anPts(b.hi)}</small>` : ''}</td></tr>`;
+  return [
+    anCard(
+      'Sessions in figures',
+      anTable(
+        ['', '#'],
+        [
+          `<tr><td>Sessions</td><td class="n">${anInt(d.sessions)}</td></tr>`,
+          `<tr><td>Players</td><td class="n">${anInt(d.players)}</td></tr>`,
+          `<tr><td>Typical session</td><td class="n">${anInt(d.len.answers)} answers, ${anInt(d.len.min)} min</td></tr>`
+        ]
+      )
+    ),
+    anCard(
+      'When sessions start (Manila time)',
+      bars(d.hours, {
+        lf: i => String(i).padStart(2, '0') + 'h',
+        xlab: 'Hour the session starts',
+        title: 'Sessions by starting hour, Manila time'
+      }),
+      'wide'
+    ),
+    anCard(
+      'Right answers along a session',
+      lines(
+        [
+          {label: 'Players', pts: d.fifths.map((b, i) => [i, b.right, b.n]).filter((p, i) => d.fifths[i].n), dots: true},
+          {label: 'App expected', pts: d.fifths.map((b, i) => [i, b.E]).filter((p, i) => d.fifths[i].E != null), dash: true}
+        ],
+        {
+          xticks: [0, 1, 2, 3, 4],
+          xf: i => ['Start', '', 'Middle', '', 'End'][i] ?? '',
+          xmin: 0,
+          xmax: 4,
+          ...anYr(d.fifths.flatMap(b => [b.right, b.E])),
+          title: 'Right answers along a session (sessions of 20 answers or more)'
+        }
+      ) +
+        anTable(
+          ['Part of the session', '#Answers', '#Right', '#App expected', '#Right − expected'],
+          d.fifths.map((b, i) => binRow(fifth[i], b)).concat(d.fromEnd.map((b, i) => binRow(endLab[i], b)))
+        ) +
+        anTable(
+          ['Answer number in the session', '#Quiz answers', '#Typical time'],
+          d.secs.map(b => `<tr><td>${posLab(b)}</td><td class="n">${anInt(b.n)}</td><td class="n">${anSec(b.s)}</td></tr>`)
+        ),
+      'wide'
+    ),
+    anCard(
+      'How sessions end',
+      anTable(
+        ['Sessions that ended', '#'],
+        [
+          `<tr><td class="an-w">On a wrong answer</td><td class="n">${anOf(E.miss, E.sessions)}</td></tr>`,
+          `<tr><td class="an-w">Wrong answers overall, for comparison</td><td class="n">${pc(E.missRate)}</td></tr>`,
+          `<tr><td class="an-w">On 2 or more misses in a row</td><td class="n">${anOf(E.miss2, E.sessions)}</td></tr>`,
+          `<tr><td class="an-w">On a genus met for the first time</td><td class="n">${anOf(E.lastNew, E.sessions)}</td></tr>`,
+          `<tr><td class="an-w">First meetings overall, for comparison</td><td class="n">${pc(E.newRate)}</td></tr>`,
+          `<tr><td class="an-w">Last answer’s game</td><td class="n">${esc(modes(E.lastMode)) || '–'}</td></tr>`
+        ]
+      )
+    ),
+    anCard(
+      'After a break: the end of a session against the start of the next',
+      anTable(
+        ['Break', '#Pairs', '#Right, last 10 before', '#Right, first 10 after', '#App expected before', '#App expected after'],
+        d.gaps.map(
+          g =>
+            `<tr><td>${esc(g.label)}</td><td class="n">${g.n}</td><td class="n">${pc(g.before)}</td><td class="n">${pc(g.after)}</td><td class="n">${pc(g.Eb)}</td><td class="n">${pc(g.Ea)}</td></tr>`
+        )
+      )
+    ),
+    anCard(
+      'Players coming back',
+      anTable(
+        ['After their', '#Players', '#Came back'],
+        d.returns.map(
+          r =>
+            `<tr><td>${['', '1st', '2nd', '3rd'][r.k]} session</td><td class="n">${r.at}</td><td class="n">${anOf(r.back, r.at)}</td></tr>`
+        )
+      ) + '<p class="note">A session that ended less than a day ago is not counted yet, either way.</p>'
+    ),
+    anCard(
+      'First session against later ones',
+      anTable(
+        ['Session', '#Sessions', '#Typical answers', '#Typical minutes', '#Right', '#Right − expected', '#New genera'],
+        d.first.map(
+          (g, i) =>
+            `<tr><td>${['First', 'Second', 'Third and later'][i]}</td><td class="n">${g.sessions}</td><td class="n">${g.answers == null ? '–' : anInt(g.answers)}</td><td class="n">${g.min == null ? '–' : anInt(g.min)}</td><td class="n">${pc(g.right)}</td><td class="n">${anPts(g.oe)}</td><td class="n">${g.newg == null ? '–' : anInt(g.newg)}</td></tr>`
+        )
+      ),
+      'wide'
+    ),
+    anCard(
+      'Every session',
+      anTable(
+        [
+          'Player',
+          'Start',
+          '#Minutes',
+          '#Answers',
+          'Games',
+          '#Right',
+          '#Right − expected',
+          '#New genera',
+          'Last 3',
+          '#Hours since the previous'
+        ],
+        d.table.map(
+          s =>
+            `<tr${s.open ? ' class="me" title="Still going"' : ''}><td>${who(s.p)} <small class="note">#${s.k}</small></td><td>${dateText(s.t0, 'dmhm')}</td><td class="n">${s.min}</td><td class="n">${s.n}</td><td>${esc(modes(s.md))}</td><td class="n">${pc(s.right)}</td><td class="n">${anPts(s.oe)}</td><td class="n">${s.newg}</td><td>${dots(s.tail)}</td><td class="n">${s.gap == null ? '–' : s.gap}</td></tr>`
+        ),
+        'tall'
+      ),
+      'wide'
+    )
+  ];
+}
 
 /* ---------- The page ---------- */
 function renderAnalyses() {
