@@ -328,6 +328,74 @@ const WIDTHS = [390, 1280];
       await settle();
       if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid)) fails.push(`${w}px Hidden: Put back left the photo removed`);
     }
+    // Genera: the view filter of the sticky bar (Pierre, 2026-11-04). Corallites shows that section alone (Candidates and
+    // Not this genus hidden, counted in one line), is remembered from genus to genus, falls back to All on a 2-zoom genus
+    // without a Close-up row when Close-up is saved, and All (or the line's All views) brings the whole page back.
+    const gg = await p.evaluate(() => {
+      const N = Object.keys(DATA.gen);
+      return {
+        three: N.filter(n => rows(n).length === 3 && unused(n).length).slice(0, 2),
+        two: N.find(n => !rows(n).some(([v]) => v === 'medium'))
+      };
+    });
+    const gstate = () =>
+      p.evaluate(() => ({
+        btns: [...document.querySelectorAll('.adm-sticky [data-gv]')].map(b => b.textContent),
+        on: [...document.querySelectorAll('.adm-sticky [data-gv][aria-pressed="true"]')].map(b => b.dataset.gv),
+        rows: [...document.querySelectorAll('.adm-main > section.adm-row:not(.adm-out) h3')].map(h => h.firstChild.textContent.trim()),
+        drops: [...document.querySelectorAll('.adm-main [data-drop]')].map(g => g.dataset.drop),
+        cands: !!document.querySelector('.adm-main .adm-cands'),
+        note: (document.querySelector('.adm-gvnote') || {}).textContent || '',
+        saved: localStorage.getItem('demo:reefid-admin-gview'),
+        all: rows(cur).map(([v]) => label(cur, v)),
+        nc: unused(cur).length
+      }));
+    // A missing button is a failure, not a 30 s wait: the checks after it then fail too.
+    const pick = async sel => ((await p.$(sel)) ? p.click(sel) : fails.push(`${w}px View filter: no ${sel}`));
+    if (gg.three.length < 2 || !gg.two) fails.push(`${w}px View filter: no test genera ${JSON.stringify(gg)}`);
+    else {
+      await go(gg.three[0]);
+      let s = await gstate();
+      if (s.btns.join('|') !== 'All|Colony|Close-up|Corallites' || s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands)
+        fails.push(`${w}px View filter: All on ${gg.three[0]} ${JSON.stringify(s)}`);
+      await pick('.adm-sticky [data-gv="macro"]');
+      await settle();
+      s = await gstate();
+      if (
+        s.on.join() !== 'macro' ||
+        s.rows.join() !== 'Corallites' ||
+        s.drops.join() !== 'macro' ||
+        s.cands ||
+        !s.note.includes(`${s.nc} candidate`)
+      )
+        fails.push(`${w}px View filter: Corallites on ${gg.three[0]} ${JSON.stringify(s)}`);
+      if (s.saved !== '"macro"') fails.push(`${w}px View filter: Corallites not remembered (${s.saved})`);
+      await go(gg.three[1]);
+      s = await gstate();
+      if (s.on.join() !== 'macro' || s.rows.join() !== 'Corallites' || s.cands)
+        fails.push(`${w}px View filter: Corallites not kept on ${gg.three[1]} ${JSON.stringify(s)}`);
+      await pick('.adm-sticky [data-gv="medium"]');
+      await settle();
+      await go(gg.two);
+      s = await gstate();
+      if (
+        s.btns.join('|') !== ['All', ...s.all].join('|') ||
+        s.btns.length !== 3 ||
+        s.on.join() !== 'all' ||
+        s.rows.join() !== s.all.join() ||
+        s.note
+      )
+        fails.push(`${w}px View filter: a saved Close-up on 2-zoom ${gg.two} ${JSON.stringify(s)}`);
+      if (s.saved !== '"medium"') fails.push(`${w}px View filter: the fallback overwrote the saved view (${s.saved})`);
+      await go(gg.three[0]);
+      s = await gstate();
+      if (s.rows.join() !== 'Close-up') fails.push(`${w}px View filter: Close-up not back on ${gg.three[0]} ${JSON.stringify(s)}`);
+      await pick('.adm-gvnote [data-gv="all"]');
+      await settle();
+      s = await gstate();
+      if (s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands || s.note || s.saved !== '"all"')
+        fails.push(`${w}px View filter: All views ${JSON.stringify(s)}`);
+    }
 
     // Users: the made-up players, one opened, a merge and a delete.
     await go('~users');
