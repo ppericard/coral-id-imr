@@ -27,6 +27,8 @@ circle-1 game photo is judged, that every code is valid and that the caps below 
 
 ## Tags (one code per photo)
 
+**Visual criteria only** (Pierre, 2026-11-04): the judge reads what it sees (how the fish is shown: view, whole, light, colour loss, clarity, size in the frame, whether the subject is obvious) and never the species. The species is the iNaturalist identification by human experts (Research Grade, or Pierre's own), taken as given: the judge does not say whether a photo shows the right species or whether its species is recognisable.
+
 A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1g1sm1j2`. In order:
 
 | Position | Tag | Values |
