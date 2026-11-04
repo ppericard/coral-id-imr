@@ -1833,12 +1833,24 @@ header {
 .lahead:hover i {
   color: var(--accent);
 }
-/* Back to the duel on a comparison opened from the Duel tab's relief card (learn.js viewCompare, quiz.js DUELBACK). */
-.cmpback {
-  margin: 0 0 12px;
+/* Back to the duel on a comparison opened from the Duel tab's relief card (learn.js viewCompare, quiz.js DUELBACK): a
+   floating main button at the bottom centre, over the page however far it scrolls, above the phone tab bar and the
+   home indicator; under the settings pop-up, the enlarged view and the cards. The page ends with room for it, so it
+   never hides the last photos. */
+.cmpfab {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 16px);
+  transform: translateX(-50%);
+  z-index: 21;
+  max-width: calc(100vw - 32px);
+  min-height: 48px;
+  padding: 12px 28px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-hover);
 }
-.cmpback:last-child {
-  margin: 16px 0 12px;
+.cmpfabpad {
+  height: 88px;
 }
 .cmprow {
   display: grid;
