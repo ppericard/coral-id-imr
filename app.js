@@ -568,7 +568,7 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
@@ -925,6 +925,12 @@ const tipsList = (g, cls = '') =>
         .join('')}</ul>`
     : `<p class="keyid">${gloss(g.sum)}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
+// A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
+// [spelling, source]; Pierre, 2026-11-04: "show both, the IMR one first"). Plain text: escape it where it is shown.
+const altName = s => {
+  const a = ((DATA && DATA.spell) || {})[s];
+  return a ? `${s}, also spelled ${a[0]} (${a[1]})` : String(s);
+};
 // The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
 const tipsHead =
   () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
@@ -1399,7 +1405,7 @@ function ctxBar(h) {
       i = L.indexOf(n);
     const prev = L[(i - 1 + L.length) % L.length],
       next = L[(i + 1) % L.length];
-    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
+    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(altName(g.fam))}</small></h2>
       <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
@@ -2036,7 +2042,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=37')
+  getR('data.json?v=38')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),
