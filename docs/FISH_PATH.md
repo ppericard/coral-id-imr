@@ -183,7 +183,7 @@ opened everything at once**: every circle-1 entry, their species, the IMR sub-en
 the fish UX study: the fish get a welcome question that **works exactly like the coral one** (PR #428, the first-launch question,
 `core.js` `CHOICE`; docs/LEARNING.md), and the answer opens nothing.
 
-- **Built** (2026-11-04 night, PR #WELCOME, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
+- **Built** (2026-11-04 night, PR #538, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
   `start`, `startKey`: `reefid-sync-fish-start`), asked on the card before the first fish question, the coral values for
   now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim, the names choice, Fish basics.
 - **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three

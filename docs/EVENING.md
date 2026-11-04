@@ -17,7 +17,7 @@ _(none)_
 Asked by agents working without Pierre (AGENTS.md Rule 0): the question, its context, the agent's recommendation. Ask
 them first thing, then clear them.
 
-- **Fish welcome question (#WELCOME, open; 2026-11-04 night, fish track).** Context: built as the ROADMAP row says, the
+- **Fish welcome question (#538, open; 2026-11-04 night, fish track).** Context: built as the ROADMAP row says, the
   coral question's code per subject; your question and three answers word for word; screenshots in the PR. Choices it
   made that are yours: (1) the line under each answer: "Start from scratch: a few easy families first." / "You are
   learning the IMR survey families." / "A diver or a guide: you can already name many families."; (2) the fish values
