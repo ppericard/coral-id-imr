@@ -93,6 +93,13 @@ const WIDTHS = [390, 1280];
       CF = [CF0, ...FREE.filter(x => x !== CF0 && !autoCheck(x.f)).slice(0, 3)].map(x => x && x.f),
       CHK = (FREE.find(x => autoCheck(x.f)) || {}).f;
     if (CF.some(f => !f) || !CHK) throw new Error(`not enough undecided candidates for the auto-sort test: ${CF} ${CHK}`);
+    // The fish auto-sort (admin plan PR 4, autosort.js fishRun): FF[0] a sure add, FF[1] a sure near-duplicate, FF[2] a
+    // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
+    const FCAND = rd('fish-cand.json').cand,
+      FF = Object.entries(FCAND)
+        .flatMap(([sid, L]) => L.map(x => [sid, x.f]))
+        .filter(([, f]) => !autoCheck(f))
+        .slice(0, 3);
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
     // the same day, rejections of photos he rejected too (no comparison, so the agreement is the test's own). The test's
@@ -109,7 +116,7 @@ const WIDTHS = [390, 1280];
       );
     await ctx.route(
       u => u.href.startsWith(base) && u.pathname === '/curation.json',
-      r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, auto: {[day]: LOG}})})
+      r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, auto: {[day]: LOG}, fish: {out: {[FF[2][1]]: 'x'}}})})
     );
     await ctx.route(base + 'suggest.json', r =>
       r.fulfill({
@@ -122,6 +129,11 @@ const WIDTHS = [390, 1280];
             [CF[2]]: {v: 'wide', q: 2, g: 'cmp', fm: 'M', n: 'Two genera side by side'},
             [CF[3]]: {v: 'wide', q: 3, k: 'best', fm: 'B', u: ['quality'], n: 'Soft?'},
             [CHK]: {v: 'wide', q: 2, k: 'best', fm: 'B', c: [0.2, 0.25, 0.8, 0.75]}
+          },
+          fish: {
+            [FF[0][1]]: {jt: 'p1g0sm1', e: 5, k: 'best', ph: 'female'},
+            [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
+            [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'}
           }
         })
       })
@@ -1740,6 +1752,96 @@ const WIDTHS = [390, 1280];
       const r2 = await p.evaluate(f => ({e: (DRAFT.retest || {})[f], q: DRAFT.quality[f]}), rt.f);
       if (!r2.e || r2.e.q[0] !== rt.q || r2.e.q[1] !== 1 || r2.q !== rt.q) fails.push(`${w}px Retest: answer ${JSON.stringify(r2)}`);
     }
+    // The fish auto-sort ran at load into DRAFT.fish (not a coral key), and Publish counts and sends it.
+    const fa = await p
+      .waitForFunction(() => DRAFT.fish && DRAFT.fish.auto, null, {timeout: 15000})
+      .then(() =>
+        p.evaluate(
+          F => ({
+            fish: DRAFT.fish,
+            sum: pubSummary(),
+            coral: F.some(([, f]) => JSON.stringify(DRAFT.genera).includes(f)),
+            // A draft with fish changes only still enables Publish (status counts the fish curation).
+            alone: (() => {
+              const keep = DRAFT;
+              DRAFT = {...clone(SAVED), fish: DRAFT.fish};
+              status();
+              const r = {dis: $('save').disabled, title: $('save').title};
+              DRAFT = keep;
+              status();
+              return !r.dis && /fish curation/.test(r.title) ? true : r;
+            })()
+          }),
+          FF
+        )
+      )
+      .catch(() => null);
+    if (
+      !fa ||
+      fa.fish.add[FF[0][1]] !== FF[0][0] ||
+      fa.fish.tags[FF[0][1]] !== 'p1g0sm1' ||
+      fa.fish.phase[FF[0][1]] !== 'female' ||
+      fa.fish.seen[FF[1][1]] !== 1 ||
+      FF[2][1] in fa.fish.add ||
+      fa.fish.out[FF[2][1]] !== 'x' ||
+      fa.coral ||
+      fa.alone !== true ||
+      !/fish photo in play/.test(fa.sum) ||
+      !/fish auto-sort decision/.test(fa.sum)
+    )
+      fails.push(
+        `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone})}`
+      );
+    // One fish auto decision undone in the Auto details (Codex review #479, AGENTS.md rule 8): gone from the draft, logged
+    // undone, never applied again at the next run.
+    if (fa) {
+      await go('~cand');
+      await p.evaluate(() => {
+        ADET = true;
+        render();
+      });
+      const fb = await p.$(`[data-ff="${FF[0][1]}"] [data-faundo]`);
+      if (!fb) fails.push(`${w}px Fish auto-sort: no Undo for ${FF[0][1]} in the Auto details`);
+      else {
+        await fb.click();
+        await settle();
+        const fu = await p.evaluate(async f => {
+          const day = Object.keys(DRAFT.fish.auto).sort().pop(),
+            r = {add: !!(DRAFT.fish.add || {})[f], code: DRAFT.fish.auto[day][f]};
+          await fishAutoRun();
+          r.again = !!(DRAFT.fish.add || {})[f];
+          return r;
+        }, FF[0][1]);
+        if (fu.add || !/^-a[tepc]*$/.test(fu.code) || fu.again) fails.push(`${w}px Fish auto-sort: Undo ${JSON.stringify(fu)}`);
+      }
+      // Over 30 fish decisions: the latest 30, then "All N" shows every one (Codex review #479).
+      const fl = await p.evaluate(() => {
+        const keep = DRAFT.fish,
+          day = '2026-11-01',
+          L = Object.fromEntries(Array.from({length: 35}, (_, i) => [`fish-test-cand-${i}`, 'r']));
+        DRAFT.fish = {...keep, auto: {...keep.auto, [day]: L}};
+        AALL = false;
+        render();
+        const n0 = document.querySelectorAll('[data-ff]').length,
+          b = [...document.querySelectorAll('[data-aall]')].find(
+            x =>
+              x.closest('.adm-autodet') &&
+              /All \d+/.test(x.textContent) &&
+              x.previousElementSibling &&
+              x.previousElementSibling.querySelector('[data-ff]')
+          );
+        if (b) b.click();
+        const n1 = document.querySelectorAll('[data-ff]').length;
+        DRAFT.fish = keep;
+        AALL = false;
+        render();
+        return {n0, b: !!b, n1};
+      });
+      if (fl.n0 !== 30 || !fl.b || fl.n1 < 36) fails.push(`${w}px Fish auto-sort: All for over 30 decisions ${JSON.stringify(fl)}`);
+      await p.evaluate(() => {
+        ADET = false;
+      });
+    }
     errs.length = 0;
     if (await p.isEnabled('#save')) {
       await p.click('#save');
@@ -1748,6 +1850,8 @@ const WIDTHS = [390, 1280];
         .catch(() => fails.push(`${w}px Publish: no "Published" toast`));
       if (!(await p.evaluate(() => Object.keys(output().auto || {}).length && Object.keys(output().retest || {}).length)))
         fails.push(`${w}px Publish: the auto-sort log or the retests are not published`);
+      if (!(await p.evaluate(() => Object.keys((output().fish || {}).auto || {}).length && (output().fish || {}).out)))
+        fails.push(`${w}px Publish: the fish curation is not published`);
     } else fails.push(`${w}px Publish: button still disabled after a change`);
     if (errs.length) fails.push(`${w}px actions: ${errs.slice(0, 3).join(' | ')}`);
 
@@ -1767,7 +1871,7 @@ const WIDTHS = [390, 1280];
   console.log(
     part
       ? 'Admin demo OK' + part + '; nothing sent.'
-      : 'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, auto-sort, retest, publish; nothing sent.'
+      : 'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, auto-sort, fish auto-sort, retest, publish; nothing sent.'
   );
 })().catch(e => {
   console.error(e);
