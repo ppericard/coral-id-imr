@@ -452,7 +452,7 @@ const AN_PART = {
   player: 'Players',
   genus: 'Genera',
   photo: 'Photos',
-  residual: 'The same player on the same photo, from one time to the next'
+  residual: 'From one answer to the next (same player, genus, photo)'
 };
 const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
 const anS = (a, u) => anTyp(a).s * Math.exp(u);
