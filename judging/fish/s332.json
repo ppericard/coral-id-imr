@@ -1,0 +1,104 @@
+{
+ "photos": {
+  "fish-s332-cand-527805856": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s332-cand-33204686": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s332-cand-411723472": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s332-cand-173605778": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s332-cand-31618238": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s332-cand-31618243": {
+   "code": "d1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s332-cand-595471374": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s332-cand-7738075": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s332-cand-176843406": {
+   "code": "p1g2bsx1",
+   "keep": "best"
+  },
+  "fish-s332-cand-277430665": {
+   "code": "p1g2ssm1",
+   "keep": "best"
+  },
+  "fish-s332-cand-388474362": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s332-cand-470972062": {
+   "code": "p0g2sl12",
+   "keep": "best"
+  },
+  "fish-s332-cand-616858982": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s332-cand-252802566": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s332-cand-489656362": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s332-cand-489656305": {
+   "code": "p0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s332-cand-489656327": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s332-cand-200712180": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s332-cand-224440902": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s332-cand-187927604": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s332-cand-592178163": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s332-cand-592178196": {
+   "code": "p1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s332-cand-43846317": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Studio photo on black: maybe not in the wild"
+  },
+  "fish-s332-cand-584327056": {
+   "code": "p1g3bm11",
+   "keep": "best"
+  }
+ }
+}
