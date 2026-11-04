@@ -3349,6 +3349,19 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (later the same day; design only, docs/FISH_PATH.md): the global fish score is **non-linear**, fast
+  at the start, 80% for every entry and species known by common name, scientific names filling the last 20% slowly (the curve set by simulation), the Elo level kept alongside; the half fault must not be gameable (common
+  names never advance the scientific-name progress; options listed, none chosen); the fish exams to rethink (per
+  species or per family, e.g. about 20 hard questions answered with the scientific name); milestone cards for species
+  names and scientific names; juveniles, colour phases and dimorphism introduced with an explanation card.
+- 2026-11-04, Pierre (fish beta feedback; decided in principle, nothing built, docs/FISH_PATH.md): on a species question
+  that asks for Latin, a typed common name counts **as half a fault** (a graded outcome 0.5: its effect on `eloStep`,
+  `pgStep`, the expected success, the all-Latin exam and the replay to study first, starting values from
+  `tools/learnsim.js`); **one global fish progress score** from 0 to every species in Latin (entries, species named,
+  species in Latin as stages of one scale, the weights set by simulation), used by the fish leaderboard; the
+  name-display thresholds start from learnsim, then are computed per species from the measured difficulty of the
+  common against the Latin name; the first fish entries are a starter core of easy families and the first photos
+  very easy (no juveniles or colour phases at the very start).
 - 2026-11-04, Pierre (after a player's "Drill this pair" run fell to 6 misses in 13 with the hold on and nothing
   changed in the duel): the hold's easing reaches the Duel tab (`planDuel`), and a relief card the first time a duel
   run's answer takes the hold across `INTRO.HOLD`: Mix in other genera / Compare them (with Back to the duel, the same
