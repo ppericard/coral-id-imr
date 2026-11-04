@@ -796,7 +796,8 @@ time, each on its card, but never as the answer of the question right after its 
   `tests/sync.test.js`); the app adds the answers the sheet has not confirmed yet and takes that as its hold
   (`holdSync`): the same sum over the same answers on every device, so right answers on a phone pay back a hold started
   on a laptop. Players not signed in keep the device's only. Cleared with
-  the progress. Every answer counts, the comeback's after a break too, each with the expectation it really had (below;
+  the progress. In the Duel tab its crossing also brings a relief card, once a run ("The Duel tab when the hold sets
+  in", below). Every answer counts, the comeback's after a break too, each with the expectation it really had (below;
   the gentle restart's, logged `|w` from its start to the comeback, stay left out). Why: an RA from the previous month's programme
   (the lecture, a few ID dives and analyses: good, not an expert) at 86% right after 50 answers declined "open all"
   (Pierre: even trained RAs prefer to meet the genera progressively; experts must still be able to open them fast),
@@ -1090,7 +1091,8 @@ it, the falling level would have lowered `e` on every genus.
 photos and the format (traps, single views: `trapsFor(t, shift)`, `formatAt`) aim at is lowered by h − `INTRO.HOLD`
 logits while the hold's sum h is past `INTRO.HOLD` (1.5): 0 at the threshold (no cliff), one logit for each answer's
 worth of misses beyond it, back to 0 as right answers pay h back. Every question but an exam (the Again and the duels
-too). No new constant: h is already in success units, on the scale the Elo steps the ability on. On the real answers
+too; the Duel tab's own duels only since 2026-11-04, "The Duel tab when the hold sets in" below: `planDuel` still aimed
+them at the plain ability). No new constant: h is already in success units, on the scale the Elo steps the ability on. On the real answers
 (read-only replay of the logged `e`) the strong player's h crossed 1.5 at the 27th answer of the collapsed run (44 answers) and
 peaked at 3.22, the second player's at the 13th of 31, peaking at 4.31; the ease would have been 0.8-0.9 logits on average
 over the 17-18 answers held (a 4-choice question aimed at 80% right is then aimed at about 88% for the same ability).
@@ -1237,6 +1239,59 @@ in the 40 answers after the comeback; genera opened on their cards in the first 
   cards are not on record; inferred from the first question on each genus (a card `INTRO.GAP` before), 3 of the 5
   genera new in the collapsed run would have waited (one more came through an Again on a genus never met, which the
   new rule also stops).
+
+### The Duel tab when the hold sets in (2026-11-04)
+
+The Duel tab (`#quiz-duel`, and `#quiz-duel|A|B` from "Drill this pair" on a comparison) is a 2-choice drill the player
+chooses. Pierre approved two changes on 2026-11-04, from a read-only look at the sheet's answers: a player (P1) drilled
+*Pocillopora* / *Stylophora* from "Drill this pair", 10 right, then missed 6 of the next 13 while the app still expected
+about 80%; the opening hold's sum crossed `INTRO.HOLD` at his 25th duel answer and nothing changed in the duel. Over all
+players, in the 10 answers after the hold sets in: the photo quiz, since the easing shipped, 84% right for 77% expected;
+the Duel tab 68% for 77%.
+
+**1. The easing reaches the Duel tab** (`quiz.js` `planDuel`): its photo is now drawn with `photoSet(t, …, holdEase(), 2)`,
+as the photo quiz's duels and Again (it passed 0, so the Duel tab never got point 2 above). `photoSet`'s shift lowers the
+photo aimed and the chance of a single view (`singleP`, `formatAt`), and skips the calibration question, as for the photo
+quiz; a duel has its two choices and no traps, so `trapsFor` has nothing to do there, and the player's own mix-ups term
+(`confTerm`) is 0 on a 2-choice question. The expectation logged (`e`) and fed to the hold is computed in `answer` from
+the photo really shown (its difficulty, one view alone harder by `PICKD.SINGLE`), so it stays the expectation of the photo
+aimed. Measured in the app on the real data (Chromium, seeded, 400 draws a setting): *Pocillopora* / *Stylophora*
+for a player at ability 1 on both genera, the difficulty the answer counts falls from 0.39 to 0.26 with h at
+`INTRO.HOLD` + 3, *Acropora* / *Montipora* 0.40 → 0.27, *Favites* / *Dipsastraea* 0.35 → 0.20; on `main` it stayed
+within ±0.01 (noise). Mostly fewer single views (78% → 52% of the duels on the first pair): a local run has no photo
+ratings from the sheet. `tests/pages.smoke.js` `duelReliefCheck` checks the drop (300 draws each way).
+
+**2. A relief card** (`quiz.js` `reliefNote`, `reliefDue`, `reliefArm`, `reliefShow`): the first time in a duel run an
+answer takes the hold's sum h from below `INTRO.HOLD` to `INTRO.HOLD` or more, the next break at Next shows a card
+(💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Seeing them side by
+side often helps more than more photos." and three choices, in Pierre's order: **Mix in other genera** (the main button,
+the photo quiz, `#quiz`), **Compare them** (the side-by-side comparison of the duel's two genera, `#cmp-A|B`, as
+`learn.js` links it), **Keep drilling** (the next duel; Escape too). No numbers on it (Pierre's rule for these cards).
+Compare them does not end the drill for good (Pierre, 2026-11-04): the comparison it opens shows **Back to the duel**
+(top and end), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
+card in it; the easing applies as usual). The comparison opened any other way is unchanged.
+
+- **The same detector**: the opening hold's CUSUM (`holdStep`), no new one and no new constant. The crossing is read in
+  `answer` (h before and after `holdStep`), only for a Duel-tab answer.
+- **A duel run** (`DUELRUN`): the Duel tab's answers from the moment its page is opened (from another page, a reload, a
+  link to another pair: `app.js` `route` passes `quizDuel` whether the page was just opened, and the page left) until it
+  is left; Next, Keep drilling and the way back from the card's comparison (`DUELBACK`: Back to the duel or the
+  browser's Back, straight from that comparison) stay in it, a switch of subject starts a new one. At most one card a
+  run. A run that starts with the hold already on (the player comes from the photo quiz held, or opens the duel again
+  from another page) gets no card until the hold falls under `INTRO.HOLD` and crosses it again.
+- **When**: at Next, never with the answer (`breakArm`), as an out-of-game prompt: never with another card, the tour or
+  an achievement toast (`promptOk`), `PROMPT.GAP` answers from the other prompts (its showing calls `promptMark`), never
+  right before a genus card (`nextCards`). It takes the break before the one-tap question, the sign-in card and the
+  tips, which wait for a later break. A break it cannot take passes it to the next one of the run while the hold is
+  still on; if the hold falls back first, nothing shows.
+- **Logged** as the tips: `ev('pulse', {r, src: 'tip:duelhold', m, n})`, r `shown`, then `mix`, `cmp`, `keep` or `none`
+  (the page left with it up), and `back` when the player returns to the duel from the comparison. The sheet keeps a pulse row's `r` and `src` as sent: no sheet change. The admin counts it
+  with the tips (To do › Errors, `tipsView`: Compare, Mix in, Keep drilling, Back to the duel columns).
+- Not simulated: `tools/learnsim.js` and `tests/profiles.smoke.js` play the photo quiz only, whose draw this does not
+  touch; a replay of the real answers cannot say how the Duel tab's players would have answered easier photos or what
+  they would have picked on the card (rule 14g). What to measure once players have met it: the Duel tab's right share
+  against `e` in the 10 answers after the hold sets in (68% for 77% before), which choice the card gets, and how often
+  Compare them comes back to the duel.
 
 ### An opening only after a right answer (2026-11-03)
 
@@ -2610,6 +2665,15 @@ The analyses:
   taken to answer are not time between sessions (Pierre, 2026-11-04, rewording rule 12): they are evidence about that
   answer, and since rules version 4 they weigh how much a right answer moves the ability ("Response time"); never a
   decay, never a penalty for being slow on its own.
+- **Answer time compared within the same question format** (2026-11-04, not adopted). A Duel-tab run (P1) where the
+  time weight raised two genera's ability fast (fast 2-choice answers against a 4 s overall median) prompted it. On the
+  real log (1,580 answers, 10 players, `tools/abilityeval.js`, paired next-answer log-loss against no time weight,
+  ×10⁻³ ± SE): the current pooled rule −2.59 ± 0.98; split 2-choice / 3+-choice −1.40 ± 0.67 (with a fallback to the
+  pooled median −1.76 ± 0.70); split Duel tab / rest −1.44 ± 0.55; weight capped at 1 −1.22 ± 1.04; no weight on
+  2-choice questions −0.71 ± 0.36. Against the current rule every variant is worse (+0.8 to +1.9). In the quiz a
+  2-choice question is not answered faster than a 4-choice one (4 of 6 players slower); only the Duel tab is fast. No
+  variant predicted the run's collapse (all expected 0.76-0.80 on the photos given). Kept: the pooled median (`RTIME`,
+  `rtWeight`).
 
 ## Simulation (`tests/profiles.smoke.js`, CI)
 
@@ -2842,6 +2906,12 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (after a player's "Drill this pair" run fell to 6 misses in 13 with the hold on and nothing
+  changed in the duel): the hold's easing reaches the Duel tab (`planDuel`), and a relief card the first time a duel
+  run's answer takes the hold across `INTRO.HOLD`: Mix in other genera / Compare them (with Back to the duel, the same
+  run) / Keep drilling, at most once a run, logged as a tip (`tip:duelhold`). Same detector, no new constant ("The Duel tab when the hold sets in").
+- 2026-11-04: answer time compared within the same question format (2-choice apart, or the Duel tab apart) **not
+  adopted**: every variant scored worse than the pooled median on the real log ("Considered and not adopted").
 - 2026-11-04, Pierre ("the signal is already very clear on few players; the question is how to integrate it"; rule 12
   was about days between sessions, not the seconds an answer takes): **answer time weighs right answers** (rules
   version 4, sheet v32): a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5), z its log seconds
