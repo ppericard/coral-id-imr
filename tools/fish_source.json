@@ -7,7 +7,7 @@
   "  id: stable id, never the name; never reuse or renumber. name: as IMR names it. fam: the family as IMR writes it.",
   "  group: IMR shape group (circle 1 only). circle: 1 IMR core, 2 seen sometimes on SVS video, 3 opt-in beyond IMR.",
   "  Circle 3 is not PDF-based (Pierre, 2026-11-03): the fish families divers want to recognise, muck diving above all (why, srcs),",
-  "  with their species seen near Dauin (at least 2 Research Grade observations within 40 km), plus winks.",
+  "  with their species confirmed near Dauin (build_fish.py near_dauin: Pierre's own, Research Grade by 2+ observers within 40 km, or the IMR PDF list), plus winks.",
   "  src: imr (the presentation), pdf (a family of the EventMeasure reference PDF), diver (circle 3), wink.",
   "  wink (Pierre): an unmistakable species, fun to meet, a light bonus rather than ID training (note says why), shown as a rare surprise card: choices = [teach id, tongue-in-cheek label] absurd distractors from our own entries, right / wrong = feedback lines.",
   "  sign: false when the entry is taught but not on the presentation's dive-sign list.",
