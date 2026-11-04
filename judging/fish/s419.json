@@ -1,0 +1,104 @@
+{
+ "photos": {
+  "fish-s419-cand-256968215": {
+   "code": "p1g1sl13",
+   "keep": "best"
+  },
+  "fish-s419-cand-227314308": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s419-cand-362245195": {
+   "code": "p1g0sl1jc2",
+   "keep": "dup"
+  },
+  "fish-s419-cand-362245196": {
+   "code": "o1g0sl1jc2",
+   "keep": "dup"
+  },
+  "fish-s419-cand-66713564": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s419-cand-432621623": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s419-cand-465704727": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s419-cand-406738018": {
+   "code": "p1g0sls3",
+   "keep": "best"
+  },
+  "fish-s419-cand-166843276": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s419-cand-106690298": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s419-cand-106690455": {
+   "code": "p1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s419-cand-359760184": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s419-cand-447285850": {
+   "code": "o1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s419-cand-81584622": {
+   "code": "o1g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s419-cand-177547795": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s419-cand-517127709": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s419-cand-295837208": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s419-cand-551712634": {
+   "code": "o1g0ss1a1",
+   "keep": "best"
+  },
+  "fish-s419-cand-258977752": {
+   "code": "p1g1sl1c1",
+   "keep": "best"
+  },
+  "fish-s419-cand-329567218": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s419-cand-329567219": {
+   "code": "p1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s419-cand-97064371": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s419-cand-97064506": {
+   "code": "o1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s419-cand-359760183": {
+   "code": "o1g1sl1c1",
+   "keep": "best"
+  },
+  "fish-s419-cand-256968245": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  }
+ }
+}
