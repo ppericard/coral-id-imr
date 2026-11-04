@@ -78,7 +78,7 @@ const anPlain = (key, e, a) => ANALYSIS.plainOf(key, e, a, {row: anRowOf(a, key,
 const anPc = v =>
   v == null || !isFinite(v) ? '–' : v > 0 && v < 0.095 ? (Math.round(v * 1000) / 10).toFixed(1) + '%' : Math.round(v * 100) + '%';
 const anSec = v => (v == null || !isFinite(v) ? '–' : (v < 10 ? v.toFixed(1) : Math.round(v)) + ' s');
-const anPts = v => (v == null || !isFinite(v) ? '–' : anNum(v * 100, 0) + ' pts');
+const anPts = v => (v == null || !isFinite(v) ? '–' : Math.round(v * 100) === 0 ? '0 pts' : anNum(v * 100, 0) + ' pts');
 const anTf = P => (P.scale === 's' ? anSec : P.scale === 'pts' ? anPts : anPc);
 // The verdict pill: helps / hurts / clear (neither good nor bad: time, the app's own calibration) / no clear effect /
 // not enough data yet; "new" when it became clear at this milestone.
