@@ -225,6 +225,29 @@
     return {F: R.add + R.reject + R.check ? N : F, R};
   }
 
+  // One fish auto decision taken back (Pierre's Undo on it in the Auto details; the coral autoUndo's counterpart; Codex
+  // review #479: AGENTS.md rule 8, every auto decision undoable one by one): what the run wrote leaves the fish part
+  // unless Pierre changed it since (s: the decision as fishSure gives it, to compare the tags, ease, phase and crop), and
+  // the log keeps it marked undone ('-'), so it is never applied again and the photo waits for him as a candidate.
+  function fishUndo(F, f, s) {
+    const x = fishIdx(F)[f];
+    if (!x || x.d.check || x.d.undone) return F;
+    const N = {...F},
+      drop = (k, v) => {
+        if (!N[k] || !(f in N[k]) || (v !== undefined && JSON.stringify(N[k][f]) !== JSON.stringify(v))) return;
+        N[k] = {...N[k]};
+        delete N[k][f];
+        if (!Object.keys(N[k]).length) delete N[k];
+      };
+    if (x.d.kind === 'a') {
+      drop('add');
+      if (s && s.keep === 'add')
+        ['tags', 'ease', 'phase', 'crop'].forEach(k => drop(k, {tags: s.tags, ease: s.ease, phase: s.phase, crop: s.crop}[k]));
+    } else drop('seen', 1);
+    N.auto = {...N.auto, [x.day]: {...N.auto[x.day], [f]: '-' + x.code}};
+    return N;
+  }
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -408,6 +431,7 @@
     fishMine,
     fishCompare,
     fishRun,
+    fishUndo,
     autoCode,
     autoParse,
     autoIdx,
