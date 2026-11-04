@@ -27,6 +27,20 @@ them first thing, then clear them.
   a per-entry "natural view" exception like the juvenile classes (e.g. head out of a hole is the normal view of a
   moray)? **Recommendation: keep the caps** (circles 2 and 3 are opt-in, met after circle 1; the fallback to the 3
   easiest already works), and revisit when fish answers are logged.
+- **Fish genus step: how a player gets it (2026-11-04 night, PR "Fish scientific genera").** Context: the genus step of
+  branch B is built as an opt-in set, "Scientific names" (a card once a family is at Advanced, Add them / Not now, and a ⚙ row),
+  because the choice of names at the fish welcome (common / scientific / both) is not built yet. Alternative: on for every
+  fish player, or set by the welcome answer once it exists. Recommendation: the opt-in set now (it is the ⚙ half of that
+  choice); the welcome question sets it later.
+- **Fish genus step: when a family's genera come (same PR).** Context: at Advanced (80%), the level at which its species open
+  (FISH_PATH "Unlock rules"). Alternative: at Open Water (sooner), or only after its species' common names (a stricter tree).
+  Recommendation: Advanced, as built.
+- **Fish genus step: the card's and the offer's wording (same PR, screenshots there).** Context: the offer says "For the
+  families you know well: a photo and four scientific genus names, as EventMeasure names them. A family's genera come as
+  you reach Advanced on it."; the genus card shows the IMR sub-entry's cues for Chromis, Dascyllus and Pomacentrus, otherwise
+  "Most met here: three species (scientific and common names); N species in the game". Recommendation: confirm or reword.
+- **Fish genus step: in the progress (same PR).** Context: the genera do not count in the fish progress % yet (the global
+  score with its genus half credit is not built). Recommendation: leave them out until the global score ships.
 
 ## Where the day stopped
 

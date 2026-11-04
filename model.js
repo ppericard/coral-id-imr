@@ -1269,6 +1269,9 @@ const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
     .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
     .map(p => p.sort());
 function distractors(t, list, traps = trapsFor(t), known = introduced) {
+  // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
+  const rk = rankOf(t);
+  list = list.filter(n => rankOf(n) === rk);
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])

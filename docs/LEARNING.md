@@ -2380,6 +2380,24 @@ judged ease (rubric 3, the 37 added photos included; main had moved to #428 for 
 The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
 replay (rule 14g) cannot judge it either: the sheet holds no fish answer.
 
+### Fish: scientific genera, the first step of branch B (2026-11-04 night, in review)
+
+Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
+photo, then 4 genus names". Built on its own branch for his review (admin-only beta), on the engine as it is: a genus is one
+more unit (`app.js` `fishGenera`), with its own Elo, progress, mastery exam, typed share, opening and comeback; no new
+constant. What is new is structural: a unit has a rank (`rankOf`), and a question's choices and typed answers stay within the
+rank of the unit asked (`model.js` `distractors`, `quiz.js` `typeMatch`). Its wrong choices follow rule 14c as an entry's do:
+genera of other identification groups first (the entry's group as the genus's form), then its sibling genera in the same IMR
+entry as traps (`look`), then the player's own mix-ups. A family's genera come into play at Advanced, the level at which its
+species open (FISH_PATH "Unlock rules"), as an opt-in set ("Scientific names"), and open one at a time by the usual rule.
+
+Measured (rule 14f: no learnsim fish profile exists; the real app in Chromium instead, a scratch run, one seed): an admin
+player with the four starter entries at Advanced, answering right, 300 more answers: 130-144 genus questions and 154-168
+entry questions, 27-37 genera met (the Parrotfish and Wrasse genera joining when those entries reached Advanced), every genus
+question's choices genera and every entry question's entries. Not measured: what players learn (no fish answers are logged);
+how the genus share of the questions should be paced against the entries (the draw weighs every unit alike, so many genera
+take many questions). To check with learnsim fish profiles once they exist.
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
