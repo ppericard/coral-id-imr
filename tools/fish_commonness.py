@@ -226,27 +226,29 @@ def fetch(fish, net):
         sp = [S[i] for i in t.get("species", []) if S[i].get("inat")]
         if not sp:
             continue
-        by = {s["inat"]: s["id"] for s in sp}
-        ids = ",".join(str(x) for x in sorted(by))
-        nobs = {s["id"]: {} for s in sp}
+        # Counted per taxon, then given to every species on it: two species of the index can share one iNaturalist
+        # taxon (s104 / s105 on 559534, Codex #497).
+        taxa = sorted({s["inat"] for s in sp})
+        ids = ",".join(str(x) for x in taxa)
+        nobs = {x: {} for x in taxa}
         for ring, where in RINGS.items():
             page = 1
             while True:
-                res = NET.get(f"{API}observations/species_counts?taxon_id={ids}&{where}&{FILTERS}&per_page=500&page={page}")
+                res = net.get(f"{API}observations/species_counts?taxon_id={ids}&{where}&{FILTERS}&per_page=500&page={page}")
                 for r in res["results"]:
                     tx = r["taxon"]
                     anc = (tx.get("ancestor_ids") or []) + [tx["id"]]
-                    sid = next((by[a] for a in reversed(anc) if a in by), None)
-                    if sid:
-                        nobs[sid][ring] = nobs[sid].get(ring, 0) + r["count"]
+                    x = next((a for a in reversed(anc) if a in nobs), None)
+                    if x:
+                        nobs[x][ring] = nobs[x].get(ring, 0) + r["count"]
                 if page * 500 >= res["total_results"]:
                     break
                 page += 1
         for s in sp:
             row = [s["inat"]]
             for ring, where in RINGS.items():
-                c = nobs[s["id"]].get(ring, 0)
-                row.append(c if c < 2 else NET.get(f"{API}observations/observers?taxon_id={s['inat']}&{where}&{FILTERS}&per_page=1")["total_results"])
+                c = nobs[s["inat"]].get(ring, 0)
+                row.append(c if c < 2 else net.get(f"{API}observations/observers?taxon_id={s['inat']}&{where}&{FILTERS}&per_page=1")["total_results"])
             out[s["id"]] = row
         print(f"  {t['id']} {t['name']}: {len(sp)} species", file=sys.stderr)
     return out

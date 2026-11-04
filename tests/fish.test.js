@@ -361,6 +361,30 @@ print(json.dumps({'order': [i for i, _, _ in a], 'idx': {i: round(x, 4) for i, x
   assert.ok(o.sig.s4.inat === 0, 'no observer anywhere: 100x below the top or more');
 });
 
+// Two species of the index on one iNaturalist taxon (Codex #497: s104 / s105 both on 559534) get the same counts, in
+// whatever order they come; fetch() uses the client it is given.
+test('commonness fetch: species sharing an iNaturalist taxon all get its counts', () => {
+  const code = `
+import json, sys
+sys.path.insert(0, ${JSON.stringify(path.join(__dirname, '..', 'tools'))})
+import fish_commonness as fc
+class Fake:
+    def get(self, url):
+        if 'species_counts' in url:
+            return {'total_results': 1, 'results': [{'count': 5, 'taxon': {'id': 7, 'ancestor_ids': [1, 7]}}]}
+        return {'total_results': 3}
+out = {}
+for order in (['a', 'b'], ['b', 'a']):
+    fish = {'species': [{'id': 'a', 'inat': 7}, {'id': 'b', 'inat': 7}], 'teach': [{'id': 't', 'name': 'T', 'species': order}]}
+    out[''.join(order)] = fc.fetch(fish, Fake())
+print(json.dumps(out))
+`;
+  const r = require('child_process').spawnSync('python3', ['-c', code], {encoding: 'utf8'});
+  assert.strictEqual(r.status, 0, r.stderr);
+  const o = JSON.parse(r.stdout);
+  for (const k of ['ab', 'ba']) assert.deepStrictEqual(o[k], {a: [7, 3, 3, 3], b: [7, 3, 3, 3]}, k);
+});
+
 // The starter core and the judged photos (Pierre, 2026-11-04: the fish beta opened on the wrong families and on photos
 // too hard for a beginner; judging/FISH.md, tools/fish_judge.py).
 const PH = read('fish-photos.json').photos,
