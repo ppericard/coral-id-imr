@@ -2221,12 +2221,14 @@ changes, all data the engine reads generically (the corals have none of these fi
   or tail view, a partial fish or camouflage at most 3), plus a proposed crop for 140 of them (a proposal for the admin,
   never applied). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
   difficulty (an Anthias is easy to call an Anthias, a parrotfish a parrotfish: its family-level difficulty is the
-  wrasse); the flag stays for the species questions and the explanation cards. **The juvenile cap is per entry**
-  (Pierre, 2026-11-04): Spadefish and Sweetlips juveniles look nothing like their adults but are themselves very
-  recognisable (Sweetlips juveniles more than the adults) and help learn the family, so those entries carry `juv:
-  "distinct"` (`tools/fish_source.json`) and their juvenile photos are judged on the other criteria only (18 photos
-  looked at again: Spadefish now 8 very easy photos, Sweetlips 10). The other entries keep the cap provisionally, with
-  no source either way; it goes with the bootstrap below. The juvenile tag stays on every photo.
+  wrasse); the flag stays for the species questions and the explanation cards. **The juvenile cap follows the
+  juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `tools/fish_source.json`
+  `juv`, judging/FISH.md): no cap for the juveniles of the class-A entries (Spadefish, Sweetlips, Boxfish) and of the
+  show-early genera (*Dascyllus*, *Pomacanthus*, *Macolor*, *Coris gaimard*, *Novaculichthys*, *Arothron stellatus*),
+  which help learn the family early; capped for class B (Parrotfish, Emperor) and the look-alike juveniles (*Acanthurus
+  pyroferus*, *Scolopsis bilineata*, *Plectropomus laevis*, *Halichoeres*, *Thalassoma*), which come later with an
+  explanation card; capped provisionally for the rest (class C, no source), until the bootstrap goes. Very easy photos
+  after the classes: Spadefish 8, Sweetlips 10, Boxfish 7, Wrasse 9. The juvenile tag stays on every photo.
 - **At least 5 very easy photos per circle-1 entry** (Pierre's target, 2026-11-04): 11 entries had fewer (Spadefish 0,
   Fusilier 0, Sandperch 1, Emperor 2, Anthias 2, Lizardfish 3, Moorish Idol, Goatfish, Triggerfish, Filefish, Lionfish
   4). 214 research-grade candidates of `fish-cand.json` (PR #463: CC0, CC BY or CC BY-NC, Indo-West Pacific) were looked
