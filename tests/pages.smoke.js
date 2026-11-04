@@ -2016,6 +2016,13 @@ async function tipsCheck(b, base) {
         const card = await p.evaluate(() => !!document.querySelector('.unlock.intro'));
         waited = {...r, card};
         if (r.tip || !card) fails.push(`${W} duel: the next duel brings a genus card, yet ${JSON.stringify(waited)}`);
+        // A duel's card is no first card (new-player walkthrough 2026-11-04): no "Open all" box, and its note does not
+        // speak of the first questions.
+        const dc = await p.evaluate(() => {
+          const u = document.querySelector('.unlock.intro');
+          return u && {all: !!u.querySelector('.ulall'), first: /first questions/.test(u.textContent)};
+        });
+        if (dc && (dc.all || dc.first)) fails.push(`${W} duel card: ${JSON.stringify(dc)}`);
       }
       // 2. Every genus met: the next armed break takes the tip, and no card comes after it.
       await p.evaluate(() => introAdd(slateGenera(), false));
@@ -3237,6 +3244,23 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         };
       });
       if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
+      // One count of the genera met (a card or an answer) everywhere on the page (new-player walkthrough 2026-11-04: "23/40
+      // met" beside "12 not open yet" after 28 cards): the badge says the 4 first cards' genera are met, the genera not
+      // open yet are the others, and a genus met on a card but never asked does not read "Not seen".
+      const mc = await q2.evaluate(() => {
+        const n = slateGenera().length,
+          met = slateGenera().filter(introduced),
+          tile = document.querySelector(`#view a[href="#g-${encodeURIComponent(met[0])}"]`);
+        return {
+          badge: (document.querySelector('#view .pbadge') || {}).textContent || '',
+          met: met.length,
+          left: introLeft().length,
+          n,
+          tip: tile ? tile.title : null
+        };
+      });
+      if (!mc.badge.includes(`${mc.met}/${mc.n} met`) || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
+        fails.push(`${w}px My progress, genera met: ${JSON.stringify(mc)}`);
       else {
         await q2.click('#openall');
         const left = await q2.evaluate(() => introLeft().length);
@@ -3381,10 +3405,15 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       if (step === under.step) fails.push(`tour keys blocked by a card waiting under it (${step})`);
       // Through to the last step and its "Start playing" (already on the quiz): the waiting cards show from the first.
       const first = await qt.evaluate(() => document.querySelector('.unlock.intro h3').textContent);
+      const said = [await qt.textContent('#tour')];
       for (let k = 0; k < 4 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
         await qt.click('#tour .tnext');
         await qt.waitForTimeout(400);
+        said.push(await qt.textContent('#tour').catch(() => ''));
       }
+      // A desktop with a mouse: "Click", never "Tap" (new-player walkthrough 2026-11-04: "Tap ?" on a desktop).
+      if (said.some(t => /\bTap\b/.test(t)) || !said.some(t => /Click \?/.test(t)))
+        fails.push(`tour on a desktop with a mouse: ${JSON.stringify(said.filter(t => /Tap|Click/.test(t)))}`);
       await qt.click('#tour .tnext');
       await qt.waitForTimeout(400);
       const after = await qt.evaluate(() => {

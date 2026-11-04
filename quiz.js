@@ -1439,9 +1439,11 @@ function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
     const c = introCard(n, {
       pos: L.length > 1 ? `${i + 1} of ${L.length}` : '',
       hint: start && !told,
+      // The first cards say what the first questions are about; cards met ready at once later (a duel's, the custom
+      // quiz's) say the next question is about them.
       note: start
         ? more
-          ? `The first questions are about these ${L.length} ${SUBJ.many}.`
+          ? `The ${kind === 's' ? 'first questions are' : 'next question is'} about these ${L.length} ${SUBJ.many}.`
           : 'Now, which is which?'
         : 'It comes up in the questions a little later.',
       btn: more ? 'Next' : start ? 'Start' : 'Got it',
@@ -1676,7 +1678,8 @@ function quizDuel(a, b, fresh = true, from = '') {
   // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer;
   // a ★ genus's card after the card of the genus it is compared to (core.js starRefs).
   const L = q[2].filter(n => !introduced(n)).sort((a, b) => starRefs(DATA, a).length - starRefs(DATA, b).length);
-  if (L.length) introShow(L, true, 'c');
+  // Ready at once (the duel names them), never the "Open all" box: that is the first cards' (and My progress's) offer.
+  if (L.length) introShow(L, true, 'c', false);
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.

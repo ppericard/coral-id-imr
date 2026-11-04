@@ -872,8 +872,9 @@ time, each on its card, but never as the answer of the question right after its 
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
-model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met") until one is
-learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
+model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met": a card or an
+answer, since 2026-11-04, so it agrees with "N not open yet"; a genus met on a card but not asked yet reads "Met, not
+asked yet", and the level legend's first step "Not asked yet") until one is learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
 
 ### The first-launch question (2026-11-03)
 
