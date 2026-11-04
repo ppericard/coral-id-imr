@@ -1,0 +1,140 @@
+{
+ "photos": {
+  "fish-s226-cand-538922059": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s226-cand-464298562": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s226-cand-756242698": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s226-cand-674304096": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s226-cand-748261513": {
+   "code": "p1g2bs11",
+   "keep": "best"
+  },
+  "fish-s226-cand-661391792": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s226-cand-637568069": {
+   "code": "p1g2bsx1",
+   "keep": "best"
+  },
+  "fish-s226-cand-738788145": {
+   "code": "d1g2bm11",
+   "keep": "best"
+  },
+  "fish-s226-cand-738788163": {
+   "code": "d1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s226-cand-738788613": {
+   "code": "d1g2sm12",
+   "keep": "alt"
+  },
+  "fish-s226-cand-738788624": {
+   "code": "d1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s226-cand-330077577": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s226-cand-635079749": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s226-cand-635079768": {
+   "code": "p1g3ssx1",
+   "keep": "dup"
+  },
+  "fish-s226-cand-635079767": {
+   "code": "p1g3ssx1",
+   "keep": "dup"
+  },
+  "fish-s226-cand-635079762": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s226-cand-701384626": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s226-cand-701384604": {
+   "code": "d0g1sm12",
+   "keep": "dup"
+  },
+  "fish-s226-cand-664956712": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s226-cand-664956719": {
+   "code": "p1g2ssm1",
+   "keep": "dup"
+  },
+  "fish-s226-cand-664956720": {
+   "code": "p1g2ssm1",
+   "keep": "dup"
+  },
+  "fish-s226-cand-725075217": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s226-cand-725075098": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s226-cand-725075234": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s226-cand-705117577": {
+   "code": "p1g1smm3",
+   "keep": "best"
+  },
+  "fish-s226-cand-705117601": {
+   "code": "p1g1smm3",
+   "keep": "alt"
+  },
+  "fish-s226-cand-705117615": {
+   "code": "p1g2smm2",
+   "keep": "dup"
+  },
+  "fish-s226-cand-727572840": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s226-cand-683752742": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s226-cand-753075850": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s226-cand-176251993": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s226-cand-688443424": {
+   "code": "p1g1sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dark short fish: a young one?"
+  },
+  "fish-s226-cand-681851998": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  }
+ }
+}
