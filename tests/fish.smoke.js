@@ -216,6 +216,8 @@ const server = http.createServer((req, res) => {
     );
     ok(!UNITS.fish.pairs().some(pr => pr.some(n => GX(n).rank)), 'sci: no duel pair of genera');
     ok(typeMatch('Chromis').g === 't01' && typeMatch('Chromis', 'genus').g === 'g:Chromis', 'sci: typed Chromis by rank');
+    // Codex review #526: a genus's WoRMS-accepted name is accepted when typed (Pseudanthias tuka is now Mirolabrichthys).
+    ok(typeMatch('Mirolabrichthys', 'genus') && typeMatch('Mirolabrichthys', 'genus').g === 'g:Pseudanthias', 'sci: typed accepted genus');
     // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
     // wrong choice, as in the quiz); a genus card's photo comes from the highest source tier (Pierre's own first, rule 7).
     st('t02').pg = 0.2;

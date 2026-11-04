@@ -465,7 +465,8 @@ function fishGenera(X, F) {
           cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {}).dauin || 0), 0))),
           levels: 1,
           views: {wide},
-          names: [g]
+          // the PDF genus shown; its species' WoRMS-accepted genera accepted when typed (Codex review #526: Mirolabrichthys)
+          names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
         };
         // The card's photo as fishGen picks an entry's: the highest source tier first (Pierre's own, rule 7), then the
         // easiest judged one (Codex review #526).
