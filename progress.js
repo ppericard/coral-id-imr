@@ -156,7 +156,7 @@ function quizBoard() {
       ? UNITS[SUBJ.id].progHelp()
       : `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
-  <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the slate.</p>
+  <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
@@ -498,7 +498,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for ELO_MIN answers.
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
-    bonus: bonusList().filter(introduced).length
+    bonus: bonusList().filter(introduced).length,
+    basics: !!A._basics
   };
 }
 // Full recount, once per device (Pierre, 2026-11-01: "redo the calculation cleanly for everyone, achievements too,
@@ -512,7 +513,7 @@ function achMigrate() {
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
   const B = {_v: ACH_V};
-  if (A) ['_run', '_best', '_cor', '_hard', '_gone'].forEach(k => A[k] && (B[k] = A[k]));
+  if (A) ['_run', '_best', '_cor', '_hard', '_gone', '_basics'].forEach(k => A[k] && (B[k] = A[k]));
   const snap = achSnap(B),
     t = Date.now();
   ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
@@ -576,6 +577,17 @@ function achAfter(good, ph) {
   if (good && o && o[1] >= 5 && o[2] / o[1] <= 0.5) A._hard = 1;
   store.set(ACHK, A);
   achCheck();
+}
+// Coral basics done (proto/basics.js seenStep): a one-off feat of the record, synced with it, so the Home line and the
+// first-launch offers know on every device (app.js basicsDone).
+function achBasics() {
+  if (!store.get(ACHK, null)) achCheck(true);
+  const A = store.get(ACHK, {}) || {};
+  if (A._basics) return;
+  A._basics = 1;
+  store.set(ACHK, A);
+  achCheck();
+  if (SYNC) syncSoon();
 }
 const TIER = ['', '🥉', '🥈', '🥇'];
 let achQ = [],

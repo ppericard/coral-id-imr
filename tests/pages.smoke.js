@@ -27,13 +27,13 @@ const ROUTES = [
   'quiz-custom',
   'quiz-custom|play',
   'pairs',
-  'finder',
+  'idkey',
   'progress',
   'board',
   'ach',
   'lab',
-  'lab-basics|walls',
-  'lab-basics|words',
+  'basics|walls',
+  'basics|words',
   'about',
   'credits',
   'lab-cards',
@@ -61,6 +61,38 @@ const server = http.createServer((req, res) => {
 
 // "Did you know?" tips off (tips.js): a player who has enlarged 3 photos is never targeted. For the tests of the other
 // cards and prompts, which play dozens of questions and click Next; tipsCheck (below) checks the tips with them.
+// Waits until the app has drawn the page at the current address (app.js route() sets window.ROUTED once done; a link
+// that sends on routes again), no fetch is in flight (counted in every context of the main browser, below) and no Lab
+// module is still loading (proto/lab.js LAB.pending: its <script>s are no fetch, and a Lab page or tool drawn before
+// they are in is a "Loading…" placeholder, redrawn by route() once they are; Codex review #454), all for three frames in
+// a row: instead of a fixed sleep after each navigation (test-suite review, 2026-11-04). Resolves false when that never
+// happens within the timeout; the caller says what it then fails.
+const drawn = (p, timeout = 15000) =>
+  p
+    .evaluate(() => (window.__calm = 0))
+    .then(() =>
+      p.waitForFunction(
+        () => {
+          const ok =
+            typeof hashNow === 'function' &&
+            window.ROUTED === hashNow() &&
+            !(window.__inflight > 0) &&
+            !(typeof LAB !== 'undefined' && LAB.pending > 0);
+          window.__calm = ok ? (window.__calm || 0) + 1 : 0;
+          return window.__calm >= 3;
+        },
+        null,
+        {polling: 'raf', timeout}
+      )
+    )
+    .then(() => true)
+    .catch(() => false);
+// Waits for a navigation the page starts itself (Back, a link): the address leaves `from`, then the new page is drawn.
+const left = (p, from, timeout = 10000) =>
+  p
+    .waitForFunction(f => location.hash !== f, from, {timeout})
+    .then(() => drawn(p))
+    .catch(() => false);
 const TIPS_OFF = () => localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
 // One overlay at a time, and each one closable (new-player walkthrough 2026-11-02). Returns the failures.
 async function overlays(b, base) {
@@ -78,6 +110,7 @@ async function overlays(b, base) {
   };
   const seen = () => {
     localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     localStorage.setItem('reefid-nudge', '1');
   };
   // C2: Back from the quiz closes the first genus card (it stayed over Home, its Next going on there). The cards shown
@@ -163,6 +196,7 @@ async function overlays(b, base) {
   for (const w of [390, 1280]) {
     const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
       localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
       localStorage.getItem('reefid-sync-coral-progress') ||
@@ -173,7 +207,7 @@ async function overlays(b, base) {
     await p.waitForSelector('#view [data-c]');
     const CASES = [
       ['genus', () => introShow([slateGenera()[1]], false)],
-      ['tip', () => introOfferShow()],
+      ['step', () => introOfferShow()],
       ['tip', () => backShow()],
       ['tip', () => reliefShow('quiz-duel', ['Pocillopora', 'Stylophora'])],
       ['bonus', () => bonusOfferShow()],
@@ -252,6 +286,7 @@ async function overlays(b, base) {
       {viewport: {width: 390, height: 800}, intro: true},
       ({r, u}) => {
         localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('reefid-nudge', '1');
         if (r && !localStorage.getItem('reefid-recalc')) localStorage.setItem('reefid-recalc', JSON.stringify(r));
         localStorage.getItem('reefid-sync-coral-progress') ||
@@ -337,6 +372,8 @@ async function overlays(b, base) {
     const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('reefid-nudge', '1'));
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+    await p.click('#tour [data-start="imr"]'); // the first-launch question first (tour.js ask): it moves on by itself
+    await p.waitForTimeout(300);
     for (let k = 0; k < at; k++) {
       await p.keyboard.press('ArrowRight');
       await p.waitForTimeout(300);
@@ -351,12 +388,20 @@ async function overlays(b, base) {
   // Out-of-game prompts take turns, counted in answers (2026-11-02): the sign-in card at 20 answers (not before), the
   // one-tap question first at 35 (a card at Next since 2026-11-03, never inline in the feedback), at least 10 answers
   // between two of them, never with an achievement toast or another card on screen. A new player, mostly right, 60
-  // answers; toasts closed by a tap as they come.
+  // answers; toasts closed by a tap as they come. The one-tap question comes at exactly 35, or later only while an
+  // achievement toast that came with an answer holds it. Then the queued events: the one-tap question's (the first ever
+  // is the plain one, core.js PULSE0, logged with its item id), an error from one of the app's files, and no noise.
+  // (Test-suite review D2, 2026-11-04: a second new player played to 40 answers in the main loop only for the exact 35
+  // and the queue; both are checked here now.)
   {
-    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => localStorage.setItem('reefid-tour', '"done"'));
+    const [c, p] = await open(
+      {viewport: {width: 390, height: 844}},
+      () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    const seenP = [];
+    const seenP = [],
+      toastAt = new Set(); // the answers that came with an achievement toast (it holds a prompt due then)
     for (let i = 0; i < 60; i++) {
       await p.waitForSelector('#view [data-c]:not([disabled])');
       const r = await p.evaluate(i => {
@@ -380,6 +425,7 @@ async function overlays(b, base) {
           toast
         };
       }, i);
+      if (r.toast) toastAt.add(r.a);
       if (r.sign || r.inline) seenP.push({...r, k: r.sign ? 'sign-in' : 'pulse'});
       // Next: the one-tap question, when due, comes as a card before the next question; "Not now" (Escape) closes it and
       // the next question is drawn.
@@ -413,6 +459,28 @@ async function overlays(b, base) {
       seenP.some(x => x.other || x.toast || x.inline || x.gone === false)
     )
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
+    // Exactly 35, or held from 35 on by a toast at every answer until it came.
+    else if (pulse.a !== 35) {
+      const free = Array.from({length: pulse.a - 35}, (_, k) => 35 + k).filter(a => !toastAt.has(a));
+      if (free.length) fails.push(`one-tap question: shown at answer ${pulse.a}, expected 35 (no toast held it at ${free.join(', ')})`);
+    }
+    // An error from one of the app's script files is reported; one injected into the page by a browser or an extension
+    // (no file, or the page itself), and the harmless ResizeObserver warning, are not (Pierre, 2026-11-02).
+    await p.evaluate(() => {
+      const dir = location.origin + location.pathname.replace(/[^/]*$/, ''),
+        err = (message, filename) => window.dispatchEvent(new ErrorEvent('error', {message, filename, lineno: 1}));
+      err('smoke test error', dir + 'quiz.js?v=1');
+      err("ReferenceError: Can't find variable: __firefox__", location.href);
+      err('Script error.', '');
+      err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
+    });
+    await p.waitForTimeout(300);
+    const q = await p.evaluate(() =>
+      JSON.parse(localStorage.getItem('reefid-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
+    );
+    // The one-tap question closed by Escape logs skip, with the plain first item's id.
+    if (!q.includes('pulse:skip@are') || !q.some(x => /smoke test error/.test(x))) fails.push(`events not queued: ${q.join(' | ')}`);
+    if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`noise errors queued: ${q.join(' | ')}`);
     await c.close();
   }
   // The one-tap question's bank (core.js PULSEQ, 2026-11-03) as a card at Next (Pierre, 2026-11-03: inline in the
@@ -559,7 +627,7 @@ async function overlays(b, base) {
       asked.push({...shown, at: undefined, it, way, tap, early, waited, enter, after, ev, n0: before});
       if (way === 'leave') {
         await p.evaluate(() => (location.hash = 'quiz'));
-        await p.waitForTimeout(300);
+        await drawn(p);
       }
     }
     const want = x => ['shown', x.way === 'tap' ? x.tap : x.way === 'leave' ? 'none' : 'skip'];
@@ -590,7 +658,7 @@ async function overlays(b, base) {
         (k && x.q === asked[k - 1].q)
     );
     // The first prompt at 35 answers, or a few later when an achievement toast it waits for came with that answer (the
-    // wrong answers here move the toasts; the exact 35 is checked by the new-player run further down).
+    // wrong answers here move the toasts; the exact 35 is checked by the prompt-spacing run above).
     const late = !asked.length || asked[0].a < 35 || asked[0].a > 40;
     if (asked.length < N || late || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
       fails.push(`${vw}px one-tap card: ${JSON.stringify(asked.length < N || late ? asked : bad.length ? bad : asked.map(x => x.q))}`);
@@ -626,6 +694,7 @@ async function overlays(b, base) {
   {
     const [c, p] = await open({viewport: {width: 390, height: 844}}, () => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
       if (!sessionStorage.getItem('cq-old')) {
         sessionStorage.setItem('cq-old', '1');
@@ -796,6 +865,7 @@ async function overlays(b, base) {
       {viewport: {width: 390, height: 800}, timezoneId: 'Asia/Manila'},
       ({t, n}) => {
         localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('reefid-nudge', '1');
         localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
         if (localStorage.getItem('reefid-sync-coral-progress')) return;
@@ -920,6 +990,7 @@ async function signin(base) {
   };
   const seen = () => {
     if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     localStorage.setItem('reefid-nudge', '1');
   };
   const card = async p => {
@@ -944,6 +1015,7 @@ async function signin(base) {
   await run(
     () => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
       localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
       // What the device read at this version's first run (core.js sorryOf): 30 answers in the window, the hold at 3.5.
@@ -968,6 +1040,7 @@ async function signin(base) {
   await run(
     () => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
       localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
       if (localStorage.getItem('test-own')) return;
@@ -1104,6 +1177,8 @@ async function signin(base) {
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),
     async p => {
+      await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+      if (await p.$('#tour [data-start]')) await p.click('#tour [data-start="imr"]'); // the first-launch question
       await p.waitForSelector('#tour .tnext', {timeout: 10000}).catch(() => {});
       for (let k = 0; k < 4 && !(await p.$('#tour .tsync form')); k++) await p.click('#tour .tnext');
       if (await p.$('#tour .tsync form')) {
@@ -1224,6 +1299,7 @@ async function replayAdoptCheck(base) {
     if (localStorage.getItem('test-init')) return;
     localStorage.setItem('test-init', '1');
     localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     localStorage.setItem('reefid-nudge', '1');
     localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"');
     localStorage.setItem('reefid-sync-coral-progress', JSON.stringify(dev));
@@ -1374,6 +1450,252 @@ async function replayAdoptCheck(base) {
   return fails;
 }
 
+// The first-launch question (Pierre, 2026-11-03; core.js CHOICE, tour.js ask, quiz.js startAskShow / startFbShow) and
+// Coral basics in Learn: forced in the tour (no Skip, no Next, no arrow key until answered), stored with how it was
+// given; a skipped tour asks it on a card before the quiz (Escape goes Home, the quiz asks again); "new" offers Coral
+// basics first; an existing player with CHOICE.ASK answers or more is never asked (inferred); the fallback card shows
+// once over a new question when the first answers do not fit, never twice; Coral basics is the first Learn tab and the
+// "0" block of Genera, out of the Lab list with a link kept there; the Home line until it is done; a glossary term
+// links to its step; done = every step seen, with its achievement. Returns the failures.
+async function startSmoke(b, base) {
+  const fails = [],
+    errs = [];
+  const open = async (init, vp = {width: 390, height: 844}) => {
+    const c = await b.newContext({viewport: vp, serviceWorkers: 'block', intro: true});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(init || (() => {}));
+    const p = await c.newPage();
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p];
+  };
+  const rec = p => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'));
+  // 1. The tour: the question first, forced; "new" ends the tour on Coral basics.
+  {
+    const [c, p] = await open(() => localStorage.setItem('reefid-nudge', '1'));
+    await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+    const q = await p.evaluate(() => ({
+      opts: document.querySelectorAll('#tour [data-start]').length,
+      skip: !!document.querySelector('#tour .tskip'),
+      next: !!document.querySelector('#tour .tnext')
+    }));
+    await p.keyboard.press('ArrowRight');
+    await p.waitForTimeout(300);
+    const still = await p.evaluate(() => !!document.querySelector('#tour [data-start]'));
+    if (q.opts !== 3 || q.skip || q.next || !still) fails.push(`tour question not forced: ${JSON.stringify({...q, still})}`);
+    await p.click('#tour [data-start="new"]');
+    await p.waitForTimeout(500);
+    const r = await rec(p);
+    if (!r || r.c !== 'new' || r.via !== 'tour' || r.at !== 0) fails.push(`tour answer not stored: ${JSON.stringify(r)}`);
+    for (let k = 0; k < 8 && (await p.$('#tour .tnext')) && !/basics/.test(await p.textContent('#tour .tnext')); k++) {
+      await p.click('#tour .tnext');
+      await p.waitForTimeout(300);
+    }
+    const last = await p.textContent('#tour .tnext').catch(() => '');
+    if (!/Coral basics/.test(last || '')) fails.push(`tour, new to corals: last button "${last}"`);
+    await p.click('#tour .tnext');
+    await p
+      .waitForFunction(() => location.hash.startsWith('#basics') && document.querySelector('.bx'), null, {timeout: 15000})
+      .catch(() => {});
+    const at = await p.evaluate(() => ({
+      h: location.hash,
+      tour: !!document.getElementById('tour'),
+      tab: document.querySelector('#modes [aria-current]')?.textContent
+    }));
+    if (!at.h.startsWith('#basics') || at.tour || !/basics/i.test(at.tab || ''))
+      fails.push(`tour, new to corals: not on Coral basics in Learn: ${JSON.stringify(at)}`);
+    await c.close();
+  }
+  // 2. Tour skipped: a card before the quiz, forced; Escape goes Home and the quiz asks again; "new" offers Coral basics,
+  // "Start the quiz" goes on to the first cards.
+  {
+    const [c, p] = await open(() => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-nudge', '1')));
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.startq', {timeout: 8000}).catch(() => {});
+    const card = await p.evaluate(() => ({
+      opts: document.querySelectorAll('.unlock.startq [data-start]').length,
+      btns: document.querySelectorAll('.unlock.startq .next').length,
+      q: !!document.querySelector('#view .q'),
+      intro: !!document.querySelector('.unlock.intro')
+    }));
+    if (card.opts !== 3 || card.btns || card.q || card.intro) fails.push(`question card before the quiz: ${JSON.stringify(card)}`);
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(400);
+    const esc = await p.evaluate(() => ({h: location.hash, card: !!document.querySelector('.unlock')}));
+    if (esc.h !== '' || esc.card) fails.push(`question card, Escape: ${JSON.stringify(esc)}`);
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.startq [data-start="new"]', {timeout: 8000}).catch(() => fails.push('question card not asked again'));
+    await p.click('.unlock.startq [data-start="new"]');
+    await p.waitForSelector('.unlock.basicsq', {timeout: 5000}).catch(() => fails.push('new to corals: no Coral basics offer'));
+    await p.click('.unlock.basicsq .next.sec');
+    await p.waitForSelector('.unlock.intro', {timeout: 8000}).catch(() => fails.push('after the question card: no first cards'));
+    const r = await rec(p);
+    if (!r || r.c !== 'new' || r.via !== 'card') fails.push(`question card answer: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // 3. Existing players: 50 answers or more, inferred and never asked; fewer, asked.
+  for (const [n, th, ask] of [
+    [60, 1.2, false],
+    [30, 0.1, true]
+  ]) {
+    const [c, p] = await open(() => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-nudge', '1')));
+    await p.evaluate(
+      ([n, th]) => {
+        P['~level'] = {ok: n - 10, ko: 10, th, at: Date.now()};
+        location.hash = 'quiz';
+      },
+      [n, th]
+    );
+    await p.waitForTimeout(1500);
+    const r = await rec(p),
+      asked = !!(await p.$('.unlock.startq'));
+    if (asked !== ask || (!ask && (!r || r.via !== 'inferred' || r.c !== 'know')))
+      fails.push(`existing player with ${n} answers: asked ${asked}, record ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // 4. The fallback card: once over a new question when, at the first checkpoint (CHOICE.AT, 40 answers), the global
+  // level is clearly below the answer's band (core.js startCheck); Keep my answer; never again.
+  {
+    const [c, p] = await open(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: []}));
+    });
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.intro', {timeout: 8000}).catch(() => {});
+    while (await p.$('.unlock.intro')) await p.click('.unlock.intro .ulbtns .next:not(.sec)');
+    const due = await p.evaluate(() => {
+      // 40 answers, the first on each genus, one in four right on average photos: clearly below "know well".
+      P[LEVEL] = {ok: 10, ko: 30, th: -0.5}; // the global level the window is checked against
+      for (let i = 0; i < CHOICE.AT[0]; i++) startStep(0, 4, i % 4 === 0, true);
+      return startDue();
+    });
+    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits).
+    for (let k = 0; k < 6 && !(await p.$('.unlock.startfb')); k++) {
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock.intro').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        quizPhoto();
+      });
+      await p.waitForTimeout(300);
+    }
+    // A gentle offer, never a verdict (Pierre, 2026-11-04): Coral basics and "No thanks, I know the basics" as two equal
+    // buttons, no word that labels the player or says the level changed.
+    const fb = await p.evaluate(() => {
+      const d = document.querySelector('.unlock.startfb'),
+        bs = d && [...d.querySelectorAll('.ulbtns .next')];
+      return (
+        d && {
+          dir: d.dataset.dir,
+          title: d.querySelector('h3').textContent,
+          basics: !!d.querySelector('.ulbtns [data-basics]'),
+          keep: (d.querySelector('[data-keep]') || {}).textContent,
+          equal: bs.length === 2 && getComputedStyle(bs[0]).backgroundColor === getComputedStyle(bs[1]).backgroundColor,
+          judged: /beginner|below what|you are new|level|gently/i.test(d.textContent),
+          // No count on the card (Pierre, 2026-11-04); "5 minutes" is the length of Coral basics.
+          digits: /\d/.test(d.textContent.replace(/5 minutes/g, ''))
+        }
+      );
+    });
+    if (
+      due !== 'lo' ||
+      !fb ||
+      fb.dir !== 'lo' ||
+      fb.title !== 'The first genera feel hard?' ||
+      !fb.basics ||
+      fb.keep !== 'No thanks, I know the basics' ||
+      !fb.equal ||
+      fb.judged ||
+      fb.digits
+    )
+      fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
+    if (fb) await p.click('.unlock.startfb [data-keep]');
+    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
+    if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
+    if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
+    // The open-all offer (a big step) and the "higher" card: no number either (they go stale, or miscount what is open).
+    const nums = await p.evaluate(() =>
+      [() => introOfferShow(), () => startFbShow('hi')].map(f => {
+        document.querySelectorAll('.unlock').forEach(x => x.ulClose());
+        f();
+        const d = document.querySelector('.unlock');
+        return d ? d.textContent.match(/\d+/g) : 'no card';
+      })
+    );
+    if (nums.some(Boolean)) fails.push(`numbers on the open-all or "higher" card: ${JSON.stringify(nums)}`);
+    await p.evaluate(() => document.querySelectorAll('.unlock').forEach(x => x.ulClose()));
+    await c.close();
+  }
+  // 5. Coral basics in Learn: the first Learn tab, the "0" block of Genera, out of the Lab list with a link kept there;
+  // the Home line until it is done; a glossary term links to its step; every step seen = done, with its achievement.
+  {
+    const [c, p] = await open(
+      () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}')),
+      {width: 1280, height: 860}
+    );
+    const home = await p.evaluate(() => !!document.querySelector('.hdoor.learn .hdnew a[href="#basics"]'));
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p.waitForSelector('#azgrid .card', {timeout: 8000});
+    const g = await p.evaluate(() => ({
+      tabs: [...document.querySelectorAll('#modes a')].map(a => a.getAttribute('href')),
+      first: document.querySelector('#azgrid > :first-child')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 40),
+      link: !!document.querySelector('#azgrid a.bxcard[href="#basics"]')
+    }));
+    if (!home) fails.push('Home: no "New to corals?" line for a new player');
+    if (g.tabs[0] !== '#basics' || !/^0\s*Coral basics/.test(g.first || '') || !g.link) fails.push(`Learn path: ${JSON.stringify(g)}`);
+    await p.evaluate(() => window.loadTier && window.loadTier(5));
+    await p.evaluate(() => (location.hash = 'lab'));
+    await p.waitForSelector('.labhub', {timeout: 15000}).catch(() => {});
+    const lab = await p.evaluate(() => ({
+      tile: !!document.querySelector('.labhub a[href="#lab-basics"]'),
+      kept: !!document.querySelector('.labgrad a[href="#basics"]')
+    }));
+    if (lab.tile || !lab.kept) fails.push(`Tools page: Coral basics ${JSON.stringify(lab)}`);
+    // An old Lab link lands on its new home.
+    await p.evaluate(() => (location.hash = 'lab-basics|septa'));
+    await p
+      .waitForFunction(() => location.hash === '#basics|septa', null, {timeout: 8000})
+      .catch(() => fails.push('#lab-basics|septa does not land on #basics|septa'));
+    // A glossary term (an underlined word of the ID tips, a genus sheet) links to its Coral basics step.
+    await p.evaluate(() => (location.hash = 'g-Astrea'));
+    await p.waitForSelector('.gt[data-gt="Septa"], .gt', {timeout: 8000});
+    const term = await p.evaluate(() => {
+      const t = document.querySelector('.gt[data-gt="Septa"]') || document.querySelector('.gt');
+      t.click();
+      const a = document.querySelector('.gpop:not([hidden]) a.gbx');
+      return {term: t.dataset.gt, href: a && a.getAttribute('href')};
+    });
+    if (!term.href || !/^#(basics|lab-anatomy)/.test(term.href))
+      fails.push(`glossary term without its Coral basics link: ${JSON.stringify(term)}`);
+    // Done: every step seen (the walls step, its four types).
+    const done = await p.evaluate(async () => {
+      const ids = ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms'];
+      for (const id of ids) {
+        location.hash = 'basics|' + id;
+        await new Promise(r => setTimeout(r, 150));
+        if (id === 'walls') for (const b of [...document.querySelectorAll('.bx-wtabs [data-w]')]) b.click();
+      }
+      const st = JSON.parse(localStorage.getItem('reefid-basics') || '{}'),
+        a = JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}');
+      return {fin: !!st.fin, ach: !!a.basics, feat: !!a._basics, done: basicsDone()};
+    });
+    if (!done.fin || !done.ach || !done.feat || !done.done) fails.push(`Coral basics done: ${JSON.stringify(done)}`);
+    await p.evaluate(() => (location.hash = ''));
+    await p.waitForSelector('.hdoor.learn', {timeout: 8000});
+    if (await p.$('.hdoor.learn .hdnew')) fails.push('Home: the Coral basics line stays once it is done');
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p.waitForSelector('#azgrid .bxcard', {timeout: 8000});
+    if (!(await p.evaluate(() => /Done/.test(document.querySelector('#azgrid .bxcard small').textContent))))
+      fails.push('Genera: Coral basics not shown as done');
+    await c.close();
+  }
+  if (errs.length) fails.push(`first-launch question: ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
+  return fails;
+}
+
 // Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
 // height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule 17), and
 // every photo of a check gets the games' clickable source once answered (rule 11, photoSrc). Returns the failures.
@@ -1400,6 +1722,7 @@ async function tipsCheck(b, base) {
     );
     await c.addInitScript(u => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
       if (!localStorage.getItem('reefid-tips'))
         localStorage.setItem('reefid-tips', JSON.stringify({u, s: {}, v: {t: Date.now(), n: 12, tip: 0}}));
@@ -1432,7 +1755,10 @@ async function tipsCheck(b, base) {
       const B = [...document.querySelectorAll('.tipcard [data-b]')];
       return B.length > 0 && B.every(x => x.disabled);
     }, toast);
-    await p.waitForTimeout(150);
+    // Next took the break or not (quiz.js breakArm, at the tap): the tip's card is up, or the next question is.
+    await p
+      .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {timeout: 10000})
+      .catch(() => {});
     return {at, dis, next: !!(await p.$('.tipcard'))};
   };
   const tips = p => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-tips')));
@@ -1485,7 +1811,7 @@ async function tipsCheck(b, base) {
           r.wide
         )
           fails.push(`${W} the card: ${JSON.stringify({...r, dis})}`);
-        await p.waitForTimeout(700);
+        // p.click waits for the button to take taps (TIP.WAIT).
         const z0 = (await tips(p)).u.z;
         await p.click('.tipcard [data-b="1"]');
         await p.waitForSelector('#lightbox:not([hidden])', {timeout: 3000}).catch(() => {});
@@ -1523,8 +1849,7 @@ async function tipsCheck(b, base) {
       for (let i = 0; i < 10 && !r.next; i++) r = await play(p, {right: true});
       if (!r.next) fails.push(`${W} not shown at a break from 40 questions`);
       else {
-        await p.waitForTimeout(700);
-        await p.click('.tipcard [data-b="2"]');
+        await p.click('.tipcard [data-b="2"]'); // waits for the button to take taps (TIP.WAIT)
         const nx = await p
           .waitForSelector('#view .q:not(.done) [data-c]', {timeout: 5000})
           .then(() => true)
@@ -1583,7 +1908,8 @@ async function tipsCheck(b, base) {
         const r = await play(p);
         if (!r.next) continue;
         shown++;
-        await p.waitForTimeout(700);
+        // Its buttons take taps after TIP.WAIT (quiz.js): wait for that, not a fixed time.
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
         await p.evaluate(() => [...document.querySelectorAll('.tipcard [data-b]')].find(x => x.textContent === 'Got it').click());
         await p.waitForTimeout(300);
         const after = await p.evaluate(() => ({
@@ -1610,13 +1936,14 @@ async function tipsCheck(b, base) {
   }
   return fails;
 }
-// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), on a phone and a desktop,
+// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), at 390, 1024 and 1280 px,
 // on "Drill this pair" (#quiz-duel|Pocillopora|Stylophora). The hold's sum is set just under INTRO.HOLD, as a run of misses
 // would leave it. Checks: the miss that takes it across shows the card at Next, never with the answer itself; one card
 // on screen, its kind, words (no number) and buttons (Mix in other genera first), faded at first; Keep drilling goes on to
 // the next duel and the card never comes again in that run, even when the hold falls back under INTRO.HOLD and crosses
 // it again; Mix in other genera opens the photo quiz, Compare them the side-by-side comparison of the two genera with
-// Back to the duel at its top and end, which, as the browser's Back, returns to the same duel and the same run (no
+// Back to the duel (phones: floating at the bottom centre; from 1024 px: a light band under the page bar; in view and on
+// top wherever the page is scrolled), which, as the browser's Back, returns to the same duel and the same run (no
 // second card); a comparison opened any other way has none; each showing logged with its choice and the return (item
 // tip:duelhold); a new run that starts with the hold already on gets none (no crossing from below); never
 // in the photo quiz; never over an achievement toast (it waits for the next break while the hold is on). The photo of
@@ -1633,6 +1960,7 @@ async function duelReliefCheck(b, base) {
     await c.addInitScript(() => {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'); // answered (quiz.js startGate)
     });
     await c.addInitScript(TIPS_OFF);
     const p = await c.newPage();
@@ -1712,6 +2040,7 @@ async function duelReliefCheck(b, base) {
   };
   for (const [w, h] of [
     [390, 844],
+    [1024, 768],
     [1280, 800]
   ]) {
     const W = `${w}px duel relief:`;
@@ -1755,7 +2084,8 @@ async function duelReliefCheck(b, base) {
           k.kind !== 'tip' ||
           k.kick !== 'Tough pair today' ||
           k.title !== 'Take a step back?' ||
-          k.body !== 'These two are hard right now. Seeing them side by side often helps more than more photos.' ||
+          k.body !==
+            'These two are hard right now. Mixing in other genera for a while, or seeing these two side by side, often helps more than more of the same.' ||
           k.btns.join() !== 'Mix in other genera,Compare them,Keep drilling' ||
           k.digits ||
           !r.dis ||
@@ -1796,20 +2126,62 @@ async function duelReliefCheck(b, base) {
         const at = await p.evaluate(() => ({
           h: decodeURIComponent(location.hash),
           cmp: !!document.querySelector('#view .cmprow'),
-          back: [...document.querySelectorAll('#view [data-duelback]')].map(x => x.textContent),
-          drill: !!document.querySelector('#view a[href^="#quiz-duel"]'),
-          first: !!document.querySelector('#view .cmpback + .cmprow')
+          // The way back shown (the other one is hidden by the size class): its text and where it sits.
+          back: [...document.querySelectorAll('#view [data-duelback]')]
+            .filter(x => x.getClientRects().length)
+            .map(x => x.textContent + (x.closest('.duelband') ? ' (band)' : x.matches('.next.cmpfab') ? ' (floating)' : ' (inline)')),
+          drill: !!document.querySelector('#view a[href^="#quiz-duel"]')
         }));
+        // Desktop (from 1024 px): the light band under the page bar; phones and tablets: the floating button.
+        const desk = w >= 1024;
         if (
           at.h !== '#cmp-Pocillopora|Stylophora' ||
           !at.cmp ||
-          at.back.join() !== 'Back to the duel,Back to the duel' ||
+          at.back.join() !== (desk ? 'Back to the duel (band)' : 'Back to the duel (floating)') ||
           at.drill ||
-          !at.first ||
           (await p.$('.unlock'))
         )
           fails.push(`${W} Compare them: ${JSON.stringify(at)}`);
-        if (way === 'button') await p.click('#view [data-duelback]');
+        // In view and on top at the top, in the middle and at the bottom of the comparison. The floating button: centred,
+        // above the phone tab bar, the last photos ending above it. The band: right under the page bar once the page
+        // scrolls, slim, its button on top.
+        for (const at of ['top', 'bottom', 'middle']) {
+          await p.evaluate(at => {
+            const max = document.documentElement.scrollHeight - innerHeight;
+            scrollTo(0, at === 'top' ? 0 : at === 'bottom' ? max : max / 2);
+          }, at);
+          await p.waitForTimeout(250);
+          const f = await p.evaluate(desk => {
+            const b = [...document.querySelectorAll('#view [data-duelback]')].find(x => x.getClientRects().length),
+              r = b.getBoundingClientRect(),
+              tab = document.querySelector('.sections'),
+              tr = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect() : null,
+              floor = tr && tr.top > innerHeight / 2 ? tr.top : innerHeight,
+              hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2),
+              max = document.documentElement.scrollHeight - innerHeight,
+              o = {
+                inView: r.top >= 0 && r.bottom <= floor && r.height > 0,
+                onTop: !!hit && b.contains(hit),
+                scrolls: max > 0,
+                wide: document.documentElement.scrollWidth > innerWidth
+              };
+            if (desk) {
+              const band = b.closest('.duelband').getBoundingClientRect(),
+                bar = document.getElementById('modes').getBoundingClientRect();
+              o.under = scrollY < 200 || Math.abs(band.top - bar.bottom - 6) < 3;
+              o.slim = band.height <= 46;
+            } else {
+              const rows = [...document.querySelectorAll('#view .cmprow, #view .cmplab ~ *:not(.cmpfab):not(.cmpfabpad):not(.duelband)')],
+                last = rows.length ? rows[rows.length - 1].getBoundingClientRect().bottom : 0;
+              o.centred = Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2;
+              o.clear = scrollY < max - 2 || last <= r.top;
+            }
+            return o;
+          }, desk);
+          if (Object.entries(f).some(([k, v]) => (k === 'wide' ? v : !v)))
+            fails.push(`${W} Back to the duel, page scrolled to the ${at}: ${JSON.stringify(f)}`);
+        }
+        if (way === 'button') await p.locator('#view [data-duelback]:visible').click();
         else await p.goBack();
         await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000}).catch(() => {});
         const bk = await p.evaluate(() => ({h: decodeURIComponent(location.hash), run: {...DUELRUN}, back: DUELBACK}));
@@ -1892,6 +2264,38 @@ async function duelReliefCheck(b, base) {
       await c.close();
     }
   }
+  // A short phone screen (Codex review #460): the settings pop-up, opened over the comparison, reaches down to the
+  // floating Back to the duel; a tap there is the setting's, not the button's (the page stays, the way back is kept).
+  {
+    const W = '390x640 duel relief:',
+      [c, p, errs] = await open(390, 640);
+    await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
+    if (!(await play(p)).next) fails.push(`${W} not shown`);
+    else {
+      await pick(p, '[data-b="2"]');
+      await p.click('#setb');
+      await p.waitForTimeout(300);
+      const o = await p.evaluate(() => {
+        const f = document.querySelector('#view .cmpfab').getBoundingClientRect(),
+          s = document.getElementById('settings').getBoundingClientRect(),
+          box = [Math.max(f.left, s.left), Math.max(f.top, s.top), Math.min(f.right, s.right), Math.min(f.bottom, s.bottom)],
+          x = (box[0] + box[2]) / 2,
+          y = (box[1] + box[3]) / 2,
+          hit = document.elementFromPoint(x, y);
+        return {over: box[0] < box[2] && box[1] < box[3], x, y, settings: !!(hit && hit.closest('#settings'))};
+      });
+      if (!o.over) fails.push(`${W} the settings pop-up no longer reaches the floating button: the check needs a shorter screen`);
+      else {
+        await p.mouse.click(o.x, o.y);
+        await p.waitForTimeout(400);
+        const a = await p.evaluate(() => ({h: decodeURIComponent(location.hash), back: !!DUELBACK}));
+        if (!o.settings || a.h !== '#cmp-Pocillopora|Stylophora' || !a.back)
+          fails.push(`${W} a tap on the settings pop-up over Back to the duel: ${JSON.stringify({...o, ...a})}`);
+      }
+    }
+    if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
   return fails;
 }
 async function credits(b, base) {
@@ -1905,6 +2309,7 @@ async function credits(b, base) {
     );
     await c.addInitScript(() => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
     });
     const p = await c.newPage();
@@ -1962,7 +2367,7 @@ async function credits(b, base) {
     const [c, p] = await open(w, 640);
     for (const hash of ['', 'genera', 'about']) {
       await p.evaluate(x => (location.hash = x), hash);
-      await p.waitForTimeout(400);
+      await drawn(p);
       const r = await p.evaluate(() => ({
         sw: document.documentElement.scrollWidth,
         iw: innerWidth,
@@ -1995,7 +2400,7 @@ async function credits(b, base) {
     if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     await p.evaluate(() => (location.hash = 'g-Acropora'));
-    await p.waitForTimeout(500);
+    await drawn(p);
     await p.click('#help');
     await p.waitForTimeout(150);
     const hp = await p.evaluate(() => {
@@ -2042,6 +2447,7 @@ async function pagesVisit(b, base) {
       await c.addInitScript(v => {
         try {
           localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
           localStorage.setItem('reefid-nudge', '1');
           if (v) localStorage.setItem('reefid-sheet-v', String(v)); // the sheet script version the replies said
         } catch (e) {} // a new tab's first about:blank has no storage
@@ -2188,6 +2594,7 @@ async function basicsFit(b, base) {
     );
     await c.addInitScript(() => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
     });
     const p = await c.newPage();
@@ -2200,7 +2607,7 @@ async function basicsFit(b, base) {
           'reefid-basics',
           JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
         );
-        location.hash = 'lab-basics|' + s;
+        location.hash = 'basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
       const r = await p.evaluate(st => {
@@ -2251,6 +2658,7 @@ async function basicsTeach(b, base) {
     );
     await c.addInitScript(() => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
     });
     const p = await c.newPage(),
@@ -2260,7 +2668,7 @@ async function basicsTeach(b, base) {
       await p.evaluate(
         ([s, v]) => {
           localStorage.setItem('reefid-basics', JSON.stringify(v));
-          location.hash = 'lab-basics|' + s;
+          location.hash = 'basics|' + s;
         },
         [st, seen]
       );
@@ -2434,12 +2842,10 @@ async function basicsTeach(b, base) {
       fails.push(`${W} forms: the enlarged example has no genus or credit: "${cap}"`);
     await p.click('#lightbox [data-x]').catch(() => {});
     // Words lists Costae and opens step 4.
-    await p.evaluate(() => (location.hash = 'lab-basics|words'));
+    await p.evaluate(() => (location.hash = 'basics|words'));
     await p.waitForSelector('.bx-words', {timeout: 5000});
     const cw = await p.evaluate(() =>
-      [...document.querySelectorAll('.bx-words dt a')].some(
-        a => a.textContent === 'Costae' && a.getAttribute('href') === '#lab-basics|septa'
-      )
+      [...document.querySelectorAll('.bx-words dt a')].some(a => a.textContent === 'Costae' && a.getAttribute('href') === '#basics|septa')
     );
     if (!cw) fails.push(`${W} words: no Costae entry linking to step 4`);
     if (errs.length) fails.push(`${W}: ${errs.slice(0, 3).join(' | ')}`);
@@ -2450,14 +2856,18 @@ async function basicsTeach(b, base) {
 
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
-// main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Finder, the new player at 390 and
+// main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
-// the Duel tab's relief card (duelReliefCheck).
-const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'signin', 'replay'],
+// the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
+// (startSmoke).
+const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'start', 'signin', 'replay'],
   WIDTHS = [390, 1280];
 
 (async () => {
-  const run = slot.parts(PARTS, {main: ['main', 'overlays'], rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'signin', 'replay']}),
+  const run = slot.parts(PARTS, {
+      main: ['main', 'overlays'],
+      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'signin', 'replay']
+    }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -2471,6 +2881,15 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
+    // Fetches in flight, for drawn().
+    await c.addInitScript(() => {
+      const f = window.fetch;
+      window.__inflight = 0;
+      window.fetch = function () {
+        window.__inflight++;
+        return f.apply(this, arguments).finally(() => window.__inflight--);
+      };
+    });
     if (!intro)
       await c.addInitScript(s => {
         try {
@@ -2498,7 +2917,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     if (errs.length) fails.push(`${w}px start: ${errs.join(' | ')}`);
     // The plain sentence (Pierre, 2026-11-03): on a genus sheet, right after the photo and before the ID tips, with no label.
     await p.evaluate(() => (location.hash = 'g-Goniastrea'));
-    await p.waitForTimeout(700);
+    await drawn(p);
     const pl = await p.evaluate(() => {
       const e = document.querySelector('#view .sheet .plainw'),
         ph = document.querySelector('#view .sheet .hero-ph'),
@@ -2514,16 +2933,42 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     });
     if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
       fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
+    // The tool is the Coral ID Key (Pierre, 2026-11-04): "Coral Finder" on a page (help, folds and pop-ups included)
+    // only names the book, cited by page (Coral Finder p. 63, Same Coral Finder box: …, p. 47-56), as the 2022 book,
+    // "the Coral Finder book" or one of its terms (tests/idkey.test.js checks the code's strings).
+    const notBook = () =>
+      [...document.body.textContent.matchAll(/Coral Finder/g)]
+        .map(m => document.body.textContent.slice(m.index, m.index + 90))
+        .filter(t => !/^Coral Finder( 2022| book| term|[^.]{0,80}?p\. ?\d)/.test(t));
     for (const h of ROUTES) {
       errs.length = 0;
       await p.evaluate(h => {
         location.hash = h;
       }, h);
-      await p.waitForTimeout(700);
+      if (!(await drawn(p))) fails.push(`${w}px #${h}: the page was not drawn within 15 s`);
+      // Drawn means the page itself, not a placeholder waiting for its files (a Lab page before its modules, Codex #454).
+      else if (await p.evaluate(() => /^\s*Loading/.test(document.querySelector('#view .note')?.textContent || '')))
+        fails.push(`${w}px #${h}: still a "Loading…" placeholder once drawn`);
+      // A short window for errors a page throws just after it is drawn (a timer, a late photo).
+      await p.waitForTimeout(150);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
+      const cf = await p.evaluate(notBook);
+      if (cf.length) fails.push(`${w}px #${h}: "Coral Finder" for something other than the book: ${cf.slice(0, 2).join(' | ')}`);
       // No credits block on any page but Home (Pierre, 2026-11-03): no footer, no Home credit line.
       if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
+    // Home and Identify say "Coral ID Key" for the tool, and its page title too.
+    await p.evaluate(() => (location.hash = ''));
+    await p.waitForTimeout(600);
+    const hk = await p.evaluate(() => ({
+      cf: [...document.body.textContent.matchAll(/Coral Finder(?! 2022| book)/g)].length,
+      key: /Open the Coral ID Key/.test(document.body.textContent)
+    }));
+    if (hk.cf || !hk.key) fails.push(`${w}px Home: the tool is not the Coral ID Key ${JSON.stringify(hk)}`);
+    await p.evaluate(() => (location.hash = 'idkey'));
+    await p.waitForSelector('.ikstart', {timeout: 15000}).catch(() => {});
+    const kt = await p.evaluate(() => (document.querySelector('#view h2') || {}).textContent || '');
+    if (kt !== 'Coral ID Key') fails.push(`${w}px #idkey: its title is "${kt}"`);
     // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
     // classified photo opens the enlarged view.
     for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
@@ -2534,7 +2979,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
           'reefid-basics',
           JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
         );
-        location.hash = 'lab-basics|' + s;
+        location.hash = 'basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
       if (st === 'corallite')
@@ -2557,7 +3002,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
     // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
     await p.evaluate(() => (location.hash = 'genera'));
-    await p.waitForTimeout(600);
+    await drawn(p);
     const gl = await p.evaluate(() => {
       const t = document.querySelector('#view .card .gt');
       if (t) t.click();
@@ -2569,12 +3014,12 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       };
     });
     if (gl.titles || !gl.cards || !gl.def || gl.h !== '#genera') fails.push(`${w}px Genera glossary: ${JSON.stringify(gl)}`);
-    // The Coral Finder's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
-    await p.evaluate(() => (location.hash = 'finder'));
-    // The Finder's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
+    // The Coral ID Key's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
+    await p.evaluate(() => (location.hash = 'idkey'));
+    // The Coral ID Key's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
     await p.waitForSelector('#view [data-show]', {timeout: 15000}).catch(() => {});
     const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
-    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral Finder slate count: "${fd[0]}", expected ${fd[1]}`);
+    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral ID Key slate count: "${fd[0]}", expected ${fd[1]}`);
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
@@ -2586,6 +3031,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await c2.addInitScript(TIPS_OFF);
       await c2.addInitScript(() => {
         localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('reefid-nudge', '1');
       });
       const q2 = await c2.newPage(),
@@ -2665,7 +3111,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       // answered Keep them all.
       await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'quiz'));
-      await q2.waitForTimeout(500);
+      await drawn(q2);
       if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
       // "Tap an underlined word" is said once, on the first card with one (beginner review 2026-11-03).
@@ -2673,48 +3119,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         fails.push(`${w}px first cards, the tap-a-word line: ${JSON.stringify(seen.map(c => [c.gt, c.hint]))}`);
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
-      let at = 0;
-      for (let i = 1; i <= 40 && !at; i++) {
-        await q2.waitForSelector('#view [data-c]');
-        await q2.evaluate(() => document.querySelectorAll('.unlock.intro').forEach(x => x.remove()));
-        // Achievement toasts have gone by the next answer (4 s; the prompts wait for them, PROMPT).
-        await q2.evaluate(() => {
-          document.querySelectorAll('.achpop').forEach(x => x.remove());
-          achQ.length = 0;
-          achBusy = false;
-        });
-        await q2.evaluate(() => document.querySelector('#view [data-c]').click());
-        await q2.waitForSelector('#next');
-        // The one-tap question comes as a card at Next (2026-11-03), never inline in the feedback.
-        if (await q2.$('#after [data-pulse]')) at = -i;
-        await q2.evaluate(() => document.getElementById('next').click());
-        if (!at && (await q2.$('.unlock.pulsecard'))) at = i;
-      }
-      if (at !== 35) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 35`);
-      else {
-        await q2.click('[data-pulse="hard"]');
-        // An error from one of the app's script files is reported; one injected into the page by a browser or an
-        // extension (no file, or the page itself), and the harmless ResizeObserver warning, are not (Pierre, 2026-11-02).
-        await q2.evaluate(() => {
-          const dir = location.origin + location.pathname.replace(/[^/]*$/, ''),
-            err = (message, filename) => window.dispatchEvent(new ErrorEvent('error', {message, filename, lineno: 1}));
-          err('smoke test error', dir + 'quiz.js?v=1');
-          err("ReferenceError: Can't find variable: __firefox__", location.href);
-          err('Script error.', '');
-          err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
-        });
-        await q2.waitForTimeout(300);
-        const q = await q2.evaluate(() =>
-          JSON.parse(localStorage.getItem('reefid-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
-        );
-        // The first one-tap question ever is the plain one (core.js PULSE0), logged with its item id.
-        if (!q.includes('pulse:hard@are') || !q.some(x => /smoke test error/.test(x)))
-          fails.push(`${w}px events not queued: ${q.join(' | ')}`);
-        if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`${w}px noise errors queued: ${q.join(' | ')}`);
-      }
       // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
       await q2.evaluate(() => (location.hash = 'g-Porites'));
-      await q2.waitForTimeout(600);
+      await drawn(q2);
       await q2.evaluate(() => document.querySelector('#view .zoom').click());
       await q2.waitForTimeout(300);
       await q2.goBack();
@@ -2731,26 +3138,26 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await q3.click('#lightbox [data-x]');
       await q3.waitForTimeout(400);
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bk = await q3.evaluate(() => location.hash);
       if (bk !== '#genera') fails.push(`${w}px Back on a linked sheet after a photo: ${bk}`);
       // A reload with a photo enlarged: its history entry is stepped over, so the sheet's Back returns to the quiz.
       await q3.evaluate(() => (location.hash = 'quiz'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => (location.hash = 'g-Porites'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => document.querySelector('#view .zoom').click());
       await q3.waitForTimeout(300);
       await q3.reload();
       await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
       await q3.waitForTimeout(300);
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bl = await q3.evaluate(() => location.hash);
       if (bl !== '#quiz') fails.push(`${w}px Back after a reload with a photo enlarged: ${bl}`);
       // Forward onto a closed photo's entry is stepped over too: the sheet's Back then returns to the quiz.
       await q3.evaluate(() => (location.hash = 'g-Porites'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => document.querySelector('#view .zoom').click());
       await q3.waitForTimeout(300);
       await q3.click('#lightbox [data-x]');
@@ -2758,37 +3165,37 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await q3.goForward();
       await q3.waitForTimeout(500);
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bf = await q3.evaluate(() => location.hash);
       if (bf !== '#quiz') fails.push(`${w}px Back after Forward onto a closed photo: ${bf}`);
       // From the quiz to a sheet, then a reload: the sheet's Back still returns to the quiz (Codex review #344).
       await q3.evaluate(() => (location.hash = 'quiz'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => (location.hash = 'g-Porites'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.reload();
       await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bq = await q3.evaluate(() => location.hash);
       if (bq !== '#quiz') fails.push(`${w}px Back on a sheet after a reload: ${bq}`);
       await q3.close();
-      // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
-      await q2.evaluate(() => (location.hash = 'finder|form=M'));
-      // Waits on the Finder's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
+      // Coral ID Key: the "Compare A and B" button is readable (its text was the colour of its background).
+      await q2.evaluate(() => (location.hash = 'idkey|form=M'));
+      // Waits on the Coral ID Key's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
       await q2.waitForSelector('#view [data-cmpk]', {timeout: 15000}).catch(() => {});
       for (const k of [0, 2]) {
         const cb = q2.locator('#view button[data-cmpk]').nth(k);
         await cb.click();
         await q2.waitForFunction(e => e.getAttribute('aria-pressed') === 'true', await cb.elementHandle(), {timeout: 5000}).catch(() => {});
       }
-      await q2.waitForSelector('.fdcmp .next', {timeout: 5000}).catch(() => {});
+      await q2.waitForSelector('.ikcmp .next', {timeout: 5000}).catch(() => {});
       const cc = await q2.evaluate(() => {
-        const n = document.querySelector('.fdcmp .next'),
+        const n = document.querySelector('.ikcmp .next'),
           c = n && getComputedStyle(n);
         return n ? [c.color, c.backgroundColor] : null;
       });
-      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral Finder compare button unreadable: ${JSON.stringify(cc)}`);
+      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral ID Key compare button unreadable: ${JSON.stringify(cc)}`);
       const other = e2.filter(e => !/smoke test error/.test(e));
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();
@@ -2803,6 +3210,8 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       const qt = await ct.newPage();
       await qt.goto(base);
       await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+      await qt.click('#tour [data-start="imr"]'); // the first-launch question, the tour's first step
+      await qt.waitForTimeout(400);
       for (let k = 0; k < 4 && (await qt.evaluate(() => location.hash !== '#quiz')); k++) {
         await qt.keyboard.press('ArrowRight');
         await qt.waitForTimeout(400);
@@ -2854,7 +3263,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         u => !u.href.startsWith(base),
         r => r.abort()
       );
-      await cb.addInitScript(() => localStorage.setItem('reefid-tour', '"done"'));
+      await cb.addInitScript(
+        () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+      );
       const qb = await cb.newPage();
       await qb.goto(base + '#quiz');
       await qb.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
@@ -2884,7 +3295,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         u => !u.href.startsWith(base),
         r => r.abort()
       );
-      await cz.addInitScript(() => localStorage.setItem('reefid-tour', '"done"'));
+      await cz.addInitScript(
+        () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+      );
       const qz = await cz.newPage();
       await qz.goto(base + '#g-Acropora');
       await qz.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
@@ -2941,6 +3354,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
           );
           await c.addInitScript(() => {
             localStorage.setItem('reefid-tour', '"done"');
+            localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
             localStorage.setItem('reefid-nudge', '1');
           });
           const p = await c.newPage();
@@ -3032,7 +3446,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     await p.waitForTimeout(500);
     if (errs.length) fails.push(`${w}px admin.html?readonly: ${errs.slice(0, 3).join(' | ')}`);
-    // One count of a Finder-only genus's colonies (Codex review #390, found apart five times): the refill
+    // One count of a Key-only genus's colonies (Codex review #390, found apart five times): the refill
     // (tools/fetch_local.py colonies) and the admin (covOf, which the Candidates swiper's full test reads) agree on the
     // real data and curation, view by view.
     if (w === 390) {
@@ -3052,13 +3466,13 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
 s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
 from datajson import load_all
 d = load_all(); G = {**d['gen'], **d['x']['gen']}; cur = json.load(open('curation.json'))
-print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded).get(v, 0) for v in fl.kept_views(g, G, cur)} for g in fl.finder_only(d)}))`
+print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded).get(v, 0) for v in fl.kept_views(g, G, cur)} for g in fl.key_only(d)}))`
           ],
           {cwd: ROOT, encoding: 'utf8'}
         )
       );
       if (JSON.stringify(adm) !== JSON.stringify(py))
-        fails.push(`Finder-only colonies, admin covOf vs tools/fetch_local.py colonies: ${JSON.stringify(adm)} vs ${JSON.stringify(py)}`);
+        fails.push(`Key-only colonies, admin covOf vs tools/fetch_local.py colonies: ${JSON.stringify(adm)} vs ${JSON.stringify(py)}`);
     }
     await ctx.close();
   }
@@ -3070,6 +3484,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('basics')) for (const f of await basicsTeach(b, base)) fails.push(f);
   if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
+  if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);

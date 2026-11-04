@@ -29,7 +29,7 @@ function bindQuizNav() {
 const gameHelp = cur =>
   UNITS[SUBJ.id].help
     ? UNITS[SUBJ.id].help(cur)
-    : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
+    : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder book, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
   ${cur === CUSTOM_H ? `<p class="lede"><b>Custom quiz</b>: only the genera you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other genera only when you picked fewer than 4. A genus you have not met yet comes with its card. The rest works as in the Quiz, and every answer counts the same, except the mastery exam: its questions only come in the Quiz, so a genus that reaches 95% here takes its exam there.</p>` : ''}
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="#progress">My progress</a>.</p>${
@@ -379,6 +379,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const good = c === target,
     s = st(target),
     chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+  const first = !((s.ok || 0) + (s.ko || 0)); // the genus's first answer (model.js startStep)
   // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
   // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
   const nc = $v.querySelectorAll('[data-c]').length || 4,
@@ -553,6 +554,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // any question, and for the rust, so a miss the rust explains adds less).
   const h0 = HOLDS;
   holdStep(ans.e, good);
+  startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
   // The Duel tab's relief card (reliefShow): this answer took the hold's sum across INTRO.HOLD, from below.
   if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
   if (warm) comebackStep(rT, th0, dm, k, good);
@@ -627,7 +629,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (tyIn) tyIn.classList.add(good ? 'ok' : c ? 'ko' : 'idk');
   const idk = !!tq && !c,
     read = tq ? typeRead(tq.m, tq.text) : '';
-  // The feedback: a genus's (IMR ID tips, mnemonic, Coral Finder) or a fish entry's (IMR cues, how to tell the look-alike
+  // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
   document.getElementById('after').innerHTML =
     `${fbBody(target, c, good, idk, again, ph, read)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
@@ -660,7 +662,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   tipAfter(nb, cur, !good, tm.zm, exq && s.mx);
 }
 // The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
-// another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral Finder's criteria, a link to
+// another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to
 // its sheet and to the comparison. A fish entry (a record with a name, core.js fishGen): the IMR cues, how IMR tells the
 // look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet.
 function fbBody(target, c, good, idk, again, ph, read) {
@@ -677,7 +679,7 @@ function fbBody(target, c, good, idk, again, ph, read) {
       : `<a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
-      : `<details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
+      : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   return `<div class="fb">
     <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> it's ${name}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
@@ -1195,6 +1197,9 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto(cur = 'quiz') {
+  // The first-launch question first (model.js startOf): a player with no answer to it (tour skipped, or an existing
+  // player) is asked on a card before the next quiz question; from CHOICE.ASK answers on it is inferred, silently.
+  if (cur === 'quiz' && startGate()) return startAskShow(cur);
   // Now and then a wink instead (winkShow): not a question of the game. Decided before any question is taken or chosen,
   // so the planned ones and the Again / duel spacing wait for the next (Codex review #442). The photo quiz only.
   const wk = cur === 'quiz' && winkDue();
@@ -1219,15 +1224,118 @@ function quizPhoto(cur = 'quiz') {
   if (q.intro) q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start);
   // The offers about which genera are in play (open all, back to one at a time, bonus genera) belong to the photo quiz.
   else if (cur !== 'quiz') {
-  } else if (!noOpen() && promptOk() && introOffer())
+  } else if (!noOpen() && promptOk() && startDue())
+    (promptMark(), startFbShow(startDue())); // the first answers do not fit the first-launch answer (model.js startDue)
+  else if (!noOpen() && promptOk() && introOffer())
     (promptMark(), introOfferShow()); // never over another card: next question
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
-// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now (Escape).
-// Leaving the page closes it unanswered (route): the offer can come back.
+// The first-launch question's cards (Pierre, 2026-11-03; core.js CHOICE, model.js startSet): the question, the Coral
+// basics offer and the fallback card, through app.js cardShow like every card.
+// Asked on a card when the quiz opens (the tour asks it as its first step): no answer yet, fewer than CHOICE.ASK answers.
+// From CHOICE.ASK answers on (an existing player, Pierre 2026-11-03), the choice is inferred from the global level
+// (core.js startInfer) and recorded as "inferred", never asked.
+const startGate = () => {
+  if (!startOn() || startOf()) return false; // corals only (CHOICE.SUBJ)
+  if (answersSoFar() >= CHOICE.ASK) return (startSet(startInfer(P), 'inferred'), false);
+  return true;
+};
+// Forced: the three answers and nothing else (Escape goes back to Home; the quiz asks again next time). Another device's
+// answer arriving meanwhile (sync, model.js startMerge) closes it and the quiz goes on.
+function startAskShow(cur) {
+  if (document.querySelector('.unlock.startq')) return;
+  $v.innerHTML = '';
+  const d = cardShow({
+    kind: 'feature',
+    cls: 'startq',
+    kick: 'Before you start',
+    title: 'How well do you know corals?',
+    label: 'How well do you know corals?',
+    body: `<p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(null)}`,
+    esc: () => go(''),
+    bind: d =>
+      d.querySelectorAll('[data-start]').forEach(
+        b =>
+          (b.onclick = () => {
+            startSet(b.dataset.start, 'card');
+            d.close('pick');
+            startBasicsOffer(cur) || quizPhoto(cur);
+          })
+      )
+  });
+  d.ulDone = () => (d.close('sync'), quizPhoto(cur));
+}
+// "I'm new to corals" (CHOICE v.basics): Coral basics offered first, about 5 minutes, then the quiz. Only while the module
+// is not done (app.js basicsDone). Returns whether it showed.
+function startBasicsOffer(cur) {
+  if (!startV().basics || basicsDone()) return false;
+  cardShow({
+    kind: 'tip',
+    cls: 'startq basicsq',
+    kick: 'New to corals',
+    title: 'Start with Coral basics?',
+    body: '<p>Seven short steps on real photos, about 5 minutes: a polyp, a corallite, septa and walls, the words the ID tips use. Then the quiz.</p>',
+    primary: {text: 'Coral basics (5 min)', attr: 'data-basics', on: () => go('basics')},
+    secondary: {text: 'Start the quiz', on: () => quizPhoto(cur)},
+    esc: 2, // Escape: the quiz
+    note: 'Learn › Coral basics, any time.'
+  });
+  return true;
+}
+// The fallback card (model.js startDue), once per direction, over a new question. 'lo' (the answers clearly below what
+// the choice predicts) is a gentle offer, never a verdict (Pierre, 2026-11-04: an RA or an expert who gets it by mistake
+// must not feel judged): "The first genera feel hard?", Coral basics in 5 minutes and "No thanks, I know the basics" as
+// two equal buttons. Coral basics also moves the start variables one band down, silently (model.js startEase: the answer
+// given stays, nothing on screen says so); "No thanks" changes nothing, and the card never comes back that way. 'hi'
+// (clearly above): the higher choices to pick from (startOptsHtml), or keep. The answers are kept either way.
+function startFbShow(dir) {
+  const o = startOf(),
+    next = startNext(o.c, dir),
+    said = `said “${esc(startOpt(o.c)[1])}”`;
+  startShown(dir);
+  const d = cardShow(
+    dir === 'lo'
+      ? {
+          kind: 'tip',
+          cls: 'startfb',
+          kick: 'A tip',
+          title: 'The first genera feel hard?',
+          label: 'Your start',
+          body: '<p>They do for most people. Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.</p>',
+          primary: {text: 'Coral basics in 5 minutes', attr: 'data-basics', on: () => (startEase(), go('basics'))},
+          secondary: {text: 'No thanks, I know the basics', attr: 'data-keep'},
+          esc: 2, // Escape: no thanks
+          onClose: () => topUp()
+        }
+      : {
+          kind: 'tip',
+          cls: 'startfb',
+          kick: 'Your start',
+          title: 'You know more than you said',
+          label: 'Your start',
+          body: `<p>Your answers beat what the game expects from someone who ${said}. Move faster? Your answers are kept.</p>${startOptsHtml(null, next)}`,
+          secondary: {text: 'Keep my answer', attr: 'data-keep'},
+          onClose: () => topUp(),
+          bind: d =>
+            d.querySelectorAll('[data-start]').forEach(
+              b =>
+                (b.onclick = () => {
+                  startSet(b.dataset.start, 'fallback');
+                  d.close('pick');
+                })
+            )
+        }
+  );
+  d.dataset.dir = dir;
+}
+// The offer to open all genera (model.js introOffer), over the question, once. A big step, and shown as one (Pierre,
+// 2026-11-04: a beginner who misclicked their level must see it is risky, an expert can confirm calmly): the "step"
+// kind (the warm --warn hue), what changes in three short lines, "Not now" the safe default on top (Escape and Enter),
+// "Open all genera" under it, outlined in the warn hue; no number. Leaving the page closes it unanswered (route): the offer can
+// come back.
 function introOfferShow() {
   const a = answersSoFar(),
     pick = open => {
@@ -1238,16 +1346,18 @@ function introOfferShow() {
       }
       save();
     };
+  // No number on this card (Pierre, 2026-11-04): counts go stale or miscount what the player already has open.
   cardShow({
-    kind: 'tip',
+    kind: 'step',
     cls: 'intro',
-    kick: `${a} answers in`,
-    title: `You seem to know your ${SUBJ.name.toLowerCase()} already`,
-    body: `<p>Open all ${slateGenera().length} ${SUBJ.many} at once, instead of one at a time? ${introLeft().length} are still to come.</p>`,
-    primary: {text: `Open all ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
-    secondary: {text: 'Not now', on: () => pick(false)},
-    esc: 2,
-    note: 'Also in My progress, any time.',
+    kick: 'A big step',
+    title: `Open all the ${SUBJ.many} at once?`,
+    body: `<p>You are doing well. Opening them all is the hard way:</p><ul class="ulchg"><li>All the remaining ${SUBJ.many} in the questions at once, without a card for each</li><li>Harder questions sooner: look-alikes side by side</li><li>More mix-ups at first, before it settles</li></ul>`,
+    primary: {text: 'Not now, one at a time', attr: 'data-notnow', on: () => pick(false)},
+    secondary: {text: `Open all ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
+    esc: 1,
+    enter: 1,
+    note: 'Also in My progress, any time. If it gets too hard, the game offers to go back.',
     onClose: topUp
   });
 }
@@ -1659,7 +1769,7 @@ function reliefShow(cur, pair) {
     cls: 'reliefcard',
     kick: 'Tough pair today',
     title: 'Take a step back?',
-    body: '<p>These two are hard right now. Seeing them side by side often helps more than more photos.</p>',
+    body: '<p>These two are hard right now. Mixing in other genera for a while, or seeing these two side by side, often helps more than more of the same.</p>',
     primary: {text: 'Mix in other genera', attr: 'disabled'},
     secondary: {text: 'Compare them', attr: 'disabled'},
     after: '<button type="button" class="linkish reliefx" data-keep disabled>Keep drilling</button>',
@@ -1742,7 +1852,7 @@ function cqGroups(view, play) {
     return {
       note: own.length
         ? ''
-        : 'No mix-ups of yours yet: here are the look-alikes of the IMR lecture and the Coral Finder, those players confuse most first. Your own mix-ups take their place as you play.',
+        : 'No mix-ups of yours yet: here are the look-alikes of the IMR lecture and the Coral Finder book, those players confuse most first. Your own mix-ups take their place as you play.',
       G: C.map((c, i) => ({
         k: 'm' + i,
         t: names(ord(c.g)),
@@ -1799,7 +1909,7 @@ function viewCustom() {
     return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
   };
   $v.innerHTML = `<h2>Custom quiz</h2>
-  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
+  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder book); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
   <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="View">${[
     ['imr', 'IMR groups'],
     ['mix', 'My mix-ups'],

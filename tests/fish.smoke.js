@@ -402,7 +402,7 @@ const server = http.createServer((req, res) => {
   // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
   //     sync does not add it again (10/2 stayed 10/2, was 20/4);
   // (3) a wink takes no planned question and leaves the Again / duel spacing alone;
-  // (4) a genus sheet or a comparison opened with Fish chosen (Identify, the Coral Finder) brings the corals on screen.
+  // (4) a genus sheet or a comparison opened with Fish chosen (Identify, the Coral ID Key) brings the corals on screen.
   const rv = [];
   {
     const c3 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
@@ -593,7 +593,103 @@ const server = http.createServer((req, res) => {
       rv.push(`fish.json failing at start-up: ${JSON.stringify(a)} then ${JSON.stringify(b2)}`);
     await c4.close();
   }
-  const fails = [...out, ...ui, ...rv];
+  // (9) A brand-new fish player (Pierre, 2026-11-04: the first families and the first photos were the wrong ones): the
+  // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
+  // entry reaches Open Water its photos are only the very easy ones (judged ease 4-5, judging/FISH.md), never a
+  // juvenile of a capped genus (fish.json juv: a juvenile is very easy only in a class-A entry or a show-early genus);
+  // past Open Water the others come in. (A sex / colour phase is no family-level difficulty: Pierre,
+  // 2026-11-04.) Five seeds.
+  const fresh = [];
+  for (const seed of [11, 222, 3333, 44444, 555555]) {
+    const c6 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+    await c6.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c6.addInitScript(sd => {
+      try {
+        if (!sessionStorage.getItem('fish-new')) {
+          sessionStorage.setItem('fish-new', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+        }
+      } catch (e) {}
+      let s = sd;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    }, seed);
+    const q = await c6.newPage();
+    q.on('pageerror', e => errs.push(`new player ${seed}: ${e.message}`));
+    await q.goto(base + '#quiz');
+    await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('#view .q'), null, {
+      timeout: 30000
+    });
+    const r = await q.evaluate(N => {
+      const fails = [],
+        ok = (c, m) => c || fails.push(m);
+      // Read the cards as a player does (Next, Next... Start): each card is met as it shows (quiz.js introShow).
+      const readCards = () => {
+        for (let k = 0; k < 10 && document.querySelector('.unlock [data-b="1"]'); k++)
+          document.querySelector('.unlock [data-b="1"]').click();
+        document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      };
+      const starters = slateGenera().filter(n => GX(n).first),
+        ph = (t, f) => GX(t).views.wide.find(y => y.f === f) || {};
+      ok(starters.slice().sort().join() === 't01,t02,t03,t06', `the starter core from fish.json: ${starters}`);
+      ok(
+        starters.every(n => ph(n, GX(n).cover).e === Math.max(...GX(n).views.wide.map(p => p.e || 0))),
+        'each card shows its easiest photo'
+      );
+      let gated = 0;
+      for (let i = 0; i < N; i++) {
+        readCards();
+        if (!document.querySelector('#view .q')) quizPhoto();
+        const qq = SHOWNQ,
+          t = qq[1];
+        ok(starters.includes(t), `question ${i + 1}: ${t} is not in the starter core`);
+        (qq[4].shown || []).forEach(s => {
+          const p = ph(t, s.f);
+          if (genScore(t) >= LV_AT[0]) return;
+          gated++;
+          ok(p.e >= 4, `question ${i + 1}: ${t} photo ${s.f} of ease ${p.e} before Open Water`);
+        });
+        const ans = document.querySelectorAll('#view [data-c]');
+        if (ans.length) [...ans].find(b => b.dataset.c === t).click();
+        else {
+          const f = document.querySelector('#view .tyform');
+          f.querySelector('input').value = GX(t).name;
+          f.requestSubmit();
+        }
+        route();
+      }
+      ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
+      const cards = Object.keys(introMap()).filter(n => introMap()[n][3] === 's');
+      ok(cards.sort().join() === 't01,t02,t03,t06', `the first cards: ${cards}`);
+      // The draw itself, on every circle-1 entry before and after Open Water.
+      FISH.c1.forEach(n => {
+        const L = GX(n).views.wide,
+          es = L.map(p => p.e || 3).sort((a, b) => b - a),
+          cut = Math.min(4, es[2]),
+          s0 = st(n).pg;
+        st(n).pg = 0;
+        const before = new Set();
+        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => before.add(x.f));
+        ok(
+          [...before].every(f => (ph(n, f).e || 3) >= cut),
+          `${n}: a photo under ease ${cut} before Open Water`
+        );
+        st(n).pg = 0.6;
+        let low = 0;
+        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
+        ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
+        st(n).pg = s0;
+      });
+      return {fails, gated};
+    }, 15);
+    fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
+    await c6.close();
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

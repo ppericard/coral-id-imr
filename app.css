@@ -1248,6 +1248,24 @@ header {
   object-fit: cover;
   display: block;
 }
+/* Step 0 of the Learn path (learn.js basicsCard): Coral basics' icon on a pale accent tint in the photo's place. */
+.card .ph.bxart,
+.bxart {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
+}
+.bxart svg {
+  width: 42%;
+  height: 42%;
+}
+.bxcard b {
+  font-size: var(--fs-m);
+}
+.bxcard.done small {
+  color: var(--good);
+}
 .card .ph.none,
 .cmpph.none {
   display: flex;
@@ -1833,12 +1851,77 @@ header {
 .lahead:hover i {
   color: var(--accent);
 }
-/* Back to the duel on a comparison opened from the Duel tab's relief card (learn.js viewCompare, quiz.js DUELBACK). */
-.cmpback {
-  margin: 0 0 12px;
+/* Back to the duel on a comparison opened from the Duel tab's relief card (learn.js viewCompare, quiz.js DUELBACK): a
+   floating main button at the bottom centre, over the page however far it scrolls, above the phone tab bar and the
+   home indicator; under the settings pop-up, the enlarged view and the cards. The page ends with room for it, so it
+   never hides the last photos. z-index 4, under the header's (5): the settings pop-up lives inside the header, and on a
+   short screen it reaches down to the button, which took its taps at 21 (Codex review #460). It sits clear of the tab
+   bar, so it never needs to be above it. */
+.cmpfab {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 16px);
+  transform: translateX(-50%);
+  z-index: 4;
+  max-width: calc(100vw - 32px);
+  min-height: 48px;
+  padding: 12px 28px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-hover);
 }
-.cmpback:last-child {
-  margin: 16px 0 12px;
+.cmpfabpad {
+  height: 88px;
+}
+/* Desktop (from 1024 px, AGENTS rule 19): a light band instead, sticky right under the page bar (its height in --ctx-h,
+   learn.js), as wide as the photo grid: a translucent tint with a blur (the photos show through as they scroll under
+   it), one subtle accent line, a small label, and the filled Back to the duel button (Pierre, 2026-11-04: the first band
+   was too heavy). */
+.duelband {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .cmpfab,
+  .cmpfabpad {
+    display: none;
+  }
+  .duelband {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + var(--hdr-h, 56px) + var(--ctx-h, 42px) + 6px);
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    min-height: 40px;
+    margin: 0 0 12px;
+    padding: 3px 3px 3px 14px;
+    border-radius: var(--pill);
+    background: color-mix(in srgb, color-mix(in srgb, var(--accent) 14%, var(--surface)) 72%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    font-size: var(--fs-s);
+    color: var(--ink);
+  }
+  .duelband span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .duelband .next {
+    flex: none;
+    padding: 6px 18px;
+    font-size: var(--fs-s);
+    white-space: nowrap;
+  }
+  :root[data-size='s'] .duelband {
+    max-width: 640px;
+  }
+  :root[data-size='m'] .duelband {
+    max-width: 960px;
+  }
 }
 .cmprow {
   display: grid;
@@ -3995,6 +4078,14 @@ a.lt:hover {
   object-fit: cover;
   border-radius: var(--r);
 }
+.tipph .bxart {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--r);
+}
+.bxtip p {
+  margin: 0 0 4px;
+}
 
 .psrc {
   position: absolute;
@@ -4105,7 +4196,7 @@ a.psrc:focus-visible {
   background: hsl(var(--g) 40% 92%);
   color: hsl(var(--g) 50% 24%);
 }
-.fdopt.gchip {
+.ikopt.gchip {
   background: var(--surface);
   box-shadow: inset 3px 0 0 hsl(var(--g) 32% 58%);
 }
@@ -4131,7 +4222,7 @@ a.psrc:focus-visible {
   border-color: hsl(var(--g) 35% 60%);
   color: hsl(var(--g) 60% 90%);
 }
-.fdopt.gchip[aria-pressed='true'] {
+.ikopt.gchip[aria-pressed='true'] {
   color: inherit;
   background: hsl(var(--g) 32% 58% / 0.18);
 }
@@ -4528,6 +4619,13 @@ a.psrc:focus-visible {
   box-shadow: var(--shadow);
   font-size: var(--fs-s);
   line-height: 1.4;
+}
+/* The term on a photo (app.js basicsHref): Coral basics' step, Corallite anatomy or the Words list. */
+.gpop .gbx {
+  display: block;
+  margin-top: 6px;
+  color: var(--accent);
+  font-weight: 600;
 }
 .gpop[hidden] {
   display: none;
@@ -5427,7 +5525,7 @@ html.touring body::after {
    buttons that were 20-23 px tall get vertical padding on touch screens only, so mouse layouts do not change. */
 @media (pointer: coarse) {
   #hintb,
-  .fdsv {
+  .iksv {
     padding-block: 10px;
   }
   .lktip a {
@@ -5479,7 +5577,7 @@ html.touring body::after {
   }
 }
 
-/* Genera page: the Coral Finder's extra genera, folded under the 39 */
+/* Genera page: the Coral Finder book's extra genera, folded under the 39 */
 .xgen {
   grid-column: 1/-1;
   margin-top: 24px;
@@ -5702,8 +5800,30 @@ html.touring .unlock {
   --kt2: color-mix(in srgb, var(--k) 24%, var(--surface));
   --kink: color-mix(in srgb, var(--k) 62%, var(--ink));
 }
-[data-k='apology'] {
+[data-k='apology'],
+[data-k='step'] {
   --k: var(--warn);
+}
+/* A big step (the open-all offer, quiz.js introOfferShow): what changes as a short list, the step itself the outlined
+   button in the warn hue under the safe "Not now". */
+.ulchg {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  text-align: left;
+  font-size: var(--fs-s);
+}
+.ulchg li + li {
+  margin-top: 4px;
+}
+.ulcard[data-k='step'] .next.sec {
+  color: var(--kink);
+  box-shadow: inset 0 0 0 1.5px var(--k);
+}
+/* The gentle offer (quiz.js startFbShow, 'lo'): Coral basics and "No thanks" carry the same weight, both outlined. */
+.unlock.startfb[data-dir='lo'] .ulbtns .next:not(.sec) {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 /* The card: a medallion over the top edge of its panel; the panel scrolls when taller than the screen, under the
    medallion, which stays in view. */
@@ -5991,6 +6111,47 @@ html.touring .unlock {
   font-family: var(--display);
   font-weight: 700;
   font-size: 17px;
+}
+/* The first-launch question (core.js CHOICE; tour.js, quiz.js startAskShow / startFbShow): the answers as big buttons, one
+   per row, each with its line; the current answer (Back in the tour) has the accent ring. */
+.startopts {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  text-align: left;
+}
+.startopt {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.startopt b {
+  display: block;
+  font-size: var(--fs-m);
+}
+.startopt small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+.startopt[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+@media (hover: hover) {
+  .startopt:hover {
+    border-color: var(--accent);
+  }
 }
 @keyframes ulfade {
   from {

@@ -39,7 +39,7 @@ misidentified Research Grade observation must not open the gates): one of Pierre
 within 40 km, Research Grade observations there by at least 2 distinct observers, or in the IMR reference PDF list (`near_dauin()`, reasons in nearBy; circle 3 needs it too); `dauin` alone
 says how many were seen, not that the species is confirmed}. --near recomputes dauinU and near on the existing fish.json
 only (the rest of the build and its counts unchanged). A species not confirmed
-in the Philippines leaves the game but stays in fish.json with `out` (a future Fish Finder for EventMeasure must hold
+in the Philippines leaves the game but stays in fish.json with `out` (a future Fish ID Key for EventMeasure must hold
 every PDF species, unfiltered), as does a PDF species whose family is in no circle.
 
 Each species: {id, name (PDF / source), now (WoRMS accepted, when it differs), common, ref (AphiaID), inat (iNaturalist
@@ -435,7 +435,7 @@ def build(src, report):
         if t and s.get("sec") and s["sec"] not in t.get("pdf", []):
             report["pdf"].append(f"{s['id']} {s['name']}: PDF section {s['sec']} but teaching node {t['id']} {t['name']}")
         x = {"i": i, "s": s, "aid": aid, "now": now, "t": t, "sub": sub, "check": check, "out": []}
-        if not t:  # a PDF species whose family is in no circle: kept for the Fish Finder, out of the game
+        if not t:  # a PDF species whose family is in no circle: kept for the Fish ID Key, out of the game
             x["out"].append("family in no circle")
         seen.setdefault(aid, x)
         species.append(x)
@@ -477,7 +477,7 @@ def build(src, report):
             report["pierre"].append(f"{s['id']} {s['name']}: confirmed in the Philippines by Pierre's own observations only")
         elif d_mine:
             report["pierre"].append(f"{s['id']} {s['name']}: confirmed near Dauin by Pierre's own observations only")
-        if not x["present"]["ph"]:  # kept for the Fish Finder (every PDF species), out of the game
+        if not x["present"]["ph"]:  # kept for the Fish ID Key (every PDF species), out of the game
             x["out"].append("not confirmed in the Philippines on iNaturalist" if tid else "not on iNaturalist")
             report["drop"].append({"name": s["name"], "why": x["out"][-1]})
         if x["out"]:
@@ -540,7 +540,7 @@ def build(src, report):
         if u["_not"]:
             o["not"] = u["_not"]
         o["species"] = [x["s"]["id"] for x in sorted(members, key=lambda x: x["r"])]
-        for k in ("sl", "cues", "look", "phase", "why", "note"):
+        for k in ("sl", "cues", "look", "phase", "dimorph", "juv", "why", "note"):
             if u.get(k):
                 o[k] = u[k]
         return o
@@ -571,11 +571,13 @@ def build(src, report):
         if n.get("iname"):
             o["iname"] = n["iname"]
         ref[aid] = o
-    return {"v": V, "groups": src["groups"], "teach": out_t, "species": out_sp, "ref": ref}
+    # start: the starter core (fish_source.json _doc), circle-1 entries met first; checked to be kept entries.
+    start = [t for t in src.get("start", []) if any(o["id"] == t and o["circle"] == 1 for o in out_t)]
+    return {"v": V, "start": start, "groups": src["groups"], "teach": out_t, "species": out_sp, "ref": ref}
 
 
 def write(o):
-    lines = ["{", f'"v":{o["v"]},', '"groups":[']
+    lines = ["{", f'"v":{o["v"]},', f'"start":{dumps(o.get("start", []))},', '"groups":[']
     lines.append(",\n".join(dumps(g) for g in o["groups"]))
     lines.append("],")
     for k in ("teach", "species"):
@@ -606,7 +608,7 @@ def show(o, rep):
                      ("pdf", "PDF section vs teaching node"), ("unplaced", "Dauin species in no teaching node"),
                      ("empty", "teaching nodes left out: no species in the game"),
                      ("pierre", "species confirmed by Pierre's own observations only"),
-                     ("out", "species out of the game (kept for the Fish Finder)"),
+                     ("out", "species out of the game (kept for the Fish ID Key)"),
                      ("mismatch", "WoRMS / iNaturalist name mismatches"), ("noinat", "reference nodes not on iNaturalist")):
         print(f"{title}: {len(rep[k])}")
         for x in rep[k]:

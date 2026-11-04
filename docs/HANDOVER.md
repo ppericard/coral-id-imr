@@ -101,7 +101,6 @@ Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Mari
 | IMR reference material (Lecture 6 PPTX, slate photo) | Pierre's Google Drive, IMR folder `1gt0sv2YN4Og7-O_YCb3cVgvW94-CK6oG` (needs his Google sign-in). |
 | Lecture 6 as Google Slides (read with the Slides API, incl. presenter notes) | Slides id `13msDDkJzPN6fRam-ezX_vl93osAd0Cw4rJ1aINOzveI`. Full-resolution deck media: Drive folder `1FDXDg3XvjXwML0KGxxtjMjVq2fU3jP8i`. |
 | Lecture text in the app | `data.json` `gen[g].imr` (verbatim slide text, review slides, presenter notes), `mn` mnemonics, `sl`/`rsl` slide numbers, `tools/lecture_more.tsv`, `tools/course_views.txt`. |
-| MCP decks "Substrate monitoring 2023", "Intro to substrate" | Marine Conservation Philippines, not IMR. Pierre: don't mine them yet. |
 | Coral Finder 2022 (R. Kelley, BYOGUIDES; copyrighted) | PDF on Pierre's Google Drive, in the IMR / coral folder (85 scanned pages, no text layer; PDF page = book page + 5). Never commit it or its page images (copyright). Page mapping already in `data.json` (`pages`, `key`, `x`). |
 | Pierre's iNaturalist | user `ppericard`, coral taxon 47532; covers 36 of the 39 slate genera (missing Anacropora, Astrea, Duncanopsammia at the time). |
 | ReefRecall | Pierre's separate mobile app (`ppericard/reefrecall`). The coral tools stay standalone; the data may be reused there later. |
@@ -110,7 +109,7 @@ The cloud environment needs network access to `api.inaturalist.org`, `www.inatur
 
 ## Context worth knowing (history in brief)
 
-- 2026-10-31: first standalone artifacts (Coral Finder key, quiz, mind map, genus doc, now in `reference/`), then one web app on GitHub Pages, the Lab of prototypes, the admin back-office, photo curation rules, the Coral Finder rebuilt as a tolerant clue ranking, responsive system, adaptive difficulty.
+- 2026-10-31: first standalone artifacts (Coral Finder key, quiz, mind map, genus doc, now in `reference/`), then one web app on GitHub Pages, the Lab of prototypes, the admin back-office, photo curation rules, the Coral Finder rebuilt as a tolerant clue ranking (renamed the Coral ID Key on 2026-11-04: the book keeps the name Coral Finder), responsive system, adaptive difficulty.
 - 2026-11-01: expert reviews (code, admin, RA, design) and their fixes, Code.gs v6-v9, players' reports, bonus genera, welcome tour for beta testers, graded answer choices, confusion scores.
 - An incident on 2026-11-01 (a stale admin draft published as a whole copy wiped curation) led to the key-by-key Publish merge (PR #240): never go back to whole-copy publishing.
 - The photos are leaving the repo (Pierre, 2026-11-02): Cloudflare R2 first (done 2026-11-03: `img/` mirrored to the bucket, the app and the admin read from it with `img/` as the fallback, `core.js` `PHOTO_BASE`), then `img/` removed, then a history rewrite to shrink `.git` (pack 290 MiB on 2026-11-02), the force-push only with Pierre's explicit go and a backup clone. See ROADMAP "Photos out of the repo".

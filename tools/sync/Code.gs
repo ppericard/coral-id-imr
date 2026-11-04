@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 35 (2026-11-04: v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 38 (2026-11-04: v38: the Coral Finder tool became the Coral ID Key: a one-shot migration (ONCE_ idkey) renames the tool's old page names to idkey / lab-idkey in the Pages, Events and Reports tabs, logged in the Deploy log; core.js copy with the renamed identifiers and the device migration migrateIdKey. v37: the embedded core.js gains the fish starter core (fishGen marks fish.json start entries first) and the fish card cover chosen within the highest source tier (Pierre's own first), then by the judged ease of fish-photos.json, unused by the script: the fish answers are not logged, so nothing it computes changes; v36: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), the stored replay keyed by that history's fingerprint too (Replayed Since = reset#fingerprint, core.js startFp) and sent with it (fp), so the app adopts it only for the history it holds, as the app does; v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -37,7 +37,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 35;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 38;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -103,7 +103,7 @@ function doGet(e){
   // it out (the app keeps its own progress and asks again next time).
   if (e.parameter.rv !== undefined) {
     const lock = LockService.getScriptLock();
-    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv), Number(e.parameter.pt)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
+    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv), Number(e.parameter.pt), startOf_(data)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
   return json_(out);
 }
@@ -187,7 +187,7 @@ function doPost(e){
     const out = {ok: true, log: true, rev: rev + 1};
     try { const o = hold_(name, resetOf_(p.data), p.pt); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
     // v28: the full replay, over every answer now logged (replay_).
-    try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data)); if (rp) out.replay = rp; } catch (err) {}
     return json_(out);
   } finally { lock.releaseLock(); }
 }
@@ -235,6 +235,10 @@ const flag_ = x => x === 1 || x === true ? 1 : x === 0 || x === false ? 0 : '';
 const HOLD = {SLACK: 0.1, IDS: 500};
 const holdKey_ = name => 'hold:' + lc_(name);
 function dropHold_(name){ ROWS_ = null; try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
+// The first-launch answer in a player's saved data (reefid-sync-coral-start, v29), null when there is none or it is broken.
+function startOf_(data){
+  try { const o = JSON.parse((data || {})['reefid-sync-coral-start'] || 'null'); return o && typeof o === 'object' ? o : null; } catch (e) { return null; }
+}
 function resetOf_(data){
   try { return resetAt_(JSON.parse(dataKey_(data, 'reset') || '""')); } catch (e) { return 0; }
 }
@@ -312,29 +316,34 @@ function gen_(){
 // (at 12, as in readAnswers rows) weigh a right answer's ability steps in the replay as in the app (core.js rtWeight).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12])];
-function replay_(key, since, appRv, pt){
+// start: the player's first-launch answer (the app's reefid-sync-coral-start record; v36): the replay steps the ability
+// with the prior it says, as the app does (core.js startPriorAt).
+function replay_(key, since, appRv, pt, start){
   if (typeof appRv !== 'number' || !isFinite(appRv) || appRv >= CORE_.RV) return null;
   const who = lc_(key), mine = answerRows_().filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
   const rows = mine.map(r => rowOf_(who, r)), n = rows.length;
   const byTime = mine.map(r => [new Date(r[1]).getTime() || 0, String(r[7])]).sort((a, b) => a[0] - b[0]);
   const from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity;
   const ids = byTime.filter((r, i) => i >= byTime.length - HOLD.IDS || r[0] >= from).map(r => r[1]);
+  // The cache's identity: the reset time, and the fingerprint of the first-launch history the replay applies (a replay
+  // made with another history is not reused; Codex review #428). Without a history: the reset time alone, as before.
+  const fp = CORE_.startFp(start), sinceKey = fp ? since + '#' + fp : String(since);
   const sh = sheet_(RPL.TAB, RPL.HEAD), at = find_(sh, key);
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0];
-    if (Number(row[1]) === CORE_.RV && Number(row[2]) === n && Number(row[3]) === since) {
-      try { return {rv: CORE_.RV, n: n, rec: JSON.parse(row.slice(5).map(String).join('') || '{}'), ids: ids}; } catch (e) {}
+    if (Number(row[1]) === CORE_.RV && Number(row[2]) === n && String(row[3]) === sinceKey) {
+      try { return {rv: CORE_.RV, n: n, rec: JSON.parse(row.slice(5).map(String).join('') || '{}'), ids: ids, fp: fp}; } catch (e) {}
     }
   }
   const gen = gen_();
   if (!gen) return null;
-  const st = stats_(), rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf})[who], rec = rep ? rep.P : {};
+  const st = stats_(), rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, starts: start ? {[who]: start} : {}})[who], rec = rep ? rep.P : {};
   const json = JSON.stringify(rec), parts = [];
   for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
-  const r = at || sh.getLastRow() + 1, old = at ? sh.getLastColumn() : 0, out = [safe_(key), CORE_.RV, n, since, new Date()].concat(parts);
+  const r = at || sh.getLastRow() + 1, old = at ? sh.getLastColumn() : 0, out = [safe_(key), CORE_.RV, n, fp ? sinceKey : since, new Date()].concat(parts);
   while (out.length < old) out.push('');  // chunks left over from a longer record
   sh.getRange(r, 1, 1, out.length).setValues([out]);
-  return {rv: CORE_.RV, n: n, rec: rec, ids: ids};
+  return {rv: CORE_.RV, n: n, rec: rec, ids: ids, fp: fp};  // fp: the first-launch history it applied (the app checks it)
 }
 
 // Anonymous id of an RA: the same for the same name, no name in it. Its salt is secret (Script Properties, made on first
@@ -959,7 +968,7 @@ function autoUpdate(){
     // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
     // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
     const props = PropertiesService.getScriptProperties(), pending = Number(props.getProperty('AUTO_PENDING') || 0);
-    if (v <= VERSION && !pending) return 'up to date (v' + VERSION + ')';
+    if (v <= VERSION && !pending) { once_(log); return 'up to date (v' + VERSION + ')'; }
     if (v > VERSION && code.indexOf('function autoUpdate(') < 0) { log('v' + v + ' not installed: it has no autoUpdate'); return 'skipped'; }
     const man = get('appsscript.json'), id = ScriptApp.getScriptId(), auth = {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()};
     const api = (method, path, body) => { const o = {method: method, headers: auth, muteHttpExceptions: true}; if (body) { o.contentType = 'application/json'; o.payload = JSON.stringify(body); }
@@ -982,6 +991,40 @@ function autoUpdate(){
   } catch (e) { log('error: ' + e.message); return 'error'; }
 }
 
+// One-shot data migrations (Pierre, 2026-11-04, alpha: no backward compatibility, AGENTS.md rule 24b): the code that
+// brings one moves the stored data once, then only the new names exist. Run by autoUpdate when it finds itself up to
+// date, so by the new code itself, within 15 minutes of its install; a Script Property (ONCE_<name>) marks each one done,
+// the Deploy log says what it changed. A failed one is tried again at the next run.
+const ONCE_ = {
+  // idkey-migration: begin
+  // v38: the Coral Finder tool became the Coral ID Key (#finder → #idkey, #lab-finder → #lab-idkey; the book keeps its
+  // name). The page names in the logged rows: Pages and Events (Page; Detail: a visit summary's page names, the load
+  // times' first and next page) and Reports (Where).
+  idkey: () => {
+    const ss = SpreadsheetApp.getActiveSpreadsheet(), out = [];
+    const ren = x => typeof x === 'string' ? x.replace(/(^|")(lab-)?finder(?=$|["|;])/g, '$1$2idkey') : x;
+    [[PAGES_TAB, 6, 2], ['Events', 6, 2], ['Reports', REP.indexOf('Where') + 1, 1]].forEach(([tab, col, w]) => {
+      const sh = ss.getSheetByName(tab); if (!sh || sh.getLastRow() < 2) return;
+      const rg = sh.getRange(2, col, sh.getLastRow() - 1, w), v = rg.getValues(); let n = 0;
+      const nv = v.map(r => r.map(x => { const y = ren(x); if (y !== x) n++; return y; }));
+      if (n) rg.setValues(nv);
+      out.push(tab + ' ' + n);
+    });
+    return 'page names finder → idkey: ' + out.join(', ') + ' cells';
+  }
+  // idkey-migration: end
+};
+function once_(log){
+  const props = PropertiesService.getScriptProperties();
+  Object.keys(ONCE_).forEach(k => {
+    if (props.getProperty('ONCE_' + k)) return;
+    const lock = LockService.getScriptLock(); lock.waitLock(30000);
+    try { const m = ONCE_[k](); props.setProperty('ONCE_' + k, String(Date.now())); log('one-shot ' + k + ' (v' + VERSION + '): ' + m); }
+    catch (e) { log('one-shot ' + k + ' failed: ' + e.message); }
+    finally { lock.releaseLock(); }
+  });
+}
+
 // Players who never sign in (v12, Pierre 2026-11-01: their answers should still improve the photo ratings and the
 // confusions). POST {anon: random device id, anonAnswers: [...]}: logged like a signed-in player's, under the name
 // "~anon <id>" (no name, no code). Signing in later moves them to the name (doPost, p.anon). Caps: 100 answers per
@@ -1000,7 +1043,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     // applied an older rules version.
     const out = {ok: true, log: true};
     // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's; Codex review #399).
-    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null); if (rp) out.replay = rp; } catch (err) {}
     return out;
   } finally { lock.releaseLock(); }
 }
@@ -1127,6 +1170,69 @@ const CORE_ = (function () { const module = {exports: {}};
       return [];
     }
   }
+  // idkey-migration: begin
+  // One-shot move of this device's data to the names of 2026-11-04 (Pierre: the Coral Finder tool became the Coral ID
+  // Key; the book keeps its name). Alpha (AGENTS.md rule 24b): no old name is read anywhere else; this moves the data
+  // once and the code forgets them. The tool's keys reefid-finder-* become reefid-idkey-*, the admin's Sheets & ID Key
+  // table reefid-admin-fcov reefid-admin-kcov, and page names stored inside values: the photo size per page
+  // (reefid-sync-size), the Lab votes per tool (reefid-lab-votes), the admin's remembered views (reefid-admin-view,
+  // -sub). Idempotent: once nothing is left under an old name it changes nothing (a value the sheet sends back from
+  // before is moved at the next start). app.js and admin.js run it at start-up, after migrateStorage. Delete it (and
+  // its test, tests/idkey.test.js) once every device has started the renamed app. Returns the keys it wrote.
+  const IDKEY_OLD = {finder: 'idkey', 'lab-finder': 'lab-idkey', '~fcov': '~kcov'};
+  function migrateIdKey(s) {
+    try {
+      s = s || localStorage; // storage blocked: nothing to move
+    } catch (e) {
+      return [];
+    }
+    const done = [],
+      move = (o, n) => {
+        const v = s.getItem(o);
+        if (v === null) return;
+        if (s.getItem(n) === null) s.setItem(n, v);
+        s.removeItem(o);
+        done.push(n);
+      },
+      edit = (k, f) => {
+        const v = s.getItem(k);
+        let o;
+        try {
+          o = JSON.parse(v);
+        } catch (e) {}
+        if (!isObj(o)) return;
+        const w = JSON.stringify(f(o));
+        if (w !== v) (s.setItem(k, w), done.push(k));
+      },
+      // An object keyed by page or tool name: the old name's entry under the new one, unless the new one is set.
+      names = o => {
+        Object.keys(IDKEY_OLD).forEach(a => {
+          if (!Object.prototype.hasOwnProperty.call(o, a)) return;
+          if (!Object.prototype.hasOwnProperty.call(o, IDKEY_OLD[a])) o[IDKEY_OLD[a]] = o[a];
+          delete o[a];
+        });
+        return o;
+      },
+      // An object whose values are page names.
+      values = o => {
+        Object.keys(o).forEach(
+          k => typeof o[k] === 'string' && Object.prototype.hasOwnProperty.call(IDKEY_OLD, o[k]) && (o[k] = IDKEY_OLD[o[k]])
+        );
+        return o;
+      };
+    try {
+      const keys = [];
+      for (let i = 0; i < s.length; i++) keys.push(s.key(i));
+      keys.filter(k => k.startsWith('reefid-finder-')).forEach(k => move(k, 'reefid-idkey-' + k.slice(14)));
+      move('reefid-admin-fcov', 'reefid-admin-kcov');
+      edit('reefid-sync-size', names);
+      edit('reefid-lab-votes', names);
+      edit('reefid-admin-view', values);
+      edit('reefid-admin-sub', values);
+    } catch (e) {}
+    return done;
+  }
+  // idkey-migration: end
   // A player's data from the sheet or a progress file, which may hold the old names (an app from before the rename
   // saved it), the new ones, or both (withLegacy): with the new names only, the new one winning.
   function keysIn(d) {
@@ -1195,7 +1301,8 @@ const CORE_ = (function () { const module = {exports: {}};
       log: true,
       ach: true,
       board: true,
-      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       progress: ['slate', 'photos', 'groups']
     },
     {
@@ -1238,10 +1345,21 @@ const CORE_ = (function () { const module = {exports: {}};
   // names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
   // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
   // surprise card, never a question of the game).
+  // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
+  // cover: the card's photo (app.js cover): within the highest source tier that has photos (AGENTS.md rule 7: Pierre's own
+  // before other observers', Codex review #461), the easiest judged one (fish-photos.json e, judging/FISH.md), the list's
+  // first among equals; the list's first when none is judged.
   function fishGen(F, photos) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
-      top = id => String(id).slice(0, 3);
+      start = new Set(F.start || []),
+      top = id => String(id).slice(0, 3),
+      tier = p => (p.own ? 0 : 1),
+      easiest = L => {
+        const t = Math.min(...L.map(tier)),
+          T = L.filter(p => tier(p) === t);
+        return T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
+      };
     (F.teach || [])
       .filter(t => t.level === 1)
       .forEach(t => {
@@ -1273,10 +1391,14 @@ const CORE_ = (function () { const module = {exports: {}};
               .filter(p => p && p.f && p.src)
               .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
           },
+          ...(start.has(t.id) ? {first: 1} : {}),
           ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
           names: fishNames(t)
         };
       });
+    Object.values(gen).forEach(g => {
+      if (g.views.wide.some(p => p.e)) g.cover = easiest(g.views.wide);
+    });
     const ids = Object.keys(gen),
       play = n => !gen[n].wink;
     return {
@@ -1473,6 +1595,11 @@ const CORE_ = (function () { const module = {exports: {}};
       }
     };
     const out = {...A, ...B};
+    // The first-launch record: the union of both accounts' histories (startUnion, Codex review #428), so the replay after
+    // the merge applies each account's answers' priors at their times.
+    const sa = J(A, CHOICE.KEY),
+      sb = J(B, CHOICE.KEY);
+    if (sa || sb) out[CHOICE.KEY] = JSON.stringify(startUnion(sa, sb));
     SUBJECTS.forEach((S, i) => {
       const pk = subjKey(S.id, 'progress'),
         qk = subjKey(S.id, 'quiz');
@@ -2109,7 +2236,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
   // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
   // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
-  // Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
+  // Coral ID Key (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
   // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
   // or in games only. Nothing is written back: photos left out simply stay unused.
   const CAP = {feat: 3, sheet: 6, inat: 2, book: 3};
@@ -2200,7 +2327,7 @@ const CORE_ = (function () { const module = {exports: {}};
           feat,
           more,
           game: [...lead, ...after.filter(p => q(p) >= 2), ...after.filter(p => q(p) < 2)],
-          finder: [
+          idkey: [
             ...feat,
             ...take(
               others.filter(p => !feat.includes(p) && !p.imr),
@@ -2223,9 +2350,12 @@ const CORE_ = (function () { const module = {exports: {}};
   // not everything, about Porites), then clamped to [LO, HI]: a strong player's first question on a new genus has traps
   // and harder photos but is never the hardest, a struggling player's starts a little easier. Taken once: the first answer
   // on the genus saves its own ability (s.th) from there.
+  // p (2026-11-03, the first-launch question, CHOICE below): the level the player said they start from. The answers are
+  // shrunk towards it instead of towards 0, with the same weight N: (m t + N p) / (m + N). No answers: W x p; p 0 (the
+  // default, "I'm new to corals") is the rule as it was. No new constant.
   const LEVEL = '~level',
     START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5};
-  function playerStart(P, skip) {
+  function playerStart(P, skip, p = 0) {
     P = P || {};
     const n = s => ((s && s.ok) || 0) + ((s && s.ko) || 0),
       G = P[LEVEL];
@@ -2241,9 +2371,114 @@ const CORE_ = (function () { const module = {exports: {}};
         m += n(s);
         t += n(s) * s.th;
       });
-    if (!m) return 0;
-    const v = START.W * (t / m) * (m / (m + START.N));
+    p = typeof p === 'number' && isFinite(p) ? p : 0;
+    if (!m && !p) return 0;
+    const v = (START.W * (t + START.N * p)) / (m + START.N);
     return Math.round(Math.min(START.HI, Math.max(START.LO, v)) * 100) / 100;
+  }
+
+  // The first-launch question (Pierre, 2026-11-03): a forced choice among three, in the welcome tour before the first
+  // question (or on a card before the next quiz question for a player who skipped the tour, and once for an existing
+  // player with fewer than ASK answers; from ASK answers on the choice is inferred silently: startInfer). It initialises
+  // a few variables of the existing model, never a coded path: v.p, the level the answers are shrunk towards (playerStart:
+  // the starting ability of a genus never answered, hence the photos, traps and single views of its first questions, and
+  // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
+  // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
+  // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
+  // launch question". Stored in reefid-sync-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
+  // Fallback (for everyone, also those who answered: they may have picked wrong): the answers after the choice (w:
+  // [difficulty, guess rate, right, first answer on its genus], kept up to the last checkpoint) are checked at AT (40
+  // and 60) answers only (Pierre, 2026-11-04: no card before 40 answers in either direction, "an expert, 20 answers
+  // isn't enough: with few genera unlocked even a mediocre player gets everything right"; startCheck). The level each
+  // answer predicts is a band around its prior, the edges midway between the priors (new under 0.25, IMR course 0.25 to
+  // 0.875, know well above). The rule reads the level the game already keeps, the global level (the Elo over every
+  // answer, difficulty allowed for), with its standard error over the window (Pierre's pick, 2026-11-04, variant
+  // "Ba80H", after weighing the errors: a true beginner left on a harder path is the costliest one, so "lower" is
+  // sensitive and its card a gentle offer, cheap when it is wrong): 'lo' (Coral basics, or a lower answer; only for the
+  // answers with a floor, IMR course and know well) when the global level is below the floor with one-sided 80%
+  // confidence (ZL), or the opening hold has fired in the window (#425 eases the questions then, so the misses do not
+  // show in the level); 'hi' (a higher answer), with OFFER.MET (10) genera met, when the global level is above the
+  // band's ceiling with 95% confidence (Z, as the admin's level margin) and, as a guard only, the level fitted on each
+  // genus's FIRST answer (before the game has adapted to it; levelFit) is above the ceiling too: a player who did well
+  // only on the few genera they have learned is not moved up. The simulation, the real log and the variants compared:
+  // docs/LEARNING.md "The fallback test, redesigned".
+  const CHOICE = {
+    KEY: 'reefid-sync-coral-start',
+    ASK: 50,
+    AT: [40, 60], // the checkpoints of the fallback window (answers after the choice); the window ends at the last
+    Z: 1.96,
+    ZL: 0.84, // "lower": one-sided 80%
+    MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
+    SUBJ: 'coral', // the subject the question is about (core.js SUBJECTS): fish keeps its own state
+    opts: [
+      ['new', 'I’m new to corals', 'Start from scratch: the app shows you the basics first.', {p: 0, at: 50, basics: 1}],
+      ['imr', 'I had the IMR coral course', 'You have met the genera in the IMR lecture.', {p: 0.5, at: 30, basics: 0}],
+      ['know', 'I know corals well', 'At IMR or elsewhere: you can already name many genera.', {p: 1.25, at: 20, basics: 0}]
+    ]
+  };
+  const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
+  // The variables of a choice (none yet, or an unknown one: the default player's).
+  const startVars = c => (startOpt(c) || CHOICE.opts[0])[3];
+  // The band of levels an answer predicts: [floor, ceiling], the edges midway between its prior and its neighbours'.
+  function startBand(c) {
+    const i = CHOICE.opts.findIndex(o => o[0] === c),
+      p = j => CHOICE.opts[j][3].p;
+    return [i > 0 ? (p(i - 1) + p(i)) / 2 : -Infinity, i >= 0 && i < CHOICE.opts.length - 1 ? (p(i) + p(i + 1)) / 2 : Infinity];
+  }
+  // The level that best explains answers A ([difficulty, guess rate, right]) on the ability scale (the app's
+  // g + (1 - g) sigmoid(level - difficulty)), searched over ELO.lo..hi, and its standard error 1 / sqrt(information).
+  const stSig = x => 1 / (1 + Math.exp(-x));
+  const stP = (th, d, g) => g + (1 - g) * stSig(th - d);
+  const stInfo = (th, d, g) => {
+    const q = stSig(th - d),
+      pr = stP(th, d, g);
+    return ((1 - g) * q * (1 - q)) ** 2 / Math.max(1e-9, pr * (1 - pr));
+  };
+  const stSe = (th, A) =>
+    1 /
+    Math.sqrt(
+      Math.max(
+        1e-9,
+        A.reduce((t, a) => t + stInfo(th, a[0], a[1]), 0)
+      )
+    );
+  function levelFit(A) {
+    let best = -Infinity,
+      bt = 0;
+    for (let i = 0, lo = -1.5, hi = 3; lo + i * 0.02 <= hi + 1e-9; i++) {
+      const th = lo + i * 0.02,
+        ll = A.reduce((t, a) => t + Math.log(a[2] ? stP(th, a[0], a[1]) : 1 - stP(th, a[0], a[1])), 0);
+      if (ll > best) ((best = ll), (bt = th));
+    }
+    return [Math.round(bt * 100) / 100, stSe(bt, A)];
+  }
+  // The verdict at a checkpoint (AT: 40 or 60 answers after the choice), null between them and when consistent: 'lo'
+  // or 'hi' (above: the opening hold alone is enough for 'lo'). w: the window's answers [d, g, right, first]; lv: the global level now; met: the slate genera met;
+  // held: the opening hold fired in the window.
+  function startCheck(w, c, lv, met, held) {
+    const n = (w || []).length;
+    if (!CHOICE.AT.includes(n) || !startOpt(c) || typeof lv !== 'number') return null;
+    const [floor, ceil] = startBand(c),
+      se = stSe(lv, w),
+      z = CHOICE.Z;
+    if (isFinite(floor) && (held || lv + CHOICE.ZL * se < floor)) return 'lo';
+    if (met < CHOICE.MET || lv - z * se <= ceil) return null;
+    // The guard: the first answers on each genus above the ceiling too (never a trigger on their own).
+    const F = w.filter(a => a[3]);
+    return F.length && levelFit(F)[0] > ceil ? 'hi' : null;
+  }
+  // The choices a fallback card offers: below the current one ('lo') or above it ('hi').
+  const startNext = (c, dir) => {
+    const i = CHOICE.opts.findIndex(o => o[0] === c);
+    return (dir === 'lo' ? CHOICE.opts.slice(0, Math.max(0, i)).reverse() : CHOICE.opts.slice(i + 1)).map(o => o[0]);
+  };
+  // An existing player with ASK answers or more is not asked: the choice is inferred from their global level (the Elo
+  // over all their answers, LEVEL), the choice whose starting level W x p is nearest (midpoints: under 0.2 new, under 0.7
+  // imr, else know). Shown as "inferred" in the admin's player journey.
+  function startInfer(P) {
+    const G = (P || {})[LEVEL],
+      t = G && typeof G.th === 'number' ? G.th : 0;
+    return CHOICE.opts.reduce((b, o) => (Math.abs(START.W * o[3].p - t) < Math.abs(START.W * b[3].p - t) ? o : b))[0];
   }
   // The global record made at the first answer after this change: it starts from the player's history (every answer so
   // far, the answer-weighted mean ability of the genera), so their earlier answers keep counting (code review, #320).
@@ -2306,7 +2541,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
   //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 95%) or above; model.js MASTERY,
   //   2026-11-03, were the quarters 25/50/75% before], learned (Instructor), pct, streak (best run of right answers), duel, cor,
-  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met)}.
+  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met),
+  //    basics (Coral basics done)}.
   // Median questions to reach the old quarter rungs, simulated with the real game (2026-11-01, before the levels; 75% / 90% right): 5 at 25%
   // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
   // Descriptions say what the player can now do (Pierre, 2026-11-02: informational feedback motivates, Deci, Koestner &
@@ -2344,7 +2580,10 @@ const CORE_ = (function () { const module = {exports: {}};
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
     ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1]
+    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
+    // Coral basics done (Pierre, 2026-11-03: completion recognised): every step of the module seen (proto/basics.js), a
+    // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
+    ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics]
   ].map(([id, title, desc, tier, icon, test]) => ({id, title, desc, tier, icon, test}));
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
@@ -2436,14 +2675,14 @@ const CORE_ = (function () { const module = {exports: {}};
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
-  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral Finder, except:
+  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral ID Key, except:
   // - BENTHIC (Pierre, 2026-11-02): Millepora, fire coral, not a hard coral nor on the IMR coral list but on the IMR
   //   benthic slate and everywhere at Dauin: a slate genus for the games and the progress (app.js isBenthic);
   // - BONUS (Pierre, 2026-11-01, opt-in since 2026-11-02): genera off the slate common at Dauin and easily taken for a
   //   slate genus (app.js bonusList, isBonus). Played once the player turns them on; never counted in the progress.
   // slateOf(d) = the slate as the games and the progress count it (app.js slateGenera); gameOf(d) = every genus a game
   // can ask (slate + BONUS), the "game genera" of the admin (candidate queue first, Game coverage, caps). The rest of
-  // data.json "x" are the Finder-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
+  // data.json "x" are the Key-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
   // DATA.gen also holds the "x" genera (admin.js): a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],
     BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
@@ -2488,7 +2727,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // Photos out of the repo, step 2 (Pierre, 2026-11-03; docs/ROADMAP.md): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
   // the site's own img/ is the fallback (app.js / admin.js photoFail, sw.js photo). The one switch: '' here sends the
-  // app, the admin and the Coral Finder back to img/ (sw.js only caches what it is asked for).
+  // app, the admin and the Coral ID Key back to img/ (sw.js only caches what it is asked for).
   const PHOTO_BASE = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/';
   // The same files on the site: every R2 address in s (a URL, a srcset, an inline style) made relative again.
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
@@ -2688,9 +2927,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // genera moves it too while its own answers are few: the global + concept skill of Pelánek et al. (UMUAI 2017), as a
   // lazy update (2026-11-03, docs/LEARNING.md "Global level and genus").
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
-  const abilityOf = (P, n) => {
+  // p: the level the player's first-launch answer says (CHOICE, startVars(c).p), which a genus never answered starts
+  // from (playerStart); 0, the default player's, when they have not answered.
+  const abilityOf = (P, n, p = 0) => {
     const s = (P || {})[n] || {};
-    if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+    if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, p);
     return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(P, n, s)));
   };
   // The global level's move since the genus's own last step (s.lt: the level then), weighed by the genus's own
@@ -2705,8 +2946,9 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   // w (response time, 2026-11-04, rtWeight): the step's size times w; 1 by default. The volatility follows the plain
   // surprise either way.
-  function eloStep(P, n, s, good, d, k, w = 1) {
-    const th = abilityOf(P, n),
+  // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered.
+  function eloStep(P, n, s, good, d, k, w = 1, p = 0) {
+    const th = abilityOf(P, n, p),
       g = 1 / k,
       e = g + (1 - g) * sigm(th - d),
       m = (s.ok || 0) + (s.ko || 0);
@@ -2819,6 +3061,12 @@ const CORE_ = (function () { const module = {exports: {}};
       at: '2026-11-04',
       why: "Answer time weighs right answers (Pierre, 2026-11-04): a right answer's ability steps, on the genus and the global level, times clamp(1 - 1.5 z, 0.5, 1.5), z its log seconds against the player's own median over their earlier timed answers (RTIME, rtWeight)",
       msg: RV_CARD
+    },
+    {
+      v: 5,
+      at: '2026-11-04',
+      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h, or the band below taken with Coral basics on the fallback card, ease)',
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -2830,6 +3078,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // the app weighs a right answer's steps by its time (rtWeight) only once the script's replies say v >= RT_SHEET
   // (sync.js sheetV), so a replay never undoes what the app did live (AGENTS.md 7a); before it, exactly as before.
   const RT_SHEET = 32;
+  // The sync script version that replays the first-launch answer's prior (Code.gs v36 replay_ reads the player's
+  // reefid-sync-coral-start: its answers and the silent ease): the app shrinks a new genus's start towards that prior
+  // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (AGENTS.md 7a,
+  // Codex review #428); before it, the default player's prior 0, exactly as before.
+  const START_SHEET = 36;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -2887,8 +3140,132 @@ const CORE_ = (function () { const module = {exports: {}};
   // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
   // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
+  // The first-launch record's history (reefid-sync-coral-start h, Codex review #428): an append-only list of timestamped
+  // events, merged between devices as a union (startUnion), from which the current answer, the silent ease and the prior
+  // at any time are derived (startNorm, startPriorAt). A choice event: [c, answers then, time, via] (via tour, card,
+  // fallback, inferred). An ease event (Coral basics on the "lower" card, model.js startEase): [the band below, answers
+  // then, time, 'ease', the answer it eased, the time of that answer's choice event]; it applies from its time until the
+  // next choice event, and only while that very choice event is the one in force (Codex review #428: matched by its code
+  // alone, an ease taken on know@100 also eased an independent know@200 from another device). A record of before the
+  // history (no h): its answer as one choice event at its t, and its ease field (if any) as one ease event. An ease event
+  // without the choice's time (written before 2026-11-04): bound, within its own record, to the latest choice of that
+  // answer at or before the ease.
+  // Every event is kept: the replay of the whole log needs the prior in force at each answer, however old (Codex review
+  // #428: a cap at 10 dropped the earliest answers' prior). Nor is the list compacted: an event that repeats the answer
+  // in force can matter again once another device's events are merged in between (know@100, know@300 merged with
+  // imr@200: "know" from 300 on), so dropping it would not commute with the union. START_CAP is only a safety bound, far
+  // above any real history (a player gives one answer, rarely changes it, and a fallback card comes once per answer and
+  // direction): at about 40 bytes an event, 200 events stay under 8 KB in the synced record.
+  const START_CAP = 200;
+  const stTime = x => (typeof x[2] === 'number' ? x[2] : -Infinity);
+  const stEase = x => x[3] === 'ease';
+  const stKey = x => (stEase(x) ? `e|${x[2]}|${x[0]}|${x[4]}|${x[5]}` : `c|${x[2]}|${x[0]}`);
+  function startEvents(rec) {
+    if (!isObj(rec)) return [];
+    const h = Array.isArray(rec.h) && rec.h.length ? rec.h : startOpt(rec.c) ? [[rec.c, rec.at || 0, rec.t, rec.via || '']] : [],
+      e = rec.ease,
+      ev = (
+        Array.isArray(e) && startOpt(e[0]) && !h.some(x => Array.isArray(x) && stEase(x))
+          ? [...h, [e[0], e[1] || 0, e[2], 'ease', rec.c]]
+          : h
+      ).filter(x => Array.isArray(x) && startOpt(x[0]));
+    // An ease without its choice's time: the latest choice of that answer at or before it, in this record.
+    return ev.map(x => {
+      if (!stEase(x) || typeof x[5] === 'number') return x;
+      const ch = ev
+        .filter(y => !stEase(y) && y[0] === x[4] && stTime(y) <= stTime(x))
+        .sort((a, b) => stTime(a) - stTime(b))
+        .pop();
+      return [x[0], x[1], x[2], 'ease', x[4], ch && typeof ch[2] === 'number' ? ch[2] : null];
+    });
+  }
+  // The events of several records, once each (by kind, time and value), oldest first (a choice before an ease at the
+  // same time, then by value: the same order whichever record comes first), START_CAP at most (the latest).
+  function startEventsOf(...recs) {
+    // One per key; between two copies of an event that differ only in their details (answers then, via), the same one
+    // whichever record comes first.
+    const by = new Map();
+    recs.flatMap(startEvents).forEach(x => {
+      const k = stKey(x),
+        y = by.get(k);
+      if (!y || JSON.stringify(x) < JSON.stringify(y)) by.set(k, x);
+    });
+    return [...by.values()]
+      .sort(
+        (a, b) =>
+          stTime(a) - stTime(b) || (stEase(a) ? 1 : 0) - (stEase(b) ? 1 : 0) || (stKey(a) < stKey(b) ? -1 : stKey(a) > stKey(b) ? 1 : 0)
+      )
+      .slice(-START_CAP);
+  }
+  // The choice event and the ease in force at time t (Infinity: now) over a sorted event list.
+  function startStateAt(ev, t) {
+    let ch = null,
+      ez = null;
+    ev.forEach(x => {
+      if (stTime(x) > t) return;
+      if (!stEase(x)) ((ch = x), (ez = null));
+      else if (ch && x[4] === ch[0] && x[5] === ch[2]) ez = x; // the very choice event it eased
+    });
+    return {ch, ez};
+  }
+  // A short fingerprint of a record's history (the sheet's replay cache, Code.gs replay_: a replay made with another
+  // history is not reused; Codex review #428): '' with no record.
+  function startFp(rec) {
+    const ev = startEventsOf(rec);
+    if (!ev.length) return '';
+    let h = 5381;
+    const s = JSON.stringify(ev.map(x => (stEase(x) ? [x[0], x[2], 'ease', x[4], x[5]] : [x[0], x[2]])));
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+  // The first-launch answer's prior at time t (2026-11-03, CHOICE): the eased band's while an ease is in force, else the
+  // answer's, 0 before the first answer (the player then played as the default player). The replay steps the ability
+  // with it (o.starts).
+  function startPriorAt(rec, t) {
+    const {ch, ez} = startStateAt(startEventsOf(rec), t);
+    return ez ? startVars(ez[0]).p : ch ? startVars(ch[0]).p : 0;
+  }
+  // The epoch of a record's fallback window: its last reset (wt), else the answer's time.
+  const startWt = x => (x && typeof x.wt === 'number' ? x.wt : (x && x.t) || 0);
+  // A record with its fields derived from its history: c, at, t, via the last choice; ease the ease in force on it.
+  function startNorm(rec) {
+    if (!isObj(rec)) return null;
+    const h = startEventsOf(rec),
+      {ch, ez} = startStateAt(h, Infinity);
+    if (!ch) return null;
+    const out = {...rec, h, c: ch[0], at: ch[1], t: ch[2], via: ch[3]};
+    if (ez) out.ease = [ez[0], ez[1], ez[2]];
+    else delete out.ease;
+    return out;
+  }
+  // Two devices' records merged (model.js startMerge, sync.js signIn): the union of their histories; the fallback window
+  // (w, hd, v, wt) of the record that holds the current answer, on the same answer the later window epoch (a progress
+  // reset) then the longer window; the fallback cards shown on either.
+  function startUnion(a, b) {
+    const A = startNorm(a),
+      B = startNorm(b);
+    if (!A || !B) return A || B;
+    const h = startEventsOf(A, B),
+      {ch} = startStateAt(h, Infinity),
+      own = x => x.c === ch[0] && x.t === ch[2],
+      n = x => (Array.isArray(x.w) ? x.w.length : 0),
+      W =
+        own(A) && own(B)
+          ? startWt(A) !== startWt(B)
+            ? startWt(A) > startWt(B)
+              ? A
+              : B
+            : n(A) >= n(B)
+              ? A
+              : B
+          : own(B) && !own(A)
+            ? B
+            : A;
+    return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
+  }
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
+      starts = o.starts || {},
       mem = memOf(o.mem),
       conf = o.conf || {},
       since = o.since || {},
@@ -2947,7 +3324,8 @@ const CORE_ = (function () { const module = {exports: {}};
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
         // The mix-ups term, on the record before this answer (quiz.js answer scores it before the offers).
-        const cf = confTermOf(pl.P, t, chs, k);
+        const cf = confTermOf(pl.P, t, chs, k),
+          pr = startPriorAt(starts[id], r[1]); // the first-launch answer's prior at this answer (abilityOf)
         // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
         chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
         s[ok ? 'ok' : 'ko']++;
@@ -2976,13 +3354,13 @@ const CORE_ = (function () { const module = {exports: {}};
           // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory,
           // a right answer's step weighed by its time against the player's earlier ones (rtWeight; time: false, without).
           rw = time ? rtWeight(pl.P[LEVEL], sec, k, ok) : 1;
-          eloStep(pl.P, t, s, ok, dm, k, rw);
+          eloStep(pl.P, t, s, ok, dm, k, rw, pr);
         }
         // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
         if (pl.P[LEVEL]) pl.P[LEVEL][ok ? 'ok' : 'ko']++;
         else pl.P[LEVEL] = levelSeed(pl.P);
         if (replayable) {
-          eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, rw);
+          eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, rw, pr);
           if (time) rtAdd(pl.P[LEVEL], sec, k);
         }
         pl.P[LEVEL].at = r[1];
@@ -3001,7 +3379,7 @@ const CORE_ = (function () { const module = {exports: {}};
         if (wrong) {
           const x = rec(c);
           if (replayable) {
-            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c), d0, k, 1, aimOf(pl.P[LEVEL].th)));
+            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c, pr), d0, k, 1, aimOf(pl.P[LEVEL].th)));
             x.u++;
           }
           x.h = (x.h + '0').slice(-10);
@@ -3479,6 +3857,15 @@ const CORE_ = (function () { const module = {exports: {}};
     MEM_LOGGED,
     CF_LOGGED,
     replayProgress,
+    startPriorAt,
+    startFp,
+    startEvents,
+    startEventsOf,
+    startStateAt,
+    startNorm,
+    startUnion,
+    startWt,
+    START_CAP,
     replayedOf,
     replayBase,
     logRow,
@@ -3491,6 +3878,7 @@ const CORE_ = (function () { const module = {exports: {}};
     RV,
     RV_SHEET,
     RT_SHEET,
+    START_SHEET,
     RTIME,
     rtMedian,
     rtWeight,
@@ -3525,6 +3913,14 @@ const CORE_ = (function () { const module = {exports: {}};
     sorryText,
     START,
     playerStart,
+    CHOICE,
+    startOpt,
+    startVars,
+    startCheck,
+    startBand,
+    levelFit,
+    startNext,
+    startInfer,
     levelSeed,
     accountOf,
     commonFactor,
@@ -3591,6 +3987,7 @@ const CORE_ = (function () { const module = {exports: {}};
     withOldNames,
     migrateKeys,
     migrateStorage,
+    migrateIdKey,
     keysIn,
     LEGACY_SEND,
     withLegacy

@@ -197,7 +197,7 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
     assert.strictEqual(s.r, i + 1, `${s.name}: species not in rank order`);
     if (!s.src || s.src === 'slides') assert.ok(s.common, `${s.name}: no common name`);
   });
-  // Every species of the IMR reference PDF stays in fish.json, in the game or not (the future Fish Finder needs them all).
+  // Every species of the IMR reference PDF stays in fish.json, in the game or not (the future Fish ID Key needs them all).
   SRC.species.filter(s => !s.src).forEach(s => assert.ok(names.has(s.name), `PDF species ${s.name} missing`));
   // Cheatsheet species come first, in cheatsheet order.
   const cs = F.species.filter(s => s.cs);
@@ -213,6 +213,163 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
       t.name
     )
   );
+});
+
+// The starter core and the judged photos (Pierre, 2026-11-04: the fish beta opened on the wrong families and on photos
+// too hard for a beginner; judging/FISH.md, tools/fish_judge.py).
+const PH = read('fish-photos.json').photos,
+  JUDGE = read('tools/fish_judge.json');
+test('start: the starter core, four easy circle-1 entries from Pierre’s fish-ID design, in fish.json and its source', () => {
+  const byId = new Map(F.teach.map(t => [t.id, t]));
+  assert.deepStrictEqual(F.start, SRC.start);
+  assert.deepStrictEqual(F.start.map(id => byId.get(id).name).sort(), [
+    'Angelfish',
+    'Butterflyfish',
+    'Damselfish',
+    'Surgeonfish & Unicornfish'
+  ]);
+  F.start.forEach(id => assert.strictEqual(byId.get(id).circle, 1, id));
+  // dimorph: only where the presentation's phase lines say the sexes or phases differ.
+  F.teach
+    .filter(t => t.dimorph)
+    .forEach(t =>
+      assert.ok(
+        (t.phase || []).some(l => /males|phase/i.test(l)),
+        t.name
+      )
+    );
+  assert.deepStrictEqual(
+    F.teach.filter(t => t.dimorph).map(t => t.name),
+    ['Parrotfish', 'Anthias']
+  );
+});
+// judging/FISH.md "Caps", the same rule as tools/fish_judge.py cap().
+const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$/;
+const capOf = (code, phase, juvOk) => {
+  const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
+    fl = fl0 + (phase ? 'p' : '');
+  let e = +e0;
+  if ((/j/.test(fl) && !juvOk) || n === 'x' || k === '3') e = Math.min(e, 2);
+  if (/[ca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
+  return {e, jt: code.slice(0, 7) + fl};
+};
+// The juvenile classes (fish.json juv, from tools/fish_source.json; the same rule as tools/fish_judge.py juv_early): a
+// juvenile is judged without the juvenile cap when its entry is class A or its species is in the entry's early list.
+const SPN = new Map(F.species.map(s => [s.id, [s.name, s.now].filter(Boolean)]));
+const JUV = Object.fromEntries(F.teach.map(t => [t.id, t.juv]));
+const juvEarly = (tid, p) => {
+  const j = JUV[tid];
+  if (!j || typeof j !== 'object') return false;
+  if (j.cls === 'A') return true;
+  return (j.early || []).some(x => (SPN.get(p.sp) || []).some(n => n === x || n.startsWith(x + ' ')));
+};
+test('judged photos: every circle-1 game photo judged with a valid code, written into fish-photos.json with its caps', () => {
+  const dim = new Set(F.teach.filter(t => t.dimorph).map(t => t.id)),
+    c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink).map(t => t.id),
+    codes = {};
+  Object.entries(JUDGE.photos).forEach(([tid, m]) =>
+    Object.entries(m).forEach(([f, c]) => {
+      assert.match(c, CODE, `${f}: code ${c}`);
+      assert.ok(!(f in codes), `${f} judged twice`);
+      codes[f] = [tid, c];
+    })
+  );
+  c1.forEach(tid => PH[tid].forEach(p => assert.ok(p.f in codes, `${tid} ${p.f}: not judged`)));
+  Object.entries(PH).forEach(([tid, L]) =>
+    L.forEach(p => {
+      if (!(p.f in codes)) return assert.ok(p.e === undefined && p.jt === undefined && !p.c, `${p.f}: e without a judgement`);
+      assert.strictEqual(codes[p.f][0], tid, `${p.f}: judged under another entry`);
+      assert.deepStrictEqual(
+        {e: p.e, jt: p.jt},
+        capOf(codes[p.f][1], dim.has(tid), juvEarly(tid, p)),
+        `${p.f}: run python3 tools/fish_judge.py`
+      );
+      assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
+      // Never among the very easy photos of the first questions: juveniles, night, partial, head / tail / top views,
+      // camouflage, out of water, an unclear subject.
+      if (
+        (/j/.test(p.jt.slice(7)) && !juvEarly(tid, p)) ||
+        /[ca]/.test(p.jt.slice(7)) ||
+        /[htd]/.test(p.jt[0]) ||
+        p.jt[1] === '0' ||
+        p.jt[2] === 'n' ||
+        p.jt[3] >= '2' ||
+        p.jt[6] === 'x'
+      )
+        assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
+    })
+  );
+  // Crops: proposals in curation.json's format, inside the photo, for judged photos only.
+  Object.entries(JUDGE.crops).forEach(([f, c]) => {
+    assert.ok(f in codes, `${f}: a crop without a judgement`);
+    assert.ok(c.length === 4 && c[0] >= 0 && c[1] >= 0 && c[2] <= 1 && c[3] <= 1 && c[0] < c[2] && c[1] < c[3], `${f}: crop ${c}`);
+  });
+  // Every circle-1 entry has at least 5 very easy photos (Pierre, 2026-11-04), so its first questions take turns among
+  // them (model.js easyFirst); the photos the pass added are judged and appear once, one per observation.
+  c1.forEach(id => assert.ok(PH[id].filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos`));
+  Object.entries(JUDGE.add || {}).forEach(([tid, L]) =>
+    L.forEach(a => {
+      const p = PH[tid].find(x => x.o === a.o);
+      assert.ok(p && p.f === a.f && p.e >= 4, `${tid} ${a.f}: an added photo missing or not very easy`);
+      assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(a.lic), `${a.f}: licence ${a.lic}`);
+    })
+  );
+  // Juveniles: a show-early genus's (or a class-A entry's) can be very easy; a capped one cannot.
+  const juvs = Object.entries(PH).flatMap(([tid, L]) => L.filter(p => p.jt && /j/.test(p.jt.slice(7))).map(p => [tid, p]));
+  ['t04', 't14', 't17'].forEach(id =>
+    assert.ok(
+      PH[id].some(p => /j/.test(p.jt.slice(7)) && p.e >= 4),
+      `${id}: no very easy juvenile`
+    )
+  );
+  assert.ok(
+    juvs.some(([tid, p]) => JUV[tid].cls === 'mixed' && juvEarly(tid, p) && p.e >= 4),
+    'a juvenile of a show-early genus (mixed entry) can be very easy'
+  );
+  const capped = juvs.filter(([tid, p]) => !juvEarly(tid, p));
+  assert.ok(capped.length && capped.every(([, p]) => p.e <= 2), 'a capped juvenile is at most 2');
+  assert.ok(
+    capped.some(([tid, p]) => (JUV[tid].late || []).some(x => SPN.get(p.sp).some(n => n === x || n.startsWith(x + ' ')))),
+    'a juvenile of a late (look-alike) species is capped'
+  );
+  // The phase flag (sex or colour phase: a species-level difficulty) caps nothing at the family level.
+  assert.ok(
+    Object.values(PH)
+      .flat()
+      .some(p => /p/.test((p.jt || '').slice(7)) && p.e >= 4),
+    'a phase photo can be very easy'
+  );
+});
+
+test('juvenile classes: every circle-1 entry classed, with sources, as in the source file (research note of 2026-11-04)', () => {
+  const c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink),
+    SJ = Object.fromEntries(SRC.teach.map(t => [t.id, t.juv]));
+  c1.forEach(t => {
+    const j = t.juv;
+    assert.ok(j && ['A', 'B', 'C', 'mixed', 'ns'].includes(j.cls), `${t.id}: juvenile class`);
+    assert.deepStrictEqual(j, SJ[t.id], `${t.id}: fish.json juv differs from tools/fish_source.json`);
+    if (j.cls !== 'ns') assert.ok((j.src || []).length && j.src.every(u => /^https:\/\//.test(u)), `${t.id}: sources`);
+    if (j.cls === 'mixed') assert.ok((j.early || []).length + (j.late || []).length, `${t.id}: mixed without genera`);
+    // Mimicry is a hypothesis (Pierre): never stated as a fact.
+    assert.ok(!/\bmimic/i.test(JSON.stringify(j)), `${t.id}: mimicry stated as a fact`);
+    // early / late name genera or species of the entry.
+    const names = t.species.flatMap(id => SPN.get(id) || []);
+    [...(j.early || []), ...(j.late || [])].forEach(x =>
+      assert.ok(
+        names.some(n => n === x || n.startsWith(x + ' ')),
+        `${t.id}: ${x} is no species or genus of the entry`
+      )
+    );
+  });
+  assert.deepStrictEqual(
+    c1.filter(t => t.juv.cls === 'A').map(t => t.name),
+    ['Spadefish', 'Sweetlips', 'Boxfish']
+  );
+  assert.deepStrictEqual(
+    c1.filter(t => t.juv.cls === 'B').map(t => t.name),
+    ['Parrotfish', 'Emperor']
+  );
+  ['t04', 't14'].forEach(id => assert.match(c1.find(t => t.id === id).juv.by, /^Pierre, 2026-11-04/));
 });
 
 test('fish-photos.json (the stopgap game photos) shows only species in the game', () => {
