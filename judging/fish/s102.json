@@ -1,0 +1,28 @@
+{
+ "photos": {
+  "fish-s102-cand-532578859": {
+   "code": "p1g1ssm2",
+   "keep": "best"
+  },
+  "fish-s102-cand-287328827": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s102-cand-731903710": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s102-cand-453163249": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s102-cand-15519294": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s102-cand-15519297": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  }
+ }
+}

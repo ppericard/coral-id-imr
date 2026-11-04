@@ -1,0 +1,112 @@
+{
+ "photos": {
+  "fish-s082-cand-697993206": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s082-cand-3006405": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s082-cand-179315006": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s082-cand-460217177": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s082-cand-490117843": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s082-cand-711138356": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s082-cand-433995358": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s082-cand-433995335": {
+   "code": "p1g0sm14",
+   "keep": "dup"
+  },
+  "fish-s082-cand-626733547": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s082-cand-465435280": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s082-cand-465435263": {
+   "code": "d1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s082-cand-465435315": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s082-cand-31346738": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s082-cand-216637391": {
+   "code": "p1g1ssx1",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Drawn circles mark the fish on the photo"
+  },
+  "fish-s082-cand-591012581": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s082-cand-445673293": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s082-cand-686974584": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s082-cand-59414018": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s082-cand-655309864": {
+   "code": "p1g2bs11",
+   "keep": "best"
+  },
+  "fish-s082-cand-490117837": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s082-cand-490117825": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s082-cand-532420010": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s082-cand-532420007": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s082-cand-532420001": {
+   "code": "p1g0sm14",
+   "keep": "alt"
+  },
+  "fish-s082-cand-634295407": {
+   "code": "p1g1smm3",
+   "keep": "best"
+  },
+  "fish-s082-cand-177889038": {
+   "code": "p1d1sm13",
+   "keep": "best"
+  }
+ }
+}
