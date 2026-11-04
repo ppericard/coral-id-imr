@@ -5,7 +5,9 @@
 # Captive observations (aquariums) are left out at the source (captive=false).
 # Last resort (Pierre, 2026-11-03: "si vraiment on est en galère … seulement si l'espèce est confirmée aux Philippines"):
 # when the Philippines tiers leave room (nothing more there), Research Grade photos taken elsewhere, but only of species
-# with Research Grade observations in the Philippines (iNaturalist species counts), at most WORLD_CAP waiting (loc world). Accepted IDs: Research Grade, or a genus-level community
+# confirmed in the Philippines by the presence rule (tools/presence.py, AGENTS.md rule 6g, 2026-11-04: Research Grade
+# there by 3+ distinct observers, or 1+ Research Grade there and listed by Corals of the World for a Philippine ecoregion,
+# or confirmed near Dauin by 2+ Research Grade observers), at most WORLD_CAP waiting (loc world). Accepted IDs: Research Grade, or a genus-level community
 # ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon).
 # Caps (Pierre, 2026-10-31, so the pile to sort stays small): at most DAUIN_CAP Dauin observations waiting per genus,
 # Philippines ones only while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings
@@ -30,6 +32,7 @@ from collections import Counter
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from excluded import excluded, drop_excluded, set_aside, SUG
 from genera import key_only, cap_sheet
+from presence import confirmed_species  # the presence rule, defined once
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
@@ -207,8 +210,8 @@ def main():
             loc, r = room_for(g, where)
             if where == 'world':
                 if ph_room <= 0: continue  # the Philippines still had candidates: no need to look further
-                sp = get(f'https://api.inaturalist.org/v1/observations/species_counts?taxon_id={T[0]["id"]}&{PHILIPPINES}&quality_grade=research&captive=false&per_page=200')['results']
-                sp = [x['taxon']['id'] for x in sp if x['taxon'].get('rank') == 'species']
+                # Only species the presence rule confirms in the Philippines (tools/presence.py, AGENTS.md rule 6g).
+                sp = sorted(confirmed_species(get, T[0]['id'], 'coral', '&captive=false'))
                 if not sp: continue  # no species confirmed in the Philippines: nothing from abroad
                 where = f'taxon_id={",".join(map(str, sp))}&not_in_place=6873'
             if r <= 0: continue

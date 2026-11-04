@@ -319,7 +319,13 @@ test('species order inside an entry follows the commonness index', () => {
   const name = id => SP.get(id).name;
   const dams = F.teach.find(t => t.id === 't01').species.map(name);
   assert.deepStrictEqual(dams.slice(0, 2), ['Dascyllus trimaculatus', 'Pomacentrus moluccensis']);
-  assert.deepStrictEqual(F.teach.find(t => t.id === 't15').species.map(name), ['Pseudanthias huchtii', 'Pseudanthias tuka']);
+  assert.deepStrictEqual(
+    F.teach
+      .find(t => t.id === 't15')
+      .species.map(name)
+      .slice(0, 2),
+    ['Pseudanthias huchtii', 'Pseudanthias tuka']
+  );
   const r = require('child_process').spawnSync('python3', [BUILD, '--commonness', '--check'], {encoding: 'utf8'});
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
 });

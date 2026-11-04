@@ -279,13 +279,14 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2]))`
   assert.match(bad, /2 photos marked best/);
 });
 
-test('confirmed near Dauin (build_fish near_dauin): Pierre own there, 2+ Research Grade observers, or the IMR list; one observer is not enough', () => {
+test('confirmed near Dauin (build_fish near_dauin): 2+ Research Grade observers or the IMR list; one observer is not enough, Pierre included', () => {
   const out = J(
-    `from build_fish import near_dauin\nprint(json.dumps([near_dauin(0, 1), near_dauin(0, 0), near_dauin(0, 2), near_dauin(1, 0), near_dauin(1, 2, True), near_dauin(0, 1, True)]))`
+    `from build_fish import near_dauin\nprint(json.dumps([near_dauin(1), near_dauin(0), near_dauin(2), near_dauin(2, True), near_dauin(1, True)]))`
   );
-  // A single Research Grade observation (one observer) no longer opens the whole region (Pierre, 2026-11-03); the
-  // reasons are recorded (present.nearBy).
-  assert.deepStrictEqual(out, [[], [], ['observers'], ['own'], ['own', 'observers', 'imr'], ['imr']]);
+  // A single Research Grade observation (one observer) no longer opens the whole region (Pierre, 2026-11-03); since
+  // 2026-11-04 Pierre is one observer like anyone (AGENTS.md rule 6g): his own observation there is no reason by itself.
+  // The reasons are recorded (present.nearBy).
+  assert.deepStrictEqual(out, [[], [], ['observers'], ['observers', 'imr'], ['imr']]);
   // fish.json: every species has near, nearBy and dauinU (their agreement with the rule: tests/fish.test.js).
   const F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'));
   F.species.forEach(s => {
