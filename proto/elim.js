@@ -78,7 +78,9 @@ LAB.add({
       draw();
     };
     root.querySelector('#elimm').onclick = () => {
-      mystery = pick(labNames());
+      const L = labPlay();
+      if (!L.length) return labNone(root.querySelector('#elimmyst'));
+      mystery = pick(L);
       sel.clear();
       const p = viewPhoto(mystery, 'macro');
       root.querySelector('#elimmyst').innerHTML =

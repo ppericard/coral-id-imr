@@ -13,7 +13,8 @@ LAB.add({
       feat: 'Which feature (IMR lecture or Coral Finder book) does this genus show?'
     };
     const round = () => {
-      const t = pick(labNames()),
+      if (labNone(root)) return;
+      const t = pick(labPlay()),
         g = DATA.gen[t],
         L = g.views.macro && g.views.macro.length ? g.views.macro : g.views.medium || [],
         p = pick(L.length ? L : [viewPhoto(t, 'macro')]);
