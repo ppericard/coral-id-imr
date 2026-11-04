@@ -19,9 +19,14 @@ let SWV = 0;
 // Every request for admin.html that reached this server, with the time it came and the time it was answered: printed
 // with the pending list if the admin page of test 9 never reaches DOMContentLoaded (did the worker's fetch get here?).
 const ADMIN_HITS = [];
+// Files this server holds without an answer while HOLD matches their path (test 9: cand.json never answers), answered
+// with nothing when the test ends. The server holds them, not a Playwright route: see test 9.
+let HOLD = null;
+const HELD = [];
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
+  if (HOLD && HOLD.test(u)) return void HELD.push(res);
   if (u === '/admin.html') {
     const hit = {url: req.url, at: Date.now(), done: 0};
     ADMIN_HITS.push(hit);
@@ -71,24 +76,27 @@ const server = http.createServer((req, res) => {
   await slot('net.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
-  const b = await chromium.launch(),
-    fails = [];
+  const fails = [];
   // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every slate
   // genus (Millepora too, app.js BENTHIC) starts as met on a card, except in a context opened with {intro: true}; the
   // bonus genera offer that then comes (every slate genus met) is answered "Not now" (Q.bon false).
-  const INTROS = JSON.stringify(Object.fromEntries([...Object.keys(require('../data.json').gen), 'Millepora'].map(n => [n, [0, 1]]))),
-    ctxNew = b.newContext.bind(b);
-  b.newContext = async ({intro, ...o} = {}) => {
-    const c = await ctxNew(o);
-    if (!intro)
-      await c.addInitScript(s => {
-        try {
-          localStorage.getItem('reefid-sync-coral-intro') || localStorage.setItem('reefid-sync-coral-intro', s);
-          localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
-        } catch (e) {}
-      }, INTROS);
-    return c;
+  const INTROS = JSON.stringify(Object.fromEntries([...Object.keys(require('../data.json').gen), 'Millepora'].map(n => [n, [0, 1]])));
+  const introsOn = br => {
+    const ctxNew = br.newContext.bind(br);
+    br.newContext = async ({intro, ...o} = {}) => {
+      const c = await ctxNew(o);
+      if (!intro)
+        await c.addInitScript(s => {
+          try {
+            localStorage.getItem('reefid-sync-coral-intro') || localStorage.setItem('reefid-sync-coral-intro', s);
+            localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
+          } catch (e) {}
+        }, INTROS);
+      return c;
+    };
+    return br;
   };
+  const b = introsOn(await chromium.launch());
   const ctxOf = async (opts = {}) => {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: opts.dpr || 1, serviceWorkers: 'block'});
     await ctx.addInitScript(() => {
@@ -428,13 +436,16 @@ const server = http.createServer((req, res) => {
     };
   };
   {
-    const ctx = await b.newContext({viewport: {width: 390, height: 800}});
+    // No Playwright route in this test (2026-11-04): the admin page of the last check now and then never reached
+    // DOMContentLoaded on CI (about 1 run in 13), waiting on the worker's own fetch of admin.html, which never reached
+    // this server (its log: "admin.html requests the server got since q2 opened: none"). Every request of a context with a
+    // route, the worker's included, passes through Playwright's interception. Here nothing is intercepted: other hosts
+    // do not resolve in this browser (nothing reaches the real sheet), and cand.json is held by the server (HOLD).
+    // docs/ROADMAP.md keeps the investigation open until enough CI runs confirm.
+    const b9 = introsOn(await chromium.launch({args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']}));
+    const ctx = await b9.newContext({viewport: {width: 390, height: 800}});
     await ctx.addInitScript(
       () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
-    );
-    await ctx.route(
-      u => !u.href.startsWith(base),
-      r => r.abort()
     );
     const p = await ctx.newPage(),
       pQuiet = track(p);
@@ -445,7 +456,7 @@ const server = http.createServer((req, res) => {
     await ready(p);
     if (!(await p.evaluate(() => !!navigator.serviceWorker.controller))) fails.push('Update test: the page is not controlled');
     // A local copy never sends anonymous answers or reports to the real sheet, even with the service worker in (its
-    // requests pass by ctx.route): tools/perf.js runs had reached it. Once every tier is in (index.html: the sheet's
+    // requests do not pass by a page's fetch): tools/perf.js runs had reached it. Once every tier is in (index.html: the sheet's
     // reads, leaderboard and sync, come with tier 4), so only what this check sends is counted.
     await p.waitForFunction(() => typeof HAVE !== 'undefined' && HAVE >= 5, null, {timeout: 20000});
     const sent = await p.evaluate(async () => {
@@ -480,13 +491,9 @@ const server = http.createServer((req, res) => {
       .waitForFunction(() => !window.__old && window.APP_READY && location.hash === '#genera', null, {timeout: 20000})
       .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
     // A tab opened before any version was installed, then left open, still gets the next version (Codex review #336).
-    const r = await ctx.browser().newContext({viewport: {width: 390, height: 800}});
+    const r = await b9.newContext({viewport: {width: 390, height: 800}});
     await r.addInitScript(
       () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
-    );
-    await r.route(
-      u => !u.href.startsWith(base),
-      x => x.abort()
     );
     const f = await r.newPage(),
       fQuiet = track(f);
@@ -541,7 +548,7 @@ const server = http.createServer((req, res) => {
     // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
     // The reloaded page's own files are in first (its quiet): only the new page's cand.json is the one that never answers.
     await qQuiet();
-    await ctx.route(/cand\.json/, () => {});
+    HOLD = /cand\.json$/;
     // Every request of the context, the worker's included, still pending: printed if the new page never reaches
     // DOMContentLoaded (one red run on CI, #473, 2026-11-04, not reproduced in 5 local runs: what did it wait on?).
     const pend = new Map();
@@ -574,7 +581,9 @@ const server = http.createServer((req, res) => {
     await q2.waitForFunction(() => typeof UPDATED !== 'undefined', null, {timeout: 20000});
     if (!(await q2.evaluate(() => window.__ccOn && !(typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera))))
       fails.push('Admin: not listening for a new version while it loads');
-    await ctx.close();
+    HOLD = null;
+    HELD.splice(0).forEach(x => x.destroy());
+    await b9.close();
   }
   // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
   // then My progress, then the Tools, one tier after the other.

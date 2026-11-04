@@ -3495,7 +3495,11 @@ async function fishAutoRun() {
         .then(r => (r.ok ? r.json() : {}))
         .catch(() => ({}));
     const [C, F] = await Promise.all([get('fish-cand.json'), get('fish.json')]);
-    FISHC = {cand: C.cand || {}, species: Object.fromEntries((F.species || []).map(x => [x.id, x]))};
+    FISHC = {
+      cand: C.cand || {},
+      species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
+      byF: Object.fromEntries(Object.values(C.cand || {}).flatMap(L => L.map(p => [p.f, p])))
+    };
   }
   const keepOn = autoState(fishCompare(DRAFT.fish)).keep.on,
     {F, R} = fishRun(FISHC.cand, SUG.fish, FISHC.species, DRAFT.fish, localDay(), keepOn);
@@ -3504,6 +3508,15 @@ async function fishAutoRun() {
   saveDraft();
   render();
   return R;
+}
+// One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again. One Undo step.
+function fishAutoUndo(f) {
+  const F = fishUndo(DRAFT.fish, f, fishSure(((SUG && SUG.fish) || {})[f]));
+  if (F === DRAFT.fish) return;
+  DRAFT.fish = F;
+  saveDraft();
+  render();
+  toast('Fish auto decision undone: the photo waits for you as a candidate.');
 }
 const fishToast = R =>
   `Fish auto-sort: ${R.add} proposed in, ${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
@@ -3596,8 +3609,10 @@ function checkToast(f) {
 // Agreement line at the top of Candidates (every source), and its details (det).
 function autoBlock(det) {
   const A = aIdx(),
-    E = Object.entries(A);
-  if (!E.length && !Object.keys(DRAFT.retest || {}).length) return '';
+    E = Object.entries(A),
+    // The fish auto-sort's decisions still standing (curation.json fish auto), each undoable here (fishAutoUndo).
+    FA = Object.entries(fishIdx(DRAFT.fish)).filter(([, x]) => !x.d.check && !x.d.undone);
+  if (!E.length && !FA.length && !Object.keys(DRAFT.retest || {}).length) return '';
   const ST = aState(),
     RT = retestStats(DRAFT),
     applied = E.filter(([, x]) => !x.d.check && !x.d.undone),
@@ -3609,7 +3624,7 @@ function autoBlock(det) {
     `<span class="adm-af${ST[k].on ? '' : ' off'}" title="${FIELD[k]}: agreement with you over the last ${ST[k].n} checks and corrections; auto ${ST[k].on ? 'on' : 'off'} under ${pctR(ST[k].min)}">${FIELD[k]} ${pctR(ST[k].rate)}${ST[k].n ? `<small>n ${ST[k].n}</small>` : ''}${ST[k].on ? '' : ' · off'}</span>`;
   // The line goes above the card, the details (det) below it, so the card stays in view.
   if (!det)
-    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
+    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')}${FA.length ? ` · fish ${FA.filter(([, x]) => x.d.kind === 'a').length} in, ${FA.filter(([, x]) => x.d.kind !== 'a').length} set aside` : ''} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
   let h = '';
   if (ADET) {
     const rows = AUTO.fields
@@ -3660,6 +3675,21 @@ function autoBlock(det) {
                 ''
               )}</div>${dec.length > 30 && !AALL ? `<button type="button" class="adm-link" data-aall>All ${dec.length}</button>` : ''}`
           : ''
+      }
+      ${
+        FA.length
+          ? `<h3 class="label">Fish auto decisions · ${FA.length}</h3><div class="adm-repl-grid">${[...FA]
+              .reverse()
+              .sort((a, b) => (a[1].day < b[1].day ? 1 : a[1].day > b[1].day ? -1 : 0))
+              .slice(0, AALL ? undefined : 30)
+              .map(([f, x]) => {
+                const p = (FISHC && FISHC.byF[f]) || {f};
+                return `<figure class="adm-repl-tile adm-atile" data-ff="${esc(f)}">${p.src ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : ''}<figcaption>${esc(p.t || '')} · ${x.d.kind === 'a' ? 'in' : 'set aside'} · ${x.day}</figcaption><button type="button" class="adm-link" data-faundo>Undo</button></figure>`;
+              })
+              .join(
+                ''
+              )}</div>${FA.length > 30 && !AALL ? `<button type="button" class="adm-link" data-aall>All ${FA.length}</button>` : ''}`
+          : ''
       }</div>`;
   }
   return h;
@@ -3671,12 +3701,14 @@ function bindAuto(scope) {
       ADET = !ADET;
       render();
     };
-  const al = scope.querySelector('[data-aall]');
-  if (al)
-    al.onclick = () => {
-      AALL = true;
-      render();
-    };
+  // "All N" under the coral and under the fish decisions (Codex review #479: the fish list showed its latest 30 only).
+  scope.querySelectorAll('[data-aall]').forEach(
+    al =>
+      (al.onclick = () => {
+        AALL = true;
+        render();
+      })
+  );
   scope.querySelectorAll('[data-af]').forEach(el => {
     const f = el.dataset.af,
       u = el.querySelector('[data-aundo]'),
@@ -3684,6 +3716,7 @@ function bindAuto(scope) {
     if (u) u.onclick = () => autoUndo(f);
     if (z) z.onclick = () => PHOTOS[f] && zoomOne(PHOTOS[f]);
   });
+  scope.querySelectorAll('[data-ff] [data-faundo]').forEach(b => (b.onclick = () => fishAutoUndo(b.closest('[data-ff]').dataset.ff)));
 }
 // Blind retest (test-retest of Pierre's own ratings): a photo he rated himself (not by the auto-sort), never retested,
 // in a fixed order per photo; quality, and growth form when he gave one. His second answer goes to curation.json
@@ -5793,8 +5826,25 @@ function savedClear() {
 const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
 const PROGM = new Map();
 let ROWSBY = null;
-function progOf(u) {
+// From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
+// time, about 15 s on a phone for 40 players) the player list carries that same replay, computed by the sheet (Code.gs
+// replayedAll_: rp = [progress %, learned, the saved copy's %]), and Players reads no saved copy. The Journey (full) still
+// replays here: it shows the replayed record genus by genus. A player without rp (the sheet could not read data.json or
+// their copy) is replayed here as before.
+const RP_SHEET = 42;
+const rpOn = () => ((USERS && USERS.v) || 0) >= RP_SHEET;
+function progOf(u, full) {
   if (!ANS || !DATA || !u || !u.id) return null;
+  if (!full && !u.anon && rpOn() && Array.isArray(u.rp) && replayOn()) {
+    const [pct, learned, spct] = u.rp;
+    return {
+      pct,
+      learned,
+      total: slateOf(DATA).length,
+      saved: {pct: spct, learned: u.learned},
+      stale: spct !== pct || u.learned !== learned
+    };
+  }
   const S = u.anon ? {P: {}} : savedOf(u.name);
   if (!S) return null;
   if (!replayOn()) return {off: 1, G: S.err ? {} : S.P || {}, err: S.err};

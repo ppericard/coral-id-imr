@@ -1936,11 +1936,22 @@
   // The tenths of a second of a timed answer, or 0 when it does not count (no seconds, 0, a typed answer: k infinite).
   const rtTenths = (sec, k) => (typeof sec === 'number' && isFinite(sec) && isFinite(k) ? Math.round(Math.min(600, sec) * 10) : 0);
   // The median log(seconds) of the times in rt, null with fewer than RTIME.MIN (the mean of the two middle ones when even).
+  // The record's keys, sorted, are kept beside it (RT_KEYS) and kept in step by rtAdd, so a replay of a long log does not
+  // sort them again at every right answer (Pierre, 2026-11-04: the admin's replay of every player, 0.2 s of it on a phone).
+  // Kept only for a record whose keys are still those it saw (another change to it: sorted again); same result.
+  const RT_KEYS = new WeakMap();
+  const rtKeys = rt => {
+    const c = RT_KEYS.get(rt);
+    if (c && c.n === Object.keys(rt).length) return c.ks;
+    const ks = Object.keys(rt)
+      .map(Number)
+      .filter(x => x > 0)
+      .sort((a, b) => a - b);
+    RT_KEYS.set(rt, {ks, n: Object.keys(rt).length});
+    return ks;
+  };
   function rtMedian(rt) {
-    const ks = Object.keys(rt || {})
-        .map(Number)
-        .filter(x => x > 0 && rt[x] > 0)
-        .sort((a, b) => a - b),
+    const ks = rt && typeof rt === 'object' ? rtKeys(rt).filter(x => rt[x] > 0) : [],
       n = ks.reduce((t, x) => t + rt[x], 0);
     if (n < RTIME.MIN) return null;
     const at = i => {

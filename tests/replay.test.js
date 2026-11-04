@@ -694,6 +694,37 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   assert.notStrictEqual(off.P[C.LEVEL].th, on.P[C.LEVEL].th);
 });
 
+// rtMedian keeps the record's sorted keys beside it (admin speed, 2026-11-04): the same medians as sorting them each time,
+// through a long record built answer by answer, a record changed outside rtAdd, and a copy of it.
+test('response time: the median with the kept sorted keys equals the median sorted afresh', () => {
+  const ref = rt => {
+    const ks = Object.keys(rt || {})
+        .map(Number)
+        .filter(x => x > 0 && rt[x] > 0)
+        .sort((a, b) => a - b),
+      n = ks.reduce((t, x) => t + rt[x], 0);
+    if (n < C.RTIME.MIN) return null;
+    const at = i => {
+      let c = 0;
+      for (const x of ks) if ((c += rt[x]) > i) return Math.log(x / 10);
+    };
+    return n % 2 ? at((n - 1) / 2) : (at(n / 2 - 1) + at(n / 2)) / 2;
+  };
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const G = {};
+  for (let i = 0; i < 3000; i++) {
+    C.rtAdd(G, Math.round((1 + rnd() * rnd() * 40) * 10) / 10, 4);
+    if (i % 7 === 0) assert.strictEqual(C.rtMedian(G.rt), ref(G.rt), `answer ${i}`);
+    if (i === 1500) G.rt[999] = 40; // a key added outside rtAdd
+    if (i === 2000) G.rt[999] = 0; // a count set to 0
+  }
+  const copy = JSON.parse(JSON.stringify(G.rt));
+  assert.strictEqual(C.rtMedian(copy), ref(G.rt));
+  assert.strictEqual(C.rtMedian(undefined), null);
+  assert.strictEqual(C.rtMedian({}), null);
+});
+
 test('response time: the median of the earlier times, the weight, and the record two devices add up', () => {
   const G = {};
   [4.5, 5, 6, 3.2, 8, 5, 4.1, 7.7, 5, 6.3].forEach(x => {

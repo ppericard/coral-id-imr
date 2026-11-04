@@ -8,7 +8,19 @@ const test = require('node:test'),
   path = require('path'),
   vm = require('vm'),
   block = require('./block');
-const {FISHT, fishTarget, fishParse, fishIdx, fishMine, fishCompare, fishRun, autoCheck, autoState} = require('../autosort.js');
+const {
+  FISHT,
+  fishTarget,
+  fishParse,
+  fishIdx,
+  fishMine,
+  fishCompare,
+  fishRun,
+  fishUndo,
+  fishSure,
+  autoCheck,
+  autoState
+} = require('../autosort.js');
 const {merge3} = require('../core.js');
 
 // Candidates: species s1 (a common one, cheatsheet cs: target 12) and s2 (target 8), photo ids never drawn as a Check.
@@ -139,4 +151,42 @@ test('fish edits never touch coral keys: the Publish merge and the published fil
     JSON.stringify({add: {a: 's2', b: 's1'}, auto: {d1: {x: 'r', y: 'a'}}})
   );
   assert.strictEqual(JSON.stringify(ctx.fishOut(undefined)), '{}');
+});
+
+test('fishUndo: one fish auto decision taken back, never applied again; a value Pierre changed since stays his', () => {
+  const [a, b] = ids,
+    cands = {
+      s1: [
+        {f: a, o: 'oa'},
+        {f: b, o: 'ob'}
+      ]
+    },
+    sug = {[a]: {...sure(5), ph: 'male'}, [b]: sure(4, 'dup')},
+    day = '2026-11-04';
+  const {F} = fishRun(cands, sug, {}, {}, day);
+  assert.deepStrictEqual([F.add[a], F.seen[b]], ['s1', 1]);
+  const mine = {...F, ease: {...F.ease, [a]: 2}}, // Pierre changed the ease since
+    U = fishUndo(fishUndo(mine, a, fishSure(sug[a])), b, fishSure(sug[b]));
+  assert.ok(!U.add && !U.seen, 'the add and the reject leave');
+  assert.deepStrictEqual([U.tags, U.phase, U.ease], [undefined, undefined, {[a]: 2}], 'his ease stays his');
+  assert.deepStrictEqual(U.auto[day], {[a]: '-atep', [b]: '-r'});
+  assert.strictEqual(fishUndo(U, a, fishSure(sug[a])), U, 'an undone decision is not undone twice');
+  const again = fishRun(cands, sug, {}, U, day);
+  assert.strictEqual(again.F, U, 'never applied again');
+  assert.deepStrictEqual(fishCompare(U), [], 'an undone decision counts in no agreement');
+});
+
+test("fishUndo leaves alone a value Pierre had given before the run, even one equal to the pass's (Codex review #479)", () => {
+  const [a] = ids,
+    sug = {[a]: {...sure(5), ph: 'male', c: [0.1, 0, 0.9, 1]}},
+    day = '2026-11-04',
+    before = {tags: {[a]: 'p1g0sm1'}, ease: {[a]: 5}}; // his, the same values the pass gives
+  const {F} = fishRun({s1: [{f: a, o: 'oa'}]}, sug, {}, before, day);
+  assert.strictEqual(F.auto[day][a], 'apc', 'the run wrote the phase and the crop only');
+  const U = fishUndo(F, a, fishSure(sug[a]));
+  assert.deepStrictEqual([U.tags, U.ease], [before.tags, before.ease], 'his tags and ease stay');
+  assert.deepStrictEqual([U.phase, U.crop, U.add], [undefined, undefined, undefined], 'what the run wrote leaves');
+  assert.strictEqual(U.auto[day][a], '-apc');
+  assert.deepStrictEqual(fishParse('-apc'), {check: false, undone: true, kind: 'a', w: ['phase', 'crop']});
+  ['rt', '?at', 'ax'].forEach(c => assert.strictEqual(fishParse(c), null, c));
 });
