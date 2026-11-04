@@ -1,0 +1,116 @@
+{
+ "photos": {
+  "fish-s129-cand-756242509": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s129-cand-756242617": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s129-cand-459047354": {
+   "code": "p1g1smm3",
+   "keep": "best"
+  },
+  "fish-s129-cand-459047344": {
+   "code": "p1g1sm14",
+   "keep": "alt"
+  },
+  "fish-s129-cand-459047417": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  },
+  "fish-s129-cand-591272849": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s129-cand-743168191": {
+   "code": "p1g2smx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "The obvious fish is another kind, maybe a parrotfish"
+  },
+  "fish-s129-cand-606000773": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s129-cand-618203381": {
+   "code": "p1g2bss1",
+   "keep": "best"
+  },
+  "fish-s129-cand-539552797": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s129-cand-641412221": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s129-cand-754527221": {
+   "code": "p1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s129-cand-754527239": {
+   "code": "p0g0sl1a2",
+   "keep": "dup"
+  },
+  "fish-s129-cand-702695771": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s129-cand-702695797": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s129-cand-650454518": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s129-cand-726171909": {
+   "code": "p1g2smm2",
+   "keep": "best"
+  },
+  "fish-s129-cand-605648026": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s129-cand-605648051": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s129-cand-585567031": {
+   "code": "p1g3ssx1",
+   "keep": "best"
+  },
+  "fish-s129-cand-701369567": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s129-cand-701369539": {
+   "code": "p0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s129-cand-556851856": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s129-cand-688398195": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s129-cand-697781789": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s129-cand-625746690": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s129-cand-591272046": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  }
+ }
+}
