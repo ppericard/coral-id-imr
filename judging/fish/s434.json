@@ -1,0 +1,120 @@
+{
+ "photos": {
+  "fish-s434-cand-541085760": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s434-cand-484433362": {
+   "code": "p1n0sm13",
+   "keep": "best"
+  },
+  "fish-s434-cand-484433361": {
+   "code": "p1n0sm13",
+   "keep": "dup"
+  },
+  "fish-s434-cand-123941376": {
+   "code": "o1g1ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the fish for sure among the algae"
+  },
+  "fish-s434-cand-598182476": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s434-cand-691117247": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s434-cand-484433412": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s434-cand-598182418": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s434-cand-484433144": {
+   "code": "p1n0sm13",
+   "keep": "best"
+  },
+  "fish-s434-cand-484433146": {
+   "code": "o1n0sm13",
+   "keep": "dup"
+  },
+  "fish-s434-cand-506721693": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s434-cand-506721699": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s434-cand-639457788": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s434-cand-421077178": {
+   "code": "o1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s434-cand-662515464": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s434-cand-597883470": {
+   "code": "o1n0sm13",
+   "keep": "best"
+  },
+  "fish-s434-cand-597883482": {
+   "code": "o1n0ss12",
+   "keep": "dup"
+  },
+  "fish-s434-cand-341093738": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s434-cand-333825208": {
+   "code": "p1g1sl13",
+   "keep": "best"
+  },
+  "fish-s434-cand-730841326": {
+   "code": "p1g1sl1c2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "On a wet rock: maybe out of water in a tide pool"
+  },
+  "fish-s434-cand-730841376": {
+   "code": "p1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s434-cand-730841411": {
+   "code": "o0g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s434-cand-730841443": {
+   "code": "h0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s434-cand-728375481": {
+   "code": "p1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s434-cand-125610038": {
+   "code": "o1d1sl13",
+   "keep": "best"
+  },
+  "fish-s434-cand-257330396": {
+   "code": "p1g1sl13",
+   "keep": "best"
+  },
+  "fish-s434-cand-111231654": {
+   "code": "o1g1sm1c1",
+   "keep": "best"
+  }
+ }
+}

@@ -220,9 +220,12 @@ const upsize = (root = $v) =>
 const photoFail = e => {
   const i = e.target;
   if (!(i instanceof HTMLImageElement)) return;
+  // A card's photo stays out of sight while it is asked again (the cards' own error listener, quiz.js, which this one
+  // stops, does the same for the retries after it: never a broken-image icon on a card); its load shows it again.
+  const hide = () => i.closest('.unlock') && i.classList.add('fail');
   // R2 once more first (core.js photoRetry: a passing error), then the site.
-  if (photoRetry(i, toSite)) return e.stopImmediatePropagation();
-  toSite(i) && e.stopImmediatePropagation();
+  if (photoRetry(i, toSite)) return (hide(), e.stopImmediatePropagation());
+  if (toSite(i)) (hide(), e.stopImmediatePropagation());
 };
 const toSite = i => {
   if (!photoToSite(i)) return false;

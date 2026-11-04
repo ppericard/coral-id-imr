@@ -1,0 +1,180 @@
+{
+ "photos": {
+  "fish-s420-cand-57622246": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s420-cand-618353171": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s420-cand-618353735": {
+   "code": "o1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-618353737": {
+   "code": "p1g1slx1",
+   "keep": "dup"
+  },
+  "fish-s420-cand-520854226": {
+   "code": "o1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s420-cand-595742732": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s420-cand-595742739": {
+   "code": "o1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-595742767": {
+   "code": "d1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-595742761": {
+   "code": "o1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-372677116": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s420-cand-397175849": {
+   "code": "d1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s420-cand-397175862": {
+   "code": "d1g0ss1a1",
+   "keep": "dup"
+  },
+  "fish-s420-cand-397175876": {
+   "code": "o1g0sm1a2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-169475104": {
+   "code": "o1g2sm13",
+   "keep": "best"
+  },
+  "fish-s420-cand-169475113": {
+   "code": "h1g2sl12",
+   "keep": "dup"
+  },
+  "fish-s420-cand-478857118": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s420-cand-478857128": {
+   "code": "p1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s420-cand-478857145": {
+   "code": "p1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s420-cand-478857140": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s420-cand-717786087": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s420-cand-717786085": {
+   "code": "o0g0sl1a2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-717786096": {
+   "code": "o1g0sm1a2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-717786070": {
+   "code": "o0g0sm1a2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-540655114": {
+   "code": "d1g1sm1c1",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "In a bucket, not in the wild"
+  },
+  "fish-s420-cand-592717038": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s420-cand-339449520": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "In a container, not in the wild"
+  },
+  "fish-s420-cand-479673665": {
+   "code": "p1g2sl1c1",
+   "keep": "best"
+  },
+  "fish-s420-cand-479674495": {
+   "code": "p1g2sl1c1",
+   "keep": "dup"
+  },
+  "fish-s420-cand-717792340": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s420-cand-717887923": {
+   "code": "p1g0sl1a3",
+   "keep": "dup"
+  },
+  "fish-s420-cand-291184007": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s420-cand-541604943": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "In a container, not in the wild"
+  },
+  "fish-s420-cand-541604974": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s420-cand-595177918": {
+   "code": "h1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-595177962": {
+   "code": "h1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-595178036": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s420-cand-595178189": {
+   "code": "o1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-3935293": {
+   "code": "o1d1sl12",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "In a plastic bag or a container, not in the wild"
+  },
+  "fish-s420-cand-603829977": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s420-cand-84289917": {
+   "code": "o1g0sm1c2",
+   "keep": "best"
+  }
+ }
+}
