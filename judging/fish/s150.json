@@ -1,0 +1,104 @@
+{
+ "photos": {
+  "fish-s150-cand-486666171": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s150-cand-668813397": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s150-cand-428495032": {
+   "code": "p1g3sm12",
+   "keep": "best"
+  },
+  "fish-s150-cand-747337002": {
+   "code": "d1g1sm1ja2",
+   "keep": "best"
+  },
+  "fish-s150-cand-710255416": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s150-cand-710255444": {
+   "code": "o1g2bl11",
+   "keep": "dup"
+  },
+  "fish-s150-cand-701607142": {
+   "code": "d1d2bl11",
+   "keep": "best"
+  },
+  "fish-s150-cand-649340479": {
+   "code": "o0g3sl12",
+   "keep": "best"
+  },
+  "fish-s150-cand-682620463": {
+   "code": "p1g3smm1",
+   "keep": "best"
+  },
+  "fish-s150-cand-649885094": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s150-cand-728816816": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s150-cand-664973715": {
+   "code": "p1g2bs11",
+   "keep": "best"
+  },
+  "fish-s150-cand-752783682": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s150-cand-606707255": {
+   "code": "p1g3bmx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Blue and blurry; I cannot find the jack for sure"
+  },
+  "fish-s150-cand-705142276": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s150-cand-747337000": {
+   "code": "d1g1sm1ja2",
+   "keep": "best"
+  },
+  "fish-s150-cand-648022970": {
+   "code": "p1g1sl13",
+   "keep": "best"
+  },
+  "fish-s150-cand-729414924": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s150-cand-664974016": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s150-cand-664974071": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s150-cand-664974060": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s150-cand-664974106": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s150-cand-381125306": {
+   "code": "p1g1bs1c1",
+   "keep": "best"
+  },
+  "fish-s150-cand-747337016": {
+   "code": "d1g1sm1ja2",
+   "keep": "best"
+  }
+ }
+}
