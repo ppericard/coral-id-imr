@@ -226,15 +226,19 @@ def usable_obs(o, used, excl):
     return {**o, "P": P, "own": own, "cls": min(lic_class(p[2], own) for p in P), "tier": tier_of(o), "st": "/".join(st), "h": hord(o["id"])}
 
 
-def select(pools, room, more, n=None, world=lambda: [], anywhere=False):
+def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=None):
     """Pick up to `room` observations (Pierre, 2026-11-03). Pierre's own first (class 0), from any pool. Then, for a
     species confirmed near Dauin (anywhere=True): every place at once, abroad included (world() fetched), by licence
     class (1 CC0 / CC BY, then 2 NC), not by distance. Otherwise: by licence class, and within a class nearest first
     (dauin, region, ph); abroad (world(), fetched only then) only when the Philippines are exhausted: room is left and no
     Philippine search had more results than it read (more[tier]). Within a bucket, the least represented observer and
     life stage first, then the fixed hash order. pools: {tier: [items from usable_obs]} (tier "world": Pierre's own
-    abroad); n: Counter of ('u', login) / ('s', stage) already in the species' list. Returns [item, ...] in order."""
+    abroad); n: Counter of ('u', login) / ('s', stage) already in the species' list. claimed: the iNaturalist photo ids
+    already taken (updated here): iNaturalist lets one photo belong to several observations, so a photo is taken once,
+    by the first observation picked, and an observation left with no photo of its own is skipped without taking room
+    (Codex review #463). Returns [item, ...] in order, each with only its own photos in P."""
     n = Counter() if n is None else n
+    claimed = set() if claimed is None else claimed
     taken, seen = [], set()
 
     def take(L):
@@ -244,6 +248,11 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False):
             o = min(L, key=lambda o: (n["u", o["u"]], n["s", o["st"]], o["h"]))
             L.remove(o)
             seen.add(o["id"])
+            P = [p for p in o["P"] if str(p[0]) not in claimed]
+            if not P:
+                continue
+            o["P"] = P
+            claimed.update(str(p[0]) for p in P)
             taken.append(o)
             n["u", o["u"]] += 1
             n["s", o["st"]] += 1
@@ -344,7 +353,9 @@ def run(args):
                 continue
             Q = queries(s["inat"])
             got, more, pools = {}, {}, {}
-            names = (["own"] if (s.get("present") or {}).get("own") else []) + list(TIERS)
+            # Pierre's own, asked for every species (Codex review #463): fish.json present.own is a count from the last
+            # build, so a species he identified since would otherwise never get his photos.
+            names = ["own", *TIERS]
             for k in names:
                 got[k] = net.get(Q[k])
             if args.plan and any(got[k] is None for k in names):
@@ -375,7 +386,7 @@ def run(args):
                 return [{**x, "tier": "world"} for x in out if x]
 
             # Confirmed near Dauin (present.near: Pierre's own there, 2+ Research Grade observers within 40 km, or the IMR list): photos from anywhere, by licence (Pierre, 2026-11-03).
-            taken = select(pools, room, more, n, world, anywhere=bool((s.get("present") or {}).get("near")))
+            taken = select(pools, room, more, n, world, anywhere=bool((s.get("present") or {}).get("near")), claimed=used)
             add = Counter(LOC[o["tier"]] for o in taken)
             plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": room, "add": dict(add)}
             if args.plan:

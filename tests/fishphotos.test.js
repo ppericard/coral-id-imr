@@ -295,6 +295,30 @@ test('confirmed near Dauin (build_fish near_dauin): Pierre own there, 2+ Researc
   });
 });
 
+test('select: a photo shared by several observations is taken once; an observation left without a photo takes no room', () => {
+  const out = J(`${OBS}
+it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
+a, b, c = it(1, u='a', n=2), it(2, u='b'), it(3, u='c')
+b['P'] = [a['P'][0]]                 # 2 holds only a photo of 1
+c['P'] = [a['P'][1], c['P'][0]]      # 3 shares one photo of 1 and has one of its own
+claimed = {'999'}
+from collections import Counter
+T = select({'dauin': [a, b, c]}, 2, {}, Counter({('u', 'b'): 1, ('u', 'c'): 1}), claimed=claimed)
+print(json.dumps([[o['id'] for o in T], [[p[0] for p in o['P']] for o in T], sorted(claimed)]))`);
+  // 1 first (its observer has none yet) with both its photos; 2, left with none, is skipped without taking the second
+  // slot; 3 keeps only its own photo.
+  assert.deepStrictEqual(out[0].sort(), [1, 3]);
+  assert.deepStrictEqual(out[1].flat().sort(), [10, 11, 30]);
+  assert.deepStrictEqual(out[2], ['10', '11', '30', '999']);
+});
+
+test('fish-cand.json: every candidate photo once (one photo can belong to several iNaturalist observations)', () => {
+  const C = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-cand.json'), 'utf8')).cand,
+    ids = Object.values(C).flatMap(L => L.map(p => p.f.split('-').pop())),
+    dup = ids.filter((x, i) => ids.indexOf(x) !== i);
+  assert.deepStrictEqual(dup, []);
+});
+
 test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, record shape; --plan writes nothing', () => {
   // Pierre, 2026-11-04: at most 20 observations per species for now (30-40 later); up to 4 photos of each.
   assert.deepStrictEqual(J('print(json.dumps([CAP, PER_OBS]))'), [20, 4]);
@@ -325,11 +349,18 @@ put(Q['region'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic
 put(Q['ph'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by'), ob(4, lic='cc-by', ll=(14.6, 121.0)), ob(12, lic='cc-by-sa', ll=(14.6, 121.0))], total=50)
 put(Q['world'], [ob(10, lic='cc0', ll=(-8.5, 115.2), inph=False), ob(11, lic='cc-by-sa', ll=(-8.5, 115.2), inph=False), ob(13, lic='cc0', ll=(27.9, 34.3), inph=False), ob(14, lic='cc0', ll=(20.8, -156.3), inph=False)])
 Q = queries(502)
+put(Q['own'], [])
 put(Q['dauin'], [])
 put(Q['region'], [])
 put(Q['ph'], [ob(5, lic='cc0', ll=(14.6, 121.0))])
-put(Q['world'], [ob(6, lic='cc-by-nc', ll=(-8.5, 115.2), inph=False), ob(7, lic='cc-by', ll=(-8.5, 115.2), inph=False)])
+# 8 shares 7's photo (iNaturalist lets one photo belong to several observations): never taken twice, and 8, left with
+# no photo of its own, takes no room (Codex review #463).
+put(Q['world'], [ob(6, lic='cc-by-nc', ll=(-8.5, 115.2), inph=False), ob(7, lic='cc-by', ll=(-8.5, 115.2), inph=False),
+                 {**ob(8, lic='cc-by', ll=(-8.5, 115.2), inph=False), 'ph': ob(7, lic='cc-by')['ph']}])
 Q = queries(504)
+# Pierre's own, though fish.json does not count any for s4 yet (present.own is from the last build): still asked and
+# taken first (Codex review #463).
+put(Q['own'], [ob(23, u='ppericard', lic='cc-by', ll=(14.6, 121.0))])
 put(Q['dauin'], [ob(20, lic='cc-by-nc')])
 put(Q['region'], [ob(20, lic='cc-by-nc')])
 put(Q['ph'], [ob(20, lic='cc-by-nc'), ob(21, lic='cc-by', ll=(14.6, 121.0))])
@@ -362,12 +393,13 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'));
   assert.strictEqual(C.v, 1);
   assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2', 's4']);
-  // Not confirmed near Dauin: the Philippines first (CC BY Luzon, then NC Dauin), the CC0 one abroad only once they are
-  // exhausted; a confirmed species would have taken the CC0 one before the NC one.
+  // Not confirmed near Dauin: Pierre's own first (found though fish.json counted none), then the Philippines (CC BY
+  // Luzon, then NC Dauin); the CC0 one abroad would come only once they are exhausted and room is left.
   assert.deepStrictEqual(
     C.cand.s4.map(p => p.o.split('/').pop()),
-    ['21', '20', '22']
+    ['23', '21', '20']
   );
+  assert.strictEqual(C.cand.s4[0].own, true);
   const s1 = C.cand.s1,
     row = p => [p.o.split('/').pop(), p.lic, p.loc, p.own];
   // Pierre's own first (NC, Needs ID); then CC BY from Luzon and CC0 from abroad before the NC ones of Dauin, which the
@@ -385,6 +417,9 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.ok(!/-sa"/.test(JSON.stringify(C)), 'no share-alike photo');
   assert.ok(!/cand-1[34]0"/.test(JSON.stringify(C)), 'no CC0 photo from the Red Sea or Hawaii (outside the Indo-West Pacific)');
   assert.ok(!JSON.stringify(C).includes('9990'), 'an excluded photo never comes back');
+  const fsAll = Object.values(C.cand).flatMap(L => L.map(p => p.f));
+  assert.strictEqual(new Set(fsAll).size, fsAll.length, 'a photo shared by two observations is a candidate once');
+  assert.ok(!C.cand.s2.some(p => p.o.endsWith('/8')), 'an observation left with no photo of its own takes no room');
   assert.deepStrictEqual(
     C.cand.s2.map(p => [p.lic, p.loc]),
     [
