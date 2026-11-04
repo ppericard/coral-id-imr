@@ -72,6 +72,29 @@
     return null;
   }
 
+  // The fish candidate pre-sort's sure decision (suggest.json "fish" entry j, tools/judging_fish.py, judging/AGENTS.md
+  // "Fish candidate pass"), the fish counterpart of autoSure, or null when it is Pierre's (Pierre, 2026-11-03, fishphotos
+  // branch; ported 2026-11-04, admin plan PR 1). Same shape as autoSure, so the fish candidates can go through the same
+  // path (autoRun, the "auto" log, Checks with autoCheck, agreement per field with autoState; admin plan PR 5).
+  // What differs from corals (judging/AGENTS.md): Poor is never a reason to set a fish photo aside (poor photos stand in
+  // for SVS video frames); an alt photo of the observation goes in too (another side, another phase); a fish has one view,
+  // so an add carries its tags instead: framing (whole / part / school), phase, quality, colour loss and a crop.
+  // - any field in `u` (unsure): Pierre's;
+  // - `exclude` (unusable): excluded;
+  // - not this species, or another species of fish.json: rejected (sending it to that species is Pierre's "Not this");
+  // - a near-duplicate or several species: rejected;
+  // - best or alt, with its framing, phase and quality: added.
+  // tools/fetch_fish.py sure_out mirrors the rejects and excludes (they free room for the next fetch).
+  function fishSure(j) {
+    if (!j || (j.u && j.u.length)) return null;
+    if (j.g === 'exclude') return {keep: 'exclude'};
+    if (j.g) return j.g === 'not' ? {keep: 'reject', why: 'not'} : {keep: 'reject', why: 'species', to: j.g};
+    if (j.k === 'dup' || j.m) return {keep: 'reject', why: j.k === 'dup' ? 'dup' : 'multi'};
+    if ((j.k === 'best' || j.k === 'alt') && j.v && j.ph && (j.q === 1 || j.q === 2 || j.q === 3))
+      return {keep: 'add', framing: j.v, phase: j.ph, quality: j.q, loss: j.cl || 'none', crop: j.c || null};
+    return null;
+  }
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -247,6 +270,7 @@
     fnv,
     autoCheck,
     autoSure,
+    fishSure,
     autoCode,
     autoParse,
     autoIdx,
