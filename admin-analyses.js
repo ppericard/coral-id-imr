@@ -310,7 +310,7 @@ const AN_FILTERS = [
   ['bad', '▼ Hurts'],
   ['thin', '… Not enough data']
 ];
-const anKeep = (P, e, f = anPref().f) => f === 'all' || (f === 'clear' ? e.v === 'clear' : f === 'thin' ? P.tone === 'thin' : P.tone === f);
+const anKeep = (P, e, f = anPref().f) => f === 'all' || (f === 'clear' ? P.v === 'clear' : f === 'thin' ? P.tone === 'thin' : P.tone === f);
 let AN_CARDS = []; // the cards drawn on this page, for the jump list: [slug, title]
 const anSlug = t =>
   String(t)
@@ -560,7 +560,7 @@ function anOverview(rep, R, prevR) {
     all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => ({k, e, P: anPlain(k, e, a), S: anSpec(k, e)}))),
     keep = all.filter(x => anKeep(x.P, x.e)),
     link = k => `<a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a>`;
-  const clear = all.filter(x => x.e.v === 'clear'),
+  const clear = all.filter(x => x.P.v === 'clear'),
     tally = t => all.filter(x => x.P.tone === t).length;
   const charts = AN_GROUPS.map(([o, t]) => {
     const L = keep.filter(x => !x.e.sd && x.S.o === o && x.P.val != null && x.P.base != null && !(x.e.hi - x.e.lo > 20));
@@ -1030,7 +1030,7 @@ function anSessDesc(d) {
           r =>
             `<tr><td>${['', '1st', '2nd', '3rd'][r.k]} session</td><td class="n">${r.at}</td><td class="n">${anOf(r.back, r.at)}</td></tr>`
         )
-      ) + '<p class="note">A player last seen less than a day ago is not counted yet.</p>'
+      ) + '<p class="note">A session that ended less than a day ago is not counted yet, either way.</p>'
     ),
     anCard(
       'First session against later ones',

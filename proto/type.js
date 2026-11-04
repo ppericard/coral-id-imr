@@ -35,15 +35,22 @@ LAB.add({
     const round = () => {
       // The corals' slate whatever the subject on screen: the Tools are the corals' (Codex review #442: with Fish chosen it
       // drew fish teaching ids).
-      const pool = (typeof slateGenera === 'function' ? CORALS(slateGenera) : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
-        t = pick(pool),
+      // Only the genera unlocked on the quiz path (lab.js labPlay, AGENTS.md rule 6d), each with a photo the games may
+      // teach from (app.js gamePhotoOk: Research Grade for the extra genera), in the view asked for, else in any view
+      // (Codex review #379: no fallback around the rule). Drawn among those that have one: with a few genera unlocked,
+      // drawing again until one had a photo could go on for ever.
+      const ok = (t, w) => gamePics(t, w).filter(x => gamePhotoOk(t, x)),
+        any = t => ['wide', 'medium', 'macro'].flatMap(w => ok(t, w)),
+        all = (typeof slateGenera === 'function' ? CORALS(slateGenera) : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
+        pool = (typeof unlocked === 'function' ? CORALS(() => unlocked(all)) : all).filter(n => any(n).length);
+      if (!pool.length) {
+        body.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+        return;
+      }
+      const t = pick(pool),
         v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view,
-        // Only photos the games may teach from (app.js gamePhotoOk: Research Grade for the extra genera), in the view
-        // asked for, else in any view (Codex review #379: no fallback around the rule).
-        ok = w => gamePics(t, w).filter(x => gamePhotoOk(t, x)),
-        L = ok(v).length ? ok(v) : ['wide', 'medium', 'macro'].flatMap(ok),
+        L = ok(t, v).length ? ok(t, v) : any(t),
         p = pick(L);
-      if (!p) return round(); // a genus with no eligible photo at all: draw another
       body.innerHTML = `<div class="rvlayout tylayout"><div class="rvstage tystage"><img src="${img(p, fit(Math.min(innerWidth, 800)))}" alt="Coral to identify"></div>
         <div class="gside">
           ${typeForm(CORALS(() => SUBJ))}

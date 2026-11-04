@@ -657,12 +657,13 @@ test('sessDesc: sessions, ends, breaks and returns from a small log', () => {
   assert.strictEqual(d.hours[8], 2, 'two sessions start at 08:00 Manila');
   assert.strictEqual(d.ends.sessions, 3, 'the last session is still going (log end)');
   assert.strictEqual(d.ends.miss, 2);
-  // returns: after the 1st session, A came back and B did not; A's 3rd session is its last and recent: not counted
+  // returns: after the 1st session, A came back and B did not; A's 2nd and 3rd sessions ended less than a day before
+  // the log ends: not counted either way
   assert.deepStrictEqual(
     d.returns.map(r => [r.at, r.back]),
     [
       [2, 1],
-      [1, 1],
+      [0, 0],
       [0, 0]
     ]
   );
@@ -720,4 +721,59 @@ test('plainOf: typed answers are read without the guess floor', () => {
 test('plainOf: the difficulty and Again labels say what the model measures', () => {
   for (const k of ['rt', 'sess']) assert.match(A.PLAIN[k].diff.name, /beyond guessing/);
   assert.match(A.PLAIN.learn.again.name, /next ordinary question after a miss/i);
+});
+
+// Codex review #495 (3rd pass): the typed contrast's verdict is judged on the accuracy shown (a clear change in
+// recognition whose range of right answers still includes the baseline is not a clear change in right answers); an
+// effect with too few answers to estimate says so, not "no such answers".
+test('plainOf: typed verdict on the accuracy shown; no estimate yet reads as not enough data', () => {
+  const r = A.plainOf('learn', {k: 'typed', est: 0.5, lo: 0.1, hi: 0.9, v: 'clear'}, {typ: {p: 0.8, g: 0.25}});
+  assert.ok(r.lo < 0.8 && r.hi > 0.8, 'the range of right answers includes 80%');
+  assert.notStrictEqual(r.v, 'clear');
+  assert.notStrictEqual(r.tone, 'good');
+  const c = A.plainOf('back', {k: 'calib', v: 'thin', n: 1, need: null}, {});
+  assert.match(c.text, /^Not enough data yet/);
+  assert.strictEqual(c.tone, 'thin');
+});
+
+// Codex review #500: "ended on 2+ misses" counts misses within the session only; the return rate uses the same
+// observation window for those who came back and those who did not (a session ended under a day ago counts for neither).
+test('sessDesc: misses in a row stay within a session; returns use one observation window', () => {
+  const H = 36e5,
+    t0 = Date.UTC(2026, 10, 2, 0, 0),
+    rows = [],
+    add = (p, t, y) =>
+      rows.push([
+        p,
+        t,
+        'Porites',
+        y ? 'Porites' : 'Favites',
+        y ? 1 : 0,
+        'quiz',
+        'f',
+        0.7,
+        0,
+        0,
+        'Porites Favites Pavona Fungia',
+        null,
+        5,
+        0
+      ]);
+  // C: two one-answer sessions two hours apart, both wrong, long ago
+  add('C', t0 - 72 * H, 0);
+  add('C', t0 - 70 * H, 0);
+  // ten players start together an hour before the end; one comes back 30+ minutes later
+  for (let i = 0; i < 10; i++) add('N' + i, t0, 1);
+  add('N0', t0 + 0.6 * H, 1);
+  const d = A.sessDesc(
+    A.prep(
+      rows.sort((a, b) => a[1] - b[1]),
+      {}
+    ),
+    10,
+    1
+  );
+  assert.strictEqual(d.ends.miss2, 0, 'no session holds two misses');
+  const r1 = d.returns.find(r => r.k === 1);
+  assert.deepStrictEqual([r1.at, r1.back], [1, 1], 'only C’s first session is a day old: C came back');
 });

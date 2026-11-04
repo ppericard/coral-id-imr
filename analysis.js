@@ -1346,7 +1346,8 @@
           .map(a => a.y)
           .join(''),
         miss: last.y ? 0 : 1,
-        miss2: !last.y && last.streak >= 2 ? 1 : 0,
+        // two misses in a row within this session (prep's streak runs across sessions; Codex review #500)
+        miss2: R.length >= 2 && !last.y && !R[R.length - 2].y ? 1 : 0,
         lastNew: last.n === 0 ? 1 : 0,
         open: end - last.t < GAP ? 1 : 0
       };
@@ -1481,9 +1482,10 @@
     const returns = [1, 2, 3].map(k => {
       let at = 0,
         back = 0;
+      // one observation window for both outcomes (Codex review #500): a kth session that ended less than a day before
+      // the log ends counts neither as a return nor as a player who did not come back
       byP.forEach(Q => {
-        if (Q.length < k) return;
-        if (Q.length === k && end - Q[k - 1].t1 < DAY) return;
+        if (Q.length < k || end - Q[k - 1].t1 < DAY) return;
         at += 1;
         if (Q.length > k) back += 1;
       });
@@ -1920,9 +1922,25 @@
       T = Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {}),
       row = o.row || null;
     if (row && row.n) ((T.p = row.E), (T.g = row.g0));
-    const out = {name: P.name, verdict: PLAIN_VERDICT[e.v] || '', tone: 'thin', dir: '', text: '', range: '', advice: '', scale: 'p'};
-    if (e.v === 'none' || e.v === 'nolog' || e.est == null || !isFinite(e.est)) {
+    // v: the verdict on the scale shown (the model's, except where the reading changes scale: typed answers)
+    const out = {
+      name: P.name,
+      v: e.v,
+      verdict: PLAIN_VERDICT[e.v] || '',
+      tone: 'thin',
+      dir: '',
+      text: '',
+      range: '',
+      advice: '',
+      scale: 'p'
+    };
+    if (e.v === 'none' || e.v === 'nolog') {
       out.text = e.v === 'nolog' ? 'It leaves no row in the answer log, so it cannot be measured yet.' : 'No such answers yet.';
+      return out;
+    }
+    // too few answers to estimate anything yet (Codex review #495: not "no such answers")
+    if (e.est == null || !isFinite(e.est)) {
+      Object.assign(out, {v: 'thin', verdict: PLAIN_VERDICT.thin, text: 'Not enough data yet: too few answers to estimate it.'});
       return out;
     }
     const s = P.s || 1,
@@ -1975,6 +1993,12 @@
       dir = val === base ? '' : up ? 'up' : 'down';
     Object.assign(out, {base, val, lo, hi, dir});
     out.range = lo == null ? '' : `between ${f(lo)} and ${f(hi)}`;
+    // a contrast read on another guess floor (typed answers) is judged on the right answers shown: clear only when their
+    // range leaves the baseline out, no clear effect when it stays within 5 points of it (Codex review #495)
+    let v = e.v;
+    if (P.g1 != null && lo != null && v !== 'none')
+      v = lo > base || hi < base ? 'clear' : lo >= base - 0.05 && hi <= base + 0.05 ? 'margin' : 'thin';
+    Object.assign(out, {v, verdict: PLAIN_VERDICT[v] || ''});
     let say;
     if (P.o === 'time') say = `${up ? 'Slower' : 'Faster'}: about ${f(val)} instead of ${f(base)}`;
     else if (P.o === 'stop')
@@ -1985,13 +2009,13 @@
     else if (P.o === 'guess') say = `About ${f(val)} right by pure guessing; the app assumes ${f(base)}`;
     else if (P.cal) say = `${up ? 'Easier' : 'Harder'} than the app expects: about ${f(val)} right where it expects ${f(base)}`;
     else say = `More likely ${up ? 'right' : 'wrong'}: about ${f(val)} right instead of ${f(base)}`;
-    if (e.v === 'clear') {
+    if (v === 'clear') {
       out.tone = P.cal || P.o === 'time' || P.o === 'guess' ? 'info' : (P.o === 'stop' || P.o === 'mix') === up ? 'bad' : 'good';
       out.text = say + '.';
       out.advice = (up ? P.up : P.down) || (P.o === 'guess' ? `The app’s guess rate for this format could be about ${f(val)}.` : '');
     } else {
       const ref = P.o === 'pts' ? 'the app’s expectation' : f(base);
-      if (e.v === 'margin') ((out.tone = 'none'), (out.text = `No clear effect: if any, it is small (${out.range} against ${ref}).`));
+      if (v === 'margin') ((out.tone = 'none'), (out.text = `No clear effect: if any, it is small (${out.range} against ${ref}).`));
       else out.text = `Too early to tell: ${out.range ? out.range + ' against ' + ref : 'too uncertain to say'}.`;
     }
     return out;

@@ -606,10 +606,20 @@
         let type = 'con',
           score = {ok: 0, n: 0},
           last = null;
-        const pool = CON.flatMap(c => c.shots.filter(s => s[2]).map(s => ({c, s})));
+        const shots = CON.flatMap(c => c.shots.filter(s => s[2]).map(s => ({c, s})));
         const ask = () => {
           const box = root.querySelector('#a2q');
           if (type === 'con') {
+            // Its photos too only of genera unlocked (lab.js labPlay; Codex review #491: each one names its genus after
+            // the answer).
+            const L = labPlay(),
+              pool = shots.filter(x => L.includes(x.s[1]));
+            // Genera unlocked, but none with a ringed photo yet (Codex review #491): say so, and where to go.
+            if (!pool.length) {
+              if (labNone(box)) return;
+              box.innerHTML = `<p class="note">None of the genera you have met has a ringed photo here yet. Try "Which arrangement?", or meet more genera in the quiz.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+              return;
+            }
             let q;
             do q = pick(pool);
             while (pool.length > 1 && q === last);
@@ -633,9 +643,11 @@
                 })
             );
           } else {
+            const L = labPlay();
+            if (labNone(box)) return;
             let n;
-            do n = pick(labNames());
-            while (n === last);
+            do n = pick(L);
+            while (n === last && L.length > 1);
             last = n;
             const right = arrOf(n),
               p = pick(DATA.gen[n].views.macro || [viewPhoto(n, 'macro')]);

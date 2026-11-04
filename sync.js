@@ -791,7 +791,13 @@ const devId = () => {
   }
   return id;
 };
-const appVer = () => ((document.querySelector('link[href*="app.js?v="]') || {}).href || '').replace(/^.*\?v=/, '');
+// The app's version as the sheet and the admin's Errors page see it: the deploy's build number, then app.js's content
+// hash (tools/stamp_versions.py: "<build>-<hash>", higher is newer); a copy never deployed has no build, only its ?v.
+const appVer = () => {
+  const v = ((document.querySelector('link[href*="app.js?v="]') || {}).href || '').replace(/^.*\?v=/, ''),
+    b = document.querySelector('meta[name="build"]');
+  return b ? `${b.content}-${v}` : v;
+};
 const uaShort = () => {
   // Edge, Opera and Samsung Internet also carry "Chrome/": their own token first (Codex review #343).
   const u = navigator.userAgent,
