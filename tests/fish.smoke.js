@@ -88,9 +88,9 @@ const server = http.createServer((req, res) => {
       ok(ch.length === 3 && ch.every(n => L.includes(n) && n !== t), `${t}: 3 choices from the fish slate`);
     }
     ok(!FISH.winks.some(n => pool().includes(n)), 'winks never in the draw');
-    // Play the real quiz screen: 30 answers, right or wrong, cards closed.
+    // Play the real quiz screen: 30 answers, right or wrong, cards closed (a wink that comes in between is no answer).
     const coralBefore = localStorage.getItem('reefid-sync-coral-progress');
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0, asked = 0; asked < 30 && i < 60; i++) {
       closeCards();
       if (!document.querySelector('#view .q')) quizPhoto();
       const q = SHOWNQ;
@@ -112,6 +112,7 @@ const server = http.createServer((req, res) => {
         f.querySelector('input').value = GX(q[1]).name;
         f.requestSubmit();
       }
+      asked++;
       route();
     }
     const fish = JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}');
@@ -266,7 +267,7 @@ const server = http.createServer((req, res) => {
         heads = [...document.querySelectorAll('#view .gblk')].map(b => ({
           n: +b.querySelector('.gn').textContent,
           t: b.querySelector('.gt').textContent,
-          ids: [...b.querySelectorAll('.tipg b')].map(x => x.textContent)
+          ids: [...b.querySelectorAll('.tipg .tipph b')].map(x => x.textContent)
         })),
         c1 = heads.filter(h => G.some(g => g.n === h.n)),
         want = G.filter(g => FISH.c1.some(n => GX(n).group === g.n)).map(g => g.n),
