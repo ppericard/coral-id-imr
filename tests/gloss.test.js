@@ -51,7 +51,7 @@ test('corallite, polyp and septal teeth are glossed; each term once per block, a
     ['Corallite', 'corallites']
   ]);
   assert.ok(!/data-gt/.test(L[1]));
-  // Inside a button (a Coral Finder box): tappable, but no focus stop of its own.
+  // Inside a button (a Coral ID Key box): tappable, but no focus stop of its own.
   assert.ok(/tabindex="0" role="button"/.test(gloss('corallites')));
   assert.ok(!/tabindex|role=/.test(gloss('corallites', undefined, true)));
   // Text is escaped first.

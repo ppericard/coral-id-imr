@@ -2161,12 +2161,12 @@ td.cov-c .cov-off {
   /* Phones: the source bar, growth forms and species count stay on wider screens, so the table never scrolls sideways (admin re-review). */
   .cov-src,
   .cov-srch,
-  .fcov-t .fcov-s,
-  .fcov-t .fcov-sh {
+  .kcov-t .kcov-s,
+  .kcov-t .kcov-sh {
     display: none;
   }
-  .fcov-t .fcov-f,
-  .fcov-t .fcov-fh {
+  .kcov-t .kcov-f,
+  .kcov-t .kcov-fh {
     display: none;
   }
   .cov-t tbody th {
@@ -2808,19 +2808,19 @@ td.cov-c .cov-off {
   color: var(--good);
   font-weight: 600;
 }
-.cov-t .fcov-x {
+.cov-t .kcov-x {
   color: var(--muted);
   font-size: 0.7rem;
 }
-.fcov-t td.fcov-f {
+.kcov-t td.kcov-f {
   white-space: normal;
   text-align: left;
 }
-.fcov-t td.fcov-f .adm-why {
+.kcov-t td.kcov-f .adm-why {
   font-size: 0.72rem;
   padding: 0 6px;
 }
-.fcov-t td.fcov-s {
+.kcov-t td.kcov-s {
   text-align: center;
   color: var(--muted);
 }
@@ -3039,8 +3039,8 @@ td.cov-c .cov-off {
   color: inherit;
   text-decoration: underline;
 }
-/* Cap per genus x view (capOf, admin.js): full and over-the-cap cells on Game coverage, and on Sheet & Finder
-   coverage for a Finder-only genus */
+/* Cap per genus x view (capOf, admin.js): full and over-the-cap cells on Game coverage, and on Sheet & ID Key
+   coverage for a Key-only genus */
 td.cov-c.cov-full {
   box-shadow: inset 0 0 0 2px var(--ink);
 }

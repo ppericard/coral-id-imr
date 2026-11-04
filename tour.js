@@ -6,7 +6,7 @@
   const KEY = 'reefid-tour';
   // Five steps (Pierre, 2026-11-01: beta testers must sign in early and start playing fast): the two doors, signing in
   // (the form is in the bubble itself, same on phone and desktop), the three games, progress, help; the last button
-  // starts the photo quiz. Details (genus sheets, answers, corallites, Coral Finder) are behind each page's ?.
+  // starts the photo quiz. Details (genus sheets, answers, corallites, Coral ID Key) are behind each page's ?.
   // sel: the element to spotlight (alt: fallback when it is hidden); also: an element joined into the same frame (? and ⚙);
   // plus: a second, separate spotlight (Practice in the menu, at the other end of a phone screen); tall: 'end' shows the
   // bottom of a target too tall to fit beside the bubble (the doors' buttons), instead of its top; arrows: a big arrow points

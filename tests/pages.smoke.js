@@ -27,7 +27,7 @@ const ROUTES = [
   'quiz-custom',
   'quiz-custom|play',
   'pairs',
-  'finder',
+  'idkey',
   'progress',
   'board',
   'ach',
@@ -388,7 +388,11 @@ async function overlays(b, base) {
   // Out-of-game prompts take turns, counted in answers (2026-11-02): the sign-in card at 20 answers (not before), the
   // one-tap question first at 35 (a card at Next since 2026-11-03, never inline in the feedback), at least 10 answers
   // between two of them, never with an achievement toast or another card on screen. A new player, mostly right, 60
-  // answers; toasts closed by a tap as they come.
+  // answers; toasts closed by a tap as they come. The one-tap question comes at exactly 35, or later only while an
+  // achievement toast that came with an answer holds it. Then the queued events: the one-tap question's (the first ever
+  // is the plain one, core.js PULSE0, logged with its item id), an error from one of the app's files, and no noise.
+  // (Test-suite review D2, 2026-11-04: a second new player played to 40 answers in the main loop only for the exact 35
+  // and the queue; both are checked here now.)
   {
     const [c, p] = await open(
       {viewport: {width: 390, height: 844}},
@@ -396,7 +400,8 @@ async function overlays(b, base) {
     );
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    const seenP = [];
+    const seenP = [],
+      toastAt = new Set(); // the answers that came with an achievement toast (it holds a prompt due then)
     for (let i = 0; i < 60; i++) {
       await p.waitForSelector('#view [data-c]:not([disabled])');
       const r = await p.evaluate(i => {
@@ -420,6 +425,7 @@ async function overlays(b, base) {
           toast
         };
       }, i);
+      if (r.toast) toastAt.add(r.a);
       if (r.sign || r.inline) seenP.push({...r, k: r.sign ? 'sign-in' : 'pulse'});
       // Next: the one-tap question, when due, comes as a card before the next question; "Not now" (Escape) closes it and
       // the next question is drawn.
@@ -453,6 +459,28 @@ async function overlays(b, base) {
       seenP.some(x => x.other || x.toast || x.inline || x.gone === false)
     )
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
+    // Exactly 35, or held from 35 on by a toast at every answer until it came.
+    else if (pulse.a !== 35) {
+      const free = Array.from({length: pulse.a - 35}, (_, k) => 35 + k).filter(a => !toastAt.has(a));
+      if (free.length) fails.push(`one-tap question: shown at answer ${pulse.a}, expected 35 (no toast held it at ${free.join(', ')})`);
+    }
+    // An error from one of the app's script files is reported; one injected into the page by a browser or an extension
+    // (no file, or the page itself), and the harmless ResizeObserver warning, are not (Pierre, 2026-11-02).
+    await p.evaluate(() => {
+      const dir = location.origin + location.pathname.replace(/[^/]*$/, ''),
+        err = (message, filename) => window.dispatchEvent(new ErrorEvent('error', {message, filename, lineno: 1}));
+      err('smoke test error', dir + 'quiz.js?v=1');
+      err("ReferenceError: Can't find variable: __firefox__", location.href);
+      err('Script error.', '');
+      err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
+    });
+    await p.waitForTimeout(300);
+    const q = await p.evaluate(() =>
+      JSON.parse(localStorage.getItem('reefid-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
+    );
+    // The one-tap question closed by Escape logs skip, with the plain first item's id.
+    if (!q.includes('pulse:skip@are') || !q.some(x => /smoke test error/.test(x))) fails.push(`events not queued: ${q.join(' | ')}`);
+    if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`noise errors queued: ${q.join(' | ')}`);
     await c.close();
   }
   // The one-tap question's bank (core.js PULSEQ, 2026-11-03) as a card at Next (Pierre, 2026-11-03: inline in the
@@ -630,7 +658,7 @@ async function overlays(b, base) {
         (k && x.q === asked[k - 1].q)
     );
     // The first prompt at 35 answers, or a few later when an achievement toast it waits for came with that answer (the
-    // wrong answers here move the toasts; the exact 35 is checked by the new-player run further down).
+    // wrong answers here move the toasts; the exact 35 is checked by the prompt-spacing run above).
     const late = !asked.length || asked[0].a < 35 || asked[0].a > 40;
     if (asked.length < N || late || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
       fails.push(`${vw}px one-tap card: ${JSON.stringify(asked.length < N || late ? asked : bad.length ? bad : asked.map(x => x.q))}`);
@@ -2569,10 +2597,16 @@ async function basicsFit(b, base) {
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
     });
-    const p = await c.newPage();
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    p.on('console', m => {
+      if (m.type() === 'error' && !/Failed to load resource|net::ERR_/.test(m.text())) errs.push(m.text());
+    });
     await p.goto(base + '#lab');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     for (const st of ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms']) {
+      errs.length = 0;
       // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
         localStorage.setItem(
@@ -2606,6 +2640,17 @@ async function basicsFit(b, base) {
         fails.push(`${w}x${h} Coral basics ${st}: teaching photo ${Math.round(r.photo)} px tall, over 45% of the screen`);
       if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
       if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
+      // Every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a classified photo
+      // opens the enlarged view with its report. (Checked here since 2026-11-04, test-suite review D1: the main route loop
+      // navigated to and answered the same steps at 390 and 1280 px only for these two checks, which are not layout.)
+      if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}x${h} Coral basics ${st}: no report button after the answer`);
+      if (st === 'walls') {
+        await p.evaluate(() => document.querySelector('.bx-q .bx-cph').click());
+        const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden && !!document.querySelector('#lightbox [data-rep]'));
+        if (!lb) fails.push(`${w}x${h} Coral basics walls: the check photo does not open the enlarged view with its report`);
+        await p.evaluate(() => document.querySelector('#lightbox [data-x]')?.click());
+      }
+      if (errs.length) fails.push(`${w}x${h} Coral basics ${st}: ${errs.slice(0, 3).join(' | ')}`);
     }
     await c.close();
   }
@@ -2828,7 +2873,7 @@ async function basicsTeach(b, base) {
 
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
-// main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Finder, the new player at 390 and
+// main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
 // the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
 // (startSmoke).
@@ -2905,6 +2950,13 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     });
     if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
       fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
+    // The tool is the Coral ID Key (Pierre, 2026-11-04): "Coral Finder" on a page (help, folds and pop-ups included)
+    // only names the book, cited by page (Coral Finder p. 63, Same Coral Finder box: …, p. 47-56), as the 2022 book,
+    // "the Coral Finder book" or one of its terms (tests/idkey.test.js checks the code's strings).
+    const notBook = () =>
+      [...document.body.textContent.matchAll(/Coral Finder/g)]
+        .map(m => document.body.textContent.slice(m.index, m.index + 90))
+        .filter(t => !/^Coral Finder( 2022| book| term|[^.]{0,80}?p\. ?\d)/.test(t));
     for (const h of ROUTES) {
       errs.length = 0;
       await p.evaluate(h => {
@@ -2917,39 +2969,23 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       // A short window for errors a page throws just after it is drawn (a timer, a late photo).
       await p.waitForTimeout(150);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
+      const cf = await p.evaluate(notBook);
+      if (cf.length) fails.push(`${w}px #${h}: "Coral Finder" for something other than the book: ${cf.slice(0, 2).join(' | ')}`);
       // No credits block on any page but Home (Pierre, 2026-11-03): no footer, no Home credit line.
       if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
-    // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
-    // classified photo opens the enlarged view.
-    for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
-      errs.length = 0;
-      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
-      await p.evaluate(s => {
-        localStorage.setItem(
-          'reefid-basics',
-          JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
-        );
-        location.hash = 'basics|' + s;
-      }, st);
-      await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
-      if (st === 'corallite')
-        await p.evaluate(() => {
-          const ph = document.querySelector('.bx-tap'),
-            r = ph.getBoundingClientRect();
-          ph.dispatchEvent(new MouseEvent('click', {clientX: r.left + r.width * 0.587, clientY: r.top + r.height * 0.485, bubbles: true}));
-        });
-      // DOM clicks: in this context the welcome tour may still be open over the page.
-      else await p.evaluate(() => document.querySelector('.bx-q .choice').click());
-      if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}px Coral basics ${st}: no report button after the answer`);
-      if (st === 'walls') {
-        await p.evaluate(() => document.querySelector('.bx-q .bx-cph').click());
-        const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden && !!document.querySelector('#lightbox [data-rep]'));
-        if (!lb) fails.push(`${w}px Coral basics walls: the check photo does not open the enlarged view with its report`);
-        await p.evaluate(() => document.querySelector('#lightbox [data-x]')?.click());
-      }
-      if (errs.length) fails.push(`${w}px Coral basics ${st}: ${errs.slice(0, 3).join(' | ')}`);
-    }
+    // Home and Identify say "Coral ID Key" for the tool, and its page title too.
+    await p.evaluate(() => (location.hash = ''));
+    await p.waitForTimeout(600);
+    const hk = await p.evaluate(() => ({
+      cf: [...document.body.textContent.matchAll(/Coral Finder(?! 2022| book)/g)].length,
+      key: /Open the Coral ID Key/.test(document.body.textContent)
+    }));
+    if (hk.cf || !hk.key) fails.push(`${w}px Home: the tool is not the Coral ID Key ${JSON.stringify(hk)}`);
+    await p.evaluate(() => (location.hash = 'idkey'));
+    await p.waitForSelector('.ikstart', {timeout: 15000}).catch(() => {});
+    const kt = await p.evaluate(() => (document.querySelector('#view h2') || {}).textContent || '');
+    if (kt !== 'Coral ID Key') fails.push(`${w}px #idkey: its title is "${kt}"`);
     // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
     // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
     await p.evaluate(() => (location.hash = 'genera'));
@@ -2965,12 +3001,12 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       };
     });
     if (gl.titles || !gl.cards || !gl.def || gl.h !== '#genera') fails.push(`${w}px Genera glossary: ${JSON.stringify(gl)}`);
-    // The Coral Finder's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
-    await p.evaluate(() => (location.hash = 'finder'));
-    // The Finder's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
+    // The Coral ID Key's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
+    await p.evaluate(() => (location.hash = 'idkey'));
+    // The Coral ID Key's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
     await p.waitForSelector('#view [data-show]', {timeout: 15000}).catch(() => {});
     const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
-    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral Finder slate count: "${fd[0]}", expected ${fd[1]}`);
+    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral ID Key slate count: "${fd[0]}", expected ${fd[1]}`);
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
@@ -3070,45 +3106,6 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         fails.push(`${w}px first cards, the tap-a-word line: ${JSON.stringify(seen.map(c => [c.gt, c.hint]))}`);
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
-      let at = 0;
-      for (let i = 1; i <= 40 && !at; i++) {
-        await q2.waitForSelector('#view [data-c]');
-        await q2.evaluate(() => document.querySelectorAll('.unlock.intro').forEach(x => x.remove()));
-        // Achievement toasts have gone by the next answer (4 s; the prompts wait for them, PROMPT).
-        await q2.evaluate(() => {
-          document.querySelectorAll('.achpop').forEach(x => x.remove());
-          achQ.length = 0;
-          achBusy = false;
-        });
-        await q2.evaluate(() => document.querySelector('#view [data-c]').click());
-        await q2.waitForSelector('#next');
-        // The one-tap question comes as a card at Next (2026-11-03), never inline in the feedback.
-        if (await q2.$('#after [data-pulse]')) at = -i;
-        await q2.evaluate(() => document.getElementById('next').click());
-        if (!at && (await q2.$('.unlock.pulsecard'))) at = i;
-      }
-      if (at !== 35) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 35`);
-      else {
-        await q2.click('[data-pulse="hard"]');
-        // An error from one of the app's script files is reported; one injected into the page by a browser or an
-        // extension (no file, or the page itself), and the harmless ResizeObserver warning, are not (Pierre, 2026-11-02).
-        await q2.evaluate(() => {
-          const dir = location.origin + location.pathname.replace(/[^/]*$/, ''),
-            err = (message, filename) => window.dispatchEvent(new ErrorEvent('error', {message, filename, lineno: 1}));
-          err('smoke test error', dir + 'quiz.js?v=1');
-          err("ReferenceError: Can't find variable: __firefox__", location.href);
-          err('Script error.', '');
-          err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
-        });
-        await q2.waitForTimeout(300);
-        const q = await q2.evaluate(() =>
-          JSON.parse(localStorage.getItem('reefid-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
-        );
-        // The first one-tap question ever is the plain one (core.js PULSE0), logged with its item id.
-        if (!q.includes('pulse:hard@are') || !q.some(x => /smoke test error/.test(x)))
-          fails.push(`${w}px events not queued: ${q.join(' | ')}`);
-        if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`${w}px noise errors queued: ${q.join(' | ')}`);
-      }
       // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
       await q2.evaluate(() => (location.hash = 'g-Porites'));
       await drawn(q2);
@@ -3170,22 +3167,22 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       const bq = await q3.evaluate(() => location.hash);
       if (bq !== '#quiz') fails.push(`${w}px Back on a sheet after a reload: ${bq}`);
       await q3.close();
-      // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
-      await q2.evaluate(() => (location.hash = 'finder|form=M'));
-      // Waits on the Finder's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
+      // Coral ID Key: the "Compare A and B" button is readable (its text was the colour of its background).
+      await q2.evaluate(() => (location.hash = 'idkey|form=M'));
+      // Waits on the Coral ID Key's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
       await q2.waitForSelector('#view [data-cmpk]', {timeout: 15000}).catch(() => {});
       for (const k of [0, 2]) {
         const cb = q2.locator('#view button[data-cmpk]').nth(k);
         await cb.click();
         await q2.waitForFunction(e => e.getAttribute('aria-pressed') === 'true', await cb.elementHandle(), {timeout: 5000}).catch(() => {});
       }
-      await q2.waitForSelector('.fdcmp .next', {timeout: 5000}).catch(() => {});
+      await q2.waitForSelector('.ikcmp .next', {timeout: 5000}).catch(() => {});
       const cc = await q2.evaluate(() => {
-        const n = document.querySelector('.fdcmp .next'),
+        const n = document.querySelector('.ikcmp .next'),
           c = n && getComputedStyle(n);
         return n ? [c.color, c.backgroundColor] : null;
       });
-      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral Finder compare button unreadable: ${JSON.stringify(cc)}`);
+      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral ID Key compare button unreadable: ${JSON.stringify(cc)}`);
       const other = e2.filter(e => !/smoke test error/.test(e));
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();
@@ -3436,7 +3433,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     await p.waitForTimeout(500);
     if (errs.length) fails.push(`${w}px admin.html?readonly: ${errs.slice(0, 3).join(' | ')}`);
-    // One count of a Finder-only genus's colonies (Codex review #390, found apart five times): the refill
+    // One count of a Key-only genus's colonies (Codex review #390, found apart five times): the refill
     // (tools/fetch_local.py colonies) and the admin (covOf, which the Candidates swiper's full test reads) agree on the
     // real data and curation, view by view.
     if (w === 390) {
@@ -3456,13 +3453,13 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
 s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
 from datajson import load_all
 d = load_all(); G = {**d['gen'], **d['x']['gen']}; cur = json.load(open('curation.json'))
-print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded).get(v, 0) for v in fl.kept_views(g, G, cur)} for g in fl.finder_only(d)}))`
+print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded).get(v, 0) for v in fl.kept_views(g, G, cur)} for g in fl.key_only(d)}))`
           ],
           {cwd: ROOT, encoding: 'utf8'}
         )
       );
       if (JSON.stringify(adm) !== JSON.stringify(py))
-        fails.push(`Finder-only colonies, admin covOf vs tools/fetch_local.py colonies: ${JSON.stringify(adm)} vs ${JSON.stringify(py)}`);
+        fails.push(`Key-only colonies, admin covOf vs tools/fetch_local.py colonies: ${JSON.stringify(adm)} vs ${JSON.stringify(py)}`);
     }
     await ctx.close();
   }
