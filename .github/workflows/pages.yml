@@ -49,6 +49,19 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pages"
           git archive HEAD | tar -x -C "$RUNNER_TEMP/pages"
           echo "Published source: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      # Every ?v=, LAB_V and the sw.js cache name V from content hashes, the build number in the pages (Pierre,
+      # 2026-11-04: PRs never edit a version number). On the staged copy only; a reference to no file fails the deploy.
+      - name: Stamp the version numbers
+        run: |
+          {
+            echo '<details><summary>Stamped versions (build ${{ github.run_number }})</summary>'
+            echo
+            echo '```'
+            python3 tools/stamp_versions.py "$RUNNER_TEMP/pages" --build "${{ github.run_number }}"
+            echo '```'
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python3 tools/check_versions.py --dir "$RUNNER_TEMP/pages"
       - uses: actions/upload-pages-artifact@v4
         with:
           path: ${{ runner.temp }}/pages
