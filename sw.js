@@ -65,7 +65,7 @@ const SHELL = [
     'pairs',
     'gallery',
     'cards'
-  ].map(f => `proto/${f}.js?v=81`)
+  ].map(f => `proto/${f}.js?v=82`)
 ];
 const get = async (c, u, n = 3) => {
   for (let i = 1; ; i++) {
