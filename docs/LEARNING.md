@@ -3424,6 +3424,11 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (approved; design only, docs/FISH_PATH.md "My progress (fish)"): the global fish score's formula. Per species,
+  C = mean mastery of its listed common names, S = max(species mastery, ½ × genus mastery), credit = a·C + b·S + (1 − a − b)·C·S
+  with b = 0.80, a ≈ 0.73; global = 25% × mean entry mastery + 75% × mean species credit over circle 1. Entries only 25%, every
+  common name 80%, every scientific name 85%, both 100%. The entries' share and the genus's half credit are checked by simulation
+  (rule 14f) before it ships.
 - 2026-11-04, Pierre (latest; design only, docs/FISH_PATH.md): the fish path is a **tree** (trunk: families; branch A: species
   by common name; branch B: scientific genus names, then species scientific names), and the players choose common, scientific
   or both names; the global fish score reaches 100% only with both names of every species, about 80% with every common name
