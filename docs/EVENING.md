@@ -38,6 +38,15 @@ them first thing, then clear them.
   a per-entry "natural view" exception like the juvenile classes (e.g. head out of a hole is the normal view of a
   moray)? **Recommendation: keep the caps** (circles 2 and 3 are opt-in, met after circle 1; the fallback to the 3
   easiest already works), and revisit when fish answers are logged.
+- **Fish species with no candidate photo at all** (fish photos track, 2026-11-04 night). The candidate search
+  (`tools/fetch_fish.py`, its rules unchanged) now covers every game species of circles 1-3 (#523): 417 of 442 have 20
+  observations, but five circle-1 species have none, because iNaturalist holds no usable photo under the rules
+  (Research Grade or yours, CC0 / CC BY / CC BY-NC, the Philippines or the Indo-West Pacific): *Chromis agilis*,
+  *Halichoeres chlorocephalus*, *H. marginatus*, *Siganus margaritiferus*, and *Pomacentrus armillatus* (iNaturalist
+  and WoRMS lump it with *P. opisthostigma*, which has 2). Question: do you have photos of any of them yourself
+  (identified to the species on iNaturalist, they would be fetched first), or should they stay without species photos
+  until iNaturalist grows? **Recommendation: leave them as they are** (no rule change: share-alike or All-rights-reserved
+  photos stay out); the search picks them up by itself on a later run.
 
 ## Where the day stopped
 
