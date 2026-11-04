@@ -1177,7 +1177,7 @@ test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns befor
   assert.strictEqual(s.get({stats: '1'}).ok, true);
 });
 
-test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it at index 14; old rows read as not logged', () => {
+test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it at index 14', () => {
   // Pierre, 2026-11-04: the time of day at home, for players outside the sheet's time zone (minutes east of UTC).
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000';
@@ -1198,19 +1198,45 @@ test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it 
     s.post({readAnswers: 1, token: T}).rows.map(x => x[14]),
     [480, -300, null, null, null, null]
   );
-  // A tab made before v44: the header comes with the next answers, and its old rows read as not logged.
-  const s2 = loadCodeGs();
-  s2.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1')]});
-  s2.sheets.Answers.rows.forEach(x => (x.length = 14));
+});
+
+test('v44 one-shot tz: the rows logged before get +480 in their empty UTC offset cells, once, never over a value', () => {
+  // Pierre, 2026-11-04: every answer logged before v44 came from players on Philippine time.
+  const CODE = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
+  const s = loadCodeGs({
+    fetch: url => (url.includes('raw.githubusercontent.com') ? {getResponseCode: () => 200, getContentText: () => CODE} : null)
+  });
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1'), ans('o2'), ans('o3')]});
+  const A = s.sheets.Answers;
+  A.rows.forEach(x => (x.length = 14)); // a tab from before v44: no header, no cells
+  A.rows[2][14] = -300; // a value already there stays
+  A.rows.splice(3, 0, []); // an empty row between answers stays empty
+  // The function itself: fills the empty cells of answer rows only, and a second call finds nothing to fill.
+  assert.strictEqual(require('vm').runInContext('ONCE_.tz()', s.ctx), 'UTC offset +480 in 2 empty cells of 4 rows');
+  assert.strictEqual(A.rows[0][14], 'UTC offset');
   assert.deepStrictEqual(
-    s2.post({readAnswers: 1, token: T}).rows.map(x => x[14]),
-    [null]
+    A.rows.slice(1).map(r => r[14]),
+    [480, -300, '', 480]
   );
-  s2.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o2', {tz: 60})]});
-  assert.strictEqual(s2.sheets.Answers.rows[0][14], 'UTC offset');
+  assert.strictEqual(require('vm').runInContext('ONCE_.tz()', s.ctx), 'UTC offset +480 in 0 empty cells of 4 rows');
+  // Run by the new script itself once (autoUpdate, up to date), logged in the Deploy log; never again.
+  A.rows[1][14] = '';
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.strictEqual(A.rows[1][14], 480);
+  assert.ok(s.props.ONCE_tz, 'marked done');
+  const log = () =>
+    s.sheets['Deploy log'].rows
+      .slice(1)
+      .map(r => String(r[1]))
+      .filter(l => l.startsWith('one-shot tz'));
+  assert.deepStrictEqual(log(), [`one-shot tz (v${SV}): UTC offset +480 in 1 empty cells of 4 rows`]);
+  A.rows[1][14] = '';
+  s.ctx.autoUpdate();
+  assert.strictEqual(A.rows[1][14], '', 'once only');
+  assert.strictEqual(log().length, 1);
   assert.deepStrictEqual(
-    s2.post({readAnswers: 1, token: T}).rows.map(x => x[14]),
-    [null, 60]
+    s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows.map(x => x[14]),
+    [null, -300, 480]
   );
 });
 test('v24: the flood caps count only answers the sheet does not have yet (Codex review #372)', () => {
