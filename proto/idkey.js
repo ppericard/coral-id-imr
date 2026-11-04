@@ -366,7 +366,7 @@ LAB.add({
       // Clicking a genus name opens it in place (all its photos, bigger, with the ID cues); the sheet is a small link.
       const isX = n => S.open.has('x:' + n);
       const head = n =>
-        `<span class="ikhead"><button type="button" class="ikname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="iksheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${notIMR(n) ? `<b class="ikxtag">${xtag(n)}</b>` : tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
+        `<span class="ikhead"><button type="button" class="ikname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="iksheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${notIMR(n) ? `<b class="ikxtag">${xtag(n)}</b>` : tag(n)} · ${esc(altName(G[n].fam))}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
       // Many varied examples at a glance, as on the paper Coral Finder's pages: cover first, then round-robin over
       // colony / closer / corallites (featured photos lead each view), a different observation each time when possible.
       // With one view picked, only that view's photos (all views when the genus has none of it).
