@@ -651,7 +651,7 @@ const server = http.createServer((req, res) => {
           if (genScore(t) >= LV_AT[0]) return;
           gated++;
           ok(p.e >= 4, `question ${i + 1}: ${t} photo ${s.f} of ease ${p.e} before Open Water`);
-          ok(!/[jp]/.test((p.jt || '').slice(6)), `question ${i + 1}: ${t} juvenile or phase photo ${s.f} before Open Water`);
+          ok(!/[jp]/.test((p.jt || '').slice(7)), `question ${i + 1}: ${t} juvenile or phase photo ${s.f} before Open Water`);
         });
         const ans = document.querySelectorAll('#view [data-c]');
         if (ans.length) [...ans].find(b => b.dataset.c === t).click();

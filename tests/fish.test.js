@@ -234,14 +234,14 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
   );
 });
 // judging/FISH.md "Caps", the same rule as tools/fish_judge.py cap().
-const CODE = /^([pohtd])([01])([gdn])([smb])([lms])([1smx])([jca]*)([1-5])$/;
+const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$/;
 const capOf = (code, phase) => {
-  const [, v, w, l, , , n, fl0, e0] = code.match(CODE),
+  const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
     fl = fl0 + (phase ? 'p' : '');
   let e = +e0;
-  if (/j/.test(fl) || n === 'x') e = Math.min(e, 2);
-  if (/[pca]/.test(fl) || l === 'n' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
-  return {e, jt: code.slice(0, 6) + fl};
+  if (/j/.test(fl) || n === 'x' || k === '3') e = Math.min(e, 2);
+  if (/[pca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
+  return {e, jt: code.slice(0, 7) + fl};
 };
 test('judged photos: every circle-1 game photo judged with a valid code, written into fish-photos.json with its caps', () => {
   const dim = new Set(F.teach.filter(t => t.dimorph).map(t => t.id)),
@@ -257,15 +257,21 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
   c1.forEach(tid => PH[tid].forEach(p => assert.ok(p.f in codes, `${tid} ${p.f}: not judged`)));
   Object.entries(PH).forEach(([tid, L]) =>
     L.forEach(p => {
-      if (!(p.f in codes)) return assert.ok(p.e === undefined && p.jt === undefined, `${p.f}: e without a judgement`);
+      if (!(p.f in codes)) return assert.ok(p.e === undefined && p.jt === undefined && !p.c, `${p.f}: e without a judgement`);
       assert.strictEqual(codes[p.f][0], tid, `${p.f}: judged under another entry`);
       assert.deepStrictEqual({e: p.e, jt: p.jt}, capOf(codes[p.f][1], dim.has(tid)), `${p.f}: run python3 tools/fish_judge.py`);
+      assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
       // Never among the very easy photos of the first questions: juveniles, phases, night, partial, head / tail / top views,
       // camouflage, out of water, an unclear subject.
-      if (/[jpca]/.test(p.jt.slice(6)) || /[htd]/.test(p.jt[0]) || p.jt[1] === '0' || p.jt[2] === 'n' || p.jt[5] === 'x')
+      if (/[jpca]/.test(p.jt.slice(7)) || /[htd]/.test(p.jt[0]) || p.jt[1] === '0' || p.jt[2] === 'n' || p.jt[3] >= '2' || p.jt[6] === 'x')
         assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
     })
   );
+  // Crops: proposals in curation.json's format, inside the photo, for judged photos only.
+  Object.entries(JUDGE.crops).forEach(([f, c]) => {
+    assert.ok(f in codes, `${f}: a crop without a judgement`);
+    assert.ok(c.length === 4 && c[0] >= 0 && c[1] >= 0 && c[2] <= 1 && c[3] <= 1 && c[0] < c[2] && c[1] < c[3], `${f}: crop ${c}`);
+  });
   // The starter core has enough very easy photos to take turns (model.js easyFirst: PICKD.VARIETY 3).
   F.start.forEach(id => assert.ok(PH[id].filter(p => p.e >= 4).length >= 3, `${id}: fewer than 3 very easy photos`));
 });

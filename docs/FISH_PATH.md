@@ -115,8 +115,11 @@ Gaps before species questions ship:
 
 ## Juveniles and colour phases
 
-- Early, never a late stage (Pierre's ReefRecall rule). Juvenile and phase photos (`ph`, `st`) stay in the pool at every level; the photo
-  difficulty Elo puts them at the hard end by itself. The entry cards already show `phase` (5 entries).
+- Early, never a late stage (Pierre's ReefRecall rule), but not in an entry's first questions (Pierre, 2026-11-04): until an entry
+  reaches Open Water its questions show only its very easy photos, and a juvenile or a sex / colour phase photo never is one (judged
+  ease capped, `judging/FISH.md`; `model.js` `easyFirst`, docs/LEARNING.md "Fish: the starter core and judged photos"). From Open Water
+  they are in the pool at every level; the judged prior and, once fish answers are logged, the photo difficulty Elo put them at the
+  hard end. Later, explanation cards will introduce them (Pierre, 2026-11-04). The entry cards already show `phase` (5 entries).
 
 ## Formats and their order
 

@@ -1011,7 +1011,8 @@ const genScore = n => scoreOf(P[n]);
 // every RA knows, one icon each): the step of a genus on the learning scale, from its % (genScore), the same colours on
 // My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%; 3 Advanced from 80%; 4 Divemaster from 95%
 // (the mastery exam's entry); 5 Instructor, the exam passed (s.mx, "learned" in the code). The thresholds only name
-// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100); the game itself never reads them.
+// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100); the game reads only Open Water, where an
+// entry's judged hard photos come in (easyFirst, 2026-11-04).
 const MASTERY = [
   ['Not seen', ''],
   ['Snorkeler', '<rect x="2.5" y="8" width="13" height="7.5" rx="3.2"/><path d="M9 15.5v-2.2M19.5 3v11a4.5 4.5 0 0 1-4.5 4.5h-1.5"/>'],

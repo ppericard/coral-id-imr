@@ -3,10 +3,13 @@
 
 Fish answers are not logged to the sheet yet, so no player answer rates a fish photo. Until they are, an agent (or a
 person) looks at every game photo and judges it on the rubric of judging/FISH.md; the judgements live in
-tools/fish_judge.json (one code per photo, e.g. "p1gsm14": view, whole, light, clarity, size, count, flags, ease 1-5).
+tools/fish_judge.json (one code per photo, e.g. "p1g0sm14": view, whole, light, colour loss, clarity, size, count, flags,
+ease 1-5) and, for some photos, a proposed crop [l, t, r, b] (fractions, curation.json's crop format).
 This script:
   - applies them to fish-photos.json: each judged photo gets `e` (its ease after the rubric's caps) and `jt` (its tags,
-    with the phase flag `p` added for the entries fish.json marks `dimorph`); a photo no longer judged loses both;
+    with the phase flag `p` added for the entries fish.json marks `dimorph`), and `c` its proposed crop when it has one
+    (a proposal for the admin, like a coral candidate's suggest.json `c`: the app never applies it); a photo no longer
+    judged loses all three;
   - prints the summary: counts per tag, very easy photos (ease 4-5) per entry, entries short of them;
   - with --sheets DIR: downloads every game photo at iNaturalist's medium size into DIR/img and draws contact sheets of
     12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after).
@@ -23,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_judge.json"
 PHOTOS = ROOT / "fish-photos.json"
-CODE = re.compile(r"^([pohtd])([01])([gdn])([smb])([lms])([1smx])([jca]*)([1-5])$")
+CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$")
 EARLY = 4  # very easy (judging/FISH.md): the photos of an entry's first questions (model.js easyFirst)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 
@@ -33,33 +36,35 @@ def cap(code, phase):
     m = CODE.match(code)
     if not m:
         raise ValueError(f"bad code {code!r}")
-    v, w, light, _c, _z, n, fl, e = m.groups()
+    v, w, light, loss, _c, _z, n, fl, e = m.groups()
     fl = fl + ("p" if phase and "p" not in fl else "")
     e = int(e)
-    if "j" in fl or n == "x":
+    if "j" in fl or n == "x" or loss == "3":
         e = min(e, 2)
-    if set(fl) & set("pca") or light == "n" or v in "htd" or w == "0":
+    if set(fl) & set("pca") or light == "n" or loss == "2" or v in "htd" or w == "0":
         e = min(e, 3)
-    return e, code[:6] + fl
+    return e, code[:7] + fl
 
 
 def load_src():
     s = json.loads(SRC.read_text(encoding="utf-8"))
-    return {f: c for entry in s["photos"].values() for f, c in entry.items()}
+    return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {})
 
 
 def apply(photos, fish=None):
     """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
     fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     dim = {t["id"] for t in fish["teach"] if t.get("dimorph")}
-    J = load_src()
+    J, C = load_src()
     k = 0
     for tid, L in photos.items():
         for p in L:
-            p.pop("e", None)
-            p.pop("jt", None)
+            for x in ("e", "jt", "c"):
+                p.pop(x, None)
             if p["f"] in J:
                 p["e"], p["jt"] = cap(J[p["f"]], tid in dim)
+                if p["f"] in C:
+                    p["c"] = C[p["f"]]
                 k += 1
     return k
 
@@ -76,12 +81,13 @@ def summary(doc, fish):
     allp = [p for L in doc["photos"].values() for p in L]
     judged = [p for p in allp if "e" in p]
     print(f"judged: {len(judged)} of {len(allp)} game photos")
-    pos = ["view", "whole", "light", "clarity", "size", "count"]
+    pos = ["view", "whole", "light", "colour loss", "clarity", "size", "count"]
     for i, t in enumerate(pos):
         print(f"  {t}: " + ", ".join(f"{k} {v}" for k, v in sorted(Counter(p['jt'][i] for p in judged).items())))
-    fl = Counter(c for p in judged for c in p["jt"][6:])
+    fl = Counter(c for p in judged for c in p["jt"][7:])
     print("  flags: " + ", ".join(f"{k} {v}" for k, v in sorted(fl.items())))
     print("  ease: " + ", ".join(f"{k} {v}" for k, v in sorted(Counter(p['e'] for p in judged).items())))
+    print(f"  crops proposed: {sum(1 for p in judged if 'c' in p)}")
     print("very easy photos (ease >= 4) per entry, circle 1 first:")
     short = []
     for tid, L in sorted(doc["photos"].items(), key=lambda kv: (names.get(kv[0], ("", 9))[1] or 9, kv[0])):

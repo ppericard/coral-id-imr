@@ -1761,6 +1761,64 @@ Pierre, 2026-11-03: fish on the same engine as corals (docs/ARCHITECTURE.md "Sub
 - **Not logged to the sheet yet**: fish answers stay on the device (and in the synced progress): the pooled photo difficulty and confusions start from their priors only for fish (the photo's set prior 0, the IMR look-alikes) until the sheet takes fish answers (ROADMAP).
 - **No timed mode, no size estimation**: video ID and EventMeasure measurement are other tools (ROADMAP).
 
+### Fish: the starter core and judged photos (2026-11-04)
+
+Pierre tried the fish beta and pulled it back (2026-11-04): the first families opened were not the right ones, and the
+first photos were too hard. Fish answers are not logged to the sheet (`SUBJECTS` `log: false`), so no photo had a
+rating and no entry a difficulty: every fish photo sat at 0, and the opening order was commonness and chance. Three
+changes, all data the engine reads generically (the corals have none of these fields, so nothing moves for them):
+
+- **The starter core** (`fish.json` `start`, from `tools/fish_source.json`; Pierre's fish-ID design: four easy, readable
+  families first): Butterflyfish, Angelfish, Damselfish, Surgeonfish & Unicornfish. `fishGen` marks their records
+  `first`; `openPick` opens a `first` unit before any other while one is left, so the `INTRO.START` (4) first cards are
+  exactly these four. The rest then opens by the existing rule, easiest and most common first: an entry's difficulty
+  (`genusDiff`) is the mean of its photos' difficulty, which the judged ease now sets.
+- **Every circle-1 photo judged** (648 photos, `judging/FISH.md`, `tools/fish_judge.json`): an agent looked at each one
+  and gave it tags (view, whole fish, light, colour loss, clarity, size, count, juvenile, camouflage; the sex / colour
+  phase flag for the entries the presentation says change, `dimorph`: Parrotfish, Anthias) and an ease from 1 to 5,
+  capped by rule (a juvenile or a monochrome photo at most 2; a phase, a night shot, a strong colour loss, a head-on or
+  tail view, a partial fish or camouflage at most 3), plus a proposed crop for 130 of them (a proposal for the admin,
+  never applied).
+- **The photo prior** (`photoDiff`): a judged photo's prior is its unit's offset + (`PDIFF.MID` 3 − ease) ×
+  `PDIFF.EASE` 0.5, so ease 5 starts at −1 and ease 1 at +1. 0.5 logit an ease point is one standard deviation of a
+  photo's own difficulty around its genus (the hierarchical photo Elo study, above), so the scale spans the spread real
+  photos show and no more. Like every prior it weighs `PDIFF.W` (5) answers once ratings come. The judged prior also
+  counts in `easyTrust` (each judged photo as `PDIFF.W` answers), so the fish entries open easiest first from the first
+  card even on a device that has not loaded the sheet's stats. **The coral lesson applies**: Pierre's Easy / Medium /
+  Hard sets predicted the answers worse than no prior ("Hierarchical photo Elo"), because they encoded featured and
+  quality, not what the players find hard. This rubric judges what a beginner must see to tell the family (profile,
+  whole fish, its colours), which is closer to that, but it is a judgement: once fish answers are logged, compare the
+  ease with the photos' ratings and drop or refit the prior if it does not predict them (ROADMAP).
+- **The first questions on an entry** (`easyFirst`, in `photoSet`): until the entry reaches **Open Water** (`LV_AT[0]`,
+  50%: the first level earned, an existing threshold; the exam's entry and every later question are untouched), only
+  its very easy photos (ease `PDIFF.EARLY` 4 or 5, Pierre's "very easy first"), or its `PICKD.VARIETY` (3) easiest when
+  it has fewer, so a few still take turns (the rule that keeps 3 colonies in rotation). By the caps above no juvenile,
+  phase, night, partial or head-on photo is ever among them, except in the fallback of an entry that has nothing better
+  (Parrotfish and Anthias by construction, Spadefish, Fusilier and Sandperch today: they need better photos).
+  Juveniles and phases are not a late stage (FISH_PATH): they come in at Open Water on each entry, a few dozen answers
+  in, and will later get their explanation cards.
+
+Constants: `PDIFF.EASE` 0.5 (the measured photo spread, above), `PDIFF.MID` 3 (the scale's middle), `PDIFF.EARLY` 4
+(Pierre's "very easy" band); no new threshold (Open Water, `PICKD.VARIETY`, `PDIFF.W`, `INTRO.START` exist).
+
+**Measured** (rule 14f). `tools/learnsim.js` has no fish profile yet (its learners and world are the coral genera), so
+the outcome simulation cannot judge this change; what was measured instead: the real app in Chromium, a brand-new fish
+player, 30 questions, right 4 times in 5, the same 5 seeds before (main) and after, every photo shown scored with the
+judged ease (rubric 2):
+
+| | before | after |
+| --- | --- | --- |
+| first cards | 4 of the 27 at random (e.g. Soldierfish, Bream, Groupers, Moorish Idol) | the starter core, every seed |
+| questions 1-15 on a starter entry | 21 / 75 | 75 / 75 |
+| questions 1-30 on a starter entry | 36 / 150 | 122 / 150 |
+| ease of the 150 photos shown (1 / 2 / 3 / 4 / 5) | 10 / 29 / 67 / 31 / 13, mean 3.05 | 0 / 0 / 7 / 93 / 50, mean 4.29 |
+| very easy (4-5) in questions 1-15 | 33% | 100% |
+| juvenile or phase photos shown | 21 | 3 (Anthias, opened at answer 22 or 27: its fallback) |
+| the starter cards' photo (ease) | 4 / 5 / 4 / 4 | 5 / 5 / 5 / 5 (`fishGen` `cover`: the easiest judged photo) |
+
+The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
+replay (rule 14g) cannot judge it either: the sheet holds no fish answer.
+
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
 Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard

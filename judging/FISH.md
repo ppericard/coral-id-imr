@@ -8,7 +8,8 @@ may show (`model.js` `easyFirst`). This file is the rubric, so the pass can be r
 and give the same kind of result.
 
 Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `tools/fish_source.json`);
-`python3 tools/fish_judge.py` writes them into `fish-photos.json` (`e`, `jt` on each photo) and prints the summary;
+`python3 tools/fish_judge.py` writes them into `fish-photos.json` (`e`, `jt` and a proposed crop `c` on each photo) and
+prints the summary;
 `tools/fish_photos.py` re-applies them whenever it rebuilds the photo list. `tests/fish.test.js` checks that every
 circle-1 game photo is judged, that every code is valid and that the caps below hold.
 
@@ -26,16 +27,17 @@ circle-1 game photo is judged, that every code is valid and that the caps below 
 
 ## Tags (one code per photo)
 
-A code is six letters, then the flags, then the ease digit: `p1gsm14`, `p1gsm1j2`. In order:
+A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1g1sm1j2`. In order:
 
 | Position | Tag | Values |
 | --- | --- | --- |
 | 1 | **view** | `p` profile (side view: the fish roughly parallel to the picture, its outline readable); `o` oblique (turned 20-60 degrees, or diagonal across the frame, the shape still readable); `h` head-on; `t` tail or rear view; `d` from above (dorsal) |
 | 2 | **whole** | `1` the whole fish is in the frame and visible; `0` partial: cut by the frame (a heavy crop, a head close-up) or hidden by reef, coral or another fish so its shape cannot be read whole |
-| 3 | **light** | `g` good (natural colours, the fish well lit); `d` dim, washed out, or a blue / green / other cast that mutes the colours; `n` night or flash on black (dark background, night colours) |
-| 4 | **clarity** | `s` sharp; `m` soft (some blur, haze, noise, the fish still clear); `b` blurred or murky (backscatter, milky water, motion blur that hides the pattern) |
-| 5 | **size** | `l` large (the fish spans a third of the frame width or more); `m` medium (a sixth to a third); `s` small (under a sixth) |
-| 6 | **count** | `1` one fish (others, if any, tiny and far); `s` several of the same kind, the subject obvious (a pair, a school); `m` other kinds of fish too, the subject obvious; `x` the subject is not obvious (which fish is asked about?) |
+| 3 | **light** | `g` good (the fish well lit); `d` dim or dark (low light, the fish in shade); `n` night or flash on black (dark background, night colours) |
+| 4 | **colour loss** | how much of the fish's colours the water took (Pierre, 2026-11-04: not a "cast", whose blue or green only follows the water and the light): `0` none; `1` slight (reds and yellows still visible); `2` strong (the warm colours mostly gone); `3` monochrome (only blue or green: deep water, low light) |
+| 5 | **clarity** | `s` sharp; `m` soft (some blur, haze, noise, the fish still clear); `b` blurred or murky (backscatter, milky water, motion blur that hides the pattern) |
+| 6 | **size** | `l` large (the fish spans a third of the frame width or more); `m` medium (a sixth to a third); `s` small (under a sixth) |
+| 7 | **count** | `1` one fish (others, if any, tiny and far); `s` several of the same kind, the subject obvious (a pair, a school); `m` other kinds of fish too, the subject obvious; `x` the subject is not obvious (which fish is asked about?) |
 | flags | `j` | a **juvenile**: the colours or shape of a young fish (e.g. the yellow-and-black stripes of a young *Scolopsis*, the white-blotched brown of a young *Plectorhinchus chaetodonoides*, a young batfish's long fins) |
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **out of water** (a fish on a net, in a hand, dead) |
@@ -52,18 +54,27 @@ several species in the frame.
 
 - **5 very easy**: profile, whole, good light, sharp, large or medium, one fish (or a school of it); colourful or with
   its family's shape and pattern plain to see. A field-guide photo.
-- **4 easy**: as 5 with one mild shortfall: a slight oblique, a dim or blue cast that still leaves the colours readable,
+- **4 easy**: as 5 with one mild shortfall: a slight oblique, dim light, a slight colour loss,
   a busy background, the fish medium-small, another kind of fish in the frame far from the subject.
 - **3 medium**: two mild shortfalls, or one strong one: a marked oblique, a head-on, tail or top view, part of the fish
-  cut or hidden, a night or flash shot, a strong cast, the fish small, camouflage the eye still sees through.
+  cut or hidden, a night or flash shot, a strong colour loss, the fish small, camouflage the eye still sees through.
 - **2 hard**: the shape or the colours are hard to read: several strong shortfalls, murky water, camouflage, a tiny
   fish, a juvenile, a school in the blue.
 - **1 very hard**: the fish is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
-**Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`) or an unclear subject (`x`) is
-at most 2; a phase photo (`p`), camouflage (`c`), out of water (`a`), a night shot (`n`), a head-on, tail or top view
-(`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or 5 ("very easy", the first questions' photos)
+**Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`), an unclear subject (`x`) or a
+monochrome photo (colour loss `3`) is at most 2; a phase photo (`p`), camouflage (`c`), out of water (`a`), a night shot
+(`n`), a strong colour loss (`2`), a head-on, tail or top view (`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or 5 ("very easy", the first questions' photos)
 is never one Pierre wants kept from the start.
+
+## A proposed crop
+
+When the fish is small in the frame, or the margins distract (another fish, a diver, empty water), the pass proposes a
+crop: `tools/fish_judge.json` `crops`, `[left, top, right, bottom]` as fractions of the photo, the format of
+`curation.json` `crop` and of a coral candidate's suggested crop (`suggest.json` `c`). Judged on a 5 x 5 grid over the
+photo, so to about a tenth of its side; the crop keeps the whole fish with a margin. **A proposal only** (Pierre,
+2026-11-04): written into `fish-photos.json` as `c`, never applied by the app or by a script; the admin will show it for
+Pierre to accept or change, as for coral candidates (ROADMAP).
 
 ## What the app does with it (docs/LEARNING.md "Fish photos judged")
 
@@ -80,6 +91,15 @@ is never one Pierre wants kept from the start.
 
 ## Agreement with other sources
 
-The pass compares its juvenile flags with iNaturalist's Life Stage annotations where an observer gave one (few do);
-`python3 tools/fish_judge.py` prints the disagreements. A disagreement is checked on the photo, not settled by either
-source.
+- iNaturalist's Life Stage annotations could check the juvenile flag, but on the 648 circle-1 photos no observer gave
+  one (21 of the 1,145 fish photos have any, all in circles 2 and 3).
+- Colour loss: a machine estimate (the share of the photo's saturated pixels whose hue is warm, red to yellow) was shown
+  beside each photo as a hint and corrected by eye; they agreed exactly on 58% of the photos and within one level on 98%.
+  The tag is the eye's.
+
+## How the first pass went (2026-11-04)
+
+Circle 1 (648 photos) only: circles 2 and 3 and the winks are opt-in, met after the IMR entries, and not judged yet (no
+`e`, so as before). The first look gave view, whole, light (with a "cast" letter), clarity, size, count, flags and ease;
+Pierre then asked for colour loss in place of the cast and for crop proposals, so every photo was looked at a second
+time for those two and the light letter (rubric 2).
