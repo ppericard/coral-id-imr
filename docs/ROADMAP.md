@@ -49,6 +49,8 @@ Never settle these in the app; keep the lecture's version.
 - Plerogyra family: lecture says Euphylliidae; WoRMS lists Plerogyridae (shown as an "Other sources" note).
 - Duncanopsammia at Dauin = D. peltata plates; Favites with shared + separate walls.
 - Corallite arrangement placements to check: Mycedium, Diploastrea, Pectinia (Corallite anatomy tool).
+- Fish (Pierre, 2026-11-04): the IMR fish presentation's slide 4 shows two dorsal fins on a clownfish, while slide 7 says damselfish have a continuous dorsal fin: a slip, or an exception to the rule?
+- Fish (Pierre, 2026-11-04): the sweetlips juvenile wording, "swim erratically", against the sources' head-down wriggling swimming (FISH_PATH "Juveniles and colour phases").
 
 ## Next (agreed, not started)
 
@@ -78,6 +80,8 @@ Never settle these in the app; keep the lecture's version.
 | **Identify per subject** (Pierre, 2026-11-04): Identify shows the **current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the other subject's tool through the subject switch (the study's "both keys" was found odd). | Pierre, 2026-11-04 | Next (after the Coral ID Key rename, #464) |
 | **Open fish to a group of players** (Pierre, 2026-11-04): fish opens to a group Pierre picks in the admin (for now he will put everyone in it), not by one site-wide switch. | Pierre, 2026-11-04 | Next (when fish is ready) |
 | **Fish leaderboard** (Pierre, 2026-11-04): leaderboards stay **separate per subject**, no merged ranking; fish ranks by the global fish score, then the fish Elo. Needs fish answers logged in the sheet first. | Pierre, 2026-11-04 | Waiting on fish answers in the sheet |
+| **Trace IMR lecture photos to their original source** (Pierre, 2026-11-04: the rights of IMR lecture photos are unclear; many come from iNaturalist or the web without a proper source, and he found some on iNaturalist): reverse search on iNaturalist, then credit the original or replace the photo where the rights are unclear. AGENTS.md rule 7. | Pierre, 2026-11-04 | Next |
+| **Fish: a scientific genus level** (Pierre, 2026-11-04, decided in principle): between common names and species scientific names, a level of scientific genus names (e.g. a photo, then 4 genus names), and a right genus typed for a species' scientific name as partial credit; the global score's last 20% covers genus then species. To design, thresholds by simulation. [FISH_PATH.md](FISH_PATH.md) "Levels". | Pierre, 2026-11-04 | Decided in principle, to design |
 | **Rethink the app icon** (Pierre, 2026-11-04): the current icon is coral-based; redesign it once the app has corals and fish. A design task. | Pierre, 2026-11-04 | Later |
 | **"Mystery" tiles in My progress for units not met yet** (Pierre, 2026-11-04): a unit the player has not met shows as a masked tile. Fish: for every player. Corals: **only for beginners** (the first-launch answer "I'm new to corals", PR #428, `reefid-sync-coral-start`); RAs who had the IMR course and players who know corals well ("I know corals well") see the genera as today, no masking. | chat 2026-11-04 | Next |
 | **A held-out photo set** (Pierre, 2026-11-04): a fixed set of photos never shown in practice, for a transfer check (recognition of photos never seen, at the start and later) and an honest exam. **Fish first** (many photos per species; [FISH_PATH.md](FISH_PATH.md) "Checks before release"); **corals later** (few photos per genus, so holding some out costs practice photos). | chat 2026-11-04 | Next (fish), Parked (corals) |

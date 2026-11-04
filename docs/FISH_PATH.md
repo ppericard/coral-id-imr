@@ -14,7 +14,7 @@ name as half a fault, one global fish progress score, and the display schedule's
 Later the same day: milestone cards, the exams to rethink, "scientific name" in player-facing text, juveniles and phases introduced with
 an explanation, a half fault that cannot be gamed, a non-linear global scale, and the fish photos and admin ("Fish photos and the admin").
 
-Later still (Pierre, 2026-11-04, answering the fish UX study): the fish welcome question, which replaces the IMR prompt's "Yes opens
+Later still (Pierre, 2026-11-04, answering the fish UX study): a scientific genus level ("Levels"), the fish welcome question, which replaces the IMR prompt's "Yes opens
 everything at once" ("The fish welcome question and the IMR answer"); Fish basics; achievements; and the frame both subjects share
 (subject switch, Identify, opening fish to players, the app icon, leaderboards: "Both subjects in one app").
 
@@ -36,10 +36,14 @@ is the design's shorthand, and internal identifiers may keep it.
   - Otherwise an optional level, offered like the opt-in circles: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
     a ⚙ On / Off row. Never counted in the progress bar.
 - **Level 2, species**: the species of an entry (`teach[].species`), shown with the name-display schedule below.
-- **Latin is not a separate level**: it is a question format whose share rises with each species' progress (schedule below).
-- **No Latin genus level.** One entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries. The genus is
-  learned through the Latin species names (its first word) and the IMR sub-entries; a separate genus level would invent groupings (rule 2).
-  In typed-Latin feedback, a right genus with a wrong species says "Right genus" (still a miss on the species).
+- **Scientific genus names, between common names and species scientific names** (Pierre, 2026-11-04, decided in principle, to design;
+  replaces "No Latin genus level" of 2026-11-03): an intermediate step before knowing every species, e.g. a photo, then 4 genus names
+  (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
+  invented: rule 2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
+- **A right genus is partial credit** (Pierre, 2026-11-04; replaces "Right genus, still a miss on the species"): when a species'
+  scientific name is asked and the player types the right genus only, it is genuine partial learning (unlike a common name typed
+  instead: open question 3), so it counts as partial credit. How much, and its thresholds, by simulation.
+- Species scientific names then come as a question format whose share rises with each species' progress (schedule below).
 
 ## The very start (fish beta feedback, Pierre, 2026-11-04)
 
@@ -136,9 +140,12 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   existing fish player past 50 fish answers, the 40 / 60 checkpoints (a "lower" verdict offers **Fish basics**), the back card after
   Open all, the "Had the IMR …? Open all" box on the first cards and in My progress. Its own state per subject (the coral answer stays
   the corals').
-- **What the open-all card opens** for fish, once species exist: the earlier prompt's list (every circle-1 entry, their species, the IMR
-  sub-entries) is the starting proposal; whether the IMR answer also starts the name-display schedule earlier (scientific names sooner)
-  is open (question 6). Until species exist it opens the entries, as today.
+- **"I'm at IMR" brings scientific names earlier** (Pierre, 2026-11-04); the adaptive difficulty still holds them back, since they are
+  hard.
+- **What the open-all card opens** for fish, once species exist (Claude's recommendation, recorded as a proposal; Pierre undecided): all
+  the remaining **families**, as now, **never all species at once** (a wall of 300+ never-asked species is the collapse pattern already
+  seen); species and scientific names then unlock family by family, earlier for the IMR answer. Until species exist it opens the
+  entries, as today.
 - **Not now**: the calmer path above (entries, then species at Advanced, scientific names later because they are hard).
 - The answer and the open-all choice are synced with the player's fish progress (the offer as the corals' does: `reefid-sync-fish-intro-offer`), shown in the admin player journey; Open all can still be taken later from My progress.
 - **No struggling once everything is open.** The dynamic difficulty must hold an IMR player near the usual target:
@@ -154,6 +161,12 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 
 - **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the IMR shape groups), so rule 2
   holds and the IMR wording is kept (rule 1).
+- **Body shape first** (Pierre, 2026-11-04): identification always starts with the body shape, which is what separates the
+  identification groups (the most-used local ID book groups fish by body shape). The module starts with body shape and the IMR shape
+  groups, then the vocabulary.
+- **IMR terms kept**: "Band", with a discreet "sources differ" note; the "heart-shaped" tail, a good *Dascyllus* indicator (IMR's term).
+- **Photos and figures** (Pierre, 2026-11-04): never the IMR slide photos (most are not IMR's own, likely from ID books); photos with
+  known rights (Pierre's, iNaturalist), diagrams and figures our own drawings.
 - **Inspiration, never citation**: a local fish ID course Pierre has may inspire the order and the explanations; it is never quoted,
   cited or named, in the app or in the repo.
 - **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule 1).
@@ -193,7 +206,9 @@ Decided from the admin pooling study:
 - **Photos per species**: start at 8 observations per circle-1 species, 12 for the PDF's 24 most sighted, cap 20. That is enough at entry
   (family) level; at species level Pierre expects **30 to 40 photos per species** soon, so players learn the species and not the photos,
   and to cover their variability (quality, individuals, profile or front, colour, partly hidden).
-- **No IMR slides or photos for fish**: iNaturalist covers every IMR family and species.
+- **No IMR slides or photos for fish**: iNaturalist covers every IMR family and species. Also a rights question (Pierre, 2026-11-04):
+  most photos of the IMR fish presentation are not IMR's own (likely taken from ID books); plenty of photos with known rights exist.
+  Diagrams and figures are our own drawings.
 - **Colour phases as photo tags**, not as sections.
 - **Photo tags, colour loss** (`cast`): not blue against green (that depends on the water and the light) but a level of colour loss:
   none / slight (other colours still visible) / strong / monochrome (only blue or green: deep water or low light).
@@ -290,8 +305,9 @@ on families only to an IMR RA with every species open:
   named" / "Scientific name" counters stay, as detail.
   - **The scale** (Pierre, 2026-11-04, later; replaces a 20 / 30 / 50 split proposed that morning): **non-linear, fast at the start**
     (recognising the families is already great). A player who knows every entry and every species by its common name is at **80%**;
-    scientific names are the real difficulty and fill the last **20%** slowly, point by point. The stages: the circle-1 entries
-    (27), their species by common name (323), the same species by scientific name; unopened units at 0; circles 2 and 3 never count (as
+    scientific names are the real difficulty and fill the last **20%** slowly, point by point: **scientific genus names, then species
+    scientific names** (Pierre, 2026-11-04). The stages: the circle-1 entries (27), their species by common name (323), their genera by
+    scientific name, the species by scientific name; unopened units at 0; circles 2 and 3 never count (as
     now). The exact curve is set by simulation (`tools/learnsim.js` fish profiles).
   - What counts for the scientific stage (the exam passed, or the progress on the questions shown in Latin) and what "nearly every one"
     means are part of the same study.
@@ -354,8 +370,9 @@ on families only to an IMR RA with every species open:
    later ("Both subjects in one app").
 5. **The fish exams, to be rethought** (Pierre, 2026-11-04; open, to design): an exam per species, or per entry (family)? Pierre's idea:
    a family's exam is about 20 questions on only the hard fish of that family, answered directly with the scientific name.
-6. **The fish open-all card and the IMR answer** (open, to settle with the species level): what the card opens once species exist (the
-   earlier IMR prompt's list is the starting proposal), and whether "I'm at IMR" also starts the name-display schedule earlier.
+6. **The fish open-all card and the IMR answer.** **Answered in part (Pierre, 2026-11-04)**: "I'm at IMR" brings scientific names
+   earlier (the adaptive difficulty still holds them back). What the card opens once species exist: proposal, Pierre undecided (all the
+   remaining families, never all species at once; "The fish welcome question and the IMR answer").
 
 ## Checks before release
 
