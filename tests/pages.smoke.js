@@ -1971,66 +1971,25 @@ async function tipsCheck(b, base) {
       if (early || !(r.inline || r.card) || r.tip) fails.push(`${W} with the one-tap question due: ${JSON.stringify({early, ...r})}`);
       await c.close();
     }
-    // The Duel tab, no genus met yet: a duel whose genera are not all met brings their cards itself (quizDuel, not in its
-    // plan): the tip waits for a later break, never a genus card right after it (Codex review of PR #440). Both sides are
-    // checked, neither left to the draw (test-suite review, 2026-11-04: with the draw deciding, a tip often never came in
-    // 10 duels and nothing was checked; and a repeated pair of met genera could come first, Codex review #456):
-    // 1. the next duel is planned with a genus not met yet (NEXTQ, as planNext would): at the break the tip must wait, and
-    //    that duel comes with the genus's card;
-    // 2. then every genus met, so no duel brings a card: at the next armed break the tip comes, and no card after it.
+    // The Duel tab (one progression path since 2026-11-04, Pierre: its duels draw only genera unlocked and bring no
+    // card; until then a duel of genera not met brought their cards and the tip had to wait for a later break, Codex
+    // review of PR #440, checked here until this change): at an armed break the tip comes, and no card after it.
     {
-      const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#quiz-duel', true); // q 60: any break will do
+      const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#quiz-duel'); // q 60: any break will do; every genus met
       // The hold already on: these misses never take it across INTRO.HOLD, so the Duel tab's relief card (checked in
       // duelReliefCheck) does not take the break before the tip.
       await p.evaluate(() => (HOLDS = 9));
-      let waited = null,
-        shown = 0;
-      // 1. A break armed for the tip (an achievement toast at the answer arms none: then the next duel is tried).
-      for (let i = 0; i < 6 && !waited; i++) {
-        await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
-        const r = await p.evaluate(() => {
-          const clear = () => {
-            document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-            document.querySelectorAll('.achpop').forEach(x => x.remove());
-            achQ.length = 0;
-            achBusy = false;
-          };
-          clear();
-          document.querySelector('#view [data-c]').click();
-          const nb = document.getElementById('next'),
-            armed = nb.onclick !== route,
-            cur = hashNow(),
-            pair = duelPick(pool(), ([x, y]) => !introduced(x) || !introduced(y));
-          if (armed && pair)
-            NEXTQ = {k: planKey(cur), args: planDuel(...pair), snap: planState(), stop: false, urls: [], held: [], next: null};
-          clear();
-          nb.click();
-          return {armed, pair, tip: !!document.querySelector('.tipcard')};
-        });
-        if (!r.armed) continue;
-        if (!r.pair) {
-          fails.push(`${W} duel: no look-alike pair with a genus not met yet`);
-          break;
-        }
-        await p.waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000}).catch(() => {});
-        const card = await p.evaluate(() => !!document.querySelector('.unlock.intro'));
-        waited = {...r, card};
-        if (r.tip || !card) fails.push(`${W} duel: the next duel brings a genus card, yet ${JSON.stringify(waited)}`);
-      }
-      // 2. Every genus met: the next armed break takes the tip, and no card comes after it.
-      await p.evaluate(() => introAdd(slateGenera(), false));
-      for (let i = 0; i < 6 && waited && !shown; i++) {
+      let shown = 0;
+      for (let i = 0; i < 6 && !shown; i++) {
         const r = await play(p);
         if (!r.next) {
           // Not armed at the answer (a toast was up then, as after a first duel won): the tip waits; nothing to check here.
-          if (r.armed) fails.push(`${W} duel: no tip at a break armed for it, every genus met (duel ${i + 1})`);
+          if (r.armed) fails.push(`${W} duel: no tip at a break armed for it (duel ${i + 1})`);
           continue;
         }
         shown++;
-        // Its buttons take taps after TIP.WAIT (quiz.js): wait for that, not a fixed time.
         await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
         await p.evaluate(() => [...document.querySelectorAll('.tipcard [data-b]')].find(x => x.textContent === 'Got it').click());
-        // The next duel is drawn with its genera's cards, if any, at once (quizDuel, introShow): wait for it, then look.
         await p
           .waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000})
           .catch(() => fails.push(`${W} duel: no next duel after the tip`));
@@ -2040,8 +1999,7 @@ async function tipsCheck(b, base) {
         }));
         if (after.intro || after.tip) fails.push(`${W} duel: a card right after the tip: ${JSON.stringify(after)}`);
       }
-      if (!waited) fails.push(`${W} duel: no break armed for the tip in 6 duels`);
-      else if (!shown) fails.push(`${W} duel: no tip in 6 duels once every genus was met`);
+      if (!shown) fails.push(`${W} duel: no tip in 6 duels`);
       if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
       await c.close();
     }
@@ -3099,19 +3057,127 @@ async function newPlayer(b, base) {
   return fails;
 }
 
+// One progression path for every game (Pierre, 2026-11-04): a beginner who met 4 genera on the path (Pocillopora,
+// Stylophora, Favites, Dipsastraea; Open all declined) plays 15 duels of the Duel tab: they come only from those 4, no
+// genus card opens, no ★ genus (whose reference is not met) ever shows; "Drill this pair" on a pair not unlocked falls back
+// to an unlocked duel; Memory deals only those 4 genera; the custom quiz offers only them. Returns the failures.
+async function onePath(b, base) {
+  const fails = [],
+    MET = ['Pocillopora', 'Stylophora', 'Favites', 'Dipsastraea'],
+    STAR = ['Duncanopsammia', 'Alveopora', 'Merulina', 'Cyphastrea', 'Halomitra'],
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true});
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  await c.addInitScript(M => {
+    localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-nudge', '1');
+    localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+    localStorage.getItem('reefid-sync-coral-intro') ||
+      localStorage.setItem('reefid-sync-coral-intro', JSON.stringify(Object.fromEntries(M.map(n => [n, [0, 1, 1, 's']]))));
+    localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
+  }, MET);
+  const p = await c.newPage(),
+    errs = [];
+  p.on('pageerror', e => errs.push(e.message));
+  await p.goto(base + '#quiz-duel');
+  await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+  const asked = new Set();
+  let cards = 0;
+  for (let i = 0; i < 15; i++) {
+    // A card that took the break at Next (a tip, the relief card) is closed first, as a player would.
+    let ok = false;
+    for (let k = 0; k < 3 && !ok; k++) {
+      ok = await p
+        .waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 5000})
+        .then(() => true)
+        .catch(() => false);
+      if (!ok) {
+        // Escape: "Got it" on a tip, "Keep drilling" on the relief card; then Next if the duel answered is still there.
+        if (await p.$('.unlock.intro')) cards++;
+        await p.keyboard.press('Escape');
+        await p.evaluate(
+          () => document.querySelector('#view .q.done') && !document.querySelector('.unlock') && document.getElementById('next')?.click()
+        );
+      }
+    }
+    if (!ok) {
+      fails.push(
+        `one path: no duel to answer at ${i + 1} ${JSON.stringify(
+          await p.evaluate(() => ({
+            h: location.hash,
+            u: [...document.querySelectorAll('.unlock')].map(x => x.className),
+            v: document.getElementById('view').textContent.slice(0, 80),
+            next: !!document.getElementById('next'),
+            dis: !!document.getElementById('next')?.disabled,
+            armed: !!document.getElementById('next') && document.getElementById('next').onclick !== route,
+            run: DUELRUN,
+            ach: achQ.length,
+            achBusy,
+            q: [...document.querySelectorAll('#view .q')].map(x => x.className)
+          }))
+        )}`
+      );
+      break;
+    }
+    const r = await p.evaluate(() => {
+      const card = !!document.querySelector('.unlock.intro');
+      document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+      document.querySelectorAll('.achpop').forEach(x => x.remove());
+      achQ.length = 0;
+      achBusy = false;
+      const cs = [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(x => x.dataset.c);
+      document.querySelector('#view .q:not(.done) [data-c]').click();
+      return {card, cs};
+    });
+    await p.waitForSelector('#next:not([disabled])', {timeout: 10000}).catch(() => {});
+    await p.evaluate(() => document.getElementById('next')?.click());
+    if (r.card) cards++;
+    r.cs.forEach(n => asked.add(n));
+  }
+  const met = await p.evaluate(() => slateGenera().filter(introduced));
+  const out = [...asked].filter(n => !MET.includes(n));
+  if (cards || out.length || met.length !== MET.length || [...asked].some(n => STAR.includes(n)))
+    fails.push(`one path, Duel tab: ${JSON.stringify({cards, out, met: met.length})}`);
+  // "Drill this pair" on a pair not unlocked: an unlocked duel instead, no card.
+  await p.evaluate(() => (location.hash = 'quiz-duel|Acropora|Montipora'));
+  await p.waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000}).catch(() => {});
+  const dr = await p.evaluate(() => ({
+    cs: [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(x => x.dataset.c),
+    card: !!document.querySelector('.unlock.intro')
+  }));
+  if (dr.card || dr.cs.some(n => !MET.includes(n))) fails.push(`one path, a link to a pair not unlocked: ${JSON.stringify(dr)}`);
+  // Memory (Practice, #pairs): only the genera unlocked (4 pairs, 8 cards at Medium).
+  await p.evaluate(() => (location.hash = 'pairs'));
+  await p.waitForSelector('#view .pcard', {timeout: 15000}).catch(() => {});
+  const mem = await p.evaluate(() => document.querySelectorAll('#view .pcard').length);
+  if (mem !== 2 * MET.length) fails.push(`one path, Memory: ${mem} cards, expected ${2 * MET.length}`);
+  // The custom quiz's selection: only the genera unlocked.
+  await p.evaluate(() => (location.hash = 'quiz-custom'));
+  await p.waitForSelector('#view .cqtile', {timeout: 15000}).catch(() => {});
+  const cq = await p.evaluate(() => [...document.querySelectorAll('#view .cqtile')].map(x => x.dataset.g));
+  if (cq.length !== MET.length || cq.some(n => !MET.includes(n)))
+    fails.push(`one path, custom quiz offers ${cq.length}: ${cq.slice(0, 6).join(', ')}`);
+  if (errs.length) fails.push(`one path: page errors ${errs.slice(0, 3).join(' | ')}`);
+  await c.close();
+  return fails;
+}
+
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
 // the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
-// (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer).
-const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'signin', 'replay'],
+// (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
+// the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath).
+const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'onepath', 'signin', 'replay'],
   WIDTHS = [390, 1280];
 
 (async () => {
   const run = slot.parts(PARTS, {
       main: ['main', 'overlays'],
-      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'signin', 'replay']
+      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'onepath', 'signin', 'replay']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -3741,6 +3807,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
+  if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);
