@@ -22,7 +22,7 @@ const SHELL = [
   'index.html',
   'app.css?v=137',
   'core.js?v=46',
-  'app.js?v=204',
+  'app.js?v=205',
   'sync.js?v=28',
   'progress.js?v=21',
   'model.js?v=37',
