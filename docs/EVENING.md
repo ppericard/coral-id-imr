@@ -149,7 +149,9 @@ two identical "Changed to I had the IMR coral course · after answer 160 · in t
 (duplicate event or two real changes: check the data path); check every time is the player's local time (UTC offset
 logged per answer since sheet v44). (2) The admin opens on Players › Activity (recent sessions), not Players › List.
 (3) Activity: tapping a session unfolds a mini-summary under it, on the same page: the session's success chart, start /
-end / length, answers and % right, genera met or opened, notable events, a link to the full Journey; tap again folds it.
+end / length, answers and % right, genera met or opened, notable events, a link to the full Journey; tap again folds it. Its content (Pierre, same morning): what the player made of the session: the most improved genera, the main
+difficulties met (the genera or pairs missed most, the hardest photos), achievements unlocked, genera opened; a
+short summary of the session, not raw numbers only.
 
 **Pierre's answers (2026-11-05 morning):** yes to #535, #522 (and accept the misspelled forms when typed, the PDF's
 especially), #526, #533, #536, #538, #540 as recommended. Notes for later: (1) #526: how to offer the genus step
