@@ -50,7 +50,9 @@ The first fish questions must be easy and readable. Two decisions, each built in
 - **The first photos are very easy**: clear light, colourful, the fish well visible in profile, an easy species. **No juveniles and no
   species with strong sexual dimorphism or colour phases (e.g. parrotfish) at the very start**: they come later (see "Juveniles and colour
   phases"). Until answers rate the photos, an annotation pass (an agent judging each fish photo on explicit criteria: light, colour, profile,
-  size in frame, life stage, phase) gives each photo an initial difficulty prior; a separate code PR, with the fish photo pipeline.
+  size in frame, life stage, phase) gives each photo an initial difficulty prior (built in #461: `judging/FISH.md`). Updated later the same
+  day (Pierre): sex and colour phases are species-level difficulties and are not kept back; juveniles are, except where they are distinct
+  and recognisable (Spadefish, Sweetlips); see "Juveniles and colour phases".
 
 ## Unlock rules
 
@@ -176,15 +178,43 @@ Decided from the admin pooling study:
 
 ## Juveniles and colour phases
 
-- Early, never a late stage (Pierre's ReefRecall rule). Juvenile and phase photos (`ph`, `st`) stay in the pool at every level; the photo
-  difficulty Elo puts them at the hard end by itself. The entry cards already show `phase` (5 entries).
-- **But not in the first questions** (Pierre, 2026-11-04, fish beta feedback; "The very start"): no juvenile, no strong sexual dimorphism
-  and no colour phase (e.g. parrotfish) while an entry is new. They come in early, not late: for example once the entry is past its first
-  level (Snorkeler, so from Open Water, 50%); the point is set by simulation. Until answers rate the photos, the annotation pass's prior
-  (life stage, phase) places them.
+- Early, never a late stage (Pierre's ReefRecall rule). Until an entry reaches Open Water its questions show only its very easy photos
+  (`model.js` `easyFirst`, a temporary bootstrap until fish answers are logged; docs/LEARNING.md "Fish: the starter core and judged
+  photos"). A juvenile is one only where its entry's juveniles are distinct and recognisable (Pierre, 2026-11-04: Spadefish and
+  Sweetlips, `fish.json` `juv: "distinct"`; Sweetlips juveniles are more recognisable than the adults), so they help learn the family
+  early; elsewhere its judged ease is capped, provisionally, until real answers say otherwise. From Open Water every juvenile is in
+  the pool.
+- **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
+  sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
+  (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.
+- Supersedes the "not in the first questions" line of 2026-11-04 morning for phases and dimorphism (Pierre, later the same day): they
+  are species-level difficulties, kept back no longer.
 - **Introduced with an explanation** (Pierre, 2026-11-04): when a juvenile, a colour phase or a strongly dimorphic species first comes in,
   a card explains it, with photos side by side (adult and juvenile; male and female, or the phases), e.g. "Careful: this is the juvenile
   of X, it looks very different", or "this species' males and females can look very different". Possibly one per species.
+
+## Look-alikes at any rank (design, Pierre, 2026-11-04; not built)
+
+- Fish look-alikes exist sometimes at the family level but mostly at the **species** level, including across two families: not all
+  damselfish against all angelfish, but certain dwarf angelfish against certain dark damselfish. So a look-alike pair can link units
+  at any rank: family to family (`look` today), and species to species, across families too.
+- In a family-level question, a cross-family species pair applies **per photo**: a photo of species A makes the family of species B a
+  likely trap and confusion (and its Again / duel), not the whole family pair.
+- Confusions are tracked at the finest rank available: fish photos carry their species (`sp`), so even family-level answers tell
+  which angelfish species get taken for damselfish. Real data will propose the species pairs; Pierre can also name them.
+- **How** (agreed with Pierre, 2026-11-04): the raw record is each answer as logged (the photo, species-tagged; the unit asked; the
+  unit answered), nothing aggregated at write time. Three views are derived from it:
+  1. family to family (summed over the species of the asked family): drives family-wide pairs;
+  2. species to family (a photo of species S of family A answered as family B): there from the first family-level games, it shows
+     which species of A are taken for B and drives the per-photo cross-family traps;
+  3. species to species: once species questions exist.
+- Small counts: a species' confusion rate is shrunk toward its family's (pooled with a prior, as the coral pooled confusions and
+  the hierarchical photo Elo already do), so a species becomes a cross-family look-alike only when its rate is clearly above its
+  family's.
+- Pairs inside a family (same genus, same IMR sub-entry) come later from species questions, seeded from the data (genus, `sub`).
+- Candidates to define at species level, no species chosen yet (never invented): some dwarf angelfish against some dark
+  damselfish; some yellow butterflyfish against some yellow rabbitfish (Pierre, 2026-11-04).
+- Engine support comes with the species level and the logging of fish answers (ROADMAP).
 
 ## Formats and their order
 
