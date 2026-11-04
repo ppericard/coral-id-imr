@@ -158,11 +158,15 @@ test('the sheet moves its logged page names once, by the new script itself, and 
   assert.deepStrictEqual(JSON.parse(E.rows[1][6]), {p0: 'idkey', nx: 'quiz'});
   assert.strictEqual(R.rows[1][where], 'idkey|form=M;box=M1');
   assert.ok(s.props.ONCE_idkey, 'marked done');
-  const log = s.sheets['Deploy log'].rows.slice(1).map(r => String(r[1]));
+  // The other one-shots log their own lines (tests/sync.test.js).
+  const log = s.sheets['Deploy log'].rows
+    .slice(1)
+    .map(r => String(r[1]))
+    .filter(l => l.startsWith('one-shot idkey'));
   assert.deepStrictEqual(log, [`one-shot idkey (v${VERSION}): page names finder → idkey: Pages 2, Events 2, Reports 1 cells`]);
   // Once only: a later run neither rewrites nor logs.
   P.rows[1][5] = 'finder';
   s.ctx.autoUpdate();
   assert.strictEqual(P.rows[1][5], 'finder');
-  assert.strictEqual(s.sheets['Deploy log'].rows.length, 2);
+  assert.strictEqual(s.sheets['Deploy log'].rows.filter(r => String(r[1]).startsWith('one-shot idkey')).length, 1);
 });
