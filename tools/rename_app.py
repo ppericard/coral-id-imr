@@ -6,8 +6,7 @@
     python3 tools/rename_app.py --from "Old Name"   # a fork that renames the app again (see below)
 
 Idempotent: a second run changes nothing. Other branches merged before this one keep adding the old names (a new
-storage key, a page title...), so after a rebase run it again, then `python3 tools/check_versions.py --base origin/main
---fix`, and commit its result on its own. Hand-written changes (the migration of players' data, its tests, the docs
+storage key, a page title...), so after a rebase run it again, then `python3 tools/check_versions.py --fix`, and commit its result on its own. Hand-written changes (the migration of players' data, its tests, the docs
 prose) are separate commits and never undone by this tool: it skips any line holding the marker "rename-app: keep" and
 any block between "rename-app: keep-begin" and "rename-app: keep-end" (code that must name the old keys on purpose).
 
