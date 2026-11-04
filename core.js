@@ -267,7 +267,7 @@
         line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
       },
       views: [['wide', 'Photo']],
-      optin: ['c2', 'c3'],
+      optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
       log: false,
       ach: false,
       board: false,

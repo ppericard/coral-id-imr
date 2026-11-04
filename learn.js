@@ -736,7 +736,9 @@ function viewFishList() {
         ]
       : [blk('', FISH.c1)];
   const sets = SETS().map(S =>
-    Q[S.k] ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units()) : ''
+    Q[S.k] && S.page !== false
+      ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units())
+      : ''
   );
   $v.innerHTML = `<p class="lede">The fish families of the IMR fish presentation${key ? `, by the identification groups of ${esc(key.short)}` : ''}, with the IMR cues. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
