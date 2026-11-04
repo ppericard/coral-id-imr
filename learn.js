@@ -26,7 +26,81 @@ let azView = (() => {
 let gfOpen = false; // phone Filter fold on Genera, kept open across redraws
 // Step 0 of the Learn path (Pierre, 2026-11-03): Coral basics before the genus sheets, as the first card of the Genera
 // page ("0 · Coral basics" in the lecture order, the first card in the slate order), with where the player is in it.
+// It always opens step 1 (Pierre, 2026-11-04: a card at the start of the path starts the path); the Basics tab, Home and
+// the quiz's offers open #basics, which resumes at the last step seen.
 const BASICS_STEPS = 7;
+// The card's picture (Pierre, 2026-11-04, mockup A3 of four proposals): the seven steps as a trail of line drawings,
+// from the colony down to the septal teeth and back out to the growth forms, each stop a soft disc in its own colour
+// (--bt1…--bt7, reef blue to coral orange; app.css). Stops seen: tinted, with a ✓; the next one: a deeper tint, a ring and
+// "Next: <word>" ("Start: Colony" while none is seen, Pierre 2026-11-04); the others desaturated, joined by a dotted
+// path. Four along the top, three back along the bottom (Teeth under Septa). Its words (proto/basics.js steps):
+// BASICS_WORDS' terms, shortened to fit a stop.
+const BASICS_TRAIL = [
+  [
+    'colony',
+    'Colony',
+    '<path d="M3 19.5h18"/><path d="M4.5 19.5c0-6 3.4-10 7.5-10s7.5 4 7.5 10"/><circle cx="9" cy="14" r=".8"/><circle cx="12" cy="12.2" r=".8"/><circle cx="15" cy="14" r=".8"/><circle cx="10.5" cy="17" r=".8"/><circle cx="13.5" cy="17" r=".8"/>'
+  ],
+  ['polyp', 'Polyp', BASICS_ICON],
+  [
+    'corallite',
+    'Corallite',
+    '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><circle cx="3.5" cy="5" r="1.6"/><circle cx="20.5" cy="19" r="1.6"/><circle cx="20.5" cy="5" r="1.6"/>'
+  ],
+  // Step 4 teaches septa and costae together (Pierre, 2026-11-03): its stop names both, and its drawing shows the blades
+  // inside the rim (septa) carried on outside it (costae).
+  [
+    'septa',
+    'Septa / costae',
+    '<circle cx="12" cy="12" r="6.5"/><path d="M13.9 12L18.5 12M15.12 13.8L17.63 15.25M12.95 13.65L15.25 17.63M12 15.6L12 18.5M11.05 13.65L8.75 17.63M8.88 13.8L6.37 15.25M10.1 12L5.5 12M8.88 10.2L6.37 8.75M11.05 10.35L8.75 6.37M12 8.4L12 5.5M12.95 10.35L15.25 6.37M15.12 10.2L17.63 8.75"/><path d="M18.5 12L22.5 12M17.63 15.25L21.09 17.25M15.25 17.63L17.25 21.09M12 18.5L12 22.5M8.75 17.63L6.75 21.09M6.37 15.25L2.91 17.25M5.5 12L1.5 12M6.37 8.75L2.91 6.75M8.75 6.37L6.75 2.91M12 5.5L12 1.5M15.25 6.37L17.25 2.91M17.63 8.75L21.09 6.75"/>'
+  ],
+  ['teeth', 'Teeth', '<path d="M3 19h18"/><path d="M3 19v-5l2-3 2 3 2-3 2 3 2-3 2 3 2-3 2 3 2-3v8"/>'],
+  [
+    'walls',
+    'Walls',
+    '<path d="M7.5 4.5 12 7v5l-4.5 2.5L3 12V7Z"/><path d="M12 7l4.5-2.5L21 7v5l-4.5 2.5L12 12"/><path d="M7.5 14.5V19l4.5 2.5 4.5-2.5v-4.5"/>'
+  ],
+  ['forms', 'Growth forms', '<path d="M3 20.5h18"/><path d="M12 20.5V11M12 15l-4.5-4V6.5M12 13l4.5-4V5M7.5 11 5 8.5M16.5 9l2.5-2.5"/>']
+];
+// Where each stop sits on a 400 x 300 board (the card's 4:3 photo box).
+const BASICS_AT = [
+  [58, 76],
+  [152, 76],
+  [246, 76],
+  [340, 76],
+  [314, 212],
+  [200, 212],
+  [86, 212]
+];
+function basicsArt() {
+  // Done on another device (the synced achievement) counts every stop as seen.
+  const done = basicsDone(),
+    seen = (store.get(BASICS_KEY, {}) || {}).seen || {},
+    next = BASICS_TRAIL.findIndex(s => !seen[s[0]]),
+    st = BASICS_TRAIL.map((s, i) => (done || seen[s[0]] ? 'is-seen' : i === next ? 'is-next' : 'is-todo')),
+    at = BASICS_AT,
+    c = i => `var(--bt${i + 1})`;
+  // From one stop to the next: straight along a row, a curve down the right side from Septa to Teeth; in the colours of
+  // its two stops once the second is reached, dotted before.
+  const way = i => {
+    const [a, b] = [at[i], at[i + 1]];
+    const d = i === 3 ? `M${a[0]} ${a[1]}C${a[0] + 62} ${a[1]} ${b[0] + 76} ${b[1]} ${b[0]} ${b[1]}` : `M${a[0]} ${a[1]}L${b[0]} ${b[1]}`;
+    return st[i + 1] === 'is-todo'
+      ? `<path class="bxt-way" d="${d}"/>`
+      : `<linearGradient id="bxg${i}" gradientUnits="userSpaceOnUse" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"><stop offset="0" style="stop-color:${c(i)}"/><stop offset="1" style="stop-color:${c(i + 1)}"/></linearGradient><path class="bxt-way on" d="${d}" style="stroke:url(#bxg${i})"/>`;
+  };
+  const stop = ([id, , icon], i) =>
+    `<g class="bxt-stop ${st[i]}" data-step="${id}" style="--c:${c(i)}" transform="translate(${at[i].join(' ')})"><circle r="31"/><g class="bxt-ic" transform="translate(-17 -17) scale(1.4167)">${icon}</g>${
+      st[i] === 'is-seen' ? '<g class="bxt-tick" transform="translate(23 -23)"><circle r="10"/><path d="M-4.5 0.5l3 3 6-6.5"/></g>' : ''
+    }</g>`;
+  // The words at a constant size (HTML, not SVG text), hung under their stop, "a / b" on two lines; on a narrow card, one by the left or right edge is anchored inwards (bxt-l, bxt-r).
+  const lab = ([, t], i) =>
+    `<span class="bxt-lab ${st[i]}${at[i][0] < 100 ? ' bxt-l' : at[i][0] > 300 ? ' bxt-r' : ''}" style="--c:${c(i)};left:${at[i][0] / 4}%;top:${(((at[i][1] + 36) / 300) * 100).toFixed(2)}%">${st[i] === 'is-next' ? (st.includes('is-seen') ? 'Next: ' : 'Start: ') : ''}${esc(t).replace(' / ', ' /<br>')}</span>`;
+  return `<span class="ph bxart" aria-hidden="true"><svg viewBox="0 0 400 300">${at
+    .slice(0, -1)
+    .map((_, i) => way(i))
+    .join('')}${BASICS_TRAIL.map(stop).join('')}</svg>${BASICS_TRAIL.map(lab).join('')}</span>`;
+}
 function basicsCard(tips) {
   const n = Object.keys((store.get(BASICS_KEY, {}) || {}).seen || {}).length,
     done = basicsDone(),
@@ -36,10 +110,11 @@ function basicsCard(tips) {
         ? `${Math.min(n, BASICS_STEPS - 1)} of ${BASICS_STEPS} steps seen`
         : `${BASICS_STEPS} short steps · about 5 min`,
     say = 'Polyp, corallite, septa, walls, growth forms: the words the ID tips use, on real photos.',
-    art = `<span class="ph bxart" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${BASICS_ICON}</svg></span>`;
+    art = basicsArt(),
+    to = '#basics|' + BASICS_TRAIL[0][0];
   return tips
-    ? `<article class="tipg bxtip"><a href="#basics" class="tipph">${art}<i>Coral basics</i></a><div><p class="note">${state}</p><p>${say}</p></div></article>`
-    : `<a class="card bxcard${done ? ' done' : ''}" href="#basics">${art}<span class="cap"><b>Coral basics</b><small>${state}</small><p>${say}</p></span></a>`;
+    ? `<article class="tipg bxtip"><a href="${to}" class="tipph">${art}<i>Coral basics</i></a><div><p class="note">${state}</p><p>${say}</p></div></article>`
+    : `<a class="card bxcard${done ? ' done' : ''}" href="${to}">${art}<span class="cap"><b>Coral basics</b><small>${state}</small><p>${say}</p></span></a>`;
 }
 function viewGenera() {
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
