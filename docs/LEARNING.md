@@ -1703,12 +1703,13 @@ ratings from the sheet. `tests/pages.smoke.js` `duelReliefCheck` checks the drop
 
 **2. A relief card** (`quiz.js` `reliefNote`, `reliefDue`, `reliefArm`, `reliefShow`): the first time in a duel run an
 answer takes the hold's sum h from below `INTRO.HOLD` to `INTRO.HOLD` or more, the next break at Next shows a card
-(💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Seeing them side by
-side often helps more than more photos." and three choices, in Pierre's order: **Mix in other genera** (the main button,
+(💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Mixing in other genera for
+a while, or seeing these two side by side, often helps more than more of the same." (Pierre, 2026-11-04: the line
+first spoke of the comparison only, the second choice since the order changed) and three choices, in Pierre's order: **Mix in other genera** (the main button,
 the photo quiz, `#quiz`), **Compare them** (the side-by-side comparison of the duel's two genera, `#cmp-A|B`, as
 `learn.js` links it), **Keep drilling** (the next duel; Escape too). No numbers on it (Pierre's rule for these cards).
 Compare them does not end the drill for good (Pierre, 2026-11-04): the comparison it opens shows **Back to the duel**
-(top and end), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
+(in view however far the page scrolls: a floating button at the bottom centre on phones and tablets, a light "Duel paused" band under the page bar on desktop), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
 card in it; the easing applies as usual). The comparison opened any other way is unchanged.
 
 - **The same detector**: the opening hold's CUSUM (`holdStep`), no new one and no new constant. The crossing is read in
@@ -2200,6 +2201,79 @@ Pierre, 2026-11-03: fish on the same engine as corals (docs/ARCHITECTURE.md "Sub
 - **Winks** (`quiz.js` `WINK` = {FROM 15, P 0.04, GAP 20}): a surprise card for every fish player, circle 1 included (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), never before 15 answers, then 4% of the questions, at least 20 answers apart, never the same wink twice in a visit, never over a card: with two winks, about one per 45 answers at most, a visit of 30-60 answers meets one or two. Never counted: no progress, ability, answer log or photo rating.
 - **Not logged to the sheet yet**: fish answers stay on the device (and in the synced progress): the pooled photo difficulty and confusions start from their priors only for fish (the photo's set prior 0, the IMR look-alikes) until the sheet takes fish answers (ROADMAP).
 - **No timed mode, no size estimation**: video ID and EventMeasure measurement are other tools (ROADMAP).
+
+### Fish: the starter core and judged photos (2026-11-04)
+
+Pierre tried the fish beta and pulled it back (2026-11-04): the first families opened were not the right ones, and the
+first photos were too hard. Fish answers are not logged to the sheet (`SUBJECTS` `log: false`), so no photo had a
+rating and no entry a difficulty: every fish photo sat at 0, and the opening order was commonness and chance. Three
+changes, all data the engine reads generically (the corals have none of these fields, so nothing moves for them):
+
+- **The starter core** (`fish.json` `start`, from `tools/fish_source.json`; Pierre's fish-ID design: four easy, readable
+  families first): Butterflyfish, Angelfish, Damselfish, Surgeonfish & Unicornfish. `fishGen` marks their records
+  `first`; `openPick` opens a `first` unit before any other while one is left, so the `INTRO.START` (4) first cards are
+  exactly these four. The rest then opens by the existing rule, easiest and most common first: an entry's difficulty
+  (`genusDiff`) is the mean of its photos' difficulty, which the judged ease now sets.
+- **Every circle-1 photo judged** (648 photos, then 37 added, `judging/FISH.md`, `tools/fish_judge.json`): an agent
+  looked at each one and gave it tags (view, whole fish, light, colour loss, clarity, size, count, juvenile, camouflage;
+  the sex / colour phase flag for the entries the presentation says change, `dimorph`: Parrotfish, Anthias) and an ease
+  from 1 to 5, capped by rule (a juvenile or a monochrome photo at most 2; a night shot, a strong colour loss, a head-on
+  or tail view, a partial fish or camouflage at most 3), plus a proposed crop for 140 of them (a proposal for the admin,
+  never applied). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
+  difficulty (an Anthias is easy to call an Anthias, a parrotfish a parrotfish: its family-level difficulty is the
+  wrasse); the flag stays for the species questions and the explanation cards. **The juvenile cap is per entry**
+  (Pierre, 2026-11-04): Spadefish and Sweetlips juveniles look nothing like their adults but are themselves very
+  recognisable (Sweetlips juveniles more than the adults) and help learn the family, so those entries carry `juv:
+  "distinct"` (`tools/fish_source.json`) and their juvenile photos are judged on the other criteria only (18 photos
+  looked at again: Spadefish now 8 very easy photos, Sweetlips 10). The other entries keep the cap provisionally, with
+  no source either way; it goes with the bootstrap below. The juvenile tag stays on every photo.
+- **At least 5 very easy photos per circle-1 entry** (Pierre's target, 2026-11-04): 11 entries had fewer (Spadefish 0,
+  Fusilier 0, Sandperch 1, Emperor 2, Anthias 2, Lizardfish 3, Moorish Idol, Goatfish, Triggerfish, Filefish, Lionfish
+  4). 214 research-grade candidates of `fish-cand.json` (PR #463: CC0, CC BY or CC BY-NC, Indo-West Pacific) were looked
+  at and judged with the same rubric, and 37 very easy ones added (`tools/fish_judge.json` `add`, to 6 per entry; Fusilier
+  5): every circle-1 entry now has 5 to 13, and 24 to 30 photos in all.
+- **The photo prior** (`photoDiff`): a judged photo's prior is its unit's offset + (`PDIFF.MID` 3 − ease) ×
+  `PDIFF.EASE` 0.5, so ease 5 starts at −1 and ease 1 at +1. 0.5 logit an ease point is one standard deviation of a
+  photo's own difficulty around its genus (the hierarchical photo Elo study, above), so the scale spans the spread real
+  photos show and no more. Like every prior it weighs `PDIFF.W` (5) answers once ratings come. The judged prior also
+  counts in `easyTrust` (each judged photo as `PDIFF.W` answers), so the fish entries open easiest first from the first
+  card even on a device that has not loaded the sheet's stats. **The coral lesson applies**: Pierre's Easy / Medium /
+  Hard sets predicted the answers worse than no prior ("Hierarchical photo Elo"), because they encoded featured and
+  quality, not what the players find hard. This rubric judges what a beginner must see to tell the family (profile,
+  whole fish, its colours), which is closer to that, but it is a judgement: once fish answers are logged, compare the
+  ease with the photos' ratings and drop or refit the prior if it does not predict them (ROADMAP).
+- **The first questions on an entry** (`easyFirst`, in `photoSet`): until the entry reaches **Open Water** (`LV_AT[0]`,
+  50%: the first level earned, an existing threshold; the exam's entry and every later question are untouched), only
+  its very easy photos (ease `PDIFF.EARLY` 4 or 5, Pierre's "very easy first"), or its `PICKD.VARIETY` (3) easiest when
+  it has fewer, so a few still take turns (the rule that keeps 3 colonies in rotation; no circle-1 entry needs it now).
+  By the caps above no night, partial or head-on photo is ever among them, nor a juvenile outside Spadefish and
+  Sweetlips. Juveniles are not a late stage
+  (FISH_PATH): they come in at Open Water on each entry, a few dozen answers in, and will later get their explanation
+  cards. **Temporary** (Pierre, 2026-11-04: an arbitrary bootstrap threshold): the gate stands in for the photo
+  ratings fish do not have yet; remove it once fish answers are logged and the automatic difficulty engine can rank the
+  photos (ROADMAP).
+
+Constants: `PDIFF.EASE` 0.5 (the measured photo spread, above), `PDIFF.MID` 3 (the scale's middle), `PDIFF.EARLY` 4
+(Pierre's "very easy" band); no new threshold (Open Water, `PICKD.VARIETY`, `PDIFF.W`, `INTRO.START` exist).
+
+**Measured** (rule 14f). `tools/learnsim.js` has no fish profile yet (its learners and world are the coral genera), so
+the outcome simulation cannot judge this change; what was measured instead: the real app in Chromium, a brand-new fish
+player, 30 questions, right 4 times in 5, the same 5 seeds before (main) and after, every photo shown scored with the
+judged ease (rubric 3, the 37 added photos included; main had moved to #428 for this run):
+
+| | before | after |
+| --- | --- | --- |
+| first cards | 4 of the 27 at random (e.g. Soldierfish, Bream, Groupers, Moorish Idol) | the starter core, every seed |
+| questions 1-15 on a starter entry | 21 / 75 | 75 / 75 |
+| questions 1-30 on a starter entry | 36 / 150 | 124 / 150 |
+| ease of the 150 photos shown (1 / 2 / 3 / 4 / 5) | 11 / 31 / 54 / 40 / 14, mean 3.10 | 0 / 1 / 2 / 98 / 49, mean 4.30 |
+| very easy (4-5) in questions 1-15 | 39% | 100% |
+| juvenile photos shown | 9 | 0 |
+| phase photos shown (no longer kept back) | 11 | 3 (very easy Anthias, opened at answer 22 or 27) |
+| the starter cards' photo (ease) | 4 / 5 / 4 / 4 | 5 / 5 / 5 / 5 (`fishGen` `cover`: the easiest judged photo of the highest source tier, Pierre's own first) |
+
+The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
+replay (rule 14g) cannot judge it either: the sheet holds no fish answer.
 
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
@@ -3348,6 +3422,19 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (later the same day; design only, docs/FISH_PATH.md): the global fish score is **non-linear**, fast
+  at the start, 80% for every entry and species known by common name, scientific names filling the last 20% slowly (the curve set by simulation), the Elo level kept alongside; the half fault must not be gameable (common
+  names never advance the scientific-name progress; options listed, none chosen); the fish exams to rethink (per
+  species or per family, e.g. about 20 hard questions answered with the scientific name); milestone cards for species
+  names and scientific names; juveniles, colour phases and dimorphism introduced with an explanation card.
+- 2026-11-04, Pierre (fish beta feedback; decided in principle, nothing built, docs/FISH_PATH.md): on a species question
+  that asks for Latin, a typed common name counts **as half a fault** (a graded outcome 0.5: its effect on `eloStep`,
+  `pgStep`, the expected success, the all-Latin exam and the replay to study first, starting values from
+  `tools/learnsim.js`); **one global fish progress score** from 0 to every species in Latin (entries, species named,
+  species in Latin as stages of one scale, the weights set by simulation), used by the fish leaderboard; the
+  name-display thresholds start from learnsim, then are computed per species from the measured difficulty of the
+  common against the Latin name; the first fish entries are a starter core of easy families and the first photos
+  very easy (no juveniles or colour phases at the very start).
 - 2026-11-04, Pierre (after a player's "Drill this pair" run fell to 6 misses in 13 with the hold on and nothing
   changed in the duel): the hold's easing reaches the Duel tab (`planDuel`), and a relief card the first time a duel
   run's answer takes the hold across `INTRO.HOLD`: Mix in other genera / Compare them (with Back to the duel, the same
