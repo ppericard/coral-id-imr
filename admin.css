@@ -3891,3 +3891,27 @@ button.adm-chip[aria-pressed='true'] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Players › Activity: activity over time (day, week, month) and play hours (Pierre, 2026-11-04: "who plays and how much"). */
+.adm-actv .adm-shead {
+  margin-bottom: 8px;
+}
+.adm-acols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.adm-acol h4,
+.adm-actv > h4 {
+  margin: 8px 0 4px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.adm-actv .adm-cols {
+  height: 90px;
+}
+@media (max-width: 599px) {
+  .adm-acols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

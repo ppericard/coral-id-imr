@@ -1057,6 +1057,33 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Recent sessions: the device not signed in ${JSON.stringify(an)}`);
       if (!R.some(x => /^#~journey\//.test(x.link) && !x.now)) fails.push(`${w}px Recent sessions: no other signed-in player`);
     }
+    // Activity over time (Pierre, 2026-11-04: "who plays and how much"): answers, active players and new players per day,
+    // week or month (the switch), and the play hours (24 bars).
+    const act = async () =>
+      p.evaluate(() => {
+        const c = document.querySelector('.adm-actv');
+        return (
+          c && {
+            charts: c.querySelectorAll('.adm-acol').length,
+            bars: c.querySelector('.adm-acol .adm-cols').children.length,
+            hours: c.querySelectorAll('.adm-phours > div').length,
+            on: (c.querySelector('[data-sf="per"][aria-pressed="true"]') || {}).dataset?.v,
+            wide: document.documentElement.scrollWidth - innerWidth
+          }
+        );
+      });
+    const ac0 = await act();
+    if (ac0) {
+      await p.click('.adm-actv [data-sf="month"], .adm-actv [data-v="month"]');
+      await settle();
+    }
+    const ac1 = await act();
+    if (!ac0 || ac0.charts !== 3 || ac0.hours !== 24 || !ac0.bars || !ac1 || ac1.on !== 'month' || ac1.bars > ac0.bars || ac1.wide > 0)
+      fails.push(`${w}px Activity over time: ${JSON.stringify([ac0, ac1])}`);
+    if (ac0) {
+      await p.click('.adm-actv [data-v="day"]');
+      await settle();
+    }
     // ↻ reads the answers again (no timer): the page comes back with its sessions.
     const before = await p.evaluate(() => ANS.at);
     await p.click('[data-sload]');

@@ -6408,6 +6408,75 @@ function recentSessions(R) {
       : '<p class="note">No sessions yet.</p>'
   }</section>`;
 }
+// Activity over time (Pierre, 2026-11-04: Players › Activity = "who plays and how much"): per day, ISO week (from
+// Monday) or month, the answers, the players who answered (active) and the players whose first answer falls in it
+// (new), oldest first, gaps filled, the last `max` periods. R: answer rows [id, time ms, ...]. Local time.
+function activityOver(R, per, max = 60) {
+  const p2 = n => String(n).padStart(2, '0'),
+    key = t => {
+      const d = new Date(t);
+      if (per === 'month') return `${d.getFullYear()}-${p2(d.getMonth() + 1)}`;
+      if (per === 'week') d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+    },
+    next = k => {
+      if (per === 'month') {
+        const [y, m] = k.split('-').map(Number);
+        return m === 12 ? `${y + 1}-01` : `${y}-${p2(m + 1)}`;
+      }
+      const [y, m, d] = k.split('-').map(Number),
+        n = new Date(y, m - 1, d + (per === 'week' ? 7 : 1));
+      return `${n.getFullYear()}-${p2(n.getMonth() + 1)}-${p2(n.getDate())}`;
+    };
+  if (!R.length) return [];
+  const B = {},
+    first = {};
+  R.forEach(r => {
+    if (!(r[0] in first) || r[1] < first[r[0]]) first[r[0]] = r[1];
+    const b = (B[key(r[1])] = B[key(r[1])] || {n: 0, ids: new Set(), nw: 0});
+    b.n++;
+    b.ids.add(r[0]);
+  });
+  Object.values(first).forEach(t => (B[key(t)].nw += 1));
+  const ks = Object.keys(B).sort(),
+    out = [];
+  for (let k = ks[0]; k <= ks[ks.length - 1]; k = next(k)) {
+    const b = B[k] || {n: 0, ids: new Set(), nw: 0};
+    out.push({k, answers: b.n, players: b.ids.size, newp: b.nw});
+  }
+  return out.slice(-max);
+}
+// Answers by hour of the day (local time), for "play hours".
+const playHours = R => {
+  const H = Array(24).fill(0);
+  R.forEach(r => H[new Date(r[1]).getHours()]++);
+  return H;
+};
+// The Activity card: the scale switch (day, week, month: SF.per), three column charts over the periods (answers, active
+// players, new players), then the play hours (answers by hour of the day).
+function activityCard(R) {
+  const per = ['day', 'week', 'month'].includes(SF.per) ? SF.per : 'day',
+    A = activityOver(R, per),
+    H = playHours(R),
+    col = (L, f, t) => {
+      const mx = Math.max(1, ...L.map(f));
+      return `<div class="adm-acol"><h4>${t}</h4><div class="adm-cols">${L.map(
+        x => `<div title="${esc(x.k)}: ${f(x)}"><i style="height:${Math.round((100 * f(x)) / mx)}%"></i></div>`
+      ).join('')}</div><p class="adm-axis"><span>${esc(L[0].k)}</span><span>${esc(L[L.length - 1].k)}</span></p></div>`;
+    },
+    hm = Math.max(1, ...H);
+  return `<section class="adm-scard adm-actv"><div class="adm-shead"><h3>Activity over time</h3>${segBtns('per', [
+    ['day', 'Day'],
+    ['week', 'Week'],
+    ['month', 'Month']
+  ])}</div><div class="adm-acols">${col(A, x => x.answers, 'Answers')}${col(A, x => x.players, 'Active players')}${col(
+    A,
+    x => x.newp,
+    'New players'
+  )}</div><h4>Play hours</h4><div class="adm-cols adm-phours">${H.map(
+    (n, h) => `<div title="${h}:00-${h + 1}:00: ${n} answers"><i style="height:${Math.round((100 * n) / hm)}%"></i></div>`
+  ).join('')}</div><p class="adm-axis"><span>0 h</span><span>12 h</span><span>23 h</span></p></section>`;
+}
 function statsPlayers() {
   const head = `<div class="adm-shead"><h2>Activity</h2>${
     myIds().size
@@ -6528,6 +6597,7 @@ function statsPlayers() {
       ['Active 7 d', wk]
     ]) +
     (R.length ? recentSessions(R) : '') +
+    (R.length ? activityCard(R) : '') +
     (!R.length
       ? `<p class="note">${SF.who === 'others' ? noneButMe() : 'No answers yet.'}</p>`
       : `
