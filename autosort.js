@@ -97,6 +97,171 @@
     return null;
   }
 
+  // ---- Fish curation (curation.json "fish", admin plan PR 4; Pierre, 2026-11-04) ----
+  // The fish choices live under one key, with the coral key names inside: add {f: species id} (in play for that species),
+  // seen {f: 1} (rejected, as ✕ Reject), exclude {f: reason} (×), out {f: species id | 'x'} (**Pierre's "Not this"**: the
+  // iNaturalist experts got the species wrong; only his click writes it, never an agent or the auto-sort, and a photo he
+  // marked so is never proposed again), tags {f: jt}, ease {f: 1-5}, phase {f}, crop {f: [l, t, r, b]} (the judging
+  // rubric's fields, judging/FISH.md), auto {day: {f: code}} (the fish auto-sort's log). Coral keys are never touched.
+  // Fish log codes: [?|-] a|r [tepc] [@t]: a proposed in, r set aside; ? a Check (not applied, shown to Pierre blind), -
+  // undone by Pierre (never applied again); after an a, the fields the run wrote (t tags, e ease, p phase, c crop: a value
+  // Pierre had already given is not written, so not listed, and an Undo leaves it alone; Codex review #479); @t when he
+  // answered or corrected it (Unix seconds in base 36, as the coral codes).
+  const FISHW = {tags: 't', ease: 'e', phase: 'p', crop: 'c'};
+  // Observations in play per species (Pierre, 2026-11-04): 8 per circle-1 species, 12 for the PDF's 24 most sighted
+  // (fish.json cs, the cheatsheet), at most 20 for now. The auto-sort proposes up to the target; Pierre adds beyond it.
+  const FISHT = {obs: 8, top: 12, cap: 20};
+  const fishTarget = sp => (sp && sp.cs ? FISHT.top : FISHT.obs);
+  function fishParse(code) {
+    const m = /^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
+    if (!m || (m[3] && (m[2] !== 'a' || m[1] === '?'))) return null;
+    const w = Object.keys(FISHW).filter(k => m[3].includes(FISHW[k]));
+    return {check: m[1] === '?', undone: m[1] === '-', kind: m[2], ...(w.length ? {w} : {}), ...(m[4] ? {t: parseInt(m[4], 36)} : {})};
+  }
+  // Every logged fish photo: {f: {day, code, d}} (the latest day wins, as autoIdx).
+  function fishIdx(F) {
+    const out = {};
+    Object.keys((F && F.auto) || {})
+      .sort()
+      .forEach(day =>
+        Object.entries(F.auto[day] || {}).forEach(([f, code]) => {
+          const d = fishParse(code);
+          if (d) out[f] = {day, code, d};
+        })
+      );
+    return out;
+  }
+  // Pierre's keep on a fish photo: 'reject' (Not this, excluded, rejected: these win over an add), 'add', or null.
+  function fishMine(F, f) {
+    F = F || {};
+    if ((F.out || {})[f] || (F.exclude || {})[f] || (F.seen || {})[f]) return 'reject';
+    return (F.add || {})[f] ? 'add' : null;
+  }
+  // Comparisons for the agreement (field keep, as autoCompare): every answered Check, and every later correction of an
+  // applied decision (a disagreement; a decision left alone says nothing), oldest answer first.
+  function fishCompare(F) {
+    const I = fishIdx(F),
+      out = [];
+    Object.keys(I)
+      .sort()
+      .forEach(f => {
+        const {day, d} = I[f],
+          p = fishMine(F, f),
+          a = d.kind === 'a' ? 'add' : 'reject';
+        if (!p || d.undone) return;
+        const ok = a === p,
+          t = d.t == null ? null : d.t;
+        if (d.check) out.push({f, day, field: 'keep', a, p, ok, how: 'check', t});
+        else if (!ok) out.push({f, day, field: 'keep', a, p, ok, how: 'fix', t});
+      });
+    return out.sort((x, y) => (x.t == null ? -1 : x.t) - (y.t == null ? -1 : y.t));
+  }
+  // The fish auto-sort's run (pure): from the candidates {species id: [photo]}, the pass's judgments (suggest.json
+  // "fish"), the species records ({id: fish.json species}) and the curation's fish part, a new fish part with the sure
+  // decisions written as Pierre's clicks would write them, and the counts. A photo Pierre or the auto-sort decided
+  // (added, rejected, excluded, Not this, logged) is never touched; a tag, ease, phase or crop he gave stays his. Adds
+  // fill each species up to its target, one observation counting once (an alt joins its observation for free): Pierre's
+  // own first (AGENTS.md rule 7), then the easiest (the first questions need easy photos), then a fixed order; the rest
+  // wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
+  function fishRun(cands, sug, species, F, day, keepOn = true) {
+    F = F || {};
+    const I = fishIdx(F),
+      busy = f => fishMine(F, f) || I[f],
+      plan = [];
+    Object.entries(cands || {}).forEach(([sid, L]) =>
+      (L || []).forEach(p => {
+        if (!p || !p.f || busy(p.f)) return;
+        const s = fishSure((sug || {})[p.f]);
+        if (s) plan.push({sid, p, s, check: autoCheck(p.f)});
+      })
+    );
+    const R = {add: 0, reject: 0, check: 0, full: 0, off: 0};
+    if (!plan.length) return {F, R};
+    plan.sort(
+      (a, b) =>
+        (b.s.keep === 'add') - (a.s.keep === 'add') ||
+        !!b.p.own - !!a.p.own ||
+        (b.s.ease || 0) - (a.s.ease || 0) ||
+        (a.p.f < b.p.f ? -1 : 1)
+    );
+    const obsOf = {};
+    Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && (obsOf[p.f] = p.o || p.f)));
+    const room = {};
+    Object.entries(F.add || {}).forEach(([f, sid]) => {
+      if (fishMine(F, f) !== 'add') return;
+      (room[sid] = room[sid] || new Set()).add(obsOf[f] || f);
+    });
+    const N = {...F, add: {...(F.add || {})}, seen: {...(F.seen || {})}},
+      L = {...((F.auto || {})[day] || {})},
+      put = (k, f, v) => {
+        if (v == null || (F[k] || {})[f] != null) return '';
+        N[k] = {...(N[k] || {}), [f]: v};
+        return FISHW[k];
+      };
+    plan.forEach(({sid, p, s, check}) => {
+      const f = p.f;
+      if (check) {
+        L[f] = s.keep === 'add' ? '?a' : '?r';
+        return R.check++;
+      }
+      if (!keepOn) return R.off++;
+      if (s.keep === 'add') {
+        const r = (room[sid] = room[sid] || new Set()),
+          o = p.o || f;
+        if (!r.has(o)) {
+          if (r.size >= Math.min(fishTarget((species || {})[sid]), FISHT.cap)) return R.full++;
+          r.add(o);
+        }
+        N.add[f] = sid;
+        L[f] = 'a' + put('tags', f, s.tags) + put('ease', f, s.ease) + put('phase', f, s.phase) + put('crop', f, s.crop);
+        R.add++;
+      } else {
+        N.seen[f] = 1;
+        L[f] = 'r';
+        R.reject++;
+      }
+    });
+    // A map the run created and left empty goes; one that was there stays (as {}: merge3 reads a missing map as removed).
+    if (!F.add && !Object.keys(N.add).length) delete N.add;
+    if (!F.seen && !Object.keys(N.seen).length) delete N.seen;
+    if (R.add + R.reject + R.check) N.auto = {...(F.auto || {}), [day]: L};
+    return {F: R.add + R.reject + R.check ? N : F, R};
+  }
+
+  // One fish auto decision taken back (Pierre's Undo on it in the Auto details; the coral autoUndo's counterpart; Codex
+  // review #479: AGENTS.md rule 8, every auto decision undoable one by one). sid: the species of the candidate (its
+  // fish-cand.json list). What the run wrote leaves the fish part, and only that: the add while it still names that
+  // species, and the fields its code lists (a value Pierre gave before the run was never written, so never listed; a
+  // value he sets since takes its field off the list, fishOwn). Nothing is compared with the pass's judgment, which a new
+  // judging pass may have replaced (Codex review #479). The log keeps the decision marked undone ('-'): never applied
+  // again, the photo waits for him as a candidate. Emptied maps stay as {} (fishOut leaves them out of the file): the
+  // Publish merge (merge3) then removes these entries only, never what another device published in the same map.
+  function fishUndo(F, f, sid) {
+    const x = fishIdx(F)[f];
+    if (!x || x.d.check || x.d.undone) return F;
+    const N = {...F},
+      drop = (k, ok = () => true) => {
+        if (!N[k] || !(f in N[k]) || !ok(N[k][f])) return;
+        N[k] = {...N[k]};
+        delete N[k][f];
+      };
+    if (x.d.kind === 'a') {
+      drop('add', v => v === sid);
+      (x.d.w || []).forEach(k => drop(k));
+    } else drop('seen', v => v === 1);
+    N.auto = {...N.auto, [x.day]: {...N.auto[x.day], [f]: '-' + x.code}};
+    return N;
+  }
+  // A fish field Pierre sets on a photo the auto-sort decided (his tags, ease, phase or crop, admin plan PR 5b) becomes
+  // his: its letter leaves the photo's log code, so an Undo of the decision never takes his value away. Every admin action
+  // that writes one of these fields goes through it.
+  function fishOwn(F, f, field) {
+    const x = fishIdx(F)[f],
+      c = FISHW[field];
+    if (!x || !c || !(x.d.w || []).includes(field)) return F;
+    return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[ar][tepc]*?)${c}`), '$1')}}};
+  }
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -273,6 +438,15 @@
     autoCheck,
     autoSure,
     fishSure,
+    FISHT,
+    fishTarget,
+    fishParse,
+    fishIdx,
+    fishMine,
+    fishCompare,
+    fishRun,
+    fishUndo,
+    fishOwn,
     autoCode,
     autoParse,
     autoIdx,
