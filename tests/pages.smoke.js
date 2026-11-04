@@ -3218,11 +3218,16 @@ async function onePath(b, base) {
         if (start) await p.click(start).catch(() => {});
       } else await p.click(again).catch(() => {});
       await p.waitForSelector(sel, {timeout: 10000}).catch(() => {});
-      // The genus of each photo shown, from data.json (an IMR lecture photo's file name does not name it).
+      // The genus of each photo shown, from the data (an IMR lecture photo's file name does not name it).
       seen.push(
         ...(await p.evaluate(sel => {
           const of = {};
-          Object.entries(DATA.gen).forEach(([n, g]) => Object.values(g.views).forEach(L => L.forEach(x => (of[x.f] = n))));
+          // Its views and its game slates (app.js gamePics: the curated photos the games may use).
+          Object.keys(DATA.gen).forEach(n =>
+            [...Object.values(GX(n).views), ...Object.values(GX(n).sl || {}).map(x => x.game || [])].forEach(L =>
+              L.forEach(x => (of[x.f] = n))
+            )
+          );
           return [...document.querySelectorAll('#view ' + sel)].map(i => {
             const f = decodeURIComponent((i.getAttribute('src') || '').split('/').pop()).replace(/(-[smt])?\.webp.*$/, '');
             return of[f] || f;
@@ -3234,6 +3239,37 @@ async function onePath(b, base) {
     if (!seen.length || out.length) labOut[h] = {photos: seen.length, out: out.slice(0, 3)};
   }
   if (Object.keys(labOut).length) fails.push(`one path, Tools games: ${JSON.stringify(labOut)}`);
+  // A player with no genus unlocked yet: each game sends to the quiz instead of asking about a genus never met.
+  {
+    const c0 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true});
+    await c0.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c0.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+    });
+    const p0 = await c0.newPage();
+    p0.on('pageerror', e => errs.push(e.message));
+    const none = [];
+    for (const [h, start] of GAMES) {
+      await p0.goto(base + '#' + h);
+      await p0.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      if (start) {
+        await p0.waitForSelector(start, {timeout: 15000}).catch(() => {});
+        await p0.click(start).catch(() => {});
+      }
+      const ok = await p0
+        .waitForFunction(() => /Meet a few in the quiz first/.test(document.getElementById('view').textContent), null, {timeout: 10000})
+        .then(() => true)
+        .catch(() => false);
+      if (!ok) none.push(h);
+    }
+    if (none.length) fails.push(`one path, Tools games with no genus unlocked: no line to the quiz in ${none.join(', ')}`);
+    await c0.close();
+  }
   if (errs.length) fails.push(`one path: page errors ${errs.slice(0, 3).join(' | ')}`);
   await c.close();
   return fails;
