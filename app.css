@@ -6170,7 +6170,8 @@ html.touring .unlock {
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
-} /* A short note (progress.js appToast): the cards' look, the kind's tint at its left. */
+}
+/* A short note (progress.js appToast): the cards' look, the kind's tint at its left. */
 .apptoast {
   position: fixed;
   left: 50%;
