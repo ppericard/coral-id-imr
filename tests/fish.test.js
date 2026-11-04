@@ -243,9 +243,18 @@ const capOf = (code, phase, juvOk) => {
   if (/[ca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
   return {e, jt: code.slice(0, 7) + fl};
 };
+// The juvenile classes (fish.json juv, from tools/fish_source.json; the same rule as tools/fish_judge.py juv_early): a
+// juvenile is judged without the juvenile cap when its entry is class A or its species is in the entry's early list.
+const SPN = new Map(F.species.map(s => [s.id, [s.name, s.now].filter(Boolean)]));
+const JUV = Object.fromEntries(F.teach.map(t => [t.id, t.juv]));
+const juvEarly = (tid, p) => {
+  const j = JUV[tid];
+  if (!j || typeof j !== 'object') return false;
+  if (j.cls === 'A') return true;
+  return (j.early || []).some(x => (SPN.get(p.sp) || []).some(n => n === x || n.startsWith(x + ' ')));
+};
 test('judged photos: every circle-1 game photo judged with a valid code, written into fish-photos.json with its caps', () => {
   const dim = new Set(F.teach.filter(t => t.dimorph).map(t => t.id)),
-    juv = new Set(F.teach.filter(t => t.juv === 'distinct').map(t => t.id)),
     c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink).map(t => t.id),
     codes = {};
   Object.entries(JUDGE.photos).forEach(([tid, m]) =>
@@ -262,14 +271,14 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
       assert.strictEqual(codes[p.f][0], tid, `${p.f}: judged under another entry`);
       assert.deepStrictEqual(
         {e: p.e, jt: p.jt},
-        capOf(codes[p.f][1], dim.has(tid), juv.has(tid)),
+        capOf(codes[p.f][1], dim.has(tid), juvEarly(tid, p)),
         `${p.f}: run python3 tools/fish_judge.py`
       );
       assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
       // Never among the very easy photos of the first questions: juveniles, night, partial, head / tail / top views,
       // camouflage, out of water, an unclear subject.
       if (
-        (/j/.test(p.jt.slice(7)) && !juv.has(tid)) ||
+        (/j/.test(p.jt.slice(7)) && !juvEarly(tid, p)) ||
         /[ca]/.test(p.jt.slice(7)) ||
         /[htd]/.test(p.jt[0]) ||
         p.jt[1] === '0' ||
@@ -295,21 +304,24 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
       assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(a.lic), `${a.f}: licence ${a.lic}`);
     })
   );
-  // Juveniles (Pierre, 2026-11-04): capped unless the entry's juveniles are distinct and recognisable (fish.json juv
-  // "distinct", from the source: Spadefish and Sweetlips), where a juvenile photo can be very easy.
-  assert.deepStrictEqual([...juv].sort(), ['t04', 't14']);
-  assert.deepStrictEqual(
-    F.teach.filter(t => t.juv).map(t => t.id),
-    SRC.teach.filter(t => t.juv).map(t => t.id)
-  );
-  ['t04', 't14'].forEach(id =>
+  // Juveniles: a show-early genus's (or a class-A entry's) can be very easy; a capped one cannot.
+  const juvs = Object.entries(PH).flatMap(([tid, L]) => L.filter(p => p.jt && /j/.test(p.jt.slice(7))).map(p => [tid, p]));
+  ['t04', 't14', 't17'].forEach(id =>
     assert.ok(
       PH[id].some(p => /j/.test(p.jt.slice(7)) && p.e >= 4),
       `${id}: no very easy juvenile`
     )
   );
-  const capped = Object.entries(PH).flatMap(([tid, L]) => (juv.has(tid) ? [] : L.filter(p => p.jt && /j/.test(p.jt.slice(7)))));
-  assert.ok(capped.length && capped.every(p => p.e <= 2), 'another entry’s juvenile is capped at 2');
+  assert.ok(
+    juvs.some(([tid, p]) => JUV[tid].cls === 'mixed' && juvEarly(tid, p) && p.e >= 4),
+    'a juvenile of a show-early genus (mixed entry) can be very easy'
+  );
+  const capped = juvs.filter(([tid, p]) => !juvEarly(tid, p));
+  assert.ok(capped.length && capped.every(([, p]) => p.e <= 2), 'a capped juvenile is at most 2');
+  assert.ok(
+    capped.some(([tid, p]) => (JUV[tid].late || []).some(x => SPN.get(p.sp).some(n => n === x || n.startsWith(x + ' ')))),
+    'a juvenile of a late (look-alike) species is capped'
+  );
   // The phase flag (sex or colour phase: a species-level difficulty) caps nothing at the family level.
   assert.ok(
     Object.values(PH)
@@ -317,4 +329,35 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
       .some(p => /p/.test((p.jt || '').slice(7)) && p.e >= 4),
     'a phase photo can be very easy'
   );
+});
+
+test('juvenile classes: every circle-1 entry classed, with sources, as in the source file (research note of 2026-11-04)', () => {
+  const c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink),
+    SJ = Object.fromEntries(SRC.teach.map(t => [t.id, t.juv]));
+  c1.forEach(t => {
+    const j = t.juv;
+    assert.ok(j && ['A', 'B', 'C', 'mixed', 'ns'].includes(j.cls), `${t.id}: juvenile class`);
+    assert.deepStrictEqual(j, SJ[t.id], `${t.id}: fish.json juv differs from tools/fish_source.json`);
+    if (j.cls !== 'ns') assert.ok((j.src || []).length && j.src.every(u => /^https:\/\//.test(u)), `${t.id}: sources`);
+    if (j.cls === 'mixed') assert.ok((j.early || []).length + (j.late || []).length, `${t.id}: mixed without genera`);
+    // Mimicry is a hypothesis (Pierre): never stated as a fact.
+    assert.ok(!/\bmimic/i.test(JSON.stringify(j)), `${t.id}: mimicry stated as a fact`);
+    // early / late name genera or species of the entry.
+    const names = t.species.flatMap(id => SPN.get(id) || []);
+    [...(j.early || []), ...(j.late || [])].forEach(x =>
+      assert.ok(
+        names.some(n => n === x || n.startsWith(x + ' ')),
+        `${t.id}: ${x} is no species or genus of the entry`
+      )
+    );
+  });
+  assert.deepStrictEqual(
+    c1.filter(t => t.juv.cls === 'A').map(t => t.name),
+    ['Spadefish', 'Sweetlips', 'Boxfish']
+  );
+  assert.deepStrictEqual(
+    c1.filter(t => t.juv.cls === 'B').map(t => t.name),
+    ['Parrotfish', 'Emperor']
+  );
+  ['t04', 't14'].forEach(id => assert.match(c1.find(t => t.id === id).juv.by, /^Pierre, 2026-11-04/));
 });

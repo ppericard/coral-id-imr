@@ -61,6 +61,38 @@ const server = http.createServer((req, res) => {
 
 // "Did you know?" tips off (tips.js): a player who has enlarged 3 photos is never targeted. For the tests of the other
 // cards and prompts, which play dozens of questions and click Next; tipsCheck (below) checks the tips with them.
+// Waits until the app has drawn the page at the current address (app.js route() sets window.ROUTED once done; a link
+// that sends on routes again), no fetch is in flight (counted in every context of the main browser, below) and no Lab
+// module is still loading (proto/lab.js LAB.pending: its <script>s are no fetch, and a Lab page or tool drawn before
+// they are in is a "Loading…" placeholder, redrawn by route() once they are; Codex review #454), all for three frames in
+// a row: instead of a fixed sleep after each navigation (test-suite review, 2026-11-04). Resolves false when that never
+// happens within the timeout; the caller says what it then fails.
+const drawn = (p, timeout = 15000) =>
+  p
+    .evaluate(() => (window.__calm = 0))
+    .then(() =>
+      p.waitForFunction(
+        () => {
+          const ok =
+            typeof hashNow === 'function' &&
+            window.ROUTED === hashNow() &&
+            !(window.__inflight > 0) &&
+            !(typeof LAB !== 'undefined' && LAB.pending > 0);
+          window.__calm = ok ? (window.__calm || 0) + 1 : 0;
+          return window.__calm >= 3;
+        },
+        null,
+        {polling: 'raf', timeout}
+      )
+    )
+    .then(() => true)
+    .catch(() => false);
+// Waits for a navigation the page starts itself (Back, a link): the address leaves `from`, then the new page is drawn.
+const left = (p, from, timeout = 10000) =>
+  p
+    .waitForFunction(f => location.hash !== f, from, {timeout})
+    .then(() => drawn(p))
+    .catch(() => false);
 const TIPS_OFF = () => localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
 // One overlay at a time, and each one closable (new-player walkthrough 2026-11-02). Returns the failures.
 async function overlays(b, base) {
@@ -567,7 +599,7 @@ async function overlays(b, base) {
       asked.push({...shown, at: undefined, it, way, tap, early, waited, enter, after, ev, n0: before});
       if (way === 'leave') {
         await p.evaluate(() => (location.hash = 'quiz'));
-        await p.waitForTimeout(300);
+        await drawn(p);
       }
     }
     const want = x => ['shown', x.way === 'tap' ? x.tap : x.way === 'leave' ? 'none' : 'skip'];
@@ -1695,7 +1727,10 @@ async function tipsCheck(b, base) {
       const B = [...document.querySelectorAll('.tipcard [data-b]')];
       return B.length > 0 && B.every(x => x.disabled);
     }, toast);
-    await p.waitForTimeout(150);
+    // Next took the break or not (quiz.js breakArm, at the tap): the tip's card is up, or the next question is.
+    await p
+      .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {timeout: 10000})
+      .catch(() => {});
     return {at, dis, next: !!(await p.$('.tipcard'))};
   };
   const tips = p => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-tips')));
@@ -1748,7 +1783,7 @@ async function tipsCheck(b, base) {
           r.wide
         )
           fails.push(`${W} the card: ${JSON.stringify({...r, dis})}`);
-        await p.waitForTimeout(700);
+        // p.click waits for the button to take taps (TIP.WAIT).
         const z0 = (await tips(p)).u.z;
         await p.click('.tipcard [data-b="1"]');
         await p.waitForSelector('#lightbox:not([hidden])', {timeout: 3000}).catch(() => {});
@@ -1786,8 +1821,7 @@ async function tipsCheck(b, base) {
       for (let i = 0; i < 10 && !r.next; i++) r = await play(p, {right: true});
       if (!r.next) fails.push(`${W} not shown at a break from 40 questions`);
       else {
-        await p.waitForTimeout(700);
-        await p.click('.tipcard [data-b="2"]');
+        await p.click('.tipcard [data-b="2"]'); // waits for the button to take taps (TIP.WAIT)
         const nx = await p
           .waitForSelector('#view .q:not(.done) [data-c]', {timeout: 5000})
           .then(() => true)
@@ -1846,7 +1880,8 @@ async function tipsCheck(b, base) {
         const r = await play(p);
         if (!r.next) continue;
         shown++;
-        await p.waitForTimeout(700);
+        // Its buttons take taps after TIP.WAIT (quiz.js): wait for that, not a fixed time.
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
         await p.evaluate(() => [...document.querySelectorAll('.tipcard [data-b]')].find(x => x.textContent === 'Got it').click());
         await p.waitForTimeout(300);
         const after = await p.evaluate(() => ({
@@ -2304,7 +2339,7 @@ async function credits(b, base) {
     const [c, p] = await open(w, 640);
     for (const hash of ['', 'genera', 'about']) {
       await p.evaluate(x => (location.hash = x), hash);
-      await p.waitForTimeout(400);
+      await drawn(p);
       const r = await p.evaluate(() => ({
         sw: document.documentElement.scrollWidth,
         iw: innerWidth,
@@ -2337,7 +2372,7 @@ async function credits(b, base) {
     if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     await p.evaluate(() => (location.hash = 'g-Acropora'));
-    await p.waitForTimeout(500);
+    await drawn(p);
     await p.click('#help');
     await p.waitForTimeout(150);
     const hp = await p.evaluate(() => {
@@ -2818,6 +2853,15 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
+    // Fetches in flight, for drawn().
+    await c.addInitScript(() => {
+      const f = window.fetch;
+      window.__inflight = 0;
+      window.fetch = function () {
+        window.__inflight++;
+        return f.apply(this, arguments).finally(() => window.__inflight--);
+      };
+    });
     if (!intro)
       await c.addInitScript(s => {
         try {
@@ -2845,7 +2889,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     if (errs.length) fails.push(`${w}px start: ${errs.join(' | ')}`);
     // The plain sentence (Pierre, 2026-11-03): on a genus sheet, right after the photo and before the ID tips, with no label.
     await p.evaluate(() => (location.hash = 'g-Goniastrea'));
-    await p.waitForTimeout(700);
+    await drawn(p);
     const pl = await p.evaluate(() => {
       const e = document.querySelector('#view .sheet .plainw'),
         ph = document.querySelector('#view .sheet .hero-ph'),
@@ -2873,7 +2917,12 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await p.evaluate(h => {
         location.hash = h;
       }, h);
-      await p.waitForTimeout(700);
+      if (!(await drawn(p))) fails.push(`${w}px #${h}: the page was not drawn within 15 s`);
+      // Drawn means the page itself, not a placeholder waiting for its files (a Lab page before its modules, Codex #454).
+      else if (await p.evaluate(() => /^\s*Loading/.test(document.querySelector('#view .note')?.textContent || '')))
+        fails.push(`${w}px #${h}: still a "Loading…" placeholder once drawn`);
+      // A short window for errors a page throws just after it is drawn (a timer, a late photo).
+      await p.waitForTimeout(150);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
       const cf = await p.evaluate(notBook);
       if (cf.length) fails.push(`${w}px #${h}: "Coral Finder" for something other than the book: ${cf.slice(0, 2).join(' | ')}`);
@@ -2925,7 +2974,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
     // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
     await p.evaluate(() => (location.hash = 'genera'));
-    await p.waitForTimeout(600);
+    await drawn(p);
     const gl = await p.evaluate(() => {
       const t = document.querySelector('#view .card .gt');
       if (t) t.click();
@@ -3034,7 +3083,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       // answered Keep them all.
       await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'quiz'));
-      await q2.waitForTimeout(500);
+      await drawn(q2);
       if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
       // "Tap an underlined word" is said once, on the first card with one (beginner review 2026-11-03).
@@ -3083,7 +3132,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       }
       // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
       await q2.evaluate(() => (location.hash = 'g-Porites'));
-      await q2.waitForTimeout(600);
+      await drawn(q2);
       await q2.evaluate(() => document.querySelector('#view .zoom').click());
       await q2.waitForTimeout(300);
       await q2.goBack();
@@ -3100,26 +3149,26 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await q3.click('#lightbox [data-x]');
       await q3.waitForTimeout(400);
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bk = await q3.evaluate(() => location.hash);
       if (bk !== '#genera') fails.push(`${w}px Back on a linked sheet after a photo: ${bk}`);
       // A reload with a photo enlarged: its history entry is stepped over, so the sheet's Back returns to the quiz.
       await q3.evaluate(() => (location.hash = 'quiz'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => (location.hash = 'g-Porites'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => document.querySelector('#view .zoom').click());
       await q3.waitForTimeout(300);
       await q3.reload();
       await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
       await q3.waitForTimeout(300);
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bl = await q3.evaluate(() => location.hash);
       if (bl !== '#quiz') fails.push(`${w}px Back after a reload with a photo enlarged: ${bl}`);
       // Forward onto a closed photo's entry is stepped over too: the sheet's Back then returns to the quiz.
       await q3.evaluate(() => (location.hash = 'g-Porites'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => document.querySelector('#view .zoom').click());
       await q3.waitForTimeout(300);
       await q3.click('#lightbox [data-x]');
@@ -3127,18 +3176,18 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await q3.goForward();
       await q3.waitForTimeout(500);
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bf = await q3.evaluate(() => location.hash);
       if (bf !== '#quiz') fails.push(`${w}px Back after Forward onto a closed photo: ${bf}`);
       // From the quiz to a sheet, then a reload: the sheet's Back still returns to the quiz (Codex review #344).
       await q3.evaluate(() => (location.hash = 'quiz'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.evaluate(() => (location.hash = 'g-Porites'));
-      await q3.waitForTimeout(600);
+      await drawn(q3);
       await q3.reload();
       await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
       await q3.click('[data-back]');
-      await q3.waitForTimeout(800);
+      await left(q3, '#g-Porites');
       const bq = await q3.evaluate(() => location.hash);
       if (bq !== '#quiz') fails.push(`${w}px Back on a sheet after a reload: ${bq}`);
       await q3.close();
