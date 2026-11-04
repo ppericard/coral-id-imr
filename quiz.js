@@ -1548,9 +1548,15 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   return q;
 }
 // fresh: the Duel tab's page has just been opened (app.js route: from another page, a reload, a link to another pair), a
-// new duel run (DUELRUN); Next and Keep drilling stay in the run.
-function quizDuel(a, b, fresh = true) {
-  if (fresh) DUELRUN = {up: 0, shown: 0};
+// new duel run (DUELRUN); Next and Keep drilling stay in the run. from: the page left. Back from the comparison the relief
+// card opened (DUELBACK) is no new run: the same one goes on (its card already shown), and the return is logged.
+function quizDuel(a, b, fresh = true, from = '') {
+  if (fresh) {
+    const bk = DUELBACK && DUELBACK.h === hashNow() && DUELBACK.cmp === from ? DUELBACK : null;
+    DUELBACK = null;
+    DUELRUN = bk ? bk.run : {up: 0, shown: 0};
+    if (bk) ev('pulse', {r: 'back', src: 'tip:duelhold', m: 'quiz-duel', n: session.n});
+  }
   const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
   question(...q);
   // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer;
@@ -1605,6 +1611,22 @@ function planDuel(a, b) {
 // before them; a break it cannot take passes it on to the next one of the run, while the hold is still on.
 // up: an answer of this run took h across INTRO.HOLD from below; shown: the card came in this run.
 let DUELRUN = {up: 0, shown: 0};
+// Compare them keeps the way back (Pierre, 2026-11-04: the comparison must not throw the player out of the duel for good):
+// DUELBACK {h: the duel's hash, cmp: the comparison's, run: the run, d: the duel page's history depth}. The comparison
+// shows Back to the duel (learn.js viewCompare, duelBackFor), which returns to the same duel and the same run, as the
+// browser's Back does (quizDuel). Any other page drops it (app.js route, duelBackKeep): the comparison opened any other
+// way is unchanged. In memory only.
+let DUELBACK = null;
+const duelBackFor = h => (DUELBACK && DUELBACK.cmp === h ? DUELBACK : null);
+const duelBackKeep = h => DUELBACK && h !== DUELBACK.h && h !== DUELBACK.cmp && (DUELBACK = null);
+// Back to the duel: the history entry before the comparison when it is the duel's (so Back from the duel goes where it
+// went before), else the duel's address.
+function duelBack() {
+  const x = DUELBACK;
+  if (!x) return;
+  if (pageDepth === x.d + 1) history.back();
+  else location.hash = '#' + x.h;
+}
 const reliefNote = (run, h0, h1) => (h0 < INTRO.HOLD && h1 >= INTRO.HOLD ? {...run, up: 1} : run);
 const reliefDue = (run = DUELRUN) => !!run.up && !run.shown && introHold();
 // After a Duel-tab answer: arms Next when the card is due (breakArm); true when it did (the other prompts then wait).
@@ -1620,12 +1642,13 @@ function reliefArm(nb, cur, pair) {
     return true;
   });
 }
-// The card (cardShow kind 'tip', 💡): "Tough pair today", "Take a step back?", one line; Compare them (the side-by-side
-// comparison of the duel's two genera, #cmp-A|B, as learn.js links it), Mix in other genera (the photo quiz), and a quiet
-// Keep drilling (the next duel; also Escape). Anti-reflex as the tips: its buttons take no tap for TIP.WAIT ms, the focus
+// The card (cardShow kind 'tip', 💡): "Tough pair today", "Take a step back?", one line; Mix in other genera (the main
+// button, the photo quiz), Compare them (the side-by-side comparison of the duel's two genera, #cmp-A|B, as learn.js links
+// it, with the way back to this duel: DUELBACK), and a quiet Keep drilling (the next duel; also Escape) (Pierre,
+// 2026-11-04, the order). Anti-reflex as the tips: its buttons take no tap for TIP.WAIT ms, the focus
 // is on the title (Enter presses nothing), a tap outside does nothing. Logged as the tips are (ev 'pulse', src
-// "tip:duelhold", r shown, then cmp / mix / keep, or none when the page is left with it up; the admin counts them with
-// the tips): at most 2 events a showing.
+// "tip:duelhold", r shown, then mix / cmp / keep, or none when the page is left with it up, and back on the return from
+// the comparison; the admin counts them with the tips): at most 3 events a showing.
 function reliefShow(cur, pair) {
   DUELRUN = {...DUELRUN, shown: 1};
   const at = {m: cur.split('|')[0], n: session.n},
@@ -1637,8 +1660,8 @@ function reliefShow(cur, pair) {
     kick: 'Tough pair today',
     title: 'Take a step back?',
     body: '<p>These two are hard right now. Seeing them side by side often helps more than more photos.</p>',
-    primary: {text: 'Compare them', attr: 'disabled'},
-    secondary: {text: 'Mix in other genera', attr: 'disabled'},
+    primary: {text: 'Mix in other genera', attr: 'disabled'},
+    secondary: {text: 'Compare them', attr: 'disabled'},
     after: '<button type="button" class="linkish reliefx" data-keep disabled>Keep drilling</button>',
     focus: 'h3',
     enter: () => {},
@@ -1647,10 +1670,12 @@ function reliefShow(cur, pair) {
       d.querySelector('[data-keep]').onclick = () => d.close('keep');
     },
     onClose: how => {
-      log(how === 1 ? 'cmp' : how === 2 ? 'mix' : how === 'route' ? 'none' : 'keep');
-      if (how === 1) location.hash = `#cmp-${pair[0]}|${pair[1]}`;
-      else if (how === 2) location.hash = '#quiz';
-      else if (how !== 'route') route();
+      log(how === 1 ? 'mix' : how === 2 ? 'cmp' : how === 'route' ? 'none' : 'keep');
+      if (how === 1) location.hash = '#quiz';
+      else if (how === 2) {
+        DUELBACK = {h: cur, cmp: `cmp-${pair[0]}|${pair[1]}`, run: DUELRUN, d: pageDepth};
+        location.hash = '#' + DUELBACK.cmp;
+      } else if (how !== 'route') route();
     }
   });
   setTimeout(() => d.querySelectorAll('[data-b], [data-keep]').forEach(b => (b.disabled = false)), TIP.WAIT);
@@ -1882,5 +1907,6 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     WINKS.seen.clear();
     WINKS.at = -Infinity;
     DUELRUN = {up: 0, shown: 0}; // the other subject's hold: a new duel run
+    DUELBACK = null;
     session = {ok: 0, n: 0, h: []};
   });

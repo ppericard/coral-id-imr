@@ -232,6 +232,62 @@ test('the Duel tab relief card: due after an answer takes the hold across INTRO.
   assert.strictEqual(due(r), false);
 });
 
+test('the Duel tab relief card: back from its comparison, the same run goes on; any other way, a new one', () => {
+  const src = read('quiz.js'),
+    events = [],
+    ctx = {
+      hash: '',
+      session: {n: 7},
+      ev: (k, o) => events.push(o.r),
+      takePlan: () => null,
+      planDuel: (a, b) => ['quiz-duel|' + a + '|' + b, a, [a, b], '', {}],
+      question: () => {},
+      introduced: () => true,
+      starRefs: () => [],
+      introShow: () => {},
+      DATA: {}
+    };
+  ctx.hashNow = () => ctx.hash;
+  vm.createContext(ctx);
+  vm.runInContext(
+    /let DUELRUN = .*\n/.exec(src)[0] +
+      /let DUELBACK = null;\n/.exec(src)[0] +
+      /const duelBackFor = .*\n/.exec(src)[0] +
+      /const duelBackKeep = .*\n/.exec(src)[0] +
+      /function quizDuel\(a, b, fresh = true, from = ''\) \{[\s\S]*?\n\}\n/.exec(src)[0] +
+      'this.D = {quizDuel, keep: duelBackKeep, backFor: duelBackFor, run: () => DUELRUN, set: (r, b) => ((DUELRUN = r), (DUELBACK = b))};',
+    ctx
+  );
+  const D = ctx.D,
+    duel = 'quiz-duel|A|B',
+    cmp = 'cmp-A|B',
+    shownRun = {up: 1, shown: 1};
+  // Compare them from the card: the comparison has its way back; the duel opened from it is the same run, logged.
+  D.set(shownRun, {h: duel, cmp, run: shownRun, d: 3});
+  D.keep(cmp);
+  assert.ok(D.backFor(cmp), 'the comparison opened from the card');
+  ctx.hash = duel;
+  D.keep(duel);
+  D.quizDuel('A', 'B', true, cmp);
+  assert.strictEqual(D.run(), shownRun, 'the same run');
+  assert.deepStrictEqual(events, ['back']);
+  assert.strictEqual(D.backFor(cmp), null, 'used once');
+  // Next in the run: nothing changes.
+  D.quizDuel('A', 'B', false, duel);
+  assert.strictEqual(D.run(), shownRun);
+  // Another page in between: the way back is dropped, the duel opened again is a new run.
+  D.set(shownRun, {h: duel, cmp, run: shownRun, d: 3});
+  D.keep('genera');
+  assert.strictEqual(D.backFor(cmp), null);
+  D.quizDuel('A', 'B', true, 'genera');
+  assert.deepStrictEqual({...D.run()}, {up: 0, shown: 0});
+  // The duel opened fresh from anywhere else than its comparison: a new run, nothing logged.
+  D.set(shownRun, {h: duel, cmp, run: shownRun, d: 3});
+  D.quizDuel('A', 'B', true, 'home');
+  assert.deepStrictEqual({...D.run()}, {up: 0, shown: 0});
+  assert.deepStrictEqual(events, ['back']);
+});
+
 test('the Again queue: up to CONTRAST.Q pairs, oldest first, none pushed out by a newer one, none twice', () => {
   const src = read('quiz.js'),
     ctx = {};

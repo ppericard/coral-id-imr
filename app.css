@@ -1833,6 +1833,10 @@ header {
 .lahead:hover i {
   color: var(--accent);
 }
+/* Back to the duel on a comparison opened from the Duel tab's relief card (learn.js viewCompare, quiz.js DUELBACK). */
+.cmpback {
+  margin: 0 0 12px;
+}
 .cmprow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

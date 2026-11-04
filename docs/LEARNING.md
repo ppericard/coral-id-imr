@@ -1264,29 +1264,34 @@ ratings from the sheet. `tests/pages.smoke.js` `duelReliefCheck` checks the drop
 **2. A relief card** (`quiz.js` `reliefNote`, `reliefDue`, `reliefArm`, `reliefShow`): the first time in a duel run an
 answer takes the hold's sum h from below `INTRO.HOLD` to `INTRO.HOLD` or more, the next break at Next shows a card
 (💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Seeing them side by
-side often helps more than more photos." and three choices: **Compare them** (the side-by-side comparison of the duel's
-two genera, `#cmp-A|B`, as `learn.js` links it), **Mix in other genera** (the photo quiz, `#quiz`), **Keep drilling**
-(the next duel; Escape too). No numbers on it (Pierre's rule for these cards).
+side often helps more than more photos." and three choices, in Pierre's order: **Mix in other genera** (the main button,
+the photo quiz, `#quiz`), **Compare them** (the side-by-side comparison of the duel's two genera, `#cmp-A|B`, as
+`learn.js` links it), **Keep drilling** (the next duel; Escape too). No numbers on it (Pierre's rule for these cards).
+Compare them does not end the drill for good (Pierre, 2026-11-04): the comparison it opens shows **Back to the duel**
+(top and end), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second
+card in it; the easing applies as usual). The comparison opened any other way is unchanged.
 
 - **The same detector**: the opening hold's CUSUM (`holdStep`), no new one and no new constant. The crossing is read in
   `answer` (h before and after `holdStep`), only for a Duel-tab answer.
 - **A duel run** (`DUELRUN`): the Duel tab's answers from the moment its page is opened (from another page, a reload, a
-  link to another pair: `app.js` `route` passes `quizDuel` whether the page was just opened) until it is left; Next and
-  Keep drilling stay in it, a switch of subject starts a new one. At most one card a run. A run that starts with the
-  hold already on (the player comes from the photo quiz held, or back from the comparison) gets no card until the hold
-  falls under `INTRO.HOLD` and crosses it again.
+  link to another pair: `app.js` `route` passes `quizDuel` whether the page was just opened, and the page left) until it
+  is left; Next, Keep drilling and the way back from the card's comparison (`DUELBACK`: Back to the duel or the
+  browser's Back, straight from that comparison) stay in it, a switch of subject starts a new one. At most one card a
+  run. A run that starts with the hold already on (the player comes from the photo quiz held, or opens the duel again
+  from another page) gets no card until the hold falls under `INTRO.HOLD` and crosses it again.
 - **When**: at Next, never with the answer (`breakArm`), as an out-of-game prompt: never with another card, the tour or
   an achievement toast (`promptOk`), `PROMPT.GAP` answers from the other prompts (its showing calls `promptMark`), never
   right before a genus card (`nextCards`). It takes the break before the one-tap question, the sign-in card and the
   tips, which wait for a later break. A break it cannot take passes it to the next one of the run while the hold is
   still on; if the hold falls back first, nothing shows.
-- **Logged** as the tips: `ev('pulse', {r, src: 'tip:duelhold', m, n})`, r `shown`, then `cmp`, `mix`, `keep` or `none`
-  (the page left with it up). The sheet keeps a pulse row's `r` and `src` as sent: no sheet change. The admin counts it
-  with the tips (To do › Errors, `tipsView`: Compare, Mix in, Keep drilling columns).
+- **Logged** as the tips: `ev('pulse', {r, src: 'tip:duelhold', m, n})`, r `shown`, then `mix`, `cmp`, `keep` or `none`
+  (the page left with it up), and `back` when the player returns to the duel from the comparison. The sheet keeps a pulse row's `r` and `src` as sent: no sheet change. The admin counts it
+  with the tips (To do › Errors, `tipsView`: Compare, Mix in, Keep drilling, Back to the duel columns).
 - Not simulated: `tools/learnsim.js` and `tests/profiles.smoke.js` play the photo quiz only, whose draw this does not
   touch; a replay of the real answers cannot say how the Duel tab's players would have answered easier photos or what
   they would have picked on the card (rule 14g). What to measure once players have met it: the Duel tab's right share
-  against `e` in the 10 answers after the hold sets in (68% for 77% before), and which choice the card gets.
+  against `e` in the 10 answers after the hold sets in (68% for 77% before), which choice the card gets, and how often
+  Compare them comes back to the duel.
 
 ### An opening only after a right answer (2026-11-03)
 
@@ -2903,8 +2908,8 @@ is not in the simulation.
 
 - 2026-11-04, Pierre (after a player's "Drill this pair" run fell to 6 misses in 13 with the hold on and nothing
   changed in the duel): the hold's easing reaches the Duel tab (`planDuel`), and a relief card the first time a duel
-  run's answer takes the hold across `INTRO.HOLD`: Compare them / Mix in other genera / Keep drilling, at most once a run,
-  logged as a tip (`tip:duelhold`). Same detector, no new constant ("The Duel tab when the hold sets in").
+  run's answer takes the hold across `INTRO.HOLD`: Mix in other genera / Compare them (with Back to the duel, the same
+  run) / Keep drilling, at most once a run, logged as a tip (`tip:duelhold`). Same detector, no new constant ("The Duel tab when the hold sets in").
 - 2026-11-04: answer time compared within the same question format (2-choice apart, or the Duel tab apart) **not
   adopted**: every variant scored worse than the pooled median on the real log ("Considered and not adopted").
 - 2026-11-04, Pierre ("the signal is already very clear on few players; the question is how to integrate it"; rule 12

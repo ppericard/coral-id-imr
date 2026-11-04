@@ -1573,7 +1573,10 @@ function route() {
     loadMark('p0', h || 'home');
     loadMark('t0');
   } else if (left && (h || 'home') !== LOADM.p0) loadMark('nx', h || 'home');
+  const from = routeFrom;
   routeFrom = h;
+  // The way back to a duel from the comparison its relief card opened (quiz.js DUELBACK): any other page drops it.
+  if (typeof duelBackKeep === 'function') duelBackKeep(h);
   // Home lives at the clean URL; an old #home link is rewritten to it.
   if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);
   const tab = sectionOf(h);
@@ -1620,7 +1623,7 @@ function route() {
   else if (h === 'about' && window.viewAbout) viewAbout();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
-    quizDuel(a, b, left); // a page just opened starts a new duel run (quiz.js DUELRUN)
+    quizDuel(a, b, left, from); // a page just opened starts a new duel run (quiz.js DUELRUN), unless back from its comparison
   } else if (h.startsWith('lab') && window.viewLab) viewLab(h);
   else if (window.labTool && labTool(h)) {
   } else if ((!h || h === 'home') && window.viewHome) viewHome();

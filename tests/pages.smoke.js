@@ -1613,10 +1613,12 @@ async function tipsCheck(b, base) {
 // The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), on a phone and a desktop,
 // on "Drill this pair" (#quiz-duel|Pocillopora|Stylophora). The hold's sum is set just under INTRO.HOLD, as a run of misses
 // would leave it. Checks: the miss that takes it across shows the card at Next, never with the answer itself; one card
-// on screen, its kind, words (no number) and buttons, faded at first; Keep drilling goes on to the next duel and the card
-// never comes again in that run, even when the hold falls back under INTRO.HOLD and crosses it again; Compare them opens
-// the side-by-side comparison of the two genera, Mix in other genera the photo quiz; each showing logged with its
-// choice (item tip:duelhold); a new run that starts with the hold already on gets none (no crossing from below); never
+// on screen, its kind, words (no number) and buttons (Mix in other genera first), faded at first; Keep drilling goes on to
+// the next duel and the card never comes again in that run, even when the hold falls back under INTRO.HOLD and crosses
+// it again; Mix in other genera opens the photo quiz, Compare them the side-by-side comparison of the two genera with
+// Back to the duel at its top and end, which, as the browser's Back, returns to the same duel and the same run (no
+// second card); a comparison opened any other way has none; each showing logged with its choice and the return (item
+// tip:duelhold); a new run that starts with the hold already on gets none (no crossing from below); never
 // in the photo quiz; never over an achievement toast (it waits for the next break while the hold is on). The photo of
 // a duel aims lower while the hold is on (quiz.js planDuel, model.js holdEase). Returns the failures.
 async function duelReliefCheck(b, base) {
@@ -1754,7 +1756,7 @@ async function duelReliefCheck(b, base) {
           k.kick !== 'Tough pair today' ||
           k.title !== 'Take a step back?' ||
           k.body !== 'These two are hard right now. Seeing them side by side often helps more than more photos.' ||
-          k.btns.join() !== 'Compare them,Mix in other genera,Keep drilling' ||
+          k.btns.join() !== 'Mix in other genera,Compare them,Keep drilling' ||
           k.digits ||
           !r.dis ||
           !k.done ||
@@ -1780,25 +1782,66 @@ async function duelReliefCheck(b, base) {
       if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
     }
-    // Compare them; then back in the Duel tab with the hold still on: a new run, no crossing, no card.
-    {
+    // Compare them, then back to the duel by the comparison's Back to the duel button (top), or by the browser's Back:
+    // the same duel and the same run (its card already shown: a new crossing brings none), the return logged. Then the
+    // duel opened from another page with the hold still on: a new run, no crossing, no card. A comparison opened any
+    // other way has no Back to the duel.
+    for (const way of ['button', 'browser']) {
       const [c, p, errs] = await open(w, h);
       await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
       const r = await play(p);
-      if (!r.next) fails.push(`${W} (compare) not shown`);
+      if (!r.next) fails.push(`${W} (compare, ${way}) not shown`);
       else {
-        await pick(p, '[data-b="1"]');
-        const at = await p.evaluate(() => ({h: decodeURIComponent(location.hash), cmp: !!document.querySelector('#view .cmprow')}));
-        if (!['#cmp-Pocillopora|Stylophora', '#cmp-Stylophora|Pocillopora'].includes(at.h) || !at.cmp || (await p.$('.unlock')))
+        await pick(p, '[data-b="2"]');
+        const at = await p.evaluate(() => ({
+          h: decodeURIComponent(location.hash),
+          cmp: !!document.querySelector('#view .cmprow'),
+          back: [...document.querySelectorAll('#view [data-duelback]')].map(x => x.textContent),
+          drill: !!document.querySelector('#view a[href^="#quiz-duel"]'),
+          first: !!document.querySelector('#view .cmpback + .cmprow')
+        }));
+        if (
+          at.h !== '#cmp-Pocillopora|Stylophora' ||
+          !at.cmp ||
+          at.back.join() !== 'Back to the duel,Back to the duel' ||
+          at.drill ||
+          !at.first ||
+          (await p.$('.unlock'))
+        )
           fails.push(`${W} Compare them: ${JSON.stringify(at)}`);
+        if (way === 'button') await p.click('#view [data-duelback]');
+        else await p.goBack();
+        await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000}).catch(() => {});
+        const bk = await p.evaluate(() => ({h: decodeURIComponent(location.hash), run: {...DUELRUN}, back: DUELBACK}));
+        if (bk.h !== PAIR || !bk.run.shown || bk.back) fails.push(`${W} back to the duel (${way}): ${JSON.stringify(bk)}`);
         const ev = await evs(p);
-        if (ev.join() !== 'pulse:shown:quiz-duel,pulse:cmp:quiz-duel') fails.push(`${W} compare events: ${JSON.stringify(ev)}`);
-        await p.goBack();
-        await p.waitForTimeout(500);
-        await p.evaluate(() => localStorage.removeItem('reefid-prompt-at')); // the run, not the prompt spacing, decides
+        if (ev.join() !== 'pulse:shown:quiz-duel,pulse:cmp:quiz-duel,pulse:back:quiz-duel')
+          fails.push(`${W} compare events (${way}): ${JSON.stringify(ev)}`);
+        // The same run: the hold falling back under INTRO.HOLD and crossing again brings no second card.
+        await p.evaluate(() => (localStorage.removeItem('reefid-prompt-at'), (HOLDS = INTRO.HOLD - 0.05)));
         let n = 0;
-        for (let i = 0; i < 3; i++) n += await shown(p);
-        if (n || (await p.evaluate(() => !introHold()))) fails.push(`${W} a new run with the hold already on: ${n} card(s)`);
+        for (let i = 0; i < 2; i++) n += await shown(p);
+        if (n) fails.push(`${W} back to the duel (${way}): a new run, ${n} card(s)`);
+        if (way === 'browser') {
+          // Opened from another page with the hold still on: a new run, no crossing, no card.
+          await p.evaluate(() => (location.hash = 'genera'));
+          await p.waitForTimeout(400);
+          await p.evaluate(h => (location.hash = h), PAIR);
+          await p.waitForTimeout(400);
+          await p.evaluate(() => localStorage.removeItem('reefid-prompt-at'));
+          let m = 0;
+          for (let i = 0; i < 3; i++) m += await shown(p);
+          if (m || (await p.evaluate(() => !introHold() || DUELRUN.shown)))
+            fails.push(`${W} a new run with the hold already on: ${m} card(s)`);
+          // The comparison opened any other way: no way back, Drill this pair as always.
+          await p.evaluate(() => (location.hash = 'cmp-Pocillopora|Stylophora'));
+          await p.waitForTimeout(400);
+          const o = await p.evaluate(() => ({
+            back: document.querySelectorAll('#view [data-duelback]').length,
+            drill: !!document.querySelector('#view a[href^="#quiz-duel"]')
+          }));
+          if (o.back || !o.drill) fails.push(`${W} a comparison opened another way: ${JSON.stringify(o)}`);
+        }
       }
       if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
@@ -1814,7 +1857,7 @@ async function duelReliefCheck(b, base) {
       for (let i = 0; i < 3 && !got; i++) got = (await play(p)).next;
       if (!got) fails.push(`${W} (mix) not shown at a later break while the hold is on`);
       else {
-        await pick(p, '[data-b="2"]');
+        await pick(p, '[data-b="1"]');
         const at = await p.evaluate(() => ({
           h: location.hash,
           q: !!document.querySelector('#view [data-c]'),
