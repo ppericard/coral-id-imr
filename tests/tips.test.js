@@ -108,18 +108,21 @@ test('registry: every tip is complete', () => {
 });
 
 // The card speaks the subject on screen (fish UX study, 2026-11-04: the zoom tip told fish players to look at the
-// corallites). Every subject gets a text; a fish player's never names a coral part.
+// corallites). Every subject gets a text; a fish player's never names a coral part. The wording is the subject's
+// (core.js SUBJECTS zoom): tips.js never names a subject (AGENTS.md 13b, Codex review #466).
 test('registry: the card text follows the subject on screen', () => {
-  const {SUBJECTS} = require('../core.js');
+  const {SUBJECTS, subjectOf} = require('../core.js');
   for (const t of TIPS)
     for (const S of SUBJECTS)
       for (const mouse of [true, false]) {
-        const o = {mouse, subj: S.id},
+        const o = {mouse, subj: S},
           txt = t.card.title(o) + ' ' + t.card.body(o);
         assert.ok(t.card.body(o).length > 10, `${t.id} ${S.id}`);
         if (S.id !== 'coral') assert.doesNotMatch(txt, /corallite|coral|genus|genera/i, `${t.id} ${S.id}: ${txt}`);
       }
   const z = TIPS.find(t => t.id === 'zoom');
-  assert.match(z.card.body({subj: 'coral'}), /corallites/);
-  assert.match(z.card.body({subj: 'fish'}), /markings/);
+  assert.match(z.card.body({subj: subjectOf('coral')}), /corallites/);
+  assert.match(z.card.body({subj: subjectOf('fish')}), /markings/);
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'tips.js'), 'utf8');
+  assert.doesNotMatch(src, /['"`](coral|fish)['"`]/, 'tips.js names a subject');
 });

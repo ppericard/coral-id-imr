@@ -18,7 +18,7 @@
 // A tip in TIPS: id; ctx, the games whose break at Next may show it (the hash before any "|"); target(u), who it is for,
 // on the counters; from, the u.q from which it can first show; now(b), its preferred moment at a break (b: {ctx, miss,
 // zm}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
-// the questions between two; card (kick, title(o) and body(o), o: {mouse, subj}), the text of its card; act, its "Show me" action
+// the questions between two; card (kick, title(o) and body(o), o: {mouse, subj: the SUBJECTS record on screen}), the text of its card; act, its "Show me" action
 // (quiz.js TIP_ACT), or none.
 (function (root) {
   // Global rules: at most one tip a visit, never in its first FLOOR answers (plus, in quiz.js: one card a break, within
@@ -42,12 +42,8 @@
       card: {
         kick: 'Did you know?',
         title: o => `${o && o.mouse ? 'Click' : 'Tap'} a photo to see it bigger`,
-        // In the subject on screen (o.subj, core.js SUBJECTS id): the corallites for corals; for fish the parts the IMR
-        // fish presentation names (markings, fins), with no claim about what tells them apart.
-        body: o =>
-          o && o.subj === 'fish'
-            ? 'It opens full screen: zoom in on the markings and the fins.'
-            : 'It opens full screen: zoom in on the corallites, the detail that often tells look-alikes apart.'
+        // What to look at closely is the subject's (o.subj: the core.js SUBJECTS record on screen, its zoom field).
+        body: o => `It opens full screen: zoom in on ${(o && o.subj && o.subj.zoom) || 'the details'}.`
       },
       act: 'zoom'
     }

@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 39 (2026-11-04: v39: the embedded core.js names a page drawn with another subject than the corals on screen <subject>.<page> (pageName: fish.quiz, fish.home) and reads it back (pageSubj), so the Pages tab tells a fish page from a coral one; pagesClean, which keeps these names as they come ('.' was already allowed), is unchanged, so the script stores and serves the same; (v38 is the Coral ID Key rename's, PR #464); v37: the embedded core.js gains the fish starter core (fishGen marks fish.json start entries first) and the fish card cover chosen within the highest source tier (Pierre's own first), then by the judged ease of fish-photos.json, unused by the script: the fish answers are not logged, so nothing it computes changes; v36: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), the stored replay keyed by that history's fingerprint too (Replayed Since = reset#fingerprint, core.js startFp) and sent with it (fp), so the app adopts it only for the history it holds, as the app does; v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 39 (2026-11-04: v39: the embedded core.js names a page drawn with another subject than the corals on screen <subject>.<page> (pageName with the subject's prefix, SUBJECTS pv: fish.quiz, fish.home) and reads it back (pageSubj), so the Pages tab tells a fish page from a coral one, and gains the subjects' zoom tip wording (SUBJECTS zoom), unused by the script; pagesClean, which keeps these names as they come ('.' was already allowed), is unchanged, so the script stores and serves the same; v38: the Coral Finder tool became the Coral ID Key: a one-shot migration (ONCE_ idkey) renames the tool's old page names to idkey / lab-idkey in the Pages, Events and Reports tabs, logged in the Deploy log; core.js copy with the renamed identifiers and the device migration migrateIdKey. v37: the embedded core.js gains the fish starter core (fishGen marks fish.json start entries first) and the fish card cover chosen within the highest source tier (Pierre's own first), then by the judged ease of fish-photos.json, unused by the script: the fish answers are not logged, so nothing it computes changes; v36: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), the stored replay keyed by that history's fingerprint too (Replayed Since = reset#fingerprint, core.js startFp) and sent with it (fp), so the app adopts it only for the history it holds, as the app does; v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -968,7 +968,7 @@ function autoUpdate(){
     // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
     // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
     const props = PropertiesService.getScriptProperties(), pending = Number(props.getProperty('AUTO_PENDING') || 0);
-    if (v <= VERSION && !pending) return 'up to date (v' + VERSION + ')';
+    if (v <= VERSION && !pending) { once_(log); return 'up to date (v' + VERSION + ')'; }
     if (v > VERSION && code.indexOf('function autoUpdate(') < 0) { log('v' + v + ' not installed: it has no autoUpdate'); return 'skipped'; }
     const man = get('appsscript.json'), id = ScriptApp.getScriptId(), auth = {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()};
     const api = (method, path, body) => { const o = {method: method, headers: auth, muteHttpExceptions: true}; if (body) { o.contentType = 'application/json'; o.payload = JSON.stringify(body); }
@@ -989,6 +989,40 @@ function autoUpdate(){
     log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update'));
     return 'deployed v' + dv;
   } catch (e) { log('error: ' + e.message); return 'error'; }
+}
+
+// One-shot data migrations (Pierre, 2026-11-04, alpha: no backward compatibility, AGENTS.md rule 24b): the code that
+// brings one moves the stored data once, then only the new names exist. Run by autoUpdate when it finds itself up to
+// date, so by the new code itself, within 15 minutes of its install; a Script Property (ONCE_<name>) marks each one done,
+// the Deploy log says what it changed. A failed one is tried again at the next run.
+const ONCE_ = {
+  // idkey-migration: begin
+  // v38: the Coral Finder tool became the Coral ID Key (#finder → #idkey, #lab-finder → #lab-idkey; the book keeps its
+  // name). The page names in the logged rows: Pages and Events (Page; Detail: a visit summary's page names, the load
+  // times' first and next page) and Reports (Where).
+  idkey: () => {
+    const ss = SpreadsheetApp.getActiveSpreadsheet(), out = [];
+    const ren = x => typeof x === 'string' ? x.replace(/(^|")(lab-)?finder(?=$|["|;])/g, '$1$2idkey') : x;
+    [[PAGES_TAB, 6, 2], ['Events', 6, 2], ['Reports', REP.indexOf('Where') + 1, 1]].forEach(([tab, col, w]) => {
+      const sh = ss.getSheetByName(tab); if (!sh || sh.getLastRow() < 2) return;
+      const rg = sh.getRange(2, col, sh.getLastRow() - 1, w), v = rg.getValues(); let n = 0;
+      const nv = v.map(r => r.map(x => { const y = ren(x); if (y !== x) n++; return y; }));
+      if (n) rg.setValues(nv);
+      out.push(tab + ' ' + n);
+    });
+    return 'page names finder → idkey: ' + out.join(', ') + ' cells';
+  }
+  // idkey-migration: end
+};
+function once_(log){
+  const props = PropertiesService.getScriptProperties();
+  Object.keys(ONCE_).forEach(k => {
+    if (props.getProperty('ONCE_' + k)) return;
+    const lock = LockService.getScriptLock(); lock.waitLock(30000);
+    try { const m = ONCE_[k](); props.setProperty('ONCE_' + k, String(Date.now())); log('one-shot ' + k + ' (v' + VERSION + '): ' + m); }
+    catch (e) { log('one-shot ' + k + ' failed: ' + e.message); }
+    finally { lock.releaseLock(); }
+  });
 }
 
 // Players who never sign in (v12, Pierre 2026-11-01: their answers should still improve the photo ratings and the
@@ -1136,6 +1170,69 @@ const CORE_ = (function () { const module = {exports: {}};
       return [];
     }
   }
+  // idkey-migration: begin
+  // One-shot move of this device's data to the names of 2026-11-04 (Pierre: the Coral Finder tool became the Coral ID
+  // Key; the book keeps its name). Alpha (AGENTS.md rule 24b): no old name is read anywhere else; this moves the data
+  // once and the code forgets them. The tool's keys reefid-finder-* become reefid-idkey-*, the admin's Sheets & ID Key
+  // table reefid-admin-fcov reefid-admin-kcov, and page names stored inside values: the photo size per page
+  // (reefid-sync-size), the Lab votes per tool (reefid-lab-votes), the admin's remembered views (reefid-admin-view,
+  // -sub). Idempotent: once nothing is left under an old name it changes nothing (a value the sheet sends back from
+  // before is moved at the next start). app.js and admin.js run it at start-up, after migrateStorage. Delete it (and
+  // its test, tests/idkey.test.js) once every device has started the renamed app. Returns the keys it wrote.
+  const IDKEY_OLD = {finder: 'idkey', 'lab-finder': 'lab-idkey', '~fcov': '~kcov'};
+  function migrateIdKey(s) {
+    try {
+      s = s || localStorage; // storage blocked: nothing to move
+    } catch (e) {
+      return [];
+    }
+    const done = [],
+      move = (o, n) => {
+        const v = s.getItem(o);
+        if (v === null) return;
+        if (s.getItem(n) === null) s.setItem(n, v);
+        s.removeItem(o);
+        done.push(n);
+      },
+      edit = (k, f) => {
+        const v = s.getItem(k);
+        let o;
+        try {
+          o = JSON.parse(v);
+        } catch (e) {}
+        if (!isObj(o)) return;
+        const w = JSON.stringify(f(o));
+        if (w !== v) (s.setItem(k, w), done.push(k));
+      },
+      // An object keyed by page or tool name: the old name's entry under the new one, unless the new one is set.
+      names = o => {
+        Object.keys(IDKEY_OLD).forEach(a => {
+          if (!Object.prototype.hasOwnProperty.call(o, a)) return;
+          if (!Object.prototype.hasOwnProperty.call(o, IDKEY_OLD[a])) o[IDKEY_OLD[a]] = o[a];
+          delete o[a];
+        });
+        return o;
+      },
+      // An object whose values are page names.
+      values = o => {
+        Object.keys(o).forEach(
+          k => typeof o[k] === 'string' && Object.prototype.hasOwnProperty.call(IDKEY_OLD, o[k]) && (o[k] = IDKEY_OLD[o[k]])
+        );
+        return o;
+      };
+    try {
+      const keys = [];
+      for (let i = 0; i < s.length; i++) keys.push(s.key(i));
+      keys.filter(k => k.startsWith('reefid-finder-')).forEach(k => move(k, 'reefid-idkey-' + k.slice(14)));
+      move('reefid-admin-fcov', 'reefid-admin-kcov');
+      edit('reefid-sync-size', names);
+      edit('reefid-lab-votes', names);
+      edit('reefid-admin-view', values);
+      edit('reefid-admin-sub', values);
+    } catch (e) {}
+    return done;
+  }
+  // idkey-migration: end
   // A player's data from the sheet or a progress file, which may hold the old names (an app from before the rename
   // saved it), the new ones, or both (withLegacy): with the new names only, the new one winning.
   function keysIn(d) {
@@ -1182,6 +1279,9 @@ const CORE_ = (function () { const module = {exports: {}};
   //   log     answers go to the sheet's Answers tab (photo ratings, confusions, the admin, the opening hold's replay)
   //   ach, board  achievements and the leaderboard count this subject
   //   progress    the views of My progress (progress.js quizBoard), the first by default
+  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.quiz)
+  //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js; fish: no claim about what tells
+  //           them apart)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, #g-); the others,
   //           Identify and the Tools are the corals' for now
   const SUBJECTS = [
@@ -1195,6 +1295,8 @@ const CORE_ = (function () { const module = {exports: {}};
       what: 'Coral',
       card: 'genus',
       lecture: 'the IMR coral lecture',
+      pv: '',
+      zoom: 'the corallites, the detail that often tells look-alikes apart',
       views: [
         ['wide', 'Colony'],
         ['medium', 'Close-up'],
@@ -1218,6 +1320,8 @@ const CORE_ = (function () { const module = {exports: {}};
       what: 'Fish',
       card: 'fish',
       lecture: 'the IMR fish presentation',
+      pv: 'fish.',
+      zoom: 'the markings and the fins',
       remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
@@ -2139,7 +2243,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
   // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
   // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
-  // Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
+  // Coral ID Key (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
   // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
   // or in games only. Nothing is written back: photos left out simply stay unused.
   const CAP = {feat: 3, sheet: 6, inat: 2, book: 3};
@@ -2230,7 +2334,7 @@ const CORE_ = (function () { const module = {exports: {}};
           feat,
           more,
           game: [...lead, ...after.filter(p => q(p) >= 2), ...after.filter(p => q(p) < 2)],
-          finder: [
+          idkey: [
             ...feat,
             ...take(
               others.filter(p => !feat.includes(p) && !p.imr),
@@ -2578,14 +2682,14 @@ const CORE_ = (function () { const module = {exports: {}};
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
-  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral Finder, except:
+  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral ID Key, except:
   // - BENTHIC (Pierre, 2026-11-02): Millepora, fire coral, not a hard coral nor on the IMR coral list but on the IMR
   //   benthic slate and everywhere at Dauin: a slate genus for the games and the progress (app.js isBenthic);
   // - BONUS (Pierre, 2026-11-01, opt-in since 2026-11-02): genera off the slate common at Dauin and easily taken for a
   //   slate genus (app.js bonusList, isBonus). Played once the player turns them on; never counted in the progress.
   // slateOf(d) = the slate as the games and the progress count it (app.js slateGenera); gameOf(d) = every genus a game
   // can ask (slate + BONUS), the "game genera" of the admin (candidate queue first, Game coverage, caps). The rest of
-  // data.json "x" are the Finder-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
+  // data.json "x" are the Key-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
   // DATA.gen also holds the "x" genera (admin.js): a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],
     BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
@@ -2630,7 +2734,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // Photos out of the repo, step 2 (Pierre, 2026-11-03; docs/ROADMAP.md): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
   // the site's own img/ is the fallback (app.js / admin.js photoFail, sw.js photo). The one switch: '' here sends the
-  // app, the admin and the Coral Finder back to img/ (sw.js only caches what it is asked for).
+  // app, the admin and the Coral ID Key back to img/ (sw.js only caches what it is asked for).
   const PHOTO_BASE = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/';
   // The same files on the site: every R2 address in s (a URL, a srcset, an inline style) made relative again.
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
@@ -3473,11 +3577,10 @@ const CORE_ = (function () { const module = {exports: {}};
   };
   // The page name of a hash: its route without the parameters, a genus sheet (g-Acropora) is 'genus', Look-alikes
   // ('cmp', 'cmp|A|B') 'lookalikes', a side-by-side comparison (cmp-A|B) 'compare', Home 'home'.
-  // subj: the subject on screen (SUBJECTS id). A page drawn in another subject than the first (the corals) is named
-  // '<subject>.<page>' ('fish.quiz', 'fish.home'), so the Pages tab tells a fish page from a coral one (fish UX study,
-  // 2026-11-04: fish used the corals' page names); the corals keep the plain names. '.' is in PAGES.RE: the sheet
-  // (pagesClean) keeps these names as they come.
-  function pageName(h, subj) {
+  // pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn with Fish on screen is 'fish.<page>' ('fish.quiz',
+  // 'fish.home'), so the Pages tab tells a fish page from a coral one (fish UX study, 2026-11-04: fish used the corals'
+  // page names); the corals' prefix is empty. '.' is in PAGES.RE: the sheet (pagesClean) keeps these names as they come.
+  function pageName(h, pre = '') {
     const s = String(h == null ? '' : h).replace(/^#/, '');
     let n;
     if (!s || s === 'home') n = 'home';
@@ -3489,15 +3592,15 @@ const CORE_ = (function () { const module = {exports: {}};
       n = s.split('|')[0].split(';')[0];
       if (!PAGES.RE.test(n)) n = 'other';
     }
-    if (!subj || subj === SUBJECTS[0].id || !SUBJECTS.some(S => S.id === subj)) return n;
-    return PAGES.RE.test(subj + '.' + n) ? subj + '.' + n : subj + '.other';
+    if (!pre) return n;
+    return PAGES.RE.test(pre + n) ? pre + n : pre + 'other';
   }
-  // A page name read back (admin): its subject and its page ('fish.quiz' -> ['fish', 'quiz'], 'quiz' -> ['coral', 'quiz']).
+  // A page name read back (admin): its subject (by its SUBJECTS pv prefix) and its page ('fish.quiz' -> ['fish', 'quiz'],
+  // 'quiz' -> ['coral', 'quiz']).
   function pageSubj(n) {
     const s = String(n == null ? '' : n),
-      i = s.indexOf('.'),
-      S = i > 0 && SUBJECTS.find(x => x.id === s.slice(0, i));
-    return S && S !== SUBJECTS[0] ? [S.id, s.slice(i + 1)] : [SUBJECTS[0].id, s];
+      S = SUBJECTS.find(x => x.pv && s.startsWith(x.pv)) || SUBJECTS.find(x => !x.pv);
+    return [S.id, S.pv ? s.slice(S.pv.length) : s];
   }
   // How a genus sheet was reached, from the page it was opened from.
   function pageFrom(h) {
@@ -3519,11 +3622,11 @@ const CORE_ = (function () { const module = {exports: {}};
     S.at = 0;
   }
   // A page opened: h its hash; o.genus the genus of a sheet (checked by the caller against the data), o.from how it
-  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view, o.subj the
-  // subject on screen (pageName).
+  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view, o.pre the
+  // page-name prefix of the subject on screen (SUBJECTS pv, pageName).
   function pagesOpen(S, h, now, o = {}) {
     pagesStop(S, now);
-    const n = pageName(h, o.subj),
+    const n = pageName(h, o.pre),
       g = n === 'genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
     (S.r[n] = S.r[n] || [0, 0])[0]++;
     if (g) (S.g[g] = S.g[g] || [0, 0, PAGES.FROM.includes(o.from) ? o.from : 'other', o.asked ? 1 : 0])[0]++;
@@ -3908,6 +4011,7 @@ const CORE_ = (function () { const module = {exports: {}};
     withOldNames,
     migrateKeys,
     migrateStorage,
+    migrateIdKey,
     keysIn,
     LEGACY_SEND,
     withLegacy

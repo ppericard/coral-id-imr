@@ -18,7 +18,7 @@ test('page names: routes without their parameters, genus sheets, look-alikes, ho
   assert.strictEqual(N('quiz-custom|play'), 'quiz-custom');
   assert.strictEqual(N('quiz-duel|Foo|Bar'), 'quiz-duel');
   assert.strictEqual(N('quiz-board'), 'progress');
-  assert.strictEqual(N('finder|form=b;box=b1'), 'finder');
+  assert.strictEqual(N('idkey|form=b;box=b1'), 'idkey');
   assert.strictEqual(N('lab-basics|walls'), 'lab-basics');
   assert.strictEqual(N('<script>'), 'other');
   assert.strictEqual(N('__proto__'), 'other');
@@ -28,19 +28,21 @@ test('page names: routes without their parameters, genus sheets, look-alikes, ho
 // A fish page is told apart from a coral one (fish UX study, 2026-11-04: the fish quiz was logged as 'quiz'): drawn with
 // Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
 test('page names carry the subject on screen: fish.<page>, the corals plain', () => {
-  const N = C.pageName;
-  assert.strictEqual(N('quiz', 'fish'), 'fish.quiz');
-  assert.strictEqual(N('', 'fish'), 'fish.home');
-  assert.strictEqual(N('quiz-board', 'fish'), 'fish.progress');
-  assert.strictEqual(N('genera', 'fish'), 'fish.genera');
-  assert.strictEqual(N('x'.repeat(39), 'fish'), 'fish.other');
-  assert.strictEqual(N('quiz', 'coral'), 'quiz');
-  assert.strictEqual(N('quiz', 'nope'), 'quiz');
+  const N = C.pageName,
+    F = C.subjectOf('fish').pv;
+  assert.strictEqual(C.subjectOf('coral').pv, '');
+  assert.strictEqual(F, 'fish.');
+  assert.strictEqual(N('quiz', F), 'fish.quiz');
+  assert.strictEqual(N('', F), 'fish.home');
+  assert.strictEqual(N('quiz-board', F), 'fish.progress');
+  assert.strictEqual(N('genera', F), 'fish.genera');
+  assert.strictEqual(N('x'.repeat(39), F), 'fish.other');
+  assert.strictEqual(N('quiz', ''), 'quiz');
   assert.strictEqual(N('quiz'), 'quiz');
   const S = C.pagesNew();
   C.pagesOpen(S, 'quiz', 1e6);
-  C.pagesOpen(S, 'quiz', 1e6 + 2000, {subj: 'fish'});
-  C.pagesOpen(S, 'genera', 1e6 + 5000, {subj: 'fish'});
+  C.pagesOpen(S, 'quiz', 1e6 + 2000, {pre: F});
+  C.pagesOpen(S, 'genera', 1e6 + 5000, {pre: F});
   const sum = C.pagesTake(S, 1e6 + 6000);
   assert.deepStrictEqual(plain(sum.r), {quiz: [1, 2], 'fish.quiz': [1, 3], 'fish.genera': [1, 1]});
   assert.deepStrictEqual(plain(C.pagesClean(sum).r), plain(sum.r));
@@ -53,7 +55,7 @@ test('page names carry the subject on screen: fish.<page>, the corals plain', ()
 test('how a sheet was reached: quiz, learn, progress, other', () => {
   const F = C.pageFrom;
   assert.deepStrictEqual(
-    ['quiz', 'quiz-custom|play', 'quiz-duel', 'genera', 'g-Porites', 'cmp', 'cmp-A|B', 'progress', 'ach', 'finder', '', 'lab'].map(F),
+    ['quiz', 'quiz-custom|play', 'quiz-duel', 'genera', 'g-Porites', 'cmp', 'cmp-A|B', 'progress', 'ach', 'idkey', '', 'lab'].map(F),
     ['quiz', 'quiz', 'quiz', 'learn', 'learn', 'learn', 'learn', 'progress', 'progress', 'other', 'other', 'other']
   );
 });

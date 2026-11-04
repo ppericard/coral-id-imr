@@ -505,8 +505,9 @@ function renderJourney(name, anonId = '') {
       );
   // A page of another subject than the corals is logged as <subject>.<page> (core.js pageName): "quiz (Fish)".
   const pageLabel = k => {
-    const [sj, pg] = pageSubj(k);
-    return esc(pg) + (sj === SUBJECTS[0].id ? '' : ` (${esc(subjectOf(sj).name)})`);
+    const [sj, pg] = pageSubj(k),
+      S = subjectOf(sj);
+    return esc(pg) + (S.pv ? ` (${esc(S.name)})` : '');
   };
   const pagesTop = Object.entries(RT_)
     .sort((a, b) => b[1][1] - a[1][1] || b[1][0] - a[1][0])

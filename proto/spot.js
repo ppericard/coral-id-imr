@@ -10,7 +10,7 @@ LAB.add({
     const Q = {
       wall: 'What kind of corallite walls?',
       size: 'Roughly how wide are the corallites?',
-      feat: 'Which feature (IMR lecture or Coral Finder) does this genus show?'
+      feat: 'Which feature (IMR lecture or Coral Finder book) does this genus show?'
     };
     const round = () => {
       const t = pick(labNames()),

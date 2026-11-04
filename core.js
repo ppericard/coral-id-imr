@@ -103,6 +103,69 @@
       return [];
     }
   }
+  // idkey-migration: begin
+  // One-shot move of this device's data to the names of 2026-11-04 (Pierre: the Coral Finder tool became the Coral ID
+  // Key; the book keeps its name). Alpha (AGENTS.md rule 24b): no old name is read anywhere else; this moves the data
+  // once and the code forgets them. The tool's keys reefid-finder-* become reefid-idkey-*, the admin's Sheets & ID Key
+  // table reefid-admin-fcov reefid-admin-kcov, and page names stored inside values: the photo size per page
+  // (reefid-sync-size), the Lab votes per tool (reefid-lab-votes), the admin's remembered views (reefid-admin-view,
+  // -sub). Idempotent: once nothing is left under an old name it changes nothing (a value the sheet sends back from
+  // before is moved at the next start). app.js and admin.js run it at start-up, after migrateStorage. Delete it (and
+  // its test, tests/idkey.test.js) once every device has started the renamed app. Returns the keys it wrote.
+  const IDKEY_OLD = {finder: 'idkey', 'lab-finder': 'lab-idkey', '~fcov': '~kcov'};
+  function migrateIdKey(s) {
+    try {
+      s = s || localStorage; // storage blocked: nothing to move
+    } catch (e) {
+      return [];
+    }
+    const done = [],
+      move = (o, n) => {
+        const v = s.getItem(o);
+        if (v === null) return;
+        if (s.getItem(n) === null) s.setItem(n, v);
+        s.removeItem(o);
+        done.push(n);
+      },
+      edit = (k, f) => {
+        const v = s.getItem(k);
+        let o;
+        try {
+          o = JSON.parse(v);
+        } catch (e) {}
+        if (!isObj(o)) return;
+        const w = JSON.stringify(f(o));
+        if (w !== v) (s.setItem(k, w), done.push(k));
+      },
+      // An object keyed by page or tool name: the old name's entry under the new one, unless the new one is set.
+      names = o => {
+        Object.keys(IDKEY_OLD).forEach(a => {
+          if (!Object.prototype.hasOwnProperty.call(o, a)) return;
+          if (!Object.prototype.hasOwnProperty.call(o, IDKEY_OLD[a])) o[IDKEY_OLD[a]] = o[a];
+          delete o[a];
+        });
+        return o;
+      },
+      // An object whose values are page names.
+      values = o => {
+        Object.keys(o).forEach(
+          k => typeof o[k] === 'string' && Object.prototype.hasOwnProperty.call(IDKEY_OLD, o[k]) && (o[k] = IDKEY_OLD[o[k]])
+        );
+        return o;
+      };
+    try {
+      const keys = [];
+      for (let i = 0; i < s.length; i++) keys.push(s.key(i));
+      keys.filter(k => k.startsWith('reefid-finder-')).forEach(k => move(k, 'reefid-idkey-' + k.slice(14)));
+      move('reefid-admin-fcov', 'reefid-admin-kcov');
+      edit('reefid-sync-size', names);
+      edit('reefid-lab-votes', names);
+      edit('reefid-admin-view', values);
+      edit('reefid-admin-sub', values);
+    } catch (e) {}
+    return done;
+  }
+  // idkey-migration: end
   // A player's data from the sheet or a progress file, which may hold the old names (an app from before the rename
   // saved it), the new ones, or both (withLegacy): with the new names only, the new one winning.
   function keysIn(d) {
@@ -149,6 +212,9 @@
   //   log     answers go to the sheet's Answers tab (photo ratings, confusions, the admin, the opening hold's replay)
   //   ach, board  achievements and the leaderboard count this subject
   //   progress    the views of My progress (progress.js quizBoard), the first by default
+  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.quiz)
+  //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js; fish: no claim about what tells
+  //           them apart)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, #g-); the others,
   //           Identify and the Tools are the corals' for now
   const SUBJECTS = [
@@ -162,6 +228,8 @@
       what: 'Coral',
       card: 'genus',
       lecture: 'the IMR coral lecture',
+      pv: '',
+      zoom: 'the corallites, the detail that often tells look-alikes apart',
       views: [
         ['wide', 'Colony'],
         ['medium', 'Close-up'],
@@ -185,6 +253,8 @@
       what: 'Fish',
       card: 'fish',
       lecture: 'the IMR fish presentation',
+      pv: 'fish.',
+      zoom: 'the markings and the fins',
       remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
@@ -1106,7 +1176,7 @@
   // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
   // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
   // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
-  // Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
+  // Coral ID Key (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
   // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
   // or in games only. Nothing is written back: photos left out simply stay unused.
   const CAP = {feat: 3, sheet: 6, inat: 2, book: 3};
@@ -1197,7 +1267,7 @@
           feat,
           more,
           game: [...lead, ...after.filter(p => q(p) >= 2), ...after.filter(p => q(p) < 2)],
-          finder: [
+          idkey: [
             ...feat,
             ...take(
               others.filter(p => !feat.includes(p) && !p.imr),
@@ -1545,14 +1615,14 @@
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
-  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral Finder, except:
+  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral ID Key, except:
   // - BENTHIC (Pierre, 2026-11-02): Millepora, fire coral, not a hard coral nor on the IMR coral list but on the IMR
   //   benthic slate and everywhere at Dauin: a slate genus for the games and the progress (app.js isBenthic);
   // - BONUS (Pierre, 2026-11-01, opt-in since 2026-11-02): genera off the slate common at Dauin and easily taken for a
   //   slate genus (app.js bonusList, isBonus). Played once the player turns them on; never counted in the progress.
   // slateOf(d) = the slate as the games and the progress count it (app.js slateGenera); gameOf(d) = every genus a game
   // can ask (slate + BONUS), the "game genera" of the admin (candidate queue first, Game coverage, caps). The rest of
-  // data.json "x" are the Finder-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
+  // data.json "x" are the Key-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
   // DATA.gen also holds the "x" genera (admin.js): a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],
     BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
@@ -1597,7 +1667,7 @@
   // Photos out of the repo, step 2 (Pierre, 2026-11-03; docs/ROADMAP.md): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
   // the site's own img/ is the fallback (app.js / admin.js photoFail, sw.js photo). The one switch: '' here sends the
-  // app, the admin and the Coral Finder back to img/ (sw.js only caches what it is asked for).
+  // app, the admin and the Coral ID Key back to img/ (sw.js only caches what it is asked for).
   const PHOTO_BASE = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/';
   // The same files on the site: every R2 address in s (a URL, a srcset, an inline style) made relative again.
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
@@ -2440,11 +2510,10 @@
   };
   // The page name of a hash: its route without the parameters, a genus sheet (g-Acropora) is 'genus', Look-alikes
   // ('cmp', 'cmp|A|B') 'lookalikes', a side-by-side comparison (cmp-A|B) 'compare', Home 'home'.
-  // subj: the subject on screen (SUBJECTS id). A page drawn in another subject than the first (the corals) is named
-  // '<subject>.<page>' ('fish.quiz', 'fish.home'), so the Pages tab tells a fish page from a coral one (fish UX study,
-  // 2026-11-04: fish used the corals' page names); the corals keep the plain names. '.' is in PAGES.RE: the sheet
-  // (pagesClean) keeps these names as they come.
-  function pageName(h, subj) {
+  // pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn with Fish on screen is 'fish.<page>' ('fish.quiz',
+  // 'fish.home'), so the Pages tab tells a fish page from a coral one (fish UX study, 2026-11-04: fish used the corals'
+  // page names); the corals' prefix is empty. '.' is in PAGES.RE: the sheet (pagesClean) keeps these names as they come.
+  function pageName(h, pre = '') {
     const s = String(h == null ? '' : h).replace(/^#/, '');
     let n;
     if (!s || s === 'home') n = 'home';
@@ -2456,15 +2525,15 @@
       n = s.split('|')[0].split(';')[0];
       if (!PAGES.RE.test(n)) n = 'other';
     }
-    if (!subj || subj === SUBJECTS[0].id || !SUBJECTS.some(S => S.id === subj)) return n;
-    return PAGES.RE.test(subj + '.' + n) ? subj + '.' + n : subj + '.other';
+    if (!pre) return n;
+    return PAGES.RE.test(pre + n) ? pre + n : pre + 'other';
   }
-  // A page name read back (admin): its subject and its page ('fish.quiz' -> ['fish', 'quiz'], 'quiz' -> ['coral', 'quiz']).
+  // A page name read back (admin): its subject (by its SUBJECTS pv prefix) and its page ('fish.quiz' -> ['fish', 'quiz'],
+  // 'quiz' -> ['coral', 'quiz']).
   function pageSubj(n) {
     const s = String(n == null ? '' : n),
-      i = s.indexOf('.'),
-      S = i > 0 && SUBJECTS.find(x => x.id === s.slice(0, i));
-    return S && S !== SUBJECTS[0] ? [S.id, s.slice(i + 1)] : [SUBJECTS[0].id, s];
+      S = SUBJECTS.find(x => x.pv && s.startsWith(x.pv)) || SUBJECTS.find(x => !x.pv);
+    return [S.id, S.pv ? s.slice(S.pv.length) : s];
   }
   // How a genus sheet was reached, from the page it was opened from.
   function pageFrom(h) {
@@ -2486,11 +2555,11 @@
     S.at = 0;
   }
   // A page opened: h its hash; o.genus the genus of a sheet (checked by the caller against the data), o.from how it
-  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view, o.subj the
-  // subject on screen (pageName).
+  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view, o.pre the
+  // page-name prefix of the subject on screen (SUBJECTS pv, pageName).
   function pagesOpen(S, h, now, o = {}) {
     pagesStop(S, now);
-    const n = pageName(h, o.subj),
+    const n = pageName(h, o.pre),
       g = n === 'genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
     (S.r[n] = S.r[n] || [0, 0])[0]++;
     if (g) (S.g[g] = S.g[g] || [0, 0, PAGES.FROM.includes(o.from) ? o.from : 'other', o.asked ? 1 : 0])[0]++;
@@ -2875,6 +2944,7 @@
     withOldNames,
     migrateKeys,
     migrateStorage,
+    migrateIdKey,
     keysIn,
     LEGACY_SEND,
     withLegacy

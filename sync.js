@@ -894,7 +894,8 @@ const SHEETV = 'reefid-sheet-v',
   PVLINK = 'reefid-pv-link',
   PV = pagesNew(),
   PVI = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
-let pvLast = null;
+let pvLast = null,
+  pvPre = null;
 // The script version of a reply (every reply carries v), remembered for the next visits.
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
@@ -922,11 +923,14 @@ document.addEventListener(
   true
 );
 // A page drawn (app.js route; a redraw of the same page is not a new opening).
+// A page is the hash and the subject on screen (SUBJECTS pv): a subject switched on the same hash (Tools) closes the page
+// of one and opens the page of the other (Codex review #466).
 function pagesRoute(h) {
-  if (h === pvLast) return;
+  if (h === pvLast && SUBJ.pv === pvPre) return;
   const prev = pvLast,
     genus = pvGenus(h);
   pvLast = h;
+  pvPre = SUBJ.pv;
   let from = prev === null ? 'other' : pageFrom(prev);
   if (genus) {
     const L = store.get(PVLINK, null);
@@ -941,7 +945,7 @@ function pagesRoute(h) {
     from,
     asked: s && (s.ok || 0) + (s.ko || 0) > 0,
     hidden: document.visibilityState === 'hidden',
-    subj: SUBJ.id // a fish page is named fish.<page> (core.js pageName)
+    pre: SUBJ.pv // a fish page is named fish.<page> (core.js pageName)
   });
 }
 function pagesSend() {
