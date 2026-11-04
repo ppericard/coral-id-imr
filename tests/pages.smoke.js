@@ -1610,14 +1610,14 @@ async function tipsCheck(b, base) {
   }
   return fails;
 }
-// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), on a phone and a desktop,
+// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), at 390, 1024 and 1280 px,
 // on "Drill this pair" (#quiz-duel|Pocillopora|Stylophora). The hold's sum is set just under INTRO.HOLD, as a run of misses
 // would leave it. Checks: the miss that takes it across shows the card at Next, never with the answer itself; one card
 // on screen, its kind, words (no number) and buttons (Mix in other genera first), faded at first; Keep drilling goes on to
 // the next duel and the card never comes again in that run, even when the hold falls back under INTRO.HOLD and crosses
 // it again; Mix in other genera opens the photo quiz, Compare them the side-by-side comparison of the two genera with
-// Back to the duel floating at the bottom centre (in view and on top wherever the page is scrolled), which, as the
-// browser's Back, returns to the same duel and the same run (no
+// Back to the duel (phones: floating at the bottom centre; from 1024 px: a light band under the page bar; in view and on
+// top wherever the page is scrolled), which, as the browser's Back, returns to the same duel and the same run (no
 // second card); a comparison opened any other way has none; each showing logged with its choice and the return (item
 // tip:duelhold); a new run that starts with the hold already on gets none (no crossing from below); never
 // in the photo quiz; never over an achievement toast (it waits for the next break while the hold is on). The photo of
@@ -1713,6 +1713,7 @@ async function duelReliefCheck(b, base) {
   };
   for (const [w, h] of [
     [390, 844],
+    [1024, 768],
     [1280, 800]
   ]) {
     const W = `${w}px duel relief:`;
@@ -1798,50 +1799,62 @@ async function duelReliefCheck(b, base) {
         const at = await p.evaluate(() => ({
           h: decodeURIComponent(location.hash),
           cmp: !!document.querySelector('#view .cmprow'),
-          back: [...document.querySelectorAll('#view [data-duelback]')].map(
-            x => x.textContent + (x.matches('.next.cmpfab') ? '' : ' (not floating)')
-          ),
+          // The way back shown (the other one is hidden by the size class): its text and where it sits.
+          back: [...document.querySelectorAll('#view [data-duelback]')]
+            .filter(x => x.getClientRects().length)
+            .map(x => x.textContent + (x.closest('.duelband') ? ' (band)' : x.matches('.next.cmpfab') ? ' (floating)' : ' (inline)')),
           drill: !!document.querySelector('#view a[href^="#quiz-duel"]')
         }));
+        // Desktop (from 1024 px): the light band under the page bar; phones and tablets: the floating button.
+        const desk = w >= 1024;
         if (
           at.h !== '#cmp-Pocillopora|Stylophora' ||
           !at.cmp ||
-          at.back.join() !== 'Back to the duel' ||
+          at.back.join() !== (desk ? 'Back to the duel (band)' : 'Back to the duel (floating)') ||
           at.drill ||
           (await p.$('.unlock'))
         )
           fails.push(`${W} Compare them: ${JSON.stringify(at)}`);
-        // The floating button: in view, centred, above the phone tab bar and on top of the page, at the top, in the
-        // middle and at the bottom of the comparison; at the bottom the last photos end above it.
+        // In view and on top at the top, in the middle and at the bottom of the comparison. The floating button: centred,
+        // above the phone tab bar, the last photos ending above it. The band: right under the page bar once the page
+        // scrolls, slim, its button on top.
         for (const at of ['top', 'bottom', 'middle']) {
           await p.evaluate(at => {
             const max = document.documentElement.scrollHeight - innerHeight;
             scrollTo(0, at === 'top' ? 0 : at === 'bottom' ? max : max / 2);
           }, at);
           await p.waitForTimeout(250);
-          const f = await p.evaluate(() => {
-            const b = document.querySelector('#view .cmpfab'),
+          const f = await p.evaluate(desk => {
+            const b = [...document.querySelectorAll('#view [data-duelback]')].find(x => x.getClientRects().length),
               r = b.getBoundingClientRect(),
               tab = document.querySelector('.sections'),
               tr = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect() : null,
               floor = tr && tr.top > innerHeight / 2 ? tr.top : innerHeight,
               hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2),
-              rows = [...document.querySelectorAll('#view .cmprow, #view .cmplab ~ *:not(.cmpfab):not(.cmpfabpad)')],
-              last = rows.length ? rows[rows.length - 1].getBoundingClientRect().bottom : 0,
-              max = document.documentElement.scrollHeight - innerHeight;
-            return {
-              inView: r.top >= 0 && r.bottom <= floor && r.height > 0,
-              centred: Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2,
-              onTop: !!hit && b.contains(hit),
-              clear: scrollY < max - 2 || last <= r.top,
-              scrolls: max > 0,
-              wide: document.documentElement.scrollWidth > innerWidth
-            };
-          });
-          if (!f.inView || !f.centred || !f.onTop || !f.clear || !f.scrolls || f.wide)
+              max = document.documentElement.scrollHeight - innerHeight,
+              o = {
+                inView: r.top >= 0 && r.bottom <= floor && r.height > 0,
+                onTop: !!hit && b.contains(hit),
+                scrolls: max > 0,
+                wide: document.documentElement.scrollWidth > innerWidth
+              };
+            if (desk) {
+              const band = b.closest('.duelband').getBoundingClientRect(),
+                bar = document.getElementById('modes').getBoundingClientRect();
+              o.under = scrollY < 200 || Math.abs(band.top - bar.bottom - 6) < 3;
+              o.slim = band.height <= 46;
+            } else {
+              const rows = [...document.querySelectorAll('#view .cmprow, #view .cmplab ~ *:not(.cmpfab):not(.cmpfabpad):not(.duelband)')],
+                last = rows.length ? rows[rows.length - 1].getBoundingClientRect().bottom : 0;
+              o.centred = Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2;
+              o.clear = scrollY < max - 2 || last <= r.top;
+            }
+            return o;
+          }, desk);
+          if (Object.entries(f).some(([k, v]) => (k === 'wide' ? v : !v)))
             fails.push(`${W} Back to the duel, page scrolled to the ${at}: ${JSON.stringify(f)}`);
         }
-        if (way === 'button') await p.click('#view [data-duelback]');
+        if (way === 'button') await p.locator('#view [data-duelback]:visible').click();
         else await p.goBack();
         await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000}).catch(() => {});
         const bk = await p.evaluate(() => ({h: decodeURIComponent(location.hash), run: {...DUELRUN}, back: DUELBACK}));
