@@ -51,8 +51,8 @@ The first fish questions must be easy and readable. Two decisions, each built in
   species with strong sexual dimorphism or colour phases (e.g. parrotfish) at the very start**: they come later (see "Juveniles and colour
   phases"). Until answers rate the photos, an annotation pass (an agent judging each fish photo on explicit criteria: light, colour, profile,
   size in frame, life stage, phase) gives each photo an initial difficulty prior (built in #461: `judging/FISH.md`). Updated later the same
-  day (Pierre): sex and colour phases are species-level difficulties and are not kept back; juveniles are, except where they are distinct
-  and recognisable (Spadefish, Sweetlips); see "Juveniles and colour phases".
+  day (Pierre): sex and colour phases are species-level difficulties and are not kept back; juveniles are, except where they help learn the family
+  early (the juvenile classes); see "Juveniles and colour phases".
 
 ## Unlock rules
 
@@ -180,10 +180,25 @@ Decided from the admin pooling study:
 
 - Early, never a late stage (Pierre's ReefRecall rule). Until an entry reaches Open Water its questions show only its very easy photos
   (`model.js` `easyFirst`, a temporary bootstrap until fish answers are logged; docs/LEARNING.md "Fish: the starter core and judged
-  photos"). A juvenile is one only where its entry's juveniles are distinct and recognisable (Pierre, 2026-11-04: Spadefish and
-  Sweetlips, `fish.json` `juv: "distinct"`; Sweetlips juveniles are more recognisable than the adults), so they help learn the family
-  early; elsewhere its judged ease is capped, provisionally, until real answers say otherwise. From Open Water every juvenile is in
-  the pool.
+  photos"). A juvenile is one only where its entry or genus shows its juveniles early (the juvenile classes, below); elsewhere its judged
+  ease is capped. From Open Water every juvenile is in the pool.
+- **Juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `fish.json` `juv`, from
+  `tools/fish_source.json`, per entry and per genus or species for mixed entries; judging/FISH.md):
+  - **Class A** (juveniles distinctive and recognisable: they help learn the family early): Spadefish (very tall fins:
+    greatly elongated dorsal and anal fins; and, Pierre's observation, they look much bigger than they are: very long fins on
+    a tiny body, the body growing while the overall height hardly changes), Sweetlips (head-down, wriggling swimming with
+    exaggerated fin movements, bold creamy blotches), Boxfish (*Ostracion cubicus*: bright yellow with black spots, the same
+    box shape). Pierre is a source for Spadefish and Sweetlips too.
+  - **Show-early genera or species** of the mixed entries: *Dascyllus* (Damselfish), *Pomacanthus* (Angelfish), *Macolor*
+    (Snapper), *Coris gaimard* and *Novaculichthys* (Wrasse), *Arothron stellatus* (Pufferfish).
+  - **Class B** (nondescript, confusing, or resembling another family: taught later, with their explanation card): Parrotfish,
+    Emperor; and the look-alike juveniles of mixed entries: *Acanthurus pyroferus* (resembles *Centropyge* pygmy angelfish),
+    *Scolopsis bilineata* (resembles a fangblenny), *Plectropomus laevis* (resembles a toby), *Halichoeres* and *Thalassoma*
+    (alike across species).
+  - **Class C** (broadly like the adults) and **no source found** (Fusilier, Triggerfish, Soldierfish, Cardinalfish,
+    Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): the cap stays, provisionally.
+  - Mimicry is a hypothesis in every case: written as "resembles" or "has been suggested", never as a fact (Pierre).
+- The B and look-alike juveniles get their explanation card when they come in (below); the provisional caps go with the bootstrap.
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
   (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.

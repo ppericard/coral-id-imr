@@ -20,7 +20,7 @@ FORMS = [
     {'id': 'S', 'name': 'Submassive', 'slide': 9, 'def': 'Thick columns, lobes or fingers; no true secondary branches; too irregular to be massive.'},
     {'id': 'F', 'name': 'Foliose/Plating', 'slide': 10, 'def': 'Thin, leafy, vertical plates, like petals, lettuce or cabbage.'},
 ]
-# Coral Finder box -> IMR forms whose photos can illustrate it (the Coral Finder site only shows genera it lists in the box).
+# Coral Finder box -> IMR forms whose photos can illustrate it (the Coral ID Key only shows genera it lists in the box).
 # IMR slide 6: tabulate is "classified as branching in the CoralFinder". Meandering is a corallite pattern, seen on any form.
 CF = {'B': 'BT', 'P': 'EF', 'S': 'MS', 'M': 'BETMSF', 'C': 'S', 'F': 'U', 'L': 'p'}
 ATTACHED = ('lobophyllia', 'plerogyra')  # Coral Finder F4 "isolated and attached": not IMR mushrooms
