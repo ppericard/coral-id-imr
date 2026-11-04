@@ -1062,8 +1062,7 @@ addEventListener('resize', () => fitModes());
 // Reports); cur, its part of curation.json ('' = the top level); pages, the admin pages it has (null = all). A page a
 // subject does not have yet says so; its tabs are left out of the header.
 const ADM0 = SUBJECTS.find(s => !s.admin.hash);
-let ASUBJ = ADM0,
-  SUBJ_FORCE = null; // the subject a click on the switch asked for (onhashchange)
+let ASUBJ = ADM0;
 const subjOfHash = h => {
   const S = SUBJECTS.find(s => s.admin.hash && h.startsWith(s.admin.hash)) || ADM0;
   return [S, h.slice(S.admin.hash.length)];
@@ -4790,23 +4789,25 @@ async function start() {
   // the page he opens first; it was the candidates on a phone, the first genus on a desktop).
   [ASUBJ, cur] = subjOfHash(hashNow());
   cur = cur || '~users';
-  // The switch's links say which subject (SUBJ_FORCE); any other link without a prefix (a player's journey from Players,
-  // a report's genus) keeps the subject on screen when that subject has the page (its address gets the prefix), else it
-  // opens the corals' page.
-  $('subj').addEventListener('click', e => {
-    const a = e.target.closest('[data-subj]');
-    if (a) SUBJ_FORCE = SUBJECTS.find(S => S.id === a.dataset.subj);
-  });
+  // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs (Codex review
+  // #492). A link without a prefix clicked on a subject's page (a player's journey from Players) is given that
+  // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject.
+  document.addEventListener(
+    'click',
+    e => {
+      const a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (!a || a.closest('#subj') || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const h = decodeURIComponent(a.getAttribute('href').slice(1)),
+        [S, page] = subjOfHash(h);
+      if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || !hasPage(ASUBJ, page)) return;
+      e.preventDefault();
+      location.hash = ASUBJ.admin.hash + page;
+    },
+    true
+  );
   window.onhashchange = () => {
     if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
-    const was = ASUBJ;
     [ASUBJ, cur] = subjOfHash(hashNow());
-    if (SUBJ_FORCE) ASUBJ = SUBJ_FORCE;
-    else if (ASUBJ === ADM0 && was !== ADM0 && was.admin.pages && hasPage(was, cur)) {
-      ASUBJ = was;
-      history.replaceState(null, '', '#' + was.admin.hash + cur);
-    }
-    SUBJ_FORCE = null;
     cur = cur || '~users';
     const h = $('admhelp');
     if (h) h.remove();

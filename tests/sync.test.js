@@ -3,6 +3,11 @@ const block = require('./block.js'); // the block of a browser file a test runs,
 const test = require('node:test'),
   assert = require('node:assert');
 const {loadCodeGs} = require('./gas.js');
+// Every reply carries the script's VERSION as v: read from the script, so a version bump edits no test (a number
+// pinned here collided between every pair of PRs that bump it).
+const SV = Number(
+  /const VERSION = (\d+);/.exec(require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8'))[1]
+);
 
 const prog = n => ({'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}})});
 const ans = (id, extra = {}) => ({
@@ -18,7 +23,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 43});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: SV});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -146,7 +151,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 43});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: SV});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -225,7 +230,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 43);
+  assert.strictEqual(r.v, SV);
   const ana = r.users.find(u => u.name === 'Ana');
   // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
   const a = s.post({readAnswers: 1, token: TOK});
@@ -259,7 +264,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 43});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: SV});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -381,7 +386,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
 // Anonymous answers (v12).
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 43});
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: SV});
   assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
@@ -481,7 +486,7 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
       ev('e4', {k: 'nope', msg: 'unknown kind'})
     ]
   });
-  assert.deepStrictEqual(r, {ok: true, ev: true, v: 43});
+  assert.deepStrictEqual(r, {ok: true, ev: true, v: SV});
   s.post({dev: 'dev0000001', events: [ev('e1', {k: 'err', msg: 'again'})]});
   const E = s.sheets.Events;
   assert.strictEqual(E.getLastRow(), 4, 'three events, an unknown kind and a resent id are not logged');
@@ -631,7 +636,7 @@ test("v30 pages events: cleaned, in their own tab, under the admin's id of the p
     eanon: 'devanon001',
     events: [pg('p1', {note: '=cmd()', f: 'https://x/y.jpg'}), {id: 'e1', k: 'err', msg: 'boom'}]
   });
-  assert.deepStrictEqual(r1, {ok: true, ev: true, v: 43});
+  assert.deepStrictEqual(r1, {ok: true, ev: true, v: SV});
   // Signed in: the name and code, checked; a wrong code, an unknown name or a bad id: no id, still logged.
   s.post({dev: 'dev0000009', ename: 'ana', epin: '1234', events: [pg('p2')]});
   s.post({dev: 'dev0000009', ename: 'Ana', epin: '9999', events: [pg('p3')]});
@@ -755,7 +760,7 @@ test('v30 pages events: an app before v30 sends none, and its other events are l
       {id: 'o2', k: 'later', msg: 'y'}
     ]
   });
-  assert.deepStrictEqual(r, {ok: true, ev: true, v: 43});
+  assert.deepStrictEqual(r, {ok: true, ev: true, v: SV});
   assert.deepStrictEqual(
     s.sheets.Events.rows.slice(1).map(x => x[9]),
     ['o1']
@@ -803,7 +808,7 @@ test('board: signed-in players by progress then level; opted-out players and the
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6}, answers: [ans('c2')]});
   const b = s.get({board: '1'});
   assert.strictEqual(b.ok, true);
-  assert.strictEqual(b.v, 43);
+  assert.strictEqual(b.v, SV);
   assert.deepStrictEqual(b.rows.map(r => r[0]).sort(), ['Ana', 'Ben'], 'Ana B opted out');
   assert.ok(
     b.rows.every(r => r.length === 3 && r[1] === 42 && r[2] === null),
@@ -830,7 +835,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben());
   assert.strictEqual(s.post({userBoard: 'Ben', hide: true}).error, 'token', 'admin only');
   assert.strictEqual(s.post({userBoard: 'Nobody', hide: true, token: TOK}).error, 'user');
-  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 43});
+  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: SV});
   assert.ok(!ben(), 'hidden at once (cache cleared)');
   assert.ok(
     s.get({board: '1'}).rows.some(r => r[0] === 'Ana'),
@@ -841,7 +846,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.ok(!ben(), 'still hidden after his own sync');
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ben').board, -1, 'the admin list says so');
-  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 43});
+  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: SV});
   assert.ok(ben(), 'shown again');
 });
 
@@ -921,7 +926,7 @@ test('achs: how many signed-in players hold each achievement; counts only', () =
   s.post({name: 'Ben', pin: '1111', data: data({met10: 3}), summary: {}, answers: []});
   s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: []});
   const a = s.get({achs: '1'});
-  assert.strictEqual(a.v, 43);
+  assert.strictEqual(a.v, SV);
   assert.strictEqual(a.n, 2, 'players with a record');
   assert.deepStrictEqual(a.counts, {met10: 2, run10: 1}, 'no _ fields');
   assert.ok(!JSON.stringify(a).match(/Ana|Ben/), 'no names');
@@ -1132,7 +1137,7 @@ test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns befor
     ]
   });
   const A = s.sheets.Answers;
-  assert.deepStrictEqual([...A.rows[0].slice(11)], ['Choices', 'Seconds', 'Enlarged']);
+  assert.deepStrictEqual([...A.rows[0].slice(11, 14)], ['Choices', 'Seconds', 'Enlarged']);
   assert.deepStrictEqual(
     A.rows.slice(1).map(r => [r[7], r[8], r[11], r[12], r[13]]),
     [
@@ -1145,7 +1150,7 @@ test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns befor
   );
   // readAnswers: the anonymous flag stays at index 11, seconds and enlarged follow (null when not logged).
   assert.deepStrictEqual(
-    s.post({readAnswers: 1, token: T}).rows.map(x => x.slice(10)),
+    s.post({readAnswers: 1, token: T}).rows.map(x => x.slice(10, 14)),
     [
       ['Acropora Porites', 0, 7.3, 1],
       ['', 0, 600, 0],
@@ -1159,9 +1164,9 @@ test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns befor
   s2.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1')]});
   s2.sheets.Answers.rows.forEach(x => (x.length = 12));
   s2.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o2', {rt: 3, zm: 0})]});
-  assert.deepStrictEqual([...s2.sheets.Answers.rows[0].slice(12)], ['Seconds', 'Enlarged']);
+  assert.deepStrictEqual([...s2.sheets.Answers.rows[0].slice(12, 14)], ['Seconds', 'Enlarged']);
   assert.deepStrictEqual(
-    s2.post({readAnswers: 1, token: T}).rows.map(x => x.slice(12)),
+    s2.post({readAnswers: 1, token: T}).rows.map(x => x.slice(12, 14)),
     [
       [null, null],
       [3, 0]
@@ -1172,6 +1177,68 @@ test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns befor
   assert.strictEqual(s.get({stats: '1'}).ok, true);
 });
 
+test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it at index 14', () => {
+  // Pierre, 2026-11-04: the time of day at home, for players outside the sheet's time zone (minutes east of UTC).
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000';
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [ans('z1', {tz: 480}), ans('z2', {tz: -300}), ans('z3', {tz: 900}), ans('z4', {tz: '480'}), ans('z5', {tz: 330.5}), ans('z6')]
+  });
+  const A = s.sheets.Answers;
+  assert.deepStrictEqual([...A.rows[0].slice(13)], ['Enlarged', 'UTC offset']);
+  assert.deepStrictEqual(
+    A.rows.slice(1).map(r => r[14]),
+    [480, -300, '', '', '', '']
+  );
+  assert.deepStrictEqual(
+    s.post({readAnswers: 1, token: T}).rows.map(x => x[14]),
+    [480, -300, null, null, null, null]
+  );
+});
+
+test('v44 one-shot tz: the rows logged before get +480 in their empty UTC offset cells, once, never over a value', () => {
+  // Pierre, 2026-11-04: every answer logged before v44 came from players on Philippine time.
+  const CODE = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
+  const s = loadCodeGs({
+    fetch: url => (url.includes('raw.githubusercontent.com') ? {getResponseCode: () => 200, getContentText: () => CODE} : null)
+  });
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1'), ans('o2'), ans('o3')]});
+  const A = s.sheets.Answers;
+  A.rows.forEach(x => (x.length = 14)); // a tab from before v44: no header, no cells
+  A.rows[2][14] = -300; // a value already there stays
+  A.rows.splice(3, 0, []); // an empty row between answers stays empty
+  // The function itself: fills the empty cells of answer rows only, and a second call finds nothing to fill.
+  assert.strictEqual(require('vm').runInContext('ONCE_.tz()', s.ctx), 'UTC offset +480 in 2 empty cells of 4 rows');
+  assert.strictEqual(A.rows[0][14], 'UTC offset');
+  assert.deepStrictEqual(
+    A.rows.slice(1).map(r => r[14]),
+    [480, -300, '', 480]
+  );
+  assert.strictEqual(require('vm').runInContext('ONCE_.tz()', s.ctx), 'UTC offset +480 in 0 empty cells of 4 rows');
+  // Run by the new script itself once (autoUpdate, up to date), logged in the Deploy log; never again.
+  A.rows[1][14] = '';
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.strictEqual(A.rows[1][14], 480);
+  assert.ok(s.props.ONCE_tz, 'marked done');
+  const log = () =>
+    s.sheets['Deploy log'].rows
+      .slice(1)
+      .map(r => String(r[1]))
+      .filter(l => l.startsWith('one-shot tz'));
+  assert.deepStrictEqual(log(), [`one-shot tz (v${SV}): UTC offset +480 in 1 empty cells of 4 rows`]);
+  A.rows[1][14] = '';
+  s.ctx.autoUpdate();
+  assert.strictEqual(A.rows[1][14], '', 'once only');
+  assert.strictEqual(log().length, 1);
+  assert.deepStrictEqual(
+    s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows.map(x => x[14]),
+    [null, -300, 480]
+  );
+});
 test('v24: the flood caps count only answers the sheet does not have yet (Codex review #372)', () => {
   const s = loadCodeGs(),
     batch = k => [...Array(100)].map((_, i) => ans('r' + k + 'x' + i)),

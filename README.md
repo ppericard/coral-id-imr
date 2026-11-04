@@ -2,7 +2,7 @@
 
 > **AI agent or new developer given only this repository's link? Start here.** Read [AGENTS.md](AGENTS.md) (standing rules, how to ship a change), then [docs/HANDOVER.md](docs/HANDOVER.md) (state of play, what the owner still has to do, how to work with him, how to set up a working copy and what lives outside GitHub, a ready-made first prompt), then [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog). Nothing outside this repository is needed to understand or continue the project.
 
-A static web app for learning the 39 coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate: 34 surveyed genera plus 5 starred look-alikes, and fire coral (*Millepora*), on the IMR benthic slate.
+A static web app for learning the coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate (the surveyed genera, the starred look-alikes and fire coral, *Millepora*), with reef fish in beta (the admin's only for now: the IMR survey families, `docs/FISH_PATH.md`).
 
 Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name (`coral-id-imr`) change later, with a migration for players (ROADMAP). The organisation and app names live in one place, `core.js` `ORG`; `tools/rename_app.py` writes them into the static files. <!-- rename-app: keep -->
 
@@ -28,7 +28,7 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus data; photos are in `img/` as WebP (1600 px, plus a 480 px `-s` version for thumbnails).
+The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus data; photos are in `img/` as WebP in four sizes (1600, 960, 480 and 240 px), mirrored to Cloudflare R2, which the app reads first (`core.js` `PHOTO_BASE`). Version numbers (`?v=`) are stamped at deploy: never edit them (AGENTS.md).
 
 ## Photos
 
