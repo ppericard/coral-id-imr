@@ -13,9 +13,11 @@
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
     const names = Object.keys(DATA.gen),
       fish = !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
-    // No subject switch here (Pierre, 2026-11-04: the fish beta came off Home, "some things clearly aren't ready"): a
-    // subject in beta is the admin's only, switched in Tools (proto/lab.js); Home is the corals' for every player and
-    // only follows the subject on screen for the admin who switched.
+    // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
+    // the doors, the one relaxation of "two doors only" (AGENTS.md rule 21), the twin of the header chip (app.js
+    // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is
+    // in beta); the doors follow the subject on screen.
+    const subj = subjMine().length > 1 ? `<div class="seg hsubj" role="group" aria-label="Subject">${subjBtns()}</div>` : '';
     // Door 1 art: a band of corallite close-ups, an illustration only (Pierre, 2026-11-03): its two buttons carry the door
     // (fish: a photo of each of 12 IMR families). Door 2 art: a real ReefCloud photo with its 5 points (Pierre's,
     // 2026-10-31), centred on the active point.
@@ -65,7 +67,7 @@
             </div>
           </div>
         </section>`;
-    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? 'a fish on a survey video' : 'a coral on a ReefCloud photo'}, or one you photographed on a dive.</p><div class="home-page">
+    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? 'a fish on a survey video' : 'a coral on a ReefCloud photo'}, or one you photographed on a dive.</p><div class="home-page">${subj}
       <div class="hdoors">
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>

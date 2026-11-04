@@ -1,0 +1,120 @@
+{
+ "photos": {
+  "fish-s380-cand-513917156": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-518685941": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-550148675": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-550148698": {
+   "code": "p1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s380-cand-489811569": {
+   "code": "p1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-596069459": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-527822710": {
+   "code": "p1n0sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-527822742": {
+   "code": "o1n0sm1c1",
+   "keep": "dup"
+  },
+  "fish-s380-cand-695416122": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-722713058": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-722713066": {
+   "code": "p1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s380-cand-566808974": {
+   "code": "o1d1ssxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the pygmy seahorse for sure in the sea fan"
+  },
+  "fish-s380-cand-66156252": {
+   "code": "p1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-490758723": {
+   "code": "p1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-490787831": {
+   "code": "p1g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s380-cand-490787834": {
+   "code": "p1g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s380-cand-550148516": {
+   "code": "p1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-597400803": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-711055542": {
+   "code": "o1n0ssxc1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the pygmy seahorse for sure in the sea fan"
+  },
+  "fish-s380-cand-711055551": {
+   "code": "o1n0sm1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-66017690": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-492257975": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-718234443": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-624856684": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-608567886": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-637408509": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-637408530": {
+   "code": "o1g1ss1c1",
+   "keep": "dup"
+  }
+ }
+}

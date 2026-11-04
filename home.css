@@ -599,3 +599,24 @@ body:has(.home-page) main {
 .keysoon p {
   margin-inline: auto;
 }
+/* The subject switch (home.js; docs/DESIGN.md "Subject switch"): one full-width segmented row above the doors, each
+   subject with its icon and name, an equal share each. */
+.home-page .hsubj {
+  display: flex;
+  width: 100%;
+  margin: 0 0 8px;
+}
+.home-page .hsubj button {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+.home-page .hsubj .sji {
+  flex: none;
+}
+.home-page .hsubj .beta {
+  margin-left: 0;
+}

@@ -1,0 +1,136 @@
+{
+ "photos": {
+  "fish-s470-cand-679518830": {
+   "code": "o1g1sl1ja2",
+   "keep": "best"
+  },
+  "fish-s470-cand-679518849": {
+   "code": "o1g1sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s470-cand-679518852": {
+   "code": "d1g1sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s470-cand-409345768": {
+   "code": "d1g2ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Murky shallow water; I cannot find the juveniles for sure"
+  },
+  "fish-s470-cand-409345767": {
+   "code": "d1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s470-cand-546184423": {
+   "code": "p1g1smsa3",
+   "keep": "best"
+  },
+  "fish-s470-cand-546184441": {
+   "code": "p1g1smsa3",
+   "keep": "dup"
+  },
+  "fish-s470-cand-606298592": {
+   "code": "p1g2ss1j1",
+   "keep": "best"
+  },
+  "fish-s470-cand-606298600": {
+   "code": "p1g1ssxj1",
+   "keep": "dup"
+  },
+  "fish-s470-cand-539447681": {
+   "code": "p1g3bl11",
+   "keep": "best"
+  },
+  "fish-s470-cand-518599831": {
+   "code": "p1g1sl1a3",
+   "keep": "best"
+  },
+  "fish-s470-cand-475225663": {
+   "code": "p1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s470-cand-475225682": {
+   "code": "p1g2ssmj1",
+   "keep": "dup"
+  },
+  "fish-s470-cand-688426832": {
+   "code": "p1g3ssxj1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A shark is the obvious fish; the small pilot jack is hard to see"
+  },
+  "fish-s470-cand-381123882": {
+   "code": "o1g2ss1j1",
+   "keep": "best"
+  },
+  "fish-s470-cand-581523189": {
+   "code": "d0g1sl1a2",
+   "keep": "best"
+  },
+  "fish-s470-cand-527823988": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s470-cand-527824021": {
+   "code": "p1g2sss2",
+   "keep": "dup"
+  },
+  "fish-s470-cand-335696849": {
+   "code": "o1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s470-cand-551736983": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s470-cand-465686880": {
+   "code": "p1g2ssxj1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A large dark animal fills the photo; the small jack is hard to see"
+  },
+  "fish-s470-cand-596531925": {
+   "code": "p1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s470-cand-595761647": {
+   "code": "o1g2bl1j1",
+   "keep": "best"
+  },
+  "fish-s470-cand-507074714": {
+   "code": "p1g2ss1j1",
+   "keep": "best"
+  },
+  "fish-s470-cand-752792197": {
+   "code": "p1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s470-cand-612061670": {
+   "code": "p1g1ssxj1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A shark's body fills the photo; the small jacks are hard to see"
+  },
+  "fish-s470-cand-622376648": {
+   "code": "p1g2ssxj1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A large animal fills the photo; the small jack is hard to see"
+  },
+  "fish-s470-cand-622376615": {
+   "code": "o1g2ssxj1",
+   "keep": "dup"
+  }
+ }
+}

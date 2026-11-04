@@ -1,0 +1,124 @@
+{
+ "photos": {
+  "fish-s454-cand-459048004": {
+   "code": "p0g1sss2",
+   "keep": "best"
+  },
+  "fish-s454-cand-459045911": {
+   "code": "p0g1sss2",
+   "keep": "dup"
+  },
+  "fish-s454-cand-746238218": {
+   "code": "p0g2sss2",
+   "keep": "best"
+  },
+  "fish-s454-cand-361274775": {
+   "code": "o0g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s454-cand-361274787": {
+   "code": "o0g1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s454-cand-361274798": {
+   "code": "o0g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s454-cand-361274817": {
+   "code": "o0g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s454-cand-597401591": {
+   "code": "o0g2bsxc1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "I cannot find the garden eels for sure among the rubble"
+  },
+  "fish-s454-cand-531243178": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s454-cand-556402248": {
+   "code": "o0g2sss2",
+   "keep": "best"
+  },
+  "fish-s454-cand-556403950": {
+   "code": "o0g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s454-cand-431902279": {
+   "code": "o0g2ssx1",
+   "keep": "best"
+  },
+  "fish-s454-cand-590975887": {
+   "code": "o0g2sss2",
+   "keep": "best"
+  },
+  "fish-s454-cand-592249481": {
+   "code": "o0g3ssx1",
+   "keep": "best"
+  },
+  "fish-s454-cand-461172584": {
+   "code": "o0g2sm12",
+   "keep": "best"
+  },
+  "fish-s454-cand-604571827": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s454-cand-532628967": {
+   "code": "o0g3ssx1",
+   "keep": "best"
+  },
+  "fish-s454-cand-423320215": {
+   "code": "o0g1sss2",
+   "keep": "best"
+  },
+  "fish-s454-cand-338396182": {
+   "code": "o0g1sms3",
+   "keep": "best"
+  },
+  "fish-s454-cand-338396711": {
+   "code": "o0g1sms3",
+   "keep": "dup"
+  },
+  "fish-s454-cand-338396710": {
+   "code": "o0g1sms3",
+   "keep": "dup"
+  },
+  "fish-s454-cand-336042634": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s454-cand-546214267": {
+   "code": "o0g2sss2",
+   "keep": "best"
+  },
+  "fish-s454-cand-66428098": {
+   "code": "o0g1sms3",
+   "keep": "best"
+  },
+  "fish-s454-cand-266502912": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s454-cand-266502898": {
+   "code": "o0g1sm13",
+   "keep": "dup"
+  },
+  "fish-s454-cand-266502924": {
+   "code": "o0g1sm13",
+   "keep": "dup"
+  },
+  "fish-s454-cand-467872503": {
+   "code": "o0g1sms3",
+   "keep": "best"
+  },
+  "fish-s454-cand-312057632": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  }
+ }
+}

@@ -107,7 +107,7 @@ function journeyOf(R) {
     h.n++;
     h.ok += ok;
   });
-  // Sessions: answers less than HEALTH.GAP minutes apart (admin.js sessionsOf, as Health and Recent sessions count them).
+  // Sessions: answers less than HEALTH.GAP minutes apart (admin.js sessionsOf, as Stops and Recent sessions count them).
   const S = sessionsOf(R).map(s => s.L);
   Object.values(G).forEach(s => (s.score = s.en ? s.res / s.en : null));
   return {G, acc, exp, met, marks, mix, perDay, S, slate};

@@ -1,0 +1,196 @@
+{
+ "photos": {
+  "fish-s453-cand-577249898": {
+   "code": "h0g2sl12",
+   "keep": "best"
+  },
+  "fish-s453-cand-252925300": {
+   "code": "d1g1sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "On wet mud at low tide: maybe out of water"
+  },
+  "fish-s453-cand-252925335": {
+   "code": "d1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s453-cand-252925363": {
+   "code": "d0g1sl1j2",
+   "keep": "dup"
+  },
+  "fish-s453-cand-252925386": {
+   "code": "d1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s453-cand-698278139": {
+   "code": "d1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s453-cand-698278190": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s453-cand-698278230": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s453-cand-698278285": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s453-cand-632742430": {
+   "code": "h0g1sm12",
+   "keep": "best"
+  },
+  "fish-s453-cand-11789684": {
+   "code": "o0g1sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-11789712": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s453-cand-314935970": {
+   "code": "d1g1sm1c2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Among wet rocks at low tide: maybe out of water"
+  },
+  "fish-s453-cand-617617743": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s453-cand-617617847": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-617617936": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-617617963": {
+   "code": "o0g1sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-577248990": {
+   "code": "h0g2sm12",
+   "keep": "best"
+  },
+  "fish-s453-cand-597336679": {
+   "code": "d1n0sm13",
+   "keep": "best"
+  },
+  "fish-s453-cand-597336710": {
+   "code": "d1n0sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-608189104": {
+   "code": "o0g1sm13",
+   "keep": "best"
+  },
+  "fish-s453-cand-597322300": {
+   "code": "d0n0sm13",
+   "keep": "best"
+  },
+  "fish-s453-cand-597322317": {
+   "code": "d0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-597322338": {
+   "code": "d1n0ss11",
+   "keep": "dup"
+  },
+  "fish-s453-cand-597322370": {
+   "code": "d0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-597323323": {
+   "code": "d0n0sm13",
+   "keep": "best"
+  },
+  "fish-s453-cand-597323350": {
+   "code": "d0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-597323367": {
+   "code": "d0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-597323384": {
+   "code": "d0n0sm13",
+   "keep": "dup"
+  },
+  "fish-s453-cand-10940875": {
+   "code": "o0g1ssx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A diver at a wreck; I cannot find the moray for sure"
+  },
+  "fish-s453-cand-239043632": {
+   "code": "d1g1sl1a3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "On mud and flattened seagrass: maybe out of water"
+  },
+  "fish-s453-cand-42882515": {
+   "code": "d0g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s453-cand-42882530": {
+   "code": "d0g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s453-cand-42882621": {
+   "code": "d0g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s453-cand-42882656": {
+   "code": "d0g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s453-cand-452387084": {
+   "code": "d1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s453-cand-408010054": {
+   "code": "o1g1sl1ja2",
+   "keep": "best"
+  },
+  "fish-s453-cand-408010085": {
+   "code": "o1g1sl1ja2",
+   "keep": "dup"
+  },
+  "fish-s453-cand-408013450": {
+   "code": "o1g1sl1ja2",
+   "keep": "dup"
+  },
+  "fish-s453-cand-408015074": {
+   "code": "d1g1sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s453-cand-348954912": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s453-cand-225600232": {
+   "code": "d1g1sm1ja2",
+   "keep": "best"
+  },
+  "fish-s453-cand-285722610": {
+   "code": "d0g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s453-cand-285722637": {
+   "code": "d0g1sm1a2",
+   "keep": "dup"
+  }
+ }
+}

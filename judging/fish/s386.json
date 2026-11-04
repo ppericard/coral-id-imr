@@ -1,0 +1,148 @@
+{
+ "photos": {
+  "fish-s386-cand-92413834": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s386-cand-356361213": {
+   "code": "o0d1sls2",
+   "keep": "best"
+  },
+  "fish-s386-cand-356361210": {
+   "code": "h0d1sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-356361209": {
+   "code": "h1d1sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-356360625": {
+   "code": "h1d1sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-66010209": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s386-cand-724496144": {
+   "code": "o1g2sm1c1",
+   "keep": "best"
+  },
+  "fish-s386-cand-725042469": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s386-cand-725042474": {
+   "code": "h0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-628821960": {
+   "code": "h1n0sm12",
+   "keep": "best"
+  },
+  "fish-s386-cand-716527996": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s386-cand-349943151": {
+   "code": "d1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s386-cand-349943182": {
+   "code": "d1g0sm1a2",
+   "keep": "dup"
+  },
+  "fish-s386-cand-62219592": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s386-cand-330992812": {
+   "code": "h0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-330993155": {
+   "code": "o1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s386-cand-330993156": {
+   "code": "o1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s386-cand-330993157": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s386-cand-629515562": {
+   "code": "o1n0sm13",
+   "keep": "best"
+  },
+  "fish-s386-cand-63849852": {
+   "code": "h1g0sl13",
+   "keep": "best"
+  },
+  "fish-s386-cand-349146672": {
+   "code": "h0d1sl12",
+   "keep": "best"
+  },
+  "fish-s386-cand-43664889": {
+   "code": "o1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s386-cand-350328666": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s386-cand-71778583": {
+   "code": "o0g1sl12",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "The photo file is cut: its lower third is plain grey"
+  },
+  "fish-s386-cand-356362670": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s386-cand-356363270": {
+   "code": "o0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-356363272": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s386-cand-54427563": {
+   "code": "o0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-54427569": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s386-cand-54427573": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s386-cand-350331174": {
+   "code": "o1n0sl13",
+   "keep": "best"
+  },
+  "fish-s386-cand-350331466": {
+   "code": "o0n0sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-350331467": {
+   "code": "h1n0sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-350331472": {
+   "code": "h1n0sl12",
+   "keep": "dup"
+  },
+  "fish-s386-cand-71776112": {
+   "code": "h1g1sl13",
+   "keep": "best"
+  }
+ }
+}
