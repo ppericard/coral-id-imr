@@ -82,6 +82,15 @@
   --bad-bg: #f7dcd6;
   --warn: #d98b2b;
   --review: #b86e0f; /* the "to review" dot of My progress (amber, calm; 2026-11-03), on a --surface ring */
+  /* The Coral basics trail (learn.js basicsArt), one colour per step from reef blue to coral orange: a deliberate
+     exception to "one meaning per hue" (docs/DESIGN.md); each >= 4.5:1 on --surface-2 and --surface. */
+  --bt1: #1d4f91;
+  --bt2: #1767a0;
+  --bt3: #0b7480;
+  --bt4: #117356;
+  --bt5: #42711a;
+  --bt6: #935a10;
+  --bt7: #b8432c;
   --cf-ink: #8a5a14;
   --photo-bg: #000;
   --on-photo: #fff;
@@ -127,6 +136,13 @@
   --bad-bg: #45231d;
   --cf-ink: #d9a75c;
   --review: #e3a649;
+  --bt1: #8db4f0;
+  --bt2: #72c0ef;
+  --bt3: #5cc6d3;
+  --bt4: #6ed2ad;
+  --bt5: #a4d47c;
+  --bt6: #eab45f;
+  --bt7: #ff967d;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-hover: 0 4px 16px rgb(0 0 0 / 0.45);
   color-scheme: dark;
@@ -1248,17 +1264,104 @@ header {
   object-fit: cover;
   display: block;
 }
-/* Step 0 of the Learn path (learn.js basicsCard): Coral basics' icon on a pale accent tint in the photo's place. */
+/* Step 0 of the Learn path (learn.js basicsCard, basicsArt): in the photo's place, the seven steps of Coral basics as a
+   trail of soft discs, each in its colour (--bt1…--bt7); seen: tinted with a ✓; next: deeper, ringed, "Next: …" ("Start: Colony" at first); not
+   reached: desaturated, on a dotted path. The words keep a constant size (HTML over the SVG board). */
 .card .ph.bxart,
 .bxart {
-  display: grid;
-  place-items: center;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
+  display: block;
+  position: relative;
+  container-type: inline-size;
+  background: var(--surface-2) !important;
 }
 .bxart svg {
-  width: 42%;
-  height: 42%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.bxt-way {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 40%, transparent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 1 11;
+}
+.bxt-way.on {
+  stroke-dasharray: none;
+}
+.bxt-stop > circle {
+  fill: color-mix(in srgb, var(--c) 20%, var(--surface));
+}
+.bxt-stop.is-todo > circle {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--c) 30%, var(--muted)) 14%, var(--surface));
+}
+.bxt-stop.is-next > circle {
+  fill: color-mix(in srgb, var(--c) 26%, var(--surface));
+  stroke: var(--c);
+  stroke-width: 5;
+}
+.bxt-ic,
+.bxt-ic * {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.is-todo .bxt-ic,
+.is-todo .bxt-ic * {
+  stroke: color-mix(in srgb, var(--c) 40%, var(--muted));
+}
+.bxt-tick circle {
+  fill: var(--c);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.bxt-tick path {
+  fill: none;
+  stroke: var(--surface);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bxt-lab {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted);
+}
+.bxt-lab.is-seen {
+  color: var(--ink);
+}
+.bxt-lab.is-next {
+  color: var(--c);
+  background: var(--surface);
+  border: 1.5px solid var(--c);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+}
+@container (min-width: 300px) {
+  .bxt-lab {
+    font-size: var(--fs-s);
+  }
+}
+/* A narrow card (photo size S on a phone, the ID tips view): seven words would collide, so only the next stop keeps its
+   word, anchored inwards by the card's edges. */
+@container (max-width: 260px) {
+  .bxt-lab:not(.is-next) {
+    display: none;
+  }
+  .bxt-lab.bxt-l {
+    transform: translateX(-20%);
+  }
+  .bxt-lab.bxt-r {
+    transform: translateX(-80%);
+  }
 }
 .bxcard b {
   font-size: var(--fs-m);

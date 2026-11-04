@@ -1717,10 +1717,67 @@ async function startSmoke(b, base) {
     const g = await p.evaluate(() => ({
       tabs: [...document.querySelectorAll('#modes a')].map(a => a.getAttribute('href')),
       first: document.querySelector('#azgrid > :first-child')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 40),
-      link: !!document.querySelector('#azgrid a.bxcard[href="#basics"]')
+      link: !!document.querySelector('#azgrid a.bxcard')
     }));
     if (!home) fails.push('Home: no "New to corals?" line for a new player');
     if (g.tabs[0] !== '#basics' || !/^0\s*Coral basics/.test(g.first || '') || !g.link) fails.push(`Learn path: ${JSON.stringify(g)}`);
+    // The Genera card always opens step 1, in both views (Pierre, 2026-11-04: it resumed at the last step seen); the
+    // Basics tab still resumes there.
+    for (const v of ['photos', 'tips']) {
+      if (v === 'tips') {
+        await p.evaluate(() => (location.hash = 'genera'));
+        await drawn(p);
+      }
+      // No step seen yet: Colony is the next stop, worded "Start: Colony" (Pierre, 2026-11-04), the others not reached.
+      await p.evaluate(v => {
+        localStorage.removeItem('reefid-basics');
+        document.querySelector(`[data-gv="${v}"]`).click();
+      }, v);
+      await p.waitForSelector(v === 'tips' ? '#azgrid .bxtip' : '#azgrid .bxcard', {timeout: 8000});
+      const start = await p.evaluate(() => {
+        const lab = document.querySelector('#azgrid .bxart .bxt-lab.is-next');
+        return {
+          stops: [...document.querySelectorAll('#azgrid .bxart .bxt-stop')].map(g => `${g.dataset.step}:${g.classList[1]}`).join(' '),
+          lab: lab?.textContent,
+          first: lab === document.querySelector('#azgrid .bxart .bxt-lab')
+        };
+      });
+      const want0 = 'colony:is-next polyp:is-todo corallite:is-todo septa:is-todo teeth:is-todo walls:is-todo forms:is-todo';
+      if (start.stops !== want0 || start.lab !== 'Start: Colony' || !start.first)
+        fails.push(`Genera (${v}): the Coral basics trail before any step ${JSON.stringify(start)}`);
+      await p.evaluate(v => {
+        localStorage.setItem('reefid-basics', JSON.stringify({seen: {colony: 1, polyp: 1, corallite: 1, septa: 1}, last: 'septa'}));
+        document.querySelector(`[data-gv="${v}"]`).click();
+      }, v);
+      await p.waitForSelector(v === 'tips' ? '#azgrid .bxtip' : '#azgrid .bxcard', {timeout: 8000});
+      // Its picture, the trail of the seven steps (learn.js basicsArt), from the stored progress: the four seen with a ✓,
+      // Teeth next with its word, the last two not reached.
+      const trail = await p.evaluate(() =>
+        [...document.querySelectorAll('#azgrid .bxart .bxt-stop')].map(
+          g => `${g.dataset.step}:${g.classList[1]}${g.querySelector('.bxt-tick') ? '✓' : ''}`
+        )
+      );
+      const nextLab = await p.evaluate(() => document.querySelector('#azgrid .bxart .bxt-lab.is-next')?.textContent);
+      const want = 'colony:is-seen✓ polyp:is-seen✓ corallite:is-seen✓ septa:is-seen✓ teeth:is-next walls:is-todo forms:is-todo';
+      if (trail.join(' ') !== want || nextLab !== 'Next: Teeth')
+        fails.push(`Genera (${v}): the Coral basics trail ${JSON.stringify({trail: trail.join(' '), nextLab})}`);
+      await p.evaluate(() => (document.querySelector('#azgrid a.bxcard') || document.querySelector('#azgrid .bxtip a')).click());
+      await drawn(p);
+      const at = await p.evaluate(() => ({h: location.hash, step: document.querySelector('.bx-t small')?.textContent}));
+      if (at.h !== '#basics|colony' || at.step !== 'Step 1 of 7')
+        fails.push(`Genera (${v}): the Coral basics card does not open step 1 ${JSON.stringify(at)}`);
+    }
+    await p.evaluate(() => (location.hash = 'genera'));
+    await drawn(p);
+    await p.evaluate(() => {
+      document.querySelector('[data-gv="photos"]').click();
+      localStorage.setItem('reefid-basics', JSON.stringify({seen: {colony: 1, polyp: 1, corallite: 1, septa: 1}, last: 'septa'}));
+      document.querySelector('#modes a[href="#basics"]').click();
+    });
+    await drawn(p);
+    const tab = await p.evaluate(() => document.querySelector('.bx-t small')?.textContent);
+    if (tab !== 'Step 4 of 7') fails.push(`Learn › Basics tab does not resume at the last step seen: ${tab}`);
+    await p.evaluate(() => localStorage.removeItem('reefid-basics'));
     await p.evaluate(() => window.loadTier && window.loadTier(5));
     await p.evaluate(() => (location.hash = 'lab'));
     await p.waitForSelector('.labhub', {timeout: 15000}).catch(() => {});
@@ -1765,6 +1822,10 @@ async function startSmoke(b, base) {
     await p.waitForSelector('#azgrid .bxcard', {timeout: 8000});
     if (!(await p.evaluate(() => /Done/.test(document.querySelector('#azgrid .bxcard small').textContent))))
       fails.push('Genera: Coral basics not shown as done');
+    const allSeen = await p.evaluate(
+      () => [...document.querySelectorAll('#azgrid .bxart .bxt-stop')].filter(g => g.matches('.is-seen')).length
+    );
+    if (allSeen !== 7) fails.push(`Genera: Coral basics done but ${allSeen} of 7 trail stops seen`);
     await c.close();
   }
   // What the start answer changes on screen (Pierre, 2026-11-04): "new" gets no "Open all" box on the first cards (My
