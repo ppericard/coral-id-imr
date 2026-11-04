@@ -1913,7 +1913,7 @@ photos (*Acropora*, *Porites*, *Pocillopora*, *Montipora*, *Millepora*) should c
 exceptions kept by hand. Until then how common a genus is played no part: once the photo stats passed `OPEN.DATA`,
 the order was difficulty only.
 
-- **The measure** (`tools/commonness.py`, run once offline, never on the phones: AGENTS.md rule 14g): for every game
+- **The measure** (`tools/commonness.py`, run once offline, never on the phones: AGENTS.md rule 14i): for every game
   genus (the slate, Millepora and the bonus genera), iNaturalist's verifiable observations of the genus taxon (by
   name, inside Cnidaria) within 40 km of Dauin, and the distinct observers of the same. **`cm` = √(observations ×
   observers)**, the geometric mean, written to the genus's `data.json` record. Pierre's compromise: near Dauin the top
@@ -3172,7 +3172,7 @@ the logged ability minus the question's difficulty (th − d, from Expected and 
   surprise moves both sides). No new state per photo, no constant per photo or genus; k_P one number chosen by the
   replay (leave one player out, as PR #431's k). The additive form (a separate time rating, T_f = Σ residual z /
   (n_f + 3), 3 = residual variance / photo variance, added to the Elo with a weight) was worse today.
-- **Genus, if it ever helps**: the sheet (compute once, AGENTS.md 14g) would serve each genus's time effect, the
+- **Genus, if it ever helps**: the sheet (compute once, AGENTS.md 14i) would serve each genus's time effect, the
   shrunk mean over players of each player's mean residual z on it, â_g = Σ_p w_p z̄_pg / (Σ_p w_p + 1/τ_g²), w_p =
   1 / (τ_pg² + σ² / n_pg), the variances refitted by `tools/rtdecomp.py` (today τ_g 0.12, τ_pg 0.27, σ 0.51), and the
   app would add `OPEN.TIME` × â_g to `genusDiff` only from that sheet version (AGENTS.md 7a); `OPEN.TIME` one number
