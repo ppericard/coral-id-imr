@@ -549,10 +549,13 @@ const server = http.createServer((req, res) => {
       };
     });
     await q2.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded'}).catch(e => {
-      e.message += `\n  requests pending: ${[...pend.values()].join(', ') || 'none'}\n  workers: ${ctx
-        .serviceWorkers()
-        .map(w => w.url().replace(base, ''))
-        .join(', ')}`;
+      // Printed apart: Node prints the error's stack, made before any addition to its message.
+      console.error(
+        `Admin page never reached DOMContentLoaded. Requests pending: ${[...pend.values()].join(', ') || 'none'}. Workers: ${ctx
+          .serviceWorkers()
+          .map(w => w.url().replace(base, ''))
+          .join(', ')}.`
+      );
       throw e;
     });
     await q2.waitForFunction(() => typeof UPDATED !== 'undefined', null, {timeout: 20000});
