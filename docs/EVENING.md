@@ -143,6 +143,14 @@ the night session's scratchpad, which a new session cannot see, so re-take them 
 
 **Morning 2026-11-05 (coordinator):** merged #531 (Cache Storage waits bounded), #551 (admin reads curation.json past 1 MB from its blob; the admin loads again, checked live), #524 (no broken-image flash on cards), #549 (fish candidates batch). #520 brought onto main, CI running. Still open: #520, then Pierre's choices on #535, #522, #526, #533, #536, #538, #540 (questions above).
 
+**Next for the following agent (Pierre, 2026-11-05 morning; not started, to build after the open PRs are merged):**
+(1) Journey › "Cards" list: items are not in time order (Nov 4 rows before Nov 2 ones), "inferred" is said twice, and
+two identical "Changed to I had the IMR coral course · after answer 160 · in the welcome tour" rows appear 4 min apart
+(duplicate event or two real changes: check the data path); check every time is the player's local time (UTC offset
+logged per answer since sheet v44). (2) The admin opens on Players › Activity (recent sessions), not Players › List.
+(3) Activity: tapping a session unfolds a mini-summary under it, on the same page: the session's success chart, start /
+end / length, answers and % right, genera met or opened, notable events, a link to the full Journey; tap again folds it.
+
 **Merge-order traps:** the sheet versions 46 / 47 / 48 are reserved by #526 / #538 / #540: merged in another order, the
 later ones take the next free number (Code.gs header, ARCHITECTURE's version list, tests). `tests/fish.smoke.js` is
 touched by #533, #536, #538 and #540: the second to merge needs a small manual merge; #540 edits the Tools tile that #533
