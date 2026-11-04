@@ -183,7 +183,17 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
     if (!s.out) {
       assert.ok(Number.isInteger(s.inat), `${s.name}: iNaturalist id`);
       assert.strictEqual(p.ph, true, `${s.name} in the game but not confirmed in the Philippines`);
-    } else assert.ok(p.ph === false || /no circle/.test(s.out), `${s.name}: out (${s.out}) but confirmed`);
+    } else
+      assert.ok(p.ph === false || /no circle|circle 3: not confirmed near Dauin/.test(s.out), `${s.name}: out (${s.out}) but confirmed`);
+    // Confirmed near Dauin (Pierre, 2026-11-03): his own there, 2+ Research Grade observers there, or the IMR reference list.
+    if (s.inat) {
+      assert.strictEqual(p.near, p.nearBy.length > 0, `${s.id}: near and nearBy disagree`);
+      assert.strictEqual(p.nearBy.includes('imr'), !!s.pdf, `${s.id}: imr iff in the PDF list`);
+      assert.strictEqual(p.nearBy.includes('observers'), p.dauinU >= 2, `${s.id}: observers iff 2+ observers near Dauin`);
+    }
+    // Circle 3 only for species confirmed near Dauin.
+    if (s.circle === 3) assert.ok(p.near, `${s.id} ${s.name}: circle 3 but not confirmed near Dauin`);
+    if (/circle 3: not confirmed/.test(s.out || '')) assert.ok(!p.near, `${s.id}: out of circle 3 but confirmed`);
     assert.strictEqual(s.r, i + 1, `${s.name}: species not in rank order`);
     if (!s.src || s.src === 'slides') assert.ok(s.common, `${s.name}: no common name`);
   });
@@ -202,5 +212,13 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
       [...t.species].sort((a, b) => SP.get(a).r - SP.get(b).r),
       t.name
     )
+  );
+});
+
+test('fish-photos.json (the stopgap game photos) shows only species in the game', () => {
+  // A species that leaves the game (e.g. circle 3 needs "confirmed near Dauin", 2026-11-03) leaves the quiz's photos too.
+  const P = read('fish-photos.json').photos;
+  Object.entries(P).forEach(([t, L]) =>
+    L.forEach(p => assert.ok(p.sp && SP.get(p.sp) && SP.get(p.sp).circle, `${t} ${p.f}: ${p.t} (${p.sp}) is not in the game`))
   );
 });

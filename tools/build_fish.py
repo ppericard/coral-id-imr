@@ -17,7 +17,7 @@ Decided with Pierre, 2026-11-03: one engine for corals and fish, with a taxonomy
 Circles: 1 = IMR core (the 27 entries, their species from the EventMeasure reference PDF "Common Filipino Fishes",
 cheatsheet first, and the species the slides name); 2 = seen sometimes on SVS video (barracudas for now); 3 = opt-in
 "beyond IMR", not PDF-based (Pierre, 2026-11-03): the fish families divers want to recognise, muck diving above all
-(sources in the source file's `sources`, reason in each node's `why`), with their species seen near Dauin, plus winks
+(sources in the source file's `sources`, reason in each node's `why`), with their species confirmed near Dauin (near_dauin), plus winks
 (`wink`: unmistakable species, fun to meet, a light bonus rather than ID training). Silvery/pelagic groups are not circle 1.
 
 Names (Pierre, 2026-11-03): the name shown and expected is the PDF's, i.e. EventMeasure's (a fixed pick list that may lag
@@ -33,7 +33,12 @@ Pierre's own observations (user ppericard) identified to the species even when N
 very sure, otherwise he stops at the genus; his only, nobody else's (`presence()`). The same rule holds for the future
 fish photo pipeline: his species-level photos are usable as that species. present = {dauin: confirmed observations
 within 40 km of Dauin (9.19, 123.26), dauinNI: the other Needs ID observations there ("not confirmed near Dauin", never
-"never seen"), ph: confirmed in the Philippines (place 6873), own: Pierre's observations of it}. A species not confirmed
+"never seen"), ph: confirmed in the Philippines (place 6873), own: Pierre's observations of it, dauinU: distinct
+observers of the Research Grade observations within 40 km, near: confirmed near Dauin (Pierre, 2026-11-03: one
+misidentified Research Grade observation must not open the gates): one of Pierre's own species-level observations
+within 40 km, Research Grade observations there by at least 2 distinct observers, or in the IMR reference PDF list (`near_dauin()`, reasons in nearBy; circle 3 needs it too); `dauin` alone
+says how many were seen, not that the species is confirmed}. --near recomputes dauinU and near on the existing fish.json
+only (the rest of the build and its counts unchanged). A species not confirmed
 in the Philippines leaves the game but stays in fish.json with `out` (a future Fish Finder for EventMeasure must hold
 every PDF species, unfiltered), as does a PDF species whose family is in no circle.
 
@@ -205,7 +210,7 @@ def inat_count(tid, where, grade="research"):
     return (NET.get(f"{INAT}observations?taxon_id={tid}{g}&{where}&per_page=0") or {}).get("total_results", 0)
 
 
-def presence(tid):
+def presence(tid, imr=False):
     """{dauin, dauinNI, ph, own} for an iNaturalist species taxon. Confirmed = Research Grade, or one of Pierre's own
     observations identified to the species even when Needs ID (Pierre, 2026-11-03: he names a species only when he is
     very sure, otherwise he stops at the genus; his only, nobody else's). Querying by the species taxon returns
@@ -221,7 +226,79 @@ def presence(tid):
     p = {"dauin": rg_d + mine_d, "dauinNI": ni_d - mine_d, "ph": bool(rg_p or mine_p)}
     if own:
         p["own"] = own
+    p.update(near_fields(tid, p, imr))
     return p, (not rg_p and mine_p), (not rg_d and mine_d)
+
+
+def near_dauin(own_d, observers, imr=False):
+    """Why a species counts as confirmed near Dauin: a list of reasons, empty when it does not (Pierre, 2026-11-03: one
+    misidentified Research Grade observation must not open the gates). "own": one of Pierre's own species-level
+    observations within 40 km; "observers": Research Grade observations there by at least NEAR_OBSERVERS distinct
+    observers (two independent people, each identification agreed on by the community); "imr": the species is in the
+    IMR reference list, the EventMeasure PDF "Common Filipino Fishes" (src pdf: Pierre, 2026-11-03, it is what IMR uses
+    as its reference for the fish seen at Dauin, despite its name). Not used: the identifiers' count (a well-identified
+    rare fish often has two identifiers only) and the date (recency says nothing about the identification)."""
+    return [k for k, ok in (("own", bool(own_d)), ("observers", observers >= NEAR_OBSERVERS), ("imr", bool(imr))) if ok]
+
+
+NEAR_OBSERVERS = 2
+# Circle 3 is limited to species confirmed near Dauin (Pierre, 2026-11-03), by the same rule.
+C3_OUT = "circle 3: not confirmed near Dauin"
+
+
+def observers(tid, where):
+    """(distinct observers of Research Grade observations, their logins: the first 10) of a taxon in a place."""
+    d = NET.get(f"{INAT}observations/observers?taxon_id={tid}&quality_grade=research&{where}&per_page=10") or {}
+    return d.get("total_results", 0), [r["user"]["login"] for r in d.get("results") or []]
+
+
+def near_fields(tid, p, imr=False):
+    """present.dauinU (distinct Research Grade observers within 40 km of Dauin), near (near_dauin) and nearBy (why)."""
+    own_d = inat_count(tid, f"user_login={PIERRE}&{DAUIN}", "research,needs_id") if p.get("own") else 0
+    n, _ = observers(tid, DAUIN) if p.get("dauin") else (0, [])
+    why = near_dauin(own_d, n, imr)
+    return {"dauinU": n, "near": bool(why), "nearBy": why}
+
+
+def update_near(path=OUT):
+    """--near: (re)compute present.dauinU, near and nearBy on the species of an existing fish.json, and take out of the
+    game a circle-3 species not confirmed near Dauin (out: C3_OUT, also out of its teaching node's lists), nothing else
+    (the rest of the build unchanged, so its WoRMS and iNaturalist counts do not move). A species taken out comes back
+    with a full build once confirmed. Returns (fish.json, changes of near, circle-3 species and nodes taken out)."""
+    o = json.loads(Path(path).read_text(encoding="utf-8"))
+    changed, left = [], []
+    for s in o["species"]:
+        p = s.get("present")
+        if not p or not s.get("inat"):
+            continue
+        old = p.get("near")
+        p.pop("near", None)
+        p.pop("nearBy", None)
+        p.update(near_fields(s["inat"], p, "pdf" in s))
+        who = None
+        if p["near"] != old or (s.get("circle") == 3 and not p["near"]):
+            _, who = observers(s["inat"], DAUIN) if p.get("dauin") else (0, [])
+        if p["near"] != old:
+            changed.append(f"{s['id']} {s['name']} (circle {s.get('circle', 'out')}): {p['dauin']} confirmed near Dauin, "
+                           f"observers {', '.join(who) or 'none'} -> "
+                           f"{'confirmed (' + ', '.join(p['nearBy']) + ')' if p['near'] else 'not confirmed'}")
+        if s.get("circle") == 3 and not p["near"]:
+            left.append(f"{s['id']} {s['name']}: {p['dauin']} Research Grade near Dauin, {p['dauinU']} observer(s) "
+                        f"({', '.join(who) or 'none'})")
+            del s["circle"]
+            s["out"] = C3_OUT
+    game = {s["id"] for s in o["species"] if s.get("circle")}
+    keep = []
+    for t in o["teach"]:
+        t["species"] = [x for x in t.get("species", []) if x in game]
+        for u in t.get("sub", []):
+            u["species"] = [x for x in u.get("species", []) if x in game]
+        if t["species"]:
+            keep.append(t)
+        else:
+            left.append(f"teaching node {t['id']} {t['name']}: no species left, left out")
+    o["teach"] = keep
+    return o, changed, left
 
 
 def resolve_ref(x, report):
@@ -247,8 +324,24 @@ def main():
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--near", action="store_true", help="only (re)compute present.near on the existing fish.json")
     a = ap.parse_args()
     NET = Net(a.offline, a.refresh)
+    if a.near:
+        try:
+            o, changed, left = update_near()
+        finally:
+            NET.save()
+        print(f"species whose 'confirmed near Dauin' changed: {len(changed)}")
+        for x in changed:
+            print("  " + x)
+        print(f"out of circle 3 (not confirmed near Dauin): {len(left)}")
+        for x in left:
+            print("  " + x)
+        if not a.dry:
+            write(o)
+            print(f"wrote {OUT.relative_to(ROOT)}")
+        return
     src = json.loads(SRC.read_text(encoding="utf-8"))
     report = {"refnames": [], "renamed": [], "typo": [], "lumped": [], "empty": [], "pierre": [], "out": [], "drop": [], "mismatch": [], "noinat": [], "pdf": [], "unplaced": []}
     try:
@@ -372,9 +465,14 @@ def build(src, report):
             report["mismatch"].append(f"{s['name']} (WoRMS {node['name']}): iNaturalist {iname}")
         x["inat"] = tid
         if tid:
-            x["present"], ph_mine, d_mine = presence(tid)
+            x["present"], ph_mine, d_mine = presence(tid, bool(s.get("pdf")))
         else:
-            x["present"], ph_mine, d_mine = {"dauin": 0, "dauinNI": 0, "ph": False}, False, False
+            imr = ["imr"] if s.get("pdf") else []
+            x["present"], ph_mine, d_mine = {"dauin": 0, "dauinNI": 0, "ph": False, "dauinU": 0, "near": bool(imr), "nearBy": imr}, False, False
+        # Circle 3 only for species confirmed near Dauin (Pierre, 2026-11-03), by the same rule (near_dauin).
+        c3 = s.get("src") in ("dauin", "wink") or (x["t"] or {}).get("circle") == 3
+        if c3 and not x["out"] and x["present"]["ph"] and not x["present"]["near"]:
+            x["out"].append(C3_OUT)
         if ph_mine:
             report["pierre"].append(f"{s['id']} {s['name']}: confirmed in the Philippines by Pierre's own observations only")
         elif d_mine:
@@ -499,8 +597,8 @@ def show(o, rep):
     for c in (1, 2, 3):
         cs = [s for s in game if s["circle"] == c]
         print(f"  circle {c}: {sum(1 for t in o['teach'] if t['circle'] == c)} teaching nodes, {len(cs)} species, "
-              f"{sum(1 for s in cs if s['present']['dauin'])} confirmed near Dauin, "
-              f"{sum(1 for s in cs if not s['present']['dauin'] and s['present']['dauinNI'])} more with Needs ID only there")
+              f"{sum(1 for s in cs if s['present'].get('near'))} confirmed near Dauin, "
+              f"{sum(1 for s in cs if not s['present'].get('near') and (s['present']['dauin'] or s['present']['dauinNI']))} more seen there, not confirmed")
     for k, title in (("refnames", "teaching refs resolved to another accepted name"),
                      ("renamed", "PDF names WoRMS has since changed (PDF name kept, WoRMS name in `now`)"),
                      ("typo", "likely slips in the PDF, to check against EventMeasure (PDF text kept)"),
