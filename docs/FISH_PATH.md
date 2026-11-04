@@ -55,6 +55,10 @@ The first fish questions must be easy and readable. Two decisions, each built in
 ## Unlock rules
 
 - **An entry's species open when the entry reaches Advanced (80%)** (Pierre, 2026-11-03). The existing level, no new constant.
+- **Progressively, entry by entry, never all at once** (Pierre, 2026-11-04): species names open first only for the entries (families) the
+  player already knows very well, exactly as scientific names come in species by species; there is no switch from families to species.
+  When species questions, and then scientific-name questions, start being asked is the difficulty algorithm's job, following the player's
+  progress.
 - They open **one at a time**, with the existing machinery: the `OPEN` share (new units only while few are shaky), a first-meeting card
   (`INTRO`), the opening hold (`introHold`), never the answer of the question right after its card.
 - Order inside an entry: most sighted first (`fish.json` `r`: the PDF cheatsheet's 24 most sighted, then PDF order), then presence near
@@ -86,9 +90,9 @@ Pierre's sequence, as a difficulty that rises with the species' progress, like t
   2026-11-04; open question 5).
 - The display is logged (a mode suffix), so the sheet and the admin can rate the formats apart once fish answers are logged.
 - **Milestones celebrated** (Pierre, 2026-11-04): two moves each get a milestone card, like the existing major achievement toasts and
-  cards: (1) the move from families / IMR groups to species names (an entry's first species opening); (2) unlocking scientific names, the
-  first time the schedule shows one ("You've unlocked scientific names: questions of this kind start coming"), even if only for one or two
-  species at first.
+  cards: (1) the first unlock of species names, even if it concerns only one or two entries at first (species names open entry by entry,
+  "Unlock rules"); (2) the first unlock of scientific names, the first time the schedule shows one ("You've unlocked scientific names:
+  questions of this kind start coming"), even if only for one or two species at first.
 
 ## Questions and choices at the species level
 
@@ -141,7 +145,7 @@ Gaps before species questions ship:
 - **Curated photos per species.** Level 1 runs on a stopgap of remote photos per entry. Species need their own curated set, enough to avoid
   photo memory; the fish pre-sort's automatic decisions (`FISHCHK`) make this workable. Targets: "Fish photos and the admin".
 - **Species-level look-alikes**, with the cue that tells each side apart. Only entries have `look` today. Sources: "Fish photos and the
-  admin".
+  admin"; how the cues are taught: "How cues are taught" there.
 - **Duplicate common name**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question).
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
@@ -153,7 +157,8 @@ Gaps before species questions ship:
 
 Decided from the admin pooling study:
 
-- **One subject switch** in the admin for everything, with each side's to-do count on it.
+- **One subject switch** in the admin for everything, with each side's to-do count on it, and subject-neutral pages (ROADMAP "Admin: one
+  subject switch, subject-neutral pages").
 - **Photos per species**: start at 8 observations per circle-1 species, 12 for the PDF's 24 most sighted, cap 20. That is enough at entry
   (family) level; at species level Pierre expects **30 to 40 photos per species** soon, so players learn the species and not the photos,
   and to cover their variability (quality, individuals, profile or front, colour, partly hidden).
@@ -165,9 +170,11 @@ Decided from the admin pooling study:
 - **Look-alike pairs** from the data (same genus, same IMR sub-entry), from IMR, from the players' confusions, **and from reference
   sites**. The **ID cues** that tell two species apart are searched online (FishBase and other references), triaged, the most relevant
   kept, and **always sourced** (rule 2).
+- **How cues are taught** (Pierre, 2026-11-04): inspired by Marine Conservation Philippines' fish ID course, which Pierre finds very well
+  made: cues about a family itself, and cues taught **by comparison** with another family or species (learning by contrast). Inspiration
+  for how to teach only (structure, comparisons): it is not cited, and its text and images are never copied; the cue content comes from
+  public, sourced references.
 - **Fish answers logged to the sheet from the start**, as soon as curated photos enter the game.
-- **A subject-neutral units page**: the coral admin's "Genera" page has no fish equivalent under that name; it is renamed and redesigned
-  as the page of the subject's units (genera for corals, entries and species for fish), whatever is being sorted (ROADMAP).
 
 ## Juveniles and colour phases
 
@@ -210,8 +217,8 @@ on families only to an IMR RA with every species open:
   Reaching 100% on fish is expected to be much harder than on corals. The fish leaderboard uses it. The per-entry bars and the "Species
   named" / "Scientific name" counters stay, as detail.
   - **The scale** (Pierre, 2026-11-04, later; replaces a 20 / 30 / 50 split proposed that morning): **non-linear, fast at the start**
-    (recognising the families is already great). A player who knows every entry and every species by its common name is at about
-    **75-80%**; scientific names are the real difficulty and fill the last 20-25% slowly, point by point. The stages: the circle-1 entries
+    (recognising the families is already great). A player who knows every entry and every species by its common name is at **80%**;
+    scientific names are the real difficulty and fill the last **20%** slowly, point by point. The stages: the circle-1 entries
     (27), their species by common name (323), the same species by scientific name; unopened units at 0; circles 2 and 3 never count (as
     now). The exact curve is set by simulation (`tools/learnsim.js` fish profiles).
   - What counts for the scientific stage (the exam passed, or the progress on the questions shown in Latin) and what "nearly every one"
