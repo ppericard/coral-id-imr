@@ -4609,8 +4609,9 @@ async function start() {
       redo();
     }
   });
-  // On a phone the page opens on the candidates, one per screen.
-  cur = hashNow() || (matchMedia('(max-width: 599px)').matches ? '~cand' : Object.keys(DATA.gen)[0]);
+  // The page opens on Players, phone and desktop (Pierre, 2026-11-04: with the photo choice mostly automated, Players is
+  // the page he opens first; it was the candidates on a phone, the first genus on a desktop).
+  cur = hashNow() || '~users';
   window.onhashchange = () => {
     if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
     cur = hashNow();
