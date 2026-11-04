@@ -439,7 +439,7 @@ const juvEarly = (tid, p) => {
   if (j.cls === 'A') return true;
   return (j.early || []).some(x => (SPN.get(p.sp) || []).some(n => n === x || n.startsWith(x + ' ')));
 };
-test('judged photos: every circle-1 game photo judged with a valid code, written into fish-photos.json with its caps', () => {
+test('judged photos: every fish game photo judged with a valid code, written into fish-photos.json with its caps', () => {
   const dim = new Set(F.teach.filter(t => t.dimorph).map(t => t.id)),
     c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink).map(t => t.id),
     codes = {};
@@ -450,7 +450,8 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
       codes[f] = [tid, c];
     })
   );
-  c1.forEach(tid => PH[tid].forEach(p => assert.ok(p.f in codes, `${tid} ${p.f}: not judged`)));
+  // Every circle since 2026-11-04 (circle 1 first, then circles 2 and 3 and the winks: ROADMAP "Fish photo judging").
+  Object.entries(PH).forEach(([tid, L]) => L.forEach(p => assert.ok(p.f in codes, `${tid} ${p.f}: not judged`)));
   Object.entries(PH).forEach(([tid, L]) =>
     L.forEach(p => {
       if (!(p.f in codes)) return assert.ok(p.e === undefined && p.jt === undefined && !p.c, `${p.f}: e without a judgement`);

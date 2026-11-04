@@ -2321,7 +2321,8 @@ changes, all data the engine reads generically (the corals have none of these fi
   the sex / colour phase flag for the entries the presentation says change, `dimorph`: Parrotfish, Anthias) and an ease
   from 1 to 5, capped by rule (a juvenile or a monochrome photo at most 2; a night shot, a strong colour loss, a head-on
   or tail view, a partial fish or camouflage at most 3), plus a proposed crop for 140 of them (a proposal for the admin,
-  never applied). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
+  never applied). The photos of circles 2 and 3 and the winks were judged the same way next (475 photos, 48 crops;
+  judging/FISH.md). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
   difficulty (an Anthias is easy to call an Anthias, a parrotfish a parrotfish: its family-level difficulty is the
   wrasse); the flag stays for the species questions and the explanation cards. **The juvenile cap follows the
   juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `tools/fish_source.json`

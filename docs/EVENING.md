@@ -28,6 +28,16 @@ them first thing, then clear them.
   leaderboard (ranked by this score) an RA learning both names sits below a diver learning common names only, for most of
   the path. Recommendation: keep the one scale you chose; look again once fish answers are logged (the real pace per kind
   of names will replace the simulation's assumed learning rates).
+- **Fish judging, circles 2 and 3: a family exception to the caps?** (fish photos track, 2026-11-04 night.) The 475
+  photos of circles 2 and 3 and the winks were judged on the rubric as written (judging/FISH.md). Several of these
+  families are almost never shown the way the rubric calls very easy: morays, snake eels, garden eels and jawfishes
+  live with most of the body in a hole (partial: at most 3), frogfishes, scorpionfishes, stonefishes and seamoths are
+  camouflaged (at most 3), rays and seamoths are mostly seen from above (at most 3). Seven entries have no photo at 4-5
+  (Morays, Garden eels, Frogfishes, Snake eels, Jawfishes, Reef sharks and the Thresher sharks wink), so their
+  first questions take their 3 easiest (`model.js` `easyFirst`, as designed). Question: keep the caps for them, or add
+  a per-entry "natural view" exception like the juvenile classes (e.g. head out of a hole is the normal view of a
+  moray)? **Recommendation: keep the caps** (circles 2 and 3 are opt-in, met after circle 1; the fallback to the 3
+  easiest already works), and revisit when fish answers are logged.
 
 ## Where the day stopped
 
