@@ -1225,7 +1225,10 @@ function quizPhoto(cur = 'quiz') {
   AUTOD = !!q.auto;
   question(...q);
   // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
-  if (q.intro) q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start);
+  // The first cards' "Had the IMR lecture? Open all" box: not for a player who answered "I'm new to corals" (Pierre,
+  // 2026-11-04; My progress keeps the button for them).
+  if (q.intro)
+    q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start, undefined, q.start && (startOf() || {}).c !== 'new');
   // The offers about which genera are in play (open all, back to one at a time, bonus genera) belong to the photo quiz.
   else if (cur !== 'quiz') {
   } else if (!noOpen() && promptOk() && startDue())
@@ -1298,7 +1301,10 @@ function startBasicsOffer(cur) {
 function startFbShow(dir) {
   const o = startOf(),
     next = startNext(o.c, dir),
-    said = `said “${esc(startOpt(o.c)[1])}”`;
+    said = `said “${esc(startOpt(o.c)[1])}”`,
+    // Everything opened at once (Open all): the "first genera" are all of them (Pierre, 2026-11-04: the same card, its text
+    // about the whole set, no number: the counts change; worded from the subject, rule 13b).
+    all = Object.values(introMap()).some(e => (e || [])[3] === 'a');
   startShown(dir);
   const d = cardShow(
     dir === 'lo'
@@ -1306,9 +1312,11 @@ function startFbShow(dir) {
           kind: 'tip',
           cls: 'startfb',
           kick: 'A tip',
-          title: 'The first genera feel hard?',
+          title: all ? `All the ${SUBJ.many} at once is a lot` : 'The first genera feel hard?',
           label: 'Your start',
-          body: '<p>They do for most people. Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.</p>',
+          body: all
+            ? `<p>${SUBJ.what} basics in 5 minutes? It shows, on real photos, the few words the ID tips use.</p>`
+            : '<p>They do for most people. Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.</p>',
           primary: {text: 'Coral basics in 5 minutes', attr: 'data-basics', on: () => (startEase(), go('basics'))},
           secondary: {text: 'No thanks, I know the basics', attr: 'data-keep'},
           esc: 2, // Escape: no thanks
@@ -1439,9 +1447,11 @@ function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
     const c = introCard(n, {
       pos: L.length > 1 ? `${i + 1} of ${L.length}` : '',
       hint: start && !told,
+      // The first cards say what the first questions are about; cards met ready at once later (a duel's, the custom
+      // quiz's) say the next question is about them.
       note: start
         ? more
-          ? `The first questions are about these ${L.length} ${SUBJ.many}.`
+          ? `The ${kind === 's' ? 'first questions are' : 'next question is'} about these ${L.length} ${SUBJ.many}.`
           : 'Now, which is which?'
         : 'It comes up in the questions a little later.',
       btn: more ? 'Next' : start ? 'Start' : 'Got it',
@@ -1676,7 +1686,8 @@ function quizDuel(a, b, fresh = true, from = '') {
   // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer;
   // a ★ genus's card after the card of the genus it is compared to (core.js starRefs).
   const L = q[2].filter(n => !introduced(n)).sort((a, b) => starRefs(DATA, a).length - starRefs(DATA, b).length);
-  if (L.length) introShow(L, true, 'c');
+  // Ready at once (the duel names them), never the "Open all" box: that is the first cards' (and My progress's) offer.
+  if (L.length) introShow(L, true, 'c', false);
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.
