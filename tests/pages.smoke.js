@@ -2011,6 +2011,10 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
     }
+    // The rules below (when a tip takes a break, which players never get it, the duel's cards) do not depend on the width:
+    // they run once, on the phone (test-suite review D3, 2026-11-04). The card itself, its fit, Show me and "once a visit"
+    // are checked above at both widths; the rules' logic also has tests/tips.test.js.
+    if (w !== 390) continue;
     // "Got it" goes on to the next question.
     {
       const [c, p] = await open(w, h, {q: 60, z: 1});
