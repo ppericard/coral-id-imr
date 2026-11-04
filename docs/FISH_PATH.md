@@ -184,12 +184,14 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps on real photos, one plain sentence
 each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card.
 
-- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the shape groups), so rule 2
+- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the identification groups), so rule 2
   holds and the IMR wording is kept (rule 1).
 - **The groups are the regional identification key's** (Pierre, 2026-11-04; AGENTS.md rule 6c): for the Indo-Pacific, the index of
   the 20 identification groups of *Reef Fish Identification – Tropical Pacific* (2nd edition), which the IMR course follows. The app
-  shows the key's group numbers and titles (no longer the 10 IMR shape groups), credited to the book (the key's `cite` and `short`,
-  `tools/fish_source.json` `keys`). Every fish family of any circle attaches to one of its groups (`tools/build_fish.py` checks it).
+  shows the key's group numbers and titles (e.g. "7. Heavy Bodies/Large Lips"; no longer the 10 IMR shape groups), only the groups that
+  hold entries in the game, in the book's order; where IMR's wording differs from the book's title, the book's title is shown. Credited
+  to the book (the key's `cite` and `short`, `tools/fish_source.json` `keys`). Every fish family of any circle attaches to one of its
+  groups (`tools/build_fish.py` checks it).
 - **Body shape first** (Pierre, 2026-11-04): identification always starts with the body shape, which is what separates the
   identification groups (the book above groups fish by body shape). The module starts with body shape and the identification
   groups, then the vocabulary.
@@ -336,11 +338,22 @@ on families only to an IMR RA with every species open:
   - **The scale** (Pierre, 2026-11-04, latest; replaces the 80 / 20 split of earlier that day, itself replacing a 20 / 30 / 50 split of
     the morning): **100% only for a player who masters both the common and the scientific names of every species** (the "fish god").
     Targets: every common name of every species and no scientific name ≈ **80%**; every scientific name and no common name ≈ **85%**.
-  - **Non-linear per species**: credit *a* for its common names only < *b* for its scientific name only < 1 for both; its genus known
-    is partial credit inside *b*. The families' share and the exact *a* and *b* are set by simulation (rule 14f: `tools/learnsim.js`
-    fish profiles), then tuned.
-  - **Not additive**: an additive split (families + common + scientific) would put families alone near 65%. The families still count
-    fast at the start (recognising the families is already great).
+  - **The formula** (proposed and approved by Pierre, 2026-11-04). Three layers, all from the progress engine's per-unit mastery
+    (0 to 1, the same weighted moving average as corals):
+    1. **Units**: each entry (family); each scientific genus; each species by scientific name; each listed common name (1 to 3 per
+       species, "Common names"). A species' common-name mastery *C* is the mean of its listed names, so all of them are needed to reach 1.
+    2. **Per species**: its scientific value is *S* = max(species mastery, ½ × its genus's mastery), so knowing a genus already gives
+       half the scientific credit for each of its species. Its identification credit is
+       **a·C + b·S + (1 − a − b)·C·S**: *a* with common names only, *b* with the scientific name only, 1 only with both (the C·S term).
+    3. **Global**: **25% × the entries' mean mastery + 75% × the mean identification credit of every species in the game** (circle 1;
+       unopened species at 0, so the % is absolute, as for corals).
+    - With these, *b* = 0.80 and *a* ≈ 0.73 put the targets exactly on 80% and 85%. Worked values: entries only 25%; entries and every
+      genus 55%; every common name 80%; every scientific name 85%; every common name and every genus 90%; everything with both names 100%.
+    - It is not additive across the branches (an additive split would put families alone near 65%), every right answer on either branch
+      moves the score, and it needs no case per branch.
+    - Still checked by simulation before it ships (rule 14f: `tools/learnsim.js` fish profiles, 5 seeds): the entries' 25% share, the
+      genus's half credit, and no long plateau on the curve. The 80 / 85 / 100% points are exact by construction.
+    - **My progress** can show three bars under the headline %: Entries, Common names, Scientific names.
   - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the circle-1 entries
     (27) and their species (323); unopened units at 0; circles 2 and 3 never count (as now).
   - What counts as a species' scientific name known (the exam passed, or the progress on the questions shown in Latin) is part of the

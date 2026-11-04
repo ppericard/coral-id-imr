@@ -1,4 +1,5 @@
 // Sync script (tools/sync/Code.gs) against an in-memory sheet: node --test tests/
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const test = require('node:test'),
   assert = require('node:assert');
 const {loadCodeGs} = require('./gas.js');
@@ -963,7 +964,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
 function modelHold(saved = {}) {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
     intro = /const INTRO = \{[\s\S]*?\n\};\n/.exec(src)[0],
-    hold = src.slice(src.indexOf('const HOLDK = '), src.indexOf('const introSince'));
+    hold = block(src, 'const HOLDK = ', 'const introSince');
   // The corals' keys (app.js sKey / sDev for the current subject).
   const ctx = {
     store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)},
@@ -1251,7 +1252,7 @@ test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names
   assert.strictEqual(vm.runInContext('typeof CORE_.replayProgress', s.ctx), 'function');
   // The app and the admin wait for this script version before they rely on the replay (core.js RV_SHEET; AGENTS.md 7a):
   // the script that serves it says so in every reply.
-  assert.strictEqual(C.RV_SHEET, 28);
+  // (Which version that is, and that the gate holds below it, is tests/gates.test.js's.)
   assert.ok(vm.runInContext('VERSION', s.ctx) >= C.RV_SHEET);
 });
 

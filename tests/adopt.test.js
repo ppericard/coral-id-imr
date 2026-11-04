@@ -3,6 +3,7 @@
 // the page), against the sync script on an in-memory sheet (tests/gas.js) where it talks to the sheet. Nothing leaves
 // this process (AGENTS.md rule 13).
 const test = require('node:test');
+const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -784,7 +785,7 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
 
 test('the recalculation card is due only when the progress % moved by 5 points or more, either way (Pierre, 2026-11-03)', () => {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
-    block = src.slice(src.indexOf('const RVN = '), src.indexOf('let rvT = 0;')),
+    block = cut(src, 'const RVN = ', 'let rvT = 0;'),
     saved = {},
     ctx = {
       ...C,
@@ -815,7 +816,7 @@ test('the recalculation card is due only when the progress % moved by 5 points o
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
 function ach(A) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
-    block = src.slice(src.indexOf('const ACHK = '), src.indexOf('const achList'));
+    block = cut(src, 'const ACHK = ', 'const achList');
   const saved = {},
     ctx = {
       ...C,
