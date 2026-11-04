@@ -181,7 +181,7 @@ const WIDTHS = [390, 1280];
     {
       const tab = await p.evaluate(() => (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '');
       const menu = await p.evaluate(() => ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '');
-      if (!/Players/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players`);
+      if (!/List/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players › List`);
     }
     // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
     // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
@@ -202,9 +202,15 @@ const WIDTHS = [390, 1280];
         ...L,
         {h: '~mont', tab: 'Look-alikes', view: null, n: 1},
         {h: '~stats-needs', tab: 'Coverage', view: '~cov', n: 2},
-        {h: '~journey/Ana Demo', tab: 'Players', view: null, n: 1}
+        {h: '~journey/Ana Demo', tab: 'List', view: null, n: 1}
       ];
     });
+    // Pierre, 2026-11-04: no tab holds a view of its own name, no group a tab of its own name.
+    const same = await p.evaluate(() => [
+      ...TABS.filter(t => t[2].length > 1 && t[2].some(([, v]) => v === t[1])).map(t => t[1]),
+      ...GROUPS.filter(([, g, L]) => L.some(t => t[1] === g)).map(([, g]) => g)
+    ]);
+    if (same.length) fails.push(`${w}px: a tab or group named like what it holds: ${same.join(', ')}`);
     const OLD = ['~triage', '~stats-needs', '~cov', '~kcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
     OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
     const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
@@ -221,6 +227,76 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px #${h}: view switch ${JSON.stringify(at)}, expected ${r.view} of ${r.n}`);
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
+    }
+    // The subject switch (admin plan PR 2): one segment per subject in the header, the corals' addresses unchanged (the
+    // loop above), a subject's pages under its prefix (core.js SUBJECTS admin.hash), only the tabs of the pages it has, a
+    // page it does not have yet saying so, a link without a prefix keeping the subject when it has that page, and the
+    // switch going back to the corals' page used last.
+    {
+      const S = await p.evaluate(() => SUBJECTS.map(s => ({id: s.id, name: s.name, hash: s.admin.hash, pages: s.admin.pages})));
+      const other = S.find(s => s.hash),
+        seg = () =>
+          p.evaluate(() => ({
+            subj: [...document.querySelectorAll('#subj [data-subj]')].map(a => [a.dataset.subj, a.getAttribute('aria-pressed')]),
+            hash: location.hash,
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent.replace(/ \(\d+\)$/, '')),
+            groups: [...document.querySelectorAll('#modes [data-mode]')].filter(a => !a.hidden).map(a => a.dataset.mode),
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+      await go('~quality');
+      let at = await seg();
+      if (at.subj.length !== S.length || at.subj[0][1] !== 'true') fails.push(`${w}px Subjects: switch ${JSON.stringify(at.subj)}`);
+      await go(other.hash + '~triage');
+      at = await seg();
+      if (
+        !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
+        at.note ||
+        !at.tabs.includes('To do') ||
+        at.groups.includes('photos')
+      )
+        fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
+      await go(other.hash + '~cand');
+      at = await seg();
+      if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
+        fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
+      // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
+      await p.evaluate(() => {
+        const a = document.createElement('a');
+        a.href = '#~users';
+        a.id = 'subjtest';
+        a.textContent = 'test';
+        document.getElementById('view').prepend(a);
+      });
+      await p.click('#subjtest');
+      await settle();
+      at = await seg();
+      if (at.hash !== '#' + other.hash + '~users' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: a shared page without prefix left the ${other.id} side ${JSON.stringify(at)}`);
+      // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
+      // (Codex review #492): #~users, then #fish/~triage, then Back.
+      await go('~users');
+      at = await seg();
+      const n0 = await p.evaluate(() => history.length);
+      if (at.hash !== '#~users' || at.subj[0][1] !== 'true')
+        fails.push(`${w}px Subjects: #~users not on the corals' side ${JSON.stringify(at)}`);
+      await go(other.hash + '~triage');
+      await p.evaluate(() => history.back());
+      await settle();
+      at = await seg();
+      const n1 = await p.evaluate(() => history.length);
+      if (at.hash !== '#~users' || at.subj[0][1] !== 'true' || n1 !== n0 + 1)
+        fails.push(`${w}px Subjects: Back to #~users ${JSON.stringify({...at, n0, n1})}`);
+      await p.evaluate(() => history.forward());
+      await settle();
+      at = await seg();
+      if (at.hash !== '#' + other.hash + '~triage' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
+      if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
+      await p.click(`#subj [data-subj="${S[0].id}"]`);
+      await settle();
+      at = await seg();
+      if (at.subj[0][1] !== 'true' || at.hash !== '#~users') fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
     }
     // Analyses (Pierre, 2026-11-04): the stored report (the demo computes it as the GitHub Action would, tools/analyses.js)
     // drawn in every view, with charts and no sideways scroll; the 4-choice count of Formats equals a direct count of the
@@ -775,7 +851,7 @@ const WIDTHS = [390, 1280];
         )
       };
     });
-    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'Players' || jo.small)
+    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'List' || jo.small)
       fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
     // The first-meeting cards from the player's saved progress (userData): Ana's first cards and single cards; Carla
     // opened all from the offer card (an orange line on the genera chart).

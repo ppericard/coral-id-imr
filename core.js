@@ -241,7 +241,11 @@
       board: true,
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
-      progress: ['slate', 'photos', 'groups']
+      progress: ['slate', 'photos', 'groups'],
+      // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin). hash: the
+      // prefix of the subject's admin addresses ('' keeps every coral address as it was); cur: its part of curation.json
+      // ('' = the top level, as before); pages: the admin pages it has (null = every page).
+      admin: {hash: '', cur: '', pages: null}
     },
     {
       id: 'fish',
@@ -268,7 +272,10 @@
       ach: false,
       board: false,
       pages: ['genera', 'quiz'],
-      progress: ['photos']
+      progress: ['photos'],
+      // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
+      // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
+      admin: {hash: 'fish/', cur: 'fish', pages: ['~triage', '~events', '~users', '~journey/', '~anon/']}
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.
