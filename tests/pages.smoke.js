@@ -3096,7 +3096,8 @@ async function newPlayer(b, base) {
 // One progression path for every game (Pierre, 2026-11-04): a beginner who met 4 genera on the path (Pocillopora,
 // Stylophora, Favites, Dipsastraea; Open all declined) plays 15 duels of the Duel tab: they come only from those 4, no
 // genus card opens, no ★ genus (whose reference is not met) ever shows; "Drill this pair" on a pair not unlocked falls back
-// to an unlocked duel; Memory deals only those 4 genera; the custom quiz offers only them. Returns the failures.
+// to an unlocked duel; Memory deals only those 4 genera; the custom quiz offers only them; the Tools' games ask about
+// them only. Returns the failures.
 async function onePath(b, base) {
   const fails = [],
     MET = ['Pocillopora', 'Stylophora', 'Favites', 'Dipsastraea'],
@@ -3195,6 +3196,44 @@ async function onePath(b, base) {
   const cq = await p.evaluate(() => [...document.querySelectorAll('#view .cqtile')].map(x => x.dataset.g));
   if (cq.length !== MET.length || cq.some(n => !MET.includes(n)))
     fails.push(`one path, custom quiz offers ${cq.length}: ${cq.slice(0, 6).join(', ')}`);
+  // The Tools' games (proto/*.js, lab.js labPlay): each round's photo is of a genus unlocked, 6 rounds each. The reference
+  // tools keep every genus (not checked here).
+  const GAMES = [
+    ['lab-reveal', null, '#rvimg', null],
+    ['lab-spot', null, '.spotph img', null],
+    ['lab-type', null, '.tystage img', null],
+    ['lab-zoom', '#zmgame', '.zlayout img', '#zmgame'],
+    ['lab-elim', '#elimm', '#elimmyst img', '#elimm'],
+    ['lab-anatomy|drill', '[data-t="arr"]', '#a2q img', '#a2next']
+  ];
+  const labOut = {};
+  for (const [h, start, sel, again] of GAMES) {
+    const seen = [];
+    for (let k = 0; k < 6; k++) {
+      if (k === 0 || !again) {
+        await p.evaluate(() => (location.hash = 'home'));
+        await p.waitForSelector('#view > *', {timeout: 10000}).catch(() => {});
+        await p.evaluate(x => (location.hash = x), h);
+        await p.waitForSelector(start || sel, {timeout: 15000}).catch(() => {});
+        if (start) await p.click(start).catch(() => {});
+      } else await p.click(again).catch(() => {});
+      await p.waitForSelector(sel, {timeout: 10000}).catch(() => {});
+      // The genus of each photo shown, from data.json (an IMR lecture photo's file name does not name it).
+      seen.push(
+        ...(await p.evaluate(sel => {
+          const of = {};
+          Object.entries(DATA.gen).forEach(([n, g]) => Object.values(g.views).forEach(L => L.forEach(x => (of[x.f] = n))));
+          return [...document.querySelectorAll('#view ' + sel)].map(i => {
+            const f = decodeURIComponent((i.getAttribute('src') || '').split('/').pop()).replace(/(-[smt])?\.webp.*$/, '');
+            return of[f] || f;
+          });
+        }, sel))
+      );
+    }
+    const out = seen.filter(n => !MET.includes(n));
+    if (!seen.length || out.length) labOut[h] = {photos: seen.length, out: out.slice(0, 3)};
+  }
+  if (Object.keys(labOut).length) fails.push(`one path, Tools games: ${JSON.stringify(labOut)}`);
   if (errs.length) fails.push(`one path: page errors ${errs.slice(0, 3).join(' | ')}`);
   await c.close();
   return fails;

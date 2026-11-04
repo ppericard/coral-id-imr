@@ -633,9 +633,11 @@
                 })
             );
           } else {
+            const L = labPlay();
+            if (labNone(box)) return;
             let n;
-            do n = pick(labNames());
-            while (n === last);
+            do n = pick(L);
+            while (n === last && L.length > 1);
             last = n;
             const right = arrOf(n),
               p = pick(DATA.gen[n].views.macro || [viewPhoto(n, 'macro')]);
