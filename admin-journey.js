@@ -503,6 +503,12 @@ function renderJourney(name, anonId = '') {
           o[1] += sc;
         })
       );
+  // A page of another subject than the corals is logged as <subject>.<page> (core.js pageName): "quiz (Fish)".
+  const pageLabel = k => {
+    const [sj, pg] = pageSubj(k),
+      S = subjectOf(sj);
+    return esc(pg) + (S.pv ? ` (${esc(S.name)})` : '');
+  };
   const pagesTop = Object.entries(RT_)
     .sort((a, b) => b[1][1] - a[1][1] || b[1][0] - a[1][0])
     .slice(0, 8);
@@ -520,7 +526,7 @@ function renderJourney(name, anonId = '') {
                       `<tr><td><a class="adm-gen" href="#${esc(o.g)}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td title="Opened first ${esc(jTime(o.first))}">${o.asked ? 'after asked' : '<b>before asked</b>'}</td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
                   ).join('')}</tbody></table></div>`
                 : '<p class="note">None opened.</p>'
-            }<p class="note">${SH.visits} visit${SH.visits === 1 ? '' : 's'} recorded · most time on ${pagesTop.map(([k, [n, sc]]) => `${esc(k)} ${secs(sc)} (${n}×)`).join(', ')}</p>`
+            }<p class="note">${SH.visits} visit${SH.visits === 1 ? '' : 's'} recorded · most time on ${pagesTop.map(([k, [n, sc]]) => `${pageLabel(k)} ${secs(sc)} (${n}×)`).join(', ')}</p>`
   }</section>`;
 
   $v.innerHTML =

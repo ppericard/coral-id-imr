@@ -61,6 +61,12 @@ const server = http.createServer((req, res) => {
 
 // "Did you know?" tips off (tips.js): a player who has enlarged 3 photos is never targeted. For the tests of the other
 // cards and prompts, which play dozens of questions and click Next; tipsCheck (below) checks the tips with them.
+// The names of the conditions that do not hold (test-suite review, 2026-11-04): a check with many conditions says which
+// one broke, not only the record. why({dialog: x.dialog, kind: x.kind === 'feedback'}) -> ['kind'] when the kind is wrong.
+const why = rules =>
+  Object.entries(rules)
+    .filter(([, ok]) => !ok)
+    .map(([k]) => k);
 // Waits until the app has drawn the page at the current address (app.js route() sets window.ROUTED once done; a link
 // that sends on routes again), no fetch is in flight (counted in every context of the main browser, below) and no Lab
 // module is still loading (proto/lab.js LAB.pending: its <script>s are no fetch, and a Lab page or tool drawn before
@@ -231,8 +237,8 @@ async function overlays(b, base) {
       // The card moves the focus into itself on a timer (cardShow): wait for it, not for a fixed time (a busy page ran the
       // timer after the 150 ms this waited, and the focus was still outside: pages smoke, 2026-11-03).
       await p
-        .waitForFunction(() => !!document.querySelector('.unlock')?.contains(document.activeElement), null, {timeout: 5000})
-        .catch(() => {});
+        .waitForFunction(() => !!document.querySelector('.unlock')?.contains(document.activeElement), null, {timeout: 15000})
+        .catch(() => fails.push(`${w}px card ${i} (${kind}): the focus never moved into the card (15 s)`));
       const r = await p.evaluate(() => {
         const d = document.querySelectorAll('.unlock'),
           u = d[0],
@@ -259,19 +265,19 @@ async function overlays(b, base) {
         gone: !document.querySelector('.unlock'),
         back: document.activeElement?.id === 'smokeopener'
       }));
-      if (
-        r.n !== 1 ||
-        r.role !== 'dialog' ||
-        r.modal !== 'true' ||
-        !r.title ||
-        r.kind !== kind ||
-        !r.look ||
-        !r.focus ||
-        !kept ||
-        !after.gone ||
-        !after.back
-      )
-        fails.push(`${w}px card ${i} (${kind}) through cardShow: ${JSON.stringify({...r, kept, ...after})}`);
+      const no = why({
+        one: r.n === 1,
+        role: r.role === 'dialog',
+        modal: r.modal === 'true',
+        title: r.title,
+        kind: r.kind === kind,
+        look: r.look,
+        focus: r.focus,
+        kept,
+        gone: after.gone,
+        back: after.back
+      });
+      if (no.length) fails.push(`${w}px card ${i} (${kind}) through cardShow: ${no.join(', ')} ${JSON.stringify({...r, kept, ...after})}`);
     }
     await c.close();
   }
@@ -322,8 +328,12 @@ async function overlays(b, base) {
     await p.click('.recalc .next').catch(() => {});
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForTimeout(2500);
-    if (await p.$('.recalc')) fails.push('recalculation pop-up shown twice');
+    // Not a fixed wait: the app says when it has decided at this load (progress.js recalcNotice, window.RECALC_SAID).
+    const said = await p
+      .waitForFunction(() => window.RECALC_SAID, null, {timeout: 15000})
+      .then(h => h.jsonValue())
+      .catch(() => 'undecided');
+    if (said !== 'none' || (await p.$('.recalc'))) fails.push(`recalculation pop-up shown twice (${said})`);
     if (!recalc) {
       // Millepora met on its card (a slate genus: a card like the others) and its sheet: the warning.
       const w = await p.evaluate(() => {
@@ -631,32 +641,37 @@ async function overlays(b, base) {
       }
     }
     const want = x => ['shown', x.way === 'tap' ? x.tap : x.way === 'leave' ? 'none' : 'skip'];
-    const bad = asked.filter(
-      (x, k) =>
-        x.inline ||
-        !x.it ||
-        !x.dialog ||
-        x.kind !== 'feedback' ||
-        x.title !== 'Quick question' ||
-        x.text !== x.it[0] ||
-        x.opts.join() !== x.it[1].join() ||
-        x.notnow !== 'Not now' ||
-        !x.wait ||
-        !x.held ||
-        !x.inView ||
-        x.wide ||
-        !x.row ||
-        (k === 0 ? !x.early || !x.early.up || !x.early.wait || x.early.n !== x.n0 + 1 : x.early) ||
-        !(x.waited[0] >= x.waited[1] - 5) ||
-        !x.enter.up ||
-        x.enter.n !== x.n0 + 1 ||
-        !x.enter.hit ||
-        x.after.up ||
-        (x.way === 'leave' ? x.after.h !== '#progress' : !x.after.next) ||
-        x.ev.map(e => e.r).join() !== want(x).join() ||
-        x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number') ||
-        (k && x.q === asked[k - 1].q)
-    );
+    // Each prompt with the names of the conditions it fails (why), so a failure says which one broke.
+    const bad = asked
+      .map((x, k) => ({
+        why: why({
+          notInline: !x.inline,
+          item: !!x.it,
+          dialog: x.dialog,
+          kind: x.kind === 'feedback',
+          title: x.title === 'Quick question',
+          text: !!x.it && x.text === x.it[0],
+          opts: !!x.it && x.opts.join() === x.it[1].join(),
+          notnow: x.notnow === 'Not now',
+          wait: x.wait,
+          held: x.held,
+          inView: x.inView,
+          notWide: !x.wide,
+          row: x.row,
+          early: k === 0 ? !!x.early && x.early.up && x.early.wait && x.early.n === x.n0 + 1 : !x.early,
+          waited: x.waited[0] >= x.waited[1] - 5,
+          enterUp: x.enter.up,
+          enterN: x.enter.n === x.n0 + 1,
+          enterHit: x.enter.hit,
+          closed: !x.after.up,
+          after: x.way === 'leave' ? x.after.h === '#progress' : x.after.next,
+          events: x.ev.map(e => e.r).join() === want(x).join(),
+          eventFields: !x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number'),
+          notRepeated: !(k && x.q === asked[k - 1].q)
+        }),
+        ...x
+      }))
+      .filter(x => x.why.length);
     // The first prompt at 35 answers, or a few later when an achievement toast it waits for came with that answer (the
     // wrong answers here move the toasts; the exact 35 is checked by the prompt-spacing run above).
     const late = !asked.length || asked[0].a < 35 || asked[0].a > 40;
@@ -1010,6 +1025,63 @@ async function signin(base) {
       prog: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
+  // The sign-in card is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not
+  // the game mode"): a player who plays only fish meets it at their 20th answer, as a coral player does (it counted the
+  // answers queued for the sheet, which takes no fish answers, so it never came). Fish is opened to this player in the
+  // page, as the admin's group will (core.js SUBJECTS beta).
+  await run(
+    () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-subject', '"fish"')),
+    async p => {
+      // The visit log on the way (Codex review #466): Fish switched on the same page (Tools) closes the coral page and opens
+      // the fish one, fish.lab (it kept counting the coral one: the tally knew the hash only).
+      await p.evaluate(() => go('lab'));
+      await p.waitForFunction(() => hashNow() === 'lab' && PV.cur && PV.cur.n === 'lab', null, {timeout: 15000});
+      await p.evaluate(() => {
+        SUBJECTS.find(S => S.id === 'fish').beta = false;
+        return setSubject('fish');
+      });
+      await p.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 15000});
+      const pv = await p.evaluate(() => ({cur: PV.cur && PV.cur.n, r: Object.keys(PV.r).sort()}));
+      if (pv.cur !== 'fish.lab' || !pv.r.includes('lab') || !pv.r.includes('fish.lab'))
+        fails.push('visit log, Fish switched on the same page: ' + JSON.stringify(pv));
+      await p.evaluate(() => go('quiz'));
+      await p.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000});
+      const r = await p.evaluate(async () => {
+        // Waits on what the app draws, never a fixed sleep (a loaded machine runs it slower).
+        const at = [],
+          until = async f => {
+            for (let k = 0; k < 300 && !f(); k++) await new Promise(ok => setTimeout(ok, 10));
+            return f();
+          };
+        for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
+          if (!(await until(() => document.querySelector('#view .q:not(.done) :is([data-c], .tyform, [data-w])')))) break;
+          const n0 = answersSoFar();
+          if (document.querySelector('#view .q.wink')) document.querySelector('#view [data-w]').click();
+          else {
+            const t = SHOWNQ[1],
+              b = [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c === t);
+            if (b) b.click();
+            else {
+              const f = document.querySelector('#view .tyform');
+              f.querySelector('input').value = GX(t).name;
+              f.requestSubmit();
+            }
+          }
+          // The answer's feedback drawn (or the wink's): the sign-in card, when due, is up by then (quiz.js answer).
+          await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
+          if (document.querySelector('.unlock.signnudge')) at.push(answersSoFar());
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          if (answersSoFar() === n0 && !document.querySelector('#view .q.wink')) break; // no answer taken: stop, reported below
+          route();
+        }
+        return {at, n: answersSoFar(), subj: SUBJ.id, used: localStorage.getItem('reefid-nudge'), log0: store.get(LOG0, []).length};
+      });
+      if (r.subj !== 'fish' || r.at.length !== 1 || r.at[0] !== 20 || r.used !== '1' || r.log0)
+        fails.push('sign-in card for a fish-only player: ' + JSON.stringify(r));
+    }
+  );
   // The apology card greets a signed-in player by the first word of their sign-in name (core.js sorryText); asked here
   // with the clock on the morning after, the device's own answer in the window, the account from the stub sheet.
   await run(
@@ -1746,20 +1818,23 @@ async function tipsCheck(b, base) {
       return !!document.querySelector('.tipcard');
     }, right);
     // dis: the card's buttons, at once, take no tap (a tap on a disabled button does nothing).
-    const dis = await p.evaluate(toast => {
+    // armed: the answer armed Next for a tip (quiz.js tipAfter, breakArm), which then decides at the tap.
+    const [dis, armed] = await p.evaluate(toast => {
       document.querySelectorAll('.achpop').forEach(x => x.remove());
       achQ.length = 0;
       achBusy = false;
       if (toast) achPop({tier: 1, icon: '🧪', title: 'Smoke tip', desc: 'test'});
-      document.getElementById('next').click();
+      const nb = document.getElementById('next'),
+        armed = nb.onclick !== route;
+      nb.click();
       const B = [...document.querySelectorAll('.tipcard [data-b]')];
-      return B.length > 0 && B.every(x => x.disabled);
+      return [B.length > 0 && B.every(x => x.disabled), armed];
     }, toast);
     // Next took the break or not (quiz.js breakArm, at the tap): the tip's card is up, or the next question is.
     await p
       .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {timeout: 10000})
       .catch(() => {});
-    return {at, dis, next: !!(await p.$('.tipcard'))};
+    return {at, dis, armed, next: !!(await p.$('.tipcard'))};
   };
   const tips = p => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-tips')));
   for (const [w, h] of [
@@ -1897,28 +1972,76 @@ async function tipsCheck(b, base) {
       await c.close();
     }
     // The Duel tab, no genus met yet: a duel whose genera are not all met brings their cards itself (quizDuel, not in its
-    // plan): the tip waits for a later break, never a genus card right after it (Codex review of PR #440).
+    // plan): the tip waits for a later break, never a genus card right after it (Codex review of PR #440). Both sides are
+    // checked, neither left to the draw (test-suite review, 2026-11-04: with the draw deciding, a tip often never came in
+    // 10 duels and nothing was checked; and a repeated pair of met genera could come first, Codex review #456):
+    // 1. the next duel is planned with a genus not met yet (NEXTQ, as planNext would): at the break the tip must wait, and
+    //    that duel comes with the genus's card;
+    // 2. then every genus met, so no duel brings a card: at the next armed break the tip comes, and no card after it.
     {
       const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#quiz-duel', true); // q 60: any break will do
       // The hold already on: these misses never take it across INTRO.HOLD, so the Duel tab's relief card (checked in
       // duelReliefCheck) does not take the break before the tip.
       await p.evaluate(() => (HOLDS = 9));
-      let shown = 0;
-      for (let i = 0; i < 10; i++) {
+      let waited = null,
+        shown = 0;
+      // 1. A break armed for the tip (an achievement toast at the answer arms none: then the next duel is tried).
+      for (let i = 0; i < 6 && !waited; i++) {
+        await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+        const r = await p.evaluate(() => {
+          const clear = () => {
+            document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+            document.querySelectorAll('.achpop').forEach(x => x.remove());
+            achQ.length = 0;
+            achBusy = false;
+          };
+          clear();
+          document.querySelector('#view [data-c]').click();
+          const nb = document.getElementById('next'),
+            armed = nb.onclick !== route,
+            cur = hashNow(),
+            pair = duelPick(pool(), ([x, y]) => !introduced(x) || !introduced(y));
+          if (armed && pair)
+            NEXTQ = {k: planKey(cur), args: planDuel(...pair), snap: planState(), stop: false, urls: [], held: [], next: null};
+          clear();
+          nb.click();
+          return {armed, pair, tip: !!document.querySelector('.tipcard')};
+        });
+        if (!r.armed) continue;
+        if (!r.pair) {
+          fails.push(`${W} duel: no look-alike pair with a genus not met yet`);
+          break;
+        }
+        await p.waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000}).catch(() => {});
+        const card = await p.evaluate(() => !!document.querySelector('.unlock.intro'));
+        waited = {...r, card};
+        if (r.tip || !card) fails.push(`${W} duel: the next duel brings a genus card, yet ${JSON.stringify(waited)}`);
+      }
+      // 2. Every genus met: the next armed break takes the tip, and no card comes after it.
+      await p.evaluate(() => introAdd(slateGenera(), false));
+      for (let i = 0; i < 6 && waited && !shown; i++) {
         const r = await play(p);
-        if (!r.next) continue;
+        if (!r.next) {
+          // Not armed at the answer (a toast was up then, as after a first duel won): the tip waits; nothing to check here.
+          if (r.armed) fails.push(`${W} duel: no tip at a break armed for it, every genus met (duel ${i + 1})`);
+          continue;
+        }
         shown++;
         // Its buttons take taps after TIP.WAIT (quiz.js): wait for that, not a fixed time.
         await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
         await p.evaluate(() => [...document.querySelectorAll('.tipcard [data-b]')].find(x => x.textContent === 'Got it').click());
-        await p.waitForTimeout(300);
+        // The next duel is drawn with its genera's cards, if any, at once (quizDuel, introShow): wait for it, then look.
+        await p
+          .waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000})
+          .catch(() => fails.push(`${W} duel: no next duel after the tip`));
         const after = await p.evaluate(() => ({
           intro: !!document.querySelector('.unlock.intro'),
           tip: !!document.querySelector('.tipcard')
         }));
         if (after.intro || after.tip) fails.push(`${W} duel: a card right after the tip: ${JSON.stringify(after)}`);
-        break;
       }
+      if (!waited) fails.push(`${W} duel: no break armed for the tip in 6 duels`);
+      else if (!shown) fails.push(`${W} duel: no tip in 6 duels once every genus was met`);
       if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
       await c.close();
     }
@@ -3054,13 +3177,43 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         // A glossary term on a card opens its definition on top of the card (an RA, 2026-11-02: it opened behind it).
         const gt = await q2.$('.unlock.intro .gt');
         if (gt) {
+          // Which event hid the definition, if one did (app.js: a click elsewhere, Escape, or a scroll once the term has
+          // moved, glossMoved), and where the term was when shown (glossAt) and is now: a failure then says why
+          // (test-suite review, 2026-11-04: seen failing under load, cause not established).
+          await q2.evaluate(() => {
+            const g = document.querySelector('.gpop'),
+              d = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'hidden');
+            if (window.__gpopLog) return;
+            window.__gpopLog = [];
+            Object.defineProperty(g, 'hidden', {
+              configurable: true,
+              get() {
+                return d.get.call(this);
+              },
+              set(v) {
+                if (v && !d.get.call(this))
+                  window.__gpopLog.push({by: (window.event && window.event.type) || 'code', t: Math.round(performance.now())});
+                d.set.call(this, v);
+              }
+            });
+          });
           await gt.click();
+          // Shown on a tap: wait for it rather than read at once.
+          await q2.waitForSelector('.gpop:not([hidden])', {timeout: 2000}).catch(() => {});
           const top = await q2.evaluate(() => {
             const g = document.querySelector('.gpop'),
-              r = g.getBoundingClientRect();
-            return !g.hidden && g.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+              r = g.getBoundingClientRect(),
+              el = glossAt && glossAt.el,
+              now = el && el.isConnected ? el.getBoundingClientRect() : null;
+            return {
+              top: !g.hidden && g.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)),
+              hidden: g.hidden,
+              hiddenBy: window.__gpopLog.slice(-2),
+              termAt: glossAt && [Math.round(glossAt.x), Math.round(glossAt.y)],
+              termNow: now && [Math.round(now.left), Math.round(now.top)]
+            };
           });
-          if (!top) fails.push(`${w}px glossary term on a genus card: definition not shown on top`);
+          if (!top.top) fails.push(`${w}px glossary term on a genus card: definition not shown on top ${JSON.stringify(top)}`);
           await q2.click('.unlock.intro h3'); // a tap elsewhere closes the definition
         }
         await q2.click('.unlock.intro .next');
@@ -3101,6 +3254,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await drawn(q2);
       if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
+      // Not vacuous (test-suite review, 2026-11-04): the first cards (fixed by INTRO.START and the data) carry a glossary
+      // term, or the definition check above and the tap-a-word line below were never checked.
+      else if (!seen.some(c => c.gt)) fails.push(`${w}px first cards: no glossary term on any, so the definition was never checked`);
       // "Tap an underlined word" is said once, on the first card with one (beginner review 2026-11-03).
       else if (seen.filter(c => c.hint).length !== +seen.some(c => c.gt) || seen.findIndex(c => c.hint) !== seen.findIndex(c => c.gt))
         fails.push(`${w}px first cards, the tap-a-word line: ${JSON.stringify(seen.map(c => [c.gt, c.hint]))}`);
@@ -3354,6 +3510,13 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
             () => p.textContent('#view .zhint'),
             () => null
           );
+        // Where no hint should come: waits for the app's decision on this question (quiz.js zoomHint marks its photo
+        // data-zh "no" or "shown"), not a fixed time, then says what is on screen; "undecided" if it never decided.
+        const hintNot = p =>
+          p.waitForSelector('#view .q .qstage .qph[data-zh]', {timeout: 15000}).then(
+            () => p.evaluate(() => document.querySelector('#view .zhint')?.textContent || null),
+            () => 'undecided'
+          );
         // toast: an achievement toast is up when the next question shows (as after a duel won as the first question, which
         // made this check fail in CI on PR #410: the hint was tried once and skipped under the toast); clicked in the page,
         // so Playwright does not wait for the toast to leave first.
@@ -3375,7 +3538,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
             return z.length ? z.filter(b => !ok(b)).length : -1;
           }, '#view .qph .zoom, #view .hero-ph, #view .strip .zoom');
         const [c, p] = await hintCtx();
-        const r = {mark: await marks(p), q1: await hintIn(p, 1500)};
+        const r = {mark: await marks(p), q1: await hintNot(p)};
         await nextQ(p, true);
         // Never with the toast; once it has gone, on the same question.
         r.toast = await p.evaluate(() => !!document.querySelector('.achpop'));
@@ -3396,24 +3559,24 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         r.gone = !(await p.$('#view .zhint'));
         await p.reload();
         await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qph'), null, {timeout: 30000});
-        r.reload = await hintIn(p, 2000);
+        r.reload = await hintNot(p);
         await nextQ(p);
-        r.after = await hintIn(p, 1500);
+        r.after = await hintNot(p);
         await p.evaluate(() => (location.hash = 'g-Acropora'));
         await p.waitForSelector('#view .hero-ph');
         r.sheet = await marks(p);
         // mark: the number of photo buttons without the mark or the label (0 = all have them; -1 = no photo found).
-        if (
-          r.mark ||
-          r.q1 ||
-          !r.toast ||
-          r.both ||
-          r.same !== 1 ||
-          !/^(Tap|Click) a photo to see it bigger$/.test(r.q2 || '') ||
-          r.label !== 'Enlarge photo' ||
-          !r.gone
-        )
-          fails.push(`enlarge mark and hint on a new player's first questions: ${JSON.stringify(r)}`);
+        const no = why({
+          marks: !r.mark,
+          noHintQ1: !r.q1,
+          toast: r.toast,
+          notWithToast: !r.both,
+          sameQuestion: r.same === 1,
+          hintQ2: /^(Tap|Click) a photo to see it bigger$/.test(r.q2 || ''),
+          label: r.label === 'Enlarge photo',
+          gone: r.gone
+        });
+        if (no.length) fails.push(`enlarge mark and hint on a new player's first questions: ${no.join(', ')} ${JSON.stringify(r)}`);
         if (r.reload || r.after || r.sheet) fails.push(`enlarge hint shown again, or genus sheet photos unmarked: ${JSON.stringify(r)}`);
         await c.close();
         // A player who already enlarged a photo never gets it.
@@ -3422,7 +3585,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         await p2.waitForSelector('#lightbox:not([hidden])');
         await p2.keyboard.press('Escape');
         await nextQ(p2);
-        const z = {hint: await hintIn(p2, 2500), key: await p2.evaluate(() => localStorage.getItem('reefid-zoomhint'))};
+        const z = {hint: await hintNot(p2), key: await p2.evaluate(() => localStorage.getItem('reefid-zoomhint'))};
         if (z.hint || z.key !== '"zoomed"') fails.push(`enlarge hint after a photo was enlarged: ${JSON.stringify(z)}`);
         await c2.close();
       }

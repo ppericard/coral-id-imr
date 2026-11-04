@@ -1,6 +1,7 @@
 // Glossary words (app.js GLOSS_PAT, gloss, glossAll; beginner review 2026-11-03): app.js's own code run in Node on the
 // real data.json terms.
 const test = require('node:test');
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -9,11 +10,11 @@ const DATA = require('../data.json');
 
 function app() {
   const src = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
+    pick = (a, b) => block(src, a, b),
     ctx = {DATA};
   vm.createContext(ctx);
   vm.runInContext(
-    src.slice(src.indexOf('const esc = '), src.indexOf('\n', src.indexOf('const esc = '))) +
+    block(src, 'const esc = ', '\n') +
       '\n' +
       pick('const GLOSS_PAT', 'const $gpop') +
       pick("// A term's text", 'function showGloss') +

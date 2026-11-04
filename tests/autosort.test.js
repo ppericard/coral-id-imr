@@ -55,7 +55,6 @@ test('sure rule: what the pass is sure of, field by field', () => {
 // them, so the share of Checks among the candidates left grows with every run (5.0% of 1746 before the first refill,
 // 7.8% of 1229 after it, 2026-11-03). The hash itself is checked on fixed names and on a large generated set.
 test('1 in 20 Checks: deterministic per photo, 5% of candidate names', () => {
-  assert.strictEqual(AUTO.every, 20);
   // Fixed names, fixed answers: a change to the hash or the rule would make other photos Checks on Pierre's data.
   ['montipora-cand-260314187', 'pocillopora-cand-263351328', 'montipora-cand-265341179', 'fungia-cand-266074282'].forEach(f =>
     assert.strictEqual(autoCheck(f), true, f)
@@ -72,11 +71,11 @@ test('1 in 20 Checks: deterministic per photo, 5% of candidate names', () => {
     n = F.filter(autoCheck).length,
     again = F.filter(autoCheck).length;
   assert.strictEqual(n, again, 'same photos on a second pass');
-  assert.ok(Math.abs(n / F.length - 0.05) < 0.003, `checks ${((100 * n) / F.length).toFixed(2)}% of ${F.length}`);
+  assert.ok(Math.abs(n / F.length - 1 / AUTO.every) < 0.003, `checks ${((100 * n) / F.length).toFixed(2)}% of ${F.length}`);
   G.forEach(g => {
     const L = F.filter(f => f.startsWith(g + '-')),
       r = L.filter(autoCheck).length / L.length;
-    assert.ok(Math.abs(r - 0.05) < 0.006, `${g}: checks ${(100 * r).toFixed(2)}% of ${L.length}`);
+    assert.ok(Math.abs(r - 1 / AUTO.every) < 0.006, `${g}: checks ${(100 * r).toFixed(2)}% of ${L.length}`);
   });
 });
 

@@ -165,6 +165,12 @@ const WIDTHS = [390, 1280];
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     if (!(await p.$('.adm-demo'))) fails.push(`${w}px: no demo banner`);
     if (await p.$('.adm-lock')) fails.push(`${w}px: lock screen shown in demo mode`);
+    // Opened with no address, the page shows Players (Pierre, 2026-11-04), on a phone as on a desktop.
+    {
+      const tab = await p.evaluate(() => (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '');
+      const menu = await p.evaluate(() => ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '');
+      if (!/Players/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players`);
+    }
     // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
     // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
     // no sideways scroll.
@@ -722,7 +728,8 @@ const WIDTHS = [390, 1280];
       !/before asked/.test(sa.t) ||
       !/after asked/.test(sa.t) ||
       !/Learn/.test(sa.t) ||
-      !/4 visits recorded/.test(sa.t)
+      !/4 visits recorded/.test(sa.t) ||
+      !/quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.quiz) read back with its subject
     )
       fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
     await go('~journey/' + encodeURIComponent('Dio Demo'));

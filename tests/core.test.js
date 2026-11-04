@@ -1002,7 +1002,13 @@ test('rename: the key table (travelling keys keep travelling, device keys stay o
     assert.ok(nk.startsWith(KEYS.APP), k);
     assert.strictEqual(keyLegacy(nk), nk.startsWith(KEYS.SYNC) ? k : null, k);
   });
-  assert.strictEqual(ORG.app, 'IMR Reef ID');
+  // The app's name is ORG.app everywhere it is written outside the code: the page title and the installed app's name.
+  const fs = require('fs'),
+    path = require('path'),
+    html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
+    man = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'manifest.webmanifest'), 'utf8'));
+  assert.strictEqual(/<title>([^<]*)<\/title>/.exec(html)[1], ORG.app);
+  assert.deepStrictEqual([man.name, man.short_name], [ORG.app, ORG.appShort]);
   assert.ok(!/imr/i.test(KEYS.APP + KEYS.SYNC), 'the keys do not name the organisation');
 });
 

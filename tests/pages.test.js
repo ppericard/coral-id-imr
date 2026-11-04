@@ -25,6 +25,33 @@ test('page names: routes without their parameters, genus sheets, look-alikes, ho
   assert.strictEqual(N('x'.repeat(60)), 'other');
 });
 
+// A fish page is told apart from a coral one (fish UX study, 2026-11-04: the fish quiz was logged as 'quiz'): drawn with
+// Fish on screen it is fish.<page>; the corals keep the plain names; the sheet's cleaning keeps it; the admin reads it back.
+test('page names carry the subject on screen: fish.<page>, the corals plain', () => {
+  const N = C.pageName,
+    F = C.subjectOf('fish').pv;
+  assert.strictEqual(C.subjectOf('coral').pv, '');
+  assert.strictEqual(F, 'fish.');
+  assert.strictEqual(N('quiz', F), 'fish.quiz');
+  assert.strictEqual(N('', F), 'fish.home');
+  assert.strictEqual(N('quiz-board', F), 'fish.progress');
+  assert.strictEqual(N('genera', F), 'fish.genera');
+  assert.strictEqual(N('x'.repeat(39), F), 'fish.other');
+  assert.strictEqual(N('quiz', ''), 'quiz');
+  assert.strictEqual(N('quiz'), 'quiz');
+  const S = C.pagesNew();
+  C.pagesOpen(S, 'quiz', 1e6);
+  C.pagesOpen(S, 'quiz', 1e6 + 2000, {pre: F});
+  C.pagesOpen(S, 'genera', 1e6 + 5000, {pre: F});
+  const sum = C.pagesTake(S, 1e6 + 6000);
+  assert.deepStrictEqual(plain(sum.r), {quiz: [1, 2], 'fish.quiz': [1, 3], 'fish.genera': [1, 1]});
+  assert.deepStrictEqual(plain(C.pagesClean(sum).r), plain(sum.r));
+  assert.deepStrictEqual(C.pageSubj('fish.quiz'), ['fish', 'quiz']);
+  assert.deepStrictEqual(C.pageSubj('quiz'), ['coral', 'quiz']);
+  assert.deepStrictEqual(C.pageSubj('lab-basics'), ['coral', 'lab-basics']);
+  assert.deepStrictEqual(C.pageSubj('coral.quiz'), ['coral', 'coral.quiz']);
+});
+
 test('how a sheet was reached: quiz, learn, progress, other', () => {
   const F = C.pageFrom;
   assert.deepStrictEqual(

@@ -776,13 +776,17 @@ const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
 // untouched.
 const ZHINT = {AT: 1, DELAY: 600, MS: 6000};
 function zoomHint() {
-  if (store.get(ZHINT_KEY, null) || answersSoFar() < ZHINT.AT) return;
   const f = $v.querySelector('.q .qstage .qph');
   if (!f) return;
+  // The decision for this question, on its photo: data-zh "no" or "shown" (tests wait for it rather than for a fixed time
+  // before checking that no hint came).
+  const said = d => (f.dataset.zh = d);
+  if (store.get(ZHINT_KEY, null) || answersSoFar() < ZHINT.AT) return void said('no');
   const show = () => {
-    if (!f.isConnected || f.closest('.q.done') || store.get(ZHINT_KEY, null)) return;
+    if (!f.isConnected || f.closest('.q.done') || store.get(ZHINT_KEY, null)) return void said('no');
     if (!lb.hidden || overlayBusy()) return void setTimeout(show, ZHINT.DELAY);
     store.set(ZHINT_KEY, 'seen');
+    said('shown');
     const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
     f.insertAdjacentHTML('beforeend', `<span class="zhint" role="status">${mouse ? 'Click' : 'Tap'} a photo to see it bigger</span>`);
     const h = f.querySelector('.zhint'),
@@ -887,8 +891,8 @@ function tipShow(t, st, cur) {
     kind: 'tip',
     cls: 'tipcard',
     kick: esc(t.card.kick),
-    title: esc(t.card.title({mouse})),
-    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body)}</p>`,
+    title: esc(t.card.title({mouse, subj: SUBJ})),
+    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ}))}</p>`,
     primary: t.act ? {text: 'Show me', attr: 'disabled'} : null,
     secondary: {text: 'Got it', attr: 'disabled'},
     focus: 'h3',

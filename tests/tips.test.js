@@ -101,8 +101,28 @@ test('registry: every tip is complete', () => {
     assert.ok(Array.isArray(t.ctx) && t.ctx.length, t.id);
     for (const k of ['target', 'now']) assert.strictEqual(typeof t[k], 'function', t.id + ' ' + k);
     for (const k of ['from', 'wait', 'max', 'every']) assert.ok(Number.isInteger(t[k]) && t[k] >= 0, t.id + ' ' + k);
-    assert.ok(t.card && t.card.kick && t.card.body && typeof t.card.title === 'function', t.id);
+    assert.ok(t.card && t.card.kick && typeof t.card.body === 'function' && typeof t.card.title === 'function', t.id);
     assert.match(t.card.title({mouse: true}), /^Click/);
     assert.match(t.card.title({mouse: false}), /^Tap/);
   }
+});
+
+// The card speaks the subject on screen (fish UX study, 2026-11-04: the zoom tip told fish players to look at the
+// corallites). Every subject gets a text; a fish player's never names a coral part. The wording is the subject's
+// (core.js SUBJECTS zoom): tips.js never names a subject (AGENTS.md 13b, Codex review #466).
+test('registry: the card text follows the subject on screen', () => {
+  const {SUBJECTS, subjectOf} = require('../core.js');
+  for (const t of TIPS)
+    for (const S of SUBJECTS)
+      for (const mouse of [true, false]) {
+        const o = {mouse, subj: S},
+          txt = t.card.title(o) + ' ' + t.card.body(o);
+        assert.ok(t.card.body(o).length > 10, `${t.id} ${S.id}`);
+        if (S.id !== 'coral') assert.doesNotMatch(txt, /corallite|coral|genus|genera/i, `${t.id} ${S.id}: ${txt}`);
+      }
+  const z = TIPS.find(t => t.id === 'zoom');
+  assert.match(z.card.body({subj: subjectOf('coral')}), /corallites/);
+  assert.match(z.card.body({subj: subjectOf('fish')}), /markings/);
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'tips.js'), 'utf8');
+  assert.doesNotMatch(src, /['"`](coral|fish)['"`]/, 'tips.js names a subject');
 });

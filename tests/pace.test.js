@@ -2,6 +2,7 @@
 // mix-ups", "Look-alikes from the data", "The apology card"): model.js's and quiz.js's own code run in Node on stubs (the
 // player's record P, the cards, the store), core.js's pure rules directly.
 const test = require('node:test');
+const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -13,7 +14,7 @@ const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 // opening hold (holdStep, introHold, holdEase), on stubs.
 function model({P = {}} = {}) {
   const src = read('model.js'),
-    block = src.slice(src.indexOf('// Progressive path (Pierre'), src.indexOf('const introSince'));
+    block = cut(src, '// Progressive path (Pierre', 'const introSince');
   const saved = {},
     ctx = {
       ...require('./subj.stub.js')(), // the corals as the current subject
@@ -311,17 +312,21 @@ test('the Again queue: up to CONTRAST.Q pairs, oldest first, none pushed out by 
     ctx
   );
   const {add, q, CONTRAST} = ctx.Q;
-  assert.strictEqual(CONTRAST.Q, 3);
-  assert.strictEqual(add(['A', 'B'], 10), true);
-  assert.strictEqual(add(['C', 'D'], 12), true);
-  assert.strictEqual(add(['B', 'A'], 13), true, 'already waiting: still coming, not queued twice');
-  assert.strictEqual(add(['E', 'F'], 14), true);
-  assert.strictEqual(add(['G', 'H'], 15), false, 'full: the newest waits for its next miss');
+  // CONTRAST.Q pairs fill it (whatever Q is), a pair already waiting is not queued twice, one more waits.
+  const pairs = Array.from({length: CONTRAST.Q + 1}, (_, i) => ['P' + i, 'Q' + i]);
+  assert.ok(CONTRAST.Q >= 2, String(CONTRAST.Q));
+  assert.strictEqual(add(pairs[0], 10), true);
+  assert.strictEqual(add(pairs[0].slice().reverse(), 11), true, 'already waiting: still coming, not queued twice');
+  pairs.slice(1, -1).forEach((p, i) => assert.strictEqual(add(p, 12 + i), true));
+  assert.strictEqual(add(pairs[CONTRAST.Q], 50), false, 'full: the newest waits for its next miss');
   assert.strictEqual(
     q()
       .map(r => r.pair.join('|') + '@' + r.at)
       .join(' '),
-    'A|B@10 C|D@12 E|F@14'
+    pairs
+      .slice(0, -1)
+      .map((p, i) => p.join('|') + '@' + (i ? 11 + i : 10))
+      .join(' ')
   );
 });
 

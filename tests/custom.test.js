@@ -3,6 +3,7 @@
 // genera, with core.js's confusion scores. Only selected genera are asked; the choices come from the selection first,
 // with the photo quiz's trap rules inside it, and from the other genera in play only when the selection is under 4.
 const test = require('node:test');
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -27,7 +28,7 @@ const GEN = {
 const PLAY = Object.keys(GEN);
 function model({P = {}, ab = {}} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b));
+    pick = (a, b) => block(src, a, b);
   const ctx = {
     P,
     PCONF: {},
@@ -75,7 +76,10 @@ const known = () => true;
 
 test('customOf: the saved genera still in play, in the game order; none under CUSTOM.MIN', () => {
   const M = model();
-  assert.strictEqual(M.CUSTOM.MIN, 2);
+  // CUSTOM.MIN genera in play make a selection, one fewer none (whatever MIN is).
+  const some = PLAY.slice(0, M.CUSTOM.MIN);
+  assert.deepStrictEqual(M.customOf(some, PLAY), some);
+  assert.strictEqual(M.customOf(some.slice(1), PLAY), null);
   assert.deepStrictEqual(M.customOf(['F', 'A', 'Z', 'A'], PLAY), ['A', 'F']);
   assert.strictEqual(M.customOf(['A'], PLAY), null);
   assert.strictEqual(M.customOf(['A', 'Z'], PLAY), null); // Z is not in play (a bonus genus switched off, say)
@@ -243,7 +247,13 @@ test('mixClusters: heaviest pairs first, a genus joins its partner up to CUSTOM.
     {g: ['A', 'B', 'C'], w: 9},
     {g: ['D', 'E', 'F'], w: 3}
   ]);
-  assert.strictEqual(M.CUSTOM.CLUSTER, 6);
+  // By default a cluster stops at CUSTOM.CLUSTER genera: CLUSTER + 2 genera all paired with one another make one cluster
+  // of exactly CLUSTER (the others pair together).
+  const K = M.CUSTOM.CLUSTER,
+    N = Array.from({length: K + 2}, (_, i) => 'G' + i),
+    all = N.flatMap((a, i) => N.slice(i + 1).map((b, j) => [a, b, 100 - i - j / 100]));
+  assert.ok(K >= 2, String(K));
+  assert.strictEqual(M.mixClusters(all)[0].g.length, K);
   assert.deepStrictEqual(M.mixClusters([]), []);
 });
 

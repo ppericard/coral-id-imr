@@ -1,6 +1,7 @@
 // Full replay of the answer log (core.js replayProgress, replayedOf; docs/LEARNING.md "Full replay"): the app's progress
 // rules (pgRightW, pgMissW, pgMemW, pgStep) run over the sheet's log, in time order. Also tools/memreplay.js on a sample.
 const test = require('node:test');
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   os = require('os'),
@@ -389,7 +390,7 @@ test('mergeProgress: a record adopted from the replay wins over the copy of the 
 test('typed answers: the replay of the log rebuilds the progress the app scored live, its abilities (th, lt) included', () => {
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length),
+    cut = (a, b) => block(src, a, b, {through: true}),
     // The pooled score of a pair with no pooled data: its prior (the replay's: look-alikes, family; these genera share no
     // IMR growth form, so model.js pooledConf gives the same).
     prior = (a, b) =>
@@ -587,7 +588,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
-    cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length);
+    cut = (a, b) => block(src, a, b, {through: true});
   // quiz.js answer steps the genus shown and the level with the same weight, then records the time.
   assert.ok(quiz.includes('const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;'));
   assert.ok(quiz.includes('abilityStep(target, s, good, dm, k, rw);'));
@@ -730,7 +731,7 @@ test('response time: the median of the earlier times, the weight, and the record
 test('the first-launch prior in the live ability only from sheet v36 (Codex review #428)', () => {
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length);
+    cut = (a, b) => block(src, a, b, {through: true});
   const at = sheet => {
     const M = {...C, P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}}, sheetV: () => sheet, startV: () => C.startVars('know')};
     vm.createContext(M);
