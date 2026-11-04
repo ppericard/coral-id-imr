@@ -1480,6 +1480,11 @@ const CORE_ = (function () { const module = {exports: {}};
       }
     };
     const out = {...A, ...B};
+    // The first-launch record: the union of both accounts' histories (startUnion, Codex review #428), so the replay after
+    // the merge applies each account's answers' priors at their times.
+    const sa = J(A, CHOICE.KEY),
+      sb = J(B, CHOICE.KEY);
+    if (sa || sb) out[CHOICE.KEY] = JSON.stringify(startUnion(sa, sb));
     SUBJECTS.forEach((S, i) => {
       const pk = subjKey(S.id, 'progress'),
         qk = subjKey(S.id, 'quiz');
@@ -3027,7 +3032,13 @@ const CORE_ = (function () { const module = {exports: {}};
   // then, time, 'ease', the answer it eased]; it applies from its time until the next choice event, and only to the
   // answer it eased (never to a choice made later or on another device meanwhile). A record of before the history (no h):
   // its answer as one choice event at its t, and its ease field (if any) as one ease event.
-  const START_CAP = 10; // the events kept, the latest
+  // Every event is kept: the replay of the whole log needs the prior in force at each answer, however old (Codex review
+  // #428: a cap at 10 dropped the earliest answers' prior). Nor is the list compacted: an event that repeats the answer
+  // in force can matter again once another device's events are merged in between (know@100, know@300 merged with
+  // imr@200: "know" from 300 on), so dropping it would not commute with the union. START_CAP is only a safety bound, far
+  // above any real history (a player gives one answer, rarely changes it, and a fallback card comes once per answer and
+  // direction): at about 40 bytes an event, 200 events stay under 8 KB in the synced record.
+  const START_CAP = 200;
   const stTime = x => (typeof x[2] === 'number' ? x[2] : -Infinity);
   const stEase = x => x[3] === 'ease';
   const stKey = x => (stEase(x) ? `e|${x[2]}|${x[0]}|${x[4]}` : `c|${x[2]}|${x[0]}`);
@@ -3042,7 +3053,7 @@ const CORE_ = (function () { const module = {exports: {}};
     return ev.filter(x => Array.isArray(x) && startOpt(x[0]));
   }
   // The events of several records, once each (by kind, time and value), oldest first (a choice before an ease at the
-  // same time, then by value: the same order whichever record comes first), the latest START_CAP kept.
+  // same time, then by value: the same order whichever record comes first), START_CAP at most (the latest).
   function startEventsOf(...recs) {
     // One per key; between two copies of an event that differ only in their details (answers then, via), the same one
     // whichever record comes first.

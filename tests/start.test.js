@@ -507,6 +507,56 @@ test('synced: merging A into B and B into A gives the same history and the same 
   }
 });
 
+// Codex review #428 (P2): the history keeps every event (no cap at 10): the replay needs the earliest answers' prior.
+test('the history keeps every event: the earliest answers keep their prior', () => {
+  const h = Array.from({length: 11}, (_, i) => ['know', i, 100 * (i + 1), i ? 'card' : 'tour']),
+    o = C.startNorm({h, w: [], fb: {}});
+  assert.strictEqual(o.h.length, 11);
+  assert.strictEqual(C.startPriorAt(o, 150), startVars('know').p, 'between the 1st and the 2nd event');
+  assert.strictEqual(C.startPriorAt(C.startUnion(o, {h: [['imr', 0, 50, 'tour']], w: [], fb: {}}), 150), startVars('know').p);
+  assert.ok(C.START_CAP >= 200, 'only a safety bound');
+});
+
+// The union is lossless (Codex review #428): for random histories far longer than the old cap, split over three devices,
+// the merged prior at every time is the prior of the whole history computed directly (a reference implementation), and
+// the union is commutative and associative.
+test('synced: the union of histories is lossless, commutative and associative (property)', () => {
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647),
+    opts = CHOICE.opts.map(o => o[0]),
+    pick = a => a[Math.floor(rnd() * a.length)],
+    // The prior at t straight from the definition: the last answer at or before t, or the band below it while an ease
+    // taken on that answer after it is the latest event (by time; a choice before an ease at the same time).
+    ref = (ev, t) => {
+      let c = null,
+        e = null;
+      ev.filter(x => x[2] <= t)
+        .sort((a, b) => a[2] - b[2] || (a[3] === 'ease') - (b[3] === 'ease'))
+        .forEach(x => (x[3] === 'ease' ? c && x[4] === c && (e = x[0]) : ((c = x[0]), (e = null))));
+      return e ? startVars(e).p : c ? startVars(c).p : 0;
+    };
+  for (let run = 0; run < 100; run++) {
+    const all = [];
+    let t = 1000;
+    for (let k = 0; k < 20 + Math.floor(rnd() * 40); k++) {
+      t += 1 + Math.floor(rnd() * 20);
+      const c = pick(opts),
+        down = C.startNext(c, 'lo')[0];
+      all.push(rnd() < 0.3 && down ? [down, k, t, 'ease', c] : [c, k, t, pick(['tour', 'card', 'fallback'])]);
+    }
+    const dev = [[], [], []];
+    all.forEach(x => dev[Math.floor(rnd() * 3)].push(x));
+    const R = dev.map(h => (h.length ? C.startNorm({h, w: [], fb: {}}) : null)).filter(Boolean),
+      U = R.reduce((m, x) => C.startUnion(m, x)),
+      V = [...R].reverse().reduce((m, x) => C.startUnion(m, x)),
+      W = R.length === 3 ? C.startUnion(R[0], C.startUnion(R[1], R[2])) : U;
+    assert.deepStrictEqual(U.h, V.h, `run ${run}: commutative`);
+    assert.deepStrictEqual(U.h, W.h, `run ${run}: associative`);
+    assert.strictEqual(U.h.length, all.length, `run ${run}: nothing dropped`);
+    for (let q = 990; q <= t + 5; q++) assert.strictEqual(C.startPriorAt(U, q), ref(all, q), `run ${run}: prior at ${q}`);
+  }
+});
+
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {
   const A = model(),
     B = model();
