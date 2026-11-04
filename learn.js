@@ -45,7 +45,7 @@ function viewGenera() {
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   // Phones: family, order and the group index fold behind one Filter line, so the genera start near the top.
   const phone = isPhone();
-  const famSel = `<select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>`;
+  const famSel = `<select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option value="${esc(f)}"${azFam === f ? ' selected' : ''}>${esc(altName(f))}</option>`).join('')}</select>`;
   const viewSeg = `<div class="seg" role="group" aria-label="View">${[
     ['photos', 'Photos'],
     ['tips', 'ID tips']
@@ -582,7 +582,7 @@ function viewCompare(a, b) {
     B = gameGenus(b) && GX(b);
   if (!A || !B) return viewLookalikes();
   const col = (n, g) =>
-    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="#g-${esc(n)}">Sheet ›</a></h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
+    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="#g-${esc(n)}">Sheet ›</a></h3><p class="note">${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => {
@@ -631,7 +631,7 @@ function viewFishList() {
   const tip = n => {
     const g = GX(n),
       p = g.views.wide[0];
-    return `<article class="tipg"><span class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<b>${uname(n)}</b><small>${esc(g.fam)}</small></span><div>${tipsList(g)}${
+    return `<article class="tipg"><span class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<b>${uname(n)}</b><small>${esc(altName(g.fam))}</small></span><div>${tipsList(g)}${
       g.lk.length
         ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>`
         : ''
