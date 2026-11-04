@@ -1,0 +1,116 @@
+{
+ "photos": {
+  "fish-s039-cand-755348774": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s039-cand-44158628": {
+   "code": "p1g3sl12",
+   "keep": "best"
+  },
+  "fish-s039-cand-120120963": {
+   "code": "o0g2bl11",
+   "keep": "best"
+  },
+  "fish-s039-cand-120121526": {
+   "code": "p0g2bl11",
+   "keep": "dup"
+  },
+  "fish-s039-cand-704520146": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s039-cand-730666779": {
+   "code": "p1d2bl11",
+   "keep": "best"
+  },
+  "fish-s039-cand-730666880": {
+   "code": "p1d2bsx1",
+   "keep": "dup"
+  },
+  "fish-s039-cand-730666887": {
+   "code": "p1d2bsx1",
+   "keep": "dup"
+  },
+  "fish-s039-cand-730667796": {
+   "code": "p1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s039-cand-92590546": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s039-cand-10892348": {
+   "code": "p1g1bm11",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Grainy, odd red colour: maybe another colour form"
+  },
+  "fish-s039-cand-41877047": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s039-cand-284838017": {
+   "code": "o1d2ml12",
+   "keep": "best"
+  },
+  "fish-s039-cand-10070842": {
+   "code": "o1g1smm3",
+   "keep": "best"
+  },
+  "fish-s039-cand-28951006": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s039-cand-174799800": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s039-cand-636279205": {
+   "code": "p1g2bsm1",
+   "keep": "best"
+  },
+  "fish-s039-cand-636280704": {
+   "code": "p1g2bmm1",
+   "keep": "dup"
+  },
+  "fish-s039-cand-636282674": {
+   "code": "p1g2bmm1",
+   "keep": "dup"
+  },
+  "fish-s039-cand-258069600": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s039-cand-6347455": {
+   "code": "p1d1sm13",
+   "keep": "best"
+  },
+  "fish-s039-cand-151372363": {
+   "code": "p1g1bm12",
+   "keep": "best"
+  },
+  "fish-s039-cand-754338936": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s039-cand-520201652": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s039-cand-458708269": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Studio-style photo on black: maybe not in the wild"
+  },
+  "fish-s039-cand-326517829": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  }
+ }
+}
