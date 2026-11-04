@@ -1657,7 +1657,24 @@ const WIDTHS = [390, 1280];
     const fa = await p
       .waitForFunction(() => DRAFT.fish && DRAFT.fish.auto, null, {timeout: 15000})
       .then(() =>
-        p.evaluate(F => ({fish: DRAFT.fish, sum: pubSummary(), coral: F.some(([, f]) => JSON.stringify(DRAFT.genera).includes(f))}), FF)
+        p.evaluate(
+          F => ({
+            fish: DRAFT.fish,
+            sum: pubSummary(),
+            coral: F.some(([, f]) => JSON.stringify(DRAFT.genera).includes(f)),
+            // A draft with fish changes only still enables Publish (status counts the fish curation).
+            alone: (() => {
+              const keep = DRAFT;
+              DRAFT = {...clone(SAVED), fish: DRAFT.fish};
+              status();
+              const r = {dis: $('save').disabled, title: $('save').title};
+              DRAFT = keep;
+              status();
+              return !r.dis && /fish curation/.test(r.title) ? true : r;
+            })()
+          }),
+          FF
+        )
       )
       .catch(() => null);
     if (
@@ -1669,11 +1686,12 @@ const WIDTHS = [390, 1280];
       FF[2][1] in fa.fish.add ||
       fa.fish.out[FF[2][1]] !== 'x' ||
       fa.coral ||
+      fa.alone !== true ||
       !/fish photo in play/.test(fa.sum) ||
       !/fish auto-sort decision/.test(fa.sum)
     )
       fails.push(
-        `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral})}`
+        `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone})}`
       );
     errs.length = 0;
     if (await p.isEnabled('#save')) {

@@ -1004,7 +1004,8 @@ function status() {
       crChanged() ? 'crops' : '',
       snChanged() ? 'several corals' : '',
       tlChanged() ? 'tile photos' : '',
-      auChanged() ? 'auto-sort' : ''
+      auChanged() ? 'auto-sort' : '',
+      fiChanged() ? 'fish curation' : ''
     ].filter(Boolean);
   const bs = $('booksw');
   if (bs) {
