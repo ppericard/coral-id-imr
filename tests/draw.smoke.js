@@ -357,7 +357,12 @@ const server = http.createServer((req, res) => {
           return {pg: P[t].pg, th: P[t].th, e: log().e};
         },
         k0 = one(false),
+        tz = log().tz,
         k1 = one(true);
+      // The device's UTC offset at answer time, minutes east of UTC (Pierre, 2026-11-04: "time of day at home"; sheet
+      // v44 stores it): Date.getTimezoneOffset, sign turned.
+      if (tz !== -new Date().getTimezoneOffset())
+        fails.push(`an answer logged with UTC offset ${tz}, the device's is ${-new Date().getTimezoneOffset()}`);
       if (!(k1.pg < k0.pg && k1.th < k0.th && k1.e > k0.e))
         fails.push(`photo memory: a right answer on a known photo ${JSON.stringify(k1)}, on a new one ${JSON.stringify(k0)}`);
     }
