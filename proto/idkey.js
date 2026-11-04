@@ -24,7 +24,9 @@ LAB.add({
     const KEY = [...DATA.key, ...(XON && DATA.x ? DATA.x.groups : [])].map(addX);
     const xtag = n => (G[n].x.nonscl ? 'Not on IMR list · not a hard coral' : 'Not on IMR list');
     const uniq = L => [...new Set(L)];
-    const withTr = id => names.filter(n => G[n].tr.includes(id));
+    // Genera that can show a trait; `half` those that show it in some species only (lab.js trHas): half a match.
+    const withTr = id => names.filter(n => trHas(G[n], id) > 0),
+      halfTr = id => names.filter(n => trHas(G[n], id) === 0.5);
     // Facets: id, title, options {id, t, g (genera)}. Within a facet picks mean either/or; facets combine.
     const CFF = KEY.map(k => ({id: k.id, t: k.name, s: k.sub, g: uniq(k.leaves.flatMap(l => l.g)), color: k.color}));
     // IMR Lecture 6 growth forms (forms.json "forms"). The lecture says form is plastic: like every clue it only ranks.
@@ -81,7 +83,7 @@ LAB.add({
           id: c.id,
           name: c.name,
           note: c.note,
-          opts: c.opts.map(o => ({id: o.id, t: o.t, s: o.src, g: withTr(o.id)}))
+          opts: c.opts.map(o => ({id: o.id, t: o.t, s: o.src, g: withTr(o.id), half: halfTr(o.id)}))
         })),
         {
           id: 'ig',
@@ -128,8 +130,9 @@ LAB.add({
       if (S.q) parts.push('q=' + encodeURIComponent(S.q));
       history.replaceState(null, '', base + (parts.length ? '|' + parts.join(';') : ''));
     };
-    // How well a genus fits one clue family: 1 if one of its picks lists the genus, 0.5 for a corallite size
-    // one class away (sizes are easy to misjudge on a photo), else 0. Unused families don't count.
+    // How well a genus fits one clue family: 1 if one of its picks lists the genus, 0.5 if the best pick is a trait of
+    // some of its species only (o.half) or a corallite size one class away (sizes are easy to misjudge on a photo),
+    // else 0. Unused families don't count.
     const SIZES = DATA.traits.find(c => c.id === 'size').opts.map(o => o.id);
     // Several growth forms picked on one colony: "Not sure" (default) = any of them fits; "Both" = the genus must take
     // them all (a genus taking only some of them is half a miss, so it is one clue off rather than gone).
@@ -141,20 +144,22 @@ LAB.add({
           k = P.filter(o => o.g.includes(n)).length;
         return k === P.length ? 1 : k ? 0.5 : 0;
       }
-      if (f.opts.some(o => S[f.id].has(o.id) && o.g.includes(n))) return 1;
+      const of = o => (!o.g.includes(n) ? 0 : (o.half || []).includes(n) ? 0.5 : 1),
+        best = Math.max(0, ...f.opts.filter(o => S[f.id].has(o.id)).map(of));
+      if (best === 1) return 1;
       if (
         f.id === 'size' &&
         [...S.size].some(id => {
           const i = SIZES.indexOf(id);
-          return [SIZES[i - 1], SIZES[i + 1]].some(x => x && G[n].tr.includes(x));
+          return [SIZES[i - 1], SIZES[i + 1]].some(x => x && trHas(G[n], x) > 0);
         })
       )
         return 0.5;
-      return 0;
+      return best;
     };
     // Penalty: how many clues the genus misses (halves for near sizes); misses: the families it misses.
     const used = (F, skip) => F.filter(f => f.id !== skip && S[f.id].size);
-    // A "No" answer: the genera that have the feature miss that clue.
+    // A "No" answer: the genera that have the feature miss that clue (half a clue when only some of their species have it).
     const optOf = (F, k) => {
       const [fid, id] = k.split('.'),
         f = F.find(x => x.id === fid),
@@ -162,14 +167,15 @@ LAB.add({
       return o ? {f, o} : null;
     };
     const nots = F => [...S.not].map(k => optOf(F, k)).filter(Boolean);
-    const pen = (n, F, skip) => used(F, skip).reduce((t, f) => t + 1 - hit(n, f), 0) + nots(F).filter(({o}) => o.g.includes(n)).length;
+    const notPen = (n, o) => (!o.g.includes(n) ? 0 : (o.half || []).includes(n) ? 0.5 : 1);
+    const pen = (n, F, skip) => used(F, skip).reduce((t, f) => t + 1 - hit(n, f), 0) + nots(F).reduce((t, {o}) => t + notPen(n, o), 0);
     const misses = (n, F) => [
       ...used(F)
         .filter(f => hit(n, f) < 1)
         .map(f => f.name + (hit(n, f) ? ' (close)' : '')),
       ...nots(F)
         .filter(({o}) => o.g.includes(n))
-        .map(({o}) => 'not ' + o.t)
+        .map(({o}) => 'not ' + o.t + ((o.half || []).includes(n) ? ' (close)' : ''))
     ];
     const fitsQ = n => !S.q || n.toLowerCase().includes(S.q.toLowerCase());
     const fits = (n, F, skip) => fitsQ(n) && pen(n, F, skip) === 0;

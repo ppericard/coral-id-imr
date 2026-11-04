@@ -24,7 +24,7 @@ LAB.add({
     const fits = n =>
       DATA.traits.every(c => {
         const picked = c.opts.filter(o => sel.has(o.id)).map(o => o.id);
-        return !picked.length || picked.some(id => DATA.gen[n].tr.includes(id));
+        return trFits(DATA.gen[n], picked);
       });
     const draw = () => {
       const left = labNames().filter(fits);
@@ -39,7 +39,7 @@ LAB.add({
         .flatMap(c => c.opts.map(o => ({o, c})))
         .filter(({o}) => !sel.has(o.id))
         .map(({o, c}) => {
-          const yes = left.filter(n => DATA.gen[n].tr.includes(o.id));
+          const yes = left.filter(n => trHas(DATA.gen[n], o.id) > 0);
           return {o, c, yes, no: left.filter(n => !yes.includes(n)), s: Math.min(yes.length, left.length - yes.length)};
         })
         .filter(x => x.s > 0)
@@ -96,7 +96,7 @@ LAB.add({
           e.preventDefault();
           const ok = n === mystery,
             miss = DATA.gen[mystery].tr.filter(id => !sel.has(id)).map(trName),
-            wrong = [...sel].filter(id => !DATA.gen[mystery].tr.includes(id)).map(trName);
+            wrong = [...sel].filter(id => !trHas(DATA.gen[mystery], id)).map(trName);
           root.querySelector('#elimres').innerHTML =
             `<p class="${ok ? 'ok' : 'ko'}"><b>${ok ? 'Right' : 'Not quite'}</b>: it was <a href="${genLink(mystery)}"><i>${esc(mystery)}</i></a>.</p>
         ${wrong.length ? `<p class="note">Ticked but not true for ${esc(mystery)}: ${wrong.map(esc).join(', ')}.</p>` : ''}${miss.length ? `<p class="note">Its features you didn't tick: ${miss.map(esc).join(', ')}.</p>` : ''}

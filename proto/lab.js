@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 82;
+const LAB_V = 83;
 // One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
 // 24 px grid, 1.75 stroke, currentColor; a tool without an entry falls back to its `icon` text.
 const LAB_ICONS = {
@@ -118,9 +118,24 @@ const thumbSrc = (n, v = 'macro', size = 's') => img(viewPhoto(n, v), size);
 const trOpt = id => DATA.traits.flatMap(t => t.opts).find(o => o.id === id);
 const trName = id => (trOpt(id) || {t: id}).t;
 const trSet = c => DATA.traits.find(t => t.id === c).opts.map(o => o.id);
+// A genus's corallite traits (data.json): `tr` the traits of the genus, `trs` traits found in some of its species only
+// (Pierre, 2026-11-04: a clear crown of paliform lobes in a few Favites, say). Every tool reads them through these
+// helpers and the same rule, never by genus name: 1 = the genus has it, 0.5 = some species, 0 = no. A some-species
+// trait counts half a match in the Coral ID Key, never eliminates in the Elimination board, and is labelled so.
+const trHas = (g, id) => (g.tr.includes(id) ? 1 : (g.trs || []).includes(id) ? 0.5 : 0);
+const trAll = g => [...g.tr, ...(g.trs || []).filter(id => !g.tr.includes(id))];
+const SOME_SP = 'some species';
+const trLabel = (g, id) => trName(id) + (trHas(g, id) === 0.5 ? ` (${SOME_SP})` : '');
+// The strict filter of one trait family: with nothing picked any genus fits; else it must be able to show one pick.
+const trFits = (g, picked) => !picked.length || picked.some(id => trHas(g, id) > 0);
 const tag = n => (DATA.gen[n].n ? 'No. ' + DATA.gen[n].n : '★ not surveyed');
 // The corallite features that decide, as a short line (never the growth form).
-const whyLine = n => 'Corallites: ' + DATA.gen[n].tr.map(trName).map(esc).join(' · ');
+const whyLine = n =>
+  'Corallites: ' +
+  trAll(DATA.gen[n])
+    .map(id => trLabel(DATA.gen[n], id))
+    .map(esc)
+    .join(' · ');
 const lookAlikes = n => DATA.gen[n].look.filter(b => DATA.gen[b]);
 // Choices for a question: the target, its look-alikes first, then random genera.
 function labChoices(t, k = 4) {
