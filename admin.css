@@ -707,6 +707,37 @@ body.adm-dragging * {
   box-shadow: var(--shadow);
 }
 
+/* The subject switch (admin plan PR 2: Corals | Fish, left of the groups), each side with its to-do count. Phones: a
+   full-width row under the header line (the study's mock-up 1). */
+.adm-subj {
+  display: inline-flex;
+  flex: none;
+  padding: 3px;
+  gap: 2px;
+  background: var(--surface-2);
+  border-radius: var(--pill);
+}
+.adm-subj[hidden] {
+  display: none;
+}
+.adm-subj a {
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: var(--pill);
+}
+.adm-subj a[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.adm-scnt {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--accent);
+}
 /* Quality: tag (dashed = automatic guess) and three-way control */
 .adm-q {
   padding: 1px 8px;
@@ -1694,6 +1725,19 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 }
 /* Phones: header on one line (entry points in a menu; Redo and Help move into ⋯). */
 @media (max-width: 599px) {
+  body.admin header:has(.adm-subj:not([hidden])) {
+    flex-wrap: wrap;
+  }
+  body.admin .adm-subj {
+    order: 10;
+    flex: 1 1 100%;
+  }
+  body.admin .adm-subj a {
+    flex: 1;
+    text-align: center;
+    min-height: 36px;
+    line-height: 26px;
+  }
   body.admin header {
     flex-wrap: nowrap;
     gap: 6px;

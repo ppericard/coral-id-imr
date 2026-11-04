@@ -222,6 +222,48 @@ const WIDTHS = [390, 1280];
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
     }
+    // The subject switch (admin plan PR 2): one segment per subject in the header, the corals' addresses unchanged (the
+    // loop above), a subject's pages under its prefix (core.js SUBJECTS admin.hash), only the tabs of the pages it has, a
+    // page it does not have yet saying so, a link without a prefix keeping the subject when it has that page, and the
+    // switch going back to the corals' page used last.
+    {
+      const S = await p.evaluate(() => SUBJECTS.map(s => ({id: s.id, name: s.name, hash: s.admin.hash, pages: s.admin.pages})));
+      const other = S.find(s => s.hash),
+        seg = () =>
+          p.evaluate(() => ({
+            subj: [...document.querySelectorAll('#subj [data-subj]')].map(a => [a.dataset.subj, a.getAttribute('aria-pressed')]),
+            hash: location.hash,
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent.replace(/ \(\d+\)$/, '')),
+            groups: [...document.querySelectorAll('#modes [data-mode]')].filter(a => !a.hidden).map(a => a.dataset.mode),
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+      await go('~quality');
+      let at = await seg();
+      if (at.subj.length !== S.length || at.subj[0][1] !== 'true') fails.push(`${w}px Subjects: switch ${JSON.stringify(at.subj)}`);
+      await go(other.hash + '~triage');
+      at = await seg();
+      if (
+        !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
+        at.note ||
+        !at.tabs.includes('To do') ||
+        at.groups.includes('photos')
+      )
+        fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
+      await go(other.hash + '~cand');
+      at = await seg();
+      if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
+        fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
+      await go('~users');
+      at = await seg();
+      if (at.hash !== '#' + other.hash + '~users' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: a shared page without prefix left the ${other.id} side ${JSON.stringify(at)}`);
+      if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
+      await p.click(`#subj [data-subj="${S[0].id}"]`);
+      await settle();
+      at = await seg();
+      if (at.subj[0][1] !== 'true' || at.hash !== '#~quality') fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
+    }
     // Analyses (Pierre, 2026-11-04): the stored report (the demo computes it as the GitHub Action would, tools/analyses.js)
     // drawn in every view, with charts and no sideways scroll; the 4-choice count of Formats equals a direct count of the
     // demo's answer log; the milestone switch; the verdicts say something for every effect.

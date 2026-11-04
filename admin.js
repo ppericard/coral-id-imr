@@ -1041,7 +1041,29 @@ addEventListener('resize', () => fitModes());
 // land right; ALIAS maps the two addresses that are not a view of their own. Each header group reopens the tab and view
 // used last in it (reefid-admin-sub), each tab its view used last (reefid-admin-view). Phones: one menu with every tab.
 // [group key, group name, [[tab key, tab name, [[address, view name], ...]], ...]]; '' = a genus page.
-const genusHash = () => '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
+// The subject on screen (admin plan PR 2; Pierre, 2026-11-04: one Corals | Fish switch for the whole admin, To do
+// included, each side showing its own to-do count). Each subject describes its admin part in core.js SUBJECTS admin:
+// hash, the prefix of its addresses ('' for the corals, whose addresses are unchanged: #fish/~triage is the fish side's
+// Reports); cur, its part of curation.json ('' = the top level); pages, the admin pages it has (null = all). A page a
+// subject does not have yet says so; its tabs are left out of the header.
+const ADM0 = SUBJECTS.find(s => !s.admin.hash);
+let ASUBJ = ADM0,
+  SUBJ_FORCE = null; // the subject a click on the switch asked for (onhashchange)
+const subjOfHash = h => {
+  const S = SUBJECTS.find(s => s.admin.hash && h.startsWith(s.admin.hash)) || ADM0;
+  return [S, h.slice(S.admin.hash.length)];
+};
+const hasPage = (S, p) => !S.admin.pages || S.admin.pages.some(x => (x.endsWith('/') ? p.startsWith(x) : p === x));
+// The per-subject memories (last tab, view and page): the corals keep their keys.
+const subjK = (k, S = ASUBJ) => (S.admin.hash ? `${k}-${S.id}` : k);
+// A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
+// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine).
+const subjTodo = (S, tn) => {
+  if (!S.admin.cur) return tn;
+  const F = DRAFT[S.admin.cur] || {};
+  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length;
+};
+const genusHash = () => '#' + ASUBJ.admin.hash + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
     'todo',
@@ -1173,22 +1195,29 @@ function navs(tn, xn) {
   const T = tabOf(),
     g = T[3],
     page = pageOf(),
-    last = store.get('reefid-admin-sub', {}) || {},
-    seen = store.get('reefid-admin-view', {}) || {};
+    last = store.get(subjK('reefid-admin-sub'), {}) || {},
+    seen = store.get(subjK('reefid-admin-view'), {}) || {};
   if (last[g] !== page) {
     last[g] = page;
-    store.set('reefid-admin-sub', last);
+    store.set(subjK('reefid-admin-sub'), last);
   }
   if (seen[T[0]] !== page) {
     seen[T[0]] = page;
-    store.set('reefid-admin-view', seen);
+    store.set(subjK('reefid-admin-view'), seen);
   }
+  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-last'), cur);
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
-    href = h => (h ? '#' + h : genusHash()),
+    href = h => (h ? '#' + ASUBJ.admin.hash + h : genusHash()),
+    // The subject's pages only: a view it has, a tab with one, a group with one.
+    vOk = ([h]) => hasPage(ASUBJ, h),
+    tOk = t => t[2].some(vOk),
     has = (t, h) => t[2].some(([x]) => x === h),
     // A tab opens on its view used last; a header group on its tab used last.
-    tabHash = t => (has(t, seen[t[0]]) ? seen[t[0]] : t[2][0][0]),
-    groupHash = G => (TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) ? last[G[0]] : tabHash(TABS.find(t => t[3] === G[0]))),
+    tabHash = t => (has(t, seen[t[0]]) && hasPage(ASUBJ, seen[t[0]]) ? seen[t[0]] : (t[2].find(vOk) || t[2][0])[0]),
+    groupHash = G =>
+      TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) && hasPage(ASUBJ, last[G[0]])
+        ? last[G[0]]
+        : tabHash(TABS.find(t => t[3] === G[0] && tOk(t)) || TABS.find(t => t[3] === G[0])),
     over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Key-only genus, Coverage › Sheets & ID Key)`,
     // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
     vcnt = h =>
@@ -1202,9 +1231,19 @@ function navs(tn, xn) {
               ? ` ⚠ ${OVER[h]}`
               : '',
     tcnt = t => (t[0] === 'todo' && tn ? ` (${tn})` : t[0] === 'cov' && OVER.n ? ' ⚠' : '');
+  const sw = $('subj');
+  if (sw && SUBJECTS.length > 1) {
+    sw.innerHTML = SUBJECTS.map(S => {
+      const n = subjTodo(S, tn);
+      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || '~users'))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+    }).join('');
+    sw.hidden = false;
+  }
   $('modes').hidden = false;
   document.querySelectorAll('#modes [data-mode]').forEach(a => {
     const G = GROUPS.find(x => x[0] === a.dataset.mode);
+    a.hidden = !TABS.some(t => t[3] === G[0] && tOk(t));
+    if (a.hidden) return;
     a.href = href(groupHash(G));
     a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : '') + (G[0] === 'todo' && OVER.n ? ' ⚠' : '');
     if (G[0] === 'todo') a.title = OVER.n ? over : '';
@@ -1212,9 +1251,9 @@ function navs(tn, xn) {
   });
   const sub = $('subnav');
   if (sub) {
-    const V = T[2].length > 1 ? T[2] : [];
+    const V = T[2].filter(vOk).length > 1 ? T[2].filter(vOk) : [];
     sub.innerHTML =
-      `<span class="adm-subtabs">${TABS.filter(t => t[3] === g)
+      `<span class="adm-subtabs">${TABS.filter(t => t[3] === g && tOk(t))
         .map(
           t =>
             `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'cov' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
@@ -1232,7 +1271,7 @@ function navs(tn, xn) {
   if (ms) {
     ms.innerHTML = GROUPS.map(
       ([k, t]) =>
-        `<optgroup label="${t}">${TABS.filter(x => x[3] === k)
+        `<optgroup label="${t}">${TABS.filter(x => x[3] === k && tOk(x))
           .map(x => `<option value="${esc(href(x === T ? page : tabHash(x)))}"${x === T ? ' selected' : ''}>${x[1]}${tcnt(x)}</option>`)
           .join('')}</optgroup>`
     ).join('');
@@ -1266,6 +1305,12 @@ const modeKey = () =>
 function render() {
   memoFresh();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
+  // A page the subject on screen does not have yet (admin plan: its fish version comes in a later PR).
+  if (!hasPage(ASUBJ, cur)) {
+    status();
+    $v.innerHTML = `<p class="note">Not for ${esc(ASUBJ.name.toLowerCase())} yet.</p>`;
+    return;
+  }
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
@@ -4678,10 +4723,26 @@ async function start() {
   });
   // The page opens on Players, phone and desktop (Pierre, 2026-11-04: with the photo choice mostly automated, Players is
   // the page he opens first; it was the candidates on a phone, the first genus on a desktop).
-  cur = hashNow() || '~users';
+  [ASUBJ, cur] = subjOfHash(hashNow());
+  cur = cur || '~users';
+  // The switch's links say which subject (SUBJ_FORCE); any other link without a prefix (a player's journey from Players,
+  // a report's genus) keeps the subject on screen when that subject has the page (its address gets the prefix), else it
+  // opens the corals' page.
+  $('subj').addEventListener('click', e => {
+    const a = e.target.closest('[data-subj]');
+    if (a) SUBJ_FORCE = SUBJECTS.find(S => S.id === a.dataset.subj);
+  });
   window.onhashchange = () => {
     if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
-    cur = hashNow();
+    const was = ASUBJ;
+    [ASUBJ, cur] = subjOfHash(hashNow());
+    if (SUBJ_FORCE) ASUBJ = SUBJ_FORCE;
+    else if (ASUBJ === ADM0 && was !== ADM0 && was.admin.pages && hasPage(was, cur)) {
+      ASUBJ = was;
+      history.replaceState(null, '', '#' + was.admin.hash + cur);
+    }
+    SUBJ_FORCE = null;
+    cur = cur || '~users';
     const h = $('admhelp');
     if (h) h.remove();
     render();
