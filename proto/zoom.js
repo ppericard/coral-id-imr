@@ -93,7 +93,9 @@ LAB.add({
     document.addEventListener('keydown', onKey);
     // Game: the slider is locked; each "zoom in" costs a point. 3 points at colony level, 1 at the corallites.
     const play = () => {
-      const t = pick(labNames());
+      const L = labPlay();
+      if (!L.length) return labNone(body); // the Explore switch stays (Codex review #491)
+      const t = pick(L);
       genus = t;
       alt = Math.floor(Math.random() * 3);
       steps = stepsFor(t);
