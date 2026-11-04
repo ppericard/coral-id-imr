@@ -17,7 +17,7 @@ _(none)_
 Asked by agents working without Pierre (AGENTS.md Rule 0): the question, its context, the agent's recommendation. Ask
 them first thing, then clear them.
 
-- **Fish common names: confirm the proposal, and how many names (2026-11-04 night, PR "Fish common names").** Context:
+- **Fish common names: confirm the proposal, and how many names (2026-11-04 night, PR #522).** Context:
   `tools/fish_common.json` proposes 1 to 3 names per game species (the PDF name first; the FishBase and iNaturalist main
   English names when both references have them; a third when both have it and FishBase records it 3+ times): 184 species
   with 1 name, 158 with 2, 100 with 3. Every listed name is needed for common-name mastery, and the score simulation puts a
