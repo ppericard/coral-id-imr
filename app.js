@@ -402,6 +402,91 @@ function build() {
   }
   DATA = d;
 }
+// The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
+// with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of the circle-1 species of each
+// IMR entry, the genus being the first word of the PDF name (no grouping invented, rule 2; a genus never spans two
+// entries). Its record, beside the entries in FISH.gen under the key 'g:' + genus (ids and names never meet): rank
+// 'genus' (its questions and typed answers stay among genera: model.js sameRank), its entry (parent: it opens once the
+// entry is at Advanced, the set's units below), its entry's group as its form (easy wrong choices from other groups
+// first) and family, its sibling genera as look-alikes (the traps, as the species level's "same entry" choices), the
+// IMR cues of the IMR sub-entry of the same name (Chromis, Dascyllus, Pomacentrus) when there is one, its species in the
+// game (scientific and common names, commonness order) and the entry's photos of those species. FISH.sci: every genus,
+// in the IMR entries' order. App only: the admin's fishGen stays the entries'.
+function fishGenera(X, F) {
+  const sp = new Map((F.species || []).map(s => [s.id, s])),
+    sci = [];
+  (F.teach || [])
+    .filter(t => t.level === 1 && t.circle === 1 && X.gen[t.id])
+    .forEach(t => {
+      const E = X.gen[t.id],
+        by = new Map();
+      t.species
+        .map(id => sp.get(id))
+        .filter(s => s && s.circle === 1)
+        .forEach(s => {
+          const g = s.name.split(/\s+/)[0];
+          if (!by.has(g)) by.set(g, []);
+          by.get(g).push(s);
+        });
+      const ids = [...by.keys()].map(g => 'g:' + g);
+      by.forEach((L, g) => {
+        const id = 'g:' + g,
+          own = new Set(L.map(s => s.id)),
+          sub = (t.sub || []).find(u => u.name === g),
+          wide = E.views.wide.filter(p => own.has(p.sp));
+        X.gen[id] = {
+          id,
+          name: g,
+          rank: 'genus',
+          one: 'genus',
+          parent: t.id,
+          fam: E.name + ' · ' + t.fam, // the card's and the feedback's family line names its IMR entry
+          wfam: E.wfam,
+          fish: 1,
+          circle: 1,
+          group: E.group,
+          ig: E.ig,
+          forms: E.forms,
+          look: ids.filter(o => o !== id),
+          lk: [],
+          lsrc: {},
+          qt: sub && sub.cues && sub.cues.length ? sub.cues : null,
+          tl: sub && sub.cues && sub.cues.length ? 'ID tips (IMR, ' + g + ')' : 'Its species here',
+          // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, then the count.
+          sum:
+            (L.length > 3 ? 'Most met here: ' : '') +
+            L.slice(0, 3)
+              .map(s => s.name.replace(/^\S+/, g[0] + '.') + (s.common ? ' (' + s.common + ')' : ''))
+              .join(', ') +
+            (L.length > 3 ? `; ${L.length} species in the game.` : ''),
+          species: L.map(s => s.id),
+          phase: [],
+          sub: [],
+          cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {}).dauin || 0), 0))),
+          levels: 1,
+          views: {wide},
+          // the PDF genus shown; its species' WoRMS-accepted genera accepted when typed (Codex review #526: Mirolabrichthys)
+          names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
+        };
+        // The card's photo as fishGen picks an entry's: the highest source tier first (Pierre's own, rule 7), then the
+        // easiest judged one (Codex review #526).
+        if (wide.some(p => p.e)) {
+          const tier = Math.min(...wide.map(p => (p.own ? 0 : 1))),
+            T = wide.filter(p => (p.own ? 0 : 1) === tier);
+          X.gen[id].cover = T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
+        }
+        sci.push(id);
+      });
+    });
+  X.sci = sci;
+  return X;
+}
+// A unit's rank inside its subject: '' for the corals' genera and the fish entries, 'genus' for a fish scientific genus.
+// A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
+const rankOf = n => (GX(n) || {}).rank || '';
+// Every unit of a rank in the subject's opt-in sets, opened or not: the wrong choices a question of that rank may name
+// (as a quiz's wrong choices may name any genus), so a family with a single genus in play still gets 4 choices.
+const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => rankOf(n) === rk);
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (FISH, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
@@ -417,7 +502,7 @@ const fishLoad = () =>
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
       if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      return (FISH = fishGen(f, ph.photos));
+      return (FISH = fishGenera(fishGen(f, ph.photos), f));
     })
     .catch(e => {
       FISHP = null;
@@ -1136,9 +1221,9 @@ const UNITS = {
     norm: typeNormAll,
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
-      Object.values(FISH ? FISH.gen : {}).flatMap(g =>
-        g.look.filter(o => FISH.gen[o] && (g.id < o || !FISH.gen[o].look.includes(g.id))).map(o => [g.id, o])
-      ),
+      Object.values(FISH ? FISH.gen : {})
+        .filter(g => !g.rank) // the scientific genera's siblings are traps, not duels
+        .flatMap(g => g.look.filter(o => FISH.gen[o] && (g.id < o || !FISH.gen[o].look.includes(g.id))).map(o => [g.id, o])),
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the
     // people working on the IMR course), whatever opt-in circles are on.
     winks: () => (FISH ? FISH.winks.filter(n => FISH.gen[n].views.wide.length) : []),
@@ -1173,6 +1258,25 @@ const UNITS = {
         tag: 'Beyond IMR',
         name: 'Beyond IMR',
         card: 'Beyond IMR: a family divers look for at Dauin.'
+      },
+      // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once an IMR family is at
+      // Advanced, the level at which its species open (FISH_PATH "Unlock rules"); on, a family's genera join the game
+      // when the family reaches Advanced, then open one at a time like any unit (a genus met stays in). all: every genus,
+      // for setOf. Not in the progress yet (the global fish score, FISH_PATH "My progress (fish)", is not built).
+      {
+        k: 'sci',
+        all: () => (FISH ? FISH.sci || [] : []),
+        units: () =>
+          (FISH ? FISH.sci || [] : []).filter(n => typeof genScore === 'function' && (introduced(n) || genScore(GX(n).parent) >= LV_AT[1])),
+        due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
+        page: false, // not on the families page
+        kick: 'Scientific names',
+        title: () => 'Scientific genus names?',
+        body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.',
+        note: "⚙ Settings, Scientific names, any time. They don't count in your progress yet.",
+        tag: 'Scientific genus',
+        name: 'Scientific names',
+        card: ''
       }
     ]
   }
@@ -1181,7 +1285,7 @@ const SETS = () => UNITS[SUBJ.id].sets;
 // The genera the games teach and the progress counts (the units of the subject): "the slate" in the code means this list.
 const slateGenera = () => UNITS[SUBJ.id].slate();
 // The opt-in set a unit belongs to (bonus genera, fish circles 2 and 3), or null.
-const setOf = n => SETS().find(S => S.units().includes(n)) || null;
+const setOf = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;
 const isBonus = n => !!setOf(n);
 // Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
 // on, so nothing disappears under them; Millepora alone (Q.bu 1) is now a slate genus, so not an opt-in.
@@ -1225,9 +1329,12 @@ const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // A unit's name as shown: a genus (its key is its name) in italics, a fish entry (its key is a stable id, fish.json) by
 // its IMR name. unameT: the plain text (tooltips, aria labels).
 const unameT = n => (GX(n) || {}).name || n;
-const uname = n => ((GX(n) || {}).name ? esc(GX(n).name) : `<i>${esc(n)}</i>`);
+const uname = n => {
+  const g = GX(n) || {};
+  return g.name && !g.rank ? esc(g.name) : `<i>${esc(g.name || n)}</i>`; // a fish scientific genus in italics, as a coral genus
+};
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
-const tipsLabel = g => (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
+const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';

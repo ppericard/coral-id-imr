@@ -179,6 +179,62 @@ const server = http.createServer((req, res) => {
     ok(progPct() === pct, 'circle 3 never counted in the progress');
     bonusSet(false, 'c3');
     ok(!pool().some(n => FISH.c3.includes(n)), 'Off: out of the draw');
+    // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
+    // circle-1 species of each IMR entry, never two entries; offered once an entry is at Advanced, a family's genera in
+    // play only from its Advanced; their questions and typed answers among genera only, an entry's among entries; never
+    // counted in the progress, never a duel pair.
+    const sci = SETS().find(S => S.k === 'sci'),
+      G = FISH.sci;
+    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the IMR entries');
+    ok(
+      G.every(n => GX(n).species.every(id => GX(GX(n).parent).views && FISH.gen[GX(n).parent])) &&
+        new Set(G.map(n => GX(n).name)).size === G.length,
+      'sci: a genus in one entry only'
+    );
+    ok(
+      G.every(n => isBonus(n) && setOf(n) === sci),
+      'sci: every genus in its set, opened or not'
+    );
+    FISH.c1.forEach(n => (st(n).pg = 0.2));
+    ok(!sci.units().length, 'sci: no genus in play before an entry is at Advanced');
+    st('t02').pg = 0.72;
+    ok(sci.units().length && sci.units().every(n => GX(n).parent === 't02'), 'sci: the genera of the entry at Advanced only');
+    ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once an entry is at Advanced');
+    const pc = progPct();
+    bonusSet(true, 'sci');
+    ok(pool().some(n => GX(n).rank) && pool().every(n => !GX(n).rank || GX(n).parent === 't02'), 'sci: on, the genera in play');
+    ok(progPct() === pc, 'sci: never counted in the progress');
+    const g0 = pool().find(n => GX(n).rank),
+      e0 = 't02';
+    ok(
+      distractors(g0, pool(), 3).every(n => GX(n).rank === 'genus'),
+      'sci: a genus question offers genera only'
+    );
+    ok(
+      distractors(e0, pool(), 3).every(n => !GX(n).rank),
+      'sci: an entry question offers entries only'
+    );
+    ok(!UNITS.fish.pairs().some(pr => pr.some(n => GX(n).rank)), 'sci: no duel pair of genera');
+    ok(typeMatch('Chromis').g === 't01' && typeMatch('Chromis', 'genus').g === 'g:Chromis', 'sci: typed Chromis by rank');
+    // Codex review #526: a genus's WoRMS-accepted name is accepted when typed (Pseudanthias tuka is now Mirolabrichthys).
+    ok(typeMatch('Mirolabrichthys', 'genus') && typeMatch('Mirolabrichthys', 'genus').g === 'g:Pseudanthias', 'sci: typed accepted genus');
+    // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
+    // wrong choice, as in the quiz); a genus card's photo comes from the highest source tier (Pierre's own first, rule 7).
+    st('t02').pg = 0.2;
+    st('t04').pg = 0.72;
+    const pl = pool().filter(n => GX(n).rank);
+    ok(pl.length === 1 && GX(pl[0]).parent === 't04', 'sci: Spadefish alone, one genus in play');
+    ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
+    ok(
+      G.every(n => {
+        const w = GX(n).views.wide,
+          c = w.find(p => p.f === GX(n).cover);
+        return !c || c.own || !w.some(p => p.own && p.e);
+      }),
+      "sci: a genus card's photo is Pierre's own when he has a judged one"
+    );
+    bonusSet(false, 'sci');
+    ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
     return fails;
   });
   // Back to corals: the coral slate and its progress.
