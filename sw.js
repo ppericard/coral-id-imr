@@ -25,10 +25,10 @@ const SHELL = [
   'app.js?v=209',
   'sync.js?v=30',
   'progress.js?v=24',
-  'model.js?v=37',
+  'model.js?v=38',
   'tips.js?v=3',
-  'quiz.js?v=50',
-  'learn.js?v=18',
+  'quiz.js?v=51',
+  'learn.js?v=19',
   'flag.js?v=11',
   'quality.json?v=3',
   'picks.json?v=1',
@@ -42,7 +42,7 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=82',
+  'proto/lab.js?v=83',
   'proto/lab.css?v=57',
   'home-art.js?v=5',
   'home.js?v=38',
@@ -65,7 +65,7 @@ const SHELL = [
     'pairs',
     'gallery',
     'cards'
-  ].map(f => `proto/${f}.js?v=81`)
+  ].map(f => `proto/${f}.js?v=82`)
 ];
 const get = async (c, u, n = 3) => {
   for (let i = 1; ; i++) {
