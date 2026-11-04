@@ -95,11 +95,45 @@ The first fish questions must be easy and readable. Two decisions, each built in
   progress.
 - They open **one at a time**, with the existing machinery: the `OPEN` share (new units only while few are shaky), a first-meeting card
   (`INTRO`), the opening hold (`introHold`), never the answer of the question right after its card.
-- Order inside an entry: most sighted first (`fish.json` `r`: the PDF cheatsheet's 24 most sighted, then PDF order), then presence near
-  Dauin.
+- Order inside an entry: **the most commonly met around Dauin first**, by the commonness index (`fish.json` species `cmi`; the entry's
+  `species` list is in that order; "Species order: the commonness index" below). Until 2026-11-04 it was the PDF rank (`r`).
 - A species starts from its entry's ability (as `playerStart` starts a genus from the global level), so a strong player on Wrasse gets harder
   Wrasse species questions sooner.
 - Species of circles 2 and 3 follow the same rule once their circle is on.
+
+## Species order: the commonness index (Pierre, 2026-11-04)
+
+Pierre's goal: train people to identify **what they will meet underwater**, so an entry's species open in the order they are met around
+Dauin; "common beats easy" for the start, real answers adjust the difficulty later. Approved after he reviewed every family's ranking on
+photo cards (2026-11-04: "very coherent; the criterion isn't crazy at all"). `tools/fish_commonness.py` computes it; `tools/build_fish.py`
+writes it into `fish.json` (the full build, `--near`, and `--commonness`, which re-applies it offline).
+
+- **Three signals, strongest first**, each scaled to 0-1 within the entry (only the order inside an entry matters):
+  1. **Field counts, weight 3**: standardised surveys near Dauin, `tools/fish_commonness.json` `field`, each with its citation and licence:
+     the CCEF "Saving Philippine Reefs" census of 11 Siquijor MPAs (May 2025; presence per MPA, k of 11; a species of a censused family
+     not recorded scores 0) and the Dauin stereo-video transects of Ferrandis 2021 (34 × 250 m², 2019-20, collected with IMR; counts,
+     only its "commercially important" species, so it scores only the species it lists, in an entry where it lists 2 or more). A presence
+     source scores k / the entry's best k, a count source on the log scale below; field = their mean. Spadefish and Lionfish have no
+     field source (not in the census).
+  2. **IMR 24 most sighted, weight 2**: `cs` 1-24 (1.0 down to 0.904), 0 for the others.
+  3. **iNaturalist, weight 1**: distinct observers (Research Grade and Needs ID, wild), more abundance-like than photo counts, which
+     keen photographers of a rare species inflate, in three rings: 40 km around Dauin (Dauin, Siquijor, Apo), 250 km (Negros, Cebu,
+     Bohol), the Philippines (`tools/fish_commonness_inat.json`). A species with little data is shrunk toward its entry's mean, a
+     local count toward the regional share, with **M = 5** pseudo-observers per step: share_PH = (o_PH + M / n) / (N_PH + M),
+     share_250 = (o_250 + M share_PH) / (N_250 + M), share_40 = (o_40 + M share_250) / (N_40 + M) (N: the ring's total over the
+     entry's n species). Score 1 + log10(share / the entry's top share) / 2, floored at 0 (10× fewer observers: 0.5).
+- **Index** = (3 field + 2 IMR + 1 iNat) / (the weights present); order: index, then the iNaturalist share, then `r`. `cmi` = the
+  index (3 decimals). With these weights an IMR-24 species stays above the others of its entry unless the field counts say otherwise.
+- **Known biases** (to keep in mind when reading an order): iNaturalist favours what divers like to photograph (Pierre's review:
+  unicornfish probably; boxfish, *Siganus unimaculatus*, *Aluterus scriptus* rank high there) and Dauin's muck diving (sand and night
+  species); the census favours reef-slope, visible, daytime species and records presence, not abundance; the Dauin counts cover the
+  fisheries species only. Pierre's review also: the blue-and-yellow fusilier may be a bit more common than shown (perhaps his own
+  spotting bias); the red-tooth triggerfish rare at Dauin (very common at Puerto Galera), so its low local rank is right.
+- **Rerun**: `python3 tools/fish_commonness.py --fetch` (iNaturalist, about 1 request a second: per entry and ring one
+  `species_counts` call for all its species, then an observers count only for a species with 2+ observations there; cached in
+  `tools/.cache/`), then `python3 tools/build_fish.py --commonness`. `python3 tools/fish_commonness.py t01` prints an entry's species
+  with every source's raw value. A new field source (Reef Life Survey Siquijor 2025 once published, ROADMAP) is one more record in
+  `tools/fish_commonness.json`.
 
 ## Name-display schedule (common to Latin)
 
@@ -209,7 +243,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 
 Supported now:
 
-- Species per entry, in rank order (`r`, `cs`); 323 species in circle-1 entries.
+- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 323 species in circle-1 entries.
 - PDF Latin name (`name`), WoRMS name (`now`, 28 species) and synonyms, iNaturalist id.
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
