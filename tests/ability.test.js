@@ -425,11 +425,12 @@ test('response time: the app rule (+A) replays exactly as the measured +T1.5+G, 
   const C = require('../core.js'),
     rows = [1, 2, 3].flatMap(i => timedLog(150, 30 + i, 'p' + i)),
     E = require('../tools/abilityeval.js'),
-    {res} = evaluate(rows, {variants: ['e', 'e+A', 'e+T1.5+G'], min: 1});
-  assert.strictEqual(C.RTIME.K, 1.5);
+    // The measured variant with the app's own K (core.js RTIME.K), not a copy of its value.
+    T = `e+T${C.RTIME.K}+G`,
+    {res} = evaluate(rows, {variants: ['e', 'e+A', T], min: 1});
   assert.deepStrictEqual(
     res['e+A'].scored.map(o => o.p),
-    res['e+T1.5+G'].scored.map(o => o.p)
+    res[T].scored.map(o => o.p)
   );
   assert.notDeepStrictEqual(
     res['e+A'].scored.map(o => o.p),

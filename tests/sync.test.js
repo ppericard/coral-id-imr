@@ -1252,7 +1252,7 @@ test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names
   assert.strictEqual(vm.runInContext('typeof CORE_.replayProgress', s.ctx), 'function');
   // The app and the admin wait for this script version before they rely on the replay (core.js RV_SHEET; AGENTS.md 7a):
   // the script that serves it says so in every reply.
-  assert.strictEqual(C.RV_SHEET, 28);
+  // (Which version that is, and that the gate holds below it, is tests/gates.test.js's.)
   assert.ok(vm.runInContext('VERSION', s.ctx) >= C.RV_SHEET);
 });
 
