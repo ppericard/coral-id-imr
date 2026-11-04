@@ -9,6 +9,9 @@ Origin: Pierre's own ReefRecall design (founding proposal, June 2026: "start wit
 "the ultimate level would be using the scientific (latin) names at the species level"; juveniles and colour phases early, not as a late
 stage), adapted to IMR on 2026-11-03.
 
+Updated 2026-11-04 with Pierre's decisions on the first fish beta feedback: the very start (opening order, first photos), a typed common
+name as half a fault, one global fish progress score, and the display schedule's thresholds (sections below, "Open questions for Pierre").
+
 ## Why Latin matters here
 
 - In EventMeasure, IMR Research Assistants tag fish with the **Latin species name** (the IMR reference PDF name), never the common name.
@@ -28,6 +31,21 @@ stage), adapted to IMR on 2026-11-03.
 - **No Latin genus level.** One entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries. The genus is
   learned through the Latin species names (its first word) and the IMR sub-entries; a separate genus level would invent groupings (rule 2).
   In typed-Latin feedback, a right genus with a wrong species says "Right genus" (still a miss on the species).
+
+## The very start (fish beta feedback, Pierre, 2026-11-04)
+
+The first fish questions must be easy and readable. Two decisions, each built in its own code PR:
+
+- **Opening order: a starter core first.** Until real answers exist to order the entries, the first entries to open are a starter core of
+  easy, readable families. Pierre's ReefRecall design (which he reviewed) named four: butterflyfishes, angelfishes, damselfishes &
+  anemonefishes, surgeonfishes & tangs. In IMR entries (`fish.json` `teach`): **Butterflyfish, Angelfish, Damselfish, Surgeonfish &
+  Unicornfish**. Agreed as the starter order; after them the usual opening rules (common first, `cm`) take over, and once fish answers are
+  logged the measured difficulty can reorder them. The order belongs in the fish data, never in a list of names in the engine (AGENTS.md
+  13b, 14a).
+- **The first photos are very easy**: clear light, colourful, the fish well visible in profile, an easy species. **No juveniles and no
+  species with strong sexual dimorphism or colour phases (e.g. parrotfish) at the very start**: they come later (see "Juveniles and colour
+  phases"). Until answers rate the photos, an annotation pass (an agent judging each fish photo on explicit criteria: light, colour, profile,
+  size in frame, life stage, phase) gives each photo an initial difficulty prior; a separate code PR, with the fish photo pipeline.
 
 ## Unlock rules
 
@@ -55,6 +73,9 @@ Pierre's sequence, as a difficulty that rises with the species' progress, like t
   - 0.5 to 0.8: the share of "Latin + common underneath" rises from 0 to 1.
   - 0.8 to 0.95: the share of "Latin only" rises from 0 to 1.
   - Typed Latin: the `TYPED` curve on top (none below 0.5, 30% at 0.8, 50% at 0.95).
+- **Where the thresholds come from** (Pierre, 2026-11-04): the starting values are set by simulation (`tools/learnsim.js`). Later, once
+  there are many fish answers, they are **computed automatically per species** from the measured difficulty of answering it with the common
+  name against the Latin name (a species whose Latin name is hard moves to Latin later).
 - The same display applies to the four choices and to the feedback. The feedback always shows both names.
 - The species' mastery exam (Instructor) is all Latin, with at least `TYPED.exam` (2) typed Latin answers.
 - The display is logged (a mode suffix), so the sheet and the admin can rate the formats apart once fish answers are logged.
@@ -68,6 +89,8 @@ Pierre's sequence, as a difficulty that rises with the species' progress, like t
   - a wrong pick **inside the same entry** never counts against the entry;
   - a wrong pick in **another entry** counts against both entries and both species (rule 13);
   - a right species answer is logged on the species; the entry keeps its own questions (no double count).
+- **A common name typed where Latin is asked counts as half a fault** (Pierre, 2026-11-04: the common name is easy to look up, but it is
+  still not the Latin). Decided in principle, **to study before building** (open question 3).
 
 ## The IMR prompt
 
@@ -117,6 +140,10 @@ Gaps before species questions ship:
 
 - Early, never a late stage (Pierre's ReefRecall rule). Juvenile and phase photos (`ph`, `st`) stay in the pool at every level; the photo
   difficulty Elo puts them at the hard end by itself. The entry cards already show `phase` (5 entries).
+- **But not in the first questions** (Pierre, 2026-11-04, fish beta feedback; "The very start"): no juvenile, no strong sexual dimorphism
+  and no colour phase (e.g. parrotfish) while an entry is new. They come in early, not late: for example once the entry is past its first
+  level (Snorkeler, so from Open Water, 50%); the point is set by simulation. Until answers rate the photos, the annotation pass's prior
+  (life stage, phase) places them.
 
 ## Formats and their order
 
@@ -127,7 +154,8 @@ Gaps before species questions ship:
 5. **"Find the X"** (one name, 4 photos), **fish only**, slipped into the quiz like duels (a small share, spaced, never on a unit not met),
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
 
-Later, not agreed yet: Matrix (4 photos matched to 4 names), photo-to-trait (needs per-photo trait tags), the 0-2 correct variant.
+Later, not agreed yet: Matrix (4 photos matched to 4 names), photo-to-trait (needs per-photo trait tags), the 0-2 correct variant. The
+coral Lab prototype of photo-to-trait, "Spot the feature" (`proto/spot.js`), stays in the Lab for now (Pierre, 2026-11-04).
 
 ## Parked
 
@@ -141,23 +169,50 @@ Later, not agreed yet: Matrix (4 photos matched to 4 names), photo-to-trait (nee
 Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#lab-fishprog`), so the page reads at every stage, from a beginner
 on families only to an IMR RA with every species open:
 
+- **One global fish progress score** (Pierre, 2026-11-04; replaces "the entry bar counts the entries only; species never enter it"): the
+  headline % covers the whole path, from 0 (nothing known, nothing opened) to 100% (every species known in Latin, or nearly every one).
+  Reaching 100% on fish is expected to be much harder than on corals. The fish leaderboard uses it. The per-entry bars and the "Species
+  named" / "In Latin" counters stay, as detail.
+  - Proposed weighting, **to be set by simulation** (`tools/learnsim.js` fish profiles): one scale with three stages, unopened units at 0:
+    the circle-1 entries (27, each from its progress as the corals' %), their species named with the common name (323, from each species'
+    progress), and the same species in Latin. For example entries 20%, species (common) 30%, species (Latin) 50% of the scale, so the entries
+    alone give at most a fifth and 100% needs the Latin. Circles 2 and 3 never count (as now).
+  - What counts for the Latin stage (the all-Latin exam passed, as the "In Latin" counter, or the progress on the questions shown in Latin)
+    and what "nearly every one" means (the Latin stage counted full from, say, 95% of the species, or only at every species) are part of
+    the same study.
 - **Default view, Slate rows (A)**: the 27 IMR entries in IMR order, each with its level bar, a thin bar of its species and the two
-  counters, **"Species named: N"** (a species at Advanced) and **"In Latin: M"** (its all-Latin exam passed). The entry bar counts the
-  entries only; species never enter it.
+  counters, **"Species named: N"** (a species at Advanced) and **"In Latin: M"** (its all-Latin exam passed), as detail under the global
+  score.
 - **On top, the totals and short lists of the Dashboard (B)**: species met, named and in Latin as totals, and three short lists
   (Review first, Almost there, Just met), so a player with 300 species open still sees what to do next without scrolling them all.
 - **Second view, Mosaic (C)**: one square per species inside its entry, for the collection effect, picked from the view selector at the
   bottom as the coral page's views.
-- Shared by all three: the card (entries ring, levels, a one-line species summary), the IMR prompt while entries or species are still
-  unopened, and a drill-down per entry (review and latest first, the rest capped; species not open counted, not listed).
+- Shared by all three: the card (its ring shows the global score; levels, a one-line species summary), the IMR prompt while entries or
+  species are still unopened, and a drill-down per entry (review and latest first, the rest capped; species not open counted, not listed).
+- **"Mystery" tiles for units not met yet** (Pierre, 2026-11-04; ROADMAP): an entry or species the player has not met shows as a masked
+  tile, for everyone on fish. On corals only for beginners (the first-launch answer "I'm new to corals"); RAs who had the IMR course and
+  players who know corals well see the genera as today.
 
 ## Open questions for Pierre
 
 1. **"Twospot wrasse"**: Pierre asks IMR; until then both species keep the PDF name.
-2. The display-schedule thresholds and the IMR shift: proposed above, set from learnsim.
-3. A typed **common** name on a species question that asks for Latin: shown as "right fish, now the Latin name" and counted as a miss, or
-   not counted? Recommendation: not counted either way, and the Latin name shown.
-4. Species in the leaderboard and achievements (an achievement for Latin species named fits rule 14d).
+2. The display-schedule thresholds and the IMR shift. **Answered (Pierre, 2026-11-04)**: the starting values from learnsim; later,
+   with many answers, computed automatically per species from the measured difficulty of answering it with the common name against the
+   Latin name ("Name-display schedule").
+3. A typed **common** name on a species question that asks for Latin. **Decided in principle (Pierre, 2026-11-04): it counts, as half a
+   fault** (the common name is easy to look up, but it is still not the Latin); the feedback shows the Latin name. **To study before
+   building**, starting values from learnsim:
+   - the Elo step with a graded outcome 0.5: `core.js` `eloStep` already has the form outcome − expected, but reads `good` as a yes / no
+     (`good ? 1 : 0`), so a 0.5 would count as right today; the right / miss counts (`s.ok`, `s.ko`) that size its step, the volatility
+     (`s.vr`) and the response-time weight (`rtWeight`, right answers only; typed answers already at 1) need a rule for a half;
+   - the progress moving average: `pgStep` has the same yes / no reading, and the weight differs for a right answer (`pgWeight`, from the
+     choices) and a miss (`pgMissW`, from the photo's difficulty): which one a half takes; the record of recent results (`s.h`, `1` / `0`);
+   - the expected success: what the ~80% target and the one-tap checks compare against when a question can end in a half;
+   - the exam (all Latin): does a half count as a miss that restarts the exam, or only as no pass?
+   - the sheet's replay: the half must be logged as such (a mark on the answer), and becomes a rules version (`RVS`) once fish answers
+     are replayed.
+4. Species in the leaderboard and achievements. **Leaderboard answered (Pierre, 2026-11-04)**: the global fish score ("My progress
+   (fish)"). Achievements: a proposal to make, inside the existing scheme (ROADMAP "An achievement for species named in Latin").
 
 ## Checks before release
 
@@ -167,7 +222,8 @@ on families only to an IMR RA with every species open:
   - RA level-1 path not slowed: entries reach Advanced at the same pace as on level 1 alone, within the seeds' spread.
   - Calm path: species open only after Advanced; Latin-only and typed Latin follow the schedule.
 - **Held-out photos**: a fixed set per species and per entry never shown in practice, for a transfer check (recognition of unseen photos at
-  the start and later) and to keep the exam honest.
+  the start and later) and to keep the exam honest. Pierre, 2026-11-04: fish first (many photos), corals later (few photos per genus);
+  ROADMAP "A held-out photo set".
 - **Real-log replay** once fish answers reach the sheet (rule 14g); until then, say what was measured instead.
 - Tests: `tests/draw.smoke.js` for the species draw (choices, display, IMR prompt), `tests/fish.test.js` for the data (no duplicate name
   among the choices of one question).

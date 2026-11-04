@@ -2842,6 +2842,14 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre (fish beta feedback; decided in principle, nothing built, docs/FISH_PATH.md): on a species question
+  that asks for Latin, a typed common name counts **as half a fault** (a graded outcome 0.5: its effect on `eloStep`,
+  `pgStep`, the expected success, the all-Latin exam and the replay to study first, starting values from
+  `tools/learnsim.js`); **one global fish progress score** from 0 to every species in Latin (entries, species named,
+  species in Latin as stages of one scale, the weights set by simulation), used by the fish leaderboard; the
+  name-display thresholds start from learnsim, then are computed per species from the measured difficulty of the
+  common against the Latin name; the first fish entries are a starter core of easy families and the first photos
+  very easy (no juveniles or colour phases at the very start).
 - 2026-11-04, Pierre ("the signal is already very clear on few players; the question is how to integrate it"; rule 12
   was about days between sessions, not the seconds an answer takes): **answer time weighs right answers** (rules
   version 4, sheet v32): a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5), z its log seconds
