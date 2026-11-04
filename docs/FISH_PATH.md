@@ -115,11 +115,38 @@ Gaps before species questions ship:
 
 ## Juveniles and colour phases
 
-- Early, never a late stage (Pierre's ReefRecall rule), but not in an entry's first questions (Pierre, 2026-11-04): until an entry
-  reaches Open Water its questions show only its very easy photos, and a juvenile or a sex / colour phase photo never is one (judged
-  ease capped, `judging/FISH.md`; `model.js` `easyFirst`, docs/LEARNING.md "Fish: the starter core and judged photos"). From Open Water
-  they are in the pool at every level; the judged prior and, once fish answers are logged, the photo difficulty Elo put them at the
-  hard end. Later, explanation cards will introduce them (Pierre, 2026-11-04). The entry cards already show `phase` (5 entries).
+- Early, never a late stage (Pierre's ReefRecall rule), but juveniles not in an entry's first questions (Pierre, 2026-11-04): until
+  an entry reaches Open Water its questions show only its very easy photos, and a juvenile never is one (judged ease capped,
+  `judging/FISH.md`; `model.js` `easyFirst`, a temporary bootstrap until fish answers are logged; docs/LEARNING.md "Fish: the starter
+  core and judged photos"). From Open Water they are in the pool at every level.
+- **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
+  sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
+  (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.
+- Later, explanation cards will introduce juveniles, phases and sexual dimorphism (Pierre, 2026-11-04). The entry cards already show
+  `phase` (5 entries).
+
+## Look-alikes at any rank (design, Pierre, 2026-11-04; not built)
+
+- Fish look-alikes exist sometimes at the family level but mostly at the **species** level, including across two families: not all
+  damselfish against all angelfish, but certain dwarf angelfish against certain dark damselfish. So a look-alike pair can link units
+  at any rank: family to family (`look` today), and species to species, across families too.
+- In a family-level question, a cross-family species pair applies **per photo**: a photo of species A makes the family of species B a
+  likely trap and confusion (and its Again / duel), not the whole family pair.
+- Confusions are tracked at the finest rank available: fish photos carry their species (`sp`), so even family-level answers tell
+  which angelfish species get taken for damselfish. Real data will propose the species pairs; Pierre can also name them.
+- **How** (agreed with Pierre, 2026-11-04): the raw record is each answer as logged (the photo, species-tagged; the unit asked; the
+  unit answered), nothing aggregated at write time. Three views are derived from it:
+  1. family to family (summed over the species of the asked family): drives family-wide pairs;
+  2. species to family (a photo of species S of family A answered as family B): there from the first family-level games, it shows
+     which species of A are taken for B and drives the per-photo cross-family traps;
+  3. species to species: once species questions exist.
+- Small counts: a species' confusion rate is shrunk toward its family's (pooled with a prior, as the coral pooled confusions and
+  the hierarchical photo Elo already do), so a species becomes a cross-family look-alike only when its rate is clearly above its
+  family's.
+- Pairs inside a family (same genus, same IMR sub-entry) come later from species questions, seeded from the data (genus, `sub`).
+- Candidates to define at species level, no species chosen yet (never invented): some dwarf angelfish against some dark
+  damselfish; some yellow butterflyfish against some yellow rabbitfish (Pierre, 2026-11-04).
+- Engine support comes with the species level and the logging of fish answers (ROADMAP).
 
 ## Formats and their order
 

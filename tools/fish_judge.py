@@ -10,6 +10,8 @@ This script:
     with the phase flag `p` added for the entries fish.json marks `dimorph`), and `c` its proposed crop when it has one
     (a proposal for the admin, like a coral candidate's suggest.json `c`: the app never applies it); a photo no longer
     judged loses all three;
+  - adds the photos the judging pass picked for entries short of very easy photos (`add`: research-grade iNaturalist
+    candidates of fish-cand.json, same licence rules), each once (one photo per observation), at the end of its list;
   - prints the summary: counts per tag, very easy photos (ease 4-5) per entry, entries short of them;
   - with --sheets DIR: downloads every game photo at iNaturalist's medium size into DIR/img and draws contact sheets of
     12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after).
@@ -29,6 +31,7 @@ PHOTOS = ROOT / "fish-photos.json"
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$")
 EARLY = 4  # very easy (judging/FISH.md): the photos of an entry's first questions (model.js easyFirst)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
+WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
 
 
 def cap(code, phase):
@@ -41,21 +44,27 @@ def cap(code, phase):
     e = int(e)
     if "j" in fl or n == "x" or loss == "3":
         e = min(e, 2)
-    if set(fl) & set("pca") or light == "n" or loss == "2" or v in "htd" or w == "0":
+    # The phase flag p caps nothing (Pierre, 2026-11-04: a sex or colour phase is a species-level difficulty; an Anthias
+    # or a parrotfish is easy to call one at the family level), kept for the species questions and explanation cards.
+    if set(fl) & set("ca") or light == "n" or loss == "2" or v in "htd" or w == "0":
         e = min(e, 3)
     return e, code[:7] + fl
 
 
 def load_src():
     s = json.loads(SRC.read_text(encoding="utf-8"))
-    return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {})
+    return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {}), s.get("add", {})
 
 
 def apply(photos, fish=None):
     """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
     fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     dim = {t["id"] for t in fish["teach"] if t.get("dimorph")}
-    J, C = load_src()
+    J, C, A = load_src()
+    for tid, extra in A.items():
+        L = photos.setdefault(tid, [])
+        have = {p["o"] for p in L}
+        L.extend(dict(p) for p in extra if p["o"] not in have)
     k = 0
     for tid, L in photos.items():
         for p in L:
@@ -97,9 +106,9 @@ def summary(doc, fish):
         ve = sum(1 for p in J if p["e"] >= EARLY)
         nm, c, w = names.get(tid, ("?", 0, False))
         print(f"  {tid} {nm} (circle {c}{', wink' if w else ''}): {ve} of {len(J)}; mean ease {sum(p['e'] for p in J) / len(J):.2f}")
-        if ve < VARIETY and not w:
+        if ve < WANT and c == 1:
             short.append(f"{tid} {nm} ({ve})")
-    print("entries with fewer than %d very easy photos (better photos needed): %s" % (VARIETY, ", ".join(short) or "none"))
+    print("circle-1 entries with fewer than %d very easy photos (better photos needed): %s" % (WANT, ", ".join(short) or "none"))
 
 
 def sheets(out):

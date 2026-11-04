@@ -63,9 +63,15 @@ several species in the frame.
 - **1 very hard**: the fish is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
 **Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`), an unclear subject (`x`) or a
-monochrome photo (colour loss `3`) is at most 2; a phase photo (`p`), camouflage (`c`), out of water (`a`), a night shot
-(`n`), a strong colour loss (`2`), a head-on, tail or top view (`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or 5 ("very easy", the first questions' photos)
-is never one Pierre wants kept from the start.
+monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a night shot (`n`), a strong
+colour loss (`2`), a head-on, tail or top view (`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or
+5 ("very easy", the first questions' photos) is never one Pierre wants kept from the start.
+
+**The phase flag caps nothing** (rubric 3, Pierre, 2026-11-04): a sex or colour phase is a species-level difficulty. An
+Anthias is easy to call an Anthias whatever its sex, a parrotfish easy to call a parrotfish (its family-level difficulty
+is telling it from a wrasse, a look-alike pair); it gets hard only when the species is asked. The flag stays on the
+photos for the species questions and the explanation cards. The juvenile cap stays: many juveniles look nothing like
+their family's adults (spadefish, sweetlips, angelfish, emperors), which is a family-level difficulty.
 
 ## A proposed crop
 
@@ -102,4 +108,12 @@ Pierre to accept or change, as for coral candidates (ROADMAP).
 Circle 1 (648 photos) only: circles 2 and 3 and the winks are opt-in, met after the IMR entries, and not judged yet (no
 `e`, so as before). The first look gave view, whole, light (with a "cast" letter), clarity, size, count, flags and ease;
 Pierre then asked for colour loss in place of the cast and for crop proposals, so every photo was looked at a second
-time for those two and the light letter (rubric 2).
+time for those two and the light letter (rubric 2). Then (rubric 3) the phase flag stopped capping the ease, and the 11
+circle-1 entries under 5 very easy photos got more: 214 research-grade candidates of `fish-cand.json` (PR #463) looked at
+and judged the same way, 37 very easy ones added (`tools/fish_judge.json` `add`; the tool appends them to
+`fish-photos.json`, once per observation).
+
+## A temporary use
+
+The very-easy-first rule (`model.js` `easyFirst`) is a bootstrap: once fish answers are logged, the players' answers
+rate the photos and the rule goes (Pierre, 2026-11-04; ROADMAP).

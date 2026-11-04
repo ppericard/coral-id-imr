@@ -23,6 +23,17 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
       Date: {now: () => ++CLOCK},
       slateGenera: () => slate,
       syncSoon: () => {},
+      // The first-launch question (core.js CHOICE; model.js startSet and its window, in the same block).
+      ...(({CHOICE, startOpt, startVars, startCheck, startNext, startInfer}) => ({
+        CHOICE,
+        startOpt,
+        startVars,
+        startCheck,
+        startNext,
+        startInfer
+      }))(require('../core.js')),
+      basicsDone: () => false,
+      document: {querySelectorAll: () => []},
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.answersSoFar = () => ctx.n;

@@ -596,8 +596,8 @@ const server = http.createServer((req, res) => {
   // (9) A brand-new fish player (Pierre, 2026-11-04: the first families and the first photos were the wrong ones): the
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
   // entry reaches Open Water its photos are only the very easy ones (judged ease 4-5, judging/FISH.md), never a
-  // juvenile or a sex / colour phase; past Open Water the others come in; an entry with fewer than 3 very easy photos
-  // (Parrotfish) shows its 3 easiest. Five seeds.
+  // juvenile; past Open Water the others come in. (A sex / colour phase is no family-level difficulty: Pierre,
+  // 2026-11-04.) Five seeds.
   const fresh = [];
   for (const seed of [11, 222, 3333, 44444, 555555]) {
     const c6 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
@@ -651,7 +651,7 @@ const server = http.createServer((req, res) => {
           if (genScore(t) >= LV_AT[0]) return;
           gated++;
           ok(p.e >= 4, `question ${i + 1}: ${t} photo ${s.f} of ease ${p.e} before Open Water`);
-          ok(!/[jp]/.test((p.jt || '').slice(7)), `question ${i + 1}: ${t} juvenile or phase photo ${s.f} before Open Water`);
+          ok(!/j/.test((p.jt || '').slice(7)), `question ${i + 1}: ${t} juvenile photo ${s.f} before Open Water`);
         });
         const ans = document.querySelectorAll('#view [data-c]');
         if (ans.length) [...ans].find(b => b.dataset.c === t).click();

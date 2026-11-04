@@ -657,3 +657,29 @@ body:has(.home-page) main {
     padding-top: 10px;
   }
 }
+/* "New to corals? Start with the basics" (home.js): one quiet line under the door's buttons, only while it helps. */
+.hdnew {
+  margin: 10px 0 0;
+  font-size: var(--fs-s);
+}
+/* On phones a short link takes the place of the door's kicker (.hdnewk), so Home still fits one screen from 360 x 640;
+   from tablets it is the line under the buttons (.hdnew). */
+.hdnewk {
+  display: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--fs-s);
+}
+@media (max-width: 599.98px) {
+  .hdoor.learn.newb .hdwhen,
+  .hdnew {
+    display: none;
+  }
+  .hdnewk {
+    display: block;
+  }
+}
+.hdnew a {
+  color: var(--accent);
+  font-weight: 600;
+}

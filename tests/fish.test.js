@@ -240,7 +240,7 @@ const capOf = (code, phase) => {
     fl = fl0 + (phase ? 'p' : '');
   let e = +e0;
   if (/j/.test(fl) || n === 'x' || k === '3') e = Math.min(e, 2);
-  if (/[pca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
+  if (/[ca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
   return {e, jt: code.slice(0, 7) + fl};
 };
 test('judged photos: every circle-1 game photo judged with a valid code, written into fish-photos.json with its caps', () => {
@@ -261,9 +261,9 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
       assert.strictEqual(codes[p.f][0], tid, `${p.f}: judged under another entry`);
       assert.deepStrictEqual({e: p.e, jt: p.jt}, capOf(codes[p.f][1], dim.has(tid)), `${p.f}: run python3 tools/fish_judge.py`);
       assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
-      // Never among the very easy photos of the first questions: juveniles, phases, night, partial, head / tail / top views,
+      // Never among the very easy photos of the first questions: juveniles, night, partial, head / tail / top views,
       // camouflage, out of water, an unclear subject.
-      if (/[jpca]/.test(p.jt.slice(7)) || /[htd]/.test(p.jt[0]) || p.jt[1] === '0' || p.jt[2] === 'n' || p.jt[3] >= '2' || p.jt[6] === 'x')
+      if (/[jca]/.test(p.jt.slice(7)) || /[htd]/.test(p.jt[0]) || p.jt[1] === '0' || p.jt[2] === 'n' || p.jt[3] >= '2' || p.jt[6] === 'x')
         assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
     })
   );
@@ -272,6 +272,21 @@ test('judged photos: every circle-1 game photo judged with a valid code, written
     assert.ok(f in codes, `${f}: a crop without a judgement`);
     assert.ok(c.length === 4 && c[0] >= 0 && c[1] >= 0 && c[2] <= 1 && c[3] <= 1 && c[0] < c[2] && c[1] < c[3], `${f}: crop ${c}`);
   });
-  // The starter core has enough very easy photos to take turns (model.js easyFirst: PICKD.VARIETY 3).
-  F.start.forEach(id => assert.ok(PH[id].filter(p => p.e >= 4).length >= 3, `${id}: fewer than 3 very easy photos`));
+  // Every circle-1 entry has at least 5 very easy photos (Pierre, 2026-11-04), so its first questions take turns among
+  // them (model.js easyFirst); the photos the pass added are judged and appear once, one per observation.
+  c1.forEach(id => assert.ok(PH[id].filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos`));
+  Object.entries(JUDGE.add || {}).forEach(([tid, L]) =>
+    L.forEach(a => {
+      const p = PH[tid].find(x => x.o === a.o);
+      assert.ok(p && p.f === a.f && p.e >= 4, `${tid} ${a.f}: an added photo missing or not very easy`);
+      assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(a.lic), `${a.f}: licence ${a.lic}`);
+    })
+  );
+  // The phase flag (sex or colour phase: a species-level difficulty) caps nothing at the family level.
+  assert.ok(
+    Object.values(PH)
+      .flat()
+      .some(p => /p/.test((p.jt || '').slice(7)) && p.e >= 4),
+    'a phase photo can be very easy'
+  );
 });
