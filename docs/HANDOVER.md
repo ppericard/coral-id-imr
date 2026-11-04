@@ -101,7 +101,6 @@ Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Mari
 | IMR reference material (Lecture 6 PPTX, slate photo) | Pierre's Google Drive, IMR folder `1gt0sv2YN4Og7-O_YCb3cVgvW94-CK6oG` (needs his Google sign-in). |
 | Lecture 6 as Google Slides (read with the Slides API, incl. presenter notes) | Slides id `13msDDkJzPN6fRam-ezX_vl93osAd0Cw4rJ1aINOzveI`. Full-resolution deck media: Drive folder `1FDXDg3XvjXwML0KGxxtjMjVq2fU3jP8i`. |
 | Lecture text in the app | `data.json` `gen[g].imr` (verbatim slide text, review slides, presenter notes), `mn` mnemonics, `sl`/`rsl` slide numbers, `tools/lecture_more.tsv`, `tools/course_views.txt`. |
-| Another organisation's monitoring decks (substrate) | Not IMR. Pierre: don't mine them yet. |
 | Coral Finder 2022 (R. Kelley, BYOGUIDES; copyrighted) | PDF on Pierre's Google Drive, in the IMR / coral folder (85 scanned pages, no text layer; PDF page = book page + 5). Never commit it or its page images (copyright). Page mapping already in `data.json` (`pages`, `key`, `x`). |
 | Pierre's iNaturalist | user `ppericard`, coral taxon 47532; covers 36 of the 39 slate genera (missing Anacropora, Astrea, Duncanopsammia at the time). |
 | ReefRecall | Pierre's separate mobile app (`ppericard/reefrecall`). The coral tools stay standalone; the data may be reused there later. |
