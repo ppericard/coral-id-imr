@@ -3266,6 +3266,8 @@ async function onePath(b, base) {
         .then(() => true)
         .catch(() => false);
       if (!ok) none.push(h);
+      // The tool's own controls stay (Codex review #491: the Zoom ladder's note replaced its Explore switch).
+      else if (start && !(await p0.$(start))) none.push(h + ' (its controls gone)');
     }
     if (none.length) fails.push(`one path, Tools games with no genus unlocked: no line to the quiz in ${none.join(', ')}`);
     await c0.close();
