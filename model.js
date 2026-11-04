@@ -592,6 +592,18 @@ function startRestart(at) {
   if (startWt(o) >= e) return; // the window already counts from that reset, or from an answer given after it
   store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0, wt: e});
 }
+// The answers given on two records ([c, at, t, via], h; a record without h: its own answer), merged: one entry per
+// answer and time, oldest first, the last 10 kept (as startSet keeps them).
+const startHist = (...R) => {
+  const all = R.flatMap(x =>
+      !x ? [] : Array.isArray(x.h) && x.h.length ? x.h : startOpt(x.c) ? [[x.c, x.at || 0, x.t || 0, x.via || '']] : []
+    ),
+    seen = new Set();
+  return all
+    .filter(e => Array.isArray(e) && startOpt(e[0]) && !seen.has(e[0] + '|' + e[2]) && seen.add(e[0] + '|' + e[2]))
+    .sort((a, b) => (Number(a[2]) || 0) - (Number(b[2]) || 0))
+    .slice(-10);
+};
 // The epoch of a record's fallback window: its last reset (wt), else the answer's time.
 const startWt = x => (x && typeof x.wt === 'number' ? x.wt : (x && x.t) || 0);
 // The fallback window (quiz.js answer): each answer after the choice, up to the last of CHOICE.AT, as [its difficulty (dm, as the
@@ -662,6 +674,10 @@ function startMerge(json) {
     const e = et(r) >= et(o) ? r.ease : o.ease;
     m = e ? {...m, ease: e} : m;
   }
+  // Every answer either device recorded, oldest first (Codex review #428): the earlier answers keep their priors in the
+  // replay (core.js startPriorAt reads h by time) whichever current answer wins, e.g. the account's "IMR course" before
+  // a new device's "know well" given before signing in.
+  m = {...m, h: startHist(r, o)};
   const before = o && startEff(o);
   store.set(CHOICE.KEY, m);
   if ((!o || before !== startEff(m)) && typeof dropPlans === 'function') dropPlans();

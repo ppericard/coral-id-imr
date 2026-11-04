@@ -409,6 +409,43 @@ test('a fish progress reset leaves the coral fallback window as it is', () => {
   assert.strictEqual(M.startOf().w.length, 0, 'a coral reset restarts it');
 });
 
+// Codex review #428 (P2): an existing player who answers the welcome question on a new device before signing in: the
+// newer local answer wins, but the account's earlier answers stay in the history, so the replay (core.js startPriorAt)
+// keeps their priors for the answers played under them.
+test('synced: both histories of answers are merged, oldest first, whichever answer wins', () => {
+  const T1 = Date.now() - 100000,
+    acct = {c: 'imr', t: T1, at: 0, via: 'tour', w: [], fb: {}, h: [['imr', 0, T1, 'tour']]},
+    B = model();
+  B.startSet('know', 'tour'); // the new device, later
+  const T2 = B.startOf().t;
+  B.startMerge(JSON.stringify(acct));
+  const o = B.startOf();
+  assert.strictEqual(o.c, 'know', 'the latest answer wins');
+  assert.deepStrictEqual(
+    o.h.map(x => [x[0], x[2]]),
+    [
+      ['imr', T1],
+      ['know', T2]
+    ]
+  );
+  assert.strictEqual(C.startPriorAt(o, T1 + 1), startVars('imr').p, 'the answers between the two keep the IMR prior');
+  assert.strictEqual(C.startPriorAt(o, T2), startVars('know').p);
+  // The other way (the account's device gets the new answer): the same history, no duplicate on a second merge.
+  const A = model();
+  A.ctx.store.set(CHOICE.KEY, acct);
+  A.startMerge(JSON.stringify(o));
+  A.startMerge(JSON.stringify(o));
+  assert.deepStrictEqual(A.startOf().h, o.h);
+  // A record of an older app, without h: its own answer counts.
+  const D = model();
+  D.startSet('know', 'tour');
+  D.startMerge(JSON.stringify({c: 'imr', t: T1, at: 3, via: 'card'}));
+  assert.deepStrictEqual(
+    D.startOf().h.map(x => x[0]),
+    ['imr', 'know']
+  );
+});
+
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {
   const A = model(),
     B = model();
