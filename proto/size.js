@@ -4,8 +4,8 @@ LAB.add({
   id: 'size',
   icon: '↔',
   title: 'Corallite size ruler',
-  blurb: 'Every genus on a ruler of corallite size, at the Coral Finder thresholds. Drag the cursor to the size you see.',
-  lede: 'Corallite diameter on a log scale, split at the thresholds of the Coral Finder boxes, 2 mm and 8 mm (bars span every class the genus can show). Drag the cursor to what you measured: genera that fit light up.',
+  blurb: 'Every genus on a ruler of corallite size, at the thresholds of the Coral Finder book. Drag the cursor to the size you see.',
+  lede: 'Corallite diameter on a log scale, split at the thresholds of the Coral Finder book boxes, 2 mm and 8 mm (bars span every class the genus can show). Drag the cursor to what you measured: genera that fit light up.',
   render(root) {
     const MIN = 0.4,
       MAX = 60,

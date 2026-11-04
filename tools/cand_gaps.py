@@ -27,7 +27,7 @@ from genera import game_genera  # noqa: E402  (core.js gameOf: the slate, Millep
 
 def short(minimum=5):
     """[(genus, candidates waiting, {view guess: count})] for the game genera under `minimum`, fewest first. The
-    Finder-only genera are left out: tools/fetch_local.py refills them only up to what their sheet can show."""
+    Key-only genera are left out: tools/fetch_local.py refills them only up to what their sheet can show."""
     d = load_all()
     cand = d.get("cand") or {}
     # Waiting = not decided yet, as fetch_local.py counts them (Codex review #365): not added, not rejected

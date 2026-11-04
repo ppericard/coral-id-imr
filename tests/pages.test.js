@@ -18,7 +18,7 @@ test('page names: routes without their parameters, genus sheets, look-alikes, ho
   assert.strictEqual(N('quiz-custom|play'), 'quiz-custom');
   assert.strictEqual(N('quiz-duel|Foo|Bar'), 'quiz-duel');
   assert.strictEqual(N('quiz-board'), 'progress');
-  assert.strictEqual(N('finder|form=b;box=b1'), 'finder');
+  assert.strictEqual(N('idkey|form=b;box=b1'), 'idkey');
   assert.strictEqual(N('lab-basics|walls'), 'lab-basics');
   assert.strictEqual(N('<script>'), 'other');
   assert.strictEqual(N('__proto__'), 'other');
@@ -28,7 +28,7 @@ test('page names: routes without their parameters, genus sheets, look-alikes, ho
 test('how a sheet was reached: quiz, learn, progress, other', () => {
   const F = C.pageFrom;
   assert.deepStrictEqual(
-    ['quiz', 'quiz-custom|play', 'quiz-duel', 'genera', 'g-Porites', 'cmp', 'cmp-A|B', 'progress', 'ach', 'finder', '', 'lab'].map(F),
+    ['quiz', 'quiz-custom|play', 'quiz-duel', 'genera', 'g-Porites', 'cmp', 'cmp-A|B', 'progress', 'ach', 'idkey', '', 'lab'].map(F),
     ['quiz', 'quiz', 'quiz', 'learn', 'learn', 'learn', 'learn', 'progress', 'progress', 'other', 'other', 'other']
   );
 });

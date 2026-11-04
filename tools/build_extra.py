@@ -1,6 +1,6 @@
 # Builds data.json "x": genera that are NOT on the IMR slate but are in the Coral Finder 2022 book AND present at Dauin
 # (Pierre, 2026-10-31: the IMR list is not exhaustive; rare genera can turn up on dives or photos). Shown only in the
-# Identify > Coral Finder (on by default, switch in ⚙), never in games, quizzes, progress or the Genera pages.
+# Identify > Coral ID Key (on by default, switch in ⚙), never in games, quizzes, progress or the Genera pages.
 # Presence at Dauin (Pierre's rule): at least one iNaturalist observation within 40 km of Dauin that is Research Grade,
 # or that 2+ people identified to this genus independently. Every text comes from the Coral Finder book page(s)
 # cited in "pages"; boxes come from the book's A-Z index pages placed in the front-page key ranges.

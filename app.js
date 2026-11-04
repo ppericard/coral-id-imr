@@ -2,6 +2,7 @@
 // First of all, the storage keys from before the rename to IMR Reef ID (2026-11-03) move to their new names (core.js
 // migrateKeys): nothing below may read a key before this line. The theme script of index.html reads both names itself.
 migrateStorage();
+migrateIdKey(); // the renamed Coral ID Key (2026-11-04): its keys moved once (core.js)
 let DATA;
 const $v = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
@@ -57,7 +58,7 @@ const shuffle = a => {
   }
   return a;
 };
-// Pierre-only controls (Lab keep/trim, finder start-screen switch, ⚑ flag) show only in the browser where the
+// Pierre-only controls (Lab keep/trim, Coral ID Key start-screen switch, ⚑ flag) show only in the browser where the
 // admin page holds his token, the same test flag.js uses. RAs never see them.
 // Pierre's browser holds the admin token (reefid-admin-vault). ⚙ View: Admin | User (reefid-admin-view) hides every
 // admin-only control without touching the token, so he sees the site exactly as RAs do.
@@ -277,7 +278,7 @@ $v.addEventListener(
   },
   true
 );
-// Each file's width as a 4:3 box drawn with object-fit: cover sees it (cards, sheet strips, pair cells, Coral Finder): the
+// Each file's width as a 4:3 box drawn with object-fit: cover sees it (cards, sheet strips, pair cells, Coral ID Key): the
 // files are 480 (-s), 960 (-m) and 1600 px (iNat: 500 and 1024) on their LONG side (Saver: no 1600 px), so a portrait or
 // panoramic photo has fewer useful pixels than that. Declaring the long side made the browser pick the 480 px file and
 // blow it up 1.3-1.9x in a 400-470 px box (design re-review m5).
@@ -350,9 +351,9 @@ let RAW,
   AUTOQ = {},
   PICKS = {};
 // Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
-// Identify > Coral Finder only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
+// Identify > Coral ID Key only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
-let XON = store.get('reefid-finder-x', true);
+let XON = store.get('reefid-idkey-x', true);
 function build() {
   GDIFF = {};
   NEXTQ = null; // a question planned on the old curation could show a photo it now excludes or moves
@@ -464,7 +465,7 @@ document.addEventListener('click', e => {
 });
 // A page of the Learn or Practice section that the subject does not have (core.js SUBJECTS pages: fish have no genus
 // sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead. Identify (the
-// Coral Finder) and the Tools are the corals' whatever the subject.
+// Coral ID Key) and the Tools are the corals' whatever the subject.
 const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
@@ -567,7 +568,7 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="fdxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
@@ -750,8 +751,8 @@ const notesList = (g, cls = '') =>
         .join(
           ''
         )}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
-    : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
-// Glossary terms in tips, lecture notes, genus cards, quiz feedback and the Coral Finder: tap (or focus + Enter) to see
+    : `<p class="note">Not on the lecture slides: see the Coral ID Key criteria below.</p>`;
+// Glossary terms in tips, lecture notes, genus cards, quiz feedback and the Coral ID Key: tap (or focus + Enter) to see
 // the definition and its source. Matching patterns per glossary term (Corallite and Polyp glossed too since the beginner
 // review of 2026-11-03: players who never had the IMR lecture; "septal teeth" opens Septa):
 const GLOSS_PAT = {
@@ -786,7 +787,7 @@ const GLOSS_PAT = {
 let glossRe = null;
 // Each term is underlined once per text block, at its first occurrence: a tip saying "corallites" three times gets one
 // underline, not three. seen (a Set) carries that over several calls that make one block (the items of one tips list).
-// btn: the text sits inside a button (a Coral Finder box): the term is tappable but not a focus stop of its own.
+// btn: the text sits inside a button (a Coral ID Key box): the term is tappable but not a focus stop of its own.
 function gloss(text, seen = new Set(), btn = false) {
   const t = esc(text);
   if (!DATA.terms) return t;
@@ -940,7 +941,7 @@ const tipCard = n => {
   }</div></article>`;
 };
 
-/* ---------- key helpers (Coral Finder boxes, used by genus sheets and the Coral Finder) + IMR groups ---------- */
+/* ---------- key helpers (Coral Finder book boxes, used by genus sheets and the Coral ID Key) + IMR groups ---------- */
 const groupOf = id => DATA.key.find(g => g.id === id[0]);
 const leafOf = id => groupOf(id)?.leaves.find(l => l.id === id);
 const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
@@ -1215,7 +1216,7 @@ function go(h) {
 // Photo size (small / medium / large), remembered per page in localStorage (key reefid-sync-size).
 // Each page reads :root[data-size] in its own CSS; pages where it means nothing (games that fill the screen,
 // home, progress) hide the S/M/L buttons, keeping their room so the header never changes size.
-const SIZE_PAGES = ['genera', 'tips', 'genus', 'pair', 'finder', 'lab-gallery', 'lab-elim'];
+const SIZE_PAGES = ['genera', 'tips', 'genus', 'pair', 'idkey', 'lab-gallery', 'lab-elim'];
 function pageKey() {
   const h = hashNow();
   return h.startsWith('g-') ? 'genus' : h.startsWith('cmp-') ? 'pair' : h.split('|')[0] || 'home';
@@ -1243,7 +1244,7 @@ function applySize() {
   document.documentElement.dataset.size = s;
   const sz = document.getElementById('size');
   document.getElementById('sizerow').hidden = !on;
-  document.getElementById('xrow').hidden = !/^(lab-)?finder$/.test(pageKey());
+  document.getElementById('xrow').hidden = !/^(lab-)?idkey$/.test(pageKey());
   document.querySelectorAll('img[data-sz]').forEach(i => (i.sizes = sizesFor(i.dataset.sz)));
   document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s)));
 }
@@ -1255,7 +1256,7 @@ document.querySelectorAll('#xgen button').forEach(
   b =>
     (b.onclick = () => {
       XON = b.dataset.x === '1';
-      store.set('reefid-finder-x', XON);
+      store.set('reefid-idkey-x', XON);
       showX();
       if (RAW) route();
     })
@@ -1363,12 +1364,12 @@ const MODES = {
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
     ['pairs', 'Memory', 'Match colony and corallites']
   ],
-  identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
+  identify: [['idkey', 'Coral ID Key', 'Tap the clues you see, get a ranked shortlist']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
 function modeOf(h) {
-  return /^[kl]-/.test(h) ? 'finder' : h.startsWith('g-') ? 'genera' : h.startsWith('cmp') ? 'cmp' : h.split('|')[0];
+  return /^[kl]-/.test(h) ? 'idkey' : h.startsWith('g-') ? 'genera' : h.startsWith('cmp') ? 'cmp' : h.split('|')[0];
 }
 function sectionOf(h) {
   if (!h || h === 'home') return 'home';
@@ -1617,7 +1618,7 @@ function route() {
   // A page the subject does not have: its section's first page for the subject.
   const sp = subjPage(h);
   if (sp !== h) {
-    // A genus sheet or a comparison of another subject (opened from Identify, the Coral Finder, with Fish chosen; Codex
+    // A genus sheet or a comparison of another subject (opened from Identify, the Coral ID Key, with Fish chosen; Codex
     // review #442): that subject comes on screen (setSubject routes again), never the subject's list instead.
     const S = /^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'));
     if (S && S !== SUBJ) return void setSubject(S.id);
@@ -1659,13 +1660,13 @@ function route() {
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
   showModes(tab, h);
-  // The old growth-form key and corallite filters live on in the Coral Finder: their links open it with the same clues ticked.
-  if (h === 'key' || h === 'key-tr') location.replace('#finder');
-  else if (h.startsWith('k-') && groupOf(h.slice(2))) location.replace('#finder|form=' + h.slice(2));
+  // The old growth-form key and corallite filters live on in the Coral ID Key: their links open it with the same clues ticked.
+  if (h === 'key' || h === 'key-tr') location.replace('#idkey');
+  else if (h.startsWith('k-') && groupOf(h.slice(2))) location.replace('#idkey|form=' + h.slice(2));
   else if (h.startsWith('l-') && leafOf(h.slice(2))) {
     const l = h.slice(2),
       one = groupOf(l).leaves.length === 1;
-    location.replace('#finder|form=' + l[0] + (one ? '' : ';box=' + l));
+    location.replace('#idkey|form=' + l[0] + (one ? '' : ';box=' + l));
   } else if (h === 'key-imr') {
     azOrder = 'lecture';
     location.replace('#genera');
@@ -1975,7 +1976,7 @@ let HAVE = 1,
 const STARTED = new Promise(r => (started = r)),
   TIERP = {},
   // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
-  // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral Finder (proto/) 5.
+  // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral ID Key (proto/) 5.
   pageTier = h =>
     !h || h === 'home' || h === 'about' || h === 'credits'
       ? 1

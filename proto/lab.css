@@ -2258,19 +2258,19 @@ path.wallc {
   }
 }
 
-/* Coral Finder+: filters in a sticky side panel, shortlist on the right */
-.fdlayout {
+/* Coral ID Key+: filters in a sticky side panel, shortlist on the right */
+.iklayout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
 @media (min-width: 600px) {
-  .fdlayout {
+  .iklayout {
     grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   }
 }
-.fdside {
+.ikside {
   position: static;
   top: calc(var(--hdr-h, 100px) + 10px);
   max-height: none;
@@ -2279,18 +2279,18 @@ path.wallc {
   overscroll-behavior: contain;
 }
 @media (min-width: 600px) {
-  .fdside {
+  .ikside {
     position: sticky;
     max-height: calc(100vh - var(--hdr-h, 100px) - 20px);
     overflow: auto;
   }
 }
-.fdsearch {
+.iksearch {
   display: flex;
   gap: 6px;
   margin-bottom: 6px;
 }
-.fdsearch input {
+.iksearch input {
   flex: 1;
   min-width: 0;
   font: inherit;
@@ -2301,15 +2301,15 @@ path.wallc {
   padding: 6px 14px;
   min-height: 36px;
 }
-.fdsearch .chip:disabled {
+.iksearch .chip:disabled {
   opacity: 0.45;
   cursor: default;
 }
-.fdfacet {
+.ikfacet {
   border-top: 1px solid var(--line);
   padding: 6px 0;
 }
-.fdfacet summary {
+.ikfacet summary {
   cursor: pointer;
   font-family: var(--display);
   font-size: var(--fs-m);
@@ -2317,11 +2317,11 @@ path.wallc {
   padding: 4px 0;
   list-style-position: outside;
 }
-.fdfacet .note {
+.ikfacet .note {
   margin: 0 0 6px;
   font-size: var(--fs-xs);
 }
-.fdn {
+.ikn {
   display: inline-block;
   min-width: 1.4em;
   text-align: center;
@@ -2333,12 +2333,12 @@ path.wallc {
   padding: 0 6px;
   vertical-align: 2px;
 }
-.fdopts {
+.ikopts {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.fdopt {
+.ikopt {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2356,84 +2356,84 @@ path.wallc {
   line-height: 1.2;
 }
 @media (hover: hover) {
-  .fdopt:hover {
+  .ikopt:hover {
     border-color: var(--accent);
   }
 }
-.fdopt[aria-pressed='true'] {
+.ikopt[aria-pressed='true'] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
 }
-.fdopt[data-zero] {
+.ikopt[data-zero] {
   opacity: 0.4;
 }
-.fdopt .fdt {
+.ikopt .ikt {
   flex: 1;
 }
-.fdopt small {
+.ikopt small {
   opacity: 0.7;
 }
-.fdopt .fdc {
+.ikopt .ikc {
   font-size: var(--fs-xs);
   font-weight: 600;
   min-width: 1.6em;
   text-align: right;
   color: var(--muted);
 }
-.fdopt[aria-pressed='true'] .fdc {
+.ikopt[aria-pressed='true'] .ikc {
   color: inherit;
 }
-.fdopt[class*=' c-']:not([aria-pressed='true']) {
+.ikopt[class*=' c-']:not([aria-pressed='true']) {
   border-left: 5px solid var(--c, var(--line));
 }
-.fdopt.c-branch {
+.ikopt.c-branch {
   --c: var(--branch);
 }
-.fdopt.c-meander {
+.ikopt.c-meander {
   --c: var(--meander);
 }
-.fdopt.c-massive {
+.ikopt.c-massive {
   --c: var(--massive);
 }
-.fdopt.c-plate {
+.ikopt.c-plate {
   --c: var(--plate);
 }
-.fdopt.c-solo {
+.ikopt.c-solo {
   --c: var(--solo);
 }
-.fdopt.c-polyp {
+.ikopt.c-polyp {
   --c: var(--polyp);
 }
-.fdopt.c-column {
+.ikopt.c-column {
   --c: var(--column);
 }
-.fdopt.c-other {
+.ikopt.c-other {
   --c: var(--other);
 }
-.fdth {
+.ikth {
   display: flex;
   flex: 0 0 auto;
 }
-.fdth img {
+.ikth img {
   width: 30px;
   height: 30px;
   object-fit: cover;
   border-radius: var(--r-xs);
   border: 1px solid var(--surface);
 }
-.fdth img + img {
+.ikth img + img {
   margin-left: -10px;
 }
 /* Results header (Pierre, 2026-10-31: declutter): one bar of clue chips + Start over, Check next, then the section
    title carrying the count with the photo switches on its right. */
-.fdbar {
+.ikbar {
   display: flex;
   gap: 6px;
   align-items: flex-start;
   margin: 0 0 8px;
 }
-.fdchips {
+.ikchips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -2441,16 +2441,16 @@ path.wallc {
   flex: 1 1 auto;
   min-width: 0;
 }
-.fdbar .fdreset2 {
+.ikbar .ikreset2 {
   flex: none;
   margin-left: auto;
   white-space: nowrap;
 }
-.fdadd {
+.ikadd {
   border-style: dashed;
   color: var(--accent);
 }
-.fdhd {
+.ikhd {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2458,40 +2458,40 @@ path.wallc {
   flex-wrap: wrap;
   margin: 6px 0 8px;
 }
-.fdhd .fdgrp {
+.ikhd .ikgrp {
   margin: 0;
 }
-.fdgrp .fdn {
+.ikgrp .ikn {
   font-size: var(--fs-s);
   vertical-align: middle;
 }
-.fdhd .seg button {
+.ikhd .seg button {
   padding: 4px 10px;
   font-size: var(--fs-xs);
 }
 @media (min-width: 600px) {
-  .fdhd .seg button {
+  .ikhd .seg button {
     padding: 5px 12px;
     font-size: var(--fs-s);
   }
 }
-.fdchosen,
-.fdnear,
-.fdouts {
+.ikchosen,
+.iknear,
+.ikouts {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
   margin: 8px 0;
 }
-.fdnear .chip img {
+.iknear .chip img {
   width: 22px;
   height: 22px;
   border-radius: 50%;
   object-fit: cover;
   margin: 0 6px 0 -6px;
 }
-.fdnext {
+.iknext {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 12px;
@@ -2499,13 +2499,13 @@ path.wallc {
   margin: 6px 0 10px;
 }
 @media (min-width: 600px) {
-  .fdnext {
+  .iknext {
     margin: 8px 0 14px;
   }
 }
 /* Suggested question (Pierre, 2026-11-01): the question, then two big answer buttons sharing the full width, each
    showing its count and the genera on its side; "Can't tell" moves on to the next best question. */
-.fdq {
+.ikq {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2517,38 +2517,38 @@ path.wallc {
   padding: 8px;
   box-shadow: var(--shadow);
 }
-.fdq + .fdq {
+.ikq + .ikq {
   display: none;
 }
 @media (min-width: 600px) {
-  .fdq + .fdq {
+  .ikq + .ikq {
     display: flex;
   }
 }
-.fdqh {
+.ikqh {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
   padding: 0 2px;
 }
-.fdqh b {
+.ikqh b {
   font-family: var(--display);
   font-size: var(--fs-m);
   font-weight: 600;
   line-height: 1.2;
 }
-.fdskip {
+.ikskip {
   flex: none;
   font-size: var(--fs-s);
   padding: 6px 2px;
 }
-.fdqa {
+.ikqa {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
-.fdans {
+.ikans {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -2564,24 +2564,24 @@ path.wallc {
   border-radius: var(--r);
   padding: 8px;
 }
-.fdans.yes {
+.ikans.yes {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 7%, var(--surface));
 }
-.fdans:active {
+.ikans:active {
   transform: scale(0.98);
 }
-.fdans:focus-visible {
+.ikans:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 @media (hover: hover) and (pointer: fine) {
-  .fdans:hover {
+  .ikans:hover {
     border-color: var(--accent);
     background: color-mix(in srgb, var(--accent) 14%, var(--surface));
   }
 }
-.fdal {
+.ikal {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2591,10 +2591,10 @@ path.wallc {
   font-weight: 700;
   line-height: 1;
 }
-.fdans.yes .fdal {
+.ikans.yes .ikal {
   color: var(--accent);
 }
-.fdal .fdc {
+.ikal .ikc {
   font-family: var(--body);
   font-size: var(--fs-s);
   font-weight: 600;
@@ -2604,23 +2604,23 @@ path.wallc {
   border-radius: var(--pill);
   padding: 1px 8px;
 }
-.fdat {
+.ikat {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 3px;
   max-width: 240px;
 }
-.fdat img,
-.fdplus {
+.ikat img,
+.ikplus {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: var(--r-xs);
 }
-.fdans.no .fdat img {
+.ikans.no .ikat img {
   filter: grayscale(0.35);
 }
-.fdplus {
+.ikplus {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2630,15 +2630,15 @@ path.wallc {
   background: var(--surface);
   border: 1px solid var(--line);
 }
-.fdnot {
+.iknot {
   border-style: dashed;
 }
-.fdrows {
+.ikrows {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.fdrow {
+.ikrow {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
@@ -2649,25 +2649,25 @@ path.wallc {
   box-shadow: var(--shadow);
 }
 @media (min-width: 600px) {
-  .fdrow {
+  .ikrow {
     grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
   }
 }
-.fdinfo {
+.ikinfo {
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
 }
-.fdinfo p {
+.ikinfo p {
   margin: 2px 0 4px;
   font-size: var(--fs-s);
 }
-.fdinfo small {
+.ikinfo small {
   color: var(--muted);
   font-size: var(--fs-xs);
 }
-.fdname {
+.ikname {
   font-family: var(--display);
   font-size: var(--fs-l);
   font-weight: 700;
@@ -2675,35 +2675,35 @@ path.wallc {
   text-decoration: none;
   line-height: 1.1;
 }
-.fdname:hover {
+.ikname:hover {
   color: var(--accent) !important;
 }
-.fdtools {
+.iktools {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
 }
-.fdtools .chip {
+.iktools .chip {
   min-height: 30px;
   font-size: var(--fs-xs);
   padding: 0 10px;
 }
-.fdmore {
+.ikmore {
   align-self: flex-start;
   font-size: var(--fs-s);
   margin-top: 4px;
 }
-.fdmos {
+.ikmos {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
 }
-.fdmos .fdph,
-.fdall .fdph {
+.ikmos .ikph,
+.ikall .ikph {
   aspect-ratio: 1;
   border-radius: var(--r-xs);
 }
-.fdph {
+.ikph {
   position: relative;
   display: block;
   width: 100%;
@@ -2715,28 +2715,28 @@ path.wallc {
   cursor: zoom-in;
   aspect-ratio: 4/3;
 }
-.fdph img {
+.ikph img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.fdall {
+.ikall {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: 3px;
 }
 @media (min-width: 600px) {
-  .fdall {
+  .ikall {
     grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   }
 }
-.fdsheets {
+.iksheets {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-.fdsheet {
+.iksheet {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 10px;
@@ -2747,44 +2747,44 @@ path.wallc {
   padding: 6px 8px;
 }
 @media (min-width: 600px) {
-  .fdsheet {
+  .iksheet {
     grid-template-columns: 150px minmax(0, 1fr);
   }
 }
-.fdsheet .fdname {
+.iksheet .ikname {
   font-size: var(--fs-m);
 }
-.fdgrid {
+.ikgrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 @media (min-width: 600px) {
-  .fdgrid {
+  .ikgrid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 10px;
   }
 }
-:root[data-size='s'] .fdgrid {
+:root[data-size='s'] .ikgrid {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 }
-:root[data-size='l'] .fdgrid {
+:root[data-size='l'] .ikgrid {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
-.fdtile {
+.iktile {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r);
   overflow: hidden;
   box-shadow: var(--shadow);
 }
-.fdtile .fdph {
+.iktile .ikph {
   border-radius: 0;
 }
-.fdtile .fdinfo {
+.iktile .ikinfo {
   padding: 8px 10px 10px;
 }
-.fdcmp {
+.ikcmp {
   position: fixed;
   /* Centred between 12 px margins, above the phone tab bar (RA review 2026-11-02: left 50% squeezed it to half the
      screen, the button became an empty blob, and it sat over the tab bar). */
@@ -2804,79 +2804,79 @@ path.wallc {
   box-shadow: var(--shadow-hover);
   max-width: calc(100vw - 24px);
 }
-.fdcmp .next {
+.ikcmp .next {
   padding: 8px 16px;
   /* ".lab a" (accent text) won over ".next": the button's text was the colour of its background (RA review 2026-11-02). */
   color: var(--accent-ink);
 }
 /* Phone base (mobile-first); larger screens restore below. */
-.fdside {
+.ikside {
   padding: 0;
 }
-.fdopts.th {
+.ikopts.th {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
 
 @media (min-width: 600px) {
-  .fdside {
+  .ikside {
     padding: 0 6px 0 0;
   }
-  .fdopts.th {
+  .ikopts.th {
     display: flex;
     grid-template-columns: revert;
   }
 }
 
 /* Phone base (mobile-first); larger screens restore below. */
-:root[data-size] .fdgrid {
+:root[data-size] .ikgrid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 @media (min-width: 600px) {
-  :root[data-size] .fdgrid {
+  :root[data-size] .ikgrid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 10px;
   }
 }
 
-.fdgrp {
+.ikgrp {
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
-.fdgrp small,
-.fdrest summary small {
+.ikgrp small,
+.ikrest summary small {
   font-family: var(--body);
   font-size: var(--fs-xs);
   font-weight: 400;
   color: var(--muted);
 }
-.fdtile.off {
+.iktile.off {
   opacity: 0.85;
   border-style: dashed;
 }
-.fdmiss {
+.ikmiss {
   color: var(--bad) !important;
 }
-.fdrest {
+.ikrest {
   margin-top: 16px;
 }
-.fdrest summary {
+.ikrest summary {
   cursor: pointer;
   font-family: var(--display);
   font-size: var(--fs-m);
   font-weight: 600;
 }
-.fdrest .chip img {
+.ikrest .chip img {
   width: 22px;
   height: 22px;
   border-radius: 50%;
   object-fit: cover;
   margin: 0 6px 0 -6px;
 }
-.fdcmp[hidden] {
+.ikcmp[hidden] {
   display: none;
 }
 
@@ -3015,18 +3015,18 @@ path.wallc {
   }
 }
 
-.fdsegs {
+.iksegs {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
-.fdhead {
+.ikhead {
   display: flex;
   align-items: baseline;
   gap: 8px;
   flex-wrap: wrap;
 }
-button.fdname {
+button.ikname {
   font: inherit;
   font-family: var(--display);
   font-size: var(--fs-l);
@@ -3038,26 +3038,26 @@ button.fdname {
   color: var(--ink);
   text-align: left;
 }
-button.fdname::after {
+button.ikname::after {
   content: ' ▸';
   font-size: var(--fs-m);
   color: var(--muted);
 }
-button.fdname[aria-expanded='true']::after {
+button.ikname[aria-expanded='true']::after {
   content: ' ▾';
 }
-.fdxtag {
+.ikxtag {
   font-weight: 700;
   color: var(--muted);
   background: var(--other);
   border-radius: var(--pill);
   padding: 0 6px;
 }
-.fdsheetl {
+.iksheetl {
   font-size: var(--fs-xs);
   color: var(--muted) !important;
 }
-.fdbig {
+.ikbig {
   grid-column: 1 / -1;
   background: var(--surface);
   border: 2px solid var(--accent);
@@ -3065,64 +3065,64 @@ button.fdname[aria-expanded='true']::after {
   padding: 10px 12px;
   box-shadow: var(--shadow);
 }
-.fdbig.off {
+.ikbig.off {
   border-style: dashed;
 }
-.fdbig {
+.ikbig {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
   align-items: start;
 }
 @media (min-width: 600px) {
-  .fdbig {
+  .ikbig {
     grid-template-columns: 200px minmax(0, 1fr);
   }
 }
-.fdbigside {
+.ikbigside {
   position: static;
   top: calc(var(--hdr-h) + 10px);
   font-size: var(--fs-s);
 }
 @media (min-width: 600px) {
-  .fdbigside {
+  .ikbigside {
     position: sticky;
   }
 }
-.fdbigside .fdcue {
+.ikbigside .ikcue {
   margin: 6px 0;
   color: var(--muted);
   line-height: 1.35;
 }
-.fdcrit {
+.ikcrit {
   margin: 4px 0 8px;
   color: var(--muted);
 }
-.fdcrit summary {
+.ikcrit summary {
   cursor: pointer;
   font-size: var(--fs-xs);
 }
-.fdcrit ul {
+.ikcrit ul {
   margin: 4px 0;
   padding-left: 1.1em;
 }
-.fdbigph {
+.ikbigph {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 @media (min-width: 600px) {
-  .fdbigph {
+  .ikbigph {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
-.fdbigph .fdph {
+.ikbigph .ikph {
   aspect-ratio: 4/3;
 }
-:root[data-size='l'] .fdbigph {
+:root[data-size='l'] .ikbigph {
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
 }
-:root[data-size='s'] .fdbigph {
+:root[data-size='s'] .ikbigph {
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
 }
 
@@ -3130,52 +3130,52 @@ button.fdname[aria-expanded='true']::after {
   top: 6px;
   bottom: auto;
 }
-/* Coral Finder start screen (three proposals: board, step by step, Coral Finder path) */
-.fdstart {
+/* Coral ID Key start screen (three proposals: board, step by step, Coral Finder book path) */
+.ikstart {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-.fdstop {
+.ikstop {
   display: flex;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
-.fdprompt {
+.ikprompt {
   margin: 0;
   font-family: var(--display);
   font-weight: 700;
   font-size: var(--fs-l);
   line-height: 1.2;
 }
-.fdstop .fdshow {
+.ikstop .ikshow {
   margin-left: 0;
 }
 @media (min-width: 600px) {
-  .fdstop .fdshow {
+  .ikstop .ikshow {
     margin-left: auto;
   }
 }
-.fdsv {
+.iksv {
   font-size: var(--fs-s);
   color: var(--muted);
 }
-.fdsvrow {
+.iksvrow {
   margin: 0;
   text-align: center;
 }
-.fdforms {
+.ikforms {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 @media (min-width: 600px) {
-  .fdforms {
+  .ikforms {
     grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   }
 }
-.fdtileb {
+.iktileb {
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -3191,19 +3191,19 @@ button.fdname[aria-expanded='true']::after {
   position: relative;
 }
 @media (hover: hover) {
-  .fdtileb:hover {
+  .iktileb:hover {
     border-color: var(--accent);
   }
 }
-.fdtileb[aria-pressed='true'] {
+.iktileb[aria-pressed='true'] {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent);
 }
-.fdtileb[data-zero],
-.fdbigopt[data-zero] {
+.iktileb[data-zero],
+.ikbigopt[data-zero] {
   opacity: 0.4;
 }
-.fdtq {
+.iktq {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
@@ -3212,7 +3212,7 @@ button.fdname[aria-expanded='true']::after {
   background: var(--line);
   overflow: hidden;
 }
-.fdtq img {
+.iktq img {
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -3221,7 +3221,7 @@ button.fdname[aria-expanded='true']::after {
 }
 /* Fewer than 4 photos of that growth form: the first one takes the free space. */
 /* Box drawings stay light in dark mode, like the home schematics. */
-.fdsch {
+.iksch {
   grid-column: span 2;
   grid-row: span 2;
   width: 100%;
@@ -3229,38 +3229,38 @@ button.fdname[aria-expanded='true']::after {
   display: block;
   background: #e9eff1;
 }
-.fdsch .f {
+.iksch .f {
   fill: #fff;
   stroke: #14262d;
   stroke-width: 1.6;
   stroke-linejoin: round;
 }
-.fdsch .st {
+.iksch .st {
   fill: none;
   stroke: #5a6d74;
   stroke-width: 1.1;
   stroke-linecap: round;
 }
-.fdsch .b {
+.iksch .b {
   fill: none;
   stroke: #5a6d74;
   stroke-width: 2.2;
   stroke-linecap: round;
 }
-.fdsch .w {
+.iksch .w {
   fill: #5a6d74;
 }
-.fdtq.n3 img:first-child {
+.iktq.n3 img:first-child {
   grid-row: span 2;
 }
-.fdtq.n2 img {
+.iktq.n2 img {
   grid-row: span 2;
 }
-.fdtq.n1 img {
+.iktq.n1 img {
   grid-column: span 2;
   grid-row: span 2;
 }
-.fdtq.s {
+.iktq.s {
   aspect-ratio: auto;
   width: 84px;
   height: 63px;
@@ -3268,22 +3268,22 @@ button.fdname[aria-expanded='true']::after {
   border-radius: var(--r-sm);
   overflow: hidden;
 }
-.fdtt {
+.iktt {
   display: flex;
   flex-direction: column;
   padding: 6px 8px 8px;
   border-top: 4px solid var(--c, var(--line));
 }
-.fdtt b {
+.iktt b {
   font-size: var(--fs-m);
   line-height: 1.2;
 }
-.fdtt small {
+.iktt small {
   color: var(--muted);
   font-size: var(--fs-xs);
   line-height: 1.25;
 }
-.fdtileb .fdc {
+.iktileb .ikc {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -3293,32 +3293,32 @@ button.fdname[aria-expanded='true']::after {
   font-size: var(--fs-xs);
   font-weight: 700;
 }
-.fdsrow {
+.iksrow {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
   align-items: center;
 }
 @media (min-width: 600px) {
-  .fdsrow {
+  .iksrow {
     grid-template-columns: 150px minmax(0, 1fr);
   }
 }
-.fdsrow h3 {
+.iksrow h3 {
   margin: 0;
   font-size: var(--fs-s);
 }
-.fdsopts {
+.iksopts {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.fdsopts.boxes {
+.iksopts.boxes {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
-.fdbigopt,
-.fdboxb {
+.ikbigopt,
+.ikboxb {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -3333,125 +3333,125 @@ button.fdname[aria-expanded='true']::after {
   cursor: pointer;
   min-height: 46px;
 }
-.fdboxb {
+.ikboxb {
   padding: 6px 10px 6px 6px;
 }
-.fdboxb > span:nth-child(2) {
+.ikboxb > span:nth-child(2) {
   flex: 1;
 }
 @media (hover: hover) {
-  .fdbigopt:hover,
-  .fdboxb:hover {
+  .ikbigopt:hover,
+  .ikboxb:hover {
     border-color: var(--accent);
   }
 }
-.fdbigopt[aria-pressed='true'],
-.fdboxb[aria-pressed='true'] {
+.ikbigopt[aria-pressed='true'],
+.ikboxb[aria-pressed='true'] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
 }
-.fdbigopt .fdc,
-.fdboxb .fdc {
+.ikbigopt .ikc,
+.ikboxb .ikc {
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--muted);
 }
-.fdbigopt[aria-pressed='true'] .fdc,
-.fdboxb[aria-pressed='true'] .fdc {
+.ikbigopt[aria-pressed='true'] .ikc,
+.ikboxb[aria-pressed='true'] .ikc {
   color: inherit;
 }
-.fdsopts.big .fdbigopt {
+.iksopts.big .ikbigopt {
   font-size: var(--fs-m);
   padding: 16px 22px;
   min-width: 180px;
 }
-.fdstep h2 {
+.ikstep h2 {
   margin: 4px 0 12px;
 }
-.fdcrumbs {
+.ikcrumbs {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
   align-items: center;
   margin: 0;
 }
-.fdstepn {
+.ikstepn {
   margin-left: auto;
   color: var(--muted);
   font-size: var(--fs-s);
 }
-.fdstepnav {
+.ikstepnav {
   margin: 12px 0 0;
 }
 /* Phone base (mobile-first); larger screens restore below. */
-.fdstop .fdshow {
+.ikstop .ikshow {
   width: 100%;
 }
 
 @media (min-width: 600px) {
-  .fdstop .fdshow {
+  .ikstop .ikshow {
     width: revert;
   }
 }
 
-.fdtileb.c-branch {
+.iktileb.c-branch {
   --c: var(--branch);
 }
-.fdtileb.c-meander {
+.iktileb.c-meander {
   --c: var(--meander);
 }
-.fdtileb.c-massive {
+.iktileb.c-massive {
   --c: var(--massive);
 }
-.fdtileb.c-plate {
+.iktileb.c-plate {
   --c: var(--plate);
 }
-.fdtileb.c-solo {
+.iktileb.c-solo {
   --c: var(--solo);
 }
-.fdtileb.c-polyp {
+.iktileb.c-polyp {
   --c: var(--polyp);
 }
-.fdtileb.c-column {
+.iktileb.c-column {
   --c: var(--column);
 }
-.fdtileb.c-other {
+.iktileb.c-other {
   --c: var(--other);
 }
-.fdtileb[class*=' c-'] {
+.iktileb[class*=' c-'] {
   background: var(--surface);
 }
-.fdstart[hidden],
-.fdlayout[hidden],
-.fdside[hidden] {
+.ikstart[hidden],
+.iklayout[hidden],
+.ikside[hidden] {
   display: none;
 }
-/* Finder start screen: live shortlist under the clues (fits every clue, then one clue off, dimmed). */
-.fdlive {
+/* Coral ID Key start screen: live shortlist under the clues (fits every clue, then one clue off, dimmed). */
+.iklive {
   margin-top: 14px;
   border-top: 1px solid var(--line);
   padding-top: 8px;
 }
-.fdforms.boxes {
+.ikforms.boxes {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 @media (min-width: 600px) {
-  .fdforms.boxes {
+  .ikforms.boxes {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 }
-.fdgcs {
+.ikgcs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 @media (min-width: 600px) {
-  .fdgcs {
+  .ikgcs {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
-.fdgc {
+.ikgc {
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -3462,60 +3462,60 @@ button.fdname[aria-expanded='true']::after {
   text-decoration: none;
 }
 @media (hover: hover) {
-  .fdgc:hover {
+  .ikgc:hover {
     border-color: var(--accent);
   }
 }
-.fdgp {
+.ikgp {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1px;
   background: var(--line);
 }
-.fdgp img {
+.ikgp img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   display: block;
 }
-.fdgc i {
+.ikgc i {
   padding: 5px 8px 6px;
   font-size: var(--fs-s);
 }
 
-.fdand {
+.ikand {
   align-self: flex-start;
   margin-top: 2px;
 }
-.fdfacet .fdand {
+.ikfacet .ikand {
   margin: 6px 0 2px;
 }
 
 /* Picked growth form: the form tiles shrink to compact chips (all widths) so the next clues stay on screen. */
-.fdforms.mini {
+.ikforms.mini {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 @media (min-width: 600px) {
-  .fdforms.mini {
+  .ikforms.mini {
     grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   }
 }
-.fdforms.mini .fdtileb {
+.ikforms.mini .iktileb {
   flex-direction: row;
   align-items: center;
   border-width: 1px;
 }
-.fdforms.mini .fdtileb[aria-pressed='true'] {
+.ikforms.mini .iktileb[aria-pressed='true'] {
   box-shadow: 0 0 0 2px var(--accent);
 }
-.fdforms.mini .fdtq {
+.ikforms.mini .iktq {
   width: 56px;
   height: 56px;
   flex: none;
   aspect-ratio: auto;
 }
-.fdforms.mini .fdtt {
+.ikforms.mini .iktt {
   border-top: 0;
   border-left: 4px solid var(--c, var(--line));
   align-self: stretch;
@@ -3523,13 +3523,13 @@ button.fdname[aria-expanded='true']::after {
   padding: 4px 6px 4px 8px;
   min-width: 0;
 }
-.fdforms.mini .fdtt b {
+.ikforms.mini .iktt b {
   font-size: var(--fs-s);
 }
-.fdforms.mini .fdtt small {
+.ikforms.mini .iktt small {
   display: none;
 }
-.fdforms.mini .fdc {
+.ikforms.mini .ikc {
   top: auto;
   bottom: 3px;
   right: auto;
@@ -3537,40 +3537,40 @@ button.fdname[aria-expanded='true']::after {
   font-size: var(--fs-xs);
   padding: 0 5px;
 }
-.fdsrow.stack {
+.iksrow.stack {
   grid-template-columns: minmax(0, 1fr);
 }
-.fdbar .fdreset2 {
+.ikbar .ikreset2 {
   padding: 7px 12px;
   font-size: var(--fs-s);
 }
 @media (min-width: 600px) {
-  .fdbar .fdreset2 {
+  .ikbar .ikreset2 {
     padding: 7px 18px;
   }
 }
-/* Finder on phones (Pierre, 2026-10-31: used beside ReefCloud). Fewer scrolls: compact form chips once a form is
+/* Coral ID Key on phones (Pierre, 2026-10-31: used beside ReefCloud). Fewer scrolls: compact form chips once a form is
    picked, the "Show the N genera" bar pinned in thumb reach from the start (Pierre: it must not move), the clue panel folded on the results page, ID tips highlighted. */
-.fdtip {
+.iktip {
   background: color-mix(in srgb, var(--accent) 9%, var(--surface));
   border-left: 4px solid var(--accent);
   border-radius: var(--r-sm);
   padding: 4px 8px;
   color: var(--ink) !important;
 }
-.fdbig {
+.ikbig {
   scroll-margin-top: calc(var(--hdr-h, 100px) + 8px);
 }
-button.fdgc {
+button.ikgc {
   font: inherit;
   padding: 0;
   text-align: left;
   cursor: pointer;
 }
-.fdoff {
+.ikoff {
   margin-top: 14px;
 }
-.fdoff > summary {
+.ikoff > summary {
   cursor: pointer;
   font-family: var(--display);
   font-size: var(--fs-m);
@@ -3578,13 +3578,13 @@ button.fdgc {
   margin-bottom: 8px;
 }
 /* Phone base (mobile-first); larger screens restore below. Room under the content for the pinned Show button. */
-body:has(.fdstart:not([hidden])) main {
+body:has(.ikstart:not([hidden])) main {
   margin-bottom: 72px;
 }
-.fdstop {
+.ikstop {
   margin-bottom: -14px;
 }
-.fdstart .fdshow {
+.ikstart .ikshow {
   position: fixed;
   left: 16px;
   right: 16px;
@@ -3594,26 +3594,26 @@ body:has(.fdstart:not([hidden])) main {
   text-align: center;
   box-shadow: var(--shadow-hover, 0 6px 18px rgba(0, 0, 0, 0.25));
 }
-.fdsegs .seg[aria-label='Layout'] {
+.iksegs .seg[aria-label='Layout'] {
   display: none;
 }
 @media (min-width: 1024px) {
-  .fdsegs .seg[aria-label='Layout'] {
+  .iksegs .seg[aria-label='Layout'] {
     display: inline-flex;
   } /* only where the results column is wide enough */
 }
-.fdinfo > small:not(.fdmiss) {
+.ikinfo > small:not(.ikmiss) {
   display: none;
 }
 
 @media (min-width: 600px) {
-  body:has(.fdstart:not([hidden])) main {
+  body:has(.ikstart:not([hidden])) main {
     margin-bottom: 32px;
   }
-  .fdstop {
+  .ikstop {
     margin-bottom: 0;
   }
-  .fdstart .fdshow {
+  .ikstart .ikshow {
     position: revert;
     left: revert;
     right: revert;
@@ -3623,7 +3623,7 @@ body:has(.fdstart:not([hidden])) main {
     text-align: revert;
     box-shadow: var(--shadow);
   }
-  .fdinfo > small:not(.fdmiss) {
+  .ikinfo > small:not(.ikmiss) {
     display: revert;
   }
 }
@@ -3634,22 +3634,22 @@ body:has(.fdstart:not([hidden])) main {
 .lab > .lede + .labhub {
   margin-top: 18px;
 }
-/* Coral Finder start: "Show all" before any clue is the secondary (outlined) button; pinned on phones, so it keeps a lift shadow. */
-.fdstart .fdshow.sec {
+/* Coral ID Key start: "Show all" before any clue is the secondary (outlined) button; pinned on phones, so it keeps a lift shadow. */
+.ikstart .ikshow.sec {
   box-shadow:
     inset 0 0 0 1.5px var(--accent),
     var(--shadow-hover);
 }
 @media (min-width: 600px) {
-  .fdstart .fdshow.sec {
+  .ikstart .ikshow.sec {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
 }
-.fdstart .fdprompt {
+.ikstart .ikprompt {
   margin: 4px 0 16px;
 }
 @media (min-width: 600px) {
-  .fdstart .fdprompt {
+  .ikstart .ikprompt {
     margin: 0;
   }
 }

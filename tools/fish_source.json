@@ -23,7 +23,7 @@
   "species: one per line: PDF order, the slides, winks, then Dauin species of circle 3. id: stable, never reuse.",
   "  name: as written in the PDF, i.e. as EventMeasure names it (its fixed pick list may lag WoRMS): it stays the name shown and",
   "  expected; the build adds the WoRMS accepted name beside it (now). A PDF species of a family in no circle, or not",
-  "  confirmed in the Philippines, stays in fish.json out of the game (the future Fish Finder holds every PDF species).",
+  "  confirmed in the Philippines, stays in fish.json out of the game (the future Fish ID Key holds every PDF species).",
   "  Confirmed = Research Grade on iNaturalist, or one of Pierre's own (ppericard) observations identified to the species,",
   "  even Needs ID (he names a species only when very sure); his only. The build computes it (presence()).",
   "  as: the name to look up when the written one does not resolve (hand fix of a typo or wrapped name).",
@@ -40,7 +40,7 @@
  "divernet": "Divernet, Atlantis Dumaguete muck diving: https://divernet.com/world-dives/asia/discovering-atlantis-dumaguete-world-class-muck-diving-in-the-philippines/",
  "inat": "iNaturalist, Research Grade observations within 40 km of Dauin (species kept: at least 2)"
  },
-"leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish Finder."},
+"leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish ID Key."},
 "start": ["t02", "t03", "t01", "t06"],
 "retired": {"teach": ["t30", "t31", "t32", "t33", "t34", "t35", "t36", "t37", "t38", "t39", "t40", "t41", "t53", "t55", "t56"], "species": ["s404", "s405", "s406", "s407", "s411", "s412", "s413", "s471", "s476", "s477"]},
 "groups": [

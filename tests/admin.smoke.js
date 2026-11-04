@@ -187,7 +187,7 @@ const WIDTHS = [390, 1280];
         {h: '~journey/Ana Demo', tab: 'Players', view: null, n: 1}
       ];
     });
-    const OLD = ['~triage', '~stats-needs', '~cov', '~fcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
+    const OLD = ['~triage', '~stats-needs', '~cov', '~kcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
     OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
     const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
     if (miss.length) fails.push(`${w}px: old addresses without a tab: ${miss.join(' ')}`);
@@ -280,7 +280,7 @@ const WIDTHS = [390, 1280];
     }
 
     // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
-    await go('~fcov');
+    await go('~kcov');
     await go('~triage');
     const mem = await p.evaluate(() => ({
       cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
@@ -288,7 +288,7 @@ const WIDTHS = [390, 1280];
       players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
       kept: (store.get('reefid-admin-view', {}) || {}).cov
     }));
-    if (mem.cov !== '#~fcov' || mem.todo !== '#~triage' || mem.kept !== '~fcov' || mem.players !== '#~users')
+    if (mem.cov !== '#~kcov' || mem.todo !== '#~triage' || mem.kept !== '~kcov' || mem.players !== '#~users')
       fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
     await p.reload();
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
@@ -1228,8 +1228,8 @@ const WIDTHS = [390, 1280];
     await settle();
 
     // Game genera first (Pierre, 2026-11-03; core.js gameOf): Game coverage lists every genus a game asks, Millepora and
-    // the bonus genera included; in Candidates no Finder-only genus comes before a game genus of the same source, none
-    // is proposed for Corallites, and a Finder-only genus is full at CAP.sheet colonies.
+    // the bonus genera included; in Candidates no Key-only genus comes before a game genus of the same source, none
+    // is proposed for Corallites, and a Key-only genus is full at CAP.sheet colonies.
     await go('~cov');
     const gq = await p.evaluate(() => {
       const rows = [...document.querySelectorAll('.cov-t tbody tr')].map(tr => tr.dataset.g),
@@ -1250,13 +1250,13 @@ const WIDTHS = [390, 1280];
       };
     });
     if (!gq.rows || !gq.mill) fails.push(`${w}px Game coverage: rows are not the game genera (Millepora and bonus: ${gq.mill})`);
-    if (!gq.fo) fails.push(`${w}px Game genera: no Finder-only genus in the data`);
+    if (!gq.fo) fails.push(`${w}px Game genera: no Key-only genus in the data`);
     Object.entries(gq.order).forEach(([s, [first, lastGame, n]]) => {
       if (first >= 0 && first < lastGame)
-        fails.push(`${w}px Candidates ${s}: a Finder-only genus at ${first}, before a game genus at ${lastGame} (${n})`);
+        fails.push(`${w}px Candidates ${s}: a Key-only genus at ${first}, before a game genus at ${lastGame} (${n})`);
     });
-    if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Finder-only genera`);
-    if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Finder-only ones`);
+    if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Key-only genera`);
+    if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Key-only ones`);
     // Where to look: a banner above the Games grid (its first cells), open in full on its old address.
     const lk = await p.evaluate(() => ({
       links: document.querySelectorAll('#cov-look .cov-lk').length,
