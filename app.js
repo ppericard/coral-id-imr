@@ -1233,6 +1233,29 @@ const BASICS_KEY = 'reefid-basics';
 const BASICS_ICON =
   '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
 const basicsDone = () => !!((store.get(BASICS_KEY, {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})._basics);
+// Coral basics' teaching photos (proto/basics.js), one per use, with the height of their 960 px file (marks and crops
+// there are pixels of that file). Here, in the first tier, so the Genera page's Coral basics card (learn.js basicsCard)
+// shows the same photos before the Tools tier is in.
+const BASICS_PH = {
+  colony: {g: 'Diploastrea', f: 'diploastrea-wide-746238202', h: 768},
+  // Day-extended polyps: only an aside on the polyp step now (Pierre, 2026-11-03: too special to explain a polyp).
+  polypsDay: {g: 'Goniopora', f: 'goniopora-medium-745205676', h: 768},
+  // One polyp, wide open (Pierre, 2026-11-03: the Galaxea photo was too busy for a beginner): an IMR lecture photo.
+  polyp: {g: 'Tubastraea', f: 'imrl-p19_g64', h: 720},
+  nowall: {g: 'Pavona', f: 'pavona-macro-745204888', h: 768},
+  cups: {g: 'Dipsastraea', f: 'dipsastraea-macro-746236818', h: 720},
+  // Septa inside the rim, costae just outside it, the mouth in the centre, on one corallite seen from above (Pierre,
+  // 2026-11-03: "if you define septa, you must define costae"; then, on an Astrea photo first used here: costae are
+  // immediately outside the wall, the septa carried on past the rim, not the skeleton between the cups). An IMR lecture
+  // photo of Diploastrea, whose corallites are low cones: a small cup in the middle, its rim sharp, short beaded septa
+  // inside it and the same ridges running on down the cone outside it. No photo of Pierre's shows that as sharply.
+  septa: {g: 'Diploastrea', f: 'imrl-p57_g172', h: 639},
+  cupsMed: {g: 'Diploastrea', f: 'diploastrea-medium-746238185', h: 768},
+  bigTeeth: {g: 'Danafungia', f: 'danafungia-macro-746236636', h: 720},
+  fineTeeth: {g: 'Fungia', f: 'fungia-macro-746236363', h: 720},
+  shared: {g: 'Goniastrea', f: 'goniastrea-macro-746237401', h: 768},
+  valleys: {g: 'Platygyra', f: 'platygyra-macro-745204314', h: 768}
+};
 // The answers to the first-launch question (core.js CHOICE) as big buttons, one per row, with a line each: the tour, the
 // card that asks it, and the fallback card (only: the choices it offers). cur: the current answer, marked.
 const startOptsHtml = (cur, only) =>
@@ -1271,7 +1294,9 @@ function photoSize() {
 const SIZES = {
   // Measured 2026-11-01 (390 to 1920 px windows): S 170-194 px, M 356-415, L 356 on phones and 615-631 above.
   card: {s: '(max-width:599.98px) 46vw, 200px', m: '(max-width:599.98px) 92vw, 420px', l: '(max-width:599.98px) 92vw, 640px'},
-  strip: {s: '(max-width:599.98px) 46vw, 260px', m: '(max-width:599.98px) 92vw, 420px', l: '(max-width:599.98px) 92vw, 640px'}
+  strip: {s: '(max-width:599.98px) 46vw, 260px', m: '(max-width:599.98px) 92vw, 420px', l: '(max-width:599.98px) 92vw, 640px'},
+  // A tile of the Coral basics card (learn.js basicsArt): half or a third of a card, drawn about 1.2x wider (cover).
+  bxt: {s: '(max-width:599.98px) 28vw, 90px', m: '(max-width:599.98px) 40vw, 170px', l: '(max-width:599.98px) 40vw, 250px'}
 };
 const sizesFor = kind => SIZES[kind][photoSize()];
 function applySize() {

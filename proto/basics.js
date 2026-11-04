@@ -12,26 +12,8 @@
 // Add |edit to print photo coordinates on a tap and show the tap targets (for placing labels).
 (() => {
   /* ---------- photos: coordinates are pixels of the 960 px file (w 960, h given), crops are [x, y, w, h] ---------- */
-  const PH = {
-    colony: {g: 'Diploastrea', f: 'diploastrea-wide-746238202', h: 768},
-    // Day-extended polyps: only an aside on the polyp step now (Pierre, 2026-11-03: too special to explain a polyp).
-    polypsDay: {g: 'Goniopora', f: 'goniopora-medium-745205676', h: 768},
-    // One polyp, wide open (Pierre, 2026-11-03: the Galaxea photo was too busy for a beginner): an IMR lecture photo.
-    polyp: {g: 'Tubastraea', f: 'imrl-p19_g64', h: 720},
-    nowall: {g: 'Pavona', f: 'pavona-macro-745204888', h: 768},
-    cups: {g: 'Dipsastraea', f: 'dipsastraea-macro-746236818', h: 720},
-    // Septa inside the rim, costae just outside it, the mouth in the centre, on one corallite seen from above (Pierre,
-    // 2026-11-03: "if you define septa, you must define costae"; then, on an Astrea photo first used here: costae are
-    // immediately outside the wall, the septa carried on past the rim, not the skeleton between the cups). An IMR lecture
-    // photo of Diploastrea, whose corallites are low cones: a small cup in the middle, its rim sharp, short beaded septa
-    // inside it and the same ridges running on down the cone outside it. No photo of Pierre's shows that as sharply.
-    septa: {g: 'Diploastrea', f: 'imrl-p57_g172', h: 639},
-    cupsMed: {g: 'Diploastrea', f: 'diploastrea-medium-746238185', h: 768},
-    bigTeeth: {g: 'Danafungia', f: 'danafungia-macro-746236636', h: 720},
-    fineTeeth: {g: 'Fungia', f: 'fungia-macro-746236363', h: 720},
-    shared: {g: 'Goniastrea', f: 'goniastrea-macro-746237401', h: 768},
-    valleys: {g: 'Platygyra', f: 'platygyra-macro-745204314', h: 768}
-  };
+  // The steps' photos: app.js BASICS_PH (the Genera page's Coral basics card shows them too, before this file is in).
+  const PH = BASICS_PH;
   // The photo object of data.json (credit, observation) for the enlarged view.
   const pobj = s => {
     const g = DATA.gen[s.g];

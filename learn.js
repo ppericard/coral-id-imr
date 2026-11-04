@@ -26,7 +26,25 @@ let azView = (() => {
 let gfOpen = false; // phone Filter fold on Genera, kept open across redraws
 // Step 0 of the Learn path (Pierre, 2026-11-03): Coral basics before the genus sheets, as the first card of the Genera
 // page ("0 · Coral basics" in the lecture order, the first card in the slate order), with where the player is in it.
+// It always opens step 1 (Pierre, 2026-11-04: a card at the start of the path starts the path); the Basics tab, Home and
+// the quiz's offers open #basics, which resumes at the last step seen.
 const BASICS_STEPS = 7;
+// The card's picture (Pierre, 2026-11-04: an icon alone in a big empty box wasted the room): the photos the first six
+// steps teach on (app.js BASICS_PH), each with its step's word. Three across, two across on a narrow card (photo size S
+// on a phone, the ID tips view) so the words still fit; what does not fit in the two rows is cut. [word, BASICS_PH key].
+const BASICS_TILES = [
+  ['Colony', 'colony'],
+  ['Polyp', 'polyp'],
+  ['Corallite', 'cups'],
+  ['Septa', 'septa'],
+  ['Teeth', 'bigTeeth'],
+  ['Walls', 'valleys']
+];
+const basicsArt = () =>
+  `<span class="ph bxart" aria-hidden="true">${BASICS_TILES.map(
+    ([t, k]) =>
+      `<span class="bxt"><img ${thumb({f: BASICS_PH[k].f}, sizesFor('bxt'))} data-sz="bxt" alt="" loading="lazy"><b>${t}</b></span>`
+  ).join('')}</span>`;
 function basicsCard(tips) {
   const n = Object.keys((store.get(BASICS_KEY, {}) || {}).seen || {}).length,
     done = basicsDone(),
@@ -36,10 +54,11 @@ function basicsCard(tips) {
         ? `${Math.min(n, BASICS_STEPS - 1)} of ${BASICS_STEPS} steps seen`
         : `${BASICS_STEPS} short steps · about 5 min`,
     say = 'Polyp, corallite, septa, walls, growth forms: the words the ID tips use, on real photos.',
-    art = `<span class="ph bxart" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${BASICS_ICON}</svg></span>`;
+    art = basicsArt(),
+    at = '#basics|colony';
   return tips
-    ? `<article class="tipg bxtip"><a href="#basics" class="tipph">${art}<i>Coral basics</i></a><div><p class="note">${state}</p><p>${say}</p></div></article>`
-    : `<a class="card bxcard${done ? ' done' : ''}" href="#basics">${art}<span class="cap"><b>Coral basics</b><small>${state}</small><p>${say}</p></span></a>`;
+    ? `<article class="tipg bxtip"><a href="${at}" class="tipph">${art}<i>Coral basics</i></a><div><p class="note">${state}</p><p>${say}</p></div></article>`
+    : `<a class="card bxcard${done ? ' done' : ''}" href="${at}">${art}<span class="cap"><b>Coral basics</b><small>${state}</small><p>${say}</p></span></a>`;
 }
 function viewGenera() {
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
