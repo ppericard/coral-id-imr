@@ -243,7 +243,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 
 Supported now:
 
-- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 351 species in circle-1 entries (since #496).
+- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 340 circle-1 species in circle-1 entries, plus 11 Dauin species of circle 3 (since #496).
 - PDF Latin name (`name`), WoRMS name (`now`, 28 species) and synonyms, iNaturalist id.
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
@@ -389,12 +389,12 @@ on families only to an IMR RA with every species open:
       docs/LEARNING.md "Fish: the global score, simulated"): the anchors are exact; the entries give 25% within the first ~1,000
       answers (the fast start); the genus's half credit removes a flat stretch at 49% on the scientific branch; no long plateau
       on one branch or on both side by side. Two effects of the anchors themselves, not of *a* or *b*: a player who completes one
-      branch and then starts the other gains its last 15-20 points 8-11 times slower per answer, and at equal effort a player
-      learning both names scores below one learning a single kind for most of the path (at 30,000 simulated answers: 61% against
+      branch and then starts the other gains its last 15-20 points 7-12 times slower per answer, and at equal effort a player
+      learning both names scores below one learning a single kind for most of the path (at 30,000 simulated answers: 62% against
       80% common only). Rerun with `tools/learnsim.js` fish profiles once the species level exists.
     - **My progress** can show three bars under the headline %: Entries, Common names, Scientific names.
   - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the circle-1 entries
-    (27) and their species (351 since the one presence rule, #496); unopened units at 0; circles 2 and 3 never count (as now).
+    (27) and their circle-1 species (340 since the one presence rule, #496); unopened units at 0; circles 2 and 3 never count (as now).
   - What counts as a species' scientific name known (the exam passed, or the progress on the questions shown in Latin) is part of the
     same study.
   - **The Elo level stays alongside** as the player's overall level.

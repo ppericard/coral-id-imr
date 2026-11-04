@@ -103,8 +103,10 @@ function world(fish, names) {
   entries.sort((x, y) => rank(x) - rank(y)); // the starter core first (fish.json start), then fish.json order (a stable sort)
   const species = [];
   const genera = new Map();
+  // Circle 1 only: an IMR entry may also hold Dauin species of circle 3, which never count (FISH_PATH).
+  const c1 = t => t.species.filter(id => sp.get(id).circle === 1);
   for (const t of entries)
-    for (const id of t.species) {
+    for (const id of c1(t)) {
       const s = sp.get(id);
       const g = s.name.split(/\s+/)[0];
       if (!genera.has(g)) genera.set(g, {g, entry: t.id, species: []});
@@ -112,7 +114,7 @@ function world(fish, names) {
       const n = names && names[id] && names[id].names ? names[id].names.length : 1;
       species.push({id, entry: t.id, genus: g, names: Math.max(1, Math.min(3, n)), cs: s.cs || 0});
     }
-  return {entries: entries.map(t => ({id: t.id, name: t.name, species: t.species})), species, genera: [...genera.values()]};
+  return {entries: entries.map(t => ({id: t.id, name: t.name, species: c1(t)})), species, genera: [...genera.values()]};
 }
 
 // The formula. m: {entry: {id: mastery}, genus: {g: m}, sci: {sId: m}, name: {sId: [m per listed name]}}.

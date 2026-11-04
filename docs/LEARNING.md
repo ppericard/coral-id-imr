@@ -2426,7 +2426,7 @@ opened at a time while fewer than 3 are shaky; weak units drawn first; a learner
 answer's feedback raises, scientific names learned more slowly than common ones), and the app's own progress engine on
 each unit (`core.js` `pgStep`, `scoreOf`, the exam). Its learning rates are assumptions (no fish species answer exists),
 so the answer counts below are a scale, not a forecast; what the formula does with them (shares, ratios, where the
-curve flattens) is the result. World: the 27 circle-1 entries, 99 scientific genera, 351 species, one common name each
+curve flattens) is the result. World: the 27 circle-1 entries, 94 scientific genera, 340 species of circle 1 (an IMR entry's Dauin species of circle 3 never count), one common name each
 (the curated lists of 1 to 3 names are not chosen yet; `--names` reads a proposal file).
 
 **Fixed states** (every unit of a set at mastery 1, the rest 0; exact):
@@ -2440,11 +2440,11 @@ curve flattens) is the result. World: the 27 circle-1 entries, 99 scientific gen
 | Every common name + every genus | 90.0% |
 | Both names of every species | 100.0% |
 | Every unit at the exam's entry (bar 95%), no exam passed | 96.9% |
-| Entries + common names of the IMR 24 most sighted | 28.8% |
-| Entries + both names of the IMR 24 most sighted | 30.1% |
-| Entries + common names of the most common half of each entry | 53.4% |
-| Entries + both names of the most common half | 76.4% |
-| Entries + every genus + scientific names of the most common half | 70.5% |
+| Entries + common names of the IMR 24 most sighted | 28.9% |
+| Entries + both names of the IMR 24 most sighted | 30.3% |
+| Entries + common names of the most common half of each entry | 53.3% |
+| Entries + both names of the most common half | 76.5% |
+| Entries + every genus + scientific names of the most common half | 70.4% |
 | Every common name + scientific names of the most common half | 90.3% |
 
 The anchors hold exactly. Because the interaction term is negative, partial mastery of both names scores more than its
@@ -2455,13 +2455,13 @@ the spread under 2% of it):
 
 | Profile | 25% | 50% | 75% | 80% | 85% | 95% |
 | --- | --- | --- | --- | --- | --- | --- |
-| Common names only | 910 | 9,950 | 26,310 | 35,340 (ceiling) | | |
-| Scientific names only | 790 | 12,200 | 35,140 | 40,160 | 55,850 (ceiling) | |
-| Both names, side by side (an IMR RA) | 720 | 19,410 | 57,770 | 67,410 | 79,080 | 102,850 |
-| Both, scientific names at half the rate | 760 | 26,180 | 78,100 | 91,380 | 107,390 | not by 120,000 |
-| Common names, then scientific names | 910 | 9,950 | 26,310 | 30,430 | 46,500 | 90,500 |
-| Scientific names, then common names | 790 | 12,200 | 35,140 | 40,160 | 48,390 | 93,060 |
-| Scientific names only, without the genus's half credit | 1,030 | 14,490 | 35,840 | 42,040 | 55,850 (ceiling) | |
+| Common names only | 910 | 9,560 | 25,120 | 33,840 (ceiling) | | |
+| Scientific names only | 780 | 11,950 | 33,410 | 38,040 | 51,790 (ceiling) | |
+| Both names, side by side (an IMR RA) | 720 | 18,670 | 54,310 | 64,400 | 74,020 | 97,320 |
+| Both, scientific names at half the rate | 760 | 25,110 | 73,310 | 87,130 | 100,750 | not by 120,000 |
+| Common names, then scientific names | 910 | 9,560 | 25,120 | 28,960 | 44,210 | 85,750 |
+| Scientific names, then common names | 780 | 11,950 | 33,410 | 38,040 | 45,740 | 87,660 |
+| Scientific names only, without the genus's half credit | 1,030 | 13,920 | 34,270 | 39,700 | 51,790 (ceiling) | |
 
 What it shows:
 
@@ -2469,24 +2469,24 @@ What it shows:
   it from the entries. So the first ~1,000 answers (about 3% of a common-names path, under 1% of a both-names path) earn a
   quarter of the score: the fast start Pierre asked for ("fast at the start"), with no step: the score rises about 4 points
   per 100 answers while the entries are learned, then about 1 point per 500-700 answers.
-- **The genus's half credit**: with it, the scientific-names player reaches 25% at 790 answers instead of 1,030, 50% at
-  12,200 instead of 14,490, and the longest point (below) falls from 2,210 answers to 1,670: without it, the answers
+- **The genus's half credit**: with it, the scientific-names player reaches 25% at 780 answers instead of 1,030, 50% at
+  11,950 instead of 13,920, and the longest point (below) falls from 2,320 answers to 1,760: without it, the answers
   spent on the genera earn nothing until their species come, a flat stretch at 49% in every seed. The ceiling is the same
   (85% at the same answer). The half credit does what it was meant to do.
 - **Plateaus** (the answers each point of the score takes, from 26% to 95% of the profile's ceiling; median / longest):
-  common names only 510 / 870; scientific only 710 / 1,670; both side by side 1,350 / 3,320; both, slow scientific 1,720 /
-  4,560. No long plateau for a player on one branch, nor for one learning both names side by side (the longest point
-  takes 2-3 times the median, near 84%, where the last species of the largest entries finish).
-- **One branch, then the other: the pace drops by 8 to 11 times** (common then scientific: median 630, longest 7,040 answers,
-  at 90-93%; scientific then common: 870 / 5,300 at 91-93%). Once one kind of names is complete (80% or 85%), the other
+  common names only 490 / 850; scientific only 650 / 1,760; both side by side 1,260 / 3,370; both, slow scientific 1,670 /
+  4,550. No long plateau for a player on one branch, nor for one learning both names side by side (the longest point
+  takes 2-3 times the median, near 85%, where the last species of the largest entries finish).
+- **One branch, then the other: the pace drops by 7 to 12 times** (common then scientific: median 580, longest 7,010 answers,
+  at 90-93%; scientific then common: 760 / 5,060 at 92-93%). Once one kind of names is complete (80% or 85%), the other
   kind is worth 20 or 15 points for as many units as the first kind's 55 or 60: each species' scientific name adds
-  0.267 × 75 / 351 ≈ 0.06 points to a player who knows its common names (0.17 to one who does not). This follows from the
+  0.267 × 75 / 340 ≈ 0.06 points to a player who knows its common names (0.18 to one who does not). This follows from the
   anchors (80 / 85 / 100%), not from a or b: any formula with these three points gives the second kind of names
   15-20 points. With the half credit, the second half of a species' scientific progress is also hidden until its bar
   passes its genus's half (S = max(...)): the longest points come right after the genera (90%).
 - **At the same effort, a player learning both names scores lower for a long time**: at 30,000 answers, common names only
-  80%, scientific only 71%, both side by side 61%; the both-names player catches up only near the end (100% at about
-  120,000). The fish leaderboard ranks by this score (FISH_PATH), so mid-path an RA learning both names sits below a diver
+  80%, scientific only 72%, both side by side 62%; the both-names player catches up only near the end (96% at 100,000,
+  100% by 120,000). The fish leaderboard ranks by this score (FISH_PATH), so mid-path an RA learning both names sits below a diver
   learning common names only with the same answers.
 - The three bars FISH_PATH proposes under the headline % (Entries, Common names, Scientific names) are the means the tool
   prints (entries, C, S); on the side-by-side path both rise together, so the bars show progress where the headline moves
