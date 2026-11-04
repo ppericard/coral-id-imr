@@ -1,0 +1,116 @@
+{
+ "photos": {
+  "fish-s115-cand-597133809": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s115-cand-244208976": {
+   "code": "d1g1ss11",
+   "keep": "best"
+  },
+  "fish-s115-cand-282049623": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s115-cand-456150978": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s115-cand-340927489": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s115-cand-340927494": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s115-cand-604121635": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s115-cand-604121647": {
+   "code": "p1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s115-cand-500452185": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s115-cand-173975323": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s115-cand-270197730": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s115-cand-660627133": {
+   "code": "p1g1smx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "The obvious fish is another kind (an anthias?)"
+  },
+  "fish-s115-cand-469636058": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s115-cand-212638095": {
+   "code": "p1g1ssm1",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "A drawn arrow points at the fish"
+  },
+  "fish-s115-cand-544258898": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s115-cand-688441204": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s115-cand-190331959": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s115-cand-190332082": {
+   "code": "p1d1ssm1",
+   "keep": "dup"
+  },
+  "fish-s115-cand-190332018": {
+   "code": "p1d1ss11",
+   "keep": "dup"
+  },
+  "fish-s115-cand-190332037": {
+   "code": "p1d1ss11",
+   "keep": "dup"
+  },
+  "fish-s115-cand-168029931": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s115-cand-168030035": {
+   "code": "p1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s115-cand-353494926": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s115-cand-724451922": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s115-cand-244494330": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s115-cand-660627121": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  }
+ }
+}
