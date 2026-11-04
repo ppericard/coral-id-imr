@@ -1,0 +1,128 @@
+{
+ "photos": {
+  "fish-s132-cand-688440981": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s132-cand-603843349": {
+   "code": "p0g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s132-cand-700667495": {
+   "code": "p1g3sss2",
+   "keep": "best"
+  },
+  "fish-s132-cand-700667529": {
+   "code": "p1g3sss2",
+   "keep": "dup"
+  },
+  "fish-s132-cand-717602279": {
+   "code": "p1g1bl12",
+   "keep": "best"
+  },
+  "fish-s132-cand-717602504": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s132-cand-717602260": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s132-cand-717602008": {
+   "code": "p1g1bm12",
+   "keep": "dup"
+  },
+  "fish-s132-cand-610778730": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s132-cand-610778767": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s132-cand-597905391": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s132-cand-726802182": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s132-cand-726802200": {
+   "code": "p1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s132-cand-630439116": {
+   "code": "p1g3bm11",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Murky yellow water; the striped fish looks like a juvenile"
+  },
+  "fish-s132-cand-630439117": {
+   "code": "p1g3bm1j1",
+   "keep": "dup"
+  },
+  "fish-s132-cand-690927013": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s132-cand-671026163": {
+   "code": "p1g3bsx1",
+   "keep": "best"
+  },
+  "fish-s132-cand-577410944": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s132-cand-571789236": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s132-cand-590774988": {
+   "code": "d1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s132-cand-590775006": {
+   "code": "d1g2sm1j2",
+   "keep": "dup"
+  },
+  "fish-s132-cand-617600170": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s132-cand-562955074": {
+   "code": "d1g0sl1a2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dead or stranded on shells? Not free in the water"
+  },
+  "fish-s132-cand-638016079": {
+   "code": "p1g2smm2",
+   "keep": "best"
+  },
+  "fish-s132-cand-717783419": {
+   "code": "p1g3bsx1",
+   "keep": "best"
+  },
+  "fish-s132-cand-637401695": {
+   "code": "p1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s132-cand-710782703": {
+   "code": "p1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s132-cand-627868032": {
+   "code": "p1g0sm1aj2",
+   "keep": "best"
+  },
+  "fish-s132-cand-627868080": {
+   "code": "p1g0sm1a2",
+   "keep": "dup"
+  }
+ }
+}
