@@ -591,7 +591,7 @@ test('plainOf: names in words, directions and tones', () => {
   assert.match(r.text, /^They differ: a typical genus gets between \d+% and \d+% right/);
   // a format reads against its own expected chance
   r = A.plainOf('fmt', {k: 'd_k4', est: 0.5, lo: 0.2, hi: 0.8, v: 'clear'}, {}, {row: {n: 100, E: 0.7, g0: 0.25}});
-  assert.match(r.text, /^Harder than the app expects: about \d+% right where it expects 70%/);
+  assert.match(r.text, /^Harder than the app expects: about \d+% recognised beyond guessing where it expects 60%/); // E 70%, floor 25%
 });
 
 test('plainOf: every effect of every analysis has a plain name, no code or model term', () => {
@@ -734,6 +734,29 @@ test('plainOf: typed verdict on the accuracy shown; no estimate yet reads as not
   const c = A.plainOf('back', {k: 'calib', v: 'thin', n: 1, need: null}, {});
   assert.match(c.text, /^Not enough data yet/);
   assert.strictEqual(c.tone, 'thin');
+});
+
+// Codex review #495 (4th pass): a format's difficulty is fitted with its own guess rate, so it is read as recognition
+// beyond guessing (the app's expectation without its guess floor), never as raw right answers on the app's floor; the
+// raw comparison is the format's "right answers against the app's expectation".
+test('plainOf: a format difficulty reads as recognition beyond guessing', () => {
+  const row = {k: 'k4', n: 500, E: 0.75, g0: 0.25, fit: {c: 0.5, d: -0.195}};
+  const r = A.plainOf('fmt', {k: 'd_k4', est: 0.195, lo: 0.1, hi: 0.3, v: 'clear'}, {}, {row});
+  near(r.base, 2 / 3, 0.001, 'the app expects 2/3 recognised beyond its 25% floor');
+  near(r.val, 1 / (1 + Math.exp(-(Math.log(2) - 0.195))), 0.001, 'shifted on recognition, no floor');
+  assert.match(r.text, /recognised beyond guessing/);
+  assert.match(A.PLAIN.fmt.d_k4.name, /beyond guessing/);
+});
+
+// Codex review #495 (5th pass): a chart of format difficulties is drawn on recognition beyond guessing, so it has its
+// own outcome heading, not "Chance of a right answer".
+test('outOf: format difficulties chart on their own beyond-guessing outcome', () => {
+  assert.strictEqual(A.outOf(A.PLAIN.fmt.d_k4), 'beyond');
+  assert.strictEqual(A.outOf(A.PLAIN.fmt.oe_k4), 'pts');
+  assert.strictEqual(A.outOf(undefined), 'right');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
+  assert.match(src, /beyond: '[^']*beyond guessing[^']*'/);
+  assert.ok(!/S\.o\b/.test(src), 'charts group by ANALYSIS.outOf, not the raw outcome');
 });
 
 // Codex review #500: "ended on 2+ misses" counts misses within the session only; the return rate uses the same

@@ -69,6 +69,7 @@ const AN_OUT = {
   stop: 'Chance to end the session after the answer',
   mix: 'Chance to pick a given wrong genus when it is offered',
   pts: 'Right answers against the app’s expectation',
+  beyond: 'Chance of recognising it, beyond guessing',
   guess: 'Success of a pure guess'
 };
 const anSpec = (key, e) => (ANALYSIS.PLAIN[key] || {})[e.k] || {o: 'right'};
@@ -310,11 +311,13 @@ function anEffects(a, key, fresh) {
   const E = (a.effects || []).map(e => [e, anPlain(key, e, a), anSpec(key, e)]),
     main = E.filter(([e]) => !e.sd),
     sds = E.filter(([e]) => e.sd);
-  const outs = [...new Set(main.filter(([e, P, S]) => P.val != null && e.v !== 'none' && S.o !== 'n').map(([, , S]) => S.o))];
+  const outs = [
+    ...new Set(main.filter(([e, P, S]) => P.val != null && e.v !== 'none' && ANALYSIS.outOf(S) !== 'n').map(([, , S]) => ANALYSIS.outOf(S)))
+  ];
   const plots = outs
     .map(o => {
       // a range the fit could not hold (wider than 20 on its own scale) stays in the table only
-      const L = main.filter(([e, P, S]) => S.o === o && P.val != null && !(e.hi - e.lo > 20));
+      const L = main.filter(([e, P, S]) => ANALYSIS.outOf(S) === o && P.val != null && !(e.hi - e.lo > 20));
       if (!L.length) return '';
       const P0 = L[0][1],
         same = L.every(([, P]) => P.base === P0.base),
@@ -1017,7 +1020,7 @@ Object.assign(HELP, {
   'an-rt': `<p><b>Answer time.</b> Seconds from the moment the photos are in view to the answer (0-600 s). Each line says how much faster or slower answers are in one situation than a typical answer, the others held equal: right against wrong answers, typed against picked, a photo enlarged, 2 choices against 4, a question the app rates harder, later in a session. <b>What makes answer times differ</b>: how much of the differences in time come from who answers (players), from the genus, from the photo, and from one time to the next. By genus and by player: the typical time, after pulling those with few answers towards the average.</p>${AN_HELP_COMMON}`,
   'an-zoom': `<p><b>Enlarging photos.</b> Is an answer more often right when the player enlarged a photo first, compared with the same player not enlarging, beyond what the app expected? And are players who enlarge often better or worse? Players: how often each enlarges, right when enlarging or not, and right answers against the app's expectation. Since 2026-11-03 20:24 the enlarge button is visible: compare milestones after it.</p>${AN_HELP_COMMON}`,
   'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p>${AN_HELP_COMMON}`,
-  'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects; and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p>${AN_HELP_COMMON}`,
+  'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects, beyond guessing (the format's own guess rate set aside); and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p>${AN_HELP_COMMON}`,
   'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p>${AN_HELP_COMMON}`,
   'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
