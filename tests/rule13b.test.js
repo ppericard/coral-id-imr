@@ -40,7 +40,7 @@ test('rule 13b: the engine never names nor tests a subject', () => {
     const src = f === 'core.js' ? core.replace(SUBJECTS, '') : read(f);
     src.split('\n').forEach((line, i) => {
       const at = `${f}:${i + 1}: ${line.trim()}`;
-      if (allowed(f, line)) return;
+      if (allowed(f, line) || /^\s*(\/\/|\/?\*)/.test(line)) return; // comment lines may name a subject
       if (lit.test(line)) bad.push('subject literal ' + at);
       if (/\bSUBJ(?:\.id)?\s*[!=]==?\s*['"`]|['"`][^'"`]*['"`]\s*[!=]==?\s*SUBJ\.id\b|\bSUBJ\.id\s*[!=]==?\s*[A-Z_]+\.SUBJ\b/.test(line))
         bad.push('subject id compared ' + at);
