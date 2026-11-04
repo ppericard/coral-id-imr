@@ -1050,6 +1050,22 @@ const WIDTHS = [390, 1280];
     }
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
+    // Every account counts (Pierre, 2026-11-04): the answers and players on Activity are the whole log's, the account
+    // this browser is signed in with included; no Others / Me switch.
+    const every = await p.evaluate(() => {
+      const k = Object.fromEntries(
+        [...document.querySelectorAll('.adm-kpis > div')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])
+      );
+      return {
+        answers: Number(k.Answers),
+        players: Number(k.Players),
+        all: ANS.rows.length,
+        ids: new Set(ANS.rows.map(r => r[0])).size,
+        sw: !!document.querySelector('[data-sf="who"]')
+      };
+    });
+    if (every.answers !== every.all || every.players !== every.ids || every.sw)
+      fails.push(`${w}px Activity: not every account counts ${JSON.stringify(every)}`);
     // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
     // Carla playing now (quiz, custom quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
     const recent = () =>
@@ -1266,15 +1282,9 @@ const WIDTHS = [390, 1280];
         wide: document.documentElement.scrollWidth - innerWidth
       }));
     await go('~health');
-    for (const v of ['all', 'others']) {
-      if (v === 'others') {
-        if (!(await p.$('[data-sf="elo"][data-v="others"]'))) {
-          fails.push(`${w}px Health: no "Without me" switch`);
-          break;
-        }
-        await p.click('[data-sf="elo"][data-v="others"]');
-        await settle();
-      }
+    // Every account counts (Pierre, 2026-11-04): no "Without me", "Others / Me" or "This is also me" anywhere.
+    if (await p.$('[data-sf="elo"], [data-sf="who"], [data-ume]')) fails.push(`${w}px Health: a filter on your own answers is back`);
+    for (const v of ['all']) {
       await p
         .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
           timeout: 10000
@@ -1378,10 +1388,6 @@ const WIDTHS = [390, 1280];
       await p.keyboard.press('Escape');
     }
     if (errs.length) fails.push(`${w}px Health: ${errs.slice(0, 3).join(' | ')}`);
-    if (await p.$('[data-sf="elo"][data-v="all"]')) {
-      await p.click('[data-sf="elo"][data-v="all"]');
-      await settle();
-    }
 
     // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
     // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
