@@ -829,7 +829,8 @@ time, each on its card, but never as the answer of the question right after its 
   opens no genus. Until then both genera were named on the buttons and the cards of those not met came together before
   the duel: a beginner who declined Open all went from 8 to 28 genera in 15 duels.
 - **"I've had the IMR lecture: open all genera"** (Pierre, same day: the first users are RAs who saw every genus in the
-  lecture and have little time): a button on the first cards, and in My progress while genera are still unopened,
+  lecture and have little time): a button on the first cards (not for a player who answered "I'm new to corals", Pierre
+  2026-11-04), and in My progress while genera are still unopened,
   opens every slate genus at once, without cards (`introAll`). The draw then asks first the genera never asked, with
   choices from the whole slate. A tinted box with a real button, not a chip (Pierre: white on white was easy to miss).
 - **Offer to open all** (Pierre, same day: 10 answers on 4 genera are too few to decide): between the 50th and the
@@ -876,8 +877,9 @@ time, each on its card, but never as the answer of the question right after its 
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
-model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met") until one is
-learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
+model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met": a card or an
+answer, since 2026-11-04, so it agrees with "N not open yet"; a genus met on a card but not asked yet reads "Met, not
+asked yet", and the level legend's first step "Not asked yet") until one is learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
 
 ### One progression path for every game (2026-11-04)
 
@@ -1215,7 +1217,9 @@ to 60 answers, `startDue` the verdict until its card):
 
 **The "lower" card is a gentle offer** (`quiz.js` `startFbShow`; Pierre, 2026-11-04: an RA or an expert who gets it by
 mistake must not feel judged): 💡 "A tip", "The first genera feel hard?", "They do for most people. Coral basics shows,
-on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes."; two buttons of equal weight
+on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes." (for a player who opened every
+genus at once, Pierre 2026-11-04: "All the genera at once is a lot" and "Coral basics in 5 minutes? …", from the subject's
+words, never a number of genera); two buttons of equal weight
 (both outlined): **Coral basics in 5 minutes** and **No thanks, I know the basics** (Escape). Nothing says what the
 player answered or that their level is low. "No thanks" changes nothing (the answer, the variables and the progress
 stay) and the card never comes back in that direction for that answer. **Coral basics** opens Coral basics and, silently,
