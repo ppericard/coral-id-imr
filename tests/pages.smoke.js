@@ -1767,6 +1767,36 @@ async function startSmoke(b, base) {
       fails.push('Genera: Coral basics not shown as done');
     await c.close();
   }
+  // What the start answer changes on screen (Pierre, 2026-11-04): "new" gets no "Open all" box on the first cards (My
+  // progress keeps it); "imr" and "know" get no Home line to Coral basics; the "lower" card of a player who opened all
+  // the genera speaks of all of them, with no number.
+  for (const c0 of ['new', 'imr', 'know']) {
+    const [c, p] = await open(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+    });
+    await c.addInitScript(c0 => localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: c0, via: 'tour', at: 0, t: 1})), c0);
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .hdoors'), null, {timeout: 30000});
+    const home = await p.evaluate(() => !!document.querySelector('#view .hdnew, #view .hdnewk'));
+    if (home !== (c0 === 'new')) fails.push(`start "${c0}": Home's Coral basics line ${home ? 'shown' : 'missing'}`);
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.intro', {timeout: 15000}).catch(() => {});
+    const box = await p.evaluate(() => !!document.querySelector('.unlock.intro .ulall'));
+    if (box !== (c0 !== 'new')) fails.push(`start "${c0}": the first cards' Open all box ${box ? 'shown' : 'missing'}`);
+    if (c0 === 'new') {
+      const lo = await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        introAll('card');
+        startFbShow('lo');
+        const d = document.querySelector('.startfb');
+        return {title: d.querySelector('h3').textContent, text: d.textContent, many: SUBJ.many};
+      });
+      if (lo.title !== `All the ${lo.many} at once is a lot` || /\d/.test(lo.title) || /\d+ genera/.test(lo.text))
+        fails.push(`start "new", all opened: the lower card ${JSON.stringify(lo)}`);
+    }
+    await c.close();
+  }
   if (errs.length) fails.push(`first-launch question: ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
   return fails;
 }
@@ -3092,7 +3122,10 @@ async function newPlayer(b, base) {
       .then(() => true)
       .catch(() => false);
     if (!nx) fails.push(`new player: no Next after answer ${i}`);
-    alone(await over(), `answer ${i}`);
+    // A card that came with the answer (the sign-in card at 20 answers) is answered first: a player cannot reach Next
+    // behind it (the card is modal, the quiz's keys wait for it). Clicking Next through it in the page, as this did
+    // until 2026-11-04, drew the next question and its genus card under it: two cards at once that no player can get.
+    if (!(await close(`after answer ${i}`))) break;
     await p.evaluate(() => document.getElementById('next')?.click());
   }
   await close('after 30 answers');
