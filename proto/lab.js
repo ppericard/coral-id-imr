@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Stamped at deploy (tools/stamp_versions.py: one hash of the Lab files), never edited: browsers never mix new and old files.
-const LAB_V = 83;
+const LAB_V = 84;
 // One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
 // 24 px grid, 1.75 stroke, currentColor; a tool without an entry falls back to its `icon` text.
 const LAB_ICONS = {
@@ -105,6 +105,21 @@ LAB.files.forEach(f => {
 /* ---------- helpers shared by the prototypes ---------- */
 // Slate order (data.json key order).
 const labNames = () => Object.keys(DATA.gen);
+// The genera a Lab game asks about (AGENTS.md rule 6d, one progression path: Pierre, 2026-11-04, "any future game or
+// mode, no exceptions"): those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the
+// subject on screen (the Tools are the corals'). Wrong choices may name any genus, as the quiz's do (model.js
+// distractors); the reference tools (map, matrix, gallery, key, board, sizes, explorer) keep every genus.
+const labPlay = () => {
+  if (typeof unlocked !== 'function') return labNames();
+  const f = () => unlocked(labNames());
+  return typeof inSubject === 'function' && typeof SUBJECTS !== 'undefined' ? inSubject(SUBJECTS[0].id, f) : f();
+};
+// Nothing unlocked yet (a new player): the game says where genera open instead of asking about one never met.
+const labNone = el => {
+  if (labPlay().length) return false;
+  el.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+  return true;
+};
 const genLink = n => `#g-${encodeURIComponent(n)}`;
 const labFams = () => [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
 // Mid-tone hues read on both light and dark backgrounds.

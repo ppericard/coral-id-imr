@@ -24,7 +24,8 @@ LAB.add({
     const body = root.querySelector('#rvbody');
     const round = () => {
       cancelAnimationFrame(raf);
-      const t = pick(labNames()),
+      if (labNone(body)) return;
+      const t = pick(labPlay()),
         v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view,
         L = gamePics(t, v),
         p = L.length ? pick(L) : viewPhoto(t, v);

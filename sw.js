@@ -42,7 +42,7 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=84',
+  'proto/lab.js?v=85',
   'proto/lab.css?v=57',
   'home-art.js?v=6',
   'home.js?v=38',
@@ -65,7 +65,7 @@ const SHELL = [
     'pairs',
     'gallery',
     'cards'
-  ].map(f => `proto/${f}.js?v=83`)
+  ].map(f => `proto/${f}.js?v=84`)
 ];
 const get = async (c, u, n = 3) => {
   for (let i = 1; ; i++) {
