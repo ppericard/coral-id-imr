@@ -17,20 +17,4 @@ _(none)_
 Overwritten by the end-of-day protocol (16:30-17:30 Manila): date; done today; unfinished work (branch, PR, state, next
 step); waiting on Pierre; first thing to do tomorrow.
 
-2026-11-04, Analyses track (one agent session, sessions study + three stacked PRs):
-
-- **Done**: a read-only study of play sessions on the real answer log (8 RAs, 19 sessions, 3.5 days; anonymised,
-  kept out of the repo): sessions end on a single miss far more often than chance, the drop at the end is the last 3
-  answers only, no fatigue up to ~100 answers, no visible forgetting over overnight breaks, one long session per
-  half-day (06-07 h, 16-21 h). Small samples: leads to re-check as the log grows.
-- **#495** Analyses in plain words (every result in words, direction and size, helps / hurts / clear / no clear
-  effect / not enough data, plain names everywhere): Pierre "already better"; Codex findings fixed in three passes;
-  merged (fc7dac3).
-- **#500** (stacked on #495) Analyses › Sessions in figures (`sessDesc`): every session, start hours, along a
-  session, how sessions end, after a break, players coming back, first session against later ones. Codex findings
-  fixed; merged (20fbe4d).
-- **#502** Analyses visual: every result as a diverging bar per outcome on the Overview and each
-  view, Show / Sort / fold / jump list kept per page in this browser, words and tables folded. Open, screenshots for
-  Pierre at 390 and 1280; Codex review requested.
-- **Dropped** (Pierre): test-account / "without me" filters in Analyses (another agent simplifies them elsewhere).
-- **Next**: show Pierre the #502 screenshots, answer Codex on #502, merge it.
+_(not filled yet)_
