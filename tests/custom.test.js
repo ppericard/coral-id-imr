@@ -3,6 +3,7 @@
 // genera, with core.js's confusion scores. Only selected genera are asked; the choices come from the selection first,
 // with the photo quiz's trap rules inside it, and from the other genera in play only when the selection is under 4.
 const test = require('node:test');
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -27,7 +28,7 @@ const GEN = {
 const PLAY = Object.keys(GEN);
 function model({P = {}, ab = {}} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b));
+    pick = (a, b) => block(src, a, b);
   const ctx = {
     P,
     PCONF: {},

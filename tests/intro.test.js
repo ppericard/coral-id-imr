@@ -2,6 +2,7 @@
 // introMerge; docs/LEARNING.md "First meeting with a genus"): model.js's own code run in Node on stubs (the player's
 // record P, the slate, the store).
 const test = require('node:test');
+const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -11,7 +12,7 @@ const fs = require('fs'),
 let CLOCK = 1.8e12;
 function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    block = src.slice(src.indexOf('// First meeting with a genus (Pierre'), src.indexOf('const introSince'));
+    block = cut(src, '// First meeting with a genus (Pierre', 'const introSince');
   const saved = {},
     ctx = {
       ...require('./subj.stub.js')(), // the corals as the current subject

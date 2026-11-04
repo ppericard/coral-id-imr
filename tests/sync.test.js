@@ -1,4 +1,5 @@
 // Sync script (tools/sync/Code.gs) against an in-memory sheet: node --test tests/
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const test = require('node:test'),
   assert = require('node:assert');
 const {loadCodeGs} = require('./gas.js');
@@ -963,7 +964,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
 function modelHold(saved = {}) {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
     intro = /const INTRO = \{[\s\S]*?\n\};\n/.exec(src)[0],
-    hold = src.slice(src.indexOf('const HOLDK = '), src.indexOf('const introSince'));
+    hold = block(src, 'const HOLDK = ', 'const introSince');
   // The corals' keys (app.js sKey / sDev for the current subject).
   const ctx = {
     store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)},

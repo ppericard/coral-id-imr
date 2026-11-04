@@ -5,6 +5,7 @@
 // step on the genus given, rule 13 kept in the progress) leaves the abilities near the truth and predicts the next
 // answer better.
 const test = require('node:test');
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const {evaluate, kOf} = require('../tools/abilityeval.js');
 
@@ -200,7 +201,7 @@ test('the success aimed for follows the global level, with no cliff', () => {
     path = require('path'),
     vm = require('vm');
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
+    pick = (a, b) => block(src, a, b),
     ctx = {...require('../core.js'), P: {}};
   vm.createContext(ctx);
   vm.runInContext(pick('const PICKD =', '// The schedule of the format') + '\nthis.M = {aimP, aimOff, PICKD};', ctx);

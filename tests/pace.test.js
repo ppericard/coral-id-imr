@@ -2,6 +2,7 @@
 // mix-ups", "Look-alikes from the data", "The apology card"): model.js's and quiz.js's own code run in Node on stubs (the
 // player's record P, the cards, the store), core.js's pure rules directly.
 const test = require('node:test');
+const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -13,7 +14,7 @@ const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 // opening hold (holdStep, introHold, holdEase), on stubs.
 function model({P = {}} = {}) {
   const src = read('model.js'),
-    block = src.slice(src.indexOf('// Progressive path (Pierre'), src.indexOf('const introSince'));
+    block = cut(src, '// Progressive path (Pierre', 'const introSince');
   const saved = {},
     ctx = {
       ...require('./subj.stub.js')(), // the corals as the current subject
