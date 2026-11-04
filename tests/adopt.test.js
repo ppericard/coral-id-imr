@@ -895,7 +895,8 @@ test('a replay adopted from a script before v36 replays the pending answers with
     [C.START_SHEET, true]
   ]) {
     const a = app({ls: {[C.CHOICE.KEY]: JSON.stringify(start)}});
-    assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, v), true);
+    // From v36 the replay says which history it applied (the same as this device's here).
+    assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: [], ...(on ? {fp: C.startFp(start)} : {})}, pending, v), true);
     assert.strictEqual(a.ctx.P.Pocillopora.th, th(on), `script v${v}: ability ${a.ctx.P.Pocillopora.th}`);
   }
 });
@@ -918,4 +919,45 @@ test("signing in keeps the first-launch answer given here before, and the accoun
   );
   assert.strictEqual(C.startPriorAt(o, 150), C.startVars('new').p);
   assert.strictEqual(C.startPriorAt(o, 250), C.startVars('know').p);
+});
+
+// Codex review #428 (P2): a replay made with another first-launch history than the device now holds (the sheet's,
+// before this device's newer answer is saved) is not adopted: the save that follows carries the merged history, and
+// its reply brings the replay made with it.
+test('a replay made with another first-launch history is not adopted; the next save brings the right one (Codex review #428)', async () => {
+  const s = loadCodeGs(withData()),
+    K = C.CHOICE.KEY,
+    L = Array.from({length: 12}, (_, i) => qa('h' + i, i)),
+    acct = {c: 'new', t: 1, at: 0, via: 'tour', w: [], fb: {}, h: [['new', 0, 1, 'tour']]},
+    here = {c: 'know', t: 2, at: 0, via: 'card', w: [], fb: {}, h: [['know', 0, 2, 'card']]};
+  // The account: the answers logged and its history saved, under the former rules version.
+  assert.ok(
+    s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}', [K]: JSON.stringify(acct)}, summary: {}, answers: L}).log
+  );
+  const a = app({
+    sheet: s,
+    SYNC: {name: 'Ana', pin: '1234', log: [], base: {}},
+    ls: {[K]: JSON.stringify(here), 'reefid-sync-coral-rv': '0'}
+  });
+  // model.js startMerge (stubbed in this harness): the union of the two histories.
+  a.ctx.startMerge = j => {
+    const r = JSON.parse(j || 'null');
+    if (r) a.store.set(K, C.startUnion(a.store.get(K, null), r));
+  };
+  await a.syncPull();
+  const merged = JSON.parse(JSON.stringify(a.store.get(K, null)));
+  assert.deepStrictEqual(
+    merged.h.map(x => x[0]),
+    ['new', 'know']
+  );
+  assert.ok(a.rvApplied() < C.RV, "the replay made with the sheet's history alone is not adopted");
+  // The save carries the merged history; its reply's replay is made with it, and adopted.
+  await a.syncPush();
+  assert.strictEqual(a.rvApplied(), C.RV);
+  const st = s.get({stats: '1'}),
+    want = C.replayProgress(
+      L.map(x => C.logRow(x, 'ana')),
+      {gen: {...DATA.x.gen, ...DATA.gen}, mem: st.mem, conf: st.conf, starts: {ana: merged}}
+    ).ana.P;
+  assert.strictEqual(a.ctx.P.Acropora.th, want.Acropora.th, 'the abilities from the merged history');
 });

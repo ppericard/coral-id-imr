@@ -139,6 +139,13 @@ function replayAdopt(rp, pending, v, cut, pre) {
   // Signed in with anonymous answers not moved to the account yet (signIn; the first save's reply clears SYNC.anon before
   // it adopts): a replay of the account's log alone would leave them out.
   if (SYNC && SYNC.anon) return false;
+  // A replay made with another first-launch history than this device's (Codex review #428: a history merged here and not
+  // saved yet): not adopted, nor its rules version marked applied; the save that follows carries the merged history, and
+  // its reply brings the replay made with it (Code.gs v36 sends the fingerprint it used, core.js startFp).
+  if (Number(v) >= START_SHEET && (rp.fp || '') !== startFp(store.get(CHOICE.KEY, null))) {
+    if (SYNC) ((SYNC.dirty = true), store.set('reefid-account', SYNC));
+    return false;
+  }
   try {
     const from = rvApplied(),
       played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && (s.ok || 0) + (s.ko || 0) > 0),
