@@ -212,6 +212,9 @@
   //   log     answers go to the sheet's Answers tab (photo ratings, confusions, the admin, the opening hold's replay)
   //   ach, board  achievements and the leaderboard count this subject
   //   progress    the views of My progress (progress.js quizBoard), the first by default
+  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.quiz)
+  //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js; fish: no claim about what tells
+  //           them apart)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, #g-); the others,
   //           Identify and the Tools are the corals' for now
   const SUBJECTS = [
@@ -225,6 +228,8 @@
       what: 'Coral',
       card: 'genus',
       lecture: 'the IMR coral lecture',
+      pv: '',
+      zoom: 'the corallites, the detail that often tells look-alikes apart',
       views: [
         ['wide', 'Colony'],
         ['medium', 'Close-up'],
@@ -248,6 +253,8 @@
       what: 'Fish',
       card: 'fish',
       lecture: 'the IMR fish presentation',
+      pv: 'fish.',
+      zoom: 'the markings and the fins',
       remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
@@ -2503,15 +2510,30 @@
   };
   // The page name of a hash: its route without the parameters, a genus sheet (g-Acropora) is 'genus', Look-alikes
   // ('cmp', 'cmp|A|B') 'lookalikes', a side-by-side comparison (cmp-A|B) 'compare', Home 'home'.
-  function pageName(h) {
+  // pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn with Fish on screen is 'fish.<page>' ('fish.quiz',
+  // 'fish.home'), so the Pages tab tells a fish page from a coral one (fish UX study, 2026-11-04: fish used the corals'
+  // page names); the corals' prefix is empty. '.' is in PAGES.RE: the sheet (pagesClean) keeps these names as they come.
+  function pageName(h, pre = '') {
     const s = String(h == null ? '' : h).replace(/^#/, '');
-    if (!s || s === 'home') return 'home';
-    if (s.startsWith('g-')) return 'genus';
-    if (s.startsWith('cmp-')) return 'compare';
-    if (s === 'cmp' || s.startsWith('cmp|')) return 'lookalikes';
-    if (s === 'quiz-board') return 'progress';
-    const n = s.split('|')[0].split(';')[0];
-    return PAGES.RE.test(n) ? n : 'other';
+    let n;
+    if (!s || s === 'home') n = 'home';
+    else if (s.startsWith('g-')) n = 'genus';
+    else if (s.startsWith('cmp-')) n = 'compare';
+    else if (s === 'cmp' || s.startsWith('cmp|')) n = 'lookalikes';
+    else if (s === 'quiz-board') n = 'progress';
+    else {
+      n = s.split('|')[0].split(';')[0];
+      if (!PAGES.RE.test(n)) n = 'other';
+    }
+    if (!pre) return n;
+    return PAGES.RE.test(pre + n) ? pre + n : pre + 'other';
+  }
+  // A page name read back (admin): its subject (by its SUBJECTS pv prefix) and its page ('fish.quiz' -> ['fish', 'quiz'],
+  // 'quiz' -> ['coral', 'quiz']).
+  function pageSubj(n) {
+    const s = String(n == null ? '' : n),
+      S = SUBJECTS.find(x => x.pv && s.startsWith(x.pv)) || SUBJECTS.find(x => !x.pv);
+    return [S.id, S.pv ? s.slice(S.pv.length) : s];
   }
   // How a genus sheet was reached, from the page it was opened from.
   function pageFrom(h) {
@@ -2533,10 +2555,11 @@
     S.at = 0;
   }
   // A page opened: h its hash; o.genus the genus of a sheet (checked by the caller against the data), o.from how it
-  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view.
+  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view, o.pre the
+  // page-name prefix of the subject on screen (SUBJECTS pv, pageName).
   function pagesOpen(S, h, now, o = {}) {
     pagesStop(S, now);
-    const n = pageName(h),
+    const n = pageName(h, o.pre),
       g = n === 'genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
     (S.r[n] = S.r[n] || [0, 0])[0]++;
     if (g) (S.g[g] = S.g[g] || [0, 0, PAGES.FROM.includes(o.from) ? o.from : 'other', o.asked ? 1 : 0])[0]++;
@@ -2820,6 +2843,7 @@
     learnedOf,
     PAGES,
     pageName,
+    pageSubj,
     pageFrom,
     pagesNew,
     pagesStop,
