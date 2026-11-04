@@ -3304,6 +3304,76 @@
     "at": "2026-11-04",
     "n": 44
    }
+  },
+  "s454": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 29
+   }
+  },
+  "s365": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 32
+   }
+  },
+  "s455": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 25
+   }
+  },
+  "s456": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 27
+   }
+  },
+  "s457": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 16
+   }
+  },
+  "s459": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 32
+   }
+  },
+  "s462": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 37
+   }
+  },
+  "s366": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 33
+   }
+  },
+  "s463": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 33
+   }
+  },
+  "s464": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-04",
+    "n": 41
+   }
   }
  },
  "photo": {},
@@ -61864,6 +61934,351 @@
    "e": 2,
    "k": "dup"
   },
+  "fish-s365-cand-388380802": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-432962477": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-447763768": {
+   "jt": "o0g3ssx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-447763786": {
+   "jt": "o0g3ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-447763799": {
+   "jt": "o0g3ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-463479527": {
+   "jt": "o0g1sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s365-cand-469860370": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-469860371": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-469860372": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-485793574": {
+   "jt": "o0d2ssx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Murky green sand; I cannot find the garden eels for sure"
+  },
+  "fish-s365-cand-485793586": {
+   "jt": "o0d2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-486780328": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-486780366": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-489112913": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Bright blurry sand; I cannot find the garden eels for sure"
+  },
+  "fish-s365-cand-500436903": {
+   "jt": "o0g1ssx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-513990260": {
+   "jt": "o0g3sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-527508704": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-531243138": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-564912280": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-564912323": {
+   "jt": "o0d3sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-585532803": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-594968854": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-594970134": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s365-cand-621190053": {
+   "jt": "o0d3sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-650010219": {
+   "jt": "o0g2ss1c",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-682624917": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-682624966": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-682624998": {
+   "jt": "o0g3ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s365-cand-682625412": {
+   "jt": "o0g3sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s365-cand-688420895": {
+   "jt": "o0g3ssx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s365-cand-724608570": {
+   "jt": "o0g1ssx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "I cannot find the garden eels for sure on the photo"
+  },
+  "fish-s365-cand-724608576": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-485729306": {
+   "jt": "d1g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-568090157": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-608568266": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-685829224": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-688442820": {
+   "jt": "o1g1smm",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-688442862": {
+   "jt": "h1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-688444627": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-698224593": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Wrapped in an octopus's arms; the ray's shape is hard to read"
+  },
+  "fish-s366-cand-698224599": {
+   "jt": "o1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-698224607": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s366-cand-708880417": {
+   "jt": "o1d3smx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "A dark fish in blue water: I cannot read the ray on the photo"
+  },
+  "fish-s366-cand-712514495": {
+   "jt": "d1g1ssm",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s366-cand-712560043": {
+   "jt": "d1g2ssxc",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-712560205": {
+   "jt": "d1g2ssxc",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-712560236": {
+   "jt": "d1g2ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s366-cand-712560264": {
+   "jt": "d1g2ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-712565160": {
+   "jt": "d1g1ssxc",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-712565327": {
+   "jt": "d1g1ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-712565353": {
+   "jt": "d1g1ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s366-cand-721148175": {
+   "jt": "d1g1sm1",
+   "e": 3,
+   "k": "alt"
+  },
+  "fish-s366-cand-721148185": {
+   "jt": "h0d1sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s366-cand-721148192": {
+   "jt": "h0g1sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s366-cand-723998060": {
+   "jt": "o1g1mlm",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s366-cand-723998077": {
+   "jt": "o1g1mlm",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s366-cand-723998080": {
+   "jt": "o1g1mlm",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s366-cand-728735018": {
+   "jt": "d0g1bl1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-728735020": {
+   "jt": "d0g1bl1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s366-cand-728735022": {
+   "jt": "d0g1bl1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-728735113": {
+   "jt": "d0g1bl1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s366-cand-732419435": {
+   "jt": "d0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s366-cand-736789205": {
+   "jt": "d1g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s366-cand-744733472": {
+   "jt": "d1g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s366-cand-744735427": {
+   "jt": "o1g1ss1",
+   "e": 1,
+   "k": "best"
+  },
   "fish-s367-cand-378687658": {
    "jt": "o1g1sm1j",
    "e": 3,
@@ -73464,6 +73879,1254 @@
    "jt": "d1g1sm1",
    "e": 2,
    "k": "dup"
+  },
+  "fish-s454-cand-266502898": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s454-cand-266502912": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-266502924": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s454-cand-312057632": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-336042634": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-338396182": {
+   "jt": "o0g1sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-338396710": {
+   "jt": "o0g1sms",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s454-cand-338396711": {
+   "jt": "o0g1sms",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s454-cand-361274775": {
+   "jt": "o0g1ss1c",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s454-cand-361274787": {
+   "jt": "o0g1ss1c",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s454-cand-361274798": {
+   "jt": "o0g2bsx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s454-cand-361274817": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s454-cand-423320215": {
+   "jt": "o0g1sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s454-cand-431902279": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s454-cand-459045911": {
+   "jt": "p0g1sss",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s454-cand-459048004": {
+   "jt": "p0g1sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s454-cand-461172584": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s454-cand-467872503": {
+   "jt": "o0g1sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-531243178": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-532628967": {
+   "jt": "o0g3ssx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s454-cand-546214267": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s454-cand-556402248": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s454-cand-556403950": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s454-cand-590975887": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s454-cand-592249481": {
+   "jt": "o0g3ssx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s454-cand-597401591": {
+   "jt": "o0g2bsxc",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "I cannot find the garden eels for sure among the rubble"
+  },
+  "fish-s454-cand-604571827": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-66428098": {
+   "jt": "o0g1sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s454-cand-746238218": {
+   "jt": "p0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-257440695": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-260843351": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-281904847": {
+   "jt": "o0d1sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-31996439": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-329022180": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-329022183": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s455-cand-348240115": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-438226017": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-442951976": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-442952051": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s455-cand-442952053": {
+   "jt": "o0g2bm1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s455-cand-443357388": {
+   "jt": "o0n0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-461002547": {
+   "jt": "o0d2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-466113021": {
+   "jt": "o0g2bm1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s455-cand-472474598": {
+   "jt": "o0n0ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s455-cand-472474776": {
+   "jt": "o0g2ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s455-cand-472474784": {
+   "jt": "o0g2ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s455-cand-472474797": {
+   "jt": "o0g2ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s455-cand-539318630": {
+   "jt": "o0n0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-552079330": {
+   "jt": "o0g3sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-575986699": {
+   "jt": "o0g2sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-652871218": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s455-cand-752379312": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-753209381": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s455-cand-96590990": {
+   "jt": "p1g1sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "fish-s456-cand-140403806": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-14753610": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-156271": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s456-cand-175234804": {
+   "jt": "o0d3sss",
+   "e": 1,
+   "k": "alt"
+  },
+  "fish-s456-cand-175234812": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s456-cand-21472389": {
+   "jt": "o0d2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-21472393": {
+   "jt": "o0d2sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s456-cand-255401023": {
+   "jt": "o0d2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-264123748": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s456-cand-429956891": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-435678000": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s456-cand-448104684": {
+   "jt": "o0d1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s456-cand-456808252": {
+   "jt": "o0g1sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s456-cand-459439904": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-460172567": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-467437205": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Distant and grey; I cannot find the garden eels for sure"
+  },
+  "fish-s456-cand-467437207": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s456-cand-467437218": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s456-cand-467437230": {
+   "jt": "o0g2ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s456-cand-515795674": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-532628968": {
+   "jt": "o0g3sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s456-cand-596632536": {
+   "jt": "o0d2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-60082176": {
+   "jt": "o0n0sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s456-cand-608171747": {
+   "jt": "o0d3sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s456-cand-690055077": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s456-cand-690055082": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s456-cand-690055100": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s457-cand-257440704": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s457-cand-304014489": {
+   "jt": "h0g1ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s457-cand-304014546": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s457-cand-333117821": {
+   "jt": "o0g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s457-cand-49212232": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s457-cand-577696326": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s457-cand-61381615": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s457-cand-62101751": {
+   "jt": "o0g1sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s457-cand-66429507": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s457-cand-684095071": {
+   "jt": "o0g2ssxc",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "I cannot find the garden eel for sure on the photo"
+  },
+  "fish-s457-cand-708305884": {
+   "jt": "o0g2ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s457-cand-750865067": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s457-cand-752088053": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s457-cand-752088144": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s457-cand-752088226": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s457-cand-753661076": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-109440279": {
+   "jt": "o0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-157623141": {
+   "jt": "o0g2ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s459-cand-186368792": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s459-cand-186368799": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-186368802": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-186368803": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-257874637": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-271908227": {
+   "jt": "h0g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-271908386": {
+   "jt": "h0g1sm1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s459-cand-285973222": {
+   "jt": "o0g2ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s459-cand-328413812": {
+   "jt": "o0d1sm1c",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s459-cand-359385257": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-445426761": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s459-cand-445426764": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s459-cand-445426774": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s459-cand-445426783": {
+   "jt": "o0g2sss",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s459-cand-447292806": {
+   "jt": "o0d2ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s459-cand-454774564": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-459215358": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-467437438": {
+   "jt": "o0d2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s459-cand-472688657": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s459-cand-48039814": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s459-cand-48039816": {
+   "jt": "o0g2sms",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-48039818": {
+   "jt": "o0g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-516970341": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-547287527": {
+   "jt": "o0n0sms",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s459-cand-547287535": {
+   "jt": "o0n0sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s459-cand-635208116": {
+   "jt": "o0g2sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s459-cand-635208150": {
+   "jt": "o0g2sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-722888577": {
+   "jt": "o0g1sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s459-cand-722888581": {
+   "jt": "o0g1sss",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s459-cand-753209446": {
+   "jt": "o0g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s462-cand-2172206": {
+   "jt": "d1g2ssxc",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "I cannot find the ray for sure on the sand"
+  },
+  "fish-s462-cand-303759560": {
+   "jt": "o1g3sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-303759562": {
+   "jt": "o1g3sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-303759563": {
+   "jt": "o1g3sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-303759596": {
+   "jt": "o0g3sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-313188141": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s462-cand-313189187": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s462-cand-333783074": {
+   "jt": "h1n0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s462-cand-352669003": {
+   "jt": "d1g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s462-cand-352669034": {
+   "jt": "h1g1sl1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s462-cand-352669051": {
+   "jt": "h1g1sl1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s462-cand-352669226": {
+   "jt": "d1g1sm1c",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-385018975": {
+   "jt": "d1g3sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-431478322": {
+   "jt": "o1g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s462-cand-472624349": {
+   "jt": "d0g3sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-472624360": {
+   "jt": "d0g3sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-472625584": {
+   "jt": "d1g2sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-472625840": {
+   "jt": "d0g2sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-500438939": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s462-cand-500438970": {
+   "jt": "h0g1sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-518685458": {
+   "jt": "h1g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-552118235": {
+   "jt": "d1g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-60591427": {
+   "jt": "h0n0sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-620776310": {
+   "jt": "d1n0ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s462-cand-620776311": {
+   "jt": "d1n0ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s462-cand-620776322": {
+   "jt": "d1n0ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s462-cand-620776324": {
+   "jt": "d1n0ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s462-cand-625299290": {
+   "jt": "d1g3ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s462-cand-625299305": {
+   "jt": "d1g3ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s462-cand-650454403": {
+   "jt": "d1g3sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-716055834": {
+   "jt": "d1g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s462-cand-731169344": {
+   "jt": "d1g2bs1c",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Blurry; I cannot find the ray for sure on the sand"
+  },
+  "fish-s462-cand-733436263": {
+   "jt": "h0g1sm1c",
+   "e": 2,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Only the eyes show out of the sand; the ray is hard to make out"
+  },
+  "fish-s462-cand-733436268": {
+   "jt": "h0g1sm1c",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s462-cand-78395985": {
+   "jt": "d1d2ss1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s462-cand-78395999": {
+   "jt": "d1d2ssxc",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s462-cand-78397959": {
+   "jt": "d1g2ss1c",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-176116757": {
+   "jt": "p1g1bsx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Seen through a rippled surface; I cannot find the shark for sure"
+  },
+  "fish-s463-cand-305627687": {
+   "jt": "p1g1sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "fish-s463-cand-324102856": {
+   "jt": "p1g1bs1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-428336709": {
+   "jt": "d1g3bm1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-688426483": {
+   "jt": "o1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s463-cand-688426821": {
+   "jt": "p1g1sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "fish-s463-cand-688442745": {
+   "jt": "p1g2bm1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-688442779": {
+   "jt": "p1d3bm1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-689098652": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s463-cand-689098654": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s463-cand-689098655": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s463-cand-689099410": {
+   "jt": "d1g2sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s463-cand-689099725": {
+   "jt": "d1g2sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s463-cand-689099727": {
+   "jt": "d1g2sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s463-cand-705903436": {
+   "jt": "p1g1bl1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-705903444": {
+   "jt": "p1g1bl1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-722356769": {
+   "jt": "p1g2ssx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "I cannot find the shark for sure on the photo"
+  },
+  "fish-s463-cand-724562201": {
+   "jt": "d1g2bms",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-724562206": {
+   "jt": "d1g2bms",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-724562228": {
+   "jt": "d1g2bms",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-729413620": {
+   "jt": "p1g3bmm",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-731359560": {
+   "jt": "o1g3sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s463-cand-734279873": {
+   "jt": "d1g1bsxj",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-734279875": {
+   "jt": "d1g1bsxj",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-734279956": {
+   "jt": "d1g1bsxj",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-734279957": {
+   "jt": "d1g1bsxj",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Seen through a rippled surface; I cannot find the juvenile for sure"
+  },
+  "fish-s463-cand-734280258": {
+   "jt": "d1g1ssxj",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-734280260": {
+   "jt": "d1g1ss1j",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-734280261": {
+   "jt": "d1g1ss1j",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s463-cand-735239851": {
+   "jt": "d1g1bl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s463-cand-735239889": {
+   "jt": "d1g1bm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s463-cand-753075933": {
+   "jt": "p1g2bss",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s463-cand-756449951": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s464-cand-345965772": {
+   "jt": "o1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s464-cand-358682005": {
+   "jt": "d1g2sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-358682011": {
+   "jt": "d1g2sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-358682030": {
+   "jt": "d1g2sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-358682036": {
+   "jt": "o1g2sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-358992845": {
+   "jt": "h1g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-358992849": {
+   "jt": "h1g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-358992852": {
+   "jt": "h1g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-428337572": {
+   "jt": "d1g3bsx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Blue and blurry; I cannot find the shark for sure"
+  },
+  "fish-s464-cand-428337585": {
+   "jt": "d1g3bm1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-428337587": {
+   "jt": "d1g3bl1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-513879776": {
+   "jt": "o1n0sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s464-cand-595525587": {
+   "jt": "o1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s464-cand-682615201": {
+   "jt": "o0n0sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-682615226": {
+   "jt": "o0g3bl1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-682615264": {
+   "jt": "p0g3sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-682615321": {
+   "jt": "p0g3bl1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-688398640": {
+   "jt": "o1g3smm",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s464-cand-688399323": {
+   "jt": "p1g2sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s464-cand-688441467": {
+   "jt": "p0g1slm",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-688442421": {
+   "jt": "d1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s464-cand-694485678": {
+   "jt": "d1g2ssx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Murky; I cannot find the shark for sure on the photo"
+  },
+  "fish-s464-cand-694485681": {
+   "jt": "d1g2bm1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-694485682": {
+   "jt": "d1g2bm1",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-697721572": {
+   "jt": "d1g2bsx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-697721573": {
+   "jt": "d1g2bsx",
+   "e": 1,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Murky; I cannot find the shark for sure on the photo"
+  },
+  "fish-s464-cand-697721582": {
+   "jt": "d1g2bsx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-697721622": {
+   "jt": "d1g2bsx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-703284480": {
+   "jt": "d1g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-703284518": {
+   "jt": "d1g2sm1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-703284558": {
+   "jt": "d1g2ssm",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s464-cand-717654327": {
+   "jt": "o1g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-725668928": {
+   "jt": "p1g2sms",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-727791997": {
+   "jt": "o1g2sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-730592443": {
+   "jt": "p1g3bm1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s464-cand-735206014": {
+   "jt": "h0g1sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s464-cand-735206041": {
+   "jt": "h1g1sms",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s464-cand-735206050": {
+   "jt": "h1g1sms",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s464-cand-735206083": {
+   "jt": "h0g1sl1",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s464-cand-752940744": {
+   "jt": "d1g1ssm",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s464-cand-758912347": {
+   "jt": "p1g2sl1",
+   "e": 3,
+   "k": "best"
   },
   "fish-s473-cand-179820840": {
    "jt": "d1g0sm1a",
