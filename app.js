@@ -778,7 +778,10 @@ const GLOSS_PAT = {
   'Radial corallites': 'radial corallites?',
   'Tentacular lobes': 'tentacular lobes?',
   'Axial furrow': 'axial furrow',
-  'Spinules': 'spinules?'
+  'Spinules': 'spinules?',
+  // The wall around each cup (Pierre, 2026-11-03: "wall" is one of the words that link to Coral basics); "separate walls"
+  // and "shared walls" keep their own entries (longer patterns win at the same place).
+  'Wall': 'walls?'
 };
 let glossRe = null;
 // Each term is underlined once per text block, at its first occurrence: a tip saying "corallites" three times gets one
@@ -819,12 +822,57 @@ document.body.appendChild($gpop);
 // the sourced definition with its source.
 const termDef = ([, d, src, plain]) =>
   `${plain ? `${esc(plain)} <span class="gdef">${esc(d)}</span>` : esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}`;
+// Coral basics' words (proto/basics.js, its Words list), each with the step that shows it ('<step>' or '<step>|<view>'), a
+// card of Corallite anatomy ('@<card>') or none (''), and the plain line used when data.json terms has none. Here, in
+// the first tier, so a glossary popup links the same way before and after the Tools tier is in (Codex review #428:
+// a deferred '#basics|<term>' opened the last step viewed for an anatomy word or a word with no step).
+const BASICS_WORDS = [
+  ['Colony', 'colony', 'Many polyps living together on one skeleton.'],
+  ['Polyp', 'polyp', 'One tiny coral animal: a soft tube, a mouth, a ring of tentacles.'],
+  ['Mouth', 'polyp', 'In the middle of the polyp. IMR asks: is it raised or embedded?'],
+  ['Corallite', 'corallite', 'The stony cup of one polyp.'],
+  ['Septa', 'septa', 'Thin blades inside the cup, from the rim to the centre.'],
+  ['Costae', 'septa', 'The same blades, carrying on outside the cup’s wall.'],
+  ['Septal teeth', 'teeth', 'Teeth on the top edge of the septa: fine or large.'],
+  ['Wall', 'walls', 'The rim around each cup: separate, shared, forming valleys, or not visible at all.'],
+  ['Separate walls', 'walls|separate', 'Each cup has its own wall, with a gap between cups.'],
+  ['Shared walls', 'walls|shared', 'Neighbouring cups share one wall, like a honeycomb.'],
+  ['Coenosteum', 'walls|separate', 'The skeleton in the gap between cups with separate walls.'],
+  ['Valleys', 'walls|valleys', 'Cups merged into long rows with several mouths (brain corals).'],
+  ['Indistinguishable walls', 'walls|nowall', 'No wall to see: the lines run from one centre to the next.'],
+  ['Septo-costae', 'walls|nowall', 'Those lines, running from one centre to the next when there is no wall.'],
+  ['Growth form', 'forms', 'The colony’s shape: branching, massive, plating…'],
+  ['Paliform lobes', '@con|pali', 'A crown of small knobs around the centre of the cup.'],
+  ['Columella', '@con|columella', 'What fills the very centre of the cup.'],
+  ['Axial corallite', '@con|axial', 'The cup at the tip of a branch, bigger than the others.'],
+  ['Monticules', '@arr|hydno', 'Small cone-shaped mounds of wall between the cups.'],
+  ['Verrucae', '', 'Bumps on the branches, bigger than one cup.'],
+  ['Hooded corallites', '', 'Cups that face downwards, like a hood.'],
+  ['Vesicles', '', 'Grape-like bubbles some corals inflate by day.']
+];
+const basicsWord = term => BASICS_WORDS.find(x => x[0].toLowerCase() === String(term).toLowerCase());
+const basicsListed = term => !!basicsWord(term);
+const basicsRoute = term => {
+  const w = basicsWord(term);
+  return !w || !w[1] ? '' : w[1][0] === '@' ? '#lab-anatomy|' + w[1].slice(1) : '#basics|' + w[1];
+};
+// Where a term is shown on a photo (Pierre, 2026-11-03: the technical words of the genus sheets, first-meeting cards and
+// quiz tips link to Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there.
+const basicsHref = term => basicsRoute(term) || (basicsListed(term) ? '#basics|words' : '');
 // The term whose definition is open, and where it was when the definition was placed next to it (glossMoved).
 let glossAt = null;
 function showGloss(el) {
   const t = DATA.terms.find(x => x[0] === el.dataset.gt);
   if (!t) return;
-  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}`;
+  const bh = basicsHref(t[0]),
+    to = !bh
+      ? ''
+      : bh.startsWith('#lab-anatomy')
+        ? 'Corallite anatomy'
+        : bh === '#basics|words'
+          ? 'Coral basics: all the words'
+          : 'Coral basics: on a photo';
+  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}${bh ? `<a class="gbx" href="${esc(bh)}">${to} ›</a>` : ''}`;
   $gpop.hidden = false;
   const r = el.getBoundingClientRect(),
     w = Math.min(320, innerWidth - 24);
@@ -1141,6 +1189,23 @@ const sheetFetch = (url, o) =>
 let SYNC = store.get('reefid-account', null),
   syncTimer = null;
 
+// Coral basics finished (proto/basics.js: every step seen), on this device or on another one (the achievement's feat
+// _basics in the synced achievements record, progress.js). The Home line and the first-launch offers read it.
+const BASICS_KEY = 'reefid-basics';
+// Its icon (a polyp on its cup; the Tools hub's too, proto/lab.js LAB_ICONS).
+const BASICS_ICON =
+  '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
+const basicsDone = () => !!((store.get(BASICS_KEY, {}) || {}).fin || (store.get('reefid-sync-ach', {}) || {})._basics);
+// The answers to the first-launch question (core.js CHOICE) as big buttons, one per row, with a line each: the tour, the
+// card that asks it, and the fallback card (only: the choices it offers). cur: the current answer, marked.
+const startOptsHtml = (cur, only) =>
+  `<div class="startopts" role="group" aria-label="How well do you know corals?">${(only ? only.map(startOpt).filter(Boolean) : CHOICE.opts)
+    .map(
+      ([c, t, d]) =>
+        `<button type="button" class="startopt" data-start="${c}" aria-pressed="${c === cur}"><b>${esc(t)}</b><small>${esc(d)}</small></button>`
+    )
+    .join('')}</div>`;
+
 /* ---------- routing ---------- */
 function go(h) {
   if (hashNow() === h) route();
@@ -1284,6 +1349,8 @@ showCvd();
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
   learn: [
+    // Coral basics (proto/basics.js), graduated from the Lab (Pierre, 2026-11-03): step 0 of the Learn path.
+    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, on real photos'],
     ['genera', 'Genera', 'Every genus, as photos or ID tips'],
     ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']
   ],
@@ -1399,6 +1466,7 @@ addEventListener('hashchange', () => {
 // d.set(changes) redraws it.
 const CARD_KINDS = {
   apology: '🙏',
+  step: '🧗', // a big step the player chooses (the open-all offer): the warm --warn hue, "Not now" on top
   update: '🔄',
   feature: '✨',
   genus: '🪸',
