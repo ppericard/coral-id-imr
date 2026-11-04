@@ -1767,6 +1767,36 @@ async function startSmoke(b, base) {
       fails.push('Genera: Coral basics not shown as done');
     await c.close();
   }
+  // What the start answer changes on screen (Pierre, 2026-11-04): "new" gets no "Open all" box on the first cards (My
+  // progress keeps it); "imr" and "know" get no Home line to Coral basics; the "lower" card of a player who opened all
+  // the genera speaks of all of them, with no number.
+  for (const c0 of ['new', 'imr', 'know']) {
+    const [c, p] = await open(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+    });
+    await c.addInitScript(c0 => localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: c0, via: 'tour', at: 0, t: 1})), c0);
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .hdoors'), null, {timeout: 30000});
+    const home = await p.evaluate(() => !!document.querySelector('#view .hdnew, #view .hdnewk'));
+    if (home !== (c0 === 'new')) fails.push(`start "${c0}": Home's Coral basics line ${home ? 'shown' : 'missing'}`);
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.intro', {timeout: 15000}).catch(() => {});
+    const box = await p.evaluate(() => !!document.querySelector('.unlock.intro .ulall'));
+    if (box !== (c0 !== 'new')) fails.push(`start "${c0}": the first cards' Open all box ${box ? 'shown' : 'missing'}`);
+    if (c0 === 'new') {
+      const lo = await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        introAll('card');
+        startFbShow('lo');
+        const d = document.querySelector('.startfb');
+        return {title: d.querySelector('h3').textContent, text: d.textContent, many: SUBJ.many};
+      });
+      if (lo.title !== `All the ${lo.many} at once is a lot` || /\d/.test(lo.title) || /\d+ genera/.test(lo.text))
+        fails.push(`start "new", all opened: the lower card ${JSON.stringify(lo)}`);
+    }
+    await c.close();
+  }
   if (errs.length) fails.push(`first-launch question: ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
   return fails;
 }
@@ -2019,6 +2049,13 @@ async function tipsCheck(b, base) {
         const card = await p.evaluate(() => !!document.querySelector('.unlock.intro'));
         waited = {...r, card};
         if (r.tip || !card) fails.push(`${W} duel: the next duel brings a genus card, yet ${JSON.stringify(waited)}`);
+        // A duel's card is no first card (new-player walkthrough 2026-11-04): no "Open all" box, and its note does not
+        // speak of the first questions.
+        const dc = await p.evaluate(() => {
+          const u = document.querySelector('.unlock.intro');
+          return u && {all: !!u.querySelector('.ulall'), first: /first questions/.test(u.textContent)};
+        });
+        if (dc && (dc.all || dc.first)) fails.push(`${W} duel card: ${JSON.stringify(dc)}`);
       }
       // 2. Every genus met: the next armed break takes the tip, and no card comes after it.
       await p.evaluate(() => introAdd(slateGenera(), false));
@@ -3085,7 +3122,10 @@ async function newPlayer(b, base) {
       .then(() => true)
       .catch(() => false);
     if (!nx) fails.push(`new player: no Next after answer ${i}`);
-    alone(await over(), `answer ${i}`);
+    // A card that came with the answer (the sign-in card at 20 answers) is answered first: a player cannot reach Next
+    // behind it (the card is modal, the quiz's keys wait for it). Clicking Next through it in the page, as this did
+    // until 2026-11-04, drew the next question and its genus card under it: two cards at once that no player can get.
+    if (!(await close(`after answer ${i}`))) break;
     await p.evaluate(() => document.getElementById('next')?.click());
   }
   await close('after 30 answers');
@@ -3345,6 +3385,23 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         };
       });
       if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
+      // One count of the genera met (a card or an answer) everywhere on the page (new-player walkthrough 2026-11-04: "23/40
+      // met" beside "12 not open yet" after 28 cards): the badge says the 4 first cards' genera are met, the genera not
+      // open yet are the others, and a genus met on a card but never asked does not read "Not seen".
+      const mc = await q2.evaluate(() => {
+        const n = slateGenera().length,
+          met = slateGenera().filter(introduced),
+          tile = document.querySelector(`#view a[href="#g-${encodeURIComponent(met[0])}"]`);
+        return {
+          badge: (document.querySelector('#view .pbadge') || {}).textContent || '',
+          met: met.length,
+          left: introLeft().length,
+          n,
+          tip: tile ? tile.title : null
+        };
+      });
+      if (!mc.badge.includes(`${mc.met}/${mc.n} met`) || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
+        fails.push(`${w}px My progress, genera met: ${JSON.stringify(mc)}`);
       else {
         await q2.click('#openall');
         const left = await q2.evaluate(() => introLeft().length);
@@ -3360,7 +3417,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'quiz'));
       await drawn(q2);
-      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.plain && c.kick.includes(`${k + 1} of 4`)))
+      // The Open all box: on the first cards, except for a player who answered "I'm new to corals" (Pierre, 2026-11-04).
+      const boxWanted = await q2.evaluate(() => (startOf() || {}).c !== 'new');
+      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all === boxWanted && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
       // Not vacuous (test-suite review, 2026-11-04): the first cards (fixed by INTRO.START and the data) carry a glossary
       // term, or the definition check above and the tap-a-word line below were never checked.
@@ -3489,10 +3548,15 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       if (step === under.step) fails.push(`tour keys blocked by a card waiting under it (${step})`);
       // Through to the last step and its "Start playing" (already on the quiz): the waiting cards show from the first.
       const first = await qt.evaluate(() => document.querySelector('.unlock.intro h3').textContent);
+      const said = [await qt.textContent('#tour')];
       for (let k = 0; k < 4 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
         await qt.click('#tour .tnext');
         await qt.waitForTimeout(400);
+        said.push(await qt.textContent('#tour').catch(() => ''));
       }
+      // A desktop with a mouse: "Click", never "Tap" (new-player walkthrough 2026-11-04: "Tap ?" on a desktop).
+      if (said.some(t => /\bTap\b/.test(t)) || !said.some(t => /Click \?/.test(t)))
+        fails.push(`tour on a desktop with a mouse: ${JSON.stringify(said.filter(t => /Tap|Click/.test(t)))}`);
       await qt.click('#tour .tnext');
       await qt.waitForTimeout(400);
       const after = await qt.evaluate(() => {

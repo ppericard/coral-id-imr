@@ -46,7 +46,9 @@ function quizBoard() {
   // They stay out of the ring and the counts.
   const BO = bonusList();
   const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
-  const count = k => list.filter(n => lv[n][0] === k).length;
+  const count = k => list.filter(n => lv[n][0] === k).length,
+    // Met: a card or an answer (docs/LEARNING.md), as "N not open yet" below counts the others.
+    met = n => lv[n][0] !== 'new' || introduced(n);
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Mastery level on a 6-step scale (one colour ramp, light to dark; model.js MASTERY: Not seen, Snorkeler, Open Water,
   // Advanced, Divemaster, Instructor). "Review" is a separate marker, so it never hides the level.
@@ -61,7 +63,8 @@ function quizBoard() {
       return c;
     })
     .join(',');
-  const STEPS = MASTERY.map(([t], k) => [k, t]);
+  // Step 0 counts the genera not asked yet, met on a card or not ("Not seen" would also count the ones met on a card).
+  const STEPS = MASTERY.map(([t], k) => [k, k ? t : 'Not asked yet']);
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css, 2026-11-03).
   const tile = n => {
@@ -93,7 +96,7 @@ function quizBoard() {
   const tip = n => {
     const s = P[n] || {ok: 0, ko: 0},
       m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : [];
-    return `${esc(unameT(n))}: ${st[n] ? MASTERY[st[n]][0] : 'Not seen'}${lv[n][0] === 'weak' ? ', to review' : ''}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}%)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
+    return `${esc(unameT(n))}: ${st[n] ? MASTERY[st[n]][0] : introduced(n) ? 'Met, not asked yet' : 'Not seen'}${lv[n][0] === 'weak' ? ', to review' : ''}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}%)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
   };
   // Learning level: the tile's colour is its step on the scale, and a thin line along its bottom shows the exact progress.
   const fill = () => '';
@@ -160,7 +163,7 @@ function quizBoard() {
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
-  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.length - count('new')}/${list.length} met`)}<div class="pgwrap"></div>
+  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.filter(met).length}/${list.length} met`)}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor</p>
@@ -252,7 +255,7 @@ function showProg() {
   if (!DATA) return;
   const n = slateGenera();
   const pt = `${progPct(n)}%`,
-    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new').length}/${n.length} ${SUBJ.many} met`;
+    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new' || introduced(x)).length}/${n.length} ${SUBJ.many} met`;
   document.getElementById('progn').textContent = pt;
   $prog.title = `Your progress: ${pt} (${lt})`;
   const p2 = document.getElementById('progn2');
