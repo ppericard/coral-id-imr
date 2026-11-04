@@ -579,3 +579,19 @@ test('common names proposal: 1 to 3 per game species, the PDF name first, source
   });
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
 });
+
+// Codex review #522: FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a
+// name accepted as a spelling (alt) counts in the shared-name check (Dascyllus trimaculatus' "Three spot damsel" is
+// Pomacentrus tripunctatus' PDF name); a spelling that links two groups merges them (Antennarius striatus).
+test('common names proposal: FishBase main name, shared spellings, linked spellings', () => {
+  const P = read('tools/fish_common.json').species;
+  const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
+  const keys = p => p.names.flatMap(n => [n.name, ...(n.alt || [])]).map(norm);
+  assert.ok(keys(P.s088).includes('agilechromis'), 'Chromis agilis: Agile chromis proposed');
+  assert.ok(!keys(P.s084).includes('threespotdamsel'), 'Dascyllus trimaculatus: no spelling of another species’ name');
+  const ant = P.s386.names.find(n => [n.name, ...(n.alt || [])].map(norm).includes('striateanglerfish'));
+  assert.ok(
+    ant && [ant.name, ...(ant.alt || [])].map(norm).includes('stripedangler'),
+    'Antennarius striatus: one name, its spellings merged'
+  );
+});

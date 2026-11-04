@@ -19,10 +19,10 @@ them first thing, then clear them.
 
 - **Fish common names: confirm the proposal, and how many names (2026-11-04 night, PR "Fish common names").** Context:
   `tools/fish_common.json` proposes 1 to 3 names per game species (the PDF name first; the FishBase and iNaturalist main
-  English names when both references have them; a third when both have it and FishBase records it 3+ times): 183 species
-  with 1 name, 158 with 2, 101 with 3. Every listed name is needed for common-name mastery, and the score simulation puts a
+  English names when both references have them; a third when both have it and FishBase records it 3+ times): 184 species
+  with 1 name, 158 with 2, 100 with 3. Every listed name is needed for common-name mastery, and the score simulation puts a
   common-names-only player at 80% after about 2.6 times as many answers as with one name each. Recommendation: confirm the
-  first two rules and drop the third (then 253 / 169 / 20 species with 1 / 2 / 3 names); review the per-entry tables in the
+  first two rules and drop the third (then 252 / 170 / 20 species with 1 / 2 / 3 names); review the per-entry tables in the
   PR for single names you would cut (e.g. "Talbot's demoiselle" beside the PDF's "Talbot's damsel").
 - **Fish common names: the two PDF slips (same PR).** Context: rule 6a keeps a likely PDF slip as written and flags it, so
   the proposal shows "Russelss's snapper" and "Eastern triangular" first, with "Russell's snapper" and "Eastern triangular

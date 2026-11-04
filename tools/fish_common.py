@@ -18,16 +18,19 @@ Sources (every name keeps the sources it was found in):
 Selection, in order, at most 3 names (names compared without case, spaces, hyphens or apostrophe style):
 1. fish.json `common` (the PDF name: IMR's wording first, rule 1; or its slides, Dauin or wink source);
 2. the FishBase main English name and the iNaturalist default English name, when not already listed (each is the main
-   name of a major public reference), but only when it recurs: found in both FishBase and iNaturalist;
+   name of a major public reference), but only when it recurs: found in both FishBase (its main name counts, with or
+   without a comnames record) and iNaturalist;
 3. another name only if it recurs in both and FishBase records it FB_MIN (3) times or more (countries, references);
    the most FishBase records first.
 Spellings of one name count as one name (2 letters apart at most, a trailing "fish", or one the other's first words:
-Pearl-scaled / Pearlscale angelfish, Neon damsel / damselfish, Indo-Pacific sergeant / sergeant major): the form shown
+Pearl-scaled / Pearlscale angelfish, Neon damsel / damselfish, Indo-Pacific sergeant / sergeant major; a spelling
+that links two groups merges them): the form shown
 is the PDF's, else FishBase's main, else its most recorded; the others are kept in `alt` (to accept when typed). A main
 name of either reference that is not proposed is listed in `left`.
 A species with no name of its own and none found in both references gets the main name of one (`single`). A name
-proposed for two game species (not the PDF's) is dropped from both and flagged `shared`; a PDF name shared
-by two species (e.g. "Twospot wrasse", FISH_PATH open question 1) stays, flagged. Spelling and capitals: FishBase's
+proposed for two game species, any of its spellings counted, is dropped from each species where it is neither the
+PDF's nor the only name (`dropped`); a name still shared then is flagged `shared` (e.g. "Twospot wrasse", FISH_PATH
+open question 1). Spelling and capitals: FishBase's
 form when it has the name (sentence case: "Ternate chromis"), else iNaturalist's with the words after the first in
 lower case unless capitalised in a FishBase name of these species (a person or place: "Bennett's"). A PDF name flagged
 `check` in fish.json (a likely slip) is kept as written and flagged for Pierre (rule 6a).
@@ -210,12 +213,21 @@ def select():
         def add(name, **tags):
             if not name:
                 return
-            g = next((g for g in groups if any(variant(name, x) for x in [g["name"]] + g["alt"])), None)
-            if g is None:
+            hit = [g for g in groups if any(variant(name, x) for x in [g["name"]] + g["alt"])]
+            if not hit:
                 g = {"name": name, "alt": [], "own": False, "fbMain": False, "inatMain": False, "fb": 0, "inat": False}
                 groups.append(g)
-            elif norm(name) not in [norm(x) for x in [g["name"]] + g["alt"]]:
-                g["alt"].append(name)
+            else:
+                # A spelling of two groups links them: one name (Codex review #522, Striate anglerfish / Striped angler).
+                g = hit[0]
+                for o in hit[1:]:
+                    g["alt"] += [x for x in [o["name"]] + o["alt"] if norm(x) not in [norm(y) for y in [g["name"]] + g["alt"]]]
+                    for k in ("own", "fbMain", "inatMain", "inat"):
+                        g[k] = g[k] or o[k]
+                    g["fb"] += o["fb"]
+                    groups.remove(o)
+                if norm(name) not in [norm(x) for x in [g["name"]] + g["alt"]]:
+                    g["alt"].append(name)
             for k, v in tags.items():
                 g[k] = g[k] + v if k == "fb" else (g[k] or v)
 
@@ -242,7 +254,8 @@ def select():
         def keep(g):
             # A name besides the species' own: one that recurs in both references (FishBase and iNaturalist), the main
             # name of one of them, or recorded FB_MIN times or more by FishBase.
-            return g["fb"] > 0 and g["inat"] and (g["fbMain"] or g["inatMain"] or g["fb"] >= FB_MIN)
+            # FishBase's main name is FishBase evidence even with no comnames record (Codex review #522, Chromis agilis).
+            return (g["fb"] > 0 or g["fbMain"]) and g["inat"] and (g["fbMain"] or g["inatMain"] or g["fb"] >= FB_MIN)
 
         rank = sorted(groups, key=lambda g: (not g["own"], not (g["fbMain"] or g["inatMain"]), -g["fb"]))
         pick = [g for g in rank if g["own"] or keep(g)][:MAX]
@@ -270,24 +283,33 @@ def select():
             o["noFishBase"] = True
         out[s["id"]] = o
     # Shared names: one name, two game species.
-    seen = {}
-    for sid, o in out.items():
-        for n in o["names"]:
-            seen.setdefault(norm(n["name"]), []).append(sid)
-    for k, ids in seen.items():
-        if len(ids) < 2:
-            continue
+    # Every spelling counts, the accepted ones (alt) too (Codex review #522: a typed answer must not name two species).
+    # First drop a shared name from each species where it is neither its own (PDF) name nor its only one, then flag the
+    # names still shared.
+    def spell(n):
+        return {norm(x) for x in [n["name"]] + n.get("alt", [])}
+
+    def shared():
+        seen = {}
+        for sid, o in out.items():
+            for n in o["names"]:
+                for k in spell(n):
+                    if sid not in seen.setdefault(k, []):
+                        seen[k].append(sid)
+        return {k: ids for k, ids in seen.items() if len(ids) > 1}
+
+    for k, ids in shared().items():
         for sid in ids:
             o = out[sid]
             for n in list(o["names"]):
-                if norm(n["name"]) != k:
-                    continue
-                others = [out[i]["sp"] for i in ids if i != sid]
-                if any(t in OWN for t in n["from"]) or len(o["names"]) == 1:
-                    n["shared"] = others
-                else:
+                if k in spell(n) and not any(t in OWN for t in n["from"]) and len(o["names"]) > 1:
                     o["names"].remove(n)
-                    o.setdefault("dropped", []).append({"name": n["name"], "sharedWith": others})
+                    o.setdefault("dropped", []).append({"name": n["name"], "sharedWith": [out[i]["sp"] for i in ids if i != sid]})
+    for k, ids in shared().items():
+        for sid in ids:
+            for n in out[sid]["names"]:
+                if k in spell(n):
+                    n["shared"] = sorted(set(n.get("shared", [])) | {out[i]["sp"] for i in ids if i != sid})
     return out
 
 

@@ -73,8 +73,8 @@ is the design's shorthand, and internal identifiers may keep it.
   and the iNaturalist default English name when each is found in both references, then a third only if both record it and
   FishBase 3 times or more (countries, references); at most 3. Spellings of one name count once (Pearl-scaled / Pearlscale
   angelfish; Neon damsel / damselfish), the others kept to accept when typed. A name two game species share is dropped from the
-  one that does not own it; a PDF name shared stays, flagged ("Twospot wrasse"). 442 game species: 183 with 1 name, 158 with 2,
-  101 with 3 (circle 1: 130 / 124 / 86). Since every listed name is needed, more names make the common-name branch longer:
+  one that does not own it; a PDF name shared stays, flagged ("Twospot wrasse"). 442 game species: 184 with 1 name, 158 with 2,
+  100 with 3 (circle 1: 131 / 123 / 86). Since every listed name is needed, more names make the common-name branch longer:
   in the score simulation (`tools/fishscore.js --names tools/fish_common.json`) a common-names-only player reaches 80% after
   about 2.6 times as many answers as with one name each.
 
