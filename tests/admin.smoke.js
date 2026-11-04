@@ -4,7 +4,7 @@ const http = require('http'),
 const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
-// Health › Genus sheets opened on the demo's Pages tab (admin-demo.js: 4 visits a player at 0, 1/4, 1/2 and 3/4 of
+// Analyses › Learning › Stops › Genus sheets opened on the demo's Pages tab (admin-demo.js: 4 visits a player at 0, 1/4, 1/2 and 3/4 of
 // their answers; Ana opens 3 sheets in her first 3 visits, Carla 2, Ben 1; a device not signed in one; one visit with no
 // id is counted by its device): players, share that opened one, visits, share with one.
 const SHEETS_ALL = ['Under 50 answers 8 50% 18 28%', '50-300 answers 6 50% 11 45%', 'Over 300 answers 1 0% 1 0%', 'All 9 44% 30 33%'].join(
@@ -58,7 +58,7 @@ const WIDTHS = [390, 1280];
     // Behaviour once, layout at both widths (test-suite review D6, 2026-11-04, approved by Pierre): every check whose result
     // can depend on the width (each view and old address landing on its tab or phone menu with no sideways scroll, the
     // subject switch, the Analyses charts and their cards, Players' "yest.", a long name on a phone, a journey's chart
-    // labels, Activity's charts, Overview and Health with no sideways scroll, no page error, the demo's storage keys) runs at
+    // labels, Activity's charts, Overview, Health and Stops with no sideways scroll, no page error, the demo's storage keys) runs at
     // 390 and 1280; the actions and data checks (sorting, replays, rename, merge, delete, journeys, events, Candidates,
     // the auto-sort, Publish…) run once, at 1280. SMOKE_W=390 runs the layout checks alone.
     const once = w === 1280;
@@ -693,7 +693,7 @@ const WIDTHS = [390, 1280];
       // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
       // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
       // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
-      // pages opened (Health) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
+      // pages opened (Analyses › Stops) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
       {
         const q = await p.context().newPage();
         q.on('pageerror', e => fails.push(`${w}px sheet reads page error: ${e.message}`));
@@ -731,14 +731,14 @@ const WIDTHS = [390, 1280];
         await q.goto(base + 'admin.html?demo&load=3#~cand');
         await quiet();
         const before = (await calls()).length;
-        await q.evaluate(() => (location.hash = '~health'));
+        await q.evaluate(() => (location.hash = '~stats-stop'));
         await quiet();
         const L = (await calls()).slice(before),
           ans = L.find(c => c.k === 'answers'),
           pg = L.find(c => c.k === 'pages');
         if (!ans || !pg || !(pg.t0 < ans.t1))
           fails.push(
-            `sheet reads: Health asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
+            `sheet reads: Stops asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
           );
         // (4) The answer log is never published before the photo ratings (Codex review #488): Health and To do's Health line
         // read both once the log is there. The ratings answer a second late here (admin-demo.js slow=stats).
@@ -1330,8 +1330,9 @@ const WIDTHS = [390, 1280];
       );
       if (ps !== '#~pstats') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
     }
-    // Health (To do): its four sections from the demo answers, with and without this browser's own answers, no sideways
-    // page scroll; a photo everyone misses opens in the lightbox.
+    // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
+    // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
+    // admin page): each from the demo answers, no sideways page scroll; a photo everyone misses opens in the lightbox.
     const health = () =>
       p.evaluate(() => ({
         secs: [...document.querySelectorAll('[data-health]')].map(s => s.dataset.health).join(' '),
@@ -1339,28 +1340,49 @@ const WIDTHS = [390, 1280];
         // Genus sheets opened, by experience: the three bands, then the visits whose answers so far are not known (none
         // in the demo) and All.
         sheets: [...document.querySelectorAll('[data-health="sheets"] tbody tr')].map(r => r.innerText.replace(/\s+/g, ' ').trim()),
-        bars: document.querySelectorAll('[data-health="time"] .adm-cols > div').length,
         wide: document.documentElement.scrollWidth - innerWidth
       }));
     await go('~health');
     // Every account counts (Pierre, 2026-11-04): no "Without me", "Others / Me" or "This is also me" anywhere.
     if (await p.$('[data-sf="elo"], [data-sf="who"], [data-ume]')) fails.push(`${w}px Health: a filter on your own answers is back`);
-    for (const v of ['all']) {
+    {
+      const hs = await health();
+      if (hs.secs !== 'photos genera' || !hs.rows) fails.push(`${w}px Health: sections ${JSON.stringify(hs)}`);
+      if (hs.wide > 0) fails.push(`${w}px Health: page ${hs.wide} px wider than the window`);
+    }
+    await go('~stats-stop');
+    {
       await p
         .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
           timeout: 10000
         })
         .catch(() => {});
       const hs = await health();
-      if (hs.secs !== 'stop photos genera time sheets' || !hs.rows || hs.bars !== 60)
-        fails.push(`${w}px Health (${v}): sections ${JSON.stringify(hs)}`);
-      if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
-      if (v === 'all' && hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Health genus sheets: ${JSON.stringify(hs.sheets)}`);
+      if (hs.secs !== 'stop sheets') fails.push(`${w}px Stops: sections ${JSON.stringify(hs)}`);
+      if (hs.wide > 0) fails.push(`${w}px Stops: page ${hs.wide} px wider than the window`);
+      if (hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Stops genus sheets: ${JSON.stringify(hs.sheets)}`);
+    }
+    // Activity's analysis cards are on Analyses › Learning › Answer log, and only there (one role per admin page).
+    {
+      const cards = () => p.evaluate(() => [...document.querySelectorAll('#view .adm-scard h3')].map(h => h.textContent.trim()));
+      const ANALYSIS_CARDS = ['Learning curve', 'Calibration', 'Conditions', 'Genera', 'Mix-ups'];
+      await go('~stats-log');
+      const lg = await cards();
+      if (ANALYSIS_CARDS.some(t => !lg.includes(t)) || lg.some(t => /^Recent sessions|^Activity over time/.test(t)))
+        fails.push(`${w}px Answer log: cards ${JSON.stringify(lg)}`);
+      await go('~stats');
+      const ac = await cards();
+      if (
+        ANALYSIS_CARDS.some(t => ac.includes(t)) ||
+        !ac.some(t => /^Recent sessions/.test(t)) ||
+        !ac.some(t => /^Activity over time/.test(t))
+      )
+        fails.push(`${w}px Activity: cards ${JSON.stringify(ac)}`);
     }
     if (once) {
       // Once: stale page summaries, the lightboxes' source links.
       // The page summaries are read again once stale (Codex review #423): a first read's error (offline, a script before
-      // v30) does not stay on Health; ↻ on Activity reads them again; and a visit reads them once at most (no
+      // v30) does not stay on Stops; ↻ on Activity reads them again; and a visit reads them once at most (no
       // render / read loop).
       {
         const sheetsText = () => p.evaluate(() => (document.querySelector('[data-health="sheets"]') || {}).innerText || '');
@@ -1379,7 +1401,7 @@ const WIDTHS = [390, 1280];
             await p.click('[data-sload]');
             await settle();
           }
-          await go('~health');
+          await go('~stats-stop');
           await p
             .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
               timeout: 8000
@@ -1387,7 +1409,7 @@ const WIDTHS = [390, 1280];
             .catch(() => {});
           await p.waitForTimeout(1500);
           const t = await sheetsText();
-          if (!/Over 300/.test(t) || /Offline/.test(t)) fails.push(`${w}px Health genus sheets after ${label}: ${t.replace(/\s+/g, ' ')}`);
+          if (!/Over 300/.test(t) || /Offline/.test(t)) fails.push(`${w}px Stops genus sheets after ${label}: ${t.replace(/\s+/g, ' ')}`);
         };
         await stale('a stale error', () => {
           PGS = {err: 'Offline'};
@@ -1399,10 +1421,10 @@ const WIDTHS = [390, 1280];
         });
         const n0 = await p.evaluate(() => PGREADS);
         await go('~stats');
-        await go('~health');
+        await go('~stats-stop');
         await p.waitForTimeout(1500);
         const reads = (await p.evaluate(() => PGREADS)) - n0;
-        if (n0 !== 2 || reads) fails.push(`${w}px Health genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
+        if (n0 !== 2 || reads) fails.push(`${w}px Stops genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
       }
       // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
       // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
@@ -1426,6 +1448,7 @@ const WIDTHS = [390, 1280];
           if (!cap.querySelector(`a[href$="#g-${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
           return '';
         }, f);
+      await go('~health');
       if (await p.$('[data-health="photos"] [data-zf]')) {
         await p.click('[data-health="photos"] [data-zf]');
         if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
