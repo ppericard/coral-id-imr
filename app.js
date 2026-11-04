@@ -233,7 +233,10 @@ const toSite = i => {
 document.addEventListener('error', photoFail, true);
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
 // then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
-// question offers another one instead of a blank frame (nothing is counted).
+// question offers another one instead of a blank frame (nothing is counted). With none of its photos shown, its answers
+// are closed (new-player walkthrough 2026-11-04, offline: an answer given to a blank frame counted, and the note was
+// below the fold): a guess is no answer. The note is brought into the question's one screen, and the frame left is a
+// plain tile, never a broken-image icon (as a card's, quiz.js).
 $v.addEventListener(
   'error',
   e => {
@@ -253,7 +256,11 @@ $v.addEventListener(
       i.dataset.low = 1;
       i.dataset.retry = 2;
       i.src = i.dataset.lo;
-    } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
+    } else if (i.closest('.qstage')) {
+      // Every photo that gave up is a plain tile, the second of a question too (Codex review #490); the note, the report
+      // and the closing of the answers come once.
+      i.classList.add('fail');
+      if ($v.querySelector('.q.done, #qfail')) return;
       if (navigator.onLine !== false)
         // By the photo's name (data-f, quiz.js): an iNaturalist URL (a candidate just added, r: 1) is not one admin can look up.
         ev('photo', {
@@ -274,7 +281,30 @@ $v.addEventListener(
           route();
         };
       }
+      // Another photo of the question may come later, one still trying or one added since (the hint, Codex review
+      // #490): the answers open again then (the load listener below).
+      const q = $v.querySelector('.q');
+      if (q && ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth)) {
+        q.classList.add('qnone');
+        qAnswers(q, false);
+      }
+      if (typeof fitStage === 'function') fitStage();
     }
+  },
+  true
+);
+const qAnswers = (q, on) => q.querySelectorAll('[data-c], [data-w], .tyform input, .tyform button').forEach(b => (b.disabled = !on));
+$v.addEventListener(
+  'load',
+  e => {
+    const q =
+      e.target instanceof HTMLImageElement &&
+      e.target.naturalWidth &&
+      e.target.closest('.q.qnone:not(.done) .qstage') &&
+      e.target.closest('.q');
+    if (!q) return;
+    q.classList.remove('qnone');
+    qAnswers(q, true);
   },
   true
 );
@@ -568,7 +598,7 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
@@ -925,6 +955,12 @@ const tipsList = (g, cls = '') =>
         .join('')}</ul>`
     : `<p class="keyid">${gloss(g.sum)}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
+// A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
+// [spelling, source]; Pierre, 2026-11-04: "show both, the IMR one first"). Plain text: escape it where it is shown.
+const altName = s => {
+  const a = ((DATA && DATA.spell) || {})[s];
+  return a ? `${s}, also spelled ${a[0]} (${a[1]})` : String(s);
+};
 // The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
 const tipsHead =
   () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
@@ -1399,7 +1435,7 @@ function ctxBar(h) {
       i = L.indexOf(n);
     const prev = L[(i - 1 + L.length) % L.length],
       next = L[(i + 1) % L.length];
-    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
+    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(altName(g.fam))}</small></h2>
       <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
@@ -2036,7 +2072,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=38')
+  getR('data.json?v=39')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),

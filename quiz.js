@@ -675,7 +675,7 @@ function fbBody(target, c, good, idk, again, ph, read) {
       `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   const name = fish
-      ? `<b>${uname(target)}</b> <small>${esc(g.fam)}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
+      ? `<b>${uname(target)}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
       : `<a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
@@ -1497,7 +1497,7 @@ function introCard(n, o = {}) {
     photo: p ? img(p, 's') : '',
     kick: `${isBonus(n) ? setOf(n).tag : 'New ' + SUBJ.one}${o.pos ? ` · ${o.pos}` : ''}`,
     title: uname(n),
-    body: `${g.name ? `<p class="ulfam">${esc(g.fam)}</p>` : ''}${plainLine(g)}
+    body: `${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
       ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? `<p class="ulnote">${setOf(n).card}</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>

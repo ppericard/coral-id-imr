@@ -17,7 +17,7 @@ LAB.add({
         k => (k ? 'Group ' + k : '★'),
         k => igColor(k)
       ],
-      ['fam', 'Family', n => [DATA.gen[n].fam], k => k, k => k, k => famColor(k)],
+      ['fam', 'Family', n => [DATA.gen[n].fam], k => altName(k), k => k, k => famColor(k)],
       [
         'wall',
         'Wall type',
@@ -141,7 +141,7 @@ LAB.add({
         const g = DATA.gen[n];
         sel = n;
         focus(n);
-        side.innerHTML = `<img src="${thumbSrc(n, 'macro', 'l')}" alt="${esc(n)} corallites"><h3><i>${esc(n)}</i></h3><p class="note">${esc(tag(n))} · ${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>
+        side.innerHTML = `<img src="${thumbSrc(n, 'macro', 'l')}" alt="${esc(n)} corallites"><h3><i>${esc(n)}</i></h3><p class="note">${esc(tag(n))} · ${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p>
           <p>${whyLine(n)}</p><p class="note">In ${keysOf(n).length} branch${keysOf(n).length > 1 ? 'es' : ''} here.</p><a class="next" href="${genLink(n)}">Open the genus sheet</a>`;
       };
       const showGroup = k => {

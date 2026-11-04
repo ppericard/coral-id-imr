@@ -172,6 +172,8 @@ function renderJourney(name, anonId = '') {
     Promise.all([USERS ? null : loadUsers(), ANS ? null : loadStats()]).then(() => {
       if (cur === here) render();
     });
+    // The pages opened leave with them, not after (the journey's Pages opened; drawn when the page is).
+    if (pagesStale()) loadPages().catch(() => {});
     return;
   }
   // A device that never signed in (Pierre, 2026-11-03): #~anon/<its anonymous id>, from Players > Not signed in. Its
@@ -210,7 +212,7 @@ function renderJourney(name, anonId = '') {
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
     // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
-    PG = progOf(anonId ? {id: anonId, anon: 1} : u),
+    PG = progOf(anonId ? {id: anonId, anon: 1} : u, true),
     RP = replayOn(),
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
@@ -578,10 +580,7 @@ function bindJReload() {
   if (b)
     b.onclick = () => {
       savedClear();
-      USERS = null;
-      ANS = null;
-      STATS = null;
-      PGS = null;
+      sheetAgain('users', 'ans', 'stats', 'pages');
       render();
     };
 }

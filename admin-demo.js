@@ -15,10 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
+    // The script version the demo answers as: the current one (v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
     // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 35,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 42,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -430,7 +430,7 @@
       pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], genera: [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
     pages.sort((a, b) => b[1] - a[1]);
-    S = {rows, users, reports, events, pages, removed: [], list};
+    S = {rows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D)};
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
@@ -590,6 +590,24 @@
       const u = by[lc(r[2])];
       if (u) u.reports++;
     });
+    // v42 (Code.gs replayedAll_): each player's full replay, [progress %, learned, the saved copy's %] over the slate.
+    if (V >= 42) {
+      const st = stats(),
+        A = answers().rows;
+      Object.keys(by).forEach(k => {
+        const su = S.users[k],
+          id = aid(su.name),
+          json = x => JSON.parse(su.data[x] || 'null'),
+          P = json('reefid-sync-coral-progress') || {},
+          start = json('reefid-sync-coral-start'),
+          rep = replayProgress(
+            A.filter(r => r[0] === id),
+            {gen: S.gen, mem: st.mem, conf: st.conf, starts: start ? {[id]: start} : {}}
+          )[id],
+          G = replayedOf(rep, P);
+        by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
+      });
+    }
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
   }
   function users(p) {
@@ -704,6 +722,10 @@
     if (url.startsWith('https://script.google.com/')) {
       await build();
       await new Promise(r => setTimeout(r, 150)); // a little of the real wait, so "Loading…" states show
+      // ?demo&slow=stats: the photo ratings answer a second after the rest (tests/admin.smoke.js: the answer log is not
+      // published before them).
+      if (/[?&]slow=stats\b/.test(location.search) && /readStats|[?&]stats=/.test(String(opts.body || '') + url))
+        await new Promise(r => setTimeout(r, 1000));
       if ((opts.method || 'GET') !== 'POST') {
         const q = new URL(url).searchParams;
         return ok(q.get('stats') ? stats() : q.get('answers') ? answers() : {ok: false, error: 'input'});
@@ -725,12 +747,36 @@
   // Calls in flight through the demo (its sync script and GitHub answers, and the site's own files): tests/admin.smoke.js
   // waits for none before reading a page, the way the app's tests wait for APP_READY, instead of a fixed time.
   window.DEMO_PENDING = 0;
+  // The sync script calls, in order: {k: what was asked, t0: sent, t1: answered} (performance.now()). tests/admin.smoke.js
+  // checks that a read on its way is not asked again and that the reads leave without waiting for the data files.
+  window.DEMO_CALLS = [];
+  const kindOf = (url, opts) => {
+    if ((opts.method || 'GET') !== 'POST') return new URL(url).searchParams.get('stats') ? 'stats' : 'get';
+    const p = JSON.parse(opts.body || '{}');
+    return p.readAnswers
+      ? 'answers'
+      : p.readStats
+        ? 'stats'
+        : p.readEvents
+          ? p.pages
+            ? 'pages'
+            : 'events'
+          : p.readReports
+            ? 'reports'
+            : Object.keys(p)
+                .filter(k => k !== 'token')
+                .join(',');
+  };
   window.fetch = async (u, opts = {}) => {
     window.DEMO_PENDING++;
+    const url = String(u && u.url ? u.url : u),
+      c = url.startsWith('https://script.google.com/') ? {k: kindOf(url, opts), t0: performance.now()} : null;
+    if (c) window.DEMO_CALLS.push(c);
     try {
       return await demoFetch(u, opts);
     } finally {
       window.DEMO_PENDING--;
+      if (c) c.t1 = performance.now();
     }
   };
   // A banner on every page: this is not the real admin.
