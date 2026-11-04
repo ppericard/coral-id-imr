@@ -775,17 +775,20 @@ const RECALC = {
 };
 function recalcNotice() {
   if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice); // the recalculations announced were the corals'
+  // Whether this load has decided ("none" or "shown"; tests wait for it rather than for a fixed time).
+  const said = d => (window.RECALC_SAID = d);
   const L = RECALC.L,
     last = L[L.length - 1].id,
     seen = store.get(RECALC.KEY, ''),
     due = L.slice(L.findIndex(x => x.id === seen) + 1).reverse();
-  if (!due.length) return;
+  if (!due.length) return void said('none');
   // Answers: the global count, or the genera's own for progress saved before it (Codex review #367).
   const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
-  if (!played) return store.set(RECALC.KEY, last);
+  if (!played) return void (store.set(RECALC.KEY, last), said('none'));
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
-  if (document.querySelector('.recalc')) return; // already on screen
+  if (document.querySelector('.recalc')) return void said('shown'); // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
+  said('shown');
   const k = due[0].kind || 'update';
   cardShow({
     kind: k,
