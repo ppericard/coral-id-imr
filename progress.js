@@ -498,7 +498,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for ELO_MIN answers.
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
-    bonus: bonusList().filter(introduced).length
+    bonus: bonusList().filter(introduced).length,
+    basics: !!A._basics
   };
 }
 // Full recount, once per device (Pierre, 2026-11-01: "redo the calculation cleanly for everyone, achievements too,
@@ -512,7 +513,7 @@ function achMigrate() {
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
   const B = {_v: ACH_V};
-  if (A) ['_run', '_best', '_cor', '_hard', '_gone'].forEach(k => A[k] && (B[k] = A[k]));
+  if (A) ['_run', '_best', '_cor', '_hard', '_gone', '_basics'].forEach(k => A[k] && (B[k] = A[k]));
   const snap = achSnap(B),
     t = Date.now();
   ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
@@ -576,6 +577,17 @@ function achAfter(good, ph) {
   if (good && o && o[1] >= 5 && o[2] / o[1] <= 0.5) A._hard = 1;
   store.set(ACHK, A);
   achCheck();
+}
+// Coral basics done (proto/basics.js seenStep): a one-off feat of the record, synced with it, so the Home line and the
+// first-launch offers know on every device (app.js basicsDone).
+function achBasics() {
+  if (!store.get(ACHK, null)) achCheck(true);
+  const A = store.get(ACHK, {}) || {};
+  if (A._basics) return;
+  A._basics = 1;
+  store.set(ACHK, A);
+  achCheck();
+  if (SYNC) syncSoon();
 }
 const TIER = ['', '🥉', '🥈', '🥇'];
 let achQ = [],

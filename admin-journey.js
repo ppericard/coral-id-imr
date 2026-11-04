@@ -16,14 +16,46 @@ let JSORT = 'met';
 // First-meeting cards and Open all genera, from the player's saved progress (sheet userData, admin token): the app keeps
 // them as reefid-sync-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown, kind]} and
 // reefid-sync-coral-intro-offer {at, open, via, t, n} (model.js INTRO; times and via from 2026-11-02), with the back card's choice
-// (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03). name -> null while loading.
+// (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03), and the first-launch question
+// reefid-sync-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet; 2026-11-03). name -> null while loading.
 // The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
 const JDATA = {};
 function journeyCards(name) {
   const S = savedOf(name);
-  return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer};
+  return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start};
 }
 const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
+// How the first-launch answer was given (model.js startSet via), and the fallback cards (core.js CHOICE).
+const JSTART = {tour: 'in the welcome tour', card: 'on the card before the quiz', fallback: 'from the fallback card', inferred: 'inferred'},
+  JFB = {lo: 'harder than predicted by', hi: 'easier than predicted by'};
+// "I know corals well" etc.; inferred (an existing player with CHOICE.ASK answers or more, never asked): said so.
+const jStart = (S, before) => {
+  if (!S || !startOpt(S.c)) return '<li><b>Start</b> not answered yet</li>';
+  // The history's events (core.js startEvents): the answers given, and the eases taken with Coral basics.
+  const ev = startEvents(S),
+    h = ev.filter(x => x[3] !== 'ease');
+  return (
+    h
+      .map(
+        ([c, a, t, via], i) =>
+          `<li><b>${i ? 'Changed to' : 'Start'}</b> ${esc((startOpt(c) || [0, c])[1])} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)}`} · ${JSTART[via] || esc(via || '')}${t ? ' · ' + jTime(t) : ''}</li>`
+      )
+      .join('') +
+    ev
+      .filter(x => x[3] === 'ease')
+      .map(
+        ([c, a, t, , of]) =>
+          `<li><b>Eased</b> to the start of ${esc(startOpt(c)[1])} (said “${esc((startOpt(of) || [0, of])[1])}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
+      )
+      .join('') +
+    Object.entries(S.fb || {})
+      .map(([k, [a, t]]) => {
+        const [c, d] = k.split('-');
+        return `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc((startOpt(c) || [0, c])[1])}”, after answer ${before(t, a)}${t ? ' · ' + jTime(t) : ''}</li>`;
+      })
+      .join('')
+  );
+};
 const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
   jTime = t => dateText(t, 'dmhm'),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
@@ -211,7 +243,7 @@ function renderJourney(name, anonId = '') {
       ? '<p class="note">Cards: not saved (not signed in).</p>'
       : C.err
         ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
-        : `<ul class="adm-jcards">${
+        : `<ul class="adm-jcards">${jStart(C.start, before)}${
             first.length
               ? `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
               : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
