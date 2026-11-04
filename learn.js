@@ -32,8 +32,9 @@ const BASICS_STEPS = 7;
 // The card's picture (Pierre, 2026-11-04, mockup A3 of four proposals): the seven steps as a trail of line drawings,
 // from the colony down to the septal teeth and back out to the growth forms, each stop a soft disc in its own colour
 // (--bt1…--bt7, reef blue to coral orange; app.css). Stops seen: tinted, with a ✓; the next one: a deeper tint, a ring and
-// "Next: <word>"; the others desaturated, joined by a dotted path. Four along the top, three back along the bottom
-// (Teeth under Septa). Its words (proto/basics.js steps): BASICS_WORDS' terms, shortened to fit a stop.
+// "Next: <word>" ("Start: Colony" while none is seen, Pierre 2026-11-04); the others desaturated, joined by a dotted
+// path. Four along the top, three back along the bottom (Teeth under Septa). Its words (proto/basics.js steps):
+// BASICS_WORDS' terms, shortened to fit a stop.
 const BASICS_TRAIL = [
   [
     'colony',
@@ -94,7 +95,7 @@ function basicsArt() {
     }</g>`;
   // The words at a constant size (HTML, not SVG text), hung under their stop, "a / b" on two lines; on a narrow card, one by the left or right edge is anchored inwards (bxt-l, bxt-r).
   const lab = ([, t], i) =>
-    `<span class="bxt-lab ${st[i]}${at[i][0] < 100 ? ' bxt-l' : at[i][0] > 300 ? ' bxt-r' : ''}" style="--c:${c(i)};left:${at[i][0] / 4}%;top:${(((at[i][1] + 36) / 300) * 100).toFixed(2)}%">${st[i] === 'is-next' ? 'Next: ' : ''}${esc(t).replace(' / ', ' /<br>')}</span>`;
+    `<span class="bxt-lab ${st[i]}${at[i][0] < 100 ? ' bxt-l' : at[i][0] > 300 ? ' bxt-r' : ''}" style="--c:${c(i)};left:${at[i][0] / 4}%;top:${(((at[i][1] + 36) / 300) * 100).toFixed(2)}%">${st[i] === 'is-next' ? (st.includes('is-seen') ? 'Next: ' : 'Start: ') : ''}${esc(t).replace(' / ', ' /<br>')}</span>`;
   return `<span class="ph bxart" aria-hidden="true"><svg viewBox="0 0 400 300">${at
     .slice(0, -1)
     .map((_, i) => way(i))

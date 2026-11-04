@@ -1728,6 +1728,23 @@ async function startSmoke(b, base) {
         await p.evaluate(() => (location.hash = 'genera'));
         await drawn(p);
       }
+      // No step seen yet: Colony is the next stop, worded "Start: Colony" (Pierre, 2026-11-04), the others not reached.
+      await p.evaluate(v => {
+        localStorage.removeItem('reefid-basics');
+        document.querySelector(`[data-gv="${v}"]`).click();
+      }, v);
+      await p.waitForSelector(v === 'tips' ? '#azgrid .bxtip' : '#azgrid .bxcard', {timeout: 8000});
+      const start = await p.evaluate(() => {
+        const lab = document.querySelector('#azgrid .bxart .bxt-lab.is-next');
+        return {
+          stops: [...document.querySelectorAll('#azgrid .bxart .bxt-stop')].map(g => `${g.dataset.step}:${g.classList[1]}`).join(' '),
+          lab: lab?.textContent,
+          first: lab === document.querySelector('#azgrid .bxart .bxt-lab')
+        };
+      });
+      const want0 = 'colony:is-next polyp:is-todo corallite:is-todo septa:is-todo teeth:is-todo walls:is-todo forms:is-todo';
+      if (start.stops !== want0 || start.lab !== 'Start: Colony' || !start.first)
+        fails.push(`Genera (${v}): the Coral basics trail before any step ${JSON.stringify(start)}`);
       await p.evaluate(v => {
         localStorage.setItem('reefid-basics', JSON.stringify({seen: {colony: 1, polyp: 1, corallite: 1, septa: 1}, last: 'septa'}));
         document.querySelector(`[data-gv="${v}"]`).click();

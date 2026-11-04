@@ -1265,7 +1265,7 @@ header {
   display: block;
 }
 /* Step 0 of the Learn path (learn.js basicsCard, basicsArt): in the photo's place, the seven steps of Coral basics as a
-   trail of soft discs, each in its colour (--bt1…--bt7); seen: tinted with a ✓; next: deeper, ringed, "Next: …"; not
+   trail of soft discs, each in its colour (--bt1…--bt7); seen: tinted with a ✓; next: deeper, ringed, "Next: …" ("Start: Colony" at first); not
    reached: desaturated, on a dotted path. The words keep a constant size (HTML over the SVG board). */
 .card .ph.bxart,
 .bxart {
