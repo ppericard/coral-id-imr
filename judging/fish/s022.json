@@ -1,0 +1,128 @@
+{
+ "photos": {
+  "fish-s022-cand-556928351": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s022-cand-295357918": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s022-cand-723340027": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s022-cand-451819201": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s022-cand-451819206": {
+   "code": "p1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s022-cand-754389093": {
+   "code": "p1d2bsm1",
+   "keep": "best"
+  },
+  "fish-s022-cand-754389084": {
+   "code": "p1d2bsx1",
+   "keep": "dup"
+  },
+  "fish-s022-cand-282879059": {
+   "code": "p1g2sm12",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dark brown fish: the rare dark colour phase, not the usual yellow"
+  },
+  "fish-s022-cand-282894056": {
+   "code": "p1g1sl13",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dark brown fish: the rare dark colour phase, not the usual yellow"
+  },
+  "fish-s022-cand-690292550": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s022-cand-286106868": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s022-cand-484327906": {
+   "code": "p1g2ss12",
+   "keep": "best"
+  },
+  "fish-s022-cand-408405217": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s022-cand-726144787": {
+   "code": "p1d2sm12",
+   "keep": "best"
+  },
+  "fish-s022-cand-599275187": {
+   "code": "o1d1ss11",
+   "keep": "best"
+  },
+  "fish-s022-cand-621108900": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s022-cand-459659685": {
+   "code": "d1g1ss12",
+   "keep": "best"
+  },
+  "fish-s022-cand-459659696": {
+   "code": "d1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s022-cand-330670093": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s022-cand-378123994": {
+   "code": "p1g1smm3",
+   "keep": "best"
+  },
+  "fish-s022-cand-407522442": {
+   "code": "p1g2ssm1",
+   "keep": "best"
+  },
+  "fish-s022-cand-407522452": {
+   "code": "p1g2sm12",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dark fish beside the yellow ones: maybe the dark colour phase"
+  },
+  "fish-s022-cand-407522449": {
+   "code": "p1g2ssm2",
+   "keep": "dup"
+  },
+  "fish-s022-cand-407522466": {
+   "code": "p1g2ssm2",
+   "keep": "dup"
+  },
+  "fish-s022-cand-293543133": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s022-cand-293543047": {
+   "code": "p1g1ssm2",
+   "keep": "dup"
+  },
+  "fish-s022-cand-511148549": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s022-cand-310653995": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  }
+ }
+}
