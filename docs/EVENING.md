@@ -25,13 +25,12 @@ step); waiting on Pierre; first thing to do tomorrow.
   half-day (06-07 h, 16-21 h). Small samples: leads to re-check as the log grows.
 - **#495** Analyses in plain words (every result in words, direction and size, helps / hurts / clear / no clear
   effect / not enough data, plain names everywhere): Pierre "already better"; Codex findings fixed in three passes;
-  brought onto main by the coordinator (versions stamped at deploy, #499).
+  merged (fc7dac3).
 - **#500** (stacked on #495) Analyses › Sessions in figures (`sessDesc`): every session, start hours, along a
   session, how sessions end, after a break, players coming back, first session against later ones. Codex findings
-  fixed; open, waiting for #495.
-- **#502** (stacked on #500) Analyses visual: every result as a diverging bar per outcome on the Overview and each
+  fixed; merged (20fbe4d).
+- **#502** Analyses visual: every result as a diverging bar per outcome on the Overview and each
   view, Show / Sort / fold / jump list kept per page in this browser, words and tables folded. Open, screenshots for
   Pierre at 390 and 1280; Codex review requested.
 - **Dropped** (Pierre): test-account / "without me" filters in Analyses (another agent simplifies them elsewhere).
-- **Next**: merge #495, retarget #500 then #502 to main in turn (merge main into each: main's version numbers),
-  answer Codex on #502, show Pierre the #502 screenshots.
+- **Next**: show Pierre the #502 screenshots, answer Codex on #502, merge it.
