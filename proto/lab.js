@@ -181,19 +181,18 @@ function viewLab(h) {
   const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id] && (!p.admin || IS_ADMIN));
   const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id]);
   // A subject in beta (core.js SUBJECTS beta: fish), the admin's only (Pierre, 2026-11-04: off Home, "in Tools instead,
-  // visible only to admins"): first tile, a switch between it and the corals ([data-subj], app.js setSubject; the
-  // emoji on the Tools links while it is on, app.js showSubj). Its line is SUBJECTS beta.line.
-  const subj = IS_ADMIN
-    ? SUBJECTS.filter(S => S.beta)
-        .map(
-          S => `<article class="labtile labsubj">
-    <div class="labopen"><span class="labicon" aria-hidden="true">${labIcon(S)}</span><b>${esc(S.name)} <small class="beta">beta</small></b><span>${S.beta.line} Admin only.</span></div>
+  // visible only to admins") and its group's players (app.js subjOpen, sheet v48): first tile, a switch between it and the
+  // corals ([data-subj], app.js setSubject; the emoji on the Tools links while it is on, app.js showSubj). Its line is
+  // SUBJECTS beta.line, and for the admin (who has it whatever the group) who else has it.
+  const subj = SUBJECTS.filter(S => S.beta && subjOpen(S))
+    .map(
+      S => `<article class="labtile labsubj">
+    <div class="labopen"><span class="labicon" aria-hidden="true">${labIcon(S)}</span><b>${esc(S.name)} <small class="beta">beta</small></b><span>${S.beta.line}${IS_ADMIN ? ' Admin and its group only.' : ''}</span></div>
     <div class="labvote" role="group" aria-label="Subject">${[SUBJECTS[0], S]
       .map(x => `<button type="button" data-subj="${x.id}" aria-pressed="${x === SUBJ}">${esc(x.name)}</button>`)
       .join('')}</div></article>`
-        )
-        .join('')
-    : '';
+    )
+    .join('');
   $v.innerHTML = `<div class="lab"><h2>Tools</h2>
   <p class="lede">Optional extras, still being tested, to learn, remember and identify the genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>
   <div class="labhub">${subj}${order

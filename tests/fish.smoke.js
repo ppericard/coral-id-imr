@@ -425,6 +425,78 @@ const server = http.createServer((req, res) => {
       ui.push(`${width}px ${user}: saved Fish or fish progress lost ${JSON.stringify(kept)}`);
     await c6.close();
   }
+  // (6b) Fish opens to a group (sheet v48; Pierre, 2026-11-04: a group he picks in the admin, not one site-wide switch),
+  // on the real app with a sheet stub (nothing sent): a player who is not the admin signs in, the sheet's reply says they
+  // are in the fish group: the Tools tile appears (without the admin's line) and Fish switches on. A load reply with
+  // another group list closes it again: the app reloads on the corals, the saved choice kept. An older script (no groups
+  // in its replies) leaves it closed; another account on the device is in no group.
+  const grp = [];
+  for (const old of [false, true]) {
+    const c8 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c8.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c8.addInitScript(old => {
+      try {
+        if (!sessionStorage.getItem('fish-grp')) {
+          sessionStorage.setItem('fish-grp', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
+          localStorage.setItem('fish-groups', JSON.stringify(['fish']));
+        }
+      } catch (e) {}
+      window.SHEET_STUB = (url, o) => {
+        const g = JSON.parse(localStorage.getItem('fish-groups') || '[]'),
+          reply =
+            o && o.method === 'POST'
+              ? {ok: true, log: true, rev: 2}
+              : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: []};
+        return Promise.resolve({json: () => Promise.resolve({...reply, ...(old ? {v: 45} : {v: 48, groups: g})})});
+      };
+    }, old);
+    const q = await c8.newPage();
+    q.on('pageerror', e => errs.push(`group${old ? ' (v45)' : ''}: ${e.message}`));
+    await q.goto(base + '#lab');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .labhub'), null, {timeout: 30000});
+    const t0 = await q.evaluate(() => !!document.querySelector('#view .labsubj'));
+    if (t0) grp.push(`signed out: a fish tile ${old ? '(v45)' : ''}`);
+    await Promise.all([q.waitForNavigation(), q.evaluate(() => syncGet({name: 'Ana', pin: '1234'}).then(j => signIn('Ana', '1234', j)))]);
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .labhub'), null, {timeout: 30000});
+    const t1 = await q.evaluate(() => {
+      const t = document.querySelector('#view .labsubj');
+      return {tile: !!t, admin: !!t && /Admin/.test(t.textContent), open: subjOpen(SUBJECTS.find(S => S.beta))};
+    });
+    if (old) {
+      if (t1.tile || t1.open) grp.push(`an older script (no groups): fish opened ${JSON.stringify(t1)}`);
+      await c8.close();
+      continue;
+    }
+    if (!t1.tile || t1.admin || !t1.open) grp.push(`in the fish group: the Tools tile ${JSON.stringify(t1)}`);
+    await q.click('#view .labsubj [data-subj="fish"]');
+    await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000}).catch(() => {});
+    if ((await q.evaluate(() => SUBJ.id)) !== 'fish') grp.push('in the fish group: Fish did not switch on');
+    // Another account on this device: in no group.
+    const other = await q.evaluate(() => {
+      const a = store.get('reefid-account', null);
+      store.set('reefid-account', {...a, name: 'Ben'});
+      const o = subjOpen(SUBJECTS.find(S => S.beta));
+      store.set('reefid-account', a);
+      return o;
+    });
+    if (other) grp.push("another account: in the first one's group");
+    // Taken out of the group: the next load's reply closes Fish, the app reloads on the corals.
+    await q.evaluate(() => localStorage.setItem('fish-groups', '[]'));
+    await Promise.all([q.waitForNavigation({timeout: 15000}).catch(() => {}), q.evaluate(() => syncPull())]);
+    await q.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const t2 = await q.evaluate(() => ({
+      subj: SUBJ.id,
+      saved: localStorage.getItem('reefid-sync-subject'),
+      g: localStorage.getItem('reefid-groups')
+    }));
+    if (t2.subj !== 'coral' || t2.saved !== '"fish"') grp.push(`taken out of the group: ${JSON.stringify(t2)}`);
+    await c8.close();
+  }
   // Codex review #442, on the real app with a sheet stub (AGENTS.md rule 13: window.SHEET_STUB, nothing sent):
   // (1) the sheet's opening hold is the corals': a pull with Fish on screen leaves the fish hold alone;
   // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
@@ -717,7 +789,7 @@ const server = http.createServer((req, res) => {
     fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
     await c6.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh];
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

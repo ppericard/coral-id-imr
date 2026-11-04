@@ -992,7 +992,17 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 // clearly aren't ready; in Tools, visible only to admins"): anyone else opens on the corals whatever this device or the
 // account saved, and nothing switches them to it (setSubject, a link to a sheet: subjAt). The saved choice and that
 // subject's progress stay as they are (synced, merged: inSubject), back on screen if the admin view comes back.
-const subjOpen = S => !S.beta || IS_ADMIN;
+// It opens to a group of players too (Pierre, 2026-11-04: "a group I pick in the admin, for now everyone; not one
+// site-wide switch"): the players the admin put in the subject's group (Players, the subject in beta on screen; sheet
+// v48, Code.gs groupSet_). The sheet's replies to a load or a save say which groups the signed-in player is in (sync.js
+// groupsSeen), kept on this device under the account's name (GROUPS_KEY): another account, or none, is in no group.
+const GROUPS_KEY = 'reefid-groups';
+const subjGroups = () => {
+  const o = store.get(GROUPS_KEY, null),
+    a = store.get('reefid-account', null);
+  return o && a && o.n === a.name && Array.isArray(o.g) ? o.g : [];
+};
+const subjOpen = S => !S.beta || IS_ADMIN || subjGroups().includes(S.id);
 const subjAt = id => (subjOpen(subjectOf(id)) ? subjectOf(id) : SUBJECTS[0]);
 let SUBJ = subjAt(store.get(SUBJECT_KEY, SUBJECTS[0].id));
 const sKey = name => subjKey(SUBJ.id, name); // reefid-sync-<subject>-<name>: travels with the player

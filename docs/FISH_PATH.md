@@ -418,7 +418,7 @@ on families only to an IMR RA with every species open:
   This relaxes AGENTS.md rule 21 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
-- **Opening fish to players**: to a group Pierre picks in the admin (for now he will put everyone in it), not one site-wide switch.
+- **Opening fish to players**: to a group Pierre picks in the admin (for now he will put everyone in it), not one site-wide switch. Built (2026-11-04 night, PR #GROUP, open for Pierre's OK): docs/ARCHITECTURE.md "The beta group".
 - **Leaderboards separate per subject**, no merged ranking: corals as today (coral %, then Elo); fish by the global fish score ("My
   progress (fish)"), then the fish Elo. Needs fish answers logged in the sheet first.
 - **Achievements** (rule 14d: learning milestones, never time or days played; designed later, each one's timing checked with the real

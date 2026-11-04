@@ -2938,6 +2938,14 @@ td.cov-c .cov-off {
   border-radius: var(--r);
   padding: 8px 12px;
 }
+/* The beta group's line above the Players table (admin.js gLine, a subject in beta on screen). */
+.adm-ugroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
 .adm-ubar .next {
   margin: 0;
 }

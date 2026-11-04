@@ -396,6 +396,7 @@ function syncOnce(tries = 0) {
     .then(j => {
       if (SYNC !== me) return null;
       if (!j.ok) return j;
+      groupsSeen(j, me.name); // the beta groups first (v48): they never depend on the merge
       if (j.found) mergeSaved(j);
       rev = me.rev;
       // Each subject's progress as sent: its baseline once the sheet confirms (SUBJECTS base).
@@ -459,6 +460,7 @@ function syncOnce(tries = 0) {
           const done = new Set(log.map(x => x.id));
           me.log = (me.log || []).filter(x => !done.has(x.id));
         }
+        groupsSeen(j, me.name); // the beta groups (v48), as the load's reply
         // The sheet's hold over every answer now logged, in time order (v23; Codex review #370), plus any answer given
         // while this send was on its way.
         holdAdopt(j.hold, me.log, j.holdIds);
@@ -525,6 +527,7 @@ function syncPull() {
         return j;
       }
       const rv0 = rvApplied();
+      groupsSeen(j, me.name); // the beta groups first (v48), as syncOnce
       if (j.found) mergeSaved(j);
       if (rvApplied() < rv0) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
       delete me.err;
@@ -903,6 +906,21 @@ const SHEETV = 'reefid-sheet-v',
 let pvLast = null,
   pvPre = null;
 // The script version of a reply (every reply carries v), remembered for the next visits.
+// The beta groups the sheet says this player is in (sheet v48: groups in a load or save reply, [] for none; an older
+// script sends none and nothing changes, so a subject in beta stays the admin's only: AGENTS.md 7a). Kept under the
+// account's name (app.js GROUPS_KEY, subjOpen). A change shows at once: the switches follow (showSubj, the page drawn
+// again), and a subject on screen that this player may no longer have reloads the app on the corals (subjAt), their
+// saved choice and its progress kept. live: false when the app reloads anyway (signIn).
+function groupsSeen(j, name, live = true) {
+  if (!j || !Array.isArray(j.groups) || !name) return;
+  const before = subjGroups().join(),
+    g = j.groups.filter(x => typeof x === 'string' && SUBJECTS.some(S => S.beta && S.id === x));
+  store.set(GROUPS_KEY, {n: name, g});
+  if (!live || subjGroups().join() === before) return;
+  if (!subjOpen(SUBJ)) return location.reload();
+  showSubj();
+  if (!SUBJ_VISIT && /^#?(lab)?$/.test(location.hash)) route(); // the Tools hub's subject tile (proto/lab.js)
+}
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
 }
@@ -1004,6 +1022,7 @@ document.addEventListener('visibilitychange', () => {
 // device's progress, so a beta tester who played first and signed in later lost it.
 function signIn(name, pin, j) {
   SYNC = {name, pin, dirty: true, log: store.get(LOG0, []), ...(store.get(ANONID, '') ? {anon: store.get(ANONID, '')} : {})};
+  groupsSeen(j, name, false); // the account's beta groups (v48), before the reload below opens the app with them
   // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
   if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
@@ -1179,6 +1198,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       // The first-meeting cards too (Codex review #350): the next player meets their own genera.
       [
         'reefid-account',
+        GROUPS_KEY, // the beta groups are this account's (app.js subjOpen)
         // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
         // the comeback belong to this player, Codex review #374).
         ...SUBJECTS.flatMap(S => [

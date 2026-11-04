@@ -768,6 +768,59 @@ const WIDTHS = [390, 1280];
       await p.click('[data-uboard="Dio Demo"]');
       await settle();
       if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
+      // The beta group (sheet v48; Pierre, 2026-11-04: fish opens to a group he picks here, not one site-wide switch): on
+      // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
+      // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
+      {
+        const beta = await p.evaluate(() => (SUBJECTS.find(S => S.beta) || {}).id);
+        const grp = () =>
+          p.evaluate(() => ({
+            line: (document.querySelector('.adm-ugroup') || {}).innerText || '',
+            col: [...document.querySelectorAll('.adm-utbl th')].some(th => /^beta/i.test(th.textContent.trim())),
+            all: !!document.querySelector('[data-ugall]'),
+            bar: (document.querySelector('.adm-ubar') || {}).innerText || ''
+          }));
+        const coral = await grp();
+        if (coral.line || coral.col) fails.push(`${w}px Players (corals): a beta group line or column ${JSON.stringify(coral)}`);
+        if (beta) {
+          await go(beta + '/~users');
+          const g0 = await grp(),
+            n = await p.evaluate(() => USERS.users.length);
+          if (
+            !new RegExp(`beta:\\s+0\\s+of\\s+${n}\\s+players`).test(g0.line) ||
+            !g0.col ||
+            !g0.all ||
+            !/Not in the \S+ beta\s*Add/.test(g0.bar)
+          )
+            fails.push(`${w}px Players (${beta}): the beta group before ${JSON.stringify(g0)}`);
+          await p.click('[data-ugroup="Dio Demo"]');
+          await settle();
+          const g1 = await grp();
+          if (!new RegExp(`beta:\\s+1\\s+of\\s+${n}\\s+players`).test(g1.line) || !/In the \S+ beta\s*Remove/.test(g1.bar))
+            fails.push(`${w}px Players (${beta}): Add did not put Dio in the group ${JSON.stringify(g1)}`);
+          await p.click('[data-ugall]');
+          await settle();
+          const g2 = await grp();
+          if (!new RegExp(`beta:\\s+${n}\\s+of\\s+${n}\\s+players`).test(g2.line) || g2.all)
+            fails.push(`${w}px Players (${beta}): Add all ${JSON.stringify(g2)}`);
+          await p.click('[data-ugroup="Dio Demo"]');
+          await settle();
+          if (!new RegExp(`beta:\\s+${n - 1}\\s+of\\s+${n}\\s+players`).test((await grp()).line))
+            fails.push(`${w}px Players (${beta}): Remove did not take Dio out`);
+          const q = await p.context().newPage();
+          await q.goto(base + `admin.html?demo&v=45#${beta}/~users`);
+          await q
+            .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
+            .catch(() => {});
+          const old = await q.evaluate(() => ({
+            note: /needs the sheet script v48/.test(document.getElementById('view').innerText),
+            btn: !!document.querySelector('[data-ugall], [data-ugroup]')
+          }));
+          if (!old.note || old.btn) fails.push(`${w}px Players (${beta}) with sheet v45: ${JSON.stringify(old)}`);
+          await q.close();
+          await go('~users'); // the corals' page, Dio's row still open, as the steps below expect
+        }
+      }
       // Rename (sheet v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted, above), hidden
       // from the leaderboard.
       await p.click('[data-uopen="Ben Demo"]');
