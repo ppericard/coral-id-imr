@@ -618,6 +618,63 @@ test('plainOf: every effect of every analysis has a plain name, no code or model
   assert.ok(n > 40, `${n} effects read`);
 });
 
+// Sessions in figures (sessDesc, the study of 2026-11-04): sessions cut at 30 minutes, how they end, the start against
+// the end of the session before, players coming back (one last seen within a day is not counted yet).
+test('sessDesc: sessions, ends, breaks and returns from a small log', () => {
+  const H = 36e5,
+    t0 = Date.UTC(2026, 10, 2, 0, 0), // 08:00 Manila
+    rows = [],
+    add = (p, t, y) =>
+      rows.push([
+        p,
+        t,
+        'Porites',
+        y ? 'Porites' : 'Favites',
+        y ? 1 : 0,
+        'quiz',
+        'f',
+        0.7,
+        0,
+        0,
+        'Porites Favites Pavona Fungia',
+        null,
+        5,
+        0
+      ]);
+  // A: 3 sessions, each 12 answers a minute apart, the first two end on a miss; 10 h then 20 h breaks
+  [0, 10, 30].forEach((h, si) => {
+    for (let i = 0; i < 12; i++) add('A', t0 + h * H + i * 6e4, si < 2 && i === 11 ? 0 : 1);
+  });
+  // B: one session, long ago, never back
+  for (let i = 0; i < 8; i++) add('B', t0 - 48 * H + i * 6e4, 1);
+  const A1 = A.prep(
+      rows.sort((a, b) => a[1] - b[1]),
+      {}
+    ),
+    d = A.sessDesc(A1, 20, 1);
+  assert.strictEqual(d.sessions, 4);
+  assert.strictEqual(d.players, 2);
+  assert.strictEqual(d.hours[8], 2, 'two sessions start at 08:00 Manila');
+  assert.strictEqual(d.ends.sessions, 3, 'the last session is still going (log end)');
+  assert.strictEqual(d.ends.miss, 2);
+  // returns: after the 1st session, A came back and B did not; A's 2nd and 3rd sessions ended less than a day before
+  // the log ends: not counted either way
+  assert.deepStrictEqual(
+    d.returns.map(r => [r.at, r.back]),
+    [
+      [2, 1],
+      [0, 0],
+      [0, 0]
+    ]
+  );
+  const g = Object.fromEntries(d.gaps.map(x => [x.label, x.n]));
+  assert.strictEqual(g['3 – 12 h'], 1);
+  assert.strictEqual(g['12 – 36 h'], 1);
+  assert.strictEqual(d.table[0].p, 'A', 'newest first');
+  assert.strictEqual(d.table[0].k, 3);
+  assert.strictEqual(d.table[0].tail, '111');
+});
+
 // Codex review #495: a compacted milestone keeps each format's own expected chance and guess rate, so its plain
 // reading does not change when the Formats table is dropped.
 test('compact keeps the formats’ baselines: the plain reading of a lean milestone is unchanged', () => {
@@ -700,4 +757,46 @@ test('outOf: format difficulties chart on their own beyond-guessing outcome', ()
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
   assert.match(src, /beyond: '[^']*beyond guessing[^']*'/);
   assert.ok(!/S\.o\b/.test(src), 'charts group by ANALYSIS.outOf, not the raw outcome');
+});
+
+// Codex review #500: "ended on 2+ misses" counts misses within the session only; the return rate uses the same
+// observation window for those who came back and those who did not (a session ended under a day ago counts for neither).
+test('sessDesc: misses in a row stay within a session; returns use one observation window', () => {
+  const H = 36e5,
+    t0 = Date.UTC(2026, 10, 2, 0, 0),
+    rows = [],
+    add = (p, t, y) =>
+      rows.push([
+        p,
+        t,
+        'Porites',
+        y ? 'Porites' : 'Favites',
+        y ? 1 : 0,
+        'quiz',
+        'f',
+        0.7,
+        0,
+        0,
+        'Porites Favites Pavona Fungia',
+        null,
+        5,
+        0
+      ]);
+  // C: two one-answer sessions two hours apart, both wrong, long ago
+  add('C', t0 - 72 * H, 0);
+  add('C', t0 - 70 * H, 0);
+  // ten players start together an hour before the end; one comes back 30+ minutes later
+  for (let i = 0; i < 10; i++) add('N' + i, t0, 1);
+  add('N0', t0 + 0.6 * H, 1);
+  const d = A.sessDesc(
+    A.prep(
+      rows.sort((a, b) => a[1] - b[1]),
+      {}
+    ),
+    10,
+    1
+  );
+  assert.strictEqual(d.ends.miss2, 0, 'no session holds two misses');
+  const r1 = d.returns.find(r => r.k === 1);
+  assert.deepStrictEqual([r1.at, r1.back], [1, 1], 'only C’s first session is a day old: C came back');
 });
