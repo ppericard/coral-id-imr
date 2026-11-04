@@ -243,7 +243,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 
 Supported now:
 
-- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 323 species in circle-1 entries.
+- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 351 species in circle-1 entries (since #496).
 - PDF Latin name (`name`), WoRMS name (`now`, 28 species) and synonyms, iNaturalist id.
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
@@ -385,11 +385,16 @@ on families only to an IMR RA with every species open:
       genus 55%; every common name 80%; every scientific name 85%; every common name and every genus 90%; everything with both names 100%.
     - It is not additive across the branches (an additive split would put families alone near 65%), every right answer on either branch
       moves the score, and it needs no case per branch.
-    - Still checked by simulation before it ships (rule 14f: `tools/learnsim.js` fish profiles, 5 seeds): the entries' 25% share, the
-      genus's half credit, and no long plateau on the curve. The 80 / 85 / 100% points are exact by construction.
+    - **Simulated** (2026-11-04, `tools/fishscore.js`, 5 seeds, a model of the path since the species level is not built;
+      docs/LEARNING.md "Fish: the global score, simulated"): the anchors are exact; the entries give 25% within the first ~1,000
+      answers (the fast start); the genus's half credit removes a flat stretch at 49% on the scientific branch; no long plateau
+      on one branch or on both side by side. Two effects of the anchors themselves, not of *a* or *b*: a player who completes one
+      branch and then starts the other gains its last 15-20 points 8-11 times slower per answer, and at equal effort a player
+      learning both names scores below one learning a single kind for most of the path (at 30,000 simulated answers: 61% against
+      80% common only). Rerun with `tools/learnsim.js` fish profiles once the species level exists.
     - **My progress** can show three bars under the headline %: Entries, Common names, Scientific names.
   - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the circle-1 entries
-    (27) and their species (323); unopened units at 0; circles 2 and 3 never count (as now).
+    (27) and their species (351 since the one presence rule, #496); unopened units at 0; circles 2 and 3 never count (as now).
   - What counts as a species' scientific name known (the exam passed, or the progress on the questions shown in Latin) is part of the
     same study.
   - **The Elo level stays alongside** as the player's overall level.
