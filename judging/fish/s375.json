@@ -1,0 +1,140 @@
+{
+ "photos": {
+  "fish-s375-cand-716524078": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s375-cand-669264003": {
+   "code": "o1g1ml13",
+   "keep": "best"
+  },
+  "fish-s375-cand-669264048": {
+   "code": "o1g1ml12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-669264095": {
+   "code": "o1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-669264144": {
+   "code": "o1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-45637144": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-732989530": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s375-cand-690980115": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s375-cand-690980091": {
+   "code": "p1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s375-cand-60566565": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s375-cand-667011939": {
+   "code": "p1g1mm1c1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Seen through a rippling water surface; the seahorse is hard to make out"
+  },
+  "fish-s375-cand-667011953": {
+   "code": "p1g1mm1c1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-667011969": {
+   "code": "p1g1mm1c1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-667011983": {
+   "code": "p1g1ms1c1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-726772496": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s375-cand-693026377": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s375-cand-43492891": {
+   "code": "o1g1slx1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Red and white animals entangled; the subject is not obvious"
+  },
+  "fish-s375-cand-43492899": {
+   "code": "o1g1slx1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-153909251": {
+   "code": "p1n0sm1j2",
+   "keep": "best"
+  },
+  "fish-s375-cand-239669301": {
+   "code": "o1d1sm12",
+   "keep": "best"
+  },
+  "fish-s375-cand-624535829": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s375-cand-607782478": {
+   "code": "p1g1sm1jc2",
+   "keep": "best"
+  },
+  "fish-s375-cand-338376087": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s375-cand-632518298": {
+   "code": "o1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s375-cand-632518304": {
+   "code": "o1g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-632518313": {
+   "code": "o1g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-628169512": {
+   "code": "o1d1sm1c1",
+   "keep": "best"
+  },
+  "fish-s375-cand-710848512": {
+   "code": "p1d1sm13",
+   "keep": "best"
+  },
+  "fish-s375-cand-704660665": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-704661367": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s375-cand-61955777": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s375-cand-61955783": {
+   "code": "p1g1sm1c2",
+   "keep": "dup"
+  }
+ }
+}
