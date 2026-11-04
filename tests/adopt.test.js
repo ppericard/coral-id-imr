@@ -35,6 +35,9 @@ function storage(init = {}) {
 // sheet: a loadCodeGs() sheet the requests go to (sheetFetch for a signed-in player, fetch for anonymous answers).
 function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
   const prog = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    // The beta groups as app.js keeps them (GROUPS_KEY, subjGroups, subjOpen; sheet v48), run as the page runs them.
+    appjs = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    groups = /const GROUPS_KEY = [\s\S]*?\nconst subjOpen = .*\n/.exec(appjs)[0],
     loadData = /const loadData = [\s\S]*?;\n/.exec(prog)[0],
     progData = /const progData = [\s\S]*?\n};\n/.exec(prog)[0],
     sent = [],
@@ -53,7 +56,10 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     crypto: require('crypto').webcrypto,
     localStorage: storage(ls),
     sessionStorage: storage(),
-    location: {hash: '', reload: () => {}},
+    location: {hash: '', reload: () => ctx.reloads++},
+    reloads: 0,
+    IS_ADMIN: false,
+    showSubj: () => {},
     document: {
       addEventListener: () => {},
       getElementById: () => ({}),
@@ -106,8 +112,9 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
      const save = () => store.set('reefid-sync-coral-progress', P);\n` +
       loadData +
       progData +
+      groups +
       fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8') +
-      '\nbindSync = () => {};\nthis.A = {replayAdopt, rvApplied, syncGet, syncPush, syncPull, signIn, sendAnon, store, RVK};',
+      '\nbindSync = () => {};\nthis.A = {replayAdopt, rvApplied, syncGet, syncPush, syncPull, signIn, sendAnon, store, RVK, subjOpen};',
     ctx
   );
   const A = ctx.A;
@@ -961,4 +968,51 @@ test('a replay made with another first-launch history is not adopted; the next s
       {gen: {...DATA.x.gen, ...DATA.gen}, mem: st.mem, conf: st.conf, starts: {ana: merged}}
     ).ana.P;
   assert.strictEqual(a.ctx.P.Acropora.th, want.Acropora.th, 'the abilities from the merged history');
+});
+
+// Sheet v48 (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch): the sheet's replies
+// to a load and a save say which groups the signed-in player is in; the app opens the beta subject to them, for that
+// account only, and closes it again when taken out (a reload on the corals when it was on screen).
+test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async () => {
+  const s = loadCodeGs(withData()),
+    TOK = 'ghp_write000000000000000000',
+    fish = C.SUBJECTS.find(S => S.beta);
+  assert.ok(s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: []}).ok);
+  const a = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  await a.syncPull();
+  assert.strictEqual(a.subjOpen(fish), false, 'in no group: closed');
+  assert.ok(s.post({userGroup: 'Ana', group: fish.id, on: true, token: TOK}).ok);
+  await a.syncPull();
+  assert.strictEqual(a.subjOpen(fish), true, 'the load reply opens it');
+  assert.deepStrictEqual(copy(a.store.get('reefid-groups', null)), {n: 'Ana', g: [fish.id]});
+  // Another account on this device is in no group.
+  const ana = a.store.get('reefid-account', null);
+  a.store.set('reefid-account', {...ana, name: 'Ben'});
+  assert.strictEqual(a.subjOpen(fish), false, "another account: not in Ana's group");
+  a.store.set('reefid-account', ana);
+  // Taken out: the next load's reply closes it; Fish on screen reloads the app (on the corals, app.js subjAt).
+  assert.ok(s.post({userGroup: 'Ana', group: fish.id, on: false, token: TOK}).ok);
+  a.ctx.SUBJ = fish;
+  await a.syncPull();
+  a.ctx.SUBJ = C.subjectOf('coral');
+  assert.strictEqual(a.subjOpen(fish), false, 'the load reply closes it');
+  assert.ok(a.ctx.reloads > 0, 'Fish on screen: the app reloads');
+  // Back in: the save's reply opens it too.
+  assert.ok(s.post({userGroup: 'Ana', group: fish.id, on: true, token: TOK}).ok);
+  a.ctx.SYNC.dirty = true;
+  a.ctx.SYNC.log = [];
+  await a.syncPush();
+  assert.ok(
+    a.got.some(j => j.log && Array.isArray(j.groups)),
+    'a save reply with the groups'
+  );
+  assert.strictEqual(a.subjOpen(fish), true, 'the save reply opens it');
+  // An older script (no groups in its reply) changes nothing; signing in stores the account's groups before the reload.
+  const b = app();
+  b.signIn('Ana', '1234', {found: true, data: {'reefid-sync-coral-progress': '{}'}});
+  assert.strictEqual(b.store.get('reefid-groups', null), null, 'no groups field: nothing stored');
+  const c = app();
+  c.signIn('Ana', '1234', {found: true, groups: [fish.id, 'nope'], data: {'reefid-sync-coral-progress': '{}'}});
+  assert.deepStrictEqual(copy(c.store.get('reefid-groups', null)), {n: 'Ana', g: [fish.id]}, 'at sign-in, beta subjects only');
+  assert.strictEqual(c.subjOpen(fish), true);
 });

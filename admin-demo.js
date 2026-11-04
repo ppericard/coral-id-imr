@@ -15,10 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
+    // The script version the demo answers as: the current one (v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
     // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 42,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 48,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -548,7 +548,8 @@
         recent: [0, 0],
         mix: [],
         reports: 0,
-        size: JSON.stringify(u.data).length
+        size: JSON.stringify(u.data).length,
+        ...(V >= 48 ? {groups: (u.groups || []).slice()} : {})
       };
     });
     const days = {},
@@ -611,6 +612,21 @@
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
   }
   function users(p) {
+    // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
+    if (p.userGroup && V >= 48) {
+      const g = String(p.group || ''),
+        L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
+      if (!SUBJECTS.some(x => x.beta && x.id === g)) return {ok: false, error: 'group'};
+      if (!Array.isArray(p.userGroup) && !S.users[lc(L[0])]) return {ok: false, error: 'user'};
+      let n = 0;
+      L.forEach(x => {
+        const u = S.users[lc(x)];
+        if (!u || (u.groups || []).includes(g) === !!p.on) return;
+        u.groups = p.on ? [...(u.groups || []), g] : u.groups.filter(y => y !== g);
+        n++;
+      });
+      return {ok: true, group: g, n, members: Object.values(S.users).filter(u => (u.groups || []).includes(g)).length};
+    }
     // Sheet v20: rename (the record moves, hidden from the leaderboard).
     if (p.userRename) {
       const m = p.userRename,
@@ -662,6 +678,7 @@
       if (typeof m.at === 'number' && m.at !== b.rev) return {ok: false, error: 'stale', rev: b.rev};
       b.data = m.data;
       b.rev++;
+      if (a.groups) b.groups = [...new Set([...(b.groups || []), ...a.groups])]; // v48: the merged name's beta groups join
       b.updated = Date.now();
       let answers = 0,
         reports = 0;
@@ -738,7 +755,8 @@
       if (p.readStats) return ok(stats());
       // v35: the stored Analyses report. A script before v35 answers 'input' (?demo&v=30: the admin shows no report).
       if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head));
-      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));
+      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename || (p.userGroup && V >= 48))
+        return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));

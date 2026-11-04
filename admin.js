@@ -1972,7 +1972,7 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
   stats: `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
     <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>`,
   statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
@@ -6026,6 +6026,14 @@ const UCOLS = [
   ['seen', 'Seen', u => u.seen, 0, 'Genera seen'],
   ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent']
 ];
+// The beta group (sheet v48; Pierre, 2026-11-04: a subject in beta opens to a group he picks here, for now everyone, not
+// by one site-wide switch): on the Players page of a subject in beta (the admin's subject switch), whether each player is
+// in its group (Code.gs groupSet_; the app opens the subject to them, app.js subjOpen). Add / Remove under the row, Add
+// all above the table.
+const GROUP_SHEET = 48;
+const groupOn = () => !!ASUBJ.beta && (USERS.v || 0) >= GROUP_SHEET;
+const inGroup = u => (u.groups || []).includes(ASUBJ.id);
+UCOLS.push(['group', 'Beta', u => (inGroup(u) ? 1 : 0), 0, 'In the beta group']);
 // Last answer, second column (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
 // to the minute, sorted by its exact time; the default sort, most recent first.
 UCOLS.splice(1, 0, ['last', 'Last', u => u.at || 0, 0, `Last answer (now = less than ${RECENT.NOW} minutes ago)`]);
@@ -6047,7 +6055,7 @@ function renderUsers() {
     return;
   }
   // The Progress column only from sheet script v28 (replayOn).
-  const COLS = UCOLS.filter(c => c[0] !== 'prog' || replayOn()),
+  const COLS = UCOLS.filter(c => (c[0] !== 'prog' || replayOn()) && (c[0] !== 'group' || groupOn())),
     col = COLS.find(c => c[0] === SF.us) || COLS.find(c => c[0] === 'last'),
     sk = col[0],
     sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
@@ -6095,6 +6103,7 @@ function renderUsers() {
       <a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a>
       ${u.pg ? `<span class="adm-uprog">Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
+      ${groupOn() ? `<span>${inGroup(u) ? 'In' : 'Not in'} the ${esc(ASUBJ.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-on="${inGroup(u) ? 0 : 1}">${inGroup(u) ? 'Remove' : 'Add'}</button></span>` : ''}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
       <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
       <button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></div></td></tr>`;
@@ -6137,8 +6146,16 @@ function renderUsers() {
             : withSaved(`${u.pg.learned}/${u.pg.total}`, u.pg.saved && `${u.pg.saved.learned}/${u.pg.total}`),
       seen: u.seen,
       reports: u.reports || '',
-      last: ago(u.at)
+      last: ago(u.at),
+      group: inGroup(u) ? 'In' : '–'
     })[k];
+  // The beta group's line above the table (groupOn): how many players are in it, and Add all for the others.
+  const gOut = groupOn() ? U.filter(u => !inGroup(u)) : [],
+    gLine = !ASUBJ.beta
+      ? ''
+      : !groupOn()
+        ? `<p class="note">The ${esc(ASUBJ.name)} beta group needs the sheet script v${GROUP_SHEET} (live: v${USERS.v || '?'}).</p>`
+        : `<p class="adm-ugroup"><span>${esc(ASUBJ.name)} beta: <b>${U.length - gOut.length}</b> of ${U.length} players</span>${gOut.length ? ` <button type="button" class="adm-fchip" data-ugall>Add all ${gOut.length}</button>` : ''}</p>`;
   $v.innerHTML =
     head +
     kpis([
@@ -6148,6 +6165,7 @@ function renderUsers() {
       ['Not signed in', anon.length]
     ]) +
     (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
+    gLine +
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
@@ -6227,6 +6245,45 @@ function bindUsers() {
           .catch(() => toast('Not done (offline).'));
       })
   );
+  // The beta group (sheet v48, groupOn): one player in or out (one click, no confirmation: Remove undoes Add), or every
+  // player not in it yet (Add all, confirmed: a bulk action). Only the group changes; the player's app follows at its next
+  // load or save.
+  // The group id is taken when the request leaves: the admin may switch subjects before it returns (Codex review #540).
+  const group = (names, on, msg, gid = ASUBJ.id) =>
+    userPost({userGroup: names, group: gid, on})
+      .then(j => {
+        if (!j || !j.ok) return toast(`Not done (${(j && j.error) || 'offline'}).`);
+        const L = new Set((Array.isArray(names) ? names : [names]).map(x => x.toLowerCase()));
+        USERS.users.forEach(u => {
+          if (!L.has(u.name.toLowerCase())) return;
+          const g = (u.groups || []).filter(x => x !== gid);
+          u.groups = on ? [...g, gid] : g;
+        });
+        toast(msg);
+        render();
+      })
+      .catch(() => toast('Not done (offline).'));
+  $v.querySelectorAll('[data-ugroup]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.ugroup,
+          on = b.dataset.on === '1';
+        group(name, on, on ? `"${name}" added to the ${ASUBJ.name} beta.` : `"${name}" removed from the ${ASUBJ.name} beta.`);
+      })
+  );
+  const ga = $v.querySelector('[data-ugall]');
+  if (ga)
+    ga.onclick = () => {
+      const L = USERS.users.filter(u => !inGroup(u)).map(u => u.name);
+      if (
+        !L.length ||
+        !confirm(
+          `Add all ${L.length} players not in it yet to the ${ASUBJ.name} beta?\n\n${ASUBJ.name} opens in the app for them at their next sync. Players who sign up later are not in it.`
+        )
+      )
+        return;
+      group(L, true, `${L.length} players added to the ${ASUBJ.name} beta.`);
+    };
   // Rename (sheet v20, Pierre 2026-11-02): keep a record apart under a new name ("Pierre-test"), off the leaderboard; the
   // old name is free again, so its owner can sign out on their devices and sign in under it to start over.
   $v.querySelectorAll('[data-uren]').forEach(
