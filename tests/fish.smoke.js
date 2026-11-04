@@ -596,7 +596,7 @@ const server = http.createServer((req, res) => {
   // (9) A brand-new fish player (Pierre, 2026-11-04: the first families and the first photos were the wrong ones): the
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
   // entry reaches Open Water its photos are only the very easy ones (judged ease 4-5, judging/FISH.md), never a
-  // juvenile of the starter entries (their juveniles are capped; only Spadefish and Sweetlips, fish.json juv, are not);
+  // juvenile of a capped genus (fish.json juv: a juvenile is very easy only in a class-A entry or a show-early genus);
   // past Open Water the others come in. (A sex / colour phase is no family-level difficulty: Pierre,
   // 2026-11-04.) Five seeds.
   const fresh = [];
@@ -652,7 +652,6 @@ const server = http.createServer((req, res) => {
           if (genScore(t) >= LV_AT[0]) return;
           gated++;
           ok(p.e >= 4, `question ${i + 1}: ${t} photo ${s.f} of ease ${p.e} before Open Water`);
-          ok(!/j/.test((p.jt || '').slice(7)), `question ${i + 1}: ${t} juvenile photo ${s.f} before Open Water`);
         });
         const ans = document.querySelectorAll('#view [data-c]');
         if (ans.length) [...ans].find(b => b.dataset.c === t).click();
