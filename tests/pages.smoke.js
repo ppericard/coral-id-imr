@@ -1054,7 +1054,11 @@ async function signin(base) {
   // answers queued for the sheet, which takes no fish answers, so it never came). Fish is opened to this player in the
   // page, as the admin's group will (core.js SUBJECTS beta).
   await run(
-    () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-subject', '"fish"')),
+    () => (
+      localStorage.setItem('reefid-tour', '"done"'),
+      localStorage.setItem('reefid-sync-subject', '"fish"'),
+      localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}') // the fish welcome question answered
+    ),
     async p => {
       // The visit log on the way (Codex review #466): Fish switched on the same page (Tools) closes the coral page and opens
       // the fish one, fish.lab (it kept counting the coral one: the tally knew the hash only).
