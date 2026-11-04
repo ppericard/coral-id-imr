@@ -215,10 +215,21 @@
   // names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
   // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
   // surprise card, never a question of the game).
+  // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
+  // cover: the card's photo (app.js cover): within the highest source tier that has photos (AGENTS.md rule 7: Pierre's own
+  // before other observers', Codex review #461), the easiest judged one (fish-photos.json e, judging/FISH.md), the list's
+  // first among equals; the list's first when none is judged.
   function fishGen(F, photos) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
-      top = id => String(id).slice(0, 3);
+      start = new Set(F.start || []),
+      top = id => String(id).slice(0, 3),
+      tier = p => (p.own ? 0 : 1),
+      easiest = L => {
+        const t = Math.min(...L.map(tier)),
+          T = L.filter(p => tier(p) === t);
+        return T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
+      };
     (F.teach || [])
       .filter(t => t.level === 1)
       .forEach(t => {
@@ -250,10 +261,14 @@
               .filter(p => p && p.f && p.src)
               .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
           },
+          ...(start.has(t.id) ? {first: 1} : {}),
           ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
           names: fishNames(t)
         };
       });
+    Object.values(gen).forEach(g => {
+      if (g.views.wide.some(p => p.e)) g.cover = easiest(g.views.wide);
+    });
     const ids = Object.keys(gen),
       play = n => !gen[n].wink;
     return {

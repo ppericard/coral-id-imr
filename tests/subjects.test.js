@@ -124,3 +124,32 @@ test('mergeUsers: each subject on its own, a subject neither account played stay
   assert.strictEqual(c.Acropora.ok, 2);
   assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).c3, true);
 });
+
+test('fishGen cover: the easiest judged photo within the highest source tier (Pierre’s own first, AGENTS.md rule 7)', () => {
+  const F = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8')),
+    PH = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-photos.json'), 'utf8')).photos,
+    X = C.fishGen(F, PH);
+  let checked = 0;
+  Object.values(X.gen).forEach(g => {
+    const L = g.views.wide;
+    if (!L.some(p => p.e)) return;
+    const c = L.find(p => p.f === g.cover),
+      own = L.filter(p => p.own);
+    if (own.length) {
+      assert.ok(c.own, `${g.id}: the cover is another observer's while Pierre has ${own.length}`);
+      assert.strictEqual(c.e || 0, Math.max(...own.map(p => p.e || 0)), `${g.id}: not the easiest of Pierre's`);
+      checked++;
+    } else assert.strictEqual(c.e || 0, Math.max(...L.map(p => p.e || 0)), `${g.id}: not the easiest`);
+  });
+  assert.ok(checked > 10, `${checked} entries with Pierre's photos checked`);
+  // A synthetic case: Pierre's photo at ease 2 beats another observer's at 5.
+  const T = {teach: [{id: 't99', name: 'X', level: 1, circle: 1, species: []}]},
+    Y = C.fishGen(T, {
+      t99: [
+        {f: 'a', src: 'x', e: 5},
+        {f: 'b', src: 'x', own: true, e: 2},
+        {f: 'c', src: 'x', own: true, e: 3}
+      ]
+    });
+  assert.strictEqual(Y.gen.t99.cover, 'c');
+});
