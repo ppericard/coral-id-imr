@@ -566,7 +566,7 @@ const server = http.createServer((req, res) => {
       .waitForFunction(
         () => {
           const got = performance.getEntriesByType('resource').map(e => new URL(e.name).pathname);
-          return ['/progress.js', '/flag.js', '/proto/lab.js', '/proto/finder.js'].every(f => got.includes(f));
+          return ['/progress.js', '/flag.js', '/proto/lab.js', '/proto/idkey.js'].every(f => got.includes(f));
         },
         null,
         {timeout: 20000}
@@ -576,7 +576,7 @@ const server = http.createServer((req, res) => {
       window.__home,
       Object.fromEntries(performance.getEntriesByType('resource').map(e => [new URL(e.name).pathname.slice(1), e.startTime]))
     ]);
-    const early = ['progress.js', 'flag.js', 'proto/lab.js', 'proto/finder.js'].filter(f => !(at[f] > home));
+    const early = ['progress.js', 'flag.js', 'proto/lab.js', 'proto/idkey.js'].filter(f => !(at[f] > home));
     if (!(home > 0) || early.length) fails.push(`Asked for before Home showed (${home} ms): ${early.join(', ')}`);
     const order = ['quiz.js', 'progress.js', 'proto/lab.js'].map(f => at[f]);
     if (!order.every((x, i) => x >= 0 && (!i || x >= order[i - 1])))

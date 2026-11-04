@@ -27,7 +27,7 @@ const ROUTES = [
   'quiz-custom',
   'quiz-custom|play',
   'pairs',
-  'finder',
+  'idkey',
   'progress',
   'board',
   'ach',
@@ -2828,7 +2828,7 @@ async function basicsTeach(b, base) {
 
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
-// main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Finder, the new player at 390 and
+// main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
 // the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
 // (startSmoke).
@@ -2905,6 +2905,13 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     });
     if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
       fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
+    // The tool is the Coral ID Key (Pierre, 2026-11-04): "Coral Finder" on a page (help, folds and pop-ups included)
+    // only names the book, cited by page (Coral Finder p. 63, Same Coral Finder box: …, p. 47-56), as the 2022 book,
+    // "the Coral Finder book" or one of its terms (tests/idkey.test.js checks the code's strings).
+    const notBook = () =>
+      [...document.body.textContent.matchAll(/Coral Finder/g)]
+        .map(m => document.body.textContent.slice(m.index, m.index + 90))
+        .filter(t => !/^Coral Finder( 2022| book| term|[^.]{0,80}?p\. ?\d)/.test(t));
     for (const h of ROUTES) {
       errs.length = 0;
       await p.evaluate(h => {
@@ -2917,9 +2924,23 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       // A short window for errors a page throws just after it is drawn (a timer, a late photo).
       await p.waitForTimeout(150);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
+      const cf = await p.evaluate(notBook);
+      if (cf.length) fails.push(`${w}px #${h}: "Coral Finder" for something other than the book: ${cf.slice(0, 2).join(' | ')}`);
       // No credits block on any page but Home (Pierre, 2026-11-03): no footer, no Home credit line.
       if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
+    // Home and Identify say "Coral ID Key" for the tool, and its page title too.
+    await p.evaluate(() => (location.hash = ''));
+    await p.waitForTimeout(600);
+    const hk = await p.evaluate(() => ({
+      cf: [...document.body.textContent.matchAll(/Coral Finder(?! 2022| book)/g)].length,
+      key: /Open the Coral ID Key/.test(document.body.textContent)
+    }));
+    if (hk.cf || !hk.key) fails.push(`${w}px Home: the tool is not the Coral ID Key ${JSON.stringify(hk)}`);
+    await p.evaluate(() => (location.hash = 'idkey'));
+    await p.waitForSelector('.ikstart', {timeout: 15000}).catch(() => {});
+    const kt = await p.evaluate(() => (document.querySelector('#view h2') || {}).textContent || '');
+    if (kt !== 'Coral ID Key') fails.push(`${w}px #idkey: its title is "${kt}"`);
     // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
     // classified photo opens the enlarged view.
     for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
@@ -2965,12 +2986,12 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       };
     });
     if (gl.titles || !gl.cards || !gl.def || gl.h !== '#genera') fails.push(`${w}px Genera glossary: ${JSON.stringify(gl)}`);
-    // The Coral Finder's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
-    await p.evaluate(() => (location.hash = 'finder'));
-    // The Finder's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
+    // The Coral ID Key's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
+    await p.evaluate(() => (location.hash = 'idkey'));
+    // The Coral ID Key's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
     await p.waitForSelector('#view [data-show]', {timeout: 15000}).catch(() => {});
     const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
-    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral Finder slate count: "${fd[0]}", expected ${fd[1]}`);
+    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral ID Key slate count: "${fd[0]}", expected ${fd[1]}`);
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
@@ -3170,22 +3191,22 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       const bq = await q3.evaluate(() => location.hash);
       if (bq !== '#quiz') fails.push(`${w}px Back on a sheet after a reload: ${bq}`);
       await q3.close();
-      // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
-      await q2.evaluate(() => (location.hash = 'finder|form=M'));
-      // Waits on the Finder's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
+      // Coral ID Key: the "Compare A and B" button is readable (its text was the colour of its background).
+      await q2.evaluate(() => (location.hash = 'idkey|form=M'));
+      // Waits on the Coral ID Key's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
       await q2.waitForSelector('#view [data-cmpk]', {timeout: 15000}).catch(() => {});
       for (const k of [0, 2]) {
         const cb = q2.locator('#view button[data-cmpk]').nth(k);
         await cb.click();
         await q2.waitForFunction(e => e.getAttribute('aria-pressed') === 'true', await cb.elementHandle(), {timeout: 5000}).catch(() => {});
       }
-      await q2.waitForSelector('.fdcmp .next', {timeout: 5000}).catch(() => {});
+      await q2.waitForSelector('.ikcmp .next', {timeout: 5000}).catch(() => {});
       const cc = await q2.evaluate(() => {
-        const n = document.querySelector('.fdcmp .next'),
+        const n = document.querySelector('.ikcmp .next'),
           c = n && getComputedStyle(n);
         return n ? [c.color, c.backgroundColor] : null;
       });
-      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral Finder compare button unreadable: ${JSON.stringify(cc)}`);
+      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral ID Key compare button unreadable: ${JSON.stringify(cc)}`);
       const other = e2.filter(e => !/smoke test error/.test(e));
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();
@@ -3436,7 +3457,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     await p.waitForTimeout(500);
     if (errs.length) fails.push(`${w}px admin.html?readonly: ${errs.slice(0, 3).join(' | ')}`);
-    // One count of a Finder-only genus's colonies (Codex review #390, found apart five times): the refill
+    // One count of a Key-only genus's colonies (Codex review #390, found apart five times): the refill
     // (tools/fetch_local.py colonies) and the admin (covOf, which the Candidates swiper's full test reads) agree on the
     // real data and curation, view by view.
     if (w === 390) {
@@ -3456,13 +3477,13 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
 s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
 from datajson import load_all
 d = load_all(); G = {**d['gen'], **d['x']['gen']}; cur = json.load(open('curation.json'))
-print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded).get(v, 0) for v in fl.kept_views(g, G, cur)} for g in fl.finder_only(d)}))`
+print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded).get(v, 0) for v in fl.kept_views(g, G, cur)} for g in fl.key_only(d)}))`
           ],
           {cwd: ROOT, encoding: 'utf8'}
         )
       );
       if (JSON.stringify(adm) !== JSON.stringify(py))
-        fails.push(`Finder-only colonies, admin covOf vs tools/fetch_local.py colonies: ${JSON.stringify(adm)} vs ${JSON.stringify(py)}`);
+        fails.push(`Key-only colonies, admin covOf vs tools/fetch_local.py colonies: ${JSON.stringify(adm)} vs ${JSON.stringify(py)}`);
     }
     await ctx.close();
   }

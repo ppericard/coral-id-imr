@@ -46,10 +46,10 @@ test('game photos: never a Coral Finder book photo, a several-corals photo or a 
   );
 });
 
-test('an excluded photo appears nowhere (views, sheet, games, Coral Finder)', () => {
+test('an excluded photo appears nowhere (views, sheet, games, Coral ID Key)', () => {
   const X = CUR.exclude || {};
   each(D, (n, g, v, s) => {
-    [...(g.views[v] || []), ...s.feat, ...s.more, ...s.finder, ...GAME.flatMap(k => s[k])].forEach(p =>
+    [...(g.views[v] || []), ...s.feat, ...s.more, ...s.idkey, ...GAME.flatMap(k => s[k])].forEach(p =>
       assert.ok(!X[p.f], `${n} ${v}: excluded ${p.f}`)
     );
   });
@@ -112,7 +112,7 @@ test('Coral Finder book switch off: no book photo anywhere', () => {
     assert.ok(!g.book || !g.book.length, n);
     VIEWS.forEach(v => {
       const s = (g.sl || {})[v];
-      if (s) [...s.feat, ...s.more, ...s.finder].forEach(p => assert.ok(!p.cf, `${n} ${v}: ${p.f}`));
+      if (s) [...s.feat, ...s.more, ...s.idkey].forEach(p => assert.ok(!p.cf, `${n} ${v}: ${p.f}`));
     });
   });
 });
