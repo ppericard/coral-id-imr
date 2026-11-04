@@ -45,7 +45,7 @@ const SHELL = [
   'proto/lab.js?v=82',
   'proto/lab.css?v=57',
   'home-art.js?v=5',
-  'home.js?v=37',
+  'home.js?v=38',
   'home.css?v=26',
   'tour.js?v=22',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.

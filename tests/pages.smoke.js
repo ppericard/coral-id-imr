@@ -3417,7 +3417,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'quiz'));
       await drawn(q2);
-      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.plain && c.kick.includes(`${k + 1} of 4`)))
+      // The Open all box: on the first cards, except for a player who answered "I'm new to corals" (Pierre, 2026-11-04).
+      const boxWanted = await q2.evaluate(() => (startOf() || {}).c !== 'new');
+      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all === boxWanted && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
       // Not vacuous (test-suite review, 2026-11-04): the first cards (fixed by INTRO.START and the data) carry a glossary
       // term, or the definition check above and the tap-a-word line below were never checked.
