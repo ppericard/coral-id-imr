@@ -1128,6 +1128,9 @@ async function signin(base) {
       await card(p);
       const ph = await p.getAttribute('.signnudge input[name=n]', 'placeholder');
       if (!/initial/i.test(ph || '')) fails.push(`sign-in: the name field does not ask for the initial (placeholder "${ph}")`);
+      // A nickname or alias is just as welcome (Pierre, 2026-11-04), said in the field's label, not only in the note below.
+      const lb = await p.evaluate(() => document.querySelector('.signnudge input[name=n]').closest('label').textContent);
+      if (!/nickname/i.test(lb)) fails.push(`sign-in: the name field's label does not offer a nickname ("${lb.trim()}")`);
       // A name taken with another code.
       await submit(p, 'Anna', '9999');
       await p
