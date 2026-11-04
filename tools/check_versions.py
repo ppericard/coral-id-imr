@@ -100,21 +100,24 @@ def main():
             errs.append(f'shell files changed but sw.js V=v{V} is not above {a.base} (v{bV})')
             newV = bV + 1
 
-    if a.fix and (fixes or newlab or newV):
+    # The sw.js Lab list follows LAB_V: the one the script bumps, or the current one when only the list lags (a sw.js
+    # conflict resolved by taking main's copy while LAB_V was already bumped).
+    swlab = newlab or (labv if swlabv != labv else None)
+    if a.fix and (fixes or swlab or newV):
         for p in PAGES + ['app.js', 'sw.js']:
             s = read(p)  # read before open(p, 'w') truncates it
             for f, v in fixes.items():
                 s = re.sub(re.escape(f) + r'\?v=\d+', f'{f}?v={v}', s)
             if p == 'sw.js' and newV:
                 s = re.sub(r"reefid-shell-v\d+", f'reefid-shell-v{newV}', s, count=1)
-            if p == 'sw.js' and newlab:
-                s = re.sub(r"(`proto/\$\{f\}\.js\?v=)\d+", rf'\g<1>{newlab}', s)
+            if p == 'sw.js' and swlab:
+                s = re.sub(r"(`proto/\$\{f\}\.js\?v=)\d+", rf'\g<1>{swlab}', s)
             open(p, 'w', encoding='utf-8').write(s)
         if newlab:
             p = 'proto/lab.js'
             t = re.sub(r'const LAB_V = \d+;', f'const LAB_V = {newlab};', read(p))
             open(p, 'w', encoding='utf-8').write(t)
-        print('Fixed:', ', '.join([f'{f} -> v{v}' for f, v in fixes.items()] + ([f'LAB_V -> {newlab}'] if newlab else []) + ([f'sw V -> v{newV}'] if newV else [])))
+        print('Fixed:', ', '.join([f'{f} -> v{v}' for f, v in fixes.items()] + ([f'LAB_V -> {newlab}'] if newlab else [f'sw.js Lab files -> v{swlab}'] if swlab else []) + ([f'sw V -> v{newV}'] if newV else [])))
         return main_again()
     for e in errs:
         print('✗', e)
