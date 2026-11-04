@@ -48,7 +48,7 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 **Working copy (any machine or cloud container):**
 1. Clone `https://github.com/ppericard/coral-id-imr` (public). Python 3, Node 18+ and Chromium/Playwright are all you need.
 2. Serve: `python3 -m http.server 8000`, open <http://localhost:8000> (app) and <http://localhost:8000/admin.html?demo> (admin without a token, every page on made-up data, nothing sent; `?readonly` shows the real curation instead). Sync and photo Elo talk to the live Apps Script even locally (read-only unless you sign in).
-3. Check: `node --test tests/*.test.js`, `node tests/pages.smoke.js`, `node tests/draw.smoke.js`, `node tests/admin.smoke.js` (Playwright; never add a `package.json`), `python3 tools/check_versions.py` (against `origin/main`).
+3. Check: `node --test tests/*.test.js`, `node tests/pages.smoke.js`, `node tests/draw.smoke.js`, `node tests/admin.smoke.js` (Playwright; never add a `package.json`), `python3 tools/check_versions.py` (consistency only: the deploy stamps the version numbers).
 4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need `pillow` (`pip install pillow`) for photo work.
 
 **Hosting settings (already in place; only if the repo ever moves):**
@@ -60,7 +60,7 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 1. New Google Sheet > Extensions > Apps Script > paste [`tools/sync/Code.gs`](../tools/sync/Code.gs) > save.
 2. Project Settings > Script Properties: add `ANON_SALT` = any long random string (keeps anonymous player ids unguessable; never commit it).
 3. Deploy > New deployment > type **Web app**, Execute as **Me**, Who has access **Anyone** > Deploy, accept the permissions. Run once in the editor a function that calls `UrlFetchApp` (see "Code.gs" below) so the admins' GitHub token check works.
-4. Put the `/exec` URL in `SYNC_URL` in `app.js` (and bump versions with `tools/check_versions.py --fix`). The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`, `Removed`) are created on first use. Old progress lives in the old Sheet only.
+4. Put the `/exec` URL in `SYNC_URL` in `app.js` (the deploy stamps the version numbers). The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`, `Removed`) are created on first use. Old progress lives in the old Sheet only.
 
 **Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script, and write it with `tools/datajson.py` (one genus per line; the PR check fails on any other layout). The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools"). **The lecture photos' rights are uncertain** (Pierre, 2026-11-04): many are not IMR's own (from iNaturalist or the web without a proper source); they stay preferred for corals but are to be traced to their original and credited or replaced (ROADMAP, AGENTS.md rule 7). The IMR fish presentation's photos are mostly not IMR's own either (likely from ID books): fish never use them.
 
