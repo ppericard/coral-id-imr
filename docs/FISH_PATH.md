@@ -184,19 +184,17 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps on real photos, one plain sentence
 each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card.
 
-- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the shape groups), so rule 2
+- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the identification groups), so rule 2
   holds and the IMR wording is kept (rule 1).
-- **The shape groups are the book's** (Pierre, 2026-11-04): those of *Reef Fish Identification – Tropical Pacific* (2nd edition, Allen,
-  Steene, Humann & DeLoach, New World Publications), which the IMR course follows. The book is credited for the groups, not IMR (the
-  code and these docs still say "IMR shape groups" for them).
-- **The app shows the book's group names and numbers** (Pierre, 2026-11-04), e.g. "7. Heavy Bodies/Large Lips", only the groups that
-  hold entries in the game, in the book's order. A later code PR replaces the 10 IMR groups in `tools/fish_source.json` (and so
-  `fish.json` `group`, the wrong-choice order and the families page) with the book's groups, and renames "IMR shape groups" in the
-  code and docs (rule 24b: clean names, data migrated once). Where IMR's wording differs from the book's title, the book's title is
-  shown.
+- **The groups are the regional identification key's** (Pierre, 2026-11-04; AGENTS.md rule 6c): for the Indo-Pacific, the index of
+  the 20 identification groups of *Reef Fish Identification – Tropical Pacific* (2nd edition), which the IMR course follows. The app
+  shows the key's group numbers and titles (e.g. "7. Heavy Bodies/Large Lips"; no longer the 10 IMR shape groups), only the groups that
+  hold entries in the game, in the book's order; where IMR's wording differs from the book's title, the book's title is shown. Credited
+  to the book (the key's `cite` and `short`, `tools/fish_source.json` `keys`). Every fish family of any circle attaches to one of its
+  groups (`tools/build_fish.py` checks it).
 - **Body shape first** (Pierre, 2026-11-04): identification always starts with the body shape, which is what separates the
-  identification groups (the book above groups fish by body shape). The module starts with body shape and the shape groups, then
-  the vocabulary.
+  identification groups (the book above groups fish by body shape). The module starts with body shape and the identification
+  groups, then the vocabulary.
 - **The dorsal fin is not a step of its own**: it is the second screen of the "Fins" step (Pierre, 2026-11-04).
 - **IMR terms kept**: "Band", with a discreet "sources differ" note; the "heart-shaped" tail, a good *Dascyllus* indicator (IMR's term).
 - **Photos and figures** (Pierre, 2026-11-04): never the IMR slide photos (most are not IMR's own, likely from ID books); photos with

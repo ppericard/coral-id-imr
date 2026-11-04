@@ -64,7 +64,7 @@ test('ids: stable, unique, never a name, never a retired one', () => {
   retired.forEach(id => assert.ok(!srcIds.has(id), `retired id ${id} reused`));
 });
 
-test('the 27 IMR entries are level 1, circle 1, in the order of the 10 shape groups, first in the tree', () => {
+test('the 27 IMR entries are level 1, circle 1, in the order of the IMR presentation, first in the tree', () => {
   const c1 = F.teach.filter(t => t.circle === 1);
   assert.deepStrictEqual(
     c1.map(t => t.name),
@@ -74,18 +74,88 @@ test('the 27 IMR entries are level 1, circle 1, in the order of the 10 shape gro
     F.teach.slice(0, 27).map(t => t.name),
     IMR27
   );
-  let g = 1;
-  c1.forEach(t => {
-    assert.strictEqual(t.level, 1, t.name);
-    assert.ok(t.group === g || t.group === g + 1, `${t.name}: group ${t.group} after ${g}`);
-    g = t.group;
-  });
-  assert.strictEqual(g, 10);
+  c1.forEach(t => assert.strictEqual(t.level, 1, t.name));
+});
+
+// Identification groups (Pierre, 2026-11-04; AGENTS.md rule 6c): the key in force for this deployment's region
+// (tools/fish_source.json deploy.key among keys; for the Indo-Pacific, the index of a reef fish ID book) is the reference for fish
+// groups. Every teaching node in the game (any circle, winks aside) carries one of its groups, unless the source marks it
+// as waiting (keyGroup null with keyWhy); fish.json is as `build_fish.py --regroup` gives it.
+const KEY = SRC.keys.find(k => k.id === SRC.deploy.key);
+const BUILD = path.join(__dirname, '..', 'tools', 'build_fish.py');
+const regroupCheck = src => {
+  const args = [BUILD, '--regroup', '--check'];
+  let tmp = null;
+  if (src) {
+    tmp = path.join(require('os').tmpdir(), `fish_source.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
+    fs.writeFileSync(tmp, JSON.stringify(src));
+    args.push('--src', tmp);
+  }
+  const r = require('child_process').spawnSync('python3', args, {encoding: 'utf8'});
+  if (tmp) fs.unlinkSync(tmp);
+  return {status: r.status, out: (r.stdout || '') + (r.stderr || '')};
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+
+test('identification groups: the key in force, credited, its 20 groups; every node in the game in one of them', () => {
+  assert.ok(KEY, 'deploy.key names a key');
+  assert.deepStrictEqual({id: F.key.id, cite: F.key.cite, short: F.key.short}, {id: KEY.id, cite: KEY.cite, short: KEY.short});
+  assert.match(F.key.cite, /Reef Fish Identification – Tropical Pacific, 2nd ed\./);
   assert.deepStrictEqual(
-    F.groups.map(x => x.n),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    F.key.groups.map(g => g.n),
+    Array.from({length: 20}, (_, i) => i + 1)
   );
-  F.teach.filter(t => t.circle !== 1).forEach(t => assert.strictEqual(t.group, undefined, `${t.name} has an IMR group`));
+  F.key.groups.forEach((g, i) => {
+    assert.strictEqual(g.title, KEY.groups[i].title);
+    assert.ok(g.pages[0] <= g.pages[1] && (i === 0 || g.pages[0] === F.key.groups[i - 1].pages[1] + 1), `pages of group ${g.n}`);
+  });
+  assert.strictEqual(F.groups, undefined, 'the IMR shape groups are gone');
+  const nums = new Set(F.key.groups.map(g => g.n)),
+    waiting = new Set(SRC.teach.filter(t => (t.keyGroup || {})[KEY.id] === null).map(t => t.id));
+  F.teach
+    .filter(t => !t.wink)
+    .forEach(t => assert.ok(nums.has(t.group) || (waiting.has(t.id) && t.group === undefined), `${t.id} ${t.name}: group ${t.group}`));
+  // The IMR look-alike pairs the book splits keep their own groups: the book's order, not the slides'.
+  const g = id => F.teach.find(t => t.id === id).group;
+  assert.deepStrictEqual(
+    [g('t02'), g('t06'), g('t01'), g('t10'), g('t16'), g('t13'), g('t08'), g('t09'), g('t23'), g('t24'), g('t26'), g('t22'), g('t19')],
+    [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 16, 17]
+  );
+  const r = regroupCheck();
+  assert.strictEqual(r.status, 0, r.out);
+});
+
+test('identification groups: the build fails, naming the node, on a node in the game with no group or two', () => {
+  // No group: the clingfishes without their explicit wait.
+  const a = clone(SRC);
+  delete a.teach.find(t => t.id === 't62').keyGroup;
+  let r = regroupCheck(a);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /t62 Clingfishes: no group/);
+  // Two groups: the soapfish genus of Groupers (Diploprion) moved to another group of the key.
+  const b = clone(SRC),
+    K = b.keys.find(k => k.id === b.deploy.key);
+  K.groups.find(x => x.n === 7).labels.find(l => l[0] === 'Soapfishes')[1] = ['Grammistidae'];
+  K.groups.find(x => x.n === 12).labels.push(['test', ['Diploprioninae']]);
+  r = regroupCheck(b);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /t13 Groupers: two groups 7, 12/);
+  // An explicit choice settles it.
+  b.teach.find(t => t.id === 't13').keyGroup = {[K.id]: 7};
+  r = regroupCheck(b);
+  assert.strictEqual(r.status, 0, r.out);
+  // A label in two groups of a key is refused.
+  const c = clone(SRC);
+  c.keys.find(k => k.id === c.deploy.key).groups[0].labels.push(['test', ['Labridae']]);
+  r = regroupCheck(c);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /Labridae is under groups/);
+  // A region with no key has no group rule.
+  const d = clone(SRC);
+  delete d.deploy.key;
+  r = regroupCheck(d);
+  assert.doesNotMatch(r.out, /identification groups \(AGENTS/);
+  assert.match(r.out, /is not as key \(none\) gives it/);
 });
 
 test('circles: 1, 2 or 3 in the game; barracudas in circle 2; nothing silvery or pelagic in circle 1', () => {
@@ -183,7 +253,17 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
     if (!s.out) {
       assert.ok(Number.isInteger(s.inat), `${s.name}: iNaturalist id`);
       assert.strictEqual(p.ph, true, `${s.name} in the game but not confirmed in the Philippines`);
-    } else assert.ok(p.ph === false || /no circle/.test(s.out), `${s.name}: out (${s.out}) but confirmed`);
+    } else
+      assert.ok(p.ph === false || /no circle|circle 3: not confirmed near Dauin/.test(s.out), `${s.name}: out (${s.out}) but confirmed`);
+    // Confirmed near Dauin (Pierre, 2026-11-03): his own there, 2+ Research Grade observers there, or the IMR reference list.
+    if (s.inat) {
+      assert.strictEqual(p.near, p.nearBy.length > 0, `${s.id}: near and nearBy disagree`);
+      assert.strictEqual(p.nearBy.includes('imr'), !!s.pdf, `${s.id}: imr iff in the PDF list`);
+      assert.strictEqual(p.nearBy.includes('observers'), p.dauinU >= 2, `${s.id}: observers iff 2+ observers near Dauin`);
+    }
+    // Circle 3 only for species confirmed near Dauin.
+    if (s.circle === 3) assert.ok(p.near, `${s.id} ${s.name}: circle 3 but not confirmed near Dauin`);
+    if (/circle 3: not confirmed/.test(s.out || '')) assert.ok(!p.near, `${s.id}: out of circle 3 but confirmed`);
     assert.strictEqual(s.r, i + 1, `${s.name}: species not in rank order`);
     if (!s.src || s.src === 'slides') assert.ok(s.common, `${s.name}: no common name`);
   });
@@ -360,4 +440,12 @@ test('juvenile classes: every circle-1 entry classed, with sources, as in the so
     ['Parrotfish', 'Emperor']
   );
   ['t04', 't14'].forEach(id => assert.match(c1.find(t => t.id === id).juv.by, /^Pierre, 2026-11-04/));
+});
+
+test('fish-photos.json (the stopgap game photos) shows only species in the game', () => {
+  // A species that leaves the game (e.g. circle 3 needs "confirmed near Dauin", 2026-11-03) leaves the quiz's photos too.
+  const P = read('fish-photos.json').photos;
+  Object.entries(P).forEach(([t, L]) =>
+    L.forEach(p => assert.ok(p.sp && SP.get(p.sp) && SP.get(p.sp).circle, `${t} ${p.f}: ${p.t} (${p.sp}) is not in the game`))
+  );
 });

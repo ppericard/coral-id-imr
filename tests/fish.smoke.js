@@ -88,9 +88,9 @@ const server = http.createServer((req, res) => {
       ok(ch.length === 3 && ch.every(n => L.includes(n) && n !== t), `${t}: 3 choices from the fish slate`);
     }
     ok(!FISH.winks.some(n => pool().includes(n)), 'winks never in the draw');
-    // Play the real quiz screen: 30 answers, right or wrong, cards closed.
+    // Play the real quiz screen: 30 answers, right or wrong, cards closed (a wink that comes in between is no answer).
     const coralBefore = localStorage.getItem('reefid-sync-coral-progress');
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0, asked = 0; asked < 30 && i < 60; i++) {
       closeCards();
       if (!document.querySelector('#view .q')) quizPhoto();
       const q = SHOWNQ;
@@ -112,6 +112,7 @@ const server = http.createServer((req, res) => {
         f.querySelector('input').value = GX(q[1]).name;
         f.requestSubmit();
       }
+      asked++;
       route();
     }
     const fish = JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}');
@@ -139,7 +140,7 @@ const server = http.createServer((req, res) => {
     const wk = document.querySelector('#view .q.wink');
     ok(!!wk, 'a wink comes for a circle-1 player');
     if (wk) {
-      const n = [...WINKS.seen][0],
+      const n = [...WINKS.seen].at(-1), // the wink just shown (an earlier one may have come in the answers above)
         w = GX(n).wink,
         labels = [...wk.querySelectorAll('[data-w]')].map(b => b.textContent.slice(1));
       ok(w.choices.every(([, l]) => labels.includes(l)) && labels.includes(GX(n).name), 'wink: its name and the absurd choices');
@@ -255,6 +256,33 @@ const server = http.createServer((req, res) => {
     }));
     if (home.sw || home.beta) ui.push(`${width}px Home with Fish on: a subject switch or a beta line ${JSON.stringify(home)}`);
     await wide('Home, Fish on');
+    // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key, AGENTS.md
+    // rule 6c), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
+    // them, every entry under its own group; the key credited in full under the list.
+    await q.evaluate(() => (location.hash = '#genera'));
+    await q.waitForFunction(() => document.querySelector('#view .gdiv'), null, {timeout: 15000});
+    const fam = await q.evaluate(() => {
+      const K = FISH.key || {},
+        G = FISH.groups,
+        heads = [...document.querySelectorAll('#view .gblk')].map(b => ({
+          n: +b.querySelector('.gn').textContent,
+          t: b.querySelector('.gt').textContent,
+          ids: [...b.querySelectorAll('.tipg .tipph b')].map(x => x.textContent)
+        })),
+        c1 = heads.filter(h => G.some(g => g.n === h.n)),
+        want = G.filter(g => FISH.c1.some(n => GX(n).group === g.n)).map(g => g.n),
+        cite = (document.querySelector('#view .keycite') || {}).textContent || '';
+      return {
+        order: c1.map(h => h.n).join() === want.join(),
+        titles: c1.every(h => (G.find(g => g.n === h.n) || {}).title === h.t),
+        placed: c1.every(h => h.ids.every(nm => FISH.c1.some(n => unameT(n) === nm && GX(n).group === h.n))),
+        got: c1.map(h => h.n).join(),
+        want: want.join(),
+        cite: !!K.cite && cite.includes(K.cite)
+      };
+    });
+    if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
+    await wide('the families page');
     await q.evaluate(() => (location.hash = '#quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
