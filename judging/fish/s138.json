@@ -1,0 +1,104 @@
+{
+ "photos": {
+  "fish-s138-cand-597385162": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s138-cand-467756028": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s138-cand-716933264": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s138-cand-505608670": {
+   "code": "p1d1sm1j3",
+   "keep": "best"
+  },
+  "fish-s138-cand-464458745": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s138-cand-459044946": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s138-cand-505608912": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s138-cand-705198893": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s138-cand-605989070": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s138-cand-749045290": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s138-cand-46795702": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s138-cand-647736057": {
+   "code": "d1g1ss11",
+   "keep": "best"
+  },
+  "fish-s138-cand-724993207": {
+   "code": "p1g2bm1j1",
+   "keep": "best"
+  },
+  "fish-s138-cand-615720774": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s138-cand-703246410": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s138-cand-703246403": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s138-cand-755348853": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s138-cand-738741982": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s138-cand-738742012": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s138-cand-711491890": {
+   "code": "p1g1ss11",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "A drawn circle marks the fish"
+  },
+  "fish-s138-cand-525979616": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s138-cand-525979621": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s138-cand-525979634": {
+   "code": "p1g1sl14",
+   "keep": "dup"
+  },
+  "fish-s138-cand-726144483": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  }
+ }
+}

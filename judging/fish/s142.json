@@ -1,0 +1,120 @@
+{
+ "photos": {
+  "fish-s142-cand-623576471": {
+   "code": "p1g3bm11",
+   "keep": "best"
+  },
+  "fish-s142-cand-623576451": {
+   "code": "p1g3bm11",
+   "keep": "dup"
+  },
+  "fish-s142-cand-623576482": {
+   "code": "p1g3bm11",
+   "keep": "dup"
+  },
+  "fish-s142-cand-623576463": {
+   "code": "p1g3bm11",
+   "keep": "dup"
+  },
+  "fish-s142-cand-748261379": {
+   "code": "d1g2bm11",
+   "keep": "best"
+  },
+  "fish-s142-cand-730204008": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s142-cand-708879733": {
+   "code": "p1g1sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dark fish: maybe a juvenile or another colour form"
+  },
+  "fish-s142-cand-618794736": {
+   "code": "p1d2sm12",
+   "keep": "best"
+  },
+  "fish-s142-cand-603726876": {
+   "code": "p1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s142-cand-604512790": {
+   "code": "p0g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s142-cand-604512797": {
+   "code": "p1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s142-cand-683171241": {
+   "code": "p1g2ss1j1",
+   "keep": "best"
+  },
+  "fish-s142-cand-683171289": {
+   "code": "p1g2ssx1",
+   "keep": "dup"
+  },
+  "fish-s142-cand-610402997": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s142-cand-755348689": {
+   "code": "h1g2sm12",
+   "keep": "best"
+  },
+  "fish-s142-cand-738774551": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s142-cand-738774565": {
+   "code": "p1g2sss2",
+   "keep": "dup"
+  },
+  "fish-s142-cand-754389121": {
+   "code": "o1g2ss1j1",
+   "keep": "best"
+  },
+  "fish-s142-cand-691333090": {
+   "code": "o1g2sl13",
+   "keep": "best"
+  },
+  "fish-s142-cand-614105499": {
+   "code": "p1g2bs11",
+   "keep": "best"
+  },
+  "fish-s142-cand-729418051": {
+   "code": "o1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s142-cand-606000772": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s142-cand-606742759": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s142-cand-738785360": {
+   "code": "o1g2sl13",
+   "keep": "best"
+  },
+  "fish-s142-cand-738785377": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s142-cand-610158013": {
+   "code": "o0g1sm1j3",
+   "keep": "best"
+  },
+  "fish-s142-cand-752753774": {
+   "code": "p1d2sm12",
+   "keep": "best"
+  },
+  "fish-s142-cand-752753775": {
+   "code": "o1d2sm12",
+   "keep": "dup"
+  }
+ }
+}
