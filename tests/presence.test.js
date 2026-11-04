@@ -171,3 +171,11 @@ test('admin To do: the out-of-rule queue follows the curated photos (removed out
   const sec = A.slice(A.indexOf('<h2>Out of the presence rule'), A.indexOf('<h2>Out of the presence rule') + 400);
   assert.ok(!/<p[ >]/.test(sec.split('${oor.map')[0]), 'an explanatory paragraph on the page');
 });
+
+test('admin: the "out of rule" tag keeps a bare-name tooltip (rule 23: explanations behind ?)', () => {
+  const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
+  const tag = A.slice(A.indexOf('const ruleTag'), A.indexOf('\n', A.indexOf('const ruleTag')));
+  assert.match(tag, /title="Out of the presence rule"/);
+  assert.ok(!('ruleWhy' in require('../presence.js')), 'no long explanation helper left');
+  assert.match(A.slice(A.indexOf('  genus: `'), A.indexOf('\n', A.indexOf('  genus: `'))), /out of rule/);
+});

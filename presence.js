@@ -11,13 +11,6 @@
     const r = w.length >= 2 && /^[a-z]/.test(w[1]) ? sp[w[0] + ' ' + w[1]] : null;
     return !!r && !r.ok;
   };
-  // Why, in a few words, for a tooltip: what iNaturalist and the checklist say.
-  const ruleWhy = (p, sp) => {
-    const w = String((p && p.t) || '').split(/\s+/),
-      r = (sp || {})[w[0] + ' ' + w[1]];
-    if (!r) return '';
-    return `${w[0]} ${w[1]}: ${r.rg} Research Grade observation${r.rg === 1 ? '' : 's'} in the Philippines${r.chk ? ', listed by Corals of the World' : ', not listed by Corals of the World'}; not confirmed there by the presence rule (3+ observers, or 1+ and the checklist, or 2+ observers near Dauin)`;
-  };
   // The photos still needing Pierre's decision (To do): those a genus sheet shows now (photosOf(n): the curated list,
   // removed and "not this genus" photos gone, approved candidates in), not hidden, not off the games' slots (several
   // corals in the extra list, Coral Finder book), that are out of the rule. Codex review #496.
@@ -27,7 +20,7 @@
         .filter(p => !isHidden(n, p) && !offSlot(p) && outOfRule(p, sp))
         .map(p => ({...p, genus: n, fv: p.base}))
     );
-  const API = {outOfRule, ruleWhy, ruleQueue};
+  const API = {outOfRule, ruleQueue};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);
