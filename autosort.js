@@ -72,26 +72,28 @@
     return null;
   }
 
-  // The fish candidate pre-sort's sure decision (suggest.json "fish" entry j, tools/judging_fish.py, judging/AGENTS.md
-  // "Fish candidate pass"), the fish counterpart of autoSure, or null when it is Pierre's (Pierre, 2026-11-03, fishphotos
-  // branch; ported 2026-11-04, admin plan PR 1). Same shape as autoSure, so the fish candidates can go through the same
-  // path (autoRun, the "auto" log, Checks with autoCheck, agreement per field with autoState; admin plan PR 5).
-  // What differs from corals (judging/AGENTS.md): Poor is never a reason to set a fish photo aside (poor photos stand in
-  // for SVS video frames); an alt photo of the observation goes in too (another side, another phase); a fish has one view,
-  // so an add carries its tags instead: framing (whole / part / school), phase, quality, colour loss and a crop.
+  // The fish candidate pre-sort's sure decision (suggest.json "fish" entry j, tools/judging_fish.py), the fish
+  // counterpart of autoSure, or null when it is Pierre's. Same shape as autoSure, so the fish candidates go through the
+  // same path (autoRun, the "auto" log, Checks with autoCheck, agreement per field; admin plan PR 4-5).
+  // One fish judging vocabulary (Pierre, 2026-11-04, judging/FISH.md): j.jt is the rubric's visual code after its caps
+  // (view, whole, light, colour loss, clarity, size, count, flags; the same tags as the game photos' fish-photos.json jt),
+  // j.e the ease 1-5, j.k best / alt / dup within the observation, j.ph an IMR sex or colour phase, j.c a crop. Visual
+  // criteria only: the species is the iNaturalist experts' identification, never judged here.
   // - any field in `u` (unsure): Pierre's;
-  // - `exclude` (unusable): excluded;
-  // - not this species, or another species of fish.json: rejected (sending it to that species is Pierre's "Not this");
-  // - a near-duplicate or several species: rejected;
-  // - best or alt, with its framing, phase and quality: added.
-  // tools/fetch_fish.py sure_out mirrors the rejects and excludes (they free room for the next fetch).
+  // - a near-duplicate: rejected;
+  // - the subject not obvious (count x: which fish is asked about?) or out of the water (flag a): rejected, as several
+  //   corals are for corals;
+  // - best or alt with its tags and ease: added (Poor-looking photos too: they stand in for SVS video frames; the ease
+  //   says how hard, it is never a reason to set one aside).
+  // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
+  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcap]*$/;
   function fishSure(j) {
     if (!j || (j.u && j.u.length)) return null;
-    if (j.g === 'exclude') return {keep: 'exclude'};
-    if (j.g) return j.g === 'not' ? {keep: 'reject', why: 'not'} : {keep: 'reject', why: 'species', to: j.g};
-    if (j.k === 'dup' || j.m) return {keep: 'reject', why: j.k === 'dup' ? 'dup' : 'multi'};
-    if ((j.k === 'best' || j.k === 'alt') && j.v && j.ph && (j.q === 1 || j.q === 2 || j.q === 3))
-      return {keep: 'add', framing: j.v, phase: j.ph, quality: j.q, loss: j.cl || 'none', crop: j.c || null};
+    if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
+    if (!FISH_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
+    if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};
+    if (j.jt.slice(7).includes('a')) return {keep: 'reject', why: 'out of water'};
+    if (j.k === 'best' || j.k === 'alt') return {keep: 'add', tags: j.jt, ease: j.e, phase: j.ph || null, crop: j.c || null};
     return null;
   }
 

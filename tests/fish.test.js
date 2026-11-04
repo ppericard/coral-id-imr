@@ -125,13 +125,28 @@ test('identification groups: the key in force, credited, its 20 groups; every no
   assert.strictEqual(r.status, 0, r.out);
 });
 
+test('the clingfishes are out of circle 3 (Pierre, 2026-11-04: not in the key); no node waits for a group', () => {
+  assert.ok(!F.teach.some(t => t.fam === 'Gobiesocidae' || t.id === 't62'), 'no clingfish entry');
+  assert.ok(SRC.retired.teach.includes('t62') && ['s460', 's461'].every(id => SRC.retired.species.includes(id)), 'ids retired');
+  assert.ok(SRC.leftOut.Gobiesocidae, 'the decision and its reason kept in leftOut');
+  assert.ok(!Object.values(REF).some(n => n.name === 'Gobiesocidae'), 'no reference node left for them');
+  assert.ok(!SRC.teach.some(t => Object.values(t.keyGroup || {}).includes(null)), 'no node waits for a group');
+});
+
 test('identification groups: the build fails, naming the node, on a node in the game with no group or two', () => {
-  // No group: the clingfishes without their explicit wait.
+  // No group: the jawfishes once their label is gone from the key.
   const a = clone(SRC);
-  delete a.teach.find(t => t.id === 't62').keyGroup;
+  a.keys.find(k => k.id === a.deploy.key).groups.find(x => x.n === 13).labels = a.keys
+    .find(k => k.id === a.deploy.key)
+    .groups.find(x => x.n === 13)
+    .labels.filter(l => l[0] !== 'Jawfishes');
   let r = regroupCheck(a);
   assert.notStrictEqual(r.status, 0);
-  assert.match(r.out, /t62 Clingfishes: no group/);
+  assert.match(r.out, /t58 Jawfishes: no group/);
+  // A wait for a decision (keyGroup null) needs its keyWhy, and lets the build go on.
+  a.teach.find(t => t.id === 't58').keyGroup = {[a.deploy.key]: null};
+  r = regroupCheck(a);
+  assert.match(r.out, /t58 Jawfishes: keyGroup null needs a keyWhy/);
   // Two groups: the soapfish genus of Groupers (Diploprion) moved to another group of the key.
   const b = clone(SRC),
     K = b.keys.find(k => k.id === b.deploy.key);

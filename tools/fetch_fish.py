@@ -38,7 +38,7 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   fish-cand.json = {"v": 1, "cand": {species id: [photo, ...]}}, one species per line (tools/datajson.py layout).
 - Curation: curation.json "fish" (written by the admin only, never here; its full shape is the admin plan's PR 4): add
   {f: 1}, seen {f: 1} (rejected), exclude {f: reason}, out {f: species id or "x"}. The top-level "exclude" (corals) is honoured too, by iNaturalist photo id.
-- Pre-sort: suggest.json "fish" (tools/judging_fish.py, judging/AGENTS.md "Fish candidate pass").
+- Pre-sort: suggest.json "fish" (tools/judging_fish.py, judging/FISH.md "Candidates").
 
 Network: iNaturalist API v2 (only the fields used), read only, a pause of PAUSE s between calls, generic User-Agent.
 Every reply is cached, trimmed, in tools/.cache/fish_photos.json (git-ignored): a rerun is offline and gives the same
@@ -283,9 +283,12 @@ def pid(f):
 
 
 def sure_out(j):
-    """The pre-sort set it aside without doubt (autosort.js fishSure: reject or exclude): unusable, not this species,
-    another species, several species, or a near-duplicate, with no `u` (unsure). Such a candidate no longer holds room."""
-    return bool(j) and not j.get("u") and bool(j.get("g") or j.get("m") or j.get("k") == "dup")
+    """The pre-sort set it aside without doubt (autosort.js fishSure's rejects): a near-duplicate, the subject not obvious
+    (count x) or out of the water (flag a), with no `u` (unsure). Such a candidate no longer holds room."""
+    if not j or j.get("u"):
+        return False
+    jt = j.get("jt") or ""
+    return j.get("k") == "dup" or (len(jt) >= 7 and (jt[6] == "x" or "a" in jt[7:]))
 
 
 def state(cur, sug):
