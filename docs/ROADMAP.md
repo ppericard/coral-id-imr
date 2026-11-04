@@ -141,7 +141,7 @@ Pierre's decisions (2026-11-04, on the design study's questions):
 | 2 | Subject descriptor + switch | The admin part of `SUBJECTS`; the Corals \| Fish segment with each side's to-do count; `#fish/` addresses; fish pages not converted yet say so | Next |
 | 3 | One filter bar (a: unit page with origin chips and the view filter; b: Photo review and Candidates) | One component everywhere, filled from the descriptor; coral behaviour identical (before / after DOM checks) | Next |
 | 4 | Curation `fish` namespace | Draft, Undo, Publish summary and merge for fish keys (the coral key names under `fish`, `auto` included); tests that fish edits never touch coral keys | Next |
-| 5 | Fish Candidates | The swiper: thinnest species and missing phases first, stop at target, tag rows (phase, framing, quality, colour loss), crop, Not this → species, the pre-sort through the auto-sort (`fishSure`, Checks, agreement), the prior chip. Needs a first run of the fish candidate pass (judging/AGENTS.md) | Next |
+| 5 | Fish Candidates | The swiper: thinnest species and missing phases first, stop at target, tag rows (the `judging/FISH.md` rubric's tags, phase), crop, Not this → species (Pierre's choice; the pass never judges the species), the pre-sort through the auto-sort (`fishSure`, Checks, agreement), the prior chip. Needs a first run of the fish candidate pass (judging/AGENTS.md) | Next |
 | 6 | Fish entry page (the units page) | Species as sections, cover, featured, Remove, Not this, tags, Validated with its list of what is missing; wink preview | Next |
 | 7 | Fish photos into the game | The workflow downloads added fish photos (R2, four sizes); the app reads the curated list, the stopgap kept for entries under a minimum | Next |
 | 8 | Fish Coverage | Entries with their species, easy photos, IMR phases; Where to look; To do items | Next |
@@ -150,7 +150,7 @@ Pierre's decisions (2026-11-04, on the design study's questions):
 | 11 | Log fish answers | A subject column, a sheet script version (the coral stats ignore fish rows; backward compatible, self-update, replay check); then Difficulty, prior vs measured, Confusions, Health per subject | Next (right after 7) |
 | 12 | Photo stats, Taxa, Players columns | Generic Overview (per facet, licences), the read-only Taxa view (out-of-game species and why), the subject's progress columns in Players and Journey | Next |
 
-Open points for the plan: (a) two fish tag vocabularies now exist, the candidate pre-sort's (`judging_fish.py`: framing, phase, quality, colour loss) and the stopgap photos' codes (`judging/FISH.md`: view, whole, light, colour loss 0-3, clarity, size, count, ease; the colour-loss levels already agree); bring them to one before PR 5 shows tags, so a photo keeps its tags when it moves from the stopgap to the curated list; (b) candidates for circles 2 and 3 only on request (`fetch_fish.py --circle 2 --circle 3`); (c) the coral auto-sort's thresholds per field apply to fish as they are until fish agreement data exist.
+Open points for the plan: (a) done before PR 4: one fish judging vocabulary, the rubric of `judging/FISH.md` (visual criteria only; Pierre, 2026-11-04: the species is the iNaturalist experts' identification, never judged), read by `fishSure` for candidates as for the game photos; (b) candidates for circles 2 and 3 only on request (`fetch_fish.py --circle 2 --circle 3`); (c) the coral auto-sort's thresholds per field apply to fish as they are until fish agreement data exist.
 
 ## Parked (medium term)
 
