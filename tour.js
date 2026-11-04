@@ -15,6 +15,8 @@
   // (no Skip and no Next until answered; Escape still closes the tour, and the quiz then asks it on a card, quiz.js
   // startAskShow). Its answer is kept at once (model.js startSet), so the first cards of the quiz under the tour already
   // follow it. "I'm new to corals" turns the last button into Coral basics (about 5 minutes), the quiz beside it.
+  // "Tap" on a touch screen, "Click" with a mouse (as the tip card and the enlarge hint say).
+  const TAP = matchMedia('(hover: hover) and (pointer: fine)').matches ? 'Click' : 'Tap';
   const STEPS = [
     {h: '', ask: true},
     {
@@ -38,13 +40,13 @@
       sel: '#prog',
       alt: 'nav [data-tab=progress]',
       t: 'Your progress',
-      d: 'Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. Tap to see every genus of the IMR slate: the coral genera IMR records on its reef surveys, plus a few look-alikes.'
+      d: `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${TAP} to see every genus of the IMR slate: the coral genera IMR records on its reef surveys, plus a few look-alikes.`
     },
     {
       h: 'quiz',
       sel: '#help',
       t: 'Help on every page',
-      d: 'Tap ? for what a page does, to send feedback, and for the credits. ⚙ sets the theme and colours. Replay this tour from ?.',
+      d: `${TAP} ? for what a page does, to send feedback, and for the credits. ⚙ sets the theme and colours. Replay this tour from ?.`,
       also: '#setb'
     }
   ].filter(s => !s.signin || SYNC_URL);

@@ -23,7 +23,9 @@
     // has few answers (under CHOICE.ASK, core.js, the same bar as the first-launch question); gone once it is done.
     // Corals only (CHOICE.SUBJ): Coral basics teaches coral words.
     const G = P[LEVEL] || {},
-      newb = SUBJ.id === CHOICE.SUBJ && !basicsDone() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK;
+      // Not for a player who said they had the IMR course or know corals well (Pierre, 2026-11-04).
+      said = (store.get(CHOICE.KEY, null) || {}).c,
+      newb = SUBJ.id === CHOICE.SUBJ && !basicsDone() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)

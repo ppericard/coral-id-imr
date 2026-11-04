@@ -14,8 +14,9 @@
 // - typed questions (model.js TYPED): sometimes on a genus well on its way, never under TYPED.from; logged quiz|t with
 //   the genus read as the answer; a typo read, a word that is no genus refused, a typed miss against both genera, "I
 //   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers;
-// - the custom quiz (quiz.js planPhoto on its selection): only genera picked are asked, one not met with its card, the
-//   choices from the selection, topped up to 4 only under 4 genera picked;
+// - the custom quiz (quiz.js planPhoto on its selection): only genera picked are asked, never a card (one progression
+//   path: only genera unlocked can be picked), the choices from the selection, topped up to 4 only under 4 genera
+//   picked and only from genera unlocked;
 // - a learned mark from the former model (BKT, no s.pg) taken away at load: one card at start-up, never held, its genus
 //   named, the learned-based badge taken back and kept so through a merge, never again after a reload or the next
 //   answers; a drop at a pull shown at once, after a card already open; learned with s.pg: nothing; due at the same
@@ -1186,9 +1187,11 @@ const server = http.createServer((req, res) => {
       HOLDS = h0;
     }
     // Custom quiz (model.js customDraw, customChoices; quiz.js planPhoto on CUSTOM_H): the real draw on the real data,
-    // a new player and a strong one. Every genus asked is one picked, a genus not met yet comes with its own card (it is
-    // the one asked), the choices come from the selection when it has 4 genera or more, and a 2-genus selection is
-    // topped up to 4 distinct choices with the other picked genus among them; the photo quiz's offers never show there.
+    // a new player (who has unlocked only the genera picked) and a strong one. Every genus asked is one picked, never with
+    // a card (one progression path, Pierre 2026-11-04: the custom quiz offers only genera unlocked; until then a genus
+    // not met came with its own card), the choices come from the selection when it has 4 genera or more, and a 2-genus
+    // selection is topped up with genera unlocked only: to 4 for the strong player, not at all for the new one (Codex
+    // review #482); the photo quiz's offers never show there.
     {
       const sel4 = ['Pocillopora', 'Stylophora', 'Seriatopora', 'Acropora', 'Porites'],
         sel2 = ['Fungia', 'Danafungia'];
@@ -1196,24 +1199,26 @@ const server = http.createServer((req, res) => {
         for (const sel of [sel4, sel2]) {
           P = strong ? Object.fromEntries(genera.map(n => [n, {ok: 20, ko: 2, h: '1111011111', th: 2, pg: 0.7}])) : {};
           if (strong) P[LEVEL] = {ok: 400, ko: 40, th: 2};
-          store.set(INTRO.KEY, {});
+          store.set(INTRO.KEY, strong ? {} : Object.fromEntries(sel.map(n => [n, [0, 1, Date.now(), 's']])));
           INTROS = null;
           rematch = [];
           NEXTQ = null;
           store.set(CUSTOM.KEY, {g: sel, t: Date.now()});
+          const open = unlocked();
           for (let i = 0; i < 40; i++) {
             const q = planPhoto(CUSTOM_H),
               [cur, t, ch] = q,
               tag = `custom quiz (${strong ? 'strong' : 'new'} player, ${sel.length} picked): ${t} [${ch.join(', ')}]`;
             if (cur !== CUSTOM_H || !sel.includes(t)) fails.push(`${tag}: genus asked not picked`);
-            if (q.intro && (q.intro.join() !== t || !q.custom)) fails.push(`${tag}: card ${q.intro} with the question`);
-            if (!q.intro && !introduced(t)) fails.push(`${tag}: a genus not met asked without its card`);
-            if (q.intro) introAdd(q.intro, true, 'c');
+            if (q.intro) fails.push(`${tag}: a card (${q.intro}) in the custom quiz`);
             if (!ch.includes(t) || new Set(ch).size !== ch.length) fails.push(`${tag}: choices`);
+            if (ch.some(n => !open.includes(n))) fails.push(`${tag}: a choice not unlocked`);
             if (ch.length === 4 && sel.length >= 4 && ch.some(n => !sel.includes(n))) fails.push(`${tag}: a choice outside the selection`);
-            if (sel.length === 2 && !q.again && !q.auto && (ch.length !== 4 || !sel.every(n => ch.includes(n))))
-              fails.push(`${tag}: a 2-genus selection not topped up to 4 with both genera`);
-            if (!q.again && !q.auto && !q.typed && ch.length !== 4) fails.push(`${tag}: ${ch.length} choices`);
+            const want = Math.min(4, open.length);
+            if (sel.length === 2 && !q.again && !q.auto && (ch.length !== want || !sel.every(n => ch.includes(n))))
+              fails.push(`${tag}: a 2-genus selection not topped up to ${want} with both genera`);
+            if (!q.again && !q.auto && !q.typed && ch.length !== Math.min(4, Math.max(sel.length, open.length)))
+              fails.push(`${tag}: ${ch.length} choices`);
           }
         }
       // Codex review #411 (1): a selection of genera nobody confuses can't give the traps a strong player's level asks
