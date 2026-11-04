@@ -19,7 +19,6 @@ let JSORT = 'met';
 // (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03), and the first-launch question
 // reefid-sync-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet; 2026-11-03). name -> null while loading.
 // The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
-const JDATA = {};
 function journeyCards(name) {
   const S = savedOf(name);
   return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start};

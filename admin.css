@@ -5,13 +5,6 @@ body.admin .wrap {
 body.admin header {
   max-width: none;
 }
-.adm-tag {
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--muted);
-  letter-spacing: 0.02em;
-}
 body.admin header {
   flex-wrap: wrap;
   gap: 8px 14px;
@@ -45,16 +38,6 @@ body.admin .hdr-tools .adm-ico {
 }
 body.admin .hdr-tools[hidden] {
   display: none;
-}
-.adm-status {
-  font-size: 0.84rem;
-  color: var(--muted);
-  margin-right: 2px;
-  cursor: help;
-}
-.adm-status.dirty {
-  color: var(--bad);
-  font-weight: 600;
 }
 .chip.adm-save {
   background: var(--accent);
@@ -209,42 +192,6 @@ body.admin .hdr-tools[hidden] {
   color: var(--bad);
   font-weight: 600;
 }
-
-.adm-head {
-  display: grid;
-  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-  margin-bottom: 8px;
-}
-.adm-head h2 {
-  margin-top: 0;
-}
-.adm-head .note {
-  margin: 4px 0;
-}
-.adm-cover {
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: zoom-in;
-  border-radius: var(--r);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-.adm-cover img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  display: block;
-}
-.adm-gacts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0 0;
-}
-
 .adm-row {
   margin-top: 18px;
 }
@@ -445,19 +392,6 @@ body.admin .hdr-tools[hidden] {
 .adm-tile.is-cand {
   border-style: dashed;
 }
-.adm-addrow {
-  display: flex;
-  gap: 4px;
-  width: 100%;
-}
-.adm-acts .adm-addrow button {
-  flex: 1;
-  min-width: 0;
-  padding: 0 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .adm-cands h3 {
   color: var(--accent);
 }
@@ -526,11 +460,6 @@ button.adm-src {
 }
 .adm-acts select[data-act='out'] {
   max-width: 132px;
-}
-.adm-acts select.adm-view {
-  max-width: none;
-  font-weight: 600;
-  background: var(--surface-2);
 }
 .adm-acts button:hover:not(:disabled),
 .adm-acts select:hover {
@@ -652,9 +581,6 @@ body.adm-dragging * {
     width: 100%;
     flex-wrap: wrap;
   }
-  .adm-cover {
-    max-width: 300px;
-  }
   .adm {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -673,9 +599,6 @@ body.adm-dragging * {
   }
   .adm-list {
     display: none;
-  }
-  .adm-head {
-    grid-template-columns: minmax(0, 1fr);
   }
   .adm-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -707,6 +630,37 @@ body.adm-dragging * {
   box-shadow: var(--shadow);
 }
 
+/* The subject switch (admin plan PR 2: Corals | Fish, left of the groups), each side with its to-do count. Phones: a
+   full-width row under the header line (the study's mock-up 1). */
+.adm-subj {
+  display: inline-flex;
+  flex: none;
+  padding: 3px;
+  gap: 2px;
+  background: var(--surface-2);
+  border-radius: var(--pill);
+}
+.adm-subj[hidden] {
+  display: none;
+}
+.adm-subj a {
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: var(--pill);
+}
+.adm-subj a[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.adm-scnt {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--accent);
+}
 /* Quality: tag (dashed = automatic guess) and three-way control */
 .adm-q {
   padding: 1px 8px;
@@ -846,10 +800,6 @@ kbd {
   border-radius: 4px;
   padding: 0 5px;
   background: var(--surface);
-}
-.adm-acts select.adm-excl {
-  color: var(--bad);
-  border-color: color-mix(in srgb, var(--bad) 40%, var(--line));
 }
 .adm-tile .adm-ph .none {
   display: grid;
@@ -1051,9 +1001,6 @@ kbd {
   margin-right: 10px;
   white-space: nowrap;
 }
-.adm-gacts {
-  align-items: center;
-}
 .adm-acts .adm-vseg button[aria-pressed='true'] {
   background: var(--surface-2);
   color: var(--ink);
@@ -1174,11 +1121,6 @@ kbd {
   color: var(--muted, #667);
   font-size: 0.75rem;
 }
-.adm-tchips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
 /* Growth form guess Claude is unsure about */
 /* Unsure first guess: the suggested form itself reads "Br?" in red (a corner badge got clipped and looked like a mark on ✿). */
 .adm-acts .adm-fseg.unsure button[data-fm][aria-pressed='true'] {
@@ -1264,11 +1206,6 @@ kbd {
 .chip.adm-save {
   min-width: 7.2em;
   justify-content: center;
-}
-.adm-status {
-  display: inline-block;
-  min-width: 8.4em;
-  text-align: right;
 }
 @media (min-width: 821px) {
   body.admin header {
@@ -1694,6 +1631,19 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 }
 /* Phones: header on one line (entry points in a menu; Redo and Help move into ⋯). */
 @media (max-width: 599px) {
+  body.admin header:has(.adm-subj:not([hidden])) {
+    flex-wrap: wrap;
+  }
+  body.admin .adm-subj {
+    order: 10;
+    flex: 1 1 100%;
+  }
+  body.admin .adm-subj a {
+    flex: 1;
+    text-align: center;
+    min-height: 36px;
+    line-height: 26px;
+  }
   body.admin header {
     flex-wrap: nowrap;
     gap: 6px;
