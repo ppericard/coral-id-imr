@@ -1085,6 +1085,9 @@ const subjOfHash = h => {
   return [S, h.slice(S.admin.hash.length)];
 };
 const hasPage = (S, p) => !S.admin.pages || S.admin.pages.some(x => (x.endsWith('/') ? p.startsWith(x) : p === x));
+// A subject's landing page: Players › Activity, or Players › List for a subject without Activity yet (fish; Codex review
+// #554).
+const homeOf = S => (hasPage(S, '~stats') ? '~stats' : '~users');
 // The per-subject memories (last tab, view and page): the corals keep their keys.
 const subjK = (k, S = ASUBJ) => (S.admin.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
@@ -1267,7 +1270,7 @@ function navs(tn, xn) {
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || '~stats'))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || homeOf(S)))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     sw.hidden = false;
   }
@@ -4806,7 +4809,7 @@ async function start() {
   // The page opens on Players › Activity, the recent sessions, phone and desktop (Pierre, 2026-11-05: what he looks at
   // first; Players › List from 2026-11-04, the candidates or the first genus before).
   [ASUBJ, cur] = subjOfHash(hashNow());
-  cur = cur || '~stats';
+  cur = cur || homeOf(ASUBJ);
   // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs (Codex review
   // #492). A link without a prefix clicked on a subject's page (a player's journey from Players) is given that
   // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject.
@@ -4826,7 +4829,7 @@ async function start() {
   window.onhashchange = () => {
     if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
     [ASUBJ, cur] = subjOfHash(hashNow());
-    cur = cur || '~stats';
+    cur = cur || homeOf(ASUBJ);
     const h = $('admhelp');
     if (h) h.remove();
     render();

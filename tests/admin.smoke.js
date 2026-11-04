@@ -191,6 +191,9 @@ const WIDTHS = [390, 1280];
       const tab = await p.evaluate(() => (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '');
       const menu = await p.evaluate(() => ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '');
       if (!/Activity/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players › Activity`);
+      // A subject without Activity yet (fish) lands on Players › List, never on "Not for fish yet" (Codex review #554).
+      const fishHref = await p.evaluate(() => (document.querySelector('#subj [data-subj="fish"]') || {}).getAttribute?.('href') || '');
+      if (fishHref && !/^#fish\/~users$/.test(fishHref)) fails.push(`${w}px: the Fish switch opens ${fishHref}, not #fish/~users`);
     }
     // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
     // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
