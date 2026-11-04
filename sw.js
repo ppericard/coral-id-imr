@@ -185,12 +185,18 @@ const trim = async c => {
 // stay offline, and back again if the switch is undone). From R2 it is asked in CORS mode whatever the page asked: an
 // <img> asks no-cors, whose opaque reply cannot be checked (a 404 would be kept) and weighs ~7 MB of quota each in
 // Chrome; the bucket allows the site (CORS). If R2 fails (out of reach, an error), the site's copy is served instead.
+// The same file at its other address (R2 for a site photo, the site for an R2 one), and a photo looked up under both.
+const twinOf = u => {
+  const r2 = u.origin === R2,
+    path = r2 ? u.pathname.slice(1) + u.search : u.href.startsWith(SITE + 'img/') ? u.href.slice(SITE.length).replace(/#.*$/, '') : '';
+  return path && (r2 ? SITE : R2 + '/') + path;
+};
+const photoHit = (c, req, twin) => c.match(req, {ignoreVary: true}).then(h => h || (twin && c.match(twin, {ignoreVary: true})));
 const photo = async (req, u) => {
   const c = await soon(caches.open(PH)),
     r2 = u.origin === R2,
-    path = r2 ? u.pathname.slice(1) + u.search : u.href.startsWith(SITE + 'img/') ? u.href.slice(SITE.length).replace(/#.*$/, '') : '',
-    twin = path && (r2 ? SITE : R2 + '/') + path,
-    hit = c && ((await soon(c.match(req, {ignoreVary: true}))) || (twin && (await soon(c.match(twin, {ignoreVary: true})))));
+    twin = twinOf(u),
+    hit = c && (await soon(photoHit(c, req, twin)));
   if (hit) return hit;
   const keep = res => {
     if (res.ok && c) {
@@ -230,7 +236,15 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
   if (u.origin === R2 ? u.pathname.startsWith('/img/') : u.origin === location.origin && u.pathname.includes('/img/'))
-    e.respondWith(photo(e.request, u).catch(() => late(e.request)));
+    // Offline (the network failed), the photo cache is asked with no time limit, under both addresses (late() for photos).
+    e.respondWith(
+      photo(e.request, u).catch(() =>
+        caches
+          .open(PH)
+          .then(c => photoHit(c, e.request, twinOf(u)))
+          .then(h => h || Response.error())
+      )
+    );
   else if (u.origin !== location.origin) return;
   // Versioned files (?v= in the URL: a new version is a new URL) and the fonts never change: cache first, no network at
   // all once cached (Pierre, 2026-11-01: fluid on poor connections; each launch used to revalidate every file).
