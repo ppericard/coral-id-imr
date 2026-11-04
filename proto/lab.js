@@ -61,22 +61,6 @@ const LAB = {
 };
 // Graduated prototypes and the section of MODES (app.js) they now live in.
 const GRADUATED = {idkey: 'identify', pairs: 'practice', basics: 'learn'};
-// Where each Lab prototype is meant to go once it is ready; the home page already shows it there, marked Beta.
-const PLANNED = {
-  basics: 'learn',
-  anatomy: 'learn',
-  size: 'learn',
-  gallery: 'learn',
-  map: 'learn',
-  web: 'learn',
-  idkey: 'identify',
-  matrix: 'identify',
-  elim: 'identify',
-  zoom: 'practice',
-  spot: 'practice',
-  reveal: 'practice',
-  type: 'practice'
-};
 const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
 const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly. One that fails (unstable
