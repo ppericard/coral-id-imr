@@ -566,8 +566,12 @@ function startEase() {
   const o = startOf(),
     d = o && startNext(startEff(o), 'lo')[0];
   if (!d) return;
-  // An ease event in the history (core.js startEvents): from now until the next answer given, on this answer only.
-  store.set(CHOICE.KEY, startNorm({...o, h: startEventsOf({...o, h: [...startEvents(o), [d, answersSoFar(), Date.now(), 'ease', o.c]]})}));
+  // An ease event in the history (core.js startEvents): from now until the next answer given, bound to this answer's
+  // choice event (its time).
+  store.set(
+    CHOICE.KEY,
+    startNorm({...o, h: startEventsOf({...o, h: [...startEvents(o), [d, answersSoFar(), Date.now(), 'ease', o.c, o.t]]})})
+  );
   if (typeof dropPlans === 'function') dropPlans();
   if (typeof syncSoon === 'function') syncSoon();
 }

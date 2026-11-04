@@ -1427,3 +1427,32 @@ test('v33: saved data is read under the new key names or the old ones (progress,
   assert.deepStrictEqual(a.counts, {met10: 3, run10: 1});
 });
 // rename-app: keep-end
+
+// Codex review #428 (P2): the Replayed tab's cache is keyed by the first-launch history too (core.js startFp, folded
+// into its Since column): a replay made with one history (a stale save) is not reused once the saved history changes.
+test('v36: the stored replay is not reused when the first-launch history changes (Codex review #428)', () => {
+  const f = withData(),
+    s = loadCodeGs({fetch: f.fetch}),
+    L = Array.from({length: 12}, (_, i) => qa('r' + i, i)),
+    K = C.CHOICE.KEY,
+    rec = c => ({c, t: 1, at: 0, via: 'tour', w: [], fb: {}, h: [[c, 0, 1, 'tour']]}),
+    data = c => ({...prog(9), [K]: JSON.stringify(rec(c))});
+  const r1 = s.post({name: 'Ana', pin: '1234', data: data('new'), summary: {}, answers: L, rv: 0});
+  const st = s.get({stats: '1'}),
+    want = c =>
+      C.replayProgress(
+        L.map(a => C.logRow(a, 'ana')),
+        {gen: GEN, mem: st.mem, conf: st.conf, starts: {ana: rec(c)}}
+      ).ana.P;
+  assert.deepStrictEqual(r1.replay.rec, want('new'));
+  assert.notDeepStrictEqual(want('know'), want('new'), 'the prior changes the replay of these answers');
+  // The same answers, the history now "know well" (a merged save): replayed again, not the stored "new" replay.
+  const r2 = s.post({name: 'Ana', pin: '1234', data: data('know'), summary: {}, answers: [], rv: 0});
+  assert.deepStrictEqual(r2.replay.rec, want('know'));
+  const T = s.sheets.Replayed;
+  assert.strictEqual(T.rows.length, 2, 'still one row');
+  assert.strictEqual(String(T.rows[1][3]), '0#' + C.startFp(rec('know')));
+  // Unchanged history: the stored replay is reused (a marker put in the tab comes back).
+  T.rows[1][5] = '{"mark":1}';
+  assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: data('know'), summary: {}, answers: [], rv: 0}).replay.rec, {mark: 1});
+});

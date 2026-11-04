@@ -1999,9 +1999,12 @@
   // events, merged between devices as a union (startUnion), from which the current answer, the silent ease and the prior
   // at any time are derived (startNorm, startPriorAt). A choice event: [c, answers then, time, via] (via tour, card,
   // fallback, inferred). An ease event (Coral basics on the "lower" card, model.js startEase): [the band below, answers
-  // then, time, 'ease', the answer it eased]; it applies from its time until the next choice event, and only to the
-  // answer it eased (never to a choice made later or on another device meanwhile). A record of before the history (no h):
-  // its answer as one choice event at its t, and its ease field (if any) as one ease event.
+  // then, time, 'ease', the answer it eased, the time of that answer's choice event]; it applies from its time until the
+  // next choice event, and only while that very choice event is the one in force (Codex review #428: matched by its code
+  // alone, an ease taken on know@100 also eased an independent know@200 from another device). A record of before the
+  // history (no h): its answer as one choice event at its t, and its ease field (if any) as one ease event. An ease event
+  // without the choice's time (written before 2026-11-04): bound, within its own record, to the latest choice of that
+  // answer at or before the ease.
   // Every event is kept: the replay of the whole log needs the prior in force at each answer, however old (Codex review
   // #428: a cap at 10 dropped the earliest answers' prior). Nor is the list compacted: an event that repeats the answer
   // in force can matter again once another device's events are merged in between (know@100, know@300 merged with
@@ -2011,16 +2014,25 @@
   const START_CAP = 200;
   const stTime = x => (typeof x[2] === 'number' ? x[2] : -Infinity);
   const stEase = x => x[3] === 'ease';
-  const stKey = x => (stEase(x) ? `e|${x[2]}|${x[0]}|${x[4]}` : `c|${x[2]}|${x[0]}`);
+  const stKey = x => (stEase(x) ? `e|${x[2]}|${x[0]}|${x[4]}|${x[5]}` : `c|${x[2]}|${x[0]}`);
   function startEvents(rec) {
     if (!isObj(rec)) return [];
     const h = Array.isArray(rec.h) && rec.h.length ? rec.h : startOpt(rec.c) ? [[rec.c, rec.at || 0, rec.t, rec.via || '']] : [],
       e = rec.ease,
-      ev =
+      ev = (
         Array.isArray(e) && startOpt(e[0]) && !h.some(x => Array.isArray(x) && stEase(x))
           ? [...h, [e[0], e[1] || 0, e[2], 'ease', rec.c]]
-          : h;
-    return ev.filter(x => Array.isArray(x) && startOpt(x[0]));
+          : h
+      ).filter(x => Array.isArray(x) && startOpt(x[0]));
+    // An ease without its choice's time: the latest choice of that answer at or before it, in this record.
+    return ev.map(x => {
+      if (!stEase(x) || typeof x[5] === 'number') return x;
+      const ch = ev
+        .filter(y => !stEase(y) && y[0] === x[4] && stTime(y) <= stTime(x))
+        .sort((a, b) => stTime(a) - stTime(b))
+        .pop();
+      return [x[0], x[1], x[2], 'ease', x[4], ch && typeof ch[2] === 'number' ? ch[2] : null];
+    });
   }
   // The events of several records, once each (by kind, time and value), oldest first (a choice before an ease at the
   // same time, then by value: the same order whichever record comes first), START_CAP at most (the latest).
@@ -2047,9 +2059,19 @@
     ev.forEach(x => {
       if (stTime(x) > t) return;
       if (!stEase(x)) ((ch = x), (ez = null));
-      else if (ch && x[4] === ch[0]) ez = x;
+      else if (ch && x[4] === ch[0] && x[5] === ch[2]) ez = x; // the very choice event it eased
     });
     return {ch, ez};
+  }
+  // A short fingerprint of a record's history (the sheet's replay cache, Code.gs replay_: a replay made with another
+  // history is not reused; Codex review #428): '' with no record.
+  function startFp(rec) {
+    const ev = startEventsOf(rec);
+    if (!ev.length) return '';
+    let h = 5381;
+    const s = JSON.stringify(ev.map(x => (stEase(x) ? [x[0], x[2], 'ease', x[4], x[5]] : [x[0], x[2]])));
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
   }
   // The first-launch answer's prior at time t (2026-11-03, CHOICE): the eased band's while an ease is in force, else the
   // answer's, 0 before the first answer (the player then played as the default player). The replay steps the ability
@@ -2691,6 +2713,7 @@
     CF_LOGGED,
     replayProgress,
     startPriorAt,
+    startFp,
     startEvents,
     startEventsOf,
     startStateAt,

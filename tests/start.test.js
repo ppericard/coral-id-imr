@@ -285,7 +285,7 @@ test('Coral basics on the "lower" card: the start variables one band down, silen
     ['know'],
     'nor added to the answers given'
   );
-  assert.deepStrictEqual(o.h[o.h.length - 1].slice(3), ['ease', 'know'], 'an ease event in the history, on the answer it eased');
+  assert.deepStrictEqual(o.h[o.h.length - 1].slice(3), ['ease', 'know', o.t], 'an ease event in the history, bound to the choice it eased');
   assert.strictEqual(o.ease[0], 'imr');
   assert.deepStrictEqual(M.startV(), startVars('imr'), "the IMR course's prior and open-all offer");
   // The replay (core.js startPriorAt) takes the band below from its time on.
@@ -517,44 +517,80 @@ test('the history keeps every event: the earliest answers keep their prior', () 
   assert.ok(C.START_CAP >= 200, 'only a safety bound');
 });
 
-// The union is lossless (Codex review #428): for random histories far longer than the old cap, split over three devices,
-// the merged prior at every time is the prior of the whole history computed directly (a reference implementation), and
-// the union is commutative and associative.
+// The union is lossless (Codex review #428): three devices each build their own history (answers, often the same answer
+// given independently on several devices, and eases bound to the device's answer in force); merged in any order, the
+// prior at every time is the one computed straight from the definition over all events, nothing is dropped, and the
+// union is commutative and associative.
 test('synced: the union of histories is lossless, commutative and associative (property)', () => {
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647),
     opts = CHOICE.opts.map(o => o[0]),
     pick = a => a[Math.floor(rnd() * a.length)],
-    // The prior at t straight from the definition: the last answer at or before t, or the band below it while an ease
-    // taken on that answer after it is the latest event (by time; a choice before an ease at the same time).
+    // The prior at t from the definition: the last answer at or before t, or the band below it while the latest event
+    // after it is an ease bound to that very answer event (same answer and time; a choice before an ease at one time).
     ref = (ev, t) => {
       let c = null,
         e = null;
       ev.filter(x => x[2] <= t)
         .sort((a, b) => a[2] - b[2] || (a[3] === 'ease') - (b[3] === 'ease'))
-        .forEach(x => (x[3] === 'ease' ? c && x[4] === c && (e = x[0]) : ((c = x[0]), (e = null))));
-      return e ? startVars(e).p : c ? startVars(c).p : 0;
+        .forEach(x => (x[3] === 'ease' ? c && x[4] === c[0] && x[5] === c[2] && (e = x[0]) : ((c = x), (e = null))));
+      return e ? startVars(e).p : c ? startVars(c[0]).p : 0;
     };
   for (let run = 0; run < 100; run++) {
-    const all = [];
-    let t = 1000;
-    for (let k = 0; k < 20 + Math.floor(rnd() * 40); k++) {
-      t += 1 + Math.floor(rnd() * 20);
-      const c = pick(opts),
-        down = C.startNext(c, 'lo')[0];
-      all.push(rnd() < 0.3 && down ? [down, k, t, 'ease', c] : [c, k, t, pick(['tour', 'card', 'fallback'])]);
-    }
-    const dev = [[], [], []];
-    all.forEach(x => dev[Math.floor(rnd() * 3)].push(x));
-    const R = dev.map(h => (h.length ? C.startNorm({h, w: [], fb: {}}) : null)).filter(Boolean),
-      U = R.reduce((m, x) => C.startUnion(m, x)),
-      V = [...R].reverse().reduce((m, x) => C.startUnion(m, x)),
-      W = R.length === 3 ? C.startUnion(R[0], C.startUnion(R[1], R[2])) : U;
+    const devs = [0, 1, 2].map(d => {
+      const h = [];
+      let t = 1000 + d,
+        cur = null;
+      for (let k = 0; k < 6 + Math.floor(rnd() * 20); k++) {
+        t += 3 * (1 + Math.floor(rnd() * 20)); // distinct times across devices (offset d): one order whatever the merge
+        const down = cur && C.startNext(cur[0], 'lo')[0];
+        if (cur && down && rnd() < 0.3) h.push([down, k, t, 'ease', cur[0], cur[2]]);
+        else h.push((cur = [rnd() < 0.5 ? 'know' : pick(opts), k, t, pick(['tour', 'card', 'fallback'])]));
+      }
+      return h;
+    });
+    const all = devs.flat(),
+      R = devs.map(h => C.startNorm({h, w: [], fb: {}})),
+      U = C.startUnion(C.startUnion(R[0], R[1]), R[2]),
+      V = C.startUnion(R[2], C.startUnion(R[1], R[0])),
+      W = C.startUnion(R[0], C.startUnion(R[1], R[2]));
     assert.deepStrictEqual(U.h, V.h, `run ${run}: commutative`);
     assert.deepStrictEqual(U.h, W.h, `run ${run}: associative`);
     assert.strictEqual(U.h.length, all.length, `run ${run}: nothing dropped`);
-    for (let q = 990; q <= t + 5; q++) assert.strictEqual(C.startPriorAt(U, q), ref(all, q), `run ${run}: prior at ${q}`);
+    const end = Math.max(...all.map(x => x[2]));
+    for (let q = 990; q <= end + 5; q++) assert.strictEqual(C.startPriorAt(U, q), ref(all, q), `run ${run}: prior at ${q}`);
   }
+});
+
+// Codex review #428 (P2): an ease applies only to the choice event it eased, not to an independent choice of the same
+// answer from another device (know@100 eased at 300, merged with know@200: "know" again from 200 on).
+test('synced: an ease applies only to the choice event it eased', () => {
+  const A = C.startNorm({
+      h: [
+        ['know', 0, 100, 'tour'],
+        ['imr', 5, 300, 'ease', 'know', 100]
+      ],
+      w: [],
+      fb: {}
+    }),
+    B = C.startNorm({h: [['know', 0, 200, 'card']], w: [], fb: {}});
+  for (const U of [C.startUnion(A, B), C.startUnion(B, A)]) {
+    assert.strictEqual(C.startPriorAt(U, 150), startVars('know').p);
+    assert.strictEqual(C.startPriorAt(U, 350), startVars('know').p, 'the ease of know@100 does not ease know@200');
+    assert.strictEqual(U.ease, undefined);
+  }
+  // An ease written before the binding: bound to the latest choice of its answer at or before it, in its own record.
+  const old = C.startNorm({
+    h: [
+      ['know', 0, 100, 'tour'],
+      ['imr', 5, 300, 'ease', 'know']
+    ],
+    w: [],
+    fb: {}
+  });
+  assert.strictEqual(old.h[1][5], 100);
+  assert.strictEqual(C.startPriorAt(C.startUnion(old, B), 350), startVars('know').p);
+  assert.strictEqual(C.startPriorAt(old, 350), startVars('imr').p, 'alone, it still eases its own answer');
 });
 
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {
