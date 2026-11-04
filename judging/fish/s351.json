@@ -1,0 +1,144 @@
+{
+ "photos": {
+  "fish-s351-cand-162711391": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s351-cand-575830887": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s351-cand-752765450": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s351-cand-635571290": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s351-cand-635571332": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s351-cand-635571371": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s351-cand-590680700": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s351-cand-590680692": {
+   "code": "o1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s351-cand-590680645": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s351-cand-590680664": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s351-cand-757063930": {
+   "code": "p1g1smm3",
+   "keep": "dup"
+  },
+  "fish-s351-cand-757064961": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s351-cand-270198116": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s351-cand-270198056": {
+   "code": "o1g1sl13",
+   "keep": "alt"
+  },
+  "fish-s351-cand-270197997": {
+   "code": "p1g1sl14",
+   "keep": "alt"
+  },
+  "fish-s351-cand-335050455": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s351-cand-413773092": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s351-cand-440896949": {
+   "code": "p1g2bsx1",
+   "keep": "best"
+  },
+  "fish-s351-cand-617818832": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s351-cand-617818829": {
+   "code": "p1g1sm13",
+   "keep": "alt"
+  },
+  "fish-s351-cand-81606287": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s351-cand-81606292": {
+   "code": "p1g2sm13",
+   "keep": "dup"
+  },
+  "fish-s351-cand-458098717": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s351-cand-484513135": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s351-cand-252417207": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s351-cand-252417196": {
+   "code": "d1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s351-cand-33207963": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s351-cand-542673158": {
+   "code": "h1g1sl13",
+   "keep": "best"
+  },
+  "fish-s351-cand-542673182": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s351-cand-542673197": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s351-cand-542673214": {
+   "code": "p1g1sm14",
+   "keep": "alt"
+  },
+  "fish-s351-cand-454630117": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s351-cand-519811203": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "The yellow-tailed fish is the subject? Looks unlike the others"
+  },
+  "fish-s351-cand-752757099": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  }
+ }
+}
