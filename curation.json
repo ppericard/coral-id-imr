@@ -688,7 +688,6 @@
         "hydnophora-cand-245794698": "wide",
         "hydnophora-cand-260021055": "wide",
         "hydnophora-cand-336219882": "wide",
-        "hydnophora-cand-245794927": "wide",
         "hydnophora-cand-245794783": "medium"
       }
     },
@@ -2751,6 +2750,7 @@
     "heliofungia-cand-475152351": "auto",
     "heliopora-cand-181616803": "auto",
     "heliopora-cand-181616836": "auto",
+    "hydnophora-cand-245794927": "excluded",
     "imrl-p10_i7": "excluded",
     "imrl-p55_i2": "excluded",
     "leptoria-cand-466228998": "auto",
@@ -3243,7 +3243,8 @@
     "cand:turbinaria-cand-611606953": 1,
     "cand:turbinaria-cand-611606954": 1,
     "cand:turbinaria-cand-675778278": 1,
-    "rep:mvxhsphed2y4": 1
+    "rep:mvxhsphed2y4": 1,
+    "rep:mw1ae2fhxeyx": 1
   },
   "mont": {
     "Acropora|Cyphastrea": {
@@ -3960,6 +3961,12 @@
       0.05,
       1,
       1
+    ],
+    "millepora-cand-47823094": [
+      0.184,
+      0.129,
+      0.839,
+      0.816
     ],
     "millepora-x-461415589": [
       0.141,
@@ -5408,7 +5415,7 @@
       "hydnophora-cand-245794698": "aw2E",
       "hydnophora-cand-245794742": "r",
       "hydnophora-cand-245794783": "am2x",
-      "hydnophora-cand-245794927": "aw2E",
+      "hydnophora-cand-245794927": "aw2E@tnymty",
       "hydnophora-cand-260016130": "?aw3E",
       "hydnophora-cand-260021055": "aw2S",
       "hydnophora-cand-260155545": "am3B",

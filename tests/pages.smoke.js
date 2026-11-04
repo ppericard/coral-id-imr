@@ -1128,6 +1128,9 @@ async function signin(base) {
       await card(p);
       const ph = await p.getAttribute('.signnudge input[name=n]', 'placeholder');
       if (!/initial/i.test(ph || '')) fails.push(`sign-in: the name field does not ask for the initial (placeholder "${ph}")`);
+      // A nickname or alias is just as welcome (Pierre, 2026-11-04), said in the field's label, not only in the note below.
+      const lb = await p.evaluate(() => document.querySelector('.signnudge input[name=n]').closest('label').textContent);
+      if (!/nickname/i.test(lb)) fails.push(`sign-in: the name field's label does not offer a nickname ("${lb.trim()}")`);
       // A name taken with another code.
       await submit(p, 'Anna', '9999');
       await p
@@ -2994,19 +2997,124 @@ async function basicsTeach(b, base) {
   return fails;
 }
 
+// A brand-new player end to end (AGENTS.md "How to make a change" 5; test-suite review, 2026-11-04: every other check
+// pre-sets "tour seen" or "cards seen", so none met them together, as an RA did). A phone, an empty browser: the welcome
+// tour step by step, the first genus cards, 30 answers with whatever card or prompt comes (each closed as a player would,
+// with Escape, or its first button), then My progress and Genera. At every step: at most one card, tour or enlarged photo
+// on screen, every card closable, no page error. Returns the failures.
+async function newPlayer(b, base) {
+  const fails = [],
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true}),
+    errs = [],
+    seen = {};
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const p = await c.newPage();
+  p.on('pageerror', e => errs.push(e.message));
+  p.on('console', m => {
+    if (m.type() === 'error' && !/Failed to load resource|net::ERR_/.test(m.text())) errs.push(m.text());
+  });
+  // What is on screen over the page: the tour, the cards shown (a card waiting under the tour is hidden), the enlarged photo.
+  const over = () =>
+    p.evaluate(() => {
+      const vis = e => !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0,
+        cards = [...document.querySelectorAll('.unlock')].filter(vis);
+      return {
+        tour: vis(document.getElementById('tour')),
+        cards: cards.map(u => (u.querySelector('.ulcard') || {dataset: {}}).dataset.k || u.className),
+        lb: !document.getElementById('lightbox').hidden
+      };
+    });
+  const alone = (o, at) => {
+    const n = +o.tour + o.cards.length + +o.lb;
+    if (n > 1) fails.push(`new player, ${at}: ${n} overlays at once ${JSON.stringify(o)}`);
+  };
+  await p.goto(base);
+  await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000}).catch(() => {});
+  if (!(await p.$('#tour'))) fails.push('new player: no welcome tour on the first visit');
+  // The tour, step by step, to its end; its first-launch question (forced, no Next) answered "I'm new to corals".
+  for (let k = 0; k < 12 && (await p.$('#tour .tnext, #tour [data-start]')); k++) {
+    const o = await over();
+    alone(o, `tour step ${k + 1}`);
+    seen.tour = k + 1;
+    const step = await p.evaluate(() => document.getElementById('tour').textContent);
+    await p.click((await p.$('#tour [data-start]')) ? '#tour [data-start="new"]' : '#tour .tnext');
+    await p
+      .waitForFunction(s => !document.getElementById('tour') || document.getElementById('tour').textContent !== s, step, {timeout: 5000})
+      .catch(() => fails.push(`new player: tour step ${k + 1} did not move on`));
+  }
+  if (await p.$('#tour')) fails.push('new player: the tour never ended');
+  // Closes whatever card is up as a player would: Escape, else its first button once it takes taps.
+  const close = async at => {
+    for (let k = 0; k < 10; k++) {
+      const o = await over();
+      alone(o, at);
+      if (!o.cards.length && !o.lb) return true;
+      o.cards.forEach(x => (seen[x] = (seen[x] || 0) + 1));
+      const before = JSON.stringify(o);
+      await p.keyboard.press('Escape');
+      let moved = false;
+      for (let t = 0; t < 10 && !moved; t++) moved = JSON.stringify(await over()) !== before;
+      if (!moved) {
+        const btn = await p.$('.unlock [data-b="1"]:not([disabled]), .unlock .pulsex');
+        if (btn) await btn.click().catch(() => {});
+        else await p.waitForTimeout(250); // a card's buttons wait a moment before they take taps
+      }
+    }
+    fails.push(`new player, ${at}: a card that does not close ${JSON.stringify(await over())}`);
+    return false;
+  };
+  if (!(await p.evaluate(() => location.hash === '#quiz'))) await p.evaluate(() => (location.hash = 'quiz'));
+  for (let i = 1; i <= 30; i++) {
+    if (!(await close(`before answer ${i}`))) break;
+    const q = await p
+      .waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 15000})
+      .then(() => true)
+      .catch(() => false);
+    if (!q) {
+      if (await close(`question ${i}`)) continue;
+      fails.push(`new player: no question to answer at ${i} ${JSON.stringify(await over())}`);
+      break;
+    }
+    // Clicked in the page: an achievement toast may lie over a button for a few seconds (a player taps through it).
+    await p.evaluate(() => document.querySelector('#view .q:not(.done) [data-c]:not([disabled])').click());
+    const nx = await p
+      .waitForSelector('#next', {timeout: 10000})
+      .then(() => true)
+      .catch(() => false);
+    if (!nx) fails.push(`new player: no Next after answer ${i}`);
+    alone(await over(), `answer ${i}`);
+    await p.evaluate(() => document.getElementById('next')?.click());
+  }
+  await close('after 30 answers');
+  for (const h of ['progress', 'genera']) {
+    await p.evaluate(h => (location.hash = h), h);
+    await p.waitForSelector('#view > *', {timeout: 10000}).catch(() => {});
+    await close(`#${h}`);
+  }
+  if (!seen.tour || !seen.genus) fails.push(`new player: the tour and the first genus cards should both have come ${JSON.stringify(seen)}`);
+  const n = await p.evaluate(() => answersSoFar());
+  if (n !== 30) fails.push(`new player: ${n} answers counted after 30`);
+  if (errs.length) fails.push(`new player: page errors ${errs.slice(0, 3).join(' | ')}`);
+  await c.close();
+  return fails;
+}
+
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
 // the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
-// (startSmoke).
-const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'start', 'signin', 'replay'],
+// (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer).
+const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'signin', 'replay'],
   WIDTHS = [390, 1280];
 
 (async () => {
   const run = slot.parts(PARTS, {
       main: ['main', 'overlays'],
-      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'signin', 'replay']
+      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'signin', 'replay']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -3635,6 +3743,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
+  if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);
