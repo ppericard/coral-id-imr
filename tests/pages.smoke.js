@@ -5,7 +5,7 @@ const http = require('http'),
   fs = require('fs'),
   path = require('path'),
   {execFileSync} = require('child_process');
-const {chromium} = require('playwright');
+const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
@@ -3087,7 +3087,7 @@ async function basicsTeach(b, base) {
 // on screen, every card closable, no page error. Returns the failures.
 async function newPlayer(b, base) {
   const fails = [],
-    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true}),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block', intro: true, reducedMotion: 'no-preference'}),
     errs = [],
     seen = {};
   await c.route(
