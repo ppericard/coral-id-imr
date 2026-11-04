@@ -531,7 +531,15 @@ const server = http.createServer((req, res) => {
     // fetches still in flight, then takes over once the old one is idle (or later, see above), maybe before start() goes
     // on. admin.js listened only from the end of start() and missed it; whether it did depended on which came first, so
     // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
+    // The reloaded page's own files are in first (its quiet): only the new page's cand.json is the one that never answers.
+    await qQuiet();
     await ctx.route(/cand\.json/, () => {});
+    // Every request of the context, the worker's included, still pending: printed if the new page never reaches
+    // DOMContentLoaded (one red run on CI, #473, 2026-11-04, not reproduced in 5 local runs: what did it wait on?).
+    const pend = new Map();
+    ctx.on('request', r => pend.set(r, `${r.url().replace(base, '')}${r.serviceWorker && r.serviceWorker() ? ' (worker)' : ''}`));
+    ctx.on('requestfinished', r => pend.delete(r));
+    ctx.on('requestfailed', r => pend.delete(r));
     const q2 = await ctx.newPage();
     await q2.addInitScript(() => {
       const add = ServiceWorkerContainer.prototype.addEventListener;
@@ -540,7 +548,13 @@ const server = http.createServer((req, res) => {
         return add.call(this, t, ...a);
       };
     });
-    await q2.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded'});
+    await q2.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded'}).catch(e => {
+      e.message += `\n  requests pending: ${[...pend.values()].join(', ') || 'none'}\n  workers: ${ctx
+        .serviceWorkers()
+        .map(w => w.url().replace(base, ''))
+        .join(', ')}`;
+      throw e;
+    });
     await q2.waitForFunction(() => typeof UPDATED !== 'undefined', null, {timeout: 20000});
     if (!(await q2.evaluate(() => window.__ccOn && !(typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera))))
       fails.push('Admin: not listening for a new version while it loads');
