@@ -72,6 +72,17 @@ function worker(V, store, net) {
     return Promise.all(L);
   };
   return {
+    // One fetch event as the browser sends it: its reply (respondWith) and its lifetime (waitUntil), apart.
+    dispatch: url => {
+      const L = {};
+      on.fetch({
+        type: 'fetch',
+        request: {url, method: 'GET', mode: 'navigate'},
+        waitUntil: p => (L.lifetime = p),
+        respondWith: p => (L.reply = p)
+      });
+      return L;
+    },
     activate: () => wait({type: 'activate'}),
     get: async url => {
       const [r] = await wait({type: 'fetch', request: {url, method: 'GET', mode: 'cors'}});
@@ -105,4 +116,36 @@ test('the admin files outlive a new version; the app shell files do not; a new ?
   assert.deepStrictEqual(net, [SITE + 'admin.js?v=161']);
   const admin = [...store.all.values()].flatMap(m => [...m.keys()]).filter(u => /\/admin\.js\?/.test(u));
   assert.deepStrictEqual(admin, [SITE + 'admin.js?v=161']);
+});
+
+// net.smoke step 9 (2026-11-04, #496's CI, job 126453879572): the admin page never reached DOMContentLoaded although the
+// server had answered its request in 1 ms: the page's reply waited for the worker's copy of it to be written to the shell
+// cache, and that write never ended (the old worker writing into the shell cache that the new version's activation was
+// replacing). A page's reply never waits for its cache copy; the copy is written in the event's lifetime.
+test('a page is answered from the network without waiting for its cache copy to be written', async () => {
+  const store = storage(),
+    open = store.api.open;
+  // Every write into a shell cache never ends.
+  store.api.open = async name => {
+    const c = await open(name);
+    if (name.startsWith('reefid-shell-')) c.put = () => new Promise(() => {});
+    return c;
+  };
+  const w = worker('reefid-shell-v1', store, []);
+  await w.activate();
+  const L = w.dispatch(SITE + 'admin.html?demo');
+  const r = await Promise.race([L.reply, new Promise(ok => setTimeout(() => ok('no reply'), 300))]);
+  assert.notStrictEqual(r, 'no reply', 'the page waited for its cache copy');
+  assert.strictEqual(r.body, 'body of ' + SITE + 'admin.html?demo');
+  assert.ok(L.lifetime, 'the copy is written in the event lifetime');
+});
+
+test('a page answered from the network is still kept in the shell cache for the next visit offline', async () => {
+  const store = storage(),
+    w = worker('reefid-shell-v1', store, []);
+  await w.activate();
+  const L = w.dispatch(SITE + 'index.html');
+  await L.reply;
+  await L.lifetime;
+  assert.ok(store.all.get('reefid-shell-v1').has(SITE + 'index.html'));
 });
