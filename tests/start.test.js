@@ -2,6 +2,7 @@
 // startInfer; model.js startSet, startStep, startDue, startShown, startMerge, startRestart; docs/LEARNING.md "The
 // first-launch question"): the core rules, then model.js's own code run in Node on stubs (as tests/intro.test.js).
 const test = require('node:test');
+const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -12,7 +13,7 @@ const {CHOICE, START, LEVEL, playerStart, startVars, startCheck, startNext, star
 let CLOCK = 1.8e12;
 function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    block = src.slice(src.indexOf('// First meeting with a genus (Pierre'), src.indexOf('const introSince'));
+    block = cut(src, '// First meeting with a genus (Pierre', 'const introSince');
   const saved = {},
     ctx = {
       ...require('./subj.stub.js')(), // the corals as the current subject

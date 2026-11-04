@@ -1,6 +1,7 @@
 // The comeback after a break (model.js, docs/LEARNING.md "Comeback after a break"): model.js's own code run in Node on
 // stubs (the player's record P, the ability and genus difficulty, the store).
 const test = require('node:test');
+const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -11,7 +12,7 @@ const DAY = 864e5,
   MIN = 60000;
 function model({P = {}, th = {}, answers = 0} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
+    pick = (a, b) => cut(src, a, b),
     hold = /const holdNext = [\s\S]*?;\n/.exec(src.slice(src.indexOf('const holdNext')))[0],
     block = pick('// Comeback after a break (Pierre', 'function weighted(');
   const saved = {},

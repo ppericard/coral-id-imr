@@ -2,6 +2,7 @@
 // its rotation (core.js PULSEQ, pulsePick, pulseScore) and the spacing (quiz.js PROMPT, promptOk, PULSE, pulseDue, run in
 // Node on stubs, as tests/intro.test.js runs model.js).
 const test = require('node:test');
+const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -97,7 +98,7 @@ test('rotation from what an older app stored, or a broken store', () => {
 // quiz.js's prompt spacing, on stubs: the answers so far, this visit's answers, the page, what is on screen.
 function quiz() {
   const src = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
-    block = src.slice(src.indexOf('// Out-of-game prompts ("fewer, better pop-ups"'), src.indexOf('// Response rate (Pierre'));
+    block = cut(src, '// Out-of-game prompts ("fewer, better pop-ups"', '// Response rate (Pierre');
   assert.ok(block.length > 500, 'the spacing block is found in quiz.js');
   const saved = {},
     ctx = {

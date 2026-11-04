@@ -5,6 +5,7 @@
 // step on the genus given, rule 13 kept in the progress) leaves the abilities near the truth and predicts the next
 // answer better.
 const test = require('node:test');
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const {evaluate, kOf} = require('../tools/abilityeval.js');
 
@@ -200,7 +201,7 @@ test('the success aimed for follows the global level, with no cliff', () => {
     path = require('path'),
     vm = require('vm');
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
+    pick = (a, b) => block(src, a, b),
     ctx = {...require('../core.js'), P: {}};
   vm.createContext(ctx);
   vm.runInContext(pick('const PICKD =', '// The schedule of the format') + '\nthis.M = {aimP, aimOff, PICKD};', ctx);
@@ -424,11 +425,12 @@ test('response time: the app rule (+A) replays exactly as the measured +T1.5+G, 
   const C = require('../core.js'),
     rows = [1, 2, 3].flatMap(i => timedLog(150, 30 + i, 'p' + i)),
     E = require('../tools/abilityeval.js'),
-    {res} = evaluate(rows, {variants: ['e', 'e+A', 'e+T1.5+G'], min: 1});
-  assert.strictEqual(C.RTIME.K, 1.5);
+    // The measured variant with the app's own K (core.js RTIME.K), not a copy of its value.
+    T = `e+T${C.RTIME.K}+G`,
+    {res} = evaluate(rows, {variants: ['e', 'e+A', T], min: 1});
   assert.deepStrictEqual(
     res['e+A'].scored.map(o => o.p),
-    res['e+T1.5+G'].scored.map(o => o.p)
+    res[T].scored.map(o => o.p)
   );
   assert.notDeepStrictEqual(
     res['e+A'].scored.map(o => o.p),
