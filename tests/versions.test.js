@@ -78,7 +78,7 @@ test('stamped: every ?v= is the hash of the file it names, consistent, idempoten
   }
 });
 
-test('a changed file changes its own ?v= and the cache name V, nothing else; a Lab file LAB_V; a build alone nothing', () => {
+test('a changed file changes its own ?v= and the cache name V, nothing else; a Lab file LAB_V; an admin file V; a build alone nothing', () => {
   const a = copy(),
     b = copy(),
     c = copy(),
@@ -96,10 +96,21 @@ test('a changed file changes its own ?v= and the cache name V, nothing else; a L
     assert.notStrictEqual(C.LAB_V, A.LAB_V);
     assert.notStrictEqual(C['sw V'], A['sw V']);
     assert.strictEqual(C['app.js'], A['app.js']);
+    // An admin-only change still makes a new worker, the open admin page's signal to reload (Codex review #499).
+    fs.appendFileSync(path.join(e, 'admin.js'), '\n// changed\n');
     // Another build number only: the shell is the same, so is its cache name (a deploy never empties it for nothing).
-    const E = stamp(e, '8');
-    assert.strictEqual(E['sw V'], A['sw V']);
-    assert.ok(read(e, 'index.html').includes('<meta name="build" content="8">'));
+    const E = stamp(e);
+    assert.notStrictEqual(E['sw V'], A['sw V']);
+    assert.notStrictEqual(E['admin.js'], A['admin.js']);
+    assert.strictEqual(E['app.js'], A['app.js']);
+    const f = copy();
+    try {
+      const F = stamp(f, '8');
+      assert.strictEqual(F['sw V'], A['sw V']);
+      assert.ok(read(f, 'index.html').includes('<meta name="build" content="8">'));
+    } finally {
+      fs.rmSync(f, {recursive: true, force: true});
+    }
   } finally {
     [a, b, c, e].forEach(d => fs.rmSync(d, {recursive: true, force: true}));
   }

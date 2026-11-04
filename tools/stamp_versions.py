@@ -9,7 +9,8 @@ the others to bump again). Run by the Pages deploy on its staged copy, never on 
   hash too (stamped until nothing changes; the references never loop);
 - proto/lab.js LAB_V and the sw.js Lab list get one hash of the Lab files (lab.js loads them all with one ?v);
 - sw.js V becomes reefid-shell-v + a hash of every file its SHELL keeps (the unversioned ones too: index.html, the
-  fonts, curation.json...), so it changes exactly when one of them does;
+  fonts, curation.json...), of the pages and of every file named with ?v= (the admin's too: an open admin page reloads
+  onto a new version only when a new worker takes over), so it changes exactly when one of them does;
 - index.html and admin.html get <meta name="build" content="N">, the deploy's run number, read with the hash by
   sync.js appVer ("higher is newer" on the admin's Errors page); left out of V, or every deploy would empty the shell.
 A reference to no file fails the deploy. Stamping a stamped copy changes nothing. Nobody edits a version number by hand
@@ -67,6 +68,10 @@ def stamp(root, build=None):
     shell = sw[sw.index('const SHELL'):sw.index('];', sw.index('const SHELL'))]
     kept = sorted({'index.html' if x == './' else x.split('?')[0] for x in re.findall(r"'([^']+)'", shell) if not re.fullmatch(r'\w+', x)})
     kept += [f'proto/{f}.js' for f in files]
+    # The admin's files too, and every page (Codex review #499): the admin page reloads onto a new version only when a
+    # new worker takes over (admin.js UPDATED), so a change to admin.js alone must still change sw.js (it did when its
+    # ?v= was bumped by hand). Its pages and scripts are not cached; the shell is re-fetched once, as before.
+    kept = sorted(set(kept) | set(PAGES) | {p for t in texts for p in REF.findall(read(t))})
     nobuild = lambda p: BUILD.sub('', read(p)).encode() if p in PAGES else open(path(p), 'rb').read()
     for p in kept:
         if not os.path.isfile(path(p)):
