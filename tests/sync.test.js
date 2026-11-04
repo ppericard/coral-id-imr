@@ -854,6 +854,51 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben(), 'shown again');
 });
 
+// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch).
+test("groups (v48): the admin adds and removes players of a beta subject's group; the replies carry each player's", () => {
+  const s = seed();
+  const groups = (n, pin) => s.get({name: n, pin}).groups;
+  assert.deepStrictEqual(groups('Ana', '1234'), [], 'in no group: [] (the app closes the beta subject)');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true}).error, 'token', 'admin only');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'coral', on: true, token: TOK}).error, 'group', 'a subject in beta only');
+  assert.strictEqual(s.post({userGroup: 'Nobody', group: 'fish', on: true, token: TOK}).error, 'user');
+  assert.deepStrictEqual(s.post({userGroup: 'ana', group: 'fish', on: true, token: TOK}), {
+    ok: true,
+    group: 'fish',
+    n: 1,
+    members: 1,
+    v: SV
+  });
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 0, 'once');
+  assert.deepStrictEqual(groups('Ana', '1234'), ['fish'], 'the load reply');
+  assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(4), summary: {}, answers: []}).groups, ['fish'], 'the save reply');
+  assert.deepStrictEqual(groups('Ben', '1111'), [], 'the others not');
+  assert.strictEqual(s.get({name: 'Ana', pin: '9999'}).groups, undefined, 'never with a wrong code');
+  // Everyone at once (a list): unknown names skipped, members counted once.
+  const all = s.post({userGroup: ['Ana', 'Ana B', 'Ben', 'Nobody', 'ben'], group: 'fish', on: true, token: TOK});
+  assert.deepStrictEqual([all.n, all.members], [2, 3]);
+  const list = s.post({users: 1, token: TOK}).users;
+  assert.deepStrictEqual(
+    Object.fromEntries(list.map(u => [u.name, u.groups])),
+    {Ana: ['fish'], 'Ana B': ['fish'], Ben: ['fish']},
+    'the admin list'
+  );
+  assert.deepStrictEqual([...s.sheets.Groups.rows[0]], ['Group', 'Name', 'Added']);
+  // Out again.
+  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: false, token: TOK}).n, 1);
+  assert.deepStrictEqual(groups('Ben', '1111'), []);
+  // A rename and a merge carry the memberships; a delete removes them.
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ana-test'}, token: TOK}).ok, true);
+  assert.deepStrictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana-test').groups, ['fish'], 'renamed');
+  const m = s.post({userMerge: {from: 'Ana B', into: 'Ben', data: prog(2)}, token: TOK});
+  assert.strictEqual(m.ok, true);
+  assert.deepStrictEqual(groups('Ben', '1111'), ['fish'], "the merged name's group joins the kept name's");
+  assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ana B'), 'the merged name leaves the tab');
+  assert.strictEqual(s.post({userDelete: 'Ben', token: TOK}).ok, true);
+  assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ben'), 'deleted: out of the group');
+  assert.strictEqual(s.post({userGroup: ['Ana-test'], group: 'fish', on: true, token: TOK}).members, 1);
+});
+
 test('rename (v20): the record moves to the new name, hidden from the leaderboard; the old name starts over', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('r1'), ans('r2')]});
