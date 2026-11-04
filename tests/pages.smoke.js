@@ -2663,10 +2663,16 @@ async function basicsFit(b, base) {
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
     });
-    const p = await c.newPage();
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    p.on('console', m => {
+      if (m.type() === 'error' && !/Failed to load resource|net::ERR_/.test(m.text())) errs.push(m.text());
+    });
     await p.goto(base + '#lab');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     for (const st of ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms']) {
+      errs.length = 0;
       // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
         localStorage.setItem(
@@ -2700,6 +2706,17 @@ async function basicsFit(b, base) {
         fails.push(`${w}x${h} Coral basics ${st}: teaching photo ${Math.round(r.photo)} px tall, over 45% of the screen`);
       if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
       if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
+      // Every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a classified photo
+      // opens the enlarged view with its report. (Checked here since 2026-11-04, test-suite review D1: the main route loop
+      // navigated to and answered the same steps at 390 and 1280 px only for these two checks, which are not layout.)
+      if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}x${h} Coral basics ${st}: no report button after the answer`);
+      if (st === 'walls') {
+        await p.evaluate(() => document.querySelector('.bx-q .bx-cph').click());
+        const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden && !!document.querySelector('#lightbox [data-rep]'));
+        if (!lb) fails.push(`${w}x${h} Coral basics walls: the check photo does not open the enlarged view with its report`);
+        await p.evaluate(() => document.querySelector('#lightbox [data-x]')?.click());
+      }
+      if (errs.length) fails.push(`${w}x${h} Coral basics ${st}: ${errs.slice(0, 3).join(' | ')}`);
     }
     await c.close();
   }
@@ -3035,36 +3052,6 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
     await p.waitForSelector('.ikstart', {timeout: 15000}).catch(() => {});
     const kt = await p.evaluate(() => (document.querySelector('#view h2') || {}).textContent || '');
     if (kt !== 'Coral ID Key') fails.push(`${w}px #idkey: its title is "${kt}"`);
-    // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
-    // classified photo opens the enlarged view.
-    for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
-      errs.length = 0;
-      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
-      await p.evaluate(s => {
-        localStorage.setItem(
-          'reefid-basics',
-          JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
-        );
-        location.hash = 'basics|' + s;
-      }, st);
-      await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
-      if (st === 'corallite')
-        await p.evaluate(() => {
-          const ph = document.querySelector('.bx-tap'),
-            r = ph.getBoundingClientRect();
-          ph.dispatchEvent(new MouseEvent('click', {clientX: r.left + r.width * 0.587, clientY: r.top + r.height * 0.485, bubbles: true}));
-        });
-      // DOM clicks: in this context the welcome tour may still be open over the page.
-      else await p.evaluate(() => document.querySelector('.bx-q .choice').click());
-      if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}px Coral basics ${st}: no report button after the answer`);
-      if (st === 'walls') {
-        await p.evaluate(() => document.querySelector('.bx-q .bx-cph').click());
-        const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden && !!document.querySelector('#lightbox [data-rep]'));
-        if (!lb) fails.push(`${w}px Coral basics walls: the check photo does not open the enlarged view with its report`);
-        await p.evaluate(() => document.querySelector('#lightbox [data-x]')?.click());
-      }
-      if (errs.length) fails.push(`${w}px Coral basics ${st}: ${errs.slice(0, 3).join(' | ')}`);
-    }
     // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
     // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
     await p.evaluate(() => (location.hash = 'genera'));
