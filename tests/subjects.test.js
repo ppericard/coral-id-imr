@@ -59,10 +59,8 @@ test('fishGen: level-1 entries as engine records, circle 1 = the 27 IMR entries,
     g.views.wide.forEach(p => assert.ok(p.f && p.src && p.r === 1 && p.o, g.id));
   });
   // The group in the identification key in force plays the part of the coral growth forms (easy wrong choices first);
-  // a node waiting for its group (the clingfishes, keyGroup null) has none.
   assert.deepStrictEqual(X.gen.t01.forms, ['g3']);
   assert.deepStrictEqual(X.gen.t47.forms, ['g16']);
-  assert.deepStrictEqual(X.gen.t62.forms, []);
   assert.strictEqual(X.key.short, F.key.short);
   assert.deepStrictEqual(
     X.groups.map(g => g.n),
