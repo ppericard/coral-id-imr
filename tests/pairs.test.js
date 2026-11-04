@@ -1,6 +1,7 @@
 // Memory (proto/pairs.js memoryGenera): the genera of a game come from those the player has met first, genera not met
 // only to fill the grid (beginner review 2026-11-03). The function runs in Node on stubs, as tests/memory.test.js does.
 const test = require('node:test');
+const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -20,7 +21,7 @@ function memoryGenera() {
       }
     };
   vm.createContext(ctx);
-  vm.runInContext(src.slice(src.indexOf('function memoryGenera'), src.indexOf('LAB.add(')) + '\nthis.f = memoryGenera;', ctx);
+  vm.runInContext(block(src, 'function memoryGenera', 'LAB.add(') + '\nthis.f = memoryGenera;', ctx);
   return ctx.f;
 }
 const names = Object.keys(LOOK);
