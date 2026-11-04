@@ -296,7 +296,158 @@ function bars(vals, o = {}) {
 }
 
 /* ---------- Page pieces ---------- */
-const anCard = (t, body, cls = '') => `<section class="adm-scard${cls ? ' ' + cls : ''}"><h3>${t}</h3>${body}</section>`;
+// Filters, sorting and folded cards (Pierre, 2026-11-04: "I can't scroll through everything"): remembered per page, in
+// this browser only (a viewer's convenience, AGENTS.md: browser storage never for shared state).
+const ANF = (() => {
+  const v = store.get('reefid-admin-anf', {});
+  return v && typeof v === 'object' ? v : {};
+})();
+const anPref = () => (ANF[cur || '~an'] = Object.assign({f: 'all', s: 'size', open: {}}, ANF[cur || '~an'] || {}));
+const anPrefSave = () => store.set('reefid-admin-anf', ANF);
+const AN_FILTERS = [
+  ['all', 'All'],
+  ['clear', 'Clear'],
+  ['good', '▲ Helps'],
+  ['bad', '▼ Hurts'],
+  ['thin', '… Not enough data']
+];
+const anKeep = (P, e, f = anPref().f) => f === 'all' || (f === 'clear' ? P.v === 'clear' : f === 'thin' ? P.tone === 'thin' : P.tone === f);
+let AN_CARDS = []; // the cards drawn on this page, for the jump list: [slug, title]
+const anSlug = t =>
+  String(t)
+    .toLowerCase()
+    .replace(/<[^>]*>/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+// A card that folds on a tap of its title (open by default unless open === false), its state kept per page.
+function anCard(t, body, cls = '', open) {
+  const sl = anSlug(t),
+    p = anPref(),
+    o = sl in p.open ? !!p.open[sl] : open !== false;
+  AN_CARDS.push([sl, t]);
+  return `<section class="adm-scard adm-an-card${cls ? ' ' + cls : ''}${o ? '' : ' folded'}" id="anc-${sl}"><h3><button type="button" class="adm-an-fold" data-anfold="${sl}" aria-expanded="${o}">${t}</button></h3><div class="adm-an-body">${body}</div></section>`;
+}
+// The bar of controls: show (all, clear, helps, hurts, not enough data), sort (by size, by name), and the jump list.
+function anControls() {
+  const p = anPref(),
+    seg = (lab, L, k, attr) =>
+      `<span class="adm-qseg adm-sseg" role="group" aria-label="${lab}">${L.map(([v, l]) => `<button type="button" data-${attr}="${v}" aria-pressed="${p[k] === v}">${l}</button>`).join('')}</span>`;
+  return `<div class="adm-an-ctl">${seg('Show', AN_FILTERS, 'f', 'anf')}${seg(
+    'Sort',
+    [
+      ['size', 'By size'],
+      ['name', 'By name']
+    ],
+    's',
+    'ans'
+  )}</div>`;
+}
+const anJump = () =>
+  AN_CARDS.length > 2
+    ? `<nav class="adm-an-jump" aria-label="Jump to">${AN_CARDS.map(([sl, t]) => `<button type="button" class="adm-chip" data-anjump="${sl}">${t}</button>`).join('')}</nav>`
+    : '';
+// Diverging bars: one effect a row, its name above it, the bar from no change to the change it makes, the likely range
+// as a thin line, coloured by verdict (helps, hurts, clear but neither, no clear effect, not enough data: hollow).
+// rows: [{label, sub, d, lo, hi, tone, title}]; o: {tf (a change as text), title}.
+function divBars(rows, o = {}) {
+  rows = rows.filter(r => r.d != null && isFinite(r.d));
+  if (!rows.length) return '<p class="note">Nothing to show with this filter.</p>';
+  // the value of each bar in a column of its own on the right, clear of the bars and their ranges
+  const w = o.w || anW(),
+    x0 = 10,
+    x1 = w - 66,
+    per = Math.max(12, Math.floor((w - 24) / 6.6)),
+    // the name and, muted, its topic, wrapped together: lines of [word, muted] (never past the right edge on a phone)
+    wrap = (t, sub) => {
+      const L = [[]],
+        len = l => l.reduce((n, [x]) => n + x.length + 1, 0);
+      [
+        ...String(t)
+          .split(' ')
+          .map(x => [x, 0]),
+        ...(sub
+          ? String(sub)
+              .split(' ')
+              .map(x => [x, 1])
+          : [])
+      ].forEach(wd => (L[L.length - 1].length && len(L[L.length - 1]) + wd[0].length > per ? L.push([wd]) : L[L.length - 1].push(wd)));
+      return L;
+    },
+    labs = rows.map(r => wrap(r.label, r.sub)),
+    hs = labs.map(L => 22 + 14 * L.length),
+    y0s = hs.map((v, i) => 4 + hs.slice(0, i).reduce((x, z) => x + z, 0)),
+    h = 4 + hs.reduce((x, z) => x + z, 0) + 26,
+    m =
+      Math.max(
+        ...rows
+          .flatMap(r => [r.d, r.lo, r.hi])
+          .filter(v => v != null && isFinite(v))
+          .map(Math.abs),
+        1e-9
+      ) * 1.08,
+    X = v => x0 + ((Math.max(-m, Math.min(m, v)) + m) / (2 * m)) * (x1 - x0),
+    tf = o.tf || (v => anNum(v, 2)),
+    yb = h - 22;
+  let s = '';
+  ticks(-m, m, 4).forEach(
+    t =>
+      (s += `<line class="an-grid" x1="${X(t)}" x2="${X(t)}" y1="4" y2="${yb}"/><text class="an-tick" x="${X(t)}" y="${yb + 15}" text-anchor="middle">${esc(t ? tf(t) : 'no change')}</text>`)
+  );
+  s += `<line class="an-zero" x1="${X(0)}" x2="${X(0)}" y1="4" y2="${yb}"/>`;
+  rows.forEach((r, i) => {
+    const L = labs[i],
+      y = y0s[i] + 14 * L.length + 6,
+      a = X(Math.min(0, r.d)),
+      b = X(Math.max(0, r.d));
+    s += `<g><title>${esc(r.title || r.label)}</title><rect class="an-hit" x="0" y="${y0s[i]}" width="${w}" height="${hs[i]}"/><text class="an-lab" x="${x0}" y="${y0s[i] + 12}">${L.map(
+      (l, j) =>
+        `<tspan x="${x0}" dy="${j ? 14 : 0}">${l
+          .map(([x, mu], k) => (mu ? `<tspan class="an-sub">${k ? ' ' : ''}${esc(x)}</tspan>` : (k ? ' ' : '') + esc(x)))
+          .join('')}</tspan>`
+    ).join('')}</text>`;
+    s += `<rect class="an-dbar t-${r.tone || 'none'}" x="${a}" y="${y - 5}" width="${Math.max(1.5, b - a)}" height="10" rx="2"/>`;
+    if (isFinite(r.lo) && isFinite(r.hi)) s += `<line class="an-ci" x1="${X(r.lo)}" x2="${X(r.hi)}" y1="${y}" y2="${y}"/>`;
+    s += `<text class="an-val t-${r.tone || 'none'}" x="${w - 6}" y="${y + 4}" text-anchor="end">${esc(tf(r.d))}</text></g>`;
+  });
+  return svg(w, h, o.title || 'Effects', s);
+}
+// A change on an outcome's own scale, as text: points of a chance, or seconds.
+const anDf = o => (o === 'time' ? v => (v > 0 ? '+' : v < 0 ? '−' : '') + anSec(Math.abs(v)) : v => anPts(v));
+// The bars of a set of effects on one outcome: the change from the typical value, sorted as the page asks.
+function anBarsOf(L, o, sub) {
+  const p = anPref(),
+    rows = L.map(x => ({
+      label: x.P.name,
+      sub: sub ? sub(x) : '',
+      d: x.P.val - (x.P.base || 0),
+      lo: x.P.lo == null ? null : x.P.lo - (x.P.base || 0),
+      hi: x.P.hi == null ? null : x.P.hi - (x.P.base || 0),
+      tone: x.P.tone,
+      title: `${x.P.name}: ${x.P.text}`
+    }));
+  // by size: the clear results first (then no clear effect, then not enough data), each group by the size of the change
+  const rank = t => ({bad: 0, good: 0, info: 0, none: 1, thin: 2})[t] ?? 2;
+  rows.sort(
+    p.s === 'name' ? (a, b) => a.label.localeCompare(b.label) : (a, b) => rank(a.tone) - rank(b.tone) || Math.abs(b.d) - Math.abs(a.d)
+  );
+  return divBars(rows, {tf: anDf(o), title: AN_OUT[o]});
+}
+// A sparkline of one result's value at every milestone (the last dot = now).
+function anSpark(rep, key, k) {
+  const P = rep.M.map(M => {
+    const A = rep.R[M].A[key],
+      e = ((A && A.effects) || []).find(x => x.k === k);
+    return e && e.est != null && isFinite(e.est) && !e.sd ? anPlain(key, e, A).val : null;
+  }).filter(v => v != null && isFinite(v));
+  if (P.length < 2) return '';
+  const w = 60,
+    h = 18,
+    a = Math.min(...P),
+    b = Math.max(...P),
+    X = i => 2 + (i / (P.length - 1)) * (w - 4),
+    Y = v => h - 3 - ((v - a) / (b - a || 1)) * (h - 6);
+  return `<svg class="adm-an-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="M${P.map((v, i) => `${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('L')}"/><circle cx="${X(P.length - 1)}" cy="${Y(P[P.length - 1])}" r="2"/></svg>`;
+}
 const anTable = (head, rows, cls = '') =>
   `<div class="adm-tscroll${cls === 'tall' ? ' tall' : ''}"><table class="adm-tbl${cls && cls !== 'tall' ? ' ' + cls : ''}"><thead><tr>${head.map(h => (h[0] === '#' ? `<th class="n">${h.slice(1)}</th>` : `<th>${h}</th>`)).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
 // Player labels: the name from Players when this browser has it (the report keeps anonymous ids), else P1, P2… by order.
@@ -304,50 +455,43 @@ function anWho(id, i) {
   const u = ((USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
   return u ? cut(u.name) : `<span class="adm-cut" title="${esc(id)}">P${i + 1}</span>`;
 }
-// The effects of one analysis: one dot-and-range chart per outcome (on the scale it is read on, labelled in words), then
-// the table: what is compared, what it does (direction, size, likely range, what it suggests), the verdict. The spreads
-// (how much players, genera, photos differ) get their own table, in words.
+// The effects of one analysis: one bar chart per outcome (the change from the typical value, coloured by verdict, sorted
+// and filtered as the page asks), the spreads as the range a typical player, genus or photo falls in, then the same in
+// words, folded (Pierre, 2026-11-04: "very visual; text available but secondary").
 function anEffects(a, key, fresh) {
-  const E = (a.effects || []).map(e => [e, anPlain(key, e, a), anSpec(key, e)]),
-    main = E.filter(([e]) => !e.sd),
-    sds = E.filter(([e]) => e.sd);
+  const E = (a.effects || []).map(e => ({e, P: anPlain(key, e, a), S: anSpec(key, e)})),
+    keep = E.filter(x => anKeep(x.P, x.e)),
+    main = keep.filter(x => !x.e.sd),
+    sds = keep.filter(x => x.e.sd);
   const outs = [
-    ...new Set(main.filter(([e, P, S]) => P.val != null && e.v !== 'none' && ANALYSIS.outOf(S) !== 'n').map(([, , S]) => ANALYSIS.outOf(S)))
+    ...new Set(
+      main.filter(x => x.P.val != null && x.P.base != null && x.e.v !== 'none' && ANALYSIS.outOf(x.S) !== 'n').map(x => ANALYSIS.outOf(x.S))
+    )
   ];
   const plots = outs
     .map(o => {
-      // a range the fit could not hold (wider than 20 on its own scale) stays in the table only
-      const L = main.filter(([e, P, S]) => ANALYSIS.outOf(S) === o && P.val != null && !(e.hi - e.lo > 20));
-      if (!L.length) return '';
-      const P0 = L[0][1],
-        same = L.every(([, P]) => P.base === P0.base),
-        pscale = P0.scale === 'p';
-      return `<h4 class="adm-an-out">${esc(AN_OUT[o])}</h4>${dotRange(
-        L.map(([e, P]) => ({
-          label: P.name,
-          est: P.val,
-          lo: P.lo,
-          hi: P.scale === 's' && P.hi > P.base * 10 ? P.base * 10 : P.hi,
-          ref: same ? null : P.base,
-          tone: P.tone,
-          title: `${P.name}: ${P.text}`
-        })),
-        {
-          tf: anTf(P0),
-          nul: same ? P0.base : null,
-          lab: o === 'pts' ? 'as the app expects' : o === 'guess' ? 'app' : 'typical',
-          title: `${anTitle(key)}: ${AN_OUT[o]}`,
-          ...(pscale ? {clamp: [0, 1]} : {})
-        }
-      )}`;
+      const L = main.filter(x => ANALYSIS.outOf(x.S) === o && x.P.val != null && x.P.base != null && !(x.e.hi - x.e.lo > 20));
+      return L.length ? `<h4 class="adm-an-out">${esc(AN_OUT[o])}: change from typical</h4>${anBarsOf(L, o)}` : '';
     })
     .join('');
-  const row = ([e, P]) =>
-    `<tr data-ek="${esc(key + ':' + e.k)}"><td class="an-c">${esc(P.name)}</td><td class="adm-an-says">${anSays(P)}</td><td class="an-v">${anPill(P, e, fresh.has(key + ':' + e.k))}</td></tr>`;
-  const head = ['Compared', 'What it does', 'Verdict'];
+  const spread = sds.length
+    ? dotRange(
+        sds.map(x => ({label: x.P.name, est: x.P.base, lo: x.P.lo, hi: x.P.hi, tone: x.P.tone, title: x.P.text})),
+        {
+          tf: anTf(sds[0].P),
+          nul: sds[0].P.base,
+          lab: 'typical',
+          title: 'How much they differ',
+          ...(sds[0].P.scale === 'p' ? {clamp: [0, 1]} : {})
+        }
+      )
+    : '';
+  const row = x =>
+    `<tr data-ek="${esc(key + ':' + x.e.k)}"><td class="an-c">${esc(x.P.name)}</td><td class="adm-an-says">${anSays(x.P)}</td><td class="an-v">${anPill(x.P, x.e, fresh.has(key + ':' + x.e.k))}</td></tr>`;
   return (
-    anCard('What changes the result', plots + anTable(head, main.map(row), 'adm-an-eff'), 'wide') +
-    (sds.length ? anCard('How much they differ', anTable(['Between', 'In words', 'Verdict'], sds.map(row), 'adm-an-eff'), 'wide') : '')
+    anCard('What changes the result', plots || '<p class="note">Nothing to show with this filter.</p>', 'wide') +
+    (spread ? anCard('How much they differ', spread, 'wide') : '') +
+    anCard('In words', anTable(['Compared', 'What it does', 'Verdict'], main.concat(sds).map(row), 'adm-an-eff'), 'wide', false)
   );
 }
 // How each estimate moved from milestone to milestone, read on its own scale (small multiples).
@@ -393,7 +537,7 @@ function anConv(rep, key) {
       }
     )}</div>`;
   });
-  return anCard('As the answers came in', `<div class="adm-an-convs">${cells.join('')}</div>`, 'wide');
+  return anCard('As the answers came in', `<div class="adm-an-convs">${cells.join('')}</div>`, 'wide', false);
 }
 // Photo thumbnails that open the photo (Photo factors, Response time).
 function anThumbs(L, val) {
@@ -405,25 +549,46 @@ function anThumbs(L, val) {
 }
 
 /* ---------- Views ---------- */
+// The Overview (Pierre, 2026-11-04: "very visual"): every result as a bar, one chart per outcome (a right answer, the time
+// to answer, ending a session, mixing up genera, the app's own estimate), sorted by size, coloured by verdict, the topic
+// beside each name; the words, with a sparkline of each result over the milestones, and the milestones, folded.
+const AN_GROUPS = [
+  ['right', 'What helps or hurts a right answer'],
+  ['time', 'What changes the time to answer'],
+  ['stop', 'What ends a session'],
+  ['mix', 'What makes genera mixed up'],
+  ['beyond', 'Where a format is easier or harder than the app expects (beyond guessing)'],
+  ['pts', 'Where the app’s own expectation is off'],
+  ['guess', 'Success of a pure guess against the app’s value']
+];
 function anOverview(rep, R, prevR) {
   const fresh = ANALYSIS.newly(R, prevR),
-    all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => [k, e, anPlain(k, e, a)])),
+    all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => ({k, e, P: anPlain(k, e, a), S: anSpec(k, e)}))),
+    keep = all.filter(x => anKeep(x.P, x.e)),
     link = k => `<a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a>`;
-  const order = {bad: 0, good: 1, info: 2},
-    clear = all.filter(([, , P]) => P.v === 'clear'),
-    // the clear results that change something (the spreads stay on their own pages), what hurts first
-    says_ = clear.filter(([, e]) => !e.sd).sort((x, y) => (order[x[2].tone] ?? 3) - (order[y[2].tone] ?? 3));
-  const says = says_.length
-    ? `<ul class="adm-an-says-l">${says_
-        .map(
-          ([k, e, P]) =>
-            `<li><span class="adm-an-v t-${P.tone}">${AN_TONE[P.tone][0]}</span> <b>${esc(P.name)}</b> <small class="note">${link(k)}</small><br>${esc(P.text)}${P.advice ? `<small class="adm-an-adv">→ ${esc(P.advice)}</small>` : ''}${fresh.has(k + ':' + e.k) ? ' <span class="adm-src new">new</span>' : ''}</li>`
+  const clear = all.filter(x => x.P.v === 'clear'),
+    tally = t => all.filter(x => x.P.tone === t).length;
+  const charts = AN_GROUPS.map(([o, t]) => {
+    const L = keep.filter(x => !x.e.sd && ANALYSIS.outOf(x.S) === o && x.P.val != null && x.P.base != null && !(x.e.hi - x.e.lo > 20));
+    return L.length
+      ? anCard(
+          t,
+          anBarsOf(L, o, x => anTitle(x.k)),
+          'wide'
         )
-        .join('')}</ul>`
-    : '<p class="note">Nothing is clear yet: more answers are needed.</p>';
-  const rows = all.map(
-    ([k, e, P]) =>
-      `<tr><td class="an-t">${link(k)}</td><td class="an-c">${esc(P.name)}</td><td class="adm-an-says">${anSays(P)}</td><td class="an-v">${anPill(P, e, fresh.has(k + ':' + e.k))}</td></tr>`
+      : '';
+  }).join('');
+  const p = anPref(),
+    words = keep
+      .slice()
+      .sort(
+        p.s === 'name'
+          ? (a, b) => a.P.name.localeCompare(b.P.name)
+          : (a, b) => ({bad: 0, good: 1, info: 2, none: 3, thin: 4})[a.P.tone] - {bad: 0, good: 1, info: 2, none: 3, thin: 4}[b.P.tone]
+      );
+  const rows = words.map(
+    x =>
+      `<tr><td class="an-t">${link(x.k)}</td><td class="an-c">${esc(x.P.name)}</td><td class="adm-an-says">${anSays(x.P)}</td><td class="an-sp">${anSpark(rep, x.k, x.e.k)}</td><td class="an-v">${anPill(x.P, x.e, fresh.has(x.k + ':' + x.e.k))}</td></tr>`
   );
   const nClear = R2 => Object.values(R2.A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length;
   const ms = rep.M.map((M, i) => {
@@ -434,14 +599,15 @@ function anOverview(rep, R, prevR) {
   return (
     kpis([
       ['Answers', anInt(R.M)],
-      ['Players', R.players],
-      ['Milestones', rep.M.length],
-      ['Clear results', `${clear.length} / ${all.filter(([, e]) => e.v !== 'nolog').length}`]
+      ['▲ Helps', tally('good')],
+      ['▼ Hurts', tally('bad')],
+      ['Clear results', `${clear.length} / ${all.filter(x => x.e.v !== 'nolog').length}`]
     ]) +
-    `<div class="adm-sgrid adm-an-grid">${anCard('What the data says clearly', says, 'wide')}${anCard(
-      'Every result',
-      anTable(['Topic', 'Compared', 'What it does', 'Verdict'], rows, 'adm-an-eff adm-an-all'),
-      'wide'
+    `<div class="adm-sgrid adm-an-grid">${charts || anCard('Results', '<p class="note">Nothing to show with this filter.</p>', 'wide')}${anCard(
+      'Every result in words',
+      anTable(['Topic', 'Compared', 'What it does', 'Over time', 'Verdict'], rows, 'adm-an-eff adm-an-all'),
+      'wide',
+      false
     )}${anCard(
       'Milestones',
       lines([{label: 'Clear results', pts: rep.M.map(M => [M, nClear(rep.R[M])]), dots: true}], {
@@ -452,7 +618,8 @@ function anOverview(rep, R, prevR) {
         xlab: 'Answers in the log',
         title: 'Clear results by milestone'
       }) + anTable(['Answers', 'Last answer', '#Players', '#Clear', '#New'], ms),
-      'wide'
+      'wide',
+      false
     )}</div>`
   );
 }
@@ -903,7 +1070,8 @@ function anSessDesc(d) {
         ),
         'tall'
       ),
-      'wide'
+      'wide',
+      false
     )
   ];
 }
@@ -945,7 +1113,9 @@ function renderAnalyses() {
     .join('')}</span>`;
   const badge = `<span class="adm-src adm-an-badge" title="${esc(`${anInt(now)} answers in the log; a milestone every ${anInt(ANALYSIS.STEP)}`)}">${anInt(since)} since ${anInt(lastM)} · next at ${anInt(lastM + ANALYSIS.STEP)}</span>`;
   const made = `<span class="note adm-an-made" title="${esc(local ? 'Recomputed in this tab' : 'Stored report')}">${local ? 'This tab' : dateText(rep.made, 'dmhm')}</span>`;
-  $v.innerHTML = `<section class="adm-an"><div class="adm-shead">${seg}${badge}${made}${recompute}</div>${key ? anView(key, rep, R, prevR) : anOverview(rep, R, prevR)}</section>`;
+  AN_CARDS = [];
+  const body = key ? anView(key, rep, R, prevR) : anOverview(rep, R, prevR);
+  $v.innerHTML = `<section class="adm-an"><div class="adm-shead">${seg}${badge}${made}${recompute}</div>${anControls()}${anJump()}${body}</section>`;
   anBind();
 }
 function anBind() {
@@ -960,6 +1130,36 @@ function anBind() {
       })
   );
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+  // show / sort: redraw the page; a folded card: fold or open it at once (no redraw), remembered per page
+  $v.querySelectorAll('[data-anf],[data-ans]').forEach(
+    b =>
+      (b.onclick = () => {
+        const p = anPref();
+        if (b.dataset.anf) p.f = b.dataset.anf;
+        else p.s = b.dataset.ans;
+        anPrefSave();
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-anfold]').forEach(
+    b =>
+      (b.onclick = () => {
+        const sec = b.closest('.adm-an-card'),
+          open = sec.classList.toggle('folded') === false;
+        b.setAttribute('aria-expanded', String(open));
+        anPref().open[b.dataset.anfold] = open;
+        anPrefSave();
+      })
+  );
+  $v.querySelectorAll('[data-anjump]').forEach(
+    b =>
+      (b.onclick = () => {
+        const sec = document.getElementById('anc-' + b.dataset.anjump);
+        if (!sec) return;
+        if (sec.classList.contains('folded')) sec.querySelector('[data-anfold]').click();
+        sec.scrollIntoView({behavior: 'smooth', block: 'start'});
+      })
+  );
   $v.querySelectorAll('[data-ansrc]').forEach(
     b =>
       (b.onclick = () => {
@@ -1012,7 +1212,8 @@ addEventListener('resize', () => {
 });
 
 // Help ("?"), per view: the definitions and the methods stay off the page (AGENTS.md rule 23).
-const AN_HELP_COMMON = `<p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>new</b>: clear since the previous milestone. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
+const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result: how much it changes the outcome named above the chart (the chance of a right answer, the time to answer, the chance to end the session, the chance to mix up genera) from its typical value, for a typical player and photo; its value is on the right. Coloured by verdict (green helps, red hurts, blue clear but neither good nor bad, grey no clear effect, dashed outline not enough data yet); the thin line is its likely range. <b>Show</b> keeps only the clear results, what helps, what hurts or what still lacks data; <b>Sort</b> by size (clear results first) or by name; a tap on a card's title folds it; the chips under them jump to a card. These choices are kept per page, in this browser only. The words, the tables and the results over time are folded by default: tap to open.</p>
+  <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>new</b>: clear since the previous milestone. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once 1000 new answers have come in (or the code changed), redoes every analysis on the first 1000, 2000, … answers in time order (the milestones) and on all of them, then stores the report in the sheet (private). This page only draws it. <b>Recompute here</b> (desktop) runs the same code in this tab; its result stays in this tab. The switch picks a milestone; the badge says how many answers came since the last one. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
