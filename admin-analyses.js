@@ -608,13 +608,15 @@ const ANV = {
           '#Against a typical pair'
         ],
         a.pairs.map(p => {
-          const v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
+          // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio (Codex review #495)
+          const fr = u => ANALYSIS.freqRatio(anTyp(a).p, u),
+            v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
           return `<tr><td>${p.k
             .split('|')
             .map(g => `<i>${esc(g)}</i>`)
             .join(
               ' · '
-            )}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n" title="How much more (or less) often than a typical pair">×${Math.exp(p.u).toFixed(1)} <small class="adm-an-ci">×${Math.exp(p.lo).toFixed(1)} – ×${Math.exp(p.hi).toFixed(1)}</small></td></tr>`;
+            )}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n" title="How many times as often as a typical pair, at the typical mix-up rate">×${fr(p.u).toFixed(1)} <small class="adm-an-ci">×${fr(p.lo).toFixed(1)} – ×${fr(p.hi).toFixed(1)}</small></td></tr>`;
         })
       ),
       'wide'
@@ -661,7 +663,7 @@ const ANV = {
       'wide'
     ),
     anCard(
-      'Answers needed to reach 80% right, by genus',
+      'Answers needed to reach 80% beyond guessing, by genus',
       forest(
         a.genus.map(g => ({
           label: g.k,
@@ -670,10 +672,10 @@ const ANV = {
           hi: Math.log(1 + Math.min(g.hi, 999)),
           title: `${g.k}: about ${anInt(g.est)} answers (likely ${anInt(g.lo)} to ${g.hi >= 999 ? '999+' : anInt(g.hi)})`
         })),
-        {nul: 0, tf: v => anInt(Math.exp(v) - 1), title: 'Answers needed to reach 80% right, by genus'}
+        {nul: 0, tf: v => anInt(Math.exp(v) - 1), title: 'Answers needed to reach 80% beyond guessing, by genus'}
       ) +
         anTable(
-          ['Genus', '#Answers', '#Players', '#Right', '#Answers to 80%', '#Likely between'],
+          ['Genus', '#Answers', '#Players', '#Right', '#Answers to 80% beyond guessing', '#Likely between'],
           a.genus.map(
             g =>
               `<tr><td><i>${esc(g.k)}</i></td><td class="n">${g.n}</td><td class="n">${g.players}</td><td class="n">${pc(g.right)}</td><td class="n">${g.est >= 999 ? '999+' : anInt(g.est)}</td><td class="n">${anInt(g.lo)} – ${g.hi >= 999 ? '999+' : anInt(g.hi)}</td></tr>`
@@ -840,7 +842,7 @@ Object.assign(HELP, {
   'an-zoom': `<p><b>Enlarging photos.</b> Is an answer more often right when the player enlarged a photo first, compared with the same player not enlarging, beyond what the app expected? And are players who enlarge often better or worse? Players: how often each enlarges, right when enlarging or not, and right answers against the app's expectation. Since 2026-11-03 20:24 the enlarge button is visible: compare milestones after it.</p>${AN_HELP_COMMON}`,
   'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p>${AN_HELP_COMMON}`,
   'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects; and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p>${AN_HELP_COMMON}`,
-  'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair. <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p>${AN_HELP_COMMON}`,
+  'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p>${AN_HELP_COMMON}`,
   'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`
