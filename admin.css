@@ -3659,6 +3659,10 @@ button.adm-chip[aria-pressed='true'] {
 }
 .adm-an-svg .an-lab {
   fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 .adm-an-svg .an-zero {
   stroke: var(--muted);
@@ -3797,6 +3801,129 @@ button.adm-chip[aria-pressed='true'] {
 .adm-an-v.v-none,
 .adm-an-v.v-nolog {
   color: var(--muted);
+}
+/* The plain reading (admin-analyses.js AN_TONE): helps / hurts / clear but neither / no clear effect / not enough data,
+   the same colours on the pills, the dots and their ranges (--good and --bad swap with the colour-blind setting). */
+.adm-an-v.t-good,
+.adm-an-svg .an-dot.t-good {
+  color: var(--good);
+  fill: var(--good);
+}
+.adm-an-v.t-bad,
+.adm-an-svg .an-dot.t-bad {
+  color: var(--bad);
+  fill: var(--bad);
+}
+.adm-an-v.t-info,
+.adm-an-svg .an-dot.t-info {
+  color: var(--accent);
+  fill: var(--accent);
+}
+.adm-an-v.t-none {
+  color: var(--ink);
+}
+.adm-an-svg .an-dot.t-none {
+  fill: var(--ink);
+}
+.adm-an-v.t-thin {
+  color: var(--muted);
+  font-weight: 400;
+}
+.adm-an-svg .an-dot.t-thin {
+  fill: var(--surface);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.adm-an-svg .an-ci.t-good {
+  stroke: var(--good);
+}
+.adm-an-svg .an-ci.t-bad {
+  stroke: var(--bad);
+}
+.adm-an-svg .an-ci.t-info {
+  stroke: var(--accent);
+}
+.adm-an-svg .an-ci.t-thin {
+  stroke-dasharray: 2 3;
+}
+.adm-an-svg .an-nul {
+  font-size: 11px;
+}
+.adm-an-out {
+  margin: 10px 0 0;
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+.adm-tbl td.adm-an-says {
+  min-width: 14em;
+  white-space: normal;
+}
+.adm-an-says small.adm-an-ci {
+  display: block;
+  font-size: var(--fs-xs);
+}
+/* What is compared wraps, never cut; on a phone each result is a block: compared and verdict, then what it does. */
+.adm-an-eff td.an-c {
+  min-width: 10em;
+  max-width: 22em;
+  white-space: normal;
+}
+@media (max-width: 599px) {
+  .adm-an-eff thead {
+    display: none;
+  }
+  .adm-an-eff tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 'c v' 's s';
+    column-gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid var(--line);
+  }
+  .adm-an-eff.adm-an-all tr {
+    grid-template-areas: 't v' 'c c' 's s';
+  }
+  .adm-tbl.adm-an-eff td {
+    display: block;
+    padding: 1px 2px;
+    border: 0;
+    max-width: none;
+    min-width: 0;
+    white-space: normal;
+  }
+  .adm-an-eff td.an-t {
+    grid-area: t;
+    font-size: var(--fs-xs);
+  }
+  .adm-an-eff td.an-c {
+    grid-area: c;
+    font-weight: 600;
+  }
+  .adm-an-eff td.adm-an-says {
+    grid-area: s;
+  }
+  .adm-an-eff td.an-v {
+    grid-area: v;
+    text-align: right;
+  }
+}
+.adm-an-adv {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink);
+  font-style: italic;
+}
+.adm-an-says-l {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.adm-an-says-l li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.adm-an-says-l li:last-child {
+  border-bottom: 0;
 }
 .adm-tbl small.adm-an-ci {
   color: var(--muted);

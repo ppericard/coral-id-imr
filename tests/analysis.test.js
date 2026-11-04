@@ -541,3 +541,78 @@ test('photo views follow the game pipeline (2 zoom levels)', () => {
     assert.ok(!fs2.some(f => meta[f][0] === 'medium'), `${g}: no Close-up view in the games`);
   });
 });
+
+// The plain reading (plainOf, Pierre 2026-11-04: "a non-statistician must understand it at a glance"): every effect has
+// a name in words, its direction says which way the chance of a right answer (or the time, the stops, the mix-ups) goes,
+// and its colour (tone) says whether that helps or hurts.
+test('plainOf: names in words, directions and tones', () => {
+  const P = (key, e, a, o) => A.plainOf(key, {v: 'clear', ...e}, a, o);
+  // more likely to stop after a wrong answer: odds up on "stop" = hurts
+  let r = P('sess', {k: 'wrong', est: 1.2, lo: 0.6, hi: 1.8}, {typ: {p: 0.02}});
+  assert.match(r.text, /^More likely to stop/);
+  assert.strictEqual(r.tone, 'bad');
+  assert.ok(r.val > r.base && r.lo > r.base, 'the range is above the typical chance');
+  // a difficulty (+ = harder) on the photos reads as more likely WRONG, with the chance of a right answer
+  r = P('photo', {k: 'poor', est: 0.7, lo: 0.3, hi: 1.1}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^More likely wrong: about \d+% right instead of 80%/);
+  assert.strictEqual(r.tone, 'bad');
+  assert.ok(r.advice, 'a clear result says what it suggests');
+  // a negative difficulty = easier = helps
+  r = P('photo', {k: 'sharp', est: -0.4, lo: -0.7, hi: -0.1}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^More likely right/);
+  assert.strictEqual(r.tone, 'good');
+  // log-odds of a right answer: + = more likely right
+  r = P('zoom', {k: 'rel', est: -0.9, lo: -1.5, hi: -0.3}, {typ: {p: 0.78, g: 0.2}});
+  assert.match(r.text, /^More likely wrong/);
+  // mix-ups: + = mixed up more often = hurts
+  r = P('conf', {k: 'macro', est: 0.5, lo: 0.2, hi: 0.8}, {typ: {p: 0.06}});
+  assert.match(r.text, /^Mixed up more often/);
+  assert.strictEqual(r.tone, 'bad');
+  // time: + = slower, neither good nor bad
+  r = P('rt', {k: 'enl', est: 0.93, lo: 0.6, hi: 1.2}, {typ: {s: 6}});
+  assert.match(r.text, /^Slower: about 15 s instead of 6.0 s/);
+  assert.strictEqual(r.tone, 'info');
+  assert.strictEqual(r.scale, 's');
+  // the app's own calibration: neither good nor bad, in points
+  r = P('back', {k: 'calib', est: 0.15, lo: 0.05, hi: 0.25}, {});
+  assert.match(r.text, /^Players do better than the app expects: \+15 points/);
+  assert.strictEqual(r.tone, 'info');
+  // no clear effect and not enough data say so, with no advice
+  r = A.plainOf('photo', {k: 'poor', est: 0.05, lo: -0.1, hi: 0.2, v: 'margin'}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^No clear effect/);
+  assert.strictEqual(r.tone, 'none');
+  assert.strictEqual(r.advice, '');
+  r = A.plainOf('photo', {k: 'poor', est: 0.4, lo: -0.5, hi: 1.3, v: 'thin'}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^Too early to tell/);
+  assert.strictEqual(r.tone, 'thin');
+  // a spread in words
+  r = A.plainOf('photo', {k: 'sd_genus', est: 0.6, lo: 0.3, hi: 0.9, v: 'clear', sd: true}, {typ: {p: 0.8, g: 0.25}});
+  assert.match(r.text, /^They differ: a typical genus gets between \d+% and \d+% right/);
+  // a format reads against its own expected chance
+  r = A.plainOf('fmt', {k: 'd_k4', est: 0.5, lo: 0.2, hi: 0.8, v: 'clear'}, {}, {row: {n: 100, E: 0.7, g0: 0.25}});
+  assert.match(r.text, /^Harder than the app expects: about \d+% right where it expects 70%/);
+});
+
+test('plainOf: every effect of every analysis has a plain name, no code or model term', () => {
+  const rows = A.demoLog(require('../data.json'), Date.now() - 3 * 864e5, {
+    cur: require('../curation.json'),
+    qual: require('../quality.json'),
+    met: require('../metrics.json')
+  });
+  const meta = A.photoMeta(require('../data.json'), require('../curation.json'), require('../quality.json'), require('../metrics.json'));
+  const R = A.runAll(rows, meta, {B: 4, seed: 1});
+  let n = 0;
+  Object.entries(R.A).forEach(([k, a]) =>
+    (a.effects || []).forEach(e => {
+      const row = k === 'fmt' ? (a.table || []).find(r => e.k.replace(/^(g|d|oe)_/, '') === r.k) : null,
+        p = A.plainOf(k, e, a, {row});
+      n++;
+      assert.ok(A.PLAIN[k] && A.PLAIN[k][e.k], `${k}:${e.k} has a plain entry`);
+      assert.doesNotMatch(p.name + ' ' + p.text, /logit|\bSD\b|log position|\(log\)|odds/i, `${k}:${e.k}: ${p.name} / ${p.text}`);
+      assert.ok(p.text.length > 10, `${k}:${e.k} says something`);
+      assert.ok(['good', 'bad', 'info', 'none', 'thin'].includes(p.tone), `${k}:${e.k} tone ${p.tone}`);
+      if (a.typ) assert.ok(isFinite(a.typ.p), `${k} carries its typical values`);
+    })
+  );
+  assert.ok(n > 40, `${n} effects read`);
+});
