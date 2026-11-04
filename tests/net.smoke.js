@@ -86,6 +86,7 @@ const server = http.createServer((req, res) => {
     await ctx.addInitScript(() => {
       try {
         localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       } catch (e) {}
     });
     await ctx.route(
@@ -257,7 +258,7 @@ const server = http.createServer((req, res) => {
       if (errs.length) fails.push('Sizes: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     };
-    const tour = () => localStorage.setItem('reefid-tour', '1');
+    const tour = () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'));
     // Phone, 2x: one photo ~390 px wide -> 960 px file.
     await run({width: 390, height: 800}, 2, tour, async (p, t) => {
       if (!t.length || t.some(x => x === 's')) fails.push(`Phone 2x quiz photos too small: ${t}`);
@@ -288,6 +289,7 @@ const server = http.createServer((req, res) => {
       2,
       () => {
         localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('reefid-photo-q', '"saver"');
       },
       async (p, t) => {
@@ -308,7 +310,9 @@ const server = http.createServer((req, res) => {
         u => !u.href.startsWith(base),
         r => r.abort()
       );
-      await ctx.addInitScript(() => localStorage.setItem('reefid-tour', '1'));
+      await ctx.addInitScript(
+        () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+      );
       const p = await ctx.newPage(),
         cdp = await ctx.newCDPSession(p);
       await cdp.send('Network.enable');
@@ -337,6 +341,7 @@ const server = http.createServer((req, res) => {
       1,
       () => {
         localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('reefid-photo-q', JSON.stringify('full'));
       },
       async (p, t) => {
@@ -416,7 +421,9 @@ const server = http.createServer((req, res) => {
   };
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
-    await ctx.addInitScript(() => localStorage.setItem('reefid-tour', '1'));
+    await ctx.addInitScript(
+      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
     await ctx.route(
       u => !u.href.startsWith(base),
       r => r.abort()
@@ -466,7 +473,9 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
     // A tab opened before any version was installed, then left open, still gets the next version (Codex review #336).
     const r = await ctx.browser().newContext({viewport: {width: 390, height: 800}});
-    await r.addInitScript(() => localStorage.setItem('reefid-tour', '1'));
+    await r.addInitScript(
+      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
     await r.route(
       u => !u.href.startsWith(base),
       x => x.abort()
@@ -795,7 +804,9 @@ const server = http.createServer((req, res) => {
       args: ['--host-resolver-rules=MAP coral.test 127.0.0.1, MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
     });
     const ctx = await bw.newContext({serviceWorkers: 'block'});
-    await ctx.addInitScript(() => localStorage.setItem('reefid-tour', '1'));
+    await ctx.addInitScript(
+      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
     const p = await ctx.newPage();
     await p.goto(`http://coral.test:${server.address().port}/#home`);
     await p.waitForFunction(

@@ -11,7 +11,12 @@
   // plus: a second, separate spotlight (Practice in the menu, at the other end of a phone screen); tall: 'end' shows the
   // bottom of a target too tall to fit beside the bubble (the doors' buttons), instead of its top; arrows: a big arrow points
   // at each spotlight, so two spotlights far apart both catch the eye (Pierre, 2026-11-01: the menu drew the eye from the games).
+  // ask: the first-launch question (Pierre, 2026-11-03; core.js CHOICE), first, before anything else: a forced choice
+  // (no Skip and no Next until answered; Escape still closes the tour, and the quiz then asks it on a card, quiz.js
+  // startAskShow). Its answer is kept at once (model.js startSet), so the first cards of the quiz under the tour already
+  // follow it. "I'm new to corals" turns the last button into Coral basics (about 5 minutes), the quiz beside it.
   const STEPS = [
+    {h: '', ask: true},
     {
       h: '',
       sel: '.hdoors',
@@ -122,11 +127,30 @@
   function bubble() {
     const s = STEPS[step],
       last = step === STEPS.length - 1,
-      b = root.querySelector('.tbub');
+      b = root.querySelector('.tbub'),
+      cur = (store.get(CHOICE.KEY, null) || {}).c,
+      // The last step of a player new to corals: Coral basics first (5 min), the quiz beside it.
+      bas = last && cur && startVars(cur).basics && !basicsDone();
     // The sign-in step holds the real sign-in box (bindSync in app.js); its Next reads "Later" until the RA has signed in.
-    b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${s.signin ? '<section class="sync tsync"></section>' : `<h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>`}
-      <div class="tnav"><button type="button" class="linkish tskip">${last ? 'Close' : 'Skip tour'}</button><span>
-      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? 'Start playing' : s.signin && !SYNC ? 'Later' : 'Next'}</button></span></div>`;
+    const body = s.signin
+      ? '<section class="sync tsync"></section>'
+      : s.ask
+        ? `<h3>How well do you know corals?</h3><p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(cur)}`
+        : `<h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>`;
+    b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${body}
+      <div class="tnav">${s.ask ? '<span></span>' : `<button type="button" class="linkish tskip">${last ? (bas ? 'Start playing' : 'Close') : 'Skip tour'}</button>`}<span>
+      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}${s.ask && !cur ? '' : `<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? (bas ? 'Coral basics (5 min)' : 'Start playing') : s.signin && !SYNC ? 'Later' : 'Next'}</button>`}</span></div>`;
+    if (s.ask)
+      b.querySelectorAll('[data-start]').forEach(
+        o =>
+          (o.onclick = () => {
+            const c = o.dataset.start;
+            b.querySelectorAll('[data-start]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
+            // model.js comes with the quiz tier; the answer is kept as soon as it is in (a first visit on a slow line).
+            if (c !== cur) need(2).then(() => startSet(c, 'tour'));
+            show(step + 1);
+          })
+      );
     if (s.signin) {
       const box = b.querySelector('.tsync');
       bindSync(box);
@@ -139,9 +163,9 @@
         place();
       }).observe(box, {childList: true});
     }
-    b.querySelector('.tskip').onclick = () => close(null, true);
+    if (b.querySelector('.tskip')) b.querySelector('.tskip').onclick = () => (bas ? close('quiz') : close(null, true));
     if (step) b.querySelector('.tback').onclick = () => show(step - 1);
-    b.querySelector('.tnext').onclick = () => (last ? close('quiz') : show(step + 1));
+    if (b.querySelector('.tnext')) b.querySelector('.tnext').onclick = () => (last ? close(bas ? 'basics' : 'quiz') : show(step + 1));
     root.classList.toggle('live', !!s.live);
     b.focus({preventScroll: true});
   }
@@ -322,6 +346,8 @@
     if (e.target.closest && e.target.closest('input, textarea, select')) return;
     if (e.key === 'ArrowRight') {
       e.preventDefault();
+      // The first-launch question is answered before the tour goes on (forced, Pierre 2026-11-03).
+      if (STEPS[step].ask && !root.querySelector('.tbub [data-start][aria-pressed="true"]')) return;
       show(step + 1);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();

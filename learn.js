@@ -24,6 +24,23 @@ let azView = (() => {
   }
 })();
 let gfOpen = false; // phone Filter fold on Genera, kept open across redraws
+// Step 0 of the Learn path (Pierre, 2026-11-03): Coral basics before the genus sheets, as the first card of the Genera
+// page ("0 · Coral basics" in the lecture order, the first card in the slate order), with where the player is in it.
+const BASICS_STEPS = 7;
+function basicsCard(tips) {
+  const n = Object.keys((store.get(BASICS_KEY, {}) || {}).seen || {}).length,
+    done = basicsDone(),
+    state = done
+      ? '✓ Done'
+      : n
+        ? `${Math.min(n, BASICS_STEPS - 1)} of ${BASICS_STEPS} steps seen`
+        : `${BASICS_STEPS} short steps · about 5 min`,
+    say = 'Polyp, corallite, septa, walls, growth forms: the words the ID tips use, on real photos.',
+    art = `<span class="ph bxart" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${BASICS_ICON}</svg></span>`;
+  return tips
+    ? `<article class="tipg bxtip"><a href="#basics" class="tipph">${art}<i>Coral basics</i></a><div><p class="note">${state}</p><p>${say}</p></div></article>`
+    : `<a class="card bxcard${done ? ' done' : ''}" href="#basics">${art}<span class="cap"><b>Coral basics</b><small>${state}</small><p>${say}</p></span></a>`;
+}
 function viewGenera() {
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   // Phones: family, order and the group index fold behind one Filter line, so the genera start near the top.
@@ -77,7 +94,12 @@ function viewGenera() {
           return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => (tips ? tipCard(n) : card(n, 'stripe'))).join('')}</section>`;
         })
         .join('');
-    } else html = names.map(n => (tips ? tipCard(n) : card(n, true))).join('');
+      if (html && !q && !azFam && SUBJ.pages.includes('basics'))
+        html = `<section class="gblk gbasics" data-n="1"><h3 class="gdiv" title="Before the genera"><span class="gn">0</span><span class="gtitle">Coral basics</span></h3>${basicsCard(tips)}</section>${html}`;
+    } else
+      html =
+        (!q && !azFam && names.length && SUBJ.pages.includes('basics') ? basicsCard(tips) : '') +
+        names.map(n => (tips ? tipCard(n) : card(n, true))).join('');
     const grid = document.getElementById('azgrid');
     // The Coral Finder's extra genera (not on the IMR list, seen at Dauin): one folded line under the 39 (Pierre).
     const X = Object.keys((DATA.x || {}).gen || {}).filter(n => !q || (n + ' ' + GX(n).crit.join(' ')).toLowerCase().includes(q));

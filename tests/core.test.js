@@ -446,7 +446,8 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
     hard: true,
     elo: 1500,
     group: true,
-    bonus: 3
+    bonus: 3,
+    basics: true
   };
   assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
 });
@@ -1105,3 +1106,18 @@ test('rename: data from the sheet or a file is read with the new names; the shee
   assert.strictEqual(JSON.parse(m['reefid-sync-coral-progress']).Porites.ok, 3);
 });
 // rename-app: keep-end
+
+// Codex review #428 (P2): the admin's account merge takes the union of the two first-launch histories, so the replay
+// after the merge applies each account's answers' priors (know@100 merged into imr@300: know's at 200).
+test('mergeUsers merges the first-launch histories (Codex review #428)', () => {
+  const C = require('../core.js');
+  const K = C.CHOICE.KEY,
+    A = {[K]: JSON.stringify({c: 'know', t: 100, at: 0, via: 'tour', w: [], fb: {}, h: [['know', 0, 100, 'tour']]})},
+    B = {[K]: JSON.stringify({c: 'imr', t: 300, at: 0, via: 'tour', w: [], fb: {}, h: [['imr', 0, 300, 'tour']]})};
+  for (const m of [C.mergeUsers(A, B), C.mergeUsers(B, A)]) {
+    const o = JSON.parse(m[K]);
+    assert.strictEqual(o.c, 'imr');
+    assert.strictEqual(C.startPriorAt(o, 200), C.startVars('know').p);
+    assert.strictEqual(C.startPriorAt(o, 300), C.startVars('imr').p);
+  }
+});
