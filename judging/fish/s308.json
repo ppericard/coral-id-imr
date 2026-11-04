@@ -1,0 +1,104 @@
+{
+ "photos": {
+  "fish-s308-cand-539446660": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s308-cand-347748933": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s308-cand-756901450": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s308-cand-564914371": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s308-cand-412558608": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s308-cand-590969982": {
+   "code": "d1g2sm12",
+   "keep": "best"
+  },
+  "fish-s308-cand-469858682": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s308-cand-430291454": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s308-cand-430293091": {
+   "code": "h1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s308-cand-622415168": {
+   "code": "p1g2bs1c1",
+   "keep": "best"
+  },
+  "fish-s308-cand-49774351": {
+   "code": "d1g0sm1a2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Dead fish on black sand? Out of water by its look"
+  },
+  "fish-s308-cand-681577490": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s308-cand-681577537": {
+   "code": "p1d1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s308-cand-336304292": {
+   "code": "d1g2sl12",
+   "keep": "best"
+  },
+  "fish-s308-cand-336304316": {
+   "code": "p0g2sl12",
+   "keep": "dup"
+  },
+  "fish-s308-cand-336304305": {
+   "code": "p1g2sl13",
+   "keep": "dup"
+  },
+  "fish-s308-cand-435424045": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s308-cand-451355578": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s308-cand-332674327": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s308-cand-656424911": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s308-cand-640529121": {
+   "code": "p1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s308-cand-512821426": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s308-cand-594823387": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s308-cand-347765399": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  }
+ }
+}

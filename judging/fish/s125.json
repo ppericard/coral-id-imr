@@ -1,0 +1,124 @@
+{
+ "photos": {
+  "fish-s125-cand-386505451": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s125-cand-386505386": {
+   "code": "p1g1sms3",
+   "keep": "dup"
+  },
+  "fish-s125-cand-386505602": {
+   "code": "p1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s125-cand-336342300": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s125-cand-336342325": {
+   "code": "p0g1sms3",
+   "keep": "dup"
+  },
+  "fish-s125-cand-458284474": {
+   "code": "p1g2sssj1",
+   "keep": "best"
+  },
+  "fish-s125-cand-430617115": {
+   "code": "p1g1slsj2",
+   "keep": "best"
+  },
+  "fish-s125-cand-430617097": {
+   "code": "p1g1sssj1",
+   "keep": "dup"
+  },
+  "fish-s125-cand-430617145": {
+   "code": "p1g1sssj1",
+   "keep": "dup"
+  },
+  "fish-s125-cand-469366640": {
+   "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s125-cand-469366645": {
+   "code": "p1g2sms2",
+   "keep": "dup"
+  },
+  "fish-s125-cand-469366643": {
+   "code": "p1g1sms3",
+   "keep": "alt"
+  },
+  "fish-s125-cand-736726850": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s125-cand-736726886": {
+   "code": "p1g2sss2",
+   "keep": "dup"
+  },
+  "fish-s125-cand-464916088": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s125-cand-464916101": {
+   "code": "p1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s125-cand-361032767": {
+   "code": "p1d1sls3",
+   "keep": "best"
+  },
+  "fish-s125-cand-597922710": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s125-cand-456609037": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s125-cand-636438462": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s125-cand-49979069": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s125-cand-447500248": {
+   "code": "p1g2bss1",
+   "keep": "best"
+  },
+  "fish-s125-cand-465287463": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s125-cand-509153865": {
+   "code": "o1d2bm11",
+   "keep": "best"
+  },
+  "fish-s125-cand-446264128": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s125-cand-382161734": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s125-cand-262297111": {
+   "code": "p1d1sls3",
+   "keep": "best"
+  },
+  "fish-s125-cand-580500493": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Pale, short fish on sand: maybe a juvenile"
+  },
+  "fish-s125-cand-29892074": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  }
+ }
+}
