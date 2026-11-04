@@ -7,7 +7,9 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   A photo belongs to the most precise taxon its observation names: the species (iNaturalist's taxon query includes
   subspecies). Only species in the game (with a `circle`, never `out`), circle 1 by default (--circle).
 - Identity: Research Grade at the species level; Pierre's own observations (iNaturalist user ppericard) identified to
-  the species count as confirmed even when Needs ID (AGENTS.md rule 6a), nobody else's. Never captive (captive=false),
+  the species are usable as that species even when Needs ID (AGENTS.md rule 6a: he names a species only when nearly
+  sure), nobody else's. That is photo use only: they no longer confirm presence on their own (rule 6g; fish.json
+  present.ph decides which species are in the game and which may have photos from abroad). Never captive (captive=false),
   never an observation annotated "Dead" (fish markets; the pre-sort sets aside the unannotated ones).
 - Licences (Pierre, 2026-11-03; fish prefer free licences, corals keep NC): only CC0, CC BY and CC BY-NC. Never a
   share-alike licence (CC BY-SA, CC BY-NC-SA: it would block a later commercial reuse) nor ND (crops are derivatives).
@@ -17,10 +19,10 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   Pierre's own observations abroad too.
 - Order (`select`, Pierre, 2026-11-03): Pierre's own observations FIRST for every species, whatever their licence (his
   are CC BY or CC BY-NC, credited "Pierre Pericard"), in the Philippines or the IWP. Then:
-  - a species confirmed near Dauin (fish.json present.near: Pierre's own there, Research Grade by 2+ observers within
-    40 km, or the IMR list): photos from anywhere in the Philippines and the IWP, ordered by licence (CC0 / CC BY before NC), not by distance;
+  - a species confirmed near Dauin (fish.json present.near: Research Grade by 2+ observers within 40 km, or the
+    IMR list): photos from anywhere in the Philippines and the IWP, ordered by licence (CC0 / CC BY before NC), not by distance;
   - any other species: the Philippines first, by licence then nearest (within 40 km of Dauin, within REGION_KM = 250 km,
-    the rest of the country), and abroad only for a species confirmed in the Philippines (present.ph), only when the
+    the rest of the country), and abroad only for a species confirmed in the Philippines (present.ph, the presence rule of tools/presence.py), only when the
     Philippines are exhausted (every Philippine observation the search can see is taken and room is left; when the one
     page read is not all of them, later pages may still hold some, so nothing from abroad), by licence too.
 - Quality varied on purpose (Pierre: poor iNaturalist photos stand in for SVS video frames, on which EventMeasure
@@ -388,7 +390,7 @@ def run(args):
                        if f"https://www.inaturalist.org/observations/{o['id']}" not in known and o["id"] not in byid]
                 return [{**x, "tier": "world"} for x in out if x]
 
-            # Confirmed near Dauin (present.near: Pierre's own there, 2+ Research Grade observers within 40 km, or the IMR list): photos from anywhere, by licence (Pierre, 2026-11-03).
+            # Confirmed near Dauin (present.near: 2+ Research Grade observers within 40 km, or the IMR list): photos from anywhere, by licence (Pierre, 2026-11-03).
             taken = select(pools, room, more, n, world, anywhere=bool((s.get("present") or {}).get("near")), claimed=used)
             add = Counter(LOC[o["tier"]] for o in taken)
             plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": room, "add": dict(add)}

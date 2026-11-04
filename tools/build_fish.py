@@ -36,17 +36,16 @@ flagged in `check` for Pierre to check against EventMeasure (common-name slips t
 species that WoRMS treats as one stay two entries. The build prints all of these, the WoRMS / iNaturalist mismatches
 and a cross-check of the PDF sections against the teaching nodes.
 
-Presence (Pierre, AGENTS.md rule 11, and 2026-11-03): confirmed = a Research Grade iNaturalist observation, or one of
-Pierre's own observations (user ppericard) identified to the species even when Needs ID: he names a species only when
-very sure, otherwise he stops at the genus; his only, nobody else's (`presence()`). The same rule holds for the future
-fish photo pipeline: his species-level photos are usable as that species. present = {dauin: confirmed observations
-within 40 km of Dauin (9.19, 123.26), dauinNI: the other Needs ID observations there ("not confirmed near Dauin", never
-"never seen"), ph: confirmed in the Philippines (place 6873), own: Pierre's observations of it, dauinU: distinct
-observers of the Research Grade observations within 40 km, near: confirmed near Dauin (Pierre, 2026-11-03: one
-misidentified Research Grade observation must not open the gates): one of Pierre's own species-level observations
-within 40 km, Research Grade observations there by at least 2 distinct observers, or in the IMR reference PDF list (`near_dauin()`, reasons in nearBy; circle 3 needs it too); `dauin` alone
-says how many were seen, not that the species is confirmed}. --near recomputes dauinU and near on the existing fish.json
-only (the rest of the build and its counts unchanged). A species not confirmed
+Presence (AGENTS.md rule 6g, Pierre 2026-11-04: "the same scientific rigour for everyone, me included"; the rule is
+defined once in tools/presence.py): confirmed near Dauin (present.near, reasons in nearBy) = Research Grade observations
+within 40 km of Dauin (9.19, 123.26) by at least 2 distinct observers, or the IMR reference PDF list; confirmed in the
+Philippines (present.ph, reasons in phBy) = Research Grade observations there (place 6873) by at least 3 distinct
+observers, or at least 1 there and FishBase's Philippine checklist (Table 1) lists it, or confirmed near Dauin. Pierre's
+own observations (user ppericard), two halves: photos identified to the species stay usable as that species even when
+Needs ID (rule 6a: he names a species only when nearly sure); presence: he is one observer like anyone, Research Grade
+only, and his observations no longer confirm anything on their own (until 2026-11-04 they did). present = {dauin, dauinNI,
+dauinU, near, nearBy, rg, phU, chk, ph, phBy, own} (presence()); circle 3 also needs near. --near recomputes dauinU and
+near on the existing fish.json only (the rest of the build and its counts unchanged). A species not confirmed
 in the Philippines leaves the game but stays in fish.json with `out` (a future Fish ID Key for EventMeasure must hold
 every PDF species, unfiltered), as does a PDF species whose family is in no circle.
 
@@ -87,10 +86,13 @@ INAT = "https://api.inaturalist.org/v1/"
 PAUSE = {WORMS: 0.3, INAT: 1.0}
 DAUIN = "lat=9.19&lng=123.26&radius=40"
 PH = "place_id=6873"
-PIERRE = "ppericard"  # his species-level observations count as confirmed, even Needs ID (Pierre, 2026-11-03)
+PIERRE = "ppericard"  # his observations: usable photos (rule 6a); one observer like anyone for presence (2026-11-04)
 CHORDATA = 2  # iNaturalist
 INAT_RANKS = {"class", "subclass", "infraclass", "superorder", "order", "suborder", "infraorder", "superfamily", "family",
               "subfamily", "supertribe", "tribe", "subtribe", "genus", "subgenus", "species"}
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from presence import NEAR_OBSERVERS, PH_OBSERVERS, listed, near_dauin, ph_confirmed  # noqa: E402  (the rule, once)
+
 LOW = {"Subspecies", "Variety", "Forma", "Natio", "Mutatio"}  # synonyms below the species: not kept
 
 
@@ -220,38 +222,33 @@ def inat_count(tid, where, grade="research"):
     return (NET.get(f"{INAT}observations?taxon_id={tid}{g}&{where}&per_page=0") or {}).get("total_results", 0)
 
 
-def presence(tid, imr=False):
-    """{dauin, dauinNI, ph, own} for an iNaturalist species taxon. Confirmed = Research Grade, or one of Pierre's own
-    observations identified to the species even when Needs ID (Pierre, 2026-11-03: he names a species only when he is
-    very sure, otherwise he stops at the genus; his only, nobody else's). Querying by the species taxon returns
-    observations identified to it or below, so a genus-level observation never counts. dauin = confirmed observations
-    within 40 km of Dauin; dauinNI = the other Needs ID observations there ("not confirmed near Dauin", never "never
-    seen"); ph = confirmed in the Philippines; own = all of Pierre's observations of it, anywhere (usable photos)."""
+def presence(tid, imr=False, names=()):
+    """present for an iNaturalist species taxon, by the presence rule (tools/presence.py, AGENTS.md rule 6g; Pierre,
+    2026-11-04: "the same scientific rigour for everyone, me included"). Querying by the species taxon returns
+    observations identified to it or below, so a genus-level observation never counts. dauin = Research Grade observations
+    within 40 km of Dauin; dauinNI = the Needs ID observations there ("not confirmed near Dauin", never "never seen");
+    dauinU = their distinct Research Grade observers; near / nearBy = confirmed near Dauin and why (near_dauin); rg =
+    Research Grade observations in the Philippines; phU = their distinct observers (asked only when rg >= PH_OBSERVERS
+    and nothing else confirms it); chk = the checklist (FishBase Table 1) lists it for the Philippines (`names`: the PDF
+    name, the WoRMS name, iNaturalist's, the synonyms); ph / phBy = confirmed in the Philippines and why (ph_confirmed);
+    own = all of Pierre's observations of it, anywhere: usable photos (rule 6a), no longer a confirmation by itself."""
     own = inat_count(tid, f"user_login={PIERRE}", "")
-    mine_d = inat_count(tid, f"user_login={PIERRE}&{DAUIN}", "needs_id") if own else 0
-    mine_p = inat_count(tid, f"user_login={PIERRE}&{PH}", "needs_id") if own else 0
     rg_p = inat_count(tid, PH)
     rg_d = inat_count(tid, DAUIN) if rg_p else 0
     ni_d = inat_count(tid, DAUIN, "needs_id")
-    p = {"dauin": rg_d + mine_d, "dauinNI": ni_d - mine_d, "ph": bool(rg_p or mine_p)}
+    p = {"dauin": rg_d, "dauinNI": ni_d}
     if own:
         p["own"] = own
     p.update(near_fields(tid, p, imr))
-    return p, (not rg_p and mine_p), (not rg_d and mine_d)
+    chk = listed("fish", names)
+    u = observers(tid, PH)[0] if rg_p >= PH_OBSERVERS and not (chk or p["near"]) else None
+    why = ph_confirmed(rg_p, u, chk, p["near"])
+    p.update({"rg": rg_p, "chk": chk, "ph": bool(why), "phBy": why})
+    if u is not None:
+        p["phU"] = u
+    return p
 
 
-def near_dauin(own_d, observers, imr=False):
-    """Why a species counts as confirmed near Dauin: a list of reasons, empty when it does not (Pierre, 2026-11-03: one
-    misidentified Research Grade observation must not open the gates). "own": one of Pierre's own species-level
-    observations within 40 km; "observers": Research Grade observations there by at least NEAR_OBSERVERS distinct
-    observers (two independent people, each identification agreed on by the community); "imr": the species is in the
-    IMR reference list, the EventMeasure PDF "Common Filipino Fishes" (src pdf: Pierre, 2026-11-03, it is what IMR uses
-    as its reference for the fish seen at Dauin, despite its name). Not used: the identifiers' count (a well-identified
-    rare fish often has two identifiers only) and the date (recency says nothing about the identification)."""
-    return [k for k, ok in (("own", bool(own_d)), ("observers", observers >= NEAR_OBSERVERS), ("imr", bool(imr))) if ok]
-
-
-NEAR_OBSERVERS = 2
 # Circle 3 is limited to species confirmed near Dauin (Pierre, 2026-11-03), by the same rule.
 C3_OUT = "circle 3: not confirmed near Dauin"
 
@@ -264,9 +261,8 @@ def observers(tid, where):
 
 def near_fields(tid, p, imr=False):
     """present.dauinU (distinct Research Grade observers within 40 km of Dauin), near (near_dauin) and nearBy (why)."""
-    own_d = inat_count(tid, f"user_login={PIERRE}&{DAUIN}", "research,needs_id") if p.get("own") else 0
     n, _ = observers(tid, DAUIN) if p.get("dauin") else (0, [])
-    why = near_dauin(own_d, n, imr)
+    why = near_dauin(n, imr)
     return {"dauinU": n, "near": bool(why), "nearBy": why}
 
 
@@ -619,20 +615,21 @@ def build(src, report):
             report["mismatch"].append(f"{s['name']} (WoRMS {node['name']}): iNaturalist {iname}")
         x["inat"] = tid
         if tid:
-            x["present"], ph_mine, d_mine = presence(tid, bool(s.get("pdf")))
+            r = tree[x["aid"]]
+            x["present"] = presence(tid, bool(s.get("pdf")), [s["name"], x["now"], r["name"], iname, *syn.get(x["aid"], [])])
         else:
             imr = ["imr"] if s.get("pdf") else []
-            x["present"], ph_mine, d_mine = {"dauin": 0, "dauinNI": 0, "ph": False, "dauinU": 0, "near": bool(imr), "nearBy": imr}, False, False
+            # Not on iNaturalist: only the IMR list can confirm it (near Dauin, so in the Philippines).
+            x["present"] = {"dauin": 0, "dauinNI": 0, "dauinU": 0, "near": bool(imr), "nearBy": imr, "rg": 0, "chk": False,
+                            "ph": bool(imr), "phBy": ["near"] if imr else []}
         # Circle 3 only for species confirmed near Dauin (Pierre, 2026-11-03), by the same rule (near_dauin).
         c3 = s.get("src") in ("dauin", "wink") or (x["t"] or {}).get("circle") == 3
         if c3 and not x["out"] and x["present"]["ph"] and not x["present"]["near"]:
             x["out"].append(C3_OUT)
-        if ph_mine:
-            report["pierre"].append(f"{s['id']} {s['name']}: confirmed in the Philippines by Pierre's own observations only")
-        elif d_mine:
-            report["pierre"].append(f"{s['id']} {s['name']}: confirmed near Dauin by Pierre's own observations only")
+        if x["present"].get("own") and not x["present"]["ph"]:
+            report["pierre"].append(f"{s['id']} {s['name']}: Pierre has {x['present']['own']} observation(s), not confirmed")
         if not x["present"]["ph"]:  # kept for the Fish ID Key (every PDF species), out of the game
-            x["out"].append("not confirmed in the Philippines on iNaturalist" if tid else "not on iNaturalist")
+            x["out"].append("not confirmed in the Philippines")
             report["drop"].append({"name": s["name"], "why": x["out"][-1]})
         if x["out"]:
             report["out"].append(f"{s['id']} {s['name']}: {'; '.join(x['out'])}")
@@ -774,7 +771,7 @@ def show(o, rep):
                      ("lumped", "PDF species WoRMS treats as one (both kept)"),
                      ("pdf", "PDF section vs teaching node"), ("unplaced", "Dauin species in no teaching node"),
                      ("empty", "teaching nodes left out: no species in the game"),
-                     ("pierre", "species confirmed by Pierre's own observations only"),
+                     ("pierre", "species Pierre observed, not confirmed (his observations confirm nothing alone)"),
                      ("out", "species out of the game (kept for the Fish ID Key)"),
                      ("mismatch", "WoRMS / iNaturalist name mismatches"), ("noinat", "reference nodes not on iNaturalist")):
         print(f"{title}: {len(rep[k])}")
