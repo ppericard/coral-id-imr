@@ -3347,7 +3347,8 @@ const aIdx = () => MEMO.aidx || (MEMO.aidx = autoIdx(DRAFT)),
     const x = aOf(f);
     return x && !x.d.check && !x.d.undone ? x.d : null;
   },
-  auChanged = () => !same(DRAFT.auto || {}, SAVED.auto || {}) || !same(DRAFT.retest || {}, SAVED.retest || {});
+  auChanged = () => !same(DRAFT.auto || {}, SAVED.auto || {}) || !same(DRAFT.retest || {}, SAVED.retest || {}),
+  fiChanged = () => !same(fishOut(DRAFT.fish), fishOut(SAVED.fish));
 const localDay = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -3434,6 +3435,31 @@ function autoRun() {
   saveDraft();
   return R;
 }
+// The fish auto-sort (admin plan PR 4; autosort.js fishRun): the same path for the fish candidates (fish-cand.json,
+// judged in suggest.json "fish" on the judging/FISH.md rubric), into DRAFT.fish, one Undo step, sent by Publish. Runs
+// only when the pass has judged fish candidates, so the 2.6 MB candidate list is fetched only then. Never writes "out"
+// (Pierre's Not this) and never touches a photo he decided. Its keep agreement (fishCompare, autoState) turns it off.
+let FISHC = null; // {cand, species} once loaded
+async function fishAutoRun() {
+  if (!TOKEN || !DRAFT || !Object.keys((SUG && SUG.fish) || {}).length) return null;
+  if (!FISHC) {
+    const get = u =>
+      fetch(u, {cache: 'no-cache'})
+        .then(r => (r.ok ? r.json() : {}))
+        .catch(() => ({}));
+    const [C, F] = await Promise.all([get('fish-cand.json'), get('fish.json')]);
+    FISHC = {cand: C.cand || {}, species: Object.fromEntries((F.species || []).map(x => [x.id, x]))};
+  }
+  const keepOn = autoState(fishCompare(DRAFT.fish)).keep.on,
+    {F, R} = fishRun(FISHC.cand, SUG.fish, FISHC.species, DRAFT.fish, localDay(), keepOn);
+  if (F === DRAFT.fish) return R;
+  DRAFT.fish = F;
+  saveDraft();
+  render();
+  return R;
+}
+const fishToast = R =>
+  `Fish auto-sort: ${R.add} proposed in, ${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
 const autoToast = R =>
   `Auto-sort: ${R.add} added, ${R.reject + R.exclude} set aside${R.check ? `, ${R.check} to check in Candidates` : ''}${R.full ? ` (${R.full} wait in full cells)` : ''}. Publish sends them.`;
 // One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value Pierre changed since stays his),
@@ -4219,6 +4245,7 @@ const output = () => {
       if (Object.keys(DRAFT.auto[d] || {}).length) auto[d] = sorted(DRAFT.auto[d]);
     });
   const retest = sorted(DRAFT.retest);
+  const fish = fishOut(DRAFT.fish);
   return {
     v: 1,
     ...(bookOn(DRAFT) ? {} : {book: false}),
@@ -4235,9 +4262,37 @@ const output = () => {
     ...(Object.keys(crop).length ? {crop} : {}),
     ...(Object.keys(tile).length ? {tile} : {}),
     ...(Object.keys(auto).length ? {auto} : {}),
-    ...(Object.keys(retest).length ? {retest} : {})
+    ...(Object.keys(retest).length ? {retest} : {}),
+    ...(Object.keys(fish).length ? {fish} : {})
   };
 };
+// curation.json "fish" as published (autosort.js "Fish curation"): each map sorted by key, empty maps left out, the
+// auto log one sorted map per day, as the coral keys.
+function fishOut(F) {
+  const out = {};
+  Object.keys(F || {})
+    .sort()
+    .forEach(k => {
+      const m = F[k];
+      if (!m || typeof m !== 'object' || Array.isArray(m)) return;
+      const o = {};
+      Object.keys(m)
+        .sort()
+        .forEach(x => {
+          const v = m[x];
+          if (k === 'auto') {
+            if (v && Object.keys(v).length)
+              o[x] = Object.fromEntries(
+                Object.keys(v)
+                  .sort()
+                  .map(f => [f, v[f]])
+              );
+          } else if (v != null) o[x] = v;
+        });
+      if (Object.keys(o).length) out[k] = o;
+    });
+  return out;
+}
 // Who publishes, shown in the commit message (Pierre, 2026-11-01, admin review): the token's GitHub login, else the
 // name synced in this browser. Looked up once per page; a failure only leaves the name out.
 let AUTHOR;
@@ -4277,7 +4332,15 @@ function pubSummary() {
     [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
     // Decisions, not the times of Pierre's answers (@t, autoWhen): his answer is counted under its own kind above.
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), 'auto-sort decision'],
-    [nDiff(DRAFT.retest, SAVED.retest), 'retest']
+    [nDiff(DRAFT.retest, SAVED.retest), 'retest'],
+    // Fish (curation.json "fish"): the photos in play, set aside or marked Not this, and the fish auto-sort's decisions.
+    [nDiff((DRAFT.fish || {}).add, (SAVED.fish || {}).add), 'fish photo in play'],
+    [
+      nDiff((DRAFT.fish || {}).seen, (SAVED.fish || {}).seen) + nDiff((DRAFT.fish || {}).exclude, (SAVED.fish || {}).exclude),
+      'fish photo set aside'
+    ],
+    [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
+    [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision']
   ]
     .filter(([c]) => c)
     .map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
@@ -4314,8 +4377,9 @@ async function save() {
     cr = crChanged(),
     sn = snChanged(),
     tl = tlChanged(),
-    au = auChanged();
-  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || au) || !TOKEN) return;
+    au = auChanged(),
+    fi = fiChanged();
+  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || au || fi) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -4334,7 +4398,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -4565,6 +4629,9 @@ async function start() {
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const ar = TOKEN && autoRun();
   if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
+  fishAutoRun().then(R => {
+    if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+  });
   $('tools').hidden = false;
   $('save').onclick = save;
   $('download').onclick = download;
