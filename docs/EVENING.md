@@ -76,12 +76,6 @@ them first thing, then clear them.
 - **Fish open to a group (#540, open, sheet v48).** Q: the group lives on the Fish side of Players (Beta column, Add /
   Remove, Add all)? Q: "Add all" adds existing players only, later sign-ups are added by hand? Q: the wording.
   Recommendation: keep as built.
-- **Five circle-1 fish species have no candidate photo** (*Chromis agilis*, *Halichoeres chlorocephalus*,
-  *H. marginatus*, *Siganus margaritiferus*; *Pomacentrus armillatus* is lumped with *P. opisthostigma* by iNaturalist
-  and WoRMS). Recommendation: no rule change; your own photos of them would be fetched first if you have any.
-- ***Plectropomus laevis*:** its saddled adult looks like the juvenile; those candidates are marked `unsure` for you to
-  settle in the admin.
-
 ## Where the day stopped
 
 Overwritten by the end-of-day protocol (16:30-17:30 Manila): date; done today; unfinished work (branch, PR, state, next
@@ -138,7 +132,8 @@ the night session's scratchpad, which a new session cannot see, so re-take them 
 
 | PR | What | Note |
 |---|---|---|
-| #524 | Cards: no broken-image flash when an R2 photo fails | Fix; the night merge was refused as a production deploy. Merge first. |
+| #551 | Admin: read curation.json from its blob past 1 MB | **Incident**: the admin stopped loading at about 19:42 ("Unexpected end of JSON input"); merge first. |
+| #524 | Cards: no broken-image flash when an R2 photo fails | Fix; the night merge was refused as a production deploy. Merge right after #551. |
 | #531 | sw.js: no reply waits on Cache Storage more than 3 s | The net.smoke step-9 hang came back after #513 (Cache Storage stalls; cause not established). Merge after #524. |
 | #520 | Smokes in reduced motion by default | Red until #524 merges; then merge main and re-request Codex. |
 | #535 | Admin page roles, the rest | Questions above. |
