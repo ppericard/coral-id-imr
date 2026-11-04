@@ -536,12 +536,14 @@ function lockScreen(msg) {
         if ($('pw').value !== $('pw2').value) throw new Error('The two passwords differ.');
         TOKEN = $('tok').value.trim();
       }
+      early();
       await checkToken();
       if (!has) await lockToken($('pw').value, TOKEN);
       sess.set(TOKEN);
       start();
     } catch (x) {
       TOKEN = null;
+      sheetAgain(...EARLY_ALL);
       lockScreen(x.message);
     }
   };
@@ -987,7 +989,15 @@ function tile(n, p, v, st) {
 }
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
+// What status() reads from the draft and the published file alone (what changed, the suggestions, the cells over the cap)
+// is computed once per draft (MEMO, emptied by memoFresh when the draft changes) and published file (Pierre, 2026-11-04:
+// every page drew it again, 0.1-0.3 s a time on a phone).
 function status() {
+  memoFresh();
+  const m = MEMO['status|'] && MEMO['status|'].saved === SAVED ? MEMO['status|'] : (MEMO['status|'] = {saved: SAVED, ...status0()});
+  statusDraw(m);
+}
+function status0() {
   const ch = changed(),
     q = qChanged(),
     x = xChanged(),
@@ -1007,14 +1017,17 @@ function status() {
       auChanged() ? 'auto-sort' : '',
       fiChanged() ? 'fish curation' : ''
     ].filter(Boolean);
+  return {parts, sug: sugCount(), over: overCap()};
+}
+function statusDraw({parts, sug, over}) {
   const bs = $('booksw');
   if (bs) {
     bs.setAttribute('aria-pressed', String(bookOn(DRAFT)));
     bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`;
   }
-  const tn = Object.keys(DRAFT.flag || {}).length + sugCount() + repsOpen().length,
+  const tn = Object.keys(DRAFT.flag || {}).length + sug + repsOpen().length,
     xn = Object.keys(DRAFT.exclude || {}).length;
-  OVER = overCap();
+  OVER = over;
   const t = draftAt ? ` (saved ${dateText(draftAt, 'hm')})` : '';
   // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
   const sv = $('save');
@@ -2383,17 +2396,21 @@ function loadReports(force) {
     REPS = {err: 'Needs the GitHub token'};
     return Promise.resolve(REPS);
   }
-  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readReports: 1, token: TOKEN})})
-    .then(r => r.json())
-    .then(j => {
-      repsAt = Date.now();
-      REPS =
-        j && j.ok && j.rows
-          ? {rows: j.rows}
-          : {err: !j || !j.v || j.v < 8 ? 'Sheet script v8 not deployed' : j.error === 'token' ? 'Token refused' : 'Not available'};
-      return REPS;
-    })
-    .catch(() => (REPS = {err: 'Offline'}));
+  if (force) sheetDrop('reports');
+  return sheetRead('reports', fresh =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readReports: 1, token: TOKEN})})
+      .then(r => r.json())
+      .then(j => {
+        if (!fresh()) return REPS;
+        repsAt = Date.now();
+        REPS =
+          j && j.ok && j.rows
+            ? {rows: j.rows}
+            : {err: !j || !j.v || j.v < 8 ? 'Sheet script v8 not deployed' : j.error === 'token' ? 'Token refused' : 'Not available'};
+        return REPS;
+      })
+      .catch(() => (fresh() ? (REPS = {err: 'Offline'}) : REPS))
+  );
 }
 const repsOpen = () => (REPS && REPS.rows ? REPS.rows.filter(r => !(DRAFT.seen || {})['rep:' + r[0]]) : []);
 // Errors & feedback (sheet v19, Pierre 2026-11-02: most RAs will not report problems): what the players' devices report
@@ -2404,23 +2421,27 @@ let EVS = null,
 function loadEvents(force) {
   if (!force && EVS && Date.now() - evsAt < 300000) return Promise.resolve(EVS);
   if (!TOKEN) return Promise.resolve((EVS = {err: 'Needs the GitHub token'}));
-  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, token: TOKEN})})
-    .then(r => r.json())
-    .then(j => {
-      evsAt = Date.now();
-      return (EVS =
-        j && j.ok && j.rows
-          ? {rows: j.rows}
-          : {
-              err:
-                !j || !j.v || j.v < 19
-                  ? 'Sheet script v19 not running yet (it updates itself within 15 minutes)'
-                  : j.error === 'token'
-                    ? 'Token refused'
-                    : 'Not available'
-            });
-    })
-    .catch(() => (EVS = {err: 'Offline'}));
+  if (force) sheetDrop('events');
+  return sheetRead('events', fresh =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, token: TOKEN})})
+      .then(r => r.json())
+      .then(j => {
+        if (!fresh()) return EVS;
+        evsAt = Date.now();
+        return (EVS =
+          j && j.ok && j.rows
+            ? {rows: j.rows}
+            : {
+                err:
+                  !j || !j.v || j.v < 19
+                    ? 'Sheet script v19 not running yet (it updates itself within 15 minutes)'
+                    : j.error === 'token'
+                      ? 'Token refused'
+                      : 'Not available'
+              });
+      })
+      .catch(() => (fresh() ? (EVS = {err: 'Offline'}) : EVS))
+  );
 }
 // Pages opened (sheet v30 'pages', app sync.js pagesSend, core.js PAGES): one summary a visit (or a part of one: the app
 // sends what it has each time it is left, same visit id), read from the sheet's Pages tab (readEvents with pages: 1,
@@ -2428,8 +2449,7 @@ function loadEvents(force) {
 // code), vi: visit, na: answers so far, r: {page: [times, seconds]}, g: {genus: [times, seconds, from, asked]}}.
 // Before sheet v30 (AGENTS.md 7a) nothing is shown but the version line.
 let PGS = null,
-  pgsAt = 0,
-  pgsP = null; // the read on its way
+  pgsAt = 0;
 // Kept 5 minutes, an error 30 s (offline, a script not updated yet). pagesFresh(): the cached read, or a new one whose
 // arrival redraws the page once if it is still the one that asked (Codex review #423: the first read was kept for good,
 // an error too). A new read is a new object, a cached one the same: no redraw, so no render / read loop.
@@ -2445,28 +2465,31 @@ function loadPages(force) {
     pgsAt = Date.now();
     return Promise.resolve((PGS = {err: 'Needs the GitHub token'}));
   }
-  if (pgsP) return pgsP;
-  return (pgsP = fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, pages: 1, token: TOKEN})})
-    .then(r => r.json())
-    .then(j => {
-      pgsAt = Date.now();
-      return (PGS =
-        j && j.ok && j.rows && Number(j.v) >= PAGES.SHEET
-          ? {rows: pagesRows(j.rows)}
-          : {
-              err:
-                !j || !(Number(j.v) >= PAGES.SHEET)
-                  ? `Sheet script v${PAGES.SHEET} not running yet (it updates itself within 15 minutes)`
-                  : j.error === 'token'
-                    ? 'Token refused'
-                    : 'Not available'
-            });
-    })
-    .catch(() => {
-      pgsAt = Date.now();
-      return (PGS = {err: 'Offline'});
-    })
-    .finally(() => (pgsP = null)));
+  if (force) sheetDrop('pages');
+  return sheetRead('pages', fresh =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, pages: 1, token: TOKEN})})
+      .then(r => r.json())
+      .then(j => {
+        if (!fresh()) return PGS;
+        pgsAt = Date.now();
+        return (PGS =
+          j && j.ok && j.rows && Number(j.v) >= PAGES.SHEET
+            ? {rows: pagesRows(j.rows)}
+            : {
+                err:
+                  !j || !(Number(j.v) >= PAGES.SHEET)
+                    ? `Sheet script v${PAGES.SHEET} not running yet (it updates itself within 15 minutes)`
+                    : j.error === 'token'
+                      ? 'Token refused'
+                      : 'Not available'
+              });
+      })
+      .catch(() => {
+        if (!fresh()) return PGS;
+        pgsAt = Date.now();
+        return (PGS = {err: 'Offline'});
+      })
+  );
 }
 const pagesRows = rows =>
   rows
@@ -4851,22 +4874,29 @@ function signOut() {
   TOKEN = null;
   location.reload();
 }
+// The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
+// names exist then). A token refused drops them all, so nothing read with it is kept.
+const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'reports'];
+const early = () => queueMicrotask(() => TOKEN && sheetEarly(hashNow() || '~users'));
 (async () => {
   if (DEMO) {
     TOKEN = 'demo';
     const pv = $('preview');
     if (pv) pv.hidden = true; // the site's ?draft preview reads the real draft, not the demo's
+    early();
     return start();
   }
   if (/[?&]readonly\b/.test(location.search)) return start();
   const t = sess.get();
   if (t) {
     TOKEN = t;
+    early();
     try {
       await checkToken();
       return start();
     } catch (x) {
       TOKEN = null;
+      sheetAgain(...EARLY_ALL);
       if (/credentials|cannot write|401/i.test(x.message)) sess.set(null);
       return lockScreen(x.message);
     }
@@ -5564,6 +5594,74 @@ const ofAns = (k, fn) => {
   if (ANS_MEMO.a !== ANS) ANS_MEMO = {a: ANS, m: {}};
   return k in ANS_MEMO.m ? ANS_MEMO.m[k] : (ANS_MEMO.m[k] = fn());
 };
+// Reads of the sync sheet, one per kind on its way at a time (Pierre, 2026-11-04: admin pages load slowly; To do read the
+// whole answer log three times at once, each render before the first reply starting another): sheetRead(k, go) gives the
+// read k on its way, or starts it with go(fresh), whose reply is used only while fresh() (the read was not dropped since).
+// sheetAgain(...kinds) is ↻ and the account actions: what they name is forgotten and read again, a read of it still on
+// its way dropped (its late reply ignored). Kinds: ans (the answer log), stats (photo ratings, levels), users (the player
+// list), pages (pages opened), events, reports.
+const SHEET_READS = {},
+  SHEET_GEN = {};
+function sheetRead(k, go) {
+  if (SHEET_READS[k]) return SHEET_READS[k];
+  const g = (SHEET_GEN[k] = (SHEET_GEN[k] || 0) + 1),
+    p = Promise.resolve()
+      .then(() => go(() => SHEET_GEN[k] === g))
+      .finally(() => {
+        if (SHEET_READS[k] === p) delete SHEET_READS[k];
+      });
+  return (SHEET_READS[k] = p);
+}
+// sheetDrop(k): a read of k on its way is dropped (force: a new read starts, what is shown stays until it is in).
+function sheetDrop(k) {
+  delete SHEET_READS[k];
+  SHEET_GEN[k] = (SHEET_GEN[k] || 0) + 1;
+}
+function sheetAgain(...kinds) {
+  kinds.forEach(k => {
+    sheetDrop(k);
+    if (k === 'ans') ANS = null;
+    else if (k === 'stats') STATS = null;
+    else if (k === 'users') USERS = null;
+    else if (k === 'pages') PGS = null;
+    else if (k === 'events') EVS = null;
+    else if (k === 'reports') REPS = null;
+  });
+}
+// The reads the landing page needs leave as soon as the token is known, in parallel with the token check and start()'s
+// data files, which they do not need (Pierre, 2026-11-04: they waited for both, about 1.5 s on a phone); the page then
+// finds them on their way (sheetRead). Called once the script has run (its let names exist).
+function sheetEarly(h) {
+  const need =
+    h === '~users'
+      ? ['users', 'ans']
+      : /^~(journey|anon)\//.test(h)
+        ? ['users', 'ans', 'pages']
+        : h === '~stats'
+          ? ['users', 'ans']
+          : h === '~health'
+            ? ['ans', 'pages']
+            : h === '~todo'
+              ? ['ans', 'events', 'reports']
+              : h === '~triage'
+                ? ['reports']
+                : h === '~events'
+                  ? ['events']
+                  : /^~(stats-|cov$|diff$)/.test(h)
+                    ? ['ans']
+                    : h === '~pstats'
+                      ? ['ratings']
+                      : [];
+  const go = {
+    ans: () => loadStats(),
+    ratings: () => loadStats(true),
+    users: loadUsers,
+    pages: loadPages,
+    events: loadEvents,
+    reports: loadReports
+  };
+  need.forEach(k => Promise.resolve(go[k]()).catch(() => {}));
+}
 // ratingsOnly (Photo stats › Overview): the photo ratings alone (?stats=1), not the whole answer log.
 function loadStats(ratingsOnly) {
   // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
@@ -5592,27 +5690,40 @@ function loadStats(ratingsOnly) {
       .catch(() => ({}));
   const who = me && sy.pin ? `&name=${encodeURIComponent(me)}&pin=${encodeURIComponent(sy.pin)}` : '';
   const old = (j, q) => (j && j.error === 'input' ? get(q) : j);
+  // The answer log and the photo ratings are two reads, each reused while on its way (sheetRead): a page drawn again
+  // before they are in, or another page asking for them, starts no second read.
+  const gs = STATS
+    ? null
+    : sheetRead('stats', fresh =>
+        (TOKEN ? post({readStats: 1}).then(j => old(j, '?stats=1')) : get('?stats=1')).then(s => {
+          if (!fresh() || !s) return;
+          STATS = s.ok ? s.photos || {} : {};
+          RAS = s.ok ? s.ras || {} : {};
+          // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
+          SMEM = memOf(s.ok && s.mem);
+          SCONF = (s.ok && s.conf) || {};
+        })
+      );
   const ga = ratingsOnly
-      ? null
-      : TOKEN
-        ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
-        : Promise.resolve({ok: false, error: 'token'}),
-    gs = STATS ? null : TOKEN ? post({readStats: 1}).then(j => old(j, '?stats=1')) : get('?stats=1');
-  return Promise.all([ga, gs, digest]).then(([a, s]) => {
-    if (!ratingsOnly) {
-      ELO_NOME = null;
-      if (a && a.me) MEID = a.me;
-      ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
-      ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
-    }
-    if (s) {
-      STATS = s.ok ? s.photos || {} : {};
-      RAS = s.ok ? s.ras || {} : {};
-      // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
-      SMEM = memOf(s.ok && s.mem);
-      SCONF = (s.ok && s.conf) || {};
-    }
-  });
+    ? null
+    : sheetRead('ans', fresh =>
+        Promise.all([
+          TOKEN
+            ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
+            : {ok: false, error: 'token'},
+          digest,
+          // The answer log is published with the photo ratings, never before them (Codex review #488): the pages that
+          // read it (Health, To do's Health line) take the ratings as read with it.
+          gs
+        ]).then(([a]) => {
+          if (!fresh()) return;
+          ELO_NOME = null;
+          if (a && a.me) MEID = a.me;
+          ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+          ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
+        })
+      );
+  return Promise.all([ga, gs, digest]).then(() => {});
 }
 // Your accounts (Pierre, 2026-11-03: his old account, renamed Pierre-test, and the new one): the one this browser is signed
 // in with (MEID) and the others marked "This is also me" in Players > Manage (kept in this browser, ME_KEY). Every
@@ -5709,9 +5820,7 @@ function bindStats() {
   const rl = $v.querySelector('[data-sload]');
   if (rl)
     rl.onclick = () => {
-      ANS = null;
-      USERS = null;
-      PGS = null; // the pages opened too (Health, Journey)
+      sheetAgain('ans', 'users', 'pages'); // the pages opened too (Health, Journey)
       render();
     };
 }
@@ -5730,24 +5839,28 @@ function loadUsers(force) {
     USERS = {err: 'Needs the GitHub token'};
     return Promise.resolve(USERS);
   }
-  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({users: 1, token: TOKEN})})
-    .then(r => r.json())
-    .then(j => {
-      usersAt = Date.now();
-      USERS =
-        j && j.ok && j.users
-          ? j
-          : {
-              err:
-                !j || !j.v || j.v < 11
-                  ? `Sheet script v11 not deployed (live: v${esc((j && j.v) || '?')})`
-                  : j.error === 'token'
-                    ? 'Token refused'
-                    : 'Not available'
-            };
-      return USERS;
-    })
-    .catch(() => (USERS = {err: 'Offline'}));
+  if (force) sheetDrop('users');
+  return sheetRead('users', fresh =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({users: 1, token: TOKEN})})
+      .then(r => r.json())
+      .then(j => {
+        if (!fresh()) return USERS;
+        usersAt = Date.now();
+        USERS =
+          j && j.ok && j.users
+            ? j
+            : {
+                err:
+                  !j || !j.v || j.v < 11
+                    ? `Sheet script v11 not deployed (live: v${esc((j && j.v) || '?')})`
+                    : j.error === 'token'
+                      ? 'Token refused'
+                      : 'Not available'
+              };
+        return USERS;
+      })
+      .catch(() => (fresh() ? (USERS = {err: 'Offline'}) : USERS))
+  );
 }
 // A player's saved data (userData) is read with the new key names whichever app saved it (core.js keysIn, rename to
 // IMR Reef ID 2026-11-03); a merged record goes back with the old names too (withLegacy), as the app sends it.
@@ -6077,9 +6190,7 @@ function bindUsers() {
   const rl = $v.querySelector('[data-uload]');
   if (rl)
     rl.onclick = () => {
-      USERS = null;
-      ANS = null;
-      STATS = null; // levels (ras) too, not only the counts
+      sheetAgain('users', 'ans', 'stats'); // levels (ras) too, not only the counts
       savedClear(); // the players' saved progress (Progress, Learned, the journeys' cards) too
       render();
     };
@@ -6093,9 +6204,7 @@ function bindUsers() {
   const done = (msg, j) => {
     if (j && j.ok) {
       toast(msg);
-      USERS = null;
-      ANS = null; // answers moved to another name or deleted: the levels and counts change
-      STATS = null;
+      sheetAgain('users', 'ans', 'stats'); // answers moved to another name or deleted: the levels and counts change
       savedClear(); // progress merged, renamed or deleted
       uOpen = null;
       render();
@@ -6232,6 +6341,8 @@ function renderStats() {
     Promise.all([ANS ? null : loadStats(), named ? loadUsers() : null]).then(() => {
       if (cur.startsWith('~stats') || cur === '~health') render();
     });
+    // Health's pages opened leave with the answer log, not after it.
+    if (cur === '~health' && pagesStale()) loadPages().catch(() => {});
     return;
   }
   return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-conf' ? statsConf() : cur === '~health' ? statsHealth() : statsPlayers();
@@ -6702,8 +6813,16 @@ const healthMedian = a => {
 };
 // To do › All: one red line at the top when Health finds something wrong (Pierre, 2026-11-03): photos everyone misses,
 // genera players are stuck on. Nothing when all is well, or until the answers are loaded.
+// Computed once per answer log, photo ratings, draft and "Without me" choice (MEMO, emptied when the draft changes): To do
+// draws itself again as its reads come in, and each draw went over the whole log (Pierre, 2026-11-04: admin speed).
 function healthLine() {
   if (!ANS || ANS.old) return '';
+  const k = 'hline|' + SF.elo + '|' + [...myIds()].sort().join(' '),
+    m = MEMO[k];
+  if (m && m.a === ANS && m.s === STATS) return m.v;
+  return (MEMO[k] = {a: ANS, s: STATS, v: healthLine0()}).v;
+}
+function healthLine0() {
   const noMe = SF.elo === 'others' && myIds().size,
     R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
     BY = Object.create(null);
