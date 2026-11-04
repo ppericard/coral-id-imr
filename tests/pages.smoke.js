@@ -3204,6 +3204,7 @@ async function onePath(b, base) {
     ['lab-type', null, '.tystage img', null],
     ['lab-zoom', '#zmgame', '.zlayout img', '#zmgame'],
     ['lab-elim', '#elimm', '#elimmyst img', '#elimm'],
+    ['lab-anatomy|drill', null, '#a2q img', '#a2next'],
     ['lab-anatomy|drill', '[data-t="arr"]', '#a2q img', '#a2next']
   ];
   const labOut = {};
@@ -3236,7 +3237,7 @@ async function onePath(b, base) {
       );
     }
     const out = seen.filter(n => !MET.includes(n));
-    if (!seen.length || out.length) labOut[h] = {photos: seen.length, out: out.slice(0, 3)};
+    if (!seen.length || out.length) labOut[h + (start ? ' ' + start : '')] = {photos: seen.length, out: out.slice(0, 3)};
   }
   if (Object.keys(labOut).length) fails.push(`one path, Tools games: ${JSON.stringify(labOut)}`);
   // A player with no genus unlocked yet: each game sends to the quiz instead of asking about a genus never met.
@@ -3265,7 +3266,7 @@ async function onePath(b, base) {
         .waitForFunction(() => /Meet a few in the quiz first/.test(document.getElementById('view').textContent), null, {timeout: 10000})
         .then(() => true)
         .catch(() => false);
-      if (!ok) none.push(h);
+      if (!ok) none.push(h + (start ? ' ' + start : ''));
       // The tool's own controls stay (Codex review #491: the Zoom ladder's note replaced its Explore switch).
       else if (start && !(await p0.$(start))) none.push(h + ' (its controls gone)');
     }

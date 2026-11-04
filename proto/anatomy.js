@@ -606,10 +606,15 @@
         let type = 'con',
           score = {ok: 0, n: 0},
           last = null;
-        const pool = CON.flatMap(c => c.shots.filter(s => s[2]).map(s => ({c, s})));
+        const shots = CON.flatMap(c => c.shots.filter(s => s[2]).map(s => ({c, s})));
         const ask = () => {
           const box = root.querySelector('#a2q');
           if (type === 'con') {
+            // Its photos too only of genera unlocked (lab.js labPlay; Codex review #491: each one names its genus after
+            // the answer).
+            const L = labPlay(),
+              pool = shots.filter(x => L.includes(x.s[1]));
+            if (!pool.length) return labNone(box);
             let q;
             do q = pick(pool);
             while (pool.length > 1 && q === last);
