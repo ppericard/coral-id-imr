@@ -71,7 +71,7 @@ jobs:
           - name: pages rest
             smoke: pages
             part: rest
-            what: Page smoke test, other half (Coral basics, credits, pages opened, tips, sign-in, the sheet's replay)
+            what: Page smoke test, other half (Coral basics, credits, pages opened, tips, the Duel tab relief card, sign-in, the sheet's replay)
           - name: draw
             smoke: draw
             what: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)

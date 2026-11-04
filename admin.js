@@ -2567,18 +2567,35 @@ function pulseResp(L) {
 }
 // "Did you know?" tips (quiz.js tipShow; tips.js TIPS): per tip, the devices it showed on, its showings and how each one
 // ended: Show me, Got it (or Escape), or the page left with it up; a tip left open when the app closed counts in none.
+// The Duel tab's relief card (quiz.js reliefShow, item duelhold) is logged the same way, its choices Compare them,
+// Mix in other genera and Keep drilling (or Escape), and back: the player came back to the duel from the comparison; a
+// column each, shown when some row has one.
+const TIPC = [
+  ['show', 'Show me'],
+  ['ok', 'Got it'],
+  ['cmp', 'Compare'],
+  ['mix', 'Mix in'],
+  ['keep', 'Keep drilling'],
+  ['back', 'Back to the duel']
+];
 function tipsView(L) {
   const T = {};
   L.forEach(r => {
-    const t = (T[String(r[5]).slice(4)] = T[String(r[5]).slice(4)] || {dev: new Set(), shown: 0, show: 0, ok: 0, none: 0});
+    const t = (T[String(r[5]).slice(4)] = T[String(r[5]).slice(4)] || {
+      dev: new Set(),
+      shown: 0,
+      none: 0,
+      ...Object.fromEntries(TIPC.map(([k]) => [k, 0]))
+    });
     t.dev.add(r[2]);
     if (r[4] in t && r[4] !== 'dev') t[r[4]]++;
   });
-  const K = Object.keys(T);
+  const K = Object.keys(T),
+    C = TIPC.filter(([k], i) => i < 2 || K.some(x => T[x][k]));
   return K.length
-    ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Tip</th><th>Devices</th><th>Shown</th><th>Show me</th><th>Got it</th><th>Left</th></tr></thead><tbody>${K.map(
+    ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Tip</th><th>Devices</th><th>Shown</th>${C.map(([, t]) => `<th>${t}</th>`).join('')}<th>Left</th></tr></thead><tbody>${K.map(
         k =>
-          `<tr><td>${esc(k)}</td><td class="n">${T[k].dev.size}</td><td class="n">${T[k].shown}</td><td class="n">${T[k].show}</td><td class="n">${T[k].ok}</td><td class="n">${T[k].none}</td></tr>`
+          `<tr><td>${esc(k)}</td><td class="n">${T[k].dev.size}</td><td class="n">${T[k].shown}</td>${C.map(([c]) => `<td class="n">${T[k][c]}</td>`).join('')}<td class="n">${T[k].none}</td></tr>`
       ).join('')}</tbody></table></div>`
     : '<p class="note">None yet.</p>';
 }
