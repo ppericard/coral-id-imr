@@ -281,10 +281,11 @@ test('Coral basics on the "lower" card: the start variables one band down, silen
   const o = M.startOf();
   assert.strictEqual(o.c, 'know', 'the answer given is never relabelled');
   assert.deepStrictEqual(
-    o.h.map(x => x[0]),
+    o.h.filter(x => x[3] !== 'ease').map(x => x[0]),
     ['know'],
     'nor added to the answers given'
   );
+  assert.deepStrictEqual(o.h[o.h.length - 1].slice(3), ['ease', 'know'], 'an ease event in the history, on the answer it eased');
   assert.strictEqual(o.ease[0], 'imr');
   assert.deepStrictEqual(M.startV(), startVars('imr'), "the IMR course's prior and open-all offer");
   // The replay (core.js startPriorAt) takes the band below from its time on.
@@ -444,6 +445,66 @@ test('synced: both histories of answers are merged, oldest first, whichever answ
     D.startOf().h.map(x => x[0]),
     ['imr', 'know']
   );
+});
+
+// Codex review #428 (P2): an ease taken under an earlier answer stays in force for the answers played under it when a
+// newer answer from another device wins (an event in the history, core.js startEvents), and never applies to that newer
+// answer.
+test("synced: an earlier answer's ease keeps its prior when a newer answer wins", () => {
+  // Before the event list: the ease as a field of the record (8359b24), and as an event since.
+  const old = {c: 'know', t: 100, at: 0, via: 'tour', w: [], fb: {}, h: [['know', 0, 100, 'tour']], ease: ['imr', 40, 200]},
+    now = C.startNorm({
+      ...old,
+      h: [
+        ['know', 0, 100, 'tour'],
+        ['imr', 40, 200, 'ease', 'know']
+      ]
+    });
+  delete now.ease;
+  for (const acct of [old, now]) {
+    const B = model();
+    B.startSet('new', 'tour'); // a new device, later, before signing in
+    const T3 = B.startOf().t;
+    B.startMerge(JSON.stringify(acct));
+    const o = B.startOf();
+    assert.strictEqual(o.c, 'new');
+    assert.strictEqual(o.ease, undefined, 'the ease of "know" never applies to "new"');
+    assert.strictEqual(C.startPriorAt(o, 150), startVars('know').p);
+    assert.strictEqual(C.startPriorAt(o, 250), startVars('imr').p, 'between the ease and the newer answer: the eased prior');
+    assert.strictEqual(C.startPriorAt(o, T3), startVars('new').p);
+  }
+});
+
+// The event list merges the same whichever way round (Codex review #428): two devices' histories from a common start,
+// each adding answers and eases at random times; union(A, B) and union(B, A) hold the same events, the same current
+// answer and ease, and give the same prior at every time.
+test('synced: merging A into B and B into A gives the same history and the same priors (property)', () => {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647),
+    pick = a => a[Math.floor(rnd() * a.length)],
+    opts = CHOICE.opts.map(o => o[0]);
+  for (let run = 0; run < 200; run++) {
+    const base = [[pick(opts), 0, 1000, 'tour']],
+      dev = () => {
+        let h = [...base],
+          t = 1000;
+        for (let k = Math.floor(rnd() * 4); k > 0; k--) {
+          t += 1 + Math.floor(rnd() * 50);
+          const cur = C.startStateAt(C.startEventsOf({h}), Infinity).ch[0],
+            down = C.startNext(cur, 'lo')[0];
+          h = [...h, rnd() < 0.5 && down ? [down, k, t, 'ease', cur] : [pick(opts), k, t, pick(['card', 'fallback'])]];
+        }
+        return C.startNorm({h, w: [], fb: {}});
+      },
+      A = dev(),
+      B = dev(),
+      AB = C.startUnion(A, B),
+      BA = C.startUnion(B, A);
+    assert.deepStrictEqual(AB.h, BA.h, `run ${run}: the same events`);
+    assert.deepStrictEqual([AB.c, AB.t, AB.ease], [BA.c, BA.t, BA.ease], `run ${run}: the same answer and ease`);
+    assert.deepStrictEqual(C.startUnion(AB, A).h, AB.h, `run ${run}: merging again adds nothing`);
+    for (let t = 999; t <= 1250; t++) assert.strictEqual(C.startPriorAt(AB, t), C.startPriorAt(BA, t), `run ${run}: prior at ${t}`);
+  }
 });
 
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {

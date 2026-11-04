@@ -1195,8 +1195,8 @@ on real photos, the few words the ID tips use: corallites, septa, walls. About 5
 player answered or that their level is low. "No thanks" changes nothing (the answer, the variables and the progress
 stay) and the card never comes back in that direction for that answer. **Coral basics** opens Coral basics and, silently,
 moves the start variables one band down (`model.js` `startEase`: know well → the IMR course's, IMR course → new's: the
-prior p and the open-all offer's `at`), kept apart from the answer given (`ease` [answer, answers then, time] in
-`reefid-sync-coral-start`; the answer is never relabelled; the admin's journey shows "Eased"; the full replay applies it
+prior p and the open-all offer's `at`), kept apart from the answer given (an ease event in the record's history, `reefid-sync-coral-start` h, applied from its time to that
+answer only; the answer is never relabelled; the admin's journey shows "Eased"; the full replay applies it
 from its time, `startPriorAt`; the live game applies the prior, eased or not, only once the sheet runs v36, `START_SHEET`, so a replay never takes it back). Coral basics already done: no "lower" card (it is the Coral basics offer).
 
 **The honest size of the silent move**: p only sets the starting ability of a genus never answered (`playerStart`:

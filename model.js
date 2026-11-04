@@ -566,7 +566,8 @@ function startEase() {
   const o = startOf(),
     d = o && startNext(startEff(o), 'lo')[0];
   if (!d) return;
-  store.set(CHOICE.KEY, {...o, ease: [d, answersSoFar(), Date.now()]});
+  // An ease event in the history (core.js startEvents): from now until the next answer given, on this answer only.
+  store.set(CHOICE.KEY, startNorm({...o, h: startEventsOf({...o, h: [...startEvents(o), [d, answersSoFar(), Date.now(), 'ease', o.c]]})}));
   if (typeof dropPlans === 'function') dropPlans();
   if (typeof syncSoon === 'function') syncSoon();
 }
@@ -575,7 +576,11 @@ function startSet(c, via) {
   const o = startOf(),
     a = answersSoFar(),
     t = Date.now();
-  store.set(CHOICE.KEY, {c, t, at: a, via, w: [], fb: (o && o.fb) || {}, h: [...((o && o.h) || []), [c, a, t, via]].slice(-10)});
+  // A choice event appended to the history (core.js startEvents; an earlier ease does not carry over: startNorm).
+  store.set(
+    CHOICE.KEY,
+    startNorm({c, t, at: a, via, w: [], fb: (o && o.fb) || {}, h: startEventsOf({h: [...startEvents(o), [c, a, t, via]]})})
+  );
   // The questions chosen ahead were planned with the old starting level.
   if (typeof dropPlans === 'function') dropPlans();
   if (typeof syncSoon === 'function') syncSoon();
@@ -592,20 +597,7 @@ function startRestart(at) {
   if (startWt(o) >= e) return; // the window already counts from that reset, or from an answer given after it
   store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0, wt: e});
 }
-// The answers given on two records ([c, at, t, via], h; a record without h: its own answer), merged: one entry per
-// answer and time, oldest first, the last 10 kept (as startSet keeps them).
-const startHist = (...R) => {
-  const all = R.flatMap(x =>
-      !x ? [] : Array.isArray(x.h) && x.h.length ? x.h : startOpt(x.c) ? [[x.c, x.at || 0, x.t || 0, x.via || '']] : []
-    ),
-    seen = new Set();
-  return all
-    .filter(e => Array.isArray(e) && startOpt(e[0]) && !seen.has(e[0] + '|' + e[2]) && seen.add(e[0] + '|' + e[2]))
-    .sort((a, b) => (Number(a[2]) || 0) - (Number(b[2]) || 0))
-    .slice(-10);
-};
-// The epoch of a record's fallback window: its last reset (wt), else the answer's time.
-const startWt = x => (x && typeof x.wt === 'number' ? x.wt : (x && x.t) || 0);
+// startWt, the window's epoch: core.js.
 // The fallback window (quiz.js answer): each answer after the choice, up to the last of CHOICE.AT, as [its difficulty (dm, as the
 // ability step takes it), the guess rate 1 / k, right, the genus's first answer]; hd once the opening hold has been on
 // at one of them. At each checkpoint (CHOICE.AT: 40 and 60 answers) the verdict (core.js startCheck), on the global level and
@@ -639,7 +631,7 @@ const startDue = () => {
 // move down of Coral basics on the "lower" card included).
 const startBack = (o, d) => {
   if (d === 'hi' && Array.isArray(o.ease)) return true;
-  const h = Array.isArray(o.h) ? o.h : [],
+  const h = startEvents(o).filter(x => x[3] !== 'ease'), // the answers given (core.js startEvents)
     i = c => CHOICE.opts.findIndex(x => x[0] === c),
     a = h[h.length - 2],
     b = h[h.length - 1];
@@ -651,10 +643,10 @@ const startShown = d => {
   const o = startOf();
   if (o) store.set(CHOICE.KEY, {...o, v: null, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
 };
-// Another device's answer (sync.js mergeSaved): the latest choice wins; the fallback cards shown on either count; on the
-// same choice the window of the later reset (wt), then the longer window, is kept, and the silent ease (startEase) is merged by its own time (Codex review #428:
-// taken on one device, it must not be lost to the other's longer window). The questions planned ahead are dropped
-// whenever the start variables in force change.
+// Another device's record (sync.js mergeSaved): the union of the two histories (core.js startUnion: the latest answer,
+// the ease in force on it, every earlier answer and ease kept with its time, so the replay keeps each one's prior; the
+// window of the record that holds the current answer, on the same answer the later reset epoch then the longer window;
+// the fallback cards shown on either). The questions planned ahead are dropped when the variables in force change.
 function startMerge(json) {
   let r = null;
   try {
@@ -662,23 +654,9 @@ function startMerge(json) {
   } catch (e) {}
   if (!r || typeof r !== 'object' || !startOpt(r.c)) return;
   const o = startOf(),
-    fb = {...(r.fb || {}), ...((o && o.fb) || {})};
-  const n = x => (Array.isArray(x.w) ? x.w.length : 0),
-    et = x => (x && Array.isArray(x.ease) && typeof x.ease[2] === 'number' ? x.ease[2] : -1);
-  // The same answer: the later window epoch (a progress reset) wins, then the longer window.
-  const rw = startWt(r),
-    ow = o ? startWt(o) : 0;
-  let m = !o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && (rw > ow || (rw === ow && n(r) > n(o)))) ? {...r, fb} : {...o, fb};
-  // The same answer on both: the later ease of the two (an ease belongs to its answer: never carried to another one).
-  if (o && r.c === o.c && (r.t || 0) === (o.t || 0)) {
-    const e = et(r) >= et(o) ? r.ease : o.ease;
-    m = e ? {...m, ease: e} : m;
-  }
-  // Every answer either device recorded, oldest first (Codex review #428): the earlier answers keep their priors in the
-  // replay (core.js startPriorAt reads h by time) whichever current answer wins, e.g. the account's "IMR course" before
-  // a new device's "know well" given before signing in.
-  m = {...m, h: startHist(r, o)};
-  const before = o && startEff(o);
+    m = startUnion(o, r),
+    before = o && startEff(o);
+  if (!m) return;
   store.set(CHOICE.KEY, m);
   if ((!o || before !== startEff(m)) && typeof dropPlans === 'function') dropPlans();
 }

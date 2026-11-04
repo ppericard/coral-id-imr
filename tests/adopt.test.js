@@ -899,3 +899,23 @@ test('a replay adopted from a script before v36 replays the pending answers with
     assert.strictEqual(a.ctx.P.Pocillopora.th, th(on), `script v${v}: ability ${a.ctx.P.Pocillopora.th}`);
   }
 });
+
+// Codex review #428 (P2): signing in merges the first-launch record made here before (a newer answer and its history)
+// with the account's (core.js startUnion) instead of taking the account's alone.
+test("signing in keeps the first-launch answer given here before, and the account's history (Codex review #428)", () => {
+  const here = {c: 'know', t: 200, at: 0, via: 'tour', w: [], fb: {}, h: [['know', 0, 200, 'tour']]},
+    acct = {c: 'new', t: 100, at: 0, via: 'tour', w: [], fb: {}, h: [['new', 0, 100, 'tour']]},
+    a = app({ls: {[C.CHOICE.KEY]: JSON.stringify(here)}});
+  a.signIn('Ana', '1234', {found: true, data: {[C.CHOICE.KEY]: JSON.stringify(acct), 'reefid-sync-coral-progress': '{}'}});
+  const o = JSON.parse(JSON.stringify(a.store.get(C.CHOICE.KEY, null))); // out of the page's realm
+  assert.strictEqual(o.c, 'know', "this device's newer answer");
+  assert.deepStrictEqual(
+    o.h.map(x => [x[0], x[2]]),
+    [
+      ['new', 100],
+      ['know', 200]
+    ]
+  );
+  assert.strictEqual(C.startPriorAt(o, 150), C.startVars('new').p);
+  assert.strictEqual(C.startPriorAt(o, 250), C.startVars('know').p);
+});

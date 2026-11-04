@@ -1020,7 +1020,10 @@ function signIn(name, pin, j) {
   } catch (e) {}
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's (code review #324).
-  const ach = store.get(ACHK, null);
+  const ach = store.get(ACHK, null),
+    // The first-launch record made here before signing in joins the account's (core.js startUnion, Codex review #428):
+    // the account's earlier answers and this device's newer one both stay in the history.
+    st = store.get(CHOICE.KEY, null);
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
@@ -1037,6 +1040,7 @@ function signIn(name, pin, j) {
       localStorage.removeItem(RVK);
     } catch (e) {}
   if (ach) achMerge(JSON.stringify(ach));
+  if (st) store.set(CHOICE.KEY, startUnion(store.get(CHOICE.KEY, null), st));
   Object.entries(M).forEach(([k, v]) => store.set(k, v));
   if (!anon && !mine) delete SYNC.dirty;
   store.set('reefid-account', SYNC);

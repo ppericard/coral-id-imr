@@ -3020,22 +3020,100 @@ const CORE_ = (function () { const module = {exports: {}};
   // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
   // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
-  // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's reefid-sync-coral-start record, keeps
-  // every answer given ([c, answers then, time, via] in h); the prior p of the last one given at or before t, 0 before
-  // the first (the player then played as the default player), or of the band below taken silently after it (rec.ease). The replay steps the ability with it (o.starts).
-  function startPriorAt(rec, t) {
-    if (!isObj(rec)) return 0;
-    const h = Array.isArray(rec.h) && rec.h.length ? rec.h : startOpt(rec.c) ? [[rec.c, rec.at, rec.t, rec.via]] : [];
-    let p = 0,
-      last = -Infinity;
-    h.forEach(x => {
-      const at = Array.isArray(x) && typeof x[2] === 'number' ? x[2] : -Infinity;
-      if (startOpt(x && x[0]) && at <= t && at >= last) ((last = at), (p = startVars(x[0]).p));
+  // The first-launch record's history (reefid-sync-coral-start h, Codex review #428): an append-only list of timestamped
+  // events, merged between devices as a union (startUnion), from which the current answer, the silent ease and the prior
+  // at any time are derived (startNorm, startPriorAt). A choice event: [c, answers then, time, via] (via tour, card,
+  // fallback, inferred). An ease event (Coral basics on the "lower" card, model.js startEase): [the band below, answers
+  // then, time, 'ease', the answer it eased]; it applies from its time until the next choice event, and only to the
+  // answer it eased (never to a choice made later or on another device meanwhile). A record of before the history (no h):
+  // its answer as one choice event at its t, and its ease field (if any) as one ease event.
+  const START_CAP = 10; // the events kept, the latest
+  const stTime = x => (typeof x[2] === 'number' ? x[2] : -Infinity);
+  const stEase = x => x[3] === 'ease';
+  const stKey = x => (stEase(x) ? `e|${x[2]}|${x[0]}|${x[4]}` : `c|${x[2]}|${x[0]}`);
+  function startEvents(rec) {
+    if (!isObj(rec)) return [];
+    const h = Array.isArray(rec.h) && rec.h.length ? rec.h : startOpt(rec.c) ? [[rec.c, rec.at || 0, rec.t, rec.via || '']] : [],
+      e = rec.ease,
+      ev =
+        Array.isArray(e) && startOpt(e[0]) && !h.some(x => Array.isArray(x) && stEase(x))
+          ? [...h, [e[0], e[1] || 0, e[2], 'ease', rec.c]]
+          : h;
+    return ev.filter(x => Array.isArray(x) && startOpt(x[0]));
+  }
+  // The events of several records, once each (by kind, time and value), oldest first (a choice before an ease at the
+  // same time, then by value: the same order whichever record comes first), the latest START_CAP kept.
+  function startEventsOf(...recs) {
+    // One per key; between two copies of an event that differ only in their details (answers then, via), the same one
+    // whichever record comes first.
+    const by = new Map();
+    recs.flatMap(startEvents).forEach(x => {
+      const k = stKey(x),
+        y = by.get(k);
+      if (!y || JSON.stringify(x) < JSON.stringify(y)) by.set(k, x);
     });
-    // The silent band below taken with Coral basics on the "lower" card (model.js startEase), from its time on.
-    const e = rec.ease;
-    if (Array.isArray(e) && startOpt(e[0]) && typeof e[2] === 'number' && e[2] <= t && e[2] >= last) p = startVars(e[0]).p;
-    return p;
+    return [...by.values()]
+      .sort(
+        (a, b) =>
+          stTime(a) - stTime(b) || (stEase(a) ? 1 : 0) - (stEase(b) ? 1 : 0) || (stKey(a) < stKey(b) ? -1 : stKey(a) > stKey(b) ? 1 : 0)
+      )
+      .slice(-START_CAP);
+  }
+  // The choice event and the ease in force at time t (Infinity: now) over a sorted event list.
+  function startStateAt(ev, t) {
+    let ch = null,
+      ez = null;
+    ev.forEach(x => {
+      if (stTime(x) > t) return;
+      if (!stEase(x)) ((ch = x), (ez = null));
+      else if (ch && x[4] === ch[0]) ez = x;
+    });
+    return {ch, ez};
+  }
+  // The first-launch answer's prior at time t (2026-11-03, CHOICE): the eased band's while an ease is in force, else the
+  // answer's, 0 before the first answer (the player then played as the default player). The replay steps the ability
+  // with it (o.starts).
+  function startPriorAt(rec, t) {
+    const {ch, ez} = startStateAt(startEventsOf(rec), t);
+    return ez ? startVars(ez[0]).p : ch ? startVars(ch[0]).p : 0;
+  }
+  // The epoch of a record's fallback window: its last reset (wt), else the answer's time.
+  const startWt = x => (x && typeof x.wt === 'number' ? x.wt : (x && x.t) || 0);
+  // A record with its fields derived from its history: c, at, t, via the last choice; ease the ease in force on it.
+  function startNorm(rec) {
+    if (!isObj(rec)) return null;
+    const h = startEventsOf(rec),
+      {ch, ez} = startStateAt(h, Infinity);
+    if (!ch) return null;
+    const out = {...rec, h, c: ch[0], at: ch[1], t: ch[2], via: ch[3]};
+    if (ez) out.ease = [ez[0], ez[1], ez[2]];
+    else delete out.ease;
+    return out;
+  }
+  // Two devices' records merged (model.js startMerge, sync.js signIn): the union of their histories; the fallback window
+  // (w, hd, v, wt) of the record that holds the current answer, on the same answer the later window epoch (a progress
+  // reset) then the longer window; the fallback cards shown on either.
+  function startUnion(a, b) {
+    const A = startNorm(a),
+      B = startNorm(b);
+    if (!A || !B) return A || B;
+    const h = startEventsOf(A, B),
+      {ch} = startStateAt(h, Infinity),
+      own = x => x.c === ch[0] && x.t === ch[2],
+      n = x => (Array.isArray(x.w) ? x.w.length : 0),
+      W =
+        own(A) && own(B)
+          ? startWt(A) !== startWt(B)
+            ? startWt(A) > startWt(B)
+              ? A
+              : B
+            : n(A) >= n(B)
+              ? A
+              : B
+          : own(B) && !own(A)
+            ? B
+            : A;
+    return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
   }
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
@@ -3632,6 +3710,13 @@ const CORE_ = (function () { const module = {exports: {}};
     CF_LOGGED,
     replayProgress,
     startPriorAt,
+    startEvents,
+    startEventsOf,
+    startStateAt,
+    startNorm,
+    startUnion,
+    startWt,
+    START_CAP,
     replayedOf,
     replayBase,
     logRow,

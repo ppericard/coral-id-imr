@@ -31,7 +31,9 @@ const JSTART = {tour: 'in the welcome tour', card: 'on the card before the quiz'
 // "I know corals well" etc.; inferred (an existing player with CHOICE.ASK answers or more, never asked): said so.
 const jStart = (S, before) => {
   if (!S || !startOpt(S.c)) return '<li><b>Start</b> not answered yet</li>';
-  const h = Array.isArray(S.h) && S.h.length ? S.h : [[S.c, S.at, S.t, S.via]];
+  // The history's events (core.js startEvents): the answers given, and the eases taken with Coral basics.
+  const ev = startEvents(S),
+    h = ev.filter(x => x[3] !== 'ease');
   return (
     h
       .map(
@@ -39,9 +41,13 @@ const jStart = (S, before) => {
           `<li><b>${i ? 'Changed to' : 'Start'}</b> ${esc((startOpt(c) || [0, c])[1])} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)}`} · ${JSTART[via] || esc(via || '')}${t ? ' · ' + jTime(t) : ''}</li>`
       )
       .join('') +
-    (Array.isArray(S.ease) && startOpt(S.ease[0])
-      ? `<li><b>Eased</b> to the start of ${esc(startOpt(S.ease[0])[1])}, after answer ${before(S.ease[2], S.ease[1])} · Coral basics taken on the fallback card${S.ease[2] ? ' · ' + jTime(S.ease[2]) : ''}</li>`
-      : '') +
+    ev
+      .filter(x => x[3] === 'ease')
+      .map(
+        ([c, a, t, , of]) =>
+          `<li><b>Eased</b> to the start of ${esc(startOpt(c)[1])} (said “${esc((startOpt(of) || [0, of])[1])}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
+      )
+      .join('') +
     Object.entries(S.fb || {})
       .map(([k, [a, t]]) => {
         const [c, d] = k.split('-');
