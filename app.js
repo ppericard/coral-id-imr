@@ -233,7 +233,10 @@ const toSite = i => {
 document.addEventListener('error', photoFail, true);
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
 // then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
-// question offers another one instead of a blank frame (nothing is counted).
+// question offers another one instead of a blank frame (nothing is counted). With none of its photos shown, its answers
+// are closed (new-player walkthrough 2026-11-04, offline: an answer given to a blank frame counted, and the note was
+// below the fold): a guess is no answer. The note is brought into the question's one screen, and the frame left is a
+// plain tile, never a broken-image icon (as a card's, quiz.js).
 $v.addEventListener(
   'error',
   e => {
@@ -254,6 +257,7 @@ $v.addEventListener(
       i.dataset.retry = 2;
       i.src = i.dataset.lo;
     } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
+      i.classList.add('fail');
       if (navigator.onLine !== false)
         // By the photo's name (data-f, quiz.js): an iNaturalist URL (a candidate just added, r: 1) is not one admin can look up.
         ev('photo', {
@@ -274,6 +278,16 @@ $v.addEventListener(
           route();
         };
       }
+      // Another photo of the question still trying may come later: the answers open again then.
+      const q = $v.querySelector('.q'),
+        ims = q ? [...q.querySelectorAll('.qstage img')] : [];
+      if (q && !ims.some(x => x.complete && x.naturalWidth)) {
+        const ans = (on, bs = q.querySelectorAll('[data-c], [data-w], .tyform input, .tyform button')) =>
+          bs.forEach(b => (b.disabled = !on));
+        ans(false);
+        ims.forEach(x => x.addEventListener('load', () => q.isConnected && !q.classList.contains('done') && ans(true), {once: true}));
+      }
+      if (typeof fitStage === 'function') fitStage();
     }
   },
   true
@@ -379,7 +393,7 @@ let FISH = null,
   FISHP = null;
 const fishLoad = () =>
   FISHP ||
-  (FISHP = Promise.all([json('fish.json?v=5'), json('fish-photos.json?v=5')])
+  (FISHP = Promise.all([json('fish.json?v=7'), json('fish-photos.json?v=7')])
     .then(([f, ph]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
@@ -2036,7 +2050,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=37')
+  getR('data.json?v=38')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),

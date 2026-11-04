@@ -6023,8 +6023,9 @@ html.touring .unlock {
   font-size: var(--fs-s);
   letter-spacing: 0;
 }
-/* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
-.unlock img.fail {
+/* A card or question photo that did not load (quiz.js, app.js): a plain tile, never a broken-image icon. */
+.unlock img.fail,
+.qstage img.fail {
   visibility: hidden;
 }
 .ultips,
