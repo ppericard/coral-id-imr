@@ -222,3 +222,21 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
   assert.deepStrictEqual(remote, [], 'still shown from iNaturalist (python3 tools/fetch_approved.py --games)');
   assert.deepStrictEqual(missing, [], 'a file missing in img/');
 });
+
+// Growth forms (AGENTS.md rule 4): learn.js photoPair puts a photo next to one of the same growth form (the quiz's mix-up
+// montage, the Look-alikes montages); a game photo with no form matches nothing (a player's report, 2026-11-04: 222 game
+// photos added after the first form pass had none). Pierre's form (curation.json gf) or a guess (forms.json gf) is enough.
+// A report, never a failure (the integrator, 2026-11-05): a candidate Pierre approves without a form comes in with his
+// Publish, straight to main, and must not turn unrelated PRs red. The list shows in the test output (a warning line per
+// photo) and with node tools/game_forms.js; the integrator fills it with a growth-form pass (judging/AGENTS.md).
+test('game photos with no growth form are reported (a warning, never a failure)', t => {
+  const {gamePhotos, formless} = require('../tools/game_forms.js');
+  const games = gamePhotos(D, RAW);
+  assert.ok(Object.keys(games).length > 1000, 'the game photos are found');
+  const left = formless(games, CUR, read('forms.json'));
+  if (!left.length) return;
+  const msg = `WARNING: ${left.length} game photo(s) with no growth form: look at each one, write its guess by the growth-form pass of judging/AGENTS.md, then node tools/game_forms.js --apply FILE`;
+  console.warn(msg);
+  t.diagnostic(msg);
+  left.forEach(p => (console.warn(`  ${p.genus} ${p.view} ${p.f}`), t.diagnostic(`${p.genus} ${p.view} ${p.f}`)));
+});

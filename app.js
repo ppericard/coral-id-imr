@@ -442,7 +442,7 @@ let CUR_NEW = null,
   curAt = Date.now(); // curation read again later (curRefresh)
 let RAW,
   CUR,
-  FORMS = {gf: {}, form: {}, cf: {}},
+  FORMS = {gf: {}, form: {}, cf: {}, gunsure: {}},
   AUTOQ = {},
   PICKS = {};
 // Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
@@ -705,7 +705,8 @@ const gamePics = (n, v) => {
 // Growth form of each photo: one of the 7 IMR growth forms (forms.json "forms"; x = form not visible) as p.form, and
 // p.polyps when polyps or vesicles are extended. Pierre's choice in curation.json "gf" wins over the first guess in
 // forms.json "gf", form and polyps flag each on their own ("p" yes, "n" no). Photos not classified yet keep their old
-// Coral Finder letter (forms.json / curation.json "form") as p.cf.
+// Coral Finder letter (forms.json / curation.json "form") as p.cf. p.formUnsure: the form is a guess still to double-check
+// (forms.json "gunsure"), not Pierre's (imrFormsOf counts such a form only when two photos have it).
 let CFMAP = {};
 function applyForms(d, c) {
   const mine = (c && c.gf) || {},
@@ -718,6 +719,7 @@ function applyForms(d, c) {
       l = L(m) || L(g),
       po = P(m) ?? P(g);
     if (l) p.form = l;
+    if (l && !L(m) && (FORMS.gunsure || {})[p.f]) p.formUnsure = true;
     if (po) p.polyps = true;
     if (!l && !po) {
       const o = old[p.f] || FORMS.form[p.f];
@@ -757,7 +759,7 @@ const imrFormsOf = n => {
   [...Object.values(g.views).flat(), ...(DATA.course[n] || [])].forEach(p => {
     if (!p.form || p.form === 'x' || p.multi) return;
     cnt[p.form] = (cnt[p.form] || 0) + 1;
-    if (!(FORMS.gunsure || {})[p.f]) sure[p.form] = 1;
+    if (!p.formUnsure) sure[p.form] = 1;
   });
   const seen = Object.keys(cnt).filter(k => sure[k] || cnt[k] >= 2);
   // A box that maps to several forms (Branching = Branching or Tabulate) only counts for a genus with no classified photo.
@@ -2219,7 +2221,14 @@ const forms = () =>
   getR('forms.json?v=7')
     .then(okJson)
     .catch(softFail('forms.json', {}))
-    .then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}}))
+    // gunsure is a list in the file, a {photo: 1} lookup here (read as an object, every unsure guess counted as sure: PR #577)
+    .then(j => ({
+      gf: j.gf || {},
+      form: j.form || {},
+      cf: j.cf || {},
+      forms: j.forms || [],
+      gunsure: Object.fromEntries((Array.isArray(j.gunsure) ? j.gunsure : []).map(f => [f, 1]))
+    }))
     .catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u =>
   getR(u)

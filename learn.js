@@ -495,17 +495,22 @@ const MONT_V = {
   'Fungia|Lithophyllon': 'medium',
   'Danafungia|Lithophyllon': 'medium'
 };
-// The two photos of two genera that make the best side by side: same growth form, nearest the front and, when the
-// photos come from all zoom levels ("All", Pierre 2026-11-01), the nearest zoom levels.
+// The two photos of two genera that make the best side by side: same growth form first, then nearest the front and,
+// when the photos come from all zoom levels ("All", Pierre 2026-11-01), the nearest zoom levels. The same form is looked
+// for in every photo of the lists, not only the first 6 (a player's report, 2026-11-04: a plate Turbinaria answered
+// Echinopora was shown a branching Echinopora while plate ones came further down); "x" (form not visible) matches
+// nothing. Without a same-form pair, the best pair among the first 6 of each list, as before.
 const ZOOM = {wide: 0, medium: 1, macro: 2};
 function photoPair(LA, LB, fa, fb) {
   let best = null;
-  const A = fa ? [fa] : LA.slice(0, 6),
-    B = fb ? [fb] : LB.slice(0, 6);
+  const A = fa ? [fa] : LA,
+    B = fb ? [fb] : LB;
   const gap = (x, y) => (x.view && y.view ? 4 * Math.abs(ZOOM[x.view] - ZOOM[y.view]) : 0);
   A.forEach((x, i) =>
     B.forEach((y, j) => {
-      const sc = i + j + (x.form && x.form === y.form ? 0 : 8) + gap(x, y);
+      const same = !!x.form && x.form !== 'x' && x.form === y.form;
+      if (!same && (i >= 6 || j >= 6)) return;
+      const sc = (same ? 0 : 1e6) + i + j + gap(x, y);
       if (!best || sc < best[0]) best = [sc, x, y];
     })
   );
