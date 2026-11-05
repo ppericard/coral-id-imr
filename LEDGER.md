@@ -20,4 +20,5 @@ Open PRs: `gh api "repos/ppericard/coral-id-imr/pulls?state=open"`. Pierre's dec
 | Coverage 360 px overflow fix | branch tbd | building | admin Coverage table.cov-t 26 px too wide at 360 |
 | Photos step 3 (history rewrite) | none | READY, needs Pierre's explicit go | scratchpad/step3/plan.md (regenerate if lost: HANDOVER step 3) |
 | App icon | none | proposals ready (D2, B1-B4), wait Pierre's pick | scratchpad/icons/v2 |
-| Merged tonight | #578 #580 #582-#597 #601 #572 | done | — |
+| Name-similarity confusion study | none (scratchpad/name-confusion-study.md) | running | Pierre 18:33: do players confuse genera because names look alike (Pectinia/Pavona)? literature + real-log test + app options |
+| Merged tonight | #578 #580 #582-#597 #601 #572 #605 #606 | done | — |
