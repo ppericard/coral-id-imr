@@ -133,6 +133,11 @@ function holdAdopt(h, log, ids) {
 }
 // The replay is the progress of the subject whose answers the sheet logs (core.js SUBJECTS log: the corals): adopted as
 // that subject whatever the subject on screen (inSubject; the fish progress is never replayed, its answers are not logged).
+// The field of the corals' progress (core.js fieldOf), for the % around an adoption; null for a subject without it.
+const fieldFor = () =>
+  SUBJ.cover && typeof slateGenera === 'function' && typeof DATA !== 'undefined' && DATA
+    ? fieldOf({...((DATA.x && DATA.x.gen) || {}), ...(DATA.gen || {})}, typeof PCONF === 'object' ? PCONF : {}, slateGenera())
+    : null;
 function replayAdopt(rp, pending, v, cut, pre) {
   sheetSeen({v});
   const LS = SUBJECTS.find(x => x.log);
@@ -180,7 +185,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
       before = copy(P),
       // The field rule (COVER_SHEET): a learned mark passed before it stays only where the replayed state meets the
       // exam's entry (core.js replayedOf, Pierre Q109).
-      M = replayedOf({P: R}, P, rp.rv, Number(v) >= COVER_SHEET && SUBJ.cover ? fieldOf(gen, PCONF, slateGenera()) : null);
+      M = replayedOf({P: R}, P, rp.rv, Number(v) >= COVER_SHEET ? fieldFor() : null);
     // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
     // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
     // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
@@ -218,7 +223,11 @@ function replayAdopt(rp, pending, v, cut, pre) {
     // a copy another device saved after its own adoption (Codex review #399: 83% to 33%, compared as 33 to 33).
     const L = typeof slateGenera === 'function' ? slateGenera() : [];
     if (played && typeof rvNoticeAdd === 'function')
-      rvNoticeAdd(from, rp.rv, [typeof pre === 'number' ? pre : pctOf(before, L), pctOf(P, L)]);
+      rvNoticeAdd(from, rp.rv, [
+        // the % shown before: with the field once the device had applied the rules version that brought it (COVER_RV)
+        Array.isArray(pre) ? pre[from >= COVER_RV ? 1 : 0] : pctOf(before, L, from >= COVER_RV ? fieldFor() : null),
+        pctOf(P, L, Number(v) >= COVER_SHEET ? fieldFor() : null)
+      ]);
     if (!SUBJ_VISIT && /^#(progress|quiz-board)$/.test(location.hash)) route(); // not while visiting: the page shows another subject
     return true;
   } catch (e) {
@@ -281,7 +290,9 @@ function mergeSavedIn(j) {
 function mergeSubject(j, d, S, mine) {
   const [BK, PK] = S.base;
   // The % shown before this sync, for the recalculation card (replayAdopt).
-  const pre = typeof slateGenera === 'function' ? pctOf(P, slateGenera()) : undefined;
+  // Both ways, without and with the field rule (core.js COVER): replayAdopt takes the one the device showed (the rules
+  // version it applied; Codex review #611: the field changes the % without changing pg).
+  const pre = typeof slateGenera === 'function' ? [pctOf(P, slateGenera()), pctOf(P, slateGenera(), fieldFor())] : undefined;
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   let R = {};
   try {

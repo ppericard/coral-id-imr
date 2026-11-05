@@ -593,10 +593,10 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
     cut = (a, b) => block(src, a, b, {through: true});
   // quiz.js answer steps the genus shown and the level with the same weight, then records the time.
-  assert.ok(quiz.includes('const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;'));
+  assert.ok(quiz.includes('const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, tq ? Infinity : k, good) : 1;'));
   assert.ok(quiz.includes('abilityStep(target, s, good, dm, k, rw);'));
   assert.ok(quiz.includes('abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);'));
-  assert.ok(quiz.includes('rtAdd(P[LEVEL], tm.rt, k);'));
+  assert.ok(quiz.includes('rtAdd(P[LEVEL], tm.rt, tq ? Infinity : k);'));
   const live = sheet => {
     // No first-launch answer: the default prior; the corals on screen (model.js startS).
     const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars(), startS: () => C.subjectOf('coral')};

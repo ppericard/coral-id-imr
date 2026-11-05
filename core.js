@@ -2318,6 +2318,9 @@
   // the field, scores a typed answer with typedK and judges the exam's entry with the coverage only once the script's
   // replies say v >= COVER_SHEET (model.js coverOn); before it, exactly as before (rule D4).
   const COVER_SHEET = 56;
+  // The rules version that brought the field rule (RVS v6): a device that applied an older one showed the bar without it
+  // (sync.js replayAdopt: the % before, for the card).
+  const COVER_RV = 6;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -2513,8 +2516,12 @@
       out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
     const pooledOf = (t, n) => F.q(t, n);
     // A typed answer's vocabulary as the log knows it (the app uses the genera unlocked, or the custom quiz's selection,
-    // which the log does not keep): the genera the player has answered on or given before this answer.
-    const vocOf = P => Object.keys(P).filter(g => g !== LEVEL && gen[g] && (P[g].ok || 0) + (P[g].ko || 0) > 0);
+    // which the log does not keep; Codex review #611): in the custom quiz (mode |s), the genera asked in the player's
+    // current run of custom-quiz answers, which its selection is drawn from; elsewhere the genera the player has answered
+    // on or given before this answer.
+    const vocOf = P => Object.keys(P).filter(g => g !== LEVEL && gen[g] && (P[g].ok || 0) + (P[g].ko || 0) > 0),
+      CUSTOM_RE = /^quiz\|s(\||$)/,
+      runs = {};
     // Known mix-ups (model.js confTerm, #425): the most, over the choices, of the player's own score of the pair above
     // the pooled one (confGap), on the record before this answer, on a question with 3 or more plausible choices; it adds
     // to the question's difficulty for the ability, the level and a miss's weight, as quiz.js answer adds it to dm.
@@ -2557,7 +2564,8 @@
           // kl: the choices the app scored the answer with (its logged e is built on it); k: today's rule. A typed answer
           // logged before rules version 6 (no |kt) is scored with the effective set size of the vocabulary the log knows.
           kl = kOf(mode, r[10]),
-          voc = cover && typed ? vocOf(pl.P) : null,
+          custom = CUSTOM_RE.test(mode),
+          voc = cover && typed ? (custom ? [...(runs[id] || [])] : vocOf(pl.P)) : null,
           k = cover && typed && !isFinite(kl) ? typedK(pl.P, t, voc, F) : kl,
           sec = typeof r[12] === 'number' ? r[12] : null,
           s = rec(t),
@@ -2596,7 +2604,7 @@
           if (o.onAnswer) o.onAnswer(r, {d, fam: fm, cf, k, w, look});
           // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory,
           // a right answer's step weighed by its time against the player's earlier ones (rtWeight; time: false, without).
-          rw = time ? rtWeight(pl.P[LEVEL], sec, k, ok) : 1;
+          rw = time ? rtWeight(pl.P[LEVEL], sec, typed ? Infinity : k, ok) : 1; // a typed answer: no time (quiz.js answer)
           eloStep(pl.P, t, s, ok, dm, k, rw, pr);
         }
         // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
@@ -2604,7 +2612,7 @@
         else pl.P[LEVEL] = levelSeed(pl.P);
         if (replayable) {
           eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, rw, pr);
-          if (time) rtAdd(pl.P[LEVEL], sec, k);
+          if (time) rtAdd(pl.P[LEVEL], sec, typed ? Infinity : k);
         }
         pl.P[LEVEL].at = r[1];
         s.at = r[1];
@@ -2633,6 +2641,9 @@
         // A right typed answer offers each genus of its vocabulary by its similarity (rules version 6, typedOffers, as
         // quiz.js answer).
         if (cover && ok && typed) typedOffers(pl.P, t, voc, F);
+        // The current run of custom-quiz answers (vocOf): its genera asked, from its first answer.
+        if (custom) (runs[id] = runs[id] || new Set()).add(t);
+        else delete runs[id];
         s.h = (s.h + (ok ? 1 : 0)).slice(-10);
         fs.forEach(f => {
           const x = (s.ps[f] = s.ps[f] || [0, 0]);
@@ -3177,6 +3188,7 @@
     RV_CARD,
     RV_SORRY,
     COVER_SHEET,
+    COVER_RV,
     RVS,
     RV,
     RV_SHEET,

@@ -469,14 +469,16 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   );
   // The answer time (core.js rtWeight, model.js rtOn): a right answer faster than the player's usual moves the genus and
   // the global level further, a slow one less; against their earlier timed answers (P[LEVEL].rt), the seconds logged.
-  const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;
+  // A typed answer stays out of the answer time (slower by design), whatever its k (core.js rtTenths reads an infinite k
+  // as typed; under the field rule a typed k is finite: Codex review #611).
+  const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, tq ? Infinity : k, good) : 1;
   abilityStep(target, s, good, dm, k, rw);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
   if (P[LEVEL]) P[LEVEL][good ? 'ok' : 'ko']++;
   else P[LEVEL] = levelSeed(P);
   abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);
-  rtAdd(P[LEVEL], tm.rt, k); // this answer's time, for the next ones
+  rtAdd(P[LEVEL], tm.rt, tq ? Infinity : k); // this answer's time, for the next ones (a typed one: none)
   // Recent results over every game, newest last: an opening only after a right answer (model.js openRight).
   P[LEVEL].h = ((P[LEVEL].h || '') + (good ? 1 : 0)).slice(-10);
   // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.

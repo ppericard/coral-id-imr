@@ -130,3 +130,25 @@ test('personalised exam (EXAMP, off): the union of global and own look-alikes, i
   assert.strictEqual(C.examTraps(P, 'T', F, () => 0.5)[0], 'U1', "the player's own strong mix-up first");
   assert.strictEqual(C.examTraps(P, 'T', F).length, C.EXAMP.N);
 });
+
+test('field rule (Codex review #611): a typed answer stays out of the answer time; a custom-quiz typed answer offers its run', () => {
+  const t0 = Date.UTC(2026, 10, 6),
+    row = (i, g, a, mode, ch = '', sec = 4) => ['p', t0 + i * 1000, g, a, g === a ? 1 : 0, mode, 'f' + i, 0.6, 0.5, 1, ch, null, sec];
+  const R = C.replayProgress([row(0, 'L1', 'L1', 'quiz', 'L1 T U1 U2'), row(1, 'T', 'T', 'quiz|t|kt3', '', 30)], {gen: GEN}).p.P;
+  assert.deepStrictEqual(
+    Object.values(R[C.LEVEL].rt || {}).reduce((a, b) => a + b, 0),
+    1,
+    'only the pick is timed'
+  );
+  // The custom quiz: the vocabulary is the run of custom answers (L2, U3), not every genus answered before (L1).
+  const S = C.replayProgress(
+    [
+      row(0, 'L1', 'L1', 'quiz', 'L1 T U1 U2'),
+      row(1, 'L2', 'L2', 'quiz|s', 'L2 T U3'),
+      row(2, 'U3', 'U3', 'quiz|s', 'U3 T L2'),
+      row(3, 'T', 'T', 'quiz|s|t|kt2')
+    ],
+    {gen: GEN}
+  ).p.P;
+  assert.deepStrictEqual(Object.keys(S.T.offT).sort(), ['L2', 'U3']);
+});
