@@ -1066,7 +1066,10 @@ function anProfiles(a) {
     desk = matchMedia('(min-width: 1024px)').matches,
     w = desk ? Math.floor((anW() - 12) / 2) : anW(),
     // beyond 3 SD the number says only that (a greyed row with few answers can sit far out)
-    zt = z => (z == null ? '–' : Math.abs(z) > 3 ? (z > 0 ? '>3' : '<−3') : (z > 0 ? '+' : z < 0 ? '−' : '') + Math.abs(z).toFixed(1));
+    // no signed number (#601): ▲ above the players' average, ▼ below; beyond 3 SD only that
+    zt = z => (z == null ? '–' : (z >= 0 ? '▲' : '▼') + (Math.abs(z) > 3 ? '>3' : Math.abs(z).toFixed(1))),
+    side = (v, k) =>
+      v == null || !isFinite(v) ? '–' : `${Math.abs(v).toFixed(2)} ${k ? (v >= 0 ? 'up' : 'down') : v >= 0 ? 'right' : 'left'}`;
   const hmap = heat({
     n: W.length,
     nc: cols.length,
@@ -1103,7 +1106,7 @@ function anProfiles(a) {
     },
     title: 'Players and how they play: each behaviour against the players’ average'
   });
-  const leg = `<p class="adm-an-leg adm-an-hleg"><span><i class="an-h an-hp3"></i>Above the players’ average</span><span><i class="an-h an-hb3"></i>Below</span><span>The number: standard deviations from it</span>${W.some(x => x.low) ? `<span class="an-dim">Greyed: under ${anInt(a.at)} answers</span>` : ''}</p>`;
+  const leg = `<p class="adm-an-leg adm-an-hleg"><span><i class="an-h an-hp3"></i>Above the players’ average</span><span><i class="an-h an-hb3"></i>Below</span><span>▲ / ▼ and the number: standard deviations above or below it</span>${W.some(x => x.low) ? `<span class="an-dim">Greyed: under ${anInt(a.at)} answers</span>` : ''}</p>`;
   const bip = () => {
     if (!a.pca) return '';
     const far = new Set(
@@ -1117,7 +1120,12 @@ function anProfiles(a) {
       w,
       var: a.pca.var,
       pts: a.pca.pts.map((p, i) => ({x: p[0], y: p[1], label: nm[i], lab: far.has(i), title: `${nm[i]} (${W[i].n} answers)`})),
-      arrows: a.pca.load.map((l, f) => ({x: l[0], y: l[1], label: short(F[f]), title: `${F[f].label}: ${anR(l[0])}, ${anR(l[1])}`})),
+      arrows: a.pca.load.map((l, f) => ({
+        x: l[0],
+        y: l[1],
+        label: short(F[f]),
+        title: `${F[f].label}: ${side(l[0], 0)}, ${side(l[1], 1)}`
+      })),
       title: 'Map of players: players as points, behaviours as arrows'
     });
   };
@@ -1132,7 +1140,7 @@ function anProfiles(a) {
     stable = st && st.stable,
     words = a.groups
       ? `<ul class="adm-an-says-l">${[
-          `<li>Groups of players (not types; ${a.k}, where the silhouette is best, ${anR(a.sil)}): ${gl.map((g, i) => `<b>${i + 1}</b> ${g}`).join('; ')}.</li>`,
+          `<li>Groups of players (not types; ${a.k}, where the silhouette is best, ${a.sil < 0 ? 'below 0' : anR(a.sil)}): ${gl.map((g, i) => `<b>${i + 1}</b> ${g}`).join('; ')}.</li>`,
           `<li>${stable ? 'Stable' : 'Not stable'}: the same groups in ${st.kept} of ${st.runs} runs with one player left out (Jaccard ${rng(st.loo)}); players drawn again ${st.draws} times: ${rng(st.boot)}.${stable ? '' : ' These groups change when one player is left out.'}</li>`,
           ...(a.close || []).map(
             ([i, j, , fs]) =>
@@ -1153,11 +1161,13 @@ function anProfiles(a) {
   const ptab = a.pca
     ? anTable(
         ['Behaviour', '#Axis 1', '#Axis 2'],
-        a.pca.load.map((l, f) => `<tr><td>${esc(F[f].label)}</td><td class="n">${anR(l[0])}</td><td class="n">${anR(l[1])}</td></tr>`)
+        a.pca.load.map(
+          (l, f) => `<tr><td>${esc(F[f].label)}</td><td class="n">${side(l[0], 0)}</td><td class="n">${side(l[1], 1)}</td></tr>`
+        )
       ) +
       anTable(
         ['Player', '#Axis 1', '#Axis 2'],
-        a.pca.pts.map((p, i) => `<tr><td>${esc(nm[i])}</td><td class="n">${anNum(p[0], 2)}</td><td class="n">${anNum(p[1], 2)}</td></tr>`)
+        a.pca.pts.map((p, i) => `<tr><td>${esc(nm[i])}</td><td class="n">${side(p[0], 0)}</td><td class="n">${side(p[1], 1)}</td></tr>`)
       )
     : '';
   return [
