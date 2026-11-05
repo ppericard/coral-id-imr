@@ -185,11 +185,15 @@ const WIDTHS = [390, 1280];
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     if (!(await p.$('.adm-demo'))) fails.push(`${w}px: no demo banner`);
     if (await p.$('.adm-lock')) fails.push(`${w}px: lock screen shown in demo mode`);
-    // Opened with no address, the page shows Players (Pierre, 2026-11-04), on a phone as on a desktop.
+    // Opened with no address, the page shows Players › Activity, the recent sessions (Pierre, 2026-11-05; it was Players ›
+    // List from 2026-11-04), on a phone as on a desktop.
     {
       const tab = await p.evaluate(() => (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '');
       const menu = await p.evaluate(() => ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '');
-      if (!/List/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players › List`);
+      if (!/Activity/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players › Activity`);
+      // A subject without Activity yet (fish) lands on Players › List, never on "Not for fish yet" (Codex review #554).
+      const fishHref = await p.evaluate(() => (document.querySelector('#subj [data-subj="fish"]') || {}).getAttribute?.('href') || '');
+      if (fishHref && !/^#fish\/~users$/.test(fishHref)) fails.push(`${w}px: the Fish switch opens ${fishHref}, not #fish/~users`);
     }
     // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
     // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
