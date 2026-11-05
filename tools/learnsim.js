@@ -192,8 +192,27 @@ const LEARNER = {
   // The field learner (above): A in (1 - know)^(A g), PAIR the contrast taught to each wrong choice shown.
   FIELD: {A: 1.6, PAIR: 1},
   // A Learned genus counts as rightly learned when its true whole-slate success pOpen is PREC or more (precision of Learned).
-  PREC: 0.8
+  PREC: 0.8,
+  // The exemplar learner (--learner exemplar; 2026-11-06, the third world of the judge, docs/LEARNING.md "The judge"): a
+  // summed-similarity exemplar model after the GCM (Nosofsky 1986, JEP:General 115:39), with a background (guessing)
+  // term. Every photo shown with its answer is stored as an exemplar of the genus shown, and the montage of a miss stores
+  // one typical photo of the genus given; prior knowledge know gives w0 = know / (1 - know) typical exemplars. A photo of
+  // difficulty d sits at atypicality r = R sig(d) (+ the single-view offset); its similarity to an exemplar of genus c is
+  // exp(-K sqrt(D_tc^2 + r^2 + r_e^2)) (the very same photo: exp(-K D_tc)), D_tc = D (1.1 - s(t, c)), s the item
+  // learner's look (1 for a declared look-alike, about 0.1 otherwise). With S_c the summed similarity to c's exemplars,
+  // P(t) = S_t / (sum over V of S_c + B), and the background share B / (...) is a guess among V (the choices, or the
+  // names held when typing). Four constants, chosen by a small grid (scratch gcmgrid.js) so that, open against the slate:
+  // 13 exemplars of every genus give 0.85 on an average photo, 0.68 on a hard one (d 2), 0.91 on an easy one; 6 each
+  // 0.77; one exemplar of the genus alone 0.43 (0.56 among 4 choices). Unlike the field learner, a genus nobody stored
+  // does not compete: a drilled genus is named right among the slate (0.96), the GCM's own prediction.
+  EX: {K: 8, R: 0.6, D: 8, B: 0.03}
 };
+// The judge (2026-11-06, Pierre Q127, docs/reviews/2026-11-06-progress-metric-research.md): the domain score D*(g) = the
+// learner's true success naming a photo of g alone (one view), with no choices (every slate genus a possible answer for
+// the field and exemplar learners; recognition alone for the item learner), averaged over g's theoretical photo
+// distribution N(mu_g, SD^2) (Gauss-Hermite, 7 points). SD: the spread of photo difficulty within a genus (an assumption:
+// easy to hard about +-1.5 logits); NOISE: the app's error on a photo's difficulty with --truth gen.
+const JUDGE = {SD: 0.8, NOISE: 0.3, GH: [[-2.651961, 0.000548], [-1.673552, 0.030757], [-0.816288, 0.240123], [0, 0.457143], [0.816288, 0.240123], [1.673552, 0.030757], [2.651961, 0.000548]]};
 
 const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
@@ -235,7 +254,7 @@ const SEEDS = Number(arg('seeds', 5)),
   TAU = Number(arg('tau', 0.5)),
   CUSTOMN = Number(arg('custom', 0)),
   DRILL = Number(arg('drill', 200));
-if (!['item', 'field'].includes(LEARN)) throw new Error('--learner item or field');
+if (!['item', 'field', 'exemplar'].includes(LEARN)) throw new Error('--learner item, field or exemplar');
 if (!(TAU >= 0 && TAU <= 1)) throw new Error('--tau between 0 and 1');
 if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or more genera, --drill 1 or more questions');
 {
@@ -268,7 +287,13 @@ const liveStats = () =>
   fetch(/const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'))[1] + '?stats=1&av=learnsim').then(r =>
     r.json()
   );
-const TRUTH_JSON = TRUTH ? JSON.parse(fs.readFileSync(TRUTH, 'utf8')) : null;
+// --truth gen[:SD[:NOISE]] (2026-11-06, the judge): no file; every photo's true difficulty is drawn from its genus's
+// theoretical distribution N(mu_g, SD^2) (mu_g the genus offset of --stats gd, else 0; SD default JUDGE.SD), from a hash
+// of its file name, so a photo keeps it across runs and seeds; the app is told an estimate of it (the true value plus
+// N(0, NOISE^2), default JUDGE.NOISE, as if 20 trusted answers had rated it). The domain score D* reads the same
+// distribution. --truth file.json: as before ({photos, gd}); its sd (or JUDGE.SD) is the spread.
+const TRUTH_GEN = TRUTH && /^gen(:|$)/.test(TRUTH) ? TRUTH.split(':').slice(1).map(Number) : null;
+const TRUTH_JSON = TRUTH && !TRUTH_GEN ? JSON.parse(fs.readFileSync(TRUTH, 'utf8')) : null;
 
 const TYPES = {
   '.html': 'text/html',
@@ -301,10 +326,65 @@ const server = http.createServer((req, res) => {
 function play(cfg) {
   const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg;
   const field = cfg.learner === 'field',
-    tau = cfg.tau;
+    exem = cfg.learner === 'exemplar',
+    tau = cfg.tau,
+    J = cfg.judge;
   if (typeof CHOICE !== 'undefined') CHOICE.opts.forEach(o => Object.assign(o[1], vars[o[0]] || {}));
   // The learner's difficulty of a photo of genus t: --truth when given, else the app's own (photoDiff).
-  const trueD = (t, p) => (truth ? (truth.photos || {})[p.f] ?? ((truth.gd || {})[t] || 0) : photoDiff(t, p));
+  // --truth gen: each photo's true difficulty drawn from N(mu_g, SD^2) by a hash of its file (a probit of a uniform), the
+  // app told the true value plus N(0, NOISE^2) by the same hash (photo statistics as 20 trusted answers would give them).
+  const tg = cfg.truthGen,
+    TSD = tg && tg[0] > 0 ? tg[0] : (truth && truth.sd) || J.SD,
+    TNOISE = tg && tg[1] >= 0 ? tg[1] : J.NOISE,
+    hashU = (str, salt) => {
+      let h = 2166136261 ^ salt;
+      for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+      return ((h >>> 0) + 0.5) / 4294967296;
+    },
+    probit = u => {
+      // Acklam's rational approximation of the normal quantile (|error| < 1.2e-9)
+      const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239],
+        b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771720, -13.28068155288572],
+        c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783],
+        e = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+      const pl = 0.02425;
+      if (u < pl) {
+        const q = Math.sqrt(-2 * Math.log(u));
+        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((e[0] * q + e[1]) * q + e[2]) * q + e[3]) * q + 1);
+      }
+      if (u > 1 - pl) return -probit(1 - u);
+      const q = u - 0.5,
+        r = q * q;
+      return ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+    };
+  const muOf = g => (typeof PGD === 'object' && PGD[g] ? PGD[g][0] || 0 : 0);
+  const GEN_D = {};
+  if (tg) {
+    // Every game photo of every genus the game can ask: its true difficulty, and the app's estimate of it.
+    const ps = {};
+    [...slateGenera(), ...BONUS].forEach(g =>
+      VIEWS.forEach(([v]) =>
+        gamePics(g, v).forEach(p => {
+          const d = muOf(g) + TSD * probit(hashU(p.f, 1));
+          GEN_D[p.f] = d;
+          ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
+        })
+      )
+    );
+    PSTAT = ps;
+  }
+  const trueD = (t, p) =>
+    tg ? GEN_D[p.f] ?? muOf(t) : truth ? (truth.photos || {})[p.f] ?? ((truth.gd || {})[t] || 0) : photoDiff(t, p);
+  // The theoretical photo distribution of genus g, as the judge's D* reads it: N(mu, SD^2), mu the genus offset (--truth
+  // gen), the file's gd (--truth file), else the mean of the app's own difficulties of g's game photos (and their spread).
+  const distOf = g => {
+    if (tg) return [muOf(g), TSD];
+    if (truth) return [(truth.gd || {})[g] || 0, TSD];
+    const ds = VIEWS.flatMap(([v]) => gamePics(g, v).map(p => photoDiff(g, p)));
+    if (!ds.length) return [0, J.SD];
+    const m = ds.reduce((a, x) => a + x, 0) / ds.length;
+    return [m, Math.sqrt(ds.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, ds.length - 1)) || J.SD];
+  };
   // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
   let T = Date.parse('2026-11-02T08:00:00Z');
   if (breaks.length) Date.now = () => T;
@@ -387,8 +467,38 @@ function play(cfg) {
       1 / (1 + Math.exp(d + (single ? L.SINGLE : 0) - mem) * V.reduce((a, c) => a + (c === t ? 0 : rOf(t, c)), 0)),
     // The genera a field learner holds in mind for a typed answer: those it has met, and the genus asked.
     vocab = t => [...new Set([t, ...SL.concat(BONUS).filter(introduced)])];
+  // The exemplar learner (--learner exemplar; LEARNER.EX above): its stored exemplars per genus, [atypicality, weight,
+  // photo file or null], prior knowledge as w0 = know / (1 - know) typical ones.
+  const EXC = L.EX,
+    EXS = {},
+    rAt = d => EXC.R * sig(d),
+    exAdd = (g, r, f, w = 1) => (EXS[g] = EXS[g] || []).push([r, w, f]);
+  if (exem) [...SL, ...BONUS].forEach(g => exAdd(g, rAt(0), null, Math.min(50, kn(g) / (1 - kn(g)))));
+  // The summed similarity of a photo of t (atypicality rx, file fx or null) to c's exemplars.
+  const exS = (t, c, rx, fx) => {
+    const D = c === t ? 0 : EXC.D * (1.1 - sim(t, c));
+    return (EXS[c] || []).reduce((a, [re, w, f]) => a + w * Math.exp(-EXC.K * (fx && f === fx && c === t ? D : Math.sqrt(D * D + rx * rx + re * re))), 0);
+  };
+  // Its chance on t among V for a photo of difficulty d (fs: the photos shown, a stored one recognised as itself); S the
+  // weights of the answers it gives when wrong (the summed similarities, the background spread evenly).
+  const pEx = (t, V, d, single, fs = []) => {
+    const rx = rAt(d + (single ? L.SINGLE : 0)),
+      fx = fs.find(f => (EXS[t] || []).some(e => e[2] === f)) || null,
+      S0 = V.map(c => exS(t, c, rx, fx)),
+      tot = S0.reduce((a, x) => a + x, 0) + EXC.B,
+      S = S0.map(x => x + EXC.B / V.length);
+    return {p: S[V.indexOf(t)] / tot, S};
+  };
   // A question's true chance by the learner's own rule (pRight for the item learner, as before).
-  const pCh = (t, ch, d, single) => (field ? pField(t, ch, d, single) : pRight(t, ch, d, single));
+  const pCh = (t, ch, d, single) => (field ? pField(t, ch, d, single) : exem ? pEx(t, ch, d, single).p : pRight(t, ch, d, single));
+  // The judge's domain score D*(t): success naming a photo of t alone (one view) with no choices, over t's theoretical
+  // photo distribution (distOf). Item learner: recognition alone (no guess); field and exemplar: every slate genus a
+  // possible answer.
+  const dOne = (t, d) => (field ? pField(t, SL, d, true) : exem ? pEx(t, SL, d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
+  const dStar = t => {
+    const [mu, sd] = distOf(t);
+    return J.GH.reduce((a, [z, w]) => a + w * dOne(t, mu + sd * z), 0);
+  };
   // The truth the field measures read: success on an average photo of t with every slate genus a possible answer.
   const pOpen = t => pCh(t, SL, 0, false);
   const ref = g => pCh(g, [g, ...REF[g]], L.REF_D, true);
@@ -451,6 +561,7 @@ function play(cfg) {
   }
 
   const rows = [],
+    credit = {},
     entry = {},
     learnedAt = {},
     metAt = {};
@@ -511,7 +622,7 @@ function play(cfg) {
     const q = SHOWNQ;
     if (pre) pre(q);
     // The first-meeting cards, read through: each teaches like one right answer.
-    (q.intro || []).forEach(g => (teach(g, prof.rate), nCards++));
+    (q.intro || []).forEach(g => (teach(g, prof.rate), exem && exAdd(g, rAt(0), null), nCards++));
     // The bonus genera offer (every slate genus met): accepted.
     const bo = document.querySelector('.unlock [data-bonus]');
     if (bo) {
@@ -534,7 +645,24 @@ function play(cfg) {
       first = !asked(t);
     let pick = t,
       pTrue;
-    if (field) {
+    if (exem) {
+      // The exemplar learner (above): Luce over the choices, or over the genera it holds in mind when typing.
+      const V = typed ? vocab(t) : ch,
+        {p, S} = pEx(t, V, d, single, fs);
+      pTrue = p;
+      if (!(rnd() < pTrue)) {
+        const os = V.map((c, k) => (c === t ? 0 : S[k])),
+          tot = os.reduce((a, x) => a + x, 0);
+        let r = rnd() * tot;
+        pick = V.filter(c => c !== t).pop() || '';
+        for (let k = 0; k < V.length; k++)
+          if (os[k] && (r -= os[k]) <= 0) {
+            pick = V[k];
+            break;
+          }
+        if (typed && rnd() < 0.5) pick = ''; // "I don't know"
+      }
+    } else if (field) {
       // The field learner (above): Luce over the choices, or over the genera it holds in mind when typing.
       const V = typed ? vocab(t) : ch,
         rs = V.map(c => (c === t ? 0 : rOf(t, c))),
@@ -585,6 +713,11 @@ function play(cfg) {
       oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});
     teach(t, prof.rate * (good ? 1 : L.MISS));
     if (!good && pick) teach(pick, prof.rate * L.PICKED);
+    // The exemplar learner stores every photo shown as an exemplar of t, and after a miss a typical photo of the genus given.
+    if (exem) {
+      shown.forEach(p2 => exAdd(t, rAt(trueD(t, p2) + (single ? L.SINGLE : 0)), p2.f));
+      if (!good && pick) exAdd(pick, rAt(0), null);
+    }
     // The field learner's pairs: each wrong choice shown is contrasted with t, the genus wrongly given more (the montage).
     if (field) {
       if (!typed) ch.forEach(c => c !== pick && contrast(t, c, prof.rate * L.FIELD.PAIR));
@@ -636,6 +769,8 @@ function play(cfg) {
       // Per genus (2026-11-06, for the over of a group of genera: those the profile knows, the custom selection): the
       // truth pOpen and the bar shown, the genera met only.
       po: Object.fromEntries(met.map(g => [g, Math.round(po[g] * 1000) / 1000])),
+      // The judge's domain score (dStar), the genera met.
+      ds: Object.fromEntries(met.map(g => [g, Math.round(dStar(g) * 1000) / 1000])),
       gs: Object.fromEntries(met.map(g => [g, Math.round(genScore(g) * 1000) / 1000]))
     };
   };
@@ -699,6 +834,25 @@ function play(cfg) {
     if (bon.offer !== null && bon.offer <= i + 1) {
       bon.q++;
       if (isBonus(t)) bon.n++;
+    }
+    // Time to credit (the judge): per genus, its first answer and the questions at which its bar first reached 50% and 80%;
+    // and over the genera the profile knows (known), the question at which their mean bar first did, all of them met.
+    SL.forEach(g => {
+      if (!asked(g)) return;
+      const c = (credit[g] = credit[g] || {first: i + 1});
+      if (!c.q80) {
+        const b = genScore(g);
+        if (!c.q50 && b >= 0.5) c.q50 = i + 1;
+        if (b >= 0.8) c.q80 = i + 1;
+      }
+    });
+    if (!credit._k80) {
+      const kg = SL.filter(g => k0[g] >= 0.5);
+      if (kg.length && kg.every(introduced)) {
+        const b = mean(kg.map(genScore));
+        if (!credit._k50 && b >= 0.5) credit._k50 = i + 1;
+        if (b >= 0.8) credit._k80 = i + 1;
+      }
     }
     SL.forEach(g => {
       if (!(g in entry) && inExam(g)) entry[g] = {q: i + 1, ref: ref(g), know: know[g]};
@@ -850,6 +1004,7 @@ function play(cfg) {
   }
   return {
     known: SL.filter(g => k0[g] >= 0.5), // the genera the profile knows from the start (the spotty profile's groups)
+    credit,
     rows,
     entry,
     learnedAt,
@@ -920,6 +1075,8 @@ async function run(browser, base, name, seed) {
     back: BACK,
     rton: RTON,
     truth: TRUTH_JSON,
+    truthGen: TRUTH_GEN,
+    judge: JUDGE,
     choice: CHOICE === 'auto' ? AUTO[name] : CHOICE,
     fallback: FALLBACK,
     vars: VARS,
