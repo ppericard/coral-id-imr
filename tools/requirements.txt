@@ -1,0 +1,4 @@
+# Python packages the CI photo jobs install (.github/workflows/approved-photos.yml: pip install -r tools/requirements.txt);
+# locally the same line for photo work. Pinned so a new major never arrives unreviewed (rule 27b: the latest stable, bumped
+# by hand in a PR). Pillow 13.0.0 writes byte-identical WebP to 12.3.0 (tools/photos.py save(); stack audit 2026-11-05).
+pillow==13.0.0

@@ -15,7 +15,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    # The image named in every workflow, not ubuntu-latest, so the next Ubuntu is a reviewed one-line PR (AGENTS.md 27b).
+    runs-on: ubuntu-26.04
     steps:
       # Depth 1: the whole history with every photo cost ~300 s of checkout. Nothing here compares with a base any more:
       # the version numbers are stamped at deploy (tools/stamp_versions.py, Pierre 2026-11-04), never bumped in a PR.
@@ -23,6 +24,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
+      # The checks and tests run python3: pinned, not the image's own (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest
+      # stable (rule 27b), the same in every workflow.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
       - name: Formatting (Prettier 3.9.10; .prettierrc.json, .prettierignore)
         run: |
           npx --yes prettier@3.9.10 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
@@ -55,7 +61,7 @@ jobs:
           python3 tools/check_versions.py
   smoke:
     name: smoke (${{ matrix.name }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       # Every smoke reports: one failing smoke no longer hides the others (the old single job stopped at its first failure).
       fail-fast: false
@@ -96,6 +102,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
+      # The checks and tests run python3: pinned, not the image's own (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest
+      # stable (rule 27b), the same in every workflow.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
       # The Chromium download (~170 MB) is kept between runs; the key follows the Playwright pin below.
       - uses: actions/cache@v6
         with:

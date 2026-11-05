@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   report:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 120
     steps:
       - name: Secret present?
@@ -38,12 +38,15 @@ jobs:
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.secret.outputs.ok == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.secret.outputs.ok == 'true'
         with:
           node-version: '26'
+          # No cache (privacy note above). setup-node v5+ caches by itself only for a package.json naming npm, which this
+          # repo never has; said explicitly so it stays off.
+          package-manager-cache: false
       - name: Compute and store the report (counts only in this log)
         if: steps.secret.outputs.ok == 'true'
         env:
