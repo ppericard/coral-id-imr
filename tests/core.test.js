@@ -29,7 +29,12 @@ const {
   memRecalc,
   PHOTO_BASE,
   photoLocal,
-  photoToSite,
+  photoFallback,
+  photoOnline,
+  photoFileOf,
+  photoAway,
+  photoIndex,
+  photoCropOf,
   scoreOf
 } = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
@@ -828,8 +833,9 @@ test('photos from R2: the R2 address made local again, an element pointed at the
   const inat = 'https://inaturalist-open-data.s3.amazonaws.com/photos/1/medium.jpg';
   assert.strictEqual(photoLocal(inat), inat, 'an iNaturalist photo is left alone');
   const mk = a => ({a, getAttribute: k => (k in a ? a[k] : null), setAttribute: (k, v) => (a[k] = v)}); // an element's attributes
+  // No record (no look, or a photo with no online original): the same files on the site.
   const i = mk({src: R + '-m.webp', srcset: `${R}-s.webp 480w, ${R}-m.webp 960w`, 'data-lo': R + '-s.webp', alt: 'x'});
-  assert.strictEqual(photoToSite(i), true);
+  assert.strictEqual(photoFallback(i), true);
   assert.deepStrictEqual(i.a, {
     src: 'img/acropora-wide-1-m.webp',
     srcset: 'img/acropora-wide-1-s.webp 480w, img/acropora-wide-1-m.webp 960w',
@@ -837,10 +843,82 @@ test('photos from R2: the R2 address made local again, an element pointed at the
     alt: 'x'
   });
   const f = mk({style: `--qbg:url('${R}-s.webp')`});
-  assert.strictEqual(photoToSite(f), true);
+  assert.strictEqual(photoFallback(f), true);
   assert.strictEqual(f.a.style, "--qbg:url('img/acropora-wide-1-s.webp')");
-  assert.strictEqual(photoToSite(mk({src: inat})), false, 'nothing to do on a photo not from R2');
-  assert.strictEqual(photoToSite(null), false);
+  assert.strictEqual(photoFallback(mk({src: inat})), false, 'nothing to do on a photo not from R2');
+  assert.strictEqual(photoFallback(null), false);
+});
+
+// Photos out of the repo, step 1 of Pierre's rule of 2026-11-05: when R2 fails, a photo with an online original
+// (iNaturalist, Pierre's own iNaturalist photos, FishBase) falls back to that original at a light size, never to img/;
+// a photo with none (IMR lecture photos, Coral Finder book scans, drawings) to the site's img/.
+test('photo fallback: the online original at a light size for an iNaturalist / FishBase photo, img/ for an IMR one', () => {
+  const D = {
+    gen: {
+      Acropora: {
+        views: {
+          wide: [
+            {f: 'acropora-wide-1', src: 'https://inaturalist-open-data.s3.amazonaws.com/photos/1/original.jpg'},
+            {f: 'acropora-wide-2', src: 'https://inaturalist-open-data.s3.amazonaws.com/photos/2/original.png', cr: [0.1, 0.2, 0.9, 1]}
+          ]
+        }
+      }
+    },
+    course: {Acropora: [{f: 'imr-p15_i4', imr: true, slide: 20}]},
+    fish: [{f: 'fbHachl_m0', src: 'https://www.fishbase.de/images/species/Hachl_m0.jpg'}]
+  };
+  const idx = photoIndex(D),
+    look = f => idx.f.get(f),
+    iN = (id, sz, ext = 'jpg') => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/${sz}.${ext}`;
+  // iNaturalist: small (240 px) for the 240 px file, medium (500 px) for 480, large (1024 px) for 960 and 1600: never
+  // the original (up to 2048 px, often several MB).
+  assert.strictEqual(photoOnline(iN(1, 'original'), 't'), iN(1, 'small'));
+  assert.strictEqual(photoOnline(iN(1, 'original'), 's'), iN(1, 'medium'));
+  assert.strictEqual(photoOnline(iN(1, 'original'), 'm'), iN(1, 'large'));
+  assert.strictEqual(photoOnline(iN(1, 'original'), ''), iN(1, 'large'));
+  // FishBase serves one file per photo: as it is.
+  assert.strictEqual(photoOnline(D.fish[0].src, 's'), D.fish[0].src);
+  // The file an R2 or site address names.
+  assert.deepStrictEqual(photoFileOf(PHOTO_BASE + 'img/acropora-wide-2-m.webp?c=0.1_0.2_0.9_1'), {f: 'acropora-wide-2', size: 'm'});
+  assert.deepStrictEqual(photoFileOf('img/imr-p15_i4.webp'), {f: 'imr-p15_i4', size: ''});
+  assert.deepStrictEqual(photoFileOf('http://127.0.0.1:8000/img/acropora-wide-1-t.webp#r1'), {f: 'acropora-wide-1', size: 't'});
+  assert.strictEqual(photoFileOf(iN(1, 'medium')), null);
+  // The chain picks the online original for an iNaturalist photo and a FishBase one, img/ for an IMR one.
+  assert.strictEqual(photoAway(PHOTO_BASE + 'img/acropora-wide-1-s.webp', look), iN(1, 'medium'));
+  assert.strictEqual(photoAway(PHOTO_BASE + 'img/acropora-wide-2-m.webp?c=0.1_0.2_0.9_1', look), iN(2, 'large', 'png'));
+  assert.strictEqual(photoAway(PHOTO_BASE + 'img/fbHachl_m0-s.webp', look), D.fish[0].src);
+  assert.strictEqual(photoAway(PHOTO_BASE + 'img/imr-p15_i4-m.webp', look), 'img/imr-p15_i4-m.webp');
+  assert.strictEqual(photoAway('img/acropora-wide-1.webp', look), iN(1, 'large'), 'a site address of an online photo too');
+  assert.strictEqual(photoAway(iN(1, 'medium'), look), iN(1, 'medium'), 'an online address is left alone');
+  // An element: src, srcset, its 480 px fallback (data-lo) and a backdrop all move; keepLo (under the service worker,
+  // which keeps photos offline under R2's address) leaves data-lo on R2.
+  const mk = a => ({a, getAttribute: k => (k in a ? a[k] : null), setAttribute: (k, v) => (a[k] = v)});
+  const R = PHOTO_BASE + 'img/acropora-wide-1';
+  const el = mk({src: R + '-m.webp', srcset: `${R}-s.webp 480w, ${R}-m.webp 960w, ${R}.webp 1600w`, 'data-lo': R + '-s.webp'});
+  assert.strictEqual(photoFallback(el, look), true);
+  assert.deepStrictEqual(el.a, {
+    src: iN(1, 'large'),
+    srcset: `${iN(1, 'medium')} 480w, ${iN(1, 'large')} 960w, ${iN(1, 'large')} 1600w`,
+    'data-lo': iN(1, 'medium')
+  });
+  const kept = mk({src: R + '-m.webp', 'data-lo': R + '-s.webp'});
+  photoFallback(kept, look, true);
+  assert.deepStrictEqual(kept.a, {src: iN(1, 'large'), 'data-lo': R + '-s.webp'});
+  const imr = mk({src: PHOTO_BASE + 'img/imr-p15_i4-m.webp', 'data-lo': PHOTO_BASE + 'img/imr-p15_i4-s.webp'});
+  photoFallback(imr, look);
+  assert.deepStrictEqual(imr.a, {src: 'img/imr-p15_i4-m.webp', 'data-lo': 'img/imr-p15_i4-s.webp'});
+  const fig = mk({style: `--qbg:url('${R}-s.webp')`});
+  photoFallback(fig, look);
+  assert.strictEqual(fig.a.style, `--qbg:url('${iN(1, 'medium')}')`);
+  // The crop baked into the site's file (data.json cr, tools/fetch_approved.py) drawn on the original: object-view-box
+  // inset(top right bottom left), as the admin's crop preview; none for an uncropped photo or a site address.
+  assert.strictEqual(photoCropOf(iN(2, 'large', 'png'), idx), 'inset(20% 10% 0% 10%)');
+  assert.strictEqual(photoCropOf(iN(2, 'medium', 'png') + '#r1', idx), 'inset(20% 10% 0% 10%)');
+  assert.strictEqual(photoCropOf(iN(1, 'large'), idx), '');
+  assert.strictEqual(photoCropOf('img/acropora-wide-2-m.webp', idx), '');
+  // A photo still remote (r: 1: a candidate just added, never downloaded) is shown whole already: no crop drawn.
+  const rem = photoIndex({p: [{f: 'x', r: 1, src: iN(3, 'original'), cr: [0, 0, 0.5, 0.5]}]});
+  assert.strictEqual(photoCropOf(iN(3, 'large'), rem), '');
 });
 
 test('typed answers: spelling tolerance, old names, a word that is no genus, two genera as close', () => {

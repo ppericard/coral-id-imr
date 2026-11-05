@@ -97,6 +97,48 @@ const server = http.createServer((req, res) => {
     return br;
   };
   const b = introsOn(await chromium.launch());
+  // iNaturalist answering from the local files (every outside host is cut off; no test reaches iNaturalist): once R2
+  // fails, a photo with an online original is read from it (core.js photoAway; Pierre, 2026-11-05), as a photo still
+  // remote (r: 1) always is. A photo with a local copy is served its own file at the size asked (small 240, medium 480,
+  // large 960 px), any other a local 480 px file. Each address asked is counted in INAT.
+  const INAT = [];
+  const inatIds = (() => {
+    const m = new Map(),
+      walk = o => {
+        if (!o || typeof o !== 'object') return;
+        if (Array.isArray(o)) return o.forEach(walk);
+        const id = typeof o.f === 'string' && typeof o.src === 'string' && (/\/photos\/(\d+)\//.exec(o.src) || [])[1];
+        if (id && !m.has(id)) m.set(id, o.f);
+        Object.values(o).forEach(walk);
+      };
+    ['data.json', 'cand.json'].forEach(f => walk(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))));
+    return m;
+  })();
+  const anyS = () => fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'));
+  const inatLocal = ctx =>
+    ctx.route(/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(small|medium|large|original)\./, r => {
+      const u = r.request().url(),
+        [, id, sz] = /\/photos\/(\d+)\/(\w+)\./.exec(u),
+        f = inatIds.get(id),
+        own = f && path.join(ROOT, 'img', `${f}${{small: '-t', medium: '-s', large: '-m'}[sz] || ''}.webp`);
+      INAT.push(u);
+      return r.fulfill({
+        contentType: 'image/webp',
+        body: fs.readFileSync(own && fs.existsSync(own) ? own : path.join(ROOT, 'img', anyS()))
+      });
+    });
+  // R2 answering, from the local files, with the bucket's CORS header.
+  const R2 = require('../core.js').PHOTO_BASE;
+  const fromR2 = ctx =>
+    ctx.route(
+      u => u.href.startsWith(R2),
+      r => {
+        const f = path.join(ROOT, decodeURIComponent(new URL(r.request().url()).pathname));
+        return fs.existsSync(f)
+          ? r.fulfill({status: 200, contentType: 'image/webp', headers: {'Access-Control-Allow-Origin': '*'}, body: fs.readFileSync(f)})
+          : r.fulfill({status: 404});
+      }
+    );
   const ctxOf = async (opts = {}) => {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: opts.dpr || 1, serviceWorkers: 'block'});
     await ctx.addInitScript(() => {
@@ -112,6 +154,7 @@ const server = http.createServer((req, res) => {
         return r.abort();
       }
     );
+    if (opts.inat !== false) await inatLocal(ctx);
     if (opts.hangCuration) await ctx.route(base + 'curation.json', () => {}); // never answers
     if (opts.failFull) {
       await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
@@ -160,12 +203,18 @@ const server = http.createServer((req, res) => {
       // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1; Millepora's until 2026-11-03) is its 'medium' file for
       // 480 px and 'large' otherwise, names resized() leaves alone, so comparing resized(…, '') failed whenever
       // Millepora came up (#376). The host is chosen when it shows too: R2 is cut off here, and about a second after the
-      // first R2 failure (core.js photoRetry: one more try PHOTO_RETRY ms later) the page reads its photos from the site
-      // (app.js R2 false). Planned while R2 was still on and shown after, the same file came from img/ instead of the
-      // R2 address read with the plan: this check failed about 1 run in 3 on a busy machine (2026-11-03). Both sides
-      // are compared without the R2 base (core.js photoLocal); check 12 is about which host.
+      // first R2 failure (core.js photoRetry: one more try PHOTO_RETRY ms later) the page reads its photos from their
+      // online original or the site (app.js AWAY). Planned while R2 was still on and shown after, the same file came
+      // from elsewhere than the R2 address read with the plan: this check failed about 1 run in 3 on a busy machine
+      // (2026-11-03). Each file is taken under both: without the R2 base (core.js photoLocal) and where it goes once R2
+      // failed (core.js photoAway); check 12 is about which host.
       const want = await p2.evaluate(() =>
-        NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => ({f: x.f, files: [img(x, 's'), img(x, 'm'), img(x, '')].map(photoLocal)})) : []
+        NEXTQ && NEXTQ.args
+          ? NEXTQ.args[4].shown.map(x => ({
+              f: x.f,
+              files: [img(x, 's'), img(x, 'm'), img(x, '')].flatMap(u => [photoLocal(u), photoAway(u, photoLook)])
+            }))
+          : []
       );
       await p2.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
       await p2.click('#next');
@@ -200,9 +249,10 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('Fallback: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
-  // 3b. Everything failing: another question is offered, nothing counted, no answer taken.
+  // 3b. Everything failing (R2, the online originals, the site): another question is offered, nothing counted, no answer
+  // taken, and each photo frame shows the "photo missing" tile (app.js noPhoto; Pierre, 2026-11-05).
   {
-    const {ctx, p, errs} = await ctxOf({failAll: true});
+    const {ctx, p, errs} = await ctxOf({failAll: true, inat: false});
     await p.goto(base + '#quiz');
     await ready(p);
     const n0 = await p.evaluate(() => answersSoFar());
@@ -224,12 +274,20 @@ const server = http.createServer((req, res) => {
           open: [...document.querySelectorAll('#view [data-c], #view [data-w], #view .tyform input')].filter(b => !b.disabled).length,
           seen: !!at && !!at.closest('#qfail'),
           icon: [...document.querySelectorAll('#view .qstage img')].filter(i => getComputedStyle(i).visibility !== 'hidden').length,
-          figs: [...document.querySelectorAll('#view .qstage .qph')].map(f => Math.round(f.getBoundingClientRect().height))
+          figs: [...document.querySelectorAll('#view .qstage .qph')].map(f => Math.round(f.getBoundingClientRect().height)),
+          // The "photo missing" tile over every frame whose photo gave up: drawn (an SVG at least 40 px wide), on screen.
+          tiles: [...document.querySelectorAll('#view .qstage .qph')].map(f => {
+            const t = f.querySelector('.nophoto svg'),
+              r = t && t.getBoundingClientRect();
+            return !!r && r.width >= 40 && getComputedStyle(f.querySelector('.nophoto')).visibility === 'visible';
+          })
         };
       });
       if (st.open) fails.push(`A question with no photo shown still took answers (${st.open} open)`);
       if (!st.seen) fails.push('The note "A photo did not load" is not in view');
       if (st.icon) fails.push(`A question photo that did not load shows a broken-image frame (${st.icon})`);
+      if (!st.tiles.length || !st.tiles.every(Boolean))
+        fails.push(`A question photo that did not load shows no "photo missing" tile (${st.tiles})`);
       if (!st.figs.length || st.figs.some(h => h < 150)) fails.push(`The question stage collapsed: ${st.figs}`);
       const b1 = await p.$('#view [data-c]');
       if (b1) await b1.click({force: true}).catch(() => {});
@@ -238,15 +296,13 @@ const server = http.createServer((req, res) => {
       // A photo of the question that comes later opens the answers again: the hint if the question has one, else one
       // added as the hint is (Codex review #490: the hint, added after the answers closed, left them closed).
       await ctx.unroute(/\/img\/.*\.webp/);
+      await inatLocal(ctx);
       if (await p.$('#hintb')) await p.click('#hintb');
       else
-        await p.evaluate(
-          src => {
-            const st = document.querySelector('#view .qstage');
-            st.insertAdjacentHTML('beforeend', `<figure class="qph"><img src="${src}" alt=""></figure>`);
-          },
-          'img/' + fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'))
-        );
+        await p.evaluate(src => {
+          const st = document.querySelector('#view .qstage');
+          st.insertAdjacentHTML('beforeend', `<figure class="qph"><img src="${src}" alt=""></figure>`);
+        }, 'img/' + anyS());
       await p
         .waitForSelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform input:not([disabled])', {
           timeout: 10000
@@ -306,6 +362,8 @@ const server = http.createServer((req, res) => {
         u => !u.href.startsWith(base),
         r => r.abort()
       );
+      // R2 answering (from the local files): the files' sizes are checked here, not where they come from (check 12).
+      await fromR2(ctx);
       await ctx.addInitScript(init);
       const p = await ctx.newPage(),
         errs = [];
@@ -326,8 +384,7 @@ const server = http.createServer((req, res) => {
       // Home band thumbnails (~60 px on a phone): the 240 px files (Pierre: no big files for how they are shown).
       // A 480 px file the quiz already fetched (its next questions' photos) may be shown instead: the browser picks a
       // srcset file it already has, at no cost.
-      // The quiz's preloads first: with R2 cut off (as here) they reach the site only after their R2 retry (core.js
-      // PHOTO_RETRY), and a file they bring in later would be taken for one Home asked for.
+      // The quiz's preloads first: a file they bring in later would be taken for one Home asked for.
       await p.evaluate(() => Promise.race([prefetched(), new Promise(ok => setTimeout(ok, 15000))]));
       const t0 = await p.evaluate(() => ((location.hash = 'home'), performance.now()));
       await p.waitForTimeout(1500);
@@ -750,23 +807,13 @@ const server = http.createServer((req, res) => {
     if (!ok) fails.push('The service worker did not install when each file failed once');
     await ctx.close();
   }
-  // 12. Photos from R2 (core.js PHOTO_BASE; ROADMAP "Photos out of the repo", step 2). The app asks R2 for its photos;
-  // R2 out of reach (cut off here, like every outside host: no test needs R2), the same files come from the site at once,
-  // and so do the next ones. Under the service worker, the worker falls back to the site by itself, asks R2 in CORS mode
-  // and keeps the photo offline, under either address.
+  // 12. Photos from R2 (core.js PHOTO_BASE; ROADMAP "Photos out of the repo"). The app asks R2 for its photos; R2 out of
+  // reach (cut off here, like every outside host: no test needs R2), a photo with an online original comes from it at a
+  // light size (iNaturalist's medium or large, never the original; answered here from the local files), one with none
+  // (IMR lecture photos) from the site's img/, at once, and so do the next ones (Pierre, 2026-11-05: the photos with an
+  // online original leave img/). Under the service worker, the worker asks R2 in CORS mode, keeps the photo offline under
+  // either address and leaves the fallback to the page (it no longer serves the site's copy by itself).
   {
-    const R2 = require('../core.js').PHOTO_BASE;
-    // R2 answering, from the local files, with the bucket's CORS header.
-    const fromR2 = ctx =>
-      ctx.route(
-        u => u.href.startsWith(R2),
-        r => {
-          const f = path.join(ROOT, decodeURIComponent(new URL(r.request().url()).pathname));
-          return fs.existsSync(f)
-            ? r.fulfill({status: 200, contentType: 'image/webp', headers: {'Access-Control-Allow-Origin': '*'}, body: fs.readFileSync(f)})
-            : r.fulfill({status: 404});
-        }
-      );
     const shown = p =>
       p
         .waitForFunction(
@@ -779,6 +826,17 @@ const server = http.createServer((req, res) => {
         )
         .then(h => h.jsonValue())
         .catch(() => null);
+    // Where each photo of the question on screen should come from once R2 failed, by its name (data-f): its online
+    // original at a light size when it has one, else the site. The photos that are not so.
+    const misplaced = p =>
+      p.evaluate(() =>
+        [...document.querySelectorAll('#view .qstage img')]
+          .map(i => [i.dataset.f, i.getAttribute('src'), photoLook(i.dataset.f)])
+          .filter(([f, u, r]) =>
+            r && r.src ? !/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(medium|large)\./.test(u) : !u.startsWith('img/')
+          )
+          .map(([f, u]) => `${f} ${u}`)
+      );
     // a. R2 answering: the game photos are R2's.
     {
       const {ctx, p, errs} = await ctxOf();
@@ -790,18 +848,52 @@ const server = http.createServer((req, res) => {
       if (errs.length) fails.push('R2: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
-    // b. R2 cut off: R2 was asked, the photos show from the site's img/, no "Another question", and the next question
-    // asks R2 nothing more.
+    // b. R2 cut off: R2 was asked, the photos show from their online original or the site's img/, no "Another
+    // question", and the next question asks R2 nothing more. A cropped photo shown from its original gets its crop drawn
+    // (object-view-box, core.js photoCropOf), on an element that fell back and on one made afterwards; an IMR lecture
+    // photo, which has no online original, comes from img/.
     {
       const {ctx, p, errs} = await ctxOf();
       let asked = 0;
       p.on('request', r => r.url().startsWith(R2) && asked++);
       await p.goto(base + '#quiz');
       await ready(p);
-      const s = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
+      const s = (await shown(p)) || [];
       if (!asked) fails.push('R2 cut off: R2 was never asked for a photo');
-      if (!s.length || !s.every(u => u.startsWith('img/')) || (await p.$('#qfail')))
-        fails.push(`R2 cut off: the game photos did not fall back to the site (${s})`);
+      const off = await misplaced(p);
+      if (!s.length || off.length || (await p.$('#qfail')))
+        fails.push(`R2 cut off: the game photos did not fall back to their online original or the site (${off.length ? off : s})`);
+      if (s.some(u => /\/original\./.test(u))) fails.push(`R2 cut off: an online original was asked at full size (${s})`);
+      // One cropped photo with an online original and one IMR lecture photo, each asked from R2 (as an element built
+      // before R2 failed) and built afterwards (loc: AWAY), in a game frame.
+      const cr = await p.evaluate(async () => {
+        const idx = photoIdx(),
+          c = [...idx.f.values()].find(x => x.cr && !x.r),
+          imr = Object.values(DATA.course).flat()[0],
+          box = document.createElement('figure');
+        box.className = 'qph';
+        box.innerHTML = [c, imr]
+          .map(x => `<img src="${PHOTO_BASE}img/${x.f}-s.webp${ver(x)}" alt=""><img src="${loc(x, 's')}" alt="">`)
+          .join('');
+        document.getElementById('view').append(box);
+        const I = [...box.querySelectorAll('img')];
+        await Promise.all(
+          I.map(i => new Promise(ok => (i.complete && i.naturalWidth ? ok() : i.addEventListener('load', ok)))).map(w =>
+            Promise.race([w, new Promise(ok => setTimeout(ok, 5000))])
+          )
+        );
+        const out = I.map(i => ({src: i.getAttribute('src'), vb: i.style.getPropertyValue('object-view-box'), ok: i.naturalWidth > 0}));
+        box.remove();
+        // As the browser writes it back (inset(7.5% 1.5% 7.5% 1.5%) reads inset(7.5% 1.5%)).
+        const n = document.createElement('i');
+        n.style.setProperty('object-view-box', photoCropOf(photoOnline(c.src, 's'), idx));
+        return {want: n.style.getPropertyValue('object-view-box'), out};
+      });
+      const [c1, c2, i1, i2] = cr.out;
+      if (![c1, c2].every(x => x.ok && /\/medium\./.test(x.src) && x.vb === cr.want && cr.want))
+        fails.push(`R2 cut off: a cropped photo from its online original lacks its crop (${JSON.stringify([cr.want, c1, c2])})`);
+      if (![i1, i2].every(x => x.ok && x.src.startsWith('img/') && !x.vb))
+        fails.push(`R2 cut off: an IMR lecture photo did not come from the site's img/ (${JSON.stringify([i1, i2])})`);
       const n = asked;
       // A question none of whose photos showed takes no answer (#490: its answers are closed): said as a failure of this
       // check, never a click that waits 30 s and stops every check after it (2026-11-04, a local run).
@@ -811,11 +903,110 @@ const server = http.createServer((req, res) => {
         await b.click();
         await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
         await p.click('#next', {timeout: 10000}).catch(() => fails.push('R2 cut off: no Next after the answer'));
-        const s2 = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
-        if (!s2.length || !s2.every(u => u.startsWith('img/')) || asked !== n)
-          fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${s2})`);
+        const s2 = (await shown(p)) || [],
+          off2 = await misplaced(p);
+        if (!s2.length || off2.length || asked !== n)
+          fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${off2.length ? off2 : s2})`);
       }
+      // The first R2 failure coming from a quiz preload, no element having failed yet: the crops are drawn from then on
+      // too (Codex review #569: only an element's fallback started the crop watch).
+      const pre = await p.evaluate(async () => {
+        ((R2 = true), (AWAY = false));
+        if (CROPW) CROPW.disconnect();
+        CROPW = null;
+        const u = PHOTO_BASE + 'img/no-such-photo-s.webp',
+          x = {urls: [u], held: [], r2try: new Set([u])};
+        ONQ = x;
+        PF.push(x);
+        pump();
+        for (let k = 0; k < 50 && !AWAY; k++) await new Promise(ok => setTimeout(ok, 100));
+        return {away: AWAY, watch: !!CROPW};
+      });
+      if (!pre.away || !pre.watch) fails.push(`R2 cut off: a failure from a preload did not start the crop watch (${JSON.stringify(pre)})`);
       if (errs.length) fails.push('R2 cut off: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // e. The admin, R2 cut off: a downloaded, cropped photo shown from its online original keeps its published crop
+    // (Codex review #569), on its genus page.
+    {
+      const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
+        C = JSON.parse(fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8')),
+        [g, ph] = Object.entries(D.cand || {})
+          .flatMap(([g, L]) => L.map(x => [g, x]))
+          .find(([g, x]) => x.cr && !x.r && ((C.genera || {})[g] || {}).add && C.genera[g].add[x.f] && !(C.exclude || {})[x.f]);
+      const ctx = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await inatLocal(ctx);
+      const p = await ctx.newPage(),
+        errs = [];
+      p.on('pageerror', e => errs.push(e.message));
+      await p.goto(base + 'admin.html?demo#' + g);
+      const sel = `figure[data-f="${ph.f}"] img`;
+      await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
+      await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
+      const st = await p
+        .waitForFunction(
+          s => {
+            const i = document.querySelector(s);
+            return (
+              i &&
+              /\/photos\//.test(i.getAttribute('src')) &&
+              i.complete && {src: i.getAttribute('src'), vb: i.style.getPropertyValue('object-view-box')}
+            );
+          },
+          sel,
+          {timeout: 15000}
+        )
+        .then(h => h.jsonValue())
+        .catch(() => null);
+      if (!st || !st.vb)
+        fails.push(`Admin, R2 cut off: a cropped photo from its online original lacks its crop (${g} ${ph.f} ${JSON.stringify(st)})`);
+      if (errs.length) fails.push('Admin, R2 cut off: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // f. The admin under the service worker, R2 cut off: each photo falls back on its own and the tab keeps asking R2,
+    // where the worker keeps its offline copies (Codex review #569: one failure sent every later photo online, past them).
+    {
+      const ctx = await b.newContext({viewport: {width: 1280, height: 900}});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await inatLocal(ctx);
+      const p = await ctx.newPage(),
+        errs = [];
+      p.on('pageerror', e => errs.push(e.message));
+      await p.goto(base + 'admin.html?demo#~todo');
+      await p.evaluate(() =>
+        Promise.race([
+          navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready),
+          new Promise(ok => setTimeout(ok, 30000))
+        ]).catch(() => {})
+      );
+      if (!(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
+        fails.push('Admin, R2 cut off, service worker: it never took the page over');
+      else {
+        await p.goto(base + 'admin.html?demo#Acropora');
+        await p.reload(); // a hash change alone keeps the page from before the worker
+        // A photo of the genus page shown from its online original: R2 failed for it.
+        const ok = await p
+          .waitForFunction(
+            () => [...document.querySelectorAll('figure[data-f] img')].some(i => /\/photos\//.test(i.getAttribute('src')) && i.complete),
+            null,
+            {
+              timeout: 20000
+            }
+          )
+          .then(() => true)
+          .catch(() => false);
+        if (!ok) fails.push('Admin, R2 cut off, service worker: no photo fell back to its online original');
+        if (!(await p.evaluate(() => R2 && !AWAY)))
+          fails.push('Admin, R2 cut off, service worker: the tab gave R2 up (its offline copies are there)');
+      }
+      if (errs.length) fails.push('Admin, R2 cut off, service worker: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
     // b2. R2 failing once per file (a passing error, Pierre 2026-11-03): each photo is asked from R2 a second time and
@@ -841,6 +1032,52 @@ const server = http.createServer((req, res) => {
         fails.push(`R2 failing once: the photos did not come from R2 on the second try (${s})`);
       if (!(await p.evaluate(() => R2))) fails.push('R2 failing once: the page gave R2 up after one passing error');
       if (errs.length) fails.push('R2 failing once: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // d. The app under its service worker, R2 cut off: each photo of the question falls back on its own, to its online
+    // original or img/, and the page keeps asking R2 (the worker serves its offline copies under R2's address and fails
+    // at once while R2 is out), so a photo kept offline is never missed for an online one.
+    {
+      const ctx = await b.newContext({viewport: {width: 390, height: 800}});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await inatLocal(ctx);
+      await ctx.addInitScript(() => {
+        try {
+          localStorage.setItem('reefid-tour', '1');
+          localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        } catch (e) {}
+      });
+      const p = await ctx.newPage(),
+        errs = [];
+      p.on('pageerror', e => errs.push(e.message));
+      await p.goto(base + '#quiz');
+      await ready(p);
+      // The app registers its worker on https only (app.js, tier 5): registered here as in check 9; it takes the page over
+      // (clients.claim), and the reload is then all its own.
+      await p.evaluate(() =>
+        Promise.race([
+          navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready),
+          new Promise(ok => setTimeout(ok, 30000))
+        ]).catch(() => {})
+      );
+      if (!(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
+        fails.push('R2 cut off, service worker: it never took the page over');
+      else {
+        await p.reload();
+        await ready(p);
+        const s = (await shown(p)) || [],
+          off = await misplaced(p);
+        if (!s.length || off.length || (await p.$('#qfail')))
+          fails.push(
+            `R2 cut off, service worker: the game photos did not fall back to their online original or the site (${off.length ? off : s})`
+          );
+        if (!(await p.evaluate(() => swOn() && R2 && !AWAY)))
+          fails.push('R2 cut off, service worker: the page gave R2 up (its offline copies are there)');
+      }
+      if (errs.length) fails.push('R2 cut off, service worker: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
     // c. Under the service worker (a bare page, as in 6).
@@ -893,34 +1130,43 @@ const server = http.createServer((req, res) => {
       if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: an R2 photo did not load from R2');
       const t = await kept(R2 + 'img/' + g);
       if (t !== 'cors') fails.push(`Service worker: the R2 photo was not kept as a CORS reply (${t})`);
-      // R2 cut off: the worker serves the site's copy, kept under the R2 address, and tells the page (sw.js r2Down,
-      // Codex review #392), whose next photos then come from the site straight away.
-      let r2hits = 0;
+      // R2 cut off: the worker does not serve the site's copy (the page picks the next source: the online original, or
+      // img/ for a photo with none), asks the site nothing for it, and keeps nothing.
+      let r2hits = 0,
+        site = 0;
       await ctx.route(
         u => u.href.startsWith(R2),
         r => (r2hits++, r.abort())
       );
-      await p.evaluate(() => {
-        window.R2DOWN = 0;
-        navigator.serviceWorker.addEventListener('message', e => e.data && e.data.t === 'reefid-r2-down' && window.R2DOWN++);
-        navigator.serviceWorker.startMessages();
-      });
-      if (!(await load(R2 + 'img/' + f))) fails.push('Service worker: an R2 photo did not fall back to the site');
-      if (!(await p.waitForFunction(() => window.R2DOWN > 0, null, {timeout: 3000}).catch(() => null)))
-        fails.push('Service worker: R2 failed but the page was not told');
-      if (!(await kept(R2 + 'img/' + f))) fails.push('Service worker: the photo served from the site was not kept');
-      // R2 failed twice: for a while the worker asks the site straight away (sw.js R2_PAUSE), no request held on R2.
-      const n2 = r2hits;
-      if (!(await load(R2 + 'img/' + f.replace(/-s\.webp$/, '.webp'))) || r2hits !== n2)
-        fails.push(`Service worker: after R2 failed, the next photo asked R2 again (${r2hits - n2}) or did not load`);
+      ctx.on('request', r => r.url().startsWith(base + 'img/') && site++); // the worker's requests too
+      if (await load(R2 + 'img/' + f)) fails.push('Service worker: R2 cut off, the worker still served a photo (the site’s copy)');
+      if (site) fails.push(`Service worker: R2 cut off, the worker asked the site for the photo (${site})`);
+      if (r2hits < 2) fails.push(`Service worker: R2 was asked ${r2hits} time(s), not twice (a passing error gets a second try)`);
+      if (await kept(R2 + 'img/' + f)) fails.push('Service worker: a photo R2 did not give was kept');
+      // R2 failed twice: for a while the worker fails at once (sw.js R2_PAUSE), no request held on R2.
+      const n2 = r2hits,
+        t2 = Date.now();
+      if ((await load(R2 + 'img/' + f.replace(/-s\.webp$/, '.webp'))) || r2hits !== n2 || Date.now() - t2 > 600)
+        fails.push(`Service worker: after R2 failed, the next photo asked R2 again (${r2hits - n2}) or did not fail at once`);
+      // A photo kept under its R2 address is still served while R2 is cut off.
+      if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: R2 cut off, a photo kept under its R2 address was not served');
       // Offline: a photo kept under the site's address is served for its R2 address.
-      const h = f.replace(/-s\.webp$/, '-m.webp');
+      const h = f.replace(/-s\.webp$/, '-m.webp'),
+        k = fs.readdirSync(path.join(ROOT, 'img')).filter(x => x.endsWith('-s.webp'))[1]; // another photo, not shown yet (no memory cache)
       await load(base + 'img/' + h);
+      await load(base + 'img/' + k);
       await ctx.route(
         u => u.href.startsWith(R2) || u.href.startsWith(base + 'img/'),
         r => r.abort()
       );
       if (!(await load(R2 + 'img/' + h))) fails.push('Service worker: offline, a photo kept from the site was not served for R2');
+      // Offline while Cache Storage is paused (sw.js soon: a slow cache is skipped for CACHE_PAUSE ms), R2 failed a moment
+      // ago: the photo kept offline is still served, by the last lookup with no time limit (Codex review #569: the
+      // worker's failure reply skipped it).
+      const [w] = ctx.serviceWorkers();
+      if (w) await w.evaluate(() => (cacheOff = Date.now()));
+      if (!w || !(await load(R2 + 'img/' + k)))
+        fails.push('Service worker: offline with Cache Storage paused, a photo kept offline was not served');
       await ctx.close();
     }
   }
@@ -978,7 +1224,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload, load order and links straight to a page, photos from R2 with the site as the fallback.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload, load order and links straight to a page, photos from R2 with the online original or the site as the fallback, the "photo missing" tile.'
   );
 })().catch(e => {
   console.error(e);

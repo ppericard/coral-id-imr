@@ -80,19 +80,36 @@ try {
 // A recropped photo keeps its file name: its URL carries the crop (cr) and rewrite count (iv) so no cache serves the old file.
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
 // The site's photos from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers; once an R2 photo failed in this tab, it and
-// the next ones come from the site's img/ (as app.js photoFail; under the service worker, sw.js falls back by itself).
-let R2 = !!PHOTO_BASE;
+// the next ones come from their online original at a light size, or from the site's img/ for a photo with none (as
+// app.js photoFail, core.js photoAway; Pierre, 2026-11-05: the photos with an online original leave img/).
+let R2 = !!PHOTO_BASE,
+  AWAY = false,
+  PIDX = null;
+const photoIdx = () => (PIDX = PIDX && PIDX.of === DATA ? PIDX : {of: DATA, ...photoIndex(DATA)});
+const photoLook = f => photoIdx().f.get(f);
 const img = (p, s) =>
   p.r && p.src
     ? p.src.replace('/original.', s ? '/medium.' : '/large.')
-    : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+    : AWAY && p.src
+      ? photoOnline(p.src, s ? 's' : '')
+      : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 document.addEventListener(
   'error',
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
-    const toSite = i => photoToSite(i) && ((R2 = false), true);
-    // R2 once more first (core.js photoRetry: a passing error), then the site.
-    if (photoRetry(e.target, toSite) || toSite(e.target)) e.stopImmediatePropagation();
+    // The published crop, baked into the site's files, drawn on the original (core.js photoCropOf; Codex review #569);
+    // crSrc draws it on the next renders (AWAY). Under a service worker, as app.js away: only this photo moves, and the
+    // tab keeps asking R2, where the worker keeps its offline copies (and has retried R2 already).
+    const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    const away = i => {
+      if (!photoFallback(i, photoLook)) return false;
+      if (!sw) ((R2 = false), (AWAY = true));
+      const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
+      if (c && !i.style.getPropertyValue('object-view-box')) i.style.setProperty('object-view-box', c);
+      return true;
+    };
+    // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
+    if ((!sw && photoRetry(e.target, away)) || away(e.target)) e.stopImmediatePropagation();
   },
   true
 );
@@ -230,10 +247,6 @@ if ('serviceWorker' in navigator) {
     if (had) UPDATED = true;
     had = true;
   });
-  // The worker could not get a photo from R2 (sw.js r2Down): the next photos come from the site, as app.js does.
-  navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.t === 'reefid-r2-down') R2 = false;
-  });
 }
 // The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.
 // Two admin tabs in one browser share the stored draft (code re-review 2026-11-01, M4). Every write is tagged with this
@@ -367,7 +380,8 @@ const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 const sugCrop = p => (p && p.j && p.j.c && !crOf(p.f) ? p.j.c : null);
 const crSrc = (p, s) => {
   const c = crOf(p.f) || sugCrop(p),
-    baked = !p.r && p.cr;
+    // Once R2 failed, a downloaded photo comes from its online original, uncropped (img(), AWAY): its crop is drawn.
+    baked = !p.r && p.cr && !(AWAY && p.src);
   if (baked && same(c, p.cr)) return `src="${img(p, s)}"`;
   const src = baked && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : img(p, s);
   return c
