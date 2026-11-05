@@ -6559,11 +6559,12 @@ const UCOLS = [
   ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent']
 ];
 // The beta group (sheet v48; Pierre, 2026-11-04: a subject in beta opens to a group he picks here, for now everyone, not
-// by one site-wide switch): on the Players page of a subject in beta (the admin's subject switch), whether each player is
+// by one site-wide switch): on the Players page of a subject that opens to a group (core.js SUBJECTS open: 'group',
+// subjGroup; none once it opens to all, even with its "beta" tag kept; the admin's subject switch), whether each player is
 // in its group (Code.gs groupSet_; the app opens the subject to them, app.js subjOpen). Add / Remove under the row, Add
 // all above the table.
 const GROUP_SHEET = 48;
-const groupOn = () => !!ASUBJ.beta && (USERS.v || 0) >= GROUP_SHEET;
+const groupOn = () => subjGroup(ASUBJ) && (USERS.v || 0) >= GROUP_SHEET;
 const inGroup = u => (u.groups || []).includes(ASUBJ.id);
 UCOLS.push(['group', 'Beta', u => (inGroup(u) ? 1 : 0), 0, 'In the beta group']);
 // Last answer, second column (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
@@ -6680,7 +6681,7 @@ function renderUsers() {
     })[k];
   // The beta group's line above the table (groupOn): how many players are in it, and Add all for the others.
   const gOut = groupOn() ? U.filter(u => !inGroup(u)) : [],
-    gLine = !ASUBJ.beta
+    gLine = !subjGroup(ASUBJ)
       ? ''
       : !groupOn()
         ? `<p class="note">The ${esc(ASUBJ.name)} beta group needs the sheet script v${GROUP_SHEET} (live: v${USERS.v || '?'}).</p>`
