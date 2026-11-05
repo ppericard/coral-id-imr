@@ -1693,7 +1693,7 @@ async function signin(base) {
         rname: localStorage.getItem('reefid-report-name'),
         posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.del)
       }));
-      if (!/were deleted/.test(s.page) || s.account || s.prog || s.rname || s.reports.join() !== 'q2')
+      if (!/were permanently deleted/.test(s.page) || s.account || s.prog || s.rname || s.reports.join() !== 'q2')
         fails.push('delete account: the device is not signed out and cleared: ' + JSON.stringify(s).slice(0, 240));
       if (s.posts.length !== 1 || s.posts[0].name) fails.push('delete account: the request: ' + JSON.stringify(s.posts));
     }
