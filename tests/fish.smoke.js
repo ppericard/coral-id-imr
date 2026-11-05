@@ -255,6 +255,31 @@ const server = http.createServer((req, res) => {
     );
     bonusSet(false, 'sci');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    // Report a problem after a fish answer (fish beta sweep, 2026-11-05: the right-answer list offered the teaching ids,
+    // "t01", and the dialog spoke of genera and corals): the fish names, in the fish words.
+    closeCards();
+    quizPhoto();
+    const rq = document.querySelector('#view [data-c]');
+    if (rq) rq.click();
+    else {
+      const f = document.querySelector('#view .tyform');
+      f.querySelector('input').value = GX(SHOWNQ[1]).name;
+      f.requestSubmit();
+    }
+    const rb = document.querySelector('#view [data-rep]');
+    ok(rb, 'report: a Report button after the answer');
+    if (rb) {
+      rb.click();
+      const dl = document.querySelector('#repdlg');
+      const opts = [...dl.querySelectorAll('#repgen option')].map(o => o.value);
+      ok(opts.length >= 27 && opts.includes('Damselfish'), 'report: the fish names offered ' + opts.slice(0, 3));
+      ok(!opts.some(o => /^t\d+$/.test(o)), 'report: no teaching id offered ' + opts.filter(o => /^t\d+$/.test(o)).slice(0, 3));
+      const txt = dl.textContent;
+      ok(/Right family, if you know/.test(txt) && /Several fish/.test(txt), 'report: the fish words');
+      ok(!/genus|coral/i.test(txt), 'report: no coral words: ' + txt.replace(/\s+/g, ' ').slice(0, 160));
+      ok(!/\bt\d\d\b/.test(dl.querySelector('input[name="fix"]').placeholder), 'report: no teaching id as the example');
+      dl.close();
+    }
     return fails;
   });
   // Back to corals: the coral slate and its progress.
