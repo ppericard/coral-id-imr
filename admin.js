@@ -2170,7 +2170,7 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, by anonymous id; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -3215,8 +3215,10 @@ function renderTriage() {
   if (!FISHA && reps.some(r => /^fi\d/.test(r[10] || '') || /^t\d/.test(r[5] || ''))) fishAdmin();
   const repCard = r => {
     const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
-      play = !/^(photo|sheet|page)$/.test(m);
-    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead"><b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>
+      play = !/^(photo|sheet|page)$/.test(m),
+      // sheet v55: the reports of an account deleted with its answers kept are "~deleted <id>", never verified (Q85)
+      gone = /^~deleted /.test(who || '');
+    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : `<b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>`}
       <span class="adm-repwhy">${esc(why === 'wrong' && !play ? 'Wrong genus' : REP_WHY[why] || why)}</span>${g ? `<span>${repUnit(g)}${a && a !== g ? ` · answered ${repUnit(a)}` : ''}</span>` : ''}${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
       <small class="adm-where">${esc(play ? 'game ' + m : m)}${w ? ` · <a href="index.html#${esc(w)}" target="_blank" rel="noopener">${esc(w)}</a>` : ''} · ${esc(when(t))}</small><button type="button" class="adm-tdone" data-rdone="${esc(id)}">✓ Done</button></div>
       ${note ? `<p class="adm-repnote">${esc(note)}</p>` : ''}${
@@ -4388,11 +4390,7 @@ function retireOrder(n, w, cols) {
     }
     if (nn !== null && nn < 0.5) {
       c.score += 3 * (1 - nn / 0.5);
-      // [text for the tile's title, HTML for the note: the reading as a badge, its raw value in the badge's title].
-      c.why.push([
-        `recognised by ${recPct(c.d)} (difficulty ${rawNum(c.d)}), like another colony`,
-        `recognised by ${recBadge(c.d, {short: 1, of: 'its photos', raw: 'mean photo difficulty'})}, like another colony`
-      ]);
+      c.why.push(`recognised by ${recPct(c.d)}, like another colony`);
     }
     if (c.ans >= 10) {
       c.score += Math.min(2, c.ans / 30);
@@ -4439,11 +4437,11 @@ function renderRepl() {
   const QN = {1: 'Poor', 2: 'Fair', 3: 'Good'};
   $v.innerHTML = `<section class="adm-repl">
     <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
-    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${sug.why.map(x => (Array.isArray(x) ? x[1] : esc(x))).join(', ')})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
+    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${esc(sug.why.join(', '))})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
     <figure class="adm-repl-new"><img ${crSrc(p)} alt=""><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
     <div class="adm-repl-grid">${cols
       .map(
-        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.map(x => (Array.isArray(x) ? x[0] : x)).join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
+        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
         <span>${c === sug ? '<b>Suggested</b> · ' : ''}${QN[c.q] || ''}${c.ft ? ' · featured' : ''}${c.L.length > 1 ? ` · ${c.L.length} photos` : ''}${c.keep ? ` · keep (${esc(c.keep)})` : ''}</span></button>`
       )
       .join('')}</div>
@@ -6358,11 +6356,15 @@ function bindStats() {
 // by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
 // for reports). Merge = two names of one person: the progress is merged here (core.js mergeUsers: answers add up, the
 // busier account's model per genus), then the sheet relabels the answers and reports and deletes the other name.
-// Delete = a test or abandoned account (its answers stay for photo difficulty, without the name, unless asked).
+// Delete (sheet v55, Pierre 2026-11-05, Q85/Q89: two named choices, no default): "Delete everything" (a test account, or
+// a player who asked: answers and reports too) or "Delete, keep answers anonymously" (answers and reports stay without
+// the name: the answers only rate the photos, the reports read "from a removed account"); nothing else of the account
+// stays in normal operation either way (Code.gs deleteAccount_).
 // Both are permanent, so both ask first; a device still signed in with the old name is told and asked to sign out.
 let USERS = null,
   usersAt = 0,
-  uOpen = null;
+  uOpen = null,
+  uDel = ''; // the player whose two delete choices show in their bar
 function loadUsers(force) {
   if (!force && USERS && Date.now() - usersAt < 120000) return Promise.resolve(USERS);
   if (!TOKEN) {
@@ -6567,6 +6569,9 @@ const UCOLS = [
 // in its group (Code.gs groupSet_; the app opens the subject to them, app.js subjOpen). Add / Remove under the row, Add
 // all above the table.
 const GROUP_SHEET = 48;
+// Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_); an older script would keep its reports.
+const DEL_SHEET = 55;
+const delOn = () => (USERS.v || 0) >= DEL_SHEET;
 const groupOn = () => subjGroup(ASUBJ) && (USERS.v || 0) >= GROUP_SHEET;
 const inGroup = u => (u.groups || []).includes(ASUBJ.id);
 UCOLS.push(['group', 'Beta', u => (inGroup(u) ? 1 : 0), 0, 'In the beta group']);
@@ -6642,15 +6647,20 @@ function renderUsers() {
       ${groupOn() ? `<span>${inGroup(u) ? 'In' : 'Not in'} the ${esc(ASUBJ.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-on="${inGroup(u) ? 0 : 1}">${inGroup(u) ? 'Remove' : 'Add'}</button></span>` : ''}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
       <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
-      <button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></div></td></tr>`;
-  // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
+      ${
+        uDel === u.name
+          ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
+          : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
+      }</div></td></tr>`;
+  // Answers without a name: devices that never signed in (~anon), by anonymous id. The answers a deleted account left
+  // (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
   const LVM = ofAns('margin', () => levelMargin(ANS.rows || [])), // 95% margin of each player's level (core.js)
     named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
   // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
   if ((USERS.v || 0) >= 13)
     (ANS.rows || []).forEach(r => {
-      if (named.has(r[0])) return;
+      if (named.has(r[0]) || goneRow(r)) return;
       const a = (A[r[0]] = A[r[0]] || {n: 0, ok: 0, last: 0, first: Infinity});
       a.n++;
       a.ok += r[4];
@@ -6748,13 +6758,16 @@ function bindUsers() {
     tr =>
       (tr.onclick = () => {
         uOpen = uOpen === tr.dataset.uopen ? null : tr.dataset.uopen;
+        uDel = '';
         render();
       })
   );
   const done = (msg, j) => {
     if (j && j.ok) {
       toast(msg);
-      sheetAgain('users', 'ans', 'stats'); // answers moved to another name or deleted: the levels and counts change
+      // answers moved to another name or deleted: the levels and counts change; v55: a merge or delete also moves or
+      // removes reports, page summaries and log mentions (Codex review #600)
+      sheetAgain('users', 'ans', 'stats', 'reports', 'pages', 'events');
       savedClear(); // progress merged, renamed or deleted
       uOpen = null;
       render();
@@ -6892,19 +6905,39 @@ function bindUsers() {
         .then(j => done(j && j.ok ? `${j.answers} answer${j.answers === 1 ? '' : 's'} deleted.` : '', j))
         .catch(() => done('', null));
     };
+  // Delete (sheet v55, Pierre 2026-11-05, Q89: two named choices, no default): Delete… shows them in the bar.
   $v.querySelectorAll('[data-udel]').forEach(
     b =>
       (b.onclick = () => {
-        const name = b.dataset.udel,
-          u = (USERS.users || []).find(x => x.name === name) || {answers: 0};
-        if (!confirm(`Delete "${name}"?\n\nTheir account and progress are deleted. This cannot be undone.`)) return;
-        const drop =
-          u.answers > 0 &&
-          confirm(
-            `Also delete their ${u.answers} answer${u.answers === 1 ? '' : 's'}?\n\nOK: delete them too (a test account).\nCancel: keep them without the name (they help rate photo difficulty).`
-          );
-        userPost({userDelete: name, answers: drop})
-          .then(j => done(`"${name}" deleted.`, j))
+        uDel = b.dataset.udel;
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-udel-no]').forEach(
+    b =>
+      (b.onclick = () => {
+        uDel = '';
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-udel-all],[data-udel-keep]').forEach(
+    b =>
+      (b.onclick = () => {
+        const all = 'udelAll' in b.dataset,
+          name = all ? b.dataset.udelAll : b.dataset.udelKeep,
+          u = (USERS.users || []).find(x => x.name === name) || {answers: 0, reports: 0},
+          n = (k, w) => `${k} ${w}${k === 1 ? '' : 's'}`;
+        if (
+          !confirm(
+            all
+              ? `Delete everything of "${name}"?\n\nTheir account, progress, ${n(u.answers, 'answer')}, ${n(u.reports || 0, 'report')} and page summaries are deleted. For a test account, or a player who asked. This cannot be undone.`
+              : `Delete "${name}", keeping their answers anonymously?\n\nTheir account, progress and page summaries are deleted. Their ${n(u.answers, 'answer')} and ${n(u.reports || 0, 'report')} stay without the name: the answers only rate photo difficulty, the reports read "from a removed account". This cannot be undone.`
+          )
+        )
+          return;
+        uDel = '';
+        userPost({userDelete: name, answers: all})
+          .then(j => done(`"${name}" deleted${all ? '' : ', answers kept anonymously'}.`, j))
           .catch(() => done('', null));
       })
   );
@@ -6930,8 +6963,11 @@ function renderStats() {
         ? statsHealth()
         : statsPlayers();
 }
-// Every answer of every account (Pierre, 2026-11-04: no player filter).
-const statRows = () => ANS.rows;
+// Every answer of every account (Pierre, 2026-11-04: no player filter), but those a deleted account left (sheet v55
+// readAnswers anonymous 2): they rate the photos only, never count as a player (Pierre, 2026-11-05, Q86).
+const goneRow = r => r[11] === 2;
+const playerRows = () => (ANS.rows || []).filter(r => !goneRow(r));
+const statRows = () => playerRows();
 // Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
 // now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
@@ -7267,9 +7303,7 @@ function needsOf() {
           why.push([
             'easy',
             `players Elo ${eloNum(top)} vs hardest photo recognised by ${recPct(hard)}`,
-            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`,
-            // The chip's HTML in the full list: the Elo and the reading as everywhere else (raw values in their titles).
-            `players Elo ${eloText(top, null, {what: 'Players at the top quarter of the genus, Elo'})} vs hardest photo recognised by ${recBadge(hard, {short: 1, raw: 'photo difficulty'})}`
+            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`
           ]);
           sc += 1.5;
         }
@@ -7375,7 +7409,7 @@ function needsBody() {
     <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr>${th('n', 'Genus')}${th('v', 'View')}${th('c', 'Colonies')}${th('sc', 'Why')}</tr></thead><tbody>
     ${L.map(
       o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
-      <td>${o.why.map(([k, t, raw, h]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${h || esc(t)}</span>`).join(' ')}</td></tr>`
+      <td>${o.why.map(([k, t, raw]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${esc(t)}</span>`).join(' ')}</td></tr>`
     ).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
   const save = () => {
     store.set('reefid-admin-stats', SF);
@@ -7487,7 +7521,8 @@ function healthLine() {
   return (MEMO[k] = {a: ANS, s: STATS, v: healthLine0()}).v;
 }
 function healthLine0() {
-  const R = ANS.rows || [],
+  // the player rows, as the Health page: a deleted account's answers are no player (sheet v55; Codex review #600)
+  const R = playerRows(),
     BY = Object.create(null);
   R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
   Object.values(BY).forEach(L => L.sort((a, b) => a[1] - b[1]));
@@ -7518,7 +7553,7 @@ function statsHealth() {
     bindStats();
     return;
   }
-  const R = ANS.rows || [];
+  const R = playerRows();
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindStats();

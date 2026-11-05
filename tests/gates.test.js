@@ -43,6 +43,9 @@ const GATES = {
       USERS: v === undefined ? {} : {v},
       GROUP_SHEET: N
     })(),
+  // Players › Delete…'s two choices (admin.js delOn, Code.gs deleteAccount_): from v55, which deletes or anonymises the
+  // account's reports, page summaries and log mentions; before, they are disabled with a note.
+  DEL_SHEET: (v, N) => fn('admin.js', 'const delOn = ', '\n', 'delOn', {USERS: v === undefined ? {} : {v}, DEL_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
   // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0. On

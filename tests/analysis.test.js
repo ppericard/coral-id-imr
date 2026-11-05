@@ -222,7 +222,8 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
     days: 300,
     players: A.DEMO_PLAYERS.slice(0, 3).map(p => [p[0], p[1], 450, p[3]])
   }).map(r => ['id' + r[0].length, ...r.slice(1)]);
-  let stored = null;
+  let stored = null,
+    stale = false;
   const logs = [],
     calls = [];
   const io = {
@@ -231,7 +232,9 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
       if (b.token !== 'tok') return {ok: false, error: 'token'};
       if (b.analysesGet) {
         const meta = stored && {answers: JSON.parse(stored).answers, av: JSON.parse(stored).AV};
-        return b.head ? {ok: true, answers: rows.length, stored: meta} : {ok: true, answers: rows.length, stored: meta, report: stored};
+        return b.head
+          ? {ok: true, answers: rows.length, stored: meta, stale}
+          : {ok: true, answers: rows.length, stored: meta, report: stored};
       }
       if (b.readAnswers) return {ok: true, rows};
       if (b.analysesPut) return ((stored = b.report), {ok: true, stored: {}});
@@ -249,6 +252,11 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0, force: true}), 'stored');
   assert.ok(/1 reused|2 reused/.test(logs[logs.length - 1]), logs[logs.length - 1]);
+  // sheet v55: an account removed since the stored report (head stale): refitted at once, nothing reused.
+  stale = true;
+  assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'stored');
+  assert.ok(/\(0 reused\)/.test(logs[logs.length - 1]), logs[logs.length - 1]);
+  stale = false;
   assert.ok(!logs.join(' ').match(/id\d|Demo/), 'the log has counts only');
   // an older sync script answers 'input': nothing done, no error
   const old = {post: async () => ({ok: false, error: 'input', v: 29}), log: t => logs.push(t)};
@@ -281,6 +289,9 @@ test('tools/analyses.js plan: compute when the log reaches a round thousand the 
   assert.strictEqual(plan(5200, st(3000)).why, 'new', 'several thousands at once');
   assert.strictEqual(plan(1933, {answers: 1933, av: A.AV - 1}).why, 'code', 'the analysis code changed');
   assert.strictEqual(plan(1933, st(1933), true).why, 'force');
+  assert.strictEqual(plan(1933, st(1933), false, true).why, 'removed', 'an account removed since (sheet v55 stale)');
+  assert.strictEqual(plan(900, st(1100), false, true).why, 'removed', 'removed below the first milestone: the old report is replaced');
+  assert.strictEqual(plan(900, null, false, true).why, 'none');
   assert.strictEqual(plan(1933, null).why, 'first');
   assert.strictEqual(plan(999, null).why, 'none', 'no milestone before 1000');
   assert.strictEqual(go(999, null, true), false, 'not even forced');
@@ -1376,4 +1387,53 @@ test('Recompute here: the Web Worker computes the new views, and a stored report
   const last = res.res.R[res.res.M[res.res.M.length - 1]];
   assert.ok(last.A.conf.map && last.A.conf.map.g.length >= 3, 'the mix-up map');
   assert.ok(last.A.rt.ent && last.A.photo.ent, 'effects hard to tell apart');
+});
+
+// Sheet v55 (Pierre, 2026-11-05, Q86): the answers a deleted account left (anonymous flag 2) stay in the pooled fits but
+// are in no per-player result and no count of players (Codex review #600: the Sessions model rows kept the marker too).
+test('a deleted account (flag 2) is in no per-player list and no count of players', () => {
+  const R = A.rng(7),
+    G = ['A', 'B', 'C', 'D'],
+    rows = [];
+  for (let i = 0; i < 4000; i++) {
+    const p = i % 5 === 4 ? 'gone' : 'p' + (i % 5),
+      k = Math.floor(R() * 4),
+      g = G[k],
+      o = G[(k + 1) % 4],
+      ok = R() < 0.7;
+    // sessions: a new one every 40 answers per player (30 minutes apart)
+    rows.push([
+      p,
+      Math.floor(i / 5) * 20e3 + Math.floor(i / 200) * 40 * 60e3,
+      g,
+      ok ? g : o,
+      ok ? 1 : 0,
+      'quiz|d|k2',
+      'f' + (i % 50),
+      0.7,
+      0,
+      0,
+      `${g} ${o}`,
+      p === 'gone' ? 2 : 0,
+      5 + R() * 5,
+      0
+    ]);
+  }
+  const L = A.prep(rows),
+    c = A.confusions(L, 0, 1),
+    s = A.sessions(L, 0, 1);
+  assert.ok(!c.player.some(x => x.k === 'gone'), 'not in the mix-ups per player');
+  assert.strictEqual(c.players, 4);
+  assert.strictEqual(s.players, 4, 'not counted in the Sessions model');
+  // the pooled models still fit with two clusters when one of them is a deleted account (Codex review #600)
+  const two = A.prep(rows.filter(r => r[0] === 'p0' || r[0] === 'gone'));
+  assert.ok(!A.rt(two, 0, 1).thin, 'answer time fitted');
+  assert.strictEqual(A.rt(two, 0, 1).players, 1);
+  assert.ok(!(s.desc && s.desc.table.some(x => x.p === 'gone')), 'not in the sessions table');
+  assert.ok(
+    s.desc.returns.every(r => r.at <= 4),
+    'not in the players coming back: ' + JSON.stringify(s.desc.returns)
+  );
+  const l = A.learning(L, 0, 1);
+  assert.ok(!l.genus || l.genus.every(g => g.players <= 4), 'not in the players per genus');
 });
