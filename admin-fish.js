@@ -19,6 +19,10 @@ let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the q
   FFULL = false, // this tab: also show the candidates of species at their target
   FASIDE = false; // this tab: also show the ones the pass is sure go, not applied (the fish auto-sort's keep off)
 const FSKIP = new Set();
+// The card Pierre is setting rows or a crop on stays on screen (his values move it in the order: a phase he clears is no
+// longer a missing one) until he decides it, skips it or sends it elsewhere (Not this); every other render, an Undo
+// included, shows the queue's first.
+let FPIN = null;
 
 // The rubric's code in words (judging/FISH.md "Tags"): the seven tags, then the flags. The values a beginner's photo
 // should have (whole, good light, no colour loss, sharp, one fish) are left out: only what makes a photo harder shows.
@@ -313,8 +317,8 @@ function renderFishCand() {
     nAside = Q1.filter(x => x.aside).length,
     nJ = Q0.filter(x => !x.j).length,
     live = Q1.filter(shown),
-    c = live[0],
-    nx = live[1];
+    c = live.find(x => x.p.f === FPIN) || live[0],
+    nx = live.find(x => x !== c);
   const cnt = L => L.filter(shown).length;
   const seg =
     `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The fish auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>` +
@@ -382,34 +386,42 @@ function renderFishCand() {
       };
     S.querySelector('[data-add]').onclick = () => {
       FSKIP.delete(f);
+      FPIN = null;
       fishEdit(G => fishAdd(G, f, sid, j));
       if (!chk) toast(`Added: ${n.sci} (${new Set(fishInPlay(DRAFT.fish, sid).map(q => q.o || q.f)).size}/${c.target}).`);
       told();
     };
     S.querySelector('[data-rej]').onclick = () => {
       FSKIP.delete(f);
+      FPIN = null;
       fishEdit(G => fishReject(G, f));
       told();
     };
     S.querySelector('[data-x]').onclick = () => {
       FSKIP.delete(f);
+      FPIN = null;
       fishEdit(G => fishExclude(G, f));
       if (!chk) toast('Excluded. Undo (Ctrl+Z) brings it back.');
       told();
     };
     S.querySelector('[data-skip]').onclick = () => {
+      FPIN = null;
       FSKIP.add(f);
       render();
     };
     S.querySelector('[data-zoom]').onclick = () => fishZoom(pb, sid, false, chk);
     // The rows (5b): each click Pierre's value, one Undo step (autosort.js fishSet, fishTag: through fishOwn).
+    const fishPin = fn => {
+      FPIN = f;
+      fishEdit(fn);
+    };
     const base = () => (DRAFT.fish.tags || {})[f] || (!chk && j && j.jt) || '';
-    S.querySelectorAll('[data-fe]').forEach(b => (b.onclick = () => fishEdit(G => fishSet(G, f, 'ease', +b.dataset.fe))));
-    S.querySelectorAll('[data-fph]').forEach(b => (b.onclick = () => fishEdit(G => fishSet(G, f, 'phase', b.dataset.fph))));
+    S.querySelectorAll('[data-fe]').forEach(b => (b.onclick = () => fishPin(G => fishSet(G, f, 'ease', +b.dataset.fe))));
+    S.querySelectorAll('[data-fph]').forEach(b => (b.onclick = () => fishPin(G => fishSet(G, f, 'phase', b.dataset.fph))));
     S.querySelectorAll('[data-ft]').forEach(
-      b => (b.onclick = () => fishEdit(G => fishSet(G, f, 'tags', fishTag(base(), +b.dataset.ft, b.dataset.fv))))
+      b => (b.onclick = () => fishPin(G => fishSet(G, f, 'tags', fishTag(base(), +b.dataset.ft, b.dataset.fv))))
     );
-    S.querySelectorAll('[data-ff2]').forEach(b => (b.onclick = () => fishEdit(G => fishSet(G, f, 'tags', fishTag(base(), b.dataset.ff2)))));
+    S.querySelectorAll('[data-ff2]').forEach(b => (b.onclick = () => fishPin(G => fishSet(G, f, 'tags', fishTag(base(), b.dataset.ff2)))));
     S.querySelector('[data-ftags]').onclick = () => {
       FTAGS_OPEN = !FTAGS_OPEN;
       store.set('reefid-admin-ftags', FTAGS_OPEN);
@@ -420,12 +432,13 @@ function renderFishCand() {
     S.querySelector('[data-fcrop]').onclick = () =>
       cropEditor(pb, {
         start: (DRAFT.fish.crop || {})[f] || (!chk && j && j.c) || null,
-        save: (v, full) => fishEdit(G => fishSet(G, f, 'crop', full ? (((SUG.fish || {})[f] || {}).c ? [0, 0, 1, 1] : null) : v))
+        save: (v, full) => fishPin(G => fishSet(G, f, 'crop', full ? (((SUG.fish || {})[f] || {}).c ? [0, 0, 1, 1] : null) : v))
       });
     S.querySelector('[data-fnot]').onchange = e => {
       const to = e.target.value;
       if (!to) return;
       FSKIP.delete(f);
+      FPIN = null;
       fishEdit(G => fishNotThis(G, f, to, from || sid));
       toast(
         to === 'x'
