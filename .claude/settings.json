@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/brief.py\" --short 2>/dev/null || true",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && git show origin/main:tools/brief.py 2>/dev/null | python3 -I - --short 2>/dev/null || true",
             "timeout": 15
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/brief.py\" --time 2>/dev/null || true",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && git show origin/main:tools/brief.py 2>/dev/null | python3 -I - --time 2>/dev/null || true",
             "timeout": 5
           }
         ]

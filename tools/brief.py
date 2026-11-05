@@ -8,7 +8,9 @@
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
 the remote branches with commits not in main and no PR (AGENTS.md rule 26b), the sheet script's VERSION on main against
-the live one, and the open questions for Pierre from docs/STATUS.md. Read-only and fast: GitHub through `gh api` (REST
+the live one, and the open questions for Pierre from docs/STATUS.md. The hooks run main's reviewed copy
+(`git show origin/main:tools/brief.py | python3 -I -`), never the copy of the branch checked out (Codex security
+review #561), so the script must also work fed on stdin. Read-only and fast: GitHub through `gh api` (REST
 only), the sheet through the same read-only GET the app makes (?stats=1), all at once with a deadline of about 5 s.
 Anything missing (no network, no gh, no git remote) is said in one line and skipped. It never prints a secret or a
 player's name: from the sheet's reply it reads only the version number.
@@ -26,7 +28,13 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime, timedelta, timezone
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# The checkout: next to this file, or, when the hooks feed main's copy on stdin (no file), CLAUDE_PROJECT_DIR.
+_HERE = globals().get('__file__', '')
+ROOT = (
+    os.path.dirname(os.path.dirname(os.path.abspath(_HERE)))
+    if _HERE.endswith('.py')
+    else os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd()
+)
 REPO = 'ppericard/coral-id-imr'
 DEADLINE = 5.0  # seconds for every network call together
 START = time.monotonic()
@@ -176,11 +184,19 @@ def main_version():
 
 
 def sync_url():
+    """SYNC_URL from main's app.js (a branch cannot point the brief elsewhere), else from the checkout."""
+    src = None
     try:
-        m = re.search(r"const SYNC_URL = '([^']+)'", open(os.path.join(ROOT, 'app.js'), encoding='utf8').read())
-        return m.group(1) if m else None
+        r = subprocess.run(['git', '-C', ROOT, 'show', 'origin/main:app.js'], capture_output=True, text=True, timeout=3)
+        src = r.stdout if r.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    try:
+        src = src or open(os.path.join(ROOT, 'app.js'), encoding='utf8').read()
     except OSError:
         return None
+    m = re.search(r"const SYNC_URL = '([^']+)'", src)
+    return m.group(1) if m else None
 
 
 def live_version(url):

@@ -115,9 +115,31 @@ test('tools/brief.py calls a PR green only when every check succeeded', () => {
   assert.match(sum([done('success'), done('stale')]), /^NOT GREEN 1\/2/);
 });
 
-test('the session hooks run tools/brief.py', () => {
+// Codex security review #561: a hook runs at every session start and prompt, so it must not run code from whatever
+// branch is checked out: it runs main's reviewed copy (git show origin/main:tools/brief.py), in isolated mode (-I: no
+// module planted in the checkout is imported), with the checkout's path from CLAUDE_PROJECT_DIR.
+test("the session hooks run main's tools/brief.py, never the checked-out copy", () => {
   const hooks = JSON.parse(read('.claude/settings.json')).hooks;
   const cmd = ev => hooks[ev].flatMap(h => h.hooks.map(x => x.command)).join(' ');
-  assert.match(cmd('SessionStart'), /tools\/brief\.py" --short/);
-  assert.match(cmd('UserPromptSubmit'), /tools\/brief\.py" --time/);
+  for (const [ev, flag] of [
+    ['SessionStart', '--short'],
+    ['UserPromptSubmit', '--time']
+  ]) {
+    assert.match(cmd(ev), new RegExp('git show origin/main:tools/brief\\.py 2>/dev/null \\| python3 -I - ' + flag), ev);
+    assert.ok(!/python3 [^|]*tools\/brief\.py/.test(cmd(ev)), ev + ' runs the checked-out tools/brief.py');
+  }
+});
+
+test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR', () => {
+  const {execFileSync} = require('child_process');
+  const env = {
+    ...process.env,
+    CLAUDE_PROJECT_DIR: ROOT,
+    HTTPS_PROXY: 'http://127.0.0.1:9',
+    https_proxy: 'http://127.0.0.1:9',
+    PATH: '/usr/bin:/bin'
+  };
+  const out = execFileSync('python3', ['-I', '-', '--short'], {input: read('tools/brief.py'), env, cwd: '/', timeout: 10000}).toString();
+  assert.match(out, /^Manila /);
+  assert.match(out, /Questions for Pierre: \d+ open, last number Q\d+/);
 });
