@@ -22,6 +22,8 @@ Every review and study was first written as a private Claude doc or artifact on 
 | [2026-11-05-deleted-accounts-audit.md](2026-11-05-deleted-accounts-audit.md) | Audit: what a deleted, merged or renamed account leaves in the sheet, the app, the admin and the reports; live / archived / deleted policy | Decided by Pierre (Q84-Q91, plus self-service deletion): being built |
 | [2026-11-05-fish-release-plan.md](2026-11-05-fish-release-plan.md) | Plan: the public fish release by 2026-11-08 (what exists, the checklist, parallel PRs, the flip and its rollback) | Its decisions (a)-(i) are Q92-Q100 |
 | [2026-11-05-stack-audit.md](2026-11-05-stack-audit.md) | Audit: every tool and service version against the latest stable, and how to keep them current | Done: #584, #586, #587; watch items in `tools/stack.json` |
+| [2026-11-05-fish-confusion-study.md](2026-11-05-fish-confusion-study.md) | Study: per-player and global confusion for fish across families, genera and species (sizes, sparse storage, hierarchical coverage, the sheet's limits, the personalised track) | Questions a-o for Pierre (replace Q110); i, f and k need his explicit go |
+| [2026-11-05-photos-step3-plan.md](2026-11-05-photos-step3-plan.md) | Plan and dry run of the photos step 3 history rewrite (script in [step3/rewrite.sh](step3/rewrite.sh)) | Needs Pierre's explicit go; `prepare` must run again on the day |
 | [../reference/genus-overview-2026-10-31.md](../reference/genus-overview-2026-10-31.md) | Pierre's first study doc on the 39 genera | Background only; `data.json` supersedes it |
 
 ## Summarised only (first rounds and studies, all closed or carried into ROADMAP)
