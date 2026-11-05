@@ -578,7 +578,8 @@ function renderJourney(name, anonId = '') {
       ['Quiz right', pct(sp.q[1], sp.q[0])],
       ['Last 50', pct(sp.q50[1], sp.q50[0])],
       ...(sp.d[0] ? [['Duels', `${sp.d[0]} · ${pct(sp.d[1], sp.d[0])}`]] : []),
-      ['Level', lv == null ? '–' : sgn(lv)],
+      // The Elo players see, ± its 95% margin (Pierre, 2026-11-05: the signed level read as good or bad); the level in its title.
+      ['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])],
       ['Genera met', `${J.marks.length}/${total}`],
       // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never
       // signed in.
@@ -879,15 +880,14 @@ function sessionSummary(id, L, name) {
           : '',
     VT = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites'},
     // A photo everyone misses (Health's rule, admin.js healthBad: under 40% right over 5 answers or more, or clearly
-    // harder than its genus's other photos) says so (Pierre, 2026-11-05), beside its difficulty, in neutral text: the
-    // colours of difficulty come with the admin-wide difficulty display (a later PR).
+    // harder than its genus's other photos) says so (Pierre, 2026-11-05), beside its difficulty (admin.js recBadge).
     hardAll = ofAns('hardAll', () => new Set(healthBad(ANS.rows || []).map(o => o.p.f))),
     tile = x => {
       const p = photos(x.g).find(q => q.f === x.f);
       return p
         ? `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(x.g)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption>${gi(x.g)}${x.a && x.a !== x.g ? ` → ${gi(x.a)}` : ''} <span>${VT[viewOf(x.g, p)] || ''}</span>${
             x.d != null || hardAll.has(p.f)
-              ? ` <span class="adm-hnum">${x.d != null ? `<span title="Starting players who recognise it, without guessing">recognised by ${recPct(x.d)}</span>` : ''}${x.d != null && hardAll.has(p.f) ? ' · ' : ''}${hardAll.has(p.f) ? '<span data-hardall>hard for everyone</span>' : ''}</span>`
+              ? ` <span class="adm-hnum">${x.d != null ? `recognised by ${recBadge(x.d, {short: 1, raw: 'photo difficulty'})}` : ''}${x.d != null && hardAll.has(p.f) ? ' · ' : ''}${hardAll.has(p.f) ? '<span data-hardall>hard for everyone</span>' : ''}</span>`
               : ''
           }</figcaption></figure>`
         : '';
