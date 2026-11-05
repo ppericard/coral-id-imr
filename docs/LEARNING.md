@@ -2291,9 +2291,13 @@ for every subject that opts in with `SUBJECTS` `cover`: the corals now, fish aft
   success, the ability step, the progress weight, the photo Elo: the answer is logged `|ktN`, which the sheet rates
   1 / N, `Code.gs` `guess_`) and the evidence it gives each pair (a right typed answer adds sim(t, x) to `P[t].offT[x]`;
   weights under 0.01 are not stored). The look-alike factor of the progress weight (`pgRightW`) runs over the
-  vocabulary, as over a pick's choices. Older typed rows (no `|kt`) are replayed with the vocabulary the log knows: the
-  genera answered or given before that answer (the app's own vocabulary, the cards met or the custom selection, is not
-  logged); the sheet rates their photos with no guess rate, as before.
+  vocabulary, as over a pick's choices. The replay scores a typed row with its logged `|ktN`; an older one (no `|kt`)
+  with the effective size of the vocabulary the log knows, and it rebuilds the offers of every typed row from that
+  vocabulary: the genera asked in the player's current run of Custom-quiz answers for a Custom-quiz row (its selection
+  is drawn from them), else the genera answered or given before that answer. The app's own vocabulary, the cards met or
+  the Custom selection, is not logged: a new Answers column is Pierre's call (Codex review #611). A typed answer stays
+  out of the answer time (it is slower by design). The sheet rates older typed rows' photos with no guess rate, as
+  before.
   - *Why similarity-weighted.* People do not hold every known name when they name something: a few similar candidates
     come to mind, then each is checked (the generate-recognise account of recall, Anderson & Bower 1972, *Psych Rev*
     79:97, doi 10.1037/h0033773; consideration sets, Hauser & Wernerfelt 1990, *J Consumer Res* 16:393, doi
