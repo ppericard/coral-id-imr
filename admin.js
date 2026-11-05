@@ -4388,7 +4388,11 @@ function retireOrder(n, w, cols) {
     }
     if (nn !== null && nn < 0.5) {
       c.score += 3 * (1 - nn / 0.5);
-      c.why.push(`recognised by ${recPct(c.d)}, like another colony`);
+      // [text for the tile's title, HTML for the note: the reading as a badge, its raw value in the badge's title].
+      c.why.push([
+        `recognised by ${recPct(c.d)} (difficulty ${rawNum(c.d)}), like another colony`,
+        `recognised by ${recBadge(c.d, {short: 1, of: 'its photos', raw: 'mean photo difficulty'})}, like another colony`
+      ]);
     }
     if (c.ans >= 10) {
       c.score += Math.min(2, c.ans / 30);
@@ -4435,11 +4439,11 @@ function renderRepl() {
   const QN = {1: 'Poor', 2: 'Fair', 3: 'Good'};
   $v.innerHTML = `<section class="adm-repl">
     <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
-    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${esc(sug.why.join(', '))})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
+    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${sug.why.map(x => (Array.isArray(x) ? x[1] : esc(x))).join(', ')})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
     <figure class="adm-repl-new"><img ${crSrc(p)} alt=""><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
     <div class="adm-repl-grid">${cols
       .map(
-        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
+        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.map(x => (Array.isArray(x) ? x[0] : x)).join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
         <span>${c === sug ? '<b>Suggested</b> · ' : ''}${QN[c.q] || ''}${c.ft ? ' · featured' : ''}${c.L.length > 1 ? ` · ${c.L.length} photos` : ''}${c.keep ? ` · keep (${esc(c.keep)})` : ''}</span></button>`
       )
       .join('')}</div>
@@ -7263,7 +7267,9 @@ function needsOf() {
           why.push([
             'easy',
             `players Elo ${eloNum(top)} vs hardest photo recognised by ${recPct(hard)}`,
-            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`
+            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`,
+            // The chip's HTML in the full list: the Elo and the reading as everywhere else (raw values in their titles).
+            `players Elo ${eloText(top, null, {what: 'Players at the top quarter of the genus, Elo'})} vs hardest photo recognised by ${recBadge(hard, {short: 1, raw: 'photo difficulty'})}`
           ]);
           sc += 1.5;
         }
@@ -7369,7 +7375,7 @@ function needsBody() {
     <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr>${th('n', 'Genus')}${th('v', 'View')}${th('c', 'Colonies')}${th('sc', 'Why')}</tr></thead><tbody>
     ${L.map(
       o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
-      <td>${o.why.map(([k, t, raw]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${esc(t)}</span>`).join(' ')}</td></tr>`
+      <td>${o.why.map(([k, t, raw, h]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${h || esc(t)}</span>`).join(' ')}</td></tr>`
     ).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
   const save = () => {
     store.set('reefid-admin-stats', SF);
