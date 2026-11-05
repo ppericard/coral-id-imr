@@ -211,7 +211,8 @@ const LEARNER = {
 // learner's true success naming a photo of g alone (one view), with no choices (every slate genus a possible answer for
 // the field and exemplar learners; recognition alone for the item learner), averaged over g's theoretical photo
 // distribution N(mu_g, SD^2) (Gauss-Hermite, 7 points). SD: the spread of photo difficulty within a genus (an assumption:
-// easy to hard about +-1.5 logits); NOISE: the app's error on a photo's difficulty with --truth gen.
+// easy to hard about +-1.5 logits); NOISE: the app's error on a photo's difficulty with --truth gen. GH: the 7-point
+// Gauss-Hermite rule for e^(-x^2), [node, weight / sqrt(pi)] (the nodes times sqrt(2) for a standard normal).
 const JUDGE = {SD: 0.8, NOISE: 0.3, GH: [[-2.651961, 0.000548], [-1.673552, 0.030757], [-0.816288, 0.240123], [0, 0.457143], [0.816288, 0.240123], [1.673552, 0.030757], [2.651961, 0.000548]]};
 
 const arg = (k, d) => {
@@ -497,7 +498,9 @@ function play(cfg) {
   const dOne = (t, d) => (field ? pField(t, SL, d, true) : exem ? pEx(t, SL, d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
   const dStar = t => {
     const [mu, sd] = distOf(t);
-    return J.GH.reduce((a, [z, w]) => a + w * dOne(t, mu + sd * z), 0);
+    // GH holds the physicists' Gauss-Hermite nodes (weight e^(-x^2)) with weights over sqrt(pi): a standard normal z is
+    // sqrt(2) x (Codex review #624).
+    return J.GH.reduce((a, [x, w]) => a + w * dOne(t, mu + sd * Math.SQRT2 * x), 0);
   };
   // The truth the field measures read: success on an average photo of t with every slate genus a possible answer.
   const pOpen = t => pCh(t, SL, 0, false);

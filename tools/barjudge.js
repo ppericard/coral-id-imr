@@ -39,7 +39,7 @@ const mean = v => (v.length ? v.reduce((a, x) => a + x, 0) / v.length : NaN),
   sd = v => Math.sqrt(v.reduce((a, x) => a + (x - mean(v)) ** 2, 0) / Math.max(1, v.length - 1)),
   num = x => typeof x === 'number' && isFinite(x),
   median = v => {
-    const s = v.filter(num).sort((a, b) => a - b);
+    const s = v.filter(x => typeof x === 'number' && !isNaN(x)).sort((a, b) => a - b);
     return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : NaN;
   },
   f = (x, d = 3) => (num(x) ? (x >= 0 ? '+' : '') + x.toFixed(d) : '   -  ');
@@ -80,7 +80,7 @@ function simJudge() {
     console.log(`\n${path.basename(file)}: ${kind}, ${d.runs.length} runs, ${d.questions} questions, commit ${d.commit}`);
     const by = {};
     d.runs.forEach(r => {
-      const R = (by[r.profile] = by[r.profile] || {E: {}, abs: {}, credit: {k50: [], k80: [], g50: [], g80: []}}),
+      const R = (by[r.profile] = by[r.profile] || {E: {}, abs: {}, credit: {k50: [], k80: [], g50: [], g80: [], r80: []}}),
         known = new Set(r.known || []),
         stops = AT.map(q => ({q, row: (r.rows.find(x => x.q === q) || {}).f})).concat(
           r.custom && r.custom.row ? [{q: 'drill', at: r.custom.to, row: r.custom.row}] : []
@@ -89,6 +89,10 @@ function simJudge() {
       let bars = st2 => st2.row.gs;
       let rep = null;
       if (alt) {
+        // The replay applies no first-launch prior (o.starts): exact for a run answered "new" (prior 0, learnsim's
+        // default --choice), not for another answer (Codex review #624): such runs are refused.
+        const ch = typeof r.choice === 'object' && r.choice ? r.choice.c || r.choice.choice : r.choice;
+        if (ch && ch !== 'new') throw new Error(`${file}: a run answered the first-launch question "${ch}"; --bar replays only "new" runs`);
         const rows = r.alog.map(x => alt.C.logRow(x[0], 'p'));
         rep = {rows, st: null, at: 0};
         bars = st2 => {
@@ -96,7 +100,12 @@ function simJudge() {
           rep.st = alt.C.replayProgress(rows.slice(rep.at, at), {gen: alt.gen, conf: alt.st.conf, mem: alt.st.mem, start: rep.st ? {p: rep.st} : undefined}).p;
           rep.at = at;
           const P = JSON.parse(JSON.stringify(rep.st.P));
-          Object.entries(r.learnedAt || {}).forEach(([g, x]) => x.q <= at && P[g] && (P[g].mx = 1));
+          // A mark passed by question `at`, unless a miss logged after it took it away as the game does (the replay's lm:
+          // the last miss that left the progress below the keep rule; Codex review #624).
+          Object.entries(r.learnedAt || {}).forEach(([g, x]) => {
+            const tq = Date.parse((r.alog[x.q - 1] || [{}])[0].t) || 0;
+            if (x.q <= at && P[g] && !(P[g].lm > tq)) P[g].mx = 1;
+          });
           return Object.fromEntries(Object.keys(st2.row.ds || {}).map(g => [g, alt.barOf(P, g)]));
         };
       }
@@ -123,12 +132,17 @@ function simJudge() {
           }
         });
       // Time to credit (live bar only: the run's own record).
+      // Censored, not dropped (Codex review #624): a known genus that never reached the level, or was never answered,
+      // counts as not reached (Infinity), so a median over the known genera is a real one or "not reached".
       if (!alt && r.credit) {
-        const kg = [...known].filter(g => r.credit[g]);
-        R.credit.k50.push(r.credit._k50 || NaN);
-        R.credit.k80.push(r.credit._k80 || NaN);
-        R.credit.g50.push(median(kg.map(g => (r.credit[g].q50 ? r.credit[g].q50 - r.credit[g].first : NaN))));
-        R.credit.g80.push(median(kg.map(g => (r.credit[g].q80 ? r.credit[g].q80 - r.credit[g].first : NaN))));
+        const c = r.credit,
+          kg = [...known],
+          tt = (g, k) => (c[g] && c[g][k] ? c[g][k] - c[g].first : Infinity);
+        R.credit.k50.push(c._k50 || Infinity);
+        R.credit.k80.push(c._k80 || Infinity);
+        R.credit.g50.push(kg.length ? median(kg.map(g => tt(g, 'q50'))) : NaN);
+        R.credit.g80.push(kg.length ? median(kg.map(g => tt(g, 'q80'))) : NaN);
+        R.credit.r80.push(kg.length ? kg.filter(g => tt(g, 'q80') < Infinity).length / kg.length : NaN);
       }
     });
     Object.entries(by).forEach(([p, R]) => {
@@ -146,9 +160,10 @@ function simJudge() {
       console.log('    |E| all   ' + AT.filter(q => R.abs[q]).map(q => `  q${q}: ${f(mean(R.abs[q]))}`).join(''));
       if (R.credit.k50.length) {
         const c = R.credit,
-          reach = v => `${v.filter(num).length}/${v.length}`;
+          reach = v => `${v.filter(num).length}/${v.length}`,
+          q = x => (x === Infinity ? 'not reached' : f(x, 0));
         console.log(
-          `    credit on the genera it knows: mean bar 50% at q ${f(median(c.k50), 0)} (${reach(c.k50)} runs), 80% at q ${f(median(c.k80), 0)} (${reach(c.k80)}); per genus, questions from its first answer: 50% ${f(median(c.g50), 0)}, 80% ${f(median(c.g80), 0)} (medians)`
+          `    credit on the genera it knows (medians over the runs; not reached counted as such): their mean bar 50% at q ${q(median(c.k50))} (reached in ${reach(c.k50)} runs), 80% at q ${q(median(c.k80))} (${reach(c.k80)}); per genus, questions from its first answer to 50% ${q(median(c.g50))}, to 80% ${q(median(c.g80))}; share of known genera at 80% by the end ${f(mean(c.r80.filter(num)), 2)}`
         );
       }
     });
