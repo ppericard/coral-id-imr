@@ -2343,6 +2343,15 @@ changes, all data the engine reads generically (the corals have none of these fi
   4). 214 research-grade candidates of `fish-cand.json` (PR #463: CC0, CC BY or CC BY-NC, Indo-West Pacific) were looked
   at and judged with the same rubric, and 37 very easy ones added (`tools/fish_judge.json` `add`, to 6 per entry; Fusilier
   5): every circle-1 entry now has 5 to 13, and 24 to 30 photos in all.
+- **Reference photos one ease point easier** (2026-11-05, Pierre: a photo a reference source uses to represent the
+  species, FishBase's main picture or iNaturalist's taxon cover, "is easy to identify, so it should come early in the quiz
+  for a beginner"): such a candidate carries `rep`, and its judged ease gets `REP_BONUS` = 1 (`tools/fish_judge.py`
+  `cap`, the flag `r` in its tags), the caps applied after it (a juvenile or a night shot stays capped). Why one point:
+  it lifts a medium photo (3) into the very easy ones of an entry's first questions (`easyFirst`, ease 4-5) and makes a
+  very easy one more likely the card's cover, without passing over the visual rubric (a hard reference photo stays
+  hard). It reaches the game only through Pierre's curation (candidates), so nothing moves for players until he adds
+  one; no learnsim run (the fish profile does not exist yet, ROADMAP). A draw that prefers `rep` photos inside the very
+  easy set is not built (ROADMAP).
 - **The photo prior** (`photoDiff`): a judged photo's prior is its unit's offset + (`PDIFF.MID` 3 − ease) ×
   `PDIFF.EASE` 0.5, so ease 5 starts at −1 and ease 1 at +1. 0.5 logit an ease point is one standard deviation of a
   photo's own difficulty around its genus (the hierarchical photo Elo study, above), so the scale spans the spread real

@@ -206,9 +206,16 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
       assert.strictEqual(p.sp, id);
       assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`);
       assert.ok(p.a && /^\(c\)/.test(p.a), `${p.f}: the observer's credit`);
+      assert.ok(!game.has(p.f), `${p.f} is also a game photo`);
+      // iNaturalist, or FishBase (tools/fetch_fishbase.py, Pierre 2026-11-05: the same rules; tests/fishbase.test.js).
+      if (p.via === 'fishbase') {
+        assert.match(p.o, /^https:\/\/www\.fishbase\.de\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
+        assert.match(p.src, /^https:\/\/www\.fishbase\.de\/images\/species\/[\w-]+\.jpg$/);
+        assert.match(p.a, /via FishBase/);
+        return;
+      }
       assert.match(p.o, /^https:\/\/www\.inaturalist\.org\/(observations|photos)\/\d+$/);
       assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./);
-      assert.ok(!game.has(p.f), `${p.f} is also a game photo`);
     });
   });
   // Pomacentrus armillatus: the photo is filed under P. opisthostigma on iNaturalist; the name shown stays the PDF's (rule 6a).

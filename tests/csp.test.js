@@ -21,3 +21,22 @@ for (const page of ['index.html', 'admin.html'])
       assert.ok(script.includes(h), `inline script not in the CSP; add ${h} to script-src in ${page}`);
     }
   });
+
+// Every remote photo the admin shows (the fish candidates in fish-cand.json: iNaturalist and, since 2026-11-05, FishBase;
+// the fish auto decisions panel draws them) comes from a host the admin's img-src allows (Codex review #562).
+test('admin.html: img-src allows every host of the fish candidates', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8'),
+    csp = (html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1],
+    img = csp
+      .split(';')
+      .map(x => x.trim())
+      .find(x => x.startsWith('img-src'))
+      .split(/\s+/),
+    cand = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-cand.json'), 'utf8')).cand,
+    hosts = new Set(
+      Object.values(cand)
+        .flat()
+        .map(p => new URL(p.src).origin)
+    );
+  hosts.forEach(h => assert.ok(img.includes(h), `${h} missing from admin.html img-src`));
+});

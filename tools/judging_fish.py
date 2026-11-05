@@ -15,6 +15,7 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    iNat annotation; ids = species (s091) or teaching entries (t01)
     python3 tools/judging_fish.py big <photo>      the 1024 px version, for a closer look
     python3 tools/judging_fish.py todo             species with candidates not judged yet
+    python3 tools/judging_fish.py rep              re-apply the reference flag (fish-cand.json rep) to suggest.json "fish"
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
     python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
 
@@ -194,12 +195,13 @@ def check(sid):
     return E, j
 
 
-def entry(sid, x):
+def entry(sid, x, rep=None):
     """A judging file's record -> suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
-    (tools/fish_judge.py cap: the phase flag for a dimorph entry, the juvenile classes of the species' entry)."""
+    (tools/fish_judge.py cap: the phase flag for a dimorph entry, the juvenile classes of the species' entry, and the
+    reference flag r with its ease bonus for a candidate whose fish-cand.json record carries `rep`)."""
     t = ENTRY.get(sid) or {}
     s = SP.get(sid) or {}
-    ease, tags = cap(x["code"], bool(t.get("dimorph")), juv_early(t.get("juv"), (s.get("name"), s.get("now"))))
+    ease, tags = cap(x["code"], bool(t.get("dimorph")), juv_early(t.get("juv"), (s.get("name"), s.get("now"))), rep)
     e = {"jt": tags, "e": ease, "k": x["keep"]}
     if x.get("phase"):
         e["ph"] = x["phase"]
@@ -233,8 +235,9 @@ def cmd_import(names, only_check, by):
     for sid, j in ok.items():
         for p in CAND.get(sid, []):
             Sf.pop(p["f"], None)
+        rep = {p["f"]: p.get("rep") for p in CAND.get(sid, [])}
         for f, x in j["photos"].items():
-            Sf[f] = entry(sid, x)
+            Sf[f] = entry(sid, x, rep.get(f))
         S["by"].setdefault(sid, {})["fish"] = {"by": by, "at": stamp, "n": len(j["photos"])}
     S["fish"] = dict(sorted(Sf.items()))
     with open(P("suggest.json"), "w", encoding="utf-8") as fh:
@@ -242,6 +245,31 @@ def cmd_import(names, only_check, by):
         fh.write("\n")
     print(f'Imported {len(ok)} species file(s): {len(S["fish"])} fish candidates judged in suggest.json "fish".')
     sys.exit(1 if bad else 0)
+
+
+def cmd_rep():
+    """Re-applies the reference flag (fish-cand.json `rep`, tools/fetch_fish.py --rep, tools/fetch_fishbase.py) to the
+    judged candidates of suggest.json "fish", from their codes in judging/fish/<species>.json: a candidate tagged since its
+    judgement gets the flag r and the ease bonus, one no longer tagged loses them. Only those entries change."""
+    S = load("suggest.json", {}) or {}
+    Sf = S.get("fish") or {}
+    n = 0
+    for sid, L in CAND.items():
+        j = load(f"judging/fish/{sid}.json")
+        if not j:
+            continue
+        for p in L:
+            x, old = (j.get("photos") or {}).get(p["f"]), Sf.get(p["f"])
+            if not x or not old or not CODE.match(str(x.get("code", ""))):
+                continue
+            new = entry(sid, x, p.get("rep"))
+            if (new["jt"], new["e"]) != (old.get("jt"), old.get("e")):
+                old["jt"], old["e"] = new["jt"], new["e"]
+                n += 1
+    with open(P("suggest.json"), "w", encoding="utf-8") as fh:
+        json.dump(S, fh, indent=1, ensure_ascii=False)
+        fh.write("\n")
+    print(f"Reference flag re-applied: {n} judged candidates changed in suggest.json \"fish\".")
 
 
 def cmd_todo():
@@ -264,5 +292,7 @@ if __name__ == "__main__":
         print(os.path.relpath(fetch(p, "large"), ROOT) if p else f"Unknown candidate {rest[1]}")
     elif rest[:1] == ["todo"]:
         cmd_todo()
+    elif rest[:1] == ["rep"]:
+        cmd_rep()
     else:
         cmd_import(ids(rest) if rest else [], "--check" in a, BY)
