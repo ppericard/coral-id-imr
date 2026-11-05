@@ -266,3 +266,17 @@ test("fishSet and fishTag (5b): Pierre's tag, ease, phase or crop; a field the a
   assert.ok(!(ids[0] in fishSet(F, ids[0], 'phase', null).phase));
   assert.strictEqual(fishSet({}, ids[0], 'phase', '').phase[ids[0]], '');
 });
+
+test("fishRun counts a photo moved with Not this and added to its new species toward that species' target (Codex review #602)", () => {
+  const cands = {s1: [ph(ids[30], 'm1')], s2: []},
+    sug = {};
+  for (let i = 0; i < 9; i++) {
+    cands.s2.push(ph(ids[i], 'o' + i));
+    sug[ids[i]] = {jt: 'p1g0sm1', e: 4, k: 'best'};
+  }
+  let F = fishAdd(fishNotThis({}, ids[30], 's2', 's1'), ids[30], 's2', null);
+  const {F: G, R} = fishRun(cands, sug, {s1: {}, s2: {}}, F, '2026-11-05');
+  assert.strictEqual(fishPlay(cands, G).s2.size, 8, 'the target, the moved observation included');
+  assert.strictEqual(R.add, 7);
+  assert.strictEqual(R.full, 2);
+});

@@ -188,8 +188,10 @@
     const obsOf = {};
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && (obsOf[p.f] = p.o || p.f)));
     const room = {};
+    // In play as the swiper counts it (fishOn): a photo Pierre moved with Not this and added to its new species counts
+    // there (Codex review #602: fishMine reads its first species, where it is a reject).
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (fishMine(F, f) !== 'add') return;
+      if (!fishOn(F, f, sid)) return;
       (room[sid] = room[sid] || new Set()).add(obsOf[f] || f);
     });
     const N = {...F, add: {...(F.add || {})}, seen: {...(F.seen || {})}},
