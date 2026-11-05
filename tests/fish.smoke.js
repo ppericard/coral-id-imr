@@ -765,6 +765,108 @@ const server = http.createServer((req, res) => {
     if (t2.subj !== 'coral' || t2.saved !== '"fish"') grp.push(`taken out of the group: ${JSON.stringify(t2)}`);
     await c8.close();
   }
+  // (6c) Fish open to all (core.js SUBJECTS open: 'all', the release's one field; forced here by serving core.js with fish's
+  // open: 'all'): a player who is not the admin, signed out, sees the Corals | Fish row on Home (the beta tag kept),
+  // switches to Fish, answers fish questions; a reload keeps Fish; signing in (the sheet's replies put them in no group)
+  // keeps Fish open and the fish progress made signed out; Corals switches back.
+  const all = [];
+  {
+    const c9 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c9.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c9.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'group'")) all.push("core.js: no open: 'group' to force");
+        await r.fulfill({response: res, body: t.replace("open: 'group'", "open: 'all'")});
+      }
+    );
+    await c9.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-all')) {
+          sessionStorage.setItem('fish-all', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
+        }
+      } catch (e) {}
+      window.SHEET_STUB = (url, o) =>
+        Promise.resolve({
+          json: () =>
+            Promise.resolve(
+              o && o.method === 'POST'
+                ? {ok: true, log: true, rev: 2, v: 48, groups: []}
+                : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: [], v: 48, groups: []}
+            )
+        });
+    });
+    const q = await c9.newPage();
+    q.on('pageerror', e => errs.push(`open to all: ${e.message}`));
+    const ready = () => q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    await q.goto(base + '#home');
+    await ready();
+    const h0 = await q.evaluate(() => {
+      const f = document.querySelector('#view .hsubj [data-subj="fish"]');
+      return {admin: IS_ADMIN, open: subjOpen(subjectOf('fish')), btn: !!f, tag: !!(f && f.querySelector('.beta'))};
+    });
+    if (h0.admin || !h0.open || !h0.btn || !h0.tag) all.push(`signed out, Home: ${JSON.stringify(h0)}`);
+    await q.click('#view .hsubj [data-subj="fish"]');
+    await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000}).catch(() => {});
+    await q.evaluate(() => go('quiz'));
+    await q.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000}).catch(() => {});
+    // Three fish answers, as pages.smoke.js answers them (the right choice, or its name typed); cards closed on the way.
+    const n = await q.evaluate(async () => {
+      const until = async f => {
+        for (let k = 0; k < 300 && !f(); k++) await new Promise(ok => setTimeout(ok, 10));
+        return f();
+      };
+      for (let i = 0; i < 12 && answersSoFar() < 3; i++) {
+        document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
+        if (!(await until(() => document.querySelector('#view .q:not(.done) :is([data-c], .tyform, [data-w])')))) break;
+        if (document.querySelector('#view .q.wink')) document.querySelector('#view [data-w]').click();
+        else {
+          const t = SHOWNQ[1],
+            c = [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c === t);
+          if (c) c.click();
+          else {
+            const f = document.querySelector('#view .tyform');
+            f.querySelector('input').value = GX(t).name;
+            f.requestSubmit();
+          }
+        }
+        await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
+        document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        route();
+      }
+      return answersSoFar();
+    });
+    const fishP = () => q.evaluate(() => Object.keys(store.get(subjKey('fish', 'progress'), {}) || {}).sort());
+    const p0 = await fishP();
+    if (n < 3 || !p0.length) all.push(`signed out, the fish quiz: ${n} answers, fish progress ${JSON.stringify(p0)}`);
+    await q.reload();
+    await q.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    if ((await q.evaluate(() => SUBJ.id)) !== 'fish') all.push('signed out, reload: Fish not kept');
+    await q.evaluate(() => go('home'));
+    await ready();
+    await Promise.all([q.waitForNavigation(), q.evaluate(() => syncGet({name: 'Ana', pin: '1234'}).then(j => signIn('Ana', '1234', j)))]);
+    await ready();
+    const s1 = await q.evaluate(() => ({
+      subj: SUBJ.id,
+      open: subjOpen(subjectOf('fish')),
+      row: !!document.querySelector('#view .hsubj [data-subj="fish"]')
+    }));
+    const p1 = await fishP();
+    if (s1.subj !== 'fish' || !s1.open || !s1.row) all.push(`signed in, in no group: ${JSON.stringify(s1)}`);
+    if (!p0.every(k => p1.includes(k))) all.push(`signed in: the fish progress made signed out lost ${JSON.stringify([p0, p1])}`);
+    await q.click('#view .hsubj [data-subj="coral"]');
+    await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
+    if ((await q.evaluate(() => SUBJ.id)) !== 'coral') all.push('Corals did not switch back');
+    await c9.close();
+  }
   // Codex review #442, on the real app with a sheet stub (AGENTS.md rule 13: window.SHEET_STUB, nothing sent):
   // (1) the sheet's opening hold is the corals': a pull with Fish on screen leaves the fish hold alone;
   // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
@@ -1127,7 +1229,7 @@ const server = http.createServer((req, res) => {
     if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
     await c7.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...welcome];
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

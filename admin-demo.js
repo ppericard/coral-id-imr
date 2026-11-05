@@ -715,7 +715,7 @@
     if (p.userGroup && V >= 48) {
       const g = String(p.group || ''),
         L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
-      if (!SUBJECTS.some(x => x.beta && x.id === g)) return {ok: false, error: 'group'};
+      if (!SUBJECTS.some(x => subjGroup(x) && x.id === g)) return {ok: false, error: 'group'};
       if (!Array.isArray(p.userGroup) && !S.users[lc(L[0])]) return {ok: false, error: 'user'};
       let n = 0;
       L.forEach(x => {
