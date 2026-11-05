@@ -82,28 +82,24 @@ const anSec = v => (v == null || !isFinite(v) ? '–' : (v < 10 ? v.toFixed(1) :
 const anPts = v => (v == null || !isFinite(v) ? '–' : Math.round(v * 100) === 0 ? '0 pts' : anNum(v * 100, 0) + ' pts');
 const anTf = P => (P.scale === 's' ? anSec : P.scale === 'pts' ? anPts : anPc);
 // The verdict pill: helps / hurts / clear (neither good nor bad: time, the app's own calibration) / no clear effect /
-// not enough data yet, after the multiple-testing correction (analysis.js correct); its tooltip gives the family and
-// the adjusted p (rule 14f: no p-value on the page itself). A primary effect (the question its analysis exists to
-// answer) is tagged; an exploratory one is tagged when it reads clear: a lead to check on later answers, not a finding.
+// not enough data yet, after the multiple-testing correction (analysis.js correct). Its tooltip, a bare label (rule 23;
+// the method is in the help): the family and the adjusted p, never on the page itself (rule 14f), and the answers that
+// would settle it. Tags: primary (the question its analysis exists to answer), and exploratory when it reads clear.
 const anP = v => (v == null ? '–' : v < 0.001 ? '< 0.001' : v < 0.01 ? v.toFixed(3) : v.toFixed(2));
 function anPill(P, e) {
   const t = AN_TONE[P.tone] || AN_TONE.thin,
     label = e.v === 'none' || e.v === 'nolog' ? P.verdict : t[1],
-    fam =
-      e.fam === 1
-        ? 'Primary question, corrected with the other primary ones (Holm)'
-        : 'Exploratory, corrected for false leads (Benjamini-Hochberg, 5%)',
     tip = [
-      e.fam ? `${fam}: adjusted p ${anP(e.pa)} (unadjusted ${anP(e.p)})` : '',
+      e.fam ? `${e.fam === 1 ? 'Primary, Holm' : 'Exploratory, BH 5%'}: adjusted p ${anP(e.pa)} (p ${anP(e.p)})` : '',
       e.v === 'thin' && e.need ? `About ${anInt(e.need)} answers would settle it` : ''
     ].filter(Boolean),
     tag =
       e.fam === 1
-        ? ' <span class="adm-src" title="The question this analysis exists to answer">primary</span>'
+        ? ' <span class="adm-src">primary</span>'
         : e.fam === 2 && e.v === 'clear'
-          ? ' <span class="adm-src" title="A lead to check on later answers, not a finding">exploratory</span>'
+          ? ' <span class="adm-src">exploratory</span>'
           : '';
-  return `<span class="adm-an-v t-${P.tone}"${tip.length ? ` title="${esc(tip.join('. '))}"` : ''}>${t[0]} ${esc(label)}</span>${tag}`;
+  return `<span class="adm-an-v t-${P.tone}"${tip.length ? ` title="${esc(tip.join(' · '))}"` : ''}>${t[0]} ${esc(label)}</span>${tag}`;
 }
 // What it does, in words, with its likely range and what it suggests when it is clear.
 const anSays = P =>
