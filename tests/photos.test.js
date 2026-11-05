@@ -3,7 +3,9 @@
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  {execFileSync} = require('child_process');
+const SIZES = ['', '-m', '-s', '-t']; // tools/photos.py SUFFIXES
 const {applyCuration, applySlots, gameOf} = require('../core.js');
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'));
 const RAW = read('data.json'),
@@ -214,11 +216,43 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
         .flat()
         .forEach(p => {
           if (p.r) remote.push(p.f);
-          else if (['', '-m', '-s', '-t'].some(s => !fs.existsSync(path.join(__dirname, '..', 'img', p.f + s + '.webp'))))
-            missing.push(p.f);
+          // A photo with an online original lives on R2 (tools/r2_sync.sh checks the bucket has its four files); one
+          // with none (an IMR lecture photo) in img/, git being its only backup.
+          else if (!p.src && SIZES.some(s => !fs.existsSync(path.join(__dirname, '..', 'img', p.f + s + '.webp')))) missing.push(p.f);
         })
     )
   );
   assert.deepStrictEqual(remote, [], 'still shown from iNaturalist (python3 tools/fetch_approved.py --games)');
   assert.deepStrictEqual(missing, [], 'a file missing in img/');
+});
+
+// tools/photos.py --check (CI) on made-up folders: the four sizes of every photo in img/; a downloaded photo with no
+// online original (IMR lecture photo, Coral Finder book scan) never missing from img/, git being its only backup; a
+// downloaded photo with an online original may be on R2 only (Photos out of the repo, Pierre's rule of 2026-11-05).
+test('tools/photos.py check: the four sizes in img/, the photos with no online original kept there, the others on R2', () => {
+  const py = code =>
+    JSON.parse(
+      execFileSync('python3', ['-c', `import sys, json, os, tempfile; sys.path.insert(0, 'tools')\nimport photos\n${code}`], {
+        cwd: path.join(__dirname, '..'),
+        encoding: 'utf8'
+      })
+    );
+  const out = py(`
+recs = {'imr-1': [{'f': 'imr-1', 'imr': 1}], 'acropora-cand-1': [{'f': 'acropora-cand-1', 'src': 'https://x/photos/1/original.jpg'}],
+        'acropora-cand-2': [{'f': 'acropora-cand-2', 'src': 'https://x/photos/2/original.jpg', 'r': 1}]}
+def run(names):
+    d = tempfile.mkdtemp()
+    for n in names: open(os.path.join(d, n + '.webp'), 'w').close()
+    return photos.check(d, recs)
+four = lambda f: [f + s for s in photos.SUFFIXES]
+print(json.dumps({'ok': run(four('imr-1')), 'size': run(four('imr-1')[:3]), 'gone': run([]),
+  'online': sorted(photos.online(recs)), 'gitonly': sorted(photos.gitonly(recs)), 'url': photos.url('a', '-s'),
+  'every': photos.every(tempfile.mkdtemp(), recs)}))`);
+  assert.deepStrictEqual(out.ok, [], 'IMR photo in img/, the online one on R2 only: all well');
+  assert.match(out.size.join(' '), /1 photo file\(s\) missing.*imr-1-t/, 'a size missing');
+  assert.match(out.gone.join(' '), /4 file\(s\) of photos with no online original missing from img\//, 'an IMR photo gone');
+  assert.deepStrictEqual(out.online, ['acropora-cand-1'], 'downloaded with an online original: on R2 only (a remote one, r: 1, is not)');
+  assert.deepStrictEqual(out.gitonly, ['imr-1']);
+  assert.deepStrictEqual(out.every, ['acropora-cand-1'], 'the photo tools measure the R2 photos too');
+  assert.strictEqual(out.url, require('../core.js').PHOTO_BASE + 'img/a-s.webp', 'the bucket address read from core.js');
 });

@@ -2,7 +2,8 @@
 
 The quiz lays out its views before the photos load (nothing may move while a photo loads), so it needs their shape
 up front to pick side by side or stacked (designer re-review 2026-11-01). Re-runnable: photos without a local file are
-skipped and keep no `ar` (the app then assumes 4:3). Run after adding photos: python3 tools/apply_ratios.py
+skipped and keep the `ar` they have, or none (the app then assumes 4:3): the photos that live on R2 only (Photos out of
+the repo) got theirs from tools/fetch_approved.py when it downloaded them. Run after adding photos: python3 tools/apply_ratios.py
 """
 import json, os
 from datajson import dump  # the one data.json layout (one genus per line)

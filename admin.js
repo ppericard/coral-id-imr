@@ -82,8 +82,9 @@ const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.i
 // The site's photos from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers; once an R2 photo failed in this tab, it and
 // the next ones come from their online original at a light size, or from the site's img/ for a photo with none (as
 // app.js photoFail, core.js photoAway; Pierre, 2026-11-05: the photos with an online original leave img/).
+// With PHOTO_BASE '' (R2 switched off), AWAY from the start: the photos with an online original live on R2 only.
 let R2 = !!PHOTO_BASE,
-  AWAY = false,
+  AWAY = !PHOTO_BASE,
   PIDX = null;
 const photoIdx = () => (PIDX = PIDX && PIDX.of === DATA ? PIDX : {of: DATA, ...photoIndex(DATA)});
 const photoLook = f => photoIdx().f.get(f);

@@ -108,9 +108,10 @@ const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.i
 // original (iNaturalist, FishBase: core.js photoAway; Pierre, 2026-11-05) is read from there at a light size, the others
 // (IMR lecture photos, Coral Finder book scans, page art) from the site's img/. Under a service worker both stay as they
 // are: the worker keeps photos offline under their R2 address and fails at once while R2 is out (sw.js photo), and each
-// photo that fails falls back on its own.
+// photo that fails falls back on its own. With PHOTO_BASE '' (R2 switched off), AWAY from the start: the photos with an
+// online original live on R2 only since step 2 of Photos out of the repo, so they come from that original.
 let R2 = !!PHOTO_BASE,
-  AWAY = false;
+  AWAY = !PHOTO_BASE;
 const swOn = () => !!(navigator.serviceWorker && navigator.serviceWorker.controller);
 // A file of img/ (a photo with no online original, page art), where this page reads it.
 const photoUrl = path => (R2 ? PHOTO_BASE : '') + path;
@@ -260,6 +261,7 @@ document.addEventListener('error', photoFail, true);
 // A cropped photo shown from its online original gets its crop drawn (core.js photoCropOf: the site's files have it baked
 // in): every <img> added or given a new src is checked, from the first fallback on (nothing watches before).
 let CROPW = null;
+if (AWAY) setTimeout(cropWatch); // R2 switched off: crops drawn from the start, once this file has run (FISH comes below)
 const cropSet = i => {
   if (i.style.getPropertyValue('object-view-box') && !i.dataset.vb) return; // a crop drawn by its page (none in the app yet)
   const c = photoCropOf(i.getAttribute('src') || '', photoIdx());

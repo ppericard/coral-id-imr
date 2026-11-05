@@ -69,8 +69,10 @@ const server = http.createServer((req, res) => {
 // 10. Load order (index.html tiers): Home shows before My progress and the Tools files are asked for, the quiz files come
 //    before My progress, which comes before the Tools; a link straight to #quiz, #progress or #lab on a first visit works.
 // 11. A browser driven by a program sends nothing to the sheet on any host name.
-// 12. Photos are read from R2 (core.js PHOTO_BASE); R2 out of reach, they come from the site at once (page and service
-//    worker), and the worker keeps them offline under either address.
+// 12. Photos are read from R2 (core.js PHOTO_BASE), the ones with an online original from R2 only (no copy in img/ since
+//    step 2 of Photos out of the repo, the admin's crop previews too); R2 out of reach, they come from their online
+//    original or the site at once (page and service worker), and the worker keeps them offline under either address;
+//    R2 switched off (PHOTO_BASE ''), from their online original or the site.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await slot('net.smoke');
@@ -97,48 +99,16 @@ const server = http.createServer((req, res) => {
     return br;
   };
   const b = introsOn(await chromium.launch());
-  // iNaturalist answering from the local files (every outside host is cut off; no test reaches iNaturalist): once R2
-  // fails, a photo with an online original is read from it (core.js photoAway; Pierre, 2026-11-05), as a photo still
-  // remote (r: 1) always is. A photo with a local copy is served its own file at the size asked (small 240, medium 480,
-  // large 960 px), any other a local 480 px file. Each address asked is counted in INAT.
-  const INAT = [];
-  const inatIds = (() => {
-    const m = new Map(),
-      walk = o => {
-        if (!o || typeof o !== 'object') return;
-        if (Array.isArray(o)) return o.forEach(walk);
-        const id = typeof o.f === 'string' && typeof o.src === 'string' && (/\/photos\/(\d+)\//.exec(o.src) || [])[1];
-        if (id && !m.has(id)) m.set(id, o.f);
-        Object.values(o).forEach(walk);
-      };
-    ['data.json', 'cand.json'].forEach(f => walk(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))));
-    return m;
-  })();
+  // iNaturalist and R2 answering from the local files (tests/photostub.js; every outside host is cut off, no test reaches
+  // them). Once R2 fails, a photo with an online original is read from it (core.js photoAway; Pierre, 2026-11-05), as a
+  // photo still remote (r: 1) always is: each address asked is counted in INAT. A photo that lives on R2 only (Photos
+  // out of the repo, step 2: no file in the checkout) is answered with a stand-in at the same size.
+  const INAT = [],
+    STUB = require('./photostub.js')(ROOT);
   const anyS = () => fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'));
-  const inatLocal = ctx =>
-    ctx.route(/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(small|medium|large|original)\./, r => {
-      const u = r.request().url(),
-        [, id, sz] = /\/photos\/(\d+)\/(\w+)\./.exec(u),
-        f = inatIds.get(id),
-        own = f && path.join(ROOT, 'img', `${f}${{small: '-t', medium: '-s', large: '-m'}[sz] || ''}.webp`);
-      INAT.push(u);
-      return r.fulfill({
-        contentType: 'image/webp',
-        body: fs.readFileSync(own && fs.existsSync(own) ? own : path.join(ROOT, 'img', anyS()))
-      });
-    });
-  // R2 answering, from the local files, with the bucket's CORS header.
+  const inatLocal = ctx => STUB.inat(ctx, INAT);
   const R2 = require('../core.js').PHOTO_BASE;
-  const fromR2 = ctx =>
-    ctx.route(
-      u => u.href.startsWith(R2),
-      r => {
-        const f = path.join(ROOT, decodeURIComponent(new URL(r.request().url()).pathname));
-        return fs.existsSync(f)
-          ? r.fulfill({status: 200, contentType: 'image/webp', headers: {'Access-Control-Allow-Origin': '*'}, body: fs.readFileSync(f)})
-          : r.fulfill({status: 404});
-      }
-    );
+  const fromR2 = ctx => STUB.r2(ctx);
   const ctxOf = async (opts = {}) => {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: opts.dpr || 1, serviceWorkers: 'block'});
     await ctx.addInitScript(() => {
@@ -1019,8 +989,8 @@ const server = http.createServer((req, res) => {
         r => {
           const url = r.request().url();
           if (!once.has(url)) return (once.add(url), r.abort());
-          const f = path.join(ROOT, decodeURIComponent(new URL(url).pathname));
-          return fs.existsSync(f)
+          const f = STUB.file(decodeURIComponent(new URL(url).pathname).replace(/^\/img\//, '')); // a stand-in for an R2-only photo
+          return f
             ? r.fulfill({status: 200, contentType: 'image/webp', headers: {'Access-Control-Allow-Origin': '*'}, body: fs.readFileSync(f)})
             : r.fulfill({status: 404});
         }
@@ -1078,6 +1048,96 @@ const server = http.createServer((req, res) => {
           fails.push('R2 cut off, service worker: the page gave R2 up (its offline copies are there)');
       }
       if (errs.length) fails.push('R2 cut off, service worker: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // g. The photos that live on R2 only (Photos out of the repo, step 2: no copy in img/): with R2 answering, one shows
+    // from R2 in the app and the site is asked nothing for it; in the admin, a downloaded, cropped one shows from R2
+    // with its crop baked in (no crop drawn), and once Pierre's draft crop differs, from its original (iNaturalist
+    // medium for a tile, large enlarged) with the draft crop drawn (admin.js crSrc), never from img/.
+    {
+      const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
+        C = JSON.parse(fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8')),
+        [g, ph] = Object.entries(D.cand || {})
+          .flatMap(([g, L]) => L.map(x => [g, x]))
+          .find(([g, x]) => x.cr && !x.r && x.src && ((C.genera || {})[g] || {}).add && C.genera[g].add[x.f] && !(C.exclude || {})[x.f]);
+      for (const admin of [false, true]) {
+        const ctx = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await ctx.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        await inatLocal(ctx);
+        await fromR2(ctx);
+        let site = 0;
+        ctx.on('request', r => r.url().startsWith(base + 'img/' + ph.f) && site++);
+        const p = await ctx.newPage(),
+          errs = [];
+        p.on('pageerror', e => errs.push(e.message));
+        const at = admin ? 'Admin' : 'App';
+        if (!admin) {
+          await p.goto(base + '#home');
+          await ready(p);
+          const st = await p.evaluate(async f => {
+            const x = photoLook(f),
+              i = document.createElement('img');
+            i.src = loc(x, 's');
+            document.getElementById('view').append(i);
+            await new Promise(ok => ((i.onload = i.onerror = ok), setTimeout(ok, 5000)));
+            return {src: i.getAttribute('src'), ok: i.naturalWidth > 0};
+          }, ph.f);
+          if (!st.ok || !st.src.startsWith(R2 + 'img/' + ph.f + '-s.webp'))
+            fails.push(`${at}, R2 answering: a photo that lives on R2 only did not show from R2 (${JSON.stringify(st)})`);
+        } else {
+          await p.goto(base + 'admin.html?demo#' + g);
+          const sel = `figure[data-f="${ph.f}"] img`;
+          await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
+          await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
+          const look = () =>
+            p
+              .waitForFunction(
+                s => {
+                  const i = document.querySelector(s);
+                  return (
+                    i && i.complete && i.naturalWidth > 0 && {src: i.getAttribute('src'), vb: i.style.getPropertyValue('object-view-box')}
+                  );
+                },
+                sel,
+                {timeout: 15000}
+              )
+              .then(h => h.jsonValue())
+              .catch(() => null);
+          const st = await look();
+          if (!st || !st.src.startsWith(R2 + 'img/' + ph.f) || st.vb)
+            fails.push(
+              `${at}, R2 answering: a downloaded, cropped photo did not show from R2 with its crop baked in (${g} ${ph.f} ${JSON.stringify(st)})`
+            );
+          await p.evaluate(f => ((DRAFT.crop = {...(DRAFT.crop || {}), [f]: [0.1, 0.1, 0.9, 0.9]}), render()), ph.f);
+          await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
+          const st2 = await look();
+          if (!st2 || !/\/photos\/\d+\/(medium|large)\./.test(st2.src) || !/inset\(10%/.test(st2.vb))
+            fails.push(`${at}, R2 answering: a new draft crop was not previewed on the original (${g} ${ph.f} ${JSON.stringify(st2)})`);
+        }
+        if (site) fails.push(`${at}, R2 answering: the site's img/ was asked for a photo that lives on R2 only (${site})`);
+        if (errs.length) fails.push(`${at}, R2 answering: ` + errs.slice(0, 3).join(' | '));
+        await ctx.close();
+      }
+    }
+    // h. R2 switched off (core.js PHOTO_BASE ''): the photos with an online original come from it (the site has no copy
+    // since step 2), the others from img/, and R2 is asked nothing.
+    {
+      const {ctx, p, errs} = await ctxOf();
+      const core = fs.readFileSync(path.join(ROOT, 'core.js'), 'utf8').replace(/const PHOTO_BASE = '[^']*'/, "const PHOTO_BASE = ''");
+      await ctx.route(/\/core\.js(\?|$)/, r => r.fulfill({contentType: 'text/javascript', body: core}));
+      let asked = 0;
+      p.on('request', r => r.url().startsWith(R2) && asked++);
+      await p.goto(base + '#quiz');
+      await ready(p);
+      const s = (await shown(p)) || [],
+        off = await misplaced(p);
+      if (!s.length || off.length || (await p.$('#qfail')))
+        fails.push(`R2 switched off: the game photos did not come from their online original or the site (${off.length ? off : s})`);
+      if (asked) fails.push(`R2 switched off: R2 was asked ${asked} time(s)`);
+      if (errs.length) fails.push('R2 switched off: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
     // c. Under the service worker (a bare page, as in 6).
