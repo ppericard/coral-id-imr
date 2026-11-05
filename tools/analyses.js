@@ -110,6 +110,7 @@ if (require.main === module) {
     B = arg('--boot') != null ? Number(arg('--boot')) : A.BOOT,
     Bh = arg('--boot-history') != null ? Number(arg('--boot-history')) : undefined,
     log = t => console.log(t);
+  require('../tests/slot.js').guard('tools/analyses.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
   (async () => {
     if (argv.includes('--sheet')) {
       const token = process.env.ANALYSES_ADMIN_TOKEN;

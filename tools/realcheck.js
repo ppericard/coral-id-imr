@@ -18,6 +18,7 @@
 const fs = require('fs');
 const file = process.argv[2];
 if (!file) throw new Error('usage: node tools/realcheck.js answers.json');
+require('../tests/slot.js').guard('tools/realcheck.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
 const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   V = Array.isArray(J) ? J : J.values || J.rows || [];
 const H = Array.isArray(V[0]) && V[0][0] === 'Name' ? V[0] : null,

@@ -17,6 +17,7 @@ const path = require('path'),
 const W = path.join(__dirname, '..'),
   [S, LOGF] = process.argv.slice(2);
 if (!S) throw new Error('usage: node tools/fallbackeval.js <dir with t-new.json, t-imr.json, t-know.json> [answers.json]');
+require('../tests/slot.js').guard('tools/fallbackeval.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
 const C = require(path.join(W, 'core.js'));
 const ORDER = ['new', 'imr', 'know'],
   TRUE = {beginner: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
