@@ -1,6 +1,6 @@
 {
 "v":1,
-"doc":"Build-time reference of names for the tools (Pierre, 2026-11-05, Q49): the app never loads it, and it never changes the IMR wording (AGENTS.md rule 1). Refreshed by tools/taxonomy.py from WoRMS and iNaturalist; its docstring describes every field. Hand-kept: refs, watch (all but seen) and the names in old; the rest is written by the refresh. Study: docs/reviews/2026-11-05-coral-taxonomy-study.md section 5.",
+"doc":"Build-time reference of names for the tools (Pierre, 2026-11-05, Q49): the app never loads it, and it never changes the IMR wording (rule C1). Refreshed by tools/taxonomy.py from WoRMS and iNaturalist; its docstring describes every field. Hand-kept: refs, watch (all but seen) and the names in old; the rest is written by the refresh. Study: docs/reviews/2026-11-05-coral-taxonomy-study.md section 5.",
 "refs":{
 "chukaew2023":"Chukaew et al. 2023 (as cited in the taxonomy study of 2026-11-05)",
 "huang2014":"Huang D, Benzoni F, Fukami H, Knowlton N, Smith ND, Budd AF (2014) Zool J Linn Soc 171: 277-355",

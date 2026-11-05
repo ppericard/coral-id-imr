@@ -6,7 +6,7 @@
 // a Web Worker on this page's own answer log, in this tab; its result stays in this tab. Loaded after admin.js, whose helpers it uses ($v, esc, store, TOKEN, SYNC_URL, loadStats,
 // loadUsers, allPhotos, zoom, img, kpis). Views: GROUPS in admin.js; docs/ARCHITECTURE.md "Analyses"; the methods in
 // docs/LEARNING.md "Multifactor analyses"; the chart helpers in docs/DESIGN.md "Admin charts".
-const AN_V = 35; // sync script version with analysesGet (AGENTS.md 7a: before it, the page just has no stored report)
+const AN_V = 35; // sync script version with analysesGet (rule D4: before it, the page just has no stored report)
 let ANREP = null, // {st: 'ok' | 'none' | 'old' | 'err', rep, answers, stored}
   ANLOC = null, // a report recomputed in this tab: {rep} once done, {prog} while running
   ANWORK = null;
@@ -32,7 +32,7 @@ function anLoad() {
   return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({analysesGet: 1, token: TOKEN})})
     .then(r => r.json())
     .then(j => {
-      // A script before v35 answers 'input' to an unknown POST: no stored report, nothing else changes (AGENTS.md 7a).
+      // A script before v35 answers 'input' to an unknown POST: no stored report, nothing else changes (rule D4).
       if (!j || (!j.ok && j.error === 'input') || (j.v && j.v < AN_V)) return (ANREP = {st: 'old', v: j && j.v});
       if (!j.ok) return (ANREP = {st: 'err', err: j.error === 'token' ? 'Token refused' : 'Not available'});
       let rep = null;
@@ -99,8 +99,8 @@ const anSec = v => (v == null || !isFinite(v) ? '–' : (v < 10 ? v.toFixed(1) :
 const anPts = v => (v == null || !isFinite(v) ? '–' : Math.round(v * 100) === 0 ? '0 pts' : anNum(v * 100, 0) + ' pts');
 const anTf = P => (P.scale === 's' ? anSec : P.scale === 'pts' ? anPts : anPc);
 // The verdict pill: helps / hurts / clear (neither good nor bad: time, the app's own calibration) / no clear effect /
-// not enough data yet, after the multiple-testing correction (analysis.js correct). Its tooltip, a bare label (rule 23;
-// the method is in the help): the family and the adjusted p, never on the page itself (rule 14f), and the answers that
+// not enough data yet, after the multiple-testing correction (analysis.js correct). Its tooltip, a bare label (rule A2;
+// the method is in the help): the family and the adjusted p, never on the page itself (rule A2), and the answers that
 // would settle it. Tags: primary (the question its analysis exists to answer), and exploratory when it reads clear.
 const anP = v => (v == null ? '–' : v < 0.001 ? '< 0.001' : v < 0.01 ? v.toFixed(3) : v.toFixed(2));
 function anPill(P, e) {
@@ -1308,7 +1308,7 @@ addEventListener('resize', () => {
   anRz = setTimeout(() => /^~an(-|$)/.test(cur) && render(), 200);
 });
 
-// Help ("?"), per view: the definitions and the methods stay off the page (AGENTS.md rule 23).
+// Help ("?"), per view: the definitions and the methods stay off the page (rule A2).
 const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result: how much it changes the outcome named above the chart (the chance of a right answer, the time to answer, the chance to end the session, the chance to mix up genera) from its typical value, for a typical player and photo; its value is on the right. Coloured by verdict (green helps, red hurts, blue clear but neither good nor bad, grey no clear effect, dashed outline not enough data yet); the thin line is its likely range. Only the clear results show at first: the button under a chart or table shows the others there (no clear effect, too early to tell), in the same order. <b>Show</b> keeps only the clear results, what helps, what hurts or what still lacks data (all of these). <b>Sort</b>, above every chart and table: <b>Most negative first</b> or <b>Most positive first</b> (by the signed change: a chance in points, a time as the share of time gained or lost; spreads after the changes, by size), <b>By topic</b> (Overview: a sub-heading per analysis, the analyses in the menu's order, by the signed change inside each) or <b>By name</b>; on the Overview each result's topic (the analysis it comes from) is the grey line under its name. A tap on a card's title folds it; the chips under them jump to a card. These choices are kept per page, in this browser only. The words, the tables and the results over time are folded by default: tap to open.</p>
   <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>

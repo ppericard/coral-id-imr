@@ -1,5 +1,5 @@
 // app.js imrFormsOf: the IMR growth forms a genus takes, from its classified photos (one photo Pierre or the first guess
-// is sure of, or two unsure guesses), which the quiz's easy wrong choices use (AGENTS.md rule 14c: genera sharing no
+// is sure of, or two unsure guesses), which the quiz's easy wrong choices use (rule L7: genera sharing no
 // growth form). forms.json "gunsure" (the guesses to double-check) is a list; it was read as an object, so every unsure
 // guess counted as sure (found on PR #577). The loader, applyForms and imrFormsOf run in Node on stubs.
 const test = require('node:test');

@@ -1908,7 +1908,7 @@ header {
 .cmpfabpad {
   height: 88px;
 }
-/* Desktop (from 1024 px, AGENTS rule 19): a light band instead, sticky right under the page bar (its height in --ctx-h,
+/* Desktop (from 1024 px, rule U4): a light band instead, sticky right under the page bar (its height in --ctx-h,
    learn.js), as wide as the photo grid: a translucent tint with a blur (the photos show through as they scroll under
    it), one subtle accent line, a small label, and the filled Back to the duel button (Pierre, 2026-11-04: the first band
    was too heavy). */
@@ -2789,7 +2789,7 @@ header {
 /* Narrow phones (under 380 px, e.g. 360 and 320): while the Sign in (or Not saved) pill is in the header, the five
    controls and the logotype don't fit one line (the ⚙ was cut off and every page scrolled sideways, 2026-11-03). The
    logotype then steps aside, still the home link's name for screen readers; the logo stays, and no control is dropped.
-   The one width query outside the three size classes (AGENTS.md rule 19), for the header only. */
+   The one width query outside the three size classes (rule U4), for the header only. */
 @media (max-width: 379.98px) {
   header:has(#signb:not([hidden])) .brand .home span,
   header:has(#subjc:not([hidden])) .brand .home span {
@@ -6742,7 +6742,7 @@ html.touring .unlock {
 }
 /* The subject chip (app.js showSubj; docs/DESIGN.md "Subject switch"): next to the logo on every page, the subject on
    screen (its icon and name, a small caret), a small menu with every subject the player has under it. Shown only to a
-   player with two subjects or more (the admin's only while fish is in beta). The header never changes size (rule 18):
+   player with two subjects or more (the admin's only while fish is in beta). The header never changes size (rule U3):
    the chip is no taller than the header's other controls. Phones: the header's grid gets a column for it, and the chip
    shows its icon and caret only (its name stays its label); while the Sign in (or Not saved) pill shows, the logotype
    text steps aside too, as it does under 380 px for everyone (below): the logo stays, and no control is dropped. */

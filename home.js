@@ -14,7 +14,7 @@
     const names = Object.keys(DATA.gen),
       fish = !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
     // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
-    // the doors, the one relaxation of "two doors only" (AGENTS.md rule 21), the twin of the header chip (app.js
+    // the doors, the one relaxation of "two doors only" (rule U12), the twin of the header chip (app.js
     // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is
     // in beta); the doors follow the subject on screen.
     const subj = subjMine().length > 1 ? `<div class="seg hsubj" role="group" aria-label="Subject">${subjBtns()}</div>` : '';
@@ -98,7 +98,7 @@ ${idoor}
     </div>`;
   };
   // About and credits (Pierre, 2026-11-03): no credits block on the pages, only the one-line credit at the bottom of Home
-  // and this page, linked from it and from the ? help of every page. Each photo keeps its own credit (AGENTS.md rule 11).
+  // and this page, linked from it and from the ? help of every page. Each photo keeps its own credit (rule P5).
   // The Coral Finder book is cited as a reference (References), never credited as a source of the app's content: its
   // content is not reproduced (Pierre, 2026-11-03, a rights question). The Home credit line does not name it.
   window.viewAbout = function () {

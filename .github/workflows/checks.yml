@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   checks:
-    # The image named in every workflow, not ubuntu-latest, so the next Ubuntu is a reviewed one-line PR (AGENTS.md 27b).
+    # The image named in every workflow, not ubuntu-latest, so the next Ubuntu is a reviewed one-line PR (rule W9).
     runs-on: ubuntu-26.04
     steps:
       # Depth 1: the whole history with every photo cost ~300 s of checkout. Nothing here compares with a base any more:
@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '26'
       # The checks and tests run python3: pinned, not the image's own (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest
-      # stable (rule 27b), the same in every workflow.
+      # stable (rule W9), the same in every workflow.
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
@@ -106,7 +106,7 @@ jobs:
         with:
           node-version: '26'
       # The checks and tests run python3: pinned, not the image's own (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest
-      # stable (rule 27b), the same in every workflow.
+      # stable (rule W9), the same in every workflow.
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'

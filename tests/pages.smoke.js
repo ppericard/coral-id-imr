@@ -312,7 +312,7 @@ async function overlays(b, base) {
     await c.close();
   }
   // Millepora a slate genus (Pierre, 2026-11-02): a returning player who saw the earlier recalculation pop-up gets the
-  // Millepora one, once (AGENTS rule 12); one who missed both gets both on one card. Bonus genera unlocked by the
+  // Millepora one, once (rule D6); one who missed both gets both on one card. Bonus genera unlocked by the
   // former thresholds (Q.bu 2+) stay on; Millepora alone (Q.bu 1) is no opt-in. Millepora's first card and sheet warn.
   for (const [recalc, bu] of [
     ['progress-moving-average-2026-11', 3],
@@ -867,7 +867,7 @@ async function overlays(b, base) {
     await c.close();
   }
   // The Practice tabs (app.js MODES; Pierre, 2026-11-03: "Photo → genus" became Quiz, "Custom" Custom quiz): their names
-  // at each size class, all four in the bar without scrolling it at 360 and 390 px (rule 20), the tab of the page
+  // at each size class, all four in the bar without scrolling it at 360 and 390 px, the tab of the page
   // marked, and the old addresses (#quiz, #quiz-custom|play) still landing on their tab.
   for (const [w, want] of [
     [360, 'Quiz|Custom quiz|Duels|Memory'],
@@ -964,7 +964,7 @@ async function overlays(b, base) {
 }
 
 // Signing in to an existing account (Pierre, 2026-11-03: players type only their first name, so two of them can pick the
-// same name, even the same simple code). The sheet is never reached (AGENTS.md rule 13): every request to the sync
+// same name, even the same simple code). The sheet is never reached (rule D1): every request to the sync
 // script is answered inside the page by a wrapped fetch (SHEET below), a route answers the same way, and the script's
 // hosts are mapped to this computer. Checks: a name taken with another code says so and suggests the initial; an
 // existing account asks "Is it you?" with its answers and last play, on a device with progress of its own and on a fresh
@@ -1056,7 +1056,7 @@ async function signin(base) {
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
   // Signed out, the leaderboard's note opens the sign-in card itself (it sent players to ⚙ Settings, where sign-in no
-  // longer is: AGENTS.md rule 20d). A cached board paints at once, whatever the sheet stub answers.
+  // longer is: rule U9). A cached board paints at once, whatever the sheet stub answers.
   await run(
     () => {
       if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
@@ -1322,7 +1322,7 @@ async function signin(base) {
 }
 
 // The sheet's full replay adopted by the app (sync.js replayAdopt; Pierre, 2026-11-03: progress recalculated from the
-// whole answer log, automatically). Nothing reaches the sheet (AGENTS.md rule 13): every sync request is answered in the
+// whole answer log, automatically). Nothing reaches the sheet (rule D1): every sync request is answered in the
 // page (a wrapped fetch and SHEET_STUB), a route answers any that escapes, and the script's hosts are mapped to this
 // computer. A stale signed-in device (its copy saved under older rules, one answer of its own not sent yet) loads:
 // it adopts the replay the sheet sends (the replayed record, its own answer replayed on top), saves and sends it, with
@@ -1440,7 +1440,7 @@ async function replayAdoptCheck(base) {
     p
       .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post), null, {timeout: 15000})
       .catch(() => {});
-  // The app never gets ahead of the sheet script (AGENTS.md 7a): a script before v28 (even one whose reply carried a
+  // The app never gets ahead of the sheet script (rule D4): a script before v28 (even one whose reply carried a
   // replay) changes nothing: the device keeps its own progress, sends its answer as before, records no rules version
   // and shows no card.
   {
@@ -1915,8 +1915,8 @@ async function startSmoke(b, base) {
 }
 
 // Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
-// height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule 17), and
-// every photo of a check gets the games' clickable source once answered (rule 11, photoSrc). Returns the failures.
+// height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule U2), and
+// every photo of a check gets the games' clickable source once answered (rule P5, photoSrc). Returns the failures.
 // Credits and Home's fit (Pierre, 2026-11-03): no page footer; Home is one screen with a one-line credit (Pierre, IMR, a
 // link to About and credits); About exists, is linked from Home and from the ? help of every page with Privacy and Send
 // feedback, and the Coral Finder book is never credited (only cited under References); the header fits the narrowest
@@ -2800,7 +2800,7 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary owner: ${JSON.stringify(r)}`);
     await c.close();
   }
-  // The app never gets ahead of the sheet script (AGENTS.md 7a): before v30 (or with no version known yet), none queued.
+  // The app never gets ahead of the sheet script (rule D4): before v30 (or with no version known yet), none queued.
   for (const v of [28, 29, 0]) {
     const [c, p] = await open(390, v);
     await answer(p);
@@ -2871,7 +2871,7 @@ async function basicsFit(b, base) {
         fails.push(`${w}x${h} Coral basics ${st}: teaching photo ${Math.round(r.photo)} px tall, over 45% of the screen`);
       if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
       if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
-      // Every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a classified photo
+      // Every kind of check offers the app's report once answered (rule U14; Codex on PR #405), and a classified photo
       // opens the enlarged view with its report. (Checked here since 2026-11-04, test-suite review D1: the main route loop
       // navigated to and answered the same steps at 390 and 1280 px only for these two checks, which are not layout.)
       if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}x${h} Coral basics ${st}: no report button after the answer`);
@@ -3059,7 +3059,7 @@ async function basicsTeach(b, base) {
         [...document.querySelectorAll('.bx-fex figure')].map(f => ({
           w: Math.round(f.querySelector('img').getBoundingClientRect().width),
           g: (f.querySelector('figcaption i') || {}).textContent || '',
-          // rule 7: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
+          // rule P1: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
           r: (n => {
             const fi = (f
                 .querySelector('img')
@@ -3078,7 +3078,7 @@ async function basicsTeach(b, base) {
       if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
       if (ex.some((e, i) => i && e.r < ex[i - 1].r))
         fails.push(
-          `${W} forms ${name}: examples not in rule 7's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+          `${W} forms ${name}: examples not in rule P1's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
         );
     }
     await p.click('.bx-fex .bx-fx');
@@ -3102,7 +3102,7 @@ async function basicsTeach(b, base) {
   return fails;
 }
 
-// A brand-new player end to end (AGENTS.md "How to make a change" 5; test-suite review, 2026-11-04: every other check
+// A brand-new player end to end (rule W17; test-suite review, 2026-11-04: every other check
 // pre-sets "tour seen" or "cards seen", so none met them together, as an RA did). A phone, an empty browser: the welcome
 // tour step by step, the first genus cards, 30 answers with whatever card or prompt comes (each closed as a player would,
 // with Escape, or its first button), then My progress and Genera. At every step: at most one card, tour or enlarged photo
@@ -3919,7 +3919,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       if (after.tour || !after.shown || !/1 of/.test(after.kick || '') || after.name !== first)
         fails.push(`first cards after the tour (first ${first}): ${JSON.stringify(after)}`);
       await ct.close();
-      // The enlarged quiz photo before the answer: its author by name, never the taxon, the genus or a link (rule 11;
+      // The enlarged quiz photo before the answer: its author by name, never the taxon, the genus or a link (rule P5;
       // Pierre, 2026-11-03: a photo with no credit at all).
       const cb = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
       await cb.route(

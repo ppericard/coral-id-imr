@@ -313,7 +313,7 @@
   };
   // The 7 IMR forms (id, name) and 2-3 example photos of each, larger (Pierre, 2026-11-03: "give 2-3 examples on real
   // photos, larger, beautiful photos"). Picked by eye among the game photos of that form (forms.json / curation.json
-  // "gf"), different genera when the form has several. Shown in rule 7's order whatever the order here: IMR lecture
+  // "gf"), different genera when the form has several. Shown in rule P1's order whatever the order here: IMR lecture
   // photos first, then Pierre's own, then other observers' (provOrder; Codex on PR #424), the first one largest. Tabulate has two: only Acropora is tabulate on the slate. A photo Pierre later
   // hides or excludes drops out (only photos still in data.json are shown). Never one of the check's photos (FORM_CHECK).
   const FORMS7 = [
@@ -380,7 +380,7 @@
       ]
     ]
   ];
-  // Rule 7: IMR lecture photos, then Pierre's own, then other observers' (a stable sort keeps the order within each).
+  // Rule P1: IMR lecture photos, then Pierre's own, then other observers' (a stable sort keeps the order within each).
   const provRank = ([g, f]) => {
     const p = pobj({g, f});
     return p.imr ? 0 : p.own ? 1 : 2;
@@ -487,7 +487,7 @@
       t: 'Septa and costae: blades inside and outside the cup',
       term: 'Septa',
       // Pierre (2026-11-03): the centre label on the centre, the septa label clearly inside the cup, the costae label on
-      // costae, immediately outside the wall. Every point was placed on 5-8x crops of the photo (rule 27d): the dashed
+      // costae, immediately outside the wall. Every point was placed on 5-8x crops of the photo (rule W11): the dashed
       // ring on the edge of the cup, the centre on the mouth, the septa point on a beaded septum inside the cup, the costae
       // point on the same blade where it carries on as a ridge just past the rim (both on one line from the centre).
       fig: () =>
@@ -729,7 +729,7 @@
         show(WALLS[sub] ? sub : 'separate');
       } else if (s.forms) {
         // Growth forms (Pierre, 2026-11-03: the photo thumbnails were too small): drawn icons to pick a form, then 2-3
-        // large photos of that form, each enlarged with a tap (genus, credit and report in the enlarged view, rule 11).
+        // large photos of that form, each enlarged with a tap (genus, credit and report in the enlarged view, rule P5).
         const show = k => {
           const [fid, name, ex] = FORMS7[k],
             shown = provOrder(ex.filter(([g, f]) => known(g, f)));
@@ -774,10 +774,10 @@
   });
 
   /* ---------- the optional check under each step ---------- */
-  // Once answered, every check offers the app's report (rule 11b): the step, the answer given and the photos shown, and
+  // Once answered, every check offers the app's report (rule U14): the step, the answer given and the photos shown, and
   // its photos open in the enlarged view (with its own report and the credit).
   const rep = ctx => (typeof repBtn === 'function' ? ' ' + repBtn(ctx) : '');
-  // Once answered, each check photo also gets the games' clickable source pill (rule 11: photoSrc, app.js; hidden on
+  // Once answered, each check photo also gets the games' clickable source pill (rule P5: photoSrc, app.js; hidden on
   // phones, where the enlarged view carries the source). Never before the answer: it would give the genus away.
   const src = (el, p) => {
     if (el && !el.querySelector('.psrc') && typeof photoSrc === 'function') el.insertAdjacentHTML('beforeend', photoSrc(p));

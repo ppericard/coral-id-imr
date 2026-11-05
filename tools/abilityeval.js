@@ -1,6 +1,6 @@
 // Per-genus ability on real answers (2026-11-03): replays the answer log, player by player in time order, with the
 // app's own Elo (core.js ELO, abilityOf, eloStep, as model.js runs them; core.js playerStart, levelSeed) under several
-// rules for the genus wrongly given (AGENTS.md rule 13), and scores how well each rule predicts the next answer.
+// rules for the genus wrongly given (rule L2), and scores how well each rule predicts the next answer.
 // Offline, reads a file, sends nothing (docs/LEARNING.md "The genus wrongly given in the Elo").
 //
 //   node tools/abilityeval.js answers.json [--variants a,e,e+L] [--player <name or id>] [--min 20] [--json out.json]
@@ -20,7 +20,7 @@
 //   d  a, but the genus ability planned as the global level plus an offset (Pelánek et al. 2017's global + concept
 //      skill): every answer moves the level, the offset of the genus shown moves by its own K
 //   e  no step on c (Pelánek et al. 2017, Papoušek et al. 2014: the learner's knowledge of an item is not updated when it
-//      is a distractor); rule 13 stays in the progress (the app since 2026-11-03)
+//      is a distractor); rule L2 stays in the progress (the app since 2026-11-03)
 // +X (2026-11-04, docs/LEARNING.md "Known mix-ups"): the confusion term, the question taken that much harder (core.js
 // confGap, the most over its choices: the player's own score of the pair, replayed from their answers as the app keeps
 // it, s.off and s.conf, against the pooled score) for the prediction and the step; +Y the prediction only; +Z the sum

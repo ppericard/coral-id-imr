@@ -2,7 +2,7 @@
 "_doc": [
   "Hand-maintained source of fish.json (built by tools/build_fish.py; see its header). Edit this file, then re-run the build.",
   "sources: where circle 3 comes from (teaching nodes cite them in srcs). leftOut: families decided out of circle 3, with why. retired: ids taken out; never reuse them.",
-  "keys: the regional identification keys (Pierre, 2026-11-04). In its region a key is the reference for fish groups: every teaching node in the game attaches to one of its groups (AGENTS.md rule 6c); a region with no key has no such rule, and a key for another region is data only (no code change).",
+  "keys: the regional identification keys (Pierre, 2026-11-04). In its region a key is the reference for fish groups: every teaching node in the game attaches to one of its groups (rule S3); a region with no key has no such rule, and a key for another region is data only (no code change).",
   "  id: stable. region: {name, area: what the key covers}. cite: the full citation (the families page credit line); short: the short form used everywhere else (one edit changes both).",
   "  src: what it was transcribed from. groups: the key's groups in its order: n, title (exact), pages [first, last], labels: [label as the key prints it, [WoRMS accepted names it covers], note when the mapping needs one].",
   "  The build gives a node the group of the first label met walking up WoRMS from each of its ref (a subfamily label wins over its family's: Parrotfishes over Wrasses).",
@@ -45,7 +45,7 @@
  "divernet": "Divernet, Atlantis Dumaguete muck diving: https://divernet.com/world-dives/asia/discovering-atlantis-dumaguete-world-class-muck-diving-in-the-philippines/",
  "inat": "iNaturalist, Research Grade observations within 40 km of Dauin (species kept: at least 2)"
  },
-"leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish ID Key.", "Gobiesocidae": "Clingfishes: taken out of circle 3 (Pierre, 2026-11-04): not among the family labels of the identification key in force (AGENTS.md rule 6c). No PDF species; their two Dauin species were retired with them."},
+"leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish ID Key.", "Gobiesocidae": "Clingfishes: taken out of circle 3 (Pierre, 2026-11-04): not among the family labels of the identification key in force (rule S3). No PDF species; their two Dauin species were retired with them."},
 "start": ["t02", "t03", "t01", "t06"],
 "retired": {"teach": ["t30", "t31", "t32", "t33", "t34", "t35", "t36", "t37", "t38", "t39", "t40", "t41", "t53", "t55", "t56", "t62"], "species": ["s404", "s405", "s406", "s407", "s411", "s412", "s413", "s460", "s461", "s471", "s476", "s477"]},
 "deploy": {"region": "Dauin, Negros Oriental, Philippines", "key": "tropical-pacific-2015"},

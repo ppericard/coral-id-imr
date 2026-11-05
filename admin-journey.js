@@ -5,7 +5,7 @@
 // (USERS, sheet v13); and the genus sheets they opened (sheet v30 'pages', admin.js loadPages, under the same id). Opened
 // from a row of Players (#~journey/<name>). Loaded after admin.js,
 // whose helpers it uses (esc, pct, kpis, sbar, sgn, loadUsers, loadStats, HEALTH, DATA). The explanations are in the
-// page help (HELP.journey, rule 23).
+// page help (HELP.journey, rule A2).
 const JOURNEY = {
   WIN: 20, // answers in the rolling "right" curve
   MIN: 3, // answers on a genus before it can be called easy or hard for the player
@@ -128,7 +128,7 @@ function journeyOf(R) {
 // A line chart over the answers (x = answer number): series [{v: [...], cls}], y from 0 to top.
 function journeyChart(series, top, opt = {}) {
   // Drawn at the page's width (a little under it, so never scaled down), so its labels keep the 12 px minimum (--fs-xs)
-  // on a phone as on a desktop (AGENTS.md rule 18; Codex review #351).
+  // on a phone as on a desktop (rule U3; Codex review #351).
   // opt.w / opt.h: a smaller chart drawn at its own box's width (a session's summary, sessionSummary); opt.min below.
   const W = opt.w || Math.max(300, Math.min(1100, ($v.clientWidth || 900) - 56)),
     H = opt.h || 190,
@@ -630,7 +630,7 @@ function bindJReload() {
 // One session of Players › Activity › Recent sessions, unfolded under its row (Pierre, 2026-11-05: "what the player made
 // of the session": its success chart, start / end / length, answers and % right, genera met or opened, notable events,
 // the most improved genera, the main difficulties met, achievements unlocked, a link to the Journey; a short summary,
-// not raw numbers only). The explanations are in the page help (HELP.stats, rule 23).
+// not raw numbers only). The explanations are in the page help (HELP.stats, rule A2).
 const SESS = {
   WIN: 10, // answers in the session's rolling "right" curve (drawn from the 5th answer, as the Journey's)
   TOP: 3, // genera, pairs and photos in each list

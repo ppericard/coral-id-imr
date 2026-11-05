@@ -1,6 +1,6 @@
 'use strict';
 // Docs that every PR touches must not conflict between open PRs (Pierre, 2026-11-04: "we lose a huge amount of time
-// resolving conflicts"): no running "done" list that every PR appends to (AGENTS.md "How to ship a change", rule 9).
+// resolving conflicts"): no running "done" list that every PR appends to (rule W19).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -164,4 +164,102 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   // brief.py cannot read the sheet (the connector is the agent's): it reminds of the reports and events check.
   assert.match(out, /reports and events last checked .+: read them/);
   assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
+});
+
+// Governance refonte PR C (Pierre, 2026-11-05): AGENTS.md is the short constitution every agent reads (Codex reads only
+// its first 32 KiB by default), and every standing rule has one stable ID by theme, defined once in docs/rules/<topic>.md
+// as a "### <ID>" heading. The two numbered lists it replaced (the standing rules and the steps of "how to make a
+// change") are gone: no compatibility with the old numbers (alpha, rule W3).
+const AGENTS = read('AGENTS.md');
+const RULE_FILES = {C: 'content', P: 'photos', L: 'learning', U: 'ui', A: 'admin', S: 'subjects', D: 'sheet', W: 'ship'};
+const RULES = new Map(); // id -> file
+const DUPES = [];
+for (const [letter, name] of Object.entries(RULE_FILES)) {
+  const f = 'docs/rules/' + name + '.md';
+  for (const m of read(f).matchAll(/^### ([A-Z]\d+)$/gm)) {
+    if (RULES.has(m[1])) DUPES.push(m[1] + ' in ' + f + ' and ' + RULES.get(m[1]));
+    RULES.set(m[1], f);
+  }
+}
+// Every text file a rule may be cited in. The copied reviews and the archive are history: they keep their words.
+const TEXT_FILES = (() => {
+  const skip = new Set(['.git', 'img', 'node_modules', 'worktrees', 'archive', 'fonts']);
+  const out = [];
+  const walk = dir => {
+    for (const e of fs.readdirSync(dir, {withFileTypes: true})) {
+      if (skip.has(e.name)) continue;
+      const p = path.join(dir, e.name),
+        rel = path.relative(ROOT, p);
+      if (e.isDirectory()) walk(p);
+      else if (/\.(md|js|py|gs|html|css|yml|yaml|sh|txt|json|tsv)$/.test(e.name) || rel === '.prettierignore')
+        if (!rel.startsWith(path.join('docs', 'reviews') + path.sep) || rel === path.join('docs', 'reviews', 'README.md')) out.push(rel);
+    }
+  };
+  walk(ROOT);
+  return out;
+})();
+
+test('AGENTS.md stays within its size budget', t => {
+  const kb = Buffer.byteLength(AGENTS) / 1024;
+  assert.ok(kb <= 30, 'AGENTS.md is ' + kb.toFixed(1) + ' KB: 30 KB at most (target 20 KB; move details to docs/rules/)');
+  if (kb > 20) t.diagnostic('AGENTS.md is ' + kb.toFixed(1) + ' KB, above its 20 KB target: move details to docs/rules/');
+});
+
+test('every rule ID is defined once, in the file of its theme, with its source, and listed in AGENTS.md', () => {
+  assert.deepStrictEqual(DUPES, [], 'duplicate rule IDs');
+  assert.ok(RULES.size >= 70, 'only ' + RULES.size + ' rules found in docs/rules/');
+  for (const [id, f] of RULES) assert.strictEqual(f, 'docs/rules/' + RULE_FILES[id[0]] + '.md', id + ' is not in the file of its letter');
+  for (const f of new Set(RULES.values())) {
+    for (const block of read(f).split(/^### /m).slice(1))
+      assert.match(block, /\*Source:\*/, f + ': rule ' + block.split('\n')[0] + ' has no *Source:* line');
+  }
+  const listed = [...AGENTS.matchAll(/^- \*\*([A-Z]\d+)\*\* /gm)].map(m => m[1]);
+  const missing = [...RULES.keys()].filter(id => !listed.includes(id) && !/^W(1[2-9]|2\d)$/.test(id)); // W12+: the ship checklist
+  assert.deepStrictEqual(missing, [], 'rules not listed in AGENTS.md "The rules"');
+  for (const id of listed) assert.ok(RULES.has(id), 'AGENTS.md lists ' + id + ', defined in no docs/rules/ file');
+});
+
+test('every rule ID cited anywhere resolves to exactly one rule', () => {
+  const bad = [];
+  const ID = '[CPLUASDW]\\d{1,2}';
+  const cite = new RegExp(`\\b[Rr]ules? (${ID}(?:(?:\\s*(?:,|and|or|/|-)\\s*)${ID})*)\\b`, 'g');
+  for (const f of TEXT_FILES) {
+    const src = read(f);
+    for (const m of src.matchAll(cite)) {
+      const ids = m[1].match(new RegExp(ID, 'g'));
+      const range = /-/.test(m[1]) && ids.length === 2 ? ids : null;
+      const all = range
+        ? Array.from({length: +range[1].slice(1) - +range[0].slice(1) + 1}, (_, k) => range[0][0] + (+range[0].slice(1) + k))
+        : ids;
+      for (const id of all) if (!RULES.has(id)) bad.push(f + ': ' + m[0]);
+    }
+    for (const m of src.matchAll(/\brules\/([a-z]+)\.md#([a-z]\d+)\b/g)) {
+      const id = m[2].toUpperCase();
+      if (RULES.get(id) !== 'docs/rules/' + m[1] + '.md') bad.push(f + ': link ' + m[0]);
+    }
+  }
+  assert.deepStrictEqual(bad, [], 'citations of rule IDs that do not exist');
+});
+
+test('no reference to the retired rule numbers or to the judging brief under its old name remains', () => {
+  const old = [
+    /\b(?:standing |workflow )?[Rr]ules? (?!0\b)\d{1,2}[a-z]?\b/, // a rule by its old number (Rule 0 stays)
+    /\bAGENTS(?:\.md)? (?:rule )?\d/, // the file name and an old number
+    /How to make a change"?\W{0,3}\d/, // an old step number
+    /\bHow-to \d/
+  ];
+  const bad = [];
+  for (const f of TEXT_FILES) {
+    const src = read(f);
+    for (const re of old) {
+      const m = re.exec(src);
+      if (m) bad.push(f + ': ' + m[0]);
+    }
+    if (src.includes('judging/' + 'AGENTS.md')) bad.push(f + ': judging/' + 'AGENTS.md (now judging/BRIEF.md)');
+  }
+  assert.deepStrictEqual(bad, [], 'references to the old numbered rules (rewrite them with the new IDs)');
+  assert.ok(
+    !fs.existsSync(path.join(ROOT, 'judging', 'AGENTS.md')),
+    'judging/' + 'AGENTS.md is judging/BRIEF.md: Codex would load an AGENTS.md for any work under judging/'
+  );
 });

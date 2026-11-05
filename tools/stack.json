@@ -1,7 +1,7 @@
 {
   "about": [
     "The technology stack's pins, one item per tool, runtime, image, data snapshot or external API the repository chooses a version of",
-    "and no package manager tracks (Pierre, 2026-11-05: the whole stack on the latest stable; AGENTS.md rule 27b). Bump a version",
+    "and no package manager tracks (Pierre, 2026-11-05: the whole stack on the latest stable; rule W9). Bump a version",
     "here and at every place its pins name, in the same PR: python3 tools/stack_check.py --check (CI, Checks job) fails when they",
     "disagree; python3 tools/stack_check.py --latest looks each item up at its source and lists what is behind (the session brief",
     "shows it once a day). GitHub Actions versions are Dependabot's (.github/dependabot.yml), not listed here.",

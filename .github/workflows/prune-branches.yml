@@ -1,5 +1,5 @@
 name: Prune merged branches
-# Manual button (Pierre, 2026-11-04: merged branches hide the ones that never got a PR, AGENTS.md 26b).
+# Manual button (Pierre, 2026-11-04: merged branches hide the ones that never got a PR, rule W6).
 # Deletes a branch only when a pull request from it was MERGED and the branch still points at that
 # pull request's last commit (nothing pushed after the merge). Branches with an open pull request,
 # with commits after the merge, or with no pull request at all are kept and listed for a human.

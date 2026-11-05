@@ -21,7 +21,7 @@ const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
 //    choices are look-alike traps (Pierre, 2026-11-01: they come in one by one and soon, as look-alikes are how genera
-//    are learned), then more and more questions showing one view alone, so each view is learned on its own (rule 14);
+//    are learned), then more and more questions showing one view alone, so each view is learned on its own (rule L3);
 //    typed questions (model.js TYPED, typedP) are the third lever, set by their own rule.
 // 2. The photo then makes up the rest: aimed aimOff(k) below the ability (and PICKD.SINGLE lower for one view alone), so
 //    that with the format's guess rate (1 in k plausible choices, plausibleK; none for a typed answer) the question is
@@ -758,7 +758,7 @@ function holdSync(h, log, ids) {
 }
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 // Comeback after a break (Pierre, 2026-11-02; replaces the fixed gentle restart, 10 easy questions at each visit). Time
-// is used here and only here (AGENTS.md rule 12): to plan the questions after a break. Progress (s.pg), mastery (s.mx)
+// is used here and only here (rule L1): to plan the questions after a break. Progress (s.pg), mastery (s.mx)
 // and the Elo ability (s.th) never decay with time; only answers move them. docs/LEARNING.md, "Comeback after a break".
 // - Recall of a genus t days after its last answer (s.at): the FSRS forgetting curve with its standard constants,
 //   R = (1 + F t / S)^C, F 19/81, C -0.5, S the stability in days (R is 0.9 at t = S).
@@ -928,7 +928,7 @@ function nextTarget(list, draw = weighted) {
 // photos), or from the player's global level on a genus never answered (core.js playerStart: their abilities on the
 // genera already answered), so a strong player gets traps, single views and harder photos on a new genus from its first
 // question. No time between sessions; the seconds taken to answer weigh a right answer's step (core.js rtWeight, rtOn
-// below; AGENTS.md rule 12).
+// below; rule L1).
 const RECENT = 10;
 const recent = n => {
   const s = P[n] || {};
@@ -941,14 +941,14 @@ const misses = h => [...h].filter(x => x === '0').length;
 // the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay. A genus never
 // answered starts from the global level shrunk towards the first-launch answer's level (startV().p, core.js
 // playerStart; each subject's own answer).
-// The prior only once the sync script replays it (core.js START_SHEET; AGENTS.md 7a, Codex review #428): before, 0, the
+// The prior only once the sync script replays it (core.js START_SHEET; rule D4, Codex review #428): before, 0, the
 // default player's, so an adopted replay never takes back what the game did live. A subject whose answers are not logged
 // (SUBJECTS log: fish) has no replay to wait for: its prior applies at once.
 const startP = () => (!startS().log || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
 const ability = n => abilityOf(P, n, startP());
 const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
-// (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (AGENTS.md 7a); before, every
+// (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule D4); before, every
 // step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
 const rtOn = () => typeof sheetV === 'function' && sheetV() >= RT_SHEET;
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
@@ -966,7 +966,7 @@ const seenOf = n => {
 let PSTAT = (store.get('reefid-photo-stats', {}) || {}).photos || {};
 // Genus offsets of the hierarchical photo Elo (Pierre, 2026-11-03; sheet v31 ?stats=1 gd, core.js GENUS_K): {genus:
 // [offset, weighed answers]}, the part of a photo's difficulty its genus shares, learned from every answer on the genus.
-// Read only from a sheet that reports v >= PGD_SHEET (AGENTS.md 7a): with an older sheet, or offline before a v31
+// Read only from a sheet that reports v >= PGD_SHEET (rule D4): with an older sheet, or offline before a v31
 // reply, every prior is 0 (a constant prior predicts the answers better than the Easy / Medium / Hard sets did).
 const PGD_SHEET = 31;
 const gdOf = j => (j && j.v >= PGD_SHEET && j.gd && typeof j.gd === 'object' ? j.gd : {});
@@ -1347,7 +1347,7 @@ const plausibleK = (t, choices) => {
 };
 // Custom quiz (Pierre, 2026-11-03): the photo quiz limited to the genera the player picks (quiz.js quizCustom, planPhoto;
 // docs/LEARNING.md "Custom quiz"). Everything else is the photo quiz's (photos, traps, typed questions, Again, duels,
-// the comeback), but for the mastery exam, left to the photo quiz (rule 14e: the selection may hold no look-alike); only
+// the comeback), but for the mastery exam, left to the photo quiz (rule L9: the selection may hold no look-alike); only
 // the genus asked and the wrong choices change, and a question is scored with the look-alikes its choices really hold:
 // - the selection in play (customOf): the genera saved (CUSTOM.KEY, synced like the other reefid-sync keys) that are in the
 //   game now (pool: the slate, and the bonus genera when on), in the game's order; fewer than CUSTOM.MIN: no quiz;

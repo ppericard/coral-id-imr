@@ -56,7 +56,7 @@ for _t in FISH["teach"]:
         for _s in _t.get("species") or []:
             ENTRY.setdefault(_s, _t)
 # The sex and colour phases the IMR fish presentation names (fish.json teach "phase"), when the photo shows one; a
-# juvenile is the code's j flag, an adult needs no tag. Never another category (AGENTS.md rule 2).
+# juvenile is the code's j flag, an adult needs no tag. Never another category (rule C2).
 PHASES = ("subadult", "intermediate", "terminal", "female", "male")
 KEEP = ("best", "alt", "dup")
 FIELDS = {"code", "keep", "phase", "crop", "unsure", "note"}

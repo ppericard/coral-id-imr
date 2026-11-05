@@ -1,7 +1,7 @@
 // The device's side of the full replay (sync.js replayAdopt, signIn, sendAnon; docs/LEARNING.md "Full replay") and the
 // learned-based achievements taken back (progress.js achRecheck): the app's own code run in Node on stubs (localStorage,
 // the page), against the sync script on an in-memory sheet (tests/gas.js) where it talks to the sheet. Nothing leaves
-// this process (AGENTS.md rule 13).
+// this process (rule D1).
 const test = require('node:test');
 const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
@@ -866,7 +866,7 @@ test('achievements taken back: the removals are kept and synced even when this r
 
 // Codex review #444: this device's answers replayed on top of an adopted replay follow the rules of the script that sent
 // it. Before sheet v32 (core.js RT_SHEET) the answer time weighs nothing, as in the live game (model.js rtOn): the
-// replay on top must not weigh it either (AGENTS.md 7a); from v32, it does, as the sheet's own replay would.
+// replay on top must not weigh it either (rule D4); from v32, it does, as the sheet's own replay would.
 test('a replay adopted from a script before v32 replays the pending answers without the answer time (Codex review #444)', () => {
   // 20 right answers on Acropora, timed: fast ones first, slower later, so the weights are far from 1 once there is a median.
   const pending = Array.from({length: 20}, (_, i) => ({...qa('p' + i, i), a: 'Acropora', ok: 1, rt: i < 12 ? 6 : 2.5}));
@@ -887,7 +887,7 @@ test('a replay adopted from a script before v32 replays the pending answers with
 
 // Codex review #428 (P1): the first-launch prior follows the script that replays it. Before sheet v36 (core.js
 // START_SHEET) the sheet's replay has no prior, so this device's answers replayed on top of its replay must not apply
-// one either (AGENTS.md 7a); from v36 they do, as the sheet's own replay would.
+// one either (rule D4); from v36 they do, as the sheet's own replay would.
 test('a replay adopted from a script before v36 replays the pending answers without the first-launch prior (Codex review #428)', () => {
   // The first answers on a genus never answered: their ability starts from the prior.
   const pending = Array.from({length: 6}, (_, i) => ({...qa('s' + i, i), g: 'Pocillopora', a: 'Pocillopora', ok: 1}));

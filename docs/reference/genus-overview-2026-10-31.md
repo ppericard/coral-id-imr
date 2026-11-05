@@ -1,6 +1,6 @@
 # IMR corals: the 39 genera to learn
 
-> **Copied into the repo for the handover (2026-11-01).** Original: Pierre's first study doc on claude.ai (private Claude doc), written 2026-10-31 before the app existed, translated to English and checked against the Coral Finder. **The app's `data.json` supersedes it** (lecture cues, ID tips, Coral Finder criteria, sources); keep it only as background. Its family column follows WoRMS where the app follows the IMR lecture (e.g. *Plerogyra*): in the app, the lecture wins (AGENTS.md rule 1). The three claude.ai links at the end (first Coral Finder, quiz and mind map artifacts) are private and were replaced by the web app.
+> **Copied into the repo for the handover (2026-11-01).** Original: Pierre's first study doc on claude.ai (private Claude doc), written 2026-10-31 before the app existed, translated to English and checked against the Coral Finder. **The app's `data.json` supersedes it** (lecture cues, ID tips, Coral Finder criteria, sources); keep it only as background. Its family column follows WoRMS where the app follows the IMR lecture (e.g. *Plerogyra*): in the app, the lecture wins (rule C1). The three claude.ai links at the end (first Coral Finder, quiz and mind map artifacts) are private and were replaced by the web app.
 
 Oct 31, 2026 · Pierre Pericard
 

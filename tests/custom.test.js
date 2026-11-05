@@ -154,7 +154,7 @@ test('customChoices: under 4 genera picked, the selection first, topped up from 
 });
 
 // Logged quiz|s… (quiz.js answer), the sheet stores and rates a custom-quiz answer as any photo-quiz answer, with no
-// new script version (AGENTS.md 7a): the sheet's guess_ and the admin's guessOf read |kN at the end and |t anywhere,
+// new script version (rule D4): the sheet's guess_ and the admin's guessOf read |kN at the end and |t anywhere,
 // the mode split keeps quiz.
 test('quiz|s modes: rated like the photo quiz by the sheet (Code.gs guess_) and the admin (core.js guessOf)', () => {
   const gs = fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8'),

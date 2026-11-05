@@ -1,6 +1,6 @@
 // The global fish score's formula on simulated players (docs/FISH_PATH.md "My progress (fish)", approved by Pierre on
 // 2026-11-04; docs/LEARNING.md "Fish: the global score, simulated"). The formula is not in the app yet (the species
-// level is not built); this tool checks it before it ships, as the design asks (rule 14f): the 80 / 85 / 100% anchors,
+// level is not built); this tool checks it before it ships, as the design asks (rule L11): the 80 / 85 / 100% anchors,
 // the entries' 25% share, the genus's half credit, and no long plateau on the curve. Not run by CI (numbers for
 // reading); tests/fishscore.test.js checks the anchors.
 //

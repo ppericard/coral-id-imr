@@ -10,10 +10,10 @@ Decided with Pierre, 2026-11-05 (Q49, from docs/reviews/2026-11-05-coral-taxonom
   admin never loads it either: it reads names.json, the small extract this tool writes beside it (`names_extract`), to
   flag a photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS writes
   otherwise (presence.js nameFlag).
-- **It never changes the IMR wording** (AGENTS.md rule 1): `app` is copied verbatim from data.json (the family the app
+- **It never changes the IMR wording** (rule C1): `app` is copied verbatim from data.json (the family the app
   shows, the IMR lecture's own "formerly..." lines), and a difference from WoRMS is reported, never applied.
 - **Watch list** (Q51): the items of taxonomy.json `watch` are reported when WoRMS or iNaturalist moves on them; that
-  never changes the app either (rule 1: the app follows IMR's wording).
+  never changes the app either (rule C1: the app follows IMR's wording).
 
 The file, one section per subject (core.js SUBJECTS ids; only "coral" now, fish later, through SUBJECTS below, with no
 subject named in the engine):
@@ -38,8 +38,8 @@ rest is written by the refresh.
 Network: WoRMS REST (batched AphiaRecordsByNames, 50 names a call; children and synonyms by AphiaID, 50 a page) and the
 iNaturalist API v1 (the genera and species of the subject's root taxa in bulk, 500 a page; the other taxa by name, with
 an ancestor guard against homonyms; details 30 ids a call), sequential, about one request per second for iNaturalist and
-0.3 s for WoRMS, a User-Agent naming the app, retries on 429 / 5xx after a pause (Retry-After when given; AGENTS.md rule
-6f). Every reply is cached in tools/.cache/taxonomy.json (git-ignored): a rerun is offline and writes the same file;
+0.3 s for WoRMS, a User-Agent naming the app, retries on 429 / 5xx after a pause (Retry-After when given; rule
+C7). Every reply is cached in tools/.cache/taxonomy.json (git-ignored): a rerun is offline and writes the same file;
 --refresh asks again; --offline fails instead of asking.
 
 names.json (the admin's extract, written with the file, never edited by hand): {"v", "doc", "<subject>": {"date",
@@ -582,7 +582,7 @@ def report(name, sec, rep, changes):
     for c in changes:
         print("  " + c)
     fl = [(n, f) for n, o in g.items() for f in o.get("flags") or []]
-    print(f"flags (reported, never applied: AGENTS.md rule 1): {len(fl)}")
+    print(f"flags (reported, never applied: rule C1): {len(fl)}")
     for n, f in fl:
         print(f"  {n}: {f}")
     miss = {n: o["inat"]["miss"] for n, o in g.items() if (o.get("inat") or {}).get("miss")}
@@ -674,7 +674,7 @@ def check(path=OUT, names_path=NAMES):
 
 NAMES_DOC = ("The admin's extract of tools/taxonomy.json, written by tools/taxonomy.py (never by hand): the admin flags a "
              "photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS "
-             "writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (AGENTS.md rule 1).")
+             "writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (rule C1).")
 
 
 def names_extract(o):

@@ -7,7 +7,7 @@
   --at HH:MM                       pretend it is that Manila time (tests)
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
-the remote branches with commits not in main and no PR (AGENTS.md rule 26b), the sheet script's VERSION on main against
+the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
 the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), and the open questions for Pierre from docs/STATUS.md. The hooks run main's reviewed copy
 (`git show origin/main:tools/brief.py | python3 -I -`), never the copy of the branch checked out (Codex security
 review #561), so the script must also work fed on stdin. Read-only and fast: GitHub through `gh api` (REST
@@ -148,7 +148,7 @@ def prs(pool):
 
 
 def stray(pool, open_refs):
-    """Remote branches with commits not in main and no PR on their tip (rule 26b)."""
+    """Remote branches with commits not in main and no PR on their tip (rule W6)."""
 
     def one(b):
         ref, sha = b['name'], b['commit']['sha']
@@ -349,7 +349,7 @@ def brief(short, at):
         else:
             names = [re.sub(r'^claude/', '', b) for b in strays] if short else strays
             s = ', '.join(names) if names else 'none'
-            lines.append('Branches with work and no PR (rule 26b): %s%s' % (s, ' [%s]' % stray_err if stray_err else ''))
+            lines.append('Branches with work and no PR (rule W6): %s%s' % (s, ' [%s]' % stray_err if stray_err else ''))
 
     # Sheet script
     if f_live is None:

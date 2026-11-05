@@ -1055,7 +1055,7 @@ test('the admin draws no “new since the previous milestone” count', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
   assert.ok(!/newly|'#New'|Clear since the previous milestone/.test(src), 'a milestone is another look at the same log, not a new finding');
   assert.ok(/B: 199, Bh: 0, bse: 1/.test(src), 'Recompute here: 199 draws, normal intervals');
-  // AGENTS.md rule 23 (Codex review #588): the method stays behind the admin "?", not on the page
+  // rule A2 (Codex review #588): the method stays behind the admin "?", not on the page
   assert.ok(!/class="note">Each milestone/.test(src), 'no explanatory text on the page');
 });
 
