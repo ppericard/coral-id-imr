@@ -297,6 +297,9 @@ test("v53: a name taken again after its account was deleted never gets the old a
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('old1')]});
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).reps, ['old1']);
   assert.strictEqual(s.post({userDelete: 'Ana', token: TOK}).ok, true);
+  // The deleted account's own device: 'gone', and never its reports (Pierre, 2026-11-05).
+  const g = s.get({name: 'Ana', pin: '1234'});
+  assert.deepStrictEqual([g.error, g.reps], ['gone', undefined]);
   s.post({name: 'Ana', pin: '9999', data: prog(1), summary: {}});
   assert.ok(!('reps' in s.get({name: 'Ana', pin: '9999'})), "the old account's report is not the new one's");
   s.post({rname: 'Ana', rpin: '9999', reports: [rep('new1', {t: new Date(Date.now() + 60000).toISOString()})]});

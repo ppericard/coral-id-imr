@@ -681,6 +681,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   }
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
   tipAfter(nb, cur, !good, tm.zm, exq && s.mx);
+  // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
+  if (typeof helpedArm === 'function') helpedArm(nb);
 }
 // The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
 // another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to

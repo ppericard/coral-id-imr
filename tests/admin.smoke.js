@@ -126,6 +126,10 @@ const WIDTHS = [390, 1280];
       u => u.href.startsWith(base) && u.pathname === '/curation.json',
       r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, auto: {[day]: LOG}, fish: {out: {[FF[2][1]]: 'x'}}})})
     );
+    // A report handled in a PR (reports-handled.json, the integrator's): out of the to-do list, "handled in #577".
+    await ctx.route(base + 'reports-handled.json', r =>
+      r.fulfill({contentType: 'application/json', body: JSON.stringify({demorep1: {pr: 577, at: '2026-11-05'}})})
+    );
     await ctx.route(base + 'suggest.json', r =>
       r.fulfill({
         contentType: 'application/json',
@@ -642,10 +646,17 @@ const WIDTHS = [390, 1280];
           line: !!v.querySelector('[data-hline] a[href="#~health"]'),
           rep: /Demo report/.test(t),
           err: !!v.querySelector('.adm-tderr'),
-          first: v.querySelector('section > *')?.matches('[data-hline]')
+          first: v.querySelector('section > *')?.matches('[data-hline]'),
+          open1: !!v.querySelector('.adm-rep[data-rep="demorep1"]'),
+          pr: [...v.querySelectorAll('.adm-repspr a[href*="/pull/"]')].map(a => [a.textContent, a.getAttribute('href')])
         };
       });
       if (!all.line || !all.rep || !all.err || !all.first) fails.push(`${w}px To do › All: ${JSON.stringify(all)}`);
+      if (
+        all.open1 ||
+        JSON.stringify(all.pr) !== JSON.stringify([['handled in #577', 'https://github.com/ppericard/coral-id-imr/pull/577']])
+      )
+        fails.push(`${w}px To do › All, a report handled in a PR: ${JSON.stringify(all)}`);
       // Genera › Hidden: Put back takes a removed photo back.
       const hid = await p.evaluate(() => {
         const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),

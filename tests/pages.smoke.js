@@ -1080,15 +1080,21 @@ async function overlays(b, base) {
     await c.close();
   }
   // Q66: "Your feedback helped". A report of this device's that the admin marked done (curation.json seen 'rep:<id>') is
-  // told once at start-up; the sheet's list of the player's reports counts only from v53; once thanked, never again.
-  {
-    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
-      localStorage.setItem('reefid-tour', '"done"');
-      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('reefid-nudge', '1');
-      if (!localStorage.getItem('reefid-sync-ach'))
-        localStorage.setItem('reefid-sync-ach', JSON.stringify({_v: 2, _rep: ['smk1', 'smk9']}));
-    });
+  // told by a card that stays until closed (its OK deaf for a moment), at a calm moment; then everything handled since in
+  // one card, at most once per 7 days (anti-spam, Pierre 2026-11-05); the sheet's list counts only from v53; signed in,
+  // nothing before the load reply; never for an account the admin deleted.
+  const helpedCtx = async (acct, rec) => {
+    const [c, p] = await open(
+      {viewport: {width: 390, height: 800}},
+      ([acct, rec]) => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        if (acct) localStorage.setItem('reefid-account', JSON.stringify(acct));
+        if (!localStorage.getItem('reefid-sync-ach')) localStorage.setItem('reefid-sync-ach', JSON.stringify(rec));
+      },
+      [acct, rec]
+    );
     await c.route(
       u => u.pathname.endsWith('/curation.json'),
       async r => {
@@ -1098,39 +1104,51 @@ async function overlays(b, base) {
         await r.fulfill({response: res, json: j});
       }
     );
-    const toast = async () => {
-      const t = await p
-        .waitForSelector('.achpop', {timeout: 3000})
-        .then(() =>
-          p.evaluate(() =>
-            [...document.querySelectorAll('.achpop small, .achpop b, .achpop .achin > span:last-child > span')].map(e => e.textContent)
-          )
-        )
-        .catch(() => null);
-      await p.evaluate(() =>
-        document.querySelectorAll('.achpop a').forEach(a => {
-          a.addEventListener('click', e => e.preventDefault());
-          a.click();
-        })
-      );
+    return [c, p];
+  };
+  // The card on screen: [kicker, title, text, OK deaf at first], closed with its OK; null when none comes within ms.
+  const cardOf =
+    p =>
+    async (ms = 3000) => {
+      const e = await p.waitForSelector('.unlock.helped', {timeout: ms}).catch(() => null);
+      if (!e) return null;
+      const t = await p.evaluate(() => {
+        const d = document.querySelector('.unlock.helped');
+        return [
+          d.querySelector('.ulkick').textContent,
+          d.querySelector('h3').textContent,
+          d.querySelector('.ulpanel p:not(.ulkick)').textContent,
+          d.querySelector('[data-b="1"]').disabled
+        ];
+      });
+      await p.click('.unlock.helped [data-b="1"]');
       return t;
     };
+  {
+    const [c, p] = await helpedCtx(null, {_v: 2, _rep: ['smk1', 'smk9']});
+    const card = cardOf(p);
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    const t1 = await toast(),
-      r1 = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-ach'))._thx);
+    const t1 = await card(),
+      r1 = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-ach')));
     await p.evaluate(() => repsSeen({v: 52, reps: ['smk2']})); // an older script: not used
-    await p.waitForTimeout(600);
-    const t2 = await p.evaluate(() => !!document.querySelector('.achpop') || achBusy);
     await p.evaluate(() => repsSeen({v: 53, reps: ['smk2', 'smk3', 'smk1']}));
-    const t3 = await toast();
+    const t2 = await card(1500); // within the 7 days: nothing
+    // 8 days later (the last thanks moved back): the two handled since, in one card.
+    await p.evaluate(() => {
+      const A = JSON.parse(localStorage.getItem('reefid-sync-ach'));
+      A._thxAt -= 8 * 864e5;
+      localStorage.setItem('reefid-sync-ach', JSON.stringify(A));
+      achHelped();
+    });
+    const t3 = await card();
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForTimeout(1500);
-    const t4 = await p.evaluate(() => !!document.querySelector('.achpop'));
+    const t4 = await card(2000);
     if (
-      JSON.stringify(t1) !== JSON.stringify(['Thank you', 'Your feedback helped', 'A report you sent was looked at and handled.']) ||
-      JSON.stringify(r1) !== '["smk1"]' ||
+      JSON.stringify(t1) !== JSON.stringify(['Thank you', 'Your feedback helped', 'A report you sent was looked at and handled.', true]) ||
+      JSON.stringify(r1._thx) !== '["smk1"]' ||
+      typeof r1._thxAt !== 'number' ||
       t2 ||
       !t3 ||
       t3[2] !== '2 reports you sent were looked at and handled.' ||
@@ -1139,41 +1157,68 @@ async function overlays(b, base) {
       fails.push(`Your feedback helped: ${JSON.stringify({t1, r1, t2, t3, t4})}`);
     await c.close();
   }
+  // A report handled in a PR (reports-handled.json, the integrator's) is thanked like Pierre's Done.
+  {
+    const [c, p] = await helpedCtx(null, {_v: 2, _rep: ['smk7']});
+    await c.route(
+      u => u.pathname.endsWith('/reports-handled.json'),
+      r => r.fulfill({contentType: 'application/json', body: JSON.stringify({smk7: {pr: 577, at: '2026-11-05'}})})
+    );
+    const card = cardOf(p);
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const t = await card();
+    if (!t || t[2] !== 'A report you sent was looked at and handled.')
+      fails.push(`Your feedback helped, handled in a PR: ${JSON.stringify(t)}`);
+    await c.close();
+  }
+  // A calm moment: never over a question; in the quiz, at the break at Next, then on to the next question.
+  {
+    const [c, p] = await helpedCtx(null, {_v: 2, _rep: ['smk1']});
+    const card = cardOf(p);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.ans button, .tyq input', {timeout: 15000}).catch(() => {});
+    const q1 = await card(2000); // the question waits for its answer: no card
+    const typed = await p.$('.tyq input');
+    if (typed) (await p.fill('.tyq input', 'Acropora'), await p.keyboard.press('Enter'));
+    else await p.click('.ans button');
+    await p.waitForSelector('#next', {timeout: 5000});
+    const a1 = await card(1500); // the answer's feedback: still no card
+    await p.click('#next');
+    const n1 = await card();
+    await p.waitForTimeout(800);
+    const next = await p.evaluate(() => !!document.querySelector('#view .q') && QOPEN);
+    if (q1 || a1 || !n1 || !next) fails.push(`Your feedback helped, calm moment: ${JSON.stringify({q1, a1, n1, next})}`);
+    await c.close();
+  }
   // Signed in: nothing before the sheet's load reply, whose saved record may say the report was thanked on another
   // device (Codex review #581); after it, only what is still not thanked.
   {
-    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
-      localStorage.setItem('reefid-tour', '"done"');
-      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-account', JSON.stringify({name: 'Testa', pin: '1234'}));
-      if (!localStorage.getItem('reefid-sync-ach'))
-        localStorage.setItem('reefid-sync-ach', JSON.stringify({_v: 2, _rep: ['smk1', 'smk2']}));
-    });
-    await c.route(
-      u => u.pathname.endsWith('/curation.json'),
-      async r => {
-        const res = await r.fetch(),
-          j = await res.json();
-        j.seen = {...(j.seen || {}), 'rep:smk1': 1, 'rep:smk2': 1};
-        await r.fulfill({response: res, json: j});
-      }
-    );
+    const [c, p] = await helpedCtx({name: 'Testa', pin: '1234'}, {_v: 2, _rep: ['smk1', 'smk2']});
+    const card = cardOf(p);
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForTimeout(2000);
-    const early = await p.evaluate(() => !!document.querySelector('.achpop') || achBusy);
-    // The load reply: smk1 thanked on another device (its record merged), smk2 not.
+    const early = await card(2000);
+    // The load reply: smk1 thanked on another device (its record merged, its thanks time far back), smk2 not.
     await p.evaluate(() => {
-      achMerge(JSON.stringify({_v: 2, _rep: ['smk1'], _thx: ['smk1']}));
+      achMerge(JSON.stringify({_v: 2, _rep: ['smk1'], _thx: ['smk1'], _thxAt: Date.now() - 30 * 864e5}));
       repsSeen({ok: true, found: true, v: 53});
     });
-    const t = await p
-      .waitForSelector('.achpop', {timeout: 3000})
-      .then(() => p.evaluate(() => document.querySelector('.achpop .achin > span:last-child > span')?.textContent))
-      .catch(() => null);
-    if (early || t !== 'A report you sent was looked at and handled.')
+    const t = await card();
+    if (early || !t || t[2] !== 'A report you sent was looked at and handled.')
       fails.push(`Your feedback helped, signed in: ${JSON.stringify({early, t})}`);
+    await c.close();
+  }
+  // An account the admin deleted (the sheet answered 'gone'): its reports are never thanked, whatever the device holds.
+  {
+    const [c, p] = await helpedCtx({name: 'Testa', pin: '1234', err: 'gone', into: ''}, {_v: 2, _rep: ['smk1']});
+    const card = cardOf(p);
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.evaluate(() => repsSeen({ok: true, found: true, v: 53, reps: ['smk2']}));
+    const t = await card(2000);
+    if (t) fails.push(`Your feedback helped, deleted account: ${JSON.stringify(t)}`);
     await c.close();
   }
   return fails;

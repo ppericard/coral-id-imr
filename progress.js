@@ -673,24 +673,91 @@ function achReport(r) {
   if (SYNC) syncSoon();
 }
 // "Your feedback helped" (Pierre, 2026-11-05, Q66): a report the admin marked done (To do › Reports ✓ Done, published in
-// curation.json seen 'rep:<id>') is told once to the player who sent it, at their next visit: at start-up (signed in: once
-// the sheet's load reply is merged, sync.js repsSeen), when a new curation.json arrives (app.js route); several at once make
-// one toast, the achievement pop-up's look with no tier. Only that it was handled: nothing the admin wrote. Whatever the
-// subject on screen, signed in or not (an anonymous device's reports by the ids it kept itself).
+// curation.json seen 'rep:<id>') is told to the player who sent it, at their next visit: checked at start-up (signed in:
+// once the sheet's load reply is merged, sync.js repsSeen) and when a new curation.json arrives (app.js route). A warm
+// card that stays until closed (Pierre: a toast at the top may go unread), at a calm moment: never over a question
+// (a game on screen: at the break at Next, helpedArm from quiz.js answer), another card, the tour, a toast or the report
+// dialog; it waits for them to go. At the first report handled, then every report handled since the last thanks in one,
+// at most once per 7 days (core.js helpedDue, helpedMark: Pierre, never again and again). Marked thanked when the player
+// closes it (left unseen by leaving the page, it comes back). Only that it was handled: nothing the admin wrote.
+// Whatever the subject on screen, signed in or not (an anonymous device's reports by the ids it kept itself); never for
+// an account the admin deleted (the sheet answered 'gone', sync.js).
+// Handled means Pierre's Done or a PR's (reports-handled.json, the integrator's: core.js handledSeen), read only by a device
+// that sent reports, again at most every 30 minutes (HANDLED).
+let helpedUp = false,
+  helpedMo = null,
+  helpedT = 0;
+const HANDLED = {file: null, at: 0, busy: false, MS: 30 * 60000};
+function handledLoad() {
+  if (HANDLED.busy || Date.now() - HANDLED.at < HANDLED.MS) return;
+  HANDLED.busy = true;
+  fetch('reports-handled.json', {cache: 'no-cache'})
+    .then(r => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then(j => {
+      HANDLED.busy = false;
+      HANDLED.at = Date.now();
+      if (j && typeof j === 'object') HANDLED.file = j;
+      achHelped();
+    });
+}
+const helpedIds = () => {
+  if (SYNC && (!repsPulled || SYNC.err === 'gone')) return []; // signed in: after the load reply; a deleted account: never
+  const A = store.get(ACHK, null);
+  return A ? helpedDue(A, handledSeen((typeof CUR === 'object' && CUR && CUR.seen) || null, HANDLED.file), Date.now()) : [];
+};
+const helpedCalm = () =>
+  !document.querySelector('#tour, .unlock, #repdlg, .achpop') &&
+  !achBusy &&
+  !(document.getElementById('view') || document.body).querySelector('.q');
 function achHelped() {
-  if (SYNC && !repsPulled) return; // signed in: after the sheet's load reply (sync.js repsSeen), its merged record first
-  const A = store.get(ACHK, null),
-    ids = A ? helpedTake(A, (typeof CUR === 'object' && CUR && CUR.seen) || null) : [];
-  if (!ids.length) return;
-  store.set(ACHK, A);
-  if (SYNC) syncSoon();
-  achPop({
-    tier: 0,
-    icon: '🙌',
-    label: 'Thank you',
-    title: 'Your feedback helped',
-    desc: ids.length === 1 ? 'A report you sent was looked at and handled.' : `${ids.length} reports you sent were looked at and handled.`
+  const A = store.get(ACHK, null);
+  if (A && Array.isArray(A._rep) && A._rep.length) handledLoad(); // its reply calls achHelped again
+  if (helpedUp || !helpedIds().length) return;
+  if (helpedCalm()) return void helpedShow();
+  if (helpedMo) return;
+  helpedMo = new MutationObserver(() => {
+    clearTimeout(helpedT);
+    helpedT = setTimeout(() => {
+      if (!helpedMo || (!helpedCalm() && helpedIds().length && !helpedUp)) return;
+      helpedMo.disconnect();
+      helpedMo = null;
+      achHelped();
+    }, 300);
   });
+  helpedMo.observe(document.body, {childList: true, subtree: true});
+}
+// After an answer in a game (quiz.js answer): the break at Next, when a thanks is due and no other card took it.
+function helpedArm(nb) {
+  if (helpedUp || !helpedIds().length || document.querySelector('#tour, .unlock, .achpop') || achBusy) return false;
+  return breakArm(nb, () => helpedShow(true));
+}
+function helpedShow(brk) {
+  const ids = helpedIds();
+  if (!ids.length || helpedUp) return false;
+  helpedUp = true;
+  cardShow({
+    kind: 'feedback',
+    emoji: '🙌',
+    cls: 'helped',
+    kick: 'Thank you',
+    title: 'Your feedback helped',
+    body: `<p>${ids.length === 1 ? 'A report you sent was looked at and handled.' : `${ids.length} reports you sent were looked at and handled.`}</p>`,
+    primary: {text: 'OK'},
+    esc: 1,
+    focus: false,
+    bind: cardCalm,
+    onClose: how => {
+      helpedUp = false;
+      if (how === 'route') return void setTimeout(achHelped, 300); // left unseen: back on the next page
+      const A = store.get(ACHK, {}) || {};
+      helpedMark(A, ids, Date.now());
+      store.set(ACHK, A);
+      if (SYNC) syncSoon();
+      if (brk) route(); // at the break: on to the next question
+    }
+  });
+  return true;
 }
 // The ids of the player's own reports, from the sheet's load reply (sync.js repsSeen, Code.gs v53): those sent signed in
 // on any device, before this version too. Then the check above.
@@ -732,7 +799,7 @@ function achNext() {
   el.setAttribute('role', 'status');
   // The cards' look (app.js cardShow, docs/DESIGN.md "Cards"), as a toast: the achievement's own emoji in a small medallion
   // with its tier at the edge, on the pale tint of the kind's hue.
-  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>${esc(a.label || 'Achievement unlocked')}</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
   const mo = new MutationObserver(() => {

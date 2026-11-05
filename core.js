@@ -1653,8 +1653,10 @@
   // (_thx), both synced and joined across devices (mergeAch), the last LIST_MAX of each: more thanked kept than sent, and
   // twice the sheet's REPS_MAX (Code.gs) sent, so an id the sheet lists again is never one whose thanks were dropped
   // (Codex review #581: equal caps evicted a thanked id the sheet then brought back). Ids only: nothing the admin
-  // wrote reaches the player. repsAdd adds ids (true when A changed); helpedTake returns the ids done and not thanked yet,
-  // and marks them thanked.
+  // wrote reaches the player. repsAdd adds ids (true when A changed). Never again and again for a player who sends many
+  // reports (Pierre, 2026-11-05): thanked at the first report handled, then every report handled since the last thanks in
+  // one, at most once per HELPED_GAP (7 days; the record's _thxAt, the time of the last thanks, the latest of two devices).
+  // helpedDue returns the ids to thank now ([] within the gap); helpedMark marks them thanked at `now`.
   const REP_ID = /^[a-z0-9]{1,20}$/,
     LIST_MAX = {_fb: CONTRIB_MAX, _rep: 100, _thx: 200};
   function repsAdd(A, ids) {
@@ -1664,12 +1666,29 @@
     A._rep = [...have, ...add].slice(-LIST_MAX._rep);
     return true;
   }
-  function helpedTake(A, seen) {
+  // Reports handled in a PR (Pierre, 2026-11-05): reports-handled.json {"<report id>": {pr, at}}, edited in PRs by the
+  // integrator (agents never write curation.json), counts as Pierre's Done (curation.json seen 'rep:<id>'): handledSeen
+  // returns the 'rep:<id>' keys of both, the one map helpedDue and the admin read.
+  function handledSeen(seen, file) {
+    const out = {};
+    Object.keys(seen && typeof seen === 'object' ? seen : {}).forEach(k => k.startsWith('rep:') && seen[k] && (out[k] = 1));
+    Object.keys(file && typeof file === 'object' && !Array.isArray(file) ? file : {}).forEach(
+      id => REP_ID.test(id) && (out['rep:' + id] = 1)
+    );
+    return out;
+  }
+  const HELPED_GAP = 7 * 864e5;
+  function helpedDue(A, seen, now) {
     if (!A || !seen || typeof seen !== 'object') return [];
-    const thx = Array.isArray(A._thx) ? A._thx : [],
-      ids = (Array.isArray(A._rep) ? A._rep : []).filter(id => seen['rep:' + id] && !thx.includes(id));
-    if (ids.length) A._thx = [...thx, ...ids].slice(-LIST_MAX._thx);
-    return ids;
+    if (typeof A._thxAt === 'number' && now - A._thxAt < HELPED_GAP) return [];
+    const thx = Array.isArray(A._thx) ? A._thx : [];
+    return (Array.isArray(A._rep) ? A._rep : []).filter(id => seen['rep:' + id] && !thx.includes(id));
+  }
+  function helpedMark(A, ids, now) {
+    if (!A || !(ids || []).length) return;
+    const thx = Array.isArray(A._thx) ? A._thx : [];
+    A._thx = [...thx, ...ids.filter(id => !thx.includes(id))].slice(-LIST_MAX._thx);
+    A._thxAt = Math.max(now, typeof A._thxAt === 'number' ? A._thxAt : 0);
   }
   // Two achievement records of one player (progress.js achMerge: another device's, the sheet's, this device's before
   // signing in): every achievement with its earliest date, the best run kept; the current run (_run) stays A's. A record of
@@ -1689,7 +1708,7 @@
       if (k === '_fb') return (A[k] = contribJoin(A[k], ra[k]));
       if (Array.isArray(ra[k]))
         return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-(LIST_MAX[k] || CONTRIB_MAX)));
-      A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
+      A[k] = k === '_best' || k === '_thxAt' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
     });
     Object.keys(gone).forEach(k => off(k, A[k]) && delete A[k]);
     if (Object.keys(gone).length) A._gone = gone;
@@ -3070,7 +3089,10 @@
     contribAdd,
     LIST_MAX,
     repsAdd,
-    helpedTake,
+    HELPED_GAP,
+    handledSeen,
+    helpedDue,
+    helpedMark,
     LEVEL,
     SORRY,
     firstName,
