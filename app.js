@@ -278,27 +278,16 @@ function cropWatch() {
   CROPW.observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ['src']});
   document.querySelectorAll('img').forEach(cropSet);
 }
-// A photo that never loaded (Pierre, 2026-11-05): a light, friendly "photo missing" tile instead of a plain one, an inline
-// SVG drawn with the theme's tokens (app.css .nophoto: light, dark, colour-blind), no request. Three variants until
-// Pierre picks one (NOPHOTO_V, the one switch): 'frame' an empty picture frame (sun and hills, dashed), 'camera' a
-// camera struck through, 'subject' the subject's own icon (a coral, a fish) in a dashed frame. Shown over a quiz photo
+// A photo that never loaded (Pierre, 2026-11-05): a light "photo missing" tile instead of a plain one, an inline SVG
+// drawn with the theme's tokens (app.css .nophoto: light, dark, colour-blind), no request: a camera struck through, which
+// says "no photo" plainly (Pierre's pick: an empty frame could read as a photo still loading). Shown over a quiz photo
 // (.qph) and a card's photo band (.ulphoto); gone if the photo comes after all.
-let NOPHOTO_V = 'frame';
-const NOPHOTO = {
-  frame: () =>
-    '<svg viewBox="0 0 64 48"><rect x="3" y="3" width="58" height="42" rx="8" stroke-dasharray="6 5"/><circle class="np-t" cx="45" cy="16" r="5"/><path class="np-t" d="M9 39l13-13 9 9 7-6 17 10z"/></svg>',
-  camera: () =>
-    '<svg viewBox="0 0 64 48"><path class="np-t" d="M8 16a5 5 0 0 1 5-5h8l4-5h14l4 5h8a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5z"/><circle cx="32" cy="27" r="9"/><path class="np-x" d="M10 4l44 42"/><path d="M10 4l44 42"/></svg>',
-  subject: () =>
-    `<svg viewBox="0 0 64 48"><rect x="3" y="3" width="58" height="42" rx="8" stroke-dasharray="6 5"/><g class="np-i" transform="translate(20 12)">${(UNITS[SUBJ.id] || UNITS.coral).icon}</g></svg>`
-};
+const NOPHOTO =
+  '<svg viewBox="0 0 64 48"><path class="np-t" d="M8 16a5 5 0 0 1 5-5h8l4-5h14l4 5h8a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5z"/><circle cx="32" cy="27" r="9"/><path class="np-x" d="M10 4l44 42"/><path d="M10 4l44 42"/></svg>';
 const noPhoto = i => {
   const box = i.closest('.qph, .ulphoto');
   if (box && !box.querySelector('.nophoto'))
-    box.insertAdjacentHTML(
-      'beforeend',
-      `<span class="nophoto" data-v="${NOPHOTO_V}" aria-hidden="true">${(NOPHOTO[NOPHOTO_V] || NOPHOTO.frame)()}</span>`
-    );
+    box.insertAdjacentHTML('beforeend', `<span class="nophoto" aria-hidden="true">${NOPHOTO}</span>`);
 };
 const noPhotoGone = i => {
   const n = i.closest('.qph, .ulphoto');

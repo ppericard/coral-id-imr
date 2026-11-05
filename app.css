@@ -5968,7 +5968,7 @@ html.touring .unlock {
   letter-spacing: 0;
 }
 /* A card or question photo that did not load (quiz.js, app.js): never a broken-image icon; once it gave up, the
-   "photo missing" tile over it (app.js noPhoto, NOPHOTO_V: three variants until Pierre picks one; docs/DESIGN.md). */
+   "photo missing" tile over it (app.js noPhoto: a camera struck through; docs/DESIGN.md). */
 .unlock img.fail,
 .qstage img.fail {
   visibility: hidden;
@@ -6003,9 +6003,6 @@ html.touring .unlock {
 .nophoto .np-x {
   stroke: var(--surface-2);
   stroke-width: 7;
-}
-.nophoto .np-i {
-  stroke-width: 2;
 }
 .ultips,
 .ulcard .warn {
