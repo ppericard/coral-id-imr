@@ -3582,7 +3582,9 @@ docs/reviews/2026-11-05-stats-methods-study.md.
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
-  [--openall offer|N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]` (the
+  [--openall offer|N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
+  [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]` (the learner and the Custom-N scenario: "Field learner and
+  the Custom-8 scenario" below; the
   first-launch answer, its fallback card and, for calibration only, other values of its variables: "The first-launch
   question"; each run's first 80 answers are kept as a trace for `tools/fallbackeval.js`). Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
@@ -3657,7 +3659,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   true reference success then and the median question.
 - **Limits**: the learner is ours, a few round numbers, not fitted to real answers; the photo difficulty it meets is the
   app's own estimate (so photo calibration cannot be judged), unless `--truth` gives it a fixed world (2026-11-03); learning is per genus only (a duel or a montage teaches
-  the two genera, not the pair as such); no forgetting (except across `--breaks`), no fatigue; the RA profiles know a fixed set of genera (every
+  the two genera, not the pair as such; the field learner, below, adds pairs and the size of the set); no forgetting (except across `--breaks`), no fatigue; the RA profiles know a fixed set of genera (every
   5th genus in data.json order), so the spread is that of the draws, not of who knows what. θ is clamped to
   `ELO.lo`..`hi` (−1.5..3), so a genus known at 2% always shows an error of about 2.4 there. Since the learner's
   guesses beat 1 in k (choices from other growth forms are ruled out), a θ that fits its answers would sit a little
