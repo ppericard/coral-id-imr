@@ -82,12 +82,28 @@ const anSec = v => (v == null || !isFinite(v) ? '–' : (v < 10 ? v.toFixed(1) :
 const anPts = v => (v == null || !isFinite(v) ? '–' : Math.round(v * 100) === 0 ? '0 pts' : anNum(v * 100, 0) + ' pts');
 const anTf = P => (P.scale === 's' ? anSec : P.scale === 'pts' ? anPts : anPc);
 // The verdict pill: helps / hurts / clear (neither good nor bad: time, the app's own calibration) / no clear effect /
-// not enough data yet; "new" when it became clear at this milestone.
-function anPill(P, e, fresh) {
+// not enough data yet, after the multiple-testing correction (analysis.js correct); its tooltip gives the family and
+// the adjusted p (rule 14f: no p-value on the page itself). A primary effect (the question its analysis exists to
+// answer) is tagged; an exploratory one is tagged when it reads clear: a lead to check on later answers, not a finding.
+const anP = v => (v == null ? '–' : v < 0.001 ? '< 0.001' : v < 0.01 ? v.toFixed(3) : v.toFixed(2));
+function anPill(P, e) {
   const t = AN_TONE[P.tone] || AN_TONE.thin,
     label = e.v === 'none' || e.v === 'nolog' ? P.verdict : t[1],
-    need = e.v === 'thin' && e.need ? ` title="About ${anInt(e.need)} answers would settle it"` : '';
-  return `<span class="adm-an-v t-${P.tone}"${need}>${t[0]} ${esc(label)}</span>${fresh ? ' <span class="adm-src new" title="Clear since the previous milestone">new</span>' : ''}`;
+    fam =
+      e.fam === 1
+        ? 'Primary question, corrected with the other primary ones (Holm)'
+        : 'Exploratory, corrected for false leads (Benjamini-Hochberg, 5%)',
+    tip = [
+      e.fam ? `${fam}: adjusted p ${anP(e.pa)} (unadjusted ${anP(e.p)})` : '',
+      e.v === 'thin' && e.need ? `About ${anInt(e.need)} answers would settle it` : ''
+    ].filter(Boolean),
+    tag =
+      e.fam === 1
+        ? ' <span class="adm-src" title="The question this analysis exists to answer">primary</span>'
+        : e.fam === 2 && e.v === 'clear'
+          ? ' <span class="adm-src" title="A lead to check on later answers, not a finding">exploratory</span>'
+          : '';
+  return `<span class="adm-an-v t-${P.tone}"${tip.length ? ` title="${esc(tip.join('. '))}"` : ''}>${t[0]} ${esc(label)}</span>${tag}`;
 }
 // What it does, in words, with its likely range and what it suggests when it is clear.
 const anSays = P =>
@@ -520,7 +536,7 @@ function anWho(id, i) {
 // The effects of one analysis: one bar chart per outcome (the change from the typical value, coloured by verdict, sorted
 // and filtered as the page asks), the spreads as the range a typical player, genus or photo falls in, then the same in
 // words, folded (Pierre, 2026-11-04: "very visual; text available but secondary").
-function anEffects(a, key, fresh) {
+function anEffects(a, key) {
   const E = (a.effects || []).map(e => ({e, P: anPlain(key, e, a), S: anSpec(key, e)})),
     keep = E.filter(x => anKeep(x.P, x.e)),
     main = keep.filter(x => !x.e.sd),
@@ -556,7 +572,7 @@ function anEffects(a, key, fresh) {
       )
     : '';
   const row = x =>
-    `<tr data-ek="${esc(key + ':' + x.e.k)}"><td class="an-c">${esc(x.P.name)}</td><td class="adm-an-says">${anSays(x.P)}</td><td class="an-v">${anPill(x.P, x.e, fresh.has(key + ':' + x.e.k))}</td></tr>`;
+    `<tr data-ek="${esc(key + ':' + x.e.k)}"><td class="an-c">${esc(x.P.name)}</td><td class="adm-an-says">${anSays(x.P)}</td><td class="an-v">${anPill(x.P, x.e)}</td></tr>`;
   return (
     anCard('What changes the result', plots ? anSortCtl() + plots : '<p class="note">Nothing to show with this filter.</p>', 'wide') +
     (spread ? anCard('How much they differ', anSortCtl() + spread, 'wide') : '') +
@@ -636,9 +652,8 @@ const AN_GROUPS = [
   ['pts', 'Where the app’s own expectation is off'],
   ['guess', 'Success of a pure guess against the app’s value']
 ];
-function anOverview(rep, R, prevR) {
-  const fresh = ANALYSIS.newly(R, prevR),
-    all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => ({k, e, P: anPlain(k, e, a), S: anSpec(k, e)}))),
+function anOverview(rep, R) {
+  const all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => ({k, e, P: anPlain(k, e, a), S: anSpec(k, e)}))),
     keep = all.filter(x => anKeep(x.P, x.e)),
     link = k => `<a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a>`;
   const clear = all.filter(x => x.P.v === 'clear'),
@@ -654,13 +669,14 @@ function anOverview(rep, R, prevR) {
     FW = anFold(keep, 'words'),
     rows = anOrder(FW.L, true).flatMap((x, i, L) => [
       ...(grp && (!i || L[i - 1].k !== x.k) ? [`<tr class="an-grp"><th colspan="4" scope="colgroup">${link(x.k)}</th></tr>`] : []),
-      `<tr><td class="an-c">${esc(x.P.name)}${grp ? '' : `<small class="adm-an-topic">${link(x.k)}</small>`}</td><td class="adm-an-says">${anSays(x.P)}</td><td class="an-sp">${anSpark(rep, x.k, x.e.k)}</td><td class="an-v">${anPill(x.P, x.e, fresh.has(x.k + ':' + x.e.k))}</td></tr>`
+      `<tr><td class="an-c">${esc(x.P.name)}${grp ? '' : `<small class="adm-an-topic">${link(x.k)}</small>`}</td><td class="adm-an-says">${anSays(x.P)}</td><td class="an-sp">${anSpark(rep, x.k, x.e.k)}</td><td class="an-v">${anPill(x.P, x.e)}</td></tr>`
     ]);
+  // Milestones as history (the stats study of 2026-11-05, §5.3): each is one more look at the same growing log, so no
+  // count of results "new since the previous milestone" and no chart of clear results over time.
   const nClear = R2 => Object.values(R2.A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length;
   const ms = rep.M.map((M, i) => {
-    const r = rep.R[M],
-      nw = i ? ANALYSIS.newly(r, rep.R[rep.M[i - 1]]).size : 0;
-    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#~an" data-anm="${i === rep.M.length - 1 ? 'all' : M}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${nClear(r)}</td><td class="n">${nw ? `+${nw}` : ''}</td></tr>`;
+    const r = rep.R[M];
+    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#~an" data-anm="${i === rep.M.length - 1 ? 'all' : M}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${nClear(r)}</td></tr>`;
   });
   return (
     kpis([
@@ -676,24 +692,17 @@ function anOverview(rep, R, prevR) {
       false
     )}${anCard(
       'Milestones',
-      lines([{label: 'Clear results', pts: rep.M.map(M => [M, nClear(rep.R[M])]), dots: true}], {
-        h: 150,
-        ymin: 0,
-        ymax: Math.max(4, ...rep.M.map(M => nClear(rep.R[M]))),
-        yf: v => String(v),
-        xlab: 'Answers in the log',
-        title: 'Clear results by milestone'
-      }) + anTable(['Answers', 'Last answer', '#Players', '#Clear', '#New'], ms),
+      '<p class="note">Each milestone is one more look at the same growing log, not a new study: a result that turns clear at one milestone and not at the next is the noise of looking again. Read the latest.</p>' +
+        anTable(['Answers', 'Last answer', '#Players', '#Clear'], ms),
       'wide',
       false
     )}</div>`
   );
 }
-function anView(key, rep, R, prevR) {
+function anView(key, rep, R) {
   const a = R.A[key];
   if (!a) return '<p class="note">Not in this report.</p>';
   if (a.err) return `<p class="note">Failed: ${esc(a.err)}</p>`;
-  const fresh = ANALYSIS.newly(R, prevR);
   const head = kpis([
     ['Answers used', anInt(a.n)],
     ['Players', a.players ?? '–'],
@@ -711,7 +720,7 @@ function anView(key, rep, R, prevR) {
       (key === 'sess' && a.desc ? `<div class="adm-sgrid adm-an-grid">${anSessDesc(a.desc).join('')}</div>` : '')
     );
   const lean = a.lean ? '<p class="note">Only the main results are kept for this milestone.</p>' : '';
-  const parts = [anEffects(a, key, fresh)];
+  const parts = [anEffects(a, key)];
   if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []));
   parts.push(anConv(rep, key));
   return head + lean + `<div class="adm-sgrid adm-an-grid">${parts.join('')}</div>`;
@@ -1166,8 +1175,6 @@ function renderAnalyses() {
   }
   const M = anM(rep),
     R = rep.R[M],
-    i = rep.M.indexOf(M),
-    prevR = i > 0 ? rep.R[rep.M[i - 1]] : null,
     now = local ? rep.answers : ANREP.answers || rep.answers,
     lastM = Math.floor(now / ANALYSIS.STEP) * ANALYSIS.STEP,
     since = now - lastM;
@@ -1180,7 +1187,7 @@ function renderAnalyses() {
   const badge = `<span class="adm-src adm-an-badge" title="${esc(`${anInt(now)} answers in the log; a milestone every ${anInt(ANALYSIS.STEP)}`)}">${anInt(since)} since ${anInt(lastM)} · next at ${anInt(lastM + ANALYSIS.STEP)}</span>`;
   const made = `<span class="note adm-an-made" title="${esc(local ? 'Recomputed in this tab' : 'Stored report')}">${local ? 'This tab' : dateText(rep.made, 'dmhm')}</span>`;
   AN_CARDS = [];
-  const body = key ? anView(key, rep, R, prevR) : anOverview(rep, R, prevR);
+  const body = key ? anView(key, rep, R) : anOverview(rep, R);
   $v.innerHTML = `<section class="adm-an"><div class="adm-shead">${seg}${badge}${made}${recompute}</div>${anControls()}${anJump()}${body}</section>`;
   anBind();
 }
@@ -1273,7 +1280,10 @@ function anRecompute() {
       if (d.res) AN.src = 'local';
       if (/^~an(-|$)/.test(cur)) render();
     };
-    ANWORK.postMessage({id: 1, rows, meta, B: 20, seed: 1, prev: ANREP && ANREP.rep});
+    // 199 draws with normal intervals from their spread (analysis.js boot): the latest milestone in a few minutes here,
+    // where the Action's 999 percentile draws would take a quarter of an hour; earlier milestones not reused from the
+    // stored report keep the model's own interval only
+    ANWORK.postMessage({id: 1, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: ANREP && ANREP.rep});
   };
   (ANS && ANS.rows && ANS.rows.length ? Promise.resolve() : loadStats()).then(go);
 }
@@ -1286,11 +1296,12 @@ addEventListener('resize', () => {
 
 // Help ("?"), per view: the definitions and the methods stay off the page (AGENTS.md rule 23).
 const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result: how much it changes the outcome named above the chart (the chance of a right answer, the time to answer, the chance to end the session, the chance to mix up genera) from its typical value, for a typical player and photo; its value is on the right. Coloured by verdict (green helps, red hurts, blue clear but neither good nor bad, grey no clear effect, dashed outline not enough data yet); the thin line is its likely range. Only the clear results show at first: the button under a chart or table shows the others there (no clear effect, too early to tell), in the same order. <b>Show</b> keeps only the clear results, what helps, what hurts or what still lacks data (all of these). <b>Sort</b>, above every chart and table: <b>Most negative first</b> or <b>Most positive first</b> (by the signed change: a chance in points, a time as the share of time gained or lost; spreads after the changes, by size), <b>By topic</b> (Overview: a sub-heading per analysis, the analyses in the menu's order, by the signed change inside each) or <b>By name</b>; on the Overview each result's topic (the analysis it comes from) is the grey line under its name. A tap on a card's title folds it; the chips under them jump to a card. These choices are kept per page, in this browser only. The words, the tables and the results over time are folded by default: tap to open.</p>
-  <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>new</b>: clear since the previous milestone. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
+  <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
+  <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
   <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once 1000 new answers have come in (or the code changed), redoes every analysis on the first 1000, 2000, … answers in time order (the milestones) and on all of them, then stores the report in the sheet (private). This page only draws it. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab. The switch picks a milestone; the badge says how many answers came since the last one. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
-  <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
+  <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
-  an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers) with how many results were clear at each.</p>${AN_HELP_COMMON}`,
+  an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers), kept as history: each is another look at the same growing log, not a new finding.</p>${AN_HELP_COMMON}`,
   'an-rt': `<p><b>Answer time.</b> Seconds from the moment the photos are in view to the answer (0-600 s). Each line says how much faster or slower answers are in one situation than a typical answer, the others held equal: right against wrong answers, typed against picked, a photo enlarged, 2 choices against 4, a question the app rates harder, later in a session. <b>What makes answer times differ</b>: how much of the differences in time come from who answers (players), from the genus, from the photo, and from one time to the next. By genus and by player: the typical time, after pulling those with few answers towards the average.</p>${AN_HELP_COMMON}`,
   'an-zoom': `<p><b>Enlarging photos.</b> Is an answer more often right when the player enlarged a photo first, compared with the same player not enlarging, beyond what the app expected? And are players who enlarge often better or worse? Players: how often each enlarges, right when enlarging or not, and right answers against the app's expectation. Since 2026-11-03 20:24 the enlarge button is visible: compare milestones after it.</p>${AN_HELP_COMMON}`,
   'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p>${AN_HELP_COMMON}`,

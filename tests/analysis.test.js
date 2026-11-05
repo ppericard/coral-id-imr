@@ -800,3 +800,195 @@ test('sessDesc: misses in a row stay within a session; returns use one observati
   const r1 = d.returns.find(r => r.k === 1);
   assert.deepStrictEqual([r1.at, r1.back], [1, 1], 'only C’s first session is a day old: C came back');
 });
+
+/* ---------- Multiple testing (Pierre, 2026-11-05, Q69): primary effects under Holm, the others under Benjamini-Hochberg ---------- */
+test('holm and bh give the textbook adjusted p-values (R p.adjust)', () => {
+  const P = [0.01, 0.04, 0.03, 0.005];
+  assert.deepStrictEqual(
+    A.holm(P).map(v => +v.toFixed(6)),
+    [0.03, 0.06, 0.06, 0.02]
+  );
+  assert.deepStrictEqual(
+    A.bh(P).map(v => +v.toFixed(6)),
+    [0.02, 0.04, 0.04, 0.02]
+  );
+  assert.deepStrictEqual(A.holm([0.5, 0.9]), [1, 1], 'capped at 1');
+  near(2 * A.ntail(1.959964), 0.05, 1e-7, 'normal tail');
+  near(A.ntail(6), 9.865876e-10, 1e-15, 'far tail');
+  near(A.nq(0.975), 1.959964, 1e-6, 'normal quantile');
+  near(A.nq(1e-6), -4.753424, 1e-5, 'far quantile');
+});
+
+test('pOf: p < 0.05 exactly when the 95% interval leaves the null value out', () => {
+  const e = (est, lo, hi, more) => ({est, lo, hi, sesoi: 0.25, n: 1000, unit: 'logit', ...more});
+  assert.ok(A.pOf(e(0.3, 0.01, 0.6)) < 0.05);
+  assert.ok(A.pOf(e(0.3, -0.01, 0.6)) > 0.05);
+  assert.ok(A.pOf(e(-0.3, -0.7, -0.02)) < 0.05, 'the side facing the null, for an uneven interval');
+  assert.ok(A.pOf(e(0.4, 0.3, 0.6, {nul: 0.5})) > 0.05 && A.pOf(e(0.4, 0.3, 0.48, {nul: 0.5})) < 0.05, 'a reference value');
+  assert.ok(A.pOf(e(0.2, 0.03, 0.4, {sd: true, lu: 0.03})) < 0.05, 'an SD: its lower bound above a tenth of the sesoi');
+  assert.ok(A.pOf(e(0.2, 0, 0.4, {sd: true, lu: -0.1})) > 0.05);
+  assert.strictEqual(A.pOf({k: 'n_all', est: 12, lo: 8, hi: 20, unit: 'n'}), null, 'a number of answers is not a test');
+  assert.strictEqual(A.pOf({k: 'card', v: 'nolog'}), null);
+});
+
+// A milestone of null effects (est ~ N(0, se), 95% interval est ± 1.96 se), on the analyses' own keys, so the primary ones
+// are those analysis.js declares; one strong effect (6 se) in each family.
+function fakeMilestone(R, strong) {
+  const A2 = {},
+    nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R());
+  Object.keys(A.PRIMARY).forEach(k => {
+    const keys = [...A.PRIMARY[k], 'x1', 'x2', 'x3'];
+    A2[k] = {
+      effects: keys.map(key => {
+        const se = 0.1,
+          est = (strong && strong[k + ':' + key]) || nrm() * se;
+        return {k: key, est, lo: est - 1.96 * se, hi: est + 1.96 * se, sesoi: 0.25, n: 2000, unit: 'logit', v: 'thin'};
+      })
+    };
+  });
+  return {n: 2000, A: A2};
+}
+test('a null milestone of many effects: few clears after the correction, a strong effect stays clear', () => {
+  const R = A.rng(20261105),
+    reps = 400,
+    strong = {'learn:slope': 0.6, 'rt:x1': 0.6};
+  let raw = 0,
+    after = 0,
+    anyPrimary = 0,
+    anyFalse = 0,
+    strongKept = 0,
+    m = 0;
+  for (let r = 0; r < reps; r++) {
+    const res = A.correct(fakeMilestone(R, r % 2 ? strong : null)),
+      E = Object.entries(res.A).flatMap(([k, a]) => a.effects.map(e => ({k: k + ':' + e.k, e})));
+    m = E.length;
+    const nul = E.filter(x => !(r % 2 && strong[x.k]));
+    raw += nul.filter(x => x.e.p < 0.05).length;
+    after += nul.filter(x => x.e.v === 'clear').length;
+    if (nul.some(x => x.e.fam === 1 && x.e.v === 'clear')) anyPrimary++;
+    if (nul.some(x => x.e.v === 'clear')) anyFalse++;
+    if (r % 2) strongKept += E.filter(x => strong[x.k] && x.e.v === 'clear').length;
+    const m1 = Object.values(A.PRIMARY).flat().length;
+    assert.ok(res.mt.m1 === m1 && res.mt.m2 === m - m1 && m1 >= 10 && m1 <= 15, JSON.stringify(res.mt));
+  }
+  const per = n => n / reps;
+  // printed for the PR: clears per milestone of null effects, before and after
+  console.log(
+    `null milestone of ${m} effects, ${reps} times: ${per(raw).toFixed(2)} clear at 95% before, ${per(after).toFixed(3)} after; a false clear among the primary effects in ${anyPrimary}, anywhere in ${anyFalse}`
+  );
+  assert.ok(per(raw) > 1.6 && per(raw) < 2.4, `about 5% of ${m} null effects clear at 95%: ${per(raw)}`);
+  assert.ok(per(after) < 0.2, `after the correction: ${per(after)}`);
+  assert.ok(anyPrimary / reps <= 0.07, `primary family: a false clear in ${anyPrimary} of ${reps} milestones (Holm: 5%)`);
+  assert.ok(anyFalse / reps <= 0.15, `any false clear in ${anyFalse} of ${reps} milestones`);
+  assert.strictEqual(strongKept, reps, 'both strong effects (one primary, one exploratory) stay clear in every milestone');
+});
+
+test('a correction never turns a 95% non-clear into clear, and a thin effect needs more answers than it has', () => {
+  const res = A.correct(fakeMilestone(A.rng(7), {'zoom:x1': 0.35, 'back:slope': 0.25}));
+  Object.values(res.A).forEach(a =>
+    a.effects.forEach(e => {
+      assert.ok(e.pa >= e.p, e.k);
+      if (e.v === 'clear') assert.ok(e.lo > 0 || e.hi < 0, e.k);
+      if (e.v === 'clear') assert.ok(e.alo > 0 || e.ahi < 0, 'its adjusted interval leaves 0 out too');
+      if (e.v !== 'clear') assert.ok(e.alo <= 0 && e.ahi >= 0, e.k);
+    })
+  );
+  const z = res.A.zoom.effects.find(e => e.k === 'x1');
+  assert.ok(z.p < 0.05 && z.fam === 2, 'clear at 95% (3.5 se)');
+  if (z.v === 'thin') assert.ok(z.need > z.n, `${z.need} answers for ${z.n}: it needs more than it has`);
+});
+
+// The generator with its effects switched off (TRUTH patched for the duration of fn, then put back).
+function withTruth(patch, fn) {
+  const save = JSON.parse(JSON.stringify(A.TRUTH));
+  const put = (o, p) =>
+    Object.entries(p).forEach(([k, v]) => (v && typeof v === 'object' && !Array.isArray(v) ? put(o[k], v) : (o[k] = v)));
+  put(A.TRUTH, patch);
+  try {
+    return fn();
+  } finally {
+    put(A.TRUTH, save);
+  }
+}
+function synthMeta() {
+  const V = ['wide', 'medium', 'macro'],
+    S = ['imr', 'own', 'inat'],
+    photos = {},
+    meta = {ph: {}},
+    look = {};
+  for (let g = 0; g < 16; g++) {
+    const G = 'Gen' + g;
+    photos[G] = [];
+    look[G] = ['Gen' + ((g + 1) % 16), 'Gen' + ((g + 3) % 16)];
+    for (let k = 0; k < 12; k++) {
+      const p = {
+        f: `g${g}-${k}`,
+        v: V[k % 3],
+        q: [3, 2, 1][Math.floor(k / 3) % 3],
+        sh: 20 + ((k * 37 + g * 11) % 200),
+        src: S[(k + g) % 3],
+        o: `o${g}-${Math.floor(k / 3)}`
+      };
+      photos[G].push(p);
+      meta.ph[p.f] = [p.v, p.q, p.sh, p.src];
+    }
+  }
+  return {photos, meta, look};
+}
+test('a synthetic log with no effect but two: the correction keeps the two, and the null ones are rarely clear', () => {
+  const NULL = {
+    rt: {right: 0, typed: 0.4, enl: 0, two: 0, sdPlayer: 0, sdGenus: 0, sdPhoto: 0},
+    ph: {medium: 0, macro: 0, fair: 0, poor: 0, sharp: 0, own: 0, inat: 0, alone: 0, sdPhoto: 0},
+    learn: {afterMiss: 0, again: 0},
+    fmt: {k2: [0.5, 0], typed: [0, 0], again: [0.5, 0]},
+    zoom: 0,
+    back: 0,
+    sess: {wrong: 0, streak: 0}
+  };
+  const {photos, meta, look} = synthMeta(),
+    pl = Array.from({length: 12}, (_, i) => ['P' + i, 0, 450, 0.1]);
+  const r = withTruth(NULL, () => A.runAll(A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 5}), meta, {B: 0}));
+  const E = Object.entries(r.A).flatMap(([k, a]) => (a.effects || []).filter(e => e.fam).map(e => ({k: k + ':' + e.k, e})));
+  // the learning slope (practice works) and typed answers taking longer stay in the generator: both must stay clear; the
+  // generator's genera differ in difficulty (photo: SD genus), so pairs of genera differ in mix-ups (SD pair): not null
+  // The spreads (SD) are left out of the count: an SD's estimate never reaches 0, so a spread that is really 0 reads clear
+  // with or without a correction (pOf); that is a limit of the SD's interval, not of the correction.
+  const kept = ['learn:slope', 'rt:typed'],
+    nul = E.filter(x => !kept.includes(x.k) && !x.e.sd),
+    before = nul.filter(x => x.e.p < 0.05).map(x => x.k),
+    after = nul.filter(x => x.e.v === 'clear').map(x => x.k);
+  console.log(
+    `null synthetic log, ${nul.length} null effects tested: ${before.length} clear at 95% before (${before.join(', ')}), ${after.length} after (${after.join(', ')})`
+  );
+  kept.forEach(k => assert.strictEqual(E.find(x => x.k === k).e.v, 'clear', k));
+  assert.ok(after.length <= 1 && after.length <= before.length, `${after.length} null effects clear after the correction`);
+  assert.ok(!nul.some(x => x.e.fam === 1 && x.e.v === 'clear'), 'no null primary effect is clear');
+});
+
+test('report: 999 draws by default for the latest milestone, fewer for the history, none beyond the cap', () => {
+  assert.strictEqual(A.BOOT, 999);
+  const {photos, meta, look} = synthMeta(),
+    pl = Array.from({length: 6}, (_, i) => ['P' + i, 0.3 * i - 0.8, 520, 0.1]),
+    rows = A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 3});
+  assert.ok(rows.length >= 3000, String(rows.length));
+  const rep = A.report(rows.slice(0, 3000), meta, null, {B: 3, Bh: 2, hcap: 2000, seed: 1});
+  assert.deepStrictEqual(
+    rep.M.map(M => rep.R[M].B),
+    [0, 2, 3],
+    'latest 3, then 2 for the 2000 answers that fit under the cap, 0 beyond'
+  );
+  assert.ok(rep.R[3000].mt.m1 > 0 && rep.R[3000].mt.m2 > 0, 'every milestone is corrected');
+  // the same draws for the same answers (seeded)
+  const again = A.report(rows.slice(0, 3000), meta, null, {B: 3, Bh: 2, hcap: 2000, seed: 1});
+  assert.deepStrictEqual(again.R[3000].A.rt.effects, rep.R[3000].A.rt.effects);
+  // the browser's quicker interval (normal, from the draws' spread) stays within the draws' range
+  const se = A.runAll(rows.slice(0, 3000), meta, {B: 6, bse: true, seed: 1});
+  assert.strictEqual(se.bse, 1);
+  se.A.rt.effects.filter(e => e.boot).forEach(e => assert.ok(e.lo <= e.est && e.est <= e.hi, e.k));
+});
+
+test('the admin draws no “new since the previous milestone” count', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
+  assert.ok(!/newly|'#New'|Clear since the previous milestone/.test(src), 'a milestone is another look at the same log, not a new finding');
+  assert.ok(/B: 199, Bh: 0, bse: 1/.test(src), 'Recompute here: 199 draws, normal intervals');
+});
