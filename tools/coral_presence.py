@@ -8,7 +8,7 @@ presence.json = {v, date, sp: {species name (as iNaturalist writes it on the pho
 confirmed, by = the rule's reasons (observers, checklist, near), rg = Research Grade observations in the Philippines, chk =
 Corals of the World lists it for a Philippine ecoregion. One species per line.
 
-iNaturalist: per genus, two batched species counts (the Philippines, 40 km around Dauin) and an observers query only for
+iNaturalist: per genus (its taxon as tools/taxonomy.json gives it: no search by name), two batched species counts (the Philippines, 40 km around Dauin) and an observers query only for
 a species neither the checklist nor near Dauin settles; about one request a second, a User-Agent, every reply cached in
 tools/.cache/presence.json (git-ignored): a rerun is offline and identical; --refresh asks again, --offline never asks.
 Usage: python3 tools/coral_presence.py [--offline | --refresh]
@@ -25,11 +25,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import load_all  # noqa: E402
 from presence import listed, species_presence  # noqa: E402
+from taxonomy import inat_taxon  # noqa: E402  (the iNaturalist taxon of each genus, tools/taxonomy.json)
 
 OUT = ROOT / "presence.json"
 CACHE = ROOT / "tools" / ".cache" / "presence.json"
 UA = {"User-Agent": "coral-id-imr/1.0", "Accept": "application/json"}
-SCLERACTINIA = 47532
 
 
 class Net:
@@ -82,13 +82,13 @@ def photo_species(d):
 
 def build(net):
     d = load_all()
-    names, gen = photo_species(d)
+    names, _ = photo_species(d)
     sp = {}
     for g in sorted(names):
-        nonscl = ((gen.get(g) or {}).get("x") or {}).get("nonscl")
-        T = [t for t in net.get(f"https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10")["results"]
-             if t["name"] == g and (SCLERACTINIA in t.get("ancestor_ids", []) or (nonscl and t.get("iconic_taxon_name") == "Animalia"))]
-        pres = species_presence(net.get, T[0]["id"], "coral", "&captive=false") if T else {}
+        tid = inat_taxon(g, "coral")
+        if not tid:
+            print(f"{g}: no active iNaturalist taxon in tools/taxonomy.json (run python3 tools/taxonomy.py)", file=sys.stderr)
+        pres = species_presence(net.get, tid, "coral", "&captive=false") if tid else {}
         for n in sorted(names[g]):
             v = pres.get(n) or {"rg": 0, "chk": listed("coral", [n]), "by": []}
             sp[n] = {"ok": bool(v["by"]), "by": v["by"], "rg": v["rg"], "chk": v["chk"]}
