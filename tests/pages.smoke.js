@@ -1139,6 +1139,43 @@ async function overlays(b, base) {
       fails.push(`Your feedback helped: ${JSON.stringify({t1, r1, t2, t3, t4})}`);
     await c.close();
   }
+  // Signed in: nothing before the sheet's load reply, whose saved record may say the report was thanked on another
+  // device (Codex review #581); after it, only what is still not thanked.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Testa', pin: '1234'}));
+      if (!localStorage.getItem('reefid-sync-ach'))
+        localStorage.setItem('reefid-sync-ach', JSON.stringify({_v: 2, _rep: ['smk1', 'smk2']}));
+    });
+    await c.route(
+      u => u.pathname.endsWith('/curation.json'),
+      async r => {
+        const res = await r.fetch(),
+          j = await res.json();
+        j.seen = {...(j.seen || {}), 'rep:smk1': 1, 'rep:smk2': 1};
+        await r.fulfill({response: res, json: j});
+      }
+    );
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(2000);
+    const early = await p.evaluate(() => !!document.querySelector('.achpop') || achBusy);
+    // The load reply: smk1 thanked on another device (its record merged), smk2 not.
+    await p.evaluate(() => {
+      achMerge(JSON.stringify({_v: 2, _rep: ['smk1'], _thx: ['smk1']}));
+      repsSeen({ok: true, found: true, v: 53});
+    });
+    const t = await p
+      .waitForSelector('.achpop', {timeout: 3000})
+      .then(() => p.evaluate(() => document.querySelector('.achpop .achin > span:last-child > span')?.textContent))
+      .catch(() => null);
+    if (early || t !== 'A report you sent was looked at and handled.')
+      fails.push(`Your feedback helped, signed in: ${JSON.stringify({early, t})}`);
+    await c.close();
+  }
   return fails;
 }
 

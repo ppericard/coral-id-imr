@@ -1033,9 +1033,15 @@ function groupsSeen(j, name, live = true) {
 // The ids of this player's own reports (sheet v53: reps in a load reply), for "Your feedback helped" (progress.js
 // achReps, achHelped; Q66). Only from a script that has it (AGENTS.md 7a): an older one sends none, and the app still
 // thanks the reports it kept itself.
+// Every load reply calls it, after merging the saved copy: a signed-in player is thanked only from then on (repsPulled,
+// progress.js achHelped), so a thanks already given on another device, which comes with that copy, is never given again
+// here (Codex review #581).
 const HELP_SHEET = 53;
+let repsPulled = false;
 function repsSeen(j) {
-  if (j && Number(j.v) >= HELP_SHEET && Array.isArray(j.reps) && typeof achReps === 'function') achReps(j.reps);
+  repsPulled = true;
+  if (j && Number(j.v) >= HELP_SHEET && Array.isArray(j.reps) && typeof achReps === 'function') return achReps(j.reps);
+  if (typeof achHelped === 'function') achHelped();
 }
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));

@@ -527,7 +527,7 @@ test('Contributions (Q65): a family apart, three tiers; one per photo, Other onl
 });
 
 test('Your feedback helped (Q66): the reports sent, those the admin marked done thanked once, across devices', () => {
-  const {repsAdd, helpedTake, mergeAch, CONTRIB_MAX} = require('../core.js');
+  const {repsAdd, helpedTake, mergeAch, LIST_MAX} = require('../core.js');
   const A = {};
   assert.strictEqual(repsAdd(A, ['a1', 'a2', 'a1', 'BAD id', 3]), true);
   assert.deepStrictEqual(A._rep, ['a1', 'a2', '3']);
@@ -543,12 +543,24 @@ test('Your feedback helped (Q66): the reports sent, those the admin marked done 
   const B = {_rep: ['a2', 'b1']},
     M = mergeAch(B, {_rep: A._rep, _thx: A._thx}, undefined);
   assert.deepStrictEqual(helpedTake(M, {'rep:a2': 1, 'rep:b1': 1}), ['b1']);
+  // 50 reports sent signed in and thanked, one more sent signed out on the device, then the sheet lists the 50 again:
+  // none thanked twice (Codex review #581: the lists' caps evicted a thanked id, which the sheet brought back).
+  const R = {},
+    S50 = Array.from({length: 50}, (_, i) => 's' + i),
+    done = Object.fromEntries([...S50, 'a1'].map(x => ['rep:' + x, 1]));
+  repsAdd(R, S50);
+  assert.strictEqual(helpedTake(R, done).length, 50);
+  repsAdd(R, ['a1']);
+  assert.deepStrictEqual(helpedTake(R, done), ['a1']);
+  repsAdd(R, S50);
+  assert.deepStrictEqual(helpedTake(mergeAch({...R}, {_rep: S50}, undefined), done), []);
   const big = {};
   repsAdd(
     big,
-    Array.from({length: 80}, (_, i) => 'r' + i)
+    Array.from({length: 150}, (_, i) => 'r' + i)
   );
-  assert.deepStrictEqual([big._rep.length, big._rep[0]], [CONTRIB_MAX, 'r30'], 'the latest kept');
+  assert.deepStrictEqual([big._rep.length, big._rep[0]], [LIST_MAX._rep, 'r50'], 'the latest kept');
+  assert.ok(LIST_MAX._thx > LIST_MAX._rep, 'more thanked kept than sent');
 });
 
 test('achRevoke and mergeAch: learned-based achievements taken back stay so through merges, until earned again', () => {

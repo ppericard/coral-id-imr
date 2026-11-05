@@ -291,6 +291,18 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
   assert.strictEqual(s.post({name: 'Ana B', pin: '0000', data: prog(1), summary: {}}).ok, true);
 });
 
+test("v53: a name taken again after its account was deleted never gets the old account's reports (Codex review #581)", () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('old1')]});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).reps, ['old1']);
+  assert.strictEqual(s.post({userDelete: 'Ana', token: TOK}).ok, true);
+  s.post({name: 'Ana', pin: '9999', data: prog(1), summary: {}});
+  assert.ok(!('reps' in s.get({name: 'Ana', pin: '9999'})), "the old account's report is not the new one's");
+  s.post({rname: 'Ana', rpin: '9999', reports: [rep('new1', {t: new Date(Date.now() + 60000).toISOString()})]});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '9999'}).reps, ['new1']);
+});
+
 test('userDelete: rows gone; answers kept anonymously unless asked; the old code is refused', () => {
   const s = seed();
   const r = s.post({userDelete: 'Ben', token: TOK});

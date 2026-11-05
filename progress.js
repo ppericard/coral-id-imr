@@ -673,11 +673,12 @@ function achReport(r) {
   if (SYNC) syncSoon();
 }
 // "Your feedback helped" (Pierre, 2026-11-05, Q66): a report the admin marked done (To do › Reports ✓ Done, published in
-// curation.json seen 'rep:<id>') is told once to the player who sent it, at their next visit: at start-up, when a new
-// curation.json arrives (app.js route) and when the sheet lists their reports (sync.js repsSeen); several at once make
+// curation.json seen 'rep:<id>') is told once to the player who sent it, at their next visit: at start-up (signed in: once
+// the sheet's load reply is merged, sync.js repsSeen), when a new curation.json arrives (app.js route); several at once make
 // one toast, the achievement pop-up's look with no tier. Only that it was handled: nothing the admin wrote. Whatever the
 // subject on screen, signed in or not (an anonymous device's reports by the ids it kept itself).
 function achHelped() {
+  if (SYNC && !repsPulled) return; // signed in: after the sheet's load reply (sync.js repsSeen), its merged record first
   const A = store.get(ACHK, null),
     ids = A ? helpedTake(A, (typeof CUR === 'object' && CUR && CUR.seen) || null) : [];
   if (!ids.length) return;

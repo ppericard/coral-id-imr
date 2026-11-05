@@ -599,14 +599,19 @@ function logReports_(p){
 // the ids of one player's reports, those sent signed in under their name with their code (Verified 1), oldest first, the
 // last REPS_MAX. The admin's Done is not here (curation.json seen 'rep:<id>', public): the app checks these ids against
 // it, with the ids it kept itself (an anonymous device's reports, matched on the device that sent them). Ids only: no
-// reason, note or anything the admin wrote.
+// reason, note or anything the admin wrote. A name whose account was deleted and taken again by someone else (Removed
+// tab: another code may pick it) gets only the reports sent after its last removal (Codex review #581).
 const REPS_MAX = 50;
 function repsOf_(name){
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'), n = sh ? sh.getLastRow() - 1 : 0, me = String(name).toLowerCase();
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Reports'), n = sh ? sh.getLastRow() - 1 : 0, me = lc_(name);
   if (n < 1) return [];
-  return sh.getRange(2, 2, n, REP.length - 1).getValues()
-    .filter(r => String(r[0]).toLowerCase() === me && Number(r[1]) === 1 && r[REP.length - 2])
-    .map(r => String(r[REP.length - 2])).slice(-REPS_MAX);
+  const rm = ss.getSheetByName('Removed');
+  let cut = 0;
+  if (rm && rm.getLastRow() > 1) rm.getRange(2, 1, rm.getLastRow() - 1, REMOVED.length).getValues()
+    .forEach(r => { if (lc_(r[0]) === me) cut = Math.max(cut, new Date(r[3]).getTime() || 0); });
+  return sh.getRange(2, 1, n, REP.length).getValues()
+    .filter(r => lc_(r[1]) === me && Number(r[2]) === 1 && r[REP.length - 1] && (new Date(r[0]).getTime() || 0) > cut)
+    .map(r => String(r[REP.length - 1])).slice(-REPS_MAX);
 }
 // POST {readReports: 1, token} (v8) → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
 // suggested genus, note, mode, photos, where]]}, newest first. Names are shown, so only the app's admins get them: anyone whose
@@ -3027,22 +3032,25 @@ const CORE_ = (function () { const module = {exports: {}};
   // curation.json seen 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js
   // achHelped). The achievements record keeps the ids of the reports the player sent (_rep: from this device at sending,
   // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v53 reps) and those already thanked
-  // (_thx), both synced and joined across devices (mergeAch), the last CONTRIB_MAX each. Ids only: nothing the admin
+  // (_thx), both synced and joined across devices (mergeAch), the last LIST_MAX of each: more thanked kept than sent, and
+  // twice the sheet's REPS_MAX (Code.gs) sent, so an id the sheet lists again is never one whose thanks were dropped
+  // (Codex review #581: equal caps evicted a thanked id the sheet then brought back). Ids only: nothing the admin
   // wrote reaches the player. repsAdd adds ids (true when A changed); helpedTake returns the ids done and not thanked yet,
   // and marks them thanked.
-  const REP_ID = /^[a-z0-9]{1,20}$/;
+  const REP_ID = /^[a-z0-9]{1,20}$/,
+    LIST_MAX = {_fb: CONTRIB_MAX, _rep: 100, _thx: 200};
   function repsAdd(A, ids) {
     const have = Array.isArray(A && A._rep) ? A._rep : [],
       add = [...new Set((ids || []).map(String))].filter(x => REP_ID.test(x) && !have.includes(x));
     if (!A || !add.length) return false;
-    A._rep = [...have, ...add].slice(-CONTRIB_MAX);
+    A._rep = [...have, ...add].slice(-LIST_MAX._rep);
     return true;
   }
   function helpedTake(A, seen) {
     if (!A || !seen || typeof seen !== 'object') return [];
     const thx = Array.isArray(A._thx) ? A._thx : [],
       ids = (Array.isArray(A._rep) ? A._rep : []).filter(id => seen['rep:' + id] && !thx.includes(id));
-    if (ids.length) A._thx = [...thx, ...ids].slice(-CONTRIB_MAX);
+    if (ids.length) A._thx = [...thx, ...ids].slice(-LIST_MAX._thx);
     return ids;
   }
   // Two achievement records of one player (progress.js achMerge: another device's, the sheet's, this device's before
@@ -3059,9 +3067,10 @@ const CORE_ = (function () { const module = {exports: {}};
     const off = (k, t) => typeof gone[k] === 'number' && !(t > gone[k]);
     Object.keys(ra).forEach(k => {
       if (k === '_run' || k === '_v' || k === '_gone' || (old && k[0] !== '_') || off(k, ra[k])) return;
-      // A list: the Contributions' _fb by their rule (contribJoin), any other (the reports sent _rep and thanked _thx) both devices' entries, each once, the last CONTRIB_MAX.
+      // A list: the Contributions' _fb by their rule (contribJoin), any other (the reports sent _rep and thanked _thx) both devices' entries, each once, the last LIST_MAX.
       if (k === '_fb') return (A[k] = contribJoin(A[k], ra[k]));
-      if (Array.isArray(ra[k])) return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-CONTRIB_MAX));
+      if (Array.isArray(ra[k]))
+        return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-(LIST_MAX[k] || CONTRIB_MAX)));
       A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
     });
     Object.keys(gone).forEach(k => off(k, A[k]) && delete A[k]);
@@ -4441,6 +4450,7 @@ const CORE_ = (function () { const module = {exports: {}};
     CONTRIB_MAX,
     contribKey,
     contribAdd,
+    LIST_MAX,
     repsAdd,
     helpedTake,
     LEVEL,
