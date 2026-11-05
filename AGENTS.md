@@ -1,8 +1,8 @@
 # AGENTS.md: the constitution
 
-Read first, every agent (Claude Code, Codex…), developer, and Pierre. Each rule has a stable ID and one home under
-[`docs/rules/`](docs/rules/), read when your task touches it. Where things stand: [`docs/STATUS.md`](docs/STATUS.md); where things are:
-[`docs/HANDOVER.md`](docs/HANDOVER.md).
+Read first, every agent (Claude, Codex…), developer, and Pierre. Each rule has a stable ID and one home under
+[`docs/rules/`](docs/rules/), read when your task touches it. Where things stand: [`docs/STATUS.md`](docs/STATUS.md);
+where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ## The project in five lines
 
@@ -29,9 +29,9 @@ what stops is everything that involves him.
   **merge** (merging is closing, allowed until 17:30), check, document, run the end-of-day protocol. Remind him the day
   ends at 17:30.
 - **After 17:30: quiet hours, Pierre's development stops, and the integrator goes silent** (the rule protects him from
-  his own temptation to keep working with the agents in the evening). Nothing asks anything of him: no question, file, review or notification, nothing that calls for an answer; chat replies are one line,
-  informational only. Implement nothing he asks, open no track for him, don't feed technical discussions that spark
-  ideas. **What he may send**: an idea, or a bug he saw or was told about, dictated to get it out of his head. Save it
+  his own temptation to keep working with the agents in the evening). Nothing asks anything of him: no question, file,
+  review or notification, nothing that calls for an answer; chat replies are one line, informational only. Implement
+  nothing he asks, open no track for him, don't feed technical discussions that spark ideas. **What he may send**: an idea, or a bug he saw or was told about, dictated to get it out of his head. Save it
   (an idea in STATUS "Parked after hours", in his words with enough context, **not analysed, developed or
   implemented** until the morning; a bug may be worked on at once by the agents, on their own), confirm in one line,
   tell him plainly he is past the limit he set himself and encourage him to stop: a film, a series, the piano, his
@@ -90,8 +90,8 @@ what stops is everything that involves him.
 - **Always ask first**, even when it looks decided: anything destructive or irreversible (history rewrite, deleting
   data, bulk changes to his curation, the sheet's column layout), anything about money, accounts or access, anything
   sent outside the project.
-- **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended);
-  subagents never edit it and put their questions and state in their report.
+- **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
+  it and put their questions and state in their report.
 - **Questions to Pierre**: in batches rather than one by one (unless one blocks work), in French in the chat, numbered
   for good (Q1, Q2…, never reset; the last number used is in STATUS, so it carries across sessions and Claude accounts);
   open ones wait in STATUS "Questions for Pierre" until he answers (the answer then goes into the PR). Each gives one or
@@ -103,8 +103,8 @@ what stops is everything that involves him.
   between agents. **Writing** to the sheet is the integrator's only (never a subagent), and only with Pierre's explicit
   one-off permission for that one correction. A subagent without the connector gets what it needs downloaded by the
   integrator, analyses it, and the integrator puts the real names back against the results for Pierre (he knows the
-  players and matches results to people). Names never go into anything committed or published (rule D2). Real-data checks (rule L12) may be run by any
-  agent; their data and named results are never committed. <!-- rename-app: keep -->
+  players and matches results to people). Names never go into anything committed or published (rule D2). Real-data
+  checks (rule L12) may be run by any agent; their data and named results are never committed. <!-- rename-app: keep -->
 - **Reports and events, at every session start and every morning**: the integrator reads the players' reports (sheet tab
   "Reports") and the app's events and errors (tab "Events": `err`, sync "save failed", old app versions) since the last
   check (its time in STATUS; `tools/brief.py` cannot read the sheet, it only reminds), and gives Pierre a short summary
