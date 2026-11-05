@@ -14,8 +14,6 @@ import collections
 import json
 import re
 import sys
-import time
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,19 +42,16 @@ def short(minimum=5):
     return sorted(out, key=lambda r: r[1])
 
 
-# What tools/fetch_local.py would take (its own rules, imported: one definition): the stony-coral genus taxon, near
-# Dauin (40 km) or in the Philippines, Research Grade, a genus-level community ID or an undisputed expert ID (ph_ok), an
-# accepted licence, never share-alike (LIC, photo_ok), a photo not already on the site or waiting, and not excluded.
-from fetch_local import LIC, ph_ok, photo_ok  # noqa: E402
+# What tools/fetch_local.py would take (its own rules, imported: one definition): the genus's iNaturalist taxon as
+# tools/taxonomy.json gives it (inat_taxon), near Dauin (40 km) or in the Philippines, Research Grade, a genus-level
+# community ID or an undisputed expert ID (ph_ok), an accepted licence, never share-alike (LIC, photo_ok), a photo not
+# already on the site or waiting, and not excluded. Its requests too (get: about one a second, retries on 429 / 5xx after
+# a pause; AGENTS.md rule 6f).
+from fetch_local import LIC, get as _get, ph_ok, photo_ok  # noqa: E402
+from taxonomy import inat_taxon  # noqa: E402
 
-UA = {"User-Agent": "coral-id-imr/1.0"}
-SCLERACTINIA = 47532
 DAUIN, PHILIPPINES = "lat=9.19&lng=123.26&radius=40", "place_id=6873"
 POOR = 15  # fetch_local.py: Philippines candidates only while a genus has fewer Dauin photos than this (or --ph-all)
-
-
-def _get(u):
-    return json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
 
 
 def findable(g):
@@ -66,18 +61,15 @@ def findable(g):
     gen = {**d["gen"], **((d.get("x") or {}).get("gen") or {})}
     used = {re.sub(r"\D", "", p["f"].split("-")[-1]) for x in gen.values() for L in [*x["views"].values(), *(x.get("more") or {}).values()] for p in L}
     used |= {p["f"].split("-")[-1] for L in (d.get("cand") or {}).values() for p in L}
-    nonscl = ((gen.get(g) or {}).get("x") or {}).get("nonscl")  # fire and blue coral: matched as animals, as fetch_local.py
-    T = [t for t in _get(f"https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10")["results"] if t["name"] == g and (SCLERACTINIA in t.get("ancestor_ids", []) or (nonscl and t.get("iconic_taxon_name") == "Animalia"))]
-    if not T:
+    tid, found = inat_taxon(g, "coral"), {DAUIN: set(), PHILIPPINES: set()}
+    if not tid:  # fetch_local.py skips it too
         return 0, 0
-    tid, found = T[0]["id"], {DAUIN: set(), PHILIPPINES: set()}
     for where in (DAUIN, PHILIPPINES):
         # The same first page as the fetcher (votes order, 200; Codex review #366).
         url = f"https://api.inaturalist.org/v1/observations?taxon_id={tid}&{where}&quality_grade=research,needs_id&photos=true&photo_license={LIC}&order_by=votes&per_page=200"
         for o in _get(url)["results"]:
             if ph_ok(o, tid) and any(photo_ok(ph) and str(ph["id"]) not in used and not excluded(photo_id=ph["id"]) for ph in o["photos"]):
                 found[where].add(o["id"])
-        time.sleep(0.5)
     return len(found[DAUIN]), len(found[PHILIPPINES] - found[DAUIN])
 
 

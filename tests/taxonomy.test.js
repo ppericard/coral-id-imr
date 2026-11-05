@@ -207,15 +207,16 @@ print(json.dumps({"refreshed": sec["refreshed"], "log": sec["log"][0]["date"]}))
 
 // Codex review #570: a candidate Pierre approved is served (curation.json genera[n].add, core.js applyCuration), so
 // its species name is a photo name too.
-test('taxonomy.py: the photo names include the approved candidates', () => {
+// Every candidate, approved (data.json) or waiting (cand.json): the admin flags a candidate's name too (names.json).
+test('taxonomy.py: the photo names include every candidate, approved or waiting', () => {
   const R = py(`import taxonomy as X
-d = json.load(open("data.json")); c = json.load(open("curation.json"))
-want = sorted({" ".join(p["t"].split()[:2]) for n, ps in (d.get("cand") or {}).items() for p in ps
-               if p["f"] in ((c.get("genera") or {}).get(n) or {}).get("add", {}) and len((p.get("t") or "").split()) >= 2
-               and p["t"].split()[1][:1].islower()})
+d = json.load(open("data.json")); w = json.load(open("cand.json"))
+def names(c): return {" ".join(p["t"].split()[:2]) for ps in (c.get("cand") or {}).values() for p in ps
+                      if len((p.get("t") or "").split()) >= 2 and p["t"].split()[1][:1].islower()}
+a, b = names(d), names(w)
 got = set(X.coral_inputs()["photos"])
-print(json.dumps({"n": len(want), "missing": [x for x in want if x not in got]}))`);
-  assert.ok(R.n > 0, 'no approved candidate with a species name');
+print(json.dumps({"n": [len(a), len(b)], "missing": sorted((a | b) - got)}))`);
+  assert.ok(R.n[0] > 0 && R.n[1] > 0, 'no candidate with a species name');
   assert.deepStrictEqual(R.missing, []);
 });
 
@@ -230,4 +231,131 @@ test('taxonomy.py --offline never asks the network: a reply missing from the cac
   );
   assert.notStrictEqual(r.status, 0);
   assert.match(r.stderr, /--offline: not cached: https:\/\/api\.inaturalist\.org\/v1\/taxa\/1/);
+});
+
+// Second PR (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49): the tools read the file, the admin its extract.
+const {nameFlag} = require('../presence.js');
+
+test('names.json: the admin extract, in step with taxonomy.json; the admin reads it, never taxonomy.json', () => {
+  const N = read('names.json'),
+    C = T.coral;
+  assert.strictEqual(N.v, 1);
+  assert.strictEqual(N.coral.date, [C.refreshed.worms, C.refreshed.inat].sort().pop());
+  assert.deepStrictEqual(Object.keys(N.coral.sp), Object.keys(C.spp), 'every species row');
+  for (const [k, r] of Object.entries(C.spp)) assert.strictEqual(N.coral.sp[k].now, r.now, k);
+  // A former genus that is no longer a genus of its own; Favia or Montastraea (accepted, they only lost species) are not.
+  assert.strictEqual(N.coral.gen.Symphyllia, 'Lobophyllia');
+  assert.strictEqual(N.coral.gen.Phymastrea, 'Favites');
+  ['Favia', 'Montastraea', 'Coscinaraea', 'Micromussa'].forEach(g => assert.ok(!(g in N.coral.gen), g));
+  assert.match(fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'), /side\('names\.json', ADM0\.id\)/);
+  const kb = fs.statSync(path.join(ROOT, 'names.json')).size / 1024;
+  assert.ok(kb < 40, `names.json is ${Math.round(kb)} KB`);
+});
+
+test('names_extract / render_names: a made-up file, and --check fails when names.json lags', () => {
+  const R = py(`import taxonomy as X, tempfile, os
+o = {"v": 1, "doc": "d", "refs": {}, "coral": {"refreshed": {"worms": "2026-11-05", "inat": "2026-12-01", "checklist": "2026-11-04"},
+  "gen": {}, "spp": {"Montastrea curta": {"now": "Astrea curta", "id": 11, "src": ["worms"]},
+                     "Favites valenciennesi": {"now": "Favites valenciennesii", "id": None, "src": ["photo"], "iname": "Favites valenciennesi"},
+                     "Euphyllia yaeyamaensis": {"now": "Fimbriaphyllia yaeyamaensis", "id": 3, "src": ["worms"], "inat": False}},
+  "old": {"Phymastrea": {"worms": {"id": 3, "st": "junior subjective synonym", "now": "Favites", "mod": "x"}},
+          "Favia": {"worms": {"id": 4, "st": "accepted", "now": "Favia", "mod": "x"}},
+          "Tubastrea": {"inat": {"id": 5, "act": False, "now": ["Tubastraea"]}},
+          "Indophyllia": {"inat": {"id": 6, "act": False}}},
+  "watch": [], "log": []}}
+e = X.names_extract(o)
+txt = X.render_names(e)
+d = tempfile.mkdtemp()
+tp, np_ = os.path.join(d, "t.json"), os.path.join(d, "n.json")
+open(tp, "w").write(X.render(o))
+open(np_, "w").write(txt)
+ok = [x for x in X.check(X.Path(tp), X.Path(np_)) if "names" in x or "n.json" in x]
+open(np_, "w").write(txt.replace("Favites", "Favia"))
+late = [x for x in X.check(X.Path(tp), X.Path(np_)) if "n.json" in x]
+print(json.dumps({"e": e, "same": json.loads(txt) == e, "ok": ok, "late": late}))`);
+  assert.ok(R.same, 'render_names writes valid JSON of the extract');
+  assert.deepStrictEqual(R.e.coral, {
+    date: '2026-12-01',
+    sp: {
+      'Montastrea curta': {now: 'Astrea curta'},
+      'Favites valenciennesi': {now: 'Favites valenciennesii', iname: 'Favites valenciennesi'},
+      'Euphyllia yaeyamaensis': {now: 'Fimbriaphyllia yaeyamaensis', inat: false}
+    },
+    gen: {Phymastrea: 'Favites', Tubastrea: 'Tubastraea'}
+  });
+  assert.deepStrictEqual(R.ok, []);
+  assert.strictEqual(R.late.length, 1, 'a names.json out of step fails the check');
+});
+
+test('nameFlag: former names, moved genera and iNaturalist spellings; flags only', () => {
+  const nm = {
+    sp: {
+      'Favites valenciennesi': {now: 'Favites valenciennesii', iname: 'Favites valenciennesi'},
+      'Montastrea valenciennesi': {now: 'Favites valenciennesii', iname: 'Favites valenciennesi'},
+      'Favites bestae': {now: 'Favites melicerum'},
+      'Euphyllia yaeyamaensis': {now: 'Fimbriaphyllia yaeyamaensis', inat: false}
+    },
+    gen: {Symphyllia: 'Lobophyllia'}
+  };
+  assert.deepStrictEqual(nameFlag({t: 'Favites valenciennesi'}, nm), {kind: 'spelling', now: 'Favites valenciennesii'});
+  assert.deepStrictEqual(nameFlag({t: 'Montastrea valenciennesi'}, nm), {
+    kind: 'former',
+    now: 'Favites valenciennesii',
+    iname: 'Favites valenciennesi'
+  });
+  assert.deepStrictEqual(nameFlag({t: 'Favites bestae'}, nm), {kind: 'former', now: 'Favites melicerum'});
+  assert.deepStrictEqual(nameFlag({t: 'Euphyllia yaeyamaensis'}, nm), {kind: 'former', now: 'Fimbriaphyllia yaeyamaensis', inat: false});
+  assert.deepStrictEqual(nameFlag({t: 'Symphyllia radians'}, nm), {kind: 'genus', now: 'Lobophyllia'});
+  assert.deepStrictEqual(nameFlag({t: 'Symphyllia'}, nm), {kind: 'genus', now: 'Lobophyllia'}, 'genus only');
+  assert.deepStrictEqual(nameFlag({t: 'Favites bestae bestae'}, nm), {kind: 'former', now: 'Favites melicerum'}, 'a subspecies');
+  assert.strictEqual(nameFlag({t: 'Favites pentagona'}, nm), null, 'a current name');
+  assert.strictEqual(nameFlag({t: 'Favites'}, nm), null);
+  assert.strictEqual(nameFlag({t: ''}, nm), null);
+  assert.strictEqual(nameFlag({t: 'Favites bestae', imr: 1}, nm), null, 'IMR lecture photo');
+  assert.strictEqual(nameFlag({t: 'Favites bestae', cf: 1}, nm), null, 'Coral Finder photo');
+  assert.strictEqual(nameFlag({t: 'Favites bestae'}, {}), null, 'names.json not loaded');
+  // On the real files: the photo names iNaturalist spells otherwise are flagged, and only what the extract knows.
+  const N = read('names.json').coral,
+    D = read('data.json');
+  const photos = [
+    ...Object.values({...D.gen, ...D.x.gen}).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()),
+    ...Object.values(D.cand || {}).flat(),
+    ...Object.values(read('cand.json').cand || {}).flat()
+  ];
+  const flagged = photos.filter(p => nameFlag(p, N));
+  assert.ok(
+    flagged.some(p => /^Favites valenciennesi\b/.test(p.t)),
+    'a Favites valenciennesi photo carries its WoRMS spelling'
+  );
+  flagged.forEach(p => assert.ok(N.sp[p.t.split(' ').slice(0, 2).join(' ')] || N.gen[p.t.split(' ')[0]], p.f));
+});
+
+test('inat_taxon / aliases: the readers the tools use; an inactive taxon or an unknown genus gives none', () => {
+  const R = py(`import taxonomy as X, tempfile, os
+d = tempfile.mkdtemp(); p = X.Path(os.path.join(d, "t.json"))
+p.write_text(json.dumps({"coral": {"gen": {"A": {"inat": {"id": 7}}, "B": {"inat": {"id": 8, "act": False}}, "C": {}},
+  "spp": {"A bus": {"now": "A ba", "iname": "A bus"}, "D cus": {"now": "A cus"}}}}))
+print(json.dumps({"taxa": [X.inat_taxon(g, "coral", p) for g in "ABCZ"], "fish": X.inat_taxon("A", "fish", p),
+  "al": [X.aliases(n, "coral", p) for n in ("A bus", "D cus", "E fus")], "fishal": X.aliases("A bus", "fish", p)}))`);
+  assert.deepStrictEqual(R.taxa, [7, null, null, null]);
+  assert.strictEqual(R.fish, null, 'a subject the file does not hold yet');
+  assert.deepStrictEqual(R.al, [['A bus', 'A ba'], ['D cus', 'A cus'], ['E fus']]);
+  assert.deepStrictEqual(R.fishal, ['A bus']);
+});
+
+test('presence.py: checklist names matched through the species rows of taxonomy.json', () => {
+  // Every Corals of the World name with a species row is listed under the name WoRMS accepts now and iNaturalist's
+  // spelling of it, without a hand mapping in presence_checklists.json.
+  const R = py(`import presence, taxonomy as X
+C = json.load(open("tools/presence_checklists.json"))["cotw"]["names"]
+spp = X.section("coral")["spp"]
+rows = [(k, r) for k, r in spp.items() if k in C]
+bad = [k for k, r in rows if not all(presence.listed("coral", [n]) for n in (r["now"], r.get("iname")) if n)]
+# A former name that is a species row: listed through the name WoRMS accepts now.
+former = [k for k, r in spp.items() if presence.listed("coral", [r["now"]]) and not presence.listed("coral", [k])]
+print(json.dumps({"rows": len(rows), "bad": bad, "former": former, "no": presence.listed("coral", ["Xus ignotus"])}))`);
+  assert.ok(R.rows > 100, `${R.rows} checklist rows`);
+  assert.deepStrictEqual(R.bad, []);
+  assert.deepStrictEqual(R.former, []);
+  assert.strictEqual(R.no, false);
 });

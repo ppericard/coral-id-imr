@@ -20,6 +20,8 @@ identifiers and the date.
 import json
 from pathlib import Path
 
+from taxonomy import aliases  # the species rows of tools/taxonomy.json: former names, moves, spellings
+
 NEAR_OBSERVERS = 2
 PH_OBSERVERS = 3
 CHECKLISTS = Path(__file__).resolve().parent / "presence_checklists.json"
@@ -58,21 +60,27 @@ def _norm(n):
 
 def checklist(kind):
     """The set of names (as written, and their WoRMS accepted names) a checklist lists for the Philippines:
-    kind "fish" = FishBase Table 1, "coral" = Corals of the World."""
+    kind "fish" = FishBase Table 1, "coral" = Corals of the World. Each name is matched through tools/taxonomy.json
+    (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49; its section for `kind`, a core.js SUBJECTS id): a name with a
+    species row there brings the name WoRMS accepts now and iNaturalist's spelling of it, so a checklist written with
+    former names meets iNaturalist's current ones without a hand mapping; a subject the file does not hold yet (the
+    fish) is matched as written."""
     if kind not in _C:
         d = json.loads(CHECKLISTS.read_text(encoding="utf-8"))
         if kind == "fish":
-            _C[kind] = {_norm(n) for n in d["fishbase"]["names"]}
+            names = list(d["fishbase"]["names"])
         else:
-            _C[kind] = {_norm(n) for k, acc in d["cotw"]["names"].items() for n in [k, *acc]}
+            names = [n for k, acc in d["cotw"]["names"].items() for n in [k, *acc]]
+        _C[kind] = {_norm(a) for n in names for a in aliases(n, kind)}
     return _C[kind]
 
 
 def listed(kind, names):
     """True when the checklist of `kind` lists any of `names` (the name used, its WoRMS accepted name, iNaturalist's
-    name, synonyms) for the Philippines."""
+    name, synonyms) for the Philippines; each name is also matched through its species row in tools/taxonomy.json (a
+    former name or another spelling of a listed species)."""
     s = checklist(kind)
-    return any(_norm(n) in s for n in names if n)
+    return any(_norm(a) in s for n in names if n for a in aliases(n, kind))
 
 
 def species_presence(get, taxon_id, kind="coral", extra=""):

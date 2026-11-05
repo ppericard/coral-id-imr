@@ -39,6 +39,7 @@ from datajson import load_all, dump_all, curated  # data.json + cand.json (candi
 from excluded import excluded, drop_excluded, set_aside, SUG
 from genera import key_only, cap_sheet
 from presence import confirmed_species  # the presence rule, defined once
+from taxonomy import inat_taxon  # the iNaturalist taxon of each genus, from tools/taxonomy.json
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0'  # never share-alike (Pierre, 2026-11-05): cc-by-sa and cc-by-nc-sa left out
 LICS = set(LIC.split(','))
@@ -46,7 +47,10 @@ LICS = set(LIC.split(','))
 # Philippines; an observation whose identification by them is at the genus searched or below, with no other current
 # identification disagreeing, is accepted in the Philippines tiers, as a genus-level community taxon is (gid).
 EXPERTS = {'thamnasteroid'}
-SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
+# The iNaturalist taxon searched for a genus is the one tools/taxonomy.json gives it (gen.<genus>.inat.id; ROADMAP
+# "Taxonomy reference", Pierre 2026-11-05, Q49): no search by name, so no homonym guard (the Astrea snail and plant, the
+# fire, blue and organ pipe corals off Scleractinia). A genus the file does not hold (new in data.json: run
+# tools/taxonomy.py) or whose taxon is inactive is skipped and said so. Another taxon only by Pierre's decision.
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
 REGION_KM = 250  # Pierre, 2026-11-03: "un rayon de 200 km autour de Dauin ou 300 km", then all the Philippines
 REGION = f'lat=9.19&lng=123.26&radius={REGION_KM}'
@@ -232,11 +236,9 @@ def main():
     PH_ALL = '--ph-all' in sys.argv
     PLAN = '--plan' in sys.argv
     d = load_all()
-    # The Coral Finder's extra genera (data.json x, tools/build_extra.py) get candidates too; the three that are not
-    # stony corals (fire, blue, organ pipe coral) are matched as animals instead of under Scleractinia.
+    # The Coral Finder's extra genera (data.json x, tools/build_extra.py) get candidates too.
     GEN = {**d['gen'], **((d.get('x') or {}).get('gen') or {})}
     KEY_ONLY = set(key_only(d))
-    NONSCL = {n for n, g in GEN.items() if (g.get('x') or {}).get('nonscl')}
     ONLY = {a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith('--') and sys.argv[i - 1] not in ('--dauin', '--ph')}
     used = {p.get('o') for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
     usedp = {re.sub(r'\D', '', p['f'].split('-')[-1]) for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
@@ -282,8 +284,8 @@ def main():
         if ONLY and g not in ONLY: continue
         if need(g) == 0:
             print(g, 'enough for a Key-only genus, not refilled'); continue
-        T = [t for t in get(f'https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10')['results'] if t['name'] == g and (SCLERACTINIA in t.get('ancestor_ids', []) or (g in NONSCL and t.get('iconic_taxon_name') == 'Animalia'))]
-        if not T: print('no taxon', g); continue
+        tid = inat_taxon(g, 'coral')
+        if not tid: print(g, 'has no active iNaturalist taxon in tools/taxonomy.json (run python3 tools/taxonomy.py): skipped'); continue
         # The region around Dauin fills the Philippines room first; the whole country only takes what room is left.
         ph_room = 0
         for where in (DAUIN, REGION, PHILIPPINES, 'world'):
@@ -291,19 +293,19 @@ def main():
             if where == 'world':
                 if ph_room <= 0: continue  # the Philippines still had candidates: no need to look further
                 # Only species the presence rule confirms in the Philippines (tools/presence.py, AGENTS.md rule 6g).
-                sp = sorted(confirmed_species(get, T[0]['id'], 'coral', '&captive=false'))
+                sp = sorted(confirmed_species(get, tid, 'coral', '&captive=false'))
                 if not sp: continue  # no species confirmed in the Philippines: nothing from abroad
                 where = f'taxon_id={",".join(map(str, sp))}&not_in_place=6873'
             if r <= 0: continue
             out = cand.setdefault(g, [])
             W = waiting_obs(g, loc)  # observations already waiting
-            q = where if loc == 'world' else f'taxon_id={T[0]["id"]}&{where}'
+            q = where if loc == 'world' else f'taxon_id={tid}&{where}'
             grade = 'research' if loc == 'world' else 'research,needs_id'  # abroad: species-level IDs only
             res = get(f'https://api.inaturalist.org/v1/observations?{q}&quality_grade={grade}&captive=false&photos=true&photo_license={LIC}&order_by=votes&per_page=200')
             obs, more = res['results'], res.get('total_results', 0) > len(res['results'])
             # Research Grade first, then genus-level community IDs and expert IDs (votes order within each); abroad
             # Research Grade only (the query asks for nothing else).
-            obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, T[0]['id'])]
+            obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, tid)]
             # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
             # so far (votes order breaks ties), and take all its photos.
             pool = []
