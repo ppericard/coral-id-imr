@@ -103,16 +103,31 @@ const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 // A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
 // service worker (photos cache-first) and the browser kept the old file for some sizes (-s 480 px vs 1600 px).
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
-// The site's photos come from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers: false once an R2 photo failed on this
-// page (photoFail below), then the site's own img/ for the rest of the visit.
-let R2 = !!PHOTO_BASE;
-// A file of img/ (a photo, page art), where this page reads it.
+// The site's photos come from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers. Once an R2 photo failed on a page no
+// service worker controls (photoFail below), R2 is false and AWAY true for the rest of the visit: a photo with an online
+// original (iNaturalist, FishBase: core.js photoAway; Pierre, 2026-11-05) is read from there at a light size, the others
+// (IMR lecture photos, Coral Finder book scans, page art) from the site's img/. Under a service worker both stay as they
+// are: the worker keeps photos offline under their R2 address and fails at once while R2 is out (sw.js photo), and each
+// photo that fails falls back on its own.
+let R2 = !!PHOTO_BASE,
+  AWAY = false;
+const swOn = () => !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+// A file of img/ (a photo with no online original, page art), where this page reads it.
 const photoUrl = path => (R2 ? PHOTO_BASE : '') + path;
 // One of the site's photo files, on R2 or on the site (not an iNaturalist photo).
 const ownPhoto = u => photoLocal(u || '').startsWith('img/');
+// Every photo record by name and by online original (core.js photoIndex), for the fallback: built when first needed,
+// again once the data was rebuilt (a new curation) or the fish data came.
+let PIDX = null,
+  PIDX_OF = [];
+const photoIdx = () => {
+  if (!PIDX || PIDX_OF[0] !== DATA || PIDX_OF[1] !== FISH) (PIDX = photoIndex(DATA, FISH)), (PIDX_OF = [DATA, FISH]);
+  return PIDX;
+};
+const photoLook = f => photoIdx().f.get(f);
 // Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
-// iNaturalist serves 500 (medium) and 1024 px (large).
-const loc = (p, s) => photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`);
+// iNaturalist serves 240 (small), 500 (medium) and 1024 px (large).
+const loc = (p, s) => (AWAY && p.src ? photoOnline(p.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`));
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
@@ -190,10 +205,12 @@ const fit = px => {
 // chosen (and preloaded) before its layout exists.
 const QBOX = {};
 const qsrc = (p, n = 1) => img(p, fit(QBOX[n] || Math.min(innerWidth, 900) / Math.sqrt(n)));
-// A shown site photo moved to another size: same name, -s / -m / no suffix (iNaturalist photos keep theirs). On the site
-// once R2 has failed on this page.
-const resized = (u, size) =>
-  (R2 ? u : photoLocal(u)).replace(/^((?:https:\/\/[^/]+\/)?img\/.+?)(-[tsm])?\.webp/, `$1${size ? '-' + size : ''}.webp`);
+// A shown site photo moved to another size: same name, -s / -m / no suffix (iNaturalist photos keep theirs). Once R2 has
+// failed on this page, the photo's online original at that size, or the site's file.
+const resized = (u, size) => {
+  const v = u.replace(/^((?:https:\/\/[^/]+\/)?img\/.+?)(-[tsm])?\.webp/, `$1${size ? '-' + size : ''}.webp`);
+  return AWAY ? photoAway(v, photoLook) : R2 ? v : photoLocal(v);
+};
 const PXR = {s: 0, m: 1, '': 2}; // rank of each file size
 const tierOf = u => (/-[ts]\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : '');
 // A photo shown bigger than its file was chosen for gets the bigger file (never a smaller one: it is already loaded); the
@@ -213,33 +230,79 @@ const upsize = (root = $v) =>
     upsizeImg(i, Math.max(r.width, r.height));
   });
 // A photo that fails on R2 (core.js PHOTO_BASE) is asked from R2 once more (core.js photoRetry, PHOTO_RETRY ms later: a
-// passing error), then takes the same file from the site (src, srcset, its 480 px fallback and the game backdrop),
-// before the retries below, and the next photos of this page come from the site too
-// (R2 false): R2 out of reach (a network that blocks it, an outage) costs one failed request, not a missing photo. Under
-// the service worker this is rare: it falls back to the site by itself (sw.js photo). Before every other error listener.
+// passing error; under a service worker the worker has done so already), then moves to its online original at a light
+// size, or to the site's file for a photo with none (core.js photoFallback: src, srcset, its 480 px fallback and the game
+// backdrop), before the retries below. Without a service worker the next photos of this page go there straight away
+// (R2 false, AWAY true): R2 out of reach (a network that blocks it, an outage) costs one failed request, not a missing
+// photo. Before every other error listener.
 const photoFail = e => {
   const i = e.target;
   if (!(i instanceof HTMLImageElement)) return;
   // A card's photo stays out of sight while it is asked again (the cards' own error listener, quiz.js, which this one
   // stops, does the same for the retries after it: never a broken-image icon on a card); its load shows it again.
   const hide = () => i.closest('.unlock') && i.classList.add('fail');
-  // R2 once more first (core.js photoRetry: a passing error), then the site.
-  if (photoRetry(i, toSite)) return (hide(), e.stopImmediatePropagation());
-  if (toSite(i)) (hide(), e.stopImmediatePropagation());
+  // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
+  if (!swOn() && photoRetry(i, away)) return (hide(), e.stopImmediatePropagation());
+  if (away(i)) (hide(), e.stopImmediatePropagation());
 };
-const toSite = i => {
-  if (!photoToSite(i)) return false;
-  R2 = false;
-  photoToSite(i.closest('figure'));
+const away = i => {
+  // Under a service worker the 480 px step and the backdrop stay on R2, where the worker keeps its offline copies.
+  const sw = swOn();
+  if (!photoFallback(i, photoLook, sw)) return false;
+  if (!sw) (R2 = false), (AWAY = true), photoFallback(i.closest('figure'), photoLook);
+  cropWatch();
   return true;
 };
 document.addEventListener('error', photoFail, true);
+// A cropped photo shown from its online original gets its crop drawn (core.js photoCropOf: the site's files have it baked
+// in): every <img> added or given a new src is checked, from the first fallback on (nothing watches before).
+let CROPW = null;
+const cropSet = i => {
+  const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
+  if (c) (i.style.setProperty('object-view-box', c), (i.dataset.vb = 1));
+  else if (i.dataset.vb) (i.style.removeProperty('object-view-box'), delete i.dataset.vb);
+};
+function cropWatch() {
+  if (CROPW || typeof MutationObserver === 'undefined') return;
+  CROPW = new MutationObserver(R =>
+    R.forEach(r =>
+      r.type === 'attributes'
+        ? r.target instanceof HTMLImageElement && cropSet(r.target)
+        : r.addedNodes.forEach(n => n.nodeType === 1 && (n instanceof HTMLImageElement ? [n] : n.querySelectorAll('img')).forEach(cropSet))
+    )
+  );
+  CROPW.observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ['src']});
+  document.querySelectorAll('img').forEach(cropSet);
+}
+// A photo that never loaded (Pierre, 2026-11-05): a light, friendly "photo missing" tile instead of a plain one, an inline
+// SVG drawn with the theme's tokens (app.css .nophoto: light, dark, colour-blind), no request. Three variants until
+// Pierre picks one (NOPHOTO_V, the one switch): 'frame' an empty picture frame (sun and hills, dashed), 'camera' a
+// camera struck through, 'subject' the subject's own icon (a coral, a fish) in a dashed frame. Shown over a quiz photo
+// (.qph) and a card's photo band (.ulphoto); gone if the photo comes after all.
+let NOPHOTO_V = 'frame';
+const NOPHOTO = {
+  frame: () =>
+    '<svg viewBox="0 0 64 48"><rect x="3" y="3" width="58" height="42" rx="8" stroke-dasharray="6 5"/><circle class="np-t" cx="45" cy="16" r="5"/><path class="np-t" d="M9 39l13-13 9 9 7-6 17 10z"/></svg>',
+  camera: () =>
+    '<svg viewBox="0 0 64 48"><path class="np-t" d="M8 16a5 5 0 0 1 5-5h8l4-5h14l4 5h8a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5z"/><circle cx="32" cy="27" r="9"/><path class="np-x" d="M10 4l44 42"/><path d="M10 4l44 42"/></svg>',
+  subject: () =>
+    `<svg viewBox="0 0 64 48"><rect x="3" y="3" width="58" height="42" rx="8" stroke-dasharray="6 5"/><g class="np-i" transform="translate(20 12)">${(UNITS[SUBJ.id] || UNITS.coral).icon}</g></svg>`
+};
+const noPhoto = i => {
+  const box = i.closest('.qph, .ulphoto');
+  if (box && !box.querySelector('.nophoto'))
+    box.insertAdjacentHTML('beforeend', `<span class="nophoto" data-v="${NOPHOTO_V}" aria-hidden="true">${(NOPHOTO[NOPHOTO_V] || NOPHOTO.frame)()}</span>`);
+};
+const noPhotoGone = i => {
+  const n = i.closest('.qph, .ulphoto');
+  if (n) n.querySelectorAll('.nophoto').forEach(x => x.remove());
+};
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
 // then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
 // question offers another one instead of a blank frame (nothing is counted). With none of its photos shown, its answers
 // are closed (new-player walkthrough 2026-11-04, offline: an answer given to a blank frame counted, and the note was
-// below the fold): a guess is no answer. The note is brought into the question's one screen, and the frame left is a
-// plain tile, never a broken-image icon (as a card's, quiz.js).
+// below the fold): a guess is no answer. The note is brought into the question's one screen, and the frame left shows
+// the "photo missing" tile (noPhoto), never a broken-image icon (as a card's, quiz.js).
 $v.addEventListener(
   'error',
   e => {
@@ -260,9 +323,10 @@ $v.addEventListener(
       i.dataset.retry = 2;
       i.src = i.dataset.lo;
     } else if (i.closest('.qstage')) {
-      // Every photo that gave up is a plain tile, the second of a question too (Codex review #490); the note, the report
-      // and the closing of the answers come once.
+      // Every photo that gave up is a "photo missing" tile, the second of a question too (Codex review #490); the note, the
+      // report and the closing of the answers come once.
       i.classList.add('fail');
+      noPhoto(i);
       if ($v.querySelector('.q.done, #qfail')) return;
       if (navigator.onLine !== false)
         // By the photo's name (data-f, quiz.js): an iNaturalist URL (a candidate just added, r: 1) is not one admin can look up.
@@ -300,6 +364,8 @@ const qAnswers = (q, on) => q.querySelectorAll('[data-c], [data-w], .tyform inpu
 $v.addEventListener(
   'load',
   e => {
+    if (e.target instanceof HTMLImageElement && e.target.naturalWidth && e.target.classList.contains('fail'))
+      (e.target.classList.remove('fail'), noPhotoGone(e.target));
     const q =
       e.target instanceof HTMLImageElement &&
       e.target.naturalWidth &&
@@ -2361,8 +2427,6 @@ const swCheck = () => {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
     if (e.data && e.data.t === 'reefid-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({v: appVer()});
-    // The worker could not get a photo from R2 (sw.js r2Down): this page's next photos come from the site (photoFail).
-    if (e.data && e.data.t === 'reefid-r2-down') R2 = false;
   });
   navigator.serviceWorker.startMessages();
 }

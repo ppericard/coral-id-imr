@@ -80,19 +80,25 @@ try {
 // A recropped photo keeps its file name: its URL carries the crop (cr) and rewrite count (iv) so no cache serves the old file.
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
 // The site's photos from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers; once an R2 photo failed in this tab, it and
-// the next ones come from the site's img/ (as app.js photoFail; under the service worker, sw.js falls back by itself).
-let R2 = !!PHOTO_BASE;
+// the next ones come from their online original at a light size, or from the site's img/ for a photo with none (as
+// app.js photoFail, core.js photoAway; Pierre, 2026-11-05: the photos with an online original leave img/).
+let R2 = !!PHOTO_BASE,
+  AWAY = false,
+  PIDX = null;
+const photoLook = f => ((PIDX = PIDX && PIDX.of === DATA ? PIDX : {of: DATA, ...photoIndex(DATA)}), PIDX.f.get(f));
 const img = (p, s) =>
   p.r && p.src
     ? p.src.replace('/original.', s ? '/medium.' : '/large.')
-    : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+    : AWAY && p.src
+      ? photoOnline(p.src, s ? 's' : '')
+      : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 document.addEventListener(
   'error',
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
-    const toSite = i => photoToSite(i) && ((R2 = false), true);
-    // R2 once more first (core.js photoRetry: a passing error), then the site.
-    if (photoRetry(e.target, toSite) || toSite(e.target)) e.stopImmediatePropagation();
+    const away = i => photoFallback(i, photoLook) && ((R2 = false), (AWAY = true));
+    // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
+    if (photoRetry(e.target, away) || away(e.target)) e.stopImmediatePropagation();
   },
   true
 );
@@ -229,10 +235,6 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (had) UPDATED = true;
     had = true;
-  });
-  // The worker could not get a photo from R2 (sw.js r2Down): the next photos come from the site, as app.js does.
-  navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.t === 'reefid-r2-down') R2 = false;
   });
 }
 // The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.

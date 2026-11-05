@@ -5967,10 +5967,41 @@ html.touring .unlock {
   font-size: var(--fs-s);
   letter-spacing: 0;
 }
-/* A card or question photo that did not load (quiz.js, app.js): a plain tile, never a broken-image icon. */
+/* A card or question photo that did not load (quiz.js, app.js): never a broken-image icon; once it gave up, the
+   "photo missing" tile over it (app.js noPhoto, NOPHOTO_V: three variants until Pierre picks one; docs/DESIGN.md). */
 .unlock img.fail,
 .qstage img.fail {
   visibility: hidden;
+}
+.nophoto {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.qph figcaption {
+  z-index: 1;
+}
+.nophoto svg {
+  width: clamp(48px, 28%, 96px);
+  height: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nophoto .np-t {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.nophoto .np-x {
+  stroke: var(--surface-2);
+  stroke-width: 7;
+}
+.nophoto .np-i {
+  stroke-width: 2;
 }
 .ultips,
 .ulcard .warn {

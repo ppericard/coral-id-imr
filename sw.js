@@ -19,7 +19,7 @@ const PH = 'imr-photos-v1',
 const ADM = 'reefid-admin-files',
   ADM_FILE = /\/(admin[\w-]*\.(js|css)|autosort\.js|analysis\.js)$/;
 // The R2 bucket the pages read the photos from (core.js PHOTO_BASE, where the switch is; this only lets the worker cache
-// them and fall back to the site): same paths as the site's img/.
+// them, under either address): same paths as the site's img/.
 const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
   R2 = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev',
   SITE = new URL('./', location).href;
@@ -195,7 +195,10 @@ const trim = async c => {
 // R2 and on the site, so each is looked up under both addresses (photos cached from the site before the switch to R2
 // stay offline, and back again if the switch is undone). From R2 it is asked in CORS mode whatever the page asked: an
 // <img> asks no-cors, whose opaque reply cannot be checked (a 404 would be kept) and weighs ~7 MB of quota each in
-// Chrome; the bucket allows the site (CORS). If R2 fails (out of reach, an error), the site's copy is served instead.
+// Chrome; the bucket allows the site (CORS). If R2 fails (out of reach, an error, a file missing), the page is told by
+// the failed request itself and picks the next source: the photo's online original, or the site's copy for a photo with
+// none (app.js photoFail; Pierre, 2026-11-05: the photos with an online original leave img/, so the worker no longer
+// serves the site's copy by itself).
 // The same file at its other address (R2 for a site photo, the site for an R2 one), and a photo looked up under both.
 const twinOf = u => {
   const r2 = u.origin === R2,
@@ -217,32 +220,25 @@ const photo = async (req, u) => {
     return res;
   };
   if (!r2) return fetch(req).then(keep);
-  // R2 failed twice in a row a moment ago: the site straight away, for R2_PAUSE ms (no request held open on a dead host:
-  // a new worker takes over only once this one has no fetch in flight).
-  if (Date.now() - r2Off < R2_PAUSE) return fetch(twin).then(keep);
-  // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the site.
+  // R2 failed twice in a row a moment ago: the page's fallback at once, for R2_PAUSE ms (no request held open on a dead
+  // host: a new worker takes over only once this one has no fetch in flight).
+  if (Date.now() - r2Off < R2_PAUSE) return Response.error();
+  // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the page's
+  // fallback.
   for (let k = 0; k < 2; k++) {
     try {
       const res = await fetch(u.href, {mode: 'cors', credentials: 'omit'});
       if (res.ok) return keep(res);
       // A file missing on R2 (404: not mirrored yet) is that file's matter, not retried; any other error is R2's.
-      if (res.status === 404) return fetch(twin).then(keep);
+      if (res.status === 404) return res;
     } catch (err) {}
     if (!k) await new Promise(ok => setTimeout(ok, PHOTO_RETRY));
   }
   r2Off = Date.now();
-  r2Down();
-  return fetch(twin).then(keep);
+  return Response.error();
 };
 let r2Off = 0;
 const R2_PAUSE = 60e3;
-// R2 failed (Codex review #392): the pages are told, so their next photos are asked from the site straight away (app.js
-// R2 false, as when an <img> fails without the worker) instead of trying R2 first, file after file. A reload tries R2 again.
-const r2Down = () =>
-  self.clients
-    .matchAll({type: 'window'})
-    .then(cs => cs.forEach(c => c.postMessage({t: 'reefid-r2-down'})))
-    .catch(() => {});
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
