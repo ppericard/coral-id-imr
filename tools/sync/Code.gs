@@ -2897,12 +2897,13 @@ const CORE_ = (function () { const module = {exports: {}};
 
   // Achievements (Pierre, 2026-11-01: "unlocked as milestones are passed, with an animated pop-up, to keep the wish to play";
   // "well spread out": learning a whole genus takes ~300-430 questions, so most rungs are the quarters on the way there).
-  // Learning milestones only, never time or days played (the learning model's rule). Each has a family, a tier
+  // Learning milestones only, never time or days played (the learning model's rule), plus one family apart, the
+  // Contributions (kind 'contrib', at the end: reports sent, never learning). Each has a family, a tier
   // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
   //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 95%) or above; model.js MASTERY,
   //   2026-11-03, were the quarters 25/50/75% before], learned (Instructor), pct, streak (best run of right answers), duel, cor,
   //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met),
-  //    basics (Coral basics done)}.
+  //    basics (Coral basics done), fb (reports counted for the Contributions, contribAdd)}.
   // Median questions to reach the old quarter rungs, simulated with the real game (2026-11-01, before the levels; 75% / 90% right): 5 at 25%
   // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
   // Descriptions say what the player can now do (Pierre, 2026-11-02: informational feedback motivates, Deci, Koestner &
@@ -2943,8 +2944,40 @@ const CORE_ = (function () { const module = {exports: {}};
     ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
     // Coral basics done (Pierre, 2026-11-03: completion recognised): every step of the module seen (proto/basics.js), a
     // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
-    ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics]
-  ].map(([id, title, desc, tier, icon, test]) => ({id, title, desc, tier, icon, test}));
+    ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics],
+    // Contributions (Pierre, 2026-11-05, Q65): a family of its own, apart from the learning ones above, for the players who
+    // send reports and feedback, to encourage it and show it is taken seriously. kind 'contrib': never in the learning
+    // count (progress.js badge, viewAch), every tier pops up right after the report that earns it (progress.js achCheck).
+    // s.fb = reports counted (contribAdd).
+    ['fb1', 'First feedback', 'You sent your first report. Every report is read: thank you!', 1, '💬', s => s.fb >= 1, 'contrib'],
+    ['fb5', 'Helping hand', '5 reports sent: you are making the app better', 2, '💬', s => s.fb >= 5, 'contrib'],
+    ['fb10', 'Co-author', '10 reports sent: the app owes you a lot', 3, '💬', s => s.fb >= 10, 'contrib']
+  ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
+  // Reports that count for the Contributions (Pierre, 2026-11-05, Q65): every report sent (game, enlarged photo, genus
+  // sheet, Send feedback), signed in or not; one per photo: a report on photos already in a counted report does not count
+  // again (several reports on one photo count once); an "Other" report counts only with a note. A counted report goes into
+  // the achievements record's _fb (synced like the rest; mergeAch joins two devices' lists): its photos joined by a space,
+  // or r:<id> for a report on no photo. CONTRIB_MAX entries are kept, more than the top tier needs.
+  const CONTRIB_MAX = 50;
+  const contribPhotos = r =>
+    String((r && r.ph) || '')
+      .split(/\s+/)
+      .filter(Boolean);
+  function contribKey(r, have) {
+    if (!r || !r.id || (r.why === 'other' && !String(r.note || '').trim())) return '';
+    const ph = contribPhotos(r);
+    if (!ph.length) return 'r:' + r.id;
+    const done = new Set((have || []).flatMap(k => (k.startsWith('r:') ? [] : k.split(' '))));
+    return ph.some(f => done.has(f)) ? '' : ph.join(' ');
+  }
+  // Counts report r into the record A (changes A._fb); true when it counted.
+  function contribAdd(A, r) {
+    const have = Array.isArray(A && A._fb) ? A._fb : [],
+      k = contribKey(r, have);
+    if (!A || !k || have.includes(k)) return false;
+    A._fb = [...have, k].slice(-CONTRIB_MAX);
+    return true;
+  }
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
   // Achievements taken back (Pierre, 2026-11-03): only those that rest on genera learned, and only when a recalculation
@@ -2979,6 +3012,8 @@ const CORE_ = (function () { const module = {exports: {}};
     const off = (k, t) => typeof gone[k] === 'number' && !(t > gone[k]);
     Object.keys(ra).forEach(k => {
       if (k === '_run' || k === '_v' || k === '_gone' || (old && k[0] !== '_') || off(k, ra[k])) return;
+      // A list (the Contributions' _fb): both devices' entries, each once, the last CONTRIB_MAX.
+      if (Array.isArray(ra[k])) return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-CONTRIB_MAX));
       A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
     });
     Object.keys(gone).forEach(k => off(k, A[k]) && delete A[k]);
@@ -4355,6 +4390,9 @@ const CORE_ = (function () { const module = {exports: {}};
     ACH_LEARN,
     achRevoke,
     mergeAch,
+    CONTRIB_MAX,
+    contribKey,
+    contribAdd,
     LEVEL,
     SORRY,
     firstName,

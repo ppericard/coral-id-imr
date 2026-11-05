@@ -960,6 +960,64 @@ async function overlays(b, base) {
       );
     await c.close();
   }
+  // Q65: the Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
+  // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, seen);
+    await p.goto(base + '#g-Acropora');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.repline [data-rep]', {timeout: 10000}).catch(() => {});
+    // One report through the dialog: kind of report, note, then Send; returns the toast's title (or '' with none).
+    const send = async (ctx, why, note) => {
+      await p.evaluate(ctx => {
+        const b = document.createElement('button');
+        document.body.append(b);
+        reportDialog(ctx, b);
+      }, ctx);
+      await p.check(`#repdlg input[name="why"][value="${why}"]`);
+      if (note) await p.fill('#repdlg textarea[name="note"]', note);
+      await p.click('#repdlg button[type="submit"]');
+      const t = await p
+        .waitForSelector('.achpop b', {timeout: 1500})
+        .then(e => e.textContent())
+        .catch(() => '');
+      await p.evaluate(() =>
+        document.querySelectorAll('.achpop a').forEach(a => {
+          a.addEventListener('click', e => e.preventDefault()); // closes it, without opening #ach
+          a.click();
+        })
+      );
+      return t;
+    };
+    const got = [];
+    // The genus sheet's own button first, "Other" without a note: not counted, no toast.
+    await p.click('.repline [data-rep]');
+    await p.check('#repdlg input[name="why"][value="other"]');
+    await p.click('#repdlg button[type="submit"]');
+    await p.waitForTimeout(600);
+    got.push(await p.evaluate(() => document.querySelector('.achpop b')?.textContent || ''));
+    got.push(await send({k: 'sheet', g: 'Acropora', m: 'sheet'}, 'info'));
+    got.push(await send({k: 'photo', g: 'Acropora', ph: ['smoke-a.webp'], m: 'photo'}, 'photo'));
+    got.push(await send({g: 'Acropora', a: 'Porites', ph: ['smoke-a.webp', 'smoke-b.webp'], m: 'quiz'}, 'wrong')); // smoke-a again
+    got.push(await send({g: 'Acropora', a: 'Porites', ph: ['smoke-c.webp'], m: 'quiz'}, 'other', 'two colonies'));
+    got.push(await send({k: 'page'}, 'idea'));
+    got.push(await send({k: 'page'}, 'bug'));
+    const n = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}')._fb?.length);
+    for (let i = 0; i < 5; i++) got.push(await send({k: 'page'}, 'bug'));
+    const want = ['', 'First feedback', '', '', '', '', 'Helping hand', '', '', '', '', 'Co-author'];
+    if (JSON.stringify(got) !== JSON.stringify(want) || n !== 5) fails.push(`Contributions: ${JSON.stringify({got, n})}`);
+    await p.evaluate(() => (location.hash = 'ach'));
+    await p.waitForSelector('.btitle.bsec', {timeout: 5000}).catch(() => {});
+    const a = await p.evaluate(() => ({
+      title: document.querySelector('.btitle')?.textContent,
+      learn: ACH.filter(x => x.kind !== 'contrib').length,
+      sec: document.querySelector('.btitle.bsec')?.textContent,
+      on: [...document.querySelectorAll('.btitle.bsec + .achl .achc.on b')].map(b => b.textContent.trim())
+    }));
+    if (a.title !== `0/${a.learn} earned` || !/^Contributions 10 reports sent/.test(a.sec || '') || a.on.length !== 3)
+      fails.push(`Contributions on #ach: ${JSON.stringify(a)}`);
+    await c.close();
+  }
   return fails;
 }
 

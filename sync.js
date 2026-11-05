@@ -769,28 +769,24 @@ function reportDialog(c, btn) {
     e.preventDefault();
     if (f.who) store.set('reefid-report-name', f.who.value.trim());
     const why = f.why.value;
-    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()};
-    store.set(
-      'reefid-reports',
-      [
-        ...store.get('reefid-reports', []),
-        {
-          ...who,
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          t: new Date().toISOString(),
-          why,
-          g: c.g || '',
-          a: c.a || '',
-          ph: (c.ph || []).join(' '),
-          m: c.m || kind,
-          w: where,
-          fix: why === 'wrong' ? f.fix.value.trim() : '',
-          note: f.note.value.trim()
-        }
-      ].slice(-200)
-    );
+    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()},
+      r = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        t: new Date().toISOString(),
+        why,
+        g: c.g || '',
+        a: c.a || '',
+        ph: (c.ph || []).join(' '),
+        m: c.m || kind,
+        w: where,
+        fix: why === 'wrong' ? f.fix.value.trim() : '',
+        note: f.note.value.trim()
+      };
+    store.set('reefid-reports', [...store.get('reefid-reports', []), {...who, ...r}].slice(-200));
     d.close();
     sendReports();
+    // The Contributions (Pierre, 2026-11-05, Q65): counted as it is sent, its achievement popping up now (progress.js).
+    if (typeof achReport === 'function') achReport(r);
     btn.textContent = kind === 'page' ? 'Thank you' : '⚑ Reported, thank you';
     btn.disabled = true;
   };
