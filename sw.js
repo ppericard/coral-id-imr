@@ -73,7 +73,7 @@ const SHELL = [
     'cards'
   ].map(f => `proto/${f}.js?v=84`)
 ];
-// A shell file for the new version (Pierre, 2026-11-05: a device stayed two days on an old app; ~86 kbit/s at the field
+// A shell file for the new version (2026-11-05, found while looking for a device left on an old app; ~86 kbit/s at the field
 // station). A versioned file (?v=: a new content is a new URL) or a font that a cache already holds, the version being
 // replaced's, is copied from it rather than downloaded again: most deploys change a few files, and the install, which
 // the takeover waits for, downloaded the whole shell (about 1 MB). The other files (the page, curation.json, the

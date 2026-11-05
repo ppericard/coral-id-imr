@@ -663,8 +663,8 @@ function oldApp_(what, who){
     sheet_('Events', EVH).appendRow([new Date(), '', 'old', safe_('app before 2026-11-03: ' + what + (who ? ' (' + who + ')' : '')), '', '', '', '', '', 'old' + Date.now().toString(36)]);
   } catch (e) {}
 }
-// v50 (Pierre, 2026-11-05: a device stayed on a two-day-old app, and its 'old' events said neither which device nor which
-// version): the app's photo stats request (at launch, every 10 minutes while in view) carries its version (av:
+// v50 (2026-11-05: the 'old' events said neither which device nor which version; those of 11-03 and 11-05 turned out
+// to be the project's own tools reading ?stats=1 without av, not players): the app's photo stats request (at launch, every 10 minutes while in view) carries its version (av:
 // "<build>-<hash>", the deploy's build number first), its anonymous device id (dev, the Device of its events, which the
 // Pages tab ties to the player's answers) and the minutes its page has been open (up). The newest build reported is kept
 // (Script Property BUILD_TOP: the build and when it was first reported; a build far ahead of it, BUILD_JUMP, is not

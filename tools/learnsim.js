@@ -5,7 +5,7 @@
 // numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
 //
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
-//                          [--workers 4] [--out results.json] [--stats stats.json] [--truth truth.json] [--met Acropora,Porites,...]
+//                          [--workers 4] [--out results.json] [--stats stats.json|live] [--truth truth.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
 //                          [--rt off] [--rtapp off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
@@ -211,7 +211,15 @@ const CPS = [
 ].sort((a, b) => a - b);
 // Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf, mem, gd, v}), to rate the photos as live
 // players do; without it every photo's difficulty is 0 (no sheet), as in CI (the Easy/Medium/Hard sets before 2026-11-03).
-const STATS_JSON = STATS ? JSON.parse(fs.readFileSync(STATS, 'utf8')) : null;
+// --stats live reads them from the sheet at start (read-only, the GET the app makes) with av=learnsim: a ?stats=1 read
+// without an app version is logged by the sheet as an app from before 2026-11-03 (Code.gs v25 'old'; 2026-11-05: the
+// integrator's own curl and, most likely, the files saved for --stats on 11-03 made the only 'old' rows). Fetch a file
+// by hand the same way: curl "<SYNC_URL>?stats=1&av=tool" (tests/statsav.test.js checks the repo's own reads).
+let STATS_JSON = STATS && STATS !== 'live' ? JSON.parse(fs.readFileSync(STATS, 'utf8')) : null;
+const liveStats = () =>
+  fetch(/const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'))[1] + '?stats=1&av=learnsim').then(r =>
+    r.json()
+  );
 const TRUTH_JSON = TRUTH ? JSON.parse(fs.readFileSync(TRUTH, 'utf8')) : null;
 
 const TYPES = {
@@ -998,6 +1006,7 @@ function openTable(runs) {
 
 (async () => {
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
+  if (STATS === 'live') STATS_JSON = await liveStats();
   const t0 = Date.now();
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;

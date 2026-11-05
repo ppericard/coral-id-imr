@@ -177,7 +177,7 @@ test('offline while Cache Storage is paused: a photo is found under its twin add
   assert.strictEqual(r && r.body, 'the photo');
 });
 
-// A new version on the field line (Pierre, 2026-11-05: a device stayed two days on an old app; ~86 kbit/s at the field
+// A new version on the field line (2026-11-05, found while looking for a device left on an old app; ~86 kbit/s at the field
 // station): its install took the files of the deploy before from the browser's HTTP cache (GitHub Pages keeps them 10
 // minutes), so a new version could hold the old page and run its old code once it took over; and it downloaded the whole
 // shell again (about 1 MB), unchanged files included.
