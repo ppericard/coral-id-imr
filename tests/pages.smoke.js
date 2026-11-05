@@ -1079,6 +1079,66 @@ async function overlays(b, base) {
     if (before !== 'undefined' || t !== 'First feedback') fails.push(`Contributions before tier 2: ${JSON.stringify({before, t})}`);
     await c.close();
   }
+  // Q66: "Your feedback helped". A report of this device's that the admin marked done (curation.json seen 'rep:<id>') is
+  // told once at start-up; the sheet's list of the player's reports counts only from v53; once thanked, never again.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      if (!localStorage.getItem('reefid-sync-ach'))
+        localStorage.setItem('reefid-sync-ach', JSON.stringify({_v: 2, _rep: ['smk1', 'smk9']}));
+    });
+    await c.route(
+      u => u.pathname.endsWith('/curation.json'),
+      async r => {
+        const res = await r.fetch(),
+          j = await res.json();
+        j.seen = {...(j.seen || {}), 'rep:smk1': 1, 'rep:smk2': 1, 'rep:smk3': 1};
+        await r.fulfill({response: res, json: j});
+      }
+    );
+    const toast = async () => {
+      const t = await p
+        .waitForSelector('.achpop', {timeout: 3000})
+        .then(() =>
+          p.evaluate(() =>
+            [...document.querySelectorAll('.achpop small, .achpop b, .achpop .achin > span:last-child > span')].map(e => e.textContent)
+          )
+        )
+        .catch(() => null);
+      await p.evaluate(() =>
+        document.querySelectorAll('.achpop a').forEach(a => {
+          a.addEventListener('click', e => e.preventDefault());
+          a.click();
+        })
+      );
+      return t;
+    };
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const t1 = await toast(),
+      r1 = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-ach'))._thx);
+    await p.evaluate(() => repsSeen({v: 52, reps: ['smk2']})); // an older script: not used
+    await p.waitForTimeout(600);
+    const t2 = await p.evaluate(() => !!document.querySelector('.achpop') || achBusy);
+    await p.evaluate(() => repsSeen({v: 53, reps: ['smk2', 'smk3', 'smk1']}));
+    const t3 = await toast();
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(1500);
+    const t4 = await p.evaluate(() => !!document.querySelector('.achpop'));
+    if (
+      JSON.stringify(t1) !== JSON.stringify(['Thank you', 'Your feedback helped', 'A report you sent was looked at and handled.']) ||
+      JSON.stringify(r1) !== '["smk1"]' ||
+      t2 ||
+      !t3 ||
+      t3[2] !== '2 reports you sent were looked at and handled.' ||
+      t4
+    )
+      fails.push(`Your feedback helped: ${JSON.stringify({t1, r1, t2, t3, t4})}`);
+    await c.close();
+  }
   return fails;
 }
 

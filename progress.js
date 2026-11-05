@@ -660,15 +660,44 @@ function achBasics() {
 // A report sent (sync.js reportDialog): counted for the Contributions (core.js contribAdd: one per photo, Other only
 // with a note), whatever the subject on screen, signed in or not; the tier it reaches pops up at once (achCheck), and the
 // record goes to the sheet with the next sync like the other feats.
+// Its id is kept too, counted or not (core.js repsAdd), for "Your feedback helped" (achHelped).
 function achReport(r) {
   // An account the admin deleted (the sheet answered 'gone': sync.js) counts nothing (Pierre, 2026-11-05).
   if (SYNC && SYNC.err === 'gone') return;
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};
-  if (!contribAdd(A, r)) return;
+  repsAdd(A, [r.id]);
+  const counted = contribAdd(A, r);
   store.set(ACHK, A);
-  achCheck();
+  if (counted) achCheck();
   if (SYNC) syncSoon();
+}
+// "Your feedback helped" (Pierre, 2026-11-05, Q66): a report the admin marked done (To do › Reports ✓ Done, published in
+// curation.json seen 'rep:<id>') is told once to the player who sent it, at their next visit: at start-up, when a new
+// curation.json arrives (app.js route) and when the sheet lists their reports (sync.js repsSeen); several at once make
+// one toast, the achievement pop-up's look with no tier. Only that it was handled: nothing the admin wrote. Whatever the
+// subject on screen, signed in or not (an anonymous device's reports by the ids it kept itself).
+function achHelped() {
+  const A = store.get(ACHK, null),
+    ids = A ? helpedTake(A, (typeof CUR === 'object' && CUR && CUR.seen) || null) : [];
+  if (!ids.length) return;
+  store.set(ACHK, A);
+  if (SYNC) syncSoon();
+  achPop({
+    tier: 0,
+    icon: '🙌',
+    label: 'Thank you',
+    title: 'Your feedback helped',
+    desc: ids.length === 1 ? 'A report you sent was looked at and handled.' : `${ids.length} reports you sent were looked at and handled.`
+  });
+}
+// The ids of the player's own reports, from the sheet's load reply (sync.js repsSeen, Code.gs v53): those sent signed in
+// on any device, before this version too. Then the check above.
+function achReps(ids) {
+  if (!store.get(ACHK, null)) achCheck(true);
+  const A = store.get(ACHK, {}) || {};
+  if (repsAdd(A, ids)) store.set(ACHK, A);
+  achHelped();
 }
 const TIER = ['', '🥉', '🥈', '🥇'];
 let achQ = [],
@@ -702,7 +731,7 @@ function achNext() {
   el.setAttribute('role', 'status');
   // The cards' look (app.js cardShow, docs/DESIGN.md "Cards"), as a toast: the achievement's own emoji in a small medallion
   // with its tier at the edge, on the pale tint of the kind's hue.
-  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>${esc(a.label || 'Achievement unlocked')}</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
   const mo = new MutationObserver(() => {
@@ -787,7 +816,8 @@ function viewAch() {
       left = ACH_L()
         .filter(a => !A[a.id])
         .sort((x, y) => (pc(y) || 0) - (pc(x) || 0)),
-      fb = Array.isArray(A._fb) ? A._fb.length : 0;
+      fb = Array.isArray(A._fb) ? A._fb.length : 0,
+      thx = Array.isArray(A._thx) ? A._thx.length : 0;
     const share = a => {
       const p = pc(a);
       return p == null ? '' : `<span class="achp">${p < 1 && p > 0 ? '<1' : Math.round(p)}% of players</span>`;
@@ -798,7 +828,7 @@ function viewAch() {
     $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback): one per photo, and an "Other" report with a note; they never count in your progress. The share of players counts everyone who signed in.</p>
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH_L().length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul>
-  <h2 class="btitle bsec">Contributions <small>${fb ? `${fb} report${fb > 1 ? 's' : ''} sent` : 'reports and feedback you send'}</small></h2>
+  <h2 class="btitle bsec">Contributions <small>${fb ? `${fb} report${fb > 1 ? 's' : ''} sent` : 'reports and feedback you send'}${thx ? ` · ${thx} handled` : ''}</small></h2>
   <ul class="achl">${ACH_C()
     .map(a => card(a, !!A[a.id]))
     .join('')}</ul></div>`;

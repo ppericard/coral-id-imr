@@ -115,6 +115,8 @@ function doGet_(e){
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
   // v48: the beta groups the player is in (groupsOf_), [] for none. A failure leaves it out (the app keeps what it had).
   try { out.groups = groupsOf_(name); } catch (err) {}
+  // v53: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
+  try { const reps = repsOf_(name); if (reps.length) out.reps = reps; } catch (err) {}
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
   // (the app keeps its own).
   try { const o = hold_(name, resetOf_(data), Number(e.parameter.pt)); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
@@ -592,6 +594,19 @@ function logReports_(p){
       sh.getRange(at, 1, rows.length, REP.length).setValues(rows); }
     return {ok: true, rep: true};
   } finally { lock.releaseLock(); }
+}
+// v53 (Pierre, 2026-11-05, Q66: when the admin marks a report done, the player who sent it is told once that it helped):
+// the ids of one player's reports, those sent signed in under their name with their code (Verified 1), oldest first, the
+// last REPS_MAX. The admin's Done is not here (curation.json seen 'rep:<id>', public): the app checks these ids against
+// it, with the ids it kept itself (an anonymous device's reports, matched on the device that sent them). Ids only: no
+// reason, note or anything the admin wrote.
+const REPS_MAX = 50;
+function repsOf_(name){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'), n = sh ? sh.getLastRow() - 1 : 0, me = String(name).toLowerCase();
+  if (n < 1) return [];
+  return sh.getRange(2, 2, n, REP.length - 1).getValues()
+    .filter(r => String(r[0]).toLowerCase() === me && Number(r[1]) === 1 && r[REP.length - 2])
+    .map(r => String(r[REP.length - 2])).slice(-REPS_MAX);
 }
 // POST {readReports: 1, token} (v8) → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
 // suggested genus, note, mode, photos, where]]}, newest first. Names are shown, so only the app's admins get them: anyone whose
@@ -3008,6 +3023,28 @@ const CORE_ = (function () { const module = {exports: {}};
     });
     return out;
   }
+  // "Your feedback helped" (Pierre, 2026-11-05, Q66): when the admin marks a report done (admin To do › Reports ✓ Done:
+  // curation.json seen 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js
+  // achHelped). The achievements record keeps the ids of the reports the player sent (_rep: from this device at sending,
+  // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v53 reps) and those already thanked
+  // (_thx), both synced and joined across devices (mergeAch), the last CONTRIB_MAX each. Ids only: nothing the admin
+  // wrote reaches the player. repsAdd adds ids (true when A changed); helpedTake returns the ids done and not thanked yet,
+  // and marks them thanked.
+  const REP_ID = /^[a-z0-9]{1,20}$/;
+  function repsAdd(A, ids) {
+    const have = Array.isArray(A && A._rep) ? A._rep : [],
+      add = [...new Set((ids || []).map(String))].filter(x => REP_ID.test(x) && !have.includes(x));
+    if (!A || !add.length) return false;
+    A._rep = [...have, ...add].slice(-CONTRIB_MAX);
+    return true;
+  }
+  function helpedTake(A, seen) {
+    if (!A || !seen || typeof seen !== 'object') return [];
+    const thx = Array.isArray(A._thx) ? A._thx : [],
+      ids = (Array.isArray(A._rep) ? A._rep : []).filter(id => seen['rep:' + id] && !thx.includes(id));
+    if (ids.length) A._thx = [...thx, ...ids].slice(-CONTRIB_MAX);
+    return ids;
+  }
   // Two achievement records of one player (progress.js achMerge: another device's, the sheet's, this device's before
   // signing in): every achievement with its earliest date, the best run kept; the current run (_run) stays A's. A record of
   // another version than v (progress.js ACH_V: counted on older rules) brings its feats (keys starting with _) but not its
@@ -3022,7 +3059,7 @@ const CORE_ = (function () { const module = {exports: {}};
     const off = (k, t) => typeof gone[k] === 'number' && !(t > gone[k]);
     Object.keys(ra).forEach(k => {
       if (k === '_run' || k === '_v' || k === '_gone' || (old && k[0] !== '_') || off(k, ra[k])) return;
-      // A list: the Contributions' _fb by their rule (contribJoin), any other both devices' entries, each once, the last CONTRIB_MAX.
+      // A list: the Contributions' _fb by their rule (contribJoin), any other (the reports sent _rep and thanked _thx) both devices' entries, each once, the last CONTRIB_MAX.
       if (k === '_fb') return (A[k] = contribJoin(A[k], ra[k]));
       if (Array.isArray(ra[k])) return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-CONTRIB_MAX));
       A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
@@ -4404,6 +4441,8 @@ const CORE_ = (function () { const module = {exports: {}};
     CONTRIB_MAX,
     contribKey,
     contribAdd,
+    repsAdd,
+    helpedTake,
     LEVEL,
     SORRY,
     firstName,

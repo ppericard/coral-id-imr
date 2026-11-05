@@ -526,6 +526,31 @@ test('Contributions (Q65): a family apart, three tiers; one per photo, Other onl
   assert.deepStrictEqual(mergeAch({_v: 2}, {_v: 1, _fb: ['r:q'], fb1: 3}, 2), {_v: 2, _fb: ['r:q']});
 });
 
+test('Your feedback helped (Q66): the reports sent, those the admin marked done thanked once, across devices', () => {
+  const {repsAdd, helpedTake, mergeAch, CONTRIB_MAX} = require('../core.js');
+  const A = {};
+  assert.strictEqual(repsAdd(A, ['a1', 'a2', 'a1', 'BAD id', 3]), true);
+  assert.deepStrictEqual(A._rep, ['a1', 'a2', '3']);
+  assert.strictEqual(repsAdd(A, ['a2']), false, 'nothing new');
+  // Done in curation.json seen ('rep:<id>'); other seen keys never match.
+  const seen = {'rep:a2': 1, 'rep:zz': 1, a1: 1};
+  assert.deepStrictEqual(helpedTake(A, seen), ['a2']);
+  assert.deepStrictEqual(helpedTake(A, seen), [], 'once');
+  assert.deepStrictEqual(helpedTake(A, {...seen, 'rep:a1': 1, 'rep:3': 1}), ['a1', '3'], 'several at once');
+  assert.deepStrictEqual(helpedTake({}, seen), []);
+  assert.deepStrictEqual(helpedTake(A, null), []);
+  // Thanked on one device: never again on another once their records meet.
+  const B = {_rep: ['a2', 'b1']},
+    M = mergeAch(B, {_rep: A._rep, _thx: A._thx}, undefined);
+  assert.deepStrictEqual(helpedTake(M, {'rep:a2': 1, 'rep:b1': 1}), ['b1']);
+  const big = {};
+  repsAdd(
+    big,
+    Array.from({length: 80}, (_, i) => 'r' + i)
+  );
+  assert.deepStrictEqual([big._rep.length, big._rep[0]], [CONTRIB_MAX, 'r30'], 'the latest kept');
+});
+
 test('achRevoke and mergeAch: learned-based achievements taken back stay so through merges, until earned again', () => {
   const {ACH_LEARN, achRevoke, mergeAch} = require('../core.js');
   assert.deepStrictEqual(ACH_LEARN, ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group']);

@@ -57,6 +57,16 @@ const GATES = {
       startV: () => ({p: 0.7}),
       startS: () => ({log: true})
     })() !== 0,
+  // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
+  // helped" (Q66): from v53; before, only the ids the device kept itself.
+  HELP_SHEET: (v, N) => {
+    let got = null;
+    fn('sync.js', 'function repsSeen(', '\nfunction sheetSeen', 'repsSeen', {HELP_SHEET: N, achReps: ids => (got = ids)})({
+      ...(v === undefined ? {} : {v}),
+      reps: ['r1']
+    });
+    return !!got;
+  },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   PGD_SHEET: (v, N) => {
     const gdOf = fn('model.js', 'const gdOf = ', '\n', 'gdOf', {PGD_SHEET: N});

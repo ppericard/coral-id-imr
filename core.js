@@ -1646,6 +1646,28 @@
     });
     return out;
   }
+  // "Your feedback helped" (Pierre, 2026-11-05, Q66): when the admin marks a report done (admin To do › Reports ✓ Done:
+  // curation.json seen 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js
+  // achHelped). The achievements record keeps the ids of the reports the player sent (_rep: from this device at sending,
+  // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v53 reps) and those already thanked
+  // (_thx), both synced and joined across devices (mergeAch), the last CONTRIB_MAX each. Ids only: nothing the admin
+  // wrote reaches the player. repsAdd adds ids (true when A changed); helpedTake returns the ids done and not thanked yet,
+  // and marks them thanked.
+  const REP_ID = /^[a-z0-9]{1,20}$/;
+  function repsAdd(A, ids) {
+    const have = Array.isArray(A && A._rep) ? A._rep : [],
+      add = [...new Set((ids || []).map(String))].filter(x => REP_ID.test(x) && !have.includes(x));
+    if (!A || !add.length) return false;
+    A._rep = [...have, ...add].slice(-CONTRIB_MAX);
+    return true;
+  }
+  function helpedTake(A, seen) {
+    if (!A || !seen || typeof seen !== 'object') return [];
+    const thx = Array.isArray(A._thx) ? A._thx : [],
+      ids = (Array.isArray(A._rep) ? A._rep : []).filter(id => seen['rep:' + id] && !thx.includes(id));
+    if (ids.length) A._thx = [...thx, ...ids].slice(-CONTRIB_MAX);
+    return ids;
+  }
   // Two achievement records of one player (progress.js achMerge: another device's, the sheet's, this device's before
   // signing in): every achievement with its earliest date, the best run kept; the current run (_run) stays A's. A record of
   // another version than v (progress.js ACH_V: counted on older rules) brings its feats (keys starting with _) but not its
@@ -1660,7 +1682,7 @@
     const off = (k, t) => typeof gone[k] === 'number' && !(t > gone[k]);
     Object.keys(ra).forEach(k => {
       if (k === '_run' || k === '_v' || k === '_gone' || (old && k[0] !== '_') || off(k, ra[k])) return;
-      // A list: the Contributions' _fb by their rule (contribJoin), any other both devices' entries, each once, the last CONTRIB_MAX.
+      // A list: the Contributions' _fb by their rule (contribJoin), any other (the reports sent _rep and thanked _thx) both devices' entries, each once, the last CONTRIB_MAX.
       if (k === '_fb') return (A[k] = contribJoin(A[k], ra[k]));
       if (Array.isArray(ra[k])) return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-CONTRIB_MAX));
       A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
@@ -3042,6 +3064,8 @@
     CONTRIB_MAX,
     contribKey,
     contribAdd,
+    repsAdd,
+    helpedTake,
     LEVEL,
     SORRY,
     firstName,

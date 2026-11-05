@@ -487,6 +487,7 @@ function syncOnce(tries = 0) {
       if (!j.ok) return j;
       groupsSeen(j, me.name); // the beta groups first (v48): they never depend on the merge
       if (j.found) mergeSaved(j);
+      repsSeen(j); // the player's reports (v53), after the merge: their thanks on another device came with it
       rev = me.rev;
       // Each subject's progress as sent: its baseline once the sheet confirms (SUBJECTS base).
       const pd0 = progData();
@@ -625,6 +626,7 @@ function syncPull() {
       const rv0 = rvApplied();
       groupsSeen(j, me.name); // the beta groups first (v48), as syncOnce
       if (j.found) mergeSaved(j);
+      repsSeen(j); // the player's reports (v53), as syncOnce
       if (rvApplied() < rv0) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
       delete me.err;
       me.last = new Date().toISOString();
@@ -1027,6 +1029,13 @@ function groupsSeen(j, name, live = true) {
   showSubj();
   // Home draws its subject row in viewHome (showSubj only updates existing buttons): redraw Home too (Codex review #540).
   if (!SUBJ_VISIT && /^#?(lab|home)?$/.test(location.hash)) route();
+}
+// The ids of this player's own reports (sheet v53: reps in a load reply), for "Your feedback helped" (progress.js
+// achReps, achHelped; Q66). Only from a script that has it (AGENTS.md 7a): an older one sends none, and the app still
+// thanks the reports it kept itself.
+const HELP_SHEET = 53;
+function repsSeen(j) {
+  if (j && Number(j.v) >= HELP_SHEET && Array.isArray(j.reps) && typeof achReps === 'function') achReps(j.reps);
 }
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));

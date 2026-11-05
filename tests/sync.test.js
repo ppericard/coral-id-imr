@@ -169,6 +169,19 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   );
 });
 
+test("v53: a load lists the ids of the player's own verified reports (Q66), never another's or an unverified one", () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
+  s.post({name: 'Bob', pin: '5678', data: prog(1), summary: {}});
+  assert.ok(!('reps' in s.get({name: 'Ana', pin: '1234'})), 'none yet: no field');
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'photo'})]});
+  s.post({rname: 'Ana', rpin: '', reports: [rep('r3')]}); // typed name, not verified
+  s.post({rname: 'Bob', rpin: '5678', reports: [rep('r4')]});
+  assert.deepStrictEqual(s.get({name: 'ana', pin: '1234'}).reps, ['r1', 'r2']);
+  assert.deepStrictEqual(s.get({name: 'Bob', pin: '5678'}).reps, ['r4']);
+  assert.strictEqual(s.get({name: 'Ana', pin: '0000'}).reps, undefined, 'a wrong code gets nothing');
+});
+
 test('v34: a save from an app that does not know a subject keeps that subject in the saved copy (Codex review #442)', () => {
   const s = loadCodeGs(),
     fish = {'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}}), 'reefid-sync-fish-quiz': '{"c2":true}'};
