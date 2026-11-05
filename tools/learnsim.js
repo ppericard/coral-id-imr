@@ -920,6 +920,7 @@ function play(cfg) {
   if (breaks.length) {
     const ls = {...localStorage},
       snap = {
+        EXS: JSON.stringify(EXS),
         P: JSON.stringify(P),
         Q: JSON.stringify(Q),
         HOLDS,
@@ -951,6 +952,9 @@ function play(cfg) {
       // The field learner's pair skills too (they do not fade across a break either: a limit, as the photo memory).
       Object.keys(X).forEach(k => delete X[k]);
       Object.assign(X, JSON.parse(snap.X));
+      // The exemplar learner's memory too (Codex review #624: each break starts from the same first session).
+      Object.keys(EXS).forEach(k => delete EXS[k]);
+      Object.assign(EXS, JSON.parse(snap.EXS));
       dropPlans();
       NEXTQ = null;
       SHOWNQ = null;

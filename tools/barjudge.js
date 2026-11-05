@@ -198,10 +198,13 @@ function logCheck(file) {
       per = players.map(p => S.filter(a => a.p === p)).filter(L => L.length >= 5),
       d = per.map(L => mean(L.map(a => a.ok - a.e)));
     // Leave one player out: logit p = a + b logit e fitted (Newton) on the others' answers of this tercile.
+    // Newton with step halving on the log-likelihood (Codex review #624: a bare Newton step diverged on flat data).
+    const loglik = (L, a, b) => L.reduce((t, r) => t + (r.ok ? Math.log(cl(sig(a + b * logit(r.e)))) : Math.log(1 - cl(sig(a + b * logit(r.e))))), 0);
     const fit = L => {
       let a = 0,
-        b = 1;
-      for (let it = 0; it < 25; it++) {
+        b = 1,
+        cur = loglik(L, a, b);
+      for (let it = 0; it < 50; it++) {
         let ga = 0,
           gb = 0,
           haa = 0,
@@ -220,8 +223,16 @@ function logCheck(file) {
         });
         const det = haa * hbb - hab * hab;
         if (!(det > 1e-9)) break;
-        a += (hbb * ga - hab * gb) / det;
-        b += (haa * gb - hab * ga) / det;
+        let da = (hbb * ga - hab * gb) / det,
+          db = (haa * gb - hab * ga) / det,
+          step = 1,
+          next;
+        while (step > 1e-6 && !((next = loglik(L, a + step * da, b + step * db)) >= cur - 1e-12)) step /= 2;
+        if (step <= 1e-6) break;
+        a += step * da;
+        b += step * db;
+        if (next - cur < 1e-10) break;
+        cur = next;
       }
       return [a, b];
     };
