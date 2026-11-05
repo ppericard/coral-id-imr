@@ -11,11 +11,12 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 7; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 8; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
   // 7: player profiles (who)
+  // 8: the Wright map and the genus × player residuals (Learning wright, res)
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -1366,6 +1367,118 @@
     return [q(L, 0.025), q(L, 0.975)];
   }
   const toMaster = (b0, b1, u) => (b0 + u >= logit(MASTER) ? 0 : b1 > 0 ? clamp(Math.exp((logit(MASTER) - b0 - u) / b1) - 1, 0, 999) : 999);
+  // The Wright map (study §2.7, §5 item 3): players and genera on the Learning model's one scale, the log-odds of
+  // recognising beyond guessing (typical question: no miss just before, not typed, not an exam). A player's place = the
+  // intercept, the practice slope at the player's own current practice (the median answers already given on the genus
+  // over their last PROF_N answers) and their own effect; a genus's = minus its own effect (its difficulty, the photos
+  // the app chose for it included). A genus level with a player: about 50% recognised beyond guessing; 80% when the player
+  // sits logit(0.8) above it (the app's target). A snapshot of the bank's reach, not of the questions asked: the app aims
+  // near 80%, so it makes players and genera meet. th: [id, place, answers, SE]; g: [genus, difficulty, answers, SE].
+  function wrightOf(D, M, F) {
+    const P = F[0],
+      G = F[1],
+      by = new Map(),
+      cnt = {},
+      gone = goneOf(D);
+    D.forEach(a => ((by.get(a.p) || by.set(a.p, []).get(a.p)).push(a), (cnt[a.g] = (cnt[a.g] || 0) + 1)));
+    // each place's uncertainty carries the intercept's and the slope's, with their covariance (V, as masterCI), beside the
+    // player's or genus's own effect (Codex review #620: the random effect's alone gave ranges too narrow)
+    const V = M.V || [
+        [0, 0],
+        [0, 0]
+      ],
+      fixVar = l => Math.max(0, V[0][0] + l * l * V[1][1] + 2 * l * V[0][1]),
+      lp = P.L.map(id =>
+        Math.log(
+          1 +
+            q(
+              by
+                .get(id)
+                .slice(-PROF_N)
+                .map(a => a.n),
+              0.5
+            )
+        )
+      ),
+      // a deleted account's answers are in the fit, never a player on the map (sheet v55)
+      live = P.L.map((id, j) => j).filter(j => !gone.has(P.L[j])),
+      lt = q(
+        live.map(j => lp[j]),
+        0.5
+      ); // the typical player: the median current practice, their own effect 0
+    return {
+      th: live.map(j => [P.L[j], r3(M.b[0] + M.b[1] * lp[j] + P.u[j]), by.get(P.L[j]).length, r3(Math.sqrt(fixVar(lp[j]) + P.cv[j]))]),
+      g: G.L.map((x, j) => [x, r3(-G.u[j]), cnt[x], r3(Math.sqrt(fixVar(lt) + G.cv[j]))]),
+      mid: r3(M.b[0] + M.b[1] * lt), // the typical player's place: a genus's chance for them is sig(mid - difficulty)
+      m: r3(logit(MASTER))
+    };
+  }
+  // A second skill? (study §2.4, §5 item 5; Pierre's Q77: residual PCA, never a PCA of raw right / wrong answers): the
+  // genus × player table of standardised residuals after the Learning model, each cell sum(right - P) / sqrt(sum P(1 - P)
+  // + RES_K) (shrunk towards the model's prediction when the player met the genus little; 0 when never), players with
+  // PROF_MIN answers or more, genera met by 2 of them or more; a PCA of the players' columns (centred): genera as points,
+  // players as arrows. If the model's one ability per player and one difficulty per genus explain everything, the first
+  // axis is noise: its share of the spread is set against the same share in the table built from RES_SIMS answer logs
+  // simulated from the fit itself (the Rasch world's dimensionality check, Linacre 1998, Raîche 2005; a share, not the
+  // eigenvalue itself, as the simulated logs are not refitted and their residuals run larger). Descriptive: no verdict,
+  // outside the multiple-testing correction. lam: the first two eigenvalues, var: their shares, null: [median, 95th
+  // percentile] of the first axis's share in the simulations.
+  const RES_K = 2,
+    RES_SIMS = 99;
+  function resOf(D, M, F, seed) {
+    const Pr = D.map((a, i) => clamp(a.g0 + (1 - a.g0) * sig(M.eta[i]), 1e-6, 1 - 1e-6)),
+      cnt = {};
+    // a deleted account's answers (gone, sheet v55) stay in the fit, never as a player's column
+    D.forEach(a => !a.gone && (cnt[a.p] = (cnt[a.p] || 0) + 1));
+    const pl = Object.keys(cnt)
+        .filter(p => cnt[p] >= PROF_MIN)
+        .sort(),
+      pi = new Map(pl.map((p, i) => [p, i])),
+      gp = {};
+    D.forEach(a => pi.has(a.p) && (gp[a.g] = gp[a.g] || new Set()).add(a.p));
+    const gs = Object.keys(gp)
+        .filter(g => gp[g].size >= 2)
+        .sort(),
+      gi = new Map(gs.map((g, i) => [g, i]));
+    if (pl.length < 3 || gs.length < 5) return null;
+    const rows = D.map((a, i) => [gi.get(a.g), pi.get(a.p), i]).filter(r => r[0] != null && r[1] != null);
+    const table = y => {
+      const num = gs.map(() => pl.map(() => 0)),
+        den = gs.map(() => pl.map(() => 0));
+      rows.forEach(([g, p, i]) => ((num[g][p] += y(i) - Pr[i]), (den[g][p] += Pr[i] * (1 - Pr[i]))));
+      const T = num.map((r, g) => r.map((v, p) => (den[g][p] ? v / Math.sqrt(den[g][p] + RES_K) : 0)));
+      // centre each player's column (the player's mean residual is level, which the model already has)
+      pl.forEach((_, p) => {
+        const m = mean(T.map(r => r[p]));
+        T.forEach(r => (r[p] -= m));
+      });
+      return T;
+    };
+    const cov = T => pl.map((_, a) => pl.map((__, b) => sum(T.map(r => r[a] * r[b])) / T.length)),
+      T = table(i => D[i].y),
+      E = eigSym(cov(T)),
+      R = rng((seed || 1) + 4242),
+      sims = [];
+    for (let k = 0; k < RES_SIMS; k++) {
+      const ys = Pr.map(p => (R() < p ? 1 : 0));
+      const v = eigSym(cov(table(i => ys[i]))).val;
+      sims.push(v[0] / (sum(v.map(x => Math.max(0, x))) || 1));
+    }
+    const tot = sum(E.val.map(v => Math.max(0, v))) || 1,
+      ax = [0, 1].map(k => {
+        const vec = E.vec.map(r => r[k]),
+          big = vec.reduce((m, x) => (Math.abs(x) > Math.abs(m) ? x : m), 0);
+        return {vec: vec.map(x => x * (big < 0 ? -1 : 1)), val: Math.max(0, E.val[k])};
+      });
+    return {
+      lam: ax.map(a => r3(a.val)),
+      var: ax.map(a => r3(a.val / tot)),
+      null: [r3(q(sims, 0.5)), r3(q(sims, 0.95))], // the first axis's share of the spread in the simulated tables
+      sims: RES_SIMS,
+      g: gs.map((g, i) => [g, ...ax.map(a => r3(sum(T[i].map((v, p) => v * a.vec[p]))))]),
+      p: pl.map((p, j) => [p, ...ax.map(a => r3(a.vec[j] * Math.sqrt(a.val)))])
+    };
+  }
   function learning(A, B, seed) {
     const D = A;
     if (D.length < 200) return thin(D.length, 200);
@@ -1453,7 +1566,9 @@
       curve,
       b0: M.b[0],
       b1: M.b[1],
-      ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])])
+      ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])]),
+      wright: wrightOf(D, M, F),
+      res: resOf(D, M, F, seed)
     };
   }
 
@@ -3157,7 +3272,9 @@
     zOf,
     eigSym,
     cutK,
-    silhouette
+    silhouette,
+    wrightOf,
+    resOf
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ANALYSIS = api;

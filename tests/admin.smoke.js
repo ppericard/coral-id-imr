@@ -476,6 +476,24 @@ const WIDTHS = [390, 1280];
       if (!pr || pr.rows < 7 || pr.cells < 7 * pr.rows || !pr.links || !pr.tree || !pr.stab || !pr.map || pr.wide > 0 || !greyLast)
         fails.push(`${w}px Analyses player profiles: ${JSON.stringify(pr)}`);
     }
+    // The Wright map and the genus × player residuals (Learning › Practice): players and genera on one scale with their
+    // names, the second-skill biplot with its words; no sideways scroll
+    {
+      await go('~an-learn');
+      const wr = await p.evaluate(() => {
+        const W = document.getElementById('anc-players-and-genera-on-one-scale'),
+          S = document.getElementById('anc-a-second-skill');
+        return {
+          labels: W ? W.querySelectorAll('svg text.an-lab').length : 0,
+          dots: W ? W.querySelectorAll('svg circle.an-dot').length : 0,
+          skill: S ? S.querySelectorAll('svg circle.an-dot').length : 0,
+          words: S ? /skill/.test(S.querySelector('.adm-an-says-l').textContent) : false,
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (wr.labels < 20 || wr.dots < 5 || wr.skill < 10 || !wr.words || wr.wide > 0)
+        fails.push(`${w}px Analyses Wright map and second skill: ${JSON.stringify(wr)}`);
+    }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
     {

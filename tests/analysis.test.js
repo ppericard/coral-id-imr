@@ -1654,3 +1654,97 @@ test('profiles: a deleted account has no row', () => {
     r = A.profiles(A.prep(rows), 0, 1);
   assert.ok(!r.who.some(w => w.k === 'eve0') && r.players === 9, JSON.stringify(r.who.map(w => w.k)));
 });
+
+/* ---------- The Wright map and the genus × player residuals (structure views 3) ---------- */
+// Made-up players and genera with known abilities and difficulties; w: a planted second skill (odd-numbered players do
+// better on odd-numbered genera and worse on even ones, by w on the log-odds), 0 for one skill only.
+const skillLog = (w, seed) => {
+  const R = A.rng(seed),
+    nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
+    G = Array.from({length: 20}, (_, i) => 'G' + i),
+    del = G.map(() => nrm() * 0.8),
+    th = Array.from({length: 10}, () => nrm() * 0.6 + 0.8),
+    rows = [];
+  let t = 0;
+  for (let p = 0; p < 10; p++)
+    for (let i = 0; i < 600; i++) {
+      const gi = Math.floor(R() * 20),
+        g = G[gi],
+        eta = th[p] - del[gi] + w * (p % 2 ? 1 : -1) * (gi % 2 ? 1 : -1),
+        ok = R() < 0.25 + 0.75 / (1 + Math.exp(-eta)),
+        others = G.filter(x => x !== g).slice(0, 3);
+      rows.push(['p' + p, (t += 60e3), g, ok ? g : others[0], ok ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, [g, ...others].join(' '), 0, 5, 0]);
+    }
+  return {rows, del, th};
+};
+const rankCorr = (a, b) => {
+  const rk = L => {
+    const I = L.map((_, i) => i).sort((i, j) => L[i] - L[j]),
+      r = [];
+    I.forEach((i, k) => (r[i] = k));
+    return r;
+  };
+  const x = rk(a),
+    y = rk(b),
+    n = a.length,
+    m = (n - 1) / 2;
+  return x.reduce((s, v, i) => s + (v - m) * (y[i] - m), 0) / x.reduce((s, v) => s + (v - m) ** 2, 0);
+};
+
+test('Wright map: players and genera come back in the order of their planted ability and difficulty', () => {
+  const {rows, del, th} = skillLog(0, 2),
+    W = A.learning(A.prep(rows), 0, 1).wright;
+  const g = W.g.map(([k, d]) => [del[Number(k.slice(1))], d]),
+    p = W.th.map(([k, v]) => [th[Number(k.slice(1))], v]);
+  assert.ok(rankCorr(...[g.map(x => x[0]), g.map(x => x[1])]) > 0.9, 'genera');
+  assert.ok(rankCorr(...[p.map(x => x[0]), p.map(x => x[1])]) > 0.85, 'players');
+  near(W.m, Math.log(4), 1e-3, 'the 80% line, logit(0.8)');
+  W.th.forEach(x => assert.strictEqual(x[2], 600, 'answers per player'));
+});
+
+test('a second skill? planted: the first residual axis stands out and splits the genera; one skill: it does not', () => {
+  for (const seed of [1, 2, 3]) {
+    const one = A.learning(A.prep(skillLog(0, seed).rows), 0, 1).res;
+    assert.ok(one.var[0] <= one.null[1], `one skill (seed ${seed}): ${JSON.stringify(one.var)} against ${JSON.stringify(one.null)}`);
+    const two = A.learning(A.prep(skillLog(0.8, seed).rows), 0, 1).res;
+    assert.ok(two.var[0] > 2 * two.null[1], `two skills (seed ${seed}): ${JSON.stringify(two.var)} against ${JSON.stringify(two.null)}`);
+    const side = L => new Set(L.map(([k, x]) => (Number(k.slice(1)) % 2) + ':' + Math.sign(x))).size;
+    assert.strictEqual(side(two.g), 2, 'odd and even genera on opposite sides of the first axis');
+    assert.strictEqual(side(two.p), 2, 'odd and even players on opposite sides');
+    assert.strictEqual(two.g.length, 20);
+    assert.strictEqual(two.p.length, 10);
+  }
+});
+
+// Sheet v55 (Q86): a deleted account is never a player on the Wright map or an arrow of the residual map.
+test('Wright map and residuals: a deleted account is no player', () => {
+  const {rows} = skillLog(0, 2),
+    R2 = rows.map(r => (r[0] === 'p3' ? [...r.slice(0, 11), 2, ...r.slice(12)] : r)),
+    L = A.learning(A.prep(R2), 0, 1);
+  assert.ok(!L.wright.th.some(x => x[0] === 'p3') && L.wright.th.length === 9);
+  assert.ok(!L.res.p.some(x => x[0] === 'p3') && L.res.p.length === 9);
+});
+
+// Codex review #620: a place's likely range carries the intercept's and the slope's uncertainty, not the random effect's
+// alone.
+test('Wright map: each place’s uncertainty includes the fixed effects (intercept, slope, covariance)', () => {
+  const D = [0, 1, 2, 3].map(n => ({p: 'p', g: 'g', n, gone: 0})),
+    F = [
+      {L: ['p'], u: [0.2], cv: [0.01]},
+      {L: ['g'], u: [-0.3], cv: [0.04]}
+    ],
+    M = {
+      b: [0.5, 0.4],
+      V: [
+        [0.09, -0.01],
+        [-0.01, 0.0225]
+      ]
+    },
+    W = A.wrightOf(D, M, F),
+    l = Math.log(1 + 1.5), // the median practice of 0..3
+    fv = 0.09 + l * l * 0.0225 + 2 * l * -0.01;
+  near(W.th[0][3], Math.sqrt(fv + 0.01), 1e-3, 'player SE');
+  near(W.g[0][3], Math.sqrt(fv + 0.04), 1e-3, 'genus SE (the typical player is this one)');
+  near(W.mid, 0.5 + 0.4 * l, 1e-3, 'the typical player');
+  near(W.th[0][1], 0.5 + 0.4 * l + 0.2, 1e-3, 'player place');
+});

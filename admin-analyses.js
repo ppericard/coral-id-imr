@@ -461,6 +461,55 @@ function biplot(o) {
   return svg(S, S, o.title || 'Map', s);
 }
 
+// A Wright map (Wright & Stone 1979): one vertical scale, players on the left (dots and names), items on the right
+// (names with a leader line to their place), each side's labels pushed apart to stay readable (at least 14 px), a
+// dashed line at the typical player. Higher = more able (a player) or harder (an item). Vertical, so it reads on a phone.
+// o: {L: [{v, label, title}], R: [{v, label, star, title}], w, lab: [left side's name, right side's name], title}.
+function wright(o) {
+  const w = o.w || anW(),
+    L = o.L.filter(x => isFinite(x.v)),
+    R = o.R.filter(x => isFinite(x.v)),
+    n = Math.max(L.length, R.length),
+    top = 28,
+    H = Math.max(300, n * 15 + 20),
+    h = top + H + 24,
+    vs = [...L, ...R].map(x => x.v),
+    a = Math.min(...vs),
+    b = Math.max(...vs),
+    pad = (b - a) * 0.04 || 0.5,
+    Y = v => top + (1 - (v - a + pad) / (b - a + 2 * pad)) * H,
+    ax = Math.round(w * 0.42),
+    spread = (P, gap) => {
+      // push labels apart downwards, then back up from the bottom, so none leave the chart
+      const S = P.map((x, i) => ({i, y: Y(x.v)})).sort((p, q) => p.y - q.y);
+      S.forEach((p, k) => k && (p.y = Math.max(p.y, S[k - 1].y + gap)));
+      for (let k = S.length - 1; k >= 0; k--) p0(S, k, top + H, gap);
+      const out = [];
+      S.forEach(p => (out[p.i] = p.y));
+      return out;
+    },
+    p0 = (S, k, lim, gap) => (S[k].y = Math.min(S[k].y, k === S.length - 1 ? lim : S[k + 1].y - gap));
+  const yl = spread(L, 14),
+    yr = spread(R, 14),
+    med = q0(L.map(x => x.v));
+  let s = `<line class="an-grid" x1="${ax}" x2="${ax}" y1="${top}" y2="${top + H}"/>`;
+  s += `<text class="an-tick" x="${ax - 8}" y="14" text-anchor="end">${esc(o.lab[0])}</text><text class="an-tick" x="${ax + 8}" y="14">${esc(o.lab[1])}</text>`;
+  if (isFinite(med)) s += `<line class="an-zero" x1="10" x2="${w - 10}" y1="${Y(med)}" y2="${Y(med)}"/>`;
+  L.forEach((x, i) => {
+    const y = Y(x.v);
+    s += `<g><title>${esc(x.title || x.label)}</title><circle class="an-dot" cx="${ax - 10}" cy="${y}" r="4.5"/><path class="an-lead" d="M${ax - 16} ${y}L${ax - 26} ${yl[i]}"/><text class="an-lab" x="${ax - 30}" y="${yl[i] + 4}" text-anchor="end">${esc(fit(String(x.label), ax - 40))}</text></g>`;
+  });
+  R.forEach((x, i) => {
+    const y = Y(x.v);
+    s += `<g><title>${esc(x.title || x.label)}</title><path class="an-lead" d="M${ax} ${y}H${ax + 8}L${ax + 20} ${yr[i]}"/><text class="an-lab an-it" x="${ax + 24}" y="${yr[i] + 4}">${esc(fit(String(x.label) + (x.star ? ' ★' : ''), w - ax - 30))}</text></g>`;
+  });
+  return svg(w, h, o.title || 'One scale', s);
+}
+const q0 = L => {
+  const S = L.filter(v => isFinite(v)).sort((x, y) => x - y);
+  return S.length ? (S.length % 2 ? S[(S.length - 1) / 2] : (S[S.length / 2 - 1] + S[S.length / 2]) / 2) : NaN;
+};
+
 /* ---------- Page pieces ---------- */
 // Filters, sorting and folded cards (Pierre, 2026-11-04: "I can't scroll through everything"): remembered per page, in
 // this browser only (a viewer's convenience, AGENTS.md: browser storage never for shared state).
@@ -1189,6 +1238,107 @@ function anProfiles(a) {
   ];
 }
 
+// The Wright map (study §2.7, §5 item 3; analysis.js wrightOf): players and genera on the Learning model's one scale,
+// a genus level with a player = about 50% recognised beyond guessing; the ★ look-alikes marked; in words, the genera
+// beyond every player today and those every player recognises at 80% or more; a table of the exact places.
+function anWright(a) {
+  const W = a.wright;
+  if (!W || !W.th || !W.g || W.th.length < 2) return '';
+  const ids = W.th.map(x => x[0]),
+    nm = id => anWhoText(id, ids.indexOf(id)),
+    star = g => typeof starRefs === 'function' && typeof DATA !== 'undefined' && DATA && starRefs(DATA, g).length > 0,
+    hi = Math.max(...W.th.map(x => x[1])),
+    lo = Math.min(...W.th.map(x => x[1])),
+    beyond = W.g.filter(x => x[1] > hi).sort((p, q) => q[1] - p[1]),
+    easy = W.g.filter(x => x[1] < lo - W.m).sort((p, q) => p[1] - q[1]),
+    it = L => L.map(x => `<i>${esc(x[0])}</i>`).join(' · '),
+    // no signed number (#601): a player's place as the chance of recognising a typical genus beyond guessing, a genus's
+    // difficulty as the chance the typical player recognises it beyond guessing, each with its likely range
+    sg = v => 1 / (1 + Math.exp(-v)),
+    mid = W.mid != null ? W.mid : q0(W.th.map(x => x[1])),
+    pr = (v, se) => `${pc(sg(v))} <small class="adm-an-ci">(${pc(sg(v - 1.96 * se))}–${pc(sg(v + 1.96 * se))})</small>`,
+    pt = x => `a typical genus recognised ${pc(sg(x[1]))} of the time beyond guessing`,
+    gt = x => `recognised by the typical player ${pc(sg(mid - x[1]))} of the time beyond guessing`;
+  const chart = wright({
+    L: W.th.map(x => ({v: x[1], label: nm(x[0]), title: `${nm(x[0])}: ${pt(x)} (${anInt(x[2])} answers)`})),
+    R: W.g.map(x => ({v: x[1], label: x[0], star: star(x[0]), title: `${x[0]}: ${gt(x)} (${anInt(x[2])} answers)`})),
+    lab: ['Players ↑ more able', 'Genera ↑ harder'],
+    title: 'Players and genera on one scale: a genus level with a player is recognised about half the time beyond guessing'
+  });
+  const words = `<ul class="adm-an-says-l"><li>${beyond.length ? `Beyond every player today (under 50% beyond guessing for each): ${it(beyond)}.` : 'No genus is beyond every player today.'}</li><li>${easy.length ? `Recognised at 80% or more beyond guessing by every player: ${it(easy)}.` : 'No genus is recognised at 80% or more by every player yet.'}</li></ul>`;
+  const tab =
+    anTable(
+      ['Player', '#A typical genus recognised', '#Answers'],
+      W.th
+        .slice()
+        .sort((p, q) => q[1] - p[1])
+        .map(x => `<tr><td>${esc(nm(x[0]))}</td><td class="n">${pr(x[1], x[3])}</td><td class="n">${anInt(x[2])}</td></tr>`)
+    ) +
+    anTable(
+      ['Genus', '#Recognised by the typical player', '#Answers'],
+      W.g
+        .slice()
+        .sort((p, q) => q[1] - p[1])
+        .map(
+          x =>
+            `<tr><td><i>${esc(x[0])}</i>${star(x[0]) ? ' ★' : ''}</td><td class="n">${pr(mid - x[1], x[3])}</td><td class="n">${anInt(x[2])}</td></tr>`
+        ),
+      'tall'
+    );
+  return anCard('Players and genera on one scale', words + chart + tab, 'wide');
+}
+// A second skill? (study §2.4, §5 item 5; Pierre's Q77; analysis.js resOf): the genus × player residuals after the
+// Learning model as a biplot (genera as points, players as arrows), the first axis's share of the spread against the
+// same share in logs simulated from the model, in words; descriptive, no verdict; a table of the places.
+function anSkill(a) {
+  const S = a.res;
+  if (!S || !S.g) return '';
+  const ids = S.p.map(x => x[0]),
+    nm = id => anWhoText(id, ids.indexOf(id)),
+    side = (v, k) =>
+      v == null || !isFinite(v) ? '–' : `${Math.abs(v).toFixed(2)} ${k ? (v >= 0 ? 'up' : 'down') : v >= 0 ? 'right' : 'left'}`,
+    big = S.var[0] > S.null[1],
+    ends = (sg, k) =>
+      S.g
+        .filter(x => Math.sign(x[1]) === sg)
+        .sort((p, q) => sg * (q[1] - p[1]))
+        .slice(0, k)
+        .map(x => `<i>${esc(x[0])}</i>`)
+        .join(' · '),
+    far = new Set(
+      S.g
+        .map((x, i) => [i, Math.hypot(x[1], x[2])])
+        .sort((p, q) => q[1] - p[1])
+        .slice(0, anWide() ? 99 : 8)
+        .map(x => x[0])
+    ),
+    words = `<ul class="adm-an-says-l"><li>${
+      big
+        ? `A second skill may be there: the first axis carries ${pc(S.var[0])} of what the model leaves unexplained, more than in 95% of ${S.sims} logs simulated from the model (up to ${pc(S.null[1])}). At one end: ${ends(1, 5)}; at the other: ${ends(-1, 5)}.`
+        : `One skill explains it so far: the first axis carries ${pc(S.var[0])} of what the model leaves unexplained, as in logs simulated from the model (${pc(S.null[0])}, up to ${pc(S.null[1])} in 95% of ${S.sims}).`
+    }</li></ul>`;
+  const chart = biplot({
+    var: S.var,
+    pts: S.g.map((x, i) => ({x: x[1], y: x[2], label: x[0], lab: far.has(i), title: `${x[0]}: ${side(x[1], 0)}, ${side(x[2], 1)}`})),
+    arrows: S.p.map(x => ({x: x[1], y: x[2], label: nm(x[0]), title: `${nm(x[0])}: ${side(x[1], 0)}, ${side(x[2], 1)}`})),
+    title: 'What the model leaves unexplained: genera as points, players as arrows'
+  });
+  const tab =
+    anTable(
+      ['Genus', '#Axis 1', '#Axis 2'],
+      S.g
+        .slice()
+        .sort((p, q) => q[1] - p[1])
+        .map(x => `<tr><td><i>${esc(x[0])}</i></td><td class="n">${side(x[1], 0)}</td><td class="n">${side(x[2], 1)}</td></tr>`),
+      'tall'
+    ) +
+    anTable(
+      ['Player', '#Axis 1', '#Axis 2'],
+      S.p.map(x => `<tr><td>${esc(nm(x[0]))}</td><td class="n">${side(x[1], 0)}</td><td class="n">${side(x[2], 1)}</td></tr>`)
+    );
+  return anCard('A second skill?', words + chart + tab, 'wide', anWide() ? undefined : false);
+}
+
 /* ---------- Views ---------- */
 // The Overview (Pierre, 2026-11-04: "very visual"): every result as a bar, one chart per outcome (a right answer, the time
 // to answer, ending a session, mixing up genera, the app's own estimate), sorted as the page asks, coloured by verdict, the
@@ -1480,6 +1630,8 @@ const ANV = {
     )
   ],
   learn: a => [
+    anWright(a),
+    anSkill(a),
     anCard(
       'Right answers with practice on the genus',
       lines(
