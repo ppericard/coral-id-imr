@@ -41,13 +41,17 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
 - Curation: curation.json "fish" (written by the admin only, never here; its full shape is the admin plan's PR 4): add
   {f: 1}, seen {f: 1} (rejected), exclude {f: reason}, out {f: species id or "x"}. The top-level "exclude" (corals) is honoured too, by iNaturalist photo id.
 - Pre-sort: suggest.json "fish" (tools/judging_fish.py, judging/FISH.md "Candidates").
+- Reference photos (Pierre, 2026-11-05): --rep tags each candidate whose photo is its taxon's iNaturalist cover (the
+  taxon's default photo, what iNaturalist shows to represent the species) with rep: "inaturalist" (judging/FISH.md
+  "Reference photos": its ease gets a bonus), 30 taxa a request, and refills nothing; run it after a refill. FishBase
+  candidates (via: "fishbase", tools/fetch_fishbase.py) carry their own tag.
 
 Network: iNaturalist API v2 (only the fields used), read only, a pause of PAUSE s between calls, generic User-Agent.
 Every reply is cached, trimmed, in tools/.cache/fish_photos.json (git-ignored): a rerun is offline and gives the same
 file; --refresh asks again (new observations), --offline never asks (fails on a reply not cached), --plan prints as JSON
 what a run would add per species and source, from the cache only, and writes nothing.
 
-    python3 tools/fetch_fish.py [--circle 1] [--cap 20] [--only s091,t05] [--refresh | --offline | --plan]
+    python3 tools/fetch_fish.py [--circle 1] [--cap 20] [--only s091,t05] [--refresh | --offline | --plan] [--rep]
 Tests: node --test tests/fishphotos.test.js (offline fixtures).
 """
 import argparse
@@ -67,6 +71,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line, as cand.json
 
 API = "https://api.inaturalist.org/v2/observations?"
+TAXA = "https://api.inaturalist.org/v2/taxa/"
 FIELDS = ("id,quality_grade,location,place_ids,taxon.id,taxon.name,taxon.rank,user.login,photos.id,photos.url,"
           "photos.license_code,photos.attribution,annotations.controlled_attribute_id,annotations.controlled_value_id,"
           "annotations.vote_score")
@@ -160,7 +165,11 @@ class Net:
         self.asked, self.new, self.missing = set(), 0, 0
 
     def get(self, q):
-        url = API + q + "&fields=" + FIELDS
+        return self.fetch(API + q + "&fields=" + FIELDS,
+                          lambda d: {"total": d.get("total_results", 0), "results": [trim(o) for o in d.get("results") or []]})
+
+    def fetch(self, url, keep):
+        """The reply to url, kept as keep(reply) in the cache (asked again with --refresh, never with --offline)."""
         if url in self.c and not (self.refresh and url not in self.asked):
             return self.c[url]
         if self.plan:
@@ -175,11 +184,11 @@ class Net:
                     d = json.load(r)
                 break
             except (OSError, ValueError) as e:  # URLError, a reset connection, a timeout, bad JSON: retried
-                print(f"  retry {q[:80]} ({e})", file=sys.stderr)
+                print(f"  retry {url[:120]} ({e})", file=sys.stderr)
                 time.sleep(10 * (k + 1))
         else:
             raise RuntimeError(f"failed: {url}")
-        v = {"total": d.get("total_results", 0), "results": [trim(o) for o in d.get("results") or []]}
+        v = keep(d)
         self.c[url] = v
         self.asked.add(url)
         self.new += 1
@@ -278,6 +287,33 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
     return taken
 
 
+def covers(net, taxa):
+    """{iNaturalist taxon id: the photo id of its default photo (the taxon's cover), or None when it has none}, for the
+    taxa iNaturalist answered (a taxon missing from the result is unknown: a --plan run, a reply not cached); 30 taxa a
+    request (rule 6f)."""
+    out, taxa = {}, sorted(set(taxa))
+    for i in range(0, len(taxa), 30):
+        url = TAXA + ",".join(map(str, taxa[i:i + 30])) + "?fields=id,default_photo.id&per_page=30"
+        d = net.fetch(url, lambda d: {str(t["id"]): (t.get("default_photo") or {}).get("id") for t in d.get("results") or []})
+        out.update({int(k): v for k, v in (d or {}).items()})
+    return out
+
+
+def tag_rep(L, cover):
+    """Tags the candidates of one species whose photo is the iNaturalist cover of its taxon (rep: "inaturalist"), and
+    untags one that no longer is; a FishBase candidate (via) keeps its own tag. Returns the number tagged."""
+    n = 0
+    for p in L:
+        if p.get("via"):
+            continue
+        if cover and pid(p["f"]) == str(cover):
+            p["rep"] = "inaturalist"
+            n += 1
+        else:
+            p.pop("rep", None)
+    return n
+
+
 def pid(f):
     """iNaturalist photo id of a candidate file name (the number after the last '-'), as tools/excluded.py pid."""
     s = str(f).rsplit("-", 1)[-1].rstrip("cd")
@@ -345,6 +381,22 @@ def run(args):
     only = set(filter(None, (args.only or "").split(",")))
     used = {pid(p["f"]) for L in have.values() for p in L} - {None}
     plan, report = {}, {}
+    if args.rep:
+        # Reference photos (Pierre, 2026-11-05): tag the candidates that are their taxon's iNaturalist cover, no refill.
+        S = species_list(fish, set(args.circle), only)
+        try:
+            cov = covers(net, [s["inat"] for s, _ in S])
+        finally:
+            net.save()
+        # Only the species whose cover is known: an unknown one keeps its tags (Codex review #562).
+        n = sum(tag_rep(have.get(s["id"], []), cov[s["inat"]]) for s, _ in S if s["inat"] in cov)
+        if args.plan:
+            print(json.dumps({"missing": net.missing, "covers": len(cov), "tagged": n}))
+            return {"covers": len(cov), "tagged": n}
+        order = [s["id"] for s in fish["species"]]
+        dump({"v": 1, "cand": {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}}, str(cand_path))
+        print(f"iNaturalist covers: {sum(1 for v in cov.values() if v)} of {len(S)} taxa; {n} candidates are their taxon's cover (rep)")
+        return {"covers": len(cov), "tagged": n}
     try:
         for s, t in species_list(fish, set(args.circle), only):
             sid = s["id"]
@@ -423,6 +475,7 @@ def main(argv=None):
     m.add_argument("--refresh", action="store_true", help="ask iNaturalist again")
     m.add_argument("--offline", action="store_true", help="never ask iNaturalist (fail on a reply not cached)")
     m.add_argument("--plan", action="store_true", help="print what a run would add, from the cache only; write nothing")
+    a.add_argument("--rep", action="store_true", help="only tag the candidates that are their taxon's iNaturalist cover (rep)")
     a.add_argument("--fish", default=str(ROOT / "fish.json"))
     a.add_argument("--cand", default=str(ROOT / "fish-cand.json"))
     a.add_argument("--cur", default=str(ROOT / "curation.json"))

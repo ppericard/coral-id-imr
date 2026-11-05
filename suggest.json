@@ -3472,6 +3472,13 @@
     "at": "2026-11-04",
     "n": 29
    }
+  },
+  "s238": {
+   "fish": {
+    "by": "claude",
+    "at": "2026-11-05",
+    "n": 4
+   }
   }
  },
  "photo": {},
@@ -20658,8 +20665,8 @@
    "k": "best"
   },
   "fish-s026-cand-425906642": {
-   "jt": "o1g0sl1",
-   "e": 4,
+   "jt": "o1g0sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s026-cand-485456218": {
@@ -22839,8 +22846,8 @@
    "k": "best"
   },
   "fish-s042-cand-38233918": {
-   "jt": "o1d1sl1",
-   "e": 3,
+   "jt": "o1d1sl1r",
+   "e": 4,
    "k": "best"
   },
   "fish-s042-cand-38233930": {
@@ -25659,7 +25666,7 @@
    "k": "best"
   },
   "fish-s064-cand-65535896": {
-   "jt": "p1g0sl1",
+   "jt": "p1g0sl1r",
    "e": 5,
    "k": "best"
   },
@@ -30479,8 +30486,8 @@
    "k": "alt"
   },
   "fish-s102-cand-15519294": {
-   "jt": "p1g1sm1",
-   "e": 4,
+   "jt": "p1g1sm1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s102-cand-15519297": {
@@ -30644,8 +30651,8 @@
    "k": "best"
   },
   "fish-s104-cand-425079810": {
-   "jt": "p1g1ss1",
-   "e": 2,
+   "jt": "p1g1ss1r",
+   "e": 3,
    "k": "best"
   },
   "fish-s104-cand-425080615": {
@@ -34008,8 +34015,8 @@
    "k": "best"
   },
   "fish-s131-cand-24048650": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s131-cand-24150906": {
@@ -36081,7 +36088,7 @@
    "k": "best"
   },
   "fish-s147-cand-60304924": {
-   "jt": "p1n0sl1",
+   "jt": "p1n0sl1r",
    "e": 3,
    "k": "best"
   },
@@ -46808,8 +46815,8 @@
    "k": "dup"
   },
   "fish-s229-cand-935034": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s230-cand-150626996": {
@@ -47078,8 +47085,8 @@
    "k": "best"
   },
   "fish-s231-cand-93919888": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s231-cand-93919909": {
@@ -47844,6 +47851,30 @@
    "jt": "p1g1sl1",
    "e": 4,
    "k": "best"
+  },
+  "fish-s238-cand-fb-Hachl_f0": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "fish-s238-cand-fb-Hachl_m0": {
+   "jt": "p1g0sl1r",
+   "e": 5,
+   "k": "best"
+  },
+  "fish-s238-cand-fb-Hachl_m1": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "fish-s238-cand-fb-Hachl_u0": {
+   "jt": "p1g0sl1j",
+   "e": 2,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Small (5.5 cm TL), dark ocelli along the dorsal fin: perhaps a juvenile or initial phase; FishBase says unsexed."
   },
   "fish-s239-cand-284794240": {
    "jt": "p1g1sm1",
@@ -48735,8 +48766,8 @@
    "k": "best"
   },
   "fish-s246-cand-19529610": {
-   "jt": "o1g1sl1",
-   "e": 3,
+   "jt": "o1g1sl1r",
+   "e": 4,
    "k": "best"
   },
   "fish-s246-cand-220567056": {
@@ -49569,8 +49600,8 @@
    "k": "best"
   },
   "fish-s253-cand-102461948": {
-   "jt": "p1g0sl1",
-   "e": 4,
+   "jt": "p1g0sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s253-cand-102466447": {
@@ -54017,8 +54048,8 @@
    "k": "best"
   },
   "fish-s287-cand-428780286": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s287-cand-437955003": {
@@ -54132,8 +54163,8 @@
    "k": "best"
   },
   "fish-s289-cand-19744250": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s289-cand-20657157": {
@@ -54802,8 +54833,8 @@
    "k": "best"
   },
   "fish-s294-cand-33053262": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s294-cand-387733129": {
@@ -55007,8 +55038,8 @@
    "k": "best"
   },
   "fish-s296-cand-158143597": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s296-cand-176794": {
@@ -55537,8 +55568,8 @@
    "k": "dup"
   },
   "fish-s299-cand-43301830": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s299-cand-447120221": {
@@ -56167,8 +56198,8 @@
    "k": "best"
   },
   "fish-s305-cand-256665007": {
-   "jt": "p1d1sl1",
-   "e": 3,
+   "jt": "p1d1sl1r",
+   "e": 4,
    "k": "best"
   },
   "fish-s305-cand-262260363": {
@@ -61279,8 +61310,8 @@
    "k": "best"
   },
   "fish-s356-cand-96591078": {
-   "jt": "p1g1sl1",
-   "e": 4,
+   "jt": "p1g1sl1r",
+   "e": 5,
    "k": "best"
   },
   "fish-s357-cand-290235219": {
@@ -69332,7 +69363,7 @@
    "k": "dup"
   },
   "fish-s409-cand-56319197": {
-   "jt": "p1n0sl1",
+   "jt": "p1n0sl1r",
    "e": 3,
    "k": "best"
   },
@@ -70767,7 +70798,7 @@
    "k": "best"
   },
   "fish-s421-cand-350280218": {
-   "jt": "p1n0sm1",
+   "jt": "p1n0sm1r",
    "e": 3,
    "k": "best"
   },
@@ -70866,8 +70897,8 @@
    "k": "dup"
   },
   "fish-s422-cand-28383319": {
-   "jt": "o1g1sm1c",
-   "e": 2,
+   "jt": "o1g1sm1cr",
+   "e": 3,
    "k": "best"
   },
   "fish-s422-cand-328000205": {
@@ -71359,8 +71390,8 @@
    "k": "dup"
   },
   "fish-s425-cand-258071975": {
-   "jt": "o1g1sm1",
-   "e": 3,
+   "jt": "o1g1sm1r",
+   "e": 4,
    "k": "best"
   },
   "fish-s425-cand-288698454": {
@@ -71449,8 +71480,8 @@
    "k": "best"
   },
   "fish-s426-cand-1388973": {
-   "jt": "o1g1sl1",
-   "e": 3,
+   "jt": "o1g1sl1r",
+   "e": 4,
    "k": "best"
   },
   "fish-s426-cand-216999637": {
@@ -73843,7 +73874,7 @@
    "k": "best"
   },
   "fish-s445-cand-12685163": {
-   "jt": "o0g1sl1",
+   "jt": "o0g1sl1r",
    "e": 3,
    "k": "best"
   },
@@ -74152,7 +74183,7 @@
    "k": "dup"
   },
   "fish-s446-cand-73521761": {
-   "jt": "h0g1sl1",
+   "jt": "h0g1sl1r",
    "e": 3,
    "k": "best"
   },
@@ -74262,7 +74293,7 @@
    "k": "best"
   },
   "fish-s447-cand-454361556": {
-   "jt": "o1n0sl1",
+   "jt": "o1n0sl1r",
    "e": 3,
    "k": "best"
   },
@@ -74327,7 +74358,7 @@
    "k": "best"
   },
   "fish-s448-cand-110739050": {
-   "jt": "o0n0sl1",
+   "jt": "o0n0sl1r",
    "e": 3,
    "k": "best"
   },
@@ -75691,7 +75722,7 @@
    "k": "dup"
   },
   "fish-s457-cand-257440704": {
-   "jt": "o0g1sm1",
+   "jt": "o0g1sm1r",
    "e": 3,
    "k": "best"
   },

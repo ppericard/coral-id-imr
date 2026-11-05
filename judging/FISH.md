@@ -46,6 +46,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **out of water** (a fish on a net, in a hand, dead) |
 | | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
+| | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
 | last | **ease** | 1 to 5, below |
 
 ## Ease: how easy for a beginner who has just seen the family's card
@@ -98,6 +99,18 @@ or its species is in the entry's `early` list; every other juvenile keeps the ca
 
 The B and look-alike caps stay after the bootstrap (those juveniles come late, with an explanation card); the C and
 no-source caps go with it (ROADMAP). The juvenile tag stays on every photo.
+
+## Reference photos
+
+Pierre, 2026-11-05: a photo that a reference source uses to represent the species (FishBase's main picture of the
+species, iNaturalist's taxon cover) represents it well: such photos are easy to identify, so they should come early in
+the quiz for a beginner, and they suit the sheets. The data tags them (`rep`: `"fishbase"` or `"inaturalist"`, on
+`fish-cand.json` candidates and `fish-photos.json` sheet photos; `tools/fetch_fishbase.py`, `tools/fetch_fish.py --rep`).
+The judge never types anything for it and still judges the photo on what it shows; the tool adds the flag `r` and
+**one ease point** (`tools/fish_judge.py` `REP_BONUS`, at most 5), **before the caps**: a juvenile reference photo stays
+at most 2, a head-on one at most 3. So a medium reference photo (3) joins an entry's very easy photos (4-5) and a very
+easy one is more often the card's cover. `python3 tools/judging_fish.py rep` re-applies the flag to the judged
+candidates after a new tag. Where the source is FishBase, the photo page (`o`) gives the author and the licence.
 
 ## A proposed crop
 

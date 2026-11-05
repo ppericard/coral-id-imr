@@ -86,7 +86,8 @@
   // - best or alt with its tags and ease: added (Poor-looking photos too: they stand in for SVS video frames; the ease
   //   says how hard, it is never a reason to set one aside).
   // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
-  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcap]*$/;
+  // The flags after the seven tags: j c a typed by the judge, p (phase) and r (a reference photo, its `rep`) added by the tool.
+  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$/;
   function fishSure(j) {
     if (!j || (j.u && j.u.length)) return null;
     if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
