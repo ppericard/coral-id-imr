@@ -19,8 +19,8 @@ let t = 0;
 const row = (id, ok, ph = 'f1') => [id, t++, 'Favia', ok ? 'Favia' : 'Favites', ok ? 1 : 0, 'quiz', ph];
 const of = (R, f = 'f1') => photoAnswers(R)[f];
 
-test('the thresholds: 3 players, 2 of them and a majority under 50%, under 40% right overall', () => {
-  assert.deepStrictEqual([HEALTH.PL_MIN, HEALTH.PL_MISS, HEALTH.PL_LOW, HEALTH.PH_LOW], [3, 2, 0.5, 0.4]);
+test('the thresholds: 3 players, 2 of them and a majority under 50%, 5 answers, under 40% right overall', () => {
+  assert.deepStrictEqual([HEALTH.PL_MIN, HEALTH.PL_MISS, HEALTH.PL_LOW, HEALTH.PH_MIN, HEALTH.PH_LOW], [3, 2, 0.5, 5, 0.4]);
 });
 
 test('photoAnswers: each answer once for every photo it showed, per player', () => {
@@ -56,6 +56,21 @@ test('three players mostly missing it: listed', () => {
   assert.strictEqual(everyoneMisses(o), true, '1 right in 5');
 });
 
+test('three players with one answer each is too little evidence (integrator, on the real log, 2026-11-05)', () => {
+  // 2 misses in 3 answers happen by chance at the game's ~80% target: 9 of the 12 photos the player rule alone listed.
+  const o = of([row('a', 0), row('b', 0), row('c', 1)]);
+  assert.deepStrictEqual(missedBy(o), {pl: 3, miss: 2});
+  assert.strictEqual(manyMiss(o), true);
+  assert.strictEqual(everyoneMisses(o), false, '3 players, 3 answers');
+  // Four answers still not enough; at five (and every player wrong) it is listed, like the 0/6 photos of the real log.
+  assert.strictEqual(everyoneMisses(of([row('a', 0), row('a', 0), row('b', 0), row('c', 0)])), false, '4 answers');
+  assert.strictEqual(
+    everyoneMisses(of([row('a', 0), row('a', 0), row('b', 0), row('b', 0), row('c', 0), row('c', 0)])),
+    true,
+    '0/6, 3 players'
+  );
+});
+
 test('a majority of players, and the overall share under 40%, are both needed', () => {
   // 2 of 4 players miss it: not a majority.
   const half = of([row('a', 0), row('b', 0), row('c', 1), row('d', 1)]);
@@ -72,7 +87,7 @@ test('healthBad, the session summary and the demo all use the one rule', () => {
   assert.match(bad, /photoAnswers\(R,/);
   assert.match(bad, /manyMiss\(o\)/);
   assert.match(bad, /everyoneMisses\(o\)/);
-  assert.doesNotMatch(bad, /o\.n >= H\.PH_MIN/, 'the old answer-count gate');
+  assert.doesNotMatch(bad, /o\.n >= H\.PH_MIN/, 'the answer minimum lives in everyoneMisses');
   assert.match(read('admin-journey.js'), /hardAll = ofAns\('hardAll', \(\) => new Set\(healthBad\(/);
   const demo = read('admin-demo.js');
   assert.match(demo, /everyoneMisses\(tally\(/);

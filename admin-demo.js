@@ -380,7 +380,7 @@
     more.forEach((r, i) => rows.push([...r.slice(0, 7), 'demoz' + i, ...r.slice(7, 11), r[12], r[13]]));
     // Photos everyone misses in the session Carla is playing now (Activity's session summary labels them "hard for
     // everyone", Health lists them; admin.js everyoneMisses, the one rule: 3 players or more answered it, most of them
-    // miss it, under 40% right over all its answers). Each question she missed there is also missed by enough earlier
+    // miss it, under 40% right over 5 answers or more). Each question she missed there is also missed by enough earlier
     // answers of the devices not signed in, several distinct players, for its photos to pass that rule, counted on every
     // answer now in the log (taken from those devices' own answers, so the answer count and the sessions stay the same;
     // every photo of the question, so whichever the summary shows carries the label; never the last 8 answers of
