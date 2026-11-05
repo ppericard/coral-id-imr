@@ -11,7 +11,8 @@ Pierre's standing rules on photos: sources, views, what games may show, credits.
 iNaturalist observers and Coral Finder book photos only to fill gaps.** Covers and the first 3 ("featured") photos per
 view: IMR before Pierre's. IMR photos are never auto-rated Poor and never auto-excluded. Exception: the Coral ID Key
 mixes sources on purpose for variety.
-- **Corals only, with a caveat**: IMR lecture photos stay preferred for corals (few alternatives), but their provenance
+- **Corals only, with a caveat**: IMR lecture photos keep a slight priority for corals (many are hard to find elsewhere
+  and they are already curated), but their provenance
   is uncertain: many are not IMR's own (from iNaturalist or the web without a proper source); trace them and credit or
   replace where the rights are unclear (ROADMAP). **Fish never use IMR slide photos** (most are not IMR's own, likely
   from ID books; photos with known rights abound); diagrams and figures are our own drawings.
@@ -24,7 +25,9 @@ mixes sources on purpose for variety.
   does not); abroad stays Research Grade and the presence rule C8 (`tools/fetch_local.py` `LIC`, `EXPERTS`;
   ARCHITECTURE.md "Share-alike coral photos").
 
-*Why (inferred):* the IMR course is the reference (rule C1); photos with clear rights where they abound.
+*Why:* for corals, many IMR lecture photos are hard to find elsewhere and are already curated (good quality), hence a
+slight priority; for fish, the IMR slides' photos were taken from elsewhere, while well-sourced photos with clear rights
+abound.
 *Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568).
 
 ### P2
@@ -43,7 +46,7 @@ ones for variety; Pierre can switch them off site-wide (admin, curation `book: f
 photos** (since #227) and count in admin Coverage › Games. "Poor" means identifiable but low visual quality
 (ReefCloud-like): Poor photos are in games, last in each view's list, and the players' answers rate how hard each one is
 (the hand-made Easy / Medium / Hard sets went on 2026-11-03); unidentifiable photos are excluded, not rated Poor.
-*Why (inferred):* a game question must have one right answer; the book's photos are copyrighted.
+*Why:* a game question must have one right answer; the book's photos are copyrighted.
 *Source:* Pierre, by 2026-11-01.
 
 ### P4

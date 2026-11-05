@@ -20,16 +20,19 @@ to the sheet yet. Fish winks (surprise cards, never counted) come for every fish
 
 ### S2
 
-**Fish names: the name shown and expected is the EventMeasure / IMR reference PDF name** (EventMeasure's fixed pick
-list may lag WoRMS); the WoRMS accepted name is an indication beside it, and both are accepted when typed. A likely slip
-in the PDF is kept and flagged for Pierre, never corrected (rule C1). **Pierre's own iNaturalist observations
+**Fish names: the IMR / EventMeasure reference PDF is a good reference, not an exhaustive one** (a hand-picked list of
+species expected at Dauin, which may hold errors or names changed since; EventMeasure's fixed pick list may lag WoRMS).
+For a species it lists, show its name with the WoRMS accepted name beside it, both accepted when typed; a species it does
+not list uses the WoRMS name. A likely slip or an outdated name is flagged to Pierre (the admin's points list,
+`points.json`, rule C5), never silently corrected (rule C1). **Pierre's own iNaturalist observations
 (`ppericard`), two halves**: *photos*: his photos identified to the species stay usable as photos of that species even
 when Needs ID (his only: he names a species only when nearly sure, otherwise he stops at the genus or the family);
 *presence*: they no longer confirm on their own that a species is present, in the Philippines or near Dauin (rule C8:
 he is one observer like anyone, Research Grade only); a species seen only as Needs ID near Dauin is "not confirmed near
 Dauin", never "never seen". ARCHITECTURE.md "Fish content".
-*Why (inferred):* the RAs label with EventMeasure's names; one presence rule for everyone (rule C8).
-*Source:* Pierre, 2026-11-03 (names), 2026-11-04 (his observations).
+*Why:* the PDF is the RAs' reference at Dauin but only a selection, and names change; one presence rule for everyone
+(rule C8).
+*Source:* Pierre, 2026-11-03 (names), 2026-11-04 (his observations), 2026-11-05 (the PDF not exhaustive).
 
 ### S3
 

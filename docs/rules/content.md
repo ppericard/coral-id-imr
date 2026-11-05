@@ -23,12 +23,13 @@ Coral Finder 2022 categories/boxes, the 7 IMR growth forms, or a mix. Every clue
 
 ### C3
 
-**IMR lecture cues are the most important content.** Two levels: the **ID tip** (`gen[g].qt`, from
-`tools/id_tips.txt`) is SHORT, 2-3 essentials, shown everywhere (quiz feedback, cards, ID tips view, comparisons) in a
-highlighted box; the full lecture cues (`gen[g].imr`, incl. review slides and presenter notes) appear only on the genus
-sheet under "IMR lecture notes".
-*Why (inferred):* the RAs are trained on the IMR course; the short tip is what they use at a glance.
-*Source:* Pierre, by 2026-11-01.
+**An ID tip is short, simple and understandable by everyone, whatever its source** (IMR or another one): one tip or
+a few essentials. The tips are what the app puts forward: the **ID tip** (`gen[g].qt`, from `tools/id_tips.txt`) is
+shown everywhere (quiz feedback, cards, ID tips view, comparisons) in a highlighted box. The technical, descriptive
+detail of what separates a genus from another goes on the genus sheet: there the full lecture cues (`gen[g].imr`, incl.
+review slides and presenter notes) appear under "IMR lecture notes".
+*Why:* tips had once turned into scientific manuals; a tip must work at a glance for anyone.
+*Source:* Pierre, by 2026-11-01; what a tip is, 2026-11-05.
 
 ### C4
 
@@ -68,7 +69,7 @@ batch many ids or taxa into one request instead of many small ones (`id=1,2,3`, 
 `observations/species_counts` on a family rather than one call per species); always send a User-Agent naming the app.
 Retry a 429 or a 5xx after a pause, never in a tight loop: `tools/fetch_local.py` paces and retries (#481); a new tool
 does the same. A review of every iNaturalist tool for batching is in ROADMAP.
-*Why (inferred):* the app depends on iNaturalist's goodwill and open data. *Source:* Pierre, 2026-11-04.
+*Why:* the app depends on iNaturalist's goodwill and open data. *Source:* Pierre, 2026-11-04.
 
 ### C8
 

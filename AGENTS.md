@@ -128,7 +128,7 @@ context go in the PR description, never in the rule.
 **Content** ([docs/rules/content.md](docs/rules/content.md))
 - **C1** Never contradict or "correct" the IMR course.
 - **C2** Never invent categories or information; every clue carries its source.
-- **C3** IMR lecture cues are the most important content.
+- **C3** An ID tip is short and simple for anyone; technical detail goes on the sheet.
 - **C4** Growth form is an entry point only: rank, never filter or group genera by it.
 - **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
 - **C6** ID cues and their doubts cite only species present at Dauin or in the Philippines.
@@ -137,7 +137,7 @@ context go in the PR description, never in the rule.
 - **C9** The coral tools stay standalone (not ReefRecall).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** Photo priority: IMR lecture, Pierre's own, then others.
+- **P1** Photo priority: IMR lecture (corals only), Pierre's own, then others.
 - **P2** Three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
 - **P3** No several-corals or Coral Finder book photo in games.
 - **P4** All photos of one question come from one observation.
@@ -177,7 +177,7 @@ context go in the PR description, never in the rule.
 - **U14** Players can report a problem from every game.
 
 **Admin** ([docs/rules/admin.md](docs/rules/admin.md))
-- **A1** Never change `curation.json` automatically or in a PR; only the admin's Publish.
+- **A1** Never change `curation.json` automatically or in a PR; an agent may propose a change.
 - **A2** The admin is minimal: no text on the page, one click with Undo, confirm only bulk.
 - **A3** The top level stays short: a new page goes into an existing tab or group first.
 - **A4** One Corals | Fish switch covers every admin page.
@@ -185,7 +185,7 @@ context go in the PR description, never in the rule.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
 - **S1** One engine, never naming a subject.
-- **S2** Fish names are the IMR PDF's; Pierre's Needs ID confirms nothing.
+- **S2** Fish names: the IMR PDF's with WoRMS beside; Pierre's Needs ID confirms nothing.
 - **S3** Fish groups come from the regional identification key.
 
 **Sheet and data** ([docs/rules/sheet.md](docs/rules/sheet.md))
