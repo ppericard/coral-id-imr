@@ -952,7 +952,7 @@ const WIDTHS = [390, 1280];
       }
     }
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
-    // points.json, the Astrea question first among the open ones; its page shows the question and its 4 photo slots
+    // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
     // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
     // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
@@ -996,11 +996,11 @@ const WIDTHS = [390, 1280];
       if (
         g0.hash !== '#~point/astrea-reefcloud' ||
         !/ReefCloud label/.test(g0.q) ||
-        g0.slots !== 4 ||
-        g0.imgs !== 4 ||
-        g0.nums !== '1,2,3,4' ||
+        g0.slots !== 7 ||
+        g0.imgs !== 7 ||
+        g0.nums !== '1,2,3,4,5,6,7' ||
         g0.names ||
-        g0.answers !== 4 ||
+        g0.answers !== 7 ||
         !g0.notes ||
         g0.acts.join() !== 'Resolved,Stand-by,Dismiss' ||
         !/^To do/.test(g0.tab) ||
@@ -1008,7 +1008,7 @@ const WIDTHS = [390, 1280];
       )
         fails.push(`${w}px Points: the Astrea page ${JSON.stringify(g0)}`);
       if (g0.wide > 0) fails.push(`${w}px Points: the Astrea page ${g0.wide} px wider than the window`);
-      // The enlarged photo: blind (number and credit, no taxon), ‹ › through the 4.
+      // The enlarged photo: blind (number and credit, no taxon), ‹ › through the 7.
       await p.click('[data-ptz="1"]');
       const lb = await p.evaluate(() => {
         const c = () => (document.querySelector('#lightbox .lb-cap') || {}).textContent || '';
