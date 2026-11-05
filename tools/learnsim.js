@@ -161,7 +161,12 @@ const PROFILES = {
   // full speed, and a genus never answered starts from their high global level (2026-11-04, the run of 2026-11-03 that
   // fell from 83% to 50% right after 7 genera opened in 16 answers). Not in the default list: run it with --profiles
   // strongBack --questions 60 --breaks 8h --after 40 (that player came back from an 8-hour break).
-  strongBack: {m: 4, hi: 0.9, lo: 0.1, rate: 0.12}
+  strongBack: {m: 4, hi: 0.9, lo: 0.1, rate: 0.12},
+  // A spotty player (2026-11-06, Pierre on #611: "a trainer who knows the Acroporidae but not the Merulinidae"): knows the
+  // genera of some IMR lecture groups as an expert does (hi) and the others hardly (lo), by family rather than by slate
+  // position, so a rule that borrows from the global level is checked on the genera it does not know. grp: the lecture
+  // groups known (app learn.js shownGroup: a starred genus in the group of its look-alikes).
+  spotty: {grp: [1, 2, 3, 4, 5], hi: 0.93, lo: 0.05, rate: 0.08}
 };
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
@@ -195,6 +200,11 @@ const arg = (k, d) => {
   return i > 0 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : d;
 };
 const SEEDS = Number(arg('seeds', 5)),
+  // --seed0 N: seeds N+1 to N+SEEDS (a confirmation on fresh seeds after a selection on 1-SEEDS).
+  SEED0 = Number(arg('seed0', 0)),
+  // --sheetv N: the sync script version the app last saw (default 1000: every gate on). With --sheetv 55 the field rule
+  // (core.js COVER_SHEET 56) is off: today's rules on the same code, for paired comparisons.
+  SHEETV = Number(arg('sheetv', 1000)),
   QN = Number(arg('questions', 300)),
   NAMES = arg('profiles', 'beginner,lectureRA,strongRA,expert').split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
@@ -322,7 +332,7 @@ function play(cfg) {
   const SL = slateGenera(),
     TRACE = 80,
     know = {};
-  SL.forEach((g, i) => (know[g] = i % 5 < prof.m ? prof.hi : prof.lo));
+  SL.forEach((g, i) => (know[g] = (prof.grp ? prof.grp.includes(shownGroup(g)) : i % 5 < prof.m) ? prof.hi : prof.lo));
   BONUS.forEach(g => (know[g] = prof.lo));
   const kn = g => know[g] ?? prof.lo;
   const teach = (g, x) => {
@@ -622,7 +632,11 @@ function play(cfg) {
       openHi: mean(hi.map(g => po[g])),
       selBar: sel ? mean(sel.map(genScore)) : null,
       selOpen: sel ? mean(sel.map(g => po[g])) : null,
-      selOver: sel ? over(sel) : null
+      selOver: sel ? over(sel) : null,
+      // Per genus (2026-11-06, for the over of a group of genera: those the profile knows, the custom selection): the
+      // truth pOpen and the bar shown, the genera met only.
+      po: Object.fromEntries(met.map(g => [g, Math.round(po[g] * 1000) / 1000])),
+      gs: Object.fromEntries(met.map(g => [g, Math.round(genScore(g) * 1000) / 1000]))
     };
   };
   let cur = 'quiz';
@@ -835,6 +849,7 @@ function play(cfg) {
     });
   }
   return {
+    known: SL.filter(g => k0[g] >= 0.5), // the genera the profile knows from the start (the spotty profile's groups)
     rows,
     entry,
     learnedAt,
@@ -866,11 +881,11 @@ async function run(browser, base, name, seed) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  await ctx.addInitScript(([st, rtapp]) => {
+  await ctx.addInitScript(([st, rtapp, sv]) => {
     localStorage.setItem('reefid-tour', '"done"');
     // The sync script version the app last saw (sync.js sheetV): one that replays the answer time (core.js RT_SHEET), so
     // the app weighs its steps by it; --rtapp off: an older one.
-    if (rtapp) localStorage.setItem('reefid-sheet-v', '1000');
+    if (rtapp) localStorage.setItem('reefid-sheet-v', String(sv));
     localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     if (st)
       localStorage.setItem(
@@ -884,7 +899,7 @@ async function run(browser, base, name, seed) {
           ...(st.gd ? {gd: st.gd} : {})
         })
       );
-  }, [STATS_JSON, RTAPP]);
+  }, [STATS_JSON, RTAPP, SHEETV]);
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));
@@ -1211,7 +1226,7 @@ function openTable(runs) {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const browser = await chromium.launch();
   const jobs = [];
-  for (let s = 1; s <= SEEDS; s++) for (const name of NAMES) jobs.push([name, s]);
+  for (let s = SEED0 + 1; s <= SEED0 + SEEDS; s++) for (const name of NAMES) jobs.push([name, s]);
   const runs = [];
   let done = 0;
   await Promise.all(
@@ -1338,6 +1353,8 @@ function openTable(runs) {
             }
           })(),
           seeds: SEEDS,
+          seed0: SEED0,
+          sheetv: SHEETV,
           questions: QN,
           checkpoints: CPS,
           profiles: Object.fromEntries(NAMES.map(n => [n, PROFILES[n]])),
