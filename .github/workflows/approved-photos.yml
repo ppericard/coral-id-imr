@@ -17,7 +17,12 @@ jobs:
   photos:
     runs-on: ubuntu-26.04
     steps:
+      # The latest main, not the commit that started the run: a run queued behind another (two Publishes in a row, the
+      # concurrency group above) must start from that run's commit, or its own commit conflicts with it on data.json
+      # and is lost (2026-11-06: the second Publish's exclusions never reached data.json and cand.json).
       - uses: actions/checkout@v7
+        with:
+          ref: main
       # Python pinned, not the image's own python3 (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest stable (rule W9),
       # the same in every workflow. Pillow pinned in tools/requirements.txt.
       - uses: actions/setup-python@v7
@@ -44,15 +49,16 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ vars.R2_BUCKET }}
-      # data.json keeps only the candidates curation.json uses, cand.json the others (tests/photos.test.js): a Publish
-      # that picks or drops candidates moves them, so the split runs before the commit (2026-11-06: a Publish left
-      # 8 picked candidates in cand.json and every PR's checks failed).
-      - run: python tools/datajson.py --split
+      # Offline, last before the commit: the photos Pierre restored back from excluded.json, the ones he excluded out of
+      # every list (kept in excluded.json), no share-alike candidate waiting, and the candidates split (data.json keeps
+      # those curation.json uses, cand.json the others). fetch_local.py ends with the same step; this one also covers
+      # whatever ran after it (tests/coralcand.test.js, tests/photos.test.js).
+      - run: python tools/fetch_local.py --tidy
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json cand.json img
+          git add data.json cand.json excluded.json img
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: download added ones, refill the lists"
           git pull --rebase origin main

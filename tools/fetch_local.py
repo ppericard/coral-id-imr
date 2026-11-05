@@ -33,10 +33,13 @@
 # by tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
 # --plan: offline, prints as JSON what a run would refill (new observations it may add per genus and source, and a
 # Key-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
+# --tidy: offline, refills nothing: only puts back the photos Pierre restored, drops the excluded photos and the waiting
+# share-alike candidates, and re-splits data.json / cand.json (tidy(), which every refill ends with), so the lists follow
+# a Publish without asking iNaturalist.
 import json, re, sys, time, urllib.error, urllib.request
 from collections import Counter
 from datajson import load_all, dump_all, curated  # data.json + cand.json (candidates waiting live in cand.json)
-from excluded import excluded, drop_excluded, set_aside, SUG
+from excluded import excluded, drop_excluded, restore_unexcluded, load_gone, save_gone, set_aside, SUG
 from genera import key_only, cap_sheet
 from presence import confirmed_species  # the presence rule, defined once
 from taxonomy import inat_taxon  # the iNaturalist taxon of each genus, from tools/taxonomy.json
@@ -231,11 +234,35 @@ def room(cap, waiting_here, need=None, waiting_all=0):
     return r if need is None else min(r, need - waiting_all)
 
 
+def tidy(d, gone=None):
+    """Brings the photo lists in line with curation.json, offline: puts back the photos Pierre restored (un-excluded in
+    admin Genera › Excluded) from excluded.json, drops the photos he excluded (tools/excluded.py drop_excluded: from every
+    list, candidates included, each kept in excluded.json; the auto-sort's exclusions keep their candidate entry, for its
+    Undo), then the waiting share-alike candidates. dump_all then splits the candidates: data.json keeps those
+    curation.json uses, cand.json the others. Every refill ends with it; --tidy runs it alone. gone: excluded.json
+    "photos" (read and written here when not given)."""
+    own = gone is None
+    if own: gone = load_gone()
+    back = restore_unexcluded(d, gone)
+    if back: print('restored (no longer excluded):', ', '.join(back))
+    drop_excluded(d, gone)  # first, so an excluded share-alike candidate is kept too: restored and added, it comes back
+    sa = drop_share_alike(d, curated())
+    if sa: print('share-alike candidates dropped:', len(sa))
+    if own: save_gone(gone)
+    return d
+
+
 def main():
     DAUIN_CAP_, PH_CAP_ = flag('--dauin', DAUIN_CAP), flag('--ph', PH_CAP)
     PH_ALL = '--ph-all' in sys.argv
     PLAN = '--plan' in sys.argv
     d = load_all()
+    if '--tidy' in sys.argv:
+        # Offline, no iNaturalist: the Candidate photos workflow runs it last, before its commit, so a Publish with
+        # exclusions or un-added candidates leaves data.json and cand.json consistent (2026-11-06).
+        dump_all(tidy(d))
+        print('photo lists tidied')
+        return
     # The Coral Finder's extra genera (data.json x, tools/build_extra.py) get candidates too.
     GEN = {**d['gen'], **((d.get('x') or {}).get('gen') or {})}
     KEY_ONLY = set(key_only(d))
@@ -244,6 +271,8 @@ def main():
     usedp = {re.sub(r'\D', '', p['f'].split('-')[-1]) for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
     cand = d.get("cand") or {}
     usedp |= {p['f'].split('-')[-1] for L in cand.values() for p in L}
+    # A photo Pierre restored comes back under its own name at the end (tidy), never as a new candidate.
+    usedp |= {re.sub(r'\D', '', f.split('-')[-1]) for f in load_gone()}
     # Pierre's decisions on candidates (curation.json): added, rejected (seen 'cand:f'), sent to another genus, excluded.
     CUR = json.load(open('curation.json'))
     ADDED = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('add') or {})}
@@ -330,11 +359,9 @@ def main():
         if g in cand and not cand[g]: del cand[g]
         print(g, len(cand.get(g, [])))
     d['cand'] = cand
-    gone = drop_share_alike(d, curated())
-    if gone: print('share-alike candidates dropped:', len(gone))
-    drop_excluded(d)
+    tidy(d)
     dump_all(d)
-    print('total', sum(map(len, cand.values())))
+    print('total', sum(map(len, d.get('cand', {}).values())))
 
 
 if __name__ == '__main__':

@@ -21,18 +21,68 @@ def set_aside(f):
     return (j.get('g') in ('exclude', 'cmp') or j.get('k') == 'dup' or bool(j.get('m')) or j.get('q') == 1) and not j.get('u')
 def excluded(f=None, photo_id=None):
     return f in EX or (photo_id is not None and str(photo_id) in IDS) or (f is not None and pid(f) in IDS)
-def drop_excluded(d):
+# What a Pierre exclusion removed (drop_excluded), kept so that his Restore (admin Genera › Excluded) brings it back
+# (restore_unexcluded; Pierre, 2026-11-06: an un-excluded photo must return by itself). excluded.json = {"photos": {f:
+# {"in": "gen" | "x" | "course" | "cand" | "cmp", "g": genus, "k": "views" | "more", "v": view, "i": index, "p": record}}},
+# written by tools/fetch_local.py tidy() (the Candidate photos workflow). Seeded from git history by
+# tools/apply_excluded_archive.py for the photos removed before it existed.
+GONE_PATH = f'{R}/excluded.json'
+
+
+def _lists(d):
+    """Every photo list of data.json with where it is: (place, list)."""
+    for where, G in (('gen', d.get('gen') or {}), ('x', (d.get('x') or {}).get('gen') or {})):
+        for g, x in G.items():
+            for k in ('views', 'more'):
+                for v, L in (x.get(k) or {}).items(): yield {'in': where, 'g': g, 'k': k, 'v': v}, L
+    for k in ('course', 'cand'):
+        for g, L in (d.get(k) or {}).items(): yield {'in': k, 'g': g}, L
+    if 'cmp' in d: yield {'in': 'cmp'}, d['cmp']
+
+
+def drop_excluded(d, gone=None):
     """Removes excluded photos from every photo list in data.json (views, more, course, cand, cmp). A candidate the
     auto-sort excluded (reason 'auto', admin.js autoRun) keeps its entry in the candidate lists (cand.json, which players
     never download): Pierre can undo each auto decision one by one (rule A1), and its Undo brings the candidate
     back only if its genus, source URL and credit are still there (Codex review #400). Excluded, it is never shown nor
-    counted as waiting (admin.js rawCands, fetch_local.py waiting)."""
-    keep = lambda L: [p for p in L if not excluded(p.get('f'))]
-    keep_cand = lambda L: [p for p in L if not excluded(p.get('f')) or EX.get(p.get('f')) == 'auto']
-    for g in [*d.get('gen', {}).values(), *((d.get('x') or {}).get('gen') or {}).values()]:
-        for k in ('views', 'more'):
-            for v, L in (g.get(k) or {}).items(): g[k][v] = keep(L)
-    for k in ('course', 'cand'):
-        for g, L in (d.get(k) or {}).items(): d[k][g] = (keep_cand if k == 'cand' else keep)(L)
-    if 'cmp' in d: d['cmp'] = keep(d['cmp'])
+    counted as waiting (admin.js rawCands, fetch_local.py waiting). gone (excluded.json "photos"): each record removed is
+    kept there with its place, for restore_unexcluded."""
+    for at, L in list(_lists(d)):
+        out = [p for p in L if excluded(p.get('f')) and not (at['in'] == 'cand' and EX.get(p.get('f')) == 'auto')]
+        if not out: continue
+        if gone is not None:
+            for p in out: gone[p['f']] = {**at, 'i': L.index(p), 'p': p}
+        L[:] = [p for p in L if p not in out]
     return d
+
+
+def restore_unexcluded(d, gone):
+    """Puts back, at its place, every photo of gone (excluded.json "photos") that curation.json no longer excludes (Pierre's
+    Restore), and forgets it. A genus or view gone since is recreated; a photo already back is only forgotten. Returns
+    the photo ids restored."""
+    have = {p.get('f') for _, L in _lists(d) for p in L}
+    back = []
+    for f, r in sorted(gone.items(), key=lambda x: x[1].get('i', 0)):
+        if excluded(f): continue
+        del gone[f]
+        if f in have: continue
+        w = r['in']
+        if w in ('gen', 'x'):
+            G = d['gen'] if w == 'gen' else d.setdefault('x', {}).setdefault('gen', {})
+            if r['g'] not in G: continue  # the genus left data.json: nothing to put it back into
+            L = G[r['g']].setdefault(r['k'], {}).setdefault(r['v'], [])
+        elif w == 'cmp': L = d.setdefault('cmp', [])
+        else: L = d.setdefault(w, {}).setdefault(r['g'], [])
+        L.insert(min(r.get('i', len(L)), len(L)), r['p'])
+        back.append(f)
+    return back
+
+
+def load_gone(path=None):
+    try: return json.load(open(path or GONE_PATH, encoding='utf-8')).get('photos') or {}
+    except (OSError, ValueError): return {}
+
+
+def save_gone(gone, path=None):
+    from datajson import dump  # one photo per line (datajson SPLIT)
+    dump({'photos': dict(sorted(gone.items()))}, path or GONE_PATH)
