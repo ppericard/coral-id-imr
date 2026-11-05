@@ -1208,7 +1208,7 @@ const twoTone = n => COVER_UI.two && !!fieldNow() && fieldNow().set.has(n) && !(
 function pctRing(n) {
   const pc = Math.round(100 * genScore(n)),
     pm = twoTone(n) ? Math.max(pc, Math.round(100 * pgScore(n))) : pc;
-  return `<small class="pct" style="--p:${pc}%${pm > pc ? `;--pm:${pm}%` : ''}"${pm > pc ? ` title="${pc}%, ${pm}% among the ${SUBJ.many} you've met"` : ''}>${pc}%</small>`;
+  return `<small class="pct" style="--p:${pc}%${pm > pc ? `;--pm:${pm}%;--pr:10%` : ''}"${pm > pc ? ` title="${pc}%, ${pm}% among the ${SUBJ.many} you've met"` : ''}>${pc}%</small>`;
 }
 // "N of M genera": the slate genera a genus is proven against, a pair counted from a level of 1/2 (core.js pairLevel).
 const provenOf = n => {
