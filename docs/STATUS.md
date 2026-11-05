@@ -60,6 +60,7 @@ Actions only Pierre can do.
 
 - **Show the Astrea question to an IMR trainer** from the admin (To do › Points, first item) and Publish the answers.
 - **Sort the photos out of the presence rule** (To do › Out of the presence rule: Remove / Keep) and, when convenient, the 14 share-alike coral photos (To do › Share-alike).
+- **More photos for the genera with the fewest** (photo memory: in a thin genus players learn the photos, not the genus; Pierre, 2026-11-03): [admin Coverage › Games › Thinnest](https://ppericard.github.io/coral-id-imr/admin.html#~cov) lists them.
 - **Protect `main` on GitHub**: [HANDOVER "Protect main"](HANDOVER.md#protect-main-one-time-setup).
 - **Create the secret `ANALYSES_ADMIN_TOKEN`** (the admin's Analyses report computes itself once it exists):
   [HANDOVER "Analyses report"](HANDOVER.md#analyses-report-one-time-setup-2026-11-04).
