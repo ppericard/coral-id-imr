@@ -1,14 +1,15 @@
 # Handover: picking up IMR Reef ID in a new Claude account
 
-Written 2026-11-01 when Pierre moved development to another Claude Code account; **state of play updated 2026-11-04** (the next two sections). If you pick the project up cold, read "Where things are" and "State of play" first. Until then the project ran in a Claude "project" with a shared memory, many parallel threads and private claude.ai docs. **None of that is reachable from the new account.** Everything that mattered has been copied into this repository; this file is the map.
+Written 2026-11-01 when Pierre moved development to another Claude Code account. If you pick the project up cold, read "Where things are" below, then [`STATUS.md`](STATUS.md): where things stand now. Until then the project ran in a Claude "project" with a shared memory, many parallel threads and private claude.ai docs. **None of that is reachable from the new account.** Everything that mattered has been copied into this repository; this file is the map.
 
 ## Read in this order (15 minutes)
 
 1. [`AGENTS.md`](../AGENTS.md): who the app is for, Pierre's standing rules (do not break them), how to ship a change.
-2. This file: state of play, what Pierre still has to do, how to work with him, where external things live.
-3. [`ROADMAP.md`](ROADMAP.md): the prioritised backlog, open questions, declined ideas.
-4. [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`DESIGN.md`](DESIGN.md) when you touch code or UI.
-5. [`reviews/`](reviews/README.md): the last expert reviews (code, admin, first-time RA, design) with what is still open.
+2. This file: how to work with Pierre, where external things live, the one-time setups.
+3. [`STATUS.md`](STATUS.md): where things stand (tracks in flight, the integrator's queue), the open questions for Pierre, what only he can do. `python3 tools/brief.py` adds what can be computed (open PRs, branches without a PR, the sheet script's version).
+4. [`ROADMAP.md`](ROADMAP.md): the prioritised backlog, long-standing content questions, declined ideas.
+5. [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`DESIGN.md`](DESIGN.md) when you touch code or UI.
+6. [`reviews/`](reviews/README.md): the last expert reviews (code, admin, first-time RA, design) with what is still open.
 
 ## Where things are (for a newcomer)
 
@@ -23,50 +24,16 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account;
 | Photos | `data.json` photo lists, `curation.json` (Pierre's choices), `img/` mirrored to Cloudflare R2 (`core.js` `PHOTO_BASE`), the tools in `tools/` (ARCHITECTURE.md "Photos") |
 | Tests and CI | `tests/*.test.js` (Node), `tests/*.smoke.js` (Playwright, one CI job each), `.github/workflows/checks.yml`; AGENTS.md "How to make a change" 2b |
 | Deploy | `.github/workflows/pages.yml` (stamps the version numbers, then publishes), [`PAGES.md`](PAGES.md) |
-| What is next, what was declined | [`ROADMAP.md`](ROADMAP.md); where yesterday stopped: [`EVENING.md`](EVENING.md) |
+| Where things stand, what waits on Pierre | [`STATUS.md`](STATUS.md) (the integrator's only); `python3 tools/brief.py` |
+| What is next, what was declined | [`ROADMAP.md`](ROADMAP.md) |
 
-## State of play (2026-11-04, evening)
+## State of play
 
-**Start with [`EVENING.md`](EVENING.md) "Where the night stopped"**: the open PRs, their order and the questions for Pierre.
+In [`STATUS.md`](STATUS.md), written by the integrator only; the history is in `git log` and the PR descriptions.
 
+## Pending actions for Pierre
 
-- **The app** is IMR Reef ID, live at <https://ppericard.github.io/coral-id-imr/>, used by Pierre and a first group of beta RAs, mostly on phones. About 500 PRs merged since 2026-10-31.
-- **Subjects**: corals (the 40-genus slate with *Millepora*, plus 5 opt-in bonus genera) for everyone; **fish in beta, the admin's only** (`app.js` `subjOpen`: switched on Home and with the header's subject chip, the admin's only; 27 IMR survey families, iNaturalist photos for now; the path to build is [`FISH_PATH.md`](FISH_PATH.md); fish answers are not logged to the sheet yet). One engine for both (AGENTS.md 13b).
-- **Learning**: one progression path for every game (AGENTS.md 6d: the photo quiz opens genera; the Duel tab, Memory, the custom quiz and the Tools' games draw only from the genera unlocked, `model.js` `unlocked()`); a first-launch question that sets variables, never a path (14h); learned = the silent mastery exam (14e); every player's progress is replayed from the whole answer log by the sheet whenever a progress rule changes (rules versions, `core.js` `RVS`; How to make a change 14).
-- **The sheet** (`tools/sync/Code.gs`): **VERSION 45** live on `main` (v44 added each answer's UTC offset; its one-shot filled +480 into the 1,494 older rows); open PRs reserve v46 (#526), v47 (#538), v48 (#540); it updates itself within about 15 minutes of a merge that raises `VERSION` (`autoUpdate`), and its **Deploy log** tab lists every install and every one-shot data migration (`ONCE_`, run once by the new script itself).
-- **Version numbers are stamped at deploy** (#499): no PR edits `?v=`, `LAB_V` or the `sw.js` cache name; `pages.yml` stamps content hashes and the build number (How to make a change 3). The sheet's `VERSION` stays manual.
-- **Presence of a species** (AGENTS.md 6e): Research Grade by 3 observers in the Philippines, or 1 plus an independent checklist, or confirmed near Dauin; cues and their doubts come only from species found here. #496 (merged) applies it to Pierre's own observations too, and to the fish (29 IMR-PDF species entered the game).
-- **The admin plan** "Admin for every subject" (ROADMAP): one admin for corals and fish in twelve small PRs; PR 1 (#463) and PR 4 (#479) are merged, PR 2 (#492) is merged; admin speed #493 and #494 merged; the Analyses group (#495 plain words, #500 Sessions, #502 charts) merged; Players › Activity over time (#501) merged; #535 (page roles, the rest) open.
-- **Agents**: since 2026-11-05 one Claude Code session is the integrator: it starts subagents (each its own branch and PR) and merges under the merge contract (AGENTS.md "Working mode"); the workflow, resource and review rules are in AGENTS.md, How to make a change 16-17 (worktrees, one smoke at a time, the Codex review loop).
-- **Watching**: the `net.smoke.js` step-9 hang (ROADMAP, open investigation): #513 did not end it; #531 (open) bounds every Cache Storage wait.
-- **Night work** (AGENTS.md Rule 0, 2026-11-04): agents keep working without Pierre on decided work and never solicit him; anything with a choice of his stays on its branch.
-
-## State of play at the account switch (2026-11-01)
-
-- The app was renamed **IMR Reef ID** (approved by Pierre on 2026-11-03, shipped 2026-11-04) (IMR Coral ID before; Pierre: corals now, fish and benthos next), internal names with it (storage keys `reefid-`, sheet v33 reads both key names; ARCHITECTURE.md "Names, storage keys and caches"). The address, the repository name, the Google Sheet "IMR Coral ID – RA progress" and the Cloud project "IMR Coral ID sync" kept their names; the address and repository move later with a migration for players (ROADMAP "Domain and repository rename"). <!-- rename-app: keep -->
-- Live app: <https://ppericard.github.io/coral-id-imr/> (GitHub Pages from `main`). Admin: <https://ppericard.github.io/coral-id-imr/admin.html>.
-- About 287 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
-- No open pull requests at handover time.
-- Tests: `node --test tests/*.test.js`, `node tests/pages.smoke.js`, `node tests/draw.smoke.js` and `node tests/admin.smoke.js` (Playwright). CI: `.github/workflows/checks.yml`.
-- Progress sync script `tools/sync/Code.gs`: **v10 is live** (deployed by Pierre and verified 2026-11-01 08:10 UTC).
-- Users: Pierre, and soon beta testers: last month's Research Assistants (RAs) and his next 6 RAs. Most use phones.
-- A full docs-vs-code pass was done for this handover (previous one at PR #245).
-
-### Last features before the handover
-
-- **Confusion scores** (PR #286, merged 2026-11-01): every quiz answer logs the choices offered (Code.gs v10, deployed and verified 2026-11-01); a confusion score per genus pair corrected for how often the pair was offered (official IMR / Coral Finder look-alikes only seed it; real player answers then decide); quiz traps picked by confusion score; admin "Confusions" view. Confusion data starts filling as soon as signed-in players answer; until there is enough, traps use the declared look-alikes.
-- **Personalised path** (approved by Pierre, built 2026-11-01 after the handover): each player's own mix-ups bring those traps and duels back more often; My progress "Often mixed up" ranks them. A suggestion on the Practice page is still open (ROADMAP).
-
-## Pending actions for Pierre (things only he can do)
-
-| What | Where / how |
-|---|---|
-| Review the debatable lecture points and the Stylophora wording (he planned to review the course on Mon 2026-11-02). | ROADMAP "Waiting on Pierre". Any change becomes a discreet note, never a correction. |
-| Confirm Merulina's placement (shown with Hydnophora, lecture group 7; alternative group 5). | ROADMAP. |
-| Say which Lab tools he marked Keep / Trim (votes live only in his browser). | ROADMAP. |
-| Send the app to the beta RAs; renew the admin GitHub token before it expires (fine-grained, 90-day expiry, created around 2026-10-31, so about late January 2027). | Admin lock screen has the token link. |
-| Create the secret `ANALYSES_ADMIN_TOKEN` so the Analyses report computes itself (2026-11-04). | Below, "Analyses report". |
-| Clean merged branches (Pierre, 2026-11-04: they hide the ones that never got a PR, AGENTS 26b): turn on Settings > General > Pull Requests > "Automatically delete head branches" for the future, and for the ~130 already merged run Actions > **Prune merged branches** (`prune-branches.yml`) once with "dry_run" ticked (it lists), then unticked (it deletes). It deletes only branches whose PR was merged and that got nothing after the merge; a deleted branch can be restored from its PR page. Agents cannot delete branches from their sessions (the git proxy refuses). | GitHub Settings; Actions. |
+In [`STATUS.md`](STATUS.md) "Pierre's hands"; the steps of the one-time setups are below ("Protect main", "Clean merged branches", "Analyses report").
 
 ## Questions for an IMR trainer
 
@@ -130,7 +97,7 @@ Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Mari
 | What | Where |
 |---|---|
 | IMR reference material (Lecture 6 PPTX, slate photo) | Pierre's Google Drive, IMR folder `1gt0sv2YN4Og7-O_YCb3cVgvW94-CK6oG` (needs his Google sign-in). |
-| Lecture 6 as Google Slides (read with the Slides API, incl. presenter notes) | Slides id `13msDDkJzPN6fRam-ezX_vl93osAd0Cw4rJ1aINOzveI`. Full-resolution deck media: Drive folder `1FDXDg3XvjXwML0KGxxtjMjVq2fU3jP8i`. |
+| Lecture 6 as Google Slides (read with the Slides API, incl. presenter notes) | Slides id `13msDDkJzPN6fRam-ezX_vl93osAd0Cw4rJ1aINOzveI`. Full-resolution deck media: Drive folder `1FDXDg3XvjXwML0KGxxtjMjVq2fU3jP8i`. **Full-resolution IMR photos** (Pierre, 2026-11-05): search the unzipped deck `2026_L6_CoralID/ppt/media` on his Drive, never the Slides, which were compressed on purpose. |
 | Lecture text in the app | `data.json` `gen[g].imr` (verbatim slide text, review slides, presenter notes), `mn` mnemonics, `sl`/`rsl` slide numbers, `tools/lecture_more.tsv`, `tools/course_views.txt`. |
 | Coral Finder 2022 (R. Kelley, BYOGUIDES; copyrighted) | PDF on Pierre's Google Drive, in the IMR / coral folder (85 scanned pages, no text layer; PDF page = book page + 5). Never commit it or its page images (copyright). Page mapping already in `data.json` (`pages`, `key`, `x`). |
 | Pierre's iNaturalist | user `ppericard`, coral taxon 47532; covers 36 of the 39 slate genera (missing Anacropora, Astrea, Duncanopsammia at the time). |
@@ -155,12 +122,12 @@ that teaches the IMR coral genera to Research Assistants at the Institute for Ma
 Dauin, Philippines. Previous work happened in another Claude account; you have no access to its
 memory or chats. Everything you need is in the repo.
 
-1. Read AGENTS.md, then docs/HANDOVER.md, then docs/ROADMAP.md. Skim docs/ARCHITECTURE.md and
+1. Read AGENTS.md, then docs/HANDOVER.md, then docs/STATUS.md, then docs/ROADMAP.md. Skim docs/ARCHITECTURE.md and
    docs/DESIGN.md. Follow the standing rules in AGENTS.md strictly.
 2. Run the tests (node --test tests/*.test.js) and serve the app locally (python3 -m http.server)
    to check that main works.
 3. Reply to me in French with: (a) a 5-line summary of where the project stands, (b) what I
-   still have to do myself (from HANDOVER "Pending actions"), (c) the top 3 backlog items you
+   still have to do myself (from docs/STATUS.md "Pierre's hands"), (c) the top 3 backlog items you
    propose to start with. Do not start coding until I answer.
 
 Working rules: answer me in French, write everything else in English; you are the integrator
@@ -181,3 +148,18 @@ The admin's **Analyses** group shows a report that a GitHub Action computes from
 
 If the log says the token was refused: the token has expired or lost access to the repository (make a new one, step 1, and replace the secret). "The sync script answers as v…: needs v35": the sheet script has not updated itself yet (about 15 minutes after a merge; its "Deploy log" tab says).
 
+## Protect main (one-time setup)
+
+GitHub does not enforce the merge rules by itself (governance review, 2026-11-05). Pierre, about 2 minutes:
+
+1. The repository > **Settings > General > Pull Requests**: keep only **Allow squash merging** (untick merge commits and rebase merging), so every merge is a squash titled `… (#N)`.
+2. **Settings > Rules > Rulesets > New ruleset > New branch ruleset**: name `main`, Enforcement status **Active**, Target branches > Add target > **Include default branch**; under Rules tick only **Restrict deletions** and **Block force pushes**; Create.
+
+Required checks are deliberately not set: they would block the admin's Publish and the Candidate photos Action, which push straight to `main`. The planned history rewrite (ROADMAP "Photos out of the repo") will need "Block force pushes" switched off for its one push, with Pierre's go.
+
+## Clean merged branches (one-time setup)
+
+Merged branches hide the ones that never got a PR (Pierre, 2026-11-04, AGENTS.md 26b). Agents cannot delete branches from their sessions (the git proxy refuses), so Pierre:
+
+1. Settings > General > Pull Requests > tick **Automatically delete head branches**, for the future.
+2. For the ~130 already merged: Actions > **Prune merged branches** (`prune-branches.yml`) > Run workflow once with "dry_run" ticked (it lists), then unticked (it deletes). It deletes only branches whose PR was merged and that got nothing after the merge; a deleted branch can be restored from its PR page.

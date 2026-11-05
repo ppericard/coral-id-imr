@@ -191,8 +191,8 @@ way on rubric 5, the small fish looked at again on a 10 x 10 grid for 48 crops. 
 very easy photo: the morays, snake eels, garden eels and jawfishes live with most of their body in a hole (partial, at
 most 3), the frogfishes, scorpionfishes, stonefishes and seamoths are camouflaged, the rays and seamoths are mostly seen
 from above, the sharks in blue water; seven entries have no photo at 4 or 5 and take their 3 easiest at the start
-(`model.js` `easyFirst`). The rubric was applied as written (no family exception): a question for Pierre in
-docs/EVENING.md.
+(`model.js` `easyFirst`). The rubric was applied as written (no family exception): a question for Pierre, put to
+him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md).
 
 ## A temporary use
 

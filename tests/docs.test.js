@@ -32,3 +32,136 @@ test('the docs never tell a PR to bump version numbers by hand', () => {
   for (const f of ['docs/ARCHITECTURE.md', 'AGENTS.md', 'README.md', 'docs/HANDOVER.md'])
     assert.ok(!/check_versions\.py --fix|--no-base|`--fix` bumps|so bump `\?v=`/.test(read(f)), f + ': a manual version bump');
 });
+
+// Governance refonte PR B (Pierre, 2026-11-05): docs/STATUS.md is the one place for where things stand, written by the
+// integrator only and overwritten, never appended, so it must stay short; it replaced the evening log, whose name must not
+// come back anywhere (the archive and the copied reviews are history and keep their words).
+const STATUS = read('docs/STATUS.md');
+
+test('docs/STATUS.md exists, has its sections and stays within its budget', () => {
+  const lines = STATUS.split('\n').length;
+  assert.ok(lines <= 100, 'docs/STATUS.md has ' + lines + ' lines: at most about 100 (overwrite it, never append)');
+  assert.match(STATUS, /^Last checked: reports and events: .+$/m, 'docs/STATUS.md: the "Last checked: reports and events" line');
+  for (const h of ['Now', 'Next', 'Questions for Pierre', "Pierre's hands", 'Parked after hours', 'Last stop'])
+    assert.ok(new RegExp('^## ' + h + '$', 'm').test(STATUS), 'docs/STATUS.md: section "## ' + h + '" missing');
+});
+
+test('question numbers never go back: the last number covers every open question', () => {
+  const m = /Last question number: Q(\d+)/.exec(STATUS);
+  assert.ok(m, 'docs/STATUS.md: the line "Last question number: Qn" is missing');
+  const sec = /^## Questions for Pierre\n([\s\S]*?)(?=^## )/m.exec(STATUS)[1];
+  for (const q of sec.matchAll(/^- \*\*Q(\d+)/gm))
+    assert.ok(Number(q[1]) <= Number(m[1]), 'Q' + q[1] + ' is above the last question number Q' + m[1]);
+});
+
+test('no reference to the retired evening log', () => {
+  const name = 'EVENING' + '.md';
+  assert.ok(!fs.existsSync(path.join(ROOT, 'docs', name)), 'docs/' + name + ' was retired: docs/STATUS.md replaces it');
+  const skip = new Set(['.git', 'img', 'node_modules', 'worktrees', 'archive', 'reviews']);
+  const bad = [];
+  const walk = dir => {
+    for (const e of fs.readdirSync(dir, {withFileTypes: true})) {
+      if (skip.has(e.name)) continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.(md|js|py|gs|html|css|yml|sh|txt)$/.test(e.name) || p.endsWith(path.join('.claude', 'settings.json')))
+        if (fs.readFileSync(p, 'utf8').includes(name)) bad.push(path.relative(ROOT, p));
+    }
+  };
+  walk(ROOT);
+  assert.deepStrictEqual(bad, [], 'files still naming the evening log (now docs/STATUS.md)');
+});
+
+// tools/brief.py --time is the UserPromptSubmit hook: it must answer at once and never need the network.
+test('tools/brief.py --time runs offline and names the Rule 0 window', () => {
+  const {execFileSync} = require('child_process');
+  const env = {...process.env, HTTPS_PROXY: 'http://127.0.0.1:9', https_proxy: 'http://127.0.0.1:9', GH_TOKEN: ''};
+  const run = (...a) => execFileSync('python3', [path.join(ROOT, 'tools/brief.py'), '--time', ...a], {env, timeout: 5000}).toString();
+  const out = run();
+  assert.match(out, /^Manila \w{3} \d\d \w{3} \d\d:\d\d · (night|day|closing|quiet): .+\n$/, out);
+  const at = t => / · (\w+):/.exec(run('--at', t))[1];
+  assert.deepStrictEqual(['07:59', '08:00', '16:29', '16:30', '17:29', '17:30', '23:59'].map(at), [
+    'night',
+    'day',
+    'day',
+    'closing',
+    'closing',
+    'quiet',
+    'quiet'
+  ]);
+});
+
+// Codex review #561: a cancelled or stale check never succeeded, so the brief must not call the PR green.
+test('tools/brief.py calls a PR green only when every check succeeded', () => {
+  const {execFileSync} = require('child_process');
+  const sum = runs =>
+    execFileSync(
+      'python3',
+      [
+        '-B',
+        '-c',
+        'import json,sys; sys.path.insert(0, "tools"); import brief; print(brief.summarise(json.loads(sys.argv[1])))',
+        JSON.stringify(runs)
+      ],
+      {cwd: ROOT}
+    )
+      .toString()
+      .trim();
+  const done = c => ({status: 'completed', conclusion: c});
+  assert.strictEqual(sum([done('success'), done('skipped'), done('neutral')]), 'green');
+  assert.strictEqual(sum([]), 'no checks');
+  assert.match(sum([done('success'), done('failure')]), /^FAILING 1\/2/);
+  assert.match(sum([done('success'), {status: 'in_progress', conclusion: null}]), /^running 1\/2/);
+  assert.match(sum([done('success'), done('cancelled')]), /^NOT GREEN 1\/2/);
+  assert.match(sum([done('success'), done('stale')]), /^NOT GREEN 1\/2/);
+});
+
+// Codex security review #561: a hook runs at every session start and prompt, so it must not run code from whatever
+// branch is checked out: it runs main's reviewed copy (git show origin/main:tools/brief.py), in isolated mode (-I: no
+// module planted in the checkout is imported), with the checkout's path from CLAUDE_PROJECT_DIR.
+// Codex review #561: the brief's version probe is a read-only GET like the app's; without an app version (av) the sync
+// script takes it for an app before 2026-11-03 and writes an "old" row in Events. It must leave Events untouched.
+test("the brief's live-version probe writes nothing to the sheet", () => {
+  const {execFileSync} = require('child_process');
+  const q = execFileSync('python3', ['-B', '-c', 'import sys; sys.path.insert(0, "tools"); import brief; print(brief.STATS_QUERY)'], {
+    cwd: ROOT
+  })
+    .toString()
+    .trim();
+  const params = Object.fromEntries(new URLSearchParams(q.replace(/^\?/, '')));
+  assert.ok(params.stats, q + ': the probe asks for the photo stats');
+  const s = require('./gas.js').loadCodeGs();
+  const r = s.get(params);
+  assert.ok(r.v, 'the reply carries v');
+  const ev = s.sheets.Events ? s.sheets.Events.rows : [];
+  assert.deepStrictEqual(ev, [], 'the probe wrote to Events');
+});
+
+test("the session hooks run main's tools/brief.py, never the checked-out copy", () => {
+  const hooks = JSON.parse(read('.claude/settings.json')).hooks;
+  const cmd = ev => hooks[ev].flatMap(h => h.hooks.map(x => x.command)).join(' ');
+  for (const [ev, flag] of [
+    ['SessionStart', '--short'],
+    ['UserPromptSubmit', '--time']
+  ]) {
+    assert.match(cmd(ev), new RegExp('git show origin/main:tools/brief\\.py 2>/dev/null \\| python3 -I - ' + flag), ev);
+    assert.ok(!/python3 [^|]*tools\/brief\.py/.test(cmd(ev)), ev + ' runs the checked-out tools/brief.py');
+  }
+});
+
+test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR', () => {
+  const {execFileSync} = require('child_process');
+  const env = {
+    ...process.env,
+    CLAUDE_PROJECT_DIR: ROOT,
+    HTTPS_PROXY: 'http://127.0.0.1:9',
+    https_proxy: 'http://127.0.0.1:9',
+    PATH: '/usr/bin:/bin'
+  };
+  const out = execFileSync('python3', ['-I', '-', '--short'], {input: read('tools/brief.py'), env, cwd: '/', timeout: 10000}).toString();
+  assert.match(out, /^Manila /);
+  assert.match(out, /Questions for Pierre: \d+ open, last number Q\d+/);
+  // brief.py cannot read the sheet (the connector is the agent's): it reminds of the reports and events check.
+  assert.match(out, /reports and events last checked .+: read them/);
+  assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
+});

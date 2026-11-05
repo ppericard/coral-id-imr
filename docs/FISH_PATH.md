@@ -55,7 +55,7 @@ is the design's shorthand, and internal identifiers may keep it.
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
   one (Chromis, Dascyllus, Pomacentrus), else its most met species; not counted in the progress yet (the global score is not built).
   Photos: the stopgap entry photos of its species, so 18 of the 94 genera have none and stay out until species photos are curated.
-  Choices made without Pierre are in docs/EVENING.md "Questions for the morning".
+  Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
 - **A right genus is partial credit** (Pierre, 2026-11-04; replaces "Right genus, still a miss on the species"): when a species'
   scientific name is asked and the player types the right genus only, it is genuine partial learning (unlike a common name typed
   instead: open question 3), so it counts as partial credit. How much, and its thresholds, by simulation.
