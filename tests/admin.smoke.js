@@ -1243,6 +1243,29 @@ const WIDTHS = [390, 1280];
         s1.wide > 0
       )
         fails.push(`${w}px Recent sessions: Carla's session did not unfold its summary ${JSON.stringify(s1)}`);
+      if (once) {
+        // ↻ with a session open reads the player's saved copy again too (Codex review #557): her achievements, cards and
+        // learned genera follow her new answers, not the copy read when the session was first unfolded.
+        const reads = () => p.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'userData').length);
+        const r0 = await reads();
+        await p.click('[data-sload]');
+        await settle();
+        await p
+          .waitForFunction(
+            () => /\d+% → \d+%/.test((document.querySelectorAll('[data-sess] .adm-kpis b')[4] || {}).textContent || ''),
+            null,
+            {
+              timeout: 20000
+            }
+          )
+          .catch(() => {});
+        const r1 = await reads(),
+          still = await sess();
+        if (r1 <= r0 || !still || still.row !== 'Carla Demo')
+          fails.push(
+            `${w}px Recent sessions ↻: the open session's saved copy was not read again (${r0} → ${r1} reads) ${JSON.stringify(still && still.row)}`
+          );
+      }
       await p.click('[data-recent] tr[data-sopen] td:nth-child(3)');
       const s2 = await sess();
       const exp2 = await p.$eval('[data-recent] tr[data-sopen]', tr => tr.getAttribute('aria-expanded'));

@@ -5847,6 +5847,9 @@ function bindStats() {
   if (rl)
     rl.onclick = () => {
       sheetAgain('ans', 'users', 'pages'); // the pages opened too (Stops, Journey)
+      // An unfolded session's player's saved copy too (achievements, cards, learned genera follow the new answers; Codex
+      // review #557), as the Players and Journey ↻ do.
+      savedClear();
       render();
     };
 }
