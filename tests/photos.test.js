@@ -229,6 +229,23 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
   assert.deepStrictEqual(back, [], 'a photo with an online original in img/ (it lives on R2 only)');
 });
 
+// A page or tool that names a photo file by a local path (img/<f>.webp, not built by the app's loc()/photoUrl()) names
+// one that is in img/: the photos with an online original live on R2 only (Codex review #576: tools/og/og.html still
+// pointed at six of them, so the link preview would have been made with holes).
+test('every img/ photo file named in the pages and tools is in img/ (the others live on R2 only)', () => {
+  const ROOT = path.join(__dirname, '..'),
+    files = execFileSync('git', ['ls-files', '*.html', '*.css', '*.js', '*.py', '*.sh'], {cwd: ROOT, encoding: 'utf8'})
+      .split('\n')
+      .filter(f => f && !f.startsWith('tests/') && !f.startsWith('docs/')),
+    gone = [];
+  files.forEach(f => {
+    const s = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const m of s.matchAll(/(r2\.dev\/)?\bimg\/([a-z][\w-]*?(?:-[tsm])?\.webp)\b/g))
+      if (!m[1] && !fs.existsSync(path.join(ROOT, 'img', m[2]))) gone.push(`${f}: img/${m[2]}`);
+  });
+  assert.deepStrictEqual(gone, [], 'name the R2 address (core.js PHOTO_BASE) or build it with loc()/photoUrl()');
+});
+
 // tools/photos.py --check (CI) on made-up folders: the four sizes of every photo in img/; a downloaded photo with no
 // online original (IMR lecture photo, Coral Finder book scan) never missing from img/, git being its only backup; a
 // downloaded photo with an online original may be on R2 only (Photos out of the repo, Pierre's rule of 2026-11-05).
@@ -241,22 +258,22 @@ test('tools/photos.py check: the four sizes in img/, the photos with no online o
       })
     );
   const out = py(`
-recs = {'imr-1': [{'f': 'imr-1', 'imr': 1}], 'acropora-cand-1': [{'f': 'acropora-cand-1', 'src': 'https://x/photos/1/original.jpg'}],
+recs = {'imr-p1_i1': [{'f': 'imr-p1_i1', 'imr': 1}], 'acropora-cand-1': [{'f': 'acropora-cand-1', 'src': 'https://x/photos/1/original.jpg'}],
         'acropora-cand-2': [{'f': 'acropora-cand-2', 'src': 'https://x/photos/2/original.jpg', 'r': 1}]}
 def run(names):
     d = tempfile.mkdtemp()
     for n in names: open(os.path.join(d, n + '.webp'), 'w').close()
     return photos.check(d, recs)
 four = lambda f: [f + s for s in photos.SUFFIXES]
-print(json.dumps({'ok': run(four('imr-1')), 'size': run(four('imr-1')[:3]), 'gone': run([]), 'back': run(four('imr-1') + ['acropora-cand-1-s']),
+print(json.dumps({'ok': run(four('imr-p1_i1')), 'size': run(four('imr-p1_i1')[:3]), 'gone': run([]), 'back': run(four('imr-p1_i1') + ['acropora-cand-1-s']),
   'online': sorted(photos.online(recs)), 'gitonly': sorted(photos.gitonly(recs)), 'url': photos.url('a', '-s'),
   'every': photos.every(tempfile.mkdtemp(), recs)}))`);
   assert.deepStrictEqual(out.ok, [], 'IMR photo in img/, the online one on R2 only: all well');
-  assert.match(out.size.join(' '), /1 photo file\(s\) missing.*imr-1-t/, 'a size missing');
+  assert.match(out.size.join(' '), /1 photo file\(s\) missing.*imr-p1_i1-t/, 'a size missing');
   assert.match(out.gone.join(' '), /4 file\(s\) of photos with no online original missing from img\//, 'an IMR photo gone');
   assert.match(out.back.join(' '), /1 photo\(s\) with an online original in img\/.*acropora-cand-1/, 'an online photo back in img/');
   assert.deepStrictEqual(out.online, ['acropora-cand-1'], 'downloaded with an online original: on R2 only (a remote one, r: 1, is not)');
-  assert.deepStrictEqual(out.gitonly, ['imr-1']);
+  assert.deepStrictEqual(out.gitonly, ['imr-p1_i1']);
   assert.deepStrictEqual(out.every, ['acropora-cand-1'], 'the photo tools measure the R2 photos too');
   assert.strictEqual(out.url, require('../core.js').PHOTO_BASE + 'img/a-s.webp', 'the bucket address read from core.js');
 });

@@ -128,7 +128,11 @@ const photoIdx = () => {
 const photoLook = f => photoIdx().f.get(f);
 // Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
 // iNaturalist serves 240 (small), 500 (medium) and 1024 px (large).
-const loc = (p, s) => (AWAY && p.src ? photoOnline(p.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`));
+// A bare {f} (the Lab's photos) finds its record, so its online original, by name (R2 switched off: AWAY from the start).
+const loc = (p, s) => {
+  const o = AWAY && !p.src ? photoLook(p.f) || p : p;
+  return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
+};
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
