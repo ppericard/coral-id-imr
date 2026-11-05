@@ -20,3 +20,11 @@
 ## Fish PR 7 #614 (draft needs-pierre, after #599/#602): game uses curated photos (entries with >=5 very easy curated photos use them only; else stopgap added); removes 12 rejected stopgap photos live today; first R2 run ~3,822 photos / 1.35 GB (R2 -> ~2 GB of 10 GB free); screenshots scratchpad/fishPR7. Questions: per-entry minimum rule (rec. keep), 25 photos with pre-flag ease (rec. leave).
 - #598: an agent was refused GitHub writes (reply/resolve thread 4480029980, '@codex review' on f6b4cc7d) by the permission system; I did not redo them on its behalf. To do in the morning by Pierre's decision (or after he allows these routine PR comments for agents).
 ## Parked after hours (Pierre 20:07): show the number of genera unlocked in progress, e.g. in the Progress badge: '30/40 genera unlocked'. Idea, not started (Rule 0).
+## One-tap question fix #618 (green, Codex clean): shows only after >=15 answers AND >=5 min in the current session (30-min gap rule), cadence unchanged otherwise. Threshold = choice with impact -> quick OK from Pierre before merge (rec. yes).
+## Parked after hours (Pierre 20:22): photos seen again and again
+- Raise the max photos per genus (caps) a lot: players go round a genus's photos fast; corals have few other sources, Pierre has started photographing genera that come up often.
+- Check how many photos stay never shown.
+- A per-player stat: photos seen / photos the player could have seen given the genera unlocked at the time (admin).
+- Worry: if the game keeps serving the easy photos, new photos are never tested; it must try new photos enough (exploration).
+- Proposal for the morning: a read-only measurement study on the real log first (repeat rate per player, unseen photos per genus, exploration share), then the cap/exploration changes.
+## Parked (integrator, from Pierre's session analysis): the 8-shaky-genera opening limit fills with the hardest look-alike families; for an expert it held openings for 138 answers. Revisit with progress v5. Details: scratchpad/pierre-session-2026-11-05.md.
