@@ -1420,7 +1420,7 @@ const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join('
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';
   if (SYNC.err === 'pin') return 'Not saved: code refused';
-  if (SYNC.err === 'archived') return 'Not saved: this record was archived'; // sync.js archivedOf (Q88)
+  if (SYNC.err === 'archived') return 'This account is archived.'; // sync.js archivedOf (Q88); Pierre's wording, no explanation
   if (SYNC.err === 'gone')
     return SYNC.into ? `Not saved: this account was merged into ${SYNC.into}` : 'Not saved: this account was removed';
   // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
