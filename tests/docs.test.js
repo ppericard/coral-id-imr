@@ -119,6 +119,24 @@ test('tools/brief.py calls a PR green only when every check succeeded', () => {
 // Codex security review #561: a hook runs at every session start and prompt, so it must not run code from whatever
 // branch is checked out: it runs main's reviewed copy (git show origin/main:tools/brief.py), in isolated mode (-I: no
 // module planted in the checkout is imported), with the checkout's path from CLAUDE_PROJECT_DIR.
+// Codex review #561: the brief's version probe is a read-only GET like the app's; without an app version (av) the sync
+// script takes it for an app before 2026-11-03 and writes an "old" row in Events. It must leave Events untouched.
+test("the brief's live-version probe writes nothing to the sheet", () => {
+  const {execFileSync} = require('child_process');
+  const q = execFileSync('python3', ['-B', '-c', 'import sys; sys.path.insert(0, "tools"); import brief; print(brief.STATS_QUERY)'], {
+    cwd: ROOT
+  })
+    .toString()
+    .trim();
+  const params = Object.fromEntries(new URLSearchParams(q.replace(/^\?/, '')));
+  assert.ok(params.stats, q + ': the probe asks for the photo stats');
+  const s = require('./gas.js').loadCodeGs();
+  const r = s.get(params);
+  assert.ok(r.v, 'the reply carries v');
+  const ev = s.sheets.Events ? s.sheets.Events.rows : [];
+  assert.deepStrictEqual(ev, [], 'the probe wrote to Events');
+});
+
 test("the session hooks run main's tools/brief.py, never the checked-out copy", () => {
   const hooks = JSON.parse(read('.claude/settings.json')).hooks;
   const cmd = ev => hooks[ev].flatMap(h => h.hooks.map(x => x.command)).join(' ');

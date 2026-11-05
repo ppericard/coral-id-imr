@@ -199,9 +199,14 @@ def sync_url():
     return m.group(1) if m else None
 
 
+# The same read-only GET the app makes for photo statistics (sync.js loadStats), with an app version: without one the
+# sync script takes the request for an app before 2026-11-03 and writes an "old" row in its Events tab (Codex review #561).
+STATS_QUERY = '?stats=1&av=brief'
+
+
 def live_version(url):
-    # The same read-only GET the app makes for photo statistics; only the version number is read from the reply.
-    with urllib.request.urlopen(url + '?stats=1', timeout=left()) as r:
+    # Only the version number is read from the reply.
+    with urllib.request.urlopen(url + STATS_QUERY, timeout=left()) as r:
         return json.loads(r.read()).get('v')
 
 
