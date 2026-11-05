@@ -706,8 +706,9 @@ const helpedIds = () => {
   const A = store.get(ACHK, null);
   return A ? helpedDue(A, handledSeen((typeof CUR === 'object' && CUR && CUR.seen) || null, HANDLED.file), Date.now()) : [];
 };
+// Never over an enlarged photo either (#lightbox, Codex review #581): its close (hidden set again) wakes the wait below.
 const helpedCalm = () =>
-  !document.querySelector('#tour, .unlock, #repdlg, .achpop') &&
+  !document.querySelector('#tour, .unlock, #repdlg, .achpop, #lightbox:not([hidden])') &&
   !achBusy &&
   !(document.getElementById('view') || document.body).querySelector('.q');
 function achHelped() {
@@ -725,7 +726,7 @@ function achHelped() {
       achHelped();
     }, 300);
   });
-  helpedMo.observe(document.body, {childList: true, subtree: true});
+  helpedMo.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden']});
 }
 // After an answer in a game (quiz.js answer): the break at Next, when a thanks is due and no other card took it.
 function helpedArm(nb) {

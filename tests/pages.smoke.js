@@ -1172,6 +1172,28 @@ async function overlays(b, base) {
       fails.push(`Your feedback helped, handled in a PR: ${JSON.stringify(t)}`);
     await c.close();
   }
+  // Never over an enlarged photo (Codex review #581): a thanks due while the lightbox is open waits for it to close.
+  {
+    const [c, p] = await helpedCtx(null, {_v: 2});
+    const card = cardOf(p);
+    await p.goto(base + '#genera');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(500);
+    await p.evaluate(() => {
+      const g = Object.keys(DATA.gen)[0];
+      zoom([{...Object.values(DATA.gen[g].views)[0][0], genus: g}], 0);
+      const A = store.get('reefid-sync-ach', {}) || {};
+      A._rep = ['smk1'];
+      store.set('reefid-sync-ach', A);
+      achHelped();
+    });
+    const over = await card(2000);
+    const lbOpen = await p.evaluate(() => !document.getElementById('lightbox').hidden);
+    await p.evaluate(() => document.querySelector('#lightbox [data-x]')?.click());
+    const after = await card();
+    if (over || !lbOpen || !after) fails.push(`Your feedback helped, enlarged photo: ${JSON.stringify({over, lbOpen, after: !!after})}`);
+    await c.close();
+  }
   // A calm moment: never over a question; in the quiz, at the break at Next, then on to the next question.
   {
     const [c, p] = await helpedCtx(null, {_v: 2, _rep: ['smk1']});
