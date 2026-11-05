@@ -43,6 +43,12 @@ const fishSrc = (p, s, blind) => {
     ? `src="${esc(img(p, s))}" style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"`
     : `src="${esc(img(p, s))}"`;
 };
+// Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
+// Indo-West Pacific (the coral origins' colours, admin.js ORIGINS).
+const fishSrcTag = p => {
+  const o = origin(p);
+  return `<span class="adm-src o-${o}">${p.via === 'fishbase' && !p.own ? 'FishBase' : ORIGINS.find(x => x[0] === o)[1]}</span>`;
+};
 const fishName = sid => {
   const s = FISHC.species[sid] || {},
     t = FISHC.entry[sid];
@@ -207,7 +213,7 @@ function renderFishCand() {
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${fishSrc(pb, 0, chk)} alt=""></button>
         <span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</span>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
-        <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}${p.st ? `<span class="adm-src" title="iNaturalist / FishBase life stage or sex">${esc(p.st)}</span>` : ''}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
+        <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${fishSrcTag(p)}${p.st ? `<span class="adm-src" title="iNaturalist / FishBase life stage or sex">${esc(p.st)}</span>` : ''}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>${chk ? '' : fishJudged(j)}
       <div class="adm-fplay" title="Observations in play for this species / its target"><span class="adm-fplayn${inObs >= c.target ? ' full' : ''}">In play <b>${inObs}/${c.target}</b></span>${play
         .map(
@@ -218,6 +224,14 @@ function renderFishCand() {
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button><button type="button" data-skip>Skip</button><button type="button" class="add${s && s.keep === 'add' ? ' sug' : ''}" data-add title="${s && s.keep === 'add' ? 'Suggested · ' : ''}Add (1)">+ Add</button></div>
     </section>${fishAutoBlock(true)}`;
     if (nx && nx.p.src) new Image().src = img(nx.p);
+    // A remote photo that does not load (its host down, or the photo gone at the source): said on the card, with its link.
+    const im = $v.querySelector('.adm-swph img');
+    if (im)
+      im.addEventListener('error', () => {
+        const fc = $v.querySelector('.adm-swcard figcaption');
+        if (fc && !fc.querySelector('.adm-fbad'))
+          fc.insertAdjacentHTML('afterbegin', '<span class="adm-src rej adm-fbad">Photo not loading</span>');
+      });
     const S = $v.querySelector('.adm-sw'),
       f = p.f,
       // After his answer to a Check: what the auto-sort had said.
