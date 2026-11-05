@@ -204,7 +204,10 @@
   //   name, one, many, what, lecture: words of the interface (Corals; genus, genera; Coral to identify; the IMR coral
   //           lecture). Names of units: app.js uname (a genus in italics, a fish entry by its IMR name)
   //   beta    a subject still in beta: {kick, line}, Home's Learn door top line and description once it is chosen (line:
-  //           HTML), and a "beta" tag on its buttons
+  //           HTML), and a "beta" tag on its buttons. The label only: who sees the subject is open
+  //   open    who the subject opens to (subjGroup): 'all' (the default, the corals: every player, signed out included) or
+  //           'group' (the admin and the players of its group, picked in the admin's Players: app.js subjOpen, sheet v48
+  //           Code.gs groupIds_). Opening fish to everyone is this one field (docs/ARCHITECTURE.md "Beta")
   //   card    the kind of its first-meeting card (app.js CARD_KINDS: its emoji)
   //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
   //   views   the views a question may show, [code, label] (one view: one photo per question)
@@ -275,6 +278,9 @@
         kick: 'Something fishy…',
         line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
       },
+      // Opens to the admin and the beta group (Pierre, 2026-11-04: "a group I pick in the admin, for now everyone; not one
+      // site-wide switch"); 'all' opens it to every player.
+      open: 'group',
       views: [['wide', 'Photo']],
       optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
       log: false,
@@ -303,6 +309,9 @@
   const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
+  // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
+  // keep a group for it (app.js subjOpen, admin.js groupOn, Code.gs groupIds_). Any other value opens it to all.
+  const subjGroup = S => !!S && S.open === 'group';
   // A subject's first-launch answer (CHOICE): reefid-sync-<subject>-start, synced with the player's progress.
   const startKey = s => subjKey(s, 'start');
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
@@ -3054,6 +3063,7 @@
     SUBJECTS,
     SUBJECT_KEY,
     subjectOf,
+    subjGroup,
     subjKey,
     subjDev,
     fishGen,

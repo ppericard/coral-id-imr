@@ -1089,7 +1089,7 @@ async function signin(base) {
       await p.evaluate(() => go('lab'));
       await p.waitForFunction(() => hashNow() === 'lab' && PV.cur && PV.cur.n === 'lab', null, {timeout: 15000});
       await p.evaluate(() => {
-        SUBJECTS.find(S => S.id === 'fish').beta = false;
+        SUBJECTS.find(S => S.id === 'fish').open = 'all'; // opened to every player (core.js SUBJECTS open)
         return setSubject('fish');
       });
       await p.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 15000});

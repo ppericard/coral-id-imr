@@ -34,10 +34,15 @@ const GATES = {
   // Players takes each player's replayed progress from the player list (admin.js rpOn, Code.gs replayedAll_ rp): from v42;
   // before, it reads every player's saved copy and replays here.
   RP_SHEET: (v, N) => fn('admin.js', 'const rpOn = ', '\n', 'rpOn', {USERS: v === undefined ? {} : {v}, RP_SHEET: N})(),
-  // The beta group's column, row toggle and Add all on a beta subject's Players page (admin.js groupOn): from v48, which
-  // keeps the group (Code.gs groupSet_); before, a note says what it needs.
+  // The beta group's column, row toggle and Add all on the Players page of a subject that opens to a group (admin.js
+  // groupOn, core.js subjGroup): from v48, which keeps the group (Code.gs groupSet_); before, a note says what it needs.
   GROUP_SHEET: (v, N) =>
-    fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {ASUBJ: {beta: {}}, USERS: v === undefined ? {} : {v}, GROUP_SHEET: N})(),
+    fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {
+      ASUBJ: {beta: {}, open: 'group'},
+      subjGroup: require('../core.js').subjGroup,
+      USERS: v === undefined ? {} : {v},
+      GROUP_SHEET: N
+    })(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
   // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0. On

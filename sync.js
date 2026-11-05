@@ -1018,7 +1018,7 @@ let pvLast = null,
 function groupsSeen(j, name, live = true) {
   if (!j || !Array.isArray(j.groups) || !name) return;
   const before = subjGroups().join(),
-    g = j.groups.filter(x => typeof x === 'string' && SUBJECTS.some(S => S.beta && S.id === x));
+    g = j.groups.filter(x => typeof x === 'string' && SUBJECTS.some(S => subjGroup(S) && S.id === x));
   store.set(GROUPS_KEY, {n: name, g});
   if (!live || subjGroups().join() === before) return;
   if (!subjOpen(SUBJ)) return location.reload();
