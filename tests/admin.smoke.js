@@ -1827,6 +1827,45 @@ const WIDTHS = [390, 1280];
       if (r.signed.length || !r[need] || r.off.length || r.noRaw.length || r.wide > 0)
         fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
     }
+    // ...and everywhere else in the admin (ROADMAP "Intuitive difficulty display everywhere", Pierre, 2026-11-05): on every
+    // view of every tab, Coverage's full "Where to look" list and both demo journeys, no signed raw number in the page's
+    // text (seconds and "pts" aside; the one-tap tables' felt difficulty, the players' own −1…+1 survey scale, aside), every
+    // badge in the band of its %, and no "recognised by N%" written as plain text outside a badge. Once, at 1280.
+    if (once)
+      for (const h of new Set([
+        ...ROUTES.map(r => r.h).filter(h => h && !h.startsWith('~journey')),
+        '~stats-needs',
+        '~journey/Ana Demo',
+        '~journey/Carla Demo'
+      ])) {
+        await go(h);
+        const r = await p.evaluate(() => {
+          const v = document.getElementById('view'),
+            band = n => (n >= 75 ? 'veasy' : n >= 60 ? 'easy' : n >= 40 ? 'mid' : n >= 25 ? 'hard' : 'vhard'),
+            felt = [...v.querySelectorAll('.adm-pscale')];
+          felt.forEach(x => (x.style.display = 'none'));
+          const signed = (v.innerText.match(/(^|[^\w.])[+−-]\d+\.\d+(?! ?(s|pts?)\b)/gm) || []).slice(0, 3);
+          felt.forEach(x => (x.style.display = ''));
+          const plain = [],
+            tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
+          for (let n; (n = tw.nextNode());)
+            if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
+              plain.push(n.textContent.trim().slice(0, 80));
+          return {
+            signed,
+            plain: plain.slice(0, 3),
+            off: [...v.querySelectorAll('.adm-rec')]
+              .filter(
+                b =>
+                  !b.classList.contains('rec-' + band(Number((b.textContent.match(/(\d+)%/) || [])[1]))) || !/[+−]?\d+\.\d\d/.test(b.title)
+              )
+              .map(b => b.className + ' ' + b.textContent)
+              .slice(0, 3)
+          };
+        });
+        if (r.signed.length || r.plain.length || r.off.length)
+          fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
+      }
     // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
     // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
     // marks, and a plain median (sort, middle value); nothing wider than the window.
