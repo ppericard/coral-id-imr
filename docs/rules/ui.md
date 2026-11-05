@@ -89,7 +89,7 @@ skips; its buttons ignore taps for their first moments and Enter never answers i
 answer or dismiss it. How often it comes stays as it was (ARCHITECTURE.md "One-tap questions"). The "Did you know?"
 tips (`tips.js`) take the same break: one card a break (`quiz.js` `breakArm`, first come first served, the one-tap
 question armed first), a tip waiting for a later break when the question is due.
-*Why:* "in a flow state, used to clicking Next, I don't see them". *Source:* Pierre, 2026-11-03; tips, 2026-11-04.
+*Why:* a player in the flow of tapping Next does not see a question inside the feedback. *Source:* Pierre, 2026-11-03; tips, 2026-11-04.
 
 ### U12
 

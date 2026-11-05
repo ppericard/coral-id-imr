@@ -31,8 +31,7 @@ The deploy-order rule D4 still holds (the app never relies on a sheet feature be
 ### W4
 
 **Many prototypes first, trim later.** Pierre judges UX by taps/clicks, scrolls, and what is on screen versus
-elsewhere; he uses the app on his phone a lot, prefers visuals to text and judges new things in use ("à voir à
-l'usage"): ship, then iterate on his feedback.
+elsewhere; he uses the app on his phone a lot, prefers visuals to text and judges new things in use: ship, then iterate on his feedback.
 *Source:* Pierre, by 2026-11-01.
 
 ### W5
@@ -55,15 +54,15 @@ promised it. *Source:* Pierre, 2026-11-04.
 **Fix by default**: after a review, fix every finding you can without asking. Ask Pierre only real choices (one short
 question each, with a recommendation) or actions that need his hands (Apps Script redeploy, admin curation, IMR
 content). Never re-ask something already answered: check ROADMAP and PR descriptions.
-*Source:* Pierre, 2026-11-01 ("fais corriger tout ce que tu peux faire corriger").
+*Source:* Pierre, 2026-11-01.
 
 ### W8
 
 **Independent reviews: an open mission, and question our choices.** Give the reviewer a profile, access to the repo and
 the app, and a mission as open as possible: no checklist, no fixed scope, no imposed form for the proposals. The mission
 says to keep an open mind, to explore what we did not think of, and to **question the choices already made** rather than
-take them as given ("would I have done it differently? can I imagine something better?"), up to "this needs a complete
-redesign; here is something much better". Then fix by default (rule W7). Reviews are copied in
+take them as given (would we have done it differently, is something better possible), up to proposing a complete
+redesign. Then fix by default (rule W7). Reviews are copied in
 [`docs/reviews/`](../reviews/README.md).
 *Source:* Pierre, 2026-11-04 (a general rule for every independent review).
 
@@ -99,8 +98,7 @@ in status messages, not in ROADMAP. **Reminders of what only he can do live wher
 related to the work at hand (e.g. "these genera are short of photos", "these 31 photos are out of the presence rule"),
 never repeated or nagged. The points to settle (rule C5: IMR trainer questions, content questions, in `points.json`)
 stay: he asked for that list.
-*Why:* an agent reminded him every few minutes, in the chat, of things unrelated to its own work; "you'll spend your
-time doing that"; "why note them in ROADMAP?". The first wording (2026-11-01) generalised and hardened that one case.
+*Why:* an agent reminded him every few minutes, in the chat, of things unrelated to its own work.
 *Source:* Pierre, 2026-11-01; scope restored, 2026-11-05.
 
 ### W11
@@ -268,7 +266,7 @@ text reads it; static files are written from it by `tools/rename_app.py`), never
 sheet, other devices), with the group of organisms in it when it belongs to one (`reefid-sync-coral-progress`, later
 `reefid-sync-fish-progress`): `core.js` `KEYS`. Never a key named after the organisation (a fork must not migrate keys).
 Code that must name an old key on purpose carries `rename-app: keep`.
-*Why:* "a developer reading the code should find one consistent naming". *Source:* Pierre, 2026-11-03.
+*Why:* a developer reading the code finds one consistent naming. *Source:* Pierre, 2026-11-03.
 
 ### W22
 

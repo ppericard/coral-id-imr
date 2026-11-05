@@ -15,7 +15,7 @@ the corals whatever was saved (`app.js` `subjOpen`, `subjAt`), their saved choic
 players of its group**, whom the admin adds on the subject's Players page (not one site-wide switch; sheet v48, details
 in ARCHITECTURE.md "The beta group"). The leaderboard and achievements stay coral for now; fish answers are not logged
 to the sheet yet. Fish winks (surprise cards, never counted) come for every fish player, circle 1 included.
-*Why:* "fish in the app on the same engine as corals, cleanly"; a beta subject: "some things clearly aren't ready".
+*Why:* fish run cleanly on the corals' engine; a subject in beta is not ready for every player.
 *Source:* Pierre, 2026-11-03 (engine, winks), 2026-11-04 (beta, its group).
 
 ### S2
@@ -42,5 +42,5 @@ the key's groups**: `tools/build_fish.py` fails, naming the node, when a node in
 without an explicit `keyGroup` (null with `keyWhy` only while a node waits for Pierre's decision; the build lists it).
 The keys are data (`tools/fish_source.json` `keys`, the one in force `deploy.key`): a deployment in another region uses
 that region's key, a region with no key has no such rule, and adding one needs no code change.
-*Why:* the book's index is "reference no. 1 in every dive centre", so nobody questions the groups.
+*Why:* the book's index is the reference in every dive centre, so nobody questions the groups.
 *Source:* Pierre, 2026-11-04.

@@ -12,7 +12,7 @@ lines, mnemonics, spellings). Where another source differs, add at most a discre
 are silently not reproduced and mentioned to Pierre only. When a source is old, trust IMR unless a very reliable
 *recent* source says otherwise: IMR trainers may be more up to date than the literature.
 *Why:* Pierre is new at IMR and the app is used there; visibly correcting the trainers would hurt his relationships.
-*Source:* Pierre, by 2026-11-01 ("Je ne veux pas me faire des ennemis").
+*Source:* Pierre, by 2026-11-01.
 
 ### C2
 
@@ -59,7 +59,7 @@ cue with a species from elsewhere (the Caribbean, the Red Sea…). A species is 
 (Needs ID alone, Pierre's included, never confirms). Check it before citing a species, with observers and not only
 Research Grade counts (batched, rule C7; `tools/presence.py` `species_presence` does it per genus), and say in the PR
 which test each species passes. Example: the Favites notes (`tools/apply_favites.py` lists them).
-*Why:* "the goal is to recognise corals here". *Source:* Pierre, 2026-11-04.
+*Why:* the app teaches recognising the corals where the RAs dive. *Source:* Pierre, 2026-11-04.
 
 ### C7
 
@@ -84,7 +84,7 @@ once in `tools/presence.py` and used everywhere presence is decided: `tools/buil
 the game or out), `tools/fetch_fish.py` and `tools/fetch_local.py` (photos from abroad only of confirmed species),
 `tools/coral_presence.py` (`presence.json`: a coral photo taken abroad of a species not confirmed is flagged "out of
 rule" in the admin, never removed automatically: Pierre decides). Change the rule there, not in a tool.
-*Why:* "the same scientific rigour for everyone, me included". *Source:* Pierre, 2026-11-04.
+*Why:* one standard of evidence for every species and every observer, Pierre included. *Source:* Pierre, 2026-11-04.
 
 ### C9
 

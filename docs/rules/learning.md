@@ -17,9 +17,8 @@ someone should be able to master everything in a few hours. Progress (`s.pg`), m
   after a break (a new visit after 30 minutes without an answer opens no genus in its first 10 answers; the FSRS
   forgetting curve plans a comeback on genera answered right; `model.js` "Comeback after a break", LEARNING.md).
 
-*Why:* "the goal is not to bring people back every day like Duolingo; the goal is to learn as fast as possible, in a few
-hours or days. But for the comeback, time must be taken into account"; the rule was about days between sessions, not
-the seconds an answer takes. *Source:* Pierre, by 2026-11-01; comeback, 2026-11-02; seconds, 2026-11-04.
+*Why:* the app is for learning fast, in hours or days, not for bringing players back every day; time matters only to
+plan a comeback, and the seconds of an answer are evidence, not time between sessions. *Source:* Pierre, by 2026-11-01; comeback, 2026-11-02; seconds, 2026-11-04.
 
 ### L2
 
@@ -42,7 +41,7 @@ Open all); every other game or mode (the Duel tab, Memory, the custom quiz, any 
 the player has unlocked, `model.js` `unlocked()`, the one source of truth, and never opens a genus (no card from a
 game). A new game uses `unlocked()` too; the Tools' games through `proto/lab.js` `labPlay()` (the reference tools keep
 every genus; wrong choices may name any genus, as the quiz's). LEARNING.md "One progression path for every game".
-*Why:* "the quiz, the Duel tab, Memory and any future game or mode, no exceptions". *Source:* Pierre, 2026-11-04.
+*Why:* one path for every game and mode, present and future, with no exception. *Source:* Pierre, 2026-11-04.
 
 ### L5
 
@@ -52,7 +51,7 @@ their Coral Finder look-alikes (display only). On the path a starred genus opens
 compares it to have been met; the references come from the data (`core.js` `starRefs`), never a list in code; Open all
 still opens everything at once. Every game follows that one path (rule L4), so this holds in the Duel tab, Memory and
 the custom quiz too.
-*Why:* a beginner met *Duncanopsammia*, "Like *Turbinaria*…", before *Turbinaria*. *Source:* Pierre, 2026-11-03.
+*Why:* a beginner met *Duncanopsammia*, whose card compares it to *Turbinaria*, before *Turbinaria*. *Source:* Pierre, 2026-11-03.
 
 ### L6
 
@@ -82,7 +81,7 @@ pooled over every player first, then each player's own mix-ups weigh in as their
 path, `pairConf`; performance only, never time). A genus never answered starts from the player's global level
 (`playerStart`, `core.js`: an Elo over all their answers, shrunk while they are few), so a strong player gets traps and
 harder photos on a new genus from its first question; "Learned" is still earned genus by genus.
-*Why:* "at the very start it must be simple", traps appear little by little. *Source:* Pierre, 2026-11-01.
+*Why:* the start must be simple; traps come little by little. *Source:* Pierre, 2026-11-01.
 
 ### L8
 
@@ -111,8 +110,7 @@ to existing players under 50 answers and inferred silently from 50 on. Each answ
 model (`core.js` `CHOICE`); the one dynamic algorithm then runs the same for everyone, with a one-time fallback card
 when the answers do not fit (its thresholds, cards and the replay's prior: LEARNING.md "The first-launch question",
 ARCHITECTURE.md "First-launch question"). A
-new variable there needs its learnsim check per answer, right and wrong. **Each subject asks its own** (the fish
-question "works exactly like the coral one"): its words in `core.js` `SUBJECTS` `start`, the same answers and engine,
+new variable there needs its learnsim check per answer, right and wrong. **Each subject asks its own** (the fish question works exactly like the coral one): its words in `core.js` `SUBJECTS` `start`, the same answers and engine,
 its own record (`startKey`); never a subject named in the code that asks it.
 *Source:* Pierre, 2026-11-03; each subject, 2026-11-04.
 
@@ -125,13 +123,13 @@ instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers**:
 - **tier 1, systematic for any change to the learning algorithm's behaviour**: check it over several seeds
   (`tests/profiles.smoke.js` profiles), not one run, and its effect on what players really learn with
   `node tools/learnsim.js` (the four profiles × 5 seeds, before and after, the same seeds, about 2 min; LEARNING.md
-  "Learning-outcome simulation"), with a small standard table in the PR; five is enough ("4 or 5 players were plenty to
-  get an idea", no p-values wanted);
+  "Learning-outcome simulation"), with a small standard table in the PR; five is enough
+  (no p-values wanted);
 - **tier 2, fine calibration**, an option, hopefully rare: when a value is being chosen, or when two versions differ by
   less than their spread on the measure that decides (tier 1 inside the noise): 20-30 seeds, extended profiles, sweeps;
 - **tier 3, real data**: rule L12.
 
-*Why:* "the simpler the algorithm, the better; with 50,000 parts and 50,000 variables it gets ever harder to calibrate".
+*Why:* every added part or variable makes the model harder to calibrate.
 *Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers, 2026-11-05.
 
 ### L12

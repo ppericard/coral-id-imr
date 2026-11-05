@@ -6,7 +6,7 @@ where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ## The project in five lines
 
-- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no build step, GitHub Pages) live at <https://ppericard.github.io/coral-id-imr/>. Named IMR Coral ID until 2026-11-03 (Pierre: corals now, fish and benthos next); the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
+- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no build step, GitHub Pages) live at <https://ppericard.github.io/coral-id-imr/>. Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
 - It teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and **Millepora** (fire coral: not a hard coral, but on the IMR benthic slate and very common at Dauin), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
 - Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones.
 - RAs' first job is genus-level labelling of top-down benthic photos in **ReefCloud**, so growth form alone is never enough: the app must teach genus recognition.
@@ -16,8 +16,7 @@ where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 Pierre set this rule himself (2026-11-04) to keep AI-assisted development sustainable for months and years: it protects
 his sleep, his health and his evenings. It comes before every other rule. Times are **Manila time (Asia/Manila,
-UTC+8), every day** (he has no weekends: he often develops more on them). **It limits Pierre's time, not the agents'**
-("you have no sleep problems, I do: just don't solicit me"): outside his hours the agents keep working on their own;
+UTC+8), every day** (he has no weekends: he often develops more on them). **It limits Pierre's time, not the agents'**: outside his hours the agents keep working on their own;
 what stops is everything that involves him.
 
 - **Check the time first**, at the start of every session and before any new task: `TZ=Asia/Manila date` (no shell:
@@ -62,8 +61,7 @@ what stops is everything that involves him.
 - **One integrator.** The main agent of a Claude Code session is the integrator: it starts as many subagents as useful,
   each on its own branch, worktree and PR (rule W22), checks their work and merges it. Subagents build, test, run the
   review loop (rule W23) and report to the integrator; **subagents never merge**.
-- **Launch decided work at once**, never hold it in a queue ("I'd rather you launch too much than leave things waiting",
-  Pierre, 2026-11-05); only a real dependency waits (two PRs on the same files). The machine is protected by
+- **Launch decided work at once**, never hold it in a queue (Pierre, 2026-11-05: better too much launched than work left waiting); only a real dependency waits (two PRs on the same files). The machine is protected by
   `tests/slot.js` (one Playwright run at a time per 2 cores, rule W14), not by holding subagents back.
 - **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold:
   1. every check is green on the current head, and no failed job was re-run to get green (rule W23);
@@ -75,8 +73,8 @@ what stops is everything that involves him.
      "Choices I made" section is empty;
   4. it was rebased on `origin/main` right before the merge (Publish commits land without PRs) and goes in as a squash
      merge titled `… (#N)` (rule W18).
-- **The integrator decides the small choices; Pierre decides the ones that matter** ("I don't want to validate
-  micro-details; I want to validate every choice that has an impact"). **With impact**, to Pierre: something players see
+- **The integrator decides the small choices; Pierre decides the ones that matter**: he validates every choice with an
+  impact, not micro-details. **With impact**, to Pierre: something players see
   or feel differently (a new screen, a game rule, a learning value, content, a photo choice), anything costly to undo,
   or a choice that commits later work (a data format, a structure, a convention other code will follow). **Without
   impact**, the integrator's own, shipped under the contract and listed in Decisions as "integrator's call": a clearer
@@ -121,9 +119,10 @@ what stops is everything that involves him.
 ## The rules
 
 Pierre's standing rules: follow them over your own taste; when in doubt, ask him. The full rule, its *Why* and
-*Source* are in its topic file. **Writing a rule down**: keep Pierre's scope and words (his sentence quoted in the PR);
-never generalise beyond the case he spoke about nor harden it; unsure of the scope, ask; a new or changed rule's wording
-goes to Pierre for his OK ("agents generalise to everything and harden my words: a classic", Pierre, 2026-11-05).
+*Source* are in its topic file. **Writing a rule down** (Pierre, 2026-11-05): keep his scope and meaning; never generalise beyond the case he
+spoke about nor harden it; unsure of the scope, ask; the wording of a new or changed rule goes to him for his OK. A rule
+is its imperative line, *Why:* one short line in our words, *Source:* Pierre, date (+ #PR); his sentence and its
+context go in the PR description, never in the rule.
 
 **Content** ([docs/rules/content.md](docs/rules/content.md))
 - **C1** Never contradict or "correct" the IMR course.

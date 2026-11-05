@@ -37,12 +37,11 @@ book switch). Same information = a filter; different information = a separate vi
 **The admin's top level stays short: a few header groups, a few tabs each.** A new page goes where it belongs first: a
 view of an existing tab (the views of a tab are in a segmented switch at its right; `GROUPS` in `admin.js`), or a new
 tab of an existing group (the tabs of a group are in a row under the header). A new header group only with Pierre's OK,
-when nothing fits (as Analyses was: "a new section in the admin with several sub-pages, with visualisations, reports,
-graphs, tables"). At each addition check that the whole stays tidy, and propose a regrouping rather than piling up. No
+when nothing fits (as Analyses was). At each addition check that the whole stays tidy, and propose a regrouping rather than piling up. No
 tab holds a view of its own name, no group a tab of its own name. One role per admin page: Health keeps what needs
 action, Activity who plays and how much, Analyses what we learn. Today's groups, tabs and views: ARCHITECTURE.md
 "Admin back-office" and "Analyses".
-*Why:* the menus had grown to 17 pages before the regrouping. *Source:* Pierre, 2026-11-01 ("regroup the admin menus"),
+*Why:* the menus had grown to 17 pages before the regrouping. *Source:* Pierre, 2026-11-01,
 2026-11-03, 2026-11-04; rewritten 2026-11-05.
 
 ### A4
