@@ -36,6 +36,19 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(C.SUBJECTS.filter(s => s.ach).length, 1);
 });
 
+test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to its group for now', () => {
+  const fish = C.subjectOf('fish'),
+    coral = C.subjectOf('coral');
+  assert.ok(fish.beta && fish.beta.kick && fish.beta.line, 'fish keeps its beta label');
+  assert.strictEqual(fish.open, 'group', 'fish opens to the admin and its group (no change for players)');
+  assert.strictEqual(C.subjGroup(fish), true);
+  assert.strictEqual(C.subjGroup(coral), false, 'the corals open to all (no field)');
+  assert.strictEqual(C.subjGroup({...fish, open: 'all'}), false, "'all': no group, the beta label kept");
+  assert.strictEqual(C.subjGroup({id: 'x', beta: {kick: 'k', line: 'l'}}), false, 'a beta label alone opens to all');
+  assert.strictEqual(C.subjGroup(null), false);
+  C.SUBJECTS.forEach(S => assert.ok(S.open === undefined || ['group', 'all'].includes(S.open), `${S.id}.open`));
+});
+
 test('fishGen: level-1 entries as engine records, circle 1 = the 27 IMR entries, winks apart', () => {
   const X = C.fishGen(F, PH.photos);
   assert.strictEqual(X.c1.length, 27);

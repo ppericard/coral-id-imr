@@ -899,6 +899,24 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   assert.strictEqual(s.post({userGroup: ['Ana-test'], group: 'fish', on: true, token: TOK}).members, 1);
 });
 
+// v53: the groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all has no
+// group (its rows kept in the tab, read again once it is back to 'group').
+test("groups (v53): a subject that opens to all has no group, whatever its beta label; back to 'group', its rows count again", () => {
+  const s = seed();
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
+  const open = v => require('vm').runInContext(`CORE_.SUBJECTS.find(S => S.id === 'fish').open = ${JSON.stringify(v)}`, s.ctx);
+  open('all');
+  assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'fish').beta", s.ctx), 'the beta label kept');
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
+  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: true, token: TOK}).error, 'group');
+  assert.ok(
+    s.sheets.Groups.rows.some(r => r[1] === 'Ana'),
+    'the rows stay in the tab'
+  );
+  open('group');
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, ['fish'], 'back to the group: the same members');
+});
+
 test('rename (v20): the record moves to the new name, hidden from the leaderboard; the old name starts over', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('r1'), ans('r2')]});
