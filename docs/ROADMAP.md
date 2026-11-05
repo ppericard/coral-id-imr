@@ -206,6 +206,8 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 - Photo Elo or any stat without Pierre's own answers, and admin filters on "me" or test accounts (Pierre, 2026-11-04: his account is a real player's; he deleted his only test account; the "Without me", "Others / Me" and "This is also me" switches were removed).
 - Anki deck.
+- Museum specimens as presence evidence (Pierre, 2026-11-05: the presence rule, AGENTS.md 6g, stays as it is).
+- Asking SeaLifeBase, Silliman University or Corals of the World for photos (Pierre, 2026-11-05: not at this point).
 - A daily-habit / Duolingo-style app (units, streaks, spaced days, decay).
 - Look-alike "families" invented by Claude; any invented grouping.
 - "Reset this genus" or any bulk wipe in admin.

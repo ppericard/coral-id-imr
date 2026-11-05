@@ -39,11 +39,22 @@ this list. Long-standing content questions stay in [ROADMAP](ROADMAP.md) "Conten
 
 _(none: the 13 questions of the fish sheets study are parked by Pierre until he picks that project)_
 
-Last question number: Q36
+Last question number: Q43
 
 ## Pierre's hands
 
-Actions only Pierre can do.
+Actions only Pierre can do (to move later to the admin list of points to handle, ROADMAP Next).
+
+- **Photo hunt for Astrea and Anacropora** at the Dauin sites where IMR trainers know they occur (colony, close-up,
+  macro; posted to iNaturalist under CC BY or CC BY-NC): iNaturalist has no Astrea observation with photos in the
+  Philippines.
+- **Pre-sort the near-Dauin iNaturalist observations left above genus** (he or an IMR trainer can tell an Astrea or an
+  Anacropora; counts of 2026-11-05): stony corals at order only,
+  [84](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=47532&rank=order&photos=true);
+  Merulinidae (Astrea's family) at family only,
+  [20](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=85893&rank=family&photos=true);
+  every stony coral between order and family,
+  [57](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=47532&rank=suborder,infraorder,superfamily,family&photos=true).
 
 - **Protect `main` on GitHub**: [HANDOVER "Protect main"](HANDOVER.md#protect-main-one-time-setup).
 - **Create the secret `ANALYSES_ADMIN_TOKEN`** (the admin's Analyses report computes itself once it exists):
