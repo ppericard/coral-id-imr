@@ -79,7 +79,7 @@ nothing reaches the game without Pierre's Publish); #537 night questions.
 event: core.js startEvents keeps it on purpose) reads "Answered again", not a second "Changed to". Left: the times are
 the admin browser's clock; to show the player's own local time, use the UTC offset logged per answer since sheet v44.
 (2) Done (#554 when merged): the admin opens on Players › Activity.
-(3) Activity: tapping a session unfolds its summary: built on branch `claude/activity` (PR open, waiting for Pierre's OK on the choices listed in it).
+(3) Activity: tapping a session unfolds its summary: #557 (waiting for Pierre's OK on the choices listed in it).
 
 **Pierre's answers (2026-11-05 morning):** yes to #535, #522 (and accept the misspelled forms when typed, the PDF's
 especially), #526, #533, #536, #538, #540 as recommended. Notes for later: (1) #526: how to offer the genus step
