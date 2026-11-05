@@ -11,8 +11,12 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 4; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 8; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
+  // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
+  // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
+  // 7: player profiles (who)
+  // 8: the Wright map and the genus × player residuals (Learning wright, res)
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -445,7 +449,14 @@
     }
     const V = inverse(I),
       c = sig(gc);
-    return {d, c, sd: Math.sqrt(Math.max(0, V[0][0])), sc: Math.sqrt(Math.max(0, V[1][1])) * c * (1 - c)};
+    // cr: the correlation of the two estimates (d and logit c), for "Effects hard to tell apart" (entOf)
+    return {
+      d,
+      c,
+      sd: Math.sqrt(Math.max(0, V[0][0])),
+      sc: Math.sqrt(Math.max(0, V[1][1])) * c * (1 - c),
+      cr: V[0][1] / Math.sqrt(Math.max(1e-300, V[0][0] * V[1][1]))
+    };
   }
 
   /* ---------- The answer log, prepared ---------- */
@@ -505,6 +516,9 @@
         views = ph.map(f => (PH[f] || [])[0]).filter(Boolean),
         A = {
           p: String(r[0]),
+          // the answers a deleted account left (Code.gs answers_ anonymous 2, sheet v55): in the pooled fits only, never
+          // in a per-player result or a count of players (Pierre, 2026-11-05, Q86)
+          gone: r[11] === 2 ? 1 : 0,
           t: Number(r[1]) || 0,
           g: String(r[2]),
           a: String(r[3] || ''),
@@ -672,7 +686,13 @@
       hw: Math.max(sd, sesoi)
     });
   }
-  const players = D => new Set(D.map(a => a.p)).size;
+  const players = D => new Set(D.filter(a => !a.gone).map(a => a.p)).size;
+  // The players to leave out of a per-player list: those whose answers a deleted account left (gone, sheet v55).
+  const goneOf = D => new Set(D.filter(a => a.gone).map(a => a.p)),
+    livePl = (D, L) => {
+      const G = goneOf(D);
+      return G.size ? L.filter(x => !G.has(x.k)) : L;
+    };
   const centre = L => {
     const m = mean(L);
     return L.map(v => v - m);
@@ -714,7 +734,7 @@
         )
       ];
     const M = lmm(y, X, F);
-    return {M, F};
+    return {M, F, X};
   }
   function rtStat(D) {
     const {M, F} = rtFit(D);
@@ -726,8 +746,9 @@
   }
   function rt(A, B, seed) {
     const D = A.filter(a => a.s && a.x != null);
-    if (D.length < 100 || players(D) < 2) return thin(D.length, 100);
-    const {M, F} = rtFit(D),
+    // the model's clusters, a deleted account's included: the count shown (players) leaves it out (Codex review #600)
+    if (D.length < 100 || new Set(D.map(a => a.p)).size < 2) return thin(D.length, 100);
+    const {M, F, X} = rtFit(D),
       bi = boot(D, rtStat, B, seed),
       n = D.length,
       effects = RT_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'log', 0.1, n, {rows: M.nz[j + 1]}));
@@ -753,7 +774,8 @@
       effects,
       genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
-      player: lv(F[0], 1).sort((a, b) => b.u - a.u)
+      player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
+      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])])
     };
   }
 
@@ -770,11 +792,14 @@
           D.map(a => a.p)
         )
       ];
-    return glmm(
-      D.map(a => a.y),
-      X,
-      F,
-      {off: Float64Array.from(D.map(a => a.x)), g: Float64Array.from(D.map(a => a.g0))}
+    return Object.assign(
+      glmm(
+        D.map(a => a.y),
+        X,
+        F,
+        {off: Float64Array.from(D.map(a => a.x)), g: Float64Array.from(D.map(a => a.g0))}
+      ),
+      {X}
     );
   }
   function zoom(A, B, seed) {
@@ -815,8 +840,9 @@
         eff('rel', 'Enlarged, against the player’s own habit (logit)', M.b[1], M.se[1], bi, 'logit', 0.25, n),
         eff('hab', 'Players who enlarge more (logit per share)', M.b[2], M.se[2], bi, 'logit', 0.25, n)
       ],
-      player: Object.values(by).sort((a, b) => b.z / b.n - a.z / a.n),
-      views: Object.values(views)
+      player: livePl(D, Object.values(by)).sort((a, b) => b.z / b.n - a.z / a.n),
+      views: Object.values(views),
+      ent: entOf(M.V, M.X, [null, 'rel', 'hab'])
     };
   }
 
@@ -946,7 +972,13 @@
         k => ({3: 'Good', 2: 'Fair', 1: 'Poor'})[k] || k
       ),
       harder: L.slice(0, 8),
-      easier: L.slice(-8).reverse()
+      easier: L.slice(-8).reverse(),
+      ent: entOf(
+        M.V,
+        D.map(a => a.X),
+        [null, ...PH_X.map(x => x[0]), null],
+        [1, ...PH_X.map(() => -1), 1]
+      )
     };
   }
 
@@ -993,10 +1025,114 @@
       );
       effects.push(eff('oe_' + k, `${l}: right − expected`, mean(oe), se, bi, 'p', 0.05, S.length, {fmt: k}));
     });
-    return {n: D.length, players: players(D), effects, table};
+    return {n: D.length, players: players(D), effects, table, ent: fmtEnt(table)};
   }
   // The bootstrap of a difficulty is stored as the shift d; reported as -d (+ = harder).
   const remap = (bi, k) => (bi[k] ? {[k]: [-bi[k][1], -bi[k][0]]} : null);
+
+  /* ---------- Structure (the multifactor visualisation study of 2026-11-05, Pierre's Q70-Q77) ---------- */
+  // Small helpers shared by the views that show how effects, genera and players relate: correlations, clustering.
+  const r3 = v => (v == null || !isFinite(v) ? null : Math.round(v * 1000) / 1000);
+  // Pearson correlations of the columns cols of X (rows of numbers), lower triangle: R[i][j] for j < i.
+  function colCorr(X, cols) {
+    const n = X.length,
+      mu = cols.map(c => sum(X.map(x => x[c])) / n),
+      sd = cols.map((c, a) => Math.sqrt(sum(X.map(x => (x[c] - mu[a]) ** 2)) / n));
+    return cols.map((c, a) =>
+      cols.slice(0, a).map((d, b) => {
+        let s = 0;
+        for (let i = 0; i < n; i++) s += (X[i][c] - mu[a]) * (X[i][d] - mu[b]);
+        return sd[a] && sd[b] ? s / n / (sd[a] * sd[b]) : null;
+      })
+    );
+  }
+  const full = (L, diag = 1) => L.map((r, i) => L.map((_, j) => (i === j ? diag : i > j ? r[j] : L[j][i])));
+  // "Effects hard to tell apart" (study §2.2, §2.3; Pierre's "correlations between effects"): for the effects one model
+  // reports, the correlation of their estimates, from V, the fixed effects' covariance marginal over the random effects
+  // (cov2cor(vcov(fit)) in R: near ±1, one estimate could rise as the other falls with almost as good a fit, so each
+  // alone is fragile, their sum is not), and the correlation of the conditions themselves in the answers (the design
+  // matrix's columns), with each condition's variance inflation factor, the diagonal of the inverse correlation matrix
+  // over every condition of the model (VIF: 1 = independent of the others; above 5 to 10, entangled). keys[c]: the
+  // effect key of column c (null for the intercept or a column the analysis does not report); sg[c] = -1 for an effect
+  // reported with the opposite sign (a difficulty). Columns that never vary are left out. Lower triangles, 3 decimals.
+  function entOf(V, X, keys, sg = []) {
+    if (!V || !X || !X.length) return null;
+    const vary = c => X.some(x => x[c] !== X[0][c]),
+      all = keys.map((_, c) => c).filter(c => c > 0 && vary(c)),
+      rep = all.filter(c => keys[c] != null);
+    if (rep.length < 2) return null;
+    const R = colCorr(X, all),
+      Rf = full(R).map(r => r.map(v => (v == null ? 0 : v))),
+      inv = inverse(Rf.map((r, i) => r.map((v, j) => v + (i === j ? 1e-9 : 0)))),
+      at = c => all.indexOf(c),
+      s = c => sg[c] || 1;
+    return {
+      k: rep.map(c => keys[c]),
+      r: rep.map((c, a) => rep.slice(0, a).map(d => r3((s(c) * s(d) * V[c][d]) / Math.sqrt(Math.max(1e-300, V[c][c] * V[d][d]))))),
+      x: rep.map((c, a) => rep.slice(0, a).map(d => r3(R[Math.max(at(c), at(d))][Math.min(at(c), at(d))]))),
+      vif: rep.map(c => r3(Math.min(999, Math.max(1, inv[at(c)][at(c)]))))
+    };
+  }
+  // Agglomerative clustering on a distance matrix D (n × n), by the Lance-Williams update: 'average' (UPGMA, the mean
+  // distance between the two groups) or 'ward' (D holding squared Euclidean distances; heights reported as their square
+  // root). Ties go to the lowest indices, so the same input always gives the same tree. Returns m: the merges [a, b,
+  // height] (leaves 0..n-1, the k-th merge creates n + k) and order: the leaves left to right, each merge putting first
+  // the branch that holds the lowest-numbered leaf.
+  function hclust(D, link = 'average') {
+    const n = D.length,
+      d = D.map(r => r.slice()),
+      id = [...Array(n).keys()],
+      size = new Array(n).fill(1),
+      on = new Array(n).fill(true),
+      m = [];
+    for (let s = 1; s < n; s++) {
+      let bi = -1,
+        bj = -1,
+        bv = Infinity;
+      for (let i = 0; i < n; i++)
+        if (on[i]) for (let j = i + 1; j < n; j++) if (on[j] && d[i][j] < bv - 1e-12) ((bv = d[i][j]), (bi = i), (bj = j));
+      m.push([id[bi], id[bj], r3(link === 'ward' ? Math.sqrt(Math.max(0, bv)) : bv)]);
+      for (let k = 0; k < n; k++) {
+        if (!on[k] || k === bi || k === bj) continue;
+        const ni = size[bi],
+          nj = size[bj],
+          nk = size[k],
+          v =
+            link === 'ward'
+              ? ((nk + ni) * d[k][bi] + (nk + nj) * d[k][bj] - nk * d[bi][bj]) / (nk + ni + nj)
+              : (ni * d[k][bi] + nj * d[k][bj]) / (ni + nj);
+        d[k][bi] = d[bi][k] = v;
+      }
+      size[bi] += size[bj];
+      on[bj] = false;
+      id[bi] = n + s - 1;
+    }
+    const kids = new Map(m.map(([a, b], k) => [n + k, [a, b]])),
+      order = [],
+      walk = x => (x < n ? order.push(x) : kids.get(x).forEach(walk));
+    if (n) walk(n > 1 ? n + m.length - 1 : 0);
+    return {m, order};
+  }
+  // The groups left when the tree is cut at height h: lists of leaves (each in leaf order), the groups in leaf order.
+  function cutTree(T, n, h) {
+    const up = [...Array(n + T.m.length).keys()],
+      top = x => (up[x] === x ? x : (up[x] = top(up[x])));
+    T.m.forEach(([a, b, v], k) => v <= h && ((up[top(a)] = n + k), (up[top(b)] = n + k)));
+    const G = new Map();
+    T.order.forEach(i => (G.get(top(i)) || G.set(top(i), []).get(top(i))).push(i));
+    return [...G.values()];
+  }
+
+  // Each format's guess rate and difficulty are fitted together (fmtFit) and known to trade off: the correlation of the two
+  // estimates, as reported (the guess rate rises with logit c; the difficulty is -d). Formats are fitted apart, so
+  // estimates of two formats are independent: null there, and no conditions to correlate (no design matrix).
+  function fmtEnt(table) {
+    const F = table.filter(t => t.fit && isFinite(t.fit.cr)),
+      k = F.flatMap(t => ['g_' + t.k, 'd_' + t.k]);
+    return F.length
+      ? {k, r: k.map((_, a) => k.slice(0, a).map((__, b) => (a % 2 && b === a - 1 ? r3(-F[(a - 1) / 2].fit.cr) : null)))}
+      : null;
+  }
 
   /* ---------- 5. Confusions: pair × view, each player against the pooled rates ---------- */
   const CF_X = [
@@ -1010,7 +1146,7 @@
       if (a.typed || a.ch.length < 2) return;
       a.ch.forEach(c => {
         if (c === a.g) return;
-        E.push({p: a.p, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length});
+        E.push({p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length});
       });
     });
     return E;
@@ -1102,8 +1238,83 @@
         orHi: Math.exp(Fp.u[j] + Z * Math.sqrt(Fp.cv[j]))
       };
     });
-    void X;
-    return {n, mixed, players: players(E), typ: {p: mixed / n}, effects, pairs, player: plist.sort((a, b) => b.n - a.n)};
+    return {
+      n,
+      mixed,
+      players: players(E),
+      typ: {p: mixed / n},
+      effects,
+      pairs,
+      player: livePl(E, plist).sort((a, b) => b.n - a.n),
+      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null]),
+      map: mixMap(E, M, F)
+    };
+  }
+
+  // The mix-up map (study §2.11, its first pick; Pierre's Q74: a phone form, the whole matrix from tablet width up):
+  // which genera form families of mix-ups. Similarity of two genera = how much more often, at the least, their pair is
+  // mixed up than a typical pair: the lower end of the 95% range of the pair's shrunk effect u in the model above (a log
+  // odds ratio: rates per offer, not counts, which mirror the app's choice of traps), 0 for a pair not clearly above a
+  // typical one or never offered, so noise makes no family; distance = 1 - similarity / the largest one; average
+  // linkage. Families: the groups of two genera or more left when the tree is cut at MIX_CUT (on average at least a
+  // fifth of the clearest pair's excess); none until a pair is clearly mixed up more than typical. Only genera mixed up
+  // at least once, as the genus shown or the one answered. Each cell (shown -> answered, the asymmetric matrix) carries its offers, its
+  // mix-ups and its rate shrunk towards the pair's model rate (MIX_K offers' worth: a direction shows only with many offers). Across: the 3 cells most mixed up
+  // between two families (or genera outside any), at least 2 mix-ups and above the typical rate: look at their photos.
+  const MIX_CUT = 0.8,
+    MIX_K = 20;
+  function mixMap(E, M, F) {
+    const P = F[0],
+      pj = new Map(P.L.map((k, j) => [k, j])),
+      cell = new Map();
+    E.forEach(e => {
+      const k = e.from + '\u0002' + e.to,
+        c = cell.get(k) || cell.set(k, {from: e.from, to: e.to, off: 0, mix: 0}).get(k);
+      c.off++;
+      c.mix += e.y;
+    });
+    const g = [...new Set([...cell.values()].filter(c => c.mix).flatMap(c => [c.from, c.to]))].sort();
+    if (g.length < 3) return null;
+    const n = g.length,
+      gi = new Map(g.map((x, i) => [x, i])),
+      typ = M.b[0] + M.b[4] * Math.log(3), // a colony photo, 4 choices
+      jOf = (a, b) => pj.get([a, b].sort().join('|')),
+      u = (a, b) => (jOf(a, b) == null ? null : P.u[jOf(a, b)]),
+      lo = (a, b) => (jOf(a, b) == null ? 0 : P.u[jOf(a, b)] - Z * Math.sqrt(P.cv[jOf(a, b)])),
+      S = g.map(a => g.map(b => (a === b ? 0 : Math.max(0, lo(a, b))))),
+      smax = Math.max(0, ...S.flat());
+    const T = hclust(S.map((r, i) => r.map((v, j) => (i === j ? 0 : smax > 0 ? 1 - v / smax : 1)))),
+      pos = new Map(T.order.map((i, k) => [i, k])),
+      fam = smax > 0 ? cutTree(T, n, MIX_CUT).filter(L => L.length > 1) : [],
+      famOf = new Map(fam.flatMap((L, f) => L.map(i => [i, f]))),
+      // leaves renumbered in display order (0 = first row and column)
+      re = i => pos.get(i),
+      cells = [...cell.values()]
+        .filter(c => gi.has(c.from) && gi.has(c.to))
+        .map(c => {
+          const i = gi.get(c.from),
+            j = gi.get(c.to),
+            pr = sig(typ + (u(c.from, c.to) || 0));
+          return [re(i), re(j), c.off, c.mix, r3((c.mix + MIX_K * pr) / (c.off + MIX_K))];
+        })
+        .sort((a, b) => a[0] - b[0] || a[1] - b[1]),
+      fo = i => (famOf.has(i) ? famOf.get(i) : 'g' + i),
+      base = sig(typ);
+    const across = cells
+      .filter(c => c[3] >= 2 && c[4] > base && fo(T.order[c[0]]) !== fo(T.order[c[1]]))
+      .sort((a, b) => b[4] - a[4] || b[3] - a[3])
+      .slice(0, 3)
+      .map(c => [c[0], c[1]]);
+    return {
+      g: T.order.map(i => g[i]),
+      m: T.m.map(([a, b, h]) => [a < n ? re(a) : a, b < n ? re(b) : b, h]),
+      fam: fam.map(L => L.map(re)),
+      cells,
+      base: r3(base),
+      cut: MIX_CUT,
+      across,
+      left: new Set(E.flatMap(e => [e.from, e.to])).size - n
+    };
   }
 
   /* ---------- 6. Learning curves: exposures to mastery, and what follows a miss ---------- */
@@ -1134,7 +1345,7 @@
       F,
       {g: Float64Array.from(D.map(a => a.g0))}
     );
-    return {M, F};
+    return {M, F, X};
   }
   // Answers to reach MASTER: 0 when the start is already there, whatever the slope (Codex review #441); 999 = not
   // reached (a flat or falling slope below it).
@@ -1156,10 +1367,122 @@
     return [q(L, 0.025), q(L, 0.975)];
   }
   const toMaster = (b0, b1, u) => (b0 + u >= logit(MASTER) ? 0 : b1 > 0 ? clamp(Math.exp((logit(MASTER) - b0 - u) / b1) - 1, 0, 999) : 999);
+  // The Wright map (study §2.7, §5 item 3): players and genera on the Learning model's one scale, the log-odds of
+  // recognising beyond guessing (typical question: no miss just before, not typed, not an exam). A player's place = the
+  // intercept, the practice slope at the player's own current practice (the median answers already given on the genus
+  // over their last PROF_N answers) and their own effect; a genus's = minus its own effect (its difficulty, the photos
+  // the app chose for it included). A genus level with a player: about 50% recognised beyond guessing; 80% when the player
+  // sits logit(0.8) above it (the app's target). A snapshot of the bank's reach, not of the questions asked: the app aims
+  // near 80%, so it makes players and genera meet. th: [id, place, answers, SE]; g: [genus, difficulty, answers, SE].
+  function wrightOf(D, M, F) {
+    const P = F[0],
+      G = F[1],
+      by = new Map(),
+      cnt = {},
+      gone = goneOf(D);
+    D.forEach(a => ((by.get(a.p) || by.set(a.p, []).get(a.p)).push(a), (cnt[a.g] = (cnt[a.g] || 0) + 1)));
+    // each place's uncertainty carries the intercept's and the slope's, with their covariance (V, as masterCI), beside the
+    // player's or genus's own effect (Codex review #620: the random effect's alone gave ranges too narrow)
+    const V = M.V || [
+        [0, 0],
+        [0, 0]
+      ],
+      fixVar = l => Math.max(0, V[0][0] + l * l * V[1][1] + 2 * l * V[0][1]),
+      lp = P.L.map(id =>
+        Math.log(
+          1 +
+            q(
+              by
+                .get(id)
+                .slice(-PROF_N)
+                .map(a => a.n),
+              0.5
+            )
+        )
+      ),
+      // a deleted account's answers are in the fit, never a player on the map (sheet v55)
+      live = P.L.map((id, j) => j).filter(j => !gone.has(P.L[j])),
+      lt = q(
+        live.map(j => lp[j]),
+        0.5
+      ); // the typical player: the median current practice, their own effect 0
+    return {
+      th: live.map(j => [P.L[j], r3(M.b[0] + M.b[1] * lp[j] + P.u[j]), by.get(P.L[j]).length, r3(Math.sqrt(fixVar(lp[j]) + P.cv[j]))]),
+      g: G.L.map((x, j) => [x, r3(-G.u[j]), cnt[x], r3(Math.sqrt(fixVar(lt) + G.cv[j]))]),
+      mid: r3(M.b[0] + M.b[1] * lt), // the typical player's place: a genus's chance for them is sig(mid - difficulty)
+      m: r3(logit(MASTER))
+    };
+  }
+  // A second skill? (study §2.4, §5 item 5; Pierre's Q77: residual PCA, never a PCA of raw right / wrong answers): the
+  // genus × player table of standardised residuals after the Learning model, each cell sum(right - P) / sqrt(sum P(1 - P)
+  // + RES_K) (shrunk towards the model's prediction when the player met the genus little; 0 when never), players with
+  // PROF_MIN answers or more, genera met by 2 of them or more; a PCA of the players' columns (centred): genera as points,
+  // players as arrows. If the model's one ability per player and one difficulty per genus explain everything, the first
+  // axis is noise: its share of the spread is set against the same share in the table built from RES_SIMS answer logs
+  // simulated from the fit itself (the Rasch world's dimensionality check, Linacre 1998, Raîche 2005; a share, not the
+  // eigenvalue itself, as the simulated logs are not refitted and their residuals run larger). Descriptive: no verdict,
+  // outside the multiple-testing correction. lam: the first two eigenvalues, var: their shares, null: [median, 95th
+  // percentile] of the first axis's share in the simulations.
+  const RES_K = 2,
+    RES_SIMS = 99;
+  function resOf(D, M, F, seed) {
+    const Pr = D.map((a, i) => clamp(a.g0 + (1 - a.g0) * sig(M.eta[i]), 1e-6, 1 - 1e-6)),
+      cnt = {};
+    // a deleted account's answers (gone, sheet v55) stay in the fit, never as a player's column
+    D.forEach(a => !a.gone && (cnt[a.p] = (cnt[a.p] || 0) + 1));
+    const pl = Object.keys(cnt)
+        .filter(p => cnt[p] >= PROF_MIN)
+        .sort(),
+      pi = new Map(pl.map((p, i) => [p, i])),
+      gp = {};
+    D.forEach(a => pi.has(a.p) && (gp[a.g] = gp[a.g] || new Set()).add(a.p));
+    const gs = Object.keys(gp)
+        .filter(g => gp[g].size >= 2)
+        .sort(),
+      gi = new Map(gs.map((g, i) => [g, i]));
+    if (pl.length < 3 || gs.length < 5) return null;
+    const rows = D.map((a, i) => [gi.get(a.g), pi.get(a.p), i]).filter(r => r[0] != null && r[1] != null);
+    const table = y => {
+      const num = gs.map(() => pl.map(() => 0)),
+        den = gs.map(() => pl.map(() => 0));
+      rows.forEach(([g, p, i]) => ((num[g][p] += y(i) - Pr[i]), (den[g][p] += Pr[i] * (1 - Pr[i]))));
+      const T = num.map((r, g) => r.map((v, p) => (den[g][p] ? v / Math.sqrt(den[g][p] + RES_K) : 0)));
+      // centre each player's column (the player's mean residual is level, which the model already has)
+      pl.forEach((_, p) => {
+        const m = mean(T.map(r => r[p]));
+        T.forEach(r => (r[p] -= m));
+      });
+      return T;
+    };
+    const cov = T => pl.map((_, a) => pl.map((__, b) => sum(T.map(r => r[a] * r[b])) / T.length)),
+      T = table(i => D[i].y),
+      E = eigSym(cov(T)),
+      R = rng((seed || 1) + 4242),
+      sims = [];
+    for (let k = 0; k < RES_SIMS; k++) {
+      const ys = Pr.map(p => (R() < p ? 1 : 0));
+      const v = eigSym(cov(table(i => ys[i]))).val;
+      sims.push(v[0] / (sum(v.map(x => Math.max(0, x))) || 1));
+    }
+    const tot = sum(E.val.map(v => Math.max(0, v))) || 1,
+      ax = [0, 1].map(k => {
+        const vec = E.vec.map(r => r[k]),
+          big = vec.reduce((m, x) => (Math.abs(x) > Math.abs(m) ? x : m), 0);
+        return {vec: vec.map(x => x * (big < 0 ? -1 : 1)), val: Math.max(0, E.val[k])};
+      });
+    return {
+      lam: ax.map(a => r3(a.val)),
+      var: ax.map(a => r3(a.val / tot)),
+      null: [r3(q(sims, 0.5)), r3(q(sims, 0.95))], // the first axis's share of the spread in the simulated tables
+      sims: RES_SIMS,
+      g: gs.map((g, i) => [g, ...ax.map(a => r3(sum(T[i].map((v, p) => v * a.vec[p]))))]),
+      p: pl.map((p, j) => [p, ...ax.map(a => r3(a.vec[j] * Math.sqrt(a.val)))])
+    };
+  }
   function learning(A, B, seed) {
     const D = A;
     if (D.length < 200) return thin(D.length, 200);
-    const {M, F} = lnFit(D),
+    const {M, F, X} = lnFit(D),
       n = D.length,
       bi = boot(
         D,
@@ -1185,7 +1508,7 @@
     D.forEach(a => {
       const c = (cnt[a.g] = cnt[a.g] || {n: 0, p: new Set(), y: 0});
       c.n++;
-      c.p.add(a.p);
+      if (!a.gone) c.p.add(a.p); // a deleted account's answers count, never as a player (Codex review #600)
       c.y += a.y;
     });
     const V2 = [
@@ -1234,7 +1557,19 @@
         })()
       )
     );
-    return {n, players: players(D), typ: typOf(D), effects, genus, curve, b0: M.b[0], b1: M.b[1]};
+    return {
+      n,
+      players: players(D),
+      typ: typOf(D),
+      effects,
+      genus,
+      curve,
+      b0: M.b[0],
+      b1: M.b[1],
+      ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])]),
+      wright: wrightOf(D, M, F),
+      res: resOf(D, M, F, seed)
+    };
   }
 
   /* ---------- 7. Comeback: the forgetting curve on real returns ---------- */
@@ -1335,6 +1670,7 @@
         if (open && i === L.length - 1) return;
         rows.push({
           p: a.p,
+          gone: a.gone, // a deleted account's answers: no player in the count (Codex review #600)
           y: i === L.length - 1 ? 1 : 0,
           X: [
             1,
@@ -1418,6 +1754,7 @@
       const last = R[R.length - 1];
       return {
         p: R[0].p,
+        gone: R[0].gone,
         t0: R[0].t,
         t1: last.t,
         R,
@@ -1445,7 +1782,7 @@
       Q.forEach((s, i) => ((s.k = i + 1), (s.gap = i ? (s.t0 - Q[i - 1].t1) / 36e5 : null)));
     });
     const r2 = v => (v == null ? null : Math.round(v * 1000) / 1000);
-    const table = L.slice()
+    const table = L.filter(s => !s.gone)
       .sort((a, b) => b.t0 - a.t0)
       .slice(0, 300)
       .map(s => ({
@@ -1570,7 +1907,7 @@
       // one observation window for both outcomes (Codex review #500): a kth session that ended less than a day before
       // the log ends counts neither as a return nor as a player who did not come back
       byP.forEach(Q => {
-        if (Q.length < k || end - Q[k - 1].t1 < DAY) return;
+        if (Q[0].gone || Q.length < k || end - Q[k - 1].t1 < DAY) return; // no deleted account in the cohort (Codex #603)
         at += 1;
         if (Q.length > k) back += 1;
       });
@@ -1605,7 +1942,7 @@
     const first = [grp(L.filter(s => s.k === 1)), grp(L.filter(s => s.k === 2)), grp(L.filter(s => s.k >= 3))];
     return {
       sessions: L.length,
-      players: byP.size,
+      players: [...byP.values()].filter(Q => !Q[0].gone).length,
       table,
       hours,
       fifths,
@@ -1661,7 +1998,358 @@
       effects: SS_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]})),
       km: curve,
       at: [5, 10, 20, 40, 80].map(k => ({k, s: at(k)})),
-      desc
+      desc,
+      ent: entOf(
+        M.V,
+        rows.map(r => r.X),
+        [null, ...SS_X.map(x => x[0])]
+      )
+    };
+  }
+
+  /* ---------- 9. Player profiles (Pierre, 2026-11-05: Q70-Q73; the multifactor visualisation study §3) ---------- */
+  // A descriptive map of how each player plays, not a typology: no named types until about 30 players (Q70; Dalmaijer et
+  // al. 2022: clusters need 20-30 people per group). Each player's current profile is computed on their last PROF_N
+  // answers (the whole history when fewer, Q71), the count shown, rows under PROF_MIN answers greyed and left out of the
+  // tree, the map and the groups. The behaviours (Q72, the study's 8; the learning slope waits for a random practice
+  // slope in Learning, ROADMAP), each net of what the app decided: the app picks the genus, the photo, the format and
+  // the difficulty from the level, so a raw share mostly measures the level.
+  const PROF_N = 300,
+    PROF_MIN = 100,
+    PROF_LOW = 20, // fewer answers than this: not on the page at all
+    PROF_K = 10, // pseudo-answers at the pooled rate for the stops after misses (a few misses in a row say little)
+    PROF_STAB = 0.75; // Hennig 2007: a group found again with a mean Jaccard of 0.75 or more is stable
+  const PROF_F = [
+    ['pace', 'Answer time'], // the player's own effect in the Answer time model (log time, net of right or wrong, format, difficulty, genus, photo)
+    ['zoom', 'Enlarging'], // share of photos enlarged, minus what the views shown predict from everyone's rates (points)
+    ['acc', 'Right beyond the app’s expectation'], // right − the app's expected chance (points), the app's choices already in it
+    ['stop', 'Stopping after misses'], // extra chance to end the session after 2+ misses in a row, against after other answers (points)
+    ['len', 'Session length'], // median answers per session (log for the map)
+    ['wk', 'Sessions per week'], // sessions per week over the window (at least a week; log for the map)
+    ['eve', 'Evening play'] // share of answers from 17:00 to midnight, Manila time
+  ];
+  // The behaviours of every player in D (any set of answers, prep's shape, in time order): {id: [value or null per
+  // PROF_F]}. Kept apart from the window so a later analysis can run it on successive windows of a player's history
+  // (Pierre, 2026-11-05: whole-history trajectories are a later level).
+  function profFeat(D) {
+    const by = new Map();
+    D.forEach(a => (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
+    const out = {},
+      ids = [...by.keys()];
+    ids.forEach(id => (out[id] = PROF_F.map(() => null)));
+    const fi = k => PROF_F.findIndex(f => f[0] === k);
+    // pace: the Answer time model on these answers, its player effects (a fast fit: no covariance needed)
+    const Dt = D.filter(a => a.s && a.x != null);
+    if (Dt.length >= 100 && players(Dt) >= 2) {
+      FAST = true;
+      try {
+        const {F} = rtFit(Dt);
+        F[0].L.forEach((id, j) => (out[id][fi('pace')] = F[0].u[j]));
+      } catch (e) {
+        void e;
+      } finally {
+        FAST = false;
+      }
+    }
+    // enlarging, net of the views: everyone's rate for the view shown is what the app's choice of photo predicts
+    const vr = {};
+    D.filter(a => a.z != null).forEach(a => {
+      const o = (vr[a.qv || '?'] = vr[a.qv || '?'] || [0, 0]);
+      o[0] += a.z;
+      o[1]++;
+    });
+    const end = D.reduce((m, a) => (a.t > m ? a.t : m), -Infinity);
+    // stops after 2+ misses in a row, pooled first (the last answer of a session ends it; a session still open is not over).
+    // The misses are counted within the session (Codex review #604: prep's streak runs across a break, so a session's
+    // first miss after a miss that ended the one before read as two in a row).
+    const stopRows = id => {
+      const L = by.get(id),
+        R = [];
+      let run = 0;
+      L.forEach((a, i) => {
+        run = a.y ? 0 : i && L[i - 1].sess === a.sess ? run + 1 : 1;
+        const last = i === L.length - 1 || L[i + 1].sess !== a.sess;
+        if (last && end - a.t < GAP) return;
+        R.push([run >= 2 ? 1 : 0, last ? 1 : 0]);
+      });
+      return R;
+    };
+    const SR = Object.fromEntries(ids.map(id => [id, stopRows(id)])),
+      pool = f => {
+        const L = ids.flatMap(id => SR[id]).filter(r => r[0] === f);
+        return L.length ? sum(L.map(r => r[1])) / L.length : 0;
+      },
+      p2 = pool(1),
+      p0 = pool(0);
+    ids.forEach(id => {
+      const L = by.get(id),
+        o = out[id],
+        Z = L.filter(a => a.z != null),
+        E = L.filter(a => a.E != null);
+      if (Z.length >= 20) o[fi('zoom')] = mean(Z.map(a => a.z - vr[a.qv || '?'][0] / vr[a.qv || '?'][1]));
+      if (E.length >= 20) o[fi('acc')] = mean(E.map(a => a.y - a.E));
+      const S = SR[id],
+        n2 = S.filter(r => r[0]).length,
+        s2 = S.filter(r => r[0] && r[1]).length,
+        n0 = S.length - n2,
+        s0 = S.filter(r => !r[0] && r[1]).length;
+      if (S.length >= 20) o[fi('stop')] = (s2 + PROF_K * p2) / (n2 + PROF_K) - (s0 + PROF_K * p0) / (n0 + PROF_K);
+      const lens = new Map();
+      L.forEach(a => lens.set(a.sess, (lens.get(a.sess) || 0) + 1));
+      // a session cut by the window's start (its first answer here is not its first, pos > 1) is not a session's length
+      // (Codex review #604): left out of the median, unless it is the only one (then it lasted at least that long)
+      const cut = L[0].pos > 1 && lens.size > 1 ? L[0].sess : null;
+      o[fi('len')] = q(
+        [...lens.entries()].filter(([k]) => k !== cut).map(([, v]) => v),
+        0.5
+      );
+      o[fi('wk')] = (lens.size * 7) / Math.max(7, (L[L.length - 1].t - L[0].t) / DAY);
+      o[fi('eve')] = mean(L.map(a => ((new Date(a.t).getUTCHours() + 8) % 24 >= 17 ? 1 : 0)));
+    });
+    return out;
+  }
+  // The scale each behaviour is mapped on (counts and rates on a log scale), then z-scores over the rows given.
+  const profScale = (k, v) => (v == null ? null : k === 'len' || k === 'wk' ? Math.log(Math.max(v, 0.1)) : v);
+  function zOf(V, rows) {
+    const p = PROF_F.length,
+      mu = [],
+      sd = [];
+    for (let f = 0; f < p; f++) {
+      const L = rows.map(r => V[r][f]).filter(v => v != null);
+      mu[f] = mean(L);
+      sd[f] = Math.sqrt(mean(L.map(v => (v - mu[f]) ** 2)));
+    }
+    return id => V[id].map((v, f) => (v == null || !sd[f] ? 0 : (v - mu[f]) / sd[f]));
+  }
+  // Eigen decomposition of a symmetric matrix (Jacobi rotations): values in decreasing order, vectors as columns.
+  function eigSym(S) {
+    const n = S.length,
+      a = S.map(r => r.slice()),
+      v = S.map((_, i) => S.map((__, j) => (i === j ? 1 : 0)));
+    for (let sweep = 0; sweep < 100; sweep++) {
+      let off = 0;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) off += a[i][j] * a[i][j];
+      if (off < 1e-22) break;
+      for (let p = 0; p < n; p++)
+        for (let r = p + 1; r < n; r++) {
+          if (Math.abs(a[p][r]) < 1e-300) continue;
+          const phi = 0.5 * Math.atan2(2 * a[p][r], a[r][r] - a[p][p]),
+            c = Math.cos(phi),
+            s = Math.sin(phi);
+          for (let k = 0; k < n; k++) {
+            const x = a[k][p],
+              y = a[k][r];
+            a[k][p] = c * x - s * y;
+            a[k][r] = s * x + c * y;
+          }
+          for (let k = 0; k < n; k++) {
+            const x = a[p][k],
+              y = a[r][k];
+            a[p][k] = c * x - s * y;
+            a[r][k] = s * x + c * y;
+          }
+          for (let k = 0; k < n; k++) {
+            const x = v[k][p],
+              y = v[k][r];
+            v[k][p] = c * x - s * y;
+            v[k][r] = s * x + c * y;
+          }
+        }
+    }
+    const I = a.map((_, i) => i).sort((i, j) => a[j][j] - a[i][i]);
+    return {val: I.map(i => a[i][i]), vec: v.map(r => I.map(i => r[i]))};
+  }
+  // k groups from a tree of n leaves: its first n - k merges applied.
+  function cutK(T, n, k) {
+    const up = [...Array(n + T.m.length).keys()],
+      top = x => (up[x] === x ? x : (up[x] = top(up[x])));
+    T.m.slice(0, Math.max(0, n - k)).forEach(([a, b], j) => ((up[top(a)] = n + j), (up[top(b)] = n + j)));
+    const G = new Map();
+    T.order.forEach(i => (G.get(top(i)) || G.set(top(i), []).get(top(i))).push(i));
+    return [...G.values()];
+  }
+  // Average silhouette width of a grouping (Rousseeuw 1987) on a distance matrix.
+  function silhouette(Dm, G) {
+    const lab = [];
+    G.forEach((L, g) => L.forEach(i => (lab[i] = g)));
+    const s = Dm.map((r, i) => {
+      const own = G[lab[i]].filter(j => j !== i);
+      if (!own.length) return 0;
+      const a = mean(own.map(j => r[j])),
+        b = Math.min(...G.filter((_, g) => g !== lab[i]).map(L => mean(L.map(j => r[j]))));
+      return (b - a) / Math.max(a, b, 1e-12);
+    });
+    return mean(s);
+  }
+  const jac = (A, B) => {
+    const S = new Set(B);
+    return A.filter(x => S.has(x)).length / new Set([...A, ...B]).size;
+  };
+  // Ward's tree on z-scores of the ids given (the groups' structure for the stability runs).
+  const wardOf = (ids, zf) => {
+    const Z = ids.map(zf),
+      D2 = Z.map(a => Z.map(b => sum(a.map((v, f) => (v - b[f]) ** 2))));
+    return {T: hclust(D2, 'ward'), D: D2.map(r => r.map(Math.sqrt))};
+  };
+  // The groups of a set of players (a list, a player drawn twice counted twice in the z-scores and the tree): Ward's tree
+  // cut into k groups (fewer when there are fewer distinct players), each group as its distinct players.
+  function profRun(V, ids, k) {
+    const kk = Math.min(k, new Set(ids).size - 1);
+    if (kk < 2) return null;
+    const zz = zOf(V, ids),
+      {T: t} = wardOf(ids, zz);
+    return cutK(t, ids.length, kk)
+      .map(L => [...new Set(L.map(i => ids[i]))])
+      .filter(L => L.length);
+  }
+  function profiles(A, B, seed) {
+    // a deleted account's answers (gone, sheet v55) make no profile (Pierre, 2026-11-05, Q86)
+    const by = new Map();
+    A.forEach(a => !a.gone && (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
+    const win = [...by.entries()].filter(([, L]) => L.length >= PROF_LOW).map(([id, L]) => [id, L.slice(-PROF_N)]),
+      D = win.flatMap(([, L]) => L).sort((a, b) => a.t - b.t),
+      V0 = profFeat(D),
+      V = Object.fromEntries(Object.entries(V0).map(([id, L]) => [id, L.map((v, f) => profScale(PROF_F[f][0], v))])),
+      cnt = Object.fromEntries(win.map(([id, L]) => [id, L.length])),
+      main = win.filter(([id]) => cnt[id] >= PROF_MIN).map(([id]) => id),
+      low = win
+        .filter(([id]) => cnt[id] < PROF_MIN)
+        .map(([id]) => id)
+        .sort((a, b) => cnt[b] - cnt[a]),
+      feats = PROF_F.map(([k, label]) => ({k, label})),
+      row = (id, zf) => ({k: id, n: cnt[id], low: cnt[id] < PROF_MIN ? 1 : 0, v: V0[id].map(r3), z: zf(id).map(r3)});
+    if (main.length < 3) {
+      const zf = zOf(
+        V,
+        win.map(([id]) => id)
+      );
+      return {
+        thin: true,
+        n: main.length,
+        min: 3,
+        of: 'players',
+        effects: [],
+        feats,
+        win: PROF_N,
+        at: PROF_MIN,
+        who: win.map(([id]) => row(id, zf))
+      };
+    }
+    const zf = zOf(V, main),
+      n = main.length,
+      p = PROF_F.length,
+      Z = main.map(zf),
+      {T, D: Dm} = wardOf(main, zf),
+      pos = new Map(T.order.map((i, k) => [i, k]));
+    // the behaviours ordered by how they go together across players (average linkage on 1 - r)
+    const C = PROF_F.map((_, f) => PROF_F.map((__, g) => sum(Z.map(z => z[f] * z[g])) / n)),
+      Cr = C.map((r, f) => r.map((v, g) => v / Math.sqrt(Math.max(1e-12, C[f][f] * C[g][g])))),
+      CT = hclust(Cr.map((r, f) => r.map((v, g) => (f === g ? 0 : 1 - (C[f][f] && C[g][g] ? v : 0))))),
+      // PCA of the behaviours (their correlations over players): players as points, behaviours as arrows (a biplot;
+      // the arrows are the loadings, the correlation of each behaviour with each axis). Each axis's sign is set so its
+      // largest loading is positive (the map would otherwise flip from one milestone to the next).
+      E = eigSym(Cr.map(r => r.map(v => (isFinite(v) ? v : 0)))),
+      tot = sum(E.val.map(v => Math.max(0, v))) || 1,
+      ax = [0, 1].map(k => {
+        const vec = E.vec.map(r => r[k]),
+          big = vec.reduce((m, x) => (Math.abs(x) > Math.abs(m) ? x : m), 0),
+          sg = big < 0 ? -1 : 1;
+        return {vec: vec.map(x => x * sg), val: Math.max(0, E.val[k])};
+      });
+    // groups: the Ward tree cut where the silhouette is best (2 to 5 groups, never named), and how they hold when one
+    // player is left out (each run) or the players are drawn again (bootstrap): each group's best Jaccard in the run
+    let k = 2,
+      sil = -1;
+    for (let g = 2; g <= Math.min(5, n - 1); g++) {
+      const s = silhouette(Dm, cutK(T, n, g));
+      if (s > sil + 1e-9) ((sil = s), (k = g));
+    }
+    const G = cutK(T, n, k).map(L => L.map(i => main[i])),
+      run = ids => profRun(V, ids, k),
+      best = (H, L) => (L.length ? Math.max(...H.map(h => jac(L, h))) : null),
+      loo = G.map(() => []),
+      bt = G.map(() => []);
+    let kept = 0,
+      done = 0; // the leave-one-out runs that could be compared (Codex review #604: with 3 players none can)
+    main.forEach(id => {
+      const H = run(main.filter(x => x !== id));
+      if (!H) return;
+      done++;
+      const J = G.map(L =>
+        best(
+          H,
+          L.filter(x => x !== id)
+        )
+      );
+      J.forEach((j, g) => j != null && loo[g].push(j));
+      if (J.every(j => j == null || j >= PROF_STAB)) kept++;
+    });
+    const R = rng(seed || 1),
+      NB = B ? Math.min(200, Math.max(50, B)) : 100;
+    for (let b = 0; b < NB; b++) {
+      // the draw keeps its multiplicities for the standardisation and the tree (Codex review #604: a set of the players
+      // drawn measured a subsample, not the bootstrap); the groups compare unique players
+      const S = main.map(() => main[Math.floor(R() * n)]),
+        U = [...new Set(S)];
+      const H = run(S);
+      if (!H) continue;
+      G.forEach((L, g) => {
+        const j = best(
+          H,
+          L.filter(x => U.includes(x))
+        );
+        if (j != null) bt[g].push(j);
+      });
+    }
+    // in words: the closest pairs and what they share; the player furthest from everyone and their most marked behaviour
+    const pairs = [];
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) pairs.push([i, j, Dm[i][j]]);
+    pairs.sort((a, b) => a[2] - b[2]);
+    const share = (i, j) =>
+      PROF_F.map((_, f) => [f, Math.sign(Z[i][f]) === Math.sign(Z[j][f]) ? Math.min(Math.abs(Z[i][f]), Math.abs(Z[j][f])) : 0])
+        .filter(x => x[1] >= 0.5)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(x => x[0]);
+    const far = Dm.map((r, i) => [i, sum(r) / (n - 1)]).sort((a, b) => b[1] - a[1])[0][0],
+      farF = Z[far].map((v, f) => [f, Math.abs(v)]).sort((a, b) => b[1] - a[1])[0][0],
+      re = i => pos.get(i);
+    return {
+      n: D.length,
+      players: n,
+      win: PROF_N,
+      at: PROF_MIN,
+      effects: [],
+      feats,
+      who: [...T.order.map(i => row(main[i], zf)), ...low.map(id => row(id, zf))],
+      m: T.m.map(([a, b, h]) => [a < n ? re(a) : a, b < n ? re(b) : b, h]),
+      cols: CT.order,
+      cm: CT.m.map(([a, b, h]) => [a < p ? CT.order.indexOf(a) : a, b < p ? CT.order.indexOf(b) : b, h]),
+      pca: {
+        var: ax.map(a => r3(a.val / tot)),
+        load: PROF_F.map((_, f) => ax.map(a => r3(a.vec[f] * Math.sqrt(a.val)))),
+        // the players projected on the same standardised behaviours the PCA diagonalised (Codex review #604: a behaviour
+        // missing for some players has a spread under 1 once those are set to the average, and Cr rescales it)
+        pts: T.order.map(i => ax.map(a => r3(sum(Z[i].map((z, f) => (C[f][f] > 1e-12 ? z / Math.sqrt(C[f][f]) : 0) * a.vec[f])))))
+      },
+      k,
+      sil: r3(sil),
+      groups: G.map(L => L.map(id => re(main.indexOf(id))).sort((a, b) => a - b)),
+      // stable only when every leave-one-out run keeps every group and each group's bootstrap mean reaches PROF_STAB (Codex
+      // review #604: the leave-one-out means alone called groups stable that some runs changed); null when no run could
+      // be compared (too few players: unavailable evidence is not instability). runs: the runs compared, of n players.
+      stab: {
+        loo: loo.map(L => (L.length ? r3(mean(L)) : null)),
+        boot: bt.map(L => (L.length ? r3(mean(L)) : null)),
+        runs: done,
+        of: n,
+        kept,
+        draws: NB,
+        at: PROF_STAB,
+        stable: !done ? null : kept === done && bt.every(L => !L.length || mean(L) >= PROF_STAB) ? 1 : 0
+      },
+      close: pairs.slice(0, 3).map(([i, j, d]) => [re(i), re(j), r3(d), share(i, j)]),
+      far: [re(far), farF]
     };
   }
 
@@ -1673,6 +2361,7 @@
     learn: {b0: -0.3, slope: 0.55, afterMiss: -0.3, again: 0.4},
     fmt: {k2: [0.4, 0], typed: [0, -0.6], again: [0.5, 0.2]}, // [true guess rate, extra ease (logit, - = harder)]
     zoom: 0.3,
+    mix: 4, // a wrong answer goes to a look-alike offered 4 times as often as to another genus offered (the mix-up map)
     back: -0.3,
     sess: {b0: -3.3, wrong: 0.5, streak: 0.6}
   };
@@ -1683,6 +2372,12 @@
       T = TRUTH,
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       pick = L => L[Math.floor(R() * L.length)],
+      // a wrong choice: a look-alike of the genus shown is picked T.mix times as often as another (one draw, as pick)
+      pickW = (L, look) => {
+        const w = L.map(x => (look.includes(x) ? T.mix : 1));
+        let r = R() * sum(w);
+        return L.find((x, i) => (r -= w[i]) < 0) || L[L.length - 1];
+      },
       G = Object.keys(o.photos).filter(g => o.photos[g].length),
       bg = Object.fromEntries(G.map(g => [g, nrm() * 0.5])),
       rg = Object.fromEntries(G.map(g => [g, nrm() * T.rt.sdGenus])),
@@ -1751,7 +2446,7 @@
         const app = f === 'typed' ? 0 : f === 'k2' ? 0.5 : f === 'k4' ? 0.25 : 0.5,
           // the app's expectation: its own estimate of eta (a little off), its fixed guess rate
           E = app + (1 - app) * sig(eta + nrm() * 0.1),
-          ans = right ? g : f === 'typed' ? (R() < 0.5 ? '' : pick(G)) : pick(ch.slice(1)),
+          ans = right ? g : f === 'typed' ? (R() < 0.5 ? '' : pick(G)) : pickW(ch.slice(1), look),
           sec = Math.exp(
             T.rt.b0 +
               rp +
@@ -2310,7 +3005,8 @@
     ['conf', 'Confusions', confusions],
     ['learn', 'Learning curves', learning],
     ['back', 'Comeback', comeback],
-    ['sess', 'Sessions', sessions]
+    ['sess', 'Sessions', sessions],
+    ['who', 'Player profiles', profiles]
   ];
   // rows: the answer log (readAnswers rows); M: how many of its answers (time order) this milestone takes; B: bootstrap
   // draws (BOOT by default); bse: normal bootstrap intervals (boot). progress(key) is called as each analysis finishes.
@@ -2560,7 +3256,25 @@
     confusions,
     learning,
     comeback,
-    sessions
+    sessions,
+    colCorr,
+    entOf,
+    hclust,
+    cutTree,
+    mixMap,
+    MIX_CUT,
+    PROF_F,
+    PROF_N,
+    PROF_MIN,
+    profFeat,
+    profiles,
+    profRun,
+    zOf,
+    eigSym,
+    cutK,
+    silhouette,
+    wrightOf,
+    resOf
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ANALYSIS = api;

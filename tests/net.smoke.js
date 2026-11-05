@@ -512,7 +512,7 @@ const server = http.createServer((req, res) => {
     // this server (its log: "admin.html requests the server got since q2 opened: none"). Every request of a context with a
     // route, the worker's included, passes through Playwright's interception. Here nothing is intercepted: other hosts
     // do not resolve in this browser (nothing reaches the real sheet), and cand.json is held by the server (HOLD).
-    // docs/ROADMAP.md keeps the investigation open until enough CI runs confirm.
+    // The hang itself came from a leftover deploy (2026-11-05, see SWV = 1 below).
     const b9 = introsOn(await chromium.launch({args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']}));
     const ctx = await b9.newContext({viewport: {width: 390, height: 800}});
     await ctx.addInitScript(
@@ -592,6 +592,12 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('A tab first opened before any install missed the next version'));
     await r.close();
     // The admin page does the same (its demo mode: no token, nothing sent).
+    // Deploy 9 was for the second context, whose storage is its own: this one still runs deploy 1, which the server serves
+    // again before the admin opens here. Left at 9 (until 2026-11-05), opening the admin installed deploy 9 in this
+    // context, the takeover checked below was met by it, and deploy 2 was still waiting for that worker when the last
+    // admin page opened: its navigation then went to the old worker in the instant Chromium stopped it for the swap,
+    // and never reached DOMContentLoaded (about 1 run in 30 on CI; docs/ARCHITECTURE.md "Service worker").
+    SWV = 1;
     const q = await ctx.newPage(),
       qQuiet = track(q);
     await q.goto(base + 'admin.html?demo');
@@ -619,15 +625,28 @@ const server = http.createServer((req, res) => {
     // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
     // The reloaded page's own files are in first (its quiet): only the new page's cand.json is the one that never answers.
     await qQuiet();
+    // No version waiting or installing: the last page opens on one worker, not in the middle of a swap (above).
+    await q
+      .waitForFunction(() => navigator.serviceWorker.getRegistration().then(g => !!g && !g.installing && !g.waiting), null, {
+        timeout: 30000
+      })
+      .catch(() => fails.push('Admin: a new version still waiting before the last page opens'));
     HOLD = /cand\.json$/;
-    // Every request of the context, the worker's included, still pending: printed if the new page never reaches
-    // DOMContentLoaded (one red run on CI, #473, 2026-11-04, not reproduced in 5 local runs: what did it wait on?).
+    // Printed if the new page never reaches DOMContentLoaded: every request of the context still pending (the worker's
+    // included), and each worker version's state as Chromium reports it (running/stopping/stopped, installed/activated),
+    // which showed the swap above (2026-11-05).
     const pend = new Map();
     ctx.on('request', r => pend.set(r, `${r.url().replace(base, '')}${r.serviceWorker && r.serviceWorker() ? ' (worker)' : ''}`));
     ctx.on('requestfinished', r => pend.delete(r));
     ctx.on('requestfailed', r => pend.delete(r));
     const q2At = Date.now(),
-      q2 = await ctx.newPage();
+      vers = [],
+      cdp = await ctx.newCDPSession(q);
+    cdp.on('ServiceWorker.workerVersionUpdated', e =>
+      e.versions.forEach(v => vers.push(`+${Date.now() - q2At} ms v${v.versionId} ${v.runningStatus}/${v.status}`))
+    );
+    await cdp.send('ServiceWorker.enable');
+    const q2 = await ctx.newPage();
     await q2.addInitScript(() => {
       const add = ServiceWorkerContainer.prototype.addEventListener;
       ServiceWorkerContainer.prototype.addEventListener = function (t, ...a) {
@@ -645,7 +664,7 @@ const server = http.createServer((req, res) => {
           ADMIN_HITS.filter(h => h.at >= q2At)
             .map(h => `${h.url} at +${h.at - q2At} ms, ${h.done ? `answered at +${h.done - q2At} ms` : 'never answered'}`)
             .join('; ') || 'none'
-        }.`
+        }. Worker versions: ${[...new Set(vers)].join('; ') || 'none'}.`
       );
       throw e;
     });
@@ -656,11 +675,10 @@ const server = http.createServer((req, res) => {
     HELD.splice(0).forEach(x => x.destroy());
     await b9.close();
   }
-  // 9c. A Cache Storage that stops answering never holds a page (2026-11-04, the step-9 hang that came back after #513:
-  // the server answered admin.html in 1 ms, yet the worker's own request for it never finished, so nothing ever read its
-  // body: neither the reply, which waited on caches.match, nor the cache copy, which waited on caches.open; the browser's
-  // Cache Storage itself had stopped answering, why is not known). Every Cache Storage call of the worker is wedged here
-  // (never answers): the admin page and the app still open and start, from the network.
+  // 9c. A Cache Storage that stops answering never holds a page (sw.js soon, #531: added for the step-9 hang, then read
+  // as a stalled Cache Storage; on 2026-11-05 that hang was traced to a leftover deploy in check 9, see SWV = 1 there).
+  // Every Cache Storage call of the worker is wedged here (never answers): the admin page and the app still open and
+  // start, from the network.
   {
     const bw = introsOn(await chromium.launch({args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']}));
     const ctx = await bw.newContext({viewport: {width: 390, height: 800}});

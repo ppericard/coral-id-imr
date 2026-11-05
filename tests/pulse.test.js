@@ -108,22 +108,31 @@ function quiz() {
       onScreen: new Set(),
       achBusy: false,
       session: {n: 0, h: []},
+      // A fake clock (ms) and model.js SESSION (the test below checks its gap against the admin's and the tips').
+      t: 1e12,
+      SESSION: {GAP: 30 * 60000},
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
+  ctx.Date = {now: () => ctx.t};
   ctx.answersSoFar = () => ctx.a;
   ctx.hashNow = () => ctx.h;
   // quiz.js photoQuiz: the photo quiz and the custom quiz on the genera the player picks (CUSTOM_H).
   ctx.photoQuiz = h => h === 'quiz' || h === 'quiz-custom|play';
   ctx.document = {querySelector: sel => (sel.split(',').some(s => ctx.onScreen.has(s.trim())) ? {} : null)};
   vm.createContext(ctx);
-  vm.runInContext(block + '\nthis.Q = {PROMPT, promptOk, promptMark, PULSE, PULSEK, pulseDue};', ctx);
+  vm.runInContext(block + '\nthis.Q = {PROMPT, promptOk, promptMark, PULSE, PULSEK, pulseDue, pulseNote, pulseSess};', ctx);
   return {...ctx.Q, ctx};
 }
 
 test('spacing: first at PULSE.FIRST answers, then every PULSE.EVERY, longer after Not now, only in the quiz and duels', () => {
   const Q = quiz(),
     c = Q.ctx,
-    at = n => ((c.a = n), (c.session.n = Math.max(c.session.n, Q.PULSE.SESSION)), Q.pulseDue());
+    // A session far enough along (Q.PULSE.SESS_N answers over Q.PULSE.SESS_MS), kept as it is in what is stored.
+    long = () => {
+      const st = c.store.get(Q.PULSEK, {});
+      c.store.set(Q.PULSEK, {...st, v: {t0: c.t - Q.PULSE.SESS_MS - 60000, t: c.t, n: Q.PULSE.SESS_N + 5}});
+    },
+    at = n => ((c.a = n), long(), Q.pulseDue());
   assert.strictEqual(at(Q.PULSE.FIRST - 1), false, 'not before PULSE.FIRST answers');
   assert.strictEqual(at(Q.PULSE.FIRST), true);
   // Asked at 35: the next one PULSE.EVERY answers later.
@@ -137,12 +146,10 @@ test('spacing: first at PULSE.FIRST answers, then every PULSE.EVERY, longer afte
   assert.strictEqual(at(100 + Q.PULSE.EVERY * Q.PULSE.AFTERX), true);
   // A count that went back (a progress reset) starts the spacing over.
   assert.strictEqual(at(60), true);
-  // Never before PULSE.SESSION answers of this visit, outside the quiz and duels, or with the tour or a card on screen.
+  // Never outside the quiz and duels, or with the tour or a card on screen.
   c.store.set(Q.PULSEK, {at: 0});
   c.a = 200;
-  c.session.n = Q.PULSE.SESSION - 1;
-  assert.strictEqual(Q.pulseDue(), false, 'early in a visit');
-  c.session.n = Q.PULSE.SESSION;
+  long();
   assert.strictEqual(Q.pulseDue(), true);
   assert.strictEqual(Q.pulseDue('quiz-duel|Porites|Goniopora'), true);
   assert.strictEqual(Q.pulseDue('quiz-custom|play'), true, 'the custom quiz is a photo quiz');
@@ -152,9 +159,135 @@ test('spacing: first at PULSE.FIRST answers, then every PULSE.EVERY, longer afte
     assert.strictEqual(Q.pulseDue(), false, s);
   }
   c.onScreen = new Set();
-  // An old store with no number (a broken value): asked as if never.
+  // An old store with no number (a broken value): asked as if never, once the session allows.
   c.store.set(Q.PULSEK, {at: 'x'});
+  assert.strictEqual(Q.pulseDue(), false, 'no session kept: not yet');
+  long();
   assert.strictEqual(Q.pulseDue(), true);
+});
+
+// A player's answers at the given gaps (seconds between two answers), on the fake clock: each one noted as answer() does
+// (pulseNote), then the prompt asked when due, as Next does (pulseAsk stubbed down to what it stores). Returns the answer
+// counts at which a prompt showed and, for each, its answer number in the session.
+function play(Q, gaps) {
+  const c = Q.ctx,
+    shown = [];
+  let inSess = 0;
+  for (const g of gaps) {
+    c.t += g * 1000;
+    const v0 = c.store.get(Q.PULSEK, {}).v;
+    inSess = v0 && c.t - v0.t < c.SESSION.GAP ? inSess + 1 : 1;
+    c.a++;
+    Q.pulseNote();
+    if (Q.pulseDue()) {
+      const st = c.store.get(Q.PULSEK, {});
+      c.store.set(Q.PULSEK, {at: c.a, q: 'are', left: [], v: st.v});
+      shown.push([c.a, inSess]);
+    }
+  }
+  return shown;
+}
+
+test('session gate: a prompt due at the start of a new session waits for 15 answers and 5 minutes into it', () => {
+  const Q = quiz(),
+    c = Q.ctx;
+  assert.strictEqual(Q.PULSE.SESS_N, 15);
+  assert.strictEqual(Q.PULSE.SESS_MS, 5 * 60000);
+  // Yesterday: 100 answers, the last prompt at 60, so the counter is due (100 − 60 ≥ 40) when today's session starts.
+  c.a = 100;
+  c.store.set(Q.PULSEK, {at: 60, q: 'fun', left: ['bored'], v: {t0: c.t - 3600e3, t: c.t, n: 50}});
+  c.t += 14 * 3600e3; // the next morning
+  // Quick answers (8 s apart): 15 answers come in 2 min, so the 5 minutes decide.
+  const quick = play(Q, Array(60).fill(8));
+  assert.strictEqual(quick.length, 1, `one prompt in 60 quick answers: ${JSON.stringify(quick)}`);
+  const [a, n] = quick[0];
+  assert.ok(n >= Q.PULSE.SESS_N, `not before ${Q.PULSE.SESS_N} answers of the session (at ${n})`);
+  assert.strictEqual(n, Math.ceil(Q.PULSE.SESS_MS / 1000 / 8) + 1, 'at the first answer 5 minutes in');
+  assert.strictEqual(a, 100 + n);
+  // The round and the "Not now" mark are kept as they are by the session's own bookkeeping.
+  assert.deepStrictEqual(c.store.get(Q.PULSEK, {}).left, []);
+});
+
+test('session gate: slow answers wait for 15 answers; a gap of 30 minutes starts the count over', () => {
+  const Q = quiz(),
+    c = Q.ctx;
+  c.a = 100;
+  c.store.set(Q.PULSEK, {at: 0});
+  // One answer a minute: 5 minutes pass at the 6th answer, the 15th decides.
+  let s = play(Q, Array(20).fill(60));
+  assert.deepStrictEqual(
+    s.map(x => x[1]),
+    [Q.PULSE.SESS_N]
+  );
+  // A new session after a 31-minute break, the counter due again (40 answers on): nothing in its first 14 answers.
+  c.store.set(Q.PULSEK, {...c.store.get(Q.PULSEK, {}), at: c.a - 40});
+  s = play(Q, [31 * 60, ...Array(30).fill(60)]);
+  assert.deepStrictEqual(
+    s.map(x => x[1]),
+    [Q.PULSE.SESS_N]
+  );
+  // 29 minutes between two answers stay in one session: no new floor.
+  const v = c.store.get(Q.PULSEK, {}).v;
+  c.store.set(Q.PULSEK, {...c.store.get(Q.PULSEK, {}), at: c.a - 40});
+  s = play(Q, [29 * 60]);
+  assert.strictEqual(s.length, 1, 'still the same session, already long: asked at once');
+  assert.strictEqual(c.store.get(Q.PULSEK, {}).v.t0, v.t0);
+  // A session that ended (its last answer 30 minutes ago or more) is no reason to ask at Next.
+  c.store.set(Q.PULSEK, {...c.store.get(Q.PULSEK, {}), at: c.a - 40});
+  c.t += 30 * 60000;
+  assert.strictEqual(Q.pulseDue(), false);
+});
+
+test('session gate: in a long session the cadence is unchanged, one prompt every 40 answers (80 after Not now)', () => {
+  const Q = quiz(),
+    c = Q.ctx;
+  // A brand-new player: 35 answers in all first (the session gate is met long before), then every 40.
+  const s = play(Q, Array(200).fill(20));
+  assert.deepStrictEqual(
+    s.map(x => x[0]),
+    [35, 75, 115, 155, 195]
+  );
+  // After a "Not now": the next one 80 answers later, in the same session.
+  c.store.set(Q.PULSEK, {...c.store.get(Q.PULSEK, {}), x: 1});
+  const after = play(Q, Array(100).fill(20));
+  assert.deepStrictEqual(
+    after.map(x => x[0]),
+    [195 + 80]
+  );
+});
+
+test('session gate: a reload is no new session; the stored session survives a broken value', () => {
+  const Q = quiz(),
+    c = Q.ctx;
+  Q.pulseNote();
+  c.t += 10000;
+  Q.pulseNote();
+  // A new page (a reload): the session is read back from the device, not from this page's answers.
+  const Q2 = quiz();
+  Q2.ctx.t = c.t + 10000;
+  Q2.ctx.store.set(Q2.PULSEK, c.store.get(Q.PULSEK, {}));
+  Q2.pulseNote();
+  assert.deepStrictEqual(Q2.ctx.store.get(Q2.PULSEK, {}).v, {t0: 1e12, t: 1e12 + 20000, n: 3});
+  // Broken values start a new session; a clock that went back too.
+  for (const v of [null, 'x', {t0: 'a', t: 1, n: 1}, {t0: 1, t: c.t + 1e6, n: 4}]) {
+    c.store.set(Q.PULSEK, {at: 3, v});
+    Q.pulseNote();
+    assert.deepStrictEqual(c.store.get(Q.PULSEK, {}), {at: 3, v: {t0: c.t, t: c.t, n: 1}}, JSON.stringify(v));
+  }
+  c.store.set(Q.PULSEK, 'broken');
+  Q.pulseNote();
+  assert.deepStrictEqual(c.store.get(Q.PULSEK, {}), {v: {t0: c.t, t: c.t, n: 1}});
+  assert.strictEqual(Q.pulseSess(null), false);
+});
+
+test("sessions: one gap for the one-tap question, the tips' visits and the admin's sessions (30 min)", () => {
+  const rd = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+  const gap = Number((rd('model.js').match(/const SESSION = \{GAP: (\d+) \* 60000\}/) || [])[1]),
+    adm = Number((rd('admin.js').match(/\n  GAP: (\d+), \/\/ minutes between two answers/) || [])[1]);
+  assert.strictEqual(gap, 30);
+  assert.strictEqual(adm, gap, 'admin.js HEALTH.GAP');
+  assert.strictEqual(require('../tips.js').TIPR.GAP, gap * 60000, 'tips.js TIPR.GAP');
+  assert.strictEqual(quiz().ctx.SESSION.GAP, gap * 60000, 'the stub here');
 });
 
 test('spacing: every out-of-game prompt PROMPT.GAP answers apart, never with the tour, a card or a toast', () => {

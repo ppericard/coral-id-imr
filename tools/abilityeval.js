@@ -685,6 +685,7 @@ if (!file) {
   );
   process.exit(1);
 }
+require('../tests/slot.js').guard('tools/abilityeval.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
 const VARIANTS = opt('variants', 'a,b,c,d,e,e+L').split(','),
   ONLY = opt('player', null),
   MIN = Number(opt('min', 20)),

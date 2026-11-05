@@ -450,7 +450,7 @@ on families only to an IMR RA with every species open:
   - plus a **separate set of harder, specific "hunt" achievements** for players who like to chase them: mastering a precise look-alike
     pair (Pierre's example: the pearlscale angelfish, *Centropyge vrolikii*, against the mimic surgeonfish, the juvenile of *Acanthurus
     pyroferus*), hard combinations, and tongue-in-cheek / wink ones. Kept apart from the general set so they never crowd it.
-- **App icon**: the current icon is coral-based; rethink it once the app has corals and fish (a design task, later).
+- **App icon**: done (Pierre chose C1 on 2026-11-06: a loupe over a coral fish and a brain coral; docs/ARCHITECTURE.md "App icon").
 
 ## Open questions for Pierre
 

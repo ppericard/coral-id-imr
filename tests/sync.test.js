@@ -732,13 +732,10 @@ test("v30 pages events follow the player's answers: sign-in claim, rename, merge
     ['p1', ben],
     ['p2', ben]
   ]);
-  // Deleted with the answers kept: under the answers' "~deleted" id; anonDelete of that id (or of a device) removes them.
+  // Deleted with the answers kept (v55, Pierre Q88): the answers stay under the "~deleted" id, the sheets opened go.
   assert.strictEqual(s.post({userDelete: 'Ben', answers: false, token: T}).ok, true);
   const del = aidOf('~deleted ' + ben);
-  assert.deepStrictEqual(ids().slice(0, 2), [
-    ['p1', del],
-    ['p2', del]
-  ]);
+  assert.deepStrictEqual(ids(), [['p3', aidOf('~anon devanon003')]]);
   assert.ok(answerIds().has(del));
   s.post({name: 'Dee', pin: '2222', data: prog(1), summary: {}, answers: [ans('d1')], av: '190'});
   s.post({dev: 'dev0000014', ename: 'Dee', epin: '2222', events: [pg('p5')]});
@@ -1732,4 +1729,196 @@ test('v36: the stored replay is not reused when the first-launch history changes
   // Unchanged history: the stored replay is reused (a marker put in the tab comes back).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: data('know'), summary: {}, answers: [], rv: 0}).replay.rec, {mark: 1});
+});
+
+// v55 (Pierre, 2026-11-05, Q84-Q91): a deleted account leaves nothing in normal operation.
+const v55 = () => {
+  const s = seed();
+  s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rb1', why: 'photo', t: '2026-11-01T00:00:00Z'}]});
+  s.post({dev: 'dev0000021', ename: 'Ben', epin: '1111', events: [{id: 'pg1', k: 'pages', t: Date.now(), av: '190', s: {quiz: [1, 60]}}]});
+  // Name mentions in the log tabs: an old app's event names the player, a capped name is named in Alerts.
+  require('vm').runInContext(
+    "oldApp_('load', 'Ben'); sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ben (3000 per 6 h)'])",
+    s.ctx
+  );
+  s.cache.board14 = s.cache.achs15 = s.cache.stats15 = '{}';
+  return s;
+};
+const rplAdd = (s, ...names) =>
+  names.forEach(n =>
+    require('vm').runInContext(`sheet_(RPL.TAB, RPL.HEAD).appendRow([${JSON.stringify(n)}, 1, 1, 0, new Date(), '{}'])`, s.ctx)
+  );
+const tabText = (s, tab) => JSON.stringify((s.sheets[tab] || {rows: []}).rows);
+
+test('v55 delete everything: answers, reports, page summaries, name mentions and caches go; only the tombstone stays', () => {
+  const s = v55();
+  assert.ok(tabText(s, 'Pages').length > 2 && /\(Ben\)/.test(tabText(s, 'Events')));
+  const r = s.post({userDelete: 'Ben', answers: true, token: TOK});
+  assert.deepStrictEqual([r.ok, r.answers, r.reports], [true, 1, 1]);
+  ['RAs', 'Answers', 'Reports', 'Progress data', 'By genus', 'Replayed', 'Events', 'Alerts'].forEach(t =>
+    assert.ok(!/\bben\b/i.test(tabText(s, t)), `no "Ben" left in ${t}`)
+  );
+  assert.strictEqual(s.sheets.Pages.getLastRow(), 1, 'the page summaries are deleted');
+  assert.match(tabText(s, 'Events'), /\(~deleted [^)]+\)/);
+  assert.match(tabText(s, 'Alerts'), /n:~deleted \S+ \(3000/);
+  assert.ok(/Ben/.test(tabText(s, 'Removed')), 'the tombstone stays');
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined], 'caches cleared');
+  assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).error, 'gone');
+});
+
+test('v55 delete keeping answers: answers and reports anonymised (Verified 0), flag 2, never a player in stats', () => {
+  const s = v55();
+  const r = s.post({userDelete: 'Ben', answers: false, token: TOK});
+  assert.deepStrictEqual([r.ok, r.answers, r.reports], [true, 1, 1]);
+  const rep = s.sheets.Reports.rows.find(x => x && x[11] === 'rb1');
+  assert.match(String(rep[1]), /^~deleted /);
+  assert.strictEqual(rep[2], 0, 'never verified');
+  assert.ok(!/\bben\b/i.test(tabText(s, 'Reports')) && !/\bben\b/i.test(tabText(s, 'Events')));
+  assert.strictEqual(s.sheets.Pages.getLastRow(), 1, 'the page summaries are deleted (Q88)');
+  const a = s.post({readAnswers: 1, token: TOK}).rows;
+  const del = a.filter(x => x[11] === 2);
+  assert.strictEqual(del.length, 1, 'the kept answer is flagged 2');
+  assert.ok(a.filter(x => x[11] !== 2).every(x => x[11] === 0));
+  s.post({anon: 'devanon777', anonAnswers: [ans('z1')], av: '190'});
+  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 15, 'a device never signed in stays 1');
+  const st = s.post({readStats: 1, token: TOK});
+  assert.ok(!(del[0][0] in st.ras), 'no ability for the deleted id');
+  assert.ok(Object.keys(st.photos).length > 0, 'its answer still rates the photos');
+});
+
+test('v55 merge clears the caches and moves name mentions to the name it joined', () => {
+  const s = v55();
+  const m = s.post({userMerge: {from: 'Ben', into: 'Ana', data: prog(4)}, token: TOK});
+  assert.strictEqual(m.ok, true);
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined]);
+  assert.match(tabText(s, 'Events'), /\(Ana\)/);
+  assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')));
+});
+
+test('v55 a removed sender: merged reports go to the name it joined, deleted ones to no name, never verified', () => {
+  const s = seed();
+  s.post({userMerge: {from: 'Ana B', into: 'Ana', data: prog(4)}, token: TOK});
+  s.post({userDelete: 'Ben', answers: true, token: TOK});
+  s.post({rname: 'Ana B', rpin: '5678', reports: [{id: 'rm1', why: 'photo'}]});
+  s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rd1', why: 'photo'}]});
+  const row = id => s.sheets.Reports.rows.find(x => x && x[11] === id);
+  assert.deepStrictEqual([row('rm1')[1], row('rm1')[2]], ['Ana', 1]);
+  assert.deepStrictEqual([row('rd1')[1], row('rd1')[2]], ['', 0]);
+  // Someone new under the deleted name with another code: their reports are theirs, the old device's still go nowhere.
+  s.post({name: 'Ben', pin: '9999', data: prog(1), summary: {}});
+  s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rd2', why: 'photo'}]});
+  s.post({rname: 'Ben', rpin: '9999', reports: [{id: 'rn1', why: 'photo'}]});
+  assert.deepStrictEqual([row('rd2')[1], row('rd2')[2]], ['', 0]);
+  assert.deepStrictEqual([row('rn1')[1], row('rn1')[2]], ['Ben', 1]);
+});
+
+test('v55 Replayed: a device row goes when its answers are claimed or deleted', () => {
+  const s = loadCodeGs(),
+    rpl = () => s.sheets.Replayed.rows.slice(1).map(r => String(r[0]));
+  // Two anonymous devices with their full replay record (replay_ writes it when an app with older rules asks).
+  s.post({anon: 'devanon101', anonAnswers: [ans('x1')], av: '190'});
+  s.post({anon: 'devanon102', anonAnswers: [ans('x2')], av: '190'});
+  rplAdd(s, '~anon devanon101', '~anon devanon102');
+  assert.deepStrictEqual(rpl(), ['~anon devanon101', '~anon devanon102']);
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], anon: 'devanon101', av: '190'});
+  assert.ok(!rpl().includes('~anon devanon101'), 'claimed at sign-in');
+  const id = require('vm').runInContext("aid_('~anon devanon102')", s.ctx);
+  s.post({anonDelete: [id], token: TOK});
+  assert.ok(!rpl().includes('~anon devanon102'), 'deleted with its answers');
+});
+
+test('v55 analyses head: a report stored before the last delete or merge is stale', () => {
+  const s = seed(),
+    rep = JSON.stringify({R: {}, answers: 4, made: 1, AV: 1});
+  assert.strictEqual(s.post({analysesPut: 1, report: rep, token: TOK}).ok, true);
+  const t0 = JSON.parse(s.sheets.Analyses.rows[1][1]).at;
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stale, false);
+  s.props.ROSTER_AT = String(t0 + 1);
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stale, true);
+  s.props.ROSTER_AT = '0';
+  s.post({userDelete: 'Ben', answers: true, token: TOK});
+  assert.ok(Number(s.props.ROSTER_AT) >= t0, 'a delete marks the roster changed');
+});
+
+test('v55 one-shot removedcleanup: orphan Replayed rows and reports of accounts deleted outright, counts logged', () => {
+  const s = seed(),
+    vm = require('vm');
+  s.post({anon: 'devanon201', anonAnswers: [ans('y1')], av: '190'});
+  s.post({anon: 'devanon202', anonAnswers: [ans('y2')], av: '190'});
+  rplAdd(s, '~anon devanon201', '~anon devanon202');
+  // Before v55: a device's answers claimed without its Replayed row, and an account deleted with its report kept.
+  s.sheets.Answers.rows.forEach(r => r[0] === '~anon devanon201' && (r[0] = 'Ana'));
+  vm.runInContext(
+    "['RAs', DATA_TAB, 'By genus'].forEach(t => dropRows_(t, 'Ana B')); sheet_('Removed', REMOVED).appendRow(['Ana B', 'h', '', new Date()])",
+    s.ctx
+  );
+  // A merged name's report (Into set) and a live player's are kept.
+  vm.runInContext("sheet_('Removed', REMOVED).appendRow(['Old', 'h', 'Ana', new Date()])", s.ctx);
+  s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rk1', why: 'photo'}]});
+  s.sheets.Reports.rows.push([new Date('2026-11-01'), 'Old', 1, 'Bad photo', '', '', '', '', '', '', '', 'rk2']);
+  assert.strictEqual(
+    vm.runInContext('ONCE_.removedcleanup()', s.ctx),
+    'Replayed 1 orphan row of devices with no answer left, Reports 1 row of accounts deleted outright'
+  );
+  assert.deepStrictEqual(
+    s.sheets.Replayed.rows.slice(1).map(r => r[0]),
+    ['~anon devanon202']
+  );
+  assert.deepStrictEqual(
+    s.sheets.Reports.rows
+      .slice(1)
+      .filter(r => r && r[11])
+      .map(r => r[11]),
+    ['rk1', 'rk2']
+  );
+  assert.strictEqual(
+    vm.runInContext('ONCE_.removedcleanup()', s.ctx),
+    'Replayed 0 orphan rows of devices with no answer left, Reports 0 rows of accounts deleted outright'
+  );
+});
+
+test('v55 (Codex review #600): a name merged into an account deleted later points nowhere; a removal during an analysis run leaves it stale', () => {
+  const s = seed();
+  s.post({userMerge: {from: 'Ana B', into: 'Ben', data: prog(2)}, token: TOK});
+  s.post({userDelete: 'Ben', answers: true, token: TOK});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: '', v: SV});
+  s.post({rname: 'Ana B', rpin: '5678', reports: [{id: 'rz1', why: 'photo'}]});
+  const row = s.sheets.Reports.rows.find(x => x && x[11] === 'rz1');
+  assert.deepStrictEqual([row[1], row[2]], ['', 0]);
+  // The Analyses job reads the answers (with the roster), an account is removed, then the job stores its report.
+  const a = s.post({readAnswers: 1, token: TOK});
+  assert.ok(a.roster > 0);
+  s.props.ROSTER_AT = String(a.roster + 1000);
+  assert.strictEqual(s.post({analysesPut: 1, report: JSON.stringify({R: {}, answers: 1, AV: 1}), roster: a.roster, token: TOK}).ok, true);
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stale, true);
+});
+
+test('v55 (Codex reviews #600, #603): successive merges redirect the older tombstones; a roster snapshot of 0 is kept', () => {
+  const s = seed();
+  s.post({userMerge: {from: 'Ana B', into: 'Ana', data: prog(2)}, token: TOK});
+  s.post({userMerge: {from: 'Ana', into: 'Ben', data: prog(3)}, token: TOK});
+  assert.strictEqual(s.get({name: 'Ana B', pin: '5678'}).into, 'Ben', 'A → B → C: A points to C');
+  s.post({rname: 'Ana B', rpin: '5678', reports: [{id: 'rc1', why: 'photo'}]});
+  const row = s.sheets.Reports.rows.find(x => x && x[11] === 'rc1');
+  assert.deepStrictEqual([row[1], row[2]], ['Ben', 1]);
+  // The first removal ever happens while the Analyses job computes: its snapshot (0) is older.
+  const t = loadCodeGs();
+  t.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('q1')]});
+  const a = t.post({readAnswers: 1, token: TOK});
+  assert.strictEqual(a.roster, 0);
+  t.post({name: 'Cid', pin: '1111', data: prog(1), summary: {}, answers: []});
+  t.post({userDelete: 'Cid', answers: true, token: TOK});
+  assert.strictEqual(t.post({analysesPut: 1, report: JSON.stringify({R: {}, answers: 1, AV: 1}), roster: a.roster, token: TOK}).ok, true);
+  assert.strictEqual(t.post({analysesGet: 1, head: 1, token: TOK}).stale, true);
+});
+
+test('v55 (Codex review #600): a removed account whose name is throttled still never gets its name on a report', () => {
+  const s = seed(),
+    vm = require('vm');
+  s.post({userDelete: 'Ben', answers: true, token: TOK});
+  vm.runInContext("for (let i = 0; i < 10; i++) failed_('Ben')", s.ctx);
+  assert.ok(vm.runInContext("blocked_('Ben')", s.ctx), 'the name is throttled');
+  s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rt1', why: 'photo'}]});
+  const row = s.sheets.Reports.rows.find(x => x && x[11] === 'rt1');
+  assert.deepStrictEqual([row[1], row[2]], ['', 0]);
 });

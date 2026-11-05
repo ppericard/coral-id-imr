@@ -447,6 +447,10 @@ async function overlays(b, base) {
       const r = await p.evaluate(i => {
         // A new genus's card is read and closed before answering, as a player does.
         document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        // This session started PULSE.SESS_MS ago (the smoke answers in seconds): its answers decide (quiz.js pulseSess).
+        (st => st.v && localStorage.setItem('reefid-pulse', JSON.stringify({...st, v: {...st.v, t0: Date.now() - PULSE.SESS_MS}})))(
+          JSON.parse(localStorage.getItem('reefid-pulse') || '{}')
+        );
         // A toast is tapped away (without following its link) before answering.
         document.querySelectorAll('.achpop a').forEach(a => {
           a.addEventListener('click', e => e.preventDefault());
@@ -554,6 +558,10 @@ async function overlays(b, base) {
           document.querySelectorAll('.achpop').forEach(x => x.remove());
           achQ.length = 0;
           achBusy = false;
+          // This session started PULSE.SESS_MS ago (the smoke answers in seconds): its answers decide (quiz.js pulseSess).
+          (st => st.v && localStorage.setItem('reefid-pulse', JSON.stringify({...st, v: {...st.v, t0: Date.now() - PULSE.SESS_MS}})))(
+            JSON.parse(localStorage.getItem('reefid-pulse') || '{}')
+          );
           if (due) {
             const a = answersSoFar() + 1;
             localStorage.setItem('reefid-prompt-at', JSON.stringify(a - PROMPT.GAP));
@@ -958,6 +966,125 @@ async function overlays(b, base) {
       fails.push(
         `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('reefid-sorry-first'))}`
       );
+    await c.close();
+  }
+  // Q65: the Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
+  // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, seen);
+    await p.goto(base + '#g-Acropora');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.repline [data-rep]', {timeout: 10000}).catch(() => {});
+    // One report through the dialog: kind of report, note, then Send; returns the toast's title (or '' with none).
+    const send = async (ctx, why, note) => {
+      await p.evaluate(ctx => {
+        const b = document.createElement('button');
+        document.body.append(b);
+        reportDialog(ctx, b);
+      }, ctx);
+      await p.check(`#repdlg input[name="why"][value="${why}"]`);
+      if (note) await p.fill('#repdlg textarea[name="note"]', note);
+      await p.click('#repdlg button[type="submit"]');
+      // A toast (the first) or a card (the 5th and 10th: they stay until closed, their button deaf for a moment).
+      const t = await p
+        .waitForSelector('.achpop b, .unlock.achcard h3', {timeout: 1500})
+        .then(async e => ((await e.evaluate(x => !!x.closest('.unlock'))) ? 'card: ' : 'toast: ') + (await e.textContent()).trim())
+        .catch(() => '');
+      if (t.startsWith('card')) {
+        const early = await p.evaluate(() => document.querySelector('.unlock.achcard [data-b="1"]').disabled);
+        await p.waitForTimeout(400);
+        const still = await p.$('.unlock.achcard'); // no time-out
+        await p.click('.unlock.achcard [data-b="1"]');
+        if (!early || !still || (await p.$('.unlock.achcard')))
+          fails.push(`Contributions card: ${JSON.stringify({early, still: !!still})}`);
+      }
+      await p.evaluate(() =>
+        document.querySelectorAll('.achpop a').forEach(a => {
+          a.addEventListener('click', e => e.preventDefault()); // closes it, without opening #ach
+          a.click();
+        })
+      );
+      return t;
+    };
+    const got = [];
+    // The genus sheet's own button first, "Other" without a note: not counted, no toast.
+    await p.click('.repline [data-rep]');
+    await p.check('#repdlg input[name="why"][value="other"]');
+    await p.click('#repdlg button[type="submit"]');
+    await p.waitForTimeout(600);
+    got.push(await p.evaluate(() => document.querySelector('.achpop b')?.textContent || ''));
+    got.push(await send({k: 'sheet', g: 'Acropora', m: 'sheet'}, 'info'));
+    got.push(await send({k: 'photo', g: 'Acropora', ph: ['smoke-a.webp'], m: 'photo'}, 'photo'));
+    got.push(await send({g: 'Acropora', a: 'Porites', ph: ['smoke-a.webp', 'smoke-b.webp'], m: 'quiz'}, 'wrong')); // smoke-a again
+    got.push(await send({g: 'Acropora', a: 'Porites', ph: ['smoke-c.webp'], m: 'quiz'}, 'other', 'two colonies'));
+    got.push(await send({k: 'page'}, 'idea'));
+    got.push(await send({k: 'page'}, 'bug'));
+    const n = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}')._fb?.length);
+    for (let i = 0; i < 5; i++) got.push(await send({k: 'page'}, 'bug'));
+    const want = ['', 'toast: First feedback', '', '', '', '', 'card: Helping hand 🥈', '', '', '', '', 'card: Co-author 🥇'];
+    if (JSON.stringify(got) !== JSON.stringify(want) || n !== 5) fails.push(`Contributions: ${JSON.stringify({got, n})}`);
+    await p.evaluate(() => (location.hash = 'ach'));
+    await p.waitForSelector('.btitle.bsec', {timeout: 5000}).catch(() => {});
+    const a = await p.evaluate(() => ({
+      title: document.querySelector('.btitle')?.textContent,
+      learn: ACH.filter(x => x.kind !== 'contrib').length,
+      sec: document.querySelector('.btitle.bsec')?.textContent,
+      on: [...document.querySelectorAll('.btitle.bsec + .achl .achc.on b')].map(b => b.textContent.trim())
+    }));
+    if (a.title !== `0/${a.learn} earned` || !/^Contributions 10 reports sent/.test(a.sec || '') || a.on.length !== 3)
+      fails.push(`Contributions on #ach: ${JSON.stringify(a)}`);
+    await c.close();
+  }
+  // A device still signed in with an account the admin deleted (the sheet said 'gone'): its reports count nothing.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Testa', pin: '1234', err: 'gone', into: ''}));
+    });
+    await p.goto(base + '#g-Acropora');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.evaluate(() => {
+      const b = document.createElement('button');
+      document.body.append(b);
+      reportDialog({k: 'page'}, b);
+    });
+    await p.check('#repdlg input[name="why"][value="bug"]');
+    await p.click('#repdlg button[type="submit"]');
+    await p.waitForTimeout(800);
+    const g = await p.evaluate(() => ({
+      toast: !!document.querySelector('.achpop'),
+      fb: (JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}')._fb || []).length
+    }));
+    if (g.toast || g.fb) fails.push(`Contributions on a deleted account: ${JSON.stringify(g)}`);
+    await c.close();
+  }
+  // Feedback sent from About before the achievements' tier has come (progress.js, tier 2): counted once it comes, its
+  // pop-up then (Codex review #579).
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, seen);
+    let go;
+    const held = new Promise(ok => (go = ok));
+    await c.route(
+      u => /\/progress\.js/.test(u.pathname),
+      async r => {
+        await held;
+        await r.continue();
+      }
+    );
+    await p.goto(base + '#about', {waitUntil: 'domcontentloaded'}); // its load event waits for the held file
+    await p.waitForSelector('#view [data-rep]', {timeout: 30000}).catch(() => {});
+    await p.click('#view [data-rep]');
+    await p.check('#repdlg input[name="why"][value="idea"]');
+    await p.click('#repdlg button[type="submit"]');
+    const before = await p.evaluate(() => typeof achReport);
+    go();
+    const t = await p
+      .waitForSelector('.achpop b', {timeout: 15000})
+      .then(e => e.textContent())
+      .catch(() => '');
+    if (before !== 'undefined' || t !== 'First feedback') fails.push(`Contributions before tier 2: ${JSON.stringify({before, t})}`);
     await c.close();
   }
   return fails;
@@ -2085,12 +2212,15 @@ async function tipsCheck(b, base) {
     }
     // The one-tap question due at the same answer takes the break: no tip there (it waits for a later break). A targeted
     // player whose visit reaches its 10th answer on this page's 8th, when the one-tap question is first due (PULSE.FIRST
-    // answers in all, PULSE.SESSION on the page); the question shows (in the feedback, or as a card at Next), the tip not.
+    // answers in all; its session, begun 6 minutes ago with 7 answers, reaches PULSE.SESS_N there); the question shows (in
+    // the feedback, or as a card at Next), the tip not.
     {
       const [c, p] = await open(w, h, {q: 25, z: 0});
       await p.evaluate(() => {
         const t = Date.now();
         localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
+        // The one-tap question's session: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
+        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
         // The Open all offer (from 50 answers, a prompt too) answered long ago: it would take the prompt spacing.
         localStorage.setItem('reefid-sync-coral-intro-offer', JSON.stringify({at: 1, open: false, t: t - 864e5}));

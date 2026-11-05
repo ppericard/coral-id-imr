@@ -5,55 +5,52 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-05, about 17:10 Manila, by the integrator.
+Written 2026-11-06, about 05:50 Manila, by the integrator.
 
 Last checked: reports and events: 2026-11-05 ~13:38 Manila (nothing new since 11:30)
 
 ## Now
 
-Tracks in flight: track · PR or branch · state · next step. Decided work is launched at once (Pierre, 2026-11-05: no
-queue held back; `tests/slot.js` protects the machine). Priority (Pierre, 2026-11-05 evening): **public fish by Sunday
-2026-11-08**, the photos' step 3, the fish sheets at three levels and the new app icon are very short term.
+Tracks in flight: track · PR or branch · state · next step. Priority (Pierre, 2026-11-05 evening): **public fish by
+Sunday 2026-11-08**; very short term: the photos' step 3, the fish sheets at three levels, the new app icon.
 
-- Fish public release · plan in the scratchpad, items A (gate split from the label), B (bug sweep), C (copy audit and
-  "Fish is here" card, draft for Pierre), D (stopgap photo health), E (admin fish Candidates 5a then 5b) · agents at
-  work · Pierre's Q92-Q100 in the morning, then the flip within his hours (not after 16:30).
-- Governance PR C #572 · merge when green; then the unit-test slot lock; the URL refonte is built but merged only
-  after the fish flip (same files).
-- Analyses: round-thousand milestones (then a forced clean recompute) · views and player profiles (Q70-Q77) · agents.
-- Contributions #579 / "Your feedback helped" #581 as cards, anti-spam, never to a deleted account, reports fixed in a
-  PR markable as handled (`reports-handled.json`) · agent · cards to Pierre before merge.
-- Deleted accounts (Q84-Q91 answered, plus self-service account deletion) · agent.
-- Streaks and Sharp eye in the Quiz only (Q82) · agent. Taxonomy reference in the tools · difficulty display · agents.
-- Prepared for Pierre's go: photos step 3 (dry run on a mirror); 4 app icon proposals; progress vs number of genera
-  study (replaces Q83).
+- **Progress against the field** · #611 draft, needs-pierre · Pierre (2026-11-06 morning) rejected the trade-off:
+  the bar must be right for every profile, experts above all early (q300: expert under-claimed by 25 points today, 30
+  with the W 1 / C 0.6 rule). Diagnosis: each genus and pair is counted from zero, with no prior from the player's
+  level. Being rebuilt as a person-level hierarchical estimate plus a pair-difficulty model; targets pre-declared
+  (|over| <= 0.03 at q300, q600, q1000 for every profile, a spotty profile included; Custom-8 within 0.05). Nothing
+  reaches players before Pierre validates. Field-learner sensitivity sims (`learnsim-field`) running, then a PR.
+- Fish public release · A #595 merged; C #598, admin 5a #599, 5b #602, PR 7 #614 wait for Pierre (Q92-Q100, Q118-Q120)
+  · then the flip within his hours (not after 16:30).
+- Deleted accounts #600 merged (v55 live, cleanup ran); #603 waits for Q116. Feedback cards #579 / #581 · Q117.
+- Typed retry #616 · Q114. One-tap timing #618 · Q115. URL refonte #610 / #612 · after the fish flip + 48 h.
 
 ## Next
 
-Waiting only on a real dependency (details in [ROADMAP](ROADMAP.md) "Next").
-
-1. The fish sheets at three levels ([study](reviews/2026-11-05-fish-sheets-study.md)): its 13 questions to Pierre now
-   (none blocks the release); then build.
-2. Curated fish photos in the game (admin PR 5b, then 7, then answer logging 11), right after the release.
-3. The next round of independent reviews, once fish is public.
+1. The fish sheets at three levels ([study](reviews/2026-11-05-fish-sheets-study.md)): Q125, then build.
+2. Curated fish photos in the game (#599, #602, #614, then answer logging), then independent reviews, after release.
 
 ## Questions for Pierre
 
-Open questions, numbered for good (never reset, AGENTS.md "Working mode"). An answered one goes into its PR and off
-this list. Long-standing content and trainer questions live in the admin, To do › Points (`points.json`, #571).
+Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes into its PR and off this list.
 
-- Q101-Q113, progress against the number of genera ([study](reviews/2026-11-05-progress-setsize-study.md) §
-  questions a-m; replaces Q83): 100% = tells it from every slate unit (Q101); coverage weighted by confusion (Q102);
-  how low a beginner's first genera may stop (Q103); a two-tone bar (Q104); exam entry and slate traps (Q105); typed
-  vocabulary = genera unlocked (Q106); no custom-quiz cap (Q107); no decay (Q108); the recalculation plan (Q109); fish
-  fields per rank (Q110); "another genus" answers later (Q111); simulation first (Q112); rule L11 wording (Q113).
-- Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep the "beta" tag (Q93);
-  a "Fish is here" card (Q94); the copy edits of PR C (Q95); level 1 on today's photos (Q96); no fish answer logging
-  for a week (Q97); smoke tests and the bug sweep as release checks (Q98); new players still start on Corals (Q99);
-  the flip Saturday ~10:00 Manila, Sunday morning as reserve (Q100). Rec. yes to each.
-- Also: his explicit go for photos step 3 (dry run ready); the icon: D2 (D improved) or a loupe B1-B4 (round 2); the 13 fish-sheet questions.
+- Q114 #616 typed retry: one retype on a close misspelling, grading unchanged; logs the raw typed text and a retyped
+  flag in 2 new Answers columns (a sheet layout change) plus a privacy-page line. Rec. yes.
+- Q115 #618: the one-tap "Getting boring?" question only after 15 answers and 5 minutes in the session. Rec. yes.
+- Q116 #603: archive message and self-delete page wording. Q117 #579 / #581: the four feedback cards.
+- Q118 #598: fish copy edits 1-7 and the "Fish is here" card (kicker, target, once per device, 10-answer minimum).
+- Q119 #599 / #602 fish admin screens ("Choices I made" in each PR). Q120 #614: keep the per-entry minimum rule (rec.
+  yes); leave the 25 pre-flag-ease photos (rec. yes).
+- Q121 photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
+- Q122 the app icon: D2 (D improved) or a loupe B1-B4.
+- Q123 fish confusion study a-o (gos on i, f, k). Q124 name study a-h. Q125 the 13 fish-sheet questions.
+- Q105 (personalised exam) and Q113 (rule L11 wording) stay open in #611.
+- Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep "beta" (Q93); a
+  "Fish is here" card (Q94); PR C's copy edits (Q95); level 1 on today's photos (Q96); no fish answer logging for a week
+  (Q97); smoke tests and the bug sweep as release checks (Q98); new players start on Corals (Q99); the flip Saturday
+  ~10:00 Manila, Sunday morning as reserve (Q100). Rec. yes to each.
 
-Last question number: Q113
+Last question number: Q125
 
 ## Pierre's hands
 
@@ -87,13 +84,16 @@ Actions only Pierre can do.
 
 ## Parked after hours
 
-Ideas Pierre dictated after 17:30, in his words (translated), with the context to pick them up; untouched until the
-morning, then turned into work or a ROADMAP row with him and cleared (AGENTS.md Rule 0).
+Ideas Pierre dictated after 17:30, untouched until the morning, then turned into work or a ROADMAP row (Rule 0).
 
-_(none)_
+- (20:07) Show the genera unlocked in the Progress badge, e.g. "30/40 genera unlocked".
+- (20:22) Photos seen again and again: raise the per-genus photo caps a lot (Pierre photographs the frequent genera);
+  count photos never shown; an admin stat per player, photos seen / photos available given the genera unlocked; make
+  sure the game tries new photos enough. Proposal: a read-only study on the real log first, then the changes.
+- (integrator, from Pierre's session) the limit of 8 shaky genera fills with the hardest look-alike families: it held an
+  expert's openings for 138 answers. Revisit with the progress rebuild.
 
 ## Last stop
 
-2026-11-05 ~17:10 Manila, integrator, end of Pierre's day (Rule 0). Merged after 15:30: #578, #580, #582-#590 (incl.
-the Analyses correction #588). The night: agents keep working on the tracks above; decided work merges when green;
-questions wait here for the morning.
+2026-11-06 ~05:50 Manila, integrator, morning report. Merged overnight: #572, #591-#597, #600 (sheet v55 live),
+#601, #604-#609, #613, #615, #617, #619, #620. The morning report now comes before 05:00 (Pierre wakes ~05:00).

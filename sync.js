@@ -662,17 +662,18 @@ document.addEventListener('visibilitychange', () => {
 // Nothing changes on the site: Pierre reads reports, with who sent them, in the admin Triage.
 // Also everywhere else it makes sense (Pierre, 2026-11-01): any enlarged photo (lightbox), the bottom of a genus sheet,
 // and "Send feedback" at the bottom of the ? help of every page (app.js helpEnd) and on About (home.js; no page footer
-// since 2026-11-03). The reasons offered depend on where the report comes from (k).
+// since 2026-11-03). The reasons offered depend on where the report comes from (k); {things} and {one} take the current
+// subject's words (SUBJECTS name and one: "Several corals", "Wrong genus"; "Several fish", "Wrong family").
 const REP_WHY = {
   game: [
     ['wrong', 'Wrong answer'],
-    ['multi', 'Several corals'],
+    ['multi', 'Several {things}'],
     ['photo', 'Bad photo'],
     ['other', 'Other']
   ],
   photo: [
-    ['wrong', 'Wrong genus'],
-    ['multi', 'Several corals'],
+    ['wrong', 'Wrong {one}'],
+    ['multi', 'Several {things}'],
     ['photo', 'Bad photo'],
     ['other', 'Other']
   ],
@@ -738,13 +739,16 @@ function reportDialog(c, btn) {
   d = document.createElement('dialog');
   d.id = 'repdlg';
   d.className = 'repdlg';
-  const names = [...slateGenera(), ...bonusList()].sort(),
+  // The names offered for the right answer: the units' names as players read them (a fish entry's IMR name, never its
+  // teaching id: the fish beta offered "t01"), each once.
+  const names = [...new Set([...slateGenera(), ...bonusList()].map(unameT))].sort(),
     kind = c.k || 'game',
-    where = hashNow() || 'home';
+    where = hashNow() || 'home',
+    words = t => t.replace('{things}', SUBJ.name.toLowerCase()).replace('{one}', SUBJ.one);
   d.innerHTML = `<form method="dialog">
     <h3>${kind === 'page' ? 'Send feedback' : 'Report a problem'}</h3>
-    <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY[kind].map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${t}</span></label>`).join('')}</div>
-    <label class="repf" data-for="wrong">Right genus, if you know<input name="fix" list="repgen" autocomplete="off" maxlength="60" placeholder="e.g. ${esc(names.find(n => n !== c.g) || '')}"></label>
+    <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY[kind].map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${esc(words(t))}</span></label>`).join('')}</div>
+    <label class="repf" data-for="wrong">Right ${esc(SUBJ.one)}, if you know<input name="fix" list="repgen" autocomplete="off" maxlength="60" placeholder="e.g. ${esc(names.find(n => n !== unameT(c.g)) || '')}"></label>
     <datalist id="repgen">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
     <label class="repf"><span>Note <small>(optional)</small></span><textarea name="note" rows="2" maxlength="1000"></textarea></label>
     ${SYNC ? '' : `<label class="repf">Your name<input name="who" maxlength="40" autocomplete="name" value="${esc(store.get('reefid-report-name', ''))}"></label>`}
@@ -765,28 +769,26 @@ function reportDialog(c, btn) {
     e.preventDefault();
     if (f.who) store.set('reefid-report-name', f.who.value.trim());
     const why = f.why.value;
-    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()};
-    store.set(
-      'reefid-reports',
-      [
-        ...store.get('reefid-reports', []),
-        {
-          ...who,
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          t: new Date().toISOString(),
-          why,
-          g: c.g || '',
-          a: c.a || '',
-          ph: (c.ph || []).join(' '),
-          m: c.m || kind,
-          w: where,
-          fix: why === 'wrong' ? f.fix.value.trim() : '',
-          note: f.note.value.trim()
-        }
-      ].slice(-200)
-    );
+    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()},
+      r = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        t: new Date().toISOString(),
+        why,
+        g: c.g || '',
+        a: c.a || '',
+        ph: (c.ph || []).join(' '),
+        m: c.m || kind,
+        w: where,
+        fix: why === 'wrong' ? f.fix.value.trim() : '',
+        note: f.note.value.trim()
+      };
+    store.set('reefid-reports', [...store.get('reefid-reports', []), {...who, ...r}].slice(-200));
     d.close();
     sendReports();
+    // The Contributions (Pierre, 2026-11-05, Q65): counted as it is sent, its achievement popping up now (progress.js).
+    // progress.js comes with tier 2 (index.html): a report sent from Home or About before it waits for it (app.js need;
+    // Codex review #579).
+    (typeof achReport === 'function' ? Promise.resolve() : need(2)).then(() => typeof achReport === 'function' && achReport(r));
     btn.textContent = kind === 'page' ? 'Thank you' : '⚑ Reported, thank you';
     btn.disabled = true;
   };

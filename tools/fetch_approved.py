@@ -14,6 +14,8 @@ import json, os, sys, urllib.request, urllib.parse, concurrent.futures as cf
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from PIL import Image
 import photos  # the four photo sizes
+import slot
+slot.guard('tools/fetch_approved.py')  # one heavy run at a time on the machine (rule W24)
 from genera import game_genera  # the game genera, as core.js gameOf
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 d = load_all()
