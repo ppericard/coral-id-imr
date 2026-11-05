@@ -1693,7 +1693,7 @@
   //   confGap do) with COVER.W offers of prior weight; the level is how much of the pooled rate the player has removed:
   //   D = clamp(1 - (m + W q) / (n + W) / q, 0, 1) = max(0, (n - m / q) / (n + W)). 0 until the pair has met; a mix-up
   //   is judged against how confusable the pair is (forgivable on a look-alike, damning on a pair nobody confuses). The
-  //   same D as the fish confusion study (scratchpad fish-confusion-study.md 4.3; corals: one rank, no parent), with
+  //   same D as the fish confusion study (docs/reviews/2026-11-05-fish-confusion-study.md 4.3; corals: one rank, no parent), with
   //   one addition, Pierre's similarity weight on the typed offers.
   // - Coverage of t, coverageOf: the mean of its pair levels over the field, each competitor weighed by its pooled score q
   //   (so 1 - sum own / sum pooled, Luce's error mass the player has removed: look-alikes weigh most, the many unrelated
@@ -2243,7 +2243,7 @@
   // The apology of rules version 6 (Pierre, 2026-11-05, Q109: "an apology card"; text option A of the PR, Pierre's pick to
   // confirm). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab; sync.js keeps it in NOTES_KEY),
   // shown small under the text when it is set: Pierre's PS naming the player who raised the question. A name is never
-  // written in the repo (AGENTS.md rule 20f).
+  // written in the repo (rule D2).
   const RV_SORRY = {
     kind: 'apology',
     t: 'Sorry: your progress was too generous',
@@ -2314,7 +2314,7 @@
   // The sync script version that replays the field rule (rules version 6: the typed offers offT, a typed answer's
   // effective set size |kt, the learned marks judged at the exam entry; Code.gs v56): the app shows the bar proven against
   // the field, scores a typed answer with typedK and judges the exam's entry with the coverage only once the script's
-  // replies say v >= COVER_SHEET (model.js coverOn); before it, exactly as before (AGENTS.md 7a).
+  // replies say v >= COVER_SHEET (model.js coverOn); before it, exactly as before (rule D4).
   const COVER_SHEET = 56;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips

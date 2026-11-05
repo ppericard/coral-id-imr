@@ -975,7 +975,7 @@ let PGD = gdOf(store.get('reefid-photo-stats', {}));
 let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
 // Proven against the field (core.js COVER; Pierre, 2026-11-05, Q101-Q110; docs/LEARNING.md "Proven against the field"):
 // on for a subject with SUBJECTS cover (the corals; fish keeps its bar until its own study, Q110) once the sync script
-// replays it (its replies say v >= COVER_SHEET, sync.js sheetV; AGENTS.md 7a). Before: the bar, the typed answers' guess
+// replays it (its replies say v >= COVER_SHEET, sync.js sheetV; rule D4). Before: the bar, the typed answers' guess
 // rate and the exam's entry exactly as before; the typed offers (s.offT) are recorded either way, as the replay rebuilds them.
 const coverOn = () => !!SUBJ.cover && typeof sheetV === 'function' && sheetV() >= COVER_SHEET;
 // The field (core.js fieldOf): the slate, and the pooled score of each pair (PCONF, the prior the sheet knows), cached

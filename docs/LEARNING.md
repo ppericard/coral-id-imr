@@ -2271,7 +2271,7 @@ for every subject that opts in with `SUBJECTS` `cover`: the corals now, fish aft
   below), shrunk toward the pooled score q (`confScore` with the declared/family prior, as `confOf` and `confGap` do)
   with `COVER.W` offers of prior weight: D = max(0, (n − m / q) / (n + W)). 0 until the pair has met; a mix-up is
   judged against how confusable the pair is: 10 offers and 1 mix-up leave 0.56 on a look-alike (q 0.3), 0 on an
-  unrelated pair (q 0.03). The same D as the fish confusion study (section 4.3; corals are its one-rank case), so fish
+  unrelated pair (q 0.03). The same D as the [fish confusion study](reviews/2026-11-05-fish-confusion-study.md) (section 4.3; corals are its one-rank case), so fish
   plugs in without rework. No new counter for picks (the offers exist); one sparse map for typed answers.
 - **Coverage** of t, `coverageOf`: the mean of its pair levels over the field, each competitor weighed by its pooled
   score q (Q102). Equivalently 1 − Σ own / Σ pooled: the share of the Luce error mass the player has removed. Look-alikes
@@ -2315,7 +2315,7 @@ for every subject that opts in with `SUBJECTS` `cover`: the corals now, fish aft
   `card.rv6.ps`, `Code.gs` `notes_`), never from the repo.
 - **Two-tone ring** (Q104): on the mini rings of My progress and the genus sheet, solid = the bar that counts in the %,
   light behind it up to the within-field score = "among the genera you've met" (`model.js` `COVER_UI.two`, on).
-- **Gate** (AGENTS.md 7a): everything above turns on once the sheet replies v ≥ `COVER_SHEET` (56); the typed offers are
+- **Gate** (rule D4): everything above turns on once the sheet replies v ≥ `COVER_SHEET` (56); the typed offers are
   recorded either way, as the replay rebuilds them.
 
 The constants (`COVER` B, G, W, C, S) are provisional, for the tier-2 sweep.

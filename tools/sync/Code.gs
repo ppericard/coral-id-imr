@@ -3083,7 +3083,7 @@ const CORE_ = (function () { const module = {exports: {}};
   //   confGap do) with COVER.W offers of prior weight; the level is how much of the pooled rate the player has removed:
   //   D = clamp(1 - (m + W q) / (n + W) / q, 0, 1) = max(0, (n - m / q) / (n + W)). 0 until the pair has met; a mix-up
   //   is judged against how confusable the pair is (forgivable on a look-alike, damning on a pair nobody confuses). The
-  //   same D as the fish confusion study (scratchpad fish-confusion-study.md 4.3; corals: one rank, no parent), with
+  //   same D as the fish confusion study (docs/reviews/2026-11-05-fish-confusion-study.md 4.3; corals: one rank, no parent), with
   //   one addition, Pierre's similarity weight on the typed offers.
   // - Coverage of t, coverageOf: the mean of its pair levels over the field, each competitor weighed by its pooled score q
   //   (so 1 - sum own / sum pooled, Luce's error mass the player has removed: look-alikes weigh most, the many unrelated
@@ -3168,6 +3168,28 @@ const CORE_ = (function () { const module = {exports: {}};
     return !!s && pgOf(s) >= PROG.M && (!F || !F.set.has(t) || coverIn(coverageOf(P, t, F)));
   };
   const examEntryOf = (P, t, F) => !((P || {})[t] || {}).mx && entryMet(P, t, F);
+  // A personalised exam (proposal for Pierre's Q105 decision of 2026-11-06, behind EXAMP.on, off): the exam's look-alikes
+  // are the union of the field's global top look-alikes (the EXAMP.N highest pooled scores, and any pair at CONF.TRAP or
+  // more) and the player's own top confusions (their score of the pair, shrunk toward the pooled one, at CONF.TRAP or
+  // more: examUnion). Entry: today's (examEntryOf) and every pair of the union told apart (pairLevel EXAMP.L or more,
+  // the fish study's "cleared"); its traps: EXAMP.N of the union, weighed by the larger of the two scores with a little
+  // shuffle (examTraps). Nothing reads it while EXAMP.on is false.
+  const EXAMP = {on: false, L: 0.5, N: 3};
+  function examUnion(P, t, F) {
+    const L = F.list.filter(x => x !== t),
+      byQ = L.slice().sort((a, b) => F.q(t, b) - F.q(t, a)),
+      own = x => confScore(pairConf(P || {}, t, x), F.q(t, x));
+    return [...new Set([...byQ.slice(0, EXAMP.N), ...L.filter(x => F.q(t, x) >= CONF.TRAP), ...L.filter(x => own(x) >= CONF.TRAP)])];
+  }
+  const examClear = (P, t, F) => examUnion(P, t, F).every(x => pairLevel(P, t, x, F.q(t, x)) >= EXAMP.L);
+  function examTraps(P, t, F, rnd = Math.random) {
+    const w = x => Math.max(F.q(t, x), confScore(pairConf(P || {}, t, x), F.q(t, x))) * (0.8 + 0.4 * rnd());
+    return examUnion(P, t, F)
+      .map(x => [x, w(x)])
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, EXAMP.N)
+      .map(x => x[0]);
+  }
   // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct), under the field F
   // when given. The sync sheet computes the leaderboard % with it (Code.gs pctOf_ calls it with the sheet's field from
   // v56; tests/sync.test.js; tests/draw.smoke.js compares this with the app's progPct).
@@ -3611,7 +3633,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // The apology of rules version 6 (Pierre, 2026-11-05, Q109: "an apology card"; text option A of the PR, Pierre's pick to
   // confirm). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab; sync.js keeps it in NOTES_KEY),
   // shown small under the text when it is set: Pierre's PS naming the player who raised the question. A name is never
-  // written in the repo (AGENTS.md rule 20f).
+  // written in the repo (rule D2).
   const RV_SORRY = {
     kind: 'apology',
     t: 'Sorry: your progress was too generous',
@@ -3682,7 +3704,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // The sync script version that replays the field rule (rules version 6: the typed offers offT, a typed answer's
   // effective set size |kt, the learned marks judged at the exam entry; Code.gs v56): the app shows the bar proven against
   // the field, scores a typed answer with typedK and judges the exam's entry with the coverage only once the script's
-  // replies say v >= COVER_SHEET (model.js coverOn); before it, exactly as before (AGENTS.md 7a).
+  // replies say v >= COVER_SHEET (model.js coverOn); before it, exactly as before (rule D4).
   const COVER_SHEET = 56;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
@@ -4510,6 +4532,10 @@ const CORE_ = (function () { const module = {exports: {}};
     typedK,
     typedOffers,
     examEntryOf,
+    EXAMP,
+    examUnion,
+    examClear,
+    examTraps,
     TARGET_P,
     AIM,
     aimOf,
