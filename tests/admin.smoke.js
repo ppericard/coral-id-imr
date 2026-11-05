@@ -240,7 +240,7 @@ const WIDTHS = [390, 1280];
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
     }
-    // The narrowest width of rule 19, 360 px, with the phone run (no job of its own): every view and old address with no
+    // The narrowest width of rule U4, 360 px, with the phone run (no job of its own): every view and old address with no
     // page wider than the window, and Coverage's two grids with a view column sorted (its ▲ widens the header), in a
     // context of its own so the sort it leaves behind touches nothing else (Coverage's table.cov-t was 26 px too wide).
     if (w === 390) {
