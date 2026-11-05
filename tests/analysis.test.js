@@ -953,8 +953,10 @@ test('a synthetic log with no effect but two: the correction keeps the two, and 
   // generator's genera differ in difficulty (photo: SD genus), so pairs of genera differ in mix-ups (SD pair): not null
   // The spreads (SD) are left out of the count: an SD's estimate never reaches 0, so a spread that is really 0 reads clear
   // with or without a correction (pOf); that is a limit of the SD's interval, not of the correction.
+  // Typed answers in Learning curves are tested as right answers against the choice questions' (correct): with no guess
+  // floor they are truly right less often, so that effect is not null either.
   const kept = ['learn:slope', 'rt:typed'],
-    nul = E.filter(x => !kept.includes(x.k) && !x.e.sd),
+    nul = E.filter(x => !kept.includes(x.k) && x.k !== 'learn:typed' && !x.e.sd),
     before = nul.filter(x => x.e.p < 0.05).map(x => x.k),
     after = nul.filter(x => x.e.v === 'clear').map(x => x.k);
   console.log(
@@ -991,4 +993,91 @@ test('the admin draws no “new since the previous milestone” count', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8');
   assert.ok(!/newly|'#New'|Clear since the previous milestone/.test(src), 'a milestone is another look at the same log, not a new finding');
   assert.ok(/B: 199, Bh: 0, bse: 1/.test(src), 'Recompute here: 199 draws, normal intervals');
+  // AGENTS.md rule 23 (Codex review #588): the method stays behind the admin "?", not on the page
+  assert.ok(!/class="note">Each milestone/.test(src), 'no explanatory text on the page');
+});
+
+// Codex review #588: a bootstrap draw that leaves out every answer with a feature cannot estimate it; the warm start
+// must not hand back the full fit's value as if it were a draw.
+test('a warm-started draw without a feature gives no value for it (not the full fit’s)', () => {
+  const R = A.rng(3),
+    D = [];
+  for (let p = 0; p < 6; p++)
+    for (let i = 0; i < 80; i++) {
+      const f = p === 0 && i % 2 ? 1 : 0;
+      D.push({p: 'P' + p, f, y: R() < A.ntail(-(0.3 + 0.8 * f)) ? 1 : 0});
+    }
+  const fit = S =>
+    A.glmm(
+      S.map(a => a.y),
+      S.map(a => [1, a.f]),
+      [
+        A.factor(
+          'player',
+          S.map(a => a.p)
+        )
+      ]
+    );
+  fit(D); // the full fit: the warm start of the draws
+  const seen = [];
+  A.boot(
+    D,
+    S => {
+      const m = fit(S);
+      seen.push([S.some(a => a.f), m.b[1]]);
+      return {f: m.b[1]};
+    },
+    40,
+    9
+  );
+  const without = seen.filter(x => !x[0]);
+  assert.ok(without.length > 0, 'some draws leave player 0 out');
+  without.forEach(x => assert.ok(!isFinite(x[1]), `a draw without the feature returned ${x[1]}`));
+  assert.ok(seen.filter(x => x[0]).every(x => isFinite(x[1])));
+});
+
+// Codex review #588: an effect smaller than its sesoi, unresolved after the correction, never says fewer answers than
+// it has would settle it.
+test('answers needed after the correction: never fewer than the answers already in', () => {
+  const res = {
+    n: 1000,
+    A: Object.fromEntries(
+      Object.entries(A.PRIMARY).map(([k, keys]) => [
+        k,
+        {effects: keys.map(key => ({k: key, est: 0, lo: -0.2, hi: 0.2, sesoi: 0.25, n: 1000, unit: 'logit', v: 'margin'}))}
+      ])
+    )
+  };
+  res.A.learn.effects[0] = {k: 'slope', est: 0.15, lo: 0.0324, hi: 0.2676, sesoi: 0.25, n: 1000, unit: 'logit', v: 'clear'};
+  const e = A.correct(res).A.learn.effects[0];
+  assert.strictEqual(e.v, 'thin');
+  assert.ok(e.need > 1000, `${e.need} answers for an effect unresolved with 1000`);
+});
+
+// Codex review #588: typed answers are read as right answers against the choice questions' (another guess floor), so
+// they are tested and corrected on that contrast, not on the recognition coefficient against 0.
+test('typed answers: the verdict shown is the corrected test of the contrast shown', () => {
+  const se = 0.1,
+    mk = (k, est) => ({k, est, lo: est - 1.96 * se, hi: est + 1.96 * se, sesoi: 0.25, n: 2000, unit: 'logit', v: 'thin'}),
+    run = est => {
+      const res = {
+        n: 2000,
+        A: {
+          learn: {typ: {p: 0.75, g: 0.25, s: 6}, effects: [mk('typed', est)]},
+          rt: {effects: Array.from({length: 20}, (_, i) => mk('x' + i, 1.645 * se))}
+        }
+      };
+      A.correct(res);
+      const e = res.A.learn.effects[0];
+      return {e, P: A.plainOf('learn', e, res.A.learn)};
+    };
+  const c0 = Math.log(0.75 / 0.25) - Math.log(2); // the coefficient at which typed answers are right as often: log 1.5
+  let r = run(0.15);
+  assert.notStrictEqual(r.P.v, 'clear', 'p 0.1 on the contrast shown, not clear');
+  near(r.e.nul, c0, 1e-6, 'tested against equal right answers');
+  r = run(c0 + 0.6);
+  assert.strictEqual(r.P.v, 'clear');
+  assert.strictEqual(r.e.v, 'clear');
+  r = run(c0);
+  assert.notStrictEqual(r.P.v, 'clear', 'as many right answers: no clear effect, whatever the recognition coefficient');
 });

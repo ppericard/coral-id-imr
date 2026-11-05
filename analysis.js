@@ -93,6 +93,10 @@
         A.map((__, i) => (i === j ? 1 : 0))
       )
     );
+  // A bootstrap draw (FAST) with no answer moving a column cannot estimate its coefficient: NaN, so boot leaves the draw
+  // out for it, rather than counting the warm start's value (the full fit's) or the ridge's 0 as a draw (Codex review
+  // #588).
+  const drawn = (b, n0) => (FAST ? b.map((v, a) => (n0[a] ? v : NaN)) : b);
   // A column the data never moves (all zero in this sample) gets a ridge, so its coefficient stays 0, not huge.
   const ridge = (A, X) => A.map((r, i) => r.map((v, j) => v + (i === j && !X.some(x => x[i]) ? 1 : 0)));
 
@@ -288,7 +292,8 @@
     // that is constant within a player looked sure from many answers of a few players).
     const V = FAST ? null : margV(X, F, null, f => s2 / f.tau2, s2, XtX);
     if (!FAST) warmKeep('lmm', p, F, b, s2);
-    return {b, se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, s2, F, nz: nz(X)};
+    const n0 = nz(X);
+    return {b: drawn(b, n0), se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, s2, F, nz: n0};
   }
 
   /* ---------- Logistic mixed model with a guess rate (explanatory IRT) ---------- */
@@ -394,7 +399,8 @@
       V = margV(X, F, W, f => 1 / f.tau2, 1, XW);
       warmKeep('glmm', p, F, b, 0);
     }
-    return {b, se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, F, eta, nz: nz(X)};
+    const n0 = nz(X);
+    return {b: drawn(b, n0), se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, F, eta, nz: n0};
   }
 
   // Two-parameter fit of one question format against the app's own expectation: P = c + (1 - c) sig(x + d), x the
@@ -2085,15 +2091,14 @@
       dir = val === base ? '' : up ? 'up' : 'down';
     Object.assign(out, {base, val, lo, hi, dir});
     out.range = lo == null ? '' : `between ${f(lo)} and ${f(hi)}`;
-    // a contrast read on another guess floor (typed answers) is judged on the right answers shown: clear only when their
-    // range leaves the baseline out, no clear effect when it stays within 5 points of it (Codex review #495); clear on
-    // the range at the level its multiple-testing correction sets (alo, ahi: correct), never on the 95% range alone
+    // a contrast read on another guess floor (typed answers) is judged on the right answers shown: clear only when the
+    // multiple-testing correction finds it clear, tested against as many right answers as the baseline (correct sets
+    // its null so: Codex review #588), else no clear effect when its range stays within 5 points of the baseline
+    // (Codex review #495)
     let v = e.v;
-    if (P.g1 != null && lo != null && v !== 'none') {
-      const c1 = fin(e.alo) ? at(e.alo) : a1,
-        c2 = fin(e.ahi) ? at(e.ahi) : a2;
-      v = Math.min(c1, c2) > base || Math.max(c1, c2) < base ? 'clear' : lo >= base - 0.05 && hi <= base + 0.05 ? 'margin' : 'thin';
-    }
+    // (an effect read here without that correction, its 95% range of right answers holding the baseline, is not clear)
+    if (P.g1 != null && lo != null && v !== 'none' && (v !== 'clear' || (lo <= base && hi >= base)))
+      v = lo >= base - 0.05 && hi <= base + 0.05 ? 'margin' : 'thin';
     Object.assign(out, {v, verdict: PLAIN_VERDICT[v] || ''});
     let say;
     if (P.o === 'time') say = `${up ? 'Slower' : 'Faster'}: about ${f(val)} instead of ${f(base)}`;
@@ -2227,36 +2232,50 @@
   const sig3 = v => (v == null || !isFinite(v) || v === 0 ? v : Number(v.toPrecision(3)));
   // The final verdict of one effect after its correction: clear when its adjusted p is at most the family's level; else
   // "no clear effect" or "not enough data yet" from its 95% interval, as verdictOf. The answers needed are those that
-  // would carry it past the level it now faces (lev: the family's level times p / adjusted p, the per-test level of its
-  // rank), so an effect clear at 95% but not after the correction never says it needs fewer answers than it has. alo /
+  // would carry it to either verdict: past the level it now faces (lev: the family's level times p / adjusted p, the
+  // per-test level of its rank), or inside the margin; so it never says it needs fewer answers than it has. alo /
   // ahi: its interval at that level (it leaves the null value out exactly when the effect is clear).
   function settle(e, pa, level) {
     const lev = pa > 0 ? Math.min(level, (level * e.p) / pa) : level,
       za = Math.max(Z, nq(1 - lev / 2)),
       sl = (e.est - (e.sd ? e.lu : e.lo)) / Z,
-      sh = (e.hi - e.est) / Z,
-      r = za / Z;
+      sh = (e.hi - e.est) / Z;
     Object.assign(e, {pa: sig3(pa), p: sig3(e.p), alo: sig3(e.est - za * sl), ahi: sig3(e.est + za * sh)});
     delete e.need;
     delete e.hw;
     if (e.hi - e.lo > 20) return Object.assign(e, {v: 'thin', need: null});
     if (pa <= level) return Object.assign(e, {v: 'clear'});
-    if (e.sd) {
-      if (e.hi <= e.sesoi) return Object.assign(e, {v: 'margin'});
-      const t = Math.max(e.est, e.sesoi);
-      return Object.assign(e, {v: 'thin', need: nice(e.n * (((e.hi - e.lo) / 2) * (r / t)) ** 2), hw: t});
-    }
-    const nul = e.nul || 0;
-    if (e.lo >= nul - e.sesoi && e.hi <= nul + e.sesoi) return Object.assign(e, {v: 'margin'});
-    const t = Math.max(Math.abs(e.est - nul), e.sesoi);
-    return Object.assign(e, {v: 'thin', need: nice(e.n * (((e.hi - e.lo) / 2) * (r / t)) ** 2), hw: t});
+    const nul = e.sd ? e.sesoi / 10 : e.nul || 0,
+      d = e.est - nul;
+    if (e.sd ? e.hi <= e.sesoi : e.lo >= nul - e.sesoi && e.hi <= nul + e.sesoi) return Object.assign(e, {v: 'margin'});
+    // Answers for either reachable verdict, the interval shrinking as 1/sqrt(n) (Codex review #588: the sesoi taken as
+    // the target half-width asked fewer answers than an effect smaller than it already had): clear, its interval at the
+    // level it faces leaving the null value out; or no clear effect, its 95% interval inside the margin. Both need more
+    // answers than it has, as it is neither now.
+    const at = f => (f > 0 && isFinite(f) ? e.n / (f * f) : Infinity),
+      clear = d > 0 ? at(d / (za * sl)) : e.sd ? Infinity : at(-d / (za * sh)),
+      margin = e.sd ? at((e.sesoi - e.est) / (Z * sh)) : at(Math.min((d + e.sesoi) / (Z * sl), (e.sesoi - d) / (Z * sh))),
+      need = Math.min(clear, margin);
+    return Object.assign(e, {v: 'thin', need: isFinite(need) ? nice(need) : null});
   }
+
   // Applies both corrections to one milestone's results (runAll): each tested effect gets its family (fam: 1 primary,
   // 2 secondary), p, adjusted p (pa) and final verdict; the milestone gets mt: how many tests in each family.
   function correct(res) {
     const T = [];
     Object.entries(res.A).forEach(([k, a]) =>
       (a.effects || []).forEach(e => {
+        // An effect read as right answers on another guess floor (typed answers, PLAIN g1; plainOf) is tested, and
+        // corrected, on that contrast: its null is the coefficient at which it gets as many right answers as the
+        // typical question, not 0 (Codex review #588).
+        const P = (PLAIN[k] || {})[e.k];
+        if (P && P.g1 != null && e.est != null && isFinite(e.est)) {
+          const T0 = Object.assign({p: 0.75, g: 0.25}, a.typ || {}),
+            g = P.o === 'right' ? T0.g : 0,
+            q0 = clamp((T0.p - g) / (1 - g), 0.001, 0.999),
+            q1 = clamp((T0.p - P.g1) / (1 - P.g1), 0.001, 0.999);
+          e.nul = (logit(q1) - logit(q0)) / ((P.inv ? -1 : 1) * (P.s || 1));
+        }
         const p = pOf(e);
         if (p == null) return;
         e.fam = (PRIMARY[k] || []).includes(e.k) ? 1 : 2;

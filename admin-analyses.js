@@ -690,13 +690,7 @@ function anOverview(rep, R) {
       anSortCtl(true) + anFolded(FW, anTable(['Compared', 'What it does', 'Over time', 'Verdict'], rows, 'adm-an-eff adm-an-all')),
       'wide',
       false
-    )}${anCard(
-      'Milestones',
-      '<p class="note">Each milestone is one more look at the same growing log, not a new study: a result that turns clear at one milestone and not at the next is the noise of looking again. Read the latest.</p>' +
-        anTable(['Answers', 'Last answer', '#Players', '#Clear'], ms),
-      'wide',
-      false
-    )}</div>`
+    )}${anCard('Milestones', anTable(['Answers', 'Last answer', '#Players', '#Clear'], ms), 'wide', false)}</div>`
   );
 }
 function anView(key, rep, R) {
