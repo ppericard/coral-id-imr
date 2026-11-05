@@ -240,6 +240,48 @@ const WIDTHS = [390, 1280];
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
     }
+    // The narrowest width of rule U4, 360 px, with the phone run (no job of its own): every view and old address with no
+    // page wider than the window, and Coverage's two grids with a view column sorted (its ▲ widens the header), in a
+    // context of its own so the sort it leaves behind touches nothing else (Coverage's table.cov-t was 26 px too wide).
+    if (w === 390) {
+      const c3 = await b.newContext({viewport: {width: 360, height: 800}, serviceWorkers: 'block'});
+      await c3.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      const q = await c3.newPage();
+      q.on('pageerror', e => fails.push(`360px: ${e.message}`));
+      await q.goto(base + 'admin.html?demo');
+      await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
+      const wide = async h => {
+        await q.evaluate(h => (location.hash = h), h);
+        await q.evaluate(() => (window.__calm = 0));
+        await q
+          .waitForFunction(
+            () => {
+              const busy = window.DEMO_PENDING > 0 || /^\s*Loading/.test((document.querySelector('#view .note') || {}).textContent || '');
+              window.__calm = busy ? 0 : (window.__calm || 0) + 1;
+              return window.__calm >= 3;
+            },
+            null,
+            {timeout: 15000, polling: 'raf'}
+          )
+          .catch(() => fails.push(`360px #${h}: still loading`));
+        return q.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      };
+      for (const r of ROUTES) {
+        const h = r.h || (await q.evaluate(() => Object.keys(DATA.gen)[0])),
+          x = await wide(h);
+        if (x > 0) fails.push(`360px #${h}: page ${x} px wider than the window`);
+      }
+      for (const h of ['~cov', '~kcov']) {
+        await wide(h);
+        await q.click('.cov-t [data-cs="macro"]');
+        const x = await wide(h);
+        if (x > 0) fails.push(`360px #${h}, sorted on a view: page ${x} px wider than the window`);
+      }
+      await c3.close();
+    }
     // The subject switch (admin plan PR 2): one segment per subject in the header, the corals' addresses unchanged (the
     // loop above), a subject's pages under its prefix (core.js SUBJECTS admin.hash), only the tabs of the pages it has, a
     // page it does not have yet saying so, a link without a prefix keeping the subject when it has that page, and the
