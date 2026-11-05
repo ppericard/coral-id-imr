@@ -11,6 +11,8 @@ Every review and study was first written as a private Claude doc or artifact on 
 | [2026-11-01-ra-re-review.md](2026-11-01-ra-re-review.md) | A first-time RA, second round | Phone hammer icon label, tablet name cut, red "!" on Review 0 (check), like-for-like wrong-answer photos |
 | [2026-11-01-design-re-review.md](2026-11-01-design-re-review.md) | Expert UI designer, second round | p2, p9, p10, m5, m11 to verify |
 | [2026-11-02-learning-algorithm-review.md](2026-11-02-learning-algorithm-review.md) | Independent review of the learning algorithm (Pierre: compare it with the guidelines and with what others do) | Its 8 proposals, one by one with Pierre (ROADMAP "Independent review"); progress as a weighted moving average agreed 2026-11-02 |
+| [2026-11-05-governance-review.md](2026-11-05-governance-review.md) | Independent review of the governance documents (rule 27a, open mission) | Being applied: ROADMAP "Governance documents refonte" (PR A merged as #558; B, C, D next) |
+| [2026-11-05-fish-sheets-study.md](2026-11-05-fish-sheets-study.md) | Study: what the fish sheets hold at each level (identification group / family, genus, species), photos, sources, order of work | 13 questions for Pierre, not asked yet: ROADMAP "Fish sheets at three levels" |
 | [../reference/genus-overview-2026-10-31.md](../reference/genus-overview-2026-10-31.md) | Pierre's first study doc on the 39 genera | Background only; `data.json` supersedes it |
 
 ## Summarised only (first rounds and studies, all closed or carried into ROADMAP)
