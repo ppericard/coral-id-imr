@@ -387,7 +387,8 @@ const WIDTHS = [390, 1280];
         await aq.close();
       }
 
-      // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
+      // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs),
+      // except Players, which always opens Activity (fixed group, Pierre 2026-11-05), List having been used before.
       await go('~kcov');
       await go('~triage');
       const mem = await p.evaluate(() => ({
@@ -396,7 +397,7 @@ const WIDTHS = [390, 1280];
         players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
         kept: (store.get('reefid-admin-view', {}) || {}).cov
       }));
-      if (mem.cov !== '#~kcov' || mem.todo !== '#~triage' || mem.kept !== '~kcov' || mem.players !== '#~users')
+      if (mem.cov !== '#~kcov' || mem.todo !== '#~triage' || mem.kept !== '~kcov' || mem.players !== '#~stats')
         fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
       await p.reload();
       await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});

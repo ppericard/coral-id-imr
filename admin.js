@@ -1171,7 +1171,10 @@ const GROUPS = [
       // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs), their addresses unchanged.
       ['activity', 'Activity', [['~stats', 'Recent sessions']]],
       ['players', 'List', [['~users', 'List']]]
-    ]
+    ],
+    // fixed: a click on the group always opens its first tab, never the tab used last (Pierre, 2026-11-05: "Players
+    // always opens Activity").
+    {fixed: true}
   ],
   // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
   // every 1000 answers): the one group added after the nine tabs (AGENTS.md rule 23); drawn by admin-analyses.js. Analyses
@@ -1256,7 +1259,7 @@ function navs(tn, xn) {
     // A tab opens on its view used last; a header group on its tab used last.
     tabHash = t => (has(t, seen[t[0]]) && hasPage(ASUBJ, seen[t[0]]) ? seen[t[0]] : (t[2].find(vOk) || t[2][0])[0]),
     groupHash = G =>
-      TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) && hasPage(ASUBJ, last[G[0]])
+      !(G[3] && G[3].fixed) && TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) && hasPage(ASUBJ, last[G[0]])
         ? last[G[0]]
         : tabHash(TABS.find(t => t[3] === G[0] && tOk(t)) || TABS.find(t => t[3] === G[0])),
     over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Key-only genus, Coverage › Sheets & ID Key)`,
