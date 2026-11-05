@@ -204,13 +204,13 @@ test('fish_game.py fish_on and pid agree with core.js fishOn and fishPid', () =>
   const got = JSON.parse(
     py(`import fish_game as G
 F = json.loads(${JSON.stringify(JSON.stringify(F))})
-print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.pid(f) for f in ['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'imr-x']]))`)
+print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.pid(f) for f in ['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'some-photo']]))`)
   );
   assert.deepStrictEqual(got, [
     ...cases.map(([f, s]) => C.fishOn(F, f, s)),
-    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'imr-x'].map(C.fishPid)
+    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'some-photo'].map(C.fishPid)
   ]);
-  assert.deepStrictEqual(got.slice(-5), ['i123', 'i123', 'i123', 'bFiwra_u0', 'imr-x']);
+  assert.deepStrictEqual(got.slice(-5), ['i123', 'i123', 'i123', 'bFiwra_u0', 'some-photo']);
 });
 
 // core.js fishPhotos: curated photos where an entry has enough very easy ones, the stopgap's joining them otherwise.
