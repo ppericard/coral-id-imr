@@ -8,7 +8,7 @@
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
 the remote branches with commits not in main and no PR (AGENTS.md rule 26b), the sheet script's VERSION on main against
-the live one, and the open questions for Pierre from docs/STATUS.md. The hooks run main's reviewed copy
+the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), and the open questions for Pierre from docs/STATUS.md. The hooks run main's reviewed copy
 (`git show origin/main:tools/brief.py | python3 -I -`), never the copy of the branch checked out (Codex security
 review #561), so the script must also work fed on stdin. Read-only and fast: GitHub through `gh api` (REST
 only), the sheet through the same read-only GET the app makes (?stats=1), all at once with a deadline of about 5 s.
@@ -210,6 +210,72 @@ def live_version(url):
         return json.loads(r.read()).get('v')
 
 
+# --- Stack (tools/stack_check.py --latest, once a day) -------------------------------------------------------------------
+# Pierre, 2026-11-05: the whole stack on the latest stable versions. The brief runs main's reviewed tools/stack_check.py
+# (as the hooks run main's brief), at most once a Manila day, within STACK_LIMIT seconds; its result is cached in
+# tools/.cache/ (gitignored) and an older cached result is shown when the lookup fails or runs out of time.
+
+STACK_CACHE = os.path.join('tools', '.cache', 'stack-latest.json')
+STACK_LIMIT = 3.0  # seconds, git show included
+MAIN = 'origin/main'  # where the reviewed tools/stack_check.py and tools/stack.json are read (tests: another ref)
+
+
+def stack_fresh(c, day, now):
+    """Today's result; one with sources not looked up is retried after an hour."""
+    return bool(c) and c.get('day') == day and (not c.get('unknown') or now - c.get('t', 0) < 3600)
+
+
+def stack_refresh(path, day):
+    t0 = time.monotonic()
+    r = subprocess.run(['git', '-C', ROOT, 'show', MAIN + ':tools/stack_check.py'], capture_output=True, text=True, timeout=STACK_LIMIT)
+    if r.returncode:
+        raise Soft('not on main')
+    rest = STACK_LIMIT - (time.monotonic() - t0)
+    args = [sys.executable, '-I', '-', '--latest', '--json', '--git-ref', MAIN, '--root', ROOT, '--timeout', '%.1f' % max(0.3, rest - 0.5)]
+    try:
+        out = subprocess.run(args, input=r.stdout, capture_output=True, text=True, timeout=max(0.5, rest))
+    except subprocess.TimeoutExpired:
+        raise Soft('no answer in %g s' % STACK_LIMIT)
+    c = json.loads(out.stdout)
+    c = {'day': day, 't': time.time(), 'outdated': c['outdated'], 'unknown': c['unknown'], 'checked': c['checked']}
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = '%s.%d' % (path, os.getpid())
+    with open(tmp, 'w', encoding='utf8') as f:
+        json.dump(c, f)
+    os.replace(tmp, path)
+    return c
+
+
+def stack_get():
+    """(result or None, why it is not today's or None). Never raises: the hook must not fail."""
+    path, day = os.path.join(ROOT, STACK_CACHE), datetime.now(MANILA).date().isoformat()
+    try:
+        with open(path, encoding='utf8') as f:
+            c = json.load(f)
+    except (OSError, ValueError):
+        c = None
+    if stack_fresh(c, day, time.time()):
+        return c, None
+    try:
+        return stack_refresh(path, day), None
+    except Soft as e:
+        return c, str(e)
+    except Exception as e:  # no git, no network, JSON: the cached result if any
+        return c, type(e).__name__
+
+
+def stack_line(c, why):
+    if not c and why == 'not on main':
+        return None  # before tools/stack_check.py reaches main: nothing to say
+    if not c:
+        return 'Stack: not checked (%s): python3 tools/stack_check.py --latest' % (why or 'no result')
+    n, u = c.get('outdated', []), c.get('unknown', [])
+    s = 'Stack: %d outdated%s' % (len(n), ': ' + ', '.join(n) if n else '')
+    s += ', %d not looked up' % len(u) if u else ''
+    s += ' [as of %s: %s]' % (c.get('day', '?'), why) if why else ''
+    return s + ' (python3 tools/stack_check.py --latest)'
+
+
 # --- docs/STATUS.md ------------------------------------------------------------------------------------------------------
 
 
@@ -248,6 +314,7 @@ def brief(short, at):
     url = sync_url()
     f_prs = pool.submit(prs, pool) if have_gh else None
     f_live = pool.submit(live_version, url) if url else None
+    f_stack = pool.submit(stack_get)
     v_main, v_where = main_version()
     q_open, q_last, checked = questions()
 
@@ -294,7 +361,17 @@ def brief(short, at):
     warn = ''
     if v_main and live is not None and live < v_main:
         warn = ': behind (it updates itself about 15 min after a merge; see the sheet\'s Deploy log)'
-    lines.append('Sheet script: %s · %s%s' % (vm, vl, warn))
+    sheet = 'Sheet script: %s · %s%s' % (vm, vl, warn)
+
+    # Stack: its own line in the full brief; in the short one (5 lines) after the sheet script, only when something is due
+    got, err = result(f_stack)
+    st = stack_line(*(got if got else (None, err)))
+    if not short:
+        lines += [sheet] + ([st] if st else [])
+    elif st and got and got[0] and (got[0].get('outdated') or got[1]):
+        lines.append(sheet + ' · ' + st)
+    else:
+        lines.append(sheet)
 
     # Questions
     # The players' reports and the app's events live in the sheet, which only the agent's connector reads (AGENTS.md
