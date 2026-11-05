@@ -11,10 +11,10 @@
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //
-// --learner field (2026-11-06, docs/reviews progress and set size; docs/LEARNING.md "Field learner"): a learner whose
+// --learner field (2026-11-05, the progress and set-size study; docs/LEARNING.md "Field learner"): a learner whose
 // confusions grow with the number of genera it holds in mind and with how much they look alike (below, "The field
 // learner"); --tau its transfer, 0 to 1. Without it, the learner of before (item), unchanged.
-// --custom N (2026-11-06, the Custom-8 scenario): the player plays the Quiz until N genera are unlocked, picks those N in
+// --custom N (2026-11-05, the Custom-8 scenario): the player plays the Quiz until N genera are unlocked, picks those N in
 // the custom quiz (quiz.js quizCustom, model.js customOf), plays --drill questions there, then goes back to the Quiz for
 // the rest of --questions. The measures are those of every run, plus a row at the end of the drill and the selection's
 // own bars against its true whole-slate success.

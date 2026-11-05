@@ -3716,6 +3716,103 @@ question 300 (Keep them all: 40, 0.75 ± 0.01), and the beginner who opened all 
 seeing more genera always teaches it more; what the card guards against, a player who quits when it gets too hard,
 is not in the simulation.
 
+#### Field learner and the Custom-8 scenario (measured 2026-11-05, no rule changed)
+
+Why (Pierre, 2026-11-05, the progress and set-size study): a genus at 100% should mean the player can tell a photo of it
+from *any* slate genus, whatever they have unlocked. The learner above cannot see what that asks: it recognises a genus
+whatever the competitors, so drilling 8 genera raises its knowledge exactly as drilling 40 would. This adds a second
+learner and Pierre's scenario, and measures today's rules with them. Validation tools only: no game rule, constant or
+rules version changed; the progress rule is Pierre's decision.
+
+- **Field learner** (`--learner field --tau T`; `tools/learnsim.js` "The field learner", constants `LEARNER.FIELD`,
+  provisional). It keeps `know[g]` and its teaching, and adds a contrast skill x per pair of genera, learned only when
+  the pair is contrasted: both among a question's choices, or side by side in the montage after a miss. A question on t
+  among the set V (its choices; for a typed question the genera the learner has met, the names it holds in mind) is
+  answered with the Luce choice P = 1 / (1 + e^(d + 0.5·single − memory) · Σ_{c∈V, c≠t} r(t, c)), r(t, c) =
+  (1 + 3 s(t, c))(1 − 0.5 know[c] g)/4 · (1 − know[t])^(1.6 g), g = τ + (1 − τ) x(t, c), s from `pooledConf` as for the
+  item learner. Every genus held in mind adds its own odds of a mix-up, look-alikes most (set size, and pooled
+  confusion); τ (transfer) is the share of what the learner knows of t, in log odds, that works against a genus it was
+  never contrasted with. A (1.6): with every pair contrasted at know 0.5 and 4 easy choices it answers 0.75 as the item
+  learner; an expert (know 0.93 on every genus and pair) about 0.85 against the whole slate. The item learner stays the
+  default and its runs are unchanged (same seeds, identical answers to `main`): two worlds, as the statistics study asks
+  (a rule that helps only in the world it was designed for is suspect).
+- **Custom-N scenario** (`--custom 8 --drill 200`): the player plays the Quiz until 8 genera are unlocked, picks those 8
+  in the custom quiz, plays 200 questions there (the real custom quiz: its draw, choices, typed questions, Again, duels;
+  no exam), then goes back to the Quiz.
+- **Measures** (`tools/fieldeval.js`, pre-declared before the runs; rule L11 tier 2). The truth is pOpen(t), each
+  learner's own success on an average photo of t with every slate genus a possible answer (Luce over the 40 for the
+  field learner; for the item learner its guess among the 40, about its know).
+  - **Primary 1, overclaim**: per run, the mean over the genera met of (bar shown, `genScore`) − pOpen, at question 600.
+    Above 0: the bar claims more than the player can do against the whole slate.
+  - **Primary 2, precision of Learned**: per run, the share of Learned genera with pOpen ≥ 0.8 (`LEARNER.PREC`), at
+    question 1000 (runs with no Learned genus have none: their number is given).
+  - Secondary, descriptive: over+ = mean of max(0, bar − pOpen) (the study's form), and at the end of the drill the
+    selection's own bar, pOpen and overclaim.
+  - Inference: mean and 95% t interval over the 30 seeds; Custom-8 against the path on the same seeds (paired), sign-flip
+    p over the seeds and Holm over the four profiles for each primary. Everything else exploratory.
+- Run: seeds 1-30, 1000 questions, the four profiles, no `--stats`; `node tools/learnsim.js --seeds 30 --questions 1000
+  --learner field --tau 0.5 [--custom 8 --drill 200] --out f.json`, then `node tools/fieldeval.js path.json custom.json`.
+
+Results, field learner τ 0.5, today's rules (`main` at 0760aa60, the learner at c7d23d1e; 240 runs; mean [95% interval
+over the 30 seeds]). The item learner and τ 0 / 0.8 runs (robustness) come in a later commit.
+
+| Profile | over at 600, path | over at 600, Custom-8 | Custom-8 − path (paired) | over at 1000, path | precision of Learned at 1000, path (pooled) | the same, Custom-8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| beginner | +0.108 [0.098, 0.118] | +0.070 [0.060, 0.080] | −0.038 [−0.049, −0.027] | +0.112 [0.103, 0.121] | 0.90 [0.81, 0.99], 22 runs (37/44) | 1.00, 30 runs (74/74) |
+| lecture-level RA | +0.084 [0.071, 0.097] | +0.036 [0.027, 0.046] | −0.048 [−0.062, −0.034] | +0.080 [0.071, 0.088] | 0.93 [0.85, 1.00] (108/115) | 0.99 [0.97, 1.00] (114/116) |
+| strong RA | +0.034 [0.022, 0.046] | −0.033 [−0.042, −0.024] | −0.067 [−0.080, −0.054] | +0.044 [0.039, 0.050] | 0.98 [0.97, 1.00] (300/305) | 1.00 (239/239) |
+| expert | −0.034 [−0.038, −0.030] | −0.113 [−0.118, −0.108] | −0.079 [−0.085, −0.073] | +0.014 [0.012, 0.016] | 1.00 (980/980) | 1.00 (754/754) |
+
+Paired Custom-8 − path at 600: sign-flip p < 0.001 for every profile, Holm-adjusted 0.0004. Precision at 1000, Custom-8 −
+path on the seeds where both runs had a Learned genus: beginner +0.10 [0.02, 0.19], lecture-level RA +0.06 [−0.02, 0.14],
+strong RA +0.02 [0.00, 0.03], expert 0; Holm-adjusted p 0.24 for the first three: no clear difference.
+
+At the end of the drill (Custom-8, question 235-238; secondary, descriptive): the 8 genera drilled.
+
+| Profile | right % in the drill | bar of the 8 | their true whole-slate success | overclaim of the 8 | of the 8, at 95% or more | the 8 at question 300 / 600: bar, true |
+| --- | --- | --- | --- | --- | --- | --- |
+| beginner | 93 | 0.92 | 0.70 | +0.22 [0.21, 0.23] | 5.9 | 0.89, 0.79 / 0.85, 0.93 |
+| lecture-level RA | 95 | 0.93 | 0.81 | +0.12 [0.12, 0.13] | 6.3 | 0.90, 0.88 / 0.88, 0.95 |
+| strong RA | 97 | 0.95 | 0.90 | +0.04 [0.03, 0.05] | 7.3 | 0.94, 0.94 / 0.92, 0.97 |
+| expert | 99 | 0.95 | 0.99 | −0.04 | 7.6 | - |
+
+What it says, on this learner (provisional constants; to be read with the item world and τ when they come):
+
+- **Pierre's scenario reproduces**: 200 custom-quiz questions on 8 genera bring 6 of them (beginner) to 7-8 (strong RA)
+  to the exam's entry, the 8 shown at 92-95% while a beginner names them right 70% of the time against the whole slate,
+  a lecture-level RA 81%: overclaims of +0.22 and +0.12 on exactly the genera drilled.
+- **It does not last in this world**: the exam is left to the Quiz, and by the time it passes, the drilled genera have been
+  set against the genera met afterwards (each question contrasts its choices). Their true success reaches 0.79-0.94 by
+  question 300 and 0.93-0.97 by 600, and every Learned genus of the Custom-8 runs but two (of 1,183) clears 0.8. At 600
+  the Custom-8 runs overclaim *less* than the natural path, over the genera met (the drill slowed the opening: fewer
+  genera met, fewer new bars). A player who drills and never goes back to the Quiz keeps the +0.22.
+- **The standing overclaim is the natural path's**: +0.11 for a beginner and +0.08 for a lecture-level RA at question
+  600, the same at 1000 (+0.03 to +0.04 for a strong RA, about 0 for an expert, whose bars under-claim early). It is
+  where the precision of Learned falls short too: 7 of a beginner's 44 Learned genera and 7 of a lecture-level RA's 115
+  are under 0.8 against the whole slate.
+- **Limits**: one learner, its constants chosen by hand (A, the contrast rate PAIR 1, τ), not fitted to real answers;
+  the pooled confusions are the priors (no `--stats`); the learner never quits and always goes back to the Quiz.
+
+**Real answer log** (tier 3, rule L12; `node tools/fieldeval.js --log answers.json`, the sheet's Answers tab read
+2026-11-05 through the Sheets connector, read-only, kept outside the repo; 1,933 coral answers of 10 players, all with the
+app's logged expectation e). Does the number of genera a player had been asked so far (x = log2 of it; the log records
+no cards, so a genus opened but not yet asked is left out) predict right or wrong beyond e? Pre-declared: M1 = logit e +
+a + b x against M0 = logit e + a, each fitted on the other players and scored on the player left out; players are the
+unit (each one vote), sign-flip over players, declared direction M1 lower with b < 0.
+
+| | Result |
+| --- | --- |
+| Log-loss M1 − M0 per player (primary) | +0.001 [−0.008, 0.011], sign-flip p 0.73 (exact); M1 better for 5 of 10 players: **no clear difference** |
+| b on every player | −0.21 logit per doubling of the genera asked (the declared direction) |
+| The players' own b (8 players with 30+ answers) | −0.14 [−0.54, 0.27], negative for 5 of 8, sign-flip p 0.45 |
+| Expected e against right, by genera asked so far | 1-4: 0.76 / 0.88 (89 answers); 5-8: 0.77 / 0.90 (216); 9-16: 0.78 / 0.88 (328); 17-32: 0.77 / 0.79 (870); 33+: 0.75 / 0.81 (430) |
+| Typed answers only (exploratory) | 55 answers of 3 players: too few to read |
+
+The players beat the app's expectation by 0.10-0.13 while they had been asked 16 genera or fewer, and by 0.02-0.06 after:
+the shape a set-size effect predicts, but also that of the Elo's early under-estimate (the ability lags most on few
+answers, "Learning-outcome simulation" above), which this log cannot tell apart. With 10 players, the held-out test sees no
+clear difference. A replay cannot judge what a new progress rule would teach (other questions would be asked).
+
 ## Decision log
 
 - 2026-11-04, Pierre (approved after review of every family's ranking): the fish species inside an entry open in

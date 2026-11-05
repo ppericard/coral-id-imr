@@ -1,4 +1,4 @@
-// Progress against the whole slate (2026-11-06, docs/LEARNING.md "Field learner"): reads tools/learnsim.js --out files
+// Progress against the whole slate (2026-11-05, docs/LEARNING.md "Field learner"): reads tools/learnsim.js --out files
 // and reports, per profile and checkpoint, the pre-declared measures with 95% intervals over the seeds, and each file
 // against the first on the same seeds (paired). With --log, a read-only check on the real answer log instead: does the
 // number of genera a player has met predict right or wrong beyond the app's own expectation? Offline, reads files,
@@ -48,7 +48,8 @@ function ci(v) {
     h = v.length > 1 ? (tQuantile(0.975, v.length - 1) * sd(v)) / Math.sqrt(v.length) : NaN;
   return {n: v.length, m, lo: m - h, hi: m + h};
 }
-const cis = c => (c.n ? `${f(c.m)} [${f(c.lo)}, ${f(c.hi)}]` : '-');
+const cis = (c, clip) => (c.n ? `${f(c.m)} [${f(clip ? Math.max(0, c.lo) : c.lo)}, ${f(clip ? Math.min(1, c.hi) : c.hi)}]` : '-');
+// precL is a share: its interval is shown clipped to [0, 1] (a t interval on few runs near 1 runs past it).
 // Holm's step-down adjustment of a list of p.
 function holm(ps) {
   const o = ps.map((p, i) => [p, i]).filter(x => num(x[0])).sort((a, b) => a[0] - b[0]),
@@ -80,7 +81,15 @@ function sims() {
     for (const q of AT) {
       for (const pr of profiles) {
         const cells = D.map(d => d.runs.filter(r => r.profile === pr));
-        const line = cells.map((R, i) => `[${i}] ${cis(ci(R.map(r => (rowAt(r, q) || {})[k])))} n ${ci(R.map(r => (rowAt(r, q) || {})[k])).n}`);
+        // precL: also pooled over the runs, the Learned genera with pOpen >= PREC out of all Learned genera.
+        const pooled = R => {
+            const F = R.map(r => rowAt(r, q)).filter(x => x && x.learned),
+              n = F.reduce((a, x) => a + x.learned, 0);
+            return n ? `, pooled ${Math.round(F.reduce((a, x) => a + x.precL * x.learned, 0))}/${n}` : '';
+          },
+          line = cells.map(
+            (R, i) => `[${i}] ${cis(ci(R.map(r => (rowAt(r, q) || {})[k])), k === 'precL')} n ${ci(R.map(r => (rowAt(r, q) || {})[k])).n}${k === 'precL' ? pooled(R) : ''}`
+          );
         console.log(`  q ${String(q).padStart(4)} ${pr.padEnd(10)} ${line.join('   ')}`);
       }
     }
