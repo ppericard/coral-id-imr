@@ -8,7 +8,13 @@
 # confirmed in the Philippines by the presence rule (tools/presence.py, AGENTS.md rule 6g, 2026-11-04: Research Grade
 # there by 3+ distinct observers, or 1+ Research Grade there and listed by Corals of the World for a Philippine ecoregion,
 # or confirmed near Dauin by 2+ Research Grade observers), at most WORLD_CAP waiting (loc world). Accepted IDs: Research Grade, or a genus-level community
-# ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon).
+# ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon), or, in
+# the Philippines only, a trusted expert's identification (EXPERTS) at the genus or below that no other current
+# identification disagrees with (expert_ok). Abroad: Research Grade only.
+# Licences (Pierre, 2026-11-05, aligned with the fish rules): CC0, CC BY, CC BY-NC; never share-alike (it would block a
+# later commercial reuse), checked photo by photo (an observation may mix licences). drop_share_alike takes the waiting
+# share-alike candidates out of cand.json at each run (never one curation.json names, e.g. one Pierre added); the
+# share-alike photos already on the site are his to keep or remove (admin To do › Share-alike), never removed here.
 # Caps (Pierre, 2026-10-31, so the pile to sort stays small): at most DAUIN_CAP Dauin observations waiting per genus,
 # Philippines ones only while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings
 # ALL its photos (PER_OBS only guards against an odd one with dozens; Pierre, 2026-11-01: "on my observations I take at
@@ -29,12 +35,17 @@
 # Key-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
 import json, re, sys, time, urllib.error, urllib.request
 from collections import Counter
-from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
+from datajson import load_all, dump_all, curated  # data.json + cand.json (candidates waiting live in cand.json)
 from excluded import excluded, drop_excluded, set_aside, SUG
 from genera import key_only, cap_sheet
 from presence import confirmed_species  # the presence rule, defined once
 UA = {'User-Agent': 'coral-id-imr/1.0'}
-LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
+LIC = 'cc-by,cc-by-nc,cc0'  # never share-alike (Pierre, 2026-11-05): cc-by-sa and cc-by-nc-sa left out
+LICS = set(LIC.split(','))
+# Trusted identifiers (Pierre, 2026-11-05): `thamnasteroid` is by far the top identifier of stony corals in the
+# Philippines; an observation whose identification by them is at the genus searched or below, with no other current
+# identification disagreeing, is accepted in the Philippines tiers, as a genus-level community taxon is (gid).
+EXPERTS = {'thamnasteroid'}
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
 REGION_KM = 250  # Pierre, 2026-11-03: "un rayon de 200 km autour de Dauin ou 300 km", then all the Philippines
@@ -71,6 +82,76 @@ def get(u):
             wait = WAITS[k]
         print(f'  iNaturalist busy, waiting {wait} s (try {k + 2} of {len(WAITS) + 1})', file=sys.stderr)
         time.sleep(wait)
+
+
+def licence(p):
+    """A photo record's licence code: its lic, else read from its attribution text ("(CC BY-NC-SA)" -> cc-by-nc-sa, "no
+    rights reserved" -> cc0); None when neither says (IMR lecture or Coral Finder book photos)."""
+    if p.get('lic'): return p['lic'].lower()
+    m = re.search(r'\((?:CC0|CC[ -][A-Z -]+?)\)', p.get('a') or '')
+    if not m: return 'cc0' if 'no rights reserved' in (p.get('a') or '').lower() else None  # iNaturalist's CC0 credit
+    t = m.group(0)[1:-1].upper()
+    return 'cc0' if t == 'CC0' else 'cc-' + '-'.join(t[3:].lower().split())
+
+
+def share_alike(p):
+    """A share-alike photo (CC BY-SA, CC BY-NC-SA): no longer accepted for corals (Pierre, 2026-11-05)."""
+    return (licence(p) or '').endswith('-sa')
+
+
+def drop_share_alike(d, keep):
+    """Takes the waiting share-alike candidates out of d['cand'], except those curation.json names (keep:
+    datajson.curated(), e.g. a candidate Pierre added). Returns the photo ids dropped."""
+    gone = []
+    for g, L in list((d.get('cand') or {}).items()):
+        k = [p for p in L if p['f'] in keep or not share_alike(p)]
+        gone += [p['f'] for p in L if p not in k]
+        if k: d['cand'][g] = k
+        else: del d['cand'][g]
+    return gone
+
+
+def in_genus(t, tid):
+    """Taxon t is the genus tid or below it."""
+    t = t or {}
+    return t.get('id') == tid or tid in (t.get('ancestor_ids') or [])
+
+
+def genus_ok(o, tid):
+    """Needs ID observation whose community taxon is this genus or below it, with most identifications agreeing."""
+    t = o.get('taxon') or {}
+    return bool(o.get('community_taxon_id')) and bool(o.get('identifications_most_agree')) and o['community_taxon_id'] == t.get('id') and in_genus(t, tid)
+
+
+def lineage(a, b):
+    """Taxa a and b on one line of descent: the same, or one an ancestor of the other (no disagreement)."""
+    a, b = a or {}, b or {}
+    return a.get('id') == b.get('id') or a.get('id') in (b.get('ancestor_ids') or []) or b.get('id') in (a.get('ancestor_ids') or [])
+
+
+def expert_ok(o, tid):
+    """Needs ID observation whose current identification by a trusted expert (EXPERTS) is at the genus tid or below, and
+    that no other current identification disagrees with (Pierre, 2026-11-05: trust thamnasteroid's identification; the
+    integrator's review of #568). Agreeing = on one line of descent with the expert's taxon: an observer's coarse
+    "Stony corals" refined by the expert to the genus is accepted (iNaturalist then has no genus-level community taxon:
+    the coarse ID does not support the genus); another genus, or a taxon off that line, refuses. Withdrawn identifications
+    do not count; an expert ID above the genus is refused."""
+    ids = [i for i in (o.get('identifications') or []) if i.get('current', True)]
+    ex = [i for i in ids if ((i.get('user') or {}).get('login') or '').lower() in EXPERTS]
+    if not ex: return False
+    et = ex[0].get('taxon')
+    if not (in_genus(et, tid) and in_genus(o.get('taxon'), tid)): return False
+    return all(lineage(i.get('taxon'), et) for i in ids if i not in ex)
+
+
+def ph_ok(o, tid):
+    """An observation the Philippines tiers accept: Research Grade, a genus-level community ID, or an expert's ID."""
+    return o.get('quality_grade') == 'research' or (o.get('quality_grade') == 'needs_id' and (genus_ok(o, tid) or expert_ok(o, tid)))
+
+
+def photo_ok(ph):
+    """A photo with an accepted licence (checked photo by photo: one observation may mix licences)."""
+    return (ph.get('license_code') or '').lower() in LICS
 
 
 def kept_views(g, G, cur):
@@ -161,10 +242,6 @@ def main():
     usedp = {re.sub(r'\D', '', p['f'].split('-')[-1]) for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
     cand = d.get("cand") or {}
     usedp |= {p['f'].split('-')[-1] for L in cand.values() for p in L}
-    # Needs ID observation whose community taxon is this genus or below it, with most identifications agreeing.
-    def genus_ok(o, tid):
-        t = o.get('taxon') or {}
-        return bool(o.get('community_taxon_id')) and o.get('identifications_most_agree') and o['community_taxon_id'] == t.get('id') and (t.get('id') == tid or tid in (t.get('ancestor_ids') or []))
     # Pierre's decisions on candidates (curation.json): added, rejected (seen 'cand:f'), sent to another genus, excluded.
     CUR = json.load(open('curation.json'))
     ADDED = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('add') or {})}
@@ -196,7 +273,10 @@ def main():
         if where != DAUIN and dauin_n(g) >= POOR and not PH_ALL: return loc, 0
         return loc, room({'dauin': DAUIN_CAP_, 'ph': PH_CAP_, 'world': WORLD_CAP}[loc], len(waiting_obs(g, loc)), need(g), len(waiting_obs(g)))
     if PLAN:
-        print(json.dumps({g: {'keyonly': g in KEY_ONLY, 'need': need(g), **{k: max(0, r) for k, r in (room_for(g, w) for w in (DAUIN, PHILIPPINES))}} for g in GEN if not ONLY or g in ONLY}))
+        # drop: waiting share-alike candidates a run would take out of cand.json (drop_share_alike), shown only when some.
+        keep = curated()
+        drop = Counter(g for g, L in cand.items() for p in L if p['f'] not in keep and share_alike(p))
+        print(json.dumps({g: {'keyonly': g in KEY_ONLY, 'need': need(g), **{k: max(0, r) for k, r in (room_for(g, w) for w in (DAUIN, PHILIPPINES))}, **({'drop': drop[g]} if drop[g] else {})} for g in GEN if not ONLY or g in ONLY}))
         return
     for g in GEN:
         if ONLY and g not in ONLY: continue
@@ -221,13 +301,14 @@ def main():
             grade = 'research' if loc == 'world' else 'research,needs_id'  # abroad: species-level IDs only
             res = get(f'https://api.inaturalist.org/v1/observations?{q}&quality_grade={grade}&captive=false&photos=true&photo_license={LIC}&order_by=votes&per_page=200')
             obs, more = res['results'], res.get('total_results', 0) > len(res['results'])
-            # Research Grade first, then genus-level community IDs (votes order within each).
-            obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if o['quality_grade'] == 'needs_id' and genus_ok(o, T[0]['id'])]
+            # Research Grade first, then genus-level community IDs and expert IDs (votes order within each); abroad
+            # Research Grade only (the query asks for nothing else).
+            obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, T[0]['id'])]
             # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
             # so far (votes order breaks ties), and take all its photos.
             pool = []
             for rank, o in enumerate(obs):
-                P = [ph for ph in o['photos'] if ph.get('license_code') and str(ph['id']) not in usedp and not excluded(photo_id=ph['id'])][:PER_OBS]
+                P = [ph for ph in o['photos'] if photo_ok(ph) and str(ph['id']) not in usedp and not excluded(photo_id=ph['id'])][:PER_OBS]
                 if P: pool.append((o, P, rank))
             n = Counter()
             for p in out: n['t', p.get('t')] += 1
@@ -247,6 +328,8 @@ def main():
         if g in cand and not cand[g]: del cand[g]
         print(g, len(cand.get(g, [])))
     d['cand'] = cand
+    gone = drop_share_alike(d, curated())
+    if gone: print('share-alike candidates dropped:', len(gone))
     drop_excluded(d)
     dump_all(d)
     print('total', sum(map(len, cand.values())))

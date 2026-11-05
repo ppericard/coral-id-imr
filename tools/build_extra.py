@@ -8,8 +8,8 @@
 # Run from the repo root: python3 tools/build_extra.py
 import json, time, urllib.request
 from datajson import dump  # the one data.json layout (one genus per line)
+from fetch_local import LIC, photo_ok  # accepted licences, never share-alike (Pierre, 2026-11-05)
 UA = {'User-Agent': 'coral-id-imr/1.0'}
-LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 DAUIN, PH = 'lat=9.19&lng=123.26&radius=40', 'place_id=6873'
 get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
 
@@ -104,7 +104,7 @@ for g, (pages, tr, crit, qt) in X.items():
         obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if o['quality_grade'] != 'research' and agree(o, tid) >= 2]
         for o in obs:
             if n >= 10 or o['id'] in seen: continue
-            P = [p for p in o['photos'] if p.get('license_code')]
+            P = [p for p in o['photos'] if photo_ok(p)]
             if not P: continue
             seen.add(o['id']); n += 1
             url = f'https://www.inaturalist.org/observations/{o["id"]}'

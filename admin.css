@@ -4238,9 +4238,10 @@ button.adm-chip[aria-pressed='true'] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-/* To do › Out of the presence rule: the photos Pierre kept, folded at the bottom of the section (Pierre, 2026-11-05),
-   and their tag on other pages, neutral instead of the warning red. */
-.adm-src.adm-rule.kept {
+/* To do › Out of the presence rule and To do › Share-alike: the photos Pierre kept, folded at the bottom of the section
+   (Pierre, 2026-11-05), and their tag on other pages, neutral instead of the warning red. */
+.adm-src.adm-rule.kept,
+.adm-src.adm-sa.kept {
   background: var(--surface-2);
   color: var(--muted);
 }
@@ -4258,7 +4259,8 @@ button.adm-chip[aria-pressed='true'] {
 .adm-rulekept[open] > summary {
   margin-bottom: 8px;
 }
-.adm-acts .adm-qseg button[data-rule='keep'][aria-pressed='true'] {
+.adm-acts .adm-qseg button[data-rule='keep'][aria-pressed='true'],
+.adm-acts .adm-qseg button[data-sa='keep'][aria-pressed='true'] {
   background: var(--surface-2);
   color: var(--ink);
   font-weight: 700;
