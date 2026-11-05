@@ -1,6 +1,7 @@
-// The admin's Analyses report (Pierre, 2026-11-04: "every 1000 new answers", computed once, never on a phone; AGENTS.md
-// rule 14i "compute once"): runs every analysis of analysis.js on the answer log, at each milestone (the first 1000,
-// 2000, … answers and all of them), and stores the report in the sync sheet, where the admin reads it.
+// The admin's Analyses report (Pierre, 2026-11-04: "every 1000 new answers", computed once; AGENTS.md rule 14i "compute
+// once"): runs every analysis of analysis.js on the answer log, at each milestone (the first 1000, 2000, … answers and
+// all of them), and stores the report in the sync sheet, where the admin reads it: the primary source. The admin's
+// "Recompute here" runs the same code in its own tab, on any device (Pierre, 2026-11-05), and keeps its result there.
 //   node tools/analyses.js --sheet [--force]   the GitHub Action (.github/workflows/analyses.yml): reads the log with
 //                                             readAnswers and stores the report with analysesPut (sheet v35), both
 //                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until 1000
