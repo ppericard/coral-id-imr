@@ -1,4 +1,4 @@
-{"note": "Growth-form guesses for the game photos that had none (tools/game_forms.js --apply), 2026-11-05: each photo looked at, judged by the growth-form pass of judging/AGENTS.md (one of the 7 IMR forms or x, the dominant visible one; polyps only for the rule 4 genera, never on a macro photo). Suggestions: Pierre confirms them in the admin; his curation.json gf wins.",
+{"note": "Growth-form guesses for the game photos that had none (tools/game_forms.js --apply), 2026-11-05: each photo looked at, judged by the growth-form pass of judging/BRIEF.md (one of the 7 IMR forms or x, the dominant visible one; polyps only for the rule C4 genera, never on a macro photo). Suggestions: Pierre confirms them in the admin; his curation.json gf wins.",
 "scope": "forms",
 "photos": {
 "acropora-cand-174427599": {"form": "B"},

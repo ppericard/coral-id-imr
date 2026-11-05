@@ -109,7 +109,7 @@ test('registry: every tip is complete', () => {
 
 // The card speaks the subject on screen (fish UX study, 2026-11-04: the zoom tip told fish players to look at the
 // corallites). Every subject gets a text; a fish player's never names a coral part. The wording is the subject's
-// (core.js SUBJECTS zoom): tips.js never names a subject (AGENTS.md 13b, Codex review #466).
+// (core.js SUBJECTS zoom): tips.js never names a subject (rule S1, Codex review #466).
 test('registry: the card text follows the subject on screen', () => {
   const {SUBJECTS, subjectOf} = require('../core.js');
   for (const t of TIPS)

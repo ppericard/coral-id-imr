@@ -844,7 +844,7 @@ const saList = () => saQueue(Object.keys(DATA.gen), photos, hidden, saKept);
 const saKeptList = () => saQueue(Object.keys(DATA.gen), photos, hidden).filter(p => saKept(p.f));
 // A photo or candidate whose name is a former combination, a moved genus or iNaturalist's spelling of a name WoRMS writes
 // otherwise (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49; presence.js nameFlag, names.json): a neutral tag with
-// the name WoRMS accepts now. Information only, no action: nothing is renamed (AGENTS.md rule 1).
+// the name WoRMS accepts now. Information only, no action: nothing is renamed (rule C1).
 const NAME_KIND = {spelling: 'iNaturalist spelling', former: 'Former name', genus: 'Former genus'};
 const nameTag = p => {
   const k = nameFlag(p, NAMES);
@@ -1235,7 +1235,7 @@ const GROUPS = [
     {fixed: true}
   ],
   // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
-  // every 1000 answers): the one group added after the nine tabs (AGENTS.md rule 23); drawn by admin-analyses.js. Analyses
+  // every 1000 answers): the one group added after the nine tabs (rule A3); drawn by admin-analyses.js. Analyses
   // = what we learn (Pierre, 2026-11-04, one role per admin page): the views read live from the answer log (~stats-*,
   // admin.js renderStats) sit here too: Pairs (formerly Players › Activity › Mix-ups), Answer log (Activity's analysis
   // cards) and Stops (Health's "where players stop" and genus sheets opened).
@@ -1781,7 +1781,7 @@ function pointerDrag(tiles, hover, drop, cancel) {
   });
 }
 // The enlarged photo's caption (zoom, zoomOne: every admin view): genus (opens its sheet, draft applied), what the photo
-// is, the iNat taxon, its credit and its source, as in the games (app.js photoSrc / credit, AGENTS.md rule 11). An iNat
+// is, the iNat taxon, its credit and its source, as in the games (app.js photoSrc / credit, rule P5). An iNat
 // photo links to its observation (Pierre, 2026-11-03: he opened his own photo that everyone misses, to check on iNaturalist
 // who identified it, and the caption had no link); IMR lecture and Coral Finder book photos have no public page: their
 // credit line only.
@@ -2164,7 +2164,7 @@ const HELP = {
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
-  todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: AGENTS.md rule 6g; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
+  todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); <b>Fish</b> marks a fish point. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
@@ -2187,7 +2187,7 @@ const HELP = {
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
-  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; AGENTS.md rule 6g): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
+  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; rule C8): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>
@@ -2669,7 +2669,7 @@ function loadEvents(force) {
 // sends what it has each time it is left, same visit id), read from the sheet's Pages tab (readEvents with pages: 1,
 // the last 10,000), apart from the other events. Each as {t, dev, id: the admin's id of the player ('' unknown: a wrong
 // code), vi: visit, na: answers so far, r: {page: [times, seconds]}, g: {genus: [times, seconds, from, asked]}}.
-// Before sheet v30 (AGENTS.md 7a) nothing is shown but the version line.
+// Before sheet v30 (rule D4) nothing is shown but the version line.
 let PGS = null,
   pgsAt = 0;
 // Kept 5 minutes, an error 30 s (offline, a script not updated yet). pagesFresh(): the cached read, or a new one whose
@@ -3092,7 +3092,7 @@ const repUnit = x =>
 // does not meet it "must not be there") and To do › Share-alike (Pierre, 2026-11-05: share-alike photos already on the
 // site are never removed automatically; same actions). Remove = the × of every photo (ACT.exclude: excluded for good,
 // from every genus, game and candidate list, and imports skip it; no confirmation, Undo works, Excluded restores it);
-// Keep = an exception he accepts for good (curation.json seen '<key>:f'); Remove all asks first (rule 23: bulk), then
+// Keep = an exception he accepts for good (curation.json seen '<key>:f'); Remove all asks first (rule A2: bulk), then
 // excludes each photo, one Undo step each. Kept: a subsection at the bottom of the section, folded (its count shown), its
 // photos out of the count and of Remove all; Keep is pressed there, a click un-keeps (back to the list to handle).
 // One section per key; its attributes carry the key (data-rule, data-ruleall, data-rulekept, data-rulesec; data-sa…).
@@ -3336,7 +3336,7 @@ function renderTriage() {
 // Each status keeps the file's order, its priority. A point opens on its own page (pointHash), made to show a trainer
 // from a phone: the question big, the photos large and enlargeable, blind (numbered, credit only: no names until
 // "Names", so the answer is the trainer's own), an answer field under each photo, notes, and Resolved / Stand-by /
-// Dismiss (/ Reopen once handled), one click each, Undo the safety net (rule 23).
+// Dismiss (/ Reopen once handled), one click each, Undo the safety net (rule A2).
 let PTS = null; // points.json: {kinds, points}, its points with a shape problem left out
 const ptList = () => (PTS && PTS.points) || [],
   ptOpen = () => pointsOrder(ptList(), DRAFT.points).open.length,
@@ -3849,7 +3849,7 @@ const JKT = {
 // Set aside by the pre-sort (Pierre, 2026-11-03: "il ne faut pas que je me retrouve à devoir faire des tris sur des choses
 // évidentes"): a candidate the judging agent found unusable (no coral, aquarium, museum specimen or label, drawing,
 // hand over the frame…), a comparison image, a near-duplicate of another photo of its observation (candidate or live),
-// a photo of several corals or a Poor one (rules learnt from 85 photos he rejected, judging/AGENTS.md), without any
+// a photo of several corals or a Poor one (rules learnt from 85 photos he rejected, judging/BRIEF.md), without any
 // doubt (no `unsure`), no longer comes up; a count and a Show link keep them reachable. Same rule as
 // tools/excluded.py set_aside: keep both identical.
 const aside = p =>
@@ -3913,7 +3913,7 @@ function autoRun() {
     });
   });
   if (!plan.length) return null;
-  // Each cell fills up to its cap (capOf, colonies): source priority first (AGENTS.md rule 7, oIdx: IMR, Pierre's own,
+  // Each cell fills up to its cap (capOf, colonies): source priority first (rule P1, oIdx: IMR, Pierre's own,
   // then other observers; Codex review #400: another observer's Good photo took the last slot ahead of Pierre's Fair
   // one), then Good before Fair, then the sharper one (metrics.json, a tie-breaker only), then a fixed order. The adds
   // that do not fit wait in their full cell, as candidates.
@@ -4507,7 +4507,7 @@ function renderCand() {
         }${
           // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
           nJ
-            ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/AGENTS.md)">${nJ} not judged yet</span>`
+            ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/BRIEF.md)">${nJ} not judged yet</span>`
             : ''
         }</p>`
       : '') +
@@ -5078,7 +5078,7 @@ async function start() {
       side('cand.json', 'cand'),
       // Objective metrics (tools/photo_metrics.py): tie-breakers and sanity flags for the auto-sort only.
       side('metrics.json', 'm'),
-      // The presence rule per photo species (tools/coral_presence.py; AGENTS.md rule 6g): the "out of rule" flag.
+      // The presence rule per photo species (tools/coral_presence.py; rule C8): the "out of rule" flag.
       side('presence.json', 'sp'),
       // Former names and iNaturalist spellings (the extract tools/taxonomy.py writes of its reference file): the name tag.
       side('names.json', ADM0.id),
@@ -6468,7 +6468,7 @@ function savedClear() {
 // has not opened the app since a recalculation, or whose last answers are not saved yet). Signed-in players by name,
 // devices that never signed in by anonymous id (no saved copy: nothing to compare). null while the saved copy is read.
 // Computed once per data load (the answer log, the stats, the saved copy), memoized.
-// Only from sheet script v28 (core.js RV_SHEET; AGENTS.md 7a: the admin never gets ahead of the script): before it the
+// Only from sheet script v28 (core.js RV_SHEET; rule D4: the admin never gets ahead of the script): before it the
 // players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
 // column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
 const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;

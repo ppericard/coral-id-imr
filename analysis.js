@@ -549,7 +549,7 @@
       G.prev = {t: A.t, y: A.y, x: A.x, E: A.E};
       if (A.f === 'again') G.again = G.again || G.miss;
       else ((G.miss = !A.y), (G.again = false));
-      // A wrong answer is a miss for the genus given too (quiz.js: it counts against both genera, AGENTS.md rule 13), so
+      // A wrong answer is a miss for the genus given too (quiz.js: it counts against both genera, rule L2), so
       // its next answers are "after a miss" and an Again on the pair follows it (Codex review #441).
       if (!A.y && A.a && A.a !== A.g) {
         const W = (P.g[A.a] = P.g[A.a] || {n: 0, prev: null, miss: false, again: false});

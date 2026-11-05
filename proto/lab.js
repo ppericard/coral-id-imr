@@ -87,7 +87,7 @@ LAB.files.forEach(f => {
 /* ---------- helpers shared by the prototypes ---------- */
 // Slate order (data.json key order).
 const labNames = () => Object.keys(DATA.gen);
-// The genera a Lab game asks about (AGENTS.md rule 6d, one progression path: Pierre, 2026-11-04, "any future game or
+// The genera a Lab game asks about (rule L4, one progression path: Pierre, 2026-11-04, "any future game or
 // mode, no exceptions"): those the player has unlocked on the quiz path (model.js unlocked), in the corals whatever the
 // subject on screen (the Tools are the corals'). Wrong choices may name any genus, as the quiz's do (model.js
 // distractors); the reference tools (map, matrix, gallery, key, board, sizes, explorer) keep every genus.

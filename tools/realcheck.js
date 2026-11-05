@@ -114,7 +114,7 @@ rows
     }
     h.res.push(r.ok);
     h.m++;
-    // A wrong answer also counts against the genus answered (rule 13), in its recent results.
+    // A wrong answer also counts against the genus answered (rule L2), in its recent results.
     if (!r.ok && r.a && r.a !== r.g) {
       const k2 = r.who + '|' + r.a,
         h2 = (hist[k2] = hist[k2] || {res: [], m: 0});

@@ -1,7 +1,7 @@
 // Response time, genus and photo (2026-11-04, docs/LEARNING.md "Response time: genus and photo"): the inputs of
 // tools/rtdecomp.py from the sheet's answer log, and the photo Elo replayed with the time as a weak signal on the photo's
 // step. Offline and read-only: reads a file, writes one file, sends nothing (the app page it opens is served from this
-// folder, every other request is aborted, and the app itself never reaches the sheet from a local copy: AGENTS.md 13).
+// folder, every other request is aborted, and the app itself never reaches the sheet from a local copy: rule D1).
 //
 //   node tools/rtprep.js answers.json out.json        (CHROME=/path/to/chrome to use an installed browser)
 //

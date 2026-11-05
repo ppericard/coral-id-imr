@@ -1,7 +1,7 @@
 // A save that fails (sync.js SAVE, saveFailed, saveRetry; Pierre, 2026-11-05: the red "Not saved" came up "a bit too
 // often"): sync.js runs here in Node with app.js's globals stubbed, a clock and timers of its own, the page's visibility
 // in the test's hands, and a sheet that fails as the test says, else answers from the sync script on an in-memory sheet
-// (tests/gas.js). Nothing leaves this process (AGENTS.md rule 13).
+// (tests/gas.js). Nothing leaves this process (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

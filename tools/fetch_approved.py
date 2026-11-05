@@ -26,7 +26,7 @@ todo = [p for L in (d.get('cand') or {}).values() for p in L if p['f'] in added 
 todo += [p for g in [*d['gen'].values(), *((d.get('x') or {}).get('gen') or {}).values()] for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L
          if p['f'] not in excl and p.get('src') and p.get('cr') != CROP.get(p['f'])]
 # The genera off the IMR list that the games use (Millepora and the bonus genera: core.js BENTHIC + BONUS, read through
-# tools/genera.py, AGENTS.md 14a) were imported as remote photos (r: 1, tools/build_extra.py), shown straight from iNaturalist.
+# tools/genera.py, rule L6) were imported as remote photos (r: 1, tools/build_extra.py), shown straight from iNaturalist.
 # --games downloads them like the others, so they are mirrored to R2 too (Photos out of the repo, step 2, 2026-11-03);
 # their credit fields stay as they are. The other extra Dauin genera of data.json "x" (Coral ID Key only) stay remote.
 GAMES = [g for g in game_genera(d) if g in ((d.get('x') or {}).get('gen') or {})]

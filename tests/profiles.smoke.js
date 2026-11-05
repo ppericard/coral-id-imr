@@ -244,7 +244,7 @@ const server = http.createServer((req, res) => {
       out.cal = {genus: g, photo: f0, without: shown(false), with: shown(true)};
       PSTAT = keep;
     }
-    // Focus over several players (AGENTS.md rule 14f): the beginner's first 100 questions again with 7 more seeds, the
+    // Focus over several players (rule L11): the beginner's first 100 questions again with 7 more seeds, the
     // app's randomness and the player's both, after every other check so their draws stay as they were.
     out.focus = [out.beginner.rows[0].met];
     for (let k = 1; k <= 7; k++) {

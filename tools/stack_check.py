@@ -13,7 +13,7 @@
     --git-ref REF                           read tools/stack.json from REF (the brief: origin/main, main's reviewed copy)
   --root DIR                                the repository (default: next to this file, else the current directory)
 
-Pierre, 2026-11-05: the whole stack stays on the latest stable versions (AGENTS.md rule 27b). Standard library only. A
+Pierre, 2026-11-05: the whole stack stays on the latest stable versions (rule W9). Standard library only. A
 lookup that fails (no network, a page that changed) is reported as "unknown" with its reason, never a crash. The hosts
 are fixed here; tools/stack.json only names a kind and its parameters (a package, a dataset).
 """
@@ -221,7 +221,7 @@ def github_api(lk, spec):
     return newest, 'supported: ' + ', '.join('%s (%s)' % (v, 'no end yet' if e.startswith('Not') else 'to ' + e) for v, e in sorted(rows, reverse=True))
 
 
-INAT_PACE = 1.0  # seconds between two iNaturalist requests (AGENTS.md rule 6f: about one a second, never parallel)
+INAT_PACE = 1.0  # seconds between two iNaturalist requests (rule C7: about one a second, never parallel)
 
 
 def inat_api(lk, spec):

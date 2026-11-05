@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Game photos with no growth form, and the guesses that fill them (AGENTS.md rule 4). learn.js photoPair matches photos
+// Game photos with no growth form, and the guesses that fill them (rule C4). learn.js photoPair matches photos
 // by growth form (the quiz's mix-up montage "Your answer, same view", the Look-alikes montages): a photo with no form
 // matches nothing. A player's report (2026-11-04): a plate Turbinaria with no form recorded, answered Echinopora, was shown
 // a branching Echinopora. Photos added after the first form pass (mostly approved candidates) had none.
@@ -9,13 +9,13 @@
 //                                          (a report, never a failure: Pierre's Publish must not turn PRs red).
 //   node tools/game_forms.js --apply FILE  writes the guesses of FILE into forms.json "gf" (and "gunsure" for the unsure
 //                                          ones), for game photos with no form of Pierre's; FILE is in the format of the
-//                                          judging brief's growth-form pass (judging/AGENTS.md, "scope": "forms"):
+//                                          judging brief's growth-form pass (judging/BRIEF.md, "scope": "forms"):
 //                                          {"photos": {f: {"form": letter, "polyps": true, "unsure": ["form"], "note": "…"}}}.
 //
-// To fill a new gap: list the photos, look at each one (rule 27d), write FILE by the judging brief (one of the 7 IMR forms
-// or "x", the dominant visible one; polyps only for the genera of rule 4, never on a macro photo), then --apply it.
+// To fill a new gap: list the photos, look at each one (rule W11), write FILE by the judging brief (one of the 7 IMR forms
+// or "x", the dominant visible one; polyps only for the genera of rule C4, never on a macro photo), then --apply it.
 // The guesses show dashed in the admin (Photo review › Growth form) until Pierre confirms or changes them; his
-// curation.json "gf" always wins and is only read here (rule 8). forms.json keeps the layout tools/judging_import.py
+// curation.json "gf" always wins and is only read here (rule A1). forms.json keeps the layout tools/judging_import.py
 // writes (dumpForms; tests/gameforms.test.js checks the two agree on the file as it is).
 const fs = require('fs'),
   path = require('path');
@@ -23,7 +23,7 @@ const ROOT = path.join(__dirname, '..');
 const {applyCuration, applySlots, gameOf} = require(path.join(ROOT, 'core.js'));
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
-// AGENTS.md rule 4 (as tools/judging_import.py POLYPS): the polyps flag only for the Coral Finder "extended by day" genera.
+// rule C4 (as tools/judging_import.py POLYPS): the polyps flag only for the Coral Finder "extended by day" genera.
 const POLYPS = new Set(['Alveopora', 'Duncanopsammia', 'Goniopora', 'Heliofungia', 'Plerogyra', 'Tubastraea']);
 const VIEWS = ['wide', 'medium', 'macro'];
 const letter = v => (v || '').replace(/[pn]/g, '');
@@ -101,7 +101,7 @@ function apply(J, games, cur, forms) {
     if (!letters.includes(x.form)) E.push(`${f}: form must be ONE of ${letters.join(' ')}, not ${JSON.stringify(x.form)}`);
     if ('polyps' in x && x.polyps !== true) E.push(`${f}: polyps is true or omitted`);
     if (x.polyps && (!POLYPS.has(p.genus) || p.view === 'macro'))
-      E.push(`${f}: polyps only for ${[...POLYPS].join(', ')}, never on a macro photo (AGENTS.md rule 4)`);
+      E.push(`${f}: polyps only for ${[...POLYPS].join(', ')}, never on a macro photo (rule C4)`);
     const u = x.unsure || [];
     if (!Array.isArray(u) || u.some(k => !['form', 'polyps'].includes(k))) E.push(`${f}: unsure is a list of "form", "polyps"`);
     if (u.length && !x.note) E.push(`${f}: note required when unsure is not empty`);
