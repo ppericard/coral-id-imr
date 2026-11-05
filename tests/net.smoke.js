@@ -16,6 +16,7 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json'
 };
 let SWV = 0;
+const DBG = process.env.DEBUG9 ? require('./sw-instr.js') : '';
 // Every request for admin.html that reached this server, with the time it came and the time it was answered: printed
 // with the pending list if the admin page of test 9 never reaches DOMContentLoaded (did the worker's fetch get here?).
 const ADMIN_HITS = [];
@@ -41,8 +42,9 @@ const server = http.createServer((req, res) => {
       res.writeHead(404);
       return res.end();
     }
-    const type = TYPES[path.extname(f)] || 'application/octet-stream',
-      body = u === '/sw.js' && SWV ? Buffer.from(b + `\n// deploy ${SWV}\n`) : b; // test 9: a new deploy changes sw.js
+    const type = TYPES[path.extname(f)] || 'application/octet-stream';
+    let body = u === '/sw.js' && SWV ? Buffer.from(b + `\n// deploy ${SWV}\n`) : b; // test 9: a new deploy changes sw.js
+    if (u === '/sw.js' && DBG) body = Buffer.from(DBG + String(body).replace('CACHE_WAIT = 3000', 'CACHE_WAIT = 1e9'));
     // Text files gzipped when the browser accepts it, as the real host serves them (GitHub Pages): on the throttled
     // lines below, the start-up time is what a player waits, not what an uncompressed data.json would cost.
     if (/^(text\/|application\/(json|manifest)|image\/svg)/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
@@ -635,7 +637,10 @@ const server = http.createServer((req, res) => {
         return add.call(this, t, ...a);
       };
     });
-    await q2.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded'}).catch(e => {
+    await q2.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded'}).catch(async e => {
+      if (DBG)
+        for (const w of ctx.serviceWorkers())
+          console.error('WORKER DUMP ' + JSON.stringify(await Promise.race([w.evaluate(() => self.__dump && self.__dump()), new Promise(ok => setTimeout(() => ok('worker did not answer'), 5000))]), null, 1));
       // Printed apart: Node prints the error's stack, made before any addition to its message.
       console.error(
         `Admin page never reached DOMContentLoaded. Requests pending: ${[...pend.values()].join(', ') || 'none'}. Workers: ${ctx

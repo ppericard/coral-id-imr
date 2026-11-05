@@ -1,0 +1,44 @@
+# Debug only, never merged (branch debug/step9-repro): the net.smoke step-9 hang, reproduced with the sw.js of before #531
+# (CACHE_WAIT off) and instrumentation in the worker.
+name: step9 debug
+on:
+  push:
+    branches: [debug/step9-repro]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [full, loop]
+        i: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-1.64.1
+      - name: Install Playwright
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm install --no-save --no-audit --no-fund playwright@1.64.1
+          npx playwright install --with-deps chromium
+      - name: Full net.smoke, 4 times (DEBUG9)
+        if: matrix.kind == 'full'
+        run: |
+          for k in 1 2 3 4; do
+            echo "=== run $k"
+            DEBUG9=1 NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/net.smoke.js > out.txt 2>&1 || true
+            grep -A200 "WORKER DUMP\|never reached DOMContentLoaded" out.txt | head -150 || true
+            grep -c "never reached DOMContentLoaded" out.txt || true
+          done
+      - name: Step 9 alone, 12 times (OLD)
+        if: matrix.kind == 'loop'
+        run: OLD=1 N=12 NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/repro9.js
