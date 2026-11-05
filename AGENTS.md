@@ -61,7 +61,7 @@ what stops is everything that involves him.
 - **One integrator.** The main agent of a Claude Code session is the integrator: it starts as many subagents as useful,
   each on its own branch, worktree and PR (rule W22), checks their work and merges it. Subagents build, test, run the
   review loop (rule W23) and report to the integrator; **subagents never merge**.
-- **Launch decided work at once**, never hold it in a queue (Pierre, 2026-11-05: better too much launched than work left waiting); only a real dependency waits (two PRs on the same files). The machine is protected by
+- **Launch decided work at once**, never hold it in a queue; only a real dependency waits (two PRs on the same files). The machine is protected by
   `tests/slot.js` (one Playwright run at a time per 2 cores, rule W14), not by holding subagents back.
 - **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold:
   1. every check is green on the current head, and no failed job was re-run to get green (rule W23);
