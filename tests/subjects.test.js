@@ -158,3 +158,63 @@ test('fishGen cover: the easiest judged photo within the highest source tier (Pi
     });
   assert.strictEqual(Y.gen.t99.cover, 'c');
 });
+
+// Sheet-only fish photos (Pierre, 2026-11-05: a species with no game photo may keep one for its sheet, never in the
+// quiz or any game; tools/fish_photos.py SHEET, fish-photos.json "sheet"). Every game draw reads an entry's
+// views.wide (model.js photoSet; app.js fishGenera builds the genus units from it), so a photo marked use: 'ref' never
+// reaching views.wide is what keeps it out of every game.
+test('sheet-only fish photos: never in an entry’s game photos nor its cover, listed by species in fishGen sheet', () => {
+  const T = {teach: [{id: 't99', name: 'X', level: 1, circle: 1, species: ['s1', 's2']}]},
+    ref = {f: 'fiR', src: 'x', sp: 's2', use: 'ref', e: 5},
+    Y = C.fishGen(T, {t99: [{f: 'fiA', src: 'x', sp: 's1', e: 2}, ref]}, {s3: [{f: 'fiS', src: 'x', sp: 's3'}]});
+  assert.deepStrictEqual(
+    Y.gen.t99.views.wide.map(p => p.f),
+    ['fiA'],
+    'a sheet-only photo listed among the game photos stays out'
+  );
+  assert.strictEqual(Y.gen.t99.cover, 'fiA', 'never the cover, even the easiest');
+  assert.deepStrictEqual(Object.keys(Y.sheet).sort(), ['s2', 's3']);
+  assert.ok(
+    Object.values(Y.sheet)
+      .flat()
+      .every(p => p.use === 'ref'),
+    'marked sheet only'
+  );
+  // An entry whose only photo is sheet-only has no game photo (so no question: no photo, no question).
+  const Z = C.fishGen(T, {t99: [ref]});
+  assert.strictEqual(Z.gen.t99.views.wide.length, 0);
+  assert.deepStrictEqual(C.fishGen(T, {t99: []}).sheet, {});
+});
+
+test('fish-photos.json sheet: the game photo rules, credited, never among the game photos', () => {
+  const SP = new Map(F.species.map(s => [s.id, s])),
+    S = PH.sheet || {},
+    ok = new Set(['cc0', 'cc-by', 'cc-by-nc']), // Pierre, 2026-11-05: never share-alike, ND or all rights reserved
+    game = new Set(Object.values(PH.photos).flatMap(L => L.map(p => p.f)));
+  // Pomacentrus armillatus: the cover of P. opisthostigma, which passes every game photo rule. The covers of Chromis
+  // agilis (the Maldives), Siganus margaritiferus (Needs ID) and a photo of Halichoeres marginatus (the Red Sea) failed
+  // them: Pierre, 2026-11-05, "if they don't pass the game rules, we don't keep them".
+  assert.ok((S.s105 || []).length, 's105 has its sheet photo');
+  ['fi421637283', 'fi542118088', 'fi11896335'].forEach(f =>
+    assert.ok(!Object.values(S).some(L => L.some(p => p.f === f)), `${f} failed the game photo rules`)
+  );
+  Object.entries(S).forEach(([id, L]) => {
+    const s = SP.get(id);
+    assert.ok(s && s.circle, `${id}: a species in the game`);
+    L.forEach(p => {
+      assert.strictEqual(p.use, 'ref', `${p.f}: sheet only`);
+      assert.strictEqual(p.sp, id);
+      assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`);
+      assert.ok(p.a && /^\(c\)/.test(p.a), `${p.f}: the observer's credit`);
+      assert.match(p.o, /^https:\/\/www\.inaturalist\.org\/(observations|photos)\/\d+$/);
+      assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./);
+      assert.ok(!game.has(p.f), `${p.f} is also a game photo`);
+    });
+  });
+  // Pomacentrus armillatus: the photo is filed under P. opisthostigma on iNaturalist; the name shown stays the PDF's (rule 6a).
+  assert.strictEqual(SP.get('s105').name, 'Pomacentrus armillatus');
+  assert.match(S.s105[0].note, /Pomacentrus opisthostigma/);
+  const X = C.fishGen(F, PH.photos, PH.sheet);
+  assert.deepStrictEqual(Object.keys(X.sheet).sort(), Object.keys(S).sort());
+  Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.use === 'ref' || !!S[p.sp]?.some(q => q.f === p.f)), g.id));
+});

@@ -323,7 +323,14 @@
   // cover: the card's photo (app.js cover): within the highest source tier that has photos (AGENTS.md rule 7: Pierre's own
   // before other observers', Codex review #461), the easiest judged one (fish-photos.json e, judging/FISH.md), the list's
   // first among equals; the list's first when none is judged.
-  function fishGen(F, photos) {
+  // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos (Pierre, 2026-11-05: a species with no
+  // game photo may keep one for its sheet, never in the quiz or any game, passing the game photo rules all the same;
+  // tools/fish_photos.py SHEET).
+  // A photo marked use: 'ref' (sheet only, the corals' word) never joins an entry's game photos, wherever it is listed:
+  // every game draw reads views.wide (model.js photoSet, app.js fishGenera), so none can show it. The result's sheet
+  // holds them by species ({species id: [photo]}), for a species sheet to show (none yet: docs/ARCHITECTURE.md "Fish content").
+  const sheetOnly = p => !!p && p.use === 'ref';
+  function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
       start = new Set(F.start || []),
@@ -362,7 +369,7 @@
           // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
           views: {
             wide: ((photos || {})[t.id] || [])
-              .filter(p => p && p.f && p.src)
+              .filter(p => p && p.f && p.src && !sheetOnly(p))
               .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
           },
           ...(start.has(t.id) ? {first: 1} : {}),
@@ -374,9 +381,14 @@
       if (g.views.wide.some(p => p.e)) g.cover = easiest(g.views.wide);
     });
     const ids = Object.keys(gen),
-      play = n => !gen[n].wink;
+      play = n => !gen[n].wink,
+      sh = {},
+      shAdd = (id, p) => p && p.f && p.src && id && !(sh[id] = sh[id] || []).some(x => x.f === p.f) && sh[id].push({...p, use: 'ref'});
+    Object.entries(sheet || {}).forEach(([id, L]) => (L || []).forEach(p => shAdd(id, p)));
+    Object.values(photos || {}).forEach(L => (L || []).filter(sheetOnly).forEach(p => shAdd(p.sp, p)));
     return {
       gen,
+      sheet: sh,
       c1: ids.filter(n => play(n) && gen[n].circle === 1),
       c2: ids.filter(n => play(n) && gen[n].circle === 2),
       c3: ids.filter(n => play(n) && gen[n].circle === 3),
