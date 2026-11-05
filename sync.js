@@ -193,7 +193,13 @@ function replayAdopt(rp, pending, v, cut, pre) {
         Object.keys(P).forEach(g => delete P[g]);
         Object.assign(P, M);
       },
-      n => (typeof (before[n] || {}).pg === 'number' ? 'rules' : 'bkt')
+      // 'field': a mark the field rule did not keep (rules version 6, core.js replayedOf; progress.js mxLostText).
+      n =>
+        typeof (before[n] || {}).pg !== 'number'
+          ? 'bkt'
+          : Number(v) >= COVER_SHEET && SUBJ.cover && !((R[n] || {}).lm > (before[n] || {}).mx)
+            ? 'field'
+            : 'rules'
     );
     store.set(RVK, rp.rv);
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this

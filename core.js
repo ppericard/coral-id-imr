@@ -2240,14 +2240,16 @@
     only: 'changed',
     min: 5
   };
-  // The apology of rules version 6 (Pierre, 2026-11-05, Q109: "an apology card"; text option A of the PR, Pierre's pick to
-  // confirm). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab; sync.js keeps it in NOTES_KEY),
+  // The apology of rules version 6 (Pierre, 2026-11-05, Q109: "an apology card"; his guidance: sincere, say it does not
+  // mean they know less, turn it into encouragement, our mistake not theirs, the new bar means more; text option A of
+  // the PR, Pierre's pick to confirm). A player who also loses learned marks gets the mastery card's 'field' line
+  // (progress.js mxLostText). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab; sync.js keeps it in NOTES_KEY),
   // shown small under the text when it is set: Pierre's PS naming the player who raised the question. A name is never
   // written in the repo (rule D2).
   const RV_SORRY = {
     kind: 'apology',
-    t: 'Sorry: your progress was too generous',
-    p: 'Until now a genus counted as known once you could tell it from the genera you had met, so your progress was overestimating what you can really tell apart on a reef. Now 100% means you can tell a genus from every genus on the slate. Your progress was recalculated from all your answers: {from}% → {to}%. Every answer is kept, and each genus you meet and tell apart fills the bars again.',
+    t: 'Sorry: we were measuring your progress wrong',
+    p: "We're sorry. Your bars may have gone down: that does not mean you know less or went backwards. It is because you learned fast and kept getting better that we saw our way of measuring was wrong: it counted what you could tell apart among the genera you had met, not among all of them. Our mistake, not yours. What you know hasn't changed, only how we measure it: {from}% → {to}%. The new bar is harder to fill, and it means more.",
     ps: 'card.rv6.ps',
     only: 'changed',
     min: 1

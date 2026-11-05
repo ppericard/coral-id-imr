@@ -839,7 +839,9 @@ function mxLostText(L, nAch, why = {}) {
   const one = L.length === 1,
     it = x => andList(x.map(n => `<i>${esc(n)}</i>`)),
     B = L.filter(n => (why[n] || 'bkt') === 'bkt'),
-    N = L.filter(n => (why[n] || 'bkt') !== 'bkt'),
+    N = L.filter(n => why[n] === 'rules'),
+    // 'field': rules version 6, the bar proven against the field (Pierre, 2026-11-05: encouragement, not a step back).
+    Fd = L.filter(n => why[n] === 'field'),
     back = x =>
       x.length === 1
         ? 'This genus is back on its progress bar, and its exam'
@@ -850,6 +852,9 @@ function mxLostText(L, nAch, why = {}) {
       : '',
     N.length
       ? `Your progress was recalculated from all your answers with the app's current rules, and the mastery exam you passed on ${it(N)} no longer stands. ${back(N)} will come again.`
+      : '',
+    Fd.length
+      ? `What you know about ${it(Fd)} is still yours: ${Fd.length === 1 ? 'its Learned mark comes' : 'their Learned marks come'} back as you show ${Fd.length === 1 ? 'it' : 'them'} against ${Fd.length === 1 ? 'its' : 'their'} look-alikes, with the mastery exam once more.`
       : '',
     nAch ? `Until then, the ${nAch > 1 ? 'badges' : 'badge'} earned with ${one ? 'it' : 'them'} ${nAch > 1 ? 'are' : 'is'} taken back.` : ''
   ]
