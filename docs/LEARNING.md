@@ -742,9 +742,10 @@ player has unlocked only: `model.js` `unlocked`; it opens none). Code: `model.js
 - **What counts**: every answer is a photo-quiz answer: progress, ability, the global level, photo ratings and
   confusions in the sheet, the opening hold (each answer with the expectation it had; a selection the player finds hard
   holds new cards in the photo quiz, as any run of misses would), achievements, except the runs of right answers (On a
-  roll, Unstoppable) and Sharp eye (Pierre, 2026-11-05, Q82: the genera are the player's pick and the choices come from
-  them, so runs and "a photo most players miss" come easier): a custom-quiz answer neither extends nor breaks the run
-  and earns no hard photo (`progress.js` `achAfter`, `achRunIn`). Logged with the mode `quiz|s` before
+  roll, Unstoppable) and Sharp eye (Pierre, 2026-11-05, Q82: "only in the normal Quiz"; the genera are the player's pick
+  and the choices come from them, so runs and "a photo most players miss" come easier): a custom-quiz answer neither
+  extends nor breaks the run and earns no hard photo (`progress.js` `achAfter`, `achRunIn`; the Duel tab's answers
+  likewise, while the duels slipped into the photo quiz count as Quiz answers). Logged with the mode `quiz|s` before
   any other tag (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`): the sheet's `guess_` reads `|kN`
   at the end and `|t` anywhere, and its mode split keeps `quiz`, so the deployed script (v27) stores and rates it as any
   photo-quiz answer, no new version needed (AGENTS.md 7a; `tests/custom.test.js` compares the two modes).

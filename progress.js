@@ -571,13 +571,14 @@ function achDot() {
 }
 // After each answer (quiz.js answer; cur, the game it was given in): the run of right answers and the one-off feats,
 // then the check.
-// The run (On a roll, Unstoppable: _run, _best) and Sharp eye (_hard) are never earned in the custom quiz (Pierre,
-// 2026-11-05, Q82: there the player picks the genera and the choices come from them, so runs and "a photo most players
-// miss" come easier; the Met achievements stay as they are, real discoveries). A custom-quiz answer neither extends nor
-// breaks the run, so switching tabs never costs a run earned in the Quiz. The photo quiz (its Again, typed questions,
-// duels slipped in, comeback) and the Duel tab count as before; the other feats (corallites, duels) everywhere, as before.
-// Nothing already earned is taken back.
-const achRunIn = cur => cur !== CUSTOM_H;
+// The run (On a roll, Unstoppable: _run, _best) and Sharp eye (_hard) are earned only in the normal photo quiz (Pierre,
+// 2026-11-05, Q82: "only in the normal Quiz"; in the custom quiz the player picks the genera and the choices come from
+// them, and the Duel tab asks between 2 genera, so runs and "a photo most players miss" come easier; the Met achievements
+// stay as they are, real discoveries). An answer in the custom quiz or the Duel tab neither extends nor breaks the run,
+// so switching tabs never costs a run earned in the Quiz. The photo quiz counts with all its formats (Again, typed
+// questions, the duels slipped into it, the comeback, the exam); the other feats (corallites, duels) count everywhere,
+// as before. Nothing already earned is taken back.
+const achRunIn = cur => cur === 'quiz';
 function achAfter(good, ph, cur) {
   if (!SUBJ.ach) return; // an answer on another subject earns nothing (fish: no achievements yet)
   if (!store.get(ACHK, null)) achCheck(true); // no record yet on this device: what is already met comes as one recap
@@ -725,7 +726,7 @@ function viewAch() {
     };
     const card = (a, on) =>
       `<li class="achc${on ? ' on' : ''}${fresh.has(a.id) ? ' new' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
-    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz and the duels, not in the Custom quiz. Never time spent. The share of players counts everyone who signed in.</p>
+    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. The share of players counts everyone who signed in.</p>
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH.length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;
   };
