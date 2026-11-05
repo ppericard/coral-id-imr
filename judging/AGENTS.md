@@ -14,7 +14,8 @@ changes the site by itself.
 
 1. **Write only `judging/out/<Genus>.json`** (format: `judging/schema.json`). Never edit `curation.json` (Pierre's
    own choices), `data.json`, the app code, or the files the import script writes (`suggest.json`, `forms.json`,
-   `quality.json`, `picks.json`). The import script is the only way in.
+   `quality.json`, `picks.json`). The import script is the only way in (one exception: the growth forms of game
+   photos that have none, below).
 2. **Use only the categories defined below.** Never invent a category, a label or a grouping. If nothing fits,
    pick the closest allowed value and list the field in `unsure`.
 3. **Never contradict the IMR course.** Judge genus with the IMR lecture cues first (`imr_cues` in the manifest),
@@ -170,6 +171,17 @@ When asked for the growth-form pass only, write `{"genus": ..., "scope": "forms"
 `form`, `polyps`, `unsure` and `note`, for the photos flagged `form_todo` in the manifest (no IMR form guess yet,
 or a guess flagged for a second look). The import then writes only the growth forms. A later full pass replaces
 the file.
+
+### Growth forms of game photos that have none (`tools/game_forms.js`)
+
+Every photo a game can show needs a growth form, Pierre's or a guess: the quiz's mix-up montage and the Look-alikes
+put side by side two photos of the same form (`tests/photos.test.js` lists the ones without as a warning). When asked to fill that gap,
+`node tools/game_forms.js` lists those photos. They span the slate, Millepora and the bonus genera, which the
+manifest does not hold, and they are a subset of the genus's `form_todo` photos, so the per-genus files above
+cannot take them. Look at each one and judge it exactly as in the growth-form pass (same fields and rules), in one
+file `{"note": ..., "scope": "forms", "photos": {...}}` (the pass of 2026-11-05: `judging/game-forms.json`), then run
+`node tools/game_forms.js --apply <file>`: it checks every judgment as the import does and writes only `forms.json`
+`gf` and `gunsure`, in the import's layout, never over a form Pierre gave.
 
 ## Per genus
 
