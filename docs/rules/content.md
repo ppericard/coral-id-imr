@@ -86,8 +86,3 @@ the game or out), `tools/fetch_fish.py` and `tools/fetch_local.py` (photos from 
 `tools/coral_presence.py` (`presence.json`: a coral photo taken abroad of a species not confirmed is flagged "out of
 rule" in the admin, never removed automatically: Pierre decides). Change the rule there, not in a tool.
 *Why:* one standard of evidence for every species and every observer, Pierre included. *Source:* Pierre, 2026-11-04.
-
-### C9
-
-**The coral tools stay quick and standalone**, not part of ReefRecall (Pierre's separate app).
-*Source:* Pierre, by 2026-11-01.

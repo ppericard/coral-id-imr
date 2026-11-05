@@ -8,7 +8,7 @@ where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 - **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no build step, GitHub Pages) live at <https://ppericard.github.io/coral-id-imr/>. Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
 - It teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and **Millepora** (fire coral: not a hard coral, but on the IMR benthic slate and very common at Dauin), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
-- Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones.
+- Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones. A separate project from ReefRecall, Pierre's monetised mobile game for another audience and approach: code, data or features move between the two only when he asks.
 - RAs' first job is genus-level labelling of top-down benthic photos in **ReefCloud**, so growth form alone is never enough: the app must teach genus recognition.
 - Path in the app = **Learn → Practice → Identify** (the order RAs work in), plus **My progress** and a Pierre-only **admin** back-office (`admin.html`).
 
@@ -128,13 +128,12 @@ context go in the PR description, never in the rule.
 **Content** ([docs/rules/content.md](docs/rules/content.md))
 - **C1** Never contradict or "correct" the IMR course.
 - **C2** Never invent categories or information; every clue carries its source.
-- **C3** An ID tip is short and simple for anyone; technical detail goes on the sheet.
+- **C3** An ID tip is short and simple for anyone; detail goes on the sheet.
 - **C4** Growth form is an entry point only: rank, never filter or group genera by it.
 - **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
 - **C6** ID cues and their doubts cite only species present at Dauin or in the Philippines.
 - **C7** iNaturalist API: about one request a second, batched, a User-Agent, paced retries.
 - **C8** Presence: one rule for every species (`tools/presence.py`).
-- **C9** The coral tools stay standalone (not ReefRecall).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
 - **P1** Photo priority: IMR lecture (corals only), Pierre's own, then others.
@@ -156,7 +155,7 @@ context go in the PR description, never in the rule.
 - **L10** The first-launch question sets variables, never a path.
 - **L11** The simplest algorithm that works; checks in four tiers.
 - **L12** Check algorithm changes on the real answer log too.
-- **L13** Compute once, not on every phone.
+- **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
 - **L15** First goal: ID on ideal photos.
 
@@ -172,7 +171,7 @@ context go in the PR description, never in the rule.
 - **U9** Sign-in never on My progress.
 - **U10** Greet by first name only (`firstName()`).
 - **U11** Questions to the player come at a natural break.
-- **U12** Home = two doors, one screen.
+- **U12** Home = two doors.
 - **U13** Lab prototypes graduate only with Pierre's OK.
 - **U14** Players can report a problem from every game.
 
@@ -185,7 +184,7 @@ context go in the PR description, never in the rule.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
 - **S1** One engine, never naming a subject.
-- **S2** Fish names: the IMR PDF's with WoRMS beside; Pierre's Needs ID confirms nothing.
+- **S2** Fish names: the IMR PDF's, WoRMS beside; Pierre's Needs ID confirms nothing.
 - **S3** Fish groups come from the regional identification key.
 
 **Sheet and data** ([docs/rules/sheet.md](docs/rules/sheet.md))
@@ -202,10 +201,10 @@ context go in the PR description, never in the rule.
 - **W3** Alpha: no backward compatibility; migrate data once.
 - **W4** Many prototypes first; Pierre judges by taps and scrolls.
 - **W5** Every idea discussed but not built goes into ROADMAP.
-- **W6** No work sleeps on a branch: a PR the same day.
+- **W6** No work sleeps on a branch.
 - **W7** Fix by default; never re-ask what was answered.
 - **W8** Independent reviews get an open mission that questions our choices.
-- **W9** Latest stable version of every tool.
+- **W9** Latest stable version of tools.
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked and how; a guess is labelled.
 
