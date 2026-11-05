@@ -19,8 +19,9 @@ queue held back; `tests/slot.js` protects the machine).
   the unit-test slot lock start.
 - Analyses multiple-testing correction (Q69: Holm on 1-2 declared primaries per analysis, BH on the rest, 999 bootstrap
   draws, "new clear" badge removed) · agent at work · before/after screenshots to Pierre, then merge.
-- Contributions achievements #579 (Q65) and "Your feedback helped" #581 (Q66, stacked on #579) · green · wait for the
-  wording, Q79-Q81.
+- Contributions #579 (Q65) and "Your feedback helped" #581 (Q66) · Q79-Q81 answered: wording A, thanked at the first
+  handled report then grouped (at most weekly), shown as cards, not toasts · agent at work · screenshots to Pierre.
+- Analyses views and player profiles (Q70-Q77 answered) · agent at work, PRs in the study's order · screenshots.
 
 ## Next
 
@@ -36,15 +37,6 @@ Waiting only on a real dependency (details in [ROADMAP](ROADMAP.md) "Next").
 Open questions, numbered for good (never reset, AGENTS.md "Working mode"). An answered one goes into its PR and off
 this list. Long-standing content and trainer questions live in the admin, To do › Points (`points.json`, #571).
 
-- Q70-Q77, the Analyses visualisations and player profiles ([study](reviews/2026-11-05-multifactor-viz-study.md)
-  §6 a-h): a map not named types until ~30 players (Q70); profile on the last 300 answers (Q71); the 8 behaviours
-  (Q72); admin only (Q73); phone forms for dense views (Q74); computed in the Action's report (Q75); a player × genus
-  effect later (Q76); no PCA on raw answers, residual and behaviour PCAs instead (Q77). Recommendation: yes to each.
-- Q78: photos served from a domain of his own instead of `r2.dev` (development-only, rate-limited), with the domain
-  rename planned before December. Recommendation: yes.
-- Q79-Q81, wording in #579 / #581 (screenshots sent): 5th and 10th report titles and icon (rec. Helping hand,
-  Co-author, 💬); the "handled" toast (rec. Your feedback helped, "A report you sent was looked at and handled.", 🙌);
-  the 2 reports already done thanked once at release (rec. yes).
 - The 13 questions of the fish sheets study stay parked until he picks that project.
 
 Last question number: Q81
