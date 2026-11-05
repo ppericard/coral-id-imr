@@ -69,9 +69,11 @@ class Soft(Exception):
     pass
 
 
-def gh(path):
+def gh(path, lines=False):
+    """One REST call through gh; lines=True: every page, one JSON object per array item."""
+    args = ['gh', 'api', path] + (['--paginate', '--jq', '.[]'] if lines else [])
     try:
-        r = subprocess.run(['gh', 'api', path], capture_output=True, text=True, timeout=left())
+        r = subprocess.run(args, capture_output=True, text=True, timeout=left())
     except subprocess.TimeoutExpired:
         raise Soft('no answer in time')
     if r.returncode:
@@ -81,6 +83,8 @@ def gh(path):
         if 'https://' in msg or 'dial ' in msg or 'connect' in msg:
             raise Soft('no network')
         raise Soft(msg.splitlines()[0][:80] if msg else 'gh failed')
+    if lines:
+        return [json.loads(l) for l in r.stdout.splitlines() if l.strip()]
     return json.loads(r.stdout or 'null')
 
 
@@ -137,7 +141,7 @@ def stray(pool, open_refs):
         ahead = gh('repos/%s/compare/main...%s' % (REPO, sha)).get('ahead_by', 0)
         return ref if ahead else None
 
-    branches = [b for b in gh('repos/%s/branches?per_page=100' % REPO) if b['name'] != 'main' and b['name'] not in open_refs]
+    branches = [b for b in gh('repos/%s/branches?per_page=100' % REPO, lines=True) if b['name'] != 'main' and b['name'] not in open_refs]
     return [pool.submit(one, b) for b in branches]
 
 
