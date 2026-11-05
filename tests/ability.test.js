@@ -441,3 +441,90 @@ test('response time: the app rule (+A) replays exactly as the measured +T1.5+G, 
   assert.ok(q.own.b < -0.5 && q.own.n > 300, JSON.stringify(q.own));
   assert.ok(isFinite(q.next.b) && q.next.n > 100);
 });
+
+// Players as the unit of the paired comparison (docs/reviews/2026-11-05-stats-methods-study.md §5.2, PR #580; docs/LEARNING.md
+// "Real-answer replay"). A made-up scored log where clustering matters: one dominant player (400 answers) whose answers
+// the second rule predicts better, five small players (20 answers each) whose answers it predicts worse. Per answer the
+// dominant player decides alone and the interval is narrow; with the players as the unit it is much wider and the
+// sign-flip test over the six players sees no clear difference.
+function clustered() {
+  const r = rng(42),
+    a = [],
+    b = [],
+    add = (p, n, shift) => {
+      for (let i = 0; i < n; i++) {
+        const pa = 0.6 + 0.3 * r(),
+          // b's prediction moves the log-loss of this answer by about shift (noise sd ~0.02)
+          pb = Math.min(0.995, Math.max(0.005, pa * Math.exp(-(shift + 0.035 * (r() - 0.5)))));
+        a.push({y: 1, p: pa, r: {p}});
+        b.push({y: 1, p: pb, r: {p}});
+      }
+    };
+  add('big', 400, -0.02);
+  ['s1', 's2', 's3', 's4', 's5'].forEach((p, i) => add(p, 20, 0.004 + 0.003 * i));
+  return {a: {scored: a}, b: {scored: b}};
+}
+test('paired difference: with one dominant player, the per-player interval is wider than the per-answer one', () => {
+  const {paired} = require('../tools/abilityeval.js'),
+    {a, b} = clustered(),
+    q = paired(a, b);
+  assert.strictEqual(q.n, 500);
+  assert.strictEqual(q.players, 6);
+  // Per answer (descriptive): the dominant player's improvement looks clear.
+  assert.ok(q.answer.hi < 0, `per answer [${q.answer.lo}, ${q.answer.hi}]`);
+  // Per player: much wider, crosses 0; the sign-flip p over 6 players is exact (64 patterns) and not small.
+  assert.ok(q.hi - q.lo > 3 * (q.answer.hi - q.answer.lo), `per player [${q.lo}, ${q.hi}] vs per answer [${q.answer.lo}, ${q.answer.hi}]`);
+  assert.ok(q.lo < 0 && q.hi > 0, `per player [${q.lo}, ${q.hi}]`);
+  assert.strictEqual(q.exact, true);
+  assert.ok(q.p > 0.2, `sign-flip p ${q.p}`);
+  // The per-answer mean is the answer-weighted mean of the players' own means.
+  const by = {};
+  a.scored.forEach((o, i) => (by[o.r.p] = by[o.r.p] || []).push(Math.log(o.p) - Math.log(b.scored[i].p)));
+  const w = Object.values(by).reduce((t, l) => t + l.reduce((s, x) => s + x, 0), 0) / 500;
+  assert.ok(Math.abs(w - q.answer.d) < 1e-12);
+  // keep() limits both figures to the answers it holds: the dominant player alone, one player, no interval.
+  const one = paired(a, b, o => o.r.p === 'big');
+  assert.strictEqual(one.players, 1);
+  assert.ok(!isFinite(one.lo) && !isFinite(one.hi));
+  assert.strictEqual(one.p, 1);
+});
+test('sign-flip test over players: exact with few players, seeded Monte Carlo with many', () => {
+  const {signFlip, tQuantile, SIGN} = require('../tools/abilityeval.js');
+  // Five players all better: the smallest two-sided p of 5 players, 2/32.
+  assert.strictEqual(signFlip([0.1, 0.2, 0.3, 0.4, 0.5]).p, 2 / 32);
+  assert.strictEqual(signFlip([0.1, -0.1]).p, 1);
+  // 20 players: Monte Carlo, at least 9999 draws, the same p on every run, never 0.
+  const d = Array.from({length: 20}, (_, i) => 0.01 * (i % 7) - 0.01);
+  assert.ok(SIGN.draws >= 9999);
+  const s1 = signFlip(d),
+    s2 = signFlip(d);
+  assert.strictEqual(s1.exact, false);
+  assert.strictEqual(s1.draws, SIGN.draws);
+  assert.strictEqual(s1.p, s2.p);
+  assert.ok(s1.p >= 1 / (1 + SIGN.draws));
+  // Agrees with the exact test where both can run (16 players).
+  const e16 = d.slice(0, 16),
+    ex = signFlip(e16),
+    mc = signFlip(e16, {exact: 0});
+  assert.strictEqual(ex.exact, true);
+  assert.ok(Math.abs(ex.p - mc.p) < 0.02, `exact ${ex.p}, Monte Carlo ${mc.p}`);
+  // Student's t quantiles (tables): 9 df 2.262, 4 df 2.776, 100 df 1.984.
+  assert.ok(Math.abs(tQuantile(0.975, 9) - 2.2622) < 1e-3);
+  assert.ok(Math.abs(tQuantile(0.975, 4) - 2.7764) < 1e-3);
+  assert.ok(Math.abs(tQuantile(0.975, 100) - 1.984) < 1e-3);
+});
+// Codex review #583: the standard errors stay linear in the number of answers (a large export must not take minutes).
+test('paired difference: linear in the number of answers', () => {
+  const {paired} = require('../tools/abilityeval.js'),
+    r = rng(9),
+    a = [],
+    b = [];
+  for (let i = 0; i < 60000; i++) {
+    a.push({y: 1, p: 0.5 + 0.4 * r(), r: {p: 'p' + (i % 10)}});
+    b.push({y: 1, p: 0.5 + 0.4 * r(), r: {p: 'p' + (i % 10)}});
+  }
+  const t0 = Date.now(),
+    q = paired({scored: a}, {scored: b});
+  assert.strictEqual(q.n, 60000);
+  assert.ok(Date.now() - t0 < 2000, `${Date.now() - t0} ms`);
+});
