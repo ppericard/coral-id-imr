@@ -262,6 +262,136 @@
     if (!x || !c || !(x.d.w || []).includes(field)) return F;
     return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[ar][tepc]*?)${c}`), '$1')}}};
   }
+  // When Pierre answers a fish Check or corrects a fish auto decision, the time goes into its log code (@t), so the fish
+  // agreement window follows the order he answered in, as autoStamp does for the corals (Codex review #400). fishSigs:
+  // his keep on each compared photo; fishStamp: the new fish "auto" map with the time t (seconds) on every photo whose keep
+  // changed since `before` (fishSigs of the previous draft's fish part), or null when nothing changed.
+  function fishSigs(F) {
+    const S = {};
+    fishCompare(F).forEach(c => (S[c.f] = c.p));
+    return S;
+  }
+  function fishStamp(F, before, t) {
+    const I = fishIdx(F);
+    let A = null;
+    Object.entries(fishSigs(F)).forEach(([f, s]) => {
+      if ((before || {})[f] === s || !I[f]) return;
+      const {day, code} = I[f];
+      A = A || {...F.auto};
+      A[day] = {...A[day], [f]: withT(code, t)};
+    });
+    return A;
+  }
+
+  // ---- Fish Candidates (admin plan PR 5a; Pierre, 2026-11-04) ----
+  // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
+  // one observation), from the adds Pierre's keep still holds (fishMine: a reject, an exclusion or a Not this wins).
+  function fishPlay(cands, F) {
+    F = F || {};
+    const obsOf = {},
+      out = {};
+    Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && p.f && (obsOf[p.f] = p.o || p.f)));
+    Object.entries(F.add || {}).forEach(([f, sid]) => {
+      if (fishMine(F, f) === 'add') (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
+    });
+    return out;
+  }
+  // The swiper's queue (pure): every candidate Pierre has not decided (added, rejected, excluded, Not this), each with
+  // its species (sid), its observations in play (n) and target (fishTarget), and three marks:
+  // - chk: a Check of the fish auto-sort waiting for his answer (shown blind; never full nor set aside: his to answer);
+  // - full: its species is at its target and the photo would add an observation (another photo of an observation in play
+  //   adds none, so it stays); the swiper stops there (Pierre, 2026-11-04: "stop at target"), shown on demand;
+  // - aside: the pass is sure it goes (fishSure reject: a near-duplicate, the subject not obvious, out of the water) and
+  //   the auto-sort did not apply it (its keep is off): shown on demand, as the coral pre-sort's set-aside ones.
+  // Order: the thinnest species first (in play / target, then the fewest in play), its photos together; within a species
+  // Pierre's own first (AGENTS.md rule 7), then the pass's best photo of an observation, another angle, not judged, a
+  // near-duplicate, then the easiest (the first questions need easy photos), then a fixed order.
+  const FISHK = {best: 0, alt: 1, dup: 3};
+  function fishQueue(cands, sug, species, F) {
+    F = F || {};
+    const I = fishIdx(F),
+      play = fishPlay(cands, F),
+      out = [];
+    Object.entries(cands || {}).forEach(([sid, L]) => {
+      const inP = play[sid] || new Set(),
+        target = fishTarget((species || {})[sid]);
+      (L || []).forEach(p => {
+        if (!p || !p.f || fishMine(F, p.f)) return;
+        const x = I[p.f],
+          chk = !!(x && x.d.check),
+          und = !!(x && x.d.undone),
+          j = (sug || {})[p.f] || null,
+          s = fishSure(j);
+        out.push({
+          sid,
+          p,
+          j,
+          n: inP.size,
+          target,
+          chk,
+          full: !chk && inP.size >= target && !inP.has(p.o || p.f),
+          aside: !chk && !und && !!s && s.keep === 'reject'
+        });
+      });
+    });
+    const k = x => (x.j && x.j.k in FISHK ? FISHK[x.j.k] : 2);
+    return out.sort(
+      (a, b) =>
+        a.n / a.target - b.n / b.target ||
+        a.n - b.n ||
+        (a.sid < b.sid ? -1 : a.sid > b.sid ? 1 : 0) ||
+        !!b.p.own - !!a.p.own ||
+        k(a) - k(b) ||
+        ((b.j && b.j.e) || 0) - ((a.j && a.j.e) || 0) ||
+        (a.p.f < b.p.f ? -1 : 1)
+    );
+  }
+  // Pierre's Add from the swiper (pure): the photo in play for its species, with the pass's tags, ease, phase and crop
+  // written beside it where he has none yet (the fish auto-sort writes its adds the same way, so every photo in play
+  // carries its tags and ease for the game, admin plan PR 7), and its "seen" mark taken off (a photo he rejected
+  // before and adds now). Not logged as auto: his own decision. A Check he answers this way keeps its log code, which
+  // fishCompare reads against his keep.
+  function fishAdd(F, f, sid, j) {
+    F = F || {};
+    const N = {...F, add: {...(F.add || {}), [f]: sid}},
+      put = (k, v) => {
+        if (v == null || (F[k] || {})[f] != null) return;
+        N[k] = {...(N[k] || {}), [f]: v};
+      };
+    if (N.seen && f in N.seen) {
+      N.seen = {...N.seen};
+      delete N.seen[f];
+    }
+    // An unsure judgment too (u: the judge doubted its code or its keep): the best description of the photo there is
+    // until Pierre's own tags (admin plan PR 5b).
+    if (j) {
+      put('tags', j.jt);
+      put('ease', j.e);
+      put('phase', j.ph);
+      put('crop', j.c);
+    }
+    return N;
+  }
+  // Pierre's Reject (✕), from the swiper or on a photo in play (pure): "seen", and the add taken off when it was in play.
+  function fishReject(F, f) {
+    F = F || {};
+    const N = {...F, seen: {...(F.seen || {}), [f]: 1}};
+    if (N.add && f in N.add) {
+      N.add = {...N.add};
+      delete N.add[f];
+    }
+    return N;
+  }
+  // Pierre's × (excluded for good, imports skip it): "exclude", and the add taken off.
+  function fishExclude(F, f) {
+    F = F || {};
+    const N = {...F, exclude: {...(F.exclude || {}), [f]: 'excluded'}};
+    if (N.add && f in N.add) {
+      N.add = {...N.add};
+      delete N.add[f];
+    }
+    return N;
+  }
 
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
@@ -448,6 +578,13 @@
     fishRun,
     fishUndo,
     fishOwn,
+    fishSigs,
+    fishStamp,
+    fishPlay,
+    fishQueue,
+    fishAdd,
+    fishReject,
+    fishExclude,
     autoCode,
     autoParse,
     autoIdx,

@@ -297,16 +297,24 @@ function step(from, to, msg) {
 // When Pierre answers a Check or corrects an auto decision, the time goes into its log code (autosort.js autoStamp), so
 // the agreement window follows the order he answered in (Codex review #400). Found by comparing his answers per photo
 // with those of the draft before this click (snap; recomputed only when undo, redo or another tab changed it).
+// The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG).
 let ASIG = null,
+  FSIG = null,
   ASIG_OF = null;
 function autoWhen() {
   if (ASIG_OF !== snap) {
-    ASIG = autoSigs(JSON.parse(snap));
+    const S = JSON.parse(snap);
+    ASIG = autoSigs(S);
+    FSIG = fishSigs(S.fish);
     ASIG_OF = snap;
   }
-  const A = autoStamp(DRAFT, ASIG, Date.now() / 1000);
+  const t = Date.now() / 1000,
+    A = autoStamp(DRAFT, ASIG, t),
+    FA = DRAFT.fish && fishStamp(DRAFT.fish, FSIG, t);
   if (A) DRAFT.auto = A;
+  if (FA) DRAFT.fish = {...DRAFT.fish, auto: FA};
   ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
+  FSIG = fishSigs(DRAFT.fish);
 }
 const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
@@ -1439,7 +1447,8 @@ function render() {
   if (cur === '~pstats') return renderPstats();
   if (modeKey() === 'stats') return renderStats();
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
-  if (cur === '~cand') return renderCand();
+  // A subject with its own part of curation.json (fish) has its own swiper (admin-fish.js, admin plan PR 5a).
+  if (cur === '~cand') return ASUBJ.admin.cur && typeof renderFishCand === 'function' ? renderFishCand() : renderCand();
   const names = Object.keys(DATA.gen);
   if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(),
@@ -2195,7 +2204,8 @@ const HELP = {
   statsstop: `<p>Where players stop and the genus sheets they open, from the answers already logged and the visits' summaries. Anonymous ids only, counts, no names. Every account counts, yours too.</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
-  excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
+  excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`,
+  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: your own first, then the pass's best photo of each observation, other angles, near-duplicates, the easiest first. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo. Tags, phase, crop and Not this come next (admin plan PR 5b).</p>`
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
 const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
@@ -2205,17 +2215,20 @@ function toggleHelp() {
     h.remove();
     return;
   }
+  // A subject's own swiper (admin-fish.js) has its own help.
   const m =
-    {
-      '~users': 'users',
-      '~stats-photos': 'statsph',
-      '~pstats': 'pstats',
-      '~stats-conf': 'statsconf',
-      '~stats-log': 'statslog',
-      '~stats-stop': 'statsstop',
-      '~stats-needs': 'statsneeds',
-      '~diff': 'diff'
-    }[cur] || modeKey();
+    cur === '~cand' && ASUBJ.admin.cur
+      ? 'fcand'
+      : {
+          '~users': 'users',
+          '~stats-photos': 'statsph',
+          '~pstats': 'pstats',
+          '~stats-conf': 'statsconf',
+          '~stats-log': 'statslog',
+          '~stats-stop': 'statsstop',
+          '~stats-needs': 'statsneeds',
+          '~diff': 'diff'
+        }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
   h.className = 'adm-help';
@@ -3978,6 +3991,8 @@ async function fishLoad() {
   return (FISHC = {
     cand: C.cand || {},
     species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
+    // Each species' teaching entry (its IMR entry for circle 1), for the fish Candidates card (admin-fish.js).
+    entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
     byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
   });
 }
@@ -4094,11 +4109,10 @@ function checkToast(f) {
 }
 // Agreement line at the top of Candidates (every source), and its details (det).
 function autoBlock(det) {
+  // The fish auto-sort's line and decisions are on the fish side's Candidates (admin-fish.js fishAutoBlock).
   const A = aIdx(),
-    E = Object.entries(A),
-    // The fish auto-sort's decisions still standing (curation.json fish auto), each undoable here (fishAutoUndo).
-    FA = Object.entries(fishIdx(DRAFT.fish)).filter(([, x]) => !x.d.check && !x.d.undone);
-  if (!E.length && !FA.length && !Object.keys(DRAFT.retest || {}).length) return '';
+    E = Object.entries(A);
+  if (!E.length && !Object.keys(DRAFT.retest || {}).length) return '';
   const ST = aState(),
     RT = retestStats(DRAFT),
     applied = E.filter(([, x]) => !x.d.check && !x.d.undone),
@@ -4110,7 +4124,7 @@ function autoBlock(det) {
     `<span class="adm-af${ST[k].on ? '' : ' off'}" title="${FIELD[k]}: agreement with you over the last ${ST[k].n} checks and corrections; auto ${ST[k].on ? 'on' : 'off'} under ${pctR(ST[k].min)}">${FIELD[k]} ${pctR(ST[k].rate)}${ST[k].n ? `<small>n ${ST[k].n}</small>` : ''}${ST[k].on ? '' : ' · off'}</span>`;
   // The line goes above the card, the details (det) below it, so the card stays in view.
   if (!det)
-    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')}${FA.length ? ` · fish ${FA.filter(([, x]) => x.d.kind === 'a').length} in, ${FA.filter(([, x]) => x.d.kind !== 'a').length} set aside` : ''} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
+    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
   let h = '';
   if (ADET) {
     const rows = AUTO.fields
@@ -4161,21 +4175,6 @@ function autoBlock(det) {
                 ''
               )}</div>${dec.length > 30 && !AALL ? `<button type="button" class="adm-link" data-aall>All ${dec.length}</button>` : ''}`
           : ''
-      }
-      ${
-        FA.length
-          ? `<h3 class="label">Fish auto decisions · ${FA.length}</h3><div class="adm-repl-grid">${[...FA]
-              .reverse()
-              .sort((a, b) => (a[1].day < b[1].day ? 1 : a[1].day > b[1].day ? -1 : 0))
-              .slice(0, AALL ? undefined : 30)
-              .map(([f, x]) => {
-                const p = (FISHC && FISHC.byF[f]) || {f};
-                return `<figure class="adm-repl-tile adm-atile" data-ff="${esc(f)}">${p.src ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : ''}<figcaption>${esc(p.t || '')} · ${x.d.kind === 'a' ? 'in' : 'set aside'} · ${x.day}</figcaption><button type="button" class="adm-link" data-faundo>Undo</button></figure>`;
-              })
-              .join(
-                ''
-              )}</div>${FA.length > 30 && !AALL ? `<button type="button" class="adm-link" data-aall>All ${FA.length}</button>` : ''}`
-          : ''
       }</div>`;
   }
   return h;
@@ -4187,7 +4186,6 @@ function bindAuto(scope) {
       ADET = !ADET;
       render();
     };
-  // "All N" under the coral and under the fish decisions (Codex review #479: the fish list showed its latest 30 only).
   scope.querySelectorAll('[data-aall]').forEach(
     al =>
       (al.onclick = () => {
@@ -4202,7 +4200,6 @@ function bindAuto(scope) {
     if (u) u.onclick = () => autoUndo(f);
     if (z) z.onclick = () => PHOTOS[f] && zoomOne(PHOTOS[f]);
   });
-  scope.querySelectorAll('[data-ff] [data-faundo]').forEach(b => (b.onclick = () => fishAutoUndo(b.closest('[data-ff]').dataset.ff)));
 }
 // Blind retest (test-retest of Pierre's own ratings): a photo he rated himself (not by the auto-sort), never retested,
 // in a fixed order per photo; quality, and growth form when he gave one. His second answer goes to curation.json
@@ -4603,6 +4600,10 @@ function renderCand() {
       CSKIP.clear();
       render();
     };
+  candKeys();
+}
+// The swipers' keys (the corals' and the fish's, admin-fish.js): ← Reject, → Skip, 1-3 the Add buttons.
+function candKeys() {
   if (!candKey) {
     candKey = e => {
       if (cur !== '~cand' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,textarea,select') || !$('lightbox').hidden)

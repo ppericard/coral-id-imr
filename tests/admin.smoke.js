@@ -103,11 +103,11 @@ const WIDTHS = [390, 1280];
     if (CF.some(f => !f) || !CHK) throw new Error(`not enough undecided candidates for the auto-sort test: ${CF} ${CHK}`);
     // The fish auto-sort (admin plan PR 4, autosort.js fishRun): FF[0] a sure add, FF[1] a sure near-duplicate, FF[2] a
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
+    // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
     const FCAND = rd('fish-cand.json').cand,
-      FF = Object.entries(FCAND)
-        .flatMap(([sid, L]) => L.map(x => [sid, x.f]))
-        .filter(([, f]) => !autoCheck(f))
-        .slice(0, 3);
+      FALL = Object.entries(FCAND).flatMap(([sid, L]) => L.map(x => [sid, x.f])),
+      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 3),
+      FC = FALL.find(([, f]) => autoCheck(f));
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
     // the same day, rejections of photos he rejected too (no comparison, so the agreement is the test's own). The test's
@@ -141,7 +141,8 @@ const WIDTHS = [390, 1280];
           fish: {
             [FF[0][1]]: {jt: 'p1g0sm1', e: 5, k: 'best', ph: 'female'},
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
-            [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'}
+            [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
+            [FC[1]]: {jt: 'o1g1ssm', e: 3, k: 'best', n: 'Demo check'}
           }
         })
       })
@@ -265,13 +266,51 @@ const WIDTHS = [390, 1280];
         !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
         at.note ||
         !at.tabs.includes('To do') ||
-        at.groups.includes('photos')
+        // Its Photos group: the pages it has (Candidates since admin plan PR 5a).
+        !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
-      await go(other.hash + '~cand');
+      await go(other.hash + '~quality');
       at = await seg();
       if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
-        fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
+        fails.push(`${w}px Subjects: ${other.id} Photo review ${JSON.stringify(at)}`);
+      // The fish Candidates swiper (admin plan PR 5a, admin-fish.js): one candidate on screen with its species and
+      // its IMR entry, the thinnest species first, the queue segment (All, Checks), the photo filling the screen without
+      // a sideways scroll; the Check (FC) blind in the Checks queue: no judgment line, a Check tag, no suggested Add.
+      await go(other.hash + '~cand');
+      const fc = () =>
+        p.evaluate(() => {
+          const S = document.querySelector('.adm-fsw'),
+            r = S && S.querySelector('.adm-swcard').getBoundingClientRect();
+          return {
+            f: S && S.dataset.f,
+            sid: S && S.dataset.s,
+            sp: ((S && S.querySelector('.adm-swg i')) || {}).textContent || '',
+            sub: ((S && S.querySelector('.adm-swg small')) || {}).textContent || '',
+            judge: !!(S && S.querySelector('.adm-judge')),
+            chk: !!(S && S.querySelector('.adm-chk')),
+            sug: !!(S && S.querySelector('[data-add].sug')),
+            seg: [...document.querySelectorAll('[data-fq]')].map(b => [b.dataset.fq, b.getAttribute('aria-pressed')]),
+            play: (document.querySelector('.adm-fplayn') || {}).textContent || '',
+            h: r ? Math.round(r.height) : 0,
+            bottom: r ? Math.round(r.bottom) : 0,
+            vh: innerHeight,
+            wide: document.documentElement.scrollWidth - innerWidth,
+            note: (document.querySelector('#view > .note') || {}).textContent || ''
+          };
+        });
+      at = await fc();
+      const FS = await p.evaluate(() => FISHC && Object.fromEntries(Object.entries(FISHC.species).map(([k, v]) => [k, v.name])));
+      if (!at.f || at.note || !FS || at.sp !== FS[at.sid] || !at.sub || at.seg.length !== 2 || !/In play \d+\/\d+/.test(at.play))
+        fails.push(`${w}px Fish Candidates: ${JSON.stringify(at)}`);
+      if (at.wide > 0 || at.h < 200 || at.bottom > at.vh) fails.push(`${w}px Fish Candidates: layout ${JSON.stringify(at)}`);
+      await p.click('[data-fq="chk"]');
+      await settle();
+      at = await fc();
+      if (at.f !== FC[1] || at.sid !== FC[0] || at.judge || !at.chk || at.sug || at.wide > 0)
+        fails.push(`${w}px Fish Candidates: the Check ${FC[1]} is not shown blind ${JSON.stringify(at)}`);
+      await p.click('[data-fq="all"]');
+      await settle();
       // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
       await p.evaluate(() => {
         const a = document.createElement('a');
@@ -2626,7 +2665,10 @@ const WIDTHS = [390, 1280];
       // One fish auto decision undone in the Auto details (Codex review #479, AGENTS.md rule 8): gone from the draft, logged
       // undone, never applied again at the next run.
       if (fa) {
+        // The coral Candidates no longer list the fish decisions: they are on the fish side's Candidates.
         await go('~cand');
+        if (await p.$('[data-ff]')) fails.push(`${w}px Candidates: fish auto decisions on the coral Candidates`);
+        await go('fish/~cand');
         await p.evaluate(() => {
           ADET = true;
           render();
@@ -2672,6 +2714,78 @@ const WIDTHS = [390, 1280];
         await p.evaluate(() => {
           ADET = false;
         });
+        // The fish swiper's clicks (admin plan PR 5a, admin-fish.js; autosort.js fishAdd, fishReject, fishExclude): the
+        // Check FC answered + Add (in play for its species with the pass's tags and ease, its log code timed, the
+        // auto-sort's answer told: same), a photo in play taken out of play from its enlarged view, a candidate rejected
+        // with ←, the next one excluded with ×, Undo taking the last click back; never "out" (Not this is Pierre's, PR
+        // 5b), no coral key touched.
+        await go('fish/~cand');
+        const coral0 = await p.evaluate(() => JSON.stringify([DRAFT.genera, DRAFT.seen || {}, DRAFT.exclude || {}, DRAFT.auto || {}]));
+        await p.click('[data-fq="chk"]');
+        await settle();
+        await p.click('.adm-fsw [data-add]');
+        await settle();
+        const r1 = await p.evaluate(F => {
+          const x = DRAFT.fish,
+            day = Object.keys(x.auto || {}).find(d => x.auto[d][F[1]]);
+          return {
+            add: (x.add || {})[F[1]],
+            tags: (x.tags || {})[F[1]],
+            ease: (x.ease || {})[F[1]],
+            code: day && x.auto[day][F[1]],
+            left: (document.querySelector('.adm-fsw') || {dataset: {}}).dataset.f || null,
+            toast: (document.querySelector('.adm-toast') || {}).textContent || ''
+          };
+        }, FC);
+        if (
+          r1.add !== FC[0] ||
+          r1.tags !== 'o1g1ssm' ||
+          r1.ease !== 3 ||
+          !/^\?a@[0-9a-z]+$/.test(r1.code || '') ||
+          r1.left ||
+          !/same/.test(r1.toast)
+        )
+          fails.push(`${w}px Fish Candidates: Add on the Check ${JSON.stringify(r1)}`);
+        await p.evaluate(F => fishZoom(FISHC.byF[F[1]], F[0], true), FC);
+        await p.click('#lightbox [data-fout]');
+        await settle();
+        const r2 = await p.evaluate(
+          F => ({add: F[1] in (DRAFT.fish.add || {}), seen: (DRAFT.fish.seen || {})[F[1]], lb: $('lightbox').hidden}),
+          FC
+        );
+        if (r2.add || r2.seen !== 1 || !r2.lb) fails.push(`${w}px Fish Candidates: Out of play ${JSON.stringify(r2)}`);
+        await p.click('[data-fq="all"]');
+        await settle();
+        const f0 = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
+        await p.keyboard.press('ArrowLeft');
+        await settle();
+        const f1 = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
+        await p.click('.adm-fsw [data-x]');
+        await settle();
+        const r3 = await p.evaluate(([a, b]) => ({seen: (DRAFT.fish.seen || {})[a], ex: (DRAFT.fish.exclude || {})[b]}), [f0, f1]);
+        await p.click('#undo');
+        await settle();
+        const r4 = await p.evaluate(
+          ([a, b, F2]) => ({
+            seen: (DRAFT.fish.seen || {})[a],
+            ex: b in (DRAFT.fish.exclude || {}),
+            back: document.querySelector('.adm-fsw').dataset.f === b,
+            out: Object.keys(DRAFT.fish.out || {}).filter(f => f !== F2),
+            coral: JSON.stringify([DRAFT.genera, DRAFT.seen || {}, DRAFT.exclude || {}, DRAFT.auto || {}])
+          }),
+          [f0, f1, FF[2][1]]
+        );
+        if (
+          f0 === f1 ||
+          r3.seen !== 1 ||
+          r3.ex !== 'excluded' ||
+          r4.seen !== 1 ||
+          r4.ex ||
+          !r4.back ||
+          r4.out.length ||
+          r4.coral !== coral0
+        )
+          fails.push(`${w}px Fish Candidates: Reject, ×, Undo ${JSON.stringify({f0, f1, r3, r4: {...r4, coral: r4.coral === coral0}})}`);
       }
       errs.length = 0;
       if (await p.isEnabled('#save')) {

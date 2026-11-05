@@ -1,0 +1,174 @@
+// The fish Candidates swiper (admin plan PR 5a; autosort.js "Fish Candidates", admin-fish.js renderFishCand): the queue
+// lists what Pierre has not decided, the thinnest species first, stops at each species' target, keeps the fish
+// auto-sort's Checks his to answer; his clicks write the fish part of the draft as the auto-sort does (tags and ease
+// beside the add), never "out" (Not this) and never a coral key; his answers to Checks are timed for the agreement.
+const test = require('node:test'),
+  assert = require('node:assert');
+const {
+  fishQueue,
+  fishPlay,
+  fishAdd,
+  fishReject,
+  fishExclude,
+  fishRun,
+  fishCompare,
+  fishSigs,
+  fishStamp,
+  fishIdx,
+  fishMine,
+  autoCheck
+} = require('../autosort.js');
+const {merge3} = require('../core.js');
+
+const ids = (() => {
+  const out = [];
+  for (let i = 2000; out.length < 40; i++) if (!autoCheck(`fish-q-cand-${i}`)) out.push(`fish-q-cand-${i}`);
+  return out;
+})();
+const chkId = (() => {
+  for (let i = 2000; ; i++) if (autoCheck(`fish-q-cand-${i}`)) return `fish-q-cand-${i}`;
+})();
+const ph = (f, o = f, x = {}) => ({f, o, t: 'X', ...x});
+
+test('fishQueue: the thinnest species first, its photos together; own first, then best, alt, not judged, dup, then the easiest', () => {
+  const cands = {
+      s1: [ph(ids[0]), ph(ids[1])],
+      s2: [ph(ids[2]), ph(ids[3], ids[3], {own: true}), ph(ids[4]), ph(ids[5]), ph(ids[6])],
+      s3: [ph(ids[7])]
+    },
+    species = {s1: {id: 's1'}, s2: {id: 's2'}, s3: {id: 's3', cs: 1}},
+    sug = {
+      [ids[2]]: {jt: 'p1g0sm1', e: 5, k: 'dup'},
+      [ids[4]]: {jt: 'p1g0sm1', e: 2, k: 'best'},
+      [ids[5]]: {jt: 'p1g0sm1', e: 4, k: 'best'},
+      [ids[6]]: {jt: 'p1g0sm1', e: 5, k: 'alt'}
+    },
+    // s1 has one observation in play out of 8, s3 none out of 12 (a cheatsheet species), s2 none out of 8.
+    F = {add: {[ids[1]]: 's1'}};
+  const Q = fishQueue(cands, sug, species, F);
+  assert.deepStrictEqual(
+    Q.map(x => [x.sid, x.p.f]),
+    [
+      ['s2', ids[3]], // Pierre's own first
+      ['s2', ids[5]], // then the best photos, the easiest first
+      ['s2', ids[4]],
+      ['s2', ids[6]], // another angle
+      ['s2', ids[2]], // a near-duplicate last (the pass is sure it goes: set aside)
+      ['s3', ids[7]],
+      ['s1', ids[0]] // 1 of 8 in play: thicker than the two empty species
+    ]
+  );
+  assert.strictEqual(Q.find(x => x.p.f === ids[2]).aside, true);
+  assert.deepStrictEqual(
+    Q.filter(x => x.sid === 's3').map(x => [x.n, x.target]),
+    [[0, 12]]
+  );
+  assert.ok(!Q.some(x => x.p.f === ids[1]), 'a photo in play is not a candidate');
+});
+
+test('fishQueue: what Pierre decided leaves it (in play, rejected, excluded, Not this); an auto decision he undid comes back', () => {
+  const cands = {s1: [ph(ids[0]), ph(ids[1]), ph(ids[2]), ph(ids[3]), ph(ids[4])]},
+    F = {
+      add: {[ids[0]]: 's1'},
+      seen: {[ids[1]]: 1},
+      exclude: {[ids[2]]: 'excluded'},
+      out: {[ids[3]]: 'x'},
+      auto: {'2026-11-05': {[ids[4]]: '-at'}}
+    };
+  const Q = fishQueue(cands, {}, {s1: {}}, F);
+  assert.deepStrictEqual(
+    Q.map(x => x.p.f),
+    [ids[4]]
+  );
+  assert.strictEqual(Q[0].aside, false);
+});
+
+test('fishQueue stops at the target: an observation more is "full", another photo of one in play is not; a Check never is', () => {
+  const cands = {s1: []},
+    F = {add: {}};
+  for (let i = 0; i < 8; i++) {
+    cands.s1.push(ph(ids[i], 'obs' + i));
+    F.add[ids[i]] = 's1';
+  }
+  cands.s1.push(ph(ids[20], 'obs3'), ph(ids[21], 'obs99'), ph(chkId, 'obs98'));
+  F.auto = {'2026-11-05': {[chkId]: '?a'}};
+  const Q = fishQueue(cands, {}, {s1: {id: 's1'}}, F),
+    by = Object.fromEntries(Q.map(x => [x.p.f, x]));
+  assert.strictEqual(by[ids[20]].full, false, 'another photo of an observation in play adds none');
+  assert.strictEqual(by[ids[21]].full, true);
+  assert.strictEqual(by[chkId].full, false);
+  assert.strictEqual(by[chkId].chk, true);
+  assert.strictEqual(fishPlay(cands, F).s1.size, 8);
+  // A rejected add frees its observation: the species is under its target again.
+  const G = fishReject(F, ids[0]);
+  assert.strictEqual(fishPlay(cands, G).s1.size, 7);
+  assert.strictEqual(fishQueue(cands, {}, {s1: {}}, G).find(x => x.p.f === ids[21]).full, false);
+});
+
+test("fishAdd: in play for its species with the pass's tags, ease, phase and crop where Pierre has none; never out", () => {
+  const j = {jt: 'p1g0sm1j', e: 3, k: 'best', ph: 'female', c: [0.1, 0.1, 0.9, 0.9]};
+  const F0 = {tags: {[ids[0]]: 'o1g0sm1'}, seen: {[ids[0]]: 1}};
+  const F = fishAdd(F0, ids[0], 's7', j);
+  assert.strictEqual(F.add[ids[0]], 's7');
+  assert.strictEqual(F.tags[ids[0]], 'o1g0sm1', 'a tag he gave stays his');
+  assert.strictEqual(F.ease[ids[0]], 3);
+  assert.strictEqual(F.phase[ids[0]], 'female');
+  assert.deepStrictEqual(F.crop[ids[0]], j.c);
+  assert.ok(!(ids[0] in F.seen), 'a photo he had rejected and adds now is no longer rejected');
+  assert.strictEqual(fishMine(F, ids[0]), 'add');
+  assert.ok(!F.out && !F.auto, 'never Not this, never logged as auto');
+  assert.deepStrictEqual(F0, {tags: {[ids[0]]: 'o1g0sm1'}, seen: {[ids[0]]: 1}}, 'the draft given is not changed');
+  // Not judged: the add alone.
+  assert.deepStrictEqual(fishAdd({}, ids[1], 's7', null), {add: {[ids[1]]: 's7'}});
+});
+
+test('fishReject and fishExclude take a photo out of play; Pierre answering a Check is compared, a correction too', () => {
+  const cands = {s1: [ph(ids[0]), ph(ids[1]), ph(chkId)]},
+    sug = {[ids[0]]: {jt: 'p1g0sm1', e: 4, k: 'best'}, [chkId]: {jt: 'p1g0sm1', e: 4, k: 'best'}};
+  let {F} = fishRun(cands, sug, {s1: {}}, {}, '2026-11-05');
+  assert.strictEqual(F.add[ids[0]], 's1');
+  assert.strictEqual(F.auto['2026-11-05'][chkId], '?a');
+  // His answer to the Check (Reject) and his correction of the auto add (Out of play): two disagreements.
+  F = fishReject(fishReject(F, chkId), ids[0]);
+  assert.ok(!(ids[0] in F.add));
+  assert.strictEqual(F.seen[ids[0]], 1);
+  const C = fishCompare(F);
+  assert.deepStrictEqual(
+    C.map(c => [c.f, c.how, c.ok]).sort(),
+    [
+      [chkId, 'check', false],
+      [ids[0], 'fix', false]
+    ].sort()
+  );
+  const X = fishExclude({add: {[ids[1]]: 's1'}}, ids[1]);
+  assert.deepStrictEqual(X, {add: {}, exclude: {[ids[1]]: 'excluded'}});
+});
+
+test('fishStamp: the time of his answer goes into the log code of the photo he just answered, only that one', () => {
+  const F0 = {auto: {'2026-11-05': {[chkId]: '?a', [ids[0]]: 'at'}}, add: {[ids[0]]: 's1'}};
+  const before = fishSigs(F0);
+  assert.deepStrictEqual(before, {});
+  const F1 = fishAdd(F0, chkId, 's1', null);
+  const A = fishStamp(F1, before, 1762300000);
+  assert.strictEqual(A['2026-11-05'][chkId], '?a@' + (1762300000).toString(36));
+  assert.strictEqual(A['2026-11-05'][ids[0]], 'at');
+  assert.strictEqual(fishIdx({...F1, auto: A})[chkId].d.t, 1762300000);
+  // Nothing new answered: nothing to stamp.
+  assert.strictEqual(fishStamp(F1, fishSigs(F1), 1762300100), null);
+});
+
+test('fish Candidates clicks never touch a coral key, through the Publish merge', () => {
+  const base = {genera: {Acropora: {add: {c1: 'wide'}}}, seen: {'cand:c2': 1}, fish: {add: {[ids[0]]: 's1'}}};
+  let fish = fishAdd(base.fish, ids[1], 's1', {jt: 'p1g0sm1', e: 4, k: 'best'});
+  fish = fishReject(fish, ids[0]);
+  fish = fishExclude(fish, ids[2]);
+  const draft = {...base, fish};
+  const out = merge3(base, draft, base);
+  assert.deepStrictEqual(out.genera, base.genera);
+  assert.deepStrictEqual(out.seen, base.seen);
+  assert.strictEqual(out.fish.add[ids[1]], 's1');
+  assert.ok(!(ids[0] in out.fish.add));
+  assert.strictEqual(out.fish.seen[ids[0]], 1);
+  assert.strictEqual(out.fish.exclude[ids[2]], 'excluded');
+  assert.ok(!out.fish.out);
+});
