@@ -22,7 +22,7 @@ test('field rule: a pair level is 0 until the pair met, grows with the offers, a
   near(C.pairLevel({T: {off: {L1: 2}}}, 'T', 'L1', q), 2 / (2 + C.COVER.W), '2 offers, no mix-up');
   near(C.pairLevel({L1: {off: {T: 2}}}, 'T', 'L1', q), 2 / (2 + C.COVER.W), 'both directions (pairConf)');
   // 10 offers, 1 mix-up: forgivable on a look-alike, damning on a pair nobody confuses.
-  near(C.pairLevel({T: {off: {L1: 10}, conf: {L1: 1}}}, 'T', 'L1', q), (10 - 1 / 0.3) / 12, 'look-alike, 1 mix-up in 10');
+  near(C.pairLevel({T: {off: {L1: 10}, conf: {L1: 1}}}, 'T', 'L1', q), (10 - 1 / 0.3) / (10 + C.COVER.W), 'look-alike, 1 mix-up in 10');
   assert.strictEqual(C.pairLevel({T: {off: {U1: 10}, conf: {U1: 1}}}, 'T', 'U1', F.q('T', 'U1')), 0, 'unrelated, 1 mix-up in 10');
   // A typed answer's offers (offT) count with the picks' offers.
   near(C.pairLevel({T: {offT: {L1: 1.5}, off: {L1: 0.5}}}, 'T', 'L1', q), 2 / (2 + C.COVER.W), 'typed offers add up');

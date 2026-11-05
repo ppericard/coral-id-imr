@@ -2270,18 +2270,19 @@ for every subject that opts in with `SUBJECTS` `cover`: the corals now, fish aft
   two together, m the mix-ups, both directions; `P[g].off`, `P[g].conf`) and the offers a typed answer makes (`P[t].offT`,
   below), shrunk toward the pooled score q (`confScore` with the declared/family prior, as `confOf` and `confGap` do)
   with `COVER.W` offers of prior weight: D = max(0, (n − m / q) / (n + W)). 0 until the pair has met; a mix-up is
-  judged against how confusable the pair is: 10 offers and 1 mix-up leave 0.56 on a look-alike (q 0.3), 0 on an
+  judged against how confusable the pair is: 10 offers and 1 mix-up leave 0.61 on a look-alike (q 0.3), 0 on an
   unrelated pair (q 0.03). The same D as the [fish confusion study](reviews/2026-11-05-fish-confusion-study.md) (section 4.3; corals are its one-rank case), so fish
   plugs in without rework. No new counter for picks (the offers exist); one sparse map for typed answers.
 - **Coverage** of t, `coverageOf`: the mean of its pair levels over the field, each competitor weighed by its pooled
   score q (Q102). Equivalently 1 − Σ own / Σ pooled: the share of the Luce error mass the player has removed. Look-alikes
   weigh most; the many unrelated genera together weigh about half (Pierre's "sheer number").
 - **The bar** (`scoreOf(s, cov)`): `0.95 × min(1, pg / M) × (B + (1 − B) × min(1, cov / C)^G)`, B 0.4, G 0.5 (the
-  study's h), C 0.9. Pierre's formula, with one addition: the coverage counts in full from C, so that the bar can reach
+  study's h), C 0.6 (and W 1; both chosen by the sweep below). Pierre's formula, with one addition: the coverage counts in full from C, so that the bar can reach
   the exam's entry (with a continuous level the coverage never reaches 1 exactly). The exam steps (1% each) show only
   from there. `pg`, the moving average, is unchanged: it is the within-field part and still drives the game (the draw,
   the typed share, the opening, the first photos of a unit: `model.js` `pgScore`). The global % is the mean of the
-  bars, as before; first genera cap around 55-63% while 4-8 genera are met (Q103: expected).
+  bars, as before. With every pair among the genera met cleared, a genus caps around 59% while 4 genera are met, 69% with 8,
+  76% with 12, 88% with 20 (Q103 expected 54-62% with the study's constants; the calibration raised them).
 - **A typed answer's vocabulary** (Q106, with Pierre's refinement of 2026-11-05): not the raw count of genera unlocked
   but a similarity-weighted effective set size, `typedK` = max(2, 1 + Σ over the unlocked competitors x of sim(t, x)),
   sim = min(1, the player's own score of the pair shrunk toward the pooled one / `COVER.S`), S = 0.3 (a declared
@@ -2325,7 +2326,23 @@ for every subject that opts in with `SUBJECTS` `cover`: the corals now, fish aft
 The constants (`COVER` B, G, W, C, S) are provisional, for the tier-2 sweep.
 
 **Checks.** Unit tests `tests/cover.test.js`. Tier 3 on the real log (2026-11-05, 1,933 answers, 10 players, read-only
-copy; per-player table in the PR, players anonymous): SIM_AND_REAL_PLACEHOLDER
+copy; pooled confusions of `?stats=1` that day; per-player table in the PR #611, players anonymous): every player's
+overall % falls by about a fifth to a third (41 → 33, 38 → 29, 34 → 27, 32 → 25; beginners 14 → 9, 3 → 2); nobody held
+a learned mark after today's replay, so none is taken away; mean coverage of the genera met 0.05-0.27, the best-covered
+genus 0.44; the two genera at the exam's entry today (one player) wait for their coverage. The study's confirmatory
+question on the same log (does the number of genera asked predict the answers beyond the app's expectation?,
+`tools/fieldeval.js --log` of the learnsim-field branch): no clear difference yet, log-loss M1 − M0 +0.001 [−0.008,
+0.011] per player, sign-flip p 0.73, 10 players; the slope is in the declared direction (−0.21 logit per doubling of the
+genera asked). Simulation (field learner, τ 0.5): **selection** on seeds 1-30 (the study's tier-2 step): the
+study's constants (W 2, C 0.9), run live (`tools/learnsim.js --learner field --tau 0.5`, 4 profiles × 30 seeds × 1000
+questions), against today's rules (#619's baseline): the overclaim at 600 questions went from +0.108 / +0.084 / +0.034
+/ −0.034 (beginner, lecture RA, strong RA, expert) to −0.030 / −0.067 / −0.112 / −0.172 (Holm-adjusted p < 0.001 in
+every profile), but no genus reached the exam's entry in 1000 questions (the expert had 32.7 Learned before): an
+over-correction. The same runs, replayed offline with other constants (the bars and the coverage only; the exam needs a
+live run): W 0.25-2 × C 0.5-0.9 × B 0.3-0.4 × G 0.5-0.75. Chosen: **W 1, C 0.6** (B 0.4, G 0.5 kept, Pierre's
+formula): overclaim at 600 +0.039 / +0.011 / −0.013 / −0.052, at 1000 +0.070 / +0.054 / +0.028 / −0.029; the expert at
+the entry with 19 genera by 600 questions and every one by 1000. **Confirmation** on fresh seeds 31-60, the chosen
+setting against today's rules, live: CONFIRM_PLACEHOLDER
 
 ### Typed questions (2026-11-03): why these settings
 

@@ -1707,9 +1707,15 @@
   //   simOf = min(1, the player's own score of the pair shrunk toward the pooled one / COVER.S): a look-alike counts
   //   about 1, an unrelated genus about 0.1 (generate-then-recognise recall, Luce / GCM competition where dissimilar
   //   items barely compete). It is the answer's guess rate (1 / typedK) and the evidence each pair gets (simOf).
-  // COVER: B, G the curve; W the prior weight of a pair level; C the coverage that counts in full; S the score of a
-  // full competitor in a typed answer (CONF.LOOK, a declared look-alike's prior). Provisional, for the tier-2 sweep.
-  const COVER = {B: 0.4, G: 0.5, W: 2, C: 0.9, S: 0.3};
+  // COVER: B, G the curve (the study's h, Pierre's formula); W the prior weight of a pair level (1: one clean offer gives
+  // a level of 1/2); C the coverage that counts in full; S the score of a full competitor in a typed answer (CONF.LOOK, a
+  // declared look-alike's prior). W and C chosen on 2026-11-06 by an offline sweep of the field learner's runs (seeds 1-30,
+  // the study's selection step; W 0.25-2 x C 0.5-0.9): the study's W 2, C 0.9 over-corrected (every profile under its
+  // truth, the expert by -0.17 at 600 questions, no genus at the exam's entry in 1000 questions); W 1, C 0.6 cut the
+  // beginners' overclaim at 600 questions from +0.11 to +0.04 and the lecture RAs' from +0.08 to +0.01, with the expert
+  // at -0.05 (-0.03 before) and every genus at the entry by 1000 (docs/LEARNING.md "Proven against the field").
+  // Provisional, for the tier-2 sweep.
+  const COVER = {B: 0.4, G: 0.5, W: 1, C: 0.6, S: 0.3};
   const coverH = c => COVER.B + (1 - COVER.B) * Math.pow(Math.min(1, Math.max(0, Number(c) || 0) / COVER.C), COVER.G);
   const coverIn = c => c == null || c >= COVER.C - 1e-9;
   // A pair's prior score (CONF): a declared look-alike (gen[n].look either way), the same family, or neither. The app's
