@@ -118,28 +118,26 @@ its own record (`startKey`); never a subject named in the code that asks it.
 
 **The simplest algorithm that works.** Don't add a variable, a special case or a hard-coded ramp to patch a problem:
 first rethink the rule or recalibrate the existing settings (example: the opening of genera became a slope on `OPEN.K`
-instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers**, the effort proportionate to the question:
+instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers, the effort proportionate to the question,
+the statistics always valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods-study.md) §0,
+§3.2, §4, §6.7; a mean larger than its spread is never a verdict: it passes about 9% of cells with no effect):
 - **tier 0, always**: the unit tests and the CI smokes;
-- **tier 1, systematic for any change to the learning algorithm's behaviour**: check it over several seeds
-  (`tests/profiles.smoke.js` profiles), not one run, and its effect on what players really learn with
-  `node tools/learnsim.js` (the four profiles × 5 seeds, before and after, the same seeds, about 2 min; LEARNING.md
-  "Learning-outcome simulation"), with a small standard table in the PR. Five seeds show the large effects that big
-  changes produce;
-- **tier 2, fine calibration**, when a value is being chosen or tier 1 cannot tell two versions apart: 30-40 seeds,
-  extended profiles, sweeps;
-- **tier 3, real data**: rule L12.
+- **tier 1, any change to the learning algorithm's behaviour** (`tests/profiles.smoke.js` over several seeds, and
+  `node tools/learnsim.js`: the four profiles × 5 seeds, before and after on the same seeds, about 2 min; LEARNING.md
+  "Learning-outcome simulation"). Before running, declare one primary measure, its checkpoint and its direction. Test it
+  pooled over the four profiles with an exact stratified sign-flip test on the 20 (profile, seed) pairs; only if that
+  passes, per-profile tests under Holm. The other measures are guardrails: held when the one-sided 90% bound of the
+  paired difference stays inside a margin set once in LEARNING.md. Anything else is labelled exploratory, uncorrected.
+  Five seeds catch large effects and breakage, not small improvements;
+- **tier 2, fine calibration** (choosing a value, or tier 1 inside the noise): 30-40 common seeds, the number sized from
+  tier 1's spread; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no
+  worse"; the chosen value confirmed on fresh seeds;
+- **tier 3, real data** (rule L12): inference per player (players are the unit), never per answer.
 
-**The statistics are proportionate to the question, but always valid.**
-- Compare before and after with a simple paired test across the same seeds: a paired t-test, or the Wilcoxon
-  signed-rank test when the differences are far from normal. A mean larger than its spread is never a verdict.
-- Name in advance the measure(s) that decide for a given change; the other measures are exploratory. When several
-  comparisons are judged, correct for multiplicity (Holm-Bonferroni by default; Bonferroni is a fine start). An isolated
-  difference among many measures is not a result unless it replicates on fresh seeds.
-- Multifactor analyses (several factors or interactions at once, e.g. profile × parameter × seed; the admin's Analyses)
-  get the full rigour in method, not only effort: find and use the method best suited to the design before running it
-  (e.g. a factorial design with a mixed-effects model, seeds or players as random effects, interactions tested in the
-  model rather than by many pairwise tests); state the model and its assumptions in the PR and check them. These
-  analyses are rare, so taking the time is expected. Single comparisons keep the simple paired test and Holm.
+**Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
+Analyses) get the method suited to the design, found before running (e.g. a factorial design with a mixed-effects
+model, seeds or players as random effects, interactions in the model rather than many pairwise tests; study §6); state
+the model and its assumptions in the PR and check them. They are rare: taking the time is expected.
 
 *Why:* every added part or variable makes the model harder to calibrate.
 *Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05.
