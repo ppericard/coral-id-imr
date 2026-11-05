@@ -15,7 +15,10 @@ const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
 // Instrumentation in the worker: every Cache Storage call and every fetch still pending, with its age.
 const PRE = `
 self.__pend = new Map(); self.__log = []; let __n = 0; const __t0 = Date.now();
-const __L = s => { self.__log.push((Date.now() - __t0) + ' ' + s); if (self.__log.length > 400) self.__log.shift(); };
+const __ID = Math.random().toString(36).slice(2, 6) + '/' + (self.__DEPLOY || 0);
+const __L = s => { self.__log.push((Date.now() - __t0) + ' ' + s); if (self.__log.length > 400) self.__log.shift();
+  try { fetch('/__log?' + encodeURIComponent(__ID + ' ' + s), {cache: 'no-store'}).catch(() => {}); } catch (e) {} };
+__L('script start');
 const __wrap = (o, k, lab) => { const f = o[k]; o[k] = function (...a) { const id = ++__n, d = lab + '.' + k + '(' + String((a[0] && a[0].url) || a[0] || '').replace(location.origin, '') + ')';
   __pend.set(id, {d, t: Date.now()}); const p = f.apply(this, a); Promise.resolve(p).then(() => __pend.delete(id), e => (__pend.delete(id), __L('ERR ' + d + ' ' + e))); return p; }; };
 ['match', 'open', 'delete', 'keys', 'has'].forEach(k => __wrap(CacheStorage.prototype, k, 'caches'));
@@ -23,7 +26,7 @@ const __wrap = (o, k, lab) => { const f = o[k]; o[k] = function (...a) { const i
 __wrap(self, 'fetch', 'net');
 const __rw = FetchEvent.prototype.respondWith;
 FetchEvent.prototype.respondWith = function (p) { const id = ++__n, d = 'respondWith(' + this.request.url.replace(location.origin, '') + ')';
-  __pend.set(id, {d, t: Date.now()}); Promise.resolve(p).then(() => __pend.delete(id), () => __pend.delete(id)); return __rw.call(this, p); };
+  __pend.set(id, {d, t: Date.now()}); Promise.resolve(p).then(r => (__pend.delete(id), __L('replied ' + d + ' ' + (r && r.status))), e => (__pend.delete(id), __L('reply failed ' + d))); return __rw.call(this, p); };
 const __wu = ExtendableEvent.prototype.waitUntil;
 ExtendableEvent.prototype.waitUntil = function (p) { const id = ++__n, d = 'waitUntil(' + this.type + (this.request ? ' ' + this.request.url.replace(location.origin, '') : '') + ')';
   __pend.set(id, {d, t: Date.now()}); __L(d + ' start'); Promise.resolve(p).then(() => (__pend.delete(id), __L(d + ' done')), e => (__pend.delete(id), __L(d + ' failed ' + e))); return __wu.call(this, p); };
@@ -34,7 +37,12 @@ let SWV = 0,
   HOLD = null;
 const HELD = [],
   ADMIN_HITS = [];
+let T0 = Date.now(), SLOG = [];
+const L = s => SLOG.push(`${Date.now() - T0} ${s}`);
 const server = http.createServer((req, res) => {
+  if (req.url.startsWith('/__log?')) { L('W ' + decodeURIComponent(req.url.slice(7))); res.writeHead(204); return res.end(); }
+  L('req ' + req.url + ' ' + (req.headers['service-worker'] ? '[sw-script]' : '') + (req.headers['sec-fetch-dest'] || '') + ' ' + (req.headers['sec-fetch-mode'] || ''));
+  res.on('finish', () => /admin\.html|sw\.js/.test(req.url) && L('done ' + req.url));
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
   if (HOLD && HOLD.test(u)) return void HELD.push(res);
@@ -50,7 +58,7 @@ const server = http.createServer((req, res) => {
     if (u === '/sw.js') {
       let s = String(b);
       if (OLD) s = s.replace('CACHE_WAIT = 3000', 'CACHE_WAIT = 1e9');
-      body = Buffer.from(PRE + s + (SWV ? `\n// deploy ${SWV}\n` : ''));
+      body = Buffer.from(`self.__DEPLOY = ${SWV};\n` + PRE + s + (SWV ? `\n// deploy ${SWV}\n` : ''));
     }
     if (/^(text\/|application\/(json|manifest)|image\/svg)/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
       res.writeHead(200, {'Content-Type': type, 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding'});
@@ -90,8 +98,13 @@ async function once(base, it) {
   };
   const thr = async pg => CPU && (await (await pg.context().newCDPSession(pg)).send('Emulation.setCPUThrottlingRate', {rate: CPU}));
   const ctx = await newCtx();
+  T0 = Date.now(); SLOG = [];
   const p = await ctx.newPage(),
     pQuiet = track(p);
+  const cdp = await ctx.newCDPSession(p);
+  cdp.on('ServiceWorker.workerVersionUpdated', e => e.versions.forEach(v => L(`V${v.versionId} ${v.runningStatus} ${v.status}${v.controlledClients && v.controlledClients.length ? ' clients ' + v.controlledClients.length : ''}`)));
+  cdp.on('ServiceWorker.workerErrorReported', e => L('SWERR ' + JSON.stringify(e)));
+  await cdp.send('ServiceWorker.enable');
   await thr(p);
   await p.goto(base);
   await ready(p);
@@ -126,21 +139,25 @@ async function once(base, it) {
   const q = await ctx.newPage(),
     qQuiet = track(q);
   await thr(q);
+  L('--- q opens (server SWV ' + SWV + ')');
   await q.goto(base + 'admin.html?demo');
   await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {timeout: 20000});
   await qQuiet();
   await q.evaluate(() => (window.__old = 1));
+  L('--- SWV 2');
   SWV = 2;
   await q.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
   await q.waitForFunction(() => UPDATED, null, {timeout: 30000}).catch(() => fails.push('C: no takeover'));
   await q.evaluate(() => (location.hash = '~cand'));
   await q.waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000}).catch(() => fails.push('C: no reload'));
   await qQuiet();
+  L('--- HOLD');
   HOLD = /cand\.json$/;
   const pend = new Map();
   ctx.on('request', r => pend.set(r, `${r.url().replace(base, '')}${r.serviceWorker && r.serviceWorker() ? ' (worker)' : ''}`));
   ctx.on('requestfinished', r => pend.delete(r));
   ctx.on('requestfailed', r => pend.delete(r));
+  L('--- q2 opens');
   const q2At = Date.now(),
     q2 = await ctx.newPage();
   await thr(q2);
@@ -153,6 +170,7 @@ async function once(base, it) {
       pending: [...pend.values()],
       hits: ADMIN_HITS.filter(h => h.at >= q2At).map(h => `${h.url} +${h.at - q2At} ${h.done ? 'answered +' + (h.done - q2At) : 'never answered'}`),
       held: HELD.length,
+      slog: SLOG.slice(-150),
       workers: ws
     };
   });
