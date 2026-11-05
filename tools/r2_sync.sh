@@ -25,7 +25,24 @@ if [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_ACCESS_KEY_ID:-}" ] || [ -z "${R2_S
   echo "R2 credentials or bucket not set: nothing synced"
   exit 0
 fi
-command -v rclone >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq rclone; }
+# rclone: the official release, pinned and checked, never the runner's apt package (stack audit 2026-11-05: apt gave
+# 1.60.1 from 2022, and its version changed with the runner image). The run stops before anything reaches the bucket
+# if the download does not match the hash. To move to a newer release: take the linux-amd64.zip line of
+# https://downloads.rclone.org/vX.Y.Z/SHA256SUMS (PGP-signed by Nick Craig-Wood, key
+# FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA; the GitHub release carries the same file), check its signature, read the
+# changelog's S3 and core entries since this version for anything that changes `copy`, `check`, `lsf` or `size` to R2,
+# then change both lines and run "Photos to R2" by hand after the merge.
+RCLONE_VERSION=1.75.2
+RCLONE_SHA256=349ac8fba6ff65d6247043f1750cdcb518ec5d500ef91463a10d37c0ccdf3702 # rclone-v1.75.2-linux-amd64.zip
+[ "$(uname -s)-$(uname -m)" = Linux-x86_64 ] || { echo "the pinned rclone is the linux-amd64 build, not $(uname -sm)" >&2; exit 1; }
+rc=$(mktemp -d)
+curl -fsSL --proto '=https' --tlsv1.2 --retry 3 -o "$rc/rclone.zip" \
+  "https://downloads.rclone.org/v${RCLONE_VERSION}/rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+echo "$RCLONE_SHA256  $rc/rclone.zip" | sha256sum --check --strict --quiet - ||
+  { echo "rclone v$RCLONE_VERSION: the download does not match its pinned SHA-256, nothing synced" >&2; exit 1; }
+unzip -q -j "$rc/rclone.zip" "rclone-v${RCLONE_VERSION}-linux-amd64/rclone" -d "$rc"
+PATH="$rc:$PATH"
+rclone version | head -1
 export RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare RCLONE_CONFIG_R2_REGION=auto \
   RCLONE_CONFIG_R2_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
   RCLONE_CONFIG_R2_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
