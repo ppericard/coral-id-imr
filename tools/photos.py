@@ -15,8 +15,8 @@
 # A tool that reads a photo's pixels opens path(f, size): the file in img/, or a copy from R2 kept in tools/.cache/r2/.
 #
 #   python3 tools/photos.py             writes the missing 960, 480 and 240 px files of img/ from the 1600 px ones
-#   python3 tools/photos.py --check     fails if a photo of img/ lacks one of its sizes, or a photo with no online
-#                                       original is missing from img/ (CI)
+#   python3 tools/photos.py --check     fails if a photo of img/ lacks one of its sizes, a photo with no online original
+#                                       is missing from img/, or a photo with one is in img/ (CI)
 #   python3 tools/photos.py --r2-list   the photos that live on R2 only, one per line (tools/r2_sync.sh checks the
 #                                       bucket has their four files)
 import json, os, re, sys
@@ -130,6 +130,9 @@ def check(folder=IMG, recs=None):
     # git is the only backup of these: they never leave img/ (Pierre, 2026-11-05).
     gone = sorted(f + suf for f in gitonly(recs) for suf in SUFFIXES if f + suf + '.webp' not in names)
     if gone: bad.append(f'{len(gone)} file(s) of photos with no online original missing from img/ (git is their only backup): ' + ', '.join(gone[:10]))
+    # A photo with an online original lives on R2 only (Photos out of the repo, step 2): never back in img/.
+    back = sorted(f for f in online(recs) if any(f + suf + '.webp' in names for suf in SUFFIXES))
+    if back: bad.append(f'{len(back)} photo(s) with an online original in img/: they live on R2 only (tools/r2_move.py --apply): ' + ', '.join(back[:10]))
     return bad
 
 

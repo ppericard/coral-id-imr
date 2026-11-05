@@ -209,7 +209,8 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
   const games = gameOf(RAW).filter(n => RAW.x.gen[n]); // core.js BENTHIC + BONUS (AGENTS.md 14a)
   assert.ok(games.includes('Millepora') && games.length > 1);
   const remote = [],
-    missing = [];
+    missing = [],
+    back = [];
   games.forEach(n =>
     ['views', 'more'].forEach(k =>
       Object.values(RAW.x.gen[n][k] || {})
@@ -219,11 +220,13 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
           // A photo with an online original lives on R2 (tools/r2_sync.sh checks the bucket has its four files); one
           // with none (an IMR lecture photo) in img/, git being its only backup.
           else if (!p.src && SIZES.some(s => !fs.existsSync(path.join(__dirname, '..', 'img', p.f + s + '.webp')))) missing.push(p.f);
+          else if (p.src && SIZES.some(s => fs.existsSync(path.join(__dirname, '..', 'img', p.f + s + '.webp')))) back.push(p.f);
         })
     )
   );
   assert.deepStrictEqual(remote, [], 'still shown from iNaturalist (python3 tools/fetch_approved.py --games)');
   assert.deepStrictEqual(missing, [], 'a file missing in img/');
+  assert.deepStrictEqual(back, [], 'a photo with an online original in img/ (it lives on R2 only)');
 });
 
 // tools/photos.py --check (CI) on made-up folders: the four sizes of every photo in img/; a downloaded photo with no
@@ -245,12 +248,13 @@ def run(names):
     for n in names: open(os.path.join(d, n + '.webp'), 'w').close()
     return photos.check(d, recs)
 four = lambda f: [f + s for s in photos.SUFFIXES]
-print(json.dumps({'ok': run(four('imr-1')), 'size': run(four('imr-1')[:3]), 'gone': run([]),
+print(json.dumps({'ok': run(four('imr-1')), 'size': run(four('imr-1')[:3]), 'gone': run([]), 'back': run(four('imr-1') + ['acropora-cand-1-s']),
   'online': sorted(photos.online(recs)), 'gitonly': sorted(photos.gitonly(recs)), 'url': photos.url('a', '-s'),
   'every': photos.every(tempfile.mkdtemp(), recs)}))`);
   assert.deepStrictEqual(out.ok, [], 'IMR photo in img/, the online one on R2 only: all well');
   assert.match(out.size.join(' '), /1 photo file\(s\) missing.*imr-1-t/, 'a size missing');
   assert.match(out.gone.join(' '), /4 file\(s\) of photos with no online original missing from img\//, 'an IMR photo gone');
+  assert.match(out.back.join(' '), /1 photo\(s\) with an online original in img\/.*acropora-cand-1/, 'an online photo back in img/');
   assert.deepStrictEqual(out.online, ['acropora-cand-1'], 'downloaded with an online original: on R2 only (a remote one, r: 1, is not)');
   assert.deepStrictEqual(out.gitonly, ['imr-1']);
   assert.deepStrictEqual(out.every, ['acropora-cand-1'], 'the photo tools measure the R2 photos too');
