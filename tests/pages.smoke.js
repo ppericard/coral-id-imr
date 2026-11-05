@@ -229,7 +229,16 @@ async function overlays(b, base) {
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
       // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
       // the learned mark taken away (progress.js mxLostNotice), through their real callers.
-      ['update', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      ['update', () => (store.set('reefid-rv-msg', {due: [5], told: [], pct: {5: [50, 42]}}), rvNotice())],
+      // The apology of rules version 6 (core.js RV_SORRY), its PS from the sheet's notes (sync.js NOTES_KEY).
+      [
+        'apology',
+        () => (
+          store.set(NOTES_KEY, {'card.rv6.ps': 'PS: a made-up line.'}),
+          store.set('reefid-rv-msg', {due: [6], told: [], pct: {6: [50, 32]}}),
+          rvNotice()
+        )
+      ],
       ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
       ['feedback', () => pulseAsk()]
     ];
@@ -1477,9 +1486,16 @@ async function replayAdoptCheck(base) {
       localStorage.removeItem('reefid-rv-msg');
       return d;
     }, C.RV);
-    // Every version since 0 has the standard card (RV_CARD): it is due once, for the last version (core.js rvMsgs).
-    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV) || !due[2][1].includes('went from 10% to 5%'))
-      fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
+    // Versions 1-5 have the standard card (RV_CARD): due once, at version 5 (core.js rvMsgs), from 5 points; version 6 the
+    // apology (RV_SORRY), from 1 point. The oldest due shows first.
+    if (
+      due[0][0].length ||
+      due[1][0].join() !== '6' ||
+      due[2][0].join() !== '5,6' ||
+      !due[2][1].includes('went from 10% to 5%') ||
+      !due[1][1].includes('10% → 14%')
+    )
+      fails.push(`replay: the cards' 5-point and 1-point rules: ${JSON.stringify(due)}`);
     await c.close();
   }
   // A stale device: the replay adopted once, its own answer on top.
@@ -1517,8 +1533,8 @@ async function replayAdoptCheck(base) {
     // says the two % (it may wait behind the learned-mark card).
     const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
     if (
-      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && Math.abs(pt - pf) >= C.RV_CARD.min) ||
-      (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`))
+      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && Math.abs(pt - pf) >= C.RVS[C.RV - 1].msg.min) ||
+      (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`) && !s.text.includes(`${pf}% → ${pt}%`))
     )
       fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
     // The next load: not adopted again (the sheet now sends another record: the progress stays), and the load says the
