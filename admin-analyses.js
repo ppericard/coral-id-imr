@@ -1281,7 +1281,7 @@ function anRecompute() {
       if (/^~an(-|$)/.test(cur)) render();
     };
     // 199 draws with normal intervals from their spread (analysis.js boot): the latest milestone in a few minutes here,
-    // where the Action's 999 percentile draws would take a quarter of an hour; earlier milestones not reused from the
+    // where the Action's 999 percentile draws would take about 5 times as long; earlier milestones not reused from the
     // stored report keep the model's own interval only
     ANWORK.postMessage({id: 1, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: ANREP && ANREP.rep});
   };

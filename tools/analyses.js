@@ -10,8 +10,8 @@
 //   node tools/analyses.js --demo --out report.json              the admin demo's made-up answers, no network
 // --boot N: bootstrap draws for the latest milestone (default 999, analysis.js BOOT); --boot-history N: for the earlier
 // ones (default 199, until their answers add up to 60,000; none beyond: analysis.js report). Seeded: the same answers
-// give the same report. With 999 draws the latest milestone takes about 2 s per 1000 answers per 10 draws (docs/
-// LEARNING.md "Multifactor analyses": runtimes); the job's limit is 2 hours. It prints counts only, never an id, a name
+// give the same report. With 999 draws the latest milestone takes about 1.7 minutes per 1000 answers (docs/LEARNING.md
+// "Multifactor analyses", Runtimes); the job's limit is 2 hours. It prints counts only, never an id, a name
 // or a player's number: the Actions
 // log of a public repository is public. The report itself holds per-player results (anonymous ids): it goes to the
 // sheet (private), never to the repo, an artifact or the log.
