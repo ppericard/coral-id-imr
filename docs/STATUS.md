@@ -23,6 +23,7 @@ queue held back; `tests/slot.js` protects the machine). Priority (Pierre, 2026-1
 - Analyses: round-thousand milestones (then a forced clean recompute) · views and player profiles (Q70-Q77) · agents.
 - Contributions #579 / "Your feedback helped" #581 as cards, anti-spam, never to a deleted account, reports fixed in a
   PR markable as handled (`reports-handled.json`) · agent · cards to Pierre before merge.
+- Deleted accounts (Q84-Q91 answered, plus self-service account deletion) · agent.
 - Streaks and Sharp eye in the Quiz only (Q82) · agent. Taxonomy reference in the tools · difficulty display · agents.
 - Prepared for Pierre's go: photos step 3 (dry run on a mirror); 4 app icon proposals; progress vs number of genera
   study (replaces Q83).
@@ -43,10 +44,6 @@ this list. Long-standing content and trainer questions live in the admin, To do 
 
 - Q83 withdrawn (Pierre: progress is too generous beyond look-alikes; the number of genera in mind matters): a study
   on progress vs the number of genera is running; its questions replace Q83.
-- Q84-Q91, deleted accounts (audit in the scratchpad): Board -2 marks an archive (Q84); "delete everything" erases
-  reports, "keep answers" anonymises them (Q85); anonymised answers in pooled fits only (Q86); page summaries erased
-  (Q87); an archived account's device says "sign out to start fresh" (Q88); two named delete buttons (Q89); privacy
-  page wording fixed (Q90); a one-shot logged sheet cleanup by the integrator (Q91, needs his explicit OK). Rec. yes.
 - Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep the "beta" tag (Q93);
   a "Fish is here" card (Q94); the copy edits of PR C (Q95); level 1 on today's photos (Q96); no fish answer logging
   for a week (Q97); smoke tests and the bug sweep as release checks (Q98); new players still start on Corals (Q99);
