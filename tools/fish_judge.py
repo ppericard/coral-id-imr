@@ -193,6 +193,9 @@ def main():
     ap.add_argument("--todo", action="store_true", help="with --sheets: only the photos not judged yet")
     a = ap.parse_args()
     if a.sheets:
+        import slot
+
+        slot.guard("tools/fish_judge.py")  # one heavy run at a time on the machine (rule W24)
         return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo)
     fish = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     doc = json.loads(PHOTOS.read_text(encoding="utf-8"))

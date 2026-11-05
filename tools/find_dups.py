@@ -11,6 +11,8 @@ sys.path.insert(0, os.path.join(R, 'tools'))
 from excluded import excluded
 from datajson import load_all
 import photos as ph  # img/, or R2 for the photos that live there only (Photos out of the repo)
+import slot
+slot.guard('tools/find_dups.py')  # one heavy run at a time on the machine (rule W24)
 d = load_all()  # data.json + the candidates waiting in cand.json
 HAVE = set(ph.every())  # the downloaded photos, wherever their files are
 

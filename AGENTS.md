@@ -220,13 +220,14 @@ context go in the PR description, never in the rule.
 | The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
-| Tests, versions, `data.json`, PRs | [ship](docs/rules/ship.md) W12-W23 |
+| Tests, versions, `data.json`, PRs | [ship](docs/rules/ship.md) W12-W24 |
 
 ## Ship checklist
 
 1. A worktree of your own from a fresh `origin/main`; stage files by name (rule W22).
 2. A test with the logic you change (rule W12).
-3. Fast tier before each push: Prettier, the checks, `node --test tests/*.test.js`, the one smoke part you touch (rule W14).
+3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests, in the machine slot: rule W24),
+   the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 5. UI: look at it, light and dark, phone and desktop (rule W17).
 6. `Code.gs` or `core.js` changed: rules D3-D5. Tests never reach the real sheet (rule D1).
