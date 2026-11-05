@@ -12,7 +12,7 @@ Open PRs: `gh api "repos/ppericard/coral-id-imr/pulls?state=open"`. Pierre's dec
 | Feedback cards #579 / #581 | PRs #579 #581 | green, wait Pierre's look at cards | rebase, next Code.gs VERSION |
 | Fish B bug sweep | per-bug PRs | building | docs/reviews/2026-11-05-fish-release-plan.md item B |
 | Fish C copy + release card | PR #598 draft needs-pierre | green, wait Pierre | merge with the flip |
-| Fish E admin Candidates 5a → 5b | branch claude/admin-fish-cand | building | plan item E + ROADMAP admin table |
+| Fish E admin Candidates 5a → 5b | PRs #599, #602 (needs-pierre) | green, wait Pierre's look | plan item E + ROADMAP admin table |
 | Fish multi-level confusion study | none (scratchpad) | running | study brief: nested vs global matrices, per player + global |
 | Slot lock for heavy runs | branch tbd | building (urgent) | Pierre: automatic lock for full unit tests and heavy tools |
 | URL refonte | branches tbd | building, merge after fish flip + 48 h | docs/reviews/2026-11-05-url-scheme-study.md |
@@ -21,4 +21,5 @@ Open PRs: `gh api "repos/ppericard/coral-id-imr/pulls?state=open"`. Pierre's dec
 | Photos step 3 (history rewrite) | none | READY, needs Pierre's explicit go | scratchpad/step3/plan.md (regenerate if lost: HANDOVER step 3) |
 | App icon | none | proposals ready (D2, B1-B4), wait Pierre's pick | scratchpad/icons/v2 |
 | Name-similarity confusion study | none (scratchpad/name-confusion-study.md) | running | Pierre 18:33: do players confuse genera because names look alike (Pectinia/Pavona)? literature + real-log test + app options |
+| Fish PR 7 curated photos in game | draft PR, stacked on #602 | building | fishOn rule, fetch_approved fish branch, curated list, no real R2 upload from session |
 | Merged tonight | #578 #580 #582-#597 #601 #572 #605 #606 | done | — |
