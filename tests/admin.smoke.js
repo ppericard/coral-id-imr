@@ -727,6 +727,135 @@ const WIDTHS = [390, 1280];
           fails.push(`${w}px View filter: All views ${JSON.stringify(s)}`);
       }
     }
+    // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
+    // points.json, the Astrea question first among the open ones; its page shows the question and its 4 photo slots
+    // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
+    // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
+    // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
+    {
+      await go('~points');
+      const pl = () =>
+        p.evaluate(() => ({
+          open: [...document.querySelectorAll('[data-ptsec="open"] + .adm-pts [data-pt]')].map(a => a.dataset.pt),
+          wait: [...document.querySelectorAll('[data-ptsec="wait"] + .adm-pts [data-pt]')].map(a => a.dataset.pt),
+          done: [...document.querySelectorAll('[data-ptfold="done"] [data-pt]')].map(a => a.dataset.pt),
+          head: +((document.querySelector('[data-ptsec="open"] small') || {}).textContent || 0),
+          meta: ((document.querySelector('[data-ptsec="open"] + .adm-pts [data-pt] .adm-ptmeta') || {}).textContent || '').trim(),
+          count: ((document.querySelector('#subnav .adm-views [data-view="~points"]') || {}).textContent || '').trim(),
+          wide: document.documentElement.scrollWidth - innerWidth
+        }));
+      const l0 = await pl();
+      if (l0.open[0] !== 'astrea-reefcloud' || l0.open.length < 20 || l0.head !== l0.open.length || !/^Trainer/.test(l0.meta))
+        fails.push(`${w}px Points: the list ${JSON.stringify({...l0, open: l0.open.slice(0, 3)})}`);
+      if (l0.count !== `Points ${l0.open.length}`) fails.push(`${w}px Points: the view's open count "${l0.count}"`);
+      if (l0.wide > 0) fails.push(`${w}px Points: page ${l0.wide} px wider than the window`);
+      await p.click('[data-pt="astrea-reefcloud"]');
+      await settle();
+      const pg = () =>
+        p.evaluate(() => ({
+          hash: location.hash,
+          q: (document.querySelector('.adm-ptq') || {}).textContent || '',
+          slots: document.querySelectorAll('.adm-ptph').length,
+          imgs: document.querySelectorAll('.adm-ptph img').length,
+          nums: [...document.querySelectorAll('.adm-ptph .adm-ptn')].map(b => b.textContent).join(),
+          names: document.querySelectorAll('.adm-ptname').length,
+          answers: document.querySelectorAll('.adm-ptph [data-pta]').length,
+          notes: !!document.querySelector('[data-ptn]'),
+          acts: [...document.querySelectorAll('[data-pts]')].map(
+            b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')
+          ),
+          tab: (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '',
+          view: (document.querySelector('#subnav .adm-views [aria-pressed="true"]') || {}).dataset?.view || '',
+          wide: document.documentElement.scrollWidth - innerWidth
+        }));
+      const g0 = await pg();
+      if (
+        g0.hash !== '#~point/astrea-reefcloud' ||
+        !/ReefCloud label/.test(g0.q) ||
+        g0.slots !== 4 ||
+        g0.imgs !== 4 ||
+        g0.nums !== '1,2,3,4' ||
+        g0.names ||
+        g0.answers !== 4 ||
+        !g0.notes ||
+        g0.acts.join() !== 'Resolved,Stand-by,Dismiss' ||
+        !/^To do/.test(g0.tab) ||
+        g0.view !== '~points'
+      )
+        fails.push(`${w}px Points: the Astrea page ${JSON.stringify(g0)}`);
+      if (g0.wide > 0) fails.push(`${w}px Points: the Astrea page ${g0.wide} px wider than the window`);
+      // The enlarged photo: blind (number and credit, no taxon), ‹ › through the 4.
+      await p.click('[data-ptz="1"]');
+      const lb = await p.evaluate(() => {
+        const c = () => (document.querySelector('#lightbox .lb-cap') || {}).textContent || '';
+        const a = c();
+        document.querySelector('#lightbox [data-d="1"]').click();
+        const b = c();
+        document.querySelector('#lightbox [data-x]').click();
+        return {a, b, shut: document.getElementById('lightbox').hidden};
+      });
+      if (!/^2 · .*Albert Kang/.test(lb.a) || /Favites|colemani/.test(lb.a) || !/^3 · /.test(lb.b) || !lb.shut)
+        fails.push(`${w}px Points: the enlarged photo ${JSON.stringify(lb)}`);
+      if (once) {
+        const st = () => p.evaluate(() => JSON.parse(JSON.stringify((DRAFT.points || {})['astrea-reefcloud'] || null)));
+        const saved0 = await p.evaluate(() => JSON.stringify(SAVED.points || null));
+        // Stand-by: down below the open points, still listed.
+        await p.click('[data-pts="wait"]');
+        await settle();
+        const s1 = await st();
+        let g = await pg();
+        if (!s1 || s1.s !== 'wait' || g.acts.join() !== 'Resolved,Stand-by*,Dismiss,Reopen')
+          fails.push(`${w}px Points: Stand-by ${JSON.stringify({s1, acts: g.acts})}`);
+        await go('~points');
+        let l = await pl();
+        if (
+          l.open[0] === 'astrea-reefcloud' ||
+          l.open.includes('astrea-reefcloud') ||
+          l.wait.join() !== 'astrea-reefcloud' ||
+          l.head !== l0.open.length - 1
+        )
+          fails.push(`${w}px Points: Stand-by did not move it below the open points ${JSON.stringify({...l, open: l.open.slice(0, 3)})}`);
+        await p.click('#undo');
+        await settle();
+        l = await pl();
+        if (l.open[0] !== 'astrea-reefcloud' || l.wait.length || (await st()))
+          fails.push(`${w}px Points: Undo did not bring it back first ${JSON.stringify({...l, open: l.open.slice(0, 3)})}`);
+        // A note and an answer reach the draft; Resolved folds it at the bottom; Reopen brings it back to the open ones.
+        await go('~point/astrea-reefcloud');
+        await p.fill('.adm-ptph [data-pta]', 'Astrea');
+        await p.fill('[data-ptn]', 'Asked at the morning briefing');
+        await p.click('[data-pts="done"]');
+        await settle();
+        const s2 = await st();
+        if (!s2 || s2.s !== 'done' || s2.n !== 'Asked at the morning briefing' || s2.a['astrea-wide-502260981'] !== 'Astrea')
+          fails.push(`${w}px Points: note, answer and Resolved in the draft ${JSON.stringify(s2)}`);
+        g = await pg();
+        await go('~points');
+        l = await pl();
+        if (l.open.includes('astrea-reefcloud') || l.done.join() !== 'astrea-reefcloud' || (await p.$('[data-ptfold="done"][open]')))
+          fails.push(`${w}px Points: Resolved is not folded at the bottom ${JSON.stringify({...l, open: l.open.slice(0, 3)})}`);
+        const out = await p.evaluate(() => ((output().points || {})['astrea-reefcloud'] || {}).s);
+        if (out !== 'done') fails.push(`${w}px Points: the resolved point is not in the curation to publish (${out})`);
+        await go('~point/astrea-reefcloud');
+        const vals = await p.evaluate(() => [document.querySelector('[data-pta]').value, document.querySelector('[data-ptn]').value]);
+        if (vals.join('|') !== 'Astrea|Asked at the morning briefing')
+          fails.push(`${w}px Points: the page does not show the note and answer ${vals}`);
+        await p.click('[data-pts="open"]');
+        await settle();
+        const s3 = await st();
+        if (!s3 || s3.s || s3.n !== 'Asked at the morning briefing') fails.push(`${w}px Points: Reopen ${JSON.stringify(s3)}`);
+        // Back to how it was, one Undo step at a time (Reopen, Resolved, the note and answer).
+        for (let i = 0; i < 6 && (await st()); i++) {
+          await p.click('#undo');
+          await settle();
+        }
+        if ((await st()) || (await p.evaluate(() => JSON.stringify(SAVED.points || null))) !== saved0)
+          fails.push(`${w}px Points: Undo did not bring the point back to how it was, or something was published`);
+        // A point that does not exist says so.
+        await go('~point/no-such-point');
+        if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);
+      }
+    }
     // Users: the made-up players, one opened, a merge and a delete.
     await go('~users');
     let t = await text();
