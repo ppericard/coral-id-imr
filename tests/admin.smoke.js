@@ -294,6 +294,9 @@ const WIDTHS = [390, 1280];
             play: (document.querySelector('.adm-fplayn') || {}).textContent || '',
             h: r ? Math.round(r.height) : 0,
             bottom: r ? Math.round(r.bottom) : 0,
+            // The decision buttons on the first screen, no page scroll (Pierre, 2026-11-06: one phone screen).
+            bar: S ? Math.round(S.querySelector('.adm-swbar').getBoundingClientRect().bottom) : 0,
+            scroll: document.documentElement.scrollHeight - innerHeight,
             vh: innerHeight,
             wide: document.documentElement.scrollWidth - innerWidth,
             note: (document.querySelector('#view > .note') || {}).textContent || ''
@@ -303,7 +306,8 @@ const WIDTHS = [390, 1280];
       const FS = await p.evaluate(() => FISHC && Object.fromEntries(Object.entries(FISHC.species).map(([k, v]) => [k, v.name])));
       if (!at.f || at.note || !FS || at.sp !== FS[at.sid] || !at.sub || at.seg.length !== 2 || !/In play \d+\/\d+/.test(at.play))
         fails.push(`${w}px Fish Candidates: ${JSON.stringify(at)}`);
-      if (at.wide > 0 || at.h < 200 || at.bottom > at.vh) fails.push(`${w}px Fish Candidates: layout ${JSON.stringify(at)}`);
+      if (at.wide > 0 || at.h < 200 || at.bottom > at.vh || at.bar > at.vh || at.scroll > 0)
+        fails.push(`${w}px Fish Candidates: layout ${JSON.stringify(at)}`);
       await p.click('[data-fq="chk"]');
       await settle();
       at = await fc();
@@ -2557,6 +2561,10 @@ const WIDTHS = [390, 1280];
         CSKIP.clear();
         render();
       });
+      // The line is folded behind the Auto chip (Pierre, 2026-11-06: one phone screen); the chip opens it.
+      if (await p.$('.adm-auto')) fails.push(`${w}px Auto: the line shows before its chip is tapped`);
+      await p.click('[data-aopen]');
+      await settle();
       const line = await p.$eval('.adm-auto', e => e.textContent).catch(() => '');
       if (!/Keep 100%/.test(line) || !/Quality 0%/.test(line)) fails.push(`${w}px Auto: agreement line ${line}`);
       if (line) await p.click('[data-adet]');
@@ -2633,6 +2641,8 @@ const WIDTHS = [390, 1280];
       if (!ux.gone || ux.gone.ex || /back in Candidates/.test(ux.gone.toast) || !/no longer in the candidate files/.test(ux.gone.toast))
         fails.push(`${w}px Auto: Undo of an auto exclusion whose candidate entry is gone ${JSON.stringify(ux.gone)}`);
       if (line) await p.click('[data-adet]');
+      await settle();
+      await p.click('[data-aopen]');
       await settle();
       // An auto-added photo carries an "auto" tag on its genus page.
       if (au.added) {
