@@ -44,6 +44,10 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ vars.R2_BUCKET }}
+      # data.json keeps only the candidates curation.json uses, cand.json the others (tests/photos.test.js): a Publish
+      # that picks or drops candidates moves them, so the split runs before the commit (2026-11-06: a Publish left
+      # 8 picked candidates in cand.json and every PR's checks failed).
+      - run: python tools/datajson.py --split
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
