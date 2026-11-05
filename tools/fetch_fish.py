@@ -29,11 +29,16 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   identifications are made): no ordering by votes (that favours the best photos), no quality filter. The order is a
   fixed hash of the observation id (neutral, reproducible), then the least represented observer and life stage first
   (iNaturalist annotations Juvenile / Adult / Female / Male, kept as `st`: a hint for the pre-sort's phase).
-- Photos per species (Pierre, 2026-11-04, admin plan): 8 observations in play per circle-1 species, 12 for the PDF's 24
-  most sighted, at most 20 for now (30-40 later). Each species keeps up to CAP (20) observations that are still usable
-  (added by Pierre, set in by the pre-sort, or waiting); what Pierre rejects, excludes or sends elsewhere, and what the
-  pre-sort sets aside without doubt, frees room for the next run. Each observation brings up to PER_OBS photos (fish
-  observations rarely hold several individuals; more photos of one fish are near-duplicates).
+- Photos per species (Pierre, 2026-11-05, Q36): the cap is weighted by how variable the species looks: 30 photos for a
+  stable species, +10 per extra phase (juvenile, intermediate phase, male or terminal phase, female) as the judging tags
+  and the sources record them, at most 60 (cap_of; the phases: species_phases). Each extra phase holds PER_PHASE (10) of
+  them for photos of that phase, the rest is free (phase_room), and the search fills each phase first: per phase where
+  iNaturalist can filter it (Life Stage Juvenile, Sex Male, Sex Female annotations: INAT_PHASE; batched over the species,
+  rule 6f), so a species with very different juveniles does not end up with 30 adults and no juvenile; FishBase
+  (tools/fetch_fishbase.py) fills what is left, phases first. The cap counts the photos still usable (added by Pierre,
+  set in by the pre-sort, or waiting); what Pierre rejects, excludes or sends elsewhere, and what the pre-sort sets aside
+  without doubt, frees room for the next run. Each observation brings up to PER_OBS photos (fish observations rarely hold
+  several individuals; more photos of one fish are near-duplicates). One function for both tools: species_room.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
   src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule 6a).
@@ -48,16 +53,20 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
 
 Network: iNaturalist API v2 (only the fields used), read only, a pause of PAUSE s between calls, generic User-Agent.
 Every reply is cached, trimmed, in tools/.cache/fish_photos.json (git-ignored): a rerun is offline and gives the same
-file; --refresh asks again (new observations), --offline never asks (fails on a reply not cached), --plan prints as JSON
-what a run would add per species and source, from the cache only, and writes nothing.
+file; --refresh asks again (new observations), --offline never asks (fails on a reply not cached), --plan prints as JSON,
+offline, per species its cap, its phases (with what records each), the photos it keeps per phase and the room per phase,
+and what a run would add per source and phase from the cache (a species not cached says "cached": false); it writes
+nothing.
 
-    python3 tools/fetch_fish.py [--circle 1] [--cap 20] [--only s091,t05] [--refresh | --offline | --plan] [--rep]
+    python3 tools/fetch_fish.py [--circle 1] [--cap N] [--only s091,t05] [--refresh | --offline | --plan] [--rep]
+(--cap N: one fixed cap for every species instead of cap_of, for a test or a one-off; the phase rooms still apply.)
 Tests: node --test tests/fishphotos.test.js (offline fixtures).
 """
 import argparse
 import hashlib
 import json
 import math
+import re
 import sys
 import time
 import urllib.error
@@ -81,8 +90,22 @@ DAUIN = (9.19, 123.26)
 DAUIN_KM, REGION_KM = 40, 250  # as tools/fetch_local.py
 PH = 6873  # iNaturalist place: the Philippines
 PIERRE = "ppericard"
-# CAP: Pierre's cap of observations per species (2026-11-04: 20 for now, 30-40 later); 30 on the first run of 2026-11-03.
-CAP, PER_OBS = 20, 4
+PER_OBS = 4  # photos taken of one observation at most
+# The cap per species (Pierre, 2026-11-05, Q36; before: 20 observations per species, 2026-11-04): 30 photos for a stable
+# species, +10 per extra phase, at most 60; each extra phase aims at PER_PHASE photos of its own, the rest is free.
+BASE_CAP, PER_PHASE, MAX_CAP = 30, 10, 60
+PHASES = ("juvenile", "intermediate", "male", "female")  # the extra phases, in this order; "male" = male or terminal phase
+# Words of the judging tags (judging/FISH.md phase values) and of the sources (iNaturalist and FishBase life stage and
+# sex; record st) -> phase. "adult" is no extra phase.
+PHASE_WORD = {"juvenile": "juvenile", "subadult": "intermediate", "intermediate": "intermediate", "initial": "intermediate",
+              "initial phase": "intermediate", "terminal": "male", "terminal phase": "male", "male": "male", "female": "female"}
+# The phases iNaturalist can search on: (term_id, term_value_id) of the Life Stage and Sex annotations. No annotation
+# says "intermediate phase": its room is filled by the general search (and FishBase's "initial phase").
+INAT_PHASE = {"juvenile": (1, 8), "male": (9, 11), "female": (9, 10)}
+# Observer annotations (iNaturalist Life Stage or Sex, on distinct candidate observations) needed before they make a
+# phase on their own: one stray annotation (a "male" on a species whose sexes look alike) does not.
+MIN_ANNOT = 2
+PHASE_BATCH, PHASE_PAGES = 20, 5  # taxa per phase search, pages of 200 read per batch (id_above) at most
 # The searches ask for these (unchanged so the cache stays valid); an observation can mix licences, so each photo is then
 # checked against OK: never share-alike, never ND (Pierre, 2026-11-03).
 LICENCES = "cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa"
@@ -151,9 +174,12 @@ def trim(o):
     an = [[a.get("controlled_attribute_id"), a.get("controlled_value_id")] for a in o.get("annotations") or []
           if (a.get("vote_score") or 0) >= 0]
     t = o.get("taxon") or {}
-    return {"id": o["id"], "g": o.get("quality_grade"), "ll": ll, "inph": PH in (o.get("place_ids") or []),
-            "t": t.get("name"), "rk": t.get("rank"), "u": (o.get("user") or {}).get("login"), "an": an,
-            "ph": [[p["id"], p.get("url"), p.get("license_code"), p.get("attribution")] for p in o.get("photos") or []]}
+    r = {"id": o["id"], "g": o.get("quality_grade"), "ll": ll, "inph": PH in (o.get("place_ids") or []),
+         "t": t.get("name"), "rk": t.get("rank"), "u": (o.get("user") or {}).get("login"), "an": an,
+         "ph": [[p["id"], p.get("url"), p.get("license_code"), p.get("attribution")] for p in o.get("photos") or []]}
+    if t.get("ancestor_ids"):  # the phase searches ask for several taxa at once: the taxon and its ancestors say whose
+        r["tx"] = [t.get("id"), *t["ancestor_ids"]]
+    return r
 
 
 class Net:
@@ -164,8 +190,8 @@ class Net:
         self.c = json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {}
         self.asked, self.new, self.missing = set(), 0, 0
 
-    def get(self, q):
-        return self.fetch(API + q + "&fields=" + FIELDS,
+    def get(self, q, fields=FIELDS):
+        return self.fetch(API + q + "&fields=" + fields,
                           lambda d: {"total": d.get("total_results", 0), "results": [trim(o) for o in d.get("results") or []]})
 
     def fetch(self, url, keep):
@@ -237,7 +263,7 @@ def usable_obs(o, used, excl):
     return {**o, "P": P, "own": own, "cls": min(lic_class(p[2], own) for p in P), "tier": tier_of(o), "st": "/".join(st), "h": hord(o["id"])}
 
 
-def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=None):
+def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=None, photos=False):
     """Pick up to `room` observations (Pierre, 2026-11-03). Pierre's own first (class 0), from any pool. Then, for a
     species confirmed near Dauin (anywhere=True): every place at once, abroad included (world() fetched), by licence
     class (1 CC0 / CC BY, then 2 NC), not by distance. Otherwise: by licence class, and within a class nearest first
@@ -247,7 +273,8 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
     abroad); n: Counter of ('u', login) / ('s', stage) already in the species' list. claimed: the iNaturalist photo ids
     already taken (updated here): iNaturalist lets one photo belong to several observations, so a photo is taken once,
     by the first observation picked, and an observation left with no photo of its own is skipped without taking room
-    (Codex review #463). Returns [item, ...] in order, each with only its own photos in P."""
+    (Codex review #463). photos=True: room counts photos (the cap of Q36), and an observation's photos are cut to the room
+    left; otherwise one observation is one unit of room. Returns [item, ...] in order, each with only its own photos in P."""
     n = Counter() if n is None else n
     claimed = set() if claimed is None else claimed
     taken, seen = [], set()
@@ -260,6 +287,8 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
             L.remove(o)
             seen.add(o["id"])
             P = [p for p in o["P"] if str(p[0]) not in claimed]
+            if photos:
+                P = P[:room]
             if not P:
                 continue
             o["P"] = P
@@ -267,7 +296,7 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
             taken.append(o)
             n["u", o["u"]] += 1
             n["s", o["st"]] += 1
-            room -= 1
+            room -= len(P) if photos else 1
 
     allp = [o for t in (*TIERS, "world") for o in pools.get(t, [])]
     take([o for o in allp if o["own"]])
@@ -285,6 +314,177 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
         for cls in (1, 2):
             take([o for o in W if o["cls"] == cls])
     return taken
+
+
+def cap_of(phases):
+    """The cap of one species (Pierre, 2026-11-05, Q36): BASE_CAP (30) photos for a stable species, +PER_PHASE (10) per
+    extra phase it shows (PHASES: juvenile, intermediate, male or terminal, female), at most MAX_CAP (60)."""
+    return min(MAX_CAP, BASE_CAP + PER_PHASE * len(set(phases) & set(PHASES)))
+
+
+def written_phases(s, t):
+    """{phase: [sources]} from what is written about species s of teaching entry t (fish.json): the IMR presentation's phase
+    lines (teach phase: "Males colourful, females dark or dull", "Juvenile, sub-adult and adult look different"...) and
+    its dimorph mark ("imr"), and the juvenile classes with their sources (teach juv, FISH_PATH "Juveniles and colour
+    phases": class A or B for the whole entry, the early / late genera or species of a mixed entry; "juv")."""
+    out = {}
+    add = lambda ph, w: out.setdefault(ph, []).append(w) if w not in out.get(ph, []) else None
+    for line in t.get("phase") or []:
+        low = line.lower()
+        for ph, rx in (("juvenile", r"\bjuveniles?\b"), ("intermediate", r"\bintermediate\b|\bsub-?adults?\b"),
+                       ("male", r"\bterminal\b|\bmales?\b"), ("female", r"\bfemales?\b")):
+            if re.search(rx, low):
+                add(ph, "imr")
+    if t.get("dimorph"):
+        add("male", "imr")
+        add("female", "imr")
+    j = t.get("juv") or {}
+    names = [x for x in (s.get("name"), s.get("now")) if x]
+    hit = lambda n: any(x == n or x.split()[0] == n for x in names)
+    if j.get("cls") in ("A", "B") or any(hit(n) for n in (j.get("early") or []) + (j.get("late") or [])):
+        add("juvenile", "juv")
+    return out
+
+
+def photo_phase(p, j=None):
+    """The extra phase one photo shows, or "" (adult, or not known): the judging tags first (j: its suggest.json "fish"
+    entry; a game photo carries jt itself): the rubric's phase tag, then its juvenile flag j; else the life stage or sex
+    its source annotated (st: iNaturalist or FishBase), juvenile first."""
+    j = j or {}
+    if PHASE_WORD.get(j.get("ph")):
+        return PHASE_WORD[j["ph"]]
+    if "j" in (j.get("jt") or p.get("jt") or "")[7:]:
+        return "juvenile"
+    got = {PHASE_WORD[w] for w in (p.get("st") or "").split("/") if w in PHASE_WORD}
+    return next((ph for ph in PHASES if ph in got), "")
+
+
+def item_phases(o):
+    """The phases a selection item (usable_obs) is annotated with on iNaturalist."""
+    return {PHASE_WORD[w] for w in (o.get("st") or "").split("/") if w in PHASE_WORD}
+
+
+def species_phases(s, t, cands=(), sug=None, game=(), fb=(), moved=frozenset()):
+    """{phase: [what records it]} for species s of teaching entry t, in PHASES order, only the phases recorded (Pierre,
+    2026-11-05, Q36: "as the judging tags and the sources record them"):
+    - "imr", "juv": the written sources of its entry (written_phases);
+    - "judged": a judging tag on one of its photos (suggest.json "fish" ph or the juvenile flag j on a candidate; jt on a
+      game photo of fish-photos.json);
+    - "inat:N": the iNaturalist Life Stage or Sex annotation of N distinct candidate observations, N >= MIN_ANNOT;
+    - "fishbase:N": N FishBase underwater photos of it labelled with that life stage (tools/fishbase_src.json st).
+    cands: its candidates (fish-cand.json); sug: suggest.json "fish"; game: its game and sheet photos; fb: its FishBase
+    rows; moved: the candidates Pierre sent to another species (curation.json fish.out), which record nothing here."""
+    sug = sug or {}
+    why = written_phases(s, t)
+    judged, ann = set(), {ph: set() for ph in PHASES}
+    for p in cands:
+        if p["f"] in moved:
+            continue
+        j = sug.get(p["f"]) or {}
+        if PHASE_WORD.get(j.get("ph")):
+            judged.add(PHASE_WORD[j["ph"]])
+        if "j" in (j.get("jt") or "")[7:]:
+            judged.add("juvenile")
+        if not p.get("via"):  # FishBase's labels are counted from its rows below
+            for w in (p.get("st") or "").split("/"):
+                if w in PHASE_WORD:
+                    ann[PHASE_WORD[w]].add(p.get("o"))
+    for p in game:
+        x = photo_phase({"jt": p.get("jt")}, {"ph": p.get("ph")})
+        if x:
+            judged.add(x)
+    fbn = Counter(PHASE_WORD.get(r.get("st")) for r in fb)
+    for ph in PHASES:
+        w = why.setdefault(ph, [])
+        if ph in judged:
+            w.append("judged")
+        if len(ann[ph]) >= MIN_ANNOT:
+            w.append(f"inat:{len(ann[ph])}")
+        if fbn.get(ph):
+            w.append(f"fishbase:{fbn[ph]}")
+    return {ph: why[ph] for ph in PHASES if why[ph]}
+
+
+def phase_room(phases, cap, held):
+    """The room of one species: {"room": photos still to take (cap - photos kept), "rooms": {phase: photos to take of
+    that phase first}, "free": the rest, of any phase}. held: Counter of the photos it keeps by photo_phase ("" adult or
+    not known). Each extra phase aims at PER_PHASE photos of its own (the +10 it brings to the cap); when the room is
+    shorter than what the phases lack, it is shared out one photo at a time, in PHASES order."""
+    room = max(0, cap - sum(held.values()))
+    need = {ph: max(0, PER_PHASE - held.get(ph, 0)) for ph in PHASES if ph in phases}
+    rooms, left = dict.fromkeys(need, 0), room
+    while left and any(rooms[ph] < need[ph] for ph in need):
+        for ph in need:
+            if left and rooms[ph] < need[ph]:
+                rooms[ph] += 1
+                left -= 1
+    return {"room": room, "rooms": rooms, "free": left}
+
+
+def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap=None):
+    """Everything the cap of Q36 says about species s (entry t), shared by tools/fetch_fish.py and tools/fetch_fishbase.py:
+    {"cap", "phases" (species_phases), "have" (photos still usable), "held" ({phase: photos kept of it}), "room", "rooms",
+    "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of."""
+    sug = sug or {}
+    phases = species_phases(s, t, L, sug, game, fb, moved)
+    c = cap_of(phases) if cap is None else cap
+    held = Counter()
+    for p in L:
+        if not gone(p["f"]):
+            x = photo_phase(p, sug.get(p["f"]))
+            held[x if x in phases else ""] += 1
+    return {"cap": c, "phases": phases, "have": sum(held.values()), "held": {ph: held[ph] for ph in phases}, **phase_room(phases, c, held)}
+
+
+def moved_of(cur):
+    """The candidates Pierre sent to another species or out of the fish (curation.json fish.out)."""
+    return frozenset(((cur or {}).get("fish") or {}).get("out") or {})
+
+
+def game_photos(fp):
+    """{species id: [its game and sheet photos]} from fish-photos.json (photos per entry, sheet per species; each sp)."""
+    out = {}
+    for part in ("photos", "sheet"):
+        for L in ((fp or {}).get(part) or {}).values():
+            for p in L:
+                if p.get("sp"):
+                    out.setdefault(p["sp"], []).append(p)
+    return out
+
+
+def phase_query(ph, taxa, where):
+    """The search of one phase (INAT_PHASE) for several species at once (rule 6f): Research Grade, the licences of
+    LICENCES, in the Philippines (where "ph") or abroad in the Indo-West Pacific ("world"), by id for paging."""
+    term, value = INAT_PHASE[ph]
+    q = (f"taxon_id={','.join(map(str, taxa))}&term_id={term}&term_value_id={value}&captive=false&photos=true"
+         f"&quality_grade=research&photo_license={LICENCES}&order_by=id&order=asc&per_page=200")
+    return q + (f"&place_id={PH}" if where == "ph" else f"&not_in_place={PH}&" + "&".join(f"{k}={v}" for k, v in IWP.items()))
+
+
+def phase_obs(net, ph, taxa, where):
+    """({taxon: [observations of that phase]}, {taxon: more}) for the iNaturalist taxa of several species, PHASE_BATCH taxa
+    a request and up to PHASE_PAGES pages of 200 a batch (id_above); more = a batch had more than it read (the
+    Philippines not exhausted for that phase). An observation belongs to the asked taxon among its taxon and ancestors
+    (a subspecies to its species). A reply not cached in a --plan run reads as nothing found, and more."""
+    taxa = sorted(set(taxa))
+    out, more = {x: [] for x in taxa}, {}
+    for i in range(0, len(taxa), PHASE_BATCH):
+        B = taxa[i:i + PHASE_BATCH]
+        q, above, done = phase_query(ph, B, where), 0, False
+        for _ in range(PHASE_PAGES):
+            d = net.get(q + (f"&id_above={above}" if above else ""), FIELDS + ",taxon.ancestor_ids")
+            if not d:
+                break
+            for o in d["results"]:
+                tx = next((x for x in o.get("tx") or [] if x in out and x in B), None)
+                if tx is not None:
+                    out[tx].append(o)
+            if d["total"] <= len(d["results"]) or not d["results"]:
+                done = True
+                break
+            above = max(o["id"] for o in d["results"])
+        more.update(dict.fromkeys(B, not done))
+    return out, more
 
 
 def covers(net, taxa):
@@ -370,13 +570,46 @@ def record(s, o, p):
     return r
 
 
+def fill(c, used):
+    """The selection of one species (context c from run), in photos: each phase iNaturalist can search on first, up to its
+    room, from the observations annotated with it (the general searches' and the phase searches'; abroad only as select
+    allows, from the phase search abroad); then, from the general searches as before Q36, the free room and the rooms of
+    the phases iNaturalist cannot search on (intermediate: the judging tags tell them later). The room of a searchable
+    phase that iNaturalist cannot fill stays open for that phase: FishBase fills it next (tools/fetch_fishbase.py), or a
+    later run; never adults in a juvenile's place."""
+    s, R, n, near = c["s"], c["R"], c["n"], c["near"]
+    taken, left = [], R["room"]
+    free = R["free"] + sum(r for ph, r in R["rooms"].items() if ph not in INAT_PHASE)
+    for ph in PHASES:
+        r = min(R["rooms"].get(ph, 0), left)
+        if not r or ph not in INAT_PHASE:
+            continue
+        pools = {}
+        for it in c["all"].values():
+            if ph in item_phases(it):
+                pools.setdefault(it["tier"], []).append(it)
+        W = c["pw"].get(ph, [])
+        got = select(pools, r, {"ph": c["pmore"].get(ph, True)}, n, lambda: W, anywhere=near, claimed=used, photos=True)
+        for o in got:
+            o["phase"] = ph
+        taken += got
+        left -= sum(len(o["P"]) for o in got)
+    free = min(free, left)
+    if free > 0:
+        taken += select(c["pools"], free, c["more"], n, c["world"], anywhere=near, claimed=used, photos=True)
+    return taken
+
+
 def run(args):
     fish = json.loads(Path(args.fish).read_text(encoding="utf-8"))
     cand_path = Path(args.cand)
     have = json.loads(cand_path.read_text(encoding="utf-8")).get("cand", {}) if cand_path.exists() else {}
     cur = json.loads(Path(args.cur).read_text(encoding="utf-8")) if Path(args.cur).exists() else {}
     sug = json.loads(Path(args.suggest).read_text(encoding="utf-8")) if Path(args.suggest).exists() else {}
+    fp = json.loads(Path(args.photos).read_text(encoding="utf-8")) if Path(args.photos).exists() else {}
+    fbsrc = (json.loads(Path(args.fbsrc).read_text(encoding="utf-8")) if Path(args.fbsrc).exists() else {}).get("species") or {}
     gone, excl = state(cur, sug)
+    sugf, moved, game = (sug or {}).get("fish") or {}, moved_of(cur), game_photos(fp)
     net = Net(args.cache, offline=args.offline, refresh=args.refresh, plan=args.plan)
     only = set(filter(None, (args.only or "").split(",")))
     used = {pid(p["f"]) for L in have.values() for p in L} - {None}
@@ -397,17 +630,18 @@ def run(args):
         dump({"v": 1, "cand": {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}}, str(cand_path))
         print(f"iNaturalist covers: {sum(1 for v in cov.values() if v)} of {len(S)} taxa; {n} candidates are their taxon's cover (rep)")
         return {"covers": len(cov), "tagged": n}
+    ctx = []
     try:
+        # 1. Per species: its cap, phases and room (species_room), and the general searches.
         for s, t in species_list(fish, set(args.circle), only):
             sid = s["id"]
             L = have.setdefault(sid, [])
-            keep_obs = {p["o"] for p in L if not gone(p["f"])}
-            room = args.cap - len(keep_obs)
-            n = Counter()
-            known = {p["o"] for p in L}
-            if room <= 0:
-                plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": 0, "add": {}}
+            R = species_room(s, t, L, gone, sugf, game.get(sid, ()), (fbsrc.get(sid) or {}).get("photos") or (), moved, args.cap)
+            plan[sid] = {"name": s["name"], "entry": t["id"], **R}
+            if R["room"] <= 0:
+                plan[sid]["add"] = {}
                 continue
+            known = {p["o"] for p in L}
             Q = queries(s["inat"])
             got, more, pools = {}, {}, {}
             # Pierre's own, asked for every species (Codex review #463): fish.json present.own is a count from the last
@@ -416,7 +650,7 @@ def run(args):
             for k in names:
                 got[k] = net.get(Q[k])
             if args.plan and any(got[k] is None for k in names):
-                plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": room, "cached": False}
+                plan[sid]["cached"] = False
                 continue
             byid = {}
             for k in names:
@@ -431,10 +665,12 @@ def run(args):
             for it in byid.values():
                 pools.setdefault(it["tier"], []).append(it)
             # Life stages already in the list, so a refill keeps varying them (observers: logins are not stored).
+            n = Counter()
             for p in L:
                 if not gone(p["f"]):
                     n["s", p.get("st", "")] += 1
-            def world():
+
+            def world(s=s, Q=Q, known=known, byid=byid):
                 if not (s.get("present") or {}).get("ph"):
                     return []  # abroad only for a species confirmed in the Philippines
                 w = net.get(Q["world"])
@@ -442,22 +678,68 @@ def run(args):
                        if f"https://www.inaturalist.org/observations/{o['id']}" not in known and o["id"] not in byid]
                 return [{**x, "tier": "world"} for x in out if x]
 
-            # Confirmed near Dauin (present.near: 2+ Research Grade observers within 40 km, or the IMR list): photos from anywhere, by licence (Pierre, 2026-11-03).
-            taken = select(pools, room, more, n, world, anywhere=bool((s.get("present") or {}).get("near")), claimed=used)
-            add = Counter(LOC[o["tier"]] for o in taken)
-            plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": room, "add": dict(add)}
+            # Confirmed near Dauin (present.near: 2+ Research Grade observers within 40 km, or the IMR list): photos from
+            # anywhere, by licence (Pierre, 2026-11-03).
+            ctx.append({"s": s, "t": t, "R": R, "n": n, "known": known, "byid": byid, "all": dict(byid), "pools": pools,
+                        "more": more, "world": world, "near": bool((s.get("present") or {}).get("near")), "pmore": {}, "pw": {}})
+
+        # 2. The phase searches (Q36), one phase at a time for every species with room in it, batched (rule 6f): the
+        # Philippines first, then abroad (Indo-West Pacific) for a species confirmed in the Philippines, when it is
+        # confirmed near Dauin (photos from anywhere) or the Philippines are exhausted for that phase and short of its room.
+        def items(c, obs, tier=None):
+            out = []
+            for o in obs:
+                if f"https://www.inaturalist.org/observations/{o['id']}" in c["known"]:
+                    continue
+                if o["id"] in c["all"]:
+                    out.append(c["all"][o["id"]])
+                    continue
+                it = usable_obs(o, used, excl)
+                if it:
+                    if tier:
+                        it["tier"] = tier
+                    c["all"][o["id"]] = it
+                    out.append(it)
+            return out
+
+        for ph in INAT_PHASE:
+            C = [c for c in ctx if c["R"]["rooms"].get(ph)]
+            if not C:
+                continue
+            got, more = phase_obs(net, ph, [c["s"]["inat"] for c in C], "ph")
+            for c in C:
+                items(c, got[c["s"]["inat"]])
+                c["pmore"][ph] = more[c["s"]["inat"]]
+            have_ph = lambda c: sum(len(it["P"]) for it in c["all"].values() if ph in item_phases(it) and it["tier"] != "world")
+            W = [c for c in C if (c["s"].get("present") or {}).get("ph")
+                 and (c["near"] or (not c["pmore"][ph] and have_ph(c) < c["R"]["rooms"][ph]))]
+            if W:
+                got, _ = phase_obs(net, ph, [c["s"]["inat"] for c in W], "world")
+                for c in W:
+                    c["pw"][ph] = [it for it in items(c, got[c["s"]["inat"]], "world") if it["tier"] == "world"]
+
+        # 3. Per species: each phase's room first, then the free room.
+        for c in ctx:
+            s, t = c["s"], c["t"]
+            sid = s["id"]
+            taken = fill(c, used)
+            add = Counter(LOC[o["tier"]] for o in taken for _ in o["P"])
+            plan[sid].update({"add": dict(add), "phase_add": dict(Counter(o["phase"] for o in taken for _ in o["P"] if o.get("phase")))})
             if args.plan:
                 continue
+            L = have[sid]
             for o in taken:
                 for p in o["P"]:
                     used.add(str(p[0]))
                     L.append(record(s, o, p))
             report[sid] = len(taken)
-            print(f"{t['name']:<28} {s['name']:<32} +{len(taken)} obs ({dict(add)}), {len(L)} photos", flush=True)
+            print(f"{t['name']:<28} {s['name']:<32} +{sum(add.values())} photos ({dict(add)}; phases {plan[sid]['phase_add']}), "
+                  f"{len(L)} candidates, cap {c['R']['cap']}", flush=True)
     finally:
         net.save()
     if args.plan:
-        print(json.dumps({"missing": net.missing, "species": plan}))
+        caps = Counter(v["cap"] for v in plan.values())
+        print(json.dumps({"missing": net.missing, "caps": {str(k): caps[k] for k in sorted(caps)}, "species": plan}))
         return plan
     order = [s["id"] for s in fish["species"]]
     out = {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}
@@ -469,7 +751,7 @@ def run(args):
 def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     a.add_argument("--circle", type=int, action="append", help="circle(s) to fetch (default 1)")
-    a.add_argument("--cap", type=int, default=CAP, help=f"usable observations kept per species (default {CAP})")
+    a.add_argument("--cap", type=int, help="one fixed cap of usable photos for every species (default: cap_of, 30-60 by phases)")
     a.add_argument("--only", help="comma-separated species or teaching ids")
     m = a.add_mutually_exclusive_group()
     m.add_argument("--refresh", action="store_true", help="ask iNaturalist again")
@@ -480,6 +762,8 @@ def main(argv=None):
     a.add_argument("--cand", default=str(ROOT / "fish-cand.json"))
     a.add_argument("--cur", default=str(ROOT / "curation.json"))
     a.add_argument("--suggest", default=str(ROOT / "suggest.json"))
+    a.add_argument("--photos", default=str(ROOT / "fish-photos.json"), help="the game photos (their judging tags record phases)")
+    a.add_argument("--fbsrc", default=str(ROOT / "tools" / "fishbase_src.json"), help="FishBase rows (their life stages record phases)")
     a.add_argument("--cache", default=str(ROOT / "tools" / ".cache" / "fish_photos.json"))
     args = a.parse_args(argv)
     args.circle = args.circle or [1]

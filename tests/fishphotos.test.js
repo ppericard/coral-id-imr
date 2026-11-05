@@ -321,8 +321,7 @@ test('fish-cand.json: every candidate photo once (one photo can belong to severa
 });
 
 test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, record shape; --plan writes nothing', () => {
-  // Pierre, 2026-11-04: at most 20 observations per species for now (30-40 later); up to 4 photos of each.
-  assert.deepStrictEqual(J('print(json.dumps([CAP, PER_OBS]))'), [20, 4]);
+  // The cap counts photos (Pierre, 2026-11-05, Q36); --cap 3 here: one fixed cap for every species. Up to 4 photos per observation.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphotos-'));
   const fish = {
     species: [
@@ -429,10 +428,204 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
       ['cc-by-nc', 'world']
     ]
   );
-  // A rerun keeps what is there and adds nothing (the cap counts usable observations); one species per line.
+  // A rerun keeps what is there and adds nothing (the cap counts usable photos); one species per line.
   run('--offline');
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C);
   assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8').split('\n').length, 9);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+// The fish candidate cap (Pierre, 2026-11-05, Q36): 30 photos for a stable species, +10 per extra phase (juvenile,
+// intermediate phase, male or terminal phase, female) as the judging tags and the sources record them, at most 60; the
+// search fills each phase. tools/fetch_fish.py cap_of, species_phases, phase_room, species_room, phase_obs, fill.
+test('cap per species (Q36): stable 30, +10 per extra phase, at most 60', () => {
+  const out = J(
+    `print(json.dumps([BASE_CAP, PER_PHASE, MAX_CAP, PER_OBS, list(PHASES), cap_of([]), cap_of(['juvenile']), cap_of({'juvenile': ['imr'], 'male': ['inat:2']}), cap_of(['juvenile', 'intermediate', 'male']), cap_of(PHASES), cap_of(['adult', 'juvenile', 'juvenile'])]))`
+  );
+  assert.deepStrictEqual(out, [
+    30,
+    10,
+    60,
+    4,
+    ['juvenile', 'intermediate', 'male', 'female'],
+    30, // stable
+    40, // one extra phase
+    50,
+    60,
+    60, // four extra phases: 70, held at 60
+    40 // "adult" is no extra phase; a phase counts once
+  ]);
+});
+
+test('room per phase (Q36): each extra phase aims at 10 photos of its own, the rest free; a short room is shared out', () => {
+  const out = J(`from collections import Counter
+print(json.dumps([
+  phase_room({}, 30, Counter({'': 20})),
+  phase_room({'juvenile': 1}, 40, Counter({'': 20, 'juvenile': 3})),
+  phase_room(PHASES, 60, Counter({'': 20})),
+  phase_room({'juvenile': 1, 'male': 1}, 50, Counter({'': 45})),
+  phase_room({'juvenile': 1}, 40, Counter({'': 50})),
+  phase_room({'juvenile': 1}, 40, Counter({'': 10, 'juvenile': 14})),
+]))`);
+  assert.deepStrictEqual(out, [
+    {room: 10, rooms: {}, free: 10}, // a stable species: all free
+    {room: 17, rooms: {juvenile: 7}, free: 10}, // 3 juveniles held: 7 more of them first
+    {room: 40, rooms: {juvenile: 10, intermediate: 10, male: 10, female: 10}, free: 0},
+    {room: 5, rooms: {juvenile: 3, male: 2}, free: 0}, // shared out one photo at a time
+    {room: 0, rooms: {juvenile: 0}, free: 0}, // over the cap (an older run): nothing removed, nothing added
+    {room: 16, rooms: {juvenile: 0}, free: 16} // the phase already has its 10
+  ]);
+});
+
+test('phases (Q36): IMR phase lines, dimorph, juvenile classes, judging tags, 2+ iNaturalist annotations, FishBase labels', () => {
+  const out = J(`
+parrot = {'phase': ['Males colourful, females dark or dull', 'Intermediate and terminal phases look different'], 'dimorph': True, 'juv': {'cls': 'B'}}
+sweet = {'phase': ['Juvenile, sub-adult and adult look different']}
+mixed = {'juv': {'cls': 'mixed', 'early': ['Dascyllus'], 'late': ['Coris gaimard']}}
+plain = {'juv': {'cls': 'C'}}
+sp = lambda n, **k: {'id': 's1', 'name': n, **k}
+c = lambda i, **k: {'f': f'fish-s1-cand-{i}', 'o': f'https://www.inaturalist.org/observations/{i}', **k}
+cands = [c(1), c(2, st='male'), c(3, st='adult/female'), c(4, st='female'), c(5, st='juvenile'), c(6, st='juvenile'),
+         c(7, st='female', via='fishbase')]
+sug = {'fish-s1-cand-1': {'jt': 'p1g0sm1j3', 'e': 3, 'k': 'best'}}
+fb = [{'n': 'a.jpg', 'st': 'terminal phase'}, {'n': 'b.jpg', 'st': 'egg'}, {'n': 'c.jpg'}]
+print(json.dumps([
+  species_phases(sp('Scarus a'), parrot),
+  species_phases(sp('Plectorhinchus a'), sweet),
+  [species_phases(sp(n), mixed) for n in ('Dascyllus aruanus', 'Chromis viridis', 'Coris gaimard', 'Coris aygula')],
+  species_phases(sp('Fishus a'), plain),
+  species_phases(sp('Fishus a'), plain, cands, sug, fb=fb),
+  species_phases(sp('Fishus a'), plain, cands, sug, fb=fb, moved={'fish-s1-cand-5', 'fish-s1-cand-1'}),
+  species_phases(sp('Fishus a'), plain, game=[{'jt': 'p1g0sm1j2'}, {'jt': 'p1g0sm14'}]),
+  [photo_phase({'st': 'adult/male'}), photo_phase({'st': 'female/juvenile'}), photo_phase({'st': 'adult'}), photo_phase({}, {'jt': 'p1g0sm1j3'}),
+   photo_phase({'st': 'male'}, {'ph': 'subadult'}), photo_phase({'jt': 'p1g0sm1j3'}), photo_phase({'st': 'terminal'}), photo_phase({'st': 'initial'})],
+]))`);
+  assert.deepStrictEqual(out[0], {juvenile: ['juv'], intermediate: ['imr'], male: ['imr'], female: ['imr']}); // Parrotfish: 60
+  assert.deepStrictEqual(out[1], {juvenile: ['imr'], intermediate: ['imr']}); // Sweetlips: sub-adult = intermediate phase
+  assert.deepStrictEqual(out[2], [{juvenile: ['juv']}, {}, {juvenile: ['juv']}, {}]); // only the genera or species named
+  assert.deepStrictEqual(out[3], {}); // class C: no written phase
+  // One judged juvenile, two iNaturalist "juvenile" and two "female" observations (one "male" is not enough), FishBase's
+  // terminal phase; FishBase candidates are counted from its rows, never twice.
+  assert.deepStrictEqual(out[4], {juvenile: ['judged', 'inat:2'], male: ['fishbase:1'], female: ['inat:2']});
+  // Photos Pierre sent to another species record nothing here.
+  assert.deepStrictEqual(out[5], {male: ['fishbase:1'], female: ['inat:2']});
+  assert.deepStrictEqual(out[6], {juvenile: ['judged']}); // a game photo's juvenile flag
+  assert.deepStrictEqual(out[7], ['male', 'juvenile', '', 'juvenile', 'intermediate', 'juvenile', 'male', 'intermediate']);
+});
+
+test('phase searches (Q36, rule 6f): several species in one request, paged by id, an observation to its species', () => {
+  const out = J(`${OBS}
+calls = []
+class N:
+    def get(self, q, fields=FIELDS):
+        calls.append([q, fields])
+        if 'id_above' not in q:
+            return {'total': 3, 'results': [{**ob(1), 'tx': [11, 501]}, {**ob(2), 'tx': [502]}]}
+        return {'total': 1, 'results': [{**ob(3), 'tx': [999, 501]}, {**ob(4), 'tx': [777]}]}
+got, more = phase_obs(N(), 'juvenile', [502, 501, 501], 'ph')
+a = [{k: [o['id'] for o in v] for k, v in got.items()}, more, len(calls)]
+q = calls[0][0]
+b = ['taxon_id=501,502&term_id=1&term_value_id=8' in q, 'place_id=6873' in q, 'quality_grade=research' in q, 'id_above=2' in calls[1][0],
+     calls[0][1].endswith(',taxon.ancestor_ids'), 'not_in_place=6873' in phase_query('male', [1], 'world'), 'swlat=-30' in phase_query('female', [1], 'world'),
+     'term_id=9&term_value_id=11' in phase_query('male', [1], 'ph'), 'term_id=9&term_value_id=10' in phase_query('female', [1], 'ph')]
+calls.clear()
+class E:
+    def get(self, q, fields=FIELDS):
+        calls.append(q)
+        return {'total': 0, 'results': []}
+phase_obs(E(), 'juvenile', range(1, 26), 'ph')
+class P:  # a --plan run, the reply not cached
+    def get(self, q, fields=FIELDS):
+        return None
+print(json.dumps([a, b, len(calls), phase_obs(P(), 'male', [5], 'ph')]))`);
+  assert.deepStrictEqual(out[0], [{501: [1, 3], 502: [2]}, {501: false, 502: false}, 2]); // a subspecies (11, 999) to its species
+  assert.deepStrictEqual(out[1], [true, true, true, true, true, true, true, true, true]);
+  assert.strictEqual(out[2], 2, '25 species: two requests of 20 and 5');
+  assert.deepStrictEqual(out[3], [{5: []}, {5: true}], 'not cached: nothing found, and the Philippines not known to be exhausted');
+});
+
+test('fetch_fish.py with phases (Q36): the juvenile room filled with juveniles first, abroad when the Philippines run out, never adults in their place; --plan offline', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphase-'));
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}},
+      {id: 's2', name: 'Fishus stabilis', inat: 502, circle: 1, present: {ph: true}}
+    ],
+    teach: [
+      {id: 't1', name: 'Juvenile fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1']},
+      {id: 't2', name: 'Stable fishes', circle: 1, species: ['s2']}
+    ]
+  };
+  // s1 keeps 25 adult photos and 1 juvenile (iNaturalist annotation); s2 keeps 28.
+  const cand = (sid, n, k = {}) =>
+    Array.from({length: n}, (_, i) => ({
+      f: `fish-${sid}-cand-${7000 + i}`,
+      o: `https://www.inaturalist.org/observations/${sid}-${i}`,
+      ...k
+    }));
+  const C0 = {
+    v: 1,
+    cand: {
+      s1: [...cand('s1', 25), {f: 'fish-s1-cand-8000', o: 'https://www.inaturalist.org/observations/s1-j', st: 'juvenile'}],
+      s2: cand('s2', 28)
+    }
+  };
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('fish-cand.json', C0);
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs, total=None, fields=FIELDS): c[API + q + '&fields=' + fields] = {'total': len(obs) if total is None else total, 'results': obs}
+Q = queries(501)
+put(Q['own'], [])
+adults = [ob(i) for i in range(1, 13)]
+put(Q['dauin'], adults)
+put(Q['region'], adults)
+put(Q['ph'], adults, total=500)  # more in the Philippines: no general search abroad
+J = (1, 8)
+put(phase_query('juvenile', [501], 'ph'), [{**ob(i, an=[J], ll=(14.6, 121.0)), 'tx': [501]} for i in (21, 22, 23)], fields=FIELDS + ',taxon.ancestor_ids')
+put(phase_query('juvenile', [501], 'world'), [{**ob(i, an=[J], ll=(-8.5, 115.2), inph=False), 'tx': [501]} for i in (31, 32)] +
+    [{**ob(33, an=[J], ll=(27.9, 34.3), inph=False), 'tx': [501]}], fields=FIELDS + ',taxon.ancestor_ids')  # the Red Sea: never
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json'];
+  const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc'];
+  const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
+  const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, ...a], {cwd: ROOT, encoding: 'utf8'});
+  const plan = JSON.parse(run('--plan'));
+  assert.deepStrictEqual(plan.caps, {30: 1, 40: 1});
+  const pick = v => [v.cap, v.phases, v.have, v.held, v.room, v.rooms, v.free];
+  assert.deepStrictEqual(pick(plan.species.s1), [40, {juvenile: ['imr']}, 26, {juvenile: 1}, 14, {juvenile: 9}, 5]);
+  assert.deepStrictEqual(plan.species.s1.add, {dauin: 5, ph: 3, world: 2});
+  assert.deepStrictEqual(plan.species.s1.phase_add, {juvenile: 5});
+  // s2 is not in the cache: its cap and room are still planned, offline.
+  assert.deepStrictEqual(pick(plan.species.s2), [30, {}, 28, {}, 2, {}, 2]);
+  assert.strictEqual(plan.species.s2.cached, false);
+  assert.ok(plan.missing > 0);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C0, '--plan writes nothing');
+  run('--offline', '--only', 's1');
+  const L = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1.slice(26);
+  // The 3 Philippine juveniles, then 2 from abroad (the Indo-West Pacific only), then 5 adults for the free room; the 4
+  // juvenile places left stay open (a FishBase juvenile or a later run), never filled with adults.
+  // (Within one source the order is the neutral hash order.)
+  const rows = a => a.map(p => [p.o.split('/').pop(), p.st || '', p.loc]).sort();
+  assert.strictEqual(L.length, 10);
+  assert.deepStrictEqual(rows(L.slice(0, 3)), [
+    ['21', 'juvenile', 'ph'],
+    ['22', 'juvenile', 'ph'],
+    ['23', 'juvenile', 'ph']
+  ]);
+  assert.deepStrictEqual(rows(L.slice(3, 5)), [
+    ['31', 'juvenile', 'world'],
+    ['32', 'juvenile', 'world']
+  ]);
+  assert.ok(rows(L.slice(5)).every(([id, st, loc]) => +id <= 12 && st === '' && loc === 'dauin'));
+  const again = JSON.parse(run('--plan', '--only', 's1')).species.s1;
+  // The juveniles brought in now record the phase too (6 annotated observations).
+  assert.deepStrictEqual(pick(again), [40, {juvenile: ['imr', 'inat:6']}, 36, {juvenile: 6}, 4, {juvenile: 4}, 0]);
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
