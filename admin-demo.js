@@ -181,6 +181,24 @@
           : name === 'Ben Demo'
             ? {c: 'new', t: at(0), at: 0, via: 'card', n: 20, s: -4.6, fb: {'new-lo': [20, at(20)]}, h: [['new', 0, at(0), 'card']]}
             : {c: 'imr', t: at(0), at: 0, via: 'tour', n: 20, s: 0.4, fb: {}, h: [['imr', 0, at(0), 'tour']]};
+      // Achievements (app progress.js ACHK: {id: time}), dated at the answer that earned them, as the app records them:
+      // 10 and 20 genera met, 10 right in a row, a first look-alike duel won, a first mastery exam passed; Carla also
+      // reached 25% progress in the session she is playing now (Activity's session summary shows it).
+      const ach = {_v: 2},
+        seenG = new Set();
+      let run = 0;
+      mine.forEach(r => {
+        if (!seenG.has(r[2])) {
+          seenG.add(r[2]);
+          if (seenG.size === 10) ach.met10 = r[1];
+          if (seenG.size === 20) ach.met20 = r[1];
+        }
+        run = r[4] ? run + 1 : 0;
+        if (run === 10 && !ach.run10) ach.run10 = r[1];
+        if (r[4] && /^quiz-duel/.test(r[5]) && !ach.duel) ach.duel = r[1];
+        if (r[4] && /\|x$/.test(r[5]) && !ach.learn1) ach.learn1 = r[1];
+      });
+      if (name === 'Carla Demo') ach.pct25 = mine[mine.length - 12][1];
       const learned = Object.values(P).filter(s => s.pg >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
@@ -200,7 +218,8 @@
           'reefid-sync-settings': '{}',
           'reefid-sync-coral-intro': JSON.stringify(intro),
           ...(offer ? {'reefid-sync-coral-intro-offer': JSON.stringify(offer)} : {}),
-          'reefid-sync-coral-start': JSON.stringify(st0)
+          'reefid-sync-coral-start': JSON.stringify(st0),
+          'reefid-sync-ach': JSON.stringify(ach)
         }
       };
     });
@@ -359,6 +378,41 @@
     ANA_META = {ph: ANALYSIS.photoMeta(D, cur, qual, met)};
     const more = ANALYSIS.demoLog(D, NOW - 3 * DAY, {cur, qual, met});
     more.forEach((r, i) => rows.push([...r.slice(0, 7), 'demoz' + i, ...r.slice(7, 11), r[12], r[13]]));
+    // Photos everyone misses in the session Carla is playing now (Activity's session summary labels them "hard for
+    // everyone", Health lists them; admin.js healthBad: 5 answers or more, under 40% right): each question she missed
+    // there is also missed by as many earlier answers of devices not signed in as its photos need to pass that rule,
+    // counted on every answer now in the log (taken from those devices' own answers, so the answer count and the
+    // sessions stay the same; every photo of the question, so whichever the summary shows carries the label).
+    {
+      const donors = rows.filter(r => r[0] === '~anon demo1' || r[0] === '~anon demo2'),
+        on = f => rows.filter(r => r[6].split(' ').includes(f));
+      rows
+        .filter(r => r[0] === 'Carla Demo')
+        .sort((a, b) => a[1] - b[1])
+        .slice(-24)
+        .filter(r => !r[4])
+        .forEach(miss => {
+          const need = Math.max(
+            0,
+            ...miss[6]
+              .split(' ')
+              .filter(Boolean)
+              .map(f => {
+                const L = on(f),
+                  k = L.filter(r => r[4]).length,
+                  w = L.length - k;
+                return Math.max(5 - L.length, Math.floor(1.5 * k - w) + 1);
+              })
+          );
+          if (need <= donors.length)
+            donors.splice(0, need).forEach(r => {
+              r[2] = miss[2];
+              r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
+              r[4] = 0;
+              r[6] = miss[6];
+            });
+        });
+    }
     ANALYSIS.DEMO_PLAYERS.forEach(([name]) => {
       const mine = more.filter(r => r[0] === name);
       users[name.toLowerCase()] = {

@@ -129,15 +129,18 @@ function journeyOf(R) {
 function journeyChart(series, top, opt = {}) {
   // Drawn at the page's width (a little under it, so never scaled down), so its labels keep the 12 px minimum (--fs-xs)
   // on a phone as on a desktop (AGENTS.md rule 18; Codex review #351).
-  const W = Math.max(300, Math.min(1100, ($v.clientWidth || 900) - 56)),
-    H = 190,
+  // opt.w / opt.h: a smaller chart drawn at its own box's width (a session's summary, sessionSummary); opt.min below.
+  const W = opt.w || Math.max(300, Math.min(1100, ($v.clientWidth || 900) - 56)),
+    H = opt.h || 190,
     pl = 34,
     pr = 8,
     pt = 8,
     pb = 22,
     n = Math.max(2, series[0].v.length),
     x = i => pl + ((W - pl - pr) * i) / (n - 1),
-    y = v => pt + (H - pt - pb) * (1 - v / top);
+    // opt.min: the bottom of the scale (0 by default), so a session's curve uses the chart's height (Pierre, 2026-11-05).
+    lo = opt.min || 0,
+    y = v => pt + (H - pt - pb) * (1 - (v - lo) / (top - lo));
   const path = v =>
     v
       .map((p, i) => (p == null ? null : `${x(i).toFixed(1)},${y(p).toFixed(1)}`))
@@ -620,4 +623,344 @@ function bindJReload() {
       sheetAgain('users', 'ans', 'stats', 'pages');
       render();
     };
+}
+
+// sessfacts: begin
+// One session of Players › Activity › Recent sessions, unfolded under its row (Pierre, 2026-11-05: "what the player made
+// of the session": its success chart, start / end / length, answers and % right, genera met or opened, notable events,
+// the most improved genera, the main difficulties met, achievements unlocked, a link to the Journey; a short summary,
+// not raw numbers only). The explanations are in the page help (HELP.stats, rule 23).
+const SESS = {
+  WIN: 10, // answers in the session's rolling "right" curve (drawn from the 5th answer, as the Journey's)
+  TOP: 3, // genera, pairs and photos in each list
+  MISS: 2, // misses on a genus in the session before it is a difficulty
+  GAIN: 0.02, // gain of a genus's bar (2 points) before it counts as improved
+  RUN: 10, // right answers in a row worth telling (the "On a roll" achievement's run)
+  END: 3, // misses in a row at the end worth telling
+  EDGE: 5 * 6e4, // ms around the session's answers within which a card, an offer or an achievement belongs to it
+  PAD: 5 // the chart's scale starts this many points under the session's lowest value, rounded down to 10 (Pierre, 2026-11-05)
+};
+// The facts of a session, pure (tests/session.test.js): L its answers (one player's rows, in time order), B the player's
+// earlier answers (in time order); o: diff (photo file -> difficulty or null), prog ({genus: [bar before, bar after]}),
+// saved (the player's saved copy: intro, offer, ach; null while it is read, absent for a device never signed in).
+function sessionFacts(L, B, o = {}) {
+  const t0 = L[0][1],
+    t1 = L[L.length - 1][1],
+    inS = t => typeof t === 'number' && t >= t0 - SESS.EDGE && t <= t1 + SESS.EDGE,
+    asked = new Set(B.map(r => r[2])),
+    E = L.filter(r => typeof r[7] === 'number'),
+    met = [],
+    M = {},
+    MX = {},
+    PH = {},
+    acc = [],
+    exp = [];
+  let run = 0,
+    best = 0,
+    end = 0;
+  L.forEach((r, i) => {
+    if (!asked.has(r[2]) && !met.some(x => x[1] === r[2])) met.push([i, r[2]]);
+    const m = (M[r[2]] = M[r[2]] || [0, 0]);
+    m[1]++;
+    run = r[4] ? run + 1 : 0;
+    best = Math.max(best, run);
+    end = r[4] ? 0 : end + 1;
+    if (!r[4]) {
+      m[0]++;
+      if (r[3] && r[3] !== r[2]) MX[r[2] + '|' + r[3]] = (MX[r[2] + '|' + r[3]] || 0) + 1;
+      // The hardest photo the question showed (its difficulty for everyone, the photo Elo), once per photo.
+      const fs = String(r[6] || '')
+        .split(' ')
+        .filter(Boolean)
+        .map(f => [f, o.diff ? o.diff(f) : null])
+        .sort((a, b) => (b[1] ?? -99) - (a[1] ?? -99));
+      if (fs.length && !PH[fs[0][0]]) PH[fs[0][0]] = {f: fs[0][0], d: fs[0][1], g: r[2], a: r[3], i};
+    }
+    const W = L.slice(Math.max(0, i - SESS.WIN + 1), i + 1),
+      We = W.filter(x => typeof x[7] === 'number');
+    acc.push(i < 4 ? null : W.reduce((n, x) => n + x[4], 0) / W.length);
+    exp.push(i < 4 || !We.length ? null : We.reduce((n, x) => n + x[7], 0) / We.length);
+  });
+  const S = o.saved,
+    count = re => {
+      const X = L.filter(r => re.test(String(r[5])));
+      return [X.length, X.filter(r => r[4]).length];
+    };
+  return {
+    n: L.length,
+    ok: L.filter(r => r[4]).length,
+    exp: E.length ? E.reduce((n, r) => n + r[7], 0) / E.length : null,
+    t0,
+    t1,
+    gap: B.length ? t0 - B[B.length - 1][1] : null,
+    met,
+    // Genera whose card showed in the session but not asked in it yet (the app shows a card before the first question).
+    opened: !S
+      ? S
+      : Object.entries(S.intro || {})
+          .filter(([g, e]) => Array.isArray(e) && inS(e[2]) && !asked.has(g) && !met.some(x => x[1] === g))
+          .map(([g]) => g),
+    missed: Object.entries(M)
+      .filter(([, m]) => m[0] >= SESS.MISS)
+      .sort((a, b) => b[1][0] - a[1][0] || a[1][1] - b[1][1])
+      .slice(0, SESS.TOP)
+      .map(([g, [k, n]]) => [g, k, n]),
+    mix: Object.entries(MX)
+      .filter(([, n]) => n >= SESS.MISS)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, SESS.TOP)
+      .map(([k, n]) => [...k.split('|'), n]),
+    photos: Object.values(PH)
+      .sort((a, b) => (b.d ?? -99) - (a.d ?? -99) || a.i - b.i)
+      .slice(0, SESS.TOP),
+    improved: Object.entries(o.prog || {})
+      .filter(([, [a, b]]) => b - a >= SESS.GAIN - 1e-9)
+      .sort((x, y) => y[1][1] - y[1][0] - (x[1][1] - x[1][0]))
+      .slice(0, SESS.TOP)
+      .map(([g, [a, b]]) => [g, a, b]),
+    best,
+    end,
+    exam: count(/\|x$/),
+    typed: count(/^quiz\|(.*\|)?t(\||$)/),
+    acc,
+    expS: exp,
+    ach: !S
+      ? S
+      : Object.entries(S.ach || {})
+          .filter(([k, t]) => k[0] !== '_' && inS(t))
+          .sort((a, b) => a[1] - b[1])
+          .map(([k]) => k),
+    offer: S && S.offer && (inS(S.offer.t) || inS(S.offer.bt)) ? S.offer : null,
+    inS
+  };
+}
+// sessfacts: end
+
+// One player's answers in time order, filtered once per answer log read.
+let SROWS = null;
+const sessRows = id => {
+  if (!SROWS || SROWS.ans !== ANS) SROWS = {ans: ANS, by: {}};
+  return SROWS.by[id] || (SROWS.by[id] = (ANS.rows || []).filter(r => r[0] === id).sort((a, b) => a[1] - b[1]));
+};
+// The bars of the genera the session touched before and after it, and the progress %: the player's answers replayed
+// with today's rules up to the session's first answer, then through it (core.js replayProgress, as admin.js progOf:
+// the sheet's photo memory and confusions, the saved copy's reset and first-launch answer). The replay has no mastery
+// exam: a genus learned now (PG, progOf's full replay) counts as learned from the time it was passed. Memoized.
+const SPROG = new Map();
+function sessProg(id, all, L, S, PG) {
+  const key = id + '|' + L[0][1],
+    m = SPROG.get(key);
+  if (m && m.ans === ANS && m.S === S && m.PG === PG && m.mem === SMEM && m.n === L.length) return m.v;
+  const ok = S && !S.err,
+    reset = ok && S.reset ? Date.parse(S.reset) : 0,
+    o = {gen: DATA.gen, mem: SMEM, conf: SCONF, since: reset ? {[id]: reset} : {}, starts: ok && S.start ? {[id]: S.start} : {}},
+    t0 = L[0][1],
+    A = replayProgress(
+      all.filter(r => r[1] < t0),
+      o
+    )[id] || {P: {}},
+    B = replayProgress(L, {...o, start: {[id]: A}})[id] || {P: {}},
+    marked = (P, t) => {
+      const out = {...P};
+      Object.entries((PG && PG.G) || {}).forEach(([g, s]) => {
+        if (s && s.mx && s.mx <= t && out[g]) out[g] = {...out[g], mx: s.mx};
+      });
+      return out;
+    },
+    Pa = marked(A.P, t0 - 1),
+    Pb = marked(B.P, L[L.length - 1][1] + SESS.EDGE),
+    slate = slateOf(DATA),
+    prog = {};
+  new Set(L.flatMap(r => [r[2], r[3]])).forEach(g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g]), scoreOf(Pb[g])]));
+  const v = {prog, pct: [pctOf(Pa, slate), pctOf(Pb, slate)]};
+  SPROG.set(key, {ans: ANS, S, PG, mem: SMEM, n: L.length, v});
+  return v;
+}
+// The summary drawn under a session's row (admin.js recentSessions): id the player's anonymous id, L the session's
+// answers, name the player's name when signed in (their saved copy: cards, offer, achievements, learned genera).
+function sessionSummary(id, L, name) {
+  const all = sessRows(id),
+    B = all.filter(r => r[1] < L[0][1]),
+    S = name ? savedOf(name) : {P: {}},
+    PG = progOf(name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}, true),
+    RP = replayOn(),
+    sp = RP && S && PG ? sessProg(id, all, L, S, PG) : null,
+    PS = photoStats() || {},
+    F = sessionFacts(L, B, {
+      diff: f => (PS[f] ? PS[f][0] : null),
+      prog: sp && sp.prog,
+      saved: !name ? undefined : S && !S.err ? S : S && {}
+    }),
+    gi = g => `<i>${esc(g)}</i>`,
+    gl = g => `<a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>`,
+    names = G =>
+      G.map(gi)
+        .join(', ')
+        .replace(/, ([^,]*)$/, ' and $1'),
+    wait = '<p class="note">…</p>',
+    span = ms => {
+      const mn = Math.round(ms / 6e4);
+      return mn < 60 ? `${mn} min` : mn < 2880 ? `${Math.round(mn / 60)} h` : `${Math.round(mn / 1440)} days`;
+    };
+  // Learned in the session: a genus learned now (PG) whose last right exam question (|x) is one of the session's, as the
+  // Journey's ★ (the answer that passed the exam).
+  const lastX = {},
+    inL = new Set(L);
+  all.forEach(r => r[4] && /\|x$/.test(String(r[5])) && (lastX[r[2]] = r));
+  const learned = !PG || (name && !S) ? null : Object.keys(PG.G || {}).filter(g => PG.G[g] && PG.G[g].mx && inL.has(lastX[g]));
+
+  // The summary in words: what the session brought, then what was hard.
+  const said = [
+    `${F.n} answer${F.n === 1 ? '' : 's'} in ${sessLen(L)}, ${pct(F.ok, F.n)} right${F.exp != null ? ` where ${Math.round(100 * F.exp)}% was expected` : ''}.`
+  ];
+  if (F.met.length)
+    said.push(F.met.length <= 3 ? `Met ${names(F.met.map(x => x[1]))} for the first time.` : `Met ${F.met.length} new genera.`);
+  if (F.offer && F.offer.open && F.inS(F.offer.t)) said.push('Opened all genera.');
+  if (learned && learned.length) said.push(`Learned ${names(learned)}.`);
+  if (F.improved.length)
+    said.push(`Most progress on ${names(F.improved.slice(0, 2).map(x => x[0]))} (${jPts(F.improved[0][2] - F.improved[0][1])}).`);
+  if (F.missed.length) {
+    const [g, k, n] = F.missed[0],
+      mx = F.mix.find(x => x[0] === g);
+    said.push(`Most misses on ${gi(g)} (${k} of ${n})${mx ? `, taken for ${gi(mx[1])}` : ''}.`);
+  } else if (F.mix.length) said.push(`Took ${gi(F.mix[0][0])} for ${gi(F.mix[0][1])} ${F.mix[0][2]} times.`);
+  if (F.end >= SESS.END) said.push(`Ended on ${F.end} misses in a row.`);
+  if (F.ach && F.ach.length)
+    said.push(
+      F.ach.length === 1
+        ? `Unlocked “${esc((ACH.find(a => a.id === F.ach[0]) || {}).title || F.ach[0])}”.`
+        : `Unlocked ${F.ach.length} achievements.`
+    );
+
+  // The chart: right answers over the session's last SESS.WIN against the expected, a dot at each new genus's first
+  // question, a ★ at a genus learned; a session too short for a curve shows its answers as dots.
+  // The scale: from under the session's lowest point (SESS.PAD, rounded down to 10) to 100%, so its evolution shows
+  // (Pierre, 2026-11-05: 0-100% squashed it). On desktop the chart takes the left of the panel, the lists the right.
+  const vals = [...F.acc, ...F.expS].filter(v => v != null).map(v => v * 100),
+    lo = vals.length ? Math.max(0, Math.min(90, Math.floor((Math.min(...vals) - SESS.PAD) / 10) * 10)) : 0,
+    pw = Math.min(innerWidth - 84, ($v.clientWidth || 900) - 48),
+    chart =
+      F.n >= 5
+        ? `<h4>Right answers, last ${SESS.WIN} <span class="adm-jkey"><i class="acc"></i>right <i class="exp"></i>expected${F.met.length ? ' <b class="adm-sdot">○</b>first question' : ''}</span></h4>${journeyChart(
+            [
+              {v: F.expS.map(v => (v == null ? null : v * 100)), cls: 'exp'},
+              {v: F.acc.map(v => (v == null ? null : v * 100)), cls: 'acc'}
+            ],
+            100,
+            {
+              min: lo,
+              ticks: [
+                [lo, lo + '%'],
+                ...(100 - lo >= 40 ? [[Math.round((lo + 100) / 20) * 10, Math.round((lo + 100) / 20) * 10 + '%']] : []),
+                [100, '100%']
+              ],
+              dots: F.met.map(([i, g]) => [i, lo, `${g}: first question`]),
+              stars: (learned || []).map(g => [L.indexOf(lastX[g]), 100, `${g} learned`]),
+              label: 'Right answers in the session',
+              w: Math.max(280, Math.min(900, innerWidth >= 1024 ? Math.round(pw * 0.42) : pw)),
+              h: 140
+            }
+          )}`
+        : `<p class="adm-jdots">${L.map(r => `<i class="${r[4] ? 'ok' : 'ko'}"></i>`).join('')}</p>`;
+
+  // The lists, in the order of Pierre's list: new genera, events, most improved, difficulties (genera, mix-ups, photos),
+  // achievements.
+  const block = (t, body, cls) => (body ? `<div${cls ? ` class="${cls}"` : ''}><h4>${t}</h4>${body}</div>` : ''),
+    newG =
+      F.met.length || (F.opened && F.opened.length)
+        ? `<p>${[...F.met.map(x => gi(x[1])), ...(F.opened || []).map(g => `${gi(g)} <small>card</small>`)].join(', ')}</p>`
+        : '',
+    impr = !RP
+      ? ''
+      : !sp
+        ? wait
+        : F.improved.length
+          ? `<table class="adm-tbl">${F.improved.map(([g, a, b]) => `<tr><td>${gl(g)}</td><td class="n">${Math.round(100 * a)}% → ${Math.round(100 * b)}%</td><td class="n">${jPts(b - a)}</td></tr>`).join('')}</table>`
+          : '',
+    VT = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites'},
+    // A photo everyone misses (Health's rule, admin.js healthBad: under 40% right over 5 answers or more, or clearly
+    // harder than its genus's other photos) says so (Pierre, 2026-11-05), beside its difficulty, in neutral text: the
+    // colours of difficulty come with the admin-wide difficulty display (a later PR).
+    hardAll = ofAns('hardAll', () => new Set(healthBad(ANS.rows || []).map(o => o.p.f))),
+    tile = x => {
+      const p = photos(x.g).find(q => q.f === x.f);
+      return p
+        ? `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(x.g)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption>${gi(x.g)}${x.a && x.a !== x.g ? ` → ${gi(x.a)}` : ''} <span>${VT[viewOf(x.g, p)] || ''}</span>${
+            x.d != null || hardAll.has(p.f)
+              ? ` <span class="adm-hnum">${x.d != null ? `<span title="Starting players who recognise it, without guessing">recognised by ${recPct(x.d)}</span>` : ''}${x.d != null && hardAll.has(p.f) ? ' · ' : ''}${hardAll.has(p.f) ? '<span data-hardall>hard for everyone</span>' : ''}</span>`
+              : ''
+          }</figcaption></figure>`
+        : '';
+    },
+    tiles = F.photos.map(tile).join(''),
+    diff =
+      F.missed.length || F.mix.length || tiles
+        ? `${
+            F.missed.length || F.mix.length
+              ? `<table class="adm-tbl">${F.missed.map(([g, k, n]) => `<tr><td>${gl(g)}</td><td class="n">${k} of ${n} missed</td></tr>`).join('')}${F.mix.map(([a, b, n]) => `<tr><td>${gi(a)} → ${gi(b)}</td><td class="n">${n}×</td></tr>`).join('')}</table>`
+              : ''
+          }${tiles ? `<div class="adm-hphotos">${tiles}</div>` : ''}`
+        : '',
+    achs =
+      F.ach === null
+        ? wait
+        : F.ach && F.ach.length
+          ? `<ul class="adm-jcards">${F.ach
+              .map(k => ACH.find(a => a.id === k))
+              .filter(Boolean)
+              .map(a => `<li title="${esc(a.desc)}">${a.icon} ${esc(a.title)}</li>`)
+              .join('')}</ul>`
+          : '',
+    SS = sessionsOf(all),
+    k = SS.findIndex(s => s.L[0] === L[0]) + 1,
+    before = (tm, n) => (tm ? all.filter(r => r[1] < tm).length : n),
+    ev = [
+      [0, `<li><b>Session ${k}</b> of ${SS.length}${F.gap != null ? ` · ${span(F.gap)} after the last` : ''}</li>`],
+      ...(F.offer
+        ? [
+            ...(F.inS(F.offer.t)
+              ? [
+                  [
+                    F.offer.t,
+                    `<li><b>${F.offer.open ? 'Opened all genera' : 'Offer to open all'}</b>${F.offer.open ? '' : ' declined'} after answer ${before(F.offer.t, F.offer.at)}</li>`
+                  ]
+                ]
+              : []),
+            ...(F.inS(F.offer.bt) && F.offer.bk
+              ? [
+                  [
+                    F.offer.bt,
+                    `<li><b>${F.offer.bk === 'one' ? 'Back to one at a time' : 'Kept all genera'}</b> after answer ${before(F.offer.bt, F.offer.bat)}</li>`
+                  ]
+                ]
+              : [])
+          ]
+        : []),
+      // The first-launch question and its fallback cards (the Journey's Cards list, jStart), when given in the session.
+      ...(name && S && !S.err && S.start ? jStart(S.start, before).filter(([t]) => F.inS(t)) : []),
+      ...(learned || []).map(g => [lastX[g][1], `<li><b>Learned</b> ${gi(g)} ★</li>`]),
+      ...(F.exam[0] ? [[null, `<li><b>Mastery exam</b> ${F.exam[0]} question${F.exam[0] === 1 ? '' : 's'}, ${F.exam[1]} right</li>`]] : []),
+      ...(F.typed[0] ? [[null, `<li><b>Typed</b> ${F.typed[0]}, ${F.typed[1]} right</li>`]] : []),
+      ...(F.best >= SESS.RUN ? [[null, `<li><b>${F.best} right</b> in a row</li>`]] : []),
+      ...(F.end >= SESS.END ? [[null, `<li><b>Ended</b> on ${F.end} misses in a row</li>`]] : [])
+    ],
+    link = name ? `#~journey/${encodeURIComponent(name)}` : `#~anon/${encodeURIComponent(id)}`;
+  return `<div class="adm-sess" data-sess>
+    <p class="adm-sesssum">${said.join(' ')}</p>
+    ${kpis([
+      ['Start → end', `${clock(F.t0)} → ${dateText(F.t1, 'hm')}`],
+      ['Length', sessLen(L)],
+      ['Answers', F.n],
+      [
+        'Right',
+        `${pct(F.ok, F.n)}${F.exp != null ? ` <small class="adm-sexp" title="Expected">exp. ${Math.round(100 * F.exp)}%</small>` : ''}`
+      ],
+      ...(RP ? [['Progress', sp ? `${sp.pct[0]}% → ${sp.pct[1]}%` : '…']] : [])
+    ])}
+    <div class="adm-sessbody"><div class="adm-sesschart">${chart}</div>
+    <div class="adm-sessgrid">${block('New genera', newG)}${block('Events', `<ul class="adm-jcards">${jOrder(ev)}</ul>`)}${block(
+      'Most improved',
+      impr
+    )}${block('Difficulties', diff, tiles ? 'adm-swide' : '')}${block('Achievements', achs)}</div>
+    <p class="adm-sesslink"><a class="next" href="${link}">Journey →</a></p></div></div>`;
 }

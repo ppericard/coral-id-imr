@@ -1976,8 +1976,12 @@ const HELP = {
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
-  stats: `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
-    <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>`,
+  // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
+  get stats() {
+    return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
+    <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
+    <p><b>Tap a session</b> to unfold its summary under it; tap again to fold it. A sentence first, then start → end, length, answers, right (beside it, small, the share the game expected: the mean of each answer's logged chance) and the progress % before → after the session (the player's answers replayed with today's rules up to the session's first answer, then through it). The chart: right answers over the session's last ${SESS.WIN} (from its 5th answer) against the expected, its scale from ${SESS.PAD} points under the session's lowest point (rounded down to 10) to 100%, a dot under each genus met for the first time, ★ at a genus learned; a session under 5 answers shows its answers as dots. <b>New genera</b>: first asked in this session (<i>card</i>: its card showed, not asked yet). <b>Most improved</b>: the genera whose bar rose most (${Math.round(SESS.GAIN * 100)} points or more, at most ${SESS.TOP}). <b>Difficulties</b>: genera missed ${SESS.MISS} times or more, mix-ups (shown → answered), the photos of the questions missed, hardest first by their difficulty for everyone (the photo Elo), each with <b>recognised by N%</b>: the share of starting players (Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) of its photo Elo d, whatever the question's format; <b>hard for everyone</b>: a photo everyone misses, as on Health. <b>Achievements</b>: earned within ${SESS.EDGE / 6e4} minutes of the session's answers (from the player's saved progress). <b>Events</b>: which session it is and the time since the last one, Open all, the first-launch question, genera learned (the right exam question that passed it), mastery exam questions, typed answers, ${SESS.RUN} right or more in a row, ending on ${SESS.END} misses or more in a row. <b>Journey →</b> opens the player's full journey.</p>`;
+  },
   statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
@@ -5764,6 +5768,14 @@ const nAns = s => (s ? (s[3] ?? s[1]) : 0);
 const photoStats = () => STATS;
 const pct = (r, n) => (n ? Math.round((100 * r) / n) + '%' : '–');
 const sgn = d => (d > 0 ? '+' : '') + d.toFixed(2);
+// recognised: begin
+// A photo's difficulty d (photo Elo) in words a reader gets (Pierre, 2026-11-05): the share of starting players (level 0,
+// Elo 1000) who really recognise it, without guessing: σ(0 − d) = 1 / (1 + e^d), the part of the model that does not
+// depend on the question's format (core.js: p = 1/k + (1 − 1/k)·σ(θ − d); the guess floor 1/k is left out on purpose).
+// d = 0 → 50%, +1.44 → 19%, −1 → 73%. One helper for every admin page that shows a photo's difficulty.
+const recognised = d => 1 / (1 + Math.exp(d)),
+  recPct = d => Math.round(100 * recognised(d)) + '%';
+// recognised: end
 const days = t => {
   const d = Math.floor((Date.now() - t) / 864e5);
   return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago';
@@ -5818,12 +5830,37 @@ function bindStats() {
       })
   );
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+  // An unfolded session's panel is as wide as the visible part of the table's scroll box (.adm-sess, --sw), never past it.
+  const rsc = $v.querySelector('.adm-recent .adm-tscroll');
+  if (rsc) rsc.style.setProperty('--sw', rsc.clientWidth + 'px');
+  // Recent sessions: a tap (or Enter / Space) on a session unfolds its summary, again folds it; its player's link opens
+  // the Journey as before.
+  $v.querySelectorAll('[data-sopen]').forEach(tr => {
+    const flip = () => {
+      const k = tr.dataset.sopen;
+      SOPEN.has(k) ? SOPEN.delete(k) : SOPEN.add(k);
+      render();
+    };
+    tr.onclick = e => !e.target.closest('a, button') && flip();
+    tr.onkeydown = e => {
+      if (e.target === tr && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        const k = tr.dataset.sopen;
+        flip();
+        const back = [...$v.querySelectorAll('[data-sopen]')].find(x => x.dataset.sopen === k);
+        if (back) back.focus({preventScroll: true});
+      }
+    };
+  });
   // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. A manual
   // reload only, no timer: each read sends the whole answer log (docs/ARCHITECTURE.md "Recent sessions and who is playing now").
   const rl = $v.querySelector('[data-sload]');
   if (rl)
     rl.onclick = () => {
       sheetAgain('ans', 'users', 'pages'); // the pages opened too (Stops, Journey)
+      // An unfolded session's player's saved copy too (achievements, cards, learned genera follow the new answers; Codex
+      // review #557), as the Players and Journey ↻ do.
+      savedClear();
       render();
     };
 }
@@ -5912,14 +5949,19 @@ function savedPump() {
           intro: P('reefid-sync-coral-intro') || {},
           offer: P('reefid-sync-coral-intro-offer'),
           start: P('reefid-sync-coral-start'), // the first-launch question (admin-journey.js)
-          reset: P('reefid-sync-coral-reset')
+          reset: P('reefid-sync-coral-reset'),
+          ach: P('reefid-sync-ach') // achievements {id: time} (progress.js ACHK): a session's summary (sessionSummary)
         };
       })
       .catch(() => gen === savedGen && (PSAVED[name] = {err: 'unreachable'}))
       .then(() => {
         savedRun--;
         savedPump();
-        if (gen === savedGen && (cur === '~journey/' + name || (cur === '~users' && !savedRun && !savedQ.length))) render();
+        if (
+          gen === savedGen &&
+          (cur === '~journey/' + name || (cur === '~users' && !savedRun && !savedQ.length) || (cur === '~stats' && SOPEN.size))
+        )
+          render();
       });
   }
 }
@@ -6417,16 +6459,21 @@ const modeOf = m =>
         : /^quiz(\||$)/.test(m)
           ? 'quiz'
           : 'other';
+// A session's length, from its first to its last answer (L: its rows in time order).
+const sessLen = L => {
+  const m = Math.round((L[L.length - 1][1] - L[0][1]) / 6e4);
+  return m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+};
+// The sessions unfolded on Recent sessions (Pierre, 2026-11-05: a tap unfolds a session's summary under it, a tap folds
+// it), by player id and first answer time, so a session stays open when the page is drawn again (↻, a saved copy read).
+const SOPEN = new Set();
 function recentSessions(R) {
   const NM = Object.create(null);
   ((USERS && USERS.users) || []).forEach(u => u.id && (NM[u.id] = u));
   const S = sessionsOf(R)
     .sort((a, b) => b.L[b.L.length - 1][1] - a.L[a.L.length - 1][1])
     .slice(0, RECENT.N);
-  const dur = s => {
-      const m = Math.round((s.L[s.L.length - 1][1] - s.L[0][1]) / 6e4);
-      return m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
-    },
+  const dur = s => sessLen(s.L),
     modes = s => {
       const c = {};
       s.L.forEach(r => (c[modeOf(r[5])] = (c[modeOf(r[5])] || 0) + 1));
@@ -6444,12 +6491,19 @@ function recentSessions(R) {
     live ? ` <span class="adm-ago now">${live} playing now</span>` : ''
   } <small class="note" title="When the answers were loaded (↻ reloads)">as of ${dateText(ANS.at || Date.now(), 'hm')}</small></h3>${
     S.length
-      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player</th><th>Last</th><th class="n">Answers</th><th class="n">Right</th><th title="From the first to the last answer">Length</th><th>Started</th><th>Modes</th></tr></thead><tbody>${S.map(
-          s =>
-            `<tr${isNow(s.L[s.L.length - 1][1]) ? ' class="now"' : ''}><td>${who(s.id)}${isMe(s.id) ? ' <small>you</small>' : ''}</td><td>${ago(s.L[s.L.length - 1][1])}</td><td class="n">${s.L.length}</td><td class="n">${pct(
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player</th><th>Last</th><th class="n">Answers</th><th class="n">Right</th><th title="From the first to the last answer">Length</th><th>Started</th><th>Modes</th><th></th></tr></thead><tbody>${S.map(
+          s => {
+            const k = s.id + '|' + s.L[0][1],
+              open = SOPEN.has(k);
+            // A tap on the row (not on the player's link) unfolds the session's summary under it (sessionSummary,
+            // admin-journey.js), as a Players row unfolds its actions.
+            return `<tr class="adm-urow${open ? ' open' : ''}${isNow(s.L[s.L.length - 1][1]) ? ' now' : ''}" data-sopen="${esc(k)}" tabindex="0" aria-expanded="${open}"><td>${who(s.id)}${isMe(s.id) ? ' <small>you</small>' : ''}</td><td>${ago(s.L[s.L.length - 1][1])}</td><td class="n">${s.L.length}</td><td class="n">${pct(
               s.L.filter(r => r[4]).length,
               s.L.length
-            )}</td><td>${dur(s)}</td><td>${clock(s.L[0][1])}</td><td>${modes(s)}</td></tr>`
+            )}</td><td>${dur(s)}</td><td>${clock(s.L[0][1])}</td><td>${modes(s)}</td><td>${open ? '▾' : '▸'}</td></tr>${
+              open ? `<tr class="adm-udet" data-sdet><td colspan="8">${sessionSummary(s.id, s.L, NM[s.id] && NM[s.id].name)}</td></tr>` : ''
+            }`;
+          }
         ).join('')}</tbody></table></div>`
       : '<p class="note">No sessions yet.</p>'
   }</section>`;
