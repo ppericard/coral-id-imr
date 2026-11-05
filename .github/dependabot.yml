@@ -1,0 +1,15 @@
+# Keeps the GitHub Actions in .github/workflows/ on their latest major (rule 27b: AGENTS.md; Node 20 actions were
+# forced onto Node 24 before the bump of 2026-11-05). Actions only: the repo has no package.json or requirements file,
+# and Prettier, Playwright, Node and Python pins stay hand-bumped. One grouped PR a week at most; who merges it:
+# AGENTS.md "Working mode" (Dependabot PRs).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ['*']
+    open-pull-requests-limit: 2

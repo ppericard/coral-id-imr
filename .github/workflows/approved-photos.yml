@@ -17,10 +17,12 @@ jobs:
   photos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      # Python pinned, not the runner's python3 (it changes with the image: 3.12 on Ubuntu 24.04, 3.14 on 26.04); the
+      # latest stable (rule 27b), the same in every workflow.
+      - uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: '3.15'
       - run: pip install pillow
       # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). The files
       # go to r2-upload/ (gitignored), uploaded below before anything is committed.
@@ -61,9 +63,13 @@ jobs:
       group: photos-r2
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
+      # r2_sync.sh runs python3 tools/photos.py --r2-list.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
       - run: tools/r2_sync.sh
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
