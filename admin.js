@@ -6475,6 +6475,14 @@ function savedClear() {
 // players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
 // column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
 const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
+// The field rule (core.js COVER, rules version 6): the bars proven against the field, as the app shows them once the
+// sheet replays it (COVER_SHEET, rule D4); null before (the bars as before). Cached per pooled confusions.
+let AFIELD = null;
+function adminField() {
+  if (!(Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= COVER_SHEET)) return null;
+  if (!AFIELD || AFIELD.conf !== SCONF) AFIELD = {conf: SCONF, F: fieldOf(DATA.gen, SCONF || {}, slateOf(DATA))};
+  return AFIELD.F;
+}
 const PROGM = new Map();
 let ROWSBY = null;
 // From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
@@ -6511,13 +6519,15 @@ function progOf(u, full) {
       mem: SMEM,
       conf: SCONF,
       since: reset ? {[u.id]: reset} : {},
-      starts: S.err ? {} : {[u.id]: S.start} // the first-launch answer (core.js startPriorAt)
+      starts: S.err ? {} : {[u.id]: S.start}, // the first-launch answer (core.js startPriorAt)
+      cover: !!adminField()
     })[u.id],
     L = slateOf(DATA), // the slate as the app counts it (core.js slateOf): the progress % and Learned are over it
-    G = replayedOf(rep, S.err ? {} : S.P),
-    v = {G, pct: pctOf(G, L), learned: learnedOf(G, L), total: L.length, err: S.err};
+    F = adminField(),
+    G = replayedOf(rep, S.err ? {} : S.P, RV, F),
+    v = {G, pct: pctOf(G, L, F), learned: learnedOf(G, L), total: L.length, err: S.err};
   if (!u.anon && !S.err) {
-    v.saved = {pct: pctOf(S.P, L), learned: u.learned};
+    v.saved = {pct: pctOf(S.P, L, F), learned: u.learned};
     v.stale = v.saved.pct !== v.pct || v.saved.learned !== v.learned;
   }
   PROGM.set(u.id, {ans: ANS, S, mem: SMEM, learned: u.learned, v});

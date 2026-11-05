@@ -708,10 +708,12 @@
           start = json('reefid-sync-coral-start'),
           rep = replayProgress(
             A.filter(r => r[0] === id),
-            {gen: S.gen, mem: st.mem, conf: st.conf, starts: start ? {[id]: start} : {}}
+            {gen: S.gen, mem: st.mem, conf: st.conf, starts: start ? {[id]: start} : {}, cover: V >= COVER_SHEET}
           )[id],
-          G = replayedOf(rep, P);
-        by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
+          // The field rule from sheet v56 (Code.gs replayedAll_, core.js COVER_SHEET), as the demo's version says.
+          F = V >= COVER_SHEET ? fieldOf(S.gen, st.conf, S.slate) : null,
+          G = replayedOf(rep, P, RV, F);
+        by[k].rp = [pctOf(G, S.slate, F), learnedOf(G, S.slate), pctOf(P, S.slate, F)];
       });
     }
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
