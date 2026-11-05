@@ -336,3 +336,31 @@ test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps th
   assert.strictEqual(out.s2[0].rep, 'inaturalist');
   fs.rmSync(dir, {recursive: true, force: true});
 });
+
+test('fetch_fish.py Net.fetch: a failed request is retried after a pause, never a crash (rule 6f; Codex review #562)', () => {
+  const out = JSON.parse(
+    execFileSync(
+      'python3',
+      [
+        '-c',
+        `import sys, json, io, tempfile, os; sys.path.insert(0, 'tools')
+import fetch_fish as ff
+calls, pauses = [], []
+def urlopen(req, timeout=0):
+    calls.append(req.full_url)
+    if len(calls) == 1:
+        raise OSError('HTTP Error 429: Too Many Requests')
+    class R(io.BytesIO):
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+    return R(json.dumps({'results': [{'id': 501, 'default_photo': {'id': 7}}]}).encode())
+ff.urllib.request.urlopen = urlopen
+ff.time.sleep = pauses.append
+net = ff.Net(os.path.join(tempfile.mkdtemp(), 'c.json'))
+print(json.dumps([ff.covers(net, [501]), len(calls), sum(1 for p in pauses if p >= 10)]))`
+      ],
+      {cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}
+    )
+  );
+  assert.deepStrictEqual(out, [{501: 7}, 2, 1]);
+});

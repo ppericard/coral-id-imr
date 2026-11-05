@@ -184,7 +184,7 @@ class Net:
                     d = json.load(r)
                 break
             except (OSError, ValueError) as e:  # URLError, a reset connection, a timeout, bad JSON: retried
-                print(f"  retry {q[:80]} ({e})", file=sys.stderr)
+                print(f"  retry {url[:120]} ({e})", file=sys.stderr)
                 time.sleep(10 * (k + 1))
         else:
             raise RuntimeError(f"failed: {url}")
