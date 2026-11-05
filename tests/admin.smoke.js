@@ -2809,6 +2809,66 @@ const WIDTHS = [390, 1280];
           r4.coral !== coral0
         )
           fails.push(`${w}px Fish Candidates: Reject, ×, Undo ${JSON.stringify({f0, f1, r3, r4: {...r4, coral: r4.coral === coral0}})}`);
+        // 5b on the same card (f1): ease, a tag (Light: Night) behind Tags, the crop editor's Save, and Not this → another
+        // species of its entry (Pierre's click: curation.json fish out), the photo then that species' candidate, marked
+        // "from"; each one Undo step; no coral key touched.
+        await p.click('.adm-fsw [data-fe="2"]');
+        await settle();
+        if (!(await p.$('.adm-fsw [data-ft]'))) {
+          await p.click('.adm-fsw [data-ftags]');
+          await settle();
+        }
+        await p.click('.adm-fsw [data-ft="2"][data-fv="n"]');
+        await settle();
+        await p.click('.adm-fsw [data-fcrop]');
+        await p.waitForSelector('#lightbox .adm-crop [data-c="save"]');
+        await p.click('#lightbox [data-c="full"]');
+        await p.click('#lightbox [data-c="save"]');
+        await settle();
+        const r5 = await p.evaluate(f => {
+          const F = DRAFT.fish,
+            sel = document.querySelector('.adm-fsw [data-fnot]'),
+            to = sel && [...sel.querySelectorAll('optgroup option')].map(o => o.value).find(v => v && v !== 'x');
+          return {
+            ease: (F.ease || {})[f],
+            tag: ((F.tags || {})[f] || '')[2],
+            crop: (F.crop || {})[f],
+            pressed: !!document.querySelector('.adm-fsw [data-fe="2"][aria-pressed="true"]'),
+            dashed: !!document.querySelector('.adm-fsw .adm-ftag.auto [data-fe]'),
+            sug: ((SUG.fish || {})[f] || {}).c || null,
+            to
+          };
+        }, f1);
+        if (
+          r5.ease !== 2 ||
+          r5.tag !== 'n' ||
+          !r5.pressed ||
+          r5.dashed ||
+          (r5.sug ? JSON.stringify(r5.crop) !== '[0,0,1,1]' : r5.crop !== undefined)
+        )
+          fails.push(`${w}px Fish Candidates 5b: rows and crop ${JSON.stringify(r5)}`);
+        if (r5.to) {
+          await p.selectOption('.adm-fsw [data-fnot]', r5.to);
+          await settle();
+          const r6 = await p.evaluate(
+            ([f, to]) => ({
+              out: (DRAFT.fish.out || {})[f],
+              add: f in (DRAFT.fish.add || {}),
+              q: (x => x && {sid: x.sid, from: x.from})(
+                fishQueue(FISHC.cand, SUG.fish || {}, FISHC.species, DRAFT.fish).find(x => x.p.f === f)
+              ),
+              toast: (document.querySelector('.adm-toast') || {}).textContent || ''
+            }),
+            [f1, r5.to]
+          );
+          if (r6.out !== r5.to || r6.add || !r6.q || r6.q.sid !== r5.to || !r6.q.from || !/sent to/.test(r6.toast))
+            fails.push(`${w}px Fish Candidates 5b: Not this ${JSON.stringify(r6)}`);
+          await p.click('#undo');
+          await settle();
+          if (await p.evaluate(f => f in (DRAFT.fish.out || {}), f1)) fails.push(`${w}px Fish Candidates 5b: Undo of Not this`);
+        } else fails.push(`${w}px Fish Candidates 5b: no species to send ${f1} to`);
+        if ((await p.evaluate(() => JSON.stringify([DRAFT.genera, DRAFT.seen || {}, DRAFT.exclude || {}, DRAFT.auto || {}]))) !== coral0)
+          fails.push(`${w}px Fish Candidates 5b: a coral key changed`);
       }
       errs.length = 0;
       if (await p.isEnabled('#save')) {

@@ -1724,6 +1724,30 @@ kbd {
   color: var(--ink);
   font-weight: 600;
 }
+/* Fish rows (5b): Pierre's value pressed; the pass's dashed until he confirms or changes it (as the growth form). */
+.adm-acts .adm-ftag button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-acts .adm-ftag.auto button[aria-pressed='true'] {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.adm-ftags {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.adm-sw .adm-acts .adm-ftags .adm-qseg button {
+  min-height: 32px;
+  font-size: 0.8rem;
+}
+.adm-src.adm-fnew {
+  background: var(--good-bg);
+  color: var(--good);
+}
 @media (max-width: 599px) {
   .adm-fth {
     width: 36px;
