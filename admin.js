@@ -1928,16 +1928,59 @@ function renderQuality() {
   );
 }
 
+// everyone: begin
 // Thresholds of Health and Stops (statsHealth), here because their help texts quote them.
 const HEALTH = {
   GAP: 30, // minutes between two answers that start a new session
   EARLY: 10, // a session of at most this many answers ended early
-  PH_MIN: 5, // answers before a photo is judged
-  PH_LOW: 0.4, // right rate under which a photo is one everyone misses
+  PH_MIN: 5, // answers before a photo is judged (its answers in the log; its rated answers for the difficulty)
+  PH_LOW: 0.4, // right share (every answer that showed it) under which a photo is one everyone misses
   PH_FAR: 1, // difficulty this far above its genus median (1 = clearly harder)
+  PL_MIN: 3, // distinct players who answered a photo before it can be one everyone misses
+  PL_MISS: 2, // ... of whom at least this many, and a majority, miss it
+  PL_LOW: 0.5, // a player misses a photo when under this share of their answers on it are right
   G_MIN: 10, // answers on a genus before a player counts as stuck on it
   G_LOW: 0.5 // right rate over a player's last G_MIN answers on a genus under which they are stuck
 };
+// "Photos everyone misses" counts players, not answers (Pierre, 2026-11-05: one player who misses the same photo six
+// times, or a new photo only one player answered, is not "everyone"). One rule for Health, To do's Health line, the
+// session summary's "hard for everyone" (healthBad) and the demo data built for it (admin-demo.js).
+// photoAnswers: the answer log per photo (rows [id, time, genus, answered, right, mode, photos...]; each answer counts once
+// for every photo it showed; known(f) keeps the photos the admin knows): {f: {n, ok, by: {player id: [answers, right]}}}.
+function photoAnswers(R, known) {
+  const PH = Object.create(null);
+  R.forEach(r =>
+    new Set(
+      String(r[6] || '')
+        .split(' ')
+        .filter(Boolean)
+    ).forEach(f => {
+      if (known && !known(f)) return;
+      const o = (PH[f] = PH[f] || {n: 0, ok: 0, by: Object.create(null)}),
+        b = (o.by[r[0]] = o.by[r[0]] || [0, 0]);
+      o.n++;
+      o.ok += r[4];
+      b[0]++;
+      b[1] += r[4];
+    })
+  );
+  return PH;
+}
+// Players who answered a photo, and those who miss it (under PL_LOW of their answers on it right).
+const missedBy = o => {
+  const P = Object.values(o.by);
+  return {pl: P.length, miss: P.filter(([n, ok]) => ok / n < HEALTH.PL_LOW).length};
+};
+// Missed by many players: PL_MIN players or more answered it, PL_MISS or more of them, and a majority, miss it.
+const manyMiss = o => {
+  const {pl, miss} = missedBy(o);
+  return pl >= HEALTH.PL_MIN && miss >= HEALTH.PL_MISS && 2 * miss > pl;
+};
+// A photo everyone misses by its answers: missed by many players, PH_MIN answers or more (on the real log, 2026-11-05,
+// photos answered once by each of 3 players, 2 wrong, came in: at the game's ~80% target that happens by chance), and
+// under PH_LOW right over all of them.
+const everyoneMisses = o => manyMiss(o) && o.n >= HEALTH.PH_MIN && o.ok / o.n < HEALTH.PH_LOW;
+// everyone: end
 // Sessions, one definition for Stops, a player's Journey and Activity's Recent sessions: one player's answers, oldest
 // first, cut where two answers are HEALTH.GAP minutes apart or more. [{id, L: rows in time order}], each player's in
 // time order.
@@ -2041,7 +2084,7 @@ const HELP = {
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
     <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
-    <p><b>Tap a session</b> to unfold its summary under it; tap again to fold it. A sentence first, then start → end, length, answers, right (beside it, small, the share the game expected: the mean of each answer's logged chance) and the progress % before → after the session (the player's answers replayed with today's rules up to the session's first answer, then through it). The chart: right answers over the session's last ${SESS.WIN} (from its 5th answer) against the expected, its scale from ${SESS.PAD} points under the session's lowest point (rounded down to 10) to 100%, a dot under each genus met for the first time, ★ at a genus learned; a session under 5 answers shows its answers as dots. <b>New genera</b>: first asked in this session (<i>card</i>: its card showed, not asked yet). <b>Most improved</b>: the genera whose bar rose most (${Math.round(SESS.GAIN * 100)} points or more, at most ${SESS.TOP}). <b>Difficulties</b>: genera missed ${SESS.MISS} times or more, mix-ups (shown → answered), the photos of the questions missed, hardest first by their difficulty for everyone (the photo Elo), each with <b>recognised by N%</b>: the share of starting players (Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) of its photo Elo d, whatever the question's format; <b>hard for everyone</b>: a photo everyone misses, as on Health. <b>Achievements</b>: earned within ${SESS.EDGE / 6e4} minutes of the session's answers (from the player's saved progress). <b>Events</b>: which session it is and the time since the last one, Open all, the first-launch question, genera learned (the right exam question that passed it), mastery exam questions, typed answers, ${SESS.RUN} right or more in a row, ending on ${SESS.END} misses or more in a row. <b>Journey →</b> opens the player's full journey.</p>`;
+    <p><b>Tap a session</b> to unfold its summary under it; tap again to fold it. A sentence first, then start → end, length, answers, right (beside it, small, the share the game expected: the mean of each answer's logged chance) and the progress % before → after the session (the player's answers replayed with today's rules up to the session's first answer, then through it). The chart: right answers over the session's last ${SESS.WIN} (from its 5th answer) against the expected, its scale from ${SESS.PAD} points under the session's lowest point (rounded down to 10) to 100%, a dot under each genus met for the first time, ★ at a genus learned; a session under 5 answers shows its answers as dots. <b>New genera</b>: first asked in this session (<i>card</i>: its card showed, not asked yet). <b>Most improved</b>: the genera whose bar rose most (${Math.round(SESS.GAIN * 100)} points or more, at most ${SESS.TOP}). <b>Difficulties</b>: genera missed ${SESS.MISS} times or more, mix-ups (shown → answered), the photos of the questions missed, hardest first by their difficulty for everyone (the photo Elo), each with <b>recognised by N%</b>: the share of starting players (Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) of its photo Elo d, whatever the question's format; <b>hard for everyone</b>: a photo everyone misses, as on Health (counted on players: ${HEALTH.PL_MIN}+ players answered it, most of them miss it, ${HEALTH.PH_MIN}+ answers). <b>Achievements</b>: earned within ${SESS.EDGE / 6e4} minutes of the session's answers (from the player's saved progress). <b>Events</b>: which session it is and the time since the last one, Open all, the first-launch question, genera learned (the right exam question that passed it), mastery exam questions, typed answers, ${SESS.RUN} right or more in a row, ending on ${SESS.END} misses or more in a row. <b>Journey →</b> opens the player's full journey.</p>`;
   },
   statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Elo = the median player's Elo on the genus (1000 + 200 × their level on it).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
@@ -2069,7 +2112,7 @@ const HELP = {
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
-    <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or clearly harder than the other photos of their genus (<b>harder than its genus</b>: a difficulty at least ${HEALTH.PH_FAR} above the median of their genus's rated photos on the photo Elo scale, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; then how many starting players recognise it (hover it for the raw difficulty and its gap to the genus median).</p>
+    <p><b>Photos everyone misses.</b> Counted on players, not answers (one player missing the same photo again and again is not everyone): photos answered by ${HEALTH.PL_MIN} players or more, ${HEALTH.PL_MISS} or more of whom, and a majority, miss it (under ${Math.round(HEALTH.PL_LOW * 100)}% of their own answers on it right), and either shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right or clearly harder than the other photos of their genus (<b>harder than its genus</b>: a difficulty at least ${HEALTH.PH_FAR} above the median of their genus's rated photos on the photo Elo scale, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; then the players who miss it out of those who answered it; then how many starting players recognise it (hover it for the raw difficulty and its gap to the genus median).</p>
     <p><b>Genera that don't take off.</b> Per slate genus, from the answers where it was shown: players who met it, the median of their right rates on it, and Stuck = players with ${HEALTH.G_MIN}+ answers on it still under ${Math.round(HEALTH.G_LOW * 100)}% over their last ${HEALTH.G_MIN} (out of the players with ${HEALTH.G_MIN}+ answers). Most stuck first.</p>`,
   statsstop: `<p>Where players stop and the genus sheets they open, from the answers already logged and the visits' summaries. Anonymous ids only, counts, no names. Every account counts, yours too.</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
@@ -6988,8 +7031,8 @@ function needsBody() {
       })
   );
 }
-// Photos everyone misses (Health): shown in PH_MIN answers or more with under PH_LOW right, or a difficulty PH_FAR or
-// more above the median of their genus's rated photos.
+// Photos everyone misses (Health): missed by many players (manyMiss), and under PH_LOW right over all their answers
+// (everyoneMisses) or a difficulty PH_FAR or more above the median of their genus's rated photos.
 function healthBad(R) {
   const H = HEALTH,
     median = healthMedian;
@@ -7000,30 +7043,32 @@ function healthBad(R) {
   allPhotos()
     .filter(p => p.view !== 'cand')
     .forEach(p => (META[p.f] = META[p.f] || p));
-  const PH = Object.create(null);
-  R.forEach(r =>
-    new Set(r[6].split(' ').filter(Boolean)).forEach(f => {
-      if (!META[f]) return;
-      const o = (PH[f] = PH[f] || {n: 0, ok: 0});
-      o.n++;
-      o.ok += r[4];
-    })
-  );
+  const PH = photoAnswers(R, f => !!META[f]);
   const GMED = Object.create(null);
   Object.values(META).forEach(p => {
     if (nAns(PS[p.f]) >= 3) (GMED[p.genus] = GMED[p.genus] || []).push(PS[p.f][0]);
   });
   Object.keys(GMED).forEach(g => (GMED[g] = GMED[g].length >= 3 ? median(GMED[g]) : null));
   const BAD = Object.entries(PH)
-    .filter(([, o]) => o.n >= H.PH_MIN)
+    .filter(([, o]) => manyMiss(o))
     .map(([f, o]) => {
       const p = META[f],
         s = PS[f],
         m = GMED[p.genus],
         far = s && nAns(s) >= H.PH_MIN && m != null ? s[0] - m : null;
-      return {p, ...o, r: o.ok / o.n, far, d: s && nAns(s) >= H.PH_MIN ? s[0] : null, gm: m};
+      return {
+        p,
+        n: o.n,
+        ok: o.ok,
+        ...missedBy(o),
+        r: o.ok / o.n,
+        all: everyoneMisses(o),
+        far,
+        d: s && nAns(s) >= H.PH_MIN ? s[0] : null,
+        gm: m
+      };
     })
-    .filter(o => o.r < H.PH_LOW || (o.far != null && o.far >= H.PH_FAR))
+    .filter(o => o.all || (o.far != null && o.far >= H.PH_FAR))
     .sort((a, b) => a.r - b.r || b.n - a.n);
   return BAD;
 }
@@ -7210,7 +7255,7 @@ function statsHealth() {
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
       <figcaption><a class="adm-gen" href="#${esc(o.p.genus)}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
-      <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')}</span>${o.d != null ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>` : ''}</figcaption></figure>`;
+      <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>${o.d != null ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>` : ''}</figcaption></figure>`;
   const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
     BAD.length
       ? `<div class="adm-hphotos">${BAD.slice(0, MAXPH).map(phTile).join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
