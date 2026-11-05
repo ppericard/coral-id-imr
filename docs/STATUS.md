@@ -14,7 +14,6 @@ Tracks in flight: track · PR or branch · state · next step.
 - Admin › Players › Activity session summary · [#557](https://github.com/ppericard/coral-id-imr/pull/557) · Pierre's
   feedback built; a photo's difficulty shown as "recognised by X%" (share of level-0 players who recognise it, σ(−d);
   Q19 answered) · merge after Q23 (colours).
-- Reviews copied to docs/reviews/ · [#560](https://github.com/ppericard/coral-id-imr/pull/560) · merging.
 - FishBase as a fish photo source, and reference photos (ROADMAP Next) · its own PR · in progress.
 - Governance refonte (ROADMAP Next) · PR A merged (#558); PR B (this file, `tools/brief.py`, the hooks) in review · then
   PR C (short AGENTS.md, `docs/rules/` topic files, stable rule IDs by theme, `judging/AGENTS.md` renamed, Codex review
