@@ -1,6 +1,6 @@
 # Workflow and shipping rules
 
-How agents work with Pierre (W1-W11) and how a change ships (W12-W23). Who merges, and when: only AGENTS.md "Working
+How agents work with Pierre (W1-W11) and how a change ships (W12-W24). Who merges, and when: only AGENTS.md "Working
 mode" (the merge contract). The index of every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
 
 ## Working with Pierre
@@ -117,7 +117,8 @@ a guess.
 <http://localhost:8000/admin.html?demo>: every page works on made-up players, answers and reports (`admin-demo.js`
 answers the sync script and GitHub calls in memory; nothing is sent, Publish is kept in memory, its storage keys are
 prefixed `demo:`). Use it for screenshots and to test an admin change; when you change a sync reply or an admin call,
-keep `admin-demo.js` in step. No build step. Tests: `node --test tests/*.test.js` (Node only, no npm) and the Playwright
+keep `admin-demo.js` in step. No build step. Tests: `node tests/run.js` (every `tests/*.test.js` under `node --test`, in the
+machine slot: rule W24; Node only, no npm) and the Playwright
 smokes (`tests/*.smoke.js`; CI installs Playwright in a temporary folder: never add a `package.json`); add a case when
 you change logic they cover (a photo rule: `tests/photos.test.js`; the question draw: `tests/draw.smoke.js`). Pure logic
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
@@ -147,7 +148,7 @@ smoke on every push loaded it until fixed timeouts failed; CI runs everything on
 and reports every failing one. Locally, run what your change can break, once:
 - **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.9.10 --check` on the changed `.js`/`.css`;
   `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency only: never bump a number, rule W15);
-  `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node --test tests/*.test.js`; then **the
+  `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24); then **the
   one smoke part your change touches** (below). Docs-only changes: no smoke.
 - **Full tier**: CI on the PR. Run every smoke locally only when CI is down. After a big interface change, the
   brand-new-player replay of rule W17 stays a separate manual step.
@@ -165,8 +166,8 @@ and reports every failing one. Locally, run what your change can break, once:
   runner. Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
 - **One Playwright run at a time per 2 cores**: every smoke and every Playwright tool (`tools/learnsim.js`,
   `tools/perf.js`, `tools/rtprep.js`, `tools/og/make_og.js`) takes a slot from `tests/slot.js` before it starts
-  Chromium, waits while the machine's load is above its core count, and gives the slot back when it ends (a crashed
-  holder's slot is taken back). A new Playwright script calls `await require('./slot.js')(name)` (from `tests/`) the same
+  Chromium, waits while the machine's load is above twice its core count (rule W24), and gives the slot back when it ends
+  (a crashed holder's slot is taken back). A new Playwright script calls `await require('./slot.js')(name)` (from `tests/`) the same
   way. A smoke loads Playwright's `chromium` through `tests/calm.js`, which opens every context in reduced motion (no
   entrance animation to wait for) unless the context asks otherwise (a check about motion, the brand-new player). Never
   run two smokes at once from one session; `SMOKE_SLOTS=n` changes the cap, CI ignores it.
@@ -275,7 +276,8 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 **worktree of its own** (`.claude/worktrees/<name>`), sparse when it does not need the photos (`git sparse-checkout set --no-cone '/*' '!/img/'`: the disk is small): link `img` to
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
-only the part your change touches (rule W14), one unit-test run at a time, CI for the full runs. At most two open PRs per
+only the part your change touches (rule W14), one unit-test run at a time (`node tests/run.js`, rule W24), CI for the full
+runs. At most two open PRs per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
 Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
 Projects mode) still keeps at most two open PRs and runs only the smoke part its change touches.
@@ -290,3 +292,32 @@ get green**: find why it failed (a known flake is no root cause), fix it or say 
 from Claude Code sessions: use the REST API (`gh api repos/...`; open a PR with `gh api repos/{owner}/{repo}/pulls -f
 title=… -f head=… -f base=main -F body=@file`; ready for review: `.../pulls/N/ccr/ready_for_review`).
 *Source:* 2026-11-04.
+
+### W24
+
+**Every heavy run takes the machine slot; the load budget is twice the cores; keep 5 GB free and clean up behind you.**
+Many agents share one 4-core machine with a small disk: a load near 16 brought it down and killed every agent on it.
+`tests/slot.js` is the one lock, automatic and a no-op on CI (`CI` set):
+- **A full unit-test run: `node tests/run.js`** (`node --test` options pass through, e.g. `--test-name-pattern=merge`;
+  files given replace the default), never a bare `node --test tests/*.test.js`. One file stays unlocked, for the fast
+  loop: `node --test tests/x.test.js`.
+- **Playwright**: every launch takes a slot first: a smoke through `tests/calm.js` (its `chromium.launch` takes it) or
+  `await require('./slot.js')(name)`, a Playwright tool the same way (`tools/learnsim.js`, `tools/perf.js`,
+  `tools/rtprep.js`, `tools/og/make_og.js`). `tests/slot.test.js` fails on a launch in `tests/` or `tools/` without it.
+- **Heavy tools** call the guard at the top of their heavy path, after the usage check: Node
+  `require('../tests/slot.js').guard('tools/x.js')`, Python `import slot; slot.guard('tools/x.py')` (`tools/slot.py`); it
+  re-runs the tool in a slot and exits with its code. Guarded: `tools/analyses.js`, `abilityeval.js`, `fallbackeval.js`,
+  `realcheck.js`, `memreplay.js`, `fishscore.js`; `photo_metrics.py`, `photo_quality.py`, `find_dups.py`, `photos.py`
+  (when it writes), `judging_cand.py` (sheets, detail), `judging_fish.py` (sheets), `fish_judge.py` (`--sheets`),
+  `fetch_approved.py`. A new heavy tool gets the guard (`tests/slot.test.js` lists them); any other heavy command runs as
+  `node tests/slot.js -- cmd args`.
+- **Load budget**: a slot is given while the 1-minute load average is at most twice the cores (`tests/slot.js` `LOAD`: 8
+  on 4 cores); above, the run waits. At most `SMOKE_SLOTS` heavy runs at once (default one per 2 cores; `SMOKE_SLOTS=1`
+  while several agents run). A holder's children run in its slot (`REEFID_SLOT`): a full run or a smoke that starts a
+  guarded tool never waits for itself.
+- **Disk**: a heavy run refuses to start with less than 5 GB free on the repository's disk (`tests/slot.js` `diskOk()`,
+  `MIN_FREE_GB`), and says what to clean. **Every agent cleans up behind itself**: its worktree once its PR is merged
+  (`git worktree remove`), temporary downloads, venvs, screenshots it no longer needs.
+
+*Why:* an agent that forgets the rule must not be able to overload the machine. *Source:* Pierre, 2026-11-05 ("the
+automatic lock of the unit tests"; the load budget of twice the cores and the disk rule the same day).

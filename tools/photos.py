@@ -148,6 +148,8 @@ if __name__ == '__main__':
         print(f'Photo sizes OK: {len(photos())} photos in img/, each in ' + ', '.join(str(w) for w, _, _ in SIZES) + f' px; {len(online())} photos with an online original live on R2')
         sys.exit(0)
     todo = [(f, size) for f in photos() for size in SIZES[1:] if not os.path.exists(os.path.join(IMG, f + size[2] + '.webp'))]
+    if todo:
+        import slot; slot.guard('tools/photos.py')  # one heavy run at a time on the machine (rule W24)
     from PIL import Image  # only to write: --check runs without Pillow
     for f, (w, q, suf) in todo:
         im = Image.open(os.path.join(IMG, f + '.webp')).convert('RGB')

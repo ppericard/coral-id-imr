@@ -1,12 +1,24 @@
-// Shared by every Playwright script (tests/*.smoke.js, tools/learnsim.js, tools/perf.js, tools/rtprep.js, tools/og/make_og.js).
+// The machine slot shared by every heavy run (rule W24): every Playwright script (tests/*.smoke.js, tests/calm.js,
+// tools/learnsim.js, tools/perf.js, tools/rtprep.js, tools/og/make_og.js), full unit-test runs and heavy tools (1b).
 //
 // 1. slot(name): at most SMOKE_SLOTS Playwright runs on this machine at once (default: one per 2 cores, at least 1), and
-//    none starts while the machine is already saturated (1-minute load average above the number of cores). Several agent
+//    none starts while the machine is already saturated (1-minute load average above LOAD x the cores: 8 on 4 cores; the
+//    crash that took the machine down came near 16; Pierre, 2026-11-05: "up to about twice the cores is fine"), and none
+//    starts with less than MIN_FREE_GB (5 GB) free on the repository's disk: it refuses, with what to clean. Several agent
 //    sessions share one machine: on 2026-11-04 its load average reached 21-30 on 4 cores, every smoke ran 3-7 times
 //    slower and fixed timeouts failed (test-suite review). The slots are files in one directory every session and every
 //    user of the machine sees; a slot whose process is gone (by PID and start time on Linux; elsewhere by PID, or no
 //    refresh for 10 minutes) is taken back. No-op on CI, where each smoke has its own runner. Call it before
-//    chromium.launch(); the slot is given back when the process ends.
+//    chromium.launch(); the slot is given back when the process ends. A holder's children run in its slot (REEFID_SLOT,
+//    below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
+//
+// 1b. Heavy work other than Playwright takes the same slots (Pierre, 2026-11-05: "the automatic lock of the unit tests"):
+//    node tests/run.js [node --test options] [files]   a full unit-test run (default: every tests/*.test.js); a single
+//                                                       file stays unlocked: node --test tests/x.test.js (the fast tier)
+//    node tests/slot.js [--name N] -- cmd [args]        any command, run once it holds a slot
+//    slot.guard(name)                                   at the top of a heavy Node tool: re-runs it under the slot (a
+//                                                       Python tool: tools/slot.py guard(), the same way)
+//    All of them are no-ops on CI (CI set) and inside a holder's process tree.
 //
 // 2. parts(all, groups) and widths(def): what a smoke runs, from the environment (default: everything).
 //    SMOKE_ONLY=a,b   only these parts (pages.smoke.js: main, overlays, basics, credits, visit, tips, signin, replay);
@@ -24,7 +36,13 @@ const DIR =
   STALE = 10 * 60e3, // without /proc: a holder refreshes its slot every minute; 10 minutes without it = gone
   GRACE = 60e3, // a record still incomplete after a minute was left by a crash (records are published whole, below)
   POLL = +process.env.SMOKE_SLOT_POLL || 2000,
-  cores = () => os.cpus().length || 1;
+  cores = () => os.cpus().length || 1,
+  LOAD = 2, // the load budget of every heavy run: wait while the 1-minute load average is above LOAD x the cores (rule W24)
+  maxLoad = () => LOAD * cores(),
+  // Free disk a heavy run needs before it starts (Pierre, 2026-11-05: the disk is small and every agent shares it).
+  MIN_FREE_GB = 5,
+  ROOT = path.join(__dirname, '..'),
+  {spawn, spawnSync} = require('child_process');
 
 // The start time of a process (Linux /proc, clock ticks since boot): with its PID it names the process even after the
 // PID is reused. '' where there is no /proc; null when the process is gone.
@@ -65,6 +83,40 @@ function dead(text, st) {
   return Date.now() - st.mtimeMs > STALE;
 }
 
+// This process's id in a slot record ("pid start"), and whether this process or an ancestor holds a live slot: the holder
+// puts its id in REEFID_SLOT, its children inherit it, and the id must still name a live record of DIR (a stray or
+// exported REEFID_SLOT never turns the lock off).
+const me = () => `${process.pid} ${started(process.pid) || '-'}`;
+function held() {
+  const h = process.env.REEFID_SLOT;
+  if (!h) return false;
+  try {
+    return fs.readdirSync(DIR).some(n => {
+      if (!/^slot\d+$/.test(n)) return false;
+      const f = path.join(DIR, n);
+      try {
+        const text = fs.readFileSync(f, 'utf8');
+        return text.startsWith(h + ' ') && !dead(text, fs.statSync(f));
+      } catch (e) {
+        return false;
+      }
+    });
+  } catch (e) {
+    return false;
+  }
+}
+
+// Enough free disk for a heavy run on the file system of dir (default: this repository): {ok, free, min, dir}, free in GB.
+// SLOT_MIN_FREE_GB changes the threshold (tests); a file system that cannot say counts as enough.
+function diskOk(dir = ROOT, min = process.env.SLOT_MIN_FREE_GB !== undefined ? +process.env.SLOT_MIN_FREE_GB : MIN_FREE_GB) {
+  let free = Infinity;
+  try {
+    const st = fs.statfsSync(dir);
+    free = (st.bavail * st.bsize) / 1e9;
+  } catch (e) {}
+  return {ok: free >= min, free, min, dir};
+}
+
 // Takes back the slot f if its holder is gone. One reaper at a time per slot (the directory f.reap, made atomically),
 // and f is removed only if it is still the very file judged dead: a new holder's file is never removed. Returns false
 // when the slot could not be taken back because of the file system's permissions.
@@ -92,9 +144,18 @@ function reap(f) {
   }
 }
 
-// o.timeout (ms, tests): give up waiting and resolve null.
+// o.timeout (ms, tests): give up waiting and resolve null. o.signals === false: the caller handles Ctrl-C and kills itself
+// (run(), which waits for its child first).
 async function slot(name, o = {}) {
-  if (process.env.CI) return () => {};
+  if (process.env.CI || held()) return () => {};
+  const disk = diskOk();
+  if (!disk.ok) {
+    console.error(
+      `${name}: refused: ${disk.free.toFixed(1)} GB free on the disk of ${disk.dir}, under the ${disk.min} GB a heavy run needs ` +
+        '(rule W24). Clean up behind you first: merged worktrees (git worktree remove), temporary downloads, venvs, old screenshots.'
+    );
+    process.exit(1);
+  }
   const n = Math.max(1, +process.env.SMOKE_SLOTS || Math.floor(cores() / 2)),
     t0 = Date.now();
   // Every user of the machine takes and takes back slots here: the directory is writable by all and not sticky, so a
@@ -105,7 +166,7 @@ async function slot(name, o = {}) {
   } catch (e) {}
   for (let said = 0; ;) {
     const load = os.loadavg()[0];
-    if (load <= cores())
+    if (load <= maxLoad())
       for (let i = 0; i < n; i++) {
         const f = path.join(DIR, 'slot' + i),
           tmp = path.join(DIR, `.new-${process.pid}-${i}-${Math.random().toString(36).slice(2)}`);
@@ -132,6 +193,7 @@ async function slot(name, o = {}) {
         }
         if (!got) continue;
         const mine = fs.readFileSync(f, 'utf8'),
+          outer = process.env.REEFID_SLOT, // a stale or test value: put back when this slot is given back
           keep = setInterval(() => {
             try {
               fs.utimesSync(f, new Date(), new Date());
@@ -139,25 +201,31 @@ async function slot(name, o = {}) {
           }, 60e3),
           free = () => {
             clearInterval(keep);
+            if (process.env.REEFID_SLOT === me()) {
+              if (outer) process.env.REEFID_SLOT = outer;
+              else delete process.env.REEFID_SLOT;
+            }
             try {
               if (fs.readFileSync(f, 'utf8') === mine) fs.unlinkSync(f);
             } catch (e) {}
           };
         keep.unref();
+        process.env.REEFID_SLOT = me(); // children (a tool, a test that runs one) run in this slot
         process.on('exit', free);
         // Ctrl-C or a kill: give the slot back, then end the way the signal would have.
-        for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'])
-          process.once(sig, () => {
-            free();
-            process.kill(process.pid, sig);
-          });
+        if (o.signals !== false)
+          for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'])
+            process.once(sig, () => {
+              free();
+              process.kill(process.pid, sig);
+            });
         if (said) console.error(`${name}: got smoke slot ${i + 1} of ${n} after ${Math.round((Date.now() - t0) / 1000)} s.`);
         return free;
       }
     if (o.timeout && Date.now() - t0 > o.timeout) return null;
     if (!(said++ % Math.max(1, Math.round(30e3 / POLL))))
       console.error(
-        `${name}: waiting for a smoke slot (${n} on this machine, ${DIR}; load ${load.toFixed(1)} on ${cores()} cores)` +
+        `${name}: waiting for a smoke slot (${n} on this machine, ${DIR}; load ${load.toFixed(1)}, budget ${maxLoad()} on ${cores()} cores)` +
           (said > 1 ? `, ${Math.round((Date.now() - t0) / 1000)} s so far` : '') +
           '…'
       );
@@ -200,5 +268,57 @@ function partial(all, run, def, ws) {
   return out.length ? ` (partial run: ${out.join('; ')})` : '';
 }
 
+// Runs cmd args once this process holds a slot, with the slot handed down (REEFID_SLOT, and REEFID_SLOT_WRAP = this pid
+// so a guarded tool run directly by it never re-runs itself), and gives the slot back when cmd ends. Ctrl-C or a kill
+// reaches cmd first; this process then ends with cmd's code (or its signal).
+async function run(cmd, args, name) {
+  const free = await slot(name, {signals: false}),
+    child = spawn(cmd, args, {stdio: 'inherit', env: {...process.env, REEFID_SLOT_WRAP: String(process.pid)}}),
+    sigs = ['SIGINT', 'SIGTERM', 'SIGHUP'],
+    pass = sig => child.kill(sig);
+  for (const sig of sigs) process.on(sig, pass);
+  child.on('error', e => {
+    free();
+    console.error(`${name}: cannot run ${cmd} (${e.code || e.message})`);
+    process.exit(127);
+  });
+  child.on('exit', (code, sig) => {
+    free();
+    for (const s of sigs) process.removeListener(s, pass);
+    if (sig) process.kill(process.pid, sig);
+    else process.exit(code);
+  });
+}
+
+// At the top of a heavy Node tool (before its work, after its usage check): run the rest of it in a slot. Outside a
+// slot it runs itself again under `node tests/slot.js`, waits, and ends with that run's code; on CI, inside a holder's
+// process tree, or when it is that run, it returns at once.
+function guard(name) {
+  if (process.env.CI || process.env.REEFID_SLOT_WRAP === String(process.ppid) || held()) return;
+  const r = spawnSync(
+    process.execPath,
+    [__filename, '--name', name, '--', process.execPath, ...process.execArgv, ...process.argv.slice(1)],
+    {
+      stdio: 'inherit'
+    }
+  );
+  if (r.error) return console.error(`${name}: no machine slot (${r.error.code}); running without one.`);
+  if (r.signal) process.kill(process.pid, r.signal);
+  process.exit(r.status);
+}
+
 module.exports = slot;
-Object.assign(slot, {slot, parts, widths, partial, DIR});
+Object.assign(slot, {slot, parts, widths, partial, held, run, guard, diskOk, maxLoad, LOAD, MIN_FREE_GB, DIR});
+
+// node tests/slot.js [--name N] -- cmd [args]
+if (require.main === module) {
+  const a = process.argv.slice(2),
+    at = a.indexOf('--'),
+    cmd = at < 0 ? [] : a.slice(at + 1),
+    name = a[0] === '--name' && at > 1 ? a[1] : cmd.join(' ').slice(0, 60);
+  if (!cmd.length) {
+    console.error('usage: node tests/slot.js [--name N] -- cmd [args]');
+    process.exit(2);
+  }
+  run(cmd[0], cmd.slice(1), name);
+}

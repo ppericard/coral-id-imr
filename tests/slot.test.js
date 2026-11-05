@@ -87,7 +87,8 @@ test("slot: at most SMOKE_SLOTS holders, a dead holder's slot is taken back, giv
         `require('os').loadavg = () => [0, 0, 0];
          require(${JSON.stringify(require.resolve('./slot.js'))})('t2').then(() => console.log('got'));`
       ],
-      {env: {...process.env, ...env, CI: ''}, stdio: ['ignore', 'pipe', 'pipe']}
+      // REEFID_SLOT '': a separate process, not a child running in this test's slot (rule W24)
+      {env: {...process.env, ...env, CI: '', REEFID_SLOT: ''}, stdio: ['ignore', 'pipe', 'pipe']}
     );
     let out = '',
       err = '';
@@ -171,6 +172,256 @@ test('slot: one holder at a time when six processes race for the only slot', asy
     ev.forEach(e => (most = Math.max(most, (now += e === '+' ? 1 : -1))));
     assert.deepStrictEqual([ev.length, most], [12, 1]);
     assert.deepStrictEqual(fs.readdirSync(path.join(dir, 's')), [], 'every slot given back, no file left over');
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+// Rule W24 (Pierre, 2026-11-05: "the automatic lock of the unit tests"): full unit-test runs and heavy tools take the same
+// slots. Children run with the load gate off (NODE_OPTIONS preloads a stub: the machine running the tests may be busy)
+// and outside any slot of the run that started the tests (REEFID_SLOT '').
+const SLOT = require.resolve('./slot.js');
+const sandbox = () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-test-')),
+    stub = path.join(dir, 'calm-load.js');
+  fs.writeFileSync(stub, "require('os').loadavg = () => [0, 0, 0];\n");
+  const env = {
+    ...process.env,
+    CI: '',
+    SMOKE_SLOT_DIR: path.join(dir, 's'),
+    SMOKE_SLOTS: '1',
+    SMOKE_SLOT_POLL: '50',
+    NODE_OPTIONS: '--require ' + stub,
+    REEFID_SLOT: '',
+    REEFID_SLOT_WRAP: '',
+    SLOT_MIN_FREE_GB: '0'
+  };
+  return {dir, env, slots: () => (fs.existsSync(env.SMOKE_SLOT_DIR) ? fs.readdirSync(env.SMOKE_SLOT_DIR) : [])};
+};
+const exec = (cmd, args, env) =>
+  new Promise(r => {
+    const c = spawn(cmd, args, {env, stdio: ['ignore', 'pipe', 'pipe']});
+    let out = '',
+      err = '';
+    c.stdout.on('data', d => (out += d));
+    c.stderr.on('data', d => (err += d));
+    c.on('exit', code => r({code, out, err}));
+  });
+
+test('node tests/slot.js -- cmd: cmd runs in the slot and its code passes through; slot() and guard() inside it do not wait', async () => {
+  const {dir, env, slots} = sandbox();
+  try {
+    const code = `const fs = require('fs'), slot = require(${JSON.stringify(SLOT)});
+      const rec = fs.readFileSync(require('path').join(process.env.SMOKE_SLOT_DIR, 'slot0'), 'utf8');
+      slot.guard('inner tool'); // run directly by the wrapper: returns at once
+      slot('inner smoke', {timeout: 300}).then(free => {
+        console.log(JSON.stringify({rec, held: process.env.REEFID_SLOT, wrap: process.env.REEFID_SLOT_WRAP, ppid: process.ppid, nested: !!free}));
+        process.exit(3);
+      });`;
+    const r = await exec(process.execPath, [SLOT, '--name', 'outer', '--', process.execPath, '-e', code], env),
+      o = JSON.parse(r.out);
+    assert.strictEqual(r.code, 3, "the command's exit code passes through");
+    assert.ok(o.nested, "a slot() inside the holder's tree resolves at once (no deadlock on the only slot)");
+    assert.strictEqual(o.wrap, String(o.ppid));
+    assert.ok(o.held && o.rec.startsWith(o.held + ' ') && / outer\n$/.test(o.rec), "the slot is held under the wrapper's id");
+    assert.deepStrictEqual(slots(), [], 'given back when the command ends');
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test("node tests/slot.js -- cmd: waits while another process holds the only slot; a dead holder's slot is taken back", async () => {
+  const {dir, env, slots} = sandbox();
+  try {
+    // Another live process holds the only slot (it prints once it has it, then waits for stdin to close).
+    const holder = spawn(
+      process.execPath,
+      [
+        '-e',
+        `require(${JSON.stringify(SLOT)})('holder').then(() => { console.log('held'); process.stdin.resume(); process.stdin.on('end', () => process.exit(0)); });`
+      ],
+      {env, stdio: ['pipe', 'pipe', 'inherit']}
+    );
+    await new Promise(r => holder.stdout.once('data', r));
+    const wait = exec(process.execPath, [SLOT, '--', process.execPath, '-e', "console.log('ran')"], env);
+    let done = false;
+    wait.then(() => (done = true));
+    await new Promise(r => setTimeout(r, 700));
+    assert.ok(!done, 'the command waits while the slot is held');
+    holder.stdin.end();
+    const r = await wait;
+    assert.deepStrictEqual([r.code, r.out.trim()], [0, 'ran']);
+    assert.match(r.err, /waiting for a smoke slot \(1 on this machine/);
+    // A slot left by a process that is gone is taken back at once.
+    fs.writeFileSync(path.join(env.SMOKE_SLOT_DIR, 'slot0'), '999999999 1 someone 2026-01-01T00:00:00Z old\n');
+    const r2 = await exec(process.execPath, [SLOT, '--', process.execPath, '-e', "console.log('ran')"], env);
+    assert.deepStrictEqual([r2.code, r2.out.trim(), slots()], [0, 'ran', []]);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('guard(): a heavy tool re-runs itself in a slot, once, with its arguments and exit code; on CI it runs as it is', async () => {
+  const {dir, env, slots} = sandbox(),
+    js = path.join(dir, 'tool.js'),
+    py = path.join(dir, 'tool.py');
+  fs.writeFileSync(
+    js,
+    `require(${JSON.stringify(SLOT)}).guard('tool.js');
+     console.log(JSON.stringify({slot: process.env.REEFID_SLOT || '', args: process.argv.slice(2)}));
+     process.exit(5);\n`
+  );
+  fs.writeFileSync(
+    py,
+    `import json, os, sys\nsys.path.insert(0, ${JSON.stringify(path.join(__dirname, '..', 'tools'))})\nimport slot\nslot.guard('tool.py')\n` +
+      `print(json.dumps({'slot': os.environ.get('REEFID_SLOT', ''), 'args': sys.argv[1:]}))\nsys.exit(5)\n`
+  );
+  try {
+    for (const [cmd, file] of [
+      [process.execPath, js],
+      ['python3', py]
+    ]) {
+      const ci = await exec(cmd, [file, 'a', 'b c'], {...env, CI: 'true'});
+      assert.strictEqual(ci.code, 5);
+      assert.deepStrictEqual(JSON.parse(ci.out), {slot: '', args: ['a', 'b c']}, file + ': on CI, no slot and no re-run');
+      assert.deepStrictEqual(slots(), [], file + ': on CI nothing is written');
+      const r = await exec(cmd, [file, 'a', 'b c'], env),
+        lines = r.out.trim().split('\n');
+      assert.strictEqual(r.code, 5, file + ': the exit code passes through');
+      assert.strictEqual(lines.length, 1, file + ': the tool runs once (the outer process only waits)');
+      const o = JSON.parse(lines[0]);
+      assert.deepStrictEqual(o.args, ['a', 'b c']);
+      assert.match(o.slot, /^\d+ \S+$/, file + ': it ran in a slot');
+      assert.deepStrictEqual(slots(), [], file + ': the slot is given back');
+      // Inside a holder's process tree (a full unit-test run, a smoke), the tool runs at once, in that slot.
+      const inner = await exec(
+        process.execPath,
+        [
+          SLOT,
+          '--',
+          process.execPath,
+          '-e',
+          `process.exit(require('child_process').spawnSync(${JSON.stringify(cmd)}, ${JSON.stringify([file, 'x'])}, {stdio: 'inherit'}).status)`
+        ],
+        env
+      );
+      assert.strictEqual(inner.code, 5, file + ': nested run');
+      assert.doesNotMatch(inner.err, /waiting/, file + ": nested, it never waits for its own run's slot");
+    }
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('tests/run.js: a full run is every tests/*.test.js under --test; options pass through; files given replace the default', () => {
+  const args = require('./run.js'),
+    all = fs.readdirSync(__dirname).filter(f => f.endsWith('.test.js'));
+  const def = args([]);
+  assert.strictEqual(def[0], '--test');
+  assert.deepStrictEqual(
+    def
+      .slice(1)
+      .map(f => path.basename(f))
+      .sort(),
+    all.sort()
+  );
+  assert.ok(def.slice(1).every(f => fs.existsSync(path.resolve(f))));
+  assert.deepStrictEqual(args(['--test-name-pattern=merge']).slice(0, 2), ['--test', '--test-name-pattern=merge']);
+  assert.strictEqual(args(['--test-name-pattern=merge']).length, all.length + 2);
+  assert.deepStrictEqual(args(['tests/a.test.js', 'tests/b.test.js']), ['--test', 'tests/a.test.js', 'tests/b.test.js']);
+});
+
+test('every Playwright launch in tests/ and tools/ takes the slot; the heavy tools are guarded (rule W24)', () => {
+  const ROOT = path.join(__dirname, '..'),
+    files = [];
+  const walk = d => {
+    for (const e of fs.readdirSync(d, {withFileTypes: true})) {
+      if (['node_modules', 'archive', '.cache'].includes(e.name)) continue;
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.[cm]?js$/.test(e.name)) files.push(p);
+    }
+  };
+  walk(path.join(ROOT, 'tests'));
+  walk(path.join(ROOT, 'tools'));
+  const code = f =>
+      fs
+        .readFileSync(f, 'utf8')
+        .split('\n')
+        .filter(l => !/^\s*\/\//.test(l))
+        .join('\n'),
+    LAUNCH = /\b(?:chromium|firefox|webkit)\.launch(?:PersistentContext|Server)?\s*\(/,
+    bad = [];
+  for (const f of files) {
+    const src = code(f),
+      rel = path.relative(ROOT, f);
+    if (!LAUNCH.test(src)) continue;
+    if (rel === path.join('tests', 'calm.js')) {
+      // calm.js hands every smoke a chromium whose launch takes the slot first.
+      if (!/await slot\(.*\);\s*return calm\(await pw\.chromium\.launch/.test(src)) bad.push(rel + ': launch does not take the slot first');
+      continue;
+    }
+    const viaCalm = /require\(['"]\.\/calm(?:\.js)?['"]\)/.test(src),
+      takes = /require\(['"][./]*(?:tests\/)?slot(?:\.js)?['"]\)(?:\(|[\s\S]*\bslot\()/.test(src);
+    if (!viaCalm && !takes) bad.push(rel + ': launches a browser without tests/slot.js');
+  }
+  assert.deepStrictEqual(bad, []);
+  const guarded = {
+    js: ['analyses', 'abilityeval', 'fallbackeval', 'realcheck', 'memreplay', 'fishscore'],
+    py: ['photo_metrics', 'photo_quality', 'find_dups', 'photos', 'judging_cand', 'judging_fish', 'fish_judge', 'fetch_approved']
+  };
+  for (const [ext, L] of Object.entries(guarded))
+    for (const t of L)
+      assert.match(
+        fs.readFileSync(path.join(ROOT, 'tools', t + '.' + ext), 'utf8'),
+        /\bslot(?:\.js'\))?\)?\.guard\(/,
+        `tools/${t}.${ext} is guarded`
+      );
+});
+
+test('the load budget is twice the cores; below 5 GB of free disk a heavy run refuses, with what to clean (rule W24)', async () => {
+  const S = fresh(),
+    {dir, env, slots} = sandbox();
+  assert.strictEqual(S.maxLoad(), 2 * (os.cpus().length || 1));
+  assert.strictEqual(S.MIN_FREE_GB, 5);
+  try {
+    // A load between the cores and twice the cores: the slot is given at once.
+    const free = await withEnv({CI: undefined, SMOKE_SLOT_DIR: env.SMOKE_SLOT_DIR, SMOKE_SLOTS: '1', SLOT_MIN_FREE_GB: '0'}, async () => {
+      const la = os.loadavg;
+      os.loadavg = () => [1.5 * (os.cpus().length || 1), 0, 0];
+      try {
+        return await fresh()('busy', {timeout: 500});
+      } finally {
+        os.loadavg = la;
+      }
+    });
+    assert.ok(free, 'a load under twice the cores does not wait');
+    free();
+    // Above twice the cores it waits.
+    const wait = await withEnv(
+      {CI: undefined, SMOKE_SLOT_DIR: env.SMOKE_SLOT_DIR, SMOKE_SLOTS: '1', SLOT_MIN_FREE_GB: '0', SMOKE_SLOT_POLL: '50'},
+      async () => {
+        const la = os.loadavg;
+        os.loadavg = () => [2.5 * (os.cpus().length || 1), 0, 0];
+        try {
+          return await fresh()('overloaded', {timeout: 300});
+        } finally {
+          os.loadavg = la;
+        }
+      }
+    );
+    assert.strictEqual(wait, null, 'a load above twice the cores waits');
+    assert.ok(S.diskOk(dir, 0).ok);
+    const low = S.diskOk(dir, 1e9);
+    assert.ok(!low.ok && low.free > 0 && low.min === 1e9);
+    const r = await exec(process.execPath, [SLOT, '--', process.execPath, '-e', "console.log('ran')"], {
+      ...env,
+      SLOT_MIN_FREE_GB: '1000000000'
+    });
+    assert.strictEqual(r.code, 1);
+    assert.strictEqual(r.out, '', 'the command never runs');
+    assert.match(r.err, /refused: .* GB free .* under the 1000000000 GB a heavy run needs .*Clean up behind you/);
+    assert.deepStrictEqual(slots(), []);
   } finally {
     fs.rmSync(dir, {recursive: true, force: true});
   }

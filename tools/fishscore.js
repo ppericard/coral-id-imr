@@ -412,5 +412,8 @@ function main() {
   if (o.json) fs.writeFileSync(o.json, JSON.stringify(out, null, 1));
 }
 
-if (require.main === module) main();
+if (require.main === module) {
+  require('../tests/slot.js').guard('tools/fishscore.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
+  main();
+}
 module.exports = {credit, parts, world, fixed, simulate, plateau, A_COM, B_SCI, W_ENTRY};
