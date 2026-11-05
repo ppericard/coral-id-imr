@@ -36,6 +36,37 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(C.SUBJECTS.filter(s => s.ach).length, 1);
 });
 
+// The admin's one filter bar (admin plan PR 3, admin.js FB) is filled from each subject's admin part: its photo origins
+// ([key, name, short name], keys among those admin.js origin(p) gives) and its Candidates sources (among its origins).
+test('admin descriptor: origins and Candidates sources for the one filter bar', () => {
+  const KEYS = ['imr', 'own', 'dauin', 'ph', 'world', 'book'];
+  C.SUBJECTS.forEach(s => {
+    const O = s.admin.origins;
+    assert.ok(Array.isArray(O) && O.length, s.id);
+    O.forEach(o => {
+      assert.strictEqual(o.length, 3, `${s.id} ${o}`);
+      assert.ok(KEYS.includes(o[0]), `${s.id}: unknown origin ${o[0]}`);
+      o.forEach(x => assert.ok(typeof x === 'string' && x, `${s.id} ${o}`));
+    });
+    assert.strictEqual(new Set(O.map(o => o[0])).size, O.length, s.id);
+    (s.admin.csrc || []).forEach(k =>
+      assert.ok(
+        O.some(o => o[0] === k),
+        `${s.id}: source ${k} is not one of its origins`
+      )
+    );
+  });
+  // The corals' chips and sources, as before the bar (their order is the order on screen).
+  const coral = C.subjectOf('coral').admin;
+  assert.deepStrictEqual(
+    coral.origins.map(o => o[0]),
+    KEYS
+  );
+  assert.deepStrictEqual(coral.csrc, ['own', 'dauin', 'ph', 'book']);
+  // No IMR photos for fish (Pierre, 2026-11-04), and no Coral Finder book.
+  assert.ok(!C.subjectOf('fish').admin.origins.some(o => o[0] === 'imr' || o[0] === 'book'));
+});
+
 test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to its group for now', () => {
   const fish = C.subjectOf('fish'),
     coral = C.subjectOf('coral');

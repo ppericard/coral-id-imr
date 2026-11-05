@@ -256,8 +256,23 @@
       },
       // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin). hash: the
       // prefix of the subject's admin addresses ('' keeps every coral address as it was); cur: its part of curation.json
-      // ('' = the top level, as before); pages: the admin pages it has (null = every page).
-      admin: {hash: '', cur: '', pages: null}
+      // ('' = the top level, as before); pages: the admin pages it has (null = every page). For the one filter bar of
+      // every photo page (admin plan PR 3, admin.js fbar): origins, where its photos come from, [key, name, short name]
+      // in the order of the chips (admin.js origin(p) gives a photo's key); csrc, the sources of its Candidates swiper.
+      admin: {
+        hash: '',
+        cur: '',
+        pages: null,
+        origins: [
+          ['imr', 'IMR lecture', 'IMR'],
+          ['own', 'Pierre', 'Pierre'],
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World'],
+          ['book', 'CF book', 'CF']
+        ],
+        csrc: ['own', 'dauin', 'ph', 'book']
+      }
     },
     {
       id: 'fish',
@@ -301,7 +316,18 @@
       },
       // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
       // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
-      admin: {hash: 'fish/', cur: 'fish', pages: ['~triage', '~events', '~users', '~journey/', '~anon/']}
+      // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
+      admin: {
+        hash: 'fish/',
+        cur: 'fish',
+        pages: ['~triage', '~events', '~users', '~journey/', '~anon/'],
+        origins: [
+          ['own', 'Pierre', 'Pierre'],
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World']
+        ]
+      }
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.

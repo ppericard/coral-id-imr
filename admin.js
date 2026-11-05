@@ -790,17 +790,10 @@ function needs(n) {
 const rows = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium' && !photos(n).some(p => viewOf(n, p) === 'medium')));
 const label = (n, v) => (lv(n) === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(x => x[0] === v)[1]);
 // Photo origin: IMR lecture, Pierre's own iNaturalist photos, or other iNaturalist observers split by place
-// (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits.
-// Short chip labels for the genus bar (full name in the tooltip), so the whole bar fits on one line.
-const SHORT_O = {imr: 'IMR', own: 'Pierre', dauin: 'Dauin', ph: 'PH', world: 'World', book: 'CF'};
-const ORIGINS = [
-  ['imr', 'IMR lecture'],
-  ['own', 'Pierre'],
-  ['dauin', 'iNat Dauin'],
-  ['ph', 'iNat Philippines'],
-  ['world', 'iNat elsewhere'],
-  ['book', 'CF book']
-];
+// (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits. Each subject lists its origins
+// in core.js SUBJECTS admin origins, [key, name, short name] (the short one on the genus bar's chips, the name in the
+// tooltip, so the whole bar fits on one line); ORIGINS are the corals', every origin a photo can have.
+const ORIGINS = SUBJECTS.find(s => !s.admin.hash).admin.origins;
 const origin = p => (p.cf ? 'book' : p.imr ? 'imr' : p.own ? 'own' : {dauin: 'dauin', ph: 'ph'}[p.loc] || 'world');
 let SHOW = new Set(
   store.get(
@@ -813,6 +806,99 @@ const shown = p => SHOW.has(origin(p));
 // are reached without scrolling past every colony photo. Kept across genera and visits; on a genus without the saved
 // view (a 2-zoom genus has no Close-up row) the page shows All, and the choice stays for the next genus.
 let GVIEW = store.get('reefid-admin-gview', 'all');
+// ---- One filter bar (admin plan PR 3, docs/ROADMAP.md "Admin for every subject") ----
+// Every photo page draws its filters with these parts, filled from the subject on screen (core.js SUBJECTS: views, the
+// unit words one / many, admin origins and csrc), and wires them with bindBar: the genus page (origin chips with counts,
+// the view filter), Photo review (origins, view, unit, its check boxes) and Candidates (the sources). Each filter keeps
+// one state, shared by every page that shows it: SHOW (reefid-admin-origins), GVIEW, each page's own (QF, FF, CSRC).
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+const FB = {
+  // The origin chips. With counts (cnt(o)): the genus bar's, short names, the full one in the tooltip, and All once one is
+  // off; else a "Show" row of full names. skip: origins a page never shows (Growth form: CF book photos never go on its
+  // tiles).
+  origins({cnt, skip = []} = {}) {
+    const O = ASUBJ.admin.origins.filter(([o]) => !skip.includes(o));
+    return cnt
+      ? `<span class="adm-shows" role="group" aria-label="Show photos from">${O.map(([o, t, s]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${s} <b>${cnt(o)}</b></button>`).join('')}${O.some(([o]) => !SHOW.has(o)) ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span>`
+      : `<div class="adm-filter"><span class="label">Show</span>${O.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>`;
+  },
+  // The view filter, items [[value, name]]: on the genus bar a segmented control (key gv), on Photo review filter chips
+  // (key qv, fv) over every photo (viewItems).
+  views: ({key, cur, items, seg}) =>
+    seg
+      ? `<span class="adm-qseg adm-lvseg adm-gview" role="group" aria-label="Show view">${items.map(([v, t]) => `<button type="button" data-${key}="${v}" aria-pressed="${cur === v}">${t}</button>`).join('')}</span>`
+      : items
+          .map(([v, t]) => `<button type="button" class="adm-fchip plain" data-${key}="${v}" aria-pressed="${cur === v}">${t}</button>`)
+          .join(''),
+  viewItems: () => [['all', 'All'], ...ASUBJ.views, ['cand', 'Candidates']],
+  // One unit or all of them (Photo review).
+  unit: ({id, cur, names}) =>
+    `<select id="${id}" aria-label="${cap1(ASUBJ.one)}"><option value="">All ${ASUBJ.many}</option>${names.map(m => `<option${m === cur ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>`,
+  check: (id, on, text) => `<label class="adm-todo"><input type="checkbox" id="${id}"${on ? ' checked' : ''}> ${text}</label>`,
+  // The Candidates swiper's sources (admin csrc, by their short names), then All; n(s) the candidates of each.
+  srcs: () => [...(ASUBJ.admin.csrc || []).map(k => [k, ASUBJ.admin.origins.find(o => o[0] === k)[2]]), ['all', 'All']],
+  sources: (cur, n) =>
+    `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${FB.srcs()
+      .map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === cur}">${t} <b>${n(s)}</b></button>`)
+      .join('')}</span>`
+};
+// The bar's clicks, then redraw(): the origin chips and the genus bar's views on every page; with f (the page's filter
+// state, kept under the storage key k), its view chips (data-<view>), its unit select (id unit) and check boxes ({id: field});
+// src: the Candidates sources.
+function bindBar(scope, {redraw, f, k, view, unit, checks = {}, src}) {
+  scope.querySelectorAll('[data-o]').forEach(
+    b =>
+      (b.onclick = () => {
+        const o = b.dataset.o;
+        if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0]));
+        else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
+        store.set('reefid-admin-origins', [...SHOW]);
+        redraw();
+      })
+  );
+  scope.querySelectorAll('[data-gv]').forEach(
+    b =>
+      (b.onclick = () => {
+        GVIEW = b.dataset.gv;
+        store.set('reefid-admin-gview', GVIEW);
+        redraw();
+      })
+  );
+  if (src)
+    scope.querySelectorAll('[data-src]').forEach(
+      b =>
+        (b.onclick = () => {
+          CSRC = b.dataset.src;
+          store.set('reefid-admin-csrc2', CSRC);
+          redraw();
+        })
+    );
+  if (!f) return;
+  const save = () => {
+    store.set(k, f);
+    redraw();
+  };
+  if (view)
+    scope.querySelectorAll(`[data-${view}]`).forEach(
+      b =>
+        (b.onclick = () => {
+          f.view = b.dataset[view];
+          save();
+        })
+    );
+  if (unit)
+    $(unit).onchange = e => {
+      f.genus = e.target.value;
+      save();
+    };
+  Object.entries(checks).forEach(
+    ([id, x]) =>
+      ($(id).onchange = e => {
+        f[x] = e.target.checked;
+        save();
+      })
+  );
+}
 // A photo taken abroad of a species the presence rule does not confirm in the Philippines (presence.js outOfRule;
 // Pierre, 2026-11-04): an "out of rule" tag next to its source, and a part of To do. Never removed automatically.
 // Kept (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself): an exception he accepted with Keep in
@@ -1530,13 +1616,8 @@ function render() {
           .map(([c, a, b]) => `${c} ${c === 1 ? a : b}`)
       )
     : '';
-  const gvSeg = `<span class="adm-qseg adm-lvseg adm-gview" role="group" aria-label="Show view">${[
-    ['all', 'All'],
-    ...R.map(([v]) => [v, label(n, v)])
-  ]
-    .map(([v, t]) => `<button type="button" data-gv="${v}" aria-pressed="${gv === v}">${t}</button>`)
-    .join('')}</span>`;
-  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
+  const gvSeg = FB.views({key: 'gv', cur: gv, items: [['all', 'All'], ...R.map(([v]) => [v, label(n, v)])], seg: true});
+  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}${FB.origins({cnt})}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
@@ -1553,24 +1634,7 @@ function render() {
       }
       ${filter}${hidRow}${body}${one ? '' : candRow + outRow}
     </section></div>`;
-  $v.querySelectorAll('[data-o]').forEach(
-    b =>
-      (b.onclick = () => {
-        const o = b.dataset.o;
-        if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0]));
-        else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('reefid-admin-origins', [...SHOW]);
-        render();
-      })
-  );
-  $v.querySelectorAll('[data-gv]').forEach(
-    b =>
-      (b.onclick = () => {
-        GVIEW = b.dataset.gv;
-        store.set('reefid-admin-gview', GVIEW);
-        render();
-      })
-  );
+  bindBar($v, {redraw: render});
   const okb = $v.querySelector('[data-ok]');
   if (okb)
     okb.onclick = () => {
@@ -1927,42 +1991,14 @@ function renderQuality() {
     return `<section class="adm-row adm-qrow"><h3><span class="adm-q q${q}">${t}</span> <small>${L.length} photo${L.length === 1 ? '' : 's'}${q === 3 ? ' · for covers and featured photos' : q === 1 ? ' · for a realistic mode' : ''}</small></h3>
       <div class="adm-grid adm-qgrid" data-qdrop="${q}">${L.map(card).join('')}</div></section>`;
   };
-  const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-qv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Photo quality</h2></div>
-    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
-    <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', QF.view)}${VIEWS.map(([v, t]) => opt(v, t, QF.view)).join('')}${opt('cand', 'Candidates', QF.view)}
-      <select id="qgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === QF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="qtodo"${QF.todo ? ' checked' : ''}> Not checked yet</label></div>
+    ${FB.origins()}
+    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'qv', cur: QF.view, items: FB.viewItems()})}
+      ${FB.unit({id: 'qgen', cur: QF.genus, names})}
+      ${FB.check('qtodo', QF.todo, 'Not checked yet')}</div>
     ${QUAL.map(sec).join('')}</section>`;
-  const saveQF = () => {
-    store.set('reefid-admin-qfilter', QF);
-    renderQuality();
-  };
-  $v.querySelectorAll('[data-o]').forEach(
-    b =>
-      (b.onclick = () => {
-        const o = b.dataset.o;
-        SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('reefid-admin-origins', [...SHOW]);
-        renderQuality();
-      })
-  );
-  $v.querySelectorAll('[data-qv]').forEach(
-    b =>
-      (b.onclick = () => {
-        QF.view = b.dataset.qv;
-        saveQF();
-      })
-  );
-  $('qgen').onchange = e => {
-    QF.genus = e.target.value;
-    saveQF();
-  };
-  $('qtodo').onchange = e => {
-    QF.todo = e.target.checked;
-    saveQF();
-  };
+  bindBar($v, {redraw: renderQuality, f: QF, k: 'reefid-admin-qfilter', view: 'qv', unit: 'qgen', checks: {qtodo: 'todo'}});
   $v.querySelectorAll('[data-act="zoom"]').forEach(
     b =>
       (b.onclick = () => {
@@ -2399,56 +2435,25 @@ function renderForm() {
     return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small>${todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : ''}</h3>
       <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`;
   };
-  const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Growth form</h2></div>
     <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
-    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book')
-      .map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`)
-      .join('')}</div>
-    <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
-      <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label><label class="adm-todo"><input type="checkbox" id="fgfirst"${FF.gfirst ? ' checked' : ''}> Guesses first</label></div>
+    ${FB.origins({skip: ['book']})}
+    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'fv', cur: FF.view, items: FB.viewItems()})}
+      ${FB.unit({id: 'fgen', cur: FF.genus, names})}
+      ${FB.check('ftodo', FF.todo, 'Not checked yet')}${FB.check('fpol', FF.pol, '✿ Polyps out')}${FB.check('fgfirst', FF.gfirst, 'Guesses first')}</div>
     ${rows.map(sec).join('')}</section>`;
   const fag = $('fagree');
   agreeFill(fag);
   fag.ontoggle = () => (FAG_OPEN = fag.open);
-  const saveFF = () => {
-    store.set('reefid-admin-ffilter', FF);
-    renderForm();
-  };
-  $v.querySelectorAll('[data-o]').forEach(
-    b =>
-      (b.onclick = () => {
-        const o = b.dataset.o;
-        SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('reefid-admin-origins', [...SHOW]);
-        renderForm();
-      })
-  );
-  $v.querySelectorAll('[data-fv]').forEach(
-    b =>
-      (b.onclick = () => {
-        FF.view = b.dataset.fv;
-        saveFF();
-      })
-  );
-  $('fgen').onchange = e => {
-    FF.genus = e.target.value;
-    saveFF();
-  };
-  $('ftodo').onchange = e => {
-    FF.todo = e.target.checked;
-    saveFF();
-  };
-  $('fpol').onchange = e => {
-    FF.pol = e.target.checked;
-    saveFF();
-  };
-  $('fgfirst').onchange = e => {
-    FF.gfirst = e.target.checked;
-    saveFF();
-  };
+  bindBar($v, {
+    redraw: renderForm,
+    f: FF,
+    k: 'reefid-admin-ffilter',
+    view: 'fv',
+    unit: 'fgen',
+    checks: {ftodo: 'todo', fpol: 'pol', fgfirst: 'gfirst'}
+  });
   $v.querySelectorAll('[data-act="zoom"]').forEach(
     b =>
       (b.onclick = () => {
@@ -3796,13 +3801,7 @@ function zoomOne(p) {
 // in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines, CF book.
 const CK = f => 'cand:' + f,
   rejected = f => !!(DRAFT.seen || {})[CK(f)];
-const CSRCS = [
-  ['own', 'Pierre'],
-  ['dauin', 'Dauin'],
-  ['ph', 'PH'],
-  ['book', 'CF'],
-  ['all', 'All']
-];
+// Sources of the swiper: the subject's (core.js SUBJECTS admin csrc, FB.srcs), then All.
 let CSRC = store.get('reefid-admin-csrc2', 'dauin'),
   CSKIP = new Set(),
   CFULL = false, // this tab: also show the candidates waiting in full cells
@@ -4479,7 +4478,9 @@ function renderCand() {
   // priority order, that still has candidates to go through. Only a source with no candidate at all: one whose
   // candidates are skipped or wait in full cells stays, so they can still be shown (Codex review #340).
   if (!candQueue(CSRC).length) {
-    const s = CSRCS.map(([k]) => k).find(k => candQueue(k).filter(shown).length);
+    const s = FB.srcs()
+      .map(([k]) => k)
+      .find(k => candQueue(k).filter(shown).length);
     if (s) CSRC = s;
   }
   const Q0 = candQueue(CSRC),
@@ -4491,7 +4492,7 @@ function renderCand() {
     c = live[0],
     nx = live[1];
   const seg =
-    `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
+    FB.sources(CSRC, s => (s === CSRC ? live.length : candQueue(s).filter(shown).length)) +
     // What the queue leaves out, as one row of small toggles (Pierre, 2026-11-03: three lines of notes took the room of
     // the photo on a phone); each chip's tooltip says what it is.
     (nFull || nAside || nJ
@@ -4592,14 +4593,7 @@ function renderCand() {
     bindQ();
     bindF(S);
   }
-  $v.querySelectorAll('[data-src]').forEach(
-    b =>
-      (b.onclick = () => {
-        CSRC = b.dataset.src;
-        store.set('reefid-admin-csrc2', CSRC);
-        render();
-      })
-  );
+  bindBar($v, {redraw: render, src: true});
   const ca = $v.querySelector('[data-caside]');
   if (ca)
     ca.onclick = () => {
