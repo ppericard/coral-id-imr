@@ -1981,7 +1981,13 @@
       if (S.length >= 20) o[fi('stop')] = (s2 + PROF_K * p2) / (n2 + PROF_K) - (s0 + PROF_K * p0) / (n0 + PROF_K);
       const lens = new Map();
       L.forEach(a => lens.set(a.sess, (lens.get(a.sess) || 0) + 1));
-      o[fi('len')] = q([...lens.values()], 0.5);
+      // a session cut by the window's start (its first answer here is not its first, pos > 1) is not a session's length
+      // (Codex review #604): left out of the median, unless it is the only one (then it lasted at least that long)
+      const cut = L[0].pos > 1 && lens.size > 1 ? L[0].sess : null;
+      o[fi('len')] = q(
+        [...lens.entries()].filter(([k]) => k !== cut).map(([, v]) => v),
+        0.5
+      );
       o[fi('wk')] = (lens.size * 7) / Math.max(7, (L[L.length - 1].t - L[0].t) / DAY);
       o[fi('eve')] = mean(L.map(a => ((new Date(a.t).getUTCHours() + 8) % 24 >= 17 ? 1 : 0)));
     });
@@ -2070,6 +2076,17 @@
       D2 = Z.map(a => Z.map(b => sum(a.map((v, f) => (v - b[f]) ** 2))));
     return {T: hclust(D2, 'ward'), D: D2.map(r => r.map(Math.sqrt))};
   };
+  // The groups of a set of players (a list, a player drawn twice counted twice in the z-scores and the tree): Ward's tree
+  // cut into k groups (fewer when there are fewer distinct players), each group as its distinct players.
+  function profRun(V, ids, k) {
+    const kk = Math.min(k, new Set(ids).size - 1);
+    if (kk < 2) return null;
+    const zz = zOf(V, ids),
+      {T: t} = wardOf(ids, zz);
+    return cutK(t, ids.length, kk)
+      .map(L => [...new Set(L.map(i => ids[i]))])
+      .filter(L => L.length);
+  }
   function profiles(A, B, seed) {
     // a deleted account's answers (gone, sheet v55) make no profile (Pierre, 2026-11-05, Q86)
     const by = new Map();
@@ -2133,13 +2150,7 @@
       if (s > sil + 1e-9) ((sil = s), (k = g));
     }
     const G = cutK(T, n, k).map(L => L.map(i => main[i])),
-      run = ids => {
-        const kk = Math.min(k, ids.length - 1);
-        if (kk < 2) return null;
-        const zz = zOf(V, ids),
-          {T: t} = wardOf(ids, zz);
-        return cutK(t, ids.length, kk).map(L => L.map(i => ids[i]));
-      },
+      run = ids => profRun(V, ids, k),
       best = (H, L) => (L.length ? Math.max(...H.map(h => jac(L, h))) : null),
       loo = G.map(() => []),
       bt = G.map(() => []);
@@ -2159,8 +2170,11 @@
     const R = rng(seed || 1),
       NB = B ? Math.min(200, Math.max(50, B)) : 100;
     for (let b = 0; b < NB; b++) {
-      const U = [...new Set(main.map(() => main[Math.floor(R() * n)]))];
-      const H = run(U);
+      // the draw keeps its multiplicities for the standardisation and the tree (Codex review #604: a set of the players
+      // drawn measured a subsample, not the bootstrap); the groups compare unique players
+      const S = main.map(() => main[Math.floor(R() * n)]),
+        U = [...new Set(S)];
+      const H = run(S);
       if (!H) continue;
       G.forEach((L, g) => {
         const j = best(
@@ -3135,6 +3149,8 @@
     PROF_MIN,
     profFeat,
     profiles,
+    profRun,
+    zOf,
     eigSym,
     cutK,
     silhouette

@@ -1601,3 +1601,23 @@ test('profiles: stable only when every leave-one-out run keeps every group; the 
     near(spread, lam, 0.03, `axis ${k + 1}: the points' spread against its eigenvalue`);
   });
 });
+
+// Codex review #604, second pass: the window's cut session and the bootstrap's multiplicities.
+test('profiles: a session cut by the 300-answer window is not a session length; a bootstrap draw keeps its multiplicities', () => {
+  // two complete sessions of 200 answers: the window holds the last 100 of the first and the whole second
+  const rows = [];
+  for (let s = 0; s < 2; s++)
+    for (let i = 0; i < 200; i++)
+      rows.push(['p1', Date.UTC(2026, 9, 1 + s) + i * 30e3, 'A', 'A', 1, 'quiz', 'fA', 0.7, 0, 0, 'A B C D', 0, 5, 0]);
+  const D = A.prep(rows).slice(-300),
+    f = A.PROF_F.findIndex(x => x[0] === 'len');
+  assert.strictEqual(A.profFeat(D).p1[f], 200);
+  // a player drawn three times weighs three times in the z-scores (and in the tree); the groups list distinct players
+  const V = {a: [0, 0, 0, 0, 0, 0, 0], b: [1, 1, 1, 1, 1, 1, 1], c: [4, 4, 4, 4, 4, 4, 4], d: [5, 5, 5, 5, 5, 5, 5]};
+  assert.notStrictEqual(A.zOf(V, ['a', 'a', 'a', 'b', 'c', 'd'])('d')[0], A.zOf(V, ['a', 'b', 'c', 'd'])('d')[0]);
+  const G = A.profRun(V, ['a', 'a', 'a', 'b', 'c', 'd'], 2);
+  assert.deepStrictEqual(G.map(L => L.slice().sort()).sort(), [
+    ['a', 'b'],
+    ['c', 'd']
+  ]);
+});
