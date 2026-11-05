@@ -1,0 +1,50 @@
+# Debug only, never merged (branch debug/step9-bisect): the net.smoke step-9 hang on main before #531 (59c7e6a3),
+# as is (A), with the smokes in reduced motion (#520, B), with the sw.js of #531 (C). Instrumentation in the worker.
+name: step9 bisect
+on:
+  push:
+    branches: [debug/step9-bisect]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        v: [A, B, C]
+        kind: [full, loop]
+        i: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-1.64.1
+      - name: Install Playwright
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm install --no-save --no-audit --no-fund playwright@1.64.1
+          npx playwright install --with-deps chromium
+      - name: Variant
+        run: |
+          if [ "${{ matrix.v }}" = B ]; then echo CALM=1 >> "$GITHUB_ENV"; fi
+          if [ "${{ matrix.v }}" = C ]; then cp tests/sw-531.js sw.js; fi
+      - name: Full net.smoke, 4 times (DEBUG9)
+        if: matrix.kind == 'full'
+        run: |
+          for k in 1 2 3 4; do
+            echo "=== run $k"
+            DEBUG9=1 NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/net.smoke.js > out.txt 2>&1 || true
+            grep -A200 "WORKER DUMP\|never reached DOMContentLoaded" out.txt | head -150 || true
+            echo "HANGCOUNT $(grep -c 'never reached DOMContentLoaded' out.txt)"
+            tail -3 out.txt
+          done
+      - name: Step 9 alone, 12 times
+        if: matrix.kind == 'loop'
+        run: N=12 NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/repro9.js
