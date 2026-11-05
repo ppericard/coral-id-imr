@@ -97,7 +97,7 @@ Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Mari
 | What | Where |
 |---|---|
 | IMR reference material (Lecture 6 PPTX, slate photo) | Pierre's Google Drive, IMR folder `1gt0sv2YN4Og7-O_YCb3cVgvW94-CK6oG` (needs his Google sign-in). |
-| Lecture 6 as Google Slides (read with the Slides API, incl. presenter notes) | Slides id `13msDDkJzPN6fRam-ezX_vl93osAd0Cw4rJ1aINOzveI`. Full-resolution deck media: Drive folder `1FDXDg3XvjXwML0KGxxtjMjVq2fU3jP8i`. |
+| Lecture 6 as Google Slides (read with the Slides API, incl. presenter notes) | Slides id `13msDDkJzPN6fRam-ezX_vl93osAd0Cw4rJ1aINOzveI`. Full-resolution deck media: Drive folder `1FDXDg3XvjXwML0KGxxtjMjVq2fU3jP8i`. **Full-resolution IMR photos** (Pierre, 2026-11-05): search the unzipped deck `2026_L6_CoralID/ppt/media` on his Drive, never the Slides, which were compressed on purpose. |
 | Lecture text in the app | `data.json` `gen[g].imr` (verbatim slide text, review slides, presenter notes), `mn` mnemonics, `sl`/`rsl` slide numbers, `tools/lecture_more.tsv`, `tools/course_views.txt`. |
 | Coral Finder 2022 (R. Kelley, BYOGUIDES; copyrighted) | PDF on Pierre's Google Drive, in the IMR / coral folder (85 scanned pages, no text layer; PDF page = book page + 5). Never commit it or its page images (copyright). Page mapping already in `data.json` (`pages`, `key`, `x`). |
 | Pierre's iNaturalist | user `ppericard`, coral taxon 47532; covers 36 of the 39 slate genera (missing Anacropora, Astrea, Duncanopsammia at the time). |

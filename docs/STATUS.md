@@ -14,8 +14,7 @@ Last checked: reports and events: 2026-11-05 ~11:30 Manila
 Tracks in flight: track · PR or branch · state · next step.
 
 - Intuitive difficulty display across the admin (ROADMAP Next; Pierre's yes to the whole proposal, Q26) · its own PR ·
-  in progress (the colours wait for Q23).
-- FishBase as a fish photo source, and reference photos (ROADMAP Next) · its own PR · in progress.
+  in progress.
 - Governance refonte (ROADMAP Next) · PR A merged (#558); PR B (this file, `tools/brief.py`, the hooks) in review · then
   PR C (short AGENTS.md, `docs/rules/` topic files, stable rule IDs by theme, `judging/AGENTS.md` renamed, Codex review
   guidelines) and PR D (size budgets, reference checks).
@@ -24,9 +23,12 @@ Tracks in flight: track · PR or branch · state · next step.
 
 The integrator's queue, in order (details in [ROADMAP](ROADMAP.md) "Next").
 
-1. The fish track toward the beta (ROADMAP "Next", the fish rows); the fish candidates still to judge
-   (`python3 tools/judging_fish.py todo`), same process as #523-#549.
-2. The fish sheets at three levels, when Pierre wants them (study:
+1. Photos out of the repo, step 2 (top priority, ROADMAP Next): the photos with an online source leave `img/`, the
+   fallback switched to their original source.
+2. Corals: no share-alike, `thamnasteroid` accepted (Q35, one PR); the fish candidate cap of Q36.
+3. The fish track toward the beta (ROADMAP "Next", the fish rows); the fish candidates still to judge
+   (`python3 tools/judging_fish.py todo`), same process as #523-#549; FishBase next steps (ROADMAP).
+4. The fish sheets at three levels, when Pierre wants them (study:
    [reviews/2026-11-05-fish-sheets-study.md](reviews/2026-11-05-fish-sheets-study.md); its 13 questions not asked yet).
 
 ## Questions for Pierre
@@ -35,13 +37,9 @@ Open questions, numbered for good (never reset, AGENTS.md "Working mode"). An an
 this list. Long-standing content questions stay in [ROADMAP](ROADMAP.md) "Content questions for Pierre" and
 "Questions for an IMR trainer".
 
-- **Q23 Colour scale for photo difficulty**: 5 levels on the recognition %: ≥75% very easy (dark green), 60-75 easy
-  (light green), 40-60 middle (grey, no colour), 25-40 hard (orange), <25 very hard (red); colour-blind: dark blue,
-  light blue, grey, light orange, dark orange; a fixed scale, more saturated than the theme, the same in every palette,
-  light and dark. Adopt it? Recommendation: yes. PR: none yet ([#557](https://github.com/ppericard/coral-id-imr/pull/557),
-  merged, shows the % without colours).
+_(none: the 13 questions of the fish sheets study are parked by Pierre until he picks that project)_
 
-Last question number: Q26
+Last question number: Q36
 
 ## Pierre's hands
 
