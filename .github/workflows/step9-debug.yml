@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kind: [full, loop]
+        kind: [loop]
         i: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@v7
@@ -41,4 +41,4 @@ jobs:
           done
       - name: Step 9 alone, 12 times (OLD)
         if: matrix.kind == 'loop'
-        run: OLD=1 N=12 NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/repro9.js
+        run: N=15 NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/repro9.js
