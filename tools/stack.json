@@ -1,0 +1,129 @@
+{
+  "about": [
+    "The technology stack's pins, one item per tool, runtime, image, data snapshot or external API the repository chooses a version of",
+    "and no package manager tracks (Pierre, 2026-11-05: the whole stack on the latest stable; AGENTS.md rule 27b). Bump a version",
+    "here and at every place its pins name, in the same PR: python3 tools/stack_check.py --check (CI, Checks job) fails when they",
+    "disagree; python3 tools/stack_check.py --latest looks each item up at its source and lists what is behind (the session brief",
+    "shows it once a day). GitHub Actions versions are Dependabot's (.github/dependabot.yml), not listed here.",
+    "Item fields: id, name, version (what the repository uses), pins (where it is written), latest (where stack_check.py looks up the",
+    "latest stable: a kind it knows plus its parameters; compare = major | minor | exact), lookup (the page a person reads), why.",
+    "A pin: files (globs from the repository root) with pattern ({v} stands for the version; every match must equal version, or one",
+    "of also, and min matches at least, default 1), or contains / lacks (text the files must or must not hold). optional: the files",
+    "may be missing (they arrive with another PR)."
+  ],
+  "items": [
+    {
+      "id": "node",
+      "name": "Node.js (CI)",
+      "version": "26",
+      "pins": [{"files": [".github/workflows/*.yml"], "pattern": "node-version: '{v}'", "min": 2}],
+      "latest": {"kind": "node-lts", "compare": "major"},
+      "lookup": "https://nodejs.org/dist/index.json",
+      "why": "The newest LTS major; setup-node follows its newest 26.x by itself."
+    },
+    {
+      "id": "python",
+      "name": "Python (CI)",
+      "version": "3.15",
+      "pins": [{"files": [".github/workflows/*.yml"], "pattern": "python-version: '{v}'"}],
+      "latest": {"kind": "endoflife", "product": "python", "compare": "minor"},
+      "lookup": "https://endoflife.date/python",
+      "why": "setup-python in every job that runs python3 (Checks, the smokes, Deploy Pages, Candidate photos, Photos to R2): one value everywhere."
+    },
+    {
+      "id": "runner",
+      "name": "GitHub runner image",
+      "version": "ubuntu-26.04",
+      "pins": [{"files": [".github/workflows/*.yml"], "pattern": "runs-on: {v}", "min": 7}],
+      "latest": {"kind": "runner-images", "compare": "exact"},
+      "lookup": "https://github.com/actions/runner-images#available-images",
+      "why": "An explicit label, so a new image is a reviewed one-line PR (the system packages change with it); --latest also says where ubuntu-latest points."
+    },
+    {
+      "id": "prettier",
+      "name": "Prettier",
+      "version": "3.9.10",
+      "pins": [
+        {"files": [".github/workflows/*.yml", "AGENTS.md", "docs/*.md", "docs/rules/*.md", "tools/*.py"], "pattern": "prettier@{v}", "min": 4},
+        {"files": [".github/workflows/checks.yml"], "pattern": "(Prettier {v};"},
+        {"files": ["AGENTS.md", "docs/rules/*.md"], "pattern": "with Prettier {v}"}
+      ],
+      "latest": {"kind": "npm", "package": "prettier", "compare": "exact"},
+      "lookup": "https://www.npmjs.com/package/prettier?activeTab=versions",
+      "why": "Run with npx (no package.json, Pierre's rule). A new major reformats the code: one commit, listed in .git-blame-ignore-revs."
+    },
+    {
+      "id": "playwright",
+      "name": "Playwright (smoke tests, Chromium)",
+      "version": "1.64.1",
+      "pins": [
+        {"files": [".github/workflows/checks.yml"], "pattern": "playwright@{v}"},
+        {"files": [".github/workflows/checks.yml"], "pattern": "ms-playwright-${{ runner.os }}-{v}"}
+      ],
+      "latest": {"kind": "npm", "package": "playwright", "compare": "exact"},
+      "lookup": "https://playwright.dev/docs/release-notes",
+      "why": "npm install into a temporary folder on CI; the browser cache key carries the same version."
+    },
+    {
+      "id": "pillow",
+      "name": "Pillow (photo pipeline)",
+      "version": "13.0.0",
+      "pins": [{"files": ["tools/requirements.txt"], "pattern": "pillow=={v}"}],
+      "latest": {"kind": "pypi", "package": "pillow", "compare": "exact"},
+      "lookup": "https://pillow.readthedocs.io/en/stable/releasenotes/",
+      "why": "Writes every WebP size (tools/photos.py). Dependabot (pip) proposes the next one; check the WebP output stays byte-identical."
+    },
+    {
+      "id": "rclone",
+      "name": "rclone (photos to R2)",
+      "version": "1.75.2",
+      "pins": [
+        {"files": ["tools/r2_sync.sh"], "pattern": "RCLONE_VERSION={v}"},
+        {"files": ["tools/r2_sync.sh"], "pattern": "# rclone-v{v}-linux-amd64.zip"}
+      ],
+      "latest": {"kind": "rclone", "compare": "exact"},
+      "lookup": "https://rclone.org/changelog/",
+      "why": "The official release, downloaded and checked against its pinned SHA-256 (tools/r2_sync.sh). To bump: the comment above RCLONE_VERSION there (signed SHA256SUMS line, changelog, a manual Photos to R2 run)."
+    },
+    {
+      "id": "fishbase",
+      "name": "FishBase snapshot (rfishbase parquet)",
+      "version": "v25.04",
+      "pins": [{"files": ["tools/fetch_fishbase.py", "tools/fish_common.py"], "pattern": "rfishbase snapshot {v} (huggingface.co/datasets/cboettig/fishbase)", "min": 2}],
+      "latest": {"kind": "hf-tree", "repo": "cboettig/fishbase", "path": "data/fb", "compare": "exact"},
+      "lookup": "https://huggingface.co/datasets/cboettig/fishbase/tree/main/data/fb",
+      "why": "FishBase names and photo lists for the fish subject; a new snapshot means re-running tools/fetch_fishbase.py and tools/fish_common.py."
+    },
+    {
+      "id": "inat_api",
+      "name": "iNaturalist API",
+      "version": "v1",
+      "pins": [{"files": ["tools/*.py"], "pattern": "api.inaturalist.org/{v}/", "also": ["v2"], "min": 10}],
+      "latest": {"kind": "inat-api", "from": 2, "compare": "exact"},
+      "lookup": "https://api.inaturalist.org/v2/docs/",
+      "why": "v1 in most tools, v2 (the preferred one) in tools/fetch_fish.py: move each tool to v2 when it is touched, its output files checked identical. v1 has no shutdown date yet."
+    },
+    {
+      "id": "github_api",
+      "name": "GitHub REST API version",
+      "version": "2022-11-28",
+      "pins": [{"files": ["admin.js", "tools/sync/Code.gs"], "lacks": "X-GitHub-Api-Version"}],
+      "latest": {"kind": "github-api", "compare": "exact"},
+      "lookup": "https://docs.github.com/en/rest/about-the-rest-api/api-versions",
+      "why": "No X-GitHub-Api-Version header is sent (admin.js, Code.gs isAdmin_), so GitHub applies its default, 2022-11-28 (supported to 2028-03-10). To move: send the header and turn this pin into a pattern."
+    },
+    {
+      "id": "apps_script",
+      "name": "Apps Script runtime (sheet script)",
+      "version": "V8",
+      "pins": [{"files": ["tools/sync/appsscript.json"], "pattern": "\"runtimeVersion\": \"{v}\""}],
+      "latest": {
+        "kind": "apps-script-sunset",
+        "watch": ["V8", "SpreadsheetApp", "Spreadsheet service", "CacheService", "Cache service", "LockService", "Lock service", "PropertiesService", "Properties service", "UrlFetchApp", "URL Fetch", "ScriptApp", "Script service", "ContentService", "Content service", "Utilities", "Apps Script API"],
+        "compare": "exact"
+      },
+      "lookup": "https://developers.google.com/apps-script/guides/support/sunset",
+      "why": "V8 is the only runtime (Rhino stopped 2026-01-31). --latest reads the sunset table for the runtime and the services the script uses."
+    }
+  ]
+}
