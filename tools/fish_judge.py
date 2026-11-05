@@ -94,9 +94,16 @@ def apply(photos, fish=None):
 
 
 def write(doc):
+    """fish-photos.json, the one writer (tools/fish_photos.py uses it too): one entry per line under "photos" (the game
+    photos), then one species per line under "sheet" (the sheet-only photos, tools/fish_photos.py SHEET), kept as they are."""
+    dump = lambda v: json.dumps(v, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
+    sheet = doc.get("sheet") or {}
     lines = ["{", f'"v":{doc["v"]},', f'"built":{json.dumps(doc["built"])},', f'"stopgap":{json.dumps(doc["stopgap"])},', '"photos":{']
-    lines.append(",\n".join(f'"{k}":{json.dumps(v, ensure_ascii=False, separators=(",", ":"))}' for k, v in doc["photos"].items()))
-    lines += ["}", "}"]
+    lines.append(",\n".join(f'"{k}":{dump(v)}' for k, v in doc["photos"].items()))
+    lines.append("}," if sheet else "}")
+    if sheet:
+        lines += ['"sheet":{', ",\n".join(f'"{k}":{dump(v)}' for k, v in sheet.items()), "}"]
+    lines.append("}")
     PHOTOS.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

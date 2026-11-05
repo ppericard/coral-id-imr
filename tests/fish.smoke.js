@@ -90,6 +90,25 @@ const server = http.createServer((req, res) => {
       ok(ch.length === 3 && ch.every(n => L.includes(n) && n !== t), `${t}: 3 choices from the fish slate`);
     }
     ok(!FISH.winks.some(n => pool().includes(n)), 'winks never in the draw');
+    // Sheet-only photos (fish-photos.json sheet, core.js fishGen; Pierre, 2026-11-05: a species with no photo the game
+    // rules accept keeps one for its sheet, never in the quiz or any game): in FISH.sheet by species, in no unit's game
+    // photos (entries, scientific genera, winks), never drawn.
+    const SH = new Set(
+      Object.values(FISH.sheet || {})
+        .flat()
+        .map(x => x.f)
+    );
+    ok(
+      ['s088', 's061', 's105', 's244'].every(id => (FISH.sheet[id] || []).every(x => x.use === 'ref') && FISH.sheet[id].length),
+      'sheet: the covers'
+    );
+    const units = Object.keys(FISH.gen);
+    ok(!units.some(n => GX(n).views.wide.some(x => SH.has(x.f) || x.use === 'ref')), 'sheet: no sheet-only photo among game photos');
+    units
+      .filter(n => GX(n).views.wide.length)
+      .forEach(n => {
+        for (let i = 0; i < 3; i++) ok(!photoSet(n).shown.some(x => SH.has(x.f)), `${n}: a sheet-only photo drawn`);
+      });
     // Play the real quiz screen: 30 answers, right or wrong, cards closed (a wink that comes in between is no answer).
     const coralBefore = localStorage.getItem('reefid-sync-coral-progress');
     for (let i = 0, asked = 0; asked < 30 && i < 60; i++) {

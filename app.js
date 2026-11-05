@@ -502,7 +502,7 @@ const fishLoad = () =>
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
       if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      return (FISH = fishGenera(fishGen(f, ph.photos), f));
+      return (FISH = fishGenera(fishGen(f, ph.photos, ph.sheet), f));
     })
     .catch(e => {
       FISHP = null;
