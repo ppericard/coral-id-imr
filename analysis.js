@@ -2212,31 +2212,33 @@
     return s > 0 && isFinite(s) ? Math.min(1, 2 * ntail(d / s)) : s > 0 ? 1 : 0;
   }
   // Adjusted p-values, in the order given: Holm (step-down, family-wise error, any dependence between the tests) and
-  // Benjamini-Hochberg (step-up, false discovery rate, valid under independence or positive dependence).
-  function holm(P) {
+  // Benjamini-Hochberg (step-up, false discovery rate, valid under independence or positive dependence). raw: without
+  // the cap at 1, so that level * p / adjusted p stays the level the test faces (settle; Codex review #588).
+  function holm(P, raw) {
     const m = P.length,
       I = P.map((_, i) => i).sort((a, b) => P[a] - P[b]),
       out = new Array(m);
     let run = 0;
-    I.forEach((i, r) => ((run = Math.max(run, Math.min(1, (m - r) * P[i]))), (out[i] = run)));
+    I.forEach((i, r) => ((run = Math.max(run, (m - r) * P[i])), (out[i] = raw ? run : Math.min(1, run))));
     return out;
   }
-  function bh(P) {
+  function bh(P, raw) {
     const m = P.length,
       I = P.map((_, i) => i).sort((a, b) => P[a] - P[b]),
       out = new Array(m);
-    let run = 1;
-    for (let r = m - 1; r >= 0; r--) ((run = Math.min(run, (m * P[I[r]]) / (r + 1))), (out[I[r]] = Math.min(1, run)));
+    let run = Infinity;
+    for (let r = m - 1; r >= 0; r--) ((run = Math.min(run, (m * P[I[r]]) / (r + 1))), (out[I[r]] = raw ? run : Math.min(1, run)));
     return out;
   }
   const sig3 = v => (v == null || !isFinite(v) || v === 0 ? v : Number(v.toPrecision(3)));
   // The final verdict of one effect after its correction: clear when its adjusted p is at most the family's level; else
   // "no clear effect" or "not enough data yet" from its 95% interval, as verdictOf. The answers needed are those that
-  // would carry it to either verdict: past the level it now faces (lev: the family's level times p / adjusted p, the
+  // would carry it to either verdict: past the level it now faces (lev: the family's level times p / uncapped adjusted p, the
   // per-test level of its rank), or inside the margin; so it never says it needs fewer answers than it has. alo /
   // ahi: its interval at that level (it leaves the null value out exactly when the effect is clear).
-  function settle(e, pa, level) {
-    const lev = pa > 0 ? Math.min(level, (level * e.p) / pa) : level,
+  function settle(e, pr, level) {
+    const pa = Math.min(1, pr),
+      lev = pr > 0 ? Math.min(level, (level * e.p) / pr) : level,
       za = Math.max(Z, nq(1 - lev / 2)),
       sl = (e.est - (e.sd ? e.lu : e.lo)) / Z,
       sh = (e.hi - e.est) / Z;
@@ -2285,8 +2287,14 @@
     );
     const L1 = T.filter(e => e.fam === 1),
       L2 = T.filter(e => e.fam === 2),
-      a1 = holm(L1.map(e => e.p)),
-      a2 = bh(L2.map(e => e.p));
+      a1 = holm(
+        L1.map(e => e.p),
+        true
+      ),
+      a2 = bh(
+        L2.map(e => e.p),
+        true
+      );
     L1.forEach((e, i) => settle(e, a1[i], ALPHA));
     L2.forEach((e, i) => settle(e, a2[i], FDR));
     res.mt = {m1: L1.length, m2: L2.length, a: ALPHA, q: FDR};

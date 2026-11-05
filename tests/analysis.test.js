@@ -1081,3 +1081,27 @@ test('typed answers: the verdict shown is the corrected test of the contrast sho
   r = run(c0);
   assert.notStrictEqual(r.P.v, 'clear', 'as many right answers: no clear effect, whatever the recognition coefficient');
 });
+
+// Codex review #588 (3rd pass): an adjusted p capped at 1 no longer gives the level the effect faces; the answers needed
+// must still reach a verdict when its interval shrinks as 1/sqrt(n).
+test('answers needed after the correction reach a verdict, even when the adjusted p is capped at 1', () => {
+  const build = eff => ({
+    n: 1000,
+    A: Object.fromEntries(
+      Object.entries(A.PRIMARY).map(([k, keys]) => [
+        k,
+        {effects: keys.map(key => ({k: key, est: 0, lo: -0.2, hi: 0.2, sesoi: 0.25, n: 1000, unit: 'logit', v: 'margin'}))}
+      ])
+    )
+  });
+  const base = {k: 'slope', est: 0.4, lo: -0.7624, hi: 1.5624, sesoi: 0.25, n: 1000, unit: 'logit', v: 'thin'};
+  const r1 = build();
+  r1.A.learn.effects[0] = {...base};
+  const e = A.correct(r1).A.learn.effects[0];
+  assert.strictEqual(e.v, 'thin');
+  const f = Math.sqrt(1000 / e.need),
+    r2 = build();
+  r2.A.learn.effects[0] = {...base, lo: 0.4 - 1.1624 * f, hi: 0.4 + 1.1624 * f, n: e.need};
+  const e2 = A.correct(r2).A.learn.effects[0];
+  assert.notStrictEqual(e2.v, 'thin', `${e.need} answers: still undecided (adjusted p ${e2.pa})`);
+});
