@@ -42,15 +42,18 @@ Waiting only on a real dependency (details in [ROADMAP](ROADMAP.md) "Next").
 Open questions, numbered for good (never reset, AGENTS.md "Working mode"). An answered one goes into its PR and off
 this list. Long-standing content and trainer questions live in the admin, To do › Points (`points.json`, #571).
 
-- Q83 withdrawn (Pierre: progress is too generous beyond look-alikes; the number of genera in mind matters): a study
-  on progress vs the number of genera is running; its questions replace Q83.
+- Q101-Q113, progress against the number of genera ([study](reviews/2026-11-05-progress-setsize-study.md) §
+  questions a-m; replaces Q83): 100% = tells it from every slate unit (Q101); coverage weighted by confusion (Q102);
+  how low a beginner's first genera may stop (Q103); a two-tone bar (Q104); exam entry and slate traps (Q105); typed
+  vocabulary = genera unlocked (Q106); no custom-quiz cap (Q107); no decay (Q108); the recalculation plan (Q109); fish
+  fields per rank (Q110); "another genus" answers later (Q111); simulation first (Q112); rule 14f wording (Q113).
 - Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep the "beta" tag (Q93);
   a "Fish is here" card (Q94); the copy edits of PR C (Q95); level 1 on today's photos (Q96); no fish answer logging
   for a week (Q97); smoke tests and the bug sweep as release checks (Q98); new players still start on Corals (Q99);
   the flip Saturday ~10:00 Manila, Sunday morning as reserve (Q100). Rec. yes to each.
-- Also: his explicit go for photos step 3 (dry run ready); his pick among 4 app icons; the 13 fish-sheet questions.
+- Also: his explicit go for photos step 3 (dry run ready); the icon: D2 (D improved) or a loupe B1-B4 (round 2); the 13 fish-sheet questions.
 
-Last question number: Q100
+Last question number: Q113
 
 ## Pierre's hands
 
