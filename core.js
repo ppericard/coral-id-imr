@@ -1608,6 +1608,16 @@
     const done = new Set((have || []).flatMap(k => (k.startsWith('r:') ? [] : k.split(' '))));
     return ph.some(f => done.has(f)) ? '' : ph.join(' ');
   }
+  // Two devices' lists of counted reports (mergeAch): b's entries join a's by the same rule, so one photo reported on
+  // each device before they synced counts once (Codex review #579); the last CONTRIB_MAX.
+  function contribJoin(a, b) {
+    const out = Array.isArray(a) ? [...a] : [];
+    (Array.isArray(b) ? b : []).forEach(k => {
+      if (typeof k !== 'string' || !k || out.includes(k)) return;
+      if (k.startsWith('r:') || contribKey({id: 'x', ph: k}, out)) out.push(k);
+    });
+    return out.slice(-CONTRIB_MAX);
+  }
   // Counts report r into the record A (changes A._fb); true when it counted.
   function contribAdd(A, r) {
     const have = Array.isArray(A && A._fb) ? A._fb : [],
@@ -1650,7 +1660,8 @@
     const off = (k, t) => typeof gone[k] === 'number' && !(t > gone[k]);
     Object.keys(ra).forEach(k => {
       if (k === '_run' || k === '_v' || k === '_gone' || (old && k[0] !== '_') || off(k, ra[k])) return;
-      // A list (the Contributions' _fb): both devices' entries, each once, the last CONTRIB_MAX.
+      // A list: the Contributions' _fb by their rule (contribJoin), any other both devices' entries, each once, the last CONTRIB_MAX.
+      if (k === '_fb') return (A[k] = contribJoin(A[k], ra[k]));
       if (Array.isArray(ra[k])) return (A[k] = [...new Set([...(Array.isArray(A[k]) ? A[k] : []), ...ra[k]])].slice(-CONTRIB_MAX));
       A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
     });

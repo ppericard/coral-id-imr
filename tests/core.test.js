@@ -508,6 +508,14 @@ test('Contributions (Q65): a family apart, three tiers; one per photo, Other onl
   // Two devices of one player: both lists, each entry once; kept within CONTRIB_MAX.
   const M = mergeAch({_v: 2, _fb: ['r:a5', 'y.webp']}, {_v: 2, _fb: ['y.webp', 'z.webp'], fb1: 5}, 2);
   assert.deepStrictEqual([M._fb, M.fb1], [['r:a5', 'y.webp', 'z.webp'], 5]);
+  // One photo reported on each device before they synced (a quiz question here, its enlarged photo there): once (Codex
+  // review #579); a report on no photo by its id.
+  assert.deepStrictEqual(mergeAch({_fb: ['x.webp y.webp', 'r:a1']}, {_fb: ['x.webp', 'z.webp', 'r:a1', 'r:a2']}, undefined)._fb, [
+    'x.webp y.webp',
+    'r:a1',
+    'z.webp',
+    'r:a2'
+  ]);
   const big = mergeAch(
     {_fb: Array.from({length: 40}, (_, i) => 'r:a' + i)},
     {_fb: Array.from({length: 40}, (_, i) => 'r:b' + i)},

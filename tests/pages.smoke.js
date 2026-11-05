@@ -1018,6 +1018,33 @@ async function overlays(b, base) {
       fails.push(`Contributions on #ach: ${JSON.stringify(a)}`);
     await c.close();
   }
+  // Feedback sent from About before the achievements' tier has come (progress.js, tier 2): counted once it comes, its
+  // pop-up then (Codex review #579).
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, seen);
+    let go;
+    const held = new Promise(ok => (go = ok));
+    await c.route(
+      u => /\/progress\.js/.test(u.pathname),
+      async r => {
+        await held;
+        await r.continue();
+      }
+    );
+    await p.goto(base + '#about', {waitUntil: 'domcontentloaded'}); // its load event waits for the held file
+    await p.waitForSelector('#view [data-rep]', {timeout: 30000}).catch(() => {});
+    await p.click('#view [data-rep]');
+    await p.check('#repdlg input[name="why"][value="idea"]');
+    await p.click('#repdlg button[type="submit"]');
+    const before = await p.evaluate(() => typeof achReport);
+    go();
+    const t = await p
+      .waitForSelector('.achpop b', {timeout: 15000})
+      .then(e => e.textContent())
+      .catch(() => '');
+    if (before !== 'undefined' || t !== 'First feedback') fails.push(`Contributions before tier 2: ${JSON.stringify({before, t})}`);
+    await c.close();
+  }
   return fails;
 }
 

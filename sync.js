@@ -786,7 +786,9 @@ function reportDialog(c, btn) {
     d.close();
     sendReports();
     // The Contributions (Pierre, 2026-11-05, Q65): counted as it is sent, its achievement popping up now (progress.js).
-    if (typeof achReport === 'function') achReport(r);
+    // progress.js comes with tier 2 (index.html): a report sent from Home or About before it waits for it (app.js need;
+    // Codex review #579).
+    (typeof achReport === 'function' ? Promise.resolve() : need(2)).then(() => typeof achReport === 'function' && achReport(r));
     btn.textContent = kind === 'page' ? 'Thank you' : '⚑ Reported, thank you';
     btn.disabled = true;
   };
