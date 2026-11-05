@@ -2,8 +2,9 @@
 # computed once and stored in the sync sheet, the admin's primary source; its "Recompute here" runs the same code in that
 # tab on any device, phones included, and its result stays in that tab: Pierre, 2026-11-05; docs/ARCHITECTURE.md
 # "Analyses"). Every hour it asks the
-# sheet how many answers there are (a cheap call) and computes only when 1000 new answers came since the stored report,
-# or when the analysis code changed, or by hand (Run workflow, "force"). Needs the repository secret
+# sheet how many answers there are (a cheap call) and computes only when the log reaches a round thousand (1000, 2000,
+# 3000, …: the milestones, never shifted by the first report's count; Pierre, 2026-11-05) the stored report does not hold
+# yet, or when the analysis code changed, or by hand (Run workflow, "force"). Needs the repository secret
 # ANALYSES_ADMIN_TOKEN (Pierre's one-time setup: docs/HANDOVER.md "Analyses report"); without it every run is skipped.
 # Privacy: the report holds per-player results; it goes to the sheet only. The script prints counts only, never an id
 # or a name (the log of a public repository's Actions is public). No artifact, no cache, no upload.
@@ -14,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: 'Compute now, even without 1000 new answers'
+        description: 'Compute now, even before the log reaches the next round thousand'
         type: boolean
         default: false
 permissions:

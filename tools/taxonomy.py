@@ -3,9 +3,13 @@
 authority accepts now (WoRMS, iNaturalist), the former genus names, the species rows that pay, and a watch list.
 
 Decided with Pierre, 2026-11-05 (Q49, from docs/reviews/2026-11-05-coral-taxonomy-study.md section 5, its small form):
-- **Build time only**: the app never loads it (Pierre: "it must not weigh on the app"). Tools read it. This first version
-  only writes the file and prints a report; wiring it into tools/fetch_local.py (the iNaturalist taxa a genus search
-  asks) and the admin flags is a second PR (docs/ROADMAP.md).
+- **Build time only**: the app never loads it (Pierre: "it must not weigh on the app"). Tools read it, through the
+  readers at the end of this file (second PR, docs/ROADMAP.md "Taxonomy reference"): tools/fetch_local.py,
+  tools/cand_gaps.py and tools/coral_presence.py search the iNaturalist taxon it gives a genus (`inat_taxon`: no name
+  search, no homonym guard), and tools/presence.py matches checklist names through its species rows (`aliases`). The
+  admin never loads it either: it reads names.json, the small extract this tool writes beside it (`names_extract`), to
+  flag a photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS writes
+  otherwise (presence.js nameFlag).
 - **It never changes the IMR wording** (AGENTS.md rule 1): `app` is copied verbatim from data.json (the family the app
   shows, the IMR lecture's own "formerly..." lines), and a difference from WoRMS is reported, never applied.
 - **Watch list** (Q51): the items of taxonomy.json `watch` are reported when WoRMS or iNaturalist moves on them; that
@@ -23,7 +27,7 @@ subject named in the engine):
              iNaturalist taxon, a checklist or photo genus); a name once listed stays;
      "spp": {species name: {now, id, src, iname?, inat?, by?}}: a species row only where it pays: a WoRMS move into an
              app genus whose old name iNaturalist knows (src worms), a checklist name (Corals of the World, src cotw) or a
-             served photo name (src photo) that WoRMS writes differently;
+             photo name (served, or a candidate: src photo) that WoRMS writes differently;
              iname = iNaturalist's spelling when it differs, inat: false when iNaturalist has no active taxon for it,
              by: "checklist" when the mapping is a decision of tools/presence_checklists.json (`decided`), not WoRMS's;
      "watch": [{id, what, ref, names, genera, seen}]: hand-written but `seen` (what the sources say now, per name);
@@ -38,9 +42,14 @@ an ancestor guard against homonyms; details 30 ids a call), sequential, about on
 6f). Every reply is cached in tools/.cache/taxonomy.json (git-ignored): a rerun is offline and writes the same file;
 --refresh asks again; --offline fails instead of asking.
 
-Usage: python3 tools/taxonomy.py [--offline | --refresh] [--dry]   (--dry: print the report, leave the file as it is)
-       python3 tools/taxonomy.py --check   (offline, no cache needed: the layout, and every genus and its `app` and
-       `role` as data.json and core.js say now; tests/taxonomy.test.js runs it)
+names.json (the admin's extract, written with the file, never edited by hand): {"v", "doc", "<subject>": {"date",
+  "sp": {species name: {now, iname?, inat?}}: the species rows; "gen": {former genus: the genus WoRMS (else iNaturalist)
+  accepts now}: the `old` names that are no longer a genus of their own}}.
+
+Usage: python3 tools/taxonomy.py [--offline | --refresh] [--dry]   (--dry: print the report, leave the files as they are)
+       python3 tools/taxonomy.py --names   (offline: write names.json again from taxonomy.json)
+       python3 tools/taxonomy.py --check   (offline, no cache needed: the layout, names.json in step, and every genus
+       and its `app` and `role` as data.json and core.js say now; tests/taxonomy.test.js runs it)
 """
 import argparse
 import json
@@ -56,8 +65,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import genera  # noqa: E402  (the game genera, defined once in core.js)
+from datajson import load_all  # noqa: E402  (data.json with the candidates of cand.json)
 
 OUT = ROOT / "tools" / "taxonomy.json"
+NAMES = ROOT / "names.json"  # the admin's extract (names_extract)
 CACHE = ROOT / "tools" / ".cache" / "taxonomy.json"
 CHECKLISTS = ROOT / "tools" / "presence_checklists.json"
 V = 1
@@ -72,10 +83,9 @@ IMR_SAYS = re.compile(r"\bformerly\b|\bnow includes?\b", re.I)  # the IMR lectur
 
 def coral_inputs():
     """The coral subject's inputs: its genera (data.json gen + x.gen, role from core.js through tools/genera.py, `app`
-    verbatim), the served photo names (data.json views and more, and the candidates Pierre approved: curation.json
-    genera[n].add, which core.js applyCuration serves), the checklist (Corals of the World's Philippine list)."""
-    d = json.loads((ROOT / "data.json").read_text(encoding="utf-8"))
-    cur = json.loads((ROOT / "curation.json").read_text(encoding="utf-8")).get("genera") or {}
+    verbatim), the photo names (data.json views and more, and every candidate, approved or waiting in cand.json: the
+    admin flags a candidate's name too, names.json), the checklist (Corals of the World's Philippine list)."""
+    d = load_all(str(ROOT / "data.json"), str(ROOT / "cand.json"))
     X = (d.get("x") or {}).get("gen") or {}
     benthic, bonus = genera.lists()
     gen, names = {}, set()
@@ -86,9 +96,7 @@ def coral_inputs():
         if says:
             app["imr"] = says
         gen[n] = {"role": role, "app": app}
-        add = (cur.get(n) or {}).get("add") or {}
-        approved = [p for p in (d.get("cand") or {}).get(n) or [] if p.get("f") in add]
-        for v in [*(g.get("views") or {}).values(), *(g.get("more") or {}).values(), approved]:
+        for v in [*(g.get("views") or {}).values(), *(g.get("more") or {}).values(), (d.get("cand") or {}).get(n) or []]:
             for p in v:
                 w = (p.get("t") or "").split()
                 if len(w) >= 2 and w[1][:1].islower():
@@ -635,13 +643,17 @@ def load(path=OUT):
     return json.loads(Path(path).read_text(encoding="utf-8")) if Path(path).exists() else None
 
 
-def check(path=OUT):
-    """Offline: the layout, and every genus with the role and `app` data.json and core.js give it now."""
+def check(path=OUT, names_path=NAMES):
+    """Offline: the layout, names.json in step, and every genus with the role and `app` data.json and core.js give it
+    now."""
     errs = []
     text = Path(path).read_text(encoding="utf-8")
     o = json.loads(text)
     if render(o) != text:
         errs.append(f"{path.name}: not in the layout taxonomy.py writes (run python3 tools/taxonomy.py --offline)")
+    names = Path(names_path)
+    if not names.exists() or names.read_text(encoding="utf-8") != render_names(names_extract(o)):
+        errs.append(f"{names.name}: not in step with {path.name} (run python3 tools/taxonomy.py --names)")
     for s, sub in SUBJECTS.items():
         if s not in o:
             errs.append(f"no section {s}")
@@ -658,13 +670,90 @@ def check(path=OUT):
     return errs
 
 
+# ---------------------------------------------------------------- names.json, the admin's extract
+
+NAMES_DOC = ("The admin's extract of tools/taxonomy.json, written by tools/taxonomy.py (never by hand): the admin flags a "
+             "photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS "
+             "writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (AGENTS.md rule 1).")
+
+
+def names_extract(o):
+    """names.json from taxonomy.json: per subject, its species rows ({now, iname?, inat?}) and its former genus names
+    that are no longer a genus of their own ({name: the genus accepted now}: WoRMS's, else iNaturalist's single current
+    taxon; Favia or Montastraea, still accepted genera that lost species, are left out)."""
+    out = {"v": 1, "doc": NAMES_DOC}
+    for s in (k for k in o if k not in ("v", "doc", "refs")):
+        sec = o[s]
+        gen = {}
+        for n, r in sec.get("old", {}).items():
+            w, i = r.get("worms") or {}, r.get("inat") or {}
+            now = w.get("now") if w else (i["now"][0] if len(i.get("now") or []) == 1 else None)
+            if now and now != n:
+                gen[n] = now
+        out[s] = {"date": max((d for d in (sec.get("refreshed") or {}).values() if d), default=None),
+                  "sp": {k: {f: r[f] for f in ("now", "iname", "inat") if f in r} for k, r in sec.get("spp", {}).items()},
+                  "gen": gen}
+    return out
+
+
+def render_names(o):
+    """One species row or former genus per line, as taxonomy.json."""
+    L = ["{", f'"v":{o["v"]},', f'"doc":{dumps(o["doc"])}' + ("," if len(o) > 2 else "")]
+    subs = [k for k in o if k not in ("v", "doc")]
+    for j, s in enumerate(subs):
+        sec = o[s]
+        L += [f"{dumps(s)}:{{", f'"date":{dumps(sec["date"])},', '"sp":{']
+        L.append(",\n".join(f"{dumps(k)}:{dumps(v)}" for k, v in sec["sp"].items()))
+        L += ["},", '"gen":{']
+        L.append(",\n".join(f"{dumps(k)}:{dumps(v)}" for k, v in sec["gen"].items()))
+        L += ["}", "}" + ("," if j < len(subs) - 1 else "")]
+    L.append("}")
+    return "\n".join(x for x in L if x != "") + "\n"
+
+
+# ---------------------------------------------------------------- readers, for the other tools
+
+_FILE = {}
+
+
+def section(subject, path=OUT):
+    """The subject's section of taxonomy.json ({} for a subject the file does not hold yet: the fish, ROADMAP)."""
+    key = str(path)
+    if key not in _FILE:
+        _FILE[key] = load(path) or {}
+    return _FILE[key].get(subject) or {}
+
+
+def inat_taxon(genus, subject="coral", path=OUT):
+    """The iNaturalist taxon a photo search asks for a genus: taxonomy.json gen.<genus>.inat.id (ROADMAP "Taxonomy
+    reference", Pierre 2026-11-05, Q49), so no search by name and no homonym guard (the Astrea snail, the plant). None
+    when the file does not hold the genus (a genus new in data.json: run tools/taxonomy.py) or its taxon is inactive
+    (the refresh flags it): the caller says so and skips the genus. Another taxon for a genus (a wider IMR concept, the
+    Astrea question) comes only by Pierre's decision."""
+    i = ((section(subject, path).get("gen") or {}).get(genus) or {}).get("inat") or {}
+    return i["id"] if i.get("id") and i.get("act") is not False else None
+
+
+def aliases(name, subject="coral", path=OUT):
+    """The names a species row of taxonomy.json ties to `name`: the name itself, the name WoRMS accepts now (a former
+    combination, a moved genus, another spelling) and iNaturalist's spelling of it. Just the name when the file has no
+    row for it."""
+    r = (section(subject, path).get("spp") or {}).get(name) or {}
+    return [x for x in dict.fromkeys([name, r.get("now"), r.get("iname")]) if x]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--names", action="store_true")
     a = ap.parse_args()
+    if a.names:
+        NAMES.write_text(render_names(names_extract(load())), encoding="utf-8")
+        print(f"wrote {NAMES.relative_to(ROOT)}")
+        return
     if a.check:
         errs = check()
         for e in errs:
@@ -688,7 +777,8 @@ def main():
             net.save()
     if not a.dry:
         OUT.write_text(render(o), encoding="utf-8")
-        print(f"wrote {OUT.relative_to(ROOT)} ({len(render(o).encode()) // 1024} KB)")
+        NAMES.write_text(render_names(names_extract(o)), encoding="utf-8")
+        print(f"wrote {OUT.relative_to(ROOT)} ({len(render(o).encode()) // 1024} KB) and {NAMES.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

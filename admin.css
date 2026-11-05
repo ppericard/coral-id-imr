@@ -3792,6 +3792,12 @@ button.adm-chip[aria-pressed='true'] {
   box-shadow: inset 0 0 0 1px var(--muted);
   color: var(--muted);
 }
+/* The name WoRMS accepts now, on a photo whose name is a former one or iNaturalist's spelling (admin.js nameTag):
+   information only, outlined like "auto". */
+.adm-src.adm-worms {
+  box-shadow: inset 0 0 0 1px var(--muted);
+  color: var(--muted);
+}
 .adm-atile {
   margin: 0;
 }

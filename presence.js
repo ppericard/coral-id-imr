@@ -1,4 +1,5 @@
-// The presence rule, as the admin applies it to photos (Pierre, 2026-11-04; AGENTS.md rule 6g), and the photo licences.
+// The presence rule, as the admin applies it to photos (Pierre, 2026-11-04; AGENTS.md rule 6g), the photo licences and
+// the photo names (nameFlag).
 // Pure functions, no DOM: loaded by admin.html only (players never download it), tested in Node (tests/presence.test.js). The rule itself is
 // computed once in Python (tools/presence.py) into presence.json by tools/coral_presence.py; this file only reads it.
 (function (root) {
@@ -42,7 +43,27 @@
         .filter(p => !isHidden(n, p) && !kept(p.f) && shareAlike(p))
         .map(p => ({...p, genus: n, fv: p.base}))
     );
-  const API = {outOfRule, ruleQueue, licence, shareAlike, saQueue};
+  // Names (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49): a photo or candidate whose name (t, iNaturalist's at
+  // fetch time) is a former combination or moved genus, or iNaturalist's spelling of a name WoRMS writes otherwise.
+  // nm = names.json's section for the subject ({sp: {name: {now, iname?, inat?}}, gen: {former genus: genus now}}),
+  // written by tools/taxonomy.py from its reference file, which the admin never loads. A flag only: nothing is renamed
+  // (AGENTS.md rule 1). null: nothing to say (a name the file does not know, a genus-only name of a current genus, an
+  // IMR lecture or Coral Finder photo). kind: 'spelling' (t is iNaturalist's spelling of `now`), 'former' (t is a former
+  // name of `now`; iname: iNaturalist's spelling of `now` when it differs, inat: false when iNaturalist has no taxon
+  // for it), 'genus' (t's genus is a former genus, `now` the genus accepted now).
+  const nameFlag = (p, nm) => {
+    if (!p || p.imr || p.cf || !nm) return null;
+    const w = String(p.t || '').split(/\s+/);
+    const n = w.length >= 2 && /^[a-z]/.test(w[1]) ? w[0] + ' ' + w[1] : null;
+    const r = n && nm.sp ? nm.sp[n] : null;
+    if (r && r.now)
+      return r.iname === n
+        ? {kind: 'spelling', now: r.now}
+        : {kind: 'former', now: r.now, ...(r.iname ? {iname: r.iname} : {}), ...(r.inat === false ? {inat: false} : {})};
+    const g = w[0] && nm.gen ? nm.gen[w[0]] : null;
+    return g ? {kind: 'genus', now: g} : null;
+  };
+  const API = {outOfRule, ruleQueue, licence, shareAlike, saQueue, nameFlag};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

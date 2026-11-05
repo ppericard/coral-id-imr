@@ -178,6 +178,7 @@ let SHOWN_COVER = null,
   PICKS = {},
   PHOTOS = {},
   PRES = {}, // presence.json sp: each photo species confirmed in the Philippines or not (tools/coral_presence.py)
+  NAMES = {}, // names.json, the coral section: former names and iNaturalist spellings (tools/taxonomy.py; presence.js nameFlag)
   FISHA = null, // the fish entries and their photos, for the fish beta's reports (fishAdmin)
   KNOWN = new Set(),
   DATA,
@@ -849,11 +850,23 @@ const saTag = p =>
       : `<span class="adm-src multi adm-sa" title="Share-alike">share-alike</span>`;
 const saList = () => saQueue(Object.keys(DATA.gen), photos, hidden, saKept);
 const saKeptList = () => saQueue(Object.keys(DATA.gen), photos, hidden).filter(p => saKept(p.f));
+// A photo or candidate whose name is a former combination, a moved genus or iNaturalist's spelling of a name WoRMS writes
+// otherwise (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49; presence.js nameFlag, names.json): a neutral tag with
+// the name WoRMS accepts now. Information only, no action: nothing is renamed (AGENTS.md rule 1).
+const NAME_KIND = {spelling: 'iNaturalist spelling', former: 'Former name', genus: 'Former genus'};
+const nameTag = p => {
+  const k = nameFlag(p, NAMES);
+  if (!k) return '';
+  const t = [NAME_KIND[k.kind], k.iname ? 'iNaturalist: ' + k.iname : '', k.inat === false ? 'not on iNaturalist' : '']
+    .filter(Boolean)
+    .join(' · ');
+  return `<span class="adm-src adm-worms" title="${esc(t)}">WoRMS: <i>${esc(k.now)}</i></span>`;
+};
 // A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
   const o = origin(p),
     a = aApplied(p.f);
-  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>${a && a.kind === 'a' ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ruleTag(p)}${saTag(p)}`;
+  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>${a && a.kind === 'a' ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ruleTag(p)}${saTag(p)}${nameTag(p)}`;
 };
 
 /* ---------- Edits ---------- */
@@ -2183,7 +2196,7 @@ const HELP = {
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
-  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; AGENTS.md rule 6g): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically.</p>
+  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; AGENTS.md rule 6g): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>
@@ -5046,7 +5059,7 @@ async function start() {
   let CJ;
   try {
     let PJ;
-    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS, PRES, PJ] = await Promise.all([
+    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS, PRES, NAMES, PJ] = await Promise.all([
       fetch('data.json', {cache: 'no-cache'}).then(r => r.json()),
       side('quality.json', 'q'),
       side('forms.json', 'gf'),
@@ -5064,6 +5077,8 @@ async function start() {
       side('metrics.json', 'm'),
       // The presence rule per photo species (tools/coral_presence.py; AGENTS.md rule 6g): the "out of rule" flag.
       side('presence.json', 'sp'),
+      // Former names and iNaturalist spellings (the extract tools/taxonomy.py writes of its reference file): the name tag.
+      side('names.json', ADM0.id),
       // The points to handle (To do › Points), written by agents; a point with a shape problem is left out.
       fetch('points.json?v=1', {cache: 'no-cache'})
         .then(r => (r.ok ? r.json() : null))

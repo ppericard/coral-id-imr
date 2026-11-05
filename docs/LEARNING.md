@@ -741,7 +741,11 @@ player has unlocked only: `model.js` `unlocked`; it opens none). Code: `model.js
   outside the selection (a top-up choice, or a typed answer) asks the selected genus of the pair.
 - **What counts**: every answer is a photo-quiz answer: progress, ability, the global level, photo ratings and
   confusions in the sheet, the opening hold (each answer with the expectation it had; a selection the player finds hard
-  holds new cards in the photo quiz, as any run of misses would), achievements. Logged with the mode `quiz|s` before
+  holds new cards in the photo quiz, as any run of misses would), achievements, except the runs of right answers (On a
+  roll, Unstoppable) and Sharp eye (Pierre, 2026-11-05, Q82: "only in the normal Quiz"; the genera are the player's pick
+  and the choices come from them, so runs and "a photo most players miss" come easier): a custom-quiz answer neither
+  extends nor breaks the run and earns no hard photo (`progress.js` `achAfter`, `achRunIn`; the Duel tab's answers
+  likewise, while the duels slipped into the photo quiz count as Quiz answers). Logged with the mode `quiz|s` before
   any other tag (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`): the sheet's `guess_` reads `|kN`
   at the end and `|t` anywhere, and its mode split keeps `quiz`, so the deployed script (v27) stores and rates it as any
   photo-quiz answer, no new version needed (AGENTS.md 7a; `tests/custom.test.js` compares the two modes).
@@ -3403,7 +3407,7 @@ the logged ability minus the question's difficulty (th − d, from Expected and 
 
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
-Pierre, 2026-11-04: multifactor reports of the answer log, refitted every 1000 answers, in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
+Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
 
 - **Crossed random effects.** Player, genus and photo (a question's photos share its photo effect, weight 1/m each), fitted by alternating updates: each level's shrunk effect given the rest (a majorise-minimise step, exact when a row has one level), then the fixed effects, with EM updates of the variance components from the posterior second moments (REML-like shrinkage, without REML's exact determinant term). Gaussian for log response time (`lmm`); logistic with each question's guess rate, P = g + (1 − g) sig(eta), for right / wrong (`glmm`, penalised quasi-likelihood, Fisher scoring), g as the app's (`core.js` `guessOf`: 1/k, ½ for a duel, 0 typed).
 - **Intervals.** 95%: the model's own (Wald, from the fixed effects' covariance marginal over the random effects, the inverse of the Schur complement of the joint precision: an effect that is constant within a player, such as a player's habit, gets the players' spread, not the precision of their many answers; Codex review #441) and, from 6 players, a cluster bootstrap over players, whichever is wider. Draws (Pierre, 2026-11-05: at least 999): **999** for the latest milestone in the Action (the percentiles of the draws), **199** for the earlier milestones, newest first, while their answers add up to 60,000, none beyond (the model's own interval only), so that a full recompute stays inside the Action's 2 hours as the log grows (`report`); **Recompute here** in the browser: 199 draws read as a normal interval, the estimate ± 1.96 times the draws' standard deviation, never beyond the draws' range (`boot`, `BSE`: some 200 draws pin a standard error, percentiles need about 1,000, Efron & Tibshirani 1993), earlier milestones not reused from the stored report with the model's own interval only. Seeded: the same answers give the same intervals. Each bootstrap refit starts from the full fit of the same model (`WARM`: the same fit in fewer steps); a draw with no answer moving a feature gives no value for it (`drawn`), never the full fit's or 0. Few players = rough intervals, said by the verdicts.
