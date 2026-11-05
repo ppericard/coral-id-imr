@@ -851,6 +851,27 @@ const WIDTHS = [390, 1280];
         }
         if ((await st()) || (await p.evaluate(() => JSON.stringify(SAVED.points || null))) !== saved0)
           fails.push(`${w}px Points: Undo did not bring the point back to how it was, or something was published`);
+        // An edit still waiting for its 0.8 s reaches the draft when the page is hidden or left (Codex review #571: a reload
+        // or a phone sending the browser to the background right after typing lost it).
+        await go('~point/astrea-reefcloud');
+        for (const ev of ['pagehide', 'visibilitychange']) {
+          const got = await p.evaluate(ev => {
+            const t = document.querySelector('[data-ptn]');
+            t.value = 'typed then left ' + ev;
+            t.dispatchEvent(new Event('input', {bubbles: true}));
+            if (ev === 'visibilitychange') {
+              Object.defineProperty(document, 'visibilityState', {value: 'hidden', configurable: true});
+              document.dispatchEvent(new Event('visibilitychange'));
+              delete document.visibilityState;
+            } else window.dispatchEvent(new Event('pagehide'));
+            return ((DRAFT.points || {})['astrea-reefcloud'] || {}).n || '';
+          }, ev);
+          if (got !== 'typed then left ' + ev) fails.push(`${w}px Points: a note typed just before ${ev} is not in the draft ("${got}")`);
+        }
+        for (let i = 0; i < 4 && (await st()); i++) {
+          await p.click('#undo');
+          await settle();
+        }
         // A point that does not exist says so.
         await go('~point/no-such-point');
         if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);

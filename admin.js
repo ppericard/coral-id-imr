@@ -5299,7 +5299,12 @@ async function start() {
     setInterval(() => document.visibilityState === 'visible' && swCheck(), 1800000);
   }
   // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
+  // A note or answer typed on a point's page in the last 0.8 s reaches the draft when the page is left or hidden (a reload,
+  // a closed tab, a phone sending the browser to the background: Codex review #571).
+  addEventListener('pagehide', () => ptFlush());
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && ptFlush());
   window.onbeforeunload = e => {
+    ptFlush();
     if (draftLost) {
       e.preventDefault();
       e.returnValue = '';
