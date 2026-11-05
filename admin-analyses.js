@@ -324,6 +324,73 @@ function bars(vals, o = {}) {
   return svg(w, h, o.title || 'Counts', s);
 }
 
+// Heatmap (the multifactor visualisation study of 2026-11-05): a grid of cells, each with a strength class (tokens only,
+// admin.css .an-h*), a hover title, and its value written in it when the cell is wide enough (o.tmin px). Row labels on
+// the left; column labels above, upright when they would not fit across, or numbered (o.num), or none when the cells are
+// too narrow (the columns then follow the rows' order); o.mark(i, j): an extra class for a cell (an outline); o.blocks:
+// [[first, last]] outlined on the diagonal; o.top and o.tree(x0, cell, height): room above the column labels and the
+// dendrogram drawn in it; o.ax: [rows' name, columns' name], written in the corner. o: {n, nc, rl, rcls, cl, cell(i, j)
+// -> null | {c, t, title, inv}, w, lw, cs (largest cell), title}.
+function heat(o) {
+  const n = o.n,
+    nc = o.nc ?? n,
+    w = o.w || anW(),
+    lw = o.lw ?? Math.min(150, Math.round(w * 0.32)),
+    cs = Math.max(6, Math.min(o.cs || 28, Math.floor((w - lw - 4) / nc))),
+    up = o.cl && !o.num && cs >= 12,
+    ch = up ? Math.min(112, 10 + 6.4 * Math.max(...o.cl.map(s => String(s).length))) : o.cl && o.num ? 18 : o.ax ? 16 : 0,
+    tt = o.top || 0,
+    top = tt + ch,
+    h = top + n * cs + 2,
+    X = j => lw + j * cs,
+    Y = i => top + i * cs;
+  let s = o.tree ? o.tree(X(0), cs, tt) : '';
+  if (o.ax)
+    s += `<text class="an-tick" x="${lw - 6}" y="${top - 4}" text-anchor="end">${esc(o.ax[0])} ↓</text>${up || o.num ? '' : `<text class="an-tick" x="${lw}" y="${top - 4}">${esc(o.ax[1])} →</text>`}`;
+  for (let i = 0; i < n; i++)
+    s += `<text class="an-lab${o.rcls ? ' ' + o.rcls : ''}" x="${lw - 6}" y="${Y(i) + cs / 2 + 4}" text-anchor="end"><title>${esc(o.rl[i])}</title>${esc(fit(String(o.rl[i]), lw - 10))}</text>`;
+  if (o.cl && (up || o.num))
+    for (let j = 0; j < nc; j++) {
+      const x = X(j) + cs / 2;
+      s += up
+        ? `<text class="an-tick an-hcol${o.rcls ? ' ' + o.rcls : ''}" x="${x + 4}" y="${top - 4}" transform="rotate(-90 ${x + 4} ${top - 4})">${esc(o.cl[j])}</text>`
+        : `<text class="an-tick" x="${x}" y="${top - 5}" text-anchor="middle">${esc(o.cl[j])}</text>`;
+    }
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < nc; j++) {
+      const c = o.cell(i, j);
+      if (!c) continue;
+      const mk = o.mark ? o.mark(i, j) : '';
+      s += `<g><title>${esc(c.title || '')}</title><rect class="an-h ${c.c}${mk ? ' ' + mk : ''}" x="${X(j) + 0.5}" y="${Y(i) + 0.5}" width="${cs - 1}" height="${cs - 1}" rx="2"/>${
+        c.t && cs >= (o.tmin || 34)
+          ? `<text class="an-ht${c.inv ? ' inv' : ''}" x="${X(j) + cs / 2}" y="${Y(i) + cs / 2 + 4}" text-anchor="middle">${esc(c.t)}</text>`
+          : ''
+      }</g>`;
+    }
+  (o.blocks || []).forEach(
+    ([a, b]) =>
+      (s += `<rect class="an-blk" x="${X(a) - 1}" y="${Y(a) - 1}" width="${(b - a + 1) * cs + 2}" height="${(b - a + 1) * cs + 2}" rx="3"/>`)
+  );
+  return svg(lw + nc * cs + 2, h, o.title || 'Heatmap', s);
+}
+// A dendrogram as one path: merges [a, b, height] (leaves 0..n-1 in display order, the k-th merge = n + k); leaf(i): the
+// leaf's position along the leaves, hp(height): the position along the height axis. side 'top': leaves along x, the tree
+// above them; 'left': leaves along y, the tree to their left. Merges at cap or above are not drawn (the mix-up map: genera
+// joined with nothing in common, distance 1).
+function dendroPath(m, n, leaf, hp, side, cap = Infinity) {
+  const P = [];
+  for (let i = 0; i < n; i++) P[i] = [leaf(i), hp(0)];
+  let d = '';
+  m.forEach(([a, b, h], k) => {
+    const A = P[a],
+      B = P[b],
+      H = hp(h);
+    P[n + k] = [(A[0] + B[0]) / 2, H];
+    if (h < cap) d += side === 'top' ? `M${A[0]} ${A[1]}V${H}H${B[0]}V${B[1]}` : `M${A[1]} ${A[0]}H${H}V${B[0]}H${B[1]}`;
+  });
+  return `<path class="an-tree" d="${d}"/>`;
+}
+
 /* ---------- Page pieces ---------- */
 // Filters, sorting and folded cards (Pierre, 2026-11-04: "I can't scroll through everything"): remembered per page, in
 // this browser only (a viewer's convenience, AGENTS.md: browser storage never for shared state).
@@ -651,6 +718,219 @@ function anThumbs(L, val) {
   }).join('')}</div>`;
 }
 
+/* ---------- Structure (the multifactor visualisation study of 2026-11-05; Pierre's Q70-Q77) ---------- */
+const anWide = () => matchMedia('(min-width: 600px)').matches;
+// A correlation's strength class (diverging: the accent above 0, --bad below, three strengths past 0.2, 0.4, 0.6, 0.8).
+const anRc = r => {
+  const a = Math.abs(r),
+    k = a < 0.2 ? 0 : a < 0.4 ? 1 : a < 0.6 ? 2 : a < 0.8 ? 3 : 4;
+  return {c: k ? (r > 0 ? 'an-hp' : 'an-hn') + k : 'an-h0', inv: k >= 3};
+};
+// A correlation without a signed number (the admin reads no raw signed number: Pierre, 2026-11-05, #601): its size and
+// its direction in words (anRw, "0.82, opposite ways"), or behind ▲ (the same way) / ▼ (opposite ways) in a cell (anRs).
+const anR = r => (r == null || !isFinite(r) ? '–' : Math.abs(r).toFixed(2));
+const anRw = r => (r == null || !isFinite(r) ? '–' : `${anR(r)}, ${r < 0 ? 'opposite ways' : 'the same way'}`);
+const anRs = r => (r == null || !isFinite(r) ? '–' : (r < 0 ? '▼' : '▲') + anR(r));
+// Effects hard to tell apart (study §2.2, §2.3; analysis.js entOf), a folded card in each analysis: the pairs whose
+// estimates are correlated past ±0.6 in words (read their sum, not each alone), the conditions that come together in the
+// answers past ±0.7 and the variance inflation factors past 5, then two small lower-triangle heatmaps (the estimates, the
+// conditions), numbered columns, the names as row labels, and a table of every pair and every VIF.
+function anEnt(a, key) {
+  const E = a.ent;
+  if (!E || !E.k || E.k.length < 2) return '';
+  const nm = k => {
+      const e = (a.effects || []).find(x => x.k === k);
+      return e ? anPlain(key, e, a).name : k;
+    },
+    N = E.k.map(nm),
+    P = E.k.flatMap((_, i) => E.k.slice(0, i).map((__, j) => ({i, j, r: E.r[i][j], x: E.x ? E.x[i][j] : null}))).filter(p => p.r != null),
+    by = f => (p, q) => Math.abs(f(q)) - Math.abs(f(p)),
+    hard = P.filter(p => Math.abs(p.r) >= 0.6).sort(by(p => p.r)),
+    tog = P.filter(p => p.x != null && Math.abs(p.x) >= 0.7).sort(by(p => p.x)),
+    vif = (E.vif || []).map((v, i) => [i, v]).filter(([, v]) => v >= 5);
+  const li = L => `<ul class="adm-an-says-l">${L.join('')}</ul>`,
+    words =
+      (hard.length
+        ? li(
+            hard.map(
+              // the stable combination follows the sign (Codex review #592): estimates that trade off (r < 0) are sure in their
+              // sum, estimates that move together (r > 0) in their difference
+              p =>
+                `<li><b>${esc(N[p.i])}</b> and <b>${esc(N[p.j])}</b>: hard to tell apart (correlation ${anRw(p.r)}); ${
+                  p.r < 0
+                    ? 'one may be too high and the other too low: read their sum'
+                    : 'both may be too high or both too low: read their difference'
+                }.</li>`
+            )
+          )
+        : '<p class="note">No two results are hard to tell apart (every correlation of their estimates within ±0.6).</p>') +
+      (tog.length || vif.length
+        ? li([
+            ...tog.map(
+              p => `<li><b>${esc(N[p.i])}</b> and <b>${esc(N[p.j])}</b> often come together in the answers (correlation ${anRw(p.x)}).</li>`
+            ),
+            ...vif.map(([i, v]) => `<li><b>${esc(N[i])}</b>: mostly predictable from the other conditions (VIF ${v.toFixed(1)}).</li>`)
+          ])
+        : '');
+  const full = E.r.every((row, i) => row.length === i && row.every(v => v != null)),
+    two = matchMedia('(min-width: 1024px)').matches && E.x,
+    w = two ? Math.floor((anW() - 12) / 2) : anW(),
+    map = (M, t) =>
+      heat({
+        n: N.length,
+        nc: N.length - 1, // the last effect has no pair to its left: its column would stay empty
+        rl: N.map((s, i) => `${i + 1} ${s}`),
+        cl: N.map((_, i) => String(i + 1)),
+        num: true,
+        w,
+        cs: 46,
+        tmin: 40,
+        // the names get what the cells leave (cells of 30 px at least on a phone, 46 px at most)
+        lw: Math.max(110, Math.min(240, w - 30 * (N.length - 1) - 6, Math.round(w * 0.5))),
+        cell: (i, j) =>
+          j < i && M[i][j] != null ? {...anRc(M[i][j]), t: anRs(M[i][j]), title: `${N[i]} · ${N[j]}: correlation ${anRw(M[i][j])}`} : null,
+        title: t
+      }),
+    charts = full
+      ? `<div class="adm-an-pair"><div><h4 class="adm-an-out">Estimates</h4>${map(E.r, 'Correlation of the estimates')}</div>${
+          E.x
+            ? `<div><h4 class="adm-an-out">Conditions in the answers</h4>${map(E.x, 'Correlation of the conditions in the answers')}</div>`
+            : ''
+        }</div>`
+      : '';
+  const rows = P.slice()
+    .sort(by(p => p.r))
+    .map(
+      p =>
+        `<tr><td class="an-w">${esc(N[p.i])} · ${esc(N[p.j])}</td><td class="n">${anRs(p.r)}</td>${E.x ? `<td class="n">${anRs(p.x)}</td>` : ''}</tr>`
+    );
+  const tab =
+    anTable(
+      ['Results compared (▲ the same way, ▼ opposite ways)', '#Estimates', ...(E.x ? ['#Conditions'] : [])],
+      rows,
+      rows.length > 12 ? 'tall' : ''
+    ) +
+    (E.vif
+      ? anTable(
+          ['Result', '#VIF'],
+          E.vif.map((v, i) => `<tr><td class="an-w">${esc(N[i])}</td><td class="n">${v.toFixed(1)}</td></tr>`)
+        )
+      : '');
+  return anCard('Effects hard to tell apart', words + charts + tab, 'wide', false);
+}
+// The mix-up map (study §2.11; analysis.js mixMap; Pierre's Q74): from tablet width up, the whole matrix (rows the genus
+// shown, columns the genus answered, both in the dendrogram's order, the tree on top), each cell coloured by its rate
+// against a typical pair, the genus sheets' look-alikes outlined, each family a dashed block on the diagonal; on a
+// phone, the dendrogram as a list of genera (the tree on their left), each family a band that opens, on a tap, its own
+// block and its mix-ups. In words: the families, those no genus sheet names as look-alikes, and the mix-ups across
+// families. A table of the exact numbers beside it.
+function anMixMap(a) {
+  const m = a.map;
+  if (!m || !m.g || m.g.length < 3) return '';
+  const n = m.g.length,
+    G = m.g,
+    C = new Map(m.cells.map(c => [c[0] * n + c[1], c])),
+    famOf = new Map(m.fam.flatMap((L, f) => L.map(i => [i, f]))),
+    gen = (typeof DATA !== 'undefined' && DATA && DATA.gen) || {},
+    look = (x, y) => ((gen[x] || {}).look || []).includes(y) || ((gen[y] || {}).look || []).includes(x),
+    hmax = Math.max(1e-9, ...m.m.map(x => x[2])),
+    q = sr => (sr <= m.base ? 0 : sr <= 1.5 * m.base ? 1 : sr <= 2.5 * m.base ? 2 : sr <= 4 * m.base ? 3 : 4),
+    tim = sr => `×${(sr / m.base).toFixed(1)}`,
+    tip = c => `${G[c[0]]} shown, ${G[c[1]]} answered: ${c[3]} of ${c[2]} offers (${pc(c[3] / c[2])}); about ${tim(c[4])} a typical pair`,
+    cellOf = (i, j) => {
+      const c = C.get(i * n + j);
+      return c ? {c: 'an-hq' + q(c[4]), inv: q(c[4]) >= 3, t: pc(c[4]), title: tip(c)} : i === j ? {c: 'an-hd', title: G[i]} : null;
+    },
+    fams = m.fam.map(L => L.map(i => G[i])),
+    plain = m.fam.filter(L => !L.some(i => L.some(j => j !== i && look(G[i], G[j])))),
+    it = L => L.map(g => `<i>${esc(g)}</i>`).join(' · ');
+  const words = `<ul class="adm-an-says-l">${[
+    fams.length
+      ? `<li>Families of mix-ups: ${fams.map(it).join('; ')}.</li>`
+      : '<li>No family stands out yet: no pair is clearly mixed up more than a typical pair.</li>',
+    plain.length ? `<li>Not look-alikes on any genus sheet: ${plain.map(L => it(L.map(i => G[i]))).join('; ')}.</li>` : '',
+    m.across.length
+      ? `<li>Mixed up across families (look at their photos): ${m.across
+          .map(([i, j]) => {
+            const c = C.get(i * n + j);
+            return `<i>${esc(G[i])}</i> → <i>${esc(G[j])}</i> (${c[3]} of ${c[2]})`;
+          })
+          .join('; ')}.</li>`
+      : '',
+    m.left ? `<li>${m.left} genera never mixed up: not on the map.</li>` : ''
+  ].join('')}</ul>`;
+  const rowsOf = L =>
+    L.filter(c => c[3]).map(
+      c =>
+        `<tr><td><i>${esc(G[c[0]])}</i></td><td><i>${esc(G[c[1]])}</i></td><td class="n">${c[2]}</td><td class="n">${c[3]}</td><td class="n">${pc(c[3] / c[2])}</td><td class="n">${pc(c[4])}</td><td class="n">${tim(c[4])}</td></tr>`
+    );
+  const table = L =>
+    anTable(['Shown', 'Answered', '#Offered', '#Mixed up', '#Rate', '#Rate, shrunk', '#Against a typical pair'], rowsOf(L), 'tall');
+  const leg = `<p class="adm-an-leg adm-an-hleg"><span><i class="an-h an-hq0"></i>Typical or less</span><span><i class="an-h an-hq1"></i>×1.5</span><span><i class="an-h an-hq2"></i>×2.5</span><span><i class="an-h an-hq3"></i>×4</span><span><i class="an-h an-hq4"></i>More</span><span><i class="an-h an-look"></i>Look-alikes</span><span><i class="an-blk"></i>Family</span></p>`;
+  if (anWide()) {
+    const chart = heat({
+      n,
+      rl: G,
+      cl: G,
+      rcls: 'an-it',
+      lw: 118,
+      cs: 22,
+      top: 70,
+      ax: ['Shown', 'Answered'],
+      tree: (x0, cs, H) =>
+        dendroPath(
+          m.m,
+          n,
+          i => x0 + i * cs + cs / 2,
+          h => H - 2 - (h / hmax) * (H - 10),
+          'top',
+          0.999
+        ),
+      cell: cellOf,
+      mark: (i, j) => (i !== j && look(G[i], G[j]) ? 'an-look' : ''),
+      blocks: m.fam.map(L => [L[0], L[L.length - 1]]),
+      title: 'Mix-ups between genera: the genus shown (rows) and the genus answered (columns), families as blocks'
+    });
+    return anCard('Mix-up map', words + chart + leg + table(m.cells), 'wide');
+  }
+  // Phone: the tree as a list, a band per family (tap: its block and its mix-ups below)
+  const sel = Math.min(Math.max(0, anPref().mfam || 0), Math.max(0, m.fam.length - 1)),
+    w = anW(),
+    rh = 22,
+    tw = 64,
+    h = n * rh + 6,
+    Y = i => 3 + i * rh + rh / 2;
+  let s = '';
+  m.fam.forEach((L, f) => {
+    s += `<g class="an-famg${f === sel ? ' on' : ''}" data-anfam="${f}" role="button" tabindex="0" aria-pressed="${f === sel}"><title>${esc(L.map(i => G[i]).join(' · '))}</title><rect class="an-famb" x="0" y="${Y(L[0]) - rh / 2}" width="${w}" height="${L.length * rh}" rx="4"/></g>`;
+  });
+  s += dendroPath(m.m, n, Y, hh => tw - 2 - (hh / hmax) * (tw - 8), 'left', 0.999);
+  G.forEach((g, i) => (s += `<text class="an-lab an-it an-nohit" x="${tw + 6}" y="${Y(i) + 4}">${esc(fit(g, w - tw - 12))}</text>`));
+  const tree = svg(w, h, 'Genera ordered by their mix-ups, families as bands', s);
+  let block = '';
+  if (m.fam.length) {
+    const L = m.fam[sel];
+    block =
+      `<h4 class="adm-an-out">${it(L.map(i => G[i]))}</h4>` +
+      heat({
+        n: L.length,
+        rl: L.map(i => G[i]),
+        cl: L.map(i => G[i]),
+        rcls: 'an-it',
+        num: false,
+        lw: 110,
+        cs: 56,
+        tmin: 40,
+        ax: ['Shown', 'Answered'],
+        cell: (i, j) => cellOf(L[i], L[j]),
+        mark: (i, j) => (i !== j && look(G[L[i]], G[L[j]]) ? 'an-look' : ''),
+        title: 'Mix-ups within the family'
+      }) +
+      table(m.cells.filter(c => L.includes(c[0]) && L.includes(c[1])));
+  }
+  return anCard('Mix-up map', words + tree + leg + block, 'wide');
+}
+
 /* ---------- Views ---------- */
 // The Overview (Pierre, 2026-11-04: "very visual"): every result as a bar, one chart per outcome (a right answer, the time
 // to answer, ending a session, mixing up genera, the app's own estimate), sorted as the page asks, coloured by verdict, the
@@ -728,7 +1008,7 @@ function anView(key, rep, R) {
     );
   const lean = a.lean ? '<p class="note">Only the main results are kept for this milestone.</p>' : '';
   const parts = [anEffects(a, key)];
-  if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []));
+  if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []), anEnt(a, key));
   parts.push(anConv(rep, key));
   return head + lean + `<div class="adm-sgrid adm-an-grid">${parts.join('')}</div>`;
 }
@@ -879,6 +1159,7 @@ const ANV = {
     )
   ],
   conf: a => [
+    anMixMap(a),
     anCard(
       'Pairs most mixed up',
       anTable(
@@ -1234,6 +1515,20 @@ function anBind() {
         if (again) scrollBy(0, again.getBoundingClientRect().top - top);
       })
   );
+  // the mix-up map on a phone: a family's band opens its block (Enter or Space too), remembered per page
+  $v.querySelectorAll('[data-anfam]').forEach(g => {
+    const go = () => {
+      const card = g.closest('.adm-an-card'),
+        top = card && card.getBoundingClientRect().top;
+      anPref().mfam = Number(g.dataset.anfam);
+      anPrefSave();
+      render();
+      const again = card && document.getElementById(card.id);
+      if (again) scrollBy(0, again.getBoundingClientRect().top - top);
+    };
+    g.addEventListener('click', go);
+    g.addEventListener('keydown', e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), go()));
+  });
   $v.querySelectorAll('[data-anfold]').forEach(
     b =>
       (b.onclick = () => {
@@ -1313,6 +1608,7 @@ const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result
   <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
   <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once the log reaches the next round thousand (or the code changed), redoes every analysis on the first 1000, 2000, 3000, … answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). This page only draws it. The switch picks a milestone, the newest by default; the badge says how many answers came since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
+  <p><b>Effects hard to tell apart</b> (folded, under each analysis's charts). Two results whose estimates are strongly correlated (r beyond ±0.6) cannot be told apart well by the data: when they are negatively correlated, one could be a bit higher and the other a bit lower with almost as good a fit, so each alone is fragile and their sum is sure; positively correlated, both could be higher (or lower) together, so their difference is sure. It is a property of the estimates (from the model's own covariance), not a link between the two in the world. <b>Conditions in the answers</b>: how often two situations come together in the answers (beyond ±0.7, worth knowing); <b>VIF</b>: how much of a condition the other conditions of the model predict (1 = none; beyond 5, entangled). Columns are numbered as the rows; in a cell, ▲ means the two go the same way, ▼ opposite ways.</p>
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
   an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers), kept as history: each is another look at the same growing log, not a new finding.</p>${AN_HELP_COMMON}`,
@@ -1320,7 +1616,7 @@ Object.assign(HELP, {
   'an-zoom': `<p><b>Enlarging photos.</b> Is an answer more often right when the player enlarged a photo first, compared with the same player not enlarging, beyond what the app expected? And are players who enlarge often better or worse? Players: how often each enlarges, right when enlarging or not, and right answers against the app's expectation. Since 2026-11-03 20:24 the enlarge button is visible: compare milestones after it.</p>${AN_HELP_COMMON}`,
   'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p>${AN_HELP_COMMON}`,
   'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects, beyond guessing (the format's own guess rate set aside); and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p>${AN_HELP_COMMON}`,
-  'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p>${AN_HELP_COMMON}`,
+  'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p><p><b>Mix-up map.</b> Which genera form families of mix-ups. Two genera are close when their pair is clearly mixed up more often than a typical pair, per offer (the lower end of its likely range, so chance alone makes no family); genera are grouped by average distance and a family is a group whose pairs are, on average, at least a fifth as close as the closest pair. Rows: the genus shown; columns: the genus answered instead, both in the tree's order, so families sit as blocks on the diagonal (dashed). Colour: the rate per offer, pulled towards the pair's own rate when offers are few, against a typical pair's (blank: never offered together). Outlined: look-alikes named on a genus sheet; a family with no outline is one the sheets do not name. <b>Mixed up across families</b>: the cells most mixed up between two families, worth a look at their photos. On a phone the tree is a list: tap a family's band for its block and its numbers. Only genera mixed up at least once are on the map.</p>${AN_HELP_COMMON}`,
   'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`
