@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-05, about 13:40 Manila, by the integrator.
+Written 2026-11-05, about 16:30 Manila, by the integrator.
 
 Last checked: reports and events: 2026-11-05 ~13:38 Manila (nothing new since 11:30)
 
@@ -14,14 +14,13 @@ Last checked: reports and events: 2026-11-05 ~13:38 Manila (nothing new since 11
 Tracks in flight: track · PR or branch · state · next step. Decided work is launched at once (Pierre, 2026-11-05: no
 queue held back; `tests/slot.js` protects the machine).
 
-- Governance refonte · PR A #558 and PR B #561 merged · PR C (short AGENTS.md, `docs/rules/`, stable rule IDs, judging
-  brief renamed, Codex review guidelines, the size and reference tests) in progress, waits for Pierre's OK on the new
-  text and the dropped list.
-- Photos out of the repo · step 1 (online-original fallback, camera icon) merged #569 · step 2 (photos with an online
-  source leave `img/`, R2-only upload) in progress, waits for Pierre's OK · step 3 (history rewrite) only with his go.
-- Growth-form comparison fix and the 139 missing growth forms (a player's report) · in progress.
-- IMR lecture photos in full resolution from the unzipped deck (a player's report, Q27) · in progress.
-- Fish candidate cap weighted by phases (Q36) · in progress.
+- Governance PR C #572 · amended today (valid statistics with Holm and pre-declared measures, multifactor method
+  rigour, "tu" with Pierre, Dependabot and stack rule) · merge when CI and Codex are green; then the URL refonte and
+  the unit-test slot lock start.
+- Analyses multiple-testing correction (Q69: Holm on 1-2 declared primaries per analysis, BH on the rest, 999 bootstrap
+  draws, "new clear" badge removed) · agent at work · before/after screenshots to Pierre, then merge.
+- Contributions achievements #579 (Q65) and "Your feedback helped" #581 (Q66, stacked on #579) · green · wait for the
+  wording, Q79-Q81.
 
 ## Next
 
@@ -39,9 +38,18 @@ Waiting only on a real dependency (details in [ROADMAP](ROADMAP.md) "Next").
 Open questions, numbered for good (never reset, AGENTS.md "Working mode"). An answered one goes into its PR and off
 this list. Long-standing content and trainer questions live in the admin, To do › Points (`points.json`, #571).
 
-_(none: the 13 questions of the fish sheets study are parked by Pierre until he picks that project)_
+- Q70-Q77, the Analyses visualisations and player profiles ([study](reviews/2026-11-05-multifactor-viz-study.md)
+  §6 a-h): a map not named types until ~30 players (Q70); profile on the last 300 answers (Q71); the 8 behaviours
+  (Q72); admin only (Q73); phone forms for dense views (Q74); computed in the Action's report (Q75); a player × genus
+  effect later (Q76); no PCA on raw answers, residual and behaviour PCAs instead (Q77). Recommendation: yes to each.
+- Q78: photos served from a domain of his own instead of `r2.dev` (development-only, rate-limited), with the domain
+  rename planned before December. Recommendation: yes.
+- Q79-Q81, wording in #579 / #581 (screenshots sent): 5th and 10th report titles and icon (rec. Helping hand,
+  Co-author, 💬); the "handled" toast (rec. Your feedback helped, "A report you sent was looked at and handled.", 🙌);
+  the 2 reports already done thanked once at release (rec. yes).
+- The 13 questions of the fish sheets study stay parked until he picks that project.
 
-Last question number: Q58
+Last question number: Q81
 
 ## Pierre's hands
 
@@ -62,7 +70,8 @@ Actions only Pierre can do.
 - **Sort the photos out of the presence rule** (To do › Out of the presence rule: Remove / Keep) and, when convenient, the 14 share-alike coral photos (To do › Share-alike).
 - **More photos for the genera with the fewest** (photo memory: in a thin genus players learn the photos, not the genus; Pierre, 2026-11-03): [admin Coverage › Games › Thinnest](https://ppericard.github.io/coral-id-imr/admin.html#~cov) lists them.
 - **Protect `main` on GitHub**: [HANDOVER "Protect main"](HANDOVER.md#protect-main-one-time-setup).
-- **Create the secret `ANALYSES_ADMIN_TOKEN`** (the admin's Analyses report computes itself once it exists):
+- **Create the secret `ANALYSES_ADMIN_TOKEN`** (no Analyses report was ever stored without it; asked again
+  2026-11-05):
   [HANDOVER "Analyses report"](HANDOVER.md#analyses-report-one-time-setup-2026-11-04).
 - **Archive tags, then delete branches** (the proxy refuses tag pushes and branch deletes from the agents):
   `git push origin f46f11c:refs/tags/archive/cards-mockups` and
@@ -85,6 +94,7 @@ _(none)_
 
 ## Last stop
 
-Who stopped, when, why, and what was mid-flight.
-
-_(none yet in the integrator mode: first day, 2026-11-05)_
+2026-11-05 ~16:30 Manila, integrator, end of Pierre's day (Rule 0). Merged today after 15:30: #578, #580, #582-#587
+(Recompute on phones, unstretched IMR photos, per-player replay stats, CI on Node 24 / Ubuntu 26.04 / Python 3.15,
+Analyses sort and fold, rclone 1.75.2 checked by a real Photos to R2 run, stack check). Mid-flight: #572 (CI), the
+Analyses correction agent; #579/#581 wait for Q79-Q81.
