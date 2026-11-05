@@ -726,7 +726,11 @@ const anRc = r => {
     k = a < 0.2 ? 0 : a < 0.4 ? 1 : a < 0.6 ? 2 : a < 0.8 ? 3 : 4;
   return {c: k ? (r > 0 ? 'an-hp' : 'an-hn') + k : 'an-h0', inv: k >= 3};
 };
-const anR = r => (r == null || !isFinite(r) ? '–' : (r < 0 ? '−' : '') + Math.abs(r).toFixed(2));
+// A correlation without a signed number (the admin reads no raw signed number: Pierre, 2026-11-05, #601): its size and
+// its direction in words (anRw, "0.82, opposite ways"), or behind ▲ (the same way) / ▼ (opposite ways) in a cell (anRs).
+const anR = r => (r == null || !isFinite(r) ? '–' : Math.abs(r).toFixed(2));
+const anRw = r => (r == null || !isFinite(r) ? '–' : `${anR(r)}, ${r < 0 ? 'opposite ways' : 'the same way'}`);
+const anRs = r => (r == null || !isFinite(r) ? '–' : (r < 0 ? '▼' : '▲') + anR(r));
 // Effects hard to tell apart (study §2.2, §2.3; analysis.js entOf), a folded card in each analysis: the pairs whose
 // estimates are correlated past ±0.6 in words (read their sum, not each alone), the conditions that come together in the
 // answers past ±0.7 and the variance inflation factors past 5, then two small lower-triangle heatmaps (the estimates, the
@@ -752,7 +756,7 @@ function anEnt(a, key) {
               // the stable combination follows the sign (Codex review #592): estimates that trade off (r < 0) are sure in their
               // sum, estimates that move together (r > 0) in their difference
               p =>
-                `<li><b>${esc(N[p.i])}</b> and <b>${esc(N[p.j])}</b>: hard to tell apart (r = ${anR(p.r)}); ${
+                `<li><b>${esc(N[p.i])}</b> and <b>${esc(N[p.j])}</b>: hard to tell apart (correlation ${anRw(p.r)}); ${
                   p.r < 0
                     ? 'one may be too high and the other too low: read their sum'
                     : 'both may be too high or both too low: read their difference'
@@ -763,7 +767,7 @@ function anEnt(a, key) {
       (tog.length || vif.length
         ? li([
             ...tog.map(
-              p => `<li><b>${esc(N[p.i])}</b> and <b>${esc(N[p.j])}</b> often come together in the answers (r = ${anR(p.x)}).</li>`
+              p => `<li><b>${esc(N[p.i])}</b> and <b>${esc(N[p.j])}</b> often come together in the answers (correlation ${anRw(p.x)}).</li>`
             ),
             ...vif.map(([i, v]) => `<li><b>${esc(N[i])}</b>: mostly predictable from the other conditions (VIF ${v.toFixed(1)}).</li>`)
           ])
@@ -784,7 +788,7 @@ function anEnt(a, key) {
         // the names get what the cells leave (cells of 30 px at least on a phone, 46 px at most)
         lw: Math.max(110, Math.min(240, w - 30 * (N.length - 1) - 6, Math.round(w * 0.5))),
         cell: (i, j) =>
-          j < i && M[i][j] != null ? {...anRc(M[i][j]), t: anR(M[i][j]), title: `${N[i]} · ${N[j]}: r = ${anR(M[i][j])}`} : null,
+          j < i && M[i][j] != null ? {...anRc(M[i][j]), t: anRs(M[i][j]), title: `${N[i]} · ${N[j]}: correlation ${anRw(M[i][j])}`} : null,
         title: t
       }),
     charts = full
@@ -798,10 +802,10 @@ function anEnt(a, key) {
     .sort(by(p => p.r))
     .map(
       p =>
-        `<tr><td class="an-w">${esc(N[p.i])} · ${esc(N[p.j])}</td><td class="n">${anR(p.r)}</td>${E.x ? `<td class="n">${anR(p.x)}</td>` : ''}</tr>`
+        `<tr><td class="an-w">${esc(N[p.i])} · ${esc(N[p.j])}</td><td class="n">${anRw(p.r)}</td>${E.x ? `<td class="n">${anRw(p.x)}</td>` : ''}</tr>`
     );
   const tab =
-    anTable(['Results compared', '#Estimates r', ...(E.x ? ['#Conditions r'] : [])], rows, rows.length > 12 ? 'tall' : '') +
+    anTable(['Results compared', '#Estimates', ...(E.x ? ['#Conditions'] : [])], rows, rows.length > 12 ? 'tall' : '') +
     (E.vif
       ? anTable(
           ['Result', '#VIF'],
@@ -1600,7 +1604,7 @@ const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result
   <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
   <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once the log reaches the next round thousand (or the code changed), redoes every analysis on the first 1000, 2000, 3000, … answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). This page only draws it. The switch picks a milestone, the newest by default; the badge says how many answers came since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
-  <p><b>Effects hard to tell apart</b> (folded, under each analysis's charts). Two results whose estimates are strongly correlated (r beyond ±0.6) cannot be told apart well by the data: when they are negatively correlated, one could be a bit higher and the other a bit lower with almost as good a fit, so each alone is fragile and their sum is sure; positively correlated, both could be higher (or lower) together, so their difference is sure. It is a property of the estimates (from the model's own covariance), not a link between the two in the world. <b>Conditions in the answers</b>: how often two situations come together in the answers (beyond ±0.7, worth knowing); <b>VIF</b>: how much of a condition the other conditions of the model predict (1 = none; beyond 5, entangled). Columns are numbered as the rows.</p>
+  <p><b>Effects hard to tell apart</b> (folded, under each analysis's charts). Two results whose estimates are strongly correlated (r beyond ±0.6) cannot be told apart well by the data: when they are negatively correlated, one could be a bit higher and the other a bit lower with almost as good a fit, so each alone is fragile and their sum is sure; positively correlated, both could be higher (or lower) together, so their difference is sure. It is a property of the estimates (from the model's own covariance), not a link between the two in the world. <b>Conditions in the answers</b>: how often two situations come together in the answers (beyond ±0.7, worth knowing); <b>VIF</b>: how much of a condition the other conditions of the model predict (1 = none; beyond 5, entangled). Columns are numbered as the rows; in a cell, ▲ means the two go the same way, ▼ opposite ways.</p>
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
   an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers), kept as history: each is another look at the same growing log, not a new finding.</p>${AN_HELP_COMMON}`,

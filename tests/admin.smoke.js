@@ -402,8 +402,8 @@ const WIDTHS = [390, 1280];
             small: [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length
           };
         });
-        const pos = ent && ent.words.filter(t => /hard to tell apart \(r = 0/.test(t)),
-          neg = ent && ent.words.filter(t => /hard to tell apart \(r = −/.test(t));
+        const pos = ent && ent.words.filter(t => /hard to tell apart \(correlation [\d.]+, the same way\)/.test(t)),
+          neg = ent && ent.words.filter(t => /hard to tell apart \(correlation [\d.]+, opposite ways\)/.test(t));
         if (ent && (pos.some(t => !/difference/.test(t)) || neg.some(t => !/sum/.test(t)) || (h === '~an-fmt' && !pos.length)))
           fails.push(`${w}px Analyses #${h} entangled words: ${JSON.stringify(ent.words)}`);
         if (!ent || !ent.folded || !ent.table || ent.wide > 0 || ent.small)
