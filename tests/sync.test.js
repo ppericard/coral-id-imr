@@ -1930,3 +1930,22 @@ test('v55 (Codex review #600): a removed account whose name is throttled still n
   const row = s.sheets.Reports.rows.find(x => x && x[11] === 'rt1');
   assert.deepStrictEqual([row[1], row[2]], ['', 0]);
 });
+
+// v56 (core.js rules version 6): the Notes tab's card lines in the load and save replies (notes_: Pierre's text, never
+// in the repo), and a typed answer logged with its effective set size rated 1 / N (guess_, as core.js guessOf).
+test('v56: the replies carry the Notes tab card lines; a typed answer with |ktN is rated 1 / N', () => {
+  const s = seed();
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).notes, {}, 'no Notes tab: none');
+  const {makeSheet} = require('./gas.js'),
+    N = (s.sheets.Notes = makeSheet('Notes'));
+  N.rows.push(['Key', 'Text'], ['card.rv6.ps', 'PS: a made-up line.'], ['other', 'not a card line'], ['card.bad key', 'x']);
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).notes, {'card.rv6.ps': 'PS: a made-up line.'});
+  assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(4), summary: {}, answers: []}).notes, {
+    'card.rv6.ps': 'PS: a made-up line.'
+  });
+  const g = vm.runInContext('guess_', s.ctx);
+  assert.strictEqual(g('quiz|t|kt4', ''), 0.25);
+  assert.strictEqual(g('quiz|t', ''), 0);
+  for (const m of ['quiz|t|kt3.5', 'quiz|t', 'quiz|k2', 'quiz-duel|A|B', 'quiz'])
+    assert.strictEqual(g(m, 'A B C D'), C.guessOf(m, 'A B C D'), m);
+});
