@@ -379,38 +379,46 @@
     const more = ANALYSIS.demoLog(D, NOW - 3 * DAY, {cur, qual, met});
     more.forEach((r, i) => rows.push([...r.slice(0, 7), 'demoz' + i, ...r.slice(7, 11), r[12], r[13]]));
     // Photos everyone misses in the session Carla is playing now (Activity's session summary labels them "hard for
-    // everyone", Health lists them; admin.js healthBad: 5 answers or more, under 40% right): each question she missed
-    // there is also missed by as many earlier answers of devices not signed in as its photos need to pass that rule,
-    // counted on every answer now in the log (taken from those devices' own answers, so the answer count and the
-    // sessions stay the same; every photo of the question, so whichever the summary shows carries the label).
+    // everyone", Health lists them; admin.js everyoneMisses, the one rule: 3 players or more answered it, most of them
+    // miss it, under 40% right over all its answers). Each question she missed there is also missed by enough earlier
+    // answers of the devices not signed in, several distinct players, for its photos to pass that rule, counted on every
+    // answer now in the log (taken from those devices' own answers, so the answer count and the sessions stay the same;
+    // every photo of the question, so whichever the summary shows carries the label; never the last 8 answers of
+    // ~anon demo0, the recent session Activity's checks read).
     {
-      const donors = rows.filter(r => r[0] === '~anon demo1' || r[0] === '~anon demo2'),
-        on = f => rows.filter(r => r[6].split(' ').includes(f));
+      const live0 = new Set(
+          rows
+            .filter(r => r[0] === '~anon demo0')
+            .sort((a, b) => a[1] - b[1])
+            .slice(-8)
+        ),
+        pool = {};
+      rows.filter(r => /^~anon demo\d$/.test(r[0]) && !live0.has(r)).forEach(r => (pool[r[0]] = pool[r[0]] || []).push(r));
+      const tally = f => photoAnswers(rows.filter(r => r[6].split(' ').includes(f)))[f] || {n: 0, ok: 0, by: {}};
       rows
         .filter(r => r[0] === 'Carla Demo')
         .sort((a, b) => a[1] - b[1])
         .slice(-24)
         .filter(r => !r[4])
         .forEach(miss => {
-          const need = Math.max(
-            0,
-            ...miss[6]
-              .split(' ')
-              .filter(Boolean)
-              .map(f => {
-                const L = on(f),
-                  k = L.filter(r => r[4]).length,
-                  w = L.length - k;
-                return Math.max(5 - L.length, Math.floor(1.5 * k - w) + 1);
-              })
-          );
-          if (need <= donors.length)
-            donors.splice(0, need).forEach(r => {
-              r[2] = miss[2];
-              r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
-              r[4] = 0;
-              r[6] = miss[6];
-            });
+          const F = miss[6].split(' ').filter(Boolean);
+          // One donor answer at a time, from the device that helps most on a photo still short of the rule: one that
+          // never answered it (a new player who misses it), then one that does not miss it yet, then any.
+          for (let guard = 0; guard < 12; guard++) {
+            const f = F.find(x => !everyoneMisses(tally(x)));
+            if (!f) break;
+            const by = tally(f).by,
+              rank = d => (!by[d] ? 0 : by[d][1] / by[d][0] >= HEALTH.PL_LOW ? 1 : 2),
+              d = Object.keys(pool)
+                .filter(x => pool[x].length)
+                .sort((a, b) => rank(a) - rank(b) || pool[b].length - pool[a].length)[0];
+            if (!d) break;
+            const r = pool[d].shift();
+            r[2] = miss[2];
+            r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
+            r[4] = 0;
+            r[6] = miss[6];
+          }
         });
     }
     ANALYSIS.DEMO_PLAYERS.forEach(([name]) => {

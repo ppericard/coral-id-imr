@@ -879,8 +879,9 @@ function sessionSummary(id, L, name) {
           ? `<table class="adm-tbl">${F.improved.map(([g, a, b]) => `<tr><td>${gl(g)}</td><td class="n">${Math.round(100 * a)}% → ${Math.round(100 * b)}%</td><td class="n">${jPts(b - a)}</td></tr>`).join('')}</table>`
           : '',
     VT = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites'},
-    // A photo everyone misses (Health's rule, admin.js healthBad: under 40% right over 5 answers or more, or clearly
-    // harder than its genus's other photos) says so (Pierre, 2026-11-05), beside its difficulty (admin.js recBadge).
+    // A photo everyone misses (Health's rule, admin.js healthBad: answered by 3 players or more, most of whom miss it,
+    // and under 40% right over all its answers or clearly harder than its genus's other photos) says so (Pierre,
+    // 2026-11-05), beside its difficulty (admin.js recBadge).
     hardAll = ofAns('hardAll', () => new Set(healthBad(ANS.rows || []).map(o => o.p.f))),
     tile = x => {
       const p = photos(x.g).find(q => q.f === x.f);
