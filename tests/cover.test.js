@@ -70,9 +70,10 @@ test('field rule: a typed answer is scored with a similarity-weighted effective 
   // The player's own record moves the similarity: a pair they never mix up after many offers weighs less.
   assert.ok(C.typedK({T: {off: Object.fromEntries(LOOK.map(n => [n, 40]))}}, 'T', ['T', ...LOOK], F) < look);
   // The guess rate and the choices read back from the log (|ktN), an older typed row none.
-  assert.strictEqual(C.guessOf('quiz|t|kt3.5', ''), 1 / 3.5);
+  assert.strictEqual(C.guessOf('quiz|t|kt350', ''), 1 / 3.5);
   assert.strictEqual(C.guessOf('quiz|t', ''), 0);
-  assert.strictEqual(C.kOf('quiz|t|kt3.5', ''), 3.5);
+  assert.strictEqual(C.kOf('quiz|t|kt350', ''), 3.5);
+  assert.strictEqual(C.kOf('quiz|t|kt100', ''), Infinity, 'a size of 1 or less is no size');
   assert.strictEqual(C.kOf('quiz|t', ''), Infinity);
   assert.strictEqual(C.kOf('quiz|k3', ''), 3, '|kN unchanged');
   // The offers of a right typed answer: each genus of the vocabulary by its similarity, sparse.
@@ -94,7 +95,7 @@ test('field rule: the replay rebuilds the typed offers and scores an old typed r
   assert.strictEqual(old.T.offT, undefined, 'the rules before version 6: none');
   assert.notStrictEqual(R.T.pg, old.T.pg, 'the typed answer weighs its effective set size');
   // A typed row logged with |kt: scored with it (the app's own vocabulary).
-  const kt = C.replayProgress([...rows.slice(0, 2), row(2, 'T', 'T', 'quiz|t|kt2')], {gen: GEN}).p.P;
+  const kt = C.replayProgress([...rows.slice(0, 2), row(2, 'T', 'T', 'quiz|t|kt200')], {gen: GEN}).p.P;
   near(kt.T.pg, R.T.pg, 'k 2 logged = the floor of 2 the vocabulary the log knows gives (1 + 0.89 + 0.09)');
   // Two devices' typed offers add up (mergeProgress), and an account merge too (mergeUsers' mergeUserP).
   const B = {T: {ok: 1, ko: 0, offT: {L1: 1}}},
@@ -134,7 +135,7 @@ test('personalised exam (EXAMP, off): the union of global and own look-alikes, i
 test('field rule (Codex review #611): a typed answer stays out of the answer time; a custom-quiz typed answer offers its run', () => {
   const t0 = Date.UTC(2026, 10, 6),
     row = (i, g, a, mode, ch = '', sec = 4) => ['p', t0 + i * 1000, g, a, g === a ? 1 : 0, mode, 'f' + i, 0.6, 0.5, 1, ch, null, sec];
-  const R = C.replayProgress([row(0, 'L1', 'L1', 'quiz', 'L1 T U1 U2'), row(1, 'T', 'T', 'quiz|t|kt3', '', 30)], {gen: GEN}).p.P;
+  const R = C.replayProgress([row(0, 'L1', 'L1', 'quiz', 'L1 T U1 U2'), row(1, 'T', 'T', 'quiz|t|kt300', '', 30)], {gen: GEN}).p.P;
   assert.deepStrictEqual(
     Object.values(R[C.LEVEL].rt || {}).reduce((a, b) => a + b, 0),
     1,
@@ -146,7 +147,7 @@ test('field rule (Codex review #611): a typed answer stays out of the answer tim
       row(0, 'L1', 'L1', 'quiz', 'L1 T U1 U2'),
       row(1, 'L2', 'L2', 'quiz|s', 'L2 T U3'),
       row(2, 'U3', 'U3', 'quiz|s', 'U3 T L2'),
-      row(3, 'T', 'T', 'quiz|s|t|kt2')
+      row(3, 'T', 'T', 'quiz|s|t|kt200')
     ],
     {gen: GEN}
   ).p.P;

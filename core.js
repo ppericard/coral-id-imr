@@ -678,14 +678,17 @@
   // A typed answer (|t, 2026-11-03: the player types the genus instead of picking one of the choices) has no guess rate:
   // nothing to pick from, so the expected success has no 1/k floor (Code.gs guess_ v27; model.js TYPED.k).
   const TYPED_RE = /\|t(\||$)/;
-  // From rules version 6 (sheet v56, the field rule) a typed answer logs its effective set size (|ktN.NN, core.js typedK):
-  // its guess rate is 1 / that (Pierre, Q106); an older typed row (no |kt) keeps none.
-  const KT_RE = /\|kt(\d+(?:\.\d+)?)/;
+  // From rules version 6 (sheet v56, the field rule) a typed answer logs its effective set size in hundredths (|ktN, N =
+  // 100 x core.js typedK, digits only: the sheet's mode check takes no '.', Codex review #611): its guess rate is 1 / that
+  // (Pierre, Q106); an older typed row (no |kt) keeps none. ktOf: the size, null without.
+  const KT_RE = /\|kt(\d+)/;
+  const ktOf = mode => {
+    const kt = KT_RE.exec(String(mode || '')),
+      k = kt ? Number(kt[1]) / 100 : 0;
+    return k > 1 ? k : null;
+  };
   const guessOf = (mode, choices) => {
-    if (TYPED_RE.test(mode)) {
-      const kt = KT_RE.exec(mode);
-      return kt && Number(kt[1]) > 1 ? 1 / Number(kt[1]) : 0;
-    }
+    if (TYPED_RE.test(mode)) return ktOf(mode) ? 1 / ktOf(mode) : 0;
     const kq = /\|k(\d)$/.exec(mode);
     if (kq) return 1 / Number(kq[1]);
     if (mode.indexOf('quiz-duel') === 0) return 0.5;
@@ -2104,8 +2107,7 @@
   const kOf = (mode, choices) => {
     if (TYPED_RE.test(String(mode || ''))) {
       // From rules version 6: the effective set size it was scored with (|kt, typedK); before, none (Infinity).
-      const kt = KT_RE.exec(String(mode || ''));
-      return kt && Number(kt[1]) > 1 ? Number(kt[1]) : Infinity;
+      return ktOf(mode) || Infinity;
     }
     const kq = /\|k(\d)/.exec(String(mode || ''));
     if (kq) return Number(kq[1]);
@@ -3138,6 +3140,7 @@
     TYPE,
     TYPED_RE,
     KT_RE,
+    ktOf,
     typeDist,
     typeNorm,
     typeNamesOf,

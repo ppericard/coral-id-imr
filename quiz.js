@@ -567,9 +567,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
       // answer a is the genus read ('' for "I don't know"), never the raw text; it offered no choices (ch empty).
       (tq ? '|t' : '') +
-      // |ktN: the effective set size a typed answer was scored with (field rule, sheet v56: guess rate 1 / N, core.js
-      // guessOf, kOf). Never under the old rule (k infinite).
-      (tq && isFinite(k) ? '|kt' + k : '') +
+      // |ktN: the effective set size a typed answer was scored with, in hundredths (field rule, sheet v56: guess rate
+      // 100 / N, core.js ktOf; digits only, the sheet's mode check takes no '.'). Never under the old rule (k infinite).
+      (tq && isFinite(k) ? '|kt' + Math.round(100 * k) : '') +
       (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).

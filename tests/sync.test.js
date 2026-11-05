@@ -1943,9 +1943,16 @@ test('v56: the replies carry the Notes tab card lines; a typed answer with |ktN 
   assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(4), summary: {}, answers: []}).notes, {
     'card.rv6.ps': 'PS: a made-up line.'
   });
+  // The mode as the app logs it (quiz.js answer: the size in hundredths, digits only) goes through logAnswers_'s check
+  // whole (Codex review #611: '3.5' emptied the mode) and is rated by stats_ as the app rated it.
+  s.post({name: 'Ana', pin: '1234', data: prog(4), summary: {}, answers: [qa('kt1', 1, {m: 'quiz|t|kt350', ch: ''})]});
+  assert.ok(
+    s.sheets.Answers.rows.some(r => r.includes('quiz|t|kt350')),
+    'the mode is stored as sent'
+  );
   const g = vm.runInContext('guess_', s.ctx);
-  assert.strictEqual(g('quiz|t|kt4', ''), 0.25);
+  assert.strictEqual(g('quiz|t|kt400', ''), 0.25);
   assert.strictEqual(g('quiz|t', ''), 0);
-  for (const m of ['quiz|t|kt3.5', 'quiz|t', 'quiz|k2', 'quiz-duel|A|B', 'quiz'])
+  for (const m of ['quiz|t|kt350', 'quiz|t', 'quiz|k2', 'quiz-duel|A|B', 'quiz'])
     assert.strictEqual(g(m, 'A B C D'), C.guessOf(m, 'A B C D'), m);
 });

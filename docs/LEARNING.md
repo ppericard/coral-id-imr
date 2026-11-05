@@ -2289,8 +2289,8 @@ for every subject that opts in with `SUBJECTS` `cover`: the corals now, fish aft
   look-alike's prior): a look-alike counts about 1, an unrelated genus about 0.1. 8 dissimilar genera unlocked give the
   floor 2; 8 look-alikes about 8; the whole slate on today's pooled data about 5.7 for *Pocillopora*. The vocabulary is
   the genera unlocked, the selection in the Custom quiz. It is the answer's guess rate (1 / typedK: the expected
-  success, the ability step, the progress weight, the photo Elo: the answer is logged `|ktN`, which the sheet rates
-  1 / N, `Code.gs` `guess_`) and the evidence it gives each pair (a right typed answer adds sim(t, x) to `P[t].offT[x]`;
+  success, the ability step, the progress weight, the photo Elo: the answer is logged `|ktN`, N the size in hundredths (digits only: the sheet's mode check takes no '.'), which the sheet rates
+  100 / N, `Code.gs` `guess_`) and the evidence it gives each pair (a right typed answer adds sim(t, x) to `P[t].offT[x]`;
   weights under 0.01 are not stored). The look-alike factor of the progress weight (`pgRightW`) runs over the
   vocabulary, as over a pick's choices. The replay scores a typed row with its logged `|ktN`; an older one (no `|kt`)
   with the effective size of the vocabulary the log knows, and it rebuilds the offers of every typed row from that
