@@ -331,6 +331,8 @@ const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
 // Coral Finder book photos on the site (curation.json "book": false switches every one of them off at once).
 const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
+// The points to handle (curation.json "points", To do › Points).
+const ptChanged = () => !same(DRAFT.points || {}, SAVED.points || {});
 // Lead photos of the growth-form tiles on the Coral ID Key start (curation.json "tile" {form letter: [f, ...]}, at most
 // 3, in click order): set with 📌 in the Growth form view. A pinned photo leads its IMR form's tile and the Coral ID Key
 // tile that starts from that form (Br → Branching, En → Thin plates and crusts, Ma → Massive, Sm → Columns,
@@ -1062,7 +1064,8 @@ function status0() {
       snChanged() ? 'several corals' : '',
       tlChanged() ? 'tile photos' : '',
       auChanged() ? 'auto-sort' : '',
-      fiChanged() ? 'fish curation' : ''
+      fiChanged() ? 'fish curation' : '',
+      ptChanged() ? 'points to handle' : ''
     ].filter(Boolean);
   return {parts, sug: sugCount(), over: overCap()};
 }
@@ -1140,7 +1143,9 @@ const GROUPS = [
           ['~todo', 'All'],
           ['~triage', 'Reports'],
           ['~events', 'Errors'],
-          ['~health', 'Health']
+          ['~health', 'Health'],
+          // The points to handle (Pierre, 2026-11-05): trainer questions, names, sources, content (renderPoints).
+          ['~points', 'Points']
         ]
       ],
       [
@@ -1248,7 +1253,17 @@ const TABS = GROUPS.flatMap(([g, , L]) => L.map(t => [...t, g]));
 // Old addresses that are not a view of their own: Montages became Look-alikes; Where to look is the banner above the Games
 // grid of Coverage, opened in full.
 const ALIAS = {'~mont': '~look', '~stats-needs': '~cov'};
-const pageOf = () => (cur.startsWith('~journey/') || cur.startsWith('~anon/') ? '~users' : ALIAS[cur] || (cur[0] === '~' ? cur : '')); // '' = a genus page; a player's journey sits under Players
+// A point's own page (To do › Points; renderPoint): its address in one place, as it will move with the admin's URL
+// refonte. Not a view: it sits under Points.
+const POINT_R = '~point/',
+  pointHash = id => '#' + POINT_R + encodeURIComponent(id);
+let ptFlush = () => {}; // a point's page: writes the note being typed to the draft (renderPoint)
+const pageOf = () =>
+  cur.startsWith('~journey/') || cur.startsWith('~anon/')
+    ? '~users'
+    : cur.startsWith(POINT_R)
+      ? '~points'
+      : ALIAS[cur] || (cur[0] === '~' ? cur : ''); // '' = a genus page; a player's journey sits under Players, a point under Points
 const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'genera');
 const groupKey = () => tabOf()[3];
 // Genus x view cells over their cap (capOf: CELL_MAX colonies for a game genus, CAP.sheet for a Key-only one; after
@@ -1296,9 +1311,11 @@ function navs(tn, xn) {
           ? ` ${xn}`
           : h === '~hidden' && hn
             ? ` ${hn}`
-            : OVER[h]
-              ? ` ⚠ ${OVER[h]}`
-              : '',
+            : h === '~points' && ptOpen()
+              ? ` ${ptOpen()}`
+              : OVER[h]
+                ? ` ⚠ ${OVER[h]}`
+                : '',
     tcnt = t => (t[0] === 'todo' && tn ? ` (${tn})` : t[0] === 'cov' && OVER.n ? ' ⚠' : '');
   const sw = $('subj');
   if (sw && SUBJECTS.length > 1) {
@@ -1351,27 +1368,32 @@ function navs(tn, xn) {
 const modeKey = () =>
   cur.startsWith('~journey/') || cur.startsWith('~anon/')
     ? 'journey'
-    : /^~an(-|$)/.test(cur)
-      ? cur.slice(1)
-      : cur.startsWith('~stats') || cur === '~diff'
-        ? 'stats'
-        : {
-            '~users': 'users',
-            '~quality': 'quality',
-            '~form': 'form',
-            '~excluded': 'excluded',
-            '~hidden': 'hidden',
-            '~todo': 'todo',
-            '~triage': 'triage',
-            '~events': 'events',
-            '~health': 'health',
-            '~cov': 'cov',
-            '~kcov': 'kcov',
-            '~look': 'mont',
-            '~mont': 'mont',
-            '~cand': 'cand'
-          }[cur] || 'genus';
+    : cur.startsWith(POINT_R)
+      ? 'point'
+      : /^~an(-|$)/.test(cur)
+        ? cur.slice(1)
+        : cur.startsWith('~stats') || cur === '~diff'
+          ? 'stats'
+          : {
+              '~users': 'users',
+              '~quality': 'quality',
+              '~form': 'form',
+              '~excluded': 'excluded',
+              '~hidden': 'hidden',
+              '~todo': 'todo',
+              '~triage': 'triage',
+              '~events': 'events',
+              '~health': 'health',
+              '~points': 'points',
+              '~cov': 'cov',
+              '~kcov': 'kcov',
+              '~look': 'mont',
+              '~mont': 'mont',
+              '~cand': 'cand'
+            }[cur] || 'genus';
 function render() {
+  ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
+  ptFlush = () => {};
   memoFresh();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   // A page the subject on screen does not have yet (admin plan: its fish version comes in a later PR).
@@ -1387,6 +1409,8 @@ function render() {
   if (cur === '~todo' || cur === '~triage') return renderTriage();
   if (cur === '~events') return renderEvents();
   if (cur === '~health') return renderStats();
+  if (cur === '~points') return renderPoints();
+  if (cur.startsWith(POINT_R)) return renderPoint(cur.slice(POINT_R.length));
   // Game coverage with the Where to look banner above it (folded on ~cov, open in full on ~stats-needs).
   if (cur === '~cov' || cur === '~stats-needs') return renderCov();
   if (cur === '~kcov') return renderKcov();
@@ -1743,13 +1767,21 @@ const lbCap = (n, p, what) =>
         : `${inatObs(p) && p.t ? `<i>${esc(p.t)}</i> · ` : ''}${esc(p.a || '')}`
   }${inatObs(p) ? ` · <a class="lb-src" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat observation ↗</a>` : ''} · <code>${esc(p.f)}</code>`;
 function zoom(n, f) {
-  const lb = $('lightbox'),
-    L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'})), ...outOf(n).map(p => ({...p, base: 'out'}))],
-    i0 = L.findIndex(p => p.f === f);
-  let i = i0;
+  const L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'})), ...outOf(n).map(p => ({...p, base: 'out'}))];
+  zoomSet(
+    L,
+    L.findIndex(p => p.f === f),
+    p => lbCap(n, p, p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p)))
+  );
+}
+// The enlarged photo stepping through a list (‹ ›, the arrow keys): a genus's photos (zoom) or a point's (renderPoint),
+// each with the caption cap(p, i) gives it.
+function zoomSet(L, i0, cap) {
+  const lb = $('lightbox');
+  let i = Math.max(0, i0);
   const show = () => {
     const p = L[i];
-    lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap">${lbCap(n, p, p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p)))}</p>
+    lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap">${cap(p, i)}</p>
     <div class="lb-nav"><button type="button" data-d="-1" aria-label="Previous">‹</button><span>${i + 1} / ${L.length}</span><button type="button" data-d="1" aria-label="Next">›</button><button type="button" data-x>Close</button></div></div>`;
     lb.querySelectorAll('[data-d]').forEach(
       b =>
@@ -2099,12 +2131,14 @@ const HELP = {
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, the photos and genera that need a look) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: AGENTS.md rule 6g; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
+  points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); <b>Fish</b> marks a fish point. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
+  point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
@@ -3264,6 +3298,168 @@ function renderTriage() {
       })
   );
 }
+/* ---------- Points to handle: Inbox › To do › Points, and one page per point ---------- */
+// Pierre, 2026-11-05: he settles most open points himself and never reads a text list, so the questions for an IMR
+// trainer, nomenclature points, discrepancies between sources and content questions live here. The points are
+// points.json (written by agents: id, kind, title, question, context, photos, sources, date; points.js checks its
+// shape); his state per point is his curation, curation.json "points" {id: {s, n, a}} (draft, Undo, Publish; never written
+// by a script): s 'wait' (stand-by: below the open ones, still shown), 'done' (resolved) or 'drop' (dismissed), both
+// folded at the bottom with their counts; no s = open; n his notes; a the trainer's answer per photo (points.js photoKey).
+// Each status keeps the file's order, its priority. A point opens on its own page (pointHash), made to show a trainer
+// from a phone: the question big, the photos large and enlargeable, blind (numbered, credit only: no names until
+// "Names", so the answer is the trainer's own), an answer field under each photo, notes, and Resolved / Stand-by /
+// Dismiss (/ Reopen once handled), one click each, Undo the safety net (rule 23).
+let PTS = null; // points.json: {kinds, points}, its points with a shape problem left out
+const ptList = () => (PTS && PTS.points) || [],
+  ptOpen = () => pointsOrder(ptList(), DRAFT.points).open.length,
+  ptKind = p => ((PTS && PTS.kinds) || {})[p.kind] || p.kind,
+  // A point of another subject than the corals carries that subject's name (one list for every subject).
+  ptSubj = p =>
+    p.subj === ADM0.id ? '' : `<span class="adm-src adm-ptk">${esc((SUBJECTS.find(s => s.id === p.subj) || {}).name || p.subj)}</span>`,
+  // A photo slot: the app's photo (its credit, crop and fallbacks), else the copy points.json keeps, else nothing.
+  ptPhoto = x => (x.f && PHOTOS[x.f]) || (x.src ? {...x, f: x.f || x.src, r: 1} : null);
+let PT_NAMES = false; // this tab: the photos' names and origins shown on a point's page
+// One change to a point's state in the draft: an empty state leaves curation.json.
+function ptSet(id, ch) {
+  const P = {...(DRAFT.points || {})},
+    o = {...(P[id] || {}), ...ch};
+  Object.keys(o).forEach(k => (o[k] === '' || o[k] === null || (typeof o[k] === 'object' && !Object.keys(o[k]).length)) && delete o[k]);
+  if (Object.keys(o).length) P[id] = o;
+  else delete P[id];
+  DRAFT.points = P;
+  if (!Object.keys(P).length) delete DRAFT.points;
+  saveDraft();
+}
+function renderPoints() {
+  status();
+  if (!PTS) {
+    $v.innerHTML = '<p class="note">No points.json.</p>';
+    return;
+  }
+  const G = pointsOrder(ptList(), DRAFT.points),
+    row = p =>
+      `<a class="adm-pt" href="${esc(pointHash(p.id))}" data-pt="${esc(p.id)}"><span class="adm-pttitle">${esc(p.title)}</span><span class="adm-ptmeta">${ptSubj(p)}<span class="adm-src adm-ptk k-${esc(p.kind)}">${esc(ptKind(p))}</span><small>${esc(pointAge(p.at))}</small></span></a>`,
+    rows = L => `<div class="adm-pts">${L.map(row).join('')}</div>`,
+    fold = (k, t) =>
+      G[k].length
+        ? `<details class="adm-rulekept adm-ptfold" data-ptfold="${k}"${PT_OPEN[k] ? ' open' : ''}><summary>${t} <small>${G[k].length}</small></summary>${rows(G[k])}</details>`
+        : '';
+  $v.innerHTML = `<section class="adm-ptlist">
+    <div class="adm-qhead adm-tdhead" data-ptsec="open"><h2>Open <small>${G.open.length}</small></h2></div>${G.open.length ? rows(G.open) : '<p class="note">Nothing open.</p>'}
+    ${G.wait.length ? `<div class="adm-qhead adm-tdhead adm-ptwait" data-ptsec="wait"><h2>Stand-by <small>${G.wait.length}</small></h2></div>${rows(G.wait)}` : ''}
+    ${fold('done', 'Resolved')}${fold('drop', 'Dismissed')}
+  </section>`;
+  $v.querySelectorAll('[data-ptfold]').forEach(d => (d.ontoggle = () => (PT_OPEN[d.dataset.ptfold] = d.open)));
+}
+const PT_OPEN = {}; // Resolved or Dismissed unfolded, kept across redraws
+let ptTimer = null;
+function renderPoint(id) {
+  status();
+  const p = ptList().find(x => x.id === id);
+  if (!p) {
+    $v.innerHTML = `<p class="note">No point ${esc(id)}. <a href="#~points">Points</a></p>`;
+    return;
+  }
+  const st = (DRAFT.points || {})[id] || {},
+    s = ptStatus(DRAFT.points, id),
+    A = st.a || {},
+    ph = p.photos || [],
+    shown = ph.map(ptPhoto),
+    // Resolved, Stand-by, Dismiss; Reopen once handled.
+    acts = ['done', 'wait', 'drop', ...(s === 'open' ? [] : ['open'])].map(k => PT_STATUS.find(x => x[0] === k)),
+    origin = q => ({dauin: 'Dauin', ph: 'Philippines', world: 'abroad'})[q.loc] || '',
+    slot = (x, i) => {
+      const q = shown[i],
+        k = photoKey(x, i);
+      return `<figure class="adm-ptph" data-pk="${esc(k)}">${
+        q
+          ? `<button type="button" class="adm-ph" data-ptz="${i}" aria-label="Enlarge photo ${i + 1}"><img ${crSrc(q)} alt="" loading="lazy"><b class="adm-ptn">${i + 1}</b></button>`
+          : `<div class="adm-ph adm-ptnone"><b class="adm-ptn">${i + 1}</b><span>${esc(x.none || 'Photo missing')}</span></div>`
+      }<figcaption>${PT_NAMES && q ? `<span class="adm-ptname"><i>${esc(q.t || x.t || '')}</i>${q.genus ? ` · <i>${esc(q.genus)}</i> in the app` : ''}${origin(q) ? ` · ${origin(q)}` : ''}</span>` : ''}${
+        !x.none
+          ? `<label class="adm-ptans"><span>${esc(p.ask || '')}</span><input type="text" data-pta="${esc(k)}" value="${esc(A[k] || '')}" autocomplete="off"></label>`
+          : ''
+      }</figcaption></figure>`;
+    };
+  $v.innerHTML = `<article class="adm-point" data-point="${esc(id)}">
+    <div class="adm-ptbar"><a class="adm-link" href="#~points">‹ Points</a><span class="adm-src adm-ptk k-${esc(p.kind)}">${esc(ptKind(p))}</span>${ptSubj(p)}<small>${esc(pointAge(p.at))}</small>${
+      ph.some(x => !x.none)
+        ? `<button type="button" class="adm-fchip plain" data-ptnames aria-pressed="${PT_NAMES}" title="Names">Names</button>`
+        : ''
+    }</div>
+    <h2 class="adm-ptq">${esc(p.q)}</h2>
+    ${ph.length ? `<div class="adm-ptphotos">${ph.map(slot).join('')}</div>` : ''}
+    <label class="adm-ptnotes"><span>Notes</span><textarea data-ptn rows="3">${esc(st.n || '')}</textarea></label>
+    <span class="adm-qseg adm-lvseg adm-ptst" role="group" aria-label="Status">${acts
+      .map(([k, , a]) => `<button type="button" data-pts="${k}" aria-pressed="${k === s}">${a}</button>`)
+      .join('')}</span>
+    ${(p.ctx || []).length || (p.src || []).length ? `<details class="adm-rulekept adm-ptctx"><summary>Context</summary>${(p.ctx || []).map(c => `<p>${esc(c)}</p>`).join('')}${(p.src || []).length ? `<p class="adm-where">${p.src.map(x => (x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t))).join(' · ')} · <code>${esc(p.id)}</code></p>` : ''}</details>` : ''}
+  </article>`;
+  // The enlarged photos: blind (number and credit only) until Names is on; then the admin's full caption.
+  const L = shown.map((q, i) => q && {...q, n: i + 1}).filter(Boolean);
+  $v.querySelectorAll('[data-ptz]').forEach(
+    b =>
+      (b.onclick = () =>
+        zoomSet(
+          L,
+          L.findIndex(q => q.n === +b.dataset.ptz + 1),
+          q => `${q.n} · ${PT_NAMES ? lbCap(q.genus, q) : esc(q.a || '')}`
+        ))
+  );
+  const nb = $v.querySelector('[data-ptnames]');
+  if (nb)
+    nb.onclick = () => {
+      PT_NAMES = !PT_NAMES;
+      render();
+    };
+  $v.querySelectorAll('[data-pts]').forEach(
+    b =>
+      (b.onclick = () => {
+        ptFlush();
+        const k = b.dataset.pts;
+        if (k === s) return;
+        ptSet(id, {s: k === 'open' ? '' : k, t: k === 'open' ? '' : Date.now()});
+        render();
+        toast(`${PT_STATUS.find(x => x[0] === k)[1]}. Undo (Ctrl+Z) brings it back.`);
+      })
+  );
+  // Notes and answers: read as typed, written to the draft (one Undo step) a moment after typing stops, at once when the
+  // field is left, and before any redraw or status change (ptFlush), so nothing typed is lost.
+  let pend = null;
+  const grab = () => {
+    const a = {...((DRAFT.points || {})[id] || {}).a};
+    $v.querySelectorAll('[data-pta]').forEach(x => (a[x.dataset.pta] = x.value.trim()));
+    Object.keys(a).forEach(k => !a[k] && delete a[k]);
+    pend = {n: ($v.querySelector('[data-ptn]') || {value: ''}).value.trim(), a};
+  };
+  const write = () => {
+    clearTimeout(ptTimer);
+    ptTimer = null;
+    if (!pend) return;
+    const v = pend,
+      o = (DRAFT.points || {})[id] || {};
+    pend = null;
+    if ((o.n || '') === v.n && same(sortKeys(o.a), sortKeys(v.a))) return;
+    ptSet(id, v);
+    status();
+  };
+  ptFlush = write;
+  $v.querySelectorAll('[data-ptn],[data-pta]').forEach(x => {
+    x.oninput = () => {
+      grab();
+      clearTimeout(ptTimer);
+      ptTimer = setTimeout(write, 800);
+    };
+    x.onchange = () => {
+      grab();
+      write();
+    };
+  });
+}
+const sortKeys = o =>
+  Object.keys(o || {})
+    .sort()
+    .reduce((m, k) => ((m[k] = o[k]), m), {});
 /* ---------- Look-alikes (was "Montages"): one photo pair per classic look-alike pair (curation.json "mont" {"A|B": {v, a, b}}) ---------- */
 // Same pairs, order and automatic pick as the site (app.js classics / montage): pairs a source compares in so many words.
 const MONT_V = {
@@ -4597,6 +4793,14 @@ const output = () => {
     });
   const retest = sorted(DRAFT.retest);
   const fish = fishOut(DRAFT.fish);
+  // Pierre's state of the points to handle (To do › Points): by point id, each point's fields sorted.
+  const points = {};
+  Object.keys(DRAFT.points || {})
+    .sort()
+    .forEach(k => {
+      const o = DRAFT.points[k] || {};
+      if (Object.keys(o).length) points[k] = {...sorted(o), ...(o.a ? {a: sorted(o.a)} : {})};
+    });
   return {
     v: 1,
     ...(bookOn(DRAFT) ? {} : {book: false}),
@@ -4614,7 +4818,8 @@ const output = () => {
     ...(Object.keys(tile).length ? {tile} : {}),
     ...(Object.keys(auto).length ? {auto} : {}),
     ...(Object.keys(retest).length ? {retest} : {}),
-    ...(Object.keys(fish).length ? {fish} : {})
+    ...(Object.keys(fish).length ? {fish} : {}),
+    ...(Object.keys(points).length ? {points} : {})
   };
 };
 // curation.json "fish" as published (autosort.js "Fish curation"): each map sorted by key, empty maps left out, the
@@ -4691,7 +4896,8 @@ function pubSummary() {
       'fish photo set aside'
     ],
     [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
-    [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision']
+    [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
+    [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]
     .filter(([c]) => c)
     .map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
@@ -4729,8 +4935,9 @@ async function save() {
     sn = snChanged(),
     tl = tlChanged(),
     au = auChanged(),
-    fi = fiChanged();
-  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || au || fi) || !TOKEN) return;
+    fi = fiChanged(),
+    pt = ptChanged();
+  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || au || fi || pt) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -4746,7 +4953,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -4818,7 +5025,8 @@ async function start() {
           })).then(j => (j && j[k]) || {});
   let CJ;
   try {
-    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS, PRES] = await Promise.all([
+    let PJ;
+    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS, PRES, PJ] = await Promise.all([
       fetch('data.json', {cache: 'no-cache'}).then(r => r.json()),
       side('quality.json', 'q'),
       side('forms.json', 'gf'),
@@ -4835,8 +5043,23 @@ async function start() {
       // Objective metrics (tools/photo_metrics.py): tie-breakers and sanity flags for the auto-sort only.
       side('metrics.json', 'm'),
       // The presence rule per photo species (tools/coral_presence.py; AGENTS.md rule 6g): the "out of rule" flag.
-      side('presence.json', 'sp')
+      side('presence.json', 'sp'),
+      // The points to handle (To do › Points), written by agents; a point with a shape problem is left out.
+      fetch('points.json?v=1', {cache: 'no-cache'})
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null)
     ]);
+    if (PJ && Array.isArray(PJ.points))
+      PTS = {
+        kinds: PJ.kinds || {},
+        points: PJ.points.filter(
+          x =>
+            !pointsProblems(
+              {kinds: PJ.kinds, points: [x]},
+              SUBJECTS.map(s => s.id)
+            ).length
+        )
+      };
     DATA.cand = DATA.cand || {};
     Object.entries(CJ || {}).forEach(([g, L]) => {
       const have = new Set((DATA.cand[g] || []).map(p => p.f));
@@ -5076,7 +5299,12 @@ async function start() {
     setInterval(() => document.visibilityState === 'visible' && swCheck(), 1800000);
   }
   // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
+  // A note or answer typed on a point's page in the last 0.8 s reaches the draft when the page is left or hidden (a reload,
+  // a closed tab, a phone sending the browser to the background: Codex review #571).
+  addEventListener('pagehide', () => ptFlush());
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && ptFlush());
   window.onbeforeunload = e => {
+    ptFlush();
     if (draftLost) {
       e.preventDefault();
       e.returnValue = '';

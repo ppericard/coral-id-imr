@@ -1,0 +1,339 @@
+{
+  "about": "Points to handle, shown in the admin (Inbox › To do › Points, admin.js renderPoints; docs/ARCHITECTURE.md \"Points to handle\"). Written by agents: questions for an IMR trainer, nomenclature points, discrepancies between sources, content questions for Pierre. Pierre's state per point (status, notes, the trainer's answers) is his curation, in curation.json points, never here. The list's order is the priority: the most important first. Wording: neutral questions, never that IMR is wrong (AGENTS.md rule 1). Fields: id (stable, never reused), kind (a key of kinds), subj (coral or fish), at (date added, Manila), title (the list's line), q (the question in plain words, shown big), ctx (context lines, folded), ask (the answer field under each photo), photos ([{f: a photo id of data.json or cand.json, with src, a, o, t as fallback when it leaves the app} or {none: why a slot is empty}]), src (sources: [{t, u?}]).",
+  "kinds": {
+    "trainer": "Trainer",
+    "names": "Names",
+    "sources": "Sources",
+    "content": "Content"
+  },
+  "points": [
+    {
+      "id": "astrea-reefcloud",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-05",
+      "title": "Which corals does IMR label Astrea in ReefCloud?",
+      "q": "Which ReefCloud label would you give each of these corals?",
+      "ctx": [
+        "Which corals does IMR label \"Astrea\" in ReefCloud: only Astrea curta and A. annuligera (Astrea in WoRMS and iNaturalist), or also the former Phymastrea, now Favites colemani, F. valenciennesii and F. magnistellata in WoRMS and iNaturalist, and maybe Paramontastraea salebrosa?",
+        "Slide 62's \"refer to Astrea / Phymastrea\" suggests the second; only a trainer can say.",
+        "Photos: 1 Astrea curta from abroad (one of the app's Astrea photos); 2 Favites colemani from the Philippines (one of the app's 4 F. colemani photos, under Favites); 3 Plesiastrea peroni from Dauin (a look-alike, from the Coral Finder's extra genera); 4 Pierre's Favites colemani near Dauin (iNaturalist observation 406194912).",
+        "Until the answer the app changes nothing: its 4 F. colemani photos stay under Favites.",
+        "Waiting on this answer (Q47): if IMR calls these corals Astrea, Pierre's F. colemani near Dauin can serve as an Astrea photo (rule 6a: his species-level photos stay usable as photos)."
+      ],
+      "ask": "ReefCloud label",
+      "photos": [
+        {
+          "f": "astrea-wide-502260981",
+          "t": "Astrea curta",
+          "a": "(c) K.L. Chew, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/279687005",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/502260981/original.jpeg"
+        },
+        {
+          "f": "favites-medium-230790299",
+          "t": "Favites colemani",
+          "a": "(c) Albert Kang, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/135324117",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/230790299/original.jpeg"
+        },
+        {
+          "f": "plesiastrea-x-472828703",
+          "t": "Plesiastrea peroni",
+          "a": "(c) shannencharter, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/263219661",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/472828703/original.jpeg"
+        },
+        {
+          "f": "favites-wide-746237677",
+          "t": "Favites colemani",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/406194912",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/746237677/original.jpg"
+        }
+      ],
+      "src": [
+        {"t": "Pierre, 2026-11-05, Q45"},
+        {"t": "Coral taxonomy study, sections 4 and 6 (question 1)", "u": "docs/reviews/2026-11-05-coral-taxonomy-study.md"}
+      ]
+    },
+    {
+      "id": "favites-slide62-phymastrea",
+      "kind": "names",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Slide 62: \"refer to Astrea / Phymastrea\"",
+      "q": "Slide 62 says \"refer to Astrea / Phymastrea\". Corals of the World's Phymastrea species (colemani, valenciennesi, magnistellata) are Favites species in WoRMS, and Astrea's are under Astrea. Which corals does the slide mean?",
+      "ctx": [
+        "Favites and its neighbours, for Pierre to raise with IMR (research report of 2026-11-04; only species present in the Philippines by Pierre's rule, AGENTS.md rule 6e; the app keeps the lecture's wording and adds \"Other sources\" notes, tools/apply_favites.py).",
+        "Slide 62: \"refer to Astrea / Phymastrea\". Corals of the World's Phymastrea pages (colemani, valenciennesi, magnistellata) are Favites species in WoRMS; Astrea's are under Astrea.",
+        "See also: Which corals does IMR label Astrea in ReefCloud?"
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "reefcloud-merulinid-labels",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "ReefCloud labels for Paragoniastrea, Coelastrea, Paramontastraea",
+      "q": "How should RAs label Paragoniastrea, Coelastrea and Paramontastraea in ReefCloud?",
+      "ctx": [
+        "All three are recorded in the Philippines: Paragoniastrea russelli, Coelastrea aspera, Paramontastraea salebrosa.",
+        "Part of the Favites block (research report of 2026-11-04; the app keeps the lecture's wording)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "stylophora-slide16",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Slide 16, right half: Stylophora?",
+      "q": "Is the coral on the right half of lecture slide 16 a Stylophora?",
+      "ctx": ["Slide 16 right half: Pierre ~90% sure it is Stylophora (captioned \"likely\")."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "starred-genera-groups",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Merulina, Cyphastrea, Halomitra: no lecture group",
+      "q": "The lecture does not cover Merulina, Cyphastrea and Halomitra. Which lecture group, if any, does each belong with?",
+      "ctx": ["Lecture doesn't cover Merulina, Cyphastrea, Halomitra (starred genera): no lecture group of their own."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "tubastraea-colour",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-02",
+      "title": "Tubastraea: dark green to black, and bright orange",
+      "q": "The lecture describes Tubastraea as dark green to black; most photos show bright orange colonies. Should RAs expect both at Dauin?",
+      "ctx": [
+        "Tubastraea: the lecture says \"dark green to black\" while most game photos show bright orange colonies (beginner RA review, 2026-11-02).",
+        "Pierre: two main species, black sun coral (dark green) and sun coral (bright orange); the app's ID tip now gives both (tools/id_tips.txt), the lecture text stays verbatim."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (beginner RA review, 2026-11-02)"}]
+    },
+    {
+      "id": "duncanopsammia-peltata",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Duncanopsammia at Dauin: D. peltata plates?",
+      "q": "Is the Duncanopsammia at Dauin D. peltata, growing as plates?",
+      "ctx": ["\"Duncanopsammia at Dauin = D. peltata plates; Favites with shared + separate walls.\" (one line of the old list, split in two points)"],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "favites-walls",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Favites with shared and separate walls",
+      "q": "Can one Favites colony show both shared and separate walls?",
+      "ctx": ["\"Duncanopsammia at Dauin = D. peltata plates; Favites with shared + separate walls.\" (one line of the old list, split in two points)"],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "corallite-arrangement",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Corallite arrangement: Mycedium, Diploastrea, Pectinia",
+      "q": "Where do Mycedium, Diploastrea and Pectinia go among the corallite arrangements?",
+      "ctx": ["Corallite arrangement placements to check: Mycedium, Diploastrea, Pectinia (Corallite anatomy tool)."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "plerogyra-family",
+      "kind": "names",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Plerogyra: Euphylliidae or Plerogyridae",
+      "q": "The lecture places Plerogyra in Euphylliidae; WoRMS lists Plerogyridae. Which family does IMR use?",
+      "ctx": ["Plerogyra family: lecture says Euphylliidae; WoRMS lists Plerogyridae (shown as an \"Other sources\" note)."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "diploastreidae-spelling",
+      "kind": "names",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Diploastreidae or Diploastraeidae",
+      "q": "The slate spells the family \"Diploastreidae\"; WoRMS spells it \"Diploastraeidae\". Which spelling does IMR use?",
+      "ctx": [
+        "Family spelling: the slate's \"Diploastreidae\" is \"Diploastraeidae\" in WoRMS (the app now shows both, the IMR one first).",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "favites-budding",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Favites budding: \"exclusively extra-tentacular\"",
+      "q": "Slide 61's notes say Favites buds exclusively extra-tentacularly; Huang et al. 2014 give Favites both intra- and extra-tentacular budding, and Dipsastraea intra only. How should RAs use budding to tell them apart?",
+      "ctx": [
+        "Slide 61 notes: Favites \"exclusively extra-tentacular\". Huang et al. 2014 (WoRMS diagnosis) give Favites intra- and extra-tentacular budding, Dipsastraea intra only; possible wording: \"extra-tentacular budding rules out Dipsastraea; Favites can also bud intra-tentacularly\".",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "paliform-lobes-separator",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Paliform lobes: Goniastrea or Favites",
+      "q": "The lecture uses paliform lobes to tell Goniastrea from Favites. Corals of the World shows a well-developed crown in some Favites and in Paragoniastrea russelli and Paramontastraea salebrosa, all recorded in the Philippines. How should RAs use paliform lobes?",
+      "ctx": [
+        "Paliform lobes as the Goniastrea / Favites separator (slide 40 notes, Goniastrea's ID tip): a well-developed crown also appears in F. pentagona and F. colemani, often in F. vasta (Corals of the World), and in Paragoniastrea russelli and Paramontastraea salebrosa, all recorded in the Philippines.",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "goniastrea-shared-walls",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Goniastrea \"shared walls\" and G. stelligera",
+      "q": "The lecture gives Goniastrea shared walls; G. stelligera, recorded in the Philippines, has separate-walled, conical corallites. How should RAs treat it?",
+      "ctx": [
+        "Goniastrea \"shared walls\": G. stelligera (recorded in the Philippines) has separate-walled, conical corallites.",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "fish-clownfish-dorsal",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-04",
+      "title": "Clownfish dorsal fins, fish slides 4 and 7",
+      "q": "Slide 4 shows two dorsal fins on a clownfish; slide 7 says damselfish have a continuous dorsal fin. How should RAs read the clownfish's dorsal fin?",
+      "ctx": ["Fish (Pierre, 2026-11-04): the IMR fish presentation's slide 4 shows two dorsal fins on a clownfish, while slide 7 says damselfish have a continuous dorsal fin: a slip, or an exception to the rule?"],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (Pierre, 2026-11-04)"}]
+    },
+    {
+      "id": "fish-sweetlips-juvenile",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-04",
+      "title": "Sweetlips juveniles: \"swim erratically\"",
+      "q": "The fish lecture says sweetlips juveniles \"swim erratically\"; the sources describe a head-down, wriggling swim. Are they the same behaviour?",
+      "ctx": ["Fish (Pierre, 2026-11-04): the sweetlips juvenile wording, \"swim erratically\", against the sources' head-down wriggling swimming (FISH_PATH \"Juveniles and colour phases\")."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (Pierre, 2026-11-04)"}, {"t": "FISH_PATH \"Juveniles and colour phases\"", "u": "docs/FISH_PATH.md"}]
+    },
+    {
+      "id": "fish-chromis-agilis",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-05",
+      "title": "Chromis agilis or Pycnochromis pacifica",
+      "q": "The Pacific populations of Chromis agilis were split as Pycnochromis pacifica (Allen & Erdmann 2020). Which name does IMR use for the Dauin fish?",
+      "ctx": ["Fish (2026-11-05): Chromis agilis: its Pacific populations were split as Pycnochromis pacifica (Allen & Erdmann 2020); the Dauin fish is probably P. pacifica. The IMR name stays in the app (rule 6a)."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (2026-11-05)"}]
+    },
+    {
+      "id": "fish-siganus-margaritiferus",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-05",
+      "title": "Siganus margaritiferus or S. fuscescens",
+      "q": "WoRMS lists Siganus margaritiferus as a synonym of S. fuscescens. Which name does IMR use?",
+      "ctx": ["Fish (2026-11-05): Siganus margaritiferus is a synonym of S. fuscescens in WoRMS. The IMR name stays in the app (rule 6a)."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (2026-11-05)"}]
+    },
+    {
+      "id": "favites-submassive",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Favites \"submassive rather than massive\" (low priority)",
+      "q": "The lecture says Favites is \"submassive rather than massive\"; Corals of the World describes F. vasta and F. magnistellata as massive, often over 1 m. Which do RAs meet at Dauin?",
+      "ctx": [
+        "Favites \"submassive rather than massive\" (low priority): F. vasta and F. magnistellata are massive, often over 1 m (Corals of the World).",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "dipsastraea-crowding",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Dipsastraea \"colony not crowded\" (low priority)",
+      "q": "The lecture says a Dipsastraea colony is \"not crowded\"; Corals of the World says spacing depends on depth (D. pallida: \"closely compacted in shallow water, more widely spaced in deeper water\"). Does that hold at Dauin's depths?",
+      "ctx": [
+        "Dipsastraea \"colony not crowded\" (low priority): depends on depth, e.g. D. pallida, \"closely compacted in shallow water, more widely spaced in deeper water\" (Corals of the World).",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "lecture-points-review",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "~10 debatable lecture points, left verbatim",
+      "q": "Review the ~10 debatable lecture points left verbatim: keep each as it is, or add a discreet note?",
+      "ctx": ["Review ~10 debatable lecture points (left verbatim): Pocillopora \"verrucae purely ornamental\", Goniastrea \"paliform lobes on the oral disc\", Montipora \"smallest corallites of all\", Tubastraea \"dark green to black\", Mycedium \"no tentacles\", Plerogyra \"looks solitary\", Herpolitha \"solitary\"; better mnemonics proposed (Acropora = pore at the tip, Pavona = peacock). Any change becomes a discreet note, never a correction."],
+      "src": [{"t": "Thread \"Fact-check all coral content on the site\""}, {"t": "PR #22", "u": "https://github.com/ppericard/coral-id-imr/pull/22"}]
+    },
+    {
+      "id": "stylophora-wording",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "Stylophora wording",
+      "q": "Stylophora: keep the written wording (\"smooth from afar, unlike Pocillopora\", \"chicken popcorn\"), or the one you remember (\"like Pocillopora but fuzzy\")?",
+      "ctx": ["Stylophora wording: Pierre remembered \"like Pocillopora but fuzzy\"; presenter notes say \"smooth from afar, unlike Pocillopora\" and \"chicken popcorn\" (Pierre remembered \"chicken nuggets\" for Pocillopora). App keeps the written wording. Pierre reviews the course on Mon 2026-11-02 and corrects it himself."],
+      "src": [{"t": "Project chat, 2026-10-31"}]
+    },
+    {
+      "id": "merulina-placement",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "Merulina: with Hydnophora or in group 5",
+      "q": "Merulina is shown with Hydnophora (lecture group 7). Keep it there, or move it to group 5?",
+      "ctx": ["Merulina placement: shown with Hydnophora (lecture group 7); group 5 is the alternative."],
+      "src": [{"t": "Thread \"Declutter the UI across the app\""}, {"t": "PR #66", "u": "https://github.com/ppericard/coral-id-imr/pull/66"}]
+    },
+    {
+      "id": "lookalikes-page",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "Look-alikes page: keep or drop the tab",
+      "q": "Does the Look-alikes montage deck convince you in use? If not, the tab goes (the pairs stay on the sheets, Home and the duels).",
+      "ctx": ["Look-alikes page: Pierre will judge the montage deck in use; if it doesn't convince, drop the tab (pairs stay on sheets, Home, duels)."],
+      "src": [{"t": "Thread \"Review the site as a new RA\""}, {"t": "PR #159", "u": "https://github.com/ppericard/coral-id-imr/pull/159"}]
+    },
+    {
+      "id": "coral-basics-anatomy",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-11-03",
+      "title": "Coral basics: Corallite anatomy as the \"more\" level",
+      "q": "Should the existing Corallite anatomy become the \"more\" level of the Coral basics module?",
+      "ctx": ["Coral basics, point (4): the existing Corallite anatomy becomes the module's \"more\" level (proposed 2026-11-03 with points 1-3, which shipped: the glossary links, the Learn tab, the Home line). Waiting on Pierre (rule 22: a Lab tool graduates only with his approval)."],
+      "src": [{"t": "Study, 2026-11-03"}]
+    },
+    {
+      "id": "key-shared-walls",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-11-02",
+      "title": "Coral ID Key: \"Shared walls?\" after a separate-walls box",
+      "q": "The Coral ID Key asks \"Shared walls?\" after a separate-walls box; that question comes from the IMR Lecture 6 wall trait, not the Coral Finder book. Keep it?",
+      "ctx": ["Beginner RA review (2026-11-02), point (b): the Coral ID Key's question \"Shared walls?\" after a separate-walls box is not in the Coral Finder book (it comes from the IMR Lecture 6 wall trait); proposal sent to Pierre. The other points were answered and built."],
+      "src": [{"t": "Beginner RA review, 2026-11-02"}]
+    }
+  ]
+}

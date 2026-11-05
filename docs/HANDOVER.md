@@ -37,7 +37,7 @@ In [`STATUS.md`](STATUS.md) "Pierre's hands"; the steps of the one-time setups a
 
 ## Questions for an IMR trainer
 
-Kept in ROADMAP "Questions for an IMR trainer". Never settle them in the app; keep the lecture's version.
+In the admin, Inbox › To do › Points (from [`points.json`](../points.json), with the content questions for Pierre; since 2026-11-05). Never settle them in the app; keep the lecture's version.
 
 ## Setting up to work, and what lives outside GitHub
 
