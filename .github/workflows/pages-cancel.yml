@@ -16,7 +16,7 @@ permissions:
   deployments: read
 jobs:
   cancel:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - name: Cancel the Pages deployment(s)
