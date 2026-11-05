@@ -1141,7 +1141,9 @@ function anProfiles(a) {
     words = a.groups
       ? `<ul class="adm-an-says-l">${[
           `<li>Groups of players (not types; ${a.k}, where the silhouette is best, ${a.sil < 0 ? 'below 0' : anR(a.sil)}): ${gl.map((g, i) => `<b>${i + 1}</b> ${g}`).join('; ')}.</li>`,
-          `<li>${stable ? 'Stable' : 'Not stable'}: the same groups in ${st.kept} of ${st.runs} runs with one player left out (Jaccard ${rng(st.loo)}); players drawn again ${st.draws} times: ${rng(st.boot)}.${stable ? '' : ' These groups change when one player is left out.'}</li>`,
+          st.stable == null
+            ? `<li>Too few players to check whether these groups hold: with one left out, too few remain to group.</li>`
+            : `<li>${stable ? 'Stable' : 'Not stable'}: the same groups in ${st.kept} of ${st.runs} runs with one player left out (Jaccard ${rng(st.loo)}); players drawn again ${st.draws} times: ${rng(st.boot)}.${stable ? '' : ' These groups change when one player is left out.'}</li>`,
           ...(a.close || []).map(
             ([i, j, , fs]) =>
               `<li>Close: <b>${esc(nm[i])}</b> and <b>${esc(nm[j])}</b>${fs.length ? ` (both ${fs.map(f => `${W[i].z[f] > 0 ? 'above' : 'below'} average in ${esc(F[f].label.toLowerCase())}`).join(', ')})` : ''}.</li>`

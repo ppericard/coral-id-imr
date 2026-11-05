@@ -2154,10 +2154,12 @@
       best = (H, L) => (L.length ? Math.max(...H.map(h => jac(L, h))) : null),
       loo = G.map(() => []),
       bt = G.map(() => []);
-    let kept = 0;
+    let kept = 0,
+      done = 0; // the leave-one-out runs that could be compared (Codex review #604: with 3 players none can)
     main.forEach(id => {
       const H = run(main.filter(x => x !== id));
       if (!H) return;
+      done++;
       const J = G.map(L =>
         best(
           H,
@@ -2219,15 +2221,17 @@
       sil: r3(sil),
       groups: G.map(L => L.map(id => re(main.indexOf(id))).sort((a, b) => a - b)),
       // stable only when every leave-one-out run keeps every group and each group's bootstrap mean reaches PROF_STAB (Codex
-      // review #604: the leave-one-out means alone called groups stable that some runs changed)
+      // review #604: the leave-one-out means alone called groups stable that some runs changed); null when no run could
+      // be compared (too few players: unavailable evidence is not instability). runs: the runs compared, of n players.
       stab: {
-        loo: loo.map(L => r3(mean(L))),
-        boot: bt.map(L => r3(mean(L))),
-        runs: n,
+        loo: loo.map(L => (L.length ? r3(mean(L)) : null)),
+        boot: bt.map(L => (L.length ? r3(mean(L)) : null)),
+        runs: done,
+        of: n,
         kept,
         draws: NB,
         at: PROF_STAB,
-        stable: kept === n && bt.every(L => !L.length || mean(L) >= PROF_STAB) ? 1 : 0
+        stable: !done ? null : kept === done && bt.every(L => !L.length || mean(L) >= PROF_STAB) ? 1 : 0
       },
       close: pairs.slice(0, 3).map(([i, j, d]) => [re(i), re(j), r3(d), share(i, j)]),
       far: [re(far), farF]

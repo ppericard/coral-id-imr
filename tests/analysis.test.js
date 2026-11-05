@@ -1621,3 +1621,17 @@ test('profiles: a session cut by the 300-answer window is not a session length; 
     ['c', 'd']
   ]);
 });
+
+// Codex review #604, third pass: with 3 profiled players no leave-one-out run can be grouped; that is no evidence, not
+// instability.
+test('profiles: with 3 players the stability is unknown, never "not stable"', () => {
+  const rows = styleLog().filter(r => /^(eve0|eve1|morn0)$/.test(r[0])),
+    r = A.profiles(A.prep(rows), 0, 1);
+  assert.ok(!r.thin && r.players === 3, JSON.stringify(r).slice(0, 200));
+  assert.strictEqual(r.stab.runs, 0);
+  assert.strictEqual(r.stab.of, 3);
+  assert.strictEqual(r.stab.stable, null);
+  // with 10 players every run is compared
+  const ten = A.profiles(A.prep(styleLog()), 0, 1);
+  assert.strictEqual(ten.stab.runs, 10);
+});
