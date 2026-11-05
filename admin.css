@@ -3148,6 +3148,17 @@ td.cov-c .cov-off {
 .adm-ubar .adm-danger {
   margin-left: auto;
 }
+/* Delete's two named choices (sheet v55, Q89: no default), on the right of the bar where Delete… was. */
+.adm-ubar .adm-udel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-left: auto;
+}
+.adm-ubar .adm-udel .adm-danger {
+  margin-left: 0;
+}
 .adm-danger {
   font: inherit;
   font-size: 0.85rem;

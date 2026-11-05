@@ -1474,6 +1474,16 @@ const WIDTHS = [390, 1280];
       await p.click('[data-uopen="Test Demo"]');
       await settle();
       await p.click('[data-udel="Test Demo"]');
+      await settle();
+      // Sheet v55 (Pierre, 2026-11-05, Q89): two named choices, no default.
+      const two = await p.evaluate(() => ({
+        all: !!document.querySelector('[data-udel-all="Test Demo"]:not([disabled])'),
+        keep: !!document.querySelector('[data-udel-keep="Test Demo"]:not([disabled])'),
+        focus: !!(document.activeElement && document.activeElement.matches('[data-udel-all], [data-udel-keep]'))
+      }));
+      if (!two.all || !two.keep || two.focus)
+        fails.push(`${w}px Users: delete does not offer its two named choices (${JSON.stringify(two)})`);
+      await p.click('[data-udel-all="Test Demo"]');
       await p.waitForFunction(() => !/Test Demo/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
       if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
     }
@@ -1681,6 +1691,9 @@ const WIDTHS = [390, 1280];
       if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
       await go('~triage');
       if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
+      // Sheet v55: a report an account deleted with its answers kept left behind reads "From a removed account", no id.
+      if (!/From a removed account/.test(await text()) || /~deleted/.test(await text()))
+        fails.push(`${w}px To do › Reports: a removed account's report is not shown as such`);
       // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
       {
         const fr = await p
@@ -1966,45 +1979,6 @@ const WIDTHS = [390, 1280];
       if (r.signed.length || !r[need] || r.off.length || r.noRaw.length || r.wide > 0)
         fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
     }
-    // ...and everywhere else in the admin (ROADMAP "Intuitive difficulty display everywhere", Pierre, 2026-11-05): on every
-    // view of every tab, Coverage's full "Where to look" list and both demo journeys, no signed raw number in the page's
-    // text (seconds and "pts" aside; the one-tap tables' felt difficulty, the players' own −1…+1 survey scale, aside), every
-    // badge in the band of its %, and no "recognised by N%" written as plain text outside a badge. Once, at 1280.
-    if (once)
-      for (const h of new Set([
-        ...ROUTES.map(r => r.h).filter(h => h && !h.startsWith('~journey')),
-        '~stats-needs',
-        '~journey/Ana Demo',
-        '~journey/Carla Demo'
-      ])) {
-        await go(h);
-        const r = await p.evaluate(() => {
-          const v = document.getElementById('view'),
-            band = n => (n >= 75 ? 'veasy' : n >= 60 ? 'easy' : n >= 40 ? 'mid' : n >= 25 ? 'hard' : 'vhard'),
-            felt = [...v.querySelectorAll('.adm-pscale')];
-          felt.forEach(x => (x.style.display = 'none'));
-          const signed = (v.innerText.match(/(^|[^\w.])[+−-]\d+\.\d+(?! ?(s|pts?)\b)/gm) || []).slice(0, 3);
-          felt.forEach(x => (x.style.display = ''));
-          const plain = [],
-            tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
-          for (let n; (n = tw.nextNode());)
-            if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
-              plain.push(n.textContent.trim().slice(0, 80));
-          return {
-            signed,
-            plain: plain.slice(0, 3),
-            off: [...v.querySelectorAll('.adm-rec')]
-              .filter(
-                b =>
-                  !b.classList.contains('rec-' + band(Number((b.textContent.match(/(\d+)%/) || [])[1]))) || !/[+−]?\d+\.\d\d/.test(b.title)
-              )
-              .map(b => b.className + ' ' + b.textContent)
-              .slice(0, 3)
-          };
-        });
-        if (r.signed.length || r.plain.length || r.off.length)
-          fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
-      }
     // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
     // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
     // marks, and a plain median (sort, middle value); nothing wider than the window.

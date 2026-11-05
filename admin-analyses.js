@@ -608,6 +608,30 @@ function anSpark(rep, key, k) {
 }
 const anTable = (head, rows, cls = '') =>
   `<div class="adm-tscroll${cls === 'tall' ? ' tall' : ''}"><table class="adm-tbl${cls && cls !== 'tall' ? ' ' + cls : ''}"><thead><tr>${head.map(h => (h[0] === '#' ? `<th class="n">${h.slice(1)}</th>` : `<th>${h}</th>`)).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+// The per-player lines of a stored report made before an account was removed (sheet v55: the next run refits it, AV 5
+// leaves those answers out): hidden once this browser knows who is still a player, the ids on Players and the devices
+// that never signed in (readAnswers anonymous 1). Pierre, 2026-11-05: a removed account is in no per-player result.
+let anAnsP = null; // the answer log asked for by the Analyses pages (once)
+// The answer log for anLive, read once at a time. The guard is cleared before the redraw (Codex review #600): a log
+// dropped while it was read (a delete or merge: sheetAgain('ans')) is then read again by that redraw.
+function anAnsLoad() {
+  if (!TOKEN || ANS || anAnsP) return;
+  anAnsP = loadStats().then(
+    () => {
+      anAnsP = null;
+      if (/^~an(-|$)/.test(cur) && ANREP) render();
+    },
+    () => (anAnsP = null)
+  );
+}
+function anLive(L, key = 'k') {
+  const U = USERS && USERS.users,
+    R = ANS && ANS.rows;
+  if (!Array.isArray(L) || !U || !R) return L || [];
+  const ok = new Set(U.map(u => u.id).filter(Boolean));
+  R.forEach(r => r[11] === 1 && ok.add(r[0]));
+  return L.filter(x => ok.has(String(x[key]).split('#')[0]));
+}
 // Player labels: the name from Players when this browser has it (the report keeps anonymous ids), else P1, P2… by order.
 function anWho(id, i) {
   const u = ((USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
@@ -1056,7 +1080,7 @@ const ANV = {
       'Seconds to answer, by player',
       anTable(
         ['Player', '#Answers', '#Typical time', '#Likely between'],
-        a.player.map(
+        anLive(a.player).map(
           (p, i) =>
             `<tr><td>${anWho(p.k, i)}</td><td class="n">${anInt(p.n)}</td><td class="n">${anSec(anS(a, p.u))}</td><td class="n">${anSec(anS(a, p.lo))} – ${anSec(anS(a, p.hi))}</td></tr>`
         )
@@ -1083,7 +1107,7 @@ const ANV = {
           '#Against expected, enlarged',
           '#Against expected, not'
         ],
-        a.player.map(
+        anLive(a.player).map(
           (p, i) =>
             `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${pc(p.z / p.n)}</td><td class="n">${p.z ? pc(p.yz / p.z) : '–'}</td><td class="n">${pc(p.y0 / Math.max(1, p.n - p.z))}</td><td class="n">${p.z ? anPts((p.yz - p.ez) / p.z) : '–'}</td><td class="n">${anPts((p.y0 - p.e0) / Math.max(1, p.n - p.z))}</td></tr>`
         )
@@ -1191,7 +1215,7 @@ const ANV = {
     anCard(
       'Each player against everyone’s rates',
       forest(
-        a.player.map((p, i) => ({
+        anLive(a.player).map((p, i) => ({
           label: (anWho(p.k, i).match(/>([^<]*)</) || [])[1] || `P${i + 1}`,
           est: p.oe,
           lo: p.lo,
@@ -1202,7 +1226,7 @@ const ANV = {
       ) +
         anTable(
           ['Player', '#Chances', '#Mixed up', '#Expected from everyone', '#Times as many'],
-          a.player.map(
+          anLive(a.player).map(
             (p, i) =>
               `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${p.mix}</td><td class="n">${p.exp.toFixed(1)}</td><td class="n">×${p.oe.toFixed(1)}<small class="adm-an-ci">×${p.lo.toFixed(1)} – ×${p.hi.toFixed(1)}</small></td></tr>`
           )
@@ -1306,6 +1330,7 @@ const anYr = V => {
 // Sessions in figures (analysis.js sessDesc; the study of 2026-11-04): counts and means, in words.
 const anOf = (k, n) => (n ? `${k} of ${n} (${pc(k / n)})` : '–');
 function anSessDesc(d) {
+  d = {...d, table: anLive(d.table, 'p')};
   const ids = [...new Set(d.table.map(s => s.p))].sort(),
     who = id => anWho(id, ids.indexOf(id)),
     modes = md =>
@@ -1448,6 +1473,8 @@ function renderAnalyses() {
     return;
   }
   if (TOKEN && !USERS) loadUsers().then(() => /^~an(-|$)/.test(cur) && ANREP && render());
+  // The answer log too: anLive tells the devices never signed in from the removed accounts with it (Codex review #600).
+  anAnsLoad();
   const rep = anRep(),
     key = anKey(cur);
   const local = AN.src === 'local' && ANLOC && ANLOC.rep;
