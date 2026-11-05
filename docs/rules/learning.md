@@ -135,8 +135,11 @@ instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers**, 
 - Name in advance the measure(s) that decide for a given change; the other measures are exploratory. When several
   comparisons are judged, correct for multiplicity (Holm-Bonferroni by default; Bonferroni is a fine start). An isolated
   difference among many measures is not a result unless it replicates on fresh seeds.
-- Multifactor analyses (the admin's Analyses, several variables mixed) get the full statistical rigour: models,
-  corrections, stated limits.
+- Multifactor analyses (several factors or interactions at once, e.g. profile × parameter × seed; the admin's Analyses)
+  get the full rigour in method, not only effort: find and use the method best suited to the design before running it
+  (e.g. a factorial design with a mixed-effects model, seeds or players as random effects, interactions tested in the
+  model rather than by many pairwise tests); state the model and its assumptions in the PR and check them. These
+  analyses are rare, so taking the time is expected. Single comparisons keep the simple paired test and Holm.
 
 *Why:* every added part or variable makes the model harder to calibrate.
 *Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05.
