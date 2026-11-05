@@ -139,6 +139,7 @@ async function once(base, it) {
   const q = await ctx.newPage(),
     qQuiet = track(q);
   await thr(q);
+  if (process.env.FIX) SWV = 1;
   L('--- q opens (server SWV ' + SWV + ')');
   await q.goto(base + 'admin.html?demo');
   await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {timeout: 20000});
@@ -151,6 +152,8 @@ async function once(base, it) {
   await q.evaluate(() => (location.hash = '~cand'));
   await q.waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000}).catch(() => fails.push('C: no reload'));
   await qQuiet();
+  if (process.env.FIX)
+    await q.waitForFunction(() => navigator.serviceWorker.getRegistration().then(r => !!r && !r.installing && !r.waiting), null, {timeout: 30000}).catch(() => fails.push('D: a version still waiting'));
   L('--- HOLD');
   HOLD = /cand\.json$/;
   const pend = new Map();
@@ -192,7 +195,7 @@ async function once(base, it) {
     if (r.hang) hangs++;
     console.log(`#${i} ${Math.round((Date.now() - t) / 1000)}s dcl=${r.dcl}ms fails=${JSON.stringify(r.fails)}${r.hang ? ' HANG ' + JSON.stringify(r.hang, null, 1) : ''}`);
   }
-  console.log(`hangs ${hangs}/${N} OLD=${OLD} CPU=${CPU}`);
+  console.log(`hangs ${hangs}/${N} OLD=${OLD} CPU=${CPU} FIX=${!!process.env.FIX}`);
   server.close();
   process.exit(0);
 })();
