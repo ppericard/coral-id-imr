@@ -30,32 +30,42 @@ const JSTART = {tour: 'in the welcome tour', card: 'on the card before the quiz'
 // "I know corals well" etc.; inferred (an existing player with CHOICE.ASK answers or more, never asked): said so.
 // An answer's words (core.js startText): the corals' question, whose record (reefid-sync-coral-start) the journey reads.
 const jSaid = c => (startText(SUBJECTS[0].id, c) || [c])[0];
+// jorder: begin
+// The Cards list in time order (Pierre, 2026-11-05: Nov 4 rows came before Nov 2 ones): items [time or null, html],
+// the timed ones oldest first, the untimed ones after them in their own order.
+const jOrder = items =>
+  items
+    .map((x, i) => [x, i])
+    .sort(([a, i], [b, j]) => (a[0] == null) - (b[0] == null) || (a[0] != null && b[0] != null && a[0] - b[0]) || i - j)
+    .map(([x]) => x[1])
+    .join('');
+// jorder: end
 const jStart = (S, before) => {
-  if (!S || !startOpt(S.c)) return '<li><b>Start</b> not answered yet</li>';
+  if (!S || !startOpt(S.c)) return [[null, '<li><b>Start</b> not answered yet</li>']];
   // The history's events (core.js startEvents): the answers given, and the eases taken with Coral basics.
   const ev = startEvents(S),
     h = ev.filter(x => x[3] !== 'ease');
-  return (
-    h
-      .map(
-        ([c, a, t, via], i) =>
-          `<li><b>${i ? 'Changed to' : 'Start'}</b> ${esc(jSaid(c))} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)}`} · ${JSTART[via] || esc(via || '')}${t ? ' · ' + jTime(t) : ''}</li>`
-      )
-      .join('') +
-    ev
+  // The same answer given again is a real event (core.js startEvents keeps it): "Answered again", not "Changed to";
+  // "inferred" is said once (Pierre, 2026-11-05).
+  return [
+    ...h.map(([c, a, t, via], i) => [
+      t || null,
+      `<li><b>${!i ? 'Start' : c === h[i - 1][0] ? 'Answered again' : 'Changed to'}</b> ${esc(jSaid(c))} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)} · ${JSTART[via] || esc(via || '')}`}${t ? ' · ' + jTime(t) : ''}</li>`
+    ]),
+    ...ev
       .filter(x => x[3] === 'ease')
-      .map(
-        ([c, a, t, , of]) =>
-          `<li><b>Eased</b> to the start of ${esc(jSaid(c))} (said “${esc(jSaid(of))}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
-      )
-      .join('') +
-    Object.entries(S.fb || {})
-      .map(([k, [a, t]]) => {
-        const [c, d] = k.split('-');
-        return `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc(jSaid(c))}”, after answer ${before(t, a)}${t ? ' · ' + jTime(t) : ''}</li>`;
-      })
-      .join('')
-  );
+      .map(([c, a, t, , of]) => [
+        t || null,
+        `<li><b>Eased</b> to the start of ${esc(jSaid(c))} (said “${esc(jSaid(of))}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
+      ]),
+    ...Object.entries(S.fb || {}).map(([k, [a, t]]) => {
+      const [c, d] = k.split('-');
+      return [
+        t || null,
+        `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc(jSaid(c))}”, after answer ${before(t, a)}${t ? ' · ' + jTime(t) : ''}</li>`
+      ];
+    })
+  ];
 };
 const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
   jTime = t => dateText(t, 'dmhm'),
@@ -246,23 +256,49 @@ function renderJourney(name, anonId = '') {
       ? '<p class="note">Cards: not saved (not signed in).</p>'
       : C.err
         ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
-        : `<ul class="adm-jcards">${jStart(C.start, before)}${
+        : `<ul class="adm-jcards">${jOrder([
+            ...jStart(C.start, before),
             first.length
-              ? `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
-              : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
-          }<li><b>Cards one at a time</b> ${singles.length}</li>${
-            openAt != null
-              ? `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} genera at once</li>${
-                  offer.bk === 'one'
-                    ? `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)} · ${offer.bn} genera closed, ${backs.length} still closed</li>`
+              ? [
+                  cardT(CM[first[0]]) || null,
+                  `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
+                ]
+              : [
+                  null,
+                  '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
+                ],
+            [null, `<li><b>Cards one at a time</b> ${singles.length}</li>`],
+            ...(openAt != null
+              ? [
+                  [
+                    offer.t || cardT([openAt]) || null,
+                    `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} genera at once</li>`
+                  ],
+                  ...(offer.bk === 'one'
+                    ? [
+                        [
+                          offer.bt || null,
+                          `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)} · ${offer.bn} genera closed, ${backs.length} still closed</li>`
+                        ]
+                      ]
                     : offer.bk === 'keep'
-                      ? `<li><b>Kept all genera</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)}</li>`
-                      : ''
-                }`
+                      ? [
+                          [
+                            offer.bt || null,
+                            `<li><b>Kept all genera</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)}</li>`
+                          ]
+                        ]
+                      : [])
+                ]
               : offer
-                ? `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
-                : '<li><b>Open all genera</b> not used</li>'
-          }</ul>`;
+                ? [
+                    [
+                      offer.t || null,
+                      `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
+                    ]
+                  ]
+                : [[null, '<li><b>Open all genera</b> not used</li>']])
+          ])}</ul>`;
 
   // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus
   // (Pierre, 2026-11-02: "you know which question validated the exam"). Once learned a genus gets no more exam
