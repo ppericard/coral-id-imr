@@ -426,3 +426,82 @@ test('the load budget is twice the cores; below 5 GB of free disk a heavy run re
     fs.rmSync(dir, {recursive: true, force: true});
   }
 });
+
+// Codex review #608: a guarded tool killed by its original PID takes its run down with it (the wrapper and the worker),
+// and the slot is given back: a cancelled analysis never keeps running and holding the slot.
+test('guard(): SIGTERM to the guarded tool stops the run it started and gives the slot back', async () => {
+  const {dir, env, slots} = sandbox(),
+    js = path.join(dir, 'long.js'),
+    pidf = path.join(dir, 'worker.pid');
+  fs.writeFileSync(
+    js,
+    `require(${JSON.stringify(SLOT)}).guard('long.js');
+     require('fs').writeFileSync(${JSON.stringify(pidf)}, String(process.pid));
+     setTimeout(() => {}, 60e3);\n`
+  );
+  const alive = pid => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+  try {
+    const outer = spawn(process.execPath, [js], {env, stdio: 'ignore'});
+    const t0 = Date.now();
+    while (!fs.existsSync(pidf) && Date.now() - t0 < 10e3) await new Promise(r => setTimeout(r, 50));
+    const worker = +fs.readFileSync(pidf, 'utf8');
+    assert.deepStrictEqual(slots(), ['slot0']);
+    outer.kill('SIGTERM');
+    const t1 = Date.now();
+    while ((alive(worker) || slots().length) && Date.now() - t1 < 8e3) await new Promise(r => setTimeout(r, 100));
+    assert.ok(!alive(worker), 'the worker stopped');
+    assert.deepStrictEqual(slots(), [], 'the slot is given back');
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+// Codex review #608: the disk is checked again when the slot is given, not only before the wait.
+test('slot: a run that waited refuses if the disk filled up meanwhile', async () => {
+  const {dir, env, slots} = sandbox();
+  try {
+    const holder = spawn(
+      process.execPath,
+      [
+        '-e',
+        `require(${JSON.stringify(SLOT)})('holder').then(() => { console.log('held'); process.stdin.resume(); process.stdin.on('end', () => process.exit(0)); });`
+      ],
+      {env, stdio: ['pipe', 'pipe', 'inherit']}
+    );
+    await new Promise(r => holder.stdout.once('data', r));
+    const waiter = exec(
+      process.execPath,
+      [
+        '-e',
+        `setTimeout(() => (process.env.SLOT_MIN_FREE_GB = '1e9'), 300); require(${JSON.stringify(SLOT)})('waiter').then(() => console.log('started'));`
+      ],
+      env
+    );
+    await new Promise(r => setTimeout(r, 600));
+    holder.stdin.end();
+    const r = await waiter;
+    assert.strictEqual(r.out, '', 'the run never starts');
+    assert.strictEqual(r.code, 1);
+    assert.match(r.err, /refused: /);
+    await new Promise(r => setTimeout(r, 200));
+    assert.deepStrictEqual(slots(), []);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+// Codex review #608: an option's value given as the next argument is not a test file (it kept the default list out).
+test('tests/run.js: a space-separated option value is not taken for a file', () => {
+  const args = require('./run.js'),
+    n = fs.readdirSync(__dirname).filter(f => f.endsWith('.test.js')).length;
+  assert.strictEqual(args(['--test-name-pattern', 'parts:']).length, n + 3);
+  assert.strictEqual(args(['--test-reporter', 'spec']).length, n + 3);
+  assert.deepStrictEqual(args(['--test-reporter', 'spec', 'tests/a.test.js']), ['--test', '--test-reporter', 'spec', 'tests/a.test.js']);
+});

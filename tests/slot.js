@@ -148,14 +148,16 @@ function reap(f) {
 // (run(), which waits for its child first).
 async function slot(name, o = {}) {
   if (process.env.CI || held()) return () => {};
-  const disk = diskOk();
-  if (!disk.ok) {
+  // Checked before each try, so a run that waited never starts on a disk that filled up meanwhile (Codex review #608).
+  const roomy = () => {
+    const disk = diskOk();
+    if (disk.ok) return;
     console.error(
       `${name}: refused: ${disk.free.toFixed(1)} GB free on the disk of ${disk.dir}, under the ${disk.min} GB a heavy run needs ` +
         '(rule W24). Clean up behind you first: merged worktrees (git worktree remove), temporary downloads, venvs, old screenshots.'
     );
     process.exit(1);
-  }
+  };
   const n = Math.max(1, +process.env.SMOKE_SLOTS || Math.floor(cores() / 2)),
     t0 = Date.now();
   // Every user of the machine takes and takes back slots here: the directory is writable by all and not sticky, so a
@@ -165,6 +167,7 @@ async function slot(name, o = {}) {
     fs.chmodSync(DIR, 0o777);
   } catch (e) {}
   for (let said = 0; ;) {
+    roomy();
     const load = os.loadavg()[0];
     if (load <= maxLoad())
       for (let i = 0; i < n; i++) {
@@ -270,19 +273,29 @@ function partial(all, run, def, ws) {
 
 // Runs cmd args once this process holds a slot, with the slot handed down (REEFID_SLOT, and REEFID_SLOT_WRAP = this pid
 // so a guarded tool run directly by it never re-runs itself), and gives the slot back when cmd ends. Ctrl-C or a kill
-// reaches cmd first; this process then ends with cmd's code (or its signal).
+// reaches cmd first; this process then ends with cmd's code (or its signal). If the process that started this one ends
+// (a guarded tool killed by its own PID), cmd is stopped too and the slot given back (Codex review #608).
 async function run(cmd, args, name) {
   const free = await slot(name, {signals: false}),
     child = spawn(cmd, args, {stdio: 'inherit', env: {...process.env, REEFID_SLOT_WRAP: String(process.pid)}}),
     sigs = ['SIGINT', 'SIGTERM', 'SIGHUP'],
     pass = sig => child.kill(sig);
   for (const sig of sigs) process.on(sig, pass);
+  const parent = process.ppid,
+    orphan = setInterval(() => {
+      if (process.ppid === parent) return;
+      clearInterval(orphan);
+      child.kill('SIGTERM');
+      setTimeout(() => child.kill('SIGKILL'), 5000).unref();
+    }, 300);
+  orphan.unref();
   child.on('error', e => {
     free();
     console.error(`${name}: cannot run ${cmd} (${e.code || e.message})`);
     process.exit(127);
   });
   child.on('exit', (code, sig) => {
+    clearInterval(orphan);
     free();
     for (const s of sigs) process.removeListener(s, pass);
     if (sig) process.kill(process.pid, sig);
