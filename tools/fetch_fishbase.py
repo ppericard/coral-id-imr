@@ -34,18 +34,22 @@ The rules (Pierre, 2026-11-05: the same as for iNaturalist photos, tools/fetch_f
   the species, e.g. J. E. Randall), taken as given like a Research Grade one. The judging pass never judges the species.
 - Reference photo: FishBase's main picture of the species (PicPreferred, the photo its species page shows) is tagged
   `rep: "fishbase"` (judging/FISH.md "Reference photos": easy to identify, so its ease gets a bonus).
-- Order and amount: the main picture first, then the nearest (Dauin, the region, the Philippines, abroad), then the
-  file name; each photo its own observation; the cap of tools/fetch_fish.py (CAP observations per species, counted as
-  it counts them: what Pierre rejected, excluded or sent elsewhere, and the pre-sort's sure rejects, free room). Run
-  after tools/fetch_fish.py, so FishBase fills the room iNaturalist leaves (the species with few or no candidates).
+- Order and amount: the cap of tools/fetch_fish.py (species_room, Pierre, 2026-11-05, Q36: 30 photos for a stable
+  species, +10 per extra phase, at most 60; counted as it counts them: what Pierre rejected, excluded or sent
+  elsewhere, and the pre-sort's sure rejects, free room). Each phase's room first, with the photos FishBase labels with
+  that life stage (juvenile, initial phase, terminal phase, male, female); then the free room (a phase's room left
+  unfilled stays open for that phase, for a later run: never adults in a juvenile's place). Within each: the main
+  picture first, then the nearest (Dauin, the region, the Philippines, abroad), then the file name; each photo its own
+  observation. Run after tools/fetch_fish.py, so FishBase fills the room iNaturalist leaves (the species with few or no
+  candidates, the phases iNaturalist had too few photos of).
 
 Candidate records, as tools/fetch_fish.py's (data.json "cand" shape): f (fish-<species id>-cand-fb-<file stem>), a (the
 author, "via FishBase", the licence), lic, o (the photo's FishBase page: its credit and licence), t (FishBase's name of
 the photo), own (false), loc (dauin / ph / world), src, r: 1, plus via: "fishbase" (absent = iNaturalist), rep, and st
-(the life stage FishBase gives: juvenile, female, male).
+(the life stage FishBase gives: juvenile, female, male, initial for its initial phase, terminal for its terminal phase).
 
     python3 tools/fetch_fishbase.py --fishbase DIR   read the snapshot into tools/fishbase_src.json
-    python3 tools/fetch_fishbase.py [--circle 1 --circle 2 --circle 3] [--cap 20] [--only s238,t05] [--plan]
+    python3 tools/fetch_fishbase.py [--circle 1 --circle 2 --circle 3] [--cap N] [--only s238,t05] [--plan]
 Tests: node --test tests/fishbase.test.js (fixtures and the real tools/fishbase_src.json).
 """
 import argparse
@@ -76,7 +80,8 @@ IWP_COUNTRIES = {
     "583": "Micronesia", "316": "Guam", "580": "Northern Mariana Islands", "158": "Taiwan", "704": "Viet Nam",
     "764": "Thailand", "116": "Cambodia", "104": "Myanmar",
 }
-STAGE = {"juvenile": "juvenile", "female": "female", "male": "male"}  # FishBase LifeStage -> st (fetch_fish.py's words)
+# FishBase LifeStage -> st (fetch_fish.py's words; fetch_fish.PHASE_WORD reads them as phases)
+STAGE = {"juvenile": "juvenile", "female": "female", "male": "male", "initial phase": "initial", "terminal phase": "terminal"}
 
 
 def lic_of(row):
@@ -224,6 +229,8 @@ def run(args):
     cur = json.loads(Path(args.cur).read_text(encoding="utf-8")) if Path(args.cur).exists() else {}
     sug = json.loads(Path(args.suggest).read_text(encoding="utf-8")) if Path(args.suggest).exists() else {}
     gone, _ = ff.state(cur, sug)
+    sugf, moved = (sug or {}).get("fish") or {}, ff.moved_of(cur)
+    game = ff.game_photos(json.loads(Path(args.photos).read_text(encoding="utf-8")) if Path(args.photos).exists() else {})
     only = set(filter(None, (args.only or "").split(",")))
     plan, added = {}, Counter()
     for s, t in ff.species_list(fish, set(args.circle), only):
@@ -232,15 +239,22 @@ def run(args):
         if not fb:
             continue
         L = have.get(sid, [])
-        keep_obs = {p["o"] for p in L if not gone(p["f"])}
         known = {p["f"] for p in L}
-        room = args.cap - len(keep_obs)
-        take = [r for r in ordered(fb["photos"], s.get("present")) if record(s, fb["code"], r)["f"] not in known][:max(room, 0)]
+        R = ff.species_room(s, t, L, gone, sugf, game.get(sid, ()), fb["photos"], moved, args.cap)
+        rows = [r for r in ordered(fb["photos"], s.get("present")) if record(s, fb["code"], r)["f"] not in known]
+        take, left = [], R["room"]
+        for ph, n in R["rooms"].items():  # each phase's room first (Q36), with the photos FishBase labels so
+            got = [r for r in rows if ff.PHASE_WORD.get(STAGE.get(r.get("st") or "")) == ph and r not in take][:min(n, left)]
+            take += got
+            left -= len(got)
+        take += [r for r in rows if r not in take][:min(R["free"], left)]  # a phase's room left unfilled stays for it
         if not take:
             continue
         recs = [record(s, fb["code"], r) for r in take]
-        plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": room, "add": len(recs),
-                     "rep": sum(1 for r in recs if r.get("rep")), "loc": dict(Counter(r["loc"] for r in recs))}
+        plan[sid] = {"name": s["name"], "entry": t["id"], "cap": R["cap"], "phases": R["phases"], "have": R["have"], "held": R["held"],
+                     "room": R["room"], "rooms": R["rooms"], "add": len(recs), "rep": sum(1 for r in recs if r.get("rep")),
+                     "loc": dict(Counter(r["loc"] for r in recs)),
+                     "phase_add": dict(Counter(ff.PHASE_WORD[r["st"]] for r in recs if ff.PHASE_WORD.get(r.get("st"))))}
         if args.plan:
             continue
         have.setdefault(sid, []).extend(recs)
@@ -262,7 +276,7 @@ def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     a.add_argument("--fishbase", metavar="DIR", help="read the rfishbase snapshot in DIR into tools/fishbase_src.json")
     a.add_argument("--circle", type=int, action="append", help="circle(s) to fill (default 1)")
-    a.add_argument("--cap", type=int, default=ff.CAP, help=f"usable observations kept per species (default {ff.CAP})")
+    a.add_argument("--cap", type=int, help="one fixed cap of usable photos for every species (default: fetch_fish.cap_of, 30-60 by phases)")
     a.add_argument("--only", help="comma-separated species or teaching ids")
     a.add_argument("--plan", action="store_true", help="print what a run would add; write nothing")
     a.add_argument("--fish", default=str(ROOT / "fish.json"))
@@ -270,6 +284,7 @@ def main(argv=None):
     a.add_argument("--cand", default=str(ROOT / "fish-cand.json"))
     a.add_argument("--cur", default=str(ROOT / "curation.json"))
     a.add_argument("--suggest", default=str(ROOT / "suggest.json"))
+    a.add_argument("--photos", default=str(ROOT / "fish-photos.json"), help="the game photos (their judging tags record phases)")
     args = a.parse_args(argv)
     if args.fishbase:
         return from_snapshot(args.fishbase, args.fish)

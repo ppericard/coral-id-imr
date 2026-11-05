@@ -291,7 +291,9 @@ Decided from the admin pooling study:
   subject switch, subject-neutral pages").
 - **Photos per species**: start at 8 observations per circle-1 species, 12 for the PDF's 24 most sighted, cap 20. That is enough at entry
   (family) level; at species level Pierre expects **30 to 40 photos per species** soon, so players learn the species and not the photos,
-  and to cover their variability (quality, individuals, profile or front, colour, partly hidden).
+  and to cover their variability (quality, individuals, profile or front, colour, partly hidden). The candidate cap since 2026-11-05
+  (Pierre, Q36): 30 photos for a stable species, +10 per extra phase (juvenile, intermediate, male or terminal, female), at most 60, the
+  search filling each phase (ARCHITECTURE.md "Fish candidates").
 - **No IMR slides or photos for fish**: iNaturalist covers every IMR family and species. Also a rights question (Pierre, 2026-11-04):
   most photos of the IMR fish presentation are not IMR's own (likely taken from ID books); plenty of photos with known rights exist.
   Diagrams and figures are our own drawings.

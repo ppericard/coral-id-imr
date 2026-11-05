@@ -143,13 +143,37 @@ test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice,
   w('src.json', src);
   w('fish-cand.json', cand);
   w('cur.json', {fish: {seen: {'fish-s1-cand-22': 1}}});
-  const args = ['--fish', 'fish.json', '--src', 'src.json', '--cand', 'fish-cand.json', '--cur', 'cur.json', '--suggest', 'none.json'].map(
-    (x, i) => (i % 2 ? path.join(dir, x) : x)
-  );
+  const args = [
+    '--fish',
+    'fish.json',
+    '--src',
+    'src.json',
+    '--cand',
+    'fish-cand.json',
+    '--cur',
+    'cur.json',
+    '--suggest',
+    'none.json',
+    '--photos',
+    'none.json'
+  ].map((x, i) => (i % 2 ? path.join(dir, x) : x));
   const run = (...a) => execFileSync('python3', ['tools/fetch_fishbase.py', ...args, '--cap', '2', ...a], {cwd: ROOT, encoding: 'utf8'});
   const plan = JSON.parse(run('--plan'));
   assert.deepStrictEqual(Object.keys(plan.species), ['s1']);
-  assert.deepStrictEqual(plan.species.s1, {name: 'Fishus fishii', entry: 't1', have: 1, room: 1, add: 1, rep: 1, loc: {world: 1}});
+  assert.deepStrictEqual(plan.species.s1, {
+    name: 'Fishus fishii',
+    entry: 't1',
+    cap: 2,
+    phases: {},
+    have: 1,
+    held: {},
+    room: 1,
+    rooms: {},
+    add: 1,
+    rep: 1,
+    loc: {world: 1},
+    phase_add: {}
+  });
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), cand, '--plan writes nothing');
   run();
   const out = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
@@ -203,8 +227,84 @@ test('fish-cand.json: every FishBase candidate passes the rules on tools/fishbas
     cand.s238.map(p => p.src.split('/').pop()),
     ['Hachl_m0.jpg', 'Hachl_f0.jpg', 'Hachl_m1.jpg', 'Hachl_u0.jpg']
   );
-  // Never more observations than the cap (tools/fetch_fish.py CAP): one FishBase photo is one observation.
-  Object.entries(cand).forEach(([sid, L]) => assert.ok(L.filter(p => p.via).length <= 20, sid));
+  // Never more photos than the highest cap (tools/fetch_fish.py MAX_CAP, Q36): one FishBase photo is one observation.
+  Object.entries(cand).forEach(([sid, L]) => assert.ok(L.filter(p => p.via).length <= 60, sid));
+});
+
+test('fetch_fishbase.py with phases (Q36): a phase room takes the photos FishBase labels with it first, and stays open otherwise', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishbase-phase-'));
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
+      {id: 's2', name: 'Fishus parvus', inat: 502, circle: 1, present: {ph: true, near: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1', 's2']}]
+  };
+  const row = (n, k = {}) => ({
+    n,
+    t: 'Fishus',
+    kind: 'underwater photo',
+    a: 'Randall, J.E.',
+    cp: 'non-commercial use',
+    cc: '598',
+    ll: [-5.2, 145.8],
+    ...k
+  });
+  const src = {
+    species: {
+      s1: {
+        code: 1,
+        photos: [
+          row('Fiu_m0.jpg', {main: true}),
+          row('Fiu_j0.jpg', {st: 'juvenile'}),
+          row('Fiu_j1.jpg', {st: 'juvenile'}),
+          row('Fiu_u0.jpg')
+        ]
+      },
+      s2: {code: 2, photos: [row('Fpa_m0.jpg', {main: true}), row('Fpa_u0.jpg')]}
+    }
+  };
+  // Both have juveniles (the entry's IMR line): cap 40. s1 keeps 38 adult photos: its 2 places go to FishBase's
+  // juveniles, not its main picture. s2 keeps 35 adults and has no juvenile on FishBase: the free room takes adults, the
+  // juvenile room stays open.
+  const cand = (sid, n) =>
+    Array.from({length: n}, (_, i) => ({f: `fish-${sid}-cand-${100 + i}`, o: `https://www.inaturalist.org/observations/${sid}${i}`}));
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('src.json', src);
+  w('fish-cand.json', {v: 1, cand: {s1: cand('s1', 38), s2: cand('s2', 25)}});
+  const argv = [
+    '--fish',
+    'fish.json',
+    '--src',
+    'src.json',
+    '--cand',
+    'fish-cand.json',
+    '--cur',
+    'none.json',
+    '--suggest',
+    'none.json',
+    '--photos',
+    'none.json'
+  ].map((x, i) => (i % 2 ? path.join(dir, x) : x));
+  const run = (...a) => execFileSync('python3', ['tools/fetch_fishbase.py', ...argv, ...a], {cwd: ROOT, encoding: 'utf8'});
+  const plan = JSON.parse(run('--plan')).species;
+  assert.deepStrictEqual([plan.s1.cap, plan.s1.room, plan.s1.rooms, plan.s1.phase_add], [40, 2, {juvenile: 2}, {juvenile: 2}]);
+  assert.deepStrictEqual([plan.s2.cap, plan.s2.room, plan.s2.rooms, plan.s2.add], [40, 15, {juvenile: 10}, 2]);
+  run();
+  const out = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  assert.deepStrictEqual(
+    out.s1.slice(38).map(p => [p.f, p.st]),
+    [
+      ['fish-s1-cand-fb-Fiu_j0', 'juvenile'],
+      ['fish-s1-cand-fb-Fiu_j1', 'juvenile']
+    ]
+  );
+  assert.deepStrictEqual(
+    out.s2.slice(25).map(p => p.f),
+    ['fish-s2-cand-fb-Fpa_m0', 'fish-s2-cand-fb-Fpa_u0']
+  );
+  fs.rmSync(dir, {recursive: true, force: true});
 });
 
 test('reference photos: rep adds the flag r and one ease point, the caps applied after it; iNaturalist covers tagged', () => {
