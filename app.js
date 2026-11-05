@@ -249,15 +249,19 @@ const away = i => {
   // Under a service worker the 480 px step and the backdrop stay on R2, where the worker keeps its offline copies.
   const sw = swOn();
   if (!photoFallback(i, photoLook, sw)) return false;
-  if (!sw) ((R2 = false), (AWAY = true), photoFallback(i.closest('figure'), photoLook));
+  if (!sw) (r2Out(), photoFallback(i.closest('figure'), photoLook));
   cropWatch();
   return true;
 };
+// R2 failed on a page no service worker controls (an element, app.js away, or a quiz preload, quiz.js pump): the next
+// photos go to their online original or the site, and the crops are drawn from now on (Codex review #569).
+const r2Out = () => ((R2 = false), (AWAY = true), cropWatch());
 document.addEventListener('error', photoFail, true);
 // A cropped photo shown from its online original gets its crop drawn (core.js photoCropOf: the site's files have it baked
 // in): every <img> added or given a new src is checked, from the first fallback on (nothing watches before).
 let CROPW = null;
 const cropSet = i => {
+  if (i.style.getPropertyValue('object-view-box') && !i.dataset.vb) return; // a crop drawn by its page (none in the app yet)
   const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
   if (c) (i.style.setProperty('object-view-box', c), (i.dataset.vb = 1));
   else if (i.dataset.vb) (i.style.removeProperty('object-view-box'), delete i.dataset.vb);

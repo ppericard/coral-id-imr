@@ -1171,7 +1171,7 @@ const pump = () => {
             x.r2try.add(u);
             return setTimeout(() => (x.urls.unshift(u), PF.includes(x) || PF.push(x), pump()), PHOTO_RETRY);
           }
-          if (!swOn()) ((R2 = false), (AWAY = true));
+          if (!swOn()) r2Out();
           x.urls.unshift(photoAway(u, photoLook));
         }
         pump();

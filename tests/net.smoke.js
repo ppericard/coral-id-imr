@@ -908,7 +908,63 @@ const server = http.createServer((req, res) => {
         if (!s2.length || off2.length || asked !== n)
           fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${off2.length ? off2 : s2})`);
       }
+      // The first R2 failure coming from a quiz preload, no element having failed yet: the crops are drawn from then on
+      // too (Codex review #569: only an element's fallback started the crop watch).
+      const pre = await p.evaluate(async () => {
+        ((R2 = true), (AWAY = false));
+        if (CROPW) CROPW.disconnect();
+        CROPW = null;
+        const u = PHOTO_BASE + 'img/no-such-photo-s.webp',
+          x = {urls: [u], held: [], r2try: new Set([u])};
+        ONQ = x;
+        PF.push(x);
+        pump();
+        for (let k = 0; k < 50 && !AWAY; k++) await new Promise(ok => setTimeout(ok, 100));
+        return {away: AWAY, watch: !!CROPW};
+      });
+      if (!pre.away || !pre.watch) fails.push(`R2 cut off: a failure from a preload did not start the crop watch (${JSON.stringify(pre)})`);
       if (errs.length) fails.push('R2 cut off: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // e. The admin, R2 cut off: a downloaded, cropped photo shown from its online original keeps its published crop
+    // (Codex review #569), on its genus page.
+    {
+      const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
+        C = JSON.parse(fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8')),
+        [g, ph] = Object.entries(D.cand || {})
+          .flatMap(([g, L]) => L.map(x => [g, x]))
+          .find(([g, x]) => x.cr && !x.r && ((C.genera || {})[g] || {}).add && C.genera[g].add[x.f] && !(C.exclude || {})[x.f]);
+      const ctx = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await inatLocal(ctx);
+      const p = await ctx.newPage(),
+        errs = [];
+      p.on('pageerror', e => errs.push(e.message));
+      await p.goto(base + 'admin.html?demo#' + g);
+      const sel = `figure[data-f="${ph.f}"] img`;
+      await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
+      await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
+      const st = await p
+        .waitForFunction(
+          s => {
+            const i = document.querySelector(s);
+            return (
+              i &&
+              /\/photos\//.test(i.getAttribute('src')) &&
+              i.complete && {src: i.getAttribute('src'), vb: i.style.getPropertyValue('object-view-box')}
+            );
+          },
+          sel,
+          {timeout: 15000}
+        )
+        .then(h => h.jsonValue())
+        .catch(() => null);
+      if (!st || !st.vb)
+        fails.push(`Admin, R2 cut off: a cropped photo from its online original lacks its crop (${g} ${ph.f} ${JSON.stringify(st)})`);
+      if (errs.length) fails.push('Admin, R2 cut off: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
     // b2. R2 failing once per file (a passing error, Pierre 2026-11-03): each photo is asked from R2 a second time and

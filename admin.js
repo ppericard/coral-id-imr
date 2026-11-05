@@ -85,7 +85,8 @@ const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.i
 let R2 = !!PHOTO_BASE,
   AWAY = false,
   PIDX = null;
-const photoLook = f => ((PIDX = PIDX && PIDX.of === DATA ? PIDX : {of: DATA, ...photoIndex(DATA)}), PIDX.f.get(f));
+const photoIdx = () => (PIDX = PIDX && PIDX.of === DATA ? PIDX : {of: DATA, ...photoIndex(DATA)});
+const photoLook = f => photoIdx().f.get(f);
 const img = (p, s) =>
   p.r && p.src
     ? p.src.replace('/original.', s ? '/medium.' : '/large.')
@@ -96,7 +97,15 @@ document.addEventListener(
   'error',
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
-    const away = i => photoFallback(i, photoLook) && ((R2 = false), (AWAY = true));
+    // The published crop, baked into the site's files, drawn on the original (core.js photoCropOf; Codex review #569);
+    // crSrc draws it on the next renders (AWAY).
+    const away = i => {
+      if (!photoFallback(i, photoLook)) return false;
+      ((R2 = false), (AWAY = true));
+      const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
+      if (c && !i.style.getPropertyValue('object-view-box')) i.style.setProperty('object-view-box', c);
+      return true;
+    };
     // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
     if (photoRetry(e.target, away) || away(e.target)) e.stopImmediatePropagation();
   },
@@ -367,7 +376,8 @@ const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 const sugCrop = p => (p && p.j && p.j.c && !crOf(p.f) ? p.j.c : null);
 const crSrc = (p, s) => {
   const c = crOf(p.f) || sugCrop(p),
-    baked = !p.r && p.cr;
+    // Once R2 failed, a downloaded photo comes from its online original, uncropped (img(), AWAY): its crop is drawn.
+    baked = !p.r && p.cr && !(AWAY && p.src);
   if (baked && same(c, p.cr)) return `src="${img(p, s)}"`;
   const src = baked && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : img(p, s);
   return c
