@@ -283,3 +283,56 @@ test('never in a game without Pierre: FishBase photos are candidates or sheet-on
   assert.ok((X.sheet.s238 || []).some(p => p.f === 'fbHachl_m0'));
   Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.f === 'fbHachl_m0') && g.cover !== 'fbHachl_m0', g.id));
 });
+
+test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps the tag (Codex review #562)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrep-'));
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
+      {id: 's2', name: 'Fishus alter', inat: 502, circle: 1, present: {ph: true, near: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2']}]
+  };
+  const cand = {
+    v: 1,
+    cand: {
+      s1: [{f: 'fish-s1-cand-7', o: 'https://www.inaturalist.org/observations/1', rep: 'inaturalist'}],
+      s2: [{f: 'fish-s2-cand-9', o: 'https://www.inaturalist.org/observations/2', rep: 'inaturalist'}]
+    }
+  };
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  const before = JSON.stringify(cand);
+  fs.writeFileSync(path.join(dir, 'fish-cand.json'), before);
+  // The cache knows the taxa reply of s1 only as "no taxa answered": s2's cover is unknown.
+  const url = 'https://api.inaturalist.org/v2/taxa/501,502?fields=id,default_photo.id&per_page=30';
+  fs.writeFileSync(path.join(dir, 'cache.json'), JSON.stringify({}));
+  const run = (...a) =>
+    execFileSync(
+      'python3',
+      [
+        'tools/fetch_fish.py',
+        '--fish',
+        path.join(dir, 'fish.json'),
+        '--cand',
+        path.join(dir, 'fish-cand.json'),
+        '--cur',
+        path.join(dir, 'none.json'),
+        '--suggest',
+        path.join(dir, 'none.json'),
+        '--cache',
+        path.join(dir, 'cache.json'),
+        '--rep',
+        ...a
+      ],
+      {cwd: ROOT, encoding: 'utf8'}
+    );
+  run('--plan');
+  assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'), before, '--rep --plan writes nothing');
+  // A reply that answers s1 only (its cover is another photo): s1 loses its stale tag, s2 (not answered) keeps its own.
+  fs.writeFileSync(path.join(dir, 'cache.json'), JSON.stringify({[url]: {501: 8}}));
+  run('--offline');
+  const out = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  assert.strictEqual(out.s1[0].rep, undefined);
+  assert.strictEqual(out.s2[0].rep, 'inaturalist');
+  fs.rmSync(dir, {recursive: true, force: true});
+});

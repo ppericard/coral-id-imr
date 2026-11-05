@@ -288,12 +288,14 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
 
 
 def covers(net, taxa):
-    """{iNaturalist taxon id: the photo id of its default photo (the taxon's cover)}, 30 taxa a request (rule 6f)."""
+    """{iNaturalist taxon id: the photo id of its default photo (the taxon's cover), or None when it has none}, for the
+    taxa iNaturalist answered (a taxon missing from the result is unknown: a --plan run, a reply not cached); 30 taxa a
+    request (rule 6f)."""
     out, taxa = {}, sorted(set(taxa))
     for i in range(0, len(taxa), 30):
         url = TAXA + ",".join(map(str, taxa[i:i + 30])) + "?fields=id,default_photo.id&per_page=30"
         d = net.fetch(url, lambda d: {str(t["id"]): (t.get("default_photo") or {}).get("id") for t in d.get("results") or []})
-        out.update({int(k): v for k, v in (d or {}).items() if v})
+        out.update({int(k): v for k, v in (d or {}).items()})
     return out
 
 
@@ -386,10 +388,14 @@ def run(args):
             cov = covers(net, [s["inat"] for s, _ in S])
         finally:
             net.save()
-        n = sum(tag_rep(have.get(s["id"], []), cov.get(s["inat"])) for s, _ in S)
+        # Only the species whose cover is known: an unknown one keeps its tags (Codex review #562).
+        n = sum(tag_rep(have.get(s["id"], []), cov[s["inat"]]) for s, _ in S if s["inat"] in cov)
+        if args.plan:
+            print(json.dumps({"missing": net.missing, "covers": len(cov), "tagged": n}))
+            return {"covers": len(cov), "tagged": n}
         order = [s["id"] for s in fish["species"]]
         dump({"v": 1, "cand": {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}}, str(cand_path))
-        print(f"iNaturalist covers: {len(cov)} taxa; {n} candidates are their taxon's cover (rep)")
+        print(f"iNaturalist covers: {sum(1 for v in cov.values() if v)} of {len(S)} taxa; {n} candidates are their taxon's cover (rep)")
         return {"covers": len(cov), "tagged": n}
     try:
         for s, t in species_list(fish, set(args.circle), only):
