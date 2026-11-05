@@ -175,7 +175,7 @@ the file.
 ### Growth forms of game photos that have none (`tools/game_forms.js`)
 
 Every photo a game can show needs a growth form, Pierre's or a guess: the quiz's mix-up montage and the Look-alikes
-put side by side two photos of the same form (`tests/photos.test.js` fails otherwise). When asked to fill that gap,
+put side by side two photos of the same form (`tests/photos.test.js` lists the ones without as a warning). When asked to fill that gap,
 `node tools/game_forms.js` lists those photos. They span the slate, Millepora and the bonus genera, which the
 manifest does not hold, and they are a subset of the genus's `form_todo` photos, so the per-genus files above
 cannot take them. Look at each one and judge it exactly as in the growth-form pass (same fields and rules), in one

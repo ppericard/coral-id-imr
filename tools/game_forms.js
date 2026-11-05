@@ -5,7 +5,8 @@
 // a branching Echinopora. Photos added after the first form pass (mostly approved candidates) had none.
 //
 //   node tools/game_forms.js               lists the game photos with no growth form: neither Pierre's (curation.json
-//                                          "gf") nor a guess (forms.json "gf"). tests/photos.test.js fails while one is left.
+//                                          "gf") nor a guess (forms.json "gf"). tests/photos.test.js warns while one is left
+//                                          (a report, never a failure: Pierre's Publish must not turn PRs red).
 //   node tools/game_forms.js --apply FILE  writes the guesses of FILE into forms.json "gf" (and "gunsure" for the unsure
 //                                          ones), for game photos with no form of Pierre's; FILE is in the format of the
 //                                          judging brief's growth-form pass (judging/AGENTS.md, "scope": "forms"):
