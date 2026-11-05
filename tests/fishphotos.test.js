@@ -435,3 +435,60 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8').split('\n').length, 9);
   fs.rmSync(dir, {recursive: true, force: true});
 });
+
+// Sheet-only photos (tools/fish_photos.py sheet_ok, sheet_pick, sheet_photo; Pierre, 2026-11-05: "if they don't pass
+// the game rules, we don't keep them"): a sheet photo passes every game photo rule (licence CC0 / CC BY / CC BY-NC or
+// Pierre's own; Research Grade or Pierre's own identified to the species; the Indo-West Pacific box; never captive or
+// Dead), checked on the observation that holds it; the cover first, then the taxon's photos, then the observations.
+test('sheet-only photos: the game photo rules on the observation; the cover first, then the taxon photos, then observations', () => {
+  const out = execFileSync(
+    'python3',
+    [
+      '-c',
+      `import sys, json; sys.path.insert(0, 'tools')
+from fish_photos import sheet_ok, sheet_pick, sheet_photo
+ph = lambda i, lic='cc-by-nc': {'id': i, 'license_code': lic, 'attribution': f'(c) u{i}', 'url': f'https://inaturalist-open-data.s3.amazonaws.com/photos/{i}/square.jpg', 'original_dimensions': {'width': 4, 'height': 3}}
+def ob(i, *P, g='research', ll='4.6,118.86', u='x', tx=5, rk='species', cap=False, an=(), t='Fishus a'):
+    return {'id': i, 'quality_grade': g, 'taxon': {'id': tx, 'name': t, 'rank': rk}, 'location': ll, 'place_ids': [], 'captive': cap,
+            'annotations': [{'controlled_attribute_id': a, 'controlled_value_id': b, 'vote_score': 1} for a, b in an], 'user': {'login': u}, 'photos': list(P)}
+ok = lambda p, o: sheet_ok(p, o, 5)
+rules = [
+  ok(ph(1), ob(10, ph(1))),                          # Research Grade, CC BY-NC, Sabah
+  ok(ph(1), ob(10, ph(1), ll='3.98,72.78')),         # the Maldives: outside the Indo-West Pacific box
+  ok(ph(1), ob(10, ph(1), ll='26.99,33.91')),        # the Red Sea
+  ok(ph(1), ob(10, ph(1), ll=None)),                 # no coordinates
+  ok(ph(1), ob(10, ph(1), g='needs_id')),            # Needs ID
+  ok(ph(1, None), ob(10, ph(1, None), g='needs_id', u='ppericard')),  # Pierre's own: any licence, Needs ID at the species
+  ok(ph(1), ob(10, ph(1), g='needs_id', u='ppericard', rk='genus', tx=4)),  # Pierre's own at the genus: no
+  ok(ph(1, 'cc-by-nc-sa'), ob(10, ph(1, 'cc-by-nc-sa'))),  # share-alike
+  ok(ph(1, 'cc-by-nd'), ob(10, ph(1, 'cc-by-nd'))),  # ND
+  ok(ph(1), ob(10, ph(1), cap=True)),                # captive
+  ok(ph(1), ob(10, ph(1), an=[(17, 19)])),           # annotated Dead
+  ok(ph(1), ob(10, ph(1), tx=6)),                    # another species
+  ok(ph(1), None),                                   # no observation found for the photo
+]
+pick = lambda t, O: (lambda r: r and [r[0]['id'], r[1]['id'], r[2]])(sheet_pick(t, O))
+picks = [
+  pick({'id': 5, 'default_photo': ph(1), 'taxon_photos': [{'photo': ph(2)}]}, [ob(10, ph(1)), ob(11, ph(2))]),
+  pick({'id': 5, 'default_photo': ph(1), 'taxon_photos': [{'photo': ph(2)}]}, [ob(10, ph(1), ll='3.98,72.78'), ob(11, ph(2))]),
+  pick({'id': 5, 'default_photo': ph(1)}, [ob(10, ph(1), g='needs_id'), ob(12, ph(3, 'cc-by-nd'), ph(4, 'cc0')), ob(13, ph(5), u='ppericard')]),
+  pick({'id': 5, 'default_photo': ph(1, 'cc-by-sa')}, [ob(10, ph(1, 'cc-by-sa')), ob(11, ph(2), ll='26.99,33.91')]),
+]
+s = {'id': 's105', 'name': 'Fishus b', 'now': 'Fishus a'}
+p = sheet_photo(s, {'id': 5, 'name': 'Fishus a', 'default_photo': ph(7)}, [ob(12, ph(7))], {'Fishus a', 'Fishus b'})
+print(json.dumps([rules, picks, p]))`
+    ],
+    {cwd: ROOT, encoding: 'utf8'}
+  );
+  const [rules, picks, p] = JSON.parse(out);
+  assert.deepStrictEqual(rules, [true, false, false, false, false, true, false, false, false, false, false, false, false]);
+  assert.deepStrictEqual(picks[0], [1, 10, 'cover'], 'the cover when it passes the rules');
+  assert.deepStrictEqual(picks[1], [2, 11, 'taxon'], 'a cover from outside the box: the next taxon photo that passes');
+  assert.deepStrictEqual(picks[2], [5, 13, 'obs'], 'then the observations, Pierre’s own first');
+  assert.strictEqual(picks[3], null, 'nothing passes: no photo');
+  assert.strictEqual(p.use, 'ref');
+  assert.strictEqual(p.f, 'fi7');
+  assert.strictEqual(p.o, 'https://www.inaturalist.org/observations/12');
+  assert.match(p.src, /\/photos\/7\/original\.jpg$/);
+  assert.strictEqual(p.note, 'Filed under Fishus a on iNaturalist, which lumps the two species (as WoRMS does).');
+});
