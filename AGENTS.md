@@ -240,7 +240,7 @@ For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
 - The engine never names or tests a subject (`'fish'`, `SUBJ === SUBJECTS[k]`): a `SUBJECTS` field or a `UNITS` function (rule S1).
-- No real player or staff name anywhere in the repo, tests included: P1, P2… or made-up names (rule D2).
+- No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` and bumps `Code.gs` `VERSION` (rule D5).
 - Tests never reach the real sheet: no made-up host, patched `LOCAL` or stubbed `navigator.webdriver` (rule D1).
