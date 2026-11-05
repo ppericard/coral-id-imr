@@ -4559,3 +4559,126 @@ button.adm-chip[aria-pressed='true'] {
     padding: 0 6px;
   }
 }
+/* Structure views (the multifactor visualisation study of 2026-11-05): heatmaps (admin-analyses.js heat), dendrograms
+   (dendroPath), the mix-up map's family bands. Tokens only: a rate against a typical pair in the accent at four
+   strengths (q), a correlation diverging from the accent (above 0) and --bad (below) at four strengths, outlines in ink. */
+.adm-an-svg .an-h,
+.adm-an-hleg .an-h {
+  fill: var(--surface-2);
+  background: var(--surface-2);
+}
+.adm-an-svg .an-hd {
+  fill: var(--line);
+}
+.adm-an-svg .an-hq1,
+.adm-an-hleg .an-hq1,
+.adm-an-svg .an-hp1 {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+.adm-an-svg .an-hq2,
+.adm-an-hleg .an-hq2,
+.adm-an-svg .an-hp2 {
+  fill: color-mix(in srgb, var(--accent) 45%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 45%, var(--surface));
+}
+.adm-an-svg .an-hq3,
+.adm-an-hleg .an-hq3,
+.adm-an-svg .an-hp3 {
+  fill: color-mix(in srgb, var(--accent) 72%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 72%, var(--surface));
+}
+.adm-an-svg .an-hq4,
+.adm-an-hleg .an-hq4,
+.adm-an-svg .an-hp4 {
+  fill: var(--accent);
+  background: var(--accent);
+}
+.adm-an-svg .an-hn1 {
+  fill: color-mix(in srgb, var(--bad) 22%, var(--surface));
+}
+.adm-an-svg .an-hn2 {
+  fill: color-mix(in srgb, var(--bad) 45%, var(--surface));
+}
+.adm-an-svg .an-hn3 {
+  fill: color-mix(in srgb, var(--bad) 72%, var(--surface));
+}
+.adm-an-svg .an-hn4 {
+  fill: var(--bad);
+}
+.adm-an-svg .an-look {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.adm-an-hleg .an-look {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+.adm-an-svg .an-blk {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.adm-an-hleg .an-blk {
+  border: 1.5px dashed var(--ink);
+}
+.adm-an-svg .an-ht {
+  font-weight: 600;
+  fill: var(--ink);
+}
+.adm-an-svg .an-ht.inv {
+  fill: var(--surface);
+}
+.adm-an-svg .an-it {
+  font-style: italic;
+}
+.adm-an-svg .an-tree {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.25;
+}
+.adm-an-svg .an-famg {
+  cursor: pointer;
+}
+/* the names and the tree over the family bands let a tap through to the band (Codex review #592) */
+.adm-an-svg .an-nohit,
+.adm-an-svg .an-tree {
+  pointer-events: none;
+}
+.adm-an-svg .an-famb {
+  fill: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.adm-an-svg .an-famg.on .an-famb {
+  fill: color-mix(in srgb, var(--accent) 18%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+.adm-an-svg .an-famg:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.adm-an-hleg {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.adm-an-hleg span::before {
+  display: none;
+}
+.adm-an-hleg i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-xs);
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+.adm-an-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@media (min-width: 1024px) {
+  .adm-an-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
