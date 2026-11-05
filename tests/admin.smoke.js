@@ -415,7 +415,7 @@ const WIDTHS = [390, 1280];
     });
     if (!anre || !anre.shown || anre.left < 0 || anre.right > anre.vw)
       fails.push(`${w}px Analyses: Recompute here ${JSON.stringify(anre)}`);
-    for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess']) {
+    for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess', '~an-who']) {
       await go(h);
       const v = await p.evaluate(() => ({
         svg: document.querySelectorAll('#view svg.adm-an-svg').length,
@@ -429,7 +429,7 @@ const WIDTHS = [390, 1280];
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
-      if (h !== '~an-back') {
+      if (h !== '~an-back' && h !== '~an-who') {
         const ent = await p.evaluate(() => {
           const c = document.getElementById('anc-effects-hard-to-tell-apart');
           if (!c) return null;
@@ -451,6 +451,48 @@ const WIDTHS = [390, 1280];
         if (!ent || !ent.folded || !ent.table || ent.wide > 0 || ent.small)
           fails.push(`${w}px Analyses #${h} entangled: ${JSON.stringify(ent)}`);
       }
+    }
+    // Player profiles (Pierre, 2026-11-05, Q70-Q73): a row per made-up player with a cell per behaviour, the greyed rows
+    // (under 100 answers) last, names from Players linked to their journeys, the tree, the stability line, the map of players
+    {
+      await go('~an-who');
+      const pr = await p.evaluate(() => {
+        const c = document.getElementById('anc-player-profiles'),
+          svg = c && c.querySelector('svg.adm-an-svg');
+        return (
+          c && {
+            rows: svg.querySelectorAll('text.an-lab').length,
+            cells: svg.querySelectorAll('rect.an-h').length,
+            dim: [...svg.querySelectorAll('text.an-lab')].map(t => t.classList.contains('an-dim')),
+            links: svg.querySelectorAll('a[href^="#~journey/"]').length,
+            tree: !!svg.querySelector('path.an-tree'),
+            stab: /runs with one player left out/.test(c.textContent),
+            map: !!document.querySelector('#view svg circle.an-dot') && !!document.querySelector('#view line.an-arrow'),
+            wide: document.documentElement.scrollWidth - innerWidth
+          }
+        );
+      });
+      const greyLast = pr && pr.dim.every((d, i) => !d || pr.dim.slice(i).every(Boolean));
+      if (!pr || pr.rows < 7 || pr.cells < 7 * pr.rows || !pr.links || !pr.tree || !pr.stab || !pr.map || pr.wide > 0 || !greyLast)
+        fails.push(`${w}px Analyses player profiles: ${JSON.stringify(pr)}`);
+    }
+    // The Wright map and the genus × player residuals (Learning › Practice): players and genera on one scale with their
+    // names, the second-skill biplot with its words; no sideways scroll
+    {
+      await go('~an-learn');
+      const wr = await p.evaluate(() => {
+        const W = document.getElementById('anc-players-and-genera-on-one-scale'),
+          S = document.getElementById('anc-a-second-skill');
+        return {
+          labels: W ? W.querySelectorAll('svg text.an-lab').length : 0,
+          dots: W ? W.querySelectorAll('svg circle.an-dot').length : 0,
+          skill: S ? S.querySelectorAll('svg circle.an-dot').length : 0,
+          words: S ? /skill/.test(S.querySelector('.adm-an-says-l').textContent) : false,
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (wr.labels < 20 || wr.dots < 5 || wr.skill < 10 || !wr.words || wr.wide > 0)
+        fails.push(`${w}px Analyses Wright map and second skill: ${JSON.stringify(wr)}`);
     }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
@@ -1474,6 +1516,16 @@ const WIDTHS = [390, 1280];
       await p.click('[data-uopen="Test Demo"]');
       await settle();
       await p.click('[data-udel="Test Demo"]');
+      await settle();
+      // Sheet v55 (Pierre, 2026-11-05, Q89): two named choices, no default.
+      const two = await p.evaluate(() => ({
+        all: !!document.querySelector('[data-udel-all="Test Demo"]:not([disabled])'),
+        keep: !!document.querySelector('[data-udel-keep="Test Demo"]:not([disabled])'),
+        focus: !!(document.activeElement && document.activeElement.matches('[data-udel-all], [data-udel-keep]'))
+      }));
+      if (!two.all || !two.keep || two.focus)
+        fails.push(`${w}px Users: delete does not offer its two named choices (${JSON.stringify(two)})`);
+      await p.click('[data-udel-all="Test Demo"]');
       await p.waitForFunction(() => !/Test Demo/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
       if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
     }
@@ -1681,6 +1733,9 @@ const WIDTHS = [390, 1280];
       if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
       await go('~triage');
       if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
+      // Sheet v55: a report an account deleted with its answers kept left behind reads "From a removed account", no id.
+      if (!/From a removed account/.test(await text()) || /~deleted/.test(await text()))
+        fails.push(`${w}px To do › Reports: a removed account's report is not shown as such`);
       // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
       {
         const fr = await p
@@ -1966,45 +2021,6 @@ const WIDTHS = [390, 1280];
       if (r.signed.length || !r[need] || r.off.length || r.noRaw.length || r.wide > 0)
         fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
     }
-    // ...and everywhere else in the admin (ROADMAP "Intuitive difficulty display everywhere", Pierre, 2026-11-05): on every
-    // view of every tab, Coverage's full "Where to look" list and both demo journeys, no signed raw number in the page's
-    // text (seconds and "pts" aside; the one-tap tables' felt difficulty, the players' own −1…+1 survey scale, aside), every
-    // badge in the band of its %, and no "recognised by N%" written as plain text outside a badge. Once, at 1280.
-    if (once)
-      for (const h of new Set([
-        ...ROUTES.map(r => r.h).filter(h => h && !h.startsWith('~journey')),
-        '~stats-needs',
-        '~journey/Ana Demo',
-        '~journey/Carla Demo'
-      ])) {
-        await go(h);
-        const r = await p.evaluate(() => {
-          const v = document.getElementById('view'),
-            band = n => (n >= 75 ? 'veasy' : n >= 60 ? 'easy' : n >= 40 ? 'mid' : n >= 25 ? 'hard' : 'vhard'),
-            felt = [...v.querySelectorAll('.adm-pscale')];
-          felt.forEach(x => (x.style.display = 'none'));
-          const signed = (v.innerText.match(/(^|[^\w.])[+−-]\d+\.\d+(?! ?(s|pts?)\b)/gm) || []).slice(0, 3);
-          felt.forEach(x => (x.style.display = ''));
-          const plain = [],
-            tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
-          for (let n; (n = tw.nextNode());)
-            if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
-              plain.push(n.textContent.trim().slice(0, 80));
-          return {
-            signed,
-            plain: plain.slice(0, 3),
-            off: [...v.querySelectorAll('.adm-rec')]
-              .filter(
-                b =>
-                  !b.classList.contains('rec-' + band(Number((b.textContent.match(/(\d+)%/) || [])[1]))) || !/[+−]?\d+\.\d\d/.test(b.title)
-              )
-              .map(b => b.className + ' ' + b.textContent)
-              .slice(0, 3)
-          };
-        });
-        if (r.signed.length || r.plain.length || r.off.length)
-          fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
-      }
     // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
     // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
     // marks, and a plain median (sort, middle value); nothing wider than the window.

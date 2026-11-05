@@ -3148,6 +3148,17 @@ td.cov-c .cov-off {
 .adm-ubar .adm-danger {
   margin-left: auto;
 }
+/* Delete's two named choices (sheet v55, Q89: no default), on the right of the bar where Delete… was. */
+.adm-ubar .adm-udel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-left: auto;
+}
+.adm-ubar .adm-udel .adm-danger {
+  margin-left: 0;
+}
 .adm-danger {
   font: inherit;
   font-size: 0.85rem;
@@ -4681,4 +4692,57 @@ button.adm-chip[aria-pressed='true'] {
   .adm-an-pair {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+/* Player profiles: below the players' average in ink at four strengths (above: the accent, .an-hp*), greyed rows (under
+   100 answers), the biplot's arrows. */
+.adm-an-svg .an-hb1,
+.adm-an-hleg .an-hb1 {
+  fill: color-mix(in srgb, var(--ink) 14%, var(--surface));
+  background: color-mix(in srgb, var(--ink) 14%, var(--surface));
+}
+.adm-an-svg .an-hb2,
+.adm-an-hleg .an-hb2 {
+  fill: color-mix(in srgb, var(--ink) 32%, var(--surface));
+  background: color-mix(in srgb, var(--ink) 32%, var(--surface));
+}
+.adm-an-svg .an-hb3,
+.adm-an-hleg .an-hb3 {
+  fill: color-mix(in srgb, var(--ink) 55%, var(--surface));
+  background: color-mix(in srgb, var(--ink) 55%, var(--surface));
+}
+.adm-an-svg .an-hb4,
+.adm-an-hleg .an-hb4 {
+  fill: color-mix(in srgb, var(--ink) 78%, var(--surface));
+  background: color-mix(in srgb, var(--ink) 78%, var(--surface));
+}
+.adm-an-hleg .an-hp3 {
+  background: color-mix(in srgb, var(--accent) 72%, var(--surface));
+}
+.adm-an-svg .an-dim {
+  opacity: 0.45;
+}
+.adm-an-svg a .an-lab {
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+}
+.adm-an .an-dim,
+.adm-tbl tr.an-dim td {
+  color: var(--muted);
+}
+.adm-an-svg .an-arrow {
+  stroke: var(--ink);
+  stroke-width: 1.25;
+}
+.adm-an-svg .an-arrowh {
+  fill: var(--ink);
+}
+.adm-an-svg .an-alab {
+  fill: var(--ink);
+  font-weight: 600;
+}
+/* The Wright map's leader lines (admin-analyses.js wright). */
+.adm-an-svg .an-lead {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
 }

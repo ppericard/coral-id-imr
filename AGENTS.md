@@ -48,9 +48,9 @@ what stops is everything that involves him.
   Never solicit him; park every question in STATUS (a subagent puts it in its report) and move on. **Merging: the merge
   contract, exactly as by day** (night changes when Pierre is asked, not what may merge: a sheet-script change of a
   decided track ships at night as by day). What waits for him stays on its branch, with its screenshots (sent in the
-  morning) and a line in STATUS "Now". Every other rule and the machine limits apply as by day. Before 08:00 the
-  integrator writes the morning report into STATUS "Last stop" and "Now": what merged, what waits for his eye, the
-  questions.
+  morning) and a line in STATUS "Now". Every other rule and the machine limits apply as by day. Before 05:00 (Pierre
+  wakes around 05:00-05:30) the integrator writes the morning report into STATUS "Last stop" and "Now": what merged,
+  what waits for his eye, the questions.
 - **Next morning:** read STATUS first (and run `python3 tools/brief.py`); show Pierre what the night did and ask the open
   questions; turn each parked idea into work or a ROADMAP row with him, then clear it.
 
@@ -195,6 +195,7 @@ context go in the PR description, never in the rule.
 - **D4** The app never gets ahead of the sheet script.
 - **D5** Every progress-rule change appends a rules version.
 - **D6** A recalculation of everyone's progress is announced.
+- **D7** A deleted account leaves nothing in normal operation.
 
 **Working with Pierre** ([docs/rules/ship.md](docs/rules/ship.md))
 - **W1** Everything produced is in English; only the chat with Pierre is in French.
