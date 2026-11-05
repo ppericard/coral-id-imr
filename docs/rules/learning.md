@@ -118,19 +118,28 @@ its own record (`startKey`); never a subject named in the code that asks it.
 
 **The simplest algorithm that works.** Don't add a variable, a special case or a hard-coded ramp to patch a problem:
 first rethink the rule or recalibrate the existing settings (example: the opening of genera became a slope on `OPEN.K`
-instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers**:
+instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers**, the effort proportionate to the question:
 - **tier 0, always**: the unit tests and the CI smokes;
 - **tier 1, systematic for any change to the learning algorithm's behaviour**: check it over several seeds
   (`tests/profiles.smoke.js` profiles), not one run, and its effect on what players really learn with
   `node tools/learnsim.js` (the four profiles × 5 seeds, before and after, the same seeds, about 2 min; LEARNING.md
-  "Learning-outcome simulation"), with a small standard table in the PR; five is enough
-  (no p-values wanted);
-- **tier 2, fine calibration**, an option, hopefully rare: when a value is being chosen, or when two versions differ by
-  less than their spread on the measure that decides (tier 1 inside the noise): 20-30 seeds, extended profiles, sweeps;
+  "Learning-outcome simulation"), with a small standard table in the PR. Five seeds show the large effects that big
+  changes produce;
+- **tier 2, fine calibration**, when a value is being chosen or tier 1 cannot tell two versions apart: 30-40 seeds,
+  extended profiles, sweeps;
 - **tier 3, real data**: rule L12.
 
+**The statistics are proportionate to the question, but always valid.**
+- Compare before and after with a simple paired test across the same seeds: a paired t-test, or the Wilcoxon
+  signed-rank test when the differences are far from normal. A mean larger than its spread is never a verdict.
+- Name in advance the measure(s) that decide for a given change; the other measures are exploratory. When several
+  comparisons are judged, correct for multiplicity (Holm-Bonferroni by default; Bonferroni is a fine start). An isolated
+  difference among many measures is not a result unless it replicates on fresh seeds.
+- Multifactor analyses (the admin's Analyses, several variables mixed) get the full statistical rigour: models,
+  corrections, stated limits.
+
 *Why:* every added part or variable makes the model harder to calibrate.
-*Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers, 2026-11-05.
+*Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05.
 
 ### L12
 

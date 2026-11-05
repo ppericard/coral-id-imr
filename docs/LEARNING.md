@@ -3576,6 +3576,8 @@ above measures pacing (genera met, traps, genera ready for their exam) on one se
 drives the same real quiz (the app's draw, photos, traps, duels, Again, exam, Elo, knowledge model and progress, all
 untouched; only the player is simulated) and measures what the simulated players really learn, and how far the app's
 estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minutes; numbers for reading).
+How a comparison is read (paired tests across the same seeds, the deciding measure named in advance, Holm-Bonferroni
+when several are judged, a lone difference replicated on fresh seeds): docs/rules/learning.md, rule L11.
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]

@@ -153,7 +153,7 @@ context go in the PR description, never in the rule.
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; checks in four tiers.
+- **L11** The simplest algorithm that works; tiered checks, valid paired statistics.
 - **L12** Check algorithm changes on the real answer log too.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
@@ -193,7 +193,7 @@ context go in the PR description, never in the rule.
 - **D3** A `Code.gs` or `core.js` change bumps `VERSION`.
 - **D4** The app never gets ahead of the sheet script.
 - **D5** Every progress-rule change appends a rules version.
-- **D6** A recalculation of everyone's progress is announced, never held.
+- **D6** A recalculation of everyone's progress is announced.
 
 **Working with Pierre** ([docs/rules/ship.md](docs/rules/ship.md))
 - **W1** Everything produced is in English; only the chat with Pierre is in French.
@@ -206,7 +206,7 @@ context go in the PR description, never in the rule.
 - **W8** Independent reviews get an open mission that questions our choices.
 - **W9** Latest stable version of tools.
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
-- **W11** Say what you checked and how; a guess is labelled.
+- **W11** Say what you checked; a guess is labelled.
 
 ## Read on demand
 
