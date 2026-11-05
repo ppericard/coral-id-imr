@@ -113,7 +113,7 @@ OBS = [
 URLS, SAVED = [], {}
 def get(u):
     URLS.append(u)
-    if '/taxa?' in u: return {'results': [{'name': 'A', 'id': 10, 'ancestor_ids': [1, 47532, 5]}]}
+    if '/taxa' in u: raise AssertionError('a genus taxon comes from tools/taxonomy.json: ' + u)
     return {'results': OBS if 'radius=40' in u else [], 'total_results': len(OBS) if 'radius=40' in u else 0}
 fl.get = get
 fl.load_all = lambda: {'gen': {'A': {'views': {}}}, 'x': {'gen': {}}, 'cand': {}}
@@ -125,6 +125,7 @@ fl.drop_excluded = lambda d: None
 fl.curated = lambda: set()
 fl.confirmed_species = lambda *a, **k: []
 fl.dump_all = lambda d: SAVED.update(d)
+fl.inat_taxon = lambda g, s='coral': {'A': 10}.get(g)
 sys.argv = ['x', 'A']
 with contextlib.redirect_stdout(io.StringIO()): fl.main()
 C = SAVED['cand']['A']`;
@@ -208,4 +209,41 @@ test('saQueue: the share-alike photos on the site, not removed, not kept; never 
       ['A', 'a3', 'macro']
     ]
   );
+});
+
+// ROADMAP "Taxonomy reference" (Pierre, 2026-11-05, Q49): the candidate search asks the iNaturalist taxon
+// tools/taxonomy.json gives a genus, never a search by name (no homonym guard needed); a genus the file does not hold,
+// or whose taxon is inactive, is skipped, said so, and costs no request.
+test('fetch_local / cand_gaps / coral_presence: the genus taxon comes from tools/taxonomy.json, no name search', () => {
+  ['fetch_local.py', 'cand_gaps.py', 'coral_presence.py'].forEach(f => {
+    const src = fs.readFileSync(path.join(ROOT, 'tools', f), 'utf8');
+    assert.ok(!/taxa\?q=/.test(src), `${f} still searches a genus by name`);
+    assert.match(src, /^from taxonomy import inat_taxon\b/m, `${f} reads the taxon from tools/taxonomy.json`);
+  });
+  const R = py(`import importlib.util, io, contextlib
+s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
+URLS = []
+fl.get = lambda u: URLS.append(u) or {'results': [], 'total_results': 0}
+fl.load_all = lambda: {'gen': {'A': {'views': {}}, 'B': {'views': {}}}, 'x': {'gen': {}}, 'cand': {}}
+fl.key_only = lambda d: []
+fl.open = lambda *a, **k: io.StringIO('{}')
+fl.excluded = lambda *a, **k: False
+fl.set_aside = lambda f: False
+fl.drop_excluded = lambda d: None
+fl.curated = lambda: set()
+fl.confirmed_species = lambda *a, **k: []
+fl.dump_all = lambda d: None
+fl.inat_taxon = lambda g, s='coral': {'A': 10}.get(g)
+sys.argv = ['x']
+out = io.StringIO()
+with contextlib.redirect_stdout(out): fl.main()
+import taxonomy as X
+T = json.load(open('tools/taxonomy.json'))['coral']['gen']
+print(json.dumps({'urls': URLS, 'out': out.getvalue(), 'real': all(X.inat_taxon(g) == r['inat']['id'] for g, r in T.items()),
+  'none': [X.inat_taxon('Xus'), X.inat_taxon('Astrea', 'fish')]}))`);
+  assert.ok(R.urls.length > 0, 'genus A searched');
+  R.urls.forEach(u => assert.match(u, /\/observations\?taxon_id=10&/, u));
+  assert.match(R.out, /^B has no active iNaturalist taxon in tools\/taxonomy\.json/m);
+  assert.ok(R.real, 'inat_taxon gives every genus its taxonomy.json id');
+  assert.deepStrictEqual(R.none, [null, null], 'a genus or a subject the file does not hold');
 });
