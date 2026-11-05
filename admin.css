@@ -4628,6 +4628,11 @@ button.adm-chip[aria-pressed='true'] {
 .adm-an-svg .an-famg {
   cursor: pointer;
 }
+/* the names and the tree over the family bands let a tap through to the band (Codex review #592) */
+.adm-an-svg .an-nohit,
+.adm-an-svg .an-tree {
+  pointer-events: none;
+}
 .adm-an-svg .an-famb {
   fill: color-mix(in srgb, var(--accent) 7%, transparent);
 }

@@ -395,11 +395,17 @@ const WIDTHS = [390, 1280];
           if (folded) c.querySelector('[data-anfold]').click();
           return {
             folded,
+            // the words follow the sign (Codex review #592): estimates that move together are read by their difference
+            words: [...c.querySelectorAll('.adm-an-says-l li')].map(li => li.textContent),
             table: c.querySelectorAll('tbody tr').length,
             wide: document.documentElement.scrollWidth - innerWidth,
             small: [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length
           };
         });
+        const pos = ent && ent.words.filter(t => /hard to tell apart \(r = 0/.test(t)),
+          neg = ent && ent.words.filter(t => /hard to tell apart \(r = −/.test(t));
+        if (ent && (pos.some(t => !/difference/.test(t)) || neg.some(t => !/sum/.test(t)) || (h === '~an-fmt' && !pos.length)))
+          fails.push(`${w}px Analyses #${h} entangled words: ${JSON.stringify(ent.words)}`);
         if (!ent || !ent.folded || !ent.table || ent.wide > 0 || ent.small)
           fails.push(`${w}px Analyses #${h} entangled: ${JSON.stringify(ent)}`);
       }
@@ -427,7 +433,15 @@ const WIDTHS = [390, 1280];
       if (!m0 || !m0.tree || m0.wide > 0 || m0.small) fails.push(`${w}px Analyses mix-up map: ${JSON.stringify(m0)}`);
       else if (w >= 600 && (m0.cells < 50 || m0.bands)) fails.push(`${w}px Analyses mix-up map, the whole matrix: ${JSON.stringify(m0)}`);
       else if (w < 600 && m0.bands > 1) {
-        await p.click('#anc-mix-up-map [data-anfam="1"]');
+        // a tap on a genus name inside the band selects its family too (Codex review #592: the names sat above the band)
+        const at = await p.evaluate(() => {
+          const b = document.querySelector('#anc-mix-up-map [data-anfam="1"] rect');
+          b.scrollIntoView({block: 'center'});
+          const r = b.getBoundingClientRect(),
+            t = document.querySelector('#anc-mix-up-map svg text.an-lab').getBoundingClientRect();
+          return {x: t.left + 10, y: r.top + 11};
+        });
+        await p.mouse.click(at.x, at.y);
         await settle();
         const m1 = await mm();
         if (m1.on !== '1' || m1.head === m0.head) fails.push(`${w}px Analyses mix-up map, a family tapped: ${JSON.stringify({m0, m1})}`);
