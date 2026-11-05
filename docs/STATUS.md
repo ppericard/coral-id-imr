@@ -5,45 +5,47 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-05, about 11:00 Manila, by the integrator.
+Written 2026-11-05, about 13:40 Manila, by the integrator.
 
-Last checked: reports and events: 2026-11-05 ~11:30 Manila
+Last checked: reports and events: 2026-11-05 ~13:38 Manila (nothing new since 11:30)
 
 ## Now
 
-Tracks in flight: track · PR or branch · state · next step.
+Tracks in flight: track · PR or branch · state · next step. Decided work is launched at once (Pierre, 2026-11-05: no
+queue held back; `tests/slot.js` protects the machine).
 
-- Intuitive difficulty display across the admin (ROADMAP Next; Pierre's yes to the whole proposal, Q26) · its own PR ·
-  in progress.
-- Governance refonte (ROADMAP Next) · PR A merged (#558); PR B (this file, `tools/brief.py`, the hooks) in review · then
-  PR C (short AGENTS.md, `docs/rules/` topic files, stable rule IDs by theme, `judging/AGENTS.md` renamed, Codex review
-  guidelines) and PR D (size budgets, reference checks).
+- Governance refonte · PR A #558 and PR B #561 merged · PR C (short AGENTS.md, `docs/rules/`, stable rule IDs, judging
+  brief renamed, Codex review guidelines, the size and reference tests) in progress, waits for Pierre's OK on the new
+  text and the dropped list.
+- Photos out of the repo · step 1 (online-original fallback, camera icon) merged #569 · step 2 (photos with an online
+  source leave `img/`, R2-only upload) in progress, waits for Pierre's OK · step 3 (history rewrite) only with his go.
+- Growth-form comparison fix and the 139 missing growth forms (a player's report) · in progress.
+- IMR lecture photos in full resolution from the unzipped deck (a player's report, Q27) · in progress.
+- Fish candidate cap weighted by phases (Q36) · in progress.
 
 ## Next
 
-The integrator's queue, in order (details in [ROADMAP](ROADMAP.md) "Next").
+Waiting only on a real dependency (details in [ROADMAP](ROADMAP.md) "Next").
 
-1. Photos out of the repo, step 2 (top priority, ROADMAP Next): the photos with an online source leave `img/`, the
-   fallback switched to their original source.
-2. Corals: no share-alike, `thamnasteroid` accepted (Q35, one PR); the fish candidate cap of Q36.
-3. The fish track toward the beta (ROADMAP "Next", the fish rows); the fish candidates still to judge
-   (`python3 tools/judging_fish.py todo`), same process as #523-#549; FishBase next steps (ROADMAP).
-4. The fish sheets at three levels, when Pierre wants them (study:
-   [reviews/2026-11-05-fish-sheets-study.md](reviews/2026-11-05-fish-sheets-study.md); its 13 questions not asked yet).
+1. URL refonte, app and admin (Q53-Q56 decided: `#section/page` and `#group/tab/view` in English, filters after `?`,
+   the subject prefix everywhere, old links not translated, admin ALIAS emptied; study to save in `docs/reviews/`):
+   after governance PR C (same files).
+2. The fish track toward the beta (ROADMAP "Next", the fish rows); FishBase next steps.
+3. The fish sheets at three levels, when Pierre wants them (study:
+   [reviews/2026-11-05-fish-sheets-study.md](reviews/2026-11-05-fish-sheets-study.md); its 13 questions parked).
 
 ## Questions for Pierre
 
 Open questions, numbered for good (never reset, AGENTS.md "Working mode"). An answered one goes into its PR and off
-this list. Long-standing content questions stay in [ROADMAP](ROADMAP.md) "Content questions for Pierre" and
-"Questions for an IMR trainer".
+this list. Long-standing content and trainer questions live in the admin, To do › Points (`points.json`, #571).
 
 _(none: the 13 questions of the fish sheets study are parked by Pierre until he picks that project)_
 
-Last question number: Q43
+Last question number: Q58
 
 ## Pierre's hands
 
-Actions only Pierre can do (to move later to the admin list of points to handle, ROADMAP Next).
+Actions only Pierre can do.
 
 - **Photo hunt for Astrea and Anacropora** at the Dauin sites where IMR trainers know they occur (colony, close-up,
   macro; posted to iNaturalist under CC BY or CC BY-NC): iNaturalist has no Astrea observation with photos in the
@@ -56,6 +58,9 @@ Actions only Pierre can do (to move later to the admin list of points to handle,
   every stony coral between order and family,
   [57](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=47532&rank=suborder,infraorder,superfamily,family&photos=true).
 
+- **Show the Astrea question to an IMR trainer** from the admin (To do › Points, first item) and Publish the answers.
+- **Sort the photos out of the presence rule** (To do › Out of the presence rule: Remove / Keep) and, when convenient, the 14 share-alike coral photos (To do › Share-alike).
+- **More photos for the genera with the fewest** (photo memory: in a thin genus players learn the photos, not the genus; Pierre, 2026-11-03): [admin Coverage › Games › Thinnest](https://ppericard.github.io/coral-id-imr/admin.html#~cov) lists them.
 - **Protect `main` on GitHub**: [HANDOVER "Protect main"](HANDOVER.md#protect-main-one-time-setup).
 - **Create the secret `ANALYSES_ADMIN_TOKEN`** (the admin's Analyses report computes itself once it exists):
   [HANDOVER "Analyses report"](HANDOVER.md#analyses-report-one-time-setup-2026-11-04).
@@ -70,7 +75,6 @@ Actions only Pierre can do (to move later to the admin list of points to handle,
 - **Lab Keep / Trim votes**: say which Lab tools he marked (the votes live only in his browser) before the Lab is
   trimmed.
 - **IMR benthic deck**: look for it (Millepora's ID tips stay the Coral Finder's until it is in).
-- **Photo memory, point 3**: more photos for the genera with the fewest (admin Coverage › Games, Thinnest).
 
 ## Parked after hours
 
