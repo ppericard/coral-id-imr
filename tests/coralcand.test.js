@@ -1,6 +1,6 @@
 // Coral candidates (Pierre, 2026-11-05): no share-alike licences any more (aligned with the fish rules), the share-alike
 // photos already on the site left to him (admin To do › Share-alike, presence.js shareAlike / saQueue), and an observation
-// whose single identification is by the trusted expert `thamnasteroid` accepted in the Philippines tiers
+// whose identification by the trusted expert `thamnasteroid` no other identification disagrees with, accepted in the Philippines tiers
 // (tools/fetch_local.py expert_ok). Offline: iNaturalist is stubbed. Needs python3, like the other checks.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -87,6 +87,8 @@ const RUN = `import importlib.util, io, contextlib
 s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
 A, B, FAM = {'id': 10, 'ancestor_ids': [1, 47532, 5]}, {'id': 20, 'ancestor_ids': [1, 47532, 5]}, {'id': 5, 'ancestor_ids': [1, 47532]}
 SP = {'id': 11, 'name': 'A b', 'ancestor_ids': [1, 47532, 5, 10]}
+SP2 = {'id': 12, 'name': 'A c', 'ancestor_ids': [1, 47532, 5, 10]}
+ORD = {'id': 47532, 'name': 'Scleractinia', 'ancestor_ids': [1]}
 def ph(i, lic='cc-by'): return {'id': i, 'license_code': lic, 'attribution': f'(c) X ({lic})', 'url': f'https://x/{i}/square.jpg'}
 def ident(who, t, current=True): return {'user': {'login': who}, 'taxon': t, 'current': current}
 def ob(i, ids, grade='needs_id', photos=None, taxon=SP, ct=None, agree=None):
@@ -97,12 +99,16 @@ OBS = [
   ob(2, [ident('thamnasteroid', SP)]),                                   # single expert ID, species of A: accepted
   ob(3, [ident('someone', SP)]),                                         # single ID by someone else: refused
   ob(4, [ident('thamnasteroid', SP), ident('someone', {**B, 'name': 'B'})]),  # disagreeing IDs: refused
-  ob(5, [ident('thamnasteroid', SP), ident('someone', SP)]),             # two IDs, no community taxon given: refused
+  ob(5, [ident('thamnasteroid', SP), ident('someone', SP)]),             # expert + an agreeing ID: accepted
   ob(6, [ident('thamnasteroid', FAM)], taxon={**FAM, 'name': 'F'}),       # expert ID above the genus: refused
   ob(7, [ident('thamnasteroid', {**A, 'name': 'A'})], taxon={**A, 'name': 'A'}),  # expert ID at the genus: accepted
   ob(8, [ident('someone', SP, False), ident('thamnasteroid', SP)]),      # an ID withdrawn: the expert's is the only one
   ob(9, [ident('THAMNASTEROID', SP)], photos=[ph(91, 'cc-by-sa')]),     # accepted, but its only photo is share-alike
   ob(12, [ident('x', SP), ident('y', SP)], ct=11, agree=True),           # genus-level community taxon: accepted as before
+  ob(13, [ident('obs13', ORD), ident('thamnasteroid', {**A, 'name': 'A'})], taxon={**A, 'name': 'A'}, ct=47532, agree=True),  # coarse observer ID refined by the expert: accepted
+  ob(14, [ident('obs14', {**B, 'name': 'B'}), ident('thamnasteroid', {**A, 'name': 'A'})], taxon={**A, 'name': 'A'}),  # observer's other genus: refused
+  ob(15, [ident('obs15', SP), ident('thamnasteroid', {**A, 'name': 'A'})], taxon={**A, 'name': 'A'}),  # a species below the expert's genus: accepted
+  ob(16, [ident('obs16', SP2), ident('thamnasteroid', SP)]),            # another species of the genus, off the expert's line: refused
 ]
 URLS, SAVED = [], {}
 def get(u):
@@ -123,14 +129,27 @@ sys.argv = ['x', 'A']
 with contextlib.redirect_stdout(io.StringIO()): fl.main()
 C = SAVED['cand']['A']`;
 
-test('fetch_local refill: thamnasteroid alone accepted in the Philippines tiers; share-alike photos left out photo by photo', () => {
+test("fetch_local refill: thamnasteroid's undisputed ID accepted in the Philippines tiers; share-alike photos left out photo by photo", () => {
   const R = py(`${RUN}
 print(json.dumps({'obs': sorted({int(p['o'].rsplit('/', 1)[1]) for p in C}), 'photos': sorted(p['f'] for p in C),
   'gid': sorted({int(p['o'].rsplit('/', 1)[1]) for p in C if p.get('gid')}),
   'lic': [u for u in URLS if '/observations?' in u]}))`);
-  assert.deepStrictEqual(R.obs, [1, 2, 7, 8, 12], 'RG, single expert IDs at the genus or below, a community taxon; nothing else');
-  assert.deepStrictEqual(R.photos, ['a-cand-11', 'a-cand-120', 'a-cand-20', 'a-cand-70', 'a-cand-80']);
-  assert.deepStrictEqual(R.gid, [2, 7, 8, 12], 'Needs ID observations keep the gid mark');
+  assert.deepStrictEqual(
+    R.obs,
+    [1, 2, 5, 7, 8, 12, 13, 15],
+    'RG, undisputed expert IDs at the genus or below, a community taxon; nothing else'
+  );
+  assert.deepStrictEqual(R.photos, [
+    'a-cand-11',
+    'a-cand-120',
+    'a-cand-130',
+    'a-cand-150',
+    'a-cand-20',
+    'a-cand-50',
+    'a-cand-70',
+    'a-cand-80'
+  ]);
+  assert.deepStrictEqual(R.gid, [2, 5, 7, 8, 12, 13, 15], 'Needs ID observations keep the gid mark');
   R.lic.forEach(u => {
     assert.match(u, /photo_license=cc-by,cc-by-nc,cc0&/);
     assert.ok(!/-sa\b/.test(u), u);
@@ -141,8 +160,8 @@ test('expert_ok / ph_ok: the rule itself; abroad stays Research Grade only', () 
   const R = py(`${RUN}
 print(json.dumps({'expert': [fl.expert_ok(o, 10) for o in OBS], 'ph': [fl.ph_ok(o, 10) for o in OBS],
   'world': [u for u in URLS if 'not_in_place' in u or 'quality_grade=research&' in u]}))`);
-  assert.deepStrictEqual(R.expert, [false, true, false, false, false, false, true, true, true, false]);
-  assert.deepStrictEqual(R.ph, [true, true, false, false, false, false, true, true, true, true]);
+  assert.deepStrictEqual(R.expert, [false, true, false, false, true, false, true, true, true, false, true, false, true, false]);
+  assert.deepStrictEqual(R.ph, [true, true, false, false, true, false, true, true, true, true, true, false, true, false]);
 });
 
 test('fetch_local --plan stays offline (no iNaturalist request) and says which share-alike candidates a run would drop', () => {

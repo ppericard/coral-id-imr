@@ -9,8 +9,8 @@
 # there by 3+ distinct observers, or 1+ Research Grade there and listed by Corals of the World for a Philippine ecoregion,
 # or confirmed near Dauin by 2+ Research Grade observers), at most WORLD_CAP waiting (loc world). Accepted IDs: Research Grade, or a genus-level community
 # ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon), or, in
-# the Philippines only, a single identification by a trusted expert (EXPERTS) at the genus or below (expert_ok). Abroad:
-# Research Grade only.
+# the Philippines only, a trusted expert's identification (EXPERTS) at the genus or below that no other current
+# identification disagrees with (expert_ok). Abroad: Research Grade only.
 # Licences (Pierre, 2026-11-05, aligned with the fish rules): CC0, CC BY, CC BY-NC; never share-alike (it would block a
 # later commercial reuse), checked photo by photo (an observation may mix licences). drop_share_alike takes the waiting
 # share-alike candidates out of cand.json at each run (never one curation.json names, e.g. one Pierre added); the
@@ -43,8 +43,8 @@ UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0'  # never share-alike (Pierre, 2026-11-05): cc-by-sa and cc-by-nc-sa left out
 LICS = set(LIC.split(','))
 # Trusted identifiers (Pierre, 2026-11-05): `thamnasteroid` is by far the top identifier of stony corals in the
-# Philippines; an observation whose single identification is theirs, at the genus searched or below, is accepted in the
-# Philippines tiers, as a genus-level community taxon is (gid).
+# Philippines; an observation whose identification by them is at the genus searched or below, with no other current
+# identification disagreeing, is accepted in the Philippines tiers, as a genus-level community taxon is (gid).
 EXPERTS = {'thamnasteroid'}
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
@@ -123,17 +123,29 @@ def genus_ok(o, tid):
     return bool(o.get('community_taxon_id')) and bool(o.get('identifications_most_agree')) and o['community_taxon_id'] == t.get('id') and in_genus(t, tid)
 
 
+def lineage(a, b):
+    """Taxa a and b on one line of descent: the same, or one an ancestor of the other (no disagreement)."""
+    a, b = a or {}, b or {}
+    return a.get('id') == b.get('id') or a.get('id') in (b.get('ancestor_ids') or []) or b.get('id') in (a.get('ancestor_ids') or [])
+
+
 def expert_ok(o, tid):
-    """Needs ID observation with a single (current) identification, by a trusted expert (EXPERTS), at the genus tid or
-    below (Pierre, 2026-11-05). Any second identification, agreeing or not, leaves it to the community rules."""
+    """Needs ID observation whose current identification by a trusted expert (EXPERTS) is at the genus tid or below, and
+    that no other current identification disagrees with (Pierre, 2026-11-05: trust thamnasteroid's identification; the
+    integrator's review of #568). Agreeing = on one line of descent with the expert's taxon: an observer's coarse
+    "Stony corals" refined by the expert to the genus is accepted (iNaturalist then has no genus-level community taxon:
+    the coarse ID does not support the genus); another genus, or a taxon off that line, refuses. Withdrawn identifications
+    do not count; an expert ID above the genus is refused."""
     ids = [i for i in (o.get('identifications') or []) if i.get('current', True)]
-    if len(ids) != 1: return False
-    i = ids[0]
-    return ((i.get('user') or {}).get('login') or '').lower() in EXPERTS and in_genus(i.get('taxon'), tid) and in_genus(o.get('taxon'), tid)
+    ex = [i for i in ids if ((i.get('user') or {}).get('login') or '').lower() in EXPERTS]
+    if not ex: return False
+    et = ex[0].get('taxon')
+    if not (in_genus(et, tid) and in_genus(o.get('taxon'), tid)): return False
+    return all(lineage(i.get('taxon'), et) for i in ids if i not in ex)
 
 
 def ph_ok(o, tid):
-    """An observation the Philippines tiers accept: Research Grade, a genus-level community ID, or a single expert ID."""
+    """An observation the Philippines tiers accept: Research Grade, a genus-level community ID, or an expert's ID."""
     return o.get('quality_grade') == 'research' or (o.get('quality_grade') == 'needs_id' and (genus_ok(o, tid) or expert_ok(o, tid)))
 
 
@@ -289,7 +301,7 @@ def main():
             grade = 'research' if loc == 'world' else 'research,needs_id'  # abroad: species-level IDs only
             res = get(f'https://api.inaturalist.org/v1/observations?{q}&quality_grade={grade}&captive=false&photos=true&photo_license={LIC}&order_by=votes&per_page=200')
             obs, more = res['results'], res.get('total_results', 0) > len(res['results'])
-            # Research Grade first, then genus-level community IDs and single expert IDs (votes order within each); abroad
+            # Research Grade first, then genus-level community IDs and expert IDs (votes order within each); abroad
             # Research Grade only (the query asks for nothing else).
             obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, T[0]['id'])]
             # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented

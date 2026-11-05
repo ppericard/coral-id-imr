@@ -45,7 +45,7 @@ def short(minimum=5):
 
 
 # What tools/fetch_local.py would take (its own rules, imported: one definition): the stony-coral genus taxon, near
-# Dauin (40 km) or in the Philippines, Research Grade, a genus-level community ID or a single expert ID (ph_ok), an
+# Dauin (40 km) or in the Philippines, Research Grade, a genus-level community ID or an undisputed expert ID (ph_ok), an
 # accepted licence, never share-alike (LIC, photo_ok), a photo not already on the site or waiting, and not excluded.
 from fetch_local import LIC, ph_ok, photo_ok  # noqa: E402
 
