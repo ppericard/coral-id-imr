@@ -1797,6 +1797,7 @@ function cardRing(pct, was) {
 function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
+  QOPEN = false; // a question left unanswered for another page (the quiz draws its next one: question())
   // A tab tapped while the app is still loading (slow line, RA review 2026-11-02): nothing to draw yet; the start-up's
   // own route() opens the page tapped, from the hash.
   if (!DATA) return;
@@ -2340,9 +2341,12 @@ function curRefresh() {
 // New versions (Pierre, 2026-11-02: players will not know to reload, he had to reload once or twice himself). Each
 // deploy changes sw.js (its cache name V). The browser checks it at each launch, and the app asks again when it comes
 // back into view and every 30 min (swCheck). The new version installs in the background and takes over (skipWaiting,
-// clients.claim): this page then reloads itself at the next calm moment, when it comes back into view or at the next
-// page change (route), so the player is on the new version without doing anything. Progress is saved at every answer.
+// clients.claim): this page then reloads itself at the next calm moment, at the next page change (route: Next in a game
+// is one, between two questions), or when it comes back into view unless a question is waiting for its answer (QOPEN,
+// quiz.js question: never in the middle of a question, Pierre 2026-11-05), so the player is on the new version without
+// doing anything. Progress is saved at every answer.
 let UPDATED = false,
+  QOPEN = false,
   swAt = Date.now();
 const swCheck = () => {
   swAt = Date.now();
@@ -2373,7 +2377,7 @@ if ('serviceWorker' in navigator) {
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
-  if (UPDATED) return location.reload();
+  if (UPDATED && !QOPEN) return location.reload();
   if (Date.now() - curAt > 300000) curRefresh();
   if (Date.now() - swAt > 300000) swCheck();
 });

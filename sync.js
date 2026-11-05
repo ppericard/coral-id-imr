@@ -20,10 +20,15 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && Date.now() - statsAt > 600000) loadStats();
 });
+// It also tells the sheet (v50, Code.gs behind_) the app's version, this device's anonymous id (devId, as its events) and
+// the minutes this page has been open (up): a device left on a replaced version is logged as 'old' with its id, so the
+// admin can find whose it is (Pierre, 2026-11-05). An older script ignores both. Never from a local copy (LOCAL: a test,
+// a developer; AGENTS.md 13): without a device id the sheet logs nothing.
 function loadStats() {
   if (!SYNC_URL || !DATA) return;
   statsAt = Date.now();
-  fetch(SYNC_URL + '?stats=1&av=' + appVer())
+  const me = LOCAL ? '' : `&dev=${devId()}&up=${Math.round(performance.now() / 60000)}`;
+  fetch(`${SYNC_URL}?stats=1&av=${appVer()}${me}`)
     .then(r => r.json())
     .then(j => {
       sheetSeen(j);
@@ -67,15 +72,17 @@ function syncSummary() {
 // rv: the rules version this device's progress was last replayed with (replayAdopt): the sheet (v28) answers with the
 // full replay of the player's log when it is older than its own. pt: the time of the oldest answer still queued here
 // (pendingFrom), so the replay's ids cover every queued answer the sheet already logged.
-const syncGet = (a = SYNC) =>
-  sheetFetch(
-    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${ptParam(a.log)}`
-  )
-    .then(r => r.json())
-    .then(j => {
-      if (j && j.data) j.data = keysIn(j.data);
-      return j;
-    });
+// info: what the request did, for a failed save's report (sheetCall).
+const syncGet = (a = SYNC, info = {}) =>
+  sheetCall(
+    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${ptParam(a.log)}`,
+    undefined,
+    info,
+    'load'
+  ).then(j => {
+    if (j && j.data) j.data = keysIn(j.data);
+    return j;
+  });
 // The full replay of the answer log by the sheet (Pierre, 2026-11-03: progress recalculated from the whole log,
 // automatically, never by a human click, now and whenever the progress engine changes; docs/LEARNING.md "Full replay").
 // The sheet (Code.gs replay_, v28) replays the player's rows with this app's own engine (core.js replayProgress, embedded
@@ -366,6 +373,86 @@ function mergeSubject(j, d, S, mine) {
   if (S.log) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
+// Saving when the line or the sheet fails (Pierre, 2026-11-05: the red "Not saved" came up "a bit too often": the
+// Events tab held 26 "save failed: Failed to fetch" / "Load failed" in four days, 15 from one phone, each shown in red
+// at once and tried again only at the next answer, the next visit or back online). A save that fails for a passing
+// reason is tried again by itself, SAVE.RETRY seconds apart (longer each time), while the app is in view: the line, a
+// request cut because the app went to the background (iOS and Android stop a hidden page's network), the sheet busy or
+// failing (sheet v50 answers those as JSON, lock or server; before, Apps Script's error page came without CORS header and
+// the browser called it a network failure). A try cut by the app going to the background never counts: it is tried
+// again when the app comes back. The header says "Not saved" (syncTrouble) only once saving has failed SAVE.RED_N times
+// in a row over SAVE.RED_MS at least, the app in view: a save that comes through on a retry never shows red, one that
+// keeps failing does. The answers wait on this device meanwhile and the whole queue goes at the next try: nothing is
+// dropped. A refused code, a removed account and the wrong-code wait are red at once (no retry mends them). Each request
+// has SAVE.TIMEOUT to answer (it had no limit, and one that never ended held every later save behind it).
+// The run of failures (SYNC.fail: n counted, hid cut by the background, at its first failure, why the last error, d what
+// the last try did) travels with the account record, so a reload in the middle of it keeps counting. The Events tab
+// (sheet v19 'sync') gets 'save failed: <error>' when the red shows, and 'save recovered: <error>' when a run with a
+// counted failure ends with a save; Where says what the last failed try did: its step (load, the pull before the send;
+// save, the send), the HTTP status when a reply came, its seconds, the tries, the seconds since the first failure, and
+// the tries cut by the background.
+const SAVE = {RETRY: [5, 10, 20, 40, 60, 120, 300], RED_N: 3, RED_MS: 60000, TIMEOUT: 90000};
+let saveTimer = 0,
+  hiddenAt = 0;
+const saveHid = () => (hiddenAt = Date.now());
+document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && saveHid());
+window.addEventListener('pagehide', saveHid);
+document.addEventListener('freeze', saveHid);
+// One request of a sync, answered within SAVE.TIMEOUT or failed; info gets its step, HTTP status and seconds.
+function sheetCall(url, o, info, step) {
+  const ac = typeof AbortController === 'function' ? new AbortController() : null,
+    t0 = Date.now();
+  let tm = 0;
+  Object.assign(info, {step, t0, http: 0, ms: 0});
+  if (!info.start) info.start = t0;
+  return Promise.race([
+    sheetFetch(url, ac ? {...(o || {}), signal: ac.signal} : o).then(r => {
+      info.http = (r && r.status) || 0;
+      return r.json();
+    }),
+    new Promise((ok, no) => {
+      tm = setTimeout(() => {
+        if (ac) ac.abort();
+        no(new Error(`no answer in ${SAVE.TIMEOUT / 1000} s`));
+      }, SAVE.TIMEOUT);
+    })
+  ]).finally(() => {
+    clearTimeout(tm);
+    info.ms = Date.now() - t0;
+  });
+}
+const saveDetail = (info, f, now) =>
+  `${info.step || '?'} · ${info.http ? 'http ' + info.http : 'no reply'} · ${((info.ms || 0) / 1000).toFixed(1)} s · try ${f.n + f.hid} · ${Math.round((now - f.at) / 1000)} s · ${f.hid} hidden`;
+// A failed try of me's save (why: the error). Cut by the background: not counted. Red once the run is long enough.
+function saveFailed(me, info, why) {
+  const now = Date.now(),
+    f = me.fail || (me.fail = {n: 0, hid: 0, at: now});
+  if (document.visibilityState === 'hidden' || hiddenAt >= (info.start || now)) f.hid++;
+  else f.n++;
+  f.why = String(why || 'no reply').slice(0, 120);
+  f.d = saveDetail(info, f, now);
+  if (f.n >= SAVE.RED_N && now - f.at >= SAVE.RED_MS) {
+    me.err = 'net';
+    if (navigator.onLine !== false) ev('sync', {msg: 'save failed: ' + f.why, src: f.d});
+  }
+  store.set('reefid-account', me);
+  saveRetry(f);
+}
+// A save that came through: the run of failures ends (reported when one of its failures counted).
+function saveOk(me) {
+  const f = me.fail;
+  clearTimeout(saveTimer);
+  delete me.fail;
+  if (f && f.n && navigator.onLine !== false)
+    ev('sync', {msg: 'save recovered: ' + f.why, src: `${f.d} · saved after ${Math.round((Date.now() - f.at) / 1000)} s`});
+}
+// The next try, while the app is in view and online (coming back to the app and back online run a sync anyway).
+function saveRetry(f) {
+  clearTimeout(saveTimer);
+  if (document.visibilityState === 'hidden' || navigator.onLine === false) return;
+  const s = SAVE.RETRY[Math.min(f.n + f.hid, SAVE.RETRY.length) - 1];
+  saveTimer = setTimeout(() => SYNC && SYNC.fail && syncPush(), s * 1000);
+}
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
 // meanwhile. Unsent progress is retried on start-up and when back online.
 // One sync at a time: a request made while one runs is queued and runs once it ends.
@@ -389,11 +476,12 @@ function syncPush() {
 // at = the sheet revision merged against (script v6): if another device wrote in between, the sheet answers 'stale'
 // (answers logged all the same) and the whole pull-merge-send runs again, at most twice (code review M1).
 function syncOnce(tries = 0) {
-  const me = SYNC;
+  const me = SYNC,
+    info = {}; // what this try's requests did (sheetCall), for a failed save's report
   let rev, sent, log, cut;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
   // Script v11: a name the admin removed or merged answers 'gone' (with the name it joined): recorded below, no send.
-  return syncGet(me)
+  return syncGet(me, info)
     .then(j => {
       if (SYNC !== me) return null;
       if (!j.ok) return j;
@@ -409,22 +497,27 @@ function syncOnce(tries = 0) {
       store.set('reefid-account', me);
       const pd = (progData()['reefid-sync-coral-progress'] || '').length;
       if (pd > 40000) console.warn(`Progress is ${pd} characters (sheet script v6 stores any size; v5 stops at 50,000).`);
-      return sheetFetch(SYNC_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: me.name,
-          pin: me.pin,
-          data: withLegacy(progData()), // + the old names, for a device still on an app from before the rename (core.js)
-          summary: syncSummary(),
-          answers: log,
-          av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
-          rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
-          ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
-          // First send after signing in: the answers this device sent anonymously move to this name (script v12).
-          ...(me.anon ? {anon: me.anon} : {}),
-          ...(typeof me.srv === 'number' ? {at: me.srv} : {})
-        })
-      }).then(r => r.json());
+      return sheetCall(
+        SYNC_URL,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: me.name,
+            pin: me.pin,
+            data: withLegacy(progData()), // + the old names, for a device still on an app from before the rename (core.js)
+            summary: syncSummary(),
+            answers: log,
+            av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
+            rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
+            ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
+            // First send after signing in: the answers this device sent anonymously move to this name (script v12).
+            ...(me.anon ? {anon: me.anon} : {}),
+            ...(typeof me.srv === 'number' ? {at: me.srv} : {})
+          })
+        },
+        info,
+        'save'
+      );
     })
     .then(j => {
       if (!j || SYNC !== me) return j;
@@ -462,6 +555,7 @@ function syncOnce(tries = 0) {
           me.log = (me.log || []).filter(x => !done.has(x.id));
         }
         groupsSeen(j, me.name); // the beta groups (v48), as the load's reply
+        saveOk(me); // a run of failed tries ends here
         // The sheet's hold over every answer now logged, in time order (v23; Codex review #370), plus any answer given
         // while this send was on its way.
         holdAdopt(j.hold, me.log, j.holdIds);
@@ -476,21 +570,22 @@ function syncOnce(tries = 0) {
         store.set('reefid-account', me);
         if (adopted && tries < 3) return syncOnce(tries + 1);
       } else if (j && SYNC === me) {
-        me.err = j.error === 'pin' || j.error === 'wait' || j.error === 'gone' ? j.error : 'net';
-        if (me.err === 'net' && j.error !== 'stale' && j.error !== 'busy')
-          ev('sync', {msg: 'save refused: ' + String(j.error || 'no reply')});
-        if (j.error === 'gone') me.into = j.into || '';
-        store.set('reefid-account', me);
+        // A refused code, a removed account, the wrong-code wait: red at once, no retry mends them. Anything else the sheet
+        // answered (busy, stale again, lock or server from v50, a failed write) is a passing failure, tried again.
+        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone') {
+          me.err = j.error;
+          if (j.error === 'gone') me.into = j.into || '';
+          delete me.fail;
+          clearTimeout(saveTimer);
+          store.set('reefid-account', me);
+        } else saveFailed(me, info, 'sheet said ' + String(j.error || 'nothing'));
       }
       return j;
     })
     .catch(x => {
       if (x && 'retried' in x) return x.retried;
-      if (SYNC === me) {
-        if (navigator.onLine !== false) ev('sync', {msg: 'save failed: ' + String((x && x.message) || x).slice(0, 120)});
-        me.err = 'net';
-        store.set('reefid-account', me);
-      }
+      // The line, a request cut by the background, a reply that is not the sheet's JSON, no answer in time.
+      if (SYNC === me) saveFailed(me, info, (x && x.message) || x);
       return null;
     })
     .finally(() => {
@@ -549,8 +644,15 @@ function syncPull() {
   return syncing;
 }
 window.addEventListener('online', syncPull);
+// Back in view: a pull (30 s apart), or at once the save a failed try left waiting (saveRetry waits for this). Leaving
+// the app: a save still waiting for its timer (syncSoon) goes now, while the page may still use the network (a try that
+// the background cuts is tried again here, uncounted: saveFailed).
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && Date.now() - pulledAt > 30000) syncPull();
+  if (document.visibilityState === 'visible' && (Date.now() - pulledAt > 30000 || (SYNC && SYNC.fail))) syncPull();
+  else if (document.visibilityState === 'hidden' && SYNC && SYNC.dirty && !syncing) {
+    clearTimeout(syncTimer);
+    syncPush();
+  }
 });
 // Players' reports (Pierre, 2026-11-01): in a game, once the answer is out, "⚑ Report a problem" opens a small dialog:
 // wrong answer (with a field for the right genus), several corals, bad photo, other, plus an optional note. A report

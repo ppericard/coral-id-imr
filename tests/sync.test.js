@@ -1322,6 +1322,99 @@ test('v25: a request without av (an app before 2026-11-03) is logged as old, onc
   assert.ok(m.some(x => /photo stats/.test(x)) && m.some(x => /~anon abcd1234ef/.test(x)) && m.some(x => /save \(Ana\)/.test(x)));
 });
 
+// v50 (Pierre, 2026-11-05: "save failed" too often): an exception thrown out of doGet / doPost made Apps Script answer
+// with its HTML error page, which has no CORS header, so the browser reported "Failed to fetch" / "Load failed" although
+// the script had answered. Every reply is the script's own JSON now.
+test('v50: a script lock held by another request is answered as JSON (lock), never thrown', () => {
+  const s = loadCodeGs();
+  assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], av: '300'}).rev, 1);
+  s.lock.busy = true;
+  const r = s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [ans('l1')], av: '300', at: 1});
+  assert.deepStrictEqual([r.ok, r.error, r.log, r.v], [false, 'lock', undefined, SV]);
+  assert.strictEqual(s.post({dev: 'dev0000001', events: [{id: 'e1', t: '2026-11-05T00:00:00Z', k: 'err', msg: 'x'}]}).error, 'lock');
+  assert.strictEqual(s.post({anon: 'abcd1234ef', anonAnswers: [ans('l2')], av: '300'}).error, 'lock');
+  assert.strictEqual(s.post({reports: [{id: 'r1', why: 'other', note: 'n'}], rname: 'Ana', rpin: '1234'}).error, 'lock');
+  s.lock.busy = false;
+  // Nothing was written: the save sent again goes through, its answer logged once.
+  const again = s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [ans('l1')], av: '300', at: 1});
+  assert.deepStrictEqual([again.ok, again.log, again.rev], [true, true, 2]);
+  assert.strictEqual(s.sheets.Answers.rows.filter(x => x[7] === 'l1').length, 1);
+});
+
+test('v50: an exception (a Sheets service failure, a broken request) is answered as JSON (server), with a short message', () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], av: '300'});
+  const ss = s.ctx.SpreadsheetApp.getActiveSpreadsheet;
+  s.ctx.SpreadsheetApp.getActiveSpreadsheet = () => {
+    throw new Error('Service Spreadsheets timed out while accessing document with id 1R-L_JqKz9eFF8jvnmPy2g12Zrpn__uWm1Y32kkMfQUE.');
+  };
+  for (const r of [
+    s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [ans('s1')], av: '300', at: 1}),
+    s.get({name: 'Ana', pin: '1234', av: '300'})
+  ]) {
+    assert.deepStrictEqual([r.ok, r.error, r.v], [false, 'server', SV]);
+    assert.match(r.msg, /^Service Spreadsheets timed out/);
+    assert.ok(!/1R-L_JqKz9eFF8jvnmPy2g12Zrpn__uWm1Y32kkMfQUE/.test(r.msg), 'no long id in the reply: ' + r.msg);
+  }
+  s.ctx.SpreadsheetApp.getActiveSpreadsheet = ss;
+  assert.strictEqual(s.ctx.doPost({postData: {contents: '{"name": "Ana", '}}).error, 'server');
+});
+
+// v50 (Pierre, 2026-11-05: a device stayed on an old app version, and the 'old' event had no device): the photo stats
+// request carries the app version (av), the anonymous device id (dev) and the minutes the page has been open (up).
+test('v50: a device on a replaced app version is logged as old with its device id and version, once in 6 hours', () => {
+  const s = loadCodeGs(),
+    H = 36e5,
+    top = (b, ago) => (s.props.BUILD_TOP = JSON.stringify({b, t: Date.now() - ago})),
+    old = () => (s.sheets.Events ? s.sheets.Events.rows.filter(r => r[2] === 'old') : []),
+    stats = (av, dev, up) => s.get({stats: '1', av, dev, up: String(up)});
+  stats('300-aaaa', 'devnew0001', 0);
+  assert.strictEqual(JSON.parse(s.props.BUILD_TOP).b, 300, 'the newest build reported is kept');
+  stats('320-bbbb', 'devnew0001', 0);
+  assert.strictEqual(JSON.parse(s.props.BUILD_TOP).b, 320);
+  stats('300-aaaa', 'devold0001', 45); // replaced a moment ago: the worker is updating it
+  assert.strictEqual(old().length, 0);
+  top(320, 2 * H);
+  stats('300-aaaa', 'devold0002', 3); // just opened on a version replaced 2 h ago: its worker takes over now
+  stats('320-bbbb', 'devnew0001', 300); // the newest version, open for hours: fine
+  stats('admin', 'devold0004', 300); // the admin page (no build number)
+  stats('300-aaaa', 'devold0005', 300); // a page open 5 h on a version replaced 2 h ago: it did not pick up the new one
+  assert.strictEqual(old().length, 1, 'only the page left open on the replaced version is logged');
+  stats('300-aaaa', 'devold0005', 310); // the same device again: not within 6 hours
+  top(320, 25 * H);
+  stats('290-cccc', 'devold0003', 0); // replaced a day ago: a device that keeps starting an old version
+  s.get({stats: '1', av: '290-cccc', up: '0'}); // no device id: nothing to match, nothing logged
+  stats('99999-dddd', 'devbad0001', 0); // a made-up build far ahead of the newest is not taken as the newest
+  assert.strictEqual(JSON.parse(s.props.BUILD_TOP).b, 320);
+  const L = old();
+  assert.deepStrictEqual(
+    L.map(r => [r[1], r[7]]),
+    [
+      ['devold0005', '300-aaaa'],
+      ['devold0003', '290-cccc']
+    ]
+  );
+  assert.match(String(L[0][3]), /^app behind: build 300, newest 320 for 2 h, page open 300 min$/);
+});
+
+// Codex review #565: a hold computed from an older read of the Answers tab must not be kept in the cache past answers
+// logged since (two saves of one account at once: the first read the tab, the second logged and dropped the cache, the
+// first then wrote its older hold back, 1.8 instead of 2.7, until the next answer or six hours). The cached hold says
+// how many rows the tab had when it was read, and is used only while the tab still has as many.
+test('v50: a cached hold read before answers logged since is not reused', () => {
+  const s = loadCodeGs(),
+    miss = id => ans(id, {a: 'Montipora', ok: 0, e: 0.9});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [miss('h1')], av: '300'});
+  const h1 = s.get({name: 'Ana', pin: '1234', av: '300'}).hold;
+  // Two more misses reach the tab while the cache keeps the hold of one (as the interleaving above leaves it).
+  const A = s.sheets.Answers;
+  ['h2', 'h3'].forEach(id =>
+    A.appendRow(['Ana', new Date('2026-11-01T00:00:01Z'), 'Acropora', 'Montipora', 0, 'quiz', 'p', id, 0.9, '', '', '', '', '', ''])
+  );
+  const h3 = s.get({name: 'Ana', pin: '1234', av: '300'}).hold;
+  assert.ok(h3 > h1, `the hold of 3 misses (${h3}) is above the hold of 1 (${h1})`);
+});
+
 test('v25: the old-app log is capped for everyone (Codex review #373)', () => {
   const s = loadCodeGs();
   for (let i = 0; i < 400; i++) s.post({anon: 'id' + String(i).padStart(8, '0'), anonAnswers: [ans('c' + i)]});

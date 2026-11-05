@@ -73,10 +73,21 @@ const SHELL = [
     'cards'
   ].map(f => `proto/${f}.js?v=84`)
 ];
+// A shell file for the new version (2026-11-05, found while looking for a device left on an old app; ~86 kbit/s at the field
+// station). A versioned file (?v=: a new content is a new URL) or a font that a cache already holds, the version being
+// replaced's, is copied from it rather than downloaded again: most deploys change a few files, and the install, which
+// the takeover waits for, downloaded the whole shell (about 1 MB). The other files (the page, curation.json, the
+// manifest, the icon) are asked from the server itself (cache: 'no-cache', a revalidation): taken from the browser's HTTP
+// cache (GitHub Pages: 10 minutes), the new version could hold the page of the deploy before and run its old code.
+const fixed = u => /[?&]v=/.test(u) || u.startsWith('fonts/');
 const get = async (c, u, n = 3) => {
+  if (fixed(u)) {
+    const hit = await soon(caches.match(u));
+    if (hit && hit.ok) return c.put(u, hit);
+  }
   for (let i = 1; ; i++) {
     try {
-      const r = await fetch(u);
+      const r = await fetch(u, fixed(u) ? undefined : {cache: 'no-cache'});
       if (!r.ok) throw new Error(`${u}: ${r.status}`);
       return await c.put(u, r);
     } catch (e) {
