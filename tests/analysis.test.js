@@ -1032,6 +1032,16 @@ test('report: 999 draws by default for the latest milestone, fewer for the histo
     'latest 3, then 2 for the 2000 answers that fit under the cap, 0 beyond'
   );
   assert.ok(rep.R[3000].mt.m1 > 0 && rep.R[3000].mt.m2 > 0, 'every milestone is corrected');
+  // Recompute here's live look at all the answers takes the latest's draws too; the round milestones keep their budget
+  // (the newest round thousand is still "the latest" for the history's cap), reused from the stored report
+  assert.ok(rows.length > 3000 && rows.length < 4000, String(rows.length));
+  const lv = A.report(rows, meta, rep, {B: 3, Bh: 2, hcap: 2000, seed: 1, live: 1});
+  assert.deepStrictEqual(lv.M, [1000, 2000, 3000, rows.length]);
+  assert.deepStrictEqual(
+    lv.M.map(M => lv.R[M].B),
+    [0, 2, 3, 3]
+  );
+  assert.strictEqual(lv.R[3000], rep.R[3000], 'the newest milestone reused');
   // the same draws for the same answers (seeded)
   const again = A.report(rows.slice(0, 3000), meta, null, {B: 3, Bh: 2, hcap: 2000, seed: 1});
   assert.deepStrictEqual(again.R[3000].A.rt.effects, rep.R[3000].A.rt.effects);

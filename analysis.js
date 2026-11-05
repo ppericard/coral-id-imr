@@ -2569,7 +2569,10 @@
     root.onmessage = e => {
       const {id, rows, meta, B, Bh, bse, seed, prev, live} = e.data || {};
       try {
-        root.postMessage({id, res: report(rows, meta, prev, {B, Bh, bse, seed, live, progress: (M, k) => root.postMessage({id, prog: [M, k]})})});
+        root.postMessage({
+          id,
+          res: report(rows, meta, prev, {B, Bh, bse, seed, live, progress: (M, k) => root.postMessage({id, prog: [M, k]})})
+        });
       } catch (err) {
         root.postMessage({id, err: String((err && err.stack) || err)});
       }
