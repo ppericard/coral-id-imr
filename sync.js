@@ -487,7 +487,7 @@ function syncOnce(tries = 0) {
       if (!j.ok) return j;
       groupsSeen(j, me.name); // the beta groups first (v48): they never depend on the merge
       if (j.found) mergeSaved(j);
-      repsSeen(j); // the player's reports (v54), after the merge: their thanks on another device came with it
+      repsSeen(j); // the player's reports (v55), after the merge: their thanks on another device came with it
       rev = me.rev;
       // Each subject's progress as sent: its baseline once the sheet confirms (SUBJECTS base).
       const pd0 = progData();
@@ -626,7 +626,7 @@ function syncPull() {
       const rv0 = rvApplied();
       groupsSeen(j, me.name); // the beta groups first (v48), as syncOnce
       if (j.found) mergeSaved(j);
-      repsSeen(j); // the player's reports (v54), as syncOnce
+      repsSeen(j); // the player's reports (v55), as syncOnce
       if (rvApplied() < rv0) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
       delete me.err;
       me.last = new Date().toISOString();
@@ -1030,13 +1030,13 @@ function groupsSeen(j, name, live = true) {
   // Home draws its subject row in viewHome (showSubj only updates existing buttons): redraw Home too (Codex review #540).
   if (!SUBJ_VISIT && /^#?(lab|home)?$/.test(location.hash)) route();
 }
-// The ids of this player's own reports (sheet v54: reps in a load reply), for "Your feedback helped" (progress.js
+// The ids of this player's own reports (sheet v55: reps in a load reply), for "Your feedback helped" (progress.js
 // achReps, achHelped; Q66). Only from a script that has it (AGENTS.md 7a): an older one sends none, and the app still
 // thanks the reports it kept itself.
 // Every load reply calls it, after merging the saved copy: a signed-in player is thanked only from then on (repsPulled,
 // progress.js achHelped), so a thanks already given on another device, which comes with that copy, is never given again
 // here (Codex review #581).
-const HELP_SHEET = 54;
+const HELP_SHEET = 55;
 let repsPulled = false;
 function repsSeen(j) {
   repsPulled = true;

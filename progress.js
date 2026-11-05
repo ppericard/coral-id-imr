@@ -759,7 +759,7 @@ function helpedShow(brk) {
   });
   return true;
 }
-// The ids of the player's own reports, from the sheet's load reply (sync.js repsSeen, Code.gs v54): those sent signed in
+// The ids of the player's own reports, from the sheet's load reply (sync.js repsSeen, Code.gs v55): those sent signed in
 // on any device, before this version too. Then the check above.
 function achReps(ids) {
   if (!store.get(ACHK, null)) achCheck(true);

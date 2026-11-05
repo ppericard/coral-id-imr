@@ -58,7 +58,7 @@ const GATES = {
       startS: () => ({log: true})
     })() !== 0,
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
-  // helped" (Q66): from v54; before, only the ids the device kept itself.
+  // helped" (Q66): from v55; before, only the ids the device kept itself.
   HELP_SHEET: (v, N) => {
     let got = null;
     fn('sync.js', 'function repsSeen(', '\nfunction sheetSeen', 'repsSeen', {HELP_SHEET: N, achReps: ids => (got = ids)})({
