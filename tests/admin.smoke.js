@@ -1161,7 +1161,7 @@ const WIDTHS = [390, 1280];
       p.evaluate(() => {
         const c = document.querySelector('[data-recent]');
         if (!c) return null;
-        const R = [...c.querySelectorAll('tbody tr')].map(tr => ({
+        const R = [...c.querySelectorAll('tbody tr[data-sopen]')].map(tr => ({
           who: tr.cells[0].textContent.trim(),
           anon: !!tr.cells[0].querySelector('code'),
           link: (tr.cells[0].querySelector('a') || {}).getAttribute?.('href') || '',
@@ -1192,6 +1192,68 @@ const WIDTHS = [390, 1280];
         if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)
           fails.push(`${w}px Recent sessions: the device not signed in ${JSON.stringify(an)}`);
         if (!R.some(x => /^#~journey\//.test(x.link) && !x.now)) fails.push(`${w}px Recent sessions: no other signed-in player`);
+      }
+    }
+    // A session unfolds its summary under it and folds again (Pierre, 2026-11-05): Carla's session playing now (made-up
+    // demo data, admin-demo.js) says what she made of it in words, then start → end, length, answers, right, progress
+    // before → after, the success chart, her new genera, events, achievements (25% progress, earned in it) and a link to
+    // her Journey; a second tap folds it; Enter unfolds it too. At both widths: no sideways page scroll while it is open.
+    {
+      const sess = () =>
+        p.evaluate(() => {
+          const d = document.querySelector('[data-sess]');
+          if (!d) return null;
+          const row = d.closest('tr').previousElementSibling;
+          return {
+            row: row && row.dataset.sopen && row.cells[0].textContent.trim(),
+            exp: row && row.getAttribute('aria-expanded'),
+            open: document.querySelectorAll('[data-sess]').length,
+            said: d.querySelector('.adm-sesssum').textContent,
+            kpis: [...d.querySelectorAll('.adm-kpis > div > span')].map(x => x.textContent),
+            prog: (d.querySelectorAll('.adm-kpis > div > b')[4] || {}).textContent,
+            chart: !!d.querySelector('svg.adm-jl path.acc'),
+            heads: [...d.querySelectorAll('.adm-sessgrid h4')].map(x => x.textContent),
+            text: d.innerText,
+            link: (d.querySelector('a.next') || {}).getAttribute?.('href'),
+            wide: document.documentElement.scrollWidth - innerWidth
+          };
+        });
+      await p.click('[data-recent] tr[data-sopen] td:nth-child(3)');
+      await p.waitForFunction(
+        () => /\d+% → \d+%/.test((document.querySelectorAll('[data-sess] .adm-kpis b')[4] || {}).textContent || ''),
+        null,
+        {
+          timeout: 20000
+        }
+      );
+      const s1 = await sess();
+      if (
+        !s1 ||
+        s1.row !== 'Carla Demo' ||
+        s1.exp !== 'true' ||
+        s1.open !== 1 ||
+        !/^24 answers in \d+ min, \d+% right where \d+% was expected\./.test(s1.said) ||
+        s1.kpis.join('|') !== 'Start → end|Length|Answers|Right|Progress' ||
+        !s1.chart ||
+        !['New genera', 'Events', 'Achievements'].every(h => s1.heads.includes(h)) ||
+        !/A quarter/.test(s1.text) ||
+        !/Session \d+ of \d+/.test(s1.text) ||
+        !/Typed 2, \d right/.test(s1.text) ||
+        s1.link !== '#~journey/Carla%20Demo' ||
+        s1.wide > 0
+      )
+        fails.push(`${w}px Recent sessions: Carla's session did not unfold its summary ${JSON.stringify(s1)}`);
+      await p.click('[data-recent] tr[data-sopen] td:nth-child(3)');
+      const s2 = await sess();
+      const exp2 = await p.$eval('[data-recent] tr[data-sopen]', tr => tr.getAttribute('aria-expanded'));
+      if (s2 || exp2 !== 'false') fails.push(`${w}px Recent sessions: a second tap did not fold the summary ${JSON.stringify(s2)}`);
+      if (once) {
+        await p.focus('[data-recent] tr[data-sopen]');
+        await p.keyboard.press('Enter');
+        const s3 = await sess();
+        if (!s3 || s3.row !== 'Carla Demo') fails.push(`${w}px Recent sessions: Enter did not unfold the summary`);
+        await p.keyboard.press('Enter');
+        if (await sess()) fails.push(`${w}px Recent sessions: Enter did not fold the summary`);
       }
     }
     // Activity over time (Pierre, 2026-11-04: "who plays and how much"): answers, active players and new players per day,

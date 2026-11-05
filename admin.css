@@ -2891,6 +2891,76 @@ td.cov-c .cov-off {
 .adm-recent {
   margin-bottom: 12px;
 }
+/* A session unfolded under its row (admin-journey.js sessionSummary; Pierre, 2026-11-05): a panel held at the left of a
+   table that scrolls sideways on phones and never wider than the screen, as a Players row's actions (.adm-ubar). */
+.adm-sess {
+  position: sticky;
+  left: 0;
+  max-width: calc(100vw - 50px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 12px;
+}
+.adm-sesssum {
+  margin: 0 0 10px;
+  font-size: var(--fs-m);
+  line-height: 1.4;
+}
+.adm-sess .adm-kpis {
+  margin-bottom: 4px;
+}
+.adm-sess .adm-kpis b {
+  font-size: var(--fs-l);
+}
+.adm-sess h4 {
+  margin: 10px 0 4px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.adm-sess .adm-jkey {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.adm-sexp {
+  font-family: var(--body);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
+}
+.adm-sdot {
+  margin: 0 4px 0 8px;
+  color: var(--accent);
+}
+.adm-sess .adm-jdots {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.adm-sessgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 18px;
+}
+.adm-sessgrid p {
+  margin: 0;
+}
+.adm-sess .adm-hphotos {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+.adm-sess .next {
+  margin: 12px 0 0;
+}
+@media (min-width: 1024px) {
+  .adm-sessgrid > .adm-swide {
+    grid-column: span 2;
+  }
+}
 
 /* Users (Stats > Users): one row per player, click for details; Delete in the danger colour, never a default button. */
 /* Players page: every column title sorts (click again to reverse) */
@@ -2911,14 +2981,14 @@ td.cov-c .cov-off {
 .adm-utbl .adm-urow.me td {
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
-.adm-utbl .adm-urow {
+.adm-urow {
   cursor: pointer;
 }
-.adm-utbl .adm-urow:hover td,
-.adm-utbl .adm-urow.open td {
+.adm-urow:hover td,
+.adm-urow.open td {
   background: var(--surface-2);
 }
-.adm-utbl .adm-udet > td {
+.adm-udet > td {
   max-width: none;
   overflow: visible;
   white-space: normal;
