@@ -560,6 +560,104 @@ const WIDTHS = [390, 1280];
             fails.push(`${w}px Out of rule: un-keep did not bring ${f2} back ${JSON.stringify(r)}`);
         }
       }
+      // To do › Share-alike (Pierre, 2026-11-05: no share-alike for corals any more, but the ones on the site are never
+      // removed automatically; the demo has the real data's share-alike photos): a "share-alike" tag on the genus page; the
+      // same actions as Out of the presence rule: Remove (the ×, Undo), Keep → Kept (curation seen 'sa:f', tag "kept"),
+      // un-keep, Remove all asks first and acts only on the photos still to handle.
+      {
+        await go('~triage');
+        const sq = () =>
+          p.evaluate(() => {
+            const t = [...document.querySelectorAll('#view .adm-saq:not([data-sakept] .adm-saq) [data-f]')],
+              k = [...document.querySelectorAll('#view [data-sakept] .adm-saq [data-f]')];
+            return {
+              n: t.length,
+              want: saList().length,
+              head: +((document.querySelector('[data-sasec] small') || {}).textContent || 0),
+              title: (document.querySelector('[data-sasec] h2') || {}).textContent || '',
+              fs: t.map(x => [x.dataset.f, x.dataset.g]),
+              kept: k.map(x => x.dataset.f),
+              kpressed: k.filter(x => x.querySelector('[data-sa="keep"]').getAttribute('aria-pressed') === 'true').length,
+              segs: t.filter(x => x.querySelectorAll('.adm-qseg [data-sa]').length === 2).length,
+              tags: t.filter(x => x.querySelector('.adm-sa:not(.kept)')).length,
+              all: !!document.querySelector('[data-sasec] button[data-saall]'),
+              note: !!document.querySelector('[data-sasec] p')
+            };
+          });
+        const s0 = await sq();
+        if (
+          s0.n < 2 ||
+          s0.n !== s0.want ||
+          s0.head !== s0.n ||
+          !/^Share-alike/.test(s0.title) ||
+          s0.segs !== s0.n ||
+          s0.tags !== s0.n ||
+          !s0.all ||
+          s0.note ||
+          s0.kept.length
+        )
+          fails.push(`${w}px To do › Share-alike: not listed with its tag, Remove / Keep and Remove all ${JSON.stringify(s0)}`);
+        else {
+          const [f1] = s0.fs[0],
+            [f2, g2] = s0.fs[1];
+          await p.click(`#view .adm-saq [data-f="${f1}"] [data-sa="exclude"]`);
+          await settle();
+          let r = await sq();
+          if (r.n !== s0.n - 1 || !(await p.evaluate(f => !!(DRAFT.exclude || {})[f], f1)))
+            fails.push(`${w}px Share-alike: Remove did not exclude ${f1} ${JSON.stringify(r)}`);
+          await p.click('#undo');
+          await settle();
+          if ((await sq()).n !== s0.n) fails.push(`${w}px Share-alike: Undo did not bring ${f1} back`);
+          const tag = async () => {
+            await go(g2);
+            return p.evaluate(f => {
+              const e = document.querySelector(`#view .adm-tile[data-f="${f}"] .adm-sa`);
+              return e ? (e.classList.contains('kept') ? 'kept' : 'sa') : 'none';
+            }, f2);
+          };
+          const before = await tag();
+          await go('~triage');
+          await p.click(`#view .adm-saq [data-f="${f2}"] [data-sa="keep"]`);
+          await settle();
+          r = await sq();
+          const kept = await p.evaluate(a => (DRAFT.seen || {})['sa:' + a[0]] === 1 && photos(a[1]).some(x => x.f === a[0]), [f2, g2]);
+          if (r.n !== s0.n - 1 || r.head !== s0.n - 1 || r.kept.join() !== f2 || r.kpressed !== 1 || !kept)
+            fails.push(`${w}px Share-alike: Keep did not move ${f2} to Kept ${JSON.stringify(r)}`);
+          const after = await tag();
+          if (before !== 'sa' || after !== 'kept') fails.push(`${w}px Share-alike: the tag of a kept photo, ${before} → ${after}`);
+          await go('~triage');
+          const asked = await p.evaluate(() => {
+            const c = window.confirm,
+              h = HIST.length;
+            let m = null;
+            window.confirm = x => ((m = x), false);
+            document.querySelector('[data-saall]').click();
+            window.confirm = c;
+            return {m, same: HIST.length === h};
+          });
+          if (asked.m !== `Remove ${s0.n - 1} share-alike photos?` || !asked.same || (await sq()).n !== s0.n - 1)
+            fails.push(`${w}px Share-alike: Remove all did not ask first ${JSON.stringify(asked)}`);
+          const h0 = await p.evaluate(() => HIST.length);
+          await p.click('[data-saall]'); // accepted by the page's dialog handler
+          await settle();
+          const gone = await p.evaluate(
+            a => ({left: saList().length, steps: HIST.length - a[0], keptOut: !!(DRAFT.exclude || {})[a[1]]}),
+            [h0, f2]
+          );
+          if (gone.left || gone.steps !== s0.n - 1 || gone.keptOut) fails.push(`${w}px Share-alike: Remove all ${JSON.stringify(gone)}`);
+          await p.evaluate(n => {
+            for (let i = 0; i < n; i++) undo();
+          }, gone.steps);
+          await settle();
+          // Un-keep from Kept: back in the list to handle.
+          await p.click('[data-sakept] > summary');
+          await p.click(`#view [data-sakept] [data-f="${f2}"] [data-sa="keep"]`);
+          await settle();
+          r = await sq();
+          if (r.n !== s0.n || r.kept.length || (await p.evaluate(f => !!(DRAFT.seen || {})['sa:' + f], f2)))
+            fails.push(`${w}px Share-alike: un-keep did not bring ${f2} back ${JSON.stringify(r)}`);
+        }
+      }
       // Genera: the view filter of the sticky bar (Pierre, 2026-11-04). Corallites shows that section alone (Candidates and
       // Not this genus hidden, counted in one line), is remembered from genus to genus, falls back to All on a 2-zoom genus
       // without a Close-up row when Close-up is saved, and All (or the line's All views) brings the whole page back.

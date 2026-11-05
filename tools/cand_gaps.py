@@ -44,11 +44,12 @@ def short(minimum=5):
     return sorted(out, key=lambda r: r[1])
 
 
-# What tools/fetch_local.py would take (keep in step with it): the stony-coral genus taxon, near Dauin (40 km) or in
-# the Philippines, Research Grade or a genus-level community ID, an open licence, a photo not already on the site or
-# waiting, and not excluded.
+# What tools/fetch_local.py would take (its own rules, imported: one definition): the stony-coral genus taxon, near
+# Dauin (40 km) or in the Philippines, Research Grade, a genus-level community ID or a single expert ID (ph_ok), an
+# accepted licence, never share-alike (LIC, photo_ok), a photo not already on the site or waiting, and not excluded.
+from fetch_local import LIC, ph_ok, photo_ok  # noqa: E402
+
 UA = {"User-Agent": "coral-id-imr/1.0"}
-LIC = "cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa"
 SCLERACTINIA = 47532
 DAUIN, PHILIPPINES = "lat=9.19&lng=123.26&radius=40", "place_id=6873"
 POOR = 15  # fetch_local.py: Philippines candidates only while a genus has fewer Dauin photos than this (or --ph-all)
@@ -74,11 +75,7 @@ def findable(g):
         # The same first page as the fetcher (votes order, 200; Codex review #366).
         url = f"https://api.inaturalist.org/v1/observations?taxon_id={tid}&{where}&quality_grade=research,needs_id&photos=true&photo_license={LIC}&order_by=votes&per_page=200"
         for o in _get(url)["results"]:
-            t = o.get("taxon") or {}
-            genus_ok = o.get("community_taxon_id") and o.get("identifications_most_agree") and o["community_taxon_id"] == t.get("id") and (t.get("id") == tid or tid in (t.get("ancestor_ids") or []))
-            if (o["quality_grade"] == "research" or genus_ok) and any(
-                ph.get("license_code") and str(ph["id"]) not in used and not excluded(photo_id=ph["id"]) for ph in o["photos"]
-            ):
+            if ph_ok(o, tid) and any(photo_ok(ph) and str(ph["id"]) not in used and not excluded(photo_id=ph["id"]) for ph in o["photos"]):
                 found[where].add(o["id"])
         time.sleep(0.5)
     return len(found[DAUIN]), len(found[PHILIPPINES] - found[DAUIN])
