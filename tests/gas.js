@@ -84,7 +84,8 @@ function loadCodeGs(opts = {}) {
   const sheets = {},
     cache = {},
     props = {},
-    fetched = [];
+    fetched = [],
+    lock = opts.lock || {busy: false};
   const ss = {getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = makeSheet(n))};
   const ctx = {
     SpreadsheetApp: {getActiveSpreadsheet: () => ss},
@@ -142,7 +143,17 @@ function loadCodeGs(opts = {}) {
       deleteTrigger() {},
       newTrigger: () => ({timeBased: () => ({everyMinutes: () => ({create() {}})})})
     },
-    LockService: {getScriptLock: () => ({waitLock() {}, tryLock: () => true, releaseLock() {}})},
+    // opts.lock = {busy: true}: the script lock is held by another request, as Apps Script then answers: waitLock throws
+    // its "Lock timeout" exception, tryLock gives false. Set lock.busy back to false to free it.
+    LockService: {
+      getScriptLock: () => ({
+        waitLock() {
+          if (lock.busy) throw new Error('Lock timeout: another process was holding the lock for too long.');
+        },
+        tryLock: () => !lock.busy,
+        releaseLock() {}
+      })
+    },
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: t => ({setMimeType: () => JSON.parse(t)})},
     console
   };
@@ -154,6 +165,6 @@ function loadCodeGs(opts = {}) {
   );
   const get = q => ctx.doGet({parameter: q});
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
-  return {ctx, sheets, cache, props, fetched, get, post};
+  return {ctx, sheets, cache, props, fetched, lock, get, post};
 }
 module.exports = {loadCodeGs, makeSheet};

@@ -347,7 +347,44 @@
         'Safari 18 mobile'
       ],
       ['demoevc', NOW - 5 * 3600e3, 'demodev3', 'photo', pics[g1][0].f, '', 'quiz', '', '159', 'Samsung 27 mobile'],
-      ['demoevd', NOW - 9 * 3600e3, 'demodev4', 'sync', 'save failed: Failed to fetch', '', 'quiz', '', '159', 'Chrome 140 mobile']
+      [
+        'demoevd',
+        NOW - 9 * 3600e3,
+        'demodev4',
+        'sync',
+        'save failed: Failed to fetch',
+        'load · no reply · 0.4 s · try 5 · 76 s · 0 hidden',
+        'quiz',
+        '',
+        '159',
+        'Chrome 140 mobile'
+      ],
+      // A save that failed once and came through on its retry (app from 2026-11-05), and a device left on a replaced
+      // version (sheet v50 'old', with its device id and version).
+      [
+        'demoeve',
+        NOW - 7 * 3600e3,
+        'demodev4',
+        'sync',
+        'save recovered: Load failed',
+        'save · no reply · 12.3 s · try 1 · 0 s · 0 hidden · saved after 5 s',
+        'quiz',
+        '',
+        '159',
+        'Safari 18 mobile'
+      ],
+      [
+        'demoevf',
+        NOW - 6 * 3600e3,
+        'demodev5',
+        'old',
+        'app behind: build 150, newest 159 for 3 h, page open 45 min',
+        '',
+        '',
+        '',
+        '150-ab12cd34ef',
+        ''
+      ]
     );
     // Load times (sheet v21): made-up visits, a slow phone line and a fast desktop one.
     [

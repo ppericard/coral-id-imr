@@ -145,6 +145,7 @@ function question(cur, target, choices, prompt, set, kq) {
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
+  QOPEN = true; // a question waits for its answer: no reload for a new version until Next (app.js UPDATED)
   bindQuizNav(cur);
   fitStage();
   const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
@@ -207,6 +208,7 @@ function question(cur, target, choices, prompt, set, kq) {
     showHint();
     reveal();
     answered = true;
+    QOPEN = false;
     answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm);
     const tr = $v.querySelector('.trail');
     if (tr) tr.outerHTML = trail();
