@@ -1397,6 +1397,22 @@ test('v50: a device on a replaced app version is logged as old with its device i
   assert.match(String(L[0][3]), /^app behind: build 300, newest 320 for 2 h, page open 300 min$/);
 });
 
+// Codex review #565: a hold computed from an older read of the Answers tab must not be kept in the cache past answers
+// logged since (two saves of one account at once: the first read the tab, the second logged and dropped the cache, the
+// first then wrote its older hold back, 1.8 instead of 2.7, until the next answer or six hours). The cached hold says
+// how many rows the tab had when it was read, and is used only while the tab still has as many.
+test('v50: a cached hold read before answers logged since is not reused', () => {
+  const s = loadCodeGs(),
+    miss = id => ans(id, {a: 'Montipora', ok: 0, e: 0.9});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [miss('h1')], av: '300'});
+  const h1 = s.get({name: 'Ana', pin: '1234', av: '300'}).hold;
+  // Two more misses reach the tab while the cache keeps the hold of one (as the interleaving above leaves it).
+  const A = s.sheets.Answers;
+  ['h2', 'h3'].forEach(id => A.appendRow(['Ana', new Date('2026-11-01T00:00:01Z'), 'Acropora', 'Montipora', 0, 'quiz', 'p', id, 0.9, '', '', '', '', '', '']));
+  const h3 = s.get({name: 'Ana', pin: '1234', av: '300'}).hold;
+  assert.ok(h3 > h1, `the hold of 3 misses (${h3}) is above the hold of 1 (${h1})`);
+});
+
 test('v25: the old-app log is capped for everyone (Codex review #373)', () => {
   const s = loadCodeGs();
   for (let i = 0; i < 400; i++) s.post({anon: 'id' + String(i).padStart(8, '0'), anonAnswers: [ans('c' + i)]});

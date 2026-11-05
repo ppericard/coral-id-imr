@@ -281,17 +281,20 @@ const resetAt_ = t => typeof t === 'string' && t ? new Date(t).getTime() || 0 : 
 function hold_(name, since, pt){
   const c = CacheService.getScriptCache(), k = holdKey_(name), hit = c.get(k),
     from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity;
-  if (hit) { const o = JSON.parse(hit); if (o.s === since && o.ids && typeof o.t === 'number' && from > o.t) return {h: o.h, ids: o.ids}; }
-  const who = lc_(name);
+  // v50 (Codex review #565): the cached hold is used only while the Answers tab has as many rows as when it was read
+  // (n): a request that read the tab before another logged answers must not keep its older hold in the cache.
+  const tab = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), nAll = tab ? tab.getLastRow() : 0;
+  if (hit) { const o = JSON.parse(hit); if (o.s === since && o.ids && typeof o.t === 'number' && from > o.t && o.n === nAll) return {h: o.h, ids: o.ids}; }
+  const who = lc_(name), all = answerRows_(), nRead = all.length ? all.length + 1 : nAll;
   let h = 0;
-  const rows = answerRows_()
+  const rows = all
     .filter(r => lc_(r[0]) === who && !/\|w(\||$)/.test(String(r[5])))
     .map(r => [new Date(r[1]).getTime() || 0, Number(r[4]) ? 1 : 0, Number(r[8]) || 0, String(r[7])])
     .filter(r => r[0] > since)
     .sort((a, b) => a[0] - b[0]);  // stable: answers logged with the same time keep the sheet's order
   rows.forEach(([, ok, e]) => { h = Math.max(0, Math.round((h + e - ok - HOLD.SLACK) * 1000) / 1000); });
   const last = rows.slice(-HOLD.IDS), ids = rows.filter((r, i) => i >= rows.length - HOLD.IDS || r[0] >= from).map(r => r[3]);
-  try { c.put(k, JSON.stringify({s: since, h: h, ids: last.map(r => r[3]), t: last.length ? last[0][0] : 0}), 21600); } catch (e) {}
+  try { c.put(k, JSON.stringify({s: since, h: h, ids: last.map(r => r[3]), t: last.length ? last[0][0] : 0, n: nRead}), 21600); } catch (e) {}
   return {h: h, ids: ids};
 }
 
