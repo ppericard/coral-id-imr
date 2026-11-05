@@ -967,6 +967,48 @@ const server = http.createServer((req, res) => {
       if (errs.length) fails.push('Admin, R2 cut off: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
+    // f. The admin under the service worker, R2 cut off: each photo falls back on its own and the tab keeps asking R2,
+    // where the worker keeps its offline copies (Codex review #569: one failure sent every later photo online, past them).
+    {
+      const ctx = await b.newContext({viewport: {width: 1280, height: 900}});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await inatLocal(ctx);
+      const p = await ctx.newPage(),
+        errs = [];
+      p.on('pageerror', e => errs.push(e.message));
+      await p.goto(base + 'admin.html?demo#~todo');
+      await p.evaluate(() =>
+        Promise.race([
+          navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready),
+          new Promise(ok => setTimeout(ok, 30000))
+        ]).catch(() => {})
+      );
+      if (!(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
+        fails.push('Admin, R2 cut off, service worker: it never took the page over');
+      else {
+        await p.goto(base + 'admin.html?demo#Acropora');
+        await p.reload(); // a hash change alone keeps the page from before the worker
+        // A photo of the genus page shown from its online original: R2 failed for it.
+        const ok = await p
+          .waitForFunction(
+            () => [...document.querySelectorAll('figure[data-f] img')].some(i => /\/photos\//.test(i.getAttribute('src')) && i.complete),
+            null,
+            {
+              timeout: 20000
+            }
+          )
+          .then(() => true)
+          .catch(() => false);
+        if (!ok) fails.push('Admin, R2 cut off, service worker: no photo fell back to its online original');
+        if (!(await p.evaluate(() => R2 && !AWAY)))
+          fails.push('Admin, R2 cut off, service worker: the tab gave R2 up (its offline copies are there)');
+      }
+      if (errs.length) fails.push('Admin, R2 cut off, service worker: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
     // b2. R2 failing once per file (a passing error, Pierre 2026-11-03): each photo is asked from R2 a second time and
     // shows from R2; the page keeps reading R2 (core.js photoRetry, quiz.js preloads).
     {

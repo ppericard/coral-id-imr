@@ -98,16 +98,18 @@ document.addEventListener(
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
     // The published crop, baked into the site's files, drawn on the original (core.js photoCropOf; Codex review #569);
-    // crSrc draws it on the next renders (AWAY).
+    // crSrc draws it on the next renders (AWAY). Under a service worker, as app.js away: only this photo moves, and the
+    // tab keeps asking R2, where the worker keeps its offline copies (and has retried R2 already).
+    const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
     const away = i => {
       if (!photoFallback(i, photoLook)) return false;
-      ((R2 = false), (AWAY = true));
+      if (!sw) ((R2 = false), (AWAY = true));
       const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
       if (c && !i.style.getPropertyValue('object-view-box')) i.style.setProperty('object-view-box', c);
       return true;
     };
     // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
-    if (photoRetry(e.target, away) || away(e.target)) e.stopImmediatePropagation();
+    if ((!sw && photoRetry(e.target, away)) || away(e.target)) e.stopImmediatePropagation();
   },
   true
 );
