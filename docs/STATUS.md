@@ -26,9 +26,7 @@ queue held back; `tests/slot.js` protects the machine).
 
 Waiting only on a real dependency (details in [ROADMAP](ROADMAP.md) "Next").
 
-1. URL refonte, app and admin (Q53-Q56 decided: `#section/page` and `#group/tab/view` in English, filters after `?`,
-   the subject prefix everywhere, old links not translated, admin ALIAS emptied; study to save in `docs/reviews/`):
-   after governance PR C (same files).
+1. URL refonte, app and admin (Q53-Q56 decided; [study](reviews/2026-11-05-url-scheme-study.md)): after #572.
 2. The fish track toward the beta (ROADMAP "Next", the fish rows); FishBase next steps.
 3. The fish sheets at three levels, when Pierre wants them (study:
    [reviews/2026-11-05-fish-sheets-study.md](reviews/2026-11-05-fish-sheets-study.md); its 13 questions parked).
