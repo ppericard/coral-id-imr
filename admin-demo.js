@@ -15,10 +15,11 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
+    // The script version the demo answers as: the current one (v55: a delete cleans up everything of the account, the
+    // answers it keeps flagged 2; v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
     // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; rule D4).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 48,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 55,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -286,7 +287,12 @@
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', '#' + g2),
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home'),
       // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
-      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', '#quiz')
+      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', '#quiz'),
+      // Sheet v55: an account deleted with its answers kept: its reports stay without the name, never verified.
+      Object.assign(
+        rp(6, '~deleted Zq3xR8kA', 'photo', g1, '', '', 'Demo report from a removed account: too dark.', 'photo', pics[g1][0].f, '#' + g1),
+        {3: 0}
+      )
     ];
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
     // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
@@ -595,7 +601,7 @@
       r[9],
       r[10],
       r[11],
-      /^~anon /.test(r[0]) ? 1 : 0,
+      /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) ? 2 : 0, // sheet v55: 2 the answers a deleted account left
       r[12] ?? null,
       r[13] ?? null
     ]);
@@ -761,13 +767,19 @@
     if (p.userDelete) {
       const u = S.users[lc(p.userDelete)];
       if (!u) return {ok: false, error: 'user'};
+      // Sheet v55 (Code.gs deleteAccount_): everything goes, or the answers and reports stay as "~deleted <id>", never
+      // verified; the page summaries go either way.
       const k = lc(u.name),
-        mine = S.rows.filter(r => lc(r[0]) === k);
+        del = '~deleted ' + aid(u.name),
+        mine = S.rows.filter(r => lc(r[0]) === k),
+        reps = S.reports.filter(r => lc(r[2] || '') === k);
       if (p.answers) S.rows = S.rows.filter(r => lc(r[0]) !== k);
-      else mine.forEach(r => (r[0] = '~deleted ' + aid(u.name)));
+      else mine.forEach(r => (r[0] = del));
+      if (p.answers) S.reports = S.reports.filter(r => lc(r[2] || '') !== k);
+      else reps.forEach(r => ((r[2] = del), (r[3] = 0)));
       delete S.users[k];
       S.removed.push({name: u.name, into: '', time: Date.now()});
-      return {ok: true, answers: mine.length};
+      return {ok: true, answers: mine.length, reports: reps.length};
     }
     if (p.userMerge) {
       const m = p.userMerge,

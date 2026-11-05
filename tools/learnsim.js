@@ -9,6 +9,15 @@
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
 //                          [--rt off] [--rtapp off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
+//                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
+//
+// --learner field (2026-11-05, the progress and set-size study; docs/LEARNING.md "Field learner"): a learner whose
+// confusions grow with the number of genera it holds in mind and with how much they look alike (below, "The field
+// learner"); --tau its transfer, 0 to 1. Without it, the learner of before (item), unchanged.
+// --custom N (2026-11-05, the Custom-8 scenario): the player plays the Quiz until N genera are unlocked, picks those N in
+// the custom quiz (quiz.js quizCustom, model.js customOf), plays --drill questions there, then goes back to the Quiz for
+// the rest of --questions. The measures are those of every run, plus a row at the end of the drill and the selection's
+// own bars against its true whole-slate success.
 //
 // --choice (2026-11-03, the first-launch question, model.js START): the answer the simulated player gives before its
 // first question: new (default: the variables of today's default player), imr, know, or auto (beginner new, lecture RA
@@ -85,6 +94,24 @@
 //   --rtlog writes the app's own answer log of every run (readAnswers rows, player = profile:seed, then the learner's
 //   pTrue and its time noise) for tools/abilityeval.js.
 //
+// The field learner (--learner field; every constant in LEARNER.FIELD). The item learner above recognises a genus whatever
+// the competitors: drilling 8 genera raises know as drilling 40 would (docs/LEARNING.md "Field learner"). This one keeps
+// know[g] (the same teaching) and adds a contrast skill x per pair of genera, learned only when the pair is contrasted:
+// both among a question's choices (RATE x PAIR), or side by side in the montage after a miss (RATE x MISS); a typed
+// question contrasts nothing but its montage. A question on genus t among the set V (its choices, or for a typed one the
+// genera the learner has met: the names it holds in mind) is answered right with the Luce choice
+//   P = 1 / (1 + exp(d + 0.5 x single view - photo memory) x sum over c in V, c != t of r(t, c)),
+//   r(t, c) = (1 + LOOK s(t, c)) (1 - ELIM know[c] g) / (1 + LOOK) x (1 - know[t])^(A g),  g = tau + (1 - tau) x(t, c),
+// with s the item learner's look (pooledConf), so the odds of taking t for c grow with their pooled confusion, and every
+// genus held in mind adds its own: more names, more errors (set size), even unrelated ones. g is the share of what the
+// learner knows of t (in log odds) that works against c: tau (transfer) of it with no contrast at all, all of it once the
+// pair was contrasted many times. Wrong, it names c with chance proportional to r(t, c) (typed: "I don't know" half the
+// time, as the item learner). x starts at min(know0) of the two genera (prior knowledge was learned in the field). A: with
+// every pair contrasted at know 0.5 and 4 easy choices, P 0.75 as for the item learner; an expert (0.93) about 0.85
+// against the slate.
+// Truth (both learners, docs/LEARNING.md): pOpen(t), the learner's success on an average photo of t with every slate genus
+// a possible answer (its own choice rule over the 40: Luce for the field learner, the item learner's guess otherwise).
+//
 // Measures, at each checkpoint (50, 100, 200, 300 questions, then every 300), mean +- sd over the seeds:
 // - knowSlate: true mean know over the slate genera (the 39 of the IMR coral slate and Millepora); knowMet: over the
 //   genera met (cards or asked).
@@ -156,7 +183,11 @@ const LEARNER = {
   FEW: 14,
   MANY: 20,
   // Response time (above): log seconds T0, the drop after a right answer B, per logit of the true chance C, noise SD.
-  RT: {T0: 7, B: 0.15, C: 0.3, SD: 0.6}
+  RT: {T0: 7, B: 0.15, C: 0.3, SD: 0.6},
+  // The field learner (above): A in (1 - know)^(A g), PAIR the contrast taught to each wrong choice shown.
+  FIELD: {A: 1.6, PAIR: 1},
+  // A Learned genus counts as rightly learned when its true whole-slate success pOpen is PREC or more (precision of Learned).
+  PREC: 0.8
 };
 
 const arg = (k, d) => {
@@ -189,7 +220,14 @@ const SEEDS = Number(arg('seeds', 5)),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean),
   RTON = arg('rt', 'on') !== 'off',
   RTAPP = arg('rtapp', 'on') !== 'off',
-  RTLOG = arg('rtlog', null);
+  RTLOG = arg('rtlog', null),
+  LEARN = arg('learner', 'item'),
+  TAU = Number(arg('tau', 0.5)),
+  CUSTOMN = Number(arg('custom', 0)),
+  DRILL = Number(arg('drill', 200));
+if (!['item', 'field'].includes(LEARN)) throw new Error('--learner item or field');
+if (!(TAU >= 0 && TAU <= 1)) throw new Error('--tau between 0 and 1');
+if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or more genera, --drill 1 or more questions');
 {
   const m = arg('mem', null);
   if (m !== null) {
@@ -252,6 +290,8 @@ const server = http.createServer((req, res) => {
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
   const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg;
+  const field = cfg.learner === 'field',
+    tau = cfg.tau;
   if (typeof CHOICE !== 'undefined') CHOICE.opts.forEach(o => Object.assign(o[1], vars[o[0]] || {}));
   // The learner's difficulty of a photo of genus t: --truth when given, else the app's own (photoDiff).
   const trueD = (t, p) => (truth ? (truth.photos || {})[p.f] ?? ((truth.gd || {})[t] || 0) : photoDiff(t, p));
@@ -319,7 +359,29 @@ function play(cfg) {
         .slice(0, 3)
     ])
   );
-  const ref = g => pRight(g, [g, ...REF[g]], L.REF_D, true);
+  // The field learner (above): the pairs' contrast skill x, its odds r(t, c) of taking t for c, and its chance on t among V.
+  const X = {},
+    pkey = (a, b) => (a < b ? a + '|' + b : b + '|' + a),
+    xOf = (t, c) => X[pkey(t, c)] ?? Math.min(k0[t] ?? prof.lo, k0[c] ?? prof.lo),
+    contrast = (t, c, x) => {
+      if (c && c !== t) {
+        const v = xOf(t, c);
+        X[pkey(t, c)] = v + x * (1 - v);
+      }
+    },
+    rOf = (t, c) => {
+      const g = tau + (1 - tau) * xOf(t, c);
+      return (((1 + L.LOOK * sim(t, c)) * (1 - L.ELIM * kn(c) * g)) / (1 + L.LOOK)) * (1 - kn(t)) ** (L.FIELD.A * g);
+    },
+    pField = (t, V, d, single, mem = 0) =>
+      1 / (1 + Math.exp(d + (single ? L.SINGLE : 0) - mem) * V.reduce((a, c) => a + (c === t ? 0 : rOf(t, c)), 0)),
+    // The genera a field learner holds in mind for a typed answer: those it has met, and the genus asked.
+    vocab = t => [...new Set([t, ...SL.concat(BONUS).filter(introduced)])];
+  // A question's true chance by the learner's own rule (pRight for the item learner, as before).
+  const pCh = (t, ch, d, single) => (field ? pField(t, ch, d, single) : pRight(t, ch, d, single));
+  // The truth the field measures read: success on an average photo of t with every slate genus a possible answer.
+  const pOpen = t => pCh(t, SL, 0, false);
+  const ref = g => pCh(g, [g, ...REF[g]], L.REF_D, true);
   // Photo memory: [seen, right] per photo file the learner was shown when answering, and the logits it adds.
   const LM = {},
     bucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3),
@@ -331,7 +393,7 @@ function play(cfg) {
     gq = {few: {n: 0, ok: 0, rep: 0, repOk: 0}, many: {n: 0, ok: 0, rep: 0, repOk: 0}};
   const PAIRS = [];
   SL.forEach(a => SL.forEach(b => a < b && isLook(a, b) && PAIRS.push([a, b])));
-  const lookAcc = () => mean(PAIRS.map(([a, b]) => (pRight(a, [a, b], 0, false) + pRight(b, [a, b], 0, false)) / 2));
+  const lookAcc = () => mean(PAIRS.map(([a, b]) => (pCh(a, [a, b], 0, false) + pCh(b, [a, b], 0, false)) / 2));
   const inExam = g => (typeof examOn === 'function' && examOn(g)) || !!(P[g] || {}).ex;
 
   // A fresh player (the context's storage is empty): no hold, no gentle restart, the open-all offer declined (the path
@@ -393,7 +455,7 @@ function play(cfg) {
   const mill = {met: null, asked: null},
     bon = {offer: null, n: 0, q: 0};
   // One question, as the player sees it (pre: called once it shows, for the breaks).
-  const ask = (pre, i = -1) => {
+  const ask = (pre, i = -1, cur = 'quiz') => {
     // Achievement toasts have gone by the next question (4 s in the app; no time passes in this loop), and the sign-in
     // card is closed: the out-of-game prompts (the bonus genera offer among them) wait for neither (quiz.js promptOk).
     document.querySelectorAll('.achpop').forEach(x => x.remove());
@@ -409,7 +471,7 @@ function play(cfg) {
       dropPlans();
       NEXTQ = null;
     }
-    quizPhoto();
+    quizPhoto(cur);
     if (openall) {
       const o = document.querySelector('.unlock.intro [data-open]');
       if (o && oa.at === null) {
@@ -435,7 +497,7 @@ function play(cfg) {
       (o || fb.querySelector('[data-keep]') || fb.querySelector('.next.sec')).click();
       if (o) early.fb.took = (startOf() || {}).c;
     }
-    planNext('quiz');
+    planNext(cur);
     const q = SHOWNQ;
     if (pre) pre(q);
     // The first-meeting cards, read through: each teaches like one right answer.
@@ -460,22 +522,41 @@ function play(cfg) {
       rep = fs.some(f => LM[f] && LM[f][0]),
       pRec = sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)),
       first = !asked(t);
-    let pick = t;
-    if (!(rnd() < pRec)) {
-      const pool = typed ? ch.filter(c => c !== t) : ch,
-        ws = pool.map(c => wOf(t, c));
-      let r = rnd() * ws.reduce((a, x) => a + x, 0);
-      pick = pool[pool.length - 1];
-      for (let k = 0; k < pool.length; k++)
-        if ((r -= ws[k]) <= 0) {
-          pick = pool[k];
-          break;
-        }
-      if (typed && rnd() < 0.5) pick = ''; // "I don't know"
+    let pick = t,
+      pTrue;
+    if (field) {
+      // The field learner (above): Luce over the choices, or over the genera it holds in mind when typing.
+      const V = typed ? vocab(t) : ch,
+        rs = V.map(c => (c === t ? 0 : rOf(t, c))),
+        S = rs.reduce((a, x) => a + x, 0);
+      pTrue = 1 / (1 + Math.exp(d + (single ? L.SINGLE : 0) - memOn(fs)) * S);
+      if (!(rnd() < pTrue)) {
+        let r = rnd() * S;
+        pick = V.filter(c => c !== t).pop() || '';
+        for (let k = 0; k < V.length; k++)
+          if (rs[k] && (r -= rs[k]) <= 0) {
+            pick = V[k];
+            break;
+          }
+        if (typed && rnd() < 0.5) pick = ''; // "I don't know"
+      }
+    } else {
+      if (!(rnd() < pRec)) {
+        const pool = typed ? ch.filter(c => c !== t) : ch,
+          ws = pool.map(c => wOf(t, c));
+        let r = rnd() * ws.reduce((a, x) => a + x, 0);
+        pick = pool[pool.length - 1];
+        for (let k = 0; k < pool.length; k++)
+          if ((r -= ws[k]) <= 0) {
+            pick = pool[k];
+            break;
+          }
+        if (typed && rnd() < 0.5) pick = ''; // "I don't know"
+      }
+      // The learner's true chance on this question: recognised, or (choices only) its guess falls on t.
+      pTrue = typed ? pRec : pRec + (1 - pRec) * (wOf(t, t) / ch.reduce((a, c) => a + wOf(t, c), 0));
     }
     const good = pick === t;
-    // The learner's true chance on this question: recognised, or (choices only) its guess falls on t.
-    const pTrue = typed ? pRec : pRec + (1 - pRec) * (wOf(t, t) / ch.reduce((a, c) => a + wOf(t, c), 0));
     lastE = null;
     // The time to answer (above), handed to the question's clock just before the answer (quiz.js QCLOCK, qclockRead).
     if (rton && typeof QCLOCK === 'object') {
@@ -489,11 +570,16 @@ function play(cfg) {
       if (!pick) f.querySelector('[data-idk]').click();
       else ((f.querySelector('input').value = pick), f.requestSubmit());
     } else document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
-    planNext('quiz'); // answer()'s top-up after the feedback
+    planNext(cur); // answer()'s top-up after the feedback
     if (oa.at !== null && lastE !== null)
       oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});
     teach(t, prof.rate * (good ? 1 : L.MISS));
     if (!good && pick) teach(pick, prof.rate * L.PICKED);
+    // The field learner's pairs: each wrong choice shown is contrasted with t, the genus wrongly given more (the montage).
+    if (field) {
+      if (!typed) ch.forEach(c => c !== pick && contrast(t, c, prof.rate * L.FIELD.PAIR));
+      if (!good && pick) contrast(t, pick, prof.rate * L.MISS);
+    }
     if (good) spaced(t);
     fs.forEach(f => {
       const h = (LM[f] = LM[f] || [0, 0]);
@@ -512,8 +598,55 @@ function play(cfg) {
     T += L.STEP;
     return {q, t, good, set, e: lastE, first};
   };
+  // The field measures (both learners; docs/LEARNING.md "Field learner"): over the genera met, the bar shown (genScore)
+  // against the learner's true whole-slate success pOpen; the share of Learned genera with pOpen >= PREC; the genera at the
+  // exam's entry or above (bar 95% or more); and the custom selection's own (--custom).
+  const cust = cfg.custom ? {n: cfg.custom, sel: null, from: null, to: null, row: null, nq: 0, ok: 0} : null;
+  const fieldRow = () => {
+    const po = Object.fromEntries(SL.map(g => [g, pOpen(g)])),
+      met = SL.filter(introduced),
+      lr = SL.filter(g => (P[g] || {}).mx),
+      hi = met.filter(g => genScore(g) >= 0.95 - 1e-9),
+      over = L2 => mean(L2.map(g => genScore(g) - po[g])),
+      sel = cust && cust.sel;
+    return {
+      openSlate: mean(SL.map(g => po[g])),
+      openMet: mean(met.map(g => po[g])),
+      bar: mean(met.map(genScore)),
+      over: over(met),
+      overPos: mean(met.map(g => Math.max(0, genScore(g) - po[g]))),
+      learned: lr.length,
+      precL: lr.length ? lr.filter(g => po[g] >= L.PREC).length / lr.length : null,
+      openL: mean(lr.map(g => po[g])),
+      hi: hi.length,
+      openHi: mean(hi.map(g => po[g])),
+      selBar: sel ? mean(sel.map(genScore)) : null,
+      selOpen: sel ? mean(sel.map(g => po[g])) : null,
+      selOver: sel ? over(sel) : null
+    };
+  };
+  let cur = 'quiz';
   for (let i = 0; i < N; i++) {
-    const {q, t, good, set, e, first} = ask(null, i);
+    // --custom: once N genera are unlocked, they are the custom quiz's selection for --drill questions, then the Quiz again.
+    if (cust && cust.sel === null && SL.filter(introReady).length >= cust.n) {
+      cust.sel = SL.filter(introReady)
+        .sort((a, b) => (metAt[a] ?? i) - (metAt[b] ?? i))
+        .slice(0, cust.n);
+      store.set(CUSTOM.KEY, {g: cust.sel, t: Date.now()});
+      cust.from = i;
+      cur = CUSTOM_H;
+      dropPlans();
+      NEXTQ = null;
+    }
+    if (cust && cur === CUSTOM_H && i - cust.from >= cfg.drill) {
+      cust.to = i;
+      cust.row = {q: i, ...fieldRow(), met: SL.filter(introduced).length, right: (100 * cust.ok) / Math.max(1, cust.nq)};
+      cur = 'quiz';
+      dropPlans();
+      NEXTQ = null;
+    }
+    const {q, t, good, set, e, first} = ask(null, i, cur);
+    if (cust && cur !== 'quiz') (cust.nq++, (cust.ok += good ? 1 : 0));
     // The first TRACE answers, for the fallback rules (tools/fallback.py): what the app logged with each answer (e, th,
     // mode), whether it was the genus's first answer, and the global level, the opening hold and the genera met after it.
     if (i < TRACE) {
@@ -584,6 +717,7 @@ function play(cfg) {
         duels: nDuel,
         agains: nAgain,
         cards: nCards,
+        f: fieldRow(),
         // By photo count (photo memory): cumulative questions on the group's genera, their genera met.
         grp: Object.fromEntries(
           Object.entries(GRP).map(([k, G]) => {
@@ -621,6 +755,7 @@ function play(cfg) {
         know: {...know},
         LS: JSON.stringify(LS),
         LM: JSON.stringify(LM),
+        X: JSON.stringify(X), // the field learner's pair skills (Codex review #619: they leaked from one break to the next)
         T,
         last,
         lastQs: [...lastQs],
@@ -642,6 +777,9 @@ function play(cfg) {
       // The photo memory comes back as it was (it does not fade across a break: a limit of this learner).
       Object.keys(LM).forEach(k => delete LM[k]);
       Object.assign(LM, JSON.parse(snap.LM));
+      // The field learner's pair skills too (they do not fade across a break either: a limit, as the photo memory).
+      Object.keys(X).forEach(k => delete X[k]);
+      Object.assign(X, JSON.parse(snap.X));
       dropPlans();
       NEXTQ = null;
       SHOWNQ = null;
@@ -717,7 +855,8 @@ function play(cfg) {
     opens,
     afterMiss,
     blocked: [...blocked].filter(([a]) => a < N).map(([a, c]) => [a + 1, Math.round(c * 1000) / 1000]),
-    alog
+    alog,
+    custom: cust
   };
 }
 
@@ -768,10 +907,70 @@ async function run(browser, base, name, seed) {
     truth: TRUTH_JSON,
     choice: CHOICE === 'auto' ? AUTO[name] : CHOICE,
     fallback: FALLBACK,
-    vars: VARS
+    vars: VARS,
+    learner: LEARN,
+    tau: TAU,
+    custom: CUSTOMN,
+    drill: DRILL
   });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
+}
+
+// The field measures (both learners): per profile and checkpoint, mean +- sd over the seeds; precL over the runs with a
+// genus Learned (their number in brackets); with --custom, the selection's own and a row at the end of the drill.
+const FKEYS = [
+  ['openSlate', 'open', 2],
+  ['openMet', 'openMet', 2],
+  ['bar', 'bar', 2],
+  ['over', 'over', 2],
+  ['overPos', 'over+', 2],
+  ['learned', 'learned', 1],
+  ['precL', 'precL', 2],
+  ['openL', 'openL', 2],
+  ['hi', 'bar>=95', 1],
+  ['openHi', 'open@95', 2],
+  ['selBar', 'selBar', 2],
+  ['selOpen', 'selOpen', 2],
+  ['selOver', 'selOver', 2]
+];
+function fieldTable(runs) {
+  const ms = v => {
+    v = v.filter(x => typeof x === 'number' && !isNaN(x));
+    if (!v.length) return ['-', 0];
+    const m = v.reduce((a, x) => a + x, 0) / v.length,
+      sd = v.length > 1 ? Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1)) : 0;
+    return [m, sd, v.length];
+  };
+  const keys = FKEYS.filter(k => CUSTOMN || !k[0].startsWith('sel')),
+    lines = [
+      `\nField measures (learner ${LEARN}${LEARN === 'field' ? ', tau ' + TAU : ''}${CUSTOMN ? `; Custom-${CUSTOMN}: ${DRILL} questions in the custom quiz once ${CUSTOMN} genera are unlocked, then the Quiz` : ''})`,
+      'open: true whole-slate success (pOpen) over the slate; openMet, bar: pOpen and the bar shown (genScore) over the genera met; over: bar - pOpen,',
+      `over+: max(0, bar - pOpen), genera met; learned, precL: Learned genera and the share with pOpen >= ${LEARNER.PREC} (runs with one, n); openL: their pOpen;`,
+      'bar>=95, open@95: genera at the exam entry or above and their pOpen' + (CUSTOMN ? '; sel*: the custom selection; drill: at the end of the drill.' : '.')
+    ];
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name),
+      rowsAt = i => R.map(r => r.rows[i] && r.rows[i].f).filter(Boolean),
+      lines2 = CPS.map((q, i) => [String(q), rowsAt(i)]);
+    if (CUSTOMN) {
+      const D = R.map(r => r.custom && r.custom.row).filter(Boolean);
+      lines2.push([`drill@${D.length ? Math.round(D.reduce((a, d) => a + d.q, 0) / D.length) : '-'}`, D]);
+    }
+    lines.push(`\n${name}`);
+    const head = ['q', ...keys.map(k => k[1])],
+      body = lines2.map(([lab, F]) => [
+        lab,
+        ...keys.map(([k, , dg]) => {
+          const [m, sd, n] = ms(F.map(f => f[k]));
+          return m === '-' ? '-' : `${m.toFixed(dg)}±${sd.toFixed(dg)}` + (k === 'precL' ? ` (${n})` : '');
+        })
+      ]),
+      w = head.map((h, j) => Math.max(h.length, ...body.map(b => b[j].length)));
+    lines.push(head.map((h, j) => h.padStart(w[j])).join(' '));
+    body.forEach(b => lines.push(b.map((x, j) => x.padStart(w[j])).join(' ')));
+  }
+  return lines.join('\n');
 }
 
 const KEYS = [
@@ -1037,6 +1236,7 @@ function openTable(runs) {
       'hard reference question 90%; exam: genera entered in the mastery exam; ref@exam / ref@learn: their true reference success then (genera counted).'
   );
   console.log(table(S));
+  console.log(fieldTable(runs));
   // Millepora met / first asked and the bonus offer, per profile: median question over the runs where it happened.
   const med = A => {
     const v = A.filter(x => typeof x === 'number').sort((a, b) => a - b);
@@ -1142,6 +1342,9 @@ function openTable(runs) {
           checkpoints: CPS,
           profiles: Object.fromEntries(NAMES.map(n => [n, PROFILES[n]])),
           learner: LEARNER,
+          learnerKind: LEARN,
+          tau: LEARN === 'field' ? TAU : null,
+          custom: CUSTOMN ? {n: CUSTOMN, drill: DRILL} : null,
           stats: STATS || null,
           truth: TRUTH || null,
           seconds: secs,

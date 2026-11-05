@@ -285,6 +285,8 @@ if __name__ == '__main__':
     a = sys.argv[1:]
     BY = a[a.index('--by') + 1] if '--by' in a else 'claude'
     rest = [x for x in a if not x.startswith('--') and x != BY]
+    if rest[:1] in (['sheets'], ['detail']):
+        import slot; slot.guard('tools/judging_cand.py')  # one heavy run at a time on the machine (rule W24)
     if rest[:1] == ['sheets']: cmd_sheets(rest[1:] or [n for n in D['gen'] if cands(n)])
     elif rest[:1] == ['big']:
         p = next((p for L in (D.get('cand') or {}).values() for p in L if p['f'] == rest[1]), None)

@@ -11,14 +11,17 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
-test('statRows is every answer and photoStats the sheet ratings, whoever answered', () => {
+// The one exception (Pierre, 2026-11-05, Q86): the answers a deleted account left (sheet v55, anonymous flag 2) are no
+// player anywhere; they only rate the photos (photoStats, the sheet's).
+test('statRows is every answer and photoStats the sheet ratings, whoever answered (but a deleted account)', () => {
   const src = read('admin.js'),
     ctx = {
       ANS: {
         rows: [
           ['me', 1],
           ['ana', 2],
-          ['ana', 3]
+          ['ana', 3],
+          ['del', 4, '', '', 0, '', '', null, null, null, '', 2]
         ]
       },
       STATS: {p: [0, 1]},
@@ -28,6 +31,8 @@ test('statRows is every answer and photoStats the sheet ratings, whoever answere
     [
       block(src, 'const isMe = ', '\n', {file: 'admin.js', through: true}),
       block(src, 'const photoStats = ', '\n', {file: 'admin.js', through: true}),
+      block(src, 'const goneRow = ', '\n', {file: 'admin.js', through: true}),
+      block(src, 'const playerRows = ', '\n', {file: 'admin.js', through: true}),
       block(src, 'const statRows = ', '\n', {file: 'admin.js', through: true}),
       'this.r = [statRows().length, photoStats() === STATS, isMe("me"), isMe("ana")];'
     ].join('\n'),
@@ -58,4 +63,40 @@ test('no admin page filters answers or players by who they are (isMe is a mark o
       assert.ok(!/\.filter\([^)]*board\s*===?\s*-1/.test(l), `${f}:${i + 1} filters by the leaderboard flag: ${l.trim()}`);
     });
   }
+});
+
+// Codex review #600: the Inbox's Health line (healthLine0) reads the player rows, never the answers a deleted account
+// left (sheet v55 flag 2), as the Health page does.
+test('the Health line reads the player rows, not a deleted account', () => {
+  const src = read('admin.js'),
+    b = block(src, 'function healthLine0() {', '\n}', {file: 'admin.js', through: true});
+  assert.match(b, /playerRows\(\)/);
+  assert.doesNotMatch(b, /ANS\.rows/);
+});
+
+// Codex review #600: an answer log dropped while the Analyses pages read it (a delete or merge: sheetAgain) is read
+// again by the redraw that follows: the guard is cleared before the redraw, not after it.
+test('Analyses: an answer log dropped during its read is read again', async () => {
+  const src = read('admin-analyses.js'),
+    ctx = {TOKEN: 't', ANS: null, ANREP: {}, cur: '~an', calls: 0, Promise};
+  ctx.loadStats = () => {
+    ctx.calls++;
+    return Promise.resolve().then(() => {
+      // the first read lands, then a delete drops it again (sheetAgain('ans')) before the redraw
+      ctx.ANS = ctx.calls === 1 ? null : {rows: []};
+    });
+  };
+  ctx.render = () => ctx.anAnsLoad();
+  vm.runInNewContext(
+    [
+      block(src, 'let anAnsP = ', '\n', {file: 'admin-analyses.js', through: true}),
+      block(src, 'function anAnsLoad() {', '\n}', {file: 'admin-analyses.js', through: true}),
+      'this.anAnsLoad = anAnsLoad;'
+    ].join('\n'),
+    ctx
+  );
+  ctx.anAnsLoad();
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  assert.strictEqual(ctx.calls, 2, 'read again');
+  assert.ok(ctx.ANS && ctx.ANS.rows);
 });

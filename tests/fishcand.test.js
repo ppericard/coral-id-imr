@@ -37,7 +37,7 @@ const chkId = (() => {
 })();
 const ph = (f, o = f, x = {}) => ({f, o, t: 'X', ...x});
 
-test('fishQueue: the thinnest species first, its photos together; own first, then best, alt, not judged, dup, then the easiest', () => {
+test('fishQueue: the thinnest species first, its photos together; best, alt, not judged, dup, then the easiest, whoever took them', () => {
   const cands = {
       s1: [ph(ids[0]), ph(ids[1])],
       s2: [ph(ids[2]), ph(ids[3], ids[3], {own: true}), ph(ids[4]), ph(ids[5]), ph(ids[6])],
@@ -46,7 +46,8 @@ test('fishQueue: the thinnest species first, its photos together; own first, the
     species = {s1: {id: 's1'}, s2: {id: 's2'}, s3: {id: 's3', cs: 1}},
     sug = {
       [ids[2]]: {jt: 'p1g0sm1', e: 5, k: 'dup'},
-      [ids[4]]: {jt: 'p1g0sm1', e: 2, k: 'best'},
+      [ids[3]]: {jt: 'p1g0sm1', e: 2, k: 'best'},
+      [ids[4]]: {jt: 'p1g0sm1r', e: 2, k: 'best'},
       [ids[5]]: {jt: 'p1g0sm1', e: 4, k: 'best'},
       [ids[6]]: {jt: 'p1g0sm1', e: 5, k: 'alt'}
     },
@@ -56,9 +57,9 @@ test('fishQueue: the thinnest species first, its photos together; own first, the
   assert.deepStrictEqual(
     Q.map(x => [x.sid, x.p.f]),
     [
-      ['s2', ids[3]], // Pierre's own first
-      ['s2', ids[5]], // then the best photos, the easiest first
-      ['s2', ids[4]],
+      ['s2', ids[5]], // the best photos first, the easiest first
+      ['s2', ids[4]], // at equal ease, the reference photo
+      ['s2', ids[3]], // Pierre's own: no priority (Pierre, 2026-11-06)
       ['s2', ids[6]], // another angle
       ['s2', ids[2]], // a near-duplicate last (the pass is sure it goes: set aside)
       ['s3', ids[7]],

@@ -286,6 +286,9 @@ if __name__ == "__main__":
     BY = a[a.index("--by") + 1] if "--by" in a else "claude"
     rest = [x for x in a if not x.startswith("--") and x != BY]
     if rest[:1] == ["sheets"]:
+        import slot
+
+        slot.guard("tools/judging_fish.py")  # one heavy run at a time on the machine (rule W24)
         cmd_sheets(ids(rest[1:]))
     elif rest[:1] == ["big"]:
         p = next((p for L in CAND.values() for p in L if p["f"] == rest[1]), None)

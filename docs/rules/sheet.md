@@ -25,8 +25,13 @@ tell Pierre at once: which rows, and how to remove them.
 there), always name players by their real names. Everything public or committed (code, comments, docs, tests, commits,
 PR texts, GitHub comments, published pages) uses anonymous labels (P1, P2…) or made-up names, never a real player's or
 staff member's name.
-*Why:* he knows the players, and real names help him understand and find problems. *Source:* Pierre, standing rule,
-restated 2026-11-04.
+Names are never a reason to keep something off GitHub: a note, a study, a status or a ledger that belongs in the repo
+goes there with each real name replaced by a stable pseudonym. The pseudonym is the player's anonymous id as the
+admin's Players page shows it beside the name, so Pierre and the integrator can always map it back from the admin;
+when that id is not at hand, use P1, P2… and keep the mapping outside the repo (STATUS records where), never in a
+committed file. Raw data holding names (sheet exports) stays out of the repo and is deleted when no longer needed.
+*Why:* he knows the players, and real names help him understand and find problems; work kept only on one machine is
+lost when the container goes. *Source:* Pierre, standing rule, restated 2026-11-04; pseudonyms 2026-11-05.
 
 ### D3
 
@@ -94,3 +99,14 @@ exception so far: the photo memory recalculation of 2026-11-03 is silent (the ba
   (sign-in nudge, one-tap question, open-all and bonus genera offers) keep `promptOk`.
 
 *Source:* Pierre, 2026-11-02; learned marks and cards never held, 2026-11-03.
+
+### D7
+
+**A deleted account leaves nothing in normal operation.** Deleting, merging or archiving an account cleans up every
+trace tied to it (sheet tabs, reports, page summaries, log mentions, caches, analyses, the device's queues); what is kept
+is either the Removed tombstone (so its devices get 'gone') or an archive that no normal feature, view or count reads,
+except anonymised answers in the pooled photo statistics. A new store of player data names its delete, merge and archive
+behaviour in the same PR (`Code.gs` `deleteAccount_`; ARCHITECTURE.md "Progress sync", SECURITY.md "Removed accounts").
+*Why:* keeping data as an archive is fine, but archived means not used in normal operation; a test account's report,
+kept after its delete, was shown in the Inbox as a live player's. *Source:* Pierre, 2026-11-05 (the deleted-accounts
+audit, Q84-Q91).

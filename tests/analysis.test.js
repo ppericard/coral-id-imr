@@ -222,7 +222,8 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
     days: 300,
     players: A.DEMO_PLAYERS.slice(0, 3).map(p => [p[0], p[1], 450, p[3]])
   }).map(r => ['id' + r[0].length, ...r.slice(1)]);
-  let stored = null;
+  let stored = null,
+    stale = false;
   const logs = [],
     calls = [];
   const io = {
@@ -231,7 +232,9 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
       if (b.token !== 'tok') return {ok: false, error: 'token'};
       if (b.analysesGet) {
         const meta = stored && {answers: JSON.parse(stored).answers, av: JSON.parse(stored).AV};
-        return b.head ? {ok: true, answers: rows.length, stored: meta} : {ok: true, answers: rows.length, stored: meta, report: stored};
+        return b.head
+          ? {ok: true, answers: rows.length, stored: meta, stale}
+          : {ok: true, answers: rows.length, stored: meta, report: stored};
       }
       if (b.readAnswers) return {ok: true, rows};
       if (b.analysesPut) return ((stored = b.report), {ok: true, stored: {}});
@@ -249,6 +252,11 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0, force: true}), 'stored');
   assert.ok(/1 reused|2 reused/.test(logs[logs.length - 1]), logs[logs.length - 1]);
+  // sheet v55: an account removed since the stored report (head stale): refitted at once, nothing reused.
+  stale = true;
+  assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'stored');
+  assert.ok(/\(0 reused\)/.test(logs[logs.length - 1]), logs[logs.length - 1]);
+  stale = false;
   assert.ok(!logs.join(' ').match(/id\d|Demo/), 'the log has counts only');
   // an older sync script answers 'input': nothing done, no error
   const old = {post: async () => ({ok: false, error: 'input', v: 29}), log: t => logs.push(t)};
@@ -281,6 +289,9 @@ test('tools/analyses.js plan: compute when the log reaches a round thousand the 
   assert.strictEqual(plan(5200, st(3000)).why, 'new', 'several thousands at once');
   assert.strictEqual(plan(1933, {answers: 1933, av: A.AV - 1}).why, 'code', 'the analysis code changed');
   assert.strictEqual(plan(1933, st(1933), true).why, 'force');
+  assert.strictEqual(plan(1933, st(1933), false, true).why, 'removed', 'an account removed since (sheet v55 stale)');
+  assert.strictEqual(plan(900, st(1100), false, true).why, 'removed', 'removed below the first milestone: the old report is replaced');
+  assert.strictEqual(plan(900, null, false, true).why, 'none');
   assert.strictEqual(plan(1933, null).why, 'first');
   assert.strictEqual(plan(999, null).why, 'none', 'no milestone before 1000');
   assert.strictEqual(go(999, null, true), false, 'not even forced');
@@ -1187,4 +1198,553 @@ test('admin: a report without any point counts as no report', () => {
   const one = {M: [1000], R: {1000: {A: {}}}, answers: 1200};
   ctx.ONE = one;
   assert.strictEqual(vm.runInContext('ANLOC = {rep: ONE}; anRep()', ctx), one);
+});
+
+/* ---------- Structure views (the multifactor visualisation study of 2026-11-05; Pierre's Q70-Q77) ---------- */
+test('entOf: two entangled conditions read as hard to tell apart, an independent one does not', () => {
+  const R = A.rng(5),
+    nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
+    y = [],
+    X = [],
+    kp = [];
+  for (let i = 0; i < 4000; i++) {
+    const a = nrm(),
+      b = a + 0.25 * nrm(), // planted: b follows a closely
+      c = nrm(); // independent
+    X.push([1, a, b, c]);
+    kp.push('p' + (i % 20));
+    y.push(0.5 * a + 0.5 * b + 0.3 * c + nrm());
+  }
+  const M = A.lmm(y, X, [A.factor('player', kp)]),
+    E = A.entOf(M.V, X, [null, 'a', 'b', 'c']);
+  assert.deepStrictEqual(E.k, ['a', 'b', 'c']);
+  assert.ok(E.r[1][0] < -0.9, `estimates of a and b: r = ${E.r[1][0]}`);
+  assert.ok(E.x[1][0] > 0.9, `conditions a and b: r = ${E.x[1][0]}`);
+  assert.ok(E.vif[0] > 5 && E.vif[1] > 5, `VIF of a and b: ${E.vif}`);
+  assert.ok(E.vif[2] < 1.2 && Math.abs(E.r[2][0]) < 0.15 && Math.abs(E.x[2][1]) < 0.15, `c stays apart: ${JSON.stringify(E)}`);
+  // an effect reported with the opposite sign (a difficulty) flips its correlations with the others, not its VIF
+  const F = A.entOf(M.V, X, [null, 'a', 'b', 'c'], [1, -1, 1, 1]);
+  assert.strictEqual(F.r[1][0], -E.r[1][0]);
+  assert.strictEqual(F.x[1][0], E.x[1][0]);
+  assert.deepStrictEqual(F.vif, E.vif);
+  // a condition that never varies is left out; fewer than two effects: nothing to compare
+  assert.deepStrictEqual(
+    A.entOf(
+      M.V,
+      X.map(x => [x[0], x[1], 0, x[3]]),
+      [null, 'a', 'b', 'c']
+    ).k,
+    ['a', 'c']
+  );
+  assert.strictEqual(A.entOf(M.V, X, [null, 'a', null, null]), null);
+});
+
+test('hclust: planted groups come back, each a block in the leaf order; cutTree splits them', () => {
+  // three groups of points on a line, far apart: average linkage and Ward find them
+  const pts = [0, 0.1, 0.25, 5, 5.2, 5.1, 10, 10.3, 9.9, 10.1],
+    D = pts.map(a => pts.map(b => Math.abs(a - b))),
+    D2 = D.map(r => r.map(v => v * v));
+  for (const [T, h] of [
+    [A.hclust(D), 2],
+    [A.hclust(D2, 'ward'), 3]
+  ]) {
+    assert.strictEqual(T.m.length, pts.length - 1);
+    assert.deepStrictEqual(
+      [...T.order].sort((a, b) => a - b),
+      pts.map((_, i) => i)
+    );
+    assert.ok(
+      T.m.every((x, k) => !k || x[2] >= T.m[k - 1][2] - 1e-9),
+      'heights never fall (monotone linkage)'
+    );
+    const G = A.cutTree(T, pts.length, h).map(L => L.slice().sort((a, b) => a - b));
+    assert.deepStrictEqual(
+      G.slice().sort((a, b) => a[0] - b[0]),
+      [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8, 9]
+      ]
+    );
+    // each group sits together in the leaf order
+    G.forEach(L => {
+      const at = L.map(i => T.order.indexOf(i)).sort((a, b) => a - b);
+      assert.strictEqual(at[at.length - 1] - at[0], L.length - 1, 'contiguous: ' + L);
+    });
+  }
+  assert.deepStrictEqual(A.hclust([[0]]), {m: [], order: [0]});
+});
+
+// A made-up log of 4-choice questions on 12 genera in 3 planted families: a wrong answer goes to a genus of the same family
+// `w` times as often as to another genus offered (w = 1: no structure).
+const mixLog = (w, seed) => {
+  const R = A.rng(seed),
+    G = ['A', 'B', 'C'].flatMap(f => [0, 1, 2, 3].map(i => f + i)),
+    fam = g => g[0],
+    rows = [];
+  let t = 0;
+  for (let p = 0; p < 8; p++)
+    for (let i = 0; i < 700; i++) {
+      const g = G[Math.floor(R() * G.length)],
+        ch = [g];
+      // two choices from its family when there are, one from elsewhere
+      while (ch.length < 4) {
+        const same = R() < 0.5,
+          L = G.filter(x => !ch.includes(x) && (fam(x) === fam(g)) === same);
+        ch.push(L[Math.floor(R() * L.length)]);
+      }
+      const right = R() < 0.7,
+        wr = ch.slice(1).map(x => (fam(x) === fam(g) ? w : 1));
+      let r = R() * wr.reduce((s, x) => s + x, 0);
+      const ans = right ? g : ch.slice(1).find((x, k) => (r -= wr[k]) < 0) || ch[3];
+      rows.push(['p' + p, (t += 60e3), g, ans, right ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, ch.sort(() => R() - 0.5).join(' '), 0, 5, 0]);
+    }
+  return rows;
+};
+
+test('mix-up map: planted families of mix-ups come back as blocks; no family from noise', () => {
+  const r = A.confusions(A.prep(mixLog(6, 3)), 0, 1),
+    m = r.map;
+  assert.ok(m && m.g.length === 12, JSON.stringify(m && m.g));
+  const F = m.fam.map(L => L.map(i => m.g[i]).sort());
+  assert.deepStrictEqual(
+    F.slice().sort((a, b) => a[0].localeCompare(b[0])),
+    [
+      ['A0', 'A1', 'A2', 'A3'],
+      ['B0', 'B1', 'B2', 'B3'],
+      ['C0', 'C1', 'C2', 'C3']
+    ]
+  );
+  m.fam.forEach(L => assert.strictEqual(Math.max(...L) - Math.min(...L), L.length - 1, 'a family is a block on the diagonal'));
+  // every merge points at leaves in display order or earlier merges; the cells are in display order and their rates shrunk
+  m.m.forEach(([a, b], k) => [a, b].forEach(x => assert.ok(x < 12 + k, 'merge ' + k)));
+  assert.ok(
+    m.cells.every(([i, j, off, mix, sr]) => i !== j && off >= mix && sr > 0 && sr < 1),
+    'cells: shown, answered, offers, mix-ups, rate'
+  );
+  const inFam = m.cells.filter(c => m.g[c[0]][0] === m.g[c[1]][0]),
+    outFam = m.cells.filter(c => m.g[c[0]][0] !== m.g[c[1]][0]),
+    avg = L => L.reduce((s, c) => s + c[4], 0) / L.length;
+  assert.ok(avg(inFam) > 2 * avg(outFam), `rates within families ${avg(inFam)} against across ${avg(outFam)}`);
+  m.across.forEach(([i, j]) => assert.notStrictEqual(m.g[i][0], m.g[j][0], 'across = between two families'));
+  // the same log with wrong answers spread evenly: no pair clearly above a typical one, so no family
+  const flat = A.confusions(A.prep(mixLog(1, 3)), 0, 1).map;
+  assert.ok(flat && flat.fam.length === 0, JSON.stringify(flat && flat.fam));
+});
+
+test('synthetic log: each analysis reports its entangled effects on its own keys; the report carries them', () => {
+  const fs = require('fs'),
+    data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json'))),
+    rows = A.demoLog(data, Date.UTC(2026, 10, 1)),
+    r = A.runAll(rows, {ph: A.photoMeta(data)}, {B: 0});
+  for (const k of ['rt', 'zoom', 'photo', 'fmt', 'conf', 'learn', 'sess']) {
+    const a = r.A[k],
+      E = a.ent;
+    assert.ok(E && E.k.length >= 2, k);
+    const keys = new Set(a.effects.map(e => e.k));
+    E.k.forEach(x => assert.ok(keys.has(x), `${k}: ${x} is one of its effects`));
+    assert.strictEqual(E.r.length, E.k.length);
+    E.r.forEach((row, i) => (assert.strictEqual(row.length, i), row.forEach(v => assert.ok(v == null || Math.abs(v) <= 1.0001, k))));
+  }
+  // Formats: a guess rate and its difficulty are estimated together (known to trade off); two formats are independent
+  const f = r.A.fmt.ent;
+  assert.ok(f.r[1][0] != null && f.r[2][0] === null && !f.x, JSON.stringify(f));
+  // the demo plays look-alikes as mix-ups (synth TRUTH.mix): the map finds families, each pair of genera of a family
+  // linked through the genus sheets' look-alikes
+  const m = r.A.conf.map,
+    look = g => (data.gen[g] && data.gen[g].look) || [];
+  assert.ok(m.fam.length >= 3, JSON.stringify(m.fam));
+  m.fam.forEach(L => {
+    const N = L.map(i => m.g[i]);
+    assert.ok(
+      N.every(a => N.some(b => b !== a && (look(a).includes(b) || look(b).includes(a)))),
+      'each genus of a family has a look-alike in it: ' + N
+    );
+  });
+});
+
+test('Recompute here: the Web Worker computes the new views, and a stored report of an older AV is not reused', () => {
+  // analysis.js run as the admin's Worker (new Worker('analysis.js?v=N')): a global scope with postMessage, no window,
+  // no module; the message handler computes a whole report
+  const vm = require('vm'),
+    fs = require('fs'),
+    path = require('path'),
+    msgs = [],
+    ctx = {postMessage: m => msgs.push(m), Date, Math, JSON, Map, Set, Float64Array, Int32Array, Number, String, Object, Array};
+  ctx.self = ctx;
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'analysis.js'), 'utf8'), ctx);
+  const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data.json'))),
+    rows = A.demoLog(data, Date.UTC(2026, 10, 1), {players: A.DEMO_PLAYERS.slice(0, 5)}),
+    meta = {ph: A.photoMeta(data)},
+    old = A.report(rows, meta, null, {B: 0});
+  // a report stored by the previous code: the same answers, without the new views
+  old.AV = A.AV - 1;
+  Object.values(old.R).forEach(r => Object.values(r.A).forEach(a => (delete a.ent, delete a.map)));
+  ctx.onmessage({data: {id: 1, rows, meta, B: 0, seed: 1, prev: JSON.parse(JSON.stringify(old))}});
+  const res = msgs.find(m => m.res);
+  assert.ok(res, JSON.stringify(msgs.find(m => m.err)));
+  const last = res.res.R[res.res.M[res.res.M.length - 1]];
+  assert.ok(last.A.conf.map && last.A.conf.map.g.length >= 3, 'the mix-up map');
+  assert.ok(last.A.rt.ent && last.A.photo.ent, 'effects hard to tell apart');
+});
+
+// Sheet v55 (Pierre, 2026-11-05, Q86): the answers a deleted account left (anonymous flag 2) stay in the pooled fits but
+// are in no per-player result and no count of players (Codex review #600: the Sessions model rows kept the marker too).
+test('a deleted account (flag 2) is in no per-player list and no count of players', () => {
+  const R = A.rng(7),
+    G = ['A', 'B', 'C', 'D'],
+    rows = [];
+  for (let i = 0; i < 4000; i++) {
+    const p = i % 5 === 4 ? 'gone' : 'p' + (i % 5),
+      k = Math.floor(R() * 4),
+      g = G[k],
+      o = G[(k + 1) % 4],
+      ok = R() < 0.7;
+    // sessions: a new one every 40 answers per player (30 minutes apart)
+    rows.push([
+      p,
+      Math.floor(i / 5) * 20e3 + Math.floor(i / 200) * 40 * 60e3,
+      g,
+      ok ? g : o,
+      ok ? 1 : 0,
+      'quiz|d|k2',
+      'f' + (i % 50),
+      0.7,
+      0,
+      0,
+      `${g} ${o}`,
+      p === 'gone' ? 2 : 0,
+      5 + R() * 5,
+      0
+    ]);
+  }
+  const L = A.prep(rows),
+    c = A.confusions(L, 0, 1),
+    s = A.sessions(L, 0, 1);
+  assert.ok(!c.player.some(x => x.k === 'gone'), 'not in the mix-ups per player');
+  assert.strictEqual(c.players, 4);
+  assert.strictEqual(s.players, 4, 'not counted in the Sessions model');
+  // the pooled models still fit with two clusters when one of them is a deleted account (Codex review #600)
+  const two = A.prep(rows.filter(r => r[0] === 'p0' || r[0] === 'gone'));
+  assert.ok(!A.rt(two, 0, 1).thin, 'answer time fitted');
+  assert.strictEqual(A.rt(two, 0, 1).players, 1);
+  assert.ok(!(s.desc && s.desc.table.some(x => x.p === 'gone')), 'not in the sessions table');
+  assert.ok(
+    s.desc.returns.every(r => r.at <= 4),
+    'not in the players coming back: ' + JSON.stringify(s.desc.returns)
+  );
+  const l = A.learning(L, 0, 1);
+  assert.ok(!l.genus || l.genus.every(g => g.players <= 4), 'not in the players per genus');
+});
+
+/* ---------- Player profiles (Pierre, 2026-11-05: Q70-Q73) ---------- */
+test('eigSym: eigenvalues in decreasing order, orthonormal vectors, S v = λ v', () => {
+  const R = A.rng(9),
+    n = 6,
+    M = Array.from({length: n}, () => Array.from({length: n}, () => R() - 0.5)),
+    S = M.map((r, i) => r.map((_, j) => M[i].reduce((s, x, k) => s + x * M[j][k], 0)));
+  const E = A.eigSym(S);
+  E.val.forEach((v, k) => !k || assert.ok(v <= E.val[k - 1] + 1e-12, 'decreasing'));
+  for (let k = 0; k < n; k++) {
+    const v = E.vec.map(r => r[k]);
+    S.forEach((r, i) =>
+      near(
+        r.reduce((s, x, j) => s + x * v[j], 0),
+        E.val[k] * v[i],
+        1e-9,
+        `S v = λ v (${k}, ${i})`
+      )
+    );
+    for (let l = 0; l < n; l++)
+      near(
+        v.reduce((s, x, i) => s + x * E.vec[i][l], 0),
+        k === l ? 1 : 0,
+        1e-9,
+        'orthonormal'
+      );
+  }
+});
+
+// Made-up players of two planted styles: evening players with long sessions who enlarge often and answer slowly, and
+// morning players with short sessions who never enlarge and answer fast; the same success. One more player with too few
+// answers for a profile of their own.
+const styleLog = () => {
+  const R = A.rng(4),
+    G = ['A', 'B', 'C', 'D', 'E', 'F'],
+    rows = [],
+    DAY = 864e5;
+  const play = (id, eve, nAns) => {
+    let t = Date.UTC(2026, 9, 1, eve ? 12 : 1) + Math.floor(R() * 4) * 6e4,
+      day = 0,
+      inSess = 0;
+    for (let i = 0; i < nAns; i++) {
+      const g = G[Math.floor(R() * G.length)],
+        ok = R() < 0.75,
+        others = G.filter(x => x !== g).slice(0, 3);
+      rows.push([
+        id,
+        t,
+        g,
+        ok ? g : others[0],
+        ok ? 1 : 0,
+        'quiz',
+        'f' + g,
+        0.75,
+        0,
+        0,
+        [g, ...others].join(' '),
+        0,
+        (eve ? 9 : 4) * (0.8 + 0.4 * R()),
+        eve ? (R() < 0.6 ? 1 : 0) : 0
+      ]);
+      inSess++;
+      if (inSess >= (eve ? 40 : 8)) {
+        inSess = 0;
+        // evening players: one session a day; morning players: two, two hours apart
+        if (eve || i % 16 === 15) (day++, (t = Date.UTC(2026, 9, 1 + day, eve ? 12 : 1)));
+        else t += 2 * 36e5;
+      } else t += 30e3;
+    }
+    void DAY;
+  };
+  for (let k = 0; k < 5; k++) play('eve' + k, true, 240);
+  for (let k = 0; k < 5; k++) play('morn' + k, false, 240);
+  play('new1', true, 50);
+  return rows;
+};
+
+test('profiles: two planted styles come back as the two groups, stable when a player is left out; a short history greyed', () => {
+  const D = A.prep(styleLog()),
+    r = A.profiles(D, 0, 1),
+    id = i => r.who[i].k;
+  assert.ok(!r.thin, JSON.stringify(r).slice(0, 200));
+  assert.strictEqual(r.players, 10);
+  assert.deepStrictEqual(
+    r.feats.map(f => f.k),
+    A.PROF_F.map(f => f[0])
+  );
+  // the greyed player: last in the list, outside the tree, the map and the groups
+  const last = r.who[r.who.length - 1];
+  assert.ok(last.k === 'new1' && last.low === 1 && last.n === 50, JSON.stringify(last));
+  assert.strictEqual(r.pca.pts.length, 10);
+  // the behaviours as planted: evening share, enlarging, session length, pace
+  const f = k => A.PROF_F.findIndex(x => x[0] === k),
+    rowOf = name => r.who.find(w => w.k === name);
+  near(rowOf('eve0').v[f('eve')], 1, 1e-9, 'evening share');
+  near(rowOf('morn0').v[f('eve')], 0, 1e-9, 'morning player');
+  assert.strictEqual(rowOf('eve0').v[f('len')], 40);
+  assert.strictEqual(rowOf('morn0').v[f('len')], 8);
+  assert.ok(rowOf('eve0').v[f('zoom')] > 0.2 && rowOf('morn0').v[f('zoom')] < -0.2, 'enlarging, net of the views');
+  assert.ok(rowOf('eve0').v[f('pace')] > 0.3 && rowOf('morn0').v[f('pace')] < -0.3, 'pace');
+  near(rowOf('morn0').v[f('wk')], 14, 1.5, 'two sessions a day');
+  // two groups, each one style, each a block of the tree's order; stable in every run
+  assert.strictEqual(r.k, 2);
+  const G = r.groups.map(L => L.map(id).map(s => s.replace(/\d+$/, '')));
+  G.forEach(L => assert.strictEqual(new Set(L).size, 1, 'one style per group: ' + L));
+  r.groups.forEach(L => assert.strictEqual(L[L.length - 1] - L[0], L.length - 1, 'a block'));
+  assert.ok(r.stab.loo.every(j => j === 1) && r.stab.kept === 10, JSON.stringify(r.stab));
+  assert.ok(
+    r.stab.boot.every(j => j > 0.9),
+    JSON.stringify(r.stab)
+  );
+  // the map's first axis separates the styles; it explains most of the spread
+  const x = r.pca.pts.map(p => p[0]),
+    side = r.who.slice(0, 10).map((w, i) => [w.k.replace(/\d+$/, ''), Math.sign(x[i])]);
+  assert.ok(new Set(side.filter(s => s[0] === 'eve').map(s => s[1])).size === 1, JSON.stringify(side));
+  assert.ok(side.find(s => s[0] === 'eve')[1] !== side.find(s => s[0] === 'morn')[1], 'opposite sides');
+  assert.ok(r.pca.var[0] > 0.5, String(r.pca.var));
+  // in words: the closest pair is two players of one style
+  const [i, j] = r.close[0];
+  assert.strictEqual(id(i).replace(/\d+$/, ''), id(j).replace(/\d+$/, ''));
+});
+
+test('profiles: fewer than 3 players with 100 answers is not enough; each player’s window is their last 300 answers', () => {
+  const rows = styleLog(),
+    two = A.profiles(A.prep(rows.filter(r => /^(eve0|eve1|new1)$/.test(r[0]))), 0, 1);
+  assert.ok(two.thin && two.n === 2 && two.min === 3 && two.who.length === 3, JSON.stringify(two).slice(0, 300));
+  // a player with 500 answers: only the last 300 count
+  const extra = [];
+  for (let i = 0; i < 260; i++)
+    extra.push(['eve0', Date.UTC(2026, 8, 1) + i * 30e3, 'A', 'A', 1, 'quiz', 'fA', 0.75, 0, 0, 'A B C D', 0, 30, 1]);
+  const r = A.profiles(A.prep(rows.concat(extra)), 0, 1);
+  assert.strictEqual(r.who.find(w => w.k === 'eve0').n, 300);
+  // the whole report carries the profiles, keyed by the anonymous ids only
+  const rep = A.runAll(rows, {}, {B: 0});
+  assert.ok(rep.A.who && rep.A.who.who.length === 11 && rep.A.who.effects.length === 0);
+});
+
+// Codex review #604: three fixes in the profiles, each with a test that failed before it.
+test('profiles: misses in a row are counted within a session, not across the break', () => {
+  // two-answer sessions, both answers wrong: within a session the second miss is the one that ends it
+  const rows = [];
+  for (let p = 0; p < 4; p++)
+    for (let s = 0; s < 40; s++)
+      for (let k = 0; k < 2; k++)
+        rows.push(['p' + p, Date.UTC(2026, 9, 1) + s * 864e5 + k * 30e3, 'A', 'B', 0, 'quiz', 'fA', 0.7, 0, 0, 'A B C D', 0, 5, 0]);
+  const V = A.profFeat(A.prep(rows)),
+    f = A.PROF_F.findIndex(x => x[0] === 'stop');
+  Object.values(V).forEach(v => assert.ok(v[f] > 0.9, `stopping after 2+ misses: ${v[f]}`));
+});
+
+test('profiles: stable only when every leave-one-out run keeps every group; the map projects what the PCA diagonalised', () => {
+  // the planted styles: stable; then the same players with enlarging logged for two of them only (the rest missing)
+  const ok = A.profiles(A.prep(styleLog()), 0, 1);
+  assert.strictEqual(ok.stab.stable, 1);
+  const rows = styleLog().map(r => (/^(eve0|morn0)$/.test(r[0]) ? r : [...r.slice(0, 13), null])),
+    r = A.profiles(A.prep(rows), 0, 1);
+  assert.strictEqual(r.stab.stable, r.stab.kept === r.stab.runs && r.stab.boot.every(j => j >= r.stab.at) ? 1 : 0);
+  // each axis's spread over the players equals its eigenvalue (the sum of its squared loadings)
+  [0, 1].forEach(k => {
+    const spread = r.pca.pts.reduce((s, p) => s + p[k] ** 2, 0) / r.pca.pts.length,
+      lam = r.pca.load.reduce((s, l) => s + l[k] ** 2, 0);
+    near(spread, lam, 0.03, `axis ${k + 1}: the points' spread against its eigenvalue`);
+  });
+});
+
+// Codex review #604, second pass: the window's cut session and the bootstrap's multiplicities.
+test('profiles: a session cut by the 300-answer window is not a session length; a bootstrap draw keeps its multiplicities', () => {
+  // two complete sessions of 200 answers: the window holds the last 100 of the first and the whole second
+  const rows = [];
+  for (let s = 0; s < 2; s++)
+    for (let i = 0; i < 200; i++)
+      rows.push(['p1', Date.UTC(2026, 9, 1 + s) + i * 30e3, 'A', 'A', 1, 'quiz', 'fA', 0.7, 0, 0, 'A B C D', 0, 5, 0]);
+  const D = A.prep(rows).slice(-300),
+    f = A.PROF_F.findIndex(x => x[0] === 'len');
+  assert.strictEqual(A.profFeat(D).p1[f], 200);
+  // a player drawn three times weighs three times in the z-scores (and in the tree); the groups list distinct players
+  const V = {a: [0, 0, 0, 0, 0, 0, 0], b: [1, 1, 1, 1, 1, 1, 1], c: [4, 4, 4, 4, 4, 4, 4], d: [5, 5, 5, 5, 5, 5, 5]};
+  assert.notStrictEqual(A.zOf(V, ['a', 'a', 'a', 'b', 'c', 'd'])('d')[0], A.zOf(V, ['a', 'b', 'c', 'd'])('d')[0]);
+  const G = A.profRun(V, ['a', 'a', 'a', 'b', 'c', 'd'], 2);
+  assert.deepStrictEqual(G.map(L => L.slice().sort()).sort(), [
+    ['a', 'b'],
+    ['c', 'd']
+  ]);
+});
+
+// Codex review #604, third pass: with 3 profiled players no leave-one-out run can be grouped; that is no evidence, not
+// instability.
+test('profiles: with 3 players the stability is unknown, never "not stable"', () => {
+  const rows = styleLog().filter(r => /^(eve0|eve1|morn0)$/.test(r[0])),
+    r = A.profiles(A.prep(rows), 0, 1);
+  assert.ok(!r.thin && r.players === 3, JSON.stringify(r).slice(0, 200));
+  assert.strictEqual(r.stab.runs, 0);
+  assert.strictEqual(r.stab.of, 3);
+  assert.strictEqual(r.stab.stable, null);
+  // with 10 players every run is compared
+  const ten = A.profiles(A.prep(styleLog()), 0, 1);
+  assert.strictEqual(ten.stab.runs, 10);
+});
+
+// Codex review #604, fourth pass: the page names the check that failed (left out one player, or drawn again).
+test('admin: why groups are not stable names each failing check apart', () => {
+  const vm = require('vm'),
+    src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
+    ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(src.match(/const anWhy = st => \{[\s\S]*?\n\};/)[0] + ';this.anWhy = anWhy;', ctx);
+  assert.strictEqual(ctx.anWhy({kept: 8, runs: 8, boot: [0.9, 0.706], at: 0.75}), ' Some groups change when the players are drawn again.');
+  assert.strictEqual(ctx.anWhy({kept: 5, runs: 8, boot: [0.9, 0.9], at: 0.75}), ' These groups change when one player is left out.');
+  assert.strictEqual(ctx.anWhy({kept: 8, runs: 8, boot: [0.9, null], at: 0.75}), '');
+});
+
+// Sheet v55 (Q86): a deleted account's answers (anonymous flag 2) make no profile.
+test('profiles: a deleted account has no row', () => {
+  const rows = styleLog().map(r => (r[0] === 'eve0' ? [...r.slice(0, 11), 2, ...r.slice(12)] : r)),
+    r = A.profiles(A.prep(rows), 0, 1);
+  assert.ok(!r.who.some(w => w.k === 'eve0') && r.players === 9, JSON.stringify(r.who.map(w => w.k)));
+});
+
+/* ---------- The Wright map and the genus × player residuals (structure views 3) ---------- */
+// Made-up players and genera with known abilities and difficulties; w: a planted second skill (odd-numbered players do
+// better on odd-numbered genera and worse on even ones, by w on the log-odds), 0 for one skill only.
+const skillLog = (w, seed) => {
+  const R = A.rng(seed),
+    nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
+    G = Array.from({length: 20}, (_, i) => 'G' + i),
+    del = G.map(() => nrm() * 0.8),
+    th = Array.from({length: 10}, () => nrm() * 0.6 + 0.8),
+    rows = [];
+  let t = 0;
+  for (let p = 0; p < 10; p++)
+    for (let i = 0; i < 600; i++) {
+      const gi = Math.floor(R() * 20),
+        g = G[gi],
+        eta = th[p] - del[gi] + w * (p % 2 ? 1 : -1) * (gi % 2 ? 1 : -1),
+        ok = R() < 0.25 + 0.75 / (1 + Math.exp(-eta)),
+        others = G.filter(x => x !== g).slice(0, 3);
+      rows.push(['p' + p, (t += 60e3), g, ok ? g : others[0], ok ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, [g, ...others].join(' '), 0, 5, 0]);
+    }
+  return {rows, del, th};
+};
+const rankCorr = (a, b) => {
+  const rk = L => {
+    const I = L.map((_, i) => i).sort((i, j) => L[i] - L[j]),
+      r = [];
+    I.forEach((i, k) => (r[i] = k));
+    return r;
+  };
+  const x = rk(a),
+    y = rk(b),
+    n = a.length,
+    m = (n - 1) / 2;
+  return x.reduce((s, v, i) => s + (v - m) * (y[i] - m), 0) / x.reduce((s, v) => s + (v - m) ** 2, 0);
+};
+
+test('Wright map: players and genera come back in the order of their planted ability and difficulty', () => {
+  const {rows, del, th} = skillLog(0, 2),
+    W = A.learning(A.prep(rows), 0, 1).wright;
+  const g = W.g.map(([k, d]) => [del[Number(k.slice(1))], d]),
+    p = W.th.map(([k, v]) => [th[Number(k.slice(1))], v]);
+  assert.ok(rankCorr(...[g.map(x => x[0]), g.map(x => x[1])]) > 0.9, 'genera');
+  assert.ok(rankCorr(...[p.map(x => x[0]), p.map(x => x[1])]) > 0.85, 'players');
+  near(W.m, Math.log(4), 1e-3, 'the 80% line, logit(0.8)');
+  W.th.forEach(x => assert.strictEqual(x[2], 600, 'answers per player'));
+});
+
+test('a second skill? planted: the first residual axis stands out and splits the genera; one skill: it does not', () => {
+  for (const seed of [1, 2, 3]) {
+    const one = A.learning(A.prep(skillLog(0, seed).rows), 0, 1).res;
+    assert.ok(one.var[0] <= one.null[1], `one skill (seed ${seed}): ${JSON.stringify(one.var)} against ${JSON.stringify(one.null)}`);
+    const two = A.learning(A.prep(skillLog(0.8, seed).rows), 0, 1).res;
+    assert.ok(two.var[0] > 2 * two.null[1], `two skills (seed ${seed}): ${JSON.stringify(two.var)} against ${JSON.stringify(two.null)}`);
+    const side = L => new Set(L.map(([k, x]) => (Number(k.slice(1)) % 2) + ':' + Math.sign(x))).size;
+    assert.strictEqual(side(two.g), 2, 'odd and even genera on opposite sides of the first axis');
+    assert.strictEqual(side(two.p), 2, 'odd and even players on opposite sides');
+    assert.strictEqual(two.g.length, 20);
+    assert.strictEqual(two.p.length, 10);
+  }
+});
+
+// Sheet v55 (Q86): a deleted account is never a player on the Wright map or an arrow of the residual map.
+test('Wright map and residuals: a deleted account is no player', () => {
+  const {rows} = skillLog(0, 2),
+    R2 = rows.map(r => (r[0] === 'p3' ? [...r.slice(0, 11), 2, ...r.slice(12)] : r)),
+    L = A.learning(A.prep(R2), 0, 1);
+  assert.ok(!L.wright.th.some(x => x[0] === 'p3') && L.wright.th.length === 9);
+  assert.ok(!L.res.p.some(x => x[0] === 'p3') && L.res.p.length === 9);
+});
+
+// Codex review #620: a place's likely range carries the intercept's and the slope's uncertainty, not the random effect's
+// alone.
+test('Wright map: each place’s uncertainty includes the fixed effects (intercept, slope, covariance)', () => {
+  const D = [0, 1, 2, 3].map(n => ({p: 'p', g: 'g', n, gone: 0})),
+    F = [
+      {L: ['p'], u: [0.2], cv: [0.01]},
+      {L: ['g'], u: [-0.3], cv: [0.04]}
+    ],
+    M = {
+      b: [0.5, 0.4],
+      V: [
+        [0.09, -0.01],
+        [-0.01, 0.0225]
+      ]
+    },
+    W = A.wrightOf(D, M, F),
+    l = Math.log(1 + 1.5), // the median practice of 0..3
+    fv = 0.09 + l * l * 0.0225 + 2 * l * -0.01;
+  near(W.th[0][3], Math.sqrt(fv + 0.01), 1e-3, 'player SE');
+  near(W.g[0][3], Math.sqrt(fv + 0.04), 1e-3, 'genus SE (the typical player is this one)');
+  near(W.mid, 0.5 + 0.4 * l, 1e-3, 'the typical player');
+  near(W.th[0][1], 0.5 + 0.4 * l + 0.2, 1e-3, 'player place');
 });

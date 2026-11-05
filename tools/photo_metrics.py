@@ -97,6 +97,7 @@ def calib():
 
 if __name__ == '__main__':
     a = sys.argv[1:]
+    import slot; slot.guard('tools/photo_metrics.py')  # one heavy run at a time on the machine (rule W24)
     if '--calib' in a: calib(); sys.exit(0)
     S = load()
     M = S.get('m', {})

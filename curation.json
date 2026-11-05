@@ -235,7 +235,6 @@
         "tubastraea-cand-721148279": "macro",
         "tubastraea-cand-61065917": "wide",
         "tubastraea-cand-511776175": "wide",
-        "tubastraea-cand-254850194": "macro",
         "tubastraea-cand-532688969": "wide"
       }
     },
@@ -366,7 +365,6 @@
         "turbinaria-cand-611606940": "macro",
         "turbinaria-cand-595763949": "macro",
         "turbinaria-cand-597647553": "wide",
-        "turbinaria-cand-409781688": "wide",
         "turbinaria-cand-437172016": "macro",
         "turbinaria-cand-611606937": "medium",
         "turbinaria-cand-611572444": "wide",
@@ -379,7 +377,6 @@
         "turbinaria-cand-194636424": "wide",
         "turbinaria-cand-713117213": "medium",
         "turbinaria-cand-598202249": "medium",
-        "turbinaria-cand-591979716": "wide",
         "turbinaria-cand-713117204": "macro",
         "turbinaria-cand-269459990": "wide"
       }
@@ -989,7 +986,6 @@
         "duncanopsammia-cand-41558845": "wide",
         "duncanopsammia-cand-227577462": "wide",
         "duncanopsammia-cand-749674403": "medium",
-        "duncanopsammia-cand-501745155": "medium",
         "duncanopsammia-cand-260323430": "wide",
         "duncanopsammia-cand-710777889": "wide",
         "duncanopsammia-cand-611581817": "medium",
@@ -1022,7 +1018,6 @@
         "alveopora-cand-246800660": "wide",
         "alveopora-cand-98861198": "wide",
         "alveopora-cand-245795047": "medium",
-        "alveopora-cand-256496381": "wide",
         "alveopora-cand-190591563": "medium",
         "alveopora-cand-600494665": "macro",
         "alveopora-cand-625302757": "wide",
@@ -1149,8 +1144,7 @@
         "fimbriaphyllia-cand-604392158": "medium",
         "fimbriaphyllia-cand-297050976": "wide",
         "fimbriaphyllia-cand-600495825": "medium",
-        "fimbriaphyllia-cand-270608190": "wide",
-        "fimbriaphyllia-cand-255252866": "wide"
+        "fimbriaphyllia-cand-270608190": "wide"
       }
     },
     "Isopora": {
@@ -1185,7 +1179,6 @@
         "leptoseris-cand-607291455": "medium",
         "leptoseris-cand-604391622": "wide",
         "leptoseris-cand-468201386": "wide",
-        "leptoseris-cand-489649926": "wide",
         "leptoseris-cand-468187243": "wide",
         "leptoseris-cand-468187784": "wide",
         "leptoseris-cand-468565732": "wide",
@@ -1324,7 +1317,6 @@
         "cycloseris-cand-258448800": "wide",
         "cycloseris-cand-352604528": "wide",
         "cycloseris-cand-169967330": "medium",
-        "cycloseris-cand-329120173": "wide",
         "cycloseris-cand-335737437": "wide"
       }
     },
@@ -2794,13 +2786,41 @@
   },
   "exclude": {
     "acropora-cand-452562788": "auto",
+    "alveopora-cand-256496381": "excluded",
+    "alveopora-macro-161599335": "excluded",
+    "alveopora-macro-161599345": "excluded",
+    "alveopora-medium-161599229": "excluded",
+    "alveopora-wide-161599037": "excluded",
+    "alveopora-wide-258804580": "excluded",
+    "alveopora-wide-365311386": "excluded",
+    "anacropora-macro-245823005": "excluded",
+    "anacropora-macro-245823013": "excluded",
+    "anacropora-macro-258587027": "excluded",
+    "anacropora-medium-258536256": "excluded",
+    "anacropora-medium-258544507": "excluded",
+    "anacropora-medium-258565862": "excluded",
+    "anacropora-wide-258565891": "excluded",
+    "anacropora-wide-687041230": "excluded",
     "astreopora-cand-675216286": "auto",
+    "astreopora-macro-504716971": "excluded",
     "ctenactis-cand-174923058": "auto",
+    "ctenactis-macro-325948097": "excluded",
+    "cycloseris-cand-329120173": "excluded",
+    "cyphastrea-macro-92102920": "excluded",
+    "cyphastrea-macro-94953869": "excluded",
+    "cyphastrea-medium-20956678": "excluded",
+    "cyphastrea-medium-249833917": "excluded",
+    "cyphastrea-medium-249833926": "excluded",
+    "cyphastrea-wide-20956669": "excluded",
+    "cyphastrea-wide-92102963": "excluded",
     "danafungia-cand-181384352": "auto",
     "danafungia-cand-181384369": "auto",
+    "danafungia-medium-625256874": "excluded",
     "dipsastraea-cand-606652645": "auto",
+    "duncanopsammia-cand-501745155": "excluded",
     "duncanopsammia-cand-611582033": "excluded",
     "duncanopsammia-cand-611582046": "excluded",
+    "fimbriaphyllia-cand-255252866": "excluded",
     "fungia-cand-629914325": "auto",
     "fungia-wide-445316156": "excluded",
     "goniastrea-cand-357894695": "auto",
@@ -2814,8 +2834,10 @@
     "imrl-p10_i7": "excluded",
     "imrl-p55_i2": "excluded",
     "leptoria-cand-466228998": "auto",
+    "leptoseris-cand-489649926": "excluded",
     "lithophyllon-cand-445317217": "auto",
     "lithophyllon-macro-746237709": "excluded",
+    "lithophyllon-medium-353047722": "excluded",
     "millepora-x-175093282": "excluded",
     "millepora-x-35099053": "auto",
     "montipora-cand-541721323": "auto",
@@ -2824,13 +2846,45 @@
     "pavona-cand-222901821": "auto",
     "pavona-cand-746234999": "excluded",
     "pectinia-cand-175031475": "auto",
+    "physogyra-x-256972725": "excluded",
     "pocillopora-cand-175099231": "excluded",
     "pocillopora-macro-745206187": "excluded",
     "porites-cand-606657989": "auto",
     "seriatopora-cand-463482466": "auto",
+    "trachyphyllia-x-294605396": "excluded",
+    "tubastraea-cand-254850194": "excluded",
     "tubastraea-cand-267618191": "excluded",
     "tubastraea-cand-580500321": "excluded",
-    "tubipora-cand-303711251": "auto"
+    "tubipora-cand-303711251": "auto",
+    "tubipora-x-333321957": "excluded",
+    "turbinaria-cand-409781688": "excluded",
+    "turbinaria-cand-591979716": "excluded"
+  },
+  "flag": {
+    "astrea-medium-550371649": {
+      "genus": "Astrea",
+      "view": "medium",
+      "where": "quiz · level auto · lightbox",
+      "at": "2026-11-05T11:56:18.516Z"
+    },
+    "goniastrea-cand-260210180": {
+      "genus": "Goniastrea",
+      "view": "wide",
+      "where": "quiz · level auto",
+      "at": "2026-11-05T12:04:12.981Z"
+    },
+    "hydnophora-cand-245794783": {
+      "genus": "Hydnophora",
+      "view": "medium",
+      "where": "quiz · level auto · lightbox",
+      "at": "2026-11-05T12:01:06.081Z"
+    },
+    "lithophyllon-cand-358993100": {
+      "genus": "Lithophyllon",
+      "view": "wide",
+      "where": "quiz · level auto",
+      "at": "2026-11-05T12:05:24.666Z"
+    }
   },
   "seen": {
     "cand:acropora-cand-129392908": 1,
@@ -6164,7 +6218,7 @@
       "alveopora-cand-245795047": "am2xp",
       "alveopora-cand-246800660": "aw2Mp#",
       "alveopora-cand-254862456": "aw2Mp",
-      "alveopora-cand-256496381": "aw2Mp",
+      "alveopora-cand-256496381": "aw2Mp@to1x0x",
       "alveopora-cand-268749996": "aw2Mp",
       "alveopora-cand-270769424": "aw2xp",
       "alveopora-cand-297050824": "am2xp",
@@ -6346,7 +6400,7 @@
       "duncanopsammia-cand-41558845": "aw2E",
       "duncanopsammia-cand-437171773": "am3F",
       "duncanopsammia-cand-452616316": "am2Ep",
-      "duncanopsammia-cand-501745155": "am2Ep",
+      "duncanopsammia-cand-501745155": "am2Ep@to1x0x",
       "duncanopsammia-cand-595463425": "am2Ep",
       "duncanopsammia-cand-595463426": "r",
       "duncanopsammia-cand-595518079": "r",
@@ -6687,7 +6741,7 @@
       "leptoseris-cand-468187784": "aw2F",
       "leptoseris-cand-468201386": "aw2F#",
       "leptoseris-cand-468565732": "aw2F",
-      "leptoseris-cand-489649926": "aw2F",
+      "leptoseris-cand-489649926": "aw2F@to1x0y",
       "leptoseris-cand-545718850": "?aw2F",
       "leptoseris-cand-574279930": "r",
       "leptoseris-cand-604391622": "aw2E",
@@ -7163,7 +7217,7 @@
       "trachyphyllia-cand-460442366": "ac2x",
       "tubastraea-cand-245791824": "am3E#",
       "tubastraea-cand-254723905": "aw2Mp",
-      "tubastraea-cand-254850194": "ac2x",
+      "tubastraea-cand-254850194": "ac2x@to1x0x",
       "tubastraea-cand-257180258": "am2xp",
       "tubastraea-cand-262125467": "aw2Mp#",
       "tubastraea-cand-267618158": "r",
@@ -7197,13 +7251,13 @@
       "turbinaria-cand-269471685": "aw3F#",
       "turbinaria-cand-311286597": "aw2F#",
       "turbinaria-cand-311972096": "aw2F",
-      "turbinaria-cand-409781688": "aw2F#",
+      "turbinaria-cand-409781688": "aw2F#@to1x0x",
       "turbinaria-cand-437171645": "ac3x",
       "turbinaria-cand-437171649": "r",
       "turbinaria-cand-437172016": "ac2x",
       "turbinaria-cand-545720018": "?aw2F",
       "turbinaria-cand-577593176": "r",
-      "turbinaria-cand-591979716": "aw2F#",
+      "turbinaria-cand-591979716": "aw2F#@to1x0x",
       "turbinaria-cand-595763949": "ac3M#",
       "turbinaria-cand-595764602": "?r",
       "turbinaria-cand-597647549": "r",
@@ -18957,6 +19011,11 @@
         "fish-s472-cand-628334333": "r",
         "fish-s472-cand-661291484": "ate",
         "fish-s472-cand-738711918": "r"
+      },
+      "2026-11-06": {
+        "fish-s238-cand-fb-Hachl_f0": "ate",
+        "fish-s238-cand-fb-Hachl_m0": "ate",
+        "fish-s238-cand-fb-Hachl_m1": "ate"
       }
     },
     "crop": {

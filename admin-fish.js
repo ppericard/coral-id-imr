@@ -234,10 +234,11 @@ function fishEdit(fn) {
   saveDraft();
   render();
 }
-// The fish auto-sort's line (above the card) and its details (below it): its decisions in and set aside, the Checks
-// waiting, its keep agreement with Pierre (autosort.js fishCompare, autoState: off under 90% over the last 40), and in
-// the details the disagreements and every decision still standing, each with Undo (fishAutoUndo; rule A1).
-function fishAutoBlock(det) {
+// The fish auto-sort's line (above the card, folded behind the Auto chip as the corals': admin.js autoChip; chip: the
+// chip alone) and its details (below it): its decisions in and set aside, the Checks waiting, its keep agreement with
+// Pierre (autosort.js fishCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
+// every decision still standing, each with Undo (fishAutoUndo; rule A1).
+function fishAutoBlock(det, chip) {
   const F = DRAFT.fish || {},
     I = Object.entries(fishIdx(F)),
     FA = I.filter(([, x]) => !x.d.check && !x.d.undone),
@@ -246,9 +247,12 @@ function fishAutoBlock(det) {
     CMP = fishCompare(F),
     K = autoState(CMP).keep;
   if (!I.length) return '';
+  if (chip) return autoChip(!K.on);
   if (!det)
-    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nIn} in · ${FA.length - nIn} set aside · ${nChk} to check · agreement <span class="adm-af${K.on ? '' : ' off'}" title="Keep: agreement with you over the last ${K.n} checks and corrections; auto ${K.on ? 'on' : 'off'} under ${pctR(K.min)}">Keep ${pctR(K.rate)}${K.n ? `<small>n ${K.n}</small>` : ''}${K.on ? '' : ' · off'}</span> <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
-  if (!ADET) return '';
+    return !AOPEN
+      ? ''
+      : `<div class="adm-auto"><p class="note"><b>Auto</b> ${nIn} in · ${FA.length - nIn} set aside · ${nChk} to check · agreement <span class="adm-af${K.on ? '' : ' off'}" title="Keep: agreement with you over the last ${K.n} checks and corrections; auto ${K.on ? 'on' : 'off'} under ${pctR(K.min)}">Keep ${pctR(K.rate)}${K.n ? `<small>n ${K.n}</small>` : ''}${K.on ? '' : ' · off'}</span> <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
+  if (!ADET || !AOPEN) return ''; // the details go with the line they open from
   // data-ff: a decision (with Undo); data-fd: a disagreement.
   const tile = (f, cap, extra = '', at = 'ff') => {
     const p = FISHC.byF[f] || {f};
@@ -279,6 +283,7 @@ function fishAutoBlock(det) {
   }</div>`;
 }
 function bindFishAuto(scope) {
+  bindAutoChip(scope);
   const t = scope.querySelector('[data-adet]');
   if (t)
     t.onclick = () => {
@@ -322,17 +327,18 @@ function renderFishCand() {
   const cnt = L => L.filter(shown).length;
   const seg =
     `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The fish auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>` +
-    (nFull || nAside || nJ
-      ? `<p class="adm-cflags">${
-          nFull
-            ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (8 observations, 12 for the cheatsheet's): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
-            : ''
-        }${
-          nAside
-            ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
-            : ''
-        }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the fish candidate pass (judging/FISH.md)">${nJ} not judged yet</span>` : ''}</p>`
-      : '') +
+    candFlags(
+      `${
+        nFull
+          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (8 observations, 12 for the cheatsheet's): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
+          : ''
+      }${
+        nAside
+          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+          : ''
+      }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the fish candidate pass (judging/FISH.md)">${nJ} not judged yet</span>` : ''}`,
+      fishAutoBlock(false, true)
+    ) +
     fishAutoBlock();
   if (!c) {
     const sk = Q1.filter(x => FSKIP.has(x.p.f)).length;

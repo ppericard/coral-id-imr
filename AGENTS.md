@@ -48,9 +48,9 @@ what stops is everything that involves him.
   Never solicit him; park every question in STATUS (a subagent puts it in its report) and move on. **Merging: the merge
   contract, exactly as by day** (night changes when Pierre is asked, not what may merge: a sheet-script change of a
   decided track ships at night as by day). What waits for him stays on its branch, with its screenshots (sent in the
-  morning) and a line in STATUS "Now". Every other rule and the machine limits apply as by day. Before 08:00 the
-  integrator writes the morning report into STATUS "Last stop" and "Now": what merged, what waits for his eye, the
-  questions.
+  morning) and a line in STATUS "Now". Every other rule and the machine limits apply as by day. Before 05:00 (Pierre
+  wakes around 05:00-05:30) the integrator writes the morning report into STATUS "Last stop" and "Now": what merged,
+  what waits for his eye, the questions.
 - **Next morning:** read STATUS first (and run `python3 tools/brief.py`); show Pierre what the night did and ask the open
   questions; turn each parked idea into work or a ROADMAP row with him, then clear it.
 
@@ -195,6 +195,7 @@ context go in the PR description, never in the rule.
 - **D4** The app never gets ahead of the sheet script.
 - **D5** Every progress-rule change appends a rules version.
 - **D6** A recalculation of everyone's progress is announced.
+- **D7** A deleted account leaves nothing in normal operation.
 
 **Working with Pierre** ([docs/rules/ship.md](docs/rules/ship.md))
 - **W1** Everything produced is in English; only the chat with Pierre is in French.
@@ -220,13 +221,14 @@ context go in the PR description, never in the rule.
 | The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
-| Tests, versions, `data.json`, PRs | [ship](docs/rules/ship.md) W12-W23 |
+| Tests, versions, `data.json`, PRs | [ship](docs/rules/ship.md) W12-W24 |
 
 ## Ship checklist
 
 1. A worktree of your own from a fresh `origin/main`; stage files by name (rule W22).
 2. A test with the logic you change (rule W12).
-3. Fast tier before each push: Prettier, the checks, `node --test tests/*.test.js`, the one smoke part you touch (rule W14).
+3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests, in the machine slot: rule W24),
+   the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 5. UI: look at it, light and dark, phone and desktop (rule W17).
 6. `Code.gs` or `core.js` changed: rules D3-D5. Tests never reach the real sheet (rule D1).
@@ -240,7 +242,7 @@ For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
 - The engine never names or tests a subject (`'fish'`, `SUBJ === SUBJECTS[k]`): a `SUBJECTS` field or a `UNITS` function (rule S1).
-- No real player or staff name anywhere in the repo, tests included: P1, P2… or made-up names (rule D2).
+- No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` and bumps `Code.gs` `VERSION` (rule D5).
 - Tests never reach the real sheet: no made-up host, patched `LOCAL` or stubbed `navigator.webdriver` (rule D1).

@@ -6395,6 +6395,9 @@ html.touring .unlock {
   margin: 4px 0 12px;
   font-size: var(--fs-xl);
 }
+.btitle.bsec {
+  margin-top: 24px; /* the Contributions, apart from the learning achievements (progress.js viewAch) */
+}
 @media (max-width: 599.98px) {
   .apptoast {
     bottom: calc(76px + env(safe-area-inset-bottom)); /* above the tab bar */

@@ -356,8 +356,10 @@
   //   the auto-sort did not apply it (its keep is off): shown on demand, as the coral pre-sort's set-aside ones;
   // - nph: it shows a phase none of its species' photos in play shows (5b: "missing phases first").
   // Order: the thinnest species first (in play / target, then the fewest in play), its photos together; within a species
-  // the missing phases first, then Pierre's own (rule P1), then the pass's best photo of an observation, another
-  // angle, not judged, a near-duplicate, then the easiest (the first questions need easy photos), then a fixed order.
+  // the missing phases first, then the pass's best photo of an observation, another angle, not judged, a near-duplicate,
+  // then the easiest (the first questions need easy photos), then a reference photo (the flag r: a reference source shows
+  // it for the species), then a fixed order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced;
+  // they came first before).
   const FISHK = {best: 0, alt: 1, dup: 3};
   function fishQueue(cands, sug, species, F) {
     F = F || {};
@@ -402,16 +404,23 @@
         });
       })
     );
-    const k = x => (x.j && x.j.k in FISHK ? FISHK[x.j.k] : 2);
+    const k = x => (x.j && x.j.k in FISHK ? FISHK[x.j.k] : 2),
+      ref = x =>
+        x.j &&
+        String(x.j.jt || '')
+          .slice(7)
+          .includes('r')
+          ? 1
+          : 0;
     return out.sort(
       (a, b) =>
         a.n / a.target - b.n / b.target ||
         a.n - b.n ||
         (a.sid < b.sid ? -1 : a.sid > b.sid ? 1 : 0) ||
         b.nph - a.nph ||
-        !!b.p.own - !!a.p.own ||
         k(a) - k(b) ||
         ((b.j && b.j.e) || 0) - ((a.j && a.j.e) || 0) ||
+        ref(b) - ref(a) ||
         (a.p.f < b.p.f ? -1 : 1)
     );
   }

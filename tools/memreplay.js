@@ -40,6 +40,7 @@ if (!file) {
   console.error('usage: node tools/memreplay.js answers.json [--player <id>] [--min 5] [--mem 0,-0.44,-1.1,-1.7]');
   process.exit(1);
 }
+require('../tests/slot.js').guard('tools/memreplay.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
 const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   rows = (Array.isArray(J) ? J : J.rows || []).filter(r => r && r[0]),
   ONLY = opt('player', null),

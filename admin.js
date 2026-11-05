@@ -1277,6 +1277,7 @@ const GROUPS = [
           ['~an-learn', 'Practice'],
           ['~an-back', 'After a break'],
           ['~an-sess', 'Sessions'],
+          ['~an-who', 'Profiles'],
           ['~stats-log', 'Answer log'],
           ['~stats-stop', 'Stops']
         ]
@@ -2166,7 +2167,7 @@ const HELP = {
   get journey() {
     return `<p>One player's path, from their answers in the sheet (signed in). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
   },
-  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
+  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
@@ -2179,7 +2180,7 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, by anonymous id; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -2210,7 +2211,7 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; the <b>Auto</b> chip after the toggles opens its line ("off" on the chip when a field is off); Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
     <p><b>Photos everyone misses.</b> Counted on players, not answers (one player missing the same photo again and again is not everyone): photos answered by ${HEALTH.PL_MIN} players or more, ${HEALTH.PL_MISS} or more of whom, and a majority, miss it (under ${Math.round(HEALTH.PL_LOW * 100)}% of their own answers on it right), and either shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right or clearly harder than the other photos of their genus (<b>harder than its genus</b>: a difficulty at least ${HEALTH.PH_FAR} above the median of their genus's rated photos on the photo Elo scale, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; then the players who miss it out of those who answered it; then how many starting players recognise it (hover it for the raw difficulty and its gap to the genus median).</p>
     <p><b>Genera that don't take off.</b> Per slate genus, from the answers where it was shown: players who met it, the median of their right rates on it, and Stuck = players with ${HEALTH.G_MIN}+ answers on it still under ${Math.round(HEALTH.G_LOW * 100)}% over their last ${HEALTH.G_MIN} (out of the players with ${HEALTH.G_MIN}+ answers). Most stuck first.</p>`,
@@ -2218,7 +2219,7 @@ const HELP = {
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`,
-  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: your own first, then the pass's best photo of each observation, other angles, near-duplicates, the easiest first. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
+  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
 const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
@@ -3228,8 +3229,10 @@ function renderTriage() {
   if (!FISHA && reps.some(r => /^fi\d/.test(r[10] || '') || /^t\d/.test(r[5] || ''))) fishAdmin();
   const repCard = r => {
     const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
-      play = !/^(photo|sheet|page)$/.test(m);
-    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead"><b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>
+      play = !/^(photo|sheet|page)$/.test(m),
+      // sheet v55: the reports of an account deleted with its answers kept are "~deleted <id>", never verified (Q85)
+      gone = /^~deleted /.test(who || '');
+    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : `<b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>`}
       <span class="adm-repwhy">${esc(why === 'wrong' && !play ? 'Wrong genus' : REP_WHY[why] || why)}</span>${g ? `<span>${repUnit(g)}${a && a !== g ? ` · answered ${repUnit(a)}` : ''}</span>` : ''}${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
       <small class="adm-where">${esc(play ? 'game ' + m : m)}${w ? ` · <a href="index.html#${esc(w)}" target="_blank" rel="noopener">${esc(w)}</a>` : ''} · ${esc(when(t))}</small><button type="button" class="adm-tdone" data-rdone="${esc(id)}">✓ Done</button></div>
       ${note ? `<p class="adm-repnote">${esc(note)}</p>` : ''}${
@@ -3886,6 +3889,7 @@ const jLine = p => {
 let METRICS = {},
   MREF = null, // sharpness of the candidates measured: sorted list, 5th and 95th percentiles (metFlag, evidence)
   ADET = false, // this tab: Auto details open
+  AOPEN = store.get('reefid-admin-autoline', false) === true, // the Auto line unfolded above the card (this browser)
   AALL = false, // this tab: every auto decision listed (else the latest 30)
   CDONE = 0, // candidates decided in the swiper since the last Retest card (this tab)
   RTSKIP = new Set(),
@@ -4122,8 +4126,15 @@ function checkToast(f) {
     bad = D.filter(c => !c.ok).map(c => FIELD[c.field].toLowerCase());
   toast(`Check: the agent said ${autoText(x.d, n)}${D.length ? (bad.length ? ` (differs: ${bad.join(', ')})` : ' (same)') : ''}.`);
 }
-// Agreement line at the top of Candidates (every source), and its details (det).
-function autoBlock(det) {
+// The Auto chip at the end of the swiper's toggles: unfolds the agreement line (AOPEN). Folded by default, so the photo
+// and the decision buttons fit one phone screen (Pierre, 2026-11-06); off = a field (or the fish keep) turned off.
+const autoChip = off =>
+  `<button type="button" class="adm-chip adm-cauto${off ? ' off' : ''}" data-aopen aria-expanded="${AOPEN}" title="The auto-sort's line: its decisions and its agreement with you${off ? ' (one turned off)' : ''}">Auto${off ? ' · off' : ''}</button>`;
+// The swiper's row of toggles (what the queue leaves out) with the Auto chip last.
+const candFlags = (chips, auto) => (chips || auto ? `<p class="adm-cflags">${chips}${auto}</p>` : '');
+// Agreement line at the top of Candidates (every source), folded behind the Auto chip (chip: the chip alone), and its
+// details (det).
+function autoBlock(det, chip) {
   // The fish auto-sort's line and decisions are on the fish side's Candidates (admin-fish.js fishAutoBlock).
   const A = aIdx(),
     E = Object.entries(A);
@@ -4135,13 +4146,16 @@ function autoBlock(det) {
     nOut = applied.length - nAdd,
     ci = curIdx(DRAFT),
     nChk = E.filter(([f, x]) => x.d.check && !excl(f) && !pierreOf(DRAFT, ci, f).keep).length;
+  if (chip) return autoChip(AUTO.fields.some(k => !ST[k].on));
   const fld = k =>
     `<span class="adm-af${ST[k].on ? '' : ' off'}" title="${FIELD[k]}: agreement with you over the last ${ST[k].n} checks and corrections; auto ${ST[k].on ? 'on' : 'off'} under ${pctR(ST[k].min)}">${FIELD[k]} ${pctR(ST[k].rate)}${ST[k].n ? `<small>n ${ST[k].n}</small>` : ''}${ST[k].on ? '' : ' · off'}</span>`;
   // The line goes above the card, the details (det) below it, so the card stays in view.
   if (!det)
-    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
+    return !AOPEN
+      ? ''
+      : `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
   let h = '';
-  if (ADET) {
+  if (ADET && AOPEN) {
     const rows = AUTO.fields
       .map(k => {
         const r = RT[k];
@@ -4194,7 +4208,18 @@ function autoBlock(det) {
   }
   return h;
 }
+// The Auto chip (autoChip), corals and fish.
+function bindAutoChip(scope) {
+  const o = scope.querySelector('[data-aopen]');
+  if (o)
+    o.onclick = () => {
+      AOPEN = !AOPEN;
+      store.set('reefid-admin-autoline', AOPEN);
+      render();
+    };
+}
 function bindAuto(scope) {
+  bindAutoChip(scope);
   const t = scope.querySelector('[data-adet]');
   if (t)
     t.onclick = () => {
@@ -4387,11 +4412,7 @@ function retireOrder(n, w, cols) {
     }
     if (nn !== null && nn < 0.5) {
       c.score += 3 * (1 - nn / 0.5);
-      // [text for the tile's title, HTML for the note: the reading as a badge, its raw value in the badge's title].
-      c.why.push([
-        `recognised by ${recPct(c.d)} (difficulty ${rawNum(c.d)}), like another colony`,
-        `recognised by ${recBadge(c.d, {short: 1, of: 'its photos', raw: 'mean photo difficulty'})}, like another colony`
-      ]);
+      c.why.push(`recognised by ${recPct(c.d)}, like another colony`);
     }
     if (c.ans >= 10) {
       c.score += Math.min(2, c.ans / 30);
@@ -4438,11 +4459,11 @@ function renderRepl() {
   const QN = {1: 'Poor', 2: 'Fair', 3: 'Good'};
   $v.innerHTML = `<section class="adm-repl">
     <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
-    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${sug.why.map(x => (Array.isArray(x) ? x[1] : esc(x))).join(', ')})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
+    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${esc(sug.why.join(', '))})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
     <figure class="adm-repl-new"><img ${crSrc(p)} alt=""><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
     <div class="adm-repl-grid">${cols
       .map(
-        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.map(x => (Array.isArray(x) ? x[0] : x)).join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
+        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
         <span>${c === sug ? '<b>Suggested</b> · ' : ''}${QN[c.q] || ''}${c.ft ? ' · featured' : ''}${c.L.length > 1 ? ` · ${c.L.length} photos` : ''}${c.keep ? ` · keep (${esc(c.keep)})` : ''}</span></button>`
       )
       .join('')}</div>
@@ -4494,22 +4515,23 @@ function renderCand() {
     `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
     // What the queue leaves out, as one row of small toggles (Pierre, 2026-11-03: three lines of notes took the room of
     // the photo on a phone); each chip's tooltip says what it is.
-    (nFull || nAside || nJ
-      ? `<p class="adm-cflags">${
-          nFull
-            ? `<button type="button" class="adm-chip adm-cfull" data-cfull aria-pressed="${CFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of cells already full (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies): ${CFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} full</button>`
-            : ''
-        }${
-          nAside
-            ? `<button type="button" class="adm-chip adm-caside" data-caside aria-pressed="${CASIDE}" title="${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison image or near-duplicate): ${CASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
-            : ''
-        }${
-          // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
-          nJ
-            ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/BRIEF.md)">${nJ} not judged yet</span>`
-            : ''
-        }</p>`
-      : '') +
+    candFlags(
+      `${
+        nFull
+          ? `<button type="button" class="adm-chip adm-cfull" data-cfull aria-pressed="${CFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of cells already full (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies): ${CFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} full</button>`
+          : ''
+      }${
+        nAside
+          ? `<button type="button" class="adm-chip adm-caside" data-caside aria-pressed="${CASIDE}" title="${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison image or near-duplicate): ${CASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+          : ''
+      }${
+        // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
+        nJ
+          ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/BRIEF.md)">${nJ} not judged yet</span>`
+          : ''
+      }`,
+      autoBlock(false, true)
+    ) +
     autoBlock();
   const rt = retestNext();
   if (rt) return renderRetest(rt, seg);
@@ -5048,6 +5070,12 @@ async function start() {
   const hd = document.querySelector('header');
   if (hd && window.ResizeObserver)
     new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
+  // Where the page starts, under the header, the tab row and the demo banner: the swiper's one screen (admin.css .adm-sw).
+  // Body changes size whenever one of them does.
+  if (window.ResizeObserver)
+    new ResizeObserver(() =>
+      document.documentElement.style.setProperty('--sw-top', Math.round($v.getBoundingClientRect().top + scrollY) + 'px')
+    ).observe(document.body);
   const sb = $('subnav');
   if (sb && window.ResizeObserver)
     new ResizeObserver(() =>
@@ -6367,11 +6395,15 @@ function bindStats() {
 // by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
 // for reports). Merge = two names of one person: the progress is merged here (core.js mergeUsers: answers add up, the
 // busier account's model per genus), then the sheet relabels the answers and reports and deletes the other name.
-// Delete = a test or abandoned account (its answers stay for photo difficulty, without the name, unless asked).
+// Delete (sheet v55, Pierre 2026-11-05, Q85/Q89: two named choices, no default): "Delete everything" (a test account, or
+// a player who asked: answers and reports too) or "Delete, keep answers anonymously" (answers and reports stay without
+// the name: the answers only rate the photos, the reports read "from a removed account"); nothing else of the account
+// stays in normal operation either way (Code.gs deleteAccount_).
 // Both are permanent, so both ask first; a device still signed in with the old name is told and asked to sign out.
 let USERS = null,
   usersAt = 0,
-  uOpen = null;
+  uOpen = null,
+  uDel = ''; // the player whose two delete choices show in their bar
 function loadUsers(force) {
   if (!force && USERS && Date.now() - usersAt < 120000) return Promise.resolve(USERS);
   if (!TOKEN) {
@@ -6576,6 +6608,9 @@ const UCOLS = [
 // in its group (Code.gs groupSet_; the app opens the subject to them, app.js subjOpen). Add / Remove under the row, Add
 // all above the table.
 const GROUP_SHEET = 48;
+// Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_); an older script would keep its reports.
+const DEL_SHEET = 55;
+const delOn = () => (USERS.v || 0) >= DEL_SHEET;
 const groupOn = () => subjGroup(ASUBJ) && (USERS.v || 0) >= GROUP_SHEET;
 const inGroup = u => (u.groups || []).includes(ASUBJ.id);
 UCOLS.push(['group', 'Beta', u => (inGroup(u) ? 1 : 0), 0, 'In the beta group']);
@@ -6651,15 +6686,20 @@ function renderUsers() {
       ${groupOn() ? `<span>${inGroup(u) ? 'In' : 'Not in'} the ${esc(ASUBJ.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-on="${inGroup(u) ? 0 : 1}">${inGroup(u) ? 'Remove' : 'Add'}</button></span>` : ''}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
       <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
-      <button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></div></td></tr>`;
-  // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
+      ${
+        uDel === u.name
+          ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
+          : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
+      }</div></td></tr>`;
+  // Answers without a name: devices that never signed in (~anon), by anonymous id. The answers a deleted account left
+  // (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
   const LVM = ofAns('margin', () => levelMargin(ANS.rows || [])), // 95% margin of each player's level (core.js)
     named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
   // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
   if ((USERS.v || 0) >= 13)
     (ANS.rows || []).forEach(r => {
-      if (named.has(r[0])) return;
+      if (named.has(r[0]) || goneRow(r)) return;
       const a = (A[r[0]] = A[r[0]] || {n: 0, ok: 0, last: 0, first: Infinity});
       a.n++;
       a.ok += r[4];
@@ -6757,13 +6797,16 @@ function bindUsers() {
     tr =>
       (tr.onclick = () => {
         uOpen = uOpen === tr.dataset.uopen ? null : tr.dataset.uopen;
+        uDel = '';
         render();
       })
   );
   const done = (msg, j) => {
     if (j && j.ok) {
       toast(msg);
-      sheetAgain('users', 'ans', 'stats'); // answers moved to another name or deleted: the levels and counts change
+      // answers moved to another name or deleted: the levels and counts change; v55: a merge or delete also moves or
+      // removes reports, page summaries and log mentions (Codex review #600)
+      sheetAgain('users', 'ans', 'stats', 'reports', 'pages', 'events');
       savedClear(); // progress merged, renamed or deleted
       uOpen = null;
       render();
@@ -6901,19 +6944,39 @@ function bindUsers() {
         .then(j => done(j && j.ok ? `${j.answers} answer${j.answers === 1 ? '' : 's'} deleted.` : '', j))
         .catch(() => done('', null));
     };
+  // Delete (sheet v55, Pierre 2026-11-05, Q89: two named choices, no default): Delete… shows them in the bar.
   $v.querySelectorAll('[data-udel]').forEach(
     b =>
       (b.onclick = () => {
-        const name = b.dataset.udel,
-          u = (USERS.users || []).find(x => x.name === name) || {answers: 0};
-        if (!confirm(`Delete "${name}"?\n\nTheir account and progress are deleted. This cannot be undone.`)) return;
-        const drop =
-          u.answers > 0 &&
-          confirm(
-            `Also delete their ${u.answers} answer${u.answers === 1 ? '' : 's'}?\n\nOK: delete them too (a test account).\nCancel: keep them without the name (they help rate photo difficulty).`
-          );
-        userPost({userDelete: name, answers: drop})
-          .then(j => done(`"${name}" deleted.`, j))
+        uDel = b.dataset.udel;
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-udel-no]').forEach(
+    b =>
+      (b.onclick = () => {
+        uDel = '';
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-udel-all],[data-udel-keep]').forEach(
+    b =>
+      (b.onclick = () => {
+        const all = 'udelAll' in b.dataset,
+          name = all ? b.dataset.udelAll : b.dataset.udelKeep,
+          u = (USERS.users || []).find(x => x.name === name) || {answers: 0, reports: 0},
+          n = (k, w) => `${k} ${w}${k === 1 ? '' : 's'}`;
+        if (
+          !confirm(
+            all
+              ? `Delete everything of "${name}"?\n\nTheir account, progress, ${n(u.answers, 'answer')}, ${n(u.reports || 0, 'report')} and page summaries are deleted. For a test account, or a player who asked. This cannot be undone.`
+              : `Delete "${name}", keeping their answers anonymously?\n\nTheir account, progress and page summaries are deleted. Their ${n(u.answers, 'answer')} and ${n(u.reports || 0, 'report')} stay without the name: the answers only rate photo difficulty, the reports read "from a removed account". This cannot be undone.`
+          )
+        )
+          return;
+        uDel = '';
+        userPost({userDelete: name, answers: all})
+          .then(j => done(`"${name}" deleted${all ? '' : ', answers kept anonymously'}.`, j))
           .catch(() => done('', null));
       })
   );
@@ -6939,8 +7002,11 @@ function renderStats() {
         ? statsHealth()
         : statsPlayers();
 }
-// Every answer of every account (Pierre, 2026-11-04: no player filter).
-const statRows = () => ANS.rows;
+// Every answer of every account (Pierre, 2026-11-04: no player filter), but those a deleted account left (sheet v55
+// readAnswers anonymous 2): they rate the photos only, never count as a player (Pierre, 2026-11-05, Q86).
+const goneRow = r => r[11] === 2;
+const playerRows = () => (ANS.rows || []).filter(r => !goneRow(r));
+const statRows = () => playerRows();
 // Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
 // now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
@@ -7276,9 +7342,7 @@ function needsOf() {
           why.push([
             'easy',
             `players Elo ${eloNum(top)} vs hardest photo recognised by ${recPct(hard)}`,
-            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`,
-            // The chip's HTML in the full list: the Elo and the reading as everywhere else (raw values in their titles).
-            `players Elo ${eloText(top, null, {what: 'Players at the top quarter of the genus, Elo'})} vs hardest photo recognised by ${recBadge(hard, {short: 1, raw: 'photo difficulty'})}`
+            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`
           ]);
           sc += 1.5;
         }
@@ -7384,7 +7448,7 @@ function needsBody() {
     <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr>${th('n', 'Genus')}${th('v', 'View')}${th('c', 'Colonies')}${th('sc', 'Why')}</tr></thead><tbody>
     ${L.map(
       o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
-      <td>${o.why.map(([k, t, raw, h]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${h || esc(t)}</span>`).join(' ')}</td></tr>`
+      <td>${o.why.map(([k, t, raw]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${esc(t)}</span>`).join(' ')}</td></tr>`
     ).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
   const save = () => {
     store.set('reefid-admin-stats', SF);
@@ -7496,7 +7560,8 @@ function healthLine() {
   return (MEMO[k] = {a: ANS, s: STATS, v: healthLine0()}).v;
 }
 function healthLine0() {
-  const R = ANS.rows || [],
+  // the player rows, as the Health page: a deleted account's answers are no player (sheet v55; Codex review #600)
+  const R = playerRows(),
     BY = Object.create(null);
   R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
   Object.values(BY).forEach(L => L.sort((a, b) => a[1] - b[1]));
@@ -7527,7 +7592,7 @@ function statsHealth() {
     bindStats();
     return;
   }
-  const R = ANS.rows || [];
+  const R = playerRows();
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindStats();

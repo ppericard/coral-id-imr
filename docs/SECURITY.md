@@ -36,7 +36,7 @@ leak of the Sheet would expose little.
   and code (`ename`, `epin`, never `name`/`pin`, so no other handler takes it for a progress write), which the script
   checks against the RAs tab and does not keep. A wrong code, an unknown or a locked name store no id; the reply is the
   same either way (`{ok, ev}`), so the events cannot be used to guess a code, and a wrong code there counts no failure
-  (it never locks the player's account). Read by admins only (`readEvents` with `pages: 1` and the token). They follow the answers when an account claims a device's anonymous answers, and through admin renames, merges and deletes.
+  (it never locks the player's account). Read by admins only (`readEvents` with `pages: 1` and the token). They follow the answers when an account claims a device's anonymous answers, and through admin renames and merges; a delete removes them (v55, Pierre Q88: per-player behaviour, no photo use).
 
 A real class of RAs stays far below every cap. A determined attacker can still add up to ~6000 anonymous answers
 and 40 accounts per 6 hours, but since v17 (2026-11-02, Pierre) the statistics count **only players whose
@@ -47,10 +47,20 @@ rule, not the name, is what tells a real player from a bot: random clicking, bot
 never count, signed in or not. A bot that reads the right answers from the app's data could still pull photos towards "easy" (repeats on a photo
 it got right twice weigh less, as remembered).
 
+## Removed accounts (v55)
+
+Pierre, 2026-11-05 (rule D7): deleting, merging or archiving an account cleans up every trace tied to it.
+The Removed tab keeps only the name, the code hash, Into and the time: a device still signed in with that name and code
+gets `gone` (its answers go to Into after a merge, nowhere after a delete) and its reports are logged under Into or under
+no name, never under the removed name (`logReports_`), so they can never be credited to someone who takes the name
+later with another code. The answers a deleted account leaves (`~deleted <id>`, "keep answers anonymously") are no
+player anywhere: `readAnswers` flags them 2 and the admin and the analyses keep them out of every per-player view.
+
 ## If it happens
 
 1. Look at the **Alerts** tab and admin **Players** (Activity, Users): a burst of `~anon` ids or new names.
-2. Delete the junk: admin Players > Users > Delete (with its answers) for fake names; for answers without a name, tick
+2. Delete the junk: admin Players > Users > Delete… > Delete everything for fake names (sheet v55: answers, reports,
+   page summaries and log mentions go; only the Removed line stays); for answers without a name, tick
    their ids under Players > Not signed in, then "Delete the answers of the selected ids" (sheet v17 `anonDelete`, admin
    token, never a named player's answers). Photo ratings and confusions are recomputed from the
    Answers tab every time, so they recover on their own.

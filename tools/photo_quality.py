@@ -8,6 +8,8 @@ import json, os
 import numpy as np
 from PIL import Image
 import photos  # the photo list and its sizes
+import slot
+slot.guard('tools/photo_quality.py')  # one heavy run at a time on the machine (rule W24)
 
 def measure(path):
     im = Image.open(path).convert('RGB')
