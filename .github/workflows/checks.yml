@@ -59,6 +59,9 @@ jobs:
       - name: Cache-busting versions consistent (stamped at deploy; tests/versions.test.js stamps a copy as the deploy does)
         run: |
           python3 tools/check_versions.py
+      - name: Stack pins consistent with tools/stack.json (tools/stack_check.py; --latest, run by hand or by the brief, says what is behind)
+        run: |
+          python3 tools/stack_check.py --check
   smoke:
     name: smoke (${{ matrix.name }})
     runs-on: ubuntu-26.04
