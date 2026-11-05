@@ -2,6 +2,8 @@
 
 Written 2026-11-06 (Manila night) for Pierre. Research only: no code, no simulation. Code read on `main` at `5cecdeb3`;
 the "proven against the field" rule of PR #611 (branch `claude/progress-coverage`, waiting for Pierre) read as a diff.
+**Addendum, 2026-11-06 morning:** Pierre's answers to a-e (section 6) and his refinement, a bar stable when photos are
+added (section 7).
 
 **Pierre's challenge.** We tuned the bar to zero "overclaim" = bar − pOpen (success on an *average* photo, open
 question against all 40 genera), a yardstick of our own. He wants ONE simple, difficulty-indexed quantity (no bands,
@@ -32,10 +34,17 @@ through a summary, slides or search excerpt; **[memory]** not re-checked. "Our i
 6. **A bar defined as a probability can be tested on real data**, as a forecast of later answers by photo difficulty
    (players as the unit). With about 2,000 answers from 10 players: overall and roughly by tercile, not per player.
 
-**Proposal (section 5).** Bar of genus g = its domain score: the mean over its game photos of P(right, one view, no
-guessing) at a cautious ability θ_g − z·SE_g, SE_g from the player's own answers on g only; the exam stays the
-confirmation. Judge any bar as a forecast: signed error against the true domain score in simulation, calibration by
-difficulty on real data.
+7. **(Addendum) 100% is defined over the population of all possible photos of the genus, not over our pool.** Random-item
+   IRT (De Boeck 2008) and item-family models (Glas & van der Linden 2003; Sinharay, Johnson & Williamson 2003) treat
+   item difficulties as draws from a distribution; the "family expected response function" is the success on a
+   randomly drawn item. Our photos are a sample that estimates that distribution, so adding photos refines the bar
+   and does not move the target (section 7).
+
+**Proposal (sections 5 and 7).** Bar of genus g = its domain score over the genus's photo population:
+E over d ~ N(μ_g, τ_g²) of σ(θ̃_g − d), at a cautious ability θ̃_g = θ_g − z·SE_g, SE_g from the player's own answers
+on g only. μ_g is the genus offset the sheet already estimates; τ_g is the spread of photo difficulty, pooled across
+genera. The exam stays the confirmation. Judge any bar as a forecast: signed error against the true domain score in
+simulation, calibration by difficulty on real data.
 
 ## 1. Progress and mastery indicators (question A)
 
@@ -183,7 +192,7 @@ difficulty on real data.
 > guess from, as far as their own answers on g have shown.**
 
 `bar_g = mean over p in photos(g) of σ(θ̃_g − d_p)`, with `θ̃_g = θ_g − z·SE_g` and
-`SE_g = 1 / sqrt(I0 + Σ p_i(1 − p_i))`.
+`SE_g = 1 / sqrt(I0 + Σ p_i(1 − p_i))`. (Addendum: the mean over the pool becomes the photo population, section 7.)
 
 - **The pieces.** `d_p`: the pooled photo difficulty the sheet already serves, plus the single-view offset
   (`PICKD.SINGLE`); the pool is every game photo of g, hard ones included from the start, so 100% needs θ well above
@@ -209,6 +218,7 @@ difficulty on real data.
   Two options, to test, not to decide here:
   - (a) pair coverage as an **exam-entry** condition only (the PALM / Larkwire practice): keeps the bar one number;
   - (b) coverage as a multiplier on the bar (PR #611): adds four constants (B, G, W, C).
+  - Pierre chose (a) on 2026-11-06 (Q129), to be compared in simulation and in use.
 
 ### (ii) The metric to judge any candidate bar
 
@@ -274,18 +284,76 @@ two simulated worlds, pre-declared tests, players as the unit (Doroudi; Pelánek
    not through what they proved about hard photos.
 6. **Learnsim gaps.** RA profiles are not clustered by family, and no learner leaves when bored.
 
-## 6. Questions for Pierre (each with a recommendation)
+## 6. Questions for Pierre, answered 2026-11-06 (Q127-Q131)
 
 - **a. Meaning of 100%.** "Names every photo of the genus right, alone, without choices", with the bar the share of its
-  photos named right? *Recommendation:* yes: one difficulty-indexed number by construction.
+  photos named right? *Recommendation:* yes: one difficulty-indexed number by construction. **Pierre (Q127): yes**, over
+  the theoretical distribution of all possible photos of the genus, easy to hard; our photos are a sample of it
+  (section 7).
 - **b. Own evidence only in the bar.** The global level and the lecture group choose the photos, never the bar's
-  certainty? *Recommendation:* yes: the guard against crediting unknown genera.
+  certainty? *Recommendation:* yes: the guard against crediting unknown genera. **Pierre (Q128): yes**: the bar uses
+  only the player's answers on that genus; the global level serves everything else, not this.
 - **c. The field.** Pair coverage as an exam-entry condition or as a bar multiplier (PR #611)? *Recommendation:* exam
-  entry, then compare both in three learner worlds.
+  entry, then compare both in three learner worlds. **Pierre (Q129):** not a bar multiplier; pair coverage becomes an
+  exam-entry condition, compared in simulation and in use.
 - **d. The yardstick.** Replace "overclaim vs pOpen" with the signed error against the true domain score, plus
-  time-to-credit? *Recommendation:* yes, before any further tuning.
+  time-to-credit? *Recommendation:* yes, before any further tuning. **Pierre (Q130): yes.**
 - **e. PR #611.** Hold its bar change until (d) has been run on it and on the domain-score bar? *Recommendation:* yes if
-  (a) is agreed. Our inference: its typed-vocabulary part (`typedK`) does not depend on the bar.
+  (a) is agreed. Our inference: its typed-vocabulary part (`typedK`) does not depend on the bar. **Pierre (Q131): yes**,
+  hold #611's bar change.
+
+## 7. Addendum: a bar that stays put when photos are added (Pierre's refinement)
+
+**The requirement** (Pierre, 2026-11-06): adding many photos must not drop everyone's bar. 100% means naming right every
+photo of the genus over the *theoretical* distribution of all possible photos, easy to hard; our photos are a sample of
+it, so more photos estimate progress better and are not a moving target.
+
+**Sources.**
+- **Random-item IRT**: items can be random like persons; a Rasch model "with fixed persons and random items" fits well,
+  and item difficulties can be explained by item properties with an error term (De Boeck 2008, *Psychometrika* 73,
+  [record](https://consensus.app/papers/details/8798ac29a0e05e2e89173cec077838f5/)) **[abstract]**.
+- **Item families**: a multilevel IRT model gives each family of clones its own distribution of item parameters; the
+  test picks a family, then a random item from it (Glas & van der Linden 2003, *APM* 27(4), doi
+  10.1177/0146621603027004001) **[abstract]**. The family expected response function gives "the probability of a
+  correct response to an item randomly generated from an item family" (Sinharay, Johnson & Williamson 2003, *JEBS*
+  28(4):295-313, [record](https://ideas.repec.org/a/sae/jedbes/v28y2003i4p295-313.html)) **[abstract]**. Our reading:
+  a genus is a family, its photos the clones, and the bar is its family expected response at the player's ability.
+- **Domain sampling**: the domain score treats the bank as "a probability sample of the domain" (Bock et al. 1997);
+  domain-sampling true scores, items randomly sampled, rest on "a more solid empirical basis" than true scores on a
+  fixed test (Ellis 2021, *Psychometrika*, [record](https://consensus.app/papers/details/ab143ae238c05fab9a4d7663bc1be51c/))
+  **[abstract]**; generalizability theory's universe score is the expected score over all admissible items (Cronbach
+  et al. 1972) **[memory]**.
+- **New, uncalibrated items**: empirical-Bayes priors from what is known about an item (family, format) make difficulty
+  estimates more precise and stable (Mislevy 1988, *APM* 12, record dated 1987,
+  [record](https://consensus.app/papers/details/1ae4e8bc2ab65e1c9447609806641961/)) **[abstract]**. Adaptive tests
+  calibrate new items online while calibrated items hold the scale; multiple-EM-cycle marginal likelihood recovered
+  parameters best at 300-3,000 examinees (Ban et al. 2001, *JEM* 38(3):191-212) **[abstract]**. We already do the
+  Bayesian part: since sheet v31 a photo is its genus offset G plus its own residual, and a photo nobody has answered
+  sits at G (LEARNING.md "Hierarchical photo Elo").
+
+**The bar** (our proposal, replacing the mean over the pool of 5(i)):
+`bar_g = E over d ~ N(μ_g, τ_g²) of σ(θ̃_g − d) ≈ σ((θ̃_g − μ_g) / √(1 + 0.39 τ_g²))`, θ̃_g = θ_g − z·SE_g as before.
+- **μ_g** = the genus offset G the sheet already estimates (plus the single-view offset): the mean of the population,
+  not of the photos we hold.
+- **τ_g** = the spread of true photo difficulty around μ_g, from photos with enough answers, net of their noise
+  (τ² ≈ variance of residuals − mean squared error), shrunk toward one common τ (most genera have few calibrated
+  photos). Computed once by the sheet and served (rule 14i).
+- Photos then estimate μ_g and τ_g and are what the game shows; the bar no longer averages over the list.
+
+**When N new photos are added.**
+- *Before any answer*: each sits at μ_g with no residual; μ_g and τ_g do not move, so **no bar moves**. (The mean over
+  the pool would have: N photos at μ_g shrink the apparent spread, nudging strong players up and weak ones down.)
+- *As they are answered*: μ_g and τ_g are re-estimated and bars move only as much as the estimate of the population
+  does, toward the truth (photos harder than thought: μ_g up, bars a little down). Kept small by μ_g's shrinking step
+  (`GENUS_K` / (1 + n/10)), the pooled τ, and letting a photo into τ only once its answers separate it from noise.
+- θ and d share one Elo scale that can drift (Bolsinova et al. 2025); adding photos does not change θ_g − μ_g by itself,
+  and the calibration check of 5(ii) watches for drift.
+- Our photos are a curated sample (quality, views, sources): the population is in practice "photos of the kind the game
+  shows". A new kind (ReefCloud points, degraded images) changes the population itself: Pierre's decision, not noise.
+
+**Constants.** Pierre's to choose: still only **z** (how sure before crediting). Technical, set from data and checked by
+calibration: τ's pooling and the answers a photo needs before it informs τ. His decision, not a constant: which photos
+define the population if new kinds of photos come in.
 
 ## References
 
@@ -296,4 +364,6 @@ al. 2020; Wyse 2011; Wilson 2023; Klinkenberg et al. 2011; Bolsinova et al. 2025
 2025; Kruschke 1992; Nosofsky et al. 2019; Patil et al. 2014; Rafferty et al. 2016; Brunmair & Richter 2019; Carvalho
 & Goldstone 2014; Yan et al. 2017; Pavlou et al. 2021; Riley et al. 2021. **Secondary:** Nosofsky,
 Sanders & McDaniel 2018; Doroudi et al. 2017 (slides); Doroudi & Brunskill 2019; Jansen et al. 2013; Khan Academy
-help centre. **Memory:** Nosofsky 1986. **Read for the 2026-11-05 set-size study:** Kellman et al. 2023.
+help centre. **Memory:** Nosofsky 1986; Cronbach et al. 1972. **Read for the 2026-11-05 set-size study:** Kellman
+et al. 2023. **Addendum, abstract:** De Boeck 2008; Glas & van der Linden 2003; Sinharay, Johnson & Williamson 2003;
+Ellis 2021; Mislevy 1988; Ban et al. 2001.
