@@ -4238,3 +4238,28 @@ button.adm-chip[aria-pressed='true'] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* To do › Out of the presence rule: the photos Pierre kept, folded at the bottom of the section (Pierre, 2026-11-05),
+   and their tag on other pages, neutral instead of the warning red. */
+.adm-src.adm-rule.kept {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.adm-rulekept {
+  margin: 12px 0 0;
+}
+.adm-rulekept > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--muted);
+}
+.adm-rulekept > summary small {
+  font-variant-numeric: tabular-nums;
+}
+.adm-rulekept[open] > summary {
+  margin-bottom: 8px;
+}
+.adm-acts .adm-qseg button[data-rule='keep'][aria-pressed='true'] {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 700;
+}
