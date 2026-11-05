@@ -71,6 +71,11 @@ const store = {
     }
   }
 };
+// Colour-blind mode as set in the app's ⚙ (app.js, reefid-sync-cvd; the theme comes the same way, admin.html): the admin
+// follows it, for right / wrong and the difficulty bands (recBadge: dark blue … dark orange; Pierre, 2026-11-05).
+try {
+  if (localStorage.getItem('reefid-sync-cvd') === '1') document.documentElement.dataset.cvd = '1';
+} catch (e) {}
 // Candidates not downloaded yet (r: 1) show straight from iNaturalist; tools/fetch_approved.py downloads the ones added.
 // A recropped photo keeps its file name: its URL carries the crop (cr) and rewrite count (iv) so no cache serves the old file.
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
@@ -1958,6 +1963,62 @@ const RECENT = {
   N: 10 // sessions in Recent sessions
 };
 
+// recognised: begin
+// Difficulty in words, one helper and one colour scale for the whole admin (Pierre, 2026-11-05, Q19 and Q26: "+1.44"
+// read as good; "+ reads as good"). A photo's difficulty d (photo Elo) reads as the share of starting players (level 0,
+// Elo 1000) who really recognise it, without guessing: σ(0 − d) = 1 / (1 + e^d), the part of the model that does not
+// depend on the question's format (core.js: p = 1/k + (1 − 1/k)·σ(θ − d); the guess floor 1/k is left out on purpose).
+// d = 0 → 50%, +1.44 → 19%, −1 → 73%. A genus (any grouping) reads the same for a typical photo of it (its offset).
+// Five bands on the whole % shown (so the colour never disagrees with the number): REC [floor, class, word], tokens
+// --rec-<class> / --rec-<class>-ink in app.css (light, dark, colour-blind). The raw value stays in the title (a tap
+// on a touch screen shows it: recTap). Players read as their Elo (1000 + 200 × level, as players see it), ± its margin.
+const recognised = d => 1 / (1 + Math.exp(d)),
+  recOf = d => Math.round(100 * recognised(d)),
+  recPct = d => recOf(d) + '%',
+  REC = [
+    [75, 'veasy', 'very easy'],
+    [60, 'easy', 'easy'],
+    [40, 'mid', 'middle'],
+    [25, 'hard', 'hard'],
+    [-Infinity, 'vhard', 'very hard']
+  ],
+  recBand = d => REC.find(b => recOf(d) >= b[0]),
+  // A raw value as the title shows it: +1.44, −0.80, 0.00.
+  rawNum = d => (d > 0.004 ? '+' : d < -0.004 ? '−' : '') + Math.abs(d).toFixed(2),
+  recQ = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'),
+  // The badge: "recognised by 19%" (o.short: "19%", where a column, a card or the words beside it say what it is: on a
+  // narrow tile "recognised by" + the "19%" pill, so the pill never overflows), its band's colour,
+  // the raw value in its title. o.of: what is recognised ("it", "a typical photo of the genus"); o.raw: the raw value's
+  // name; o.more: more raw context for the title. No value: '–' (o.none).
+  recBadge = (d, o = {}) => {
+    if (d == null || !isFinite(d)) return o.none ?? '–';
+    const [, k, w] = recBand(d),
+      t = `Starting players who recognise ${o.of || 'it'} without guessing: ${recPct(d)} (${w}) · ${o.raw || 'difficulty'} ${rawNum(d)} (+ = harder)${o.more ? ' · ' + o.more : ''}`;
+    return `<span class="adm-rec rec-${k}" data-d="${d.toFixed(2)}" title="${recQ(t)}">${o.short ? '' : 'recognised by '}${recPct(d)}</span>`;
+  },
+  // The scale under a chart's difficulty axis (d from a on the left to b on the right): one segment per band, in its
+  // colour. recCut(f): the difficulty past which the whole % shown drops under the floor f.
+  recCut = f => Math.log(100 / (f - 0.5) - 1),
+  recScale = (a, b, cls = '') => {
+    const cut = [-Infinity, ...REC.slice(0, -1).map(([f]) => recCut(f)), Infinity];
+    return `<span class="adm-recscale${cls ? ' ' + cls : ''}">${REC.map(([, k, w], i) => {
+      const l = Math.max(a, cut[i]),
+        r = Math.min(b, cut[i + 1]);
+      return r > l ? `<i class="rec-${k}" style="width:${((100 * (r - l)) / (b - a)).toFixed(2)}%" title="${w}"></i>` : '';
+    }).join('')}</span>`;
+  },
+  // A player's level lv as the Elo players see (1000 + 200 × lv), with its 95% margin m (on the level scale) when known.
+  eloNum = lv => Math.round(1000 + 200 * lv),
+  eloMargin = m => (m != null && isFinite(m) ? Math.round((200 * m) / 10) * 10 : null),
+  eloText = (lv, m, o = {}) => {
+    if (lv == null || !isFinite(lv)) return '–';
+    const e = eloMargin(m),
+      t = `${o.what || 'Elo'} ${eloNum(lv)}${e != null ? ` ± ${e} (95% margin)` : ''} · level ${rawNum(lv)} (Elo = 1000 + 200 × level)`;
+    return `<span class="adm-elo" title="${recQ(t)}">${eloNum(lv)}${e != null && !o.bare ? ` <small>±${e}</small>` : ''}</span>`;
+  };
+// recognised: end
+// The method behind every difficulty reading, shown in the "?" of each page that has one.
+const REC_HELP = `<p><b>Difficulty in words</b> (Pierre, 2026-11-05). A photo reads as <b>recognised by N%</b>: the share of starting players (level 0, Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) for its difficulty d on the photo Elo scale (0 → 50%, +1 → 27%, −1 → 73%; + = harder). The lucky guess a question's choices allow (1 in 4 with four choices) is left out on purpose: it depends on the question, not the photo. A genus reads the same, for a typical photo of it (its difficulty offset). A higher % is an easier photo, and sorting follows it. Colours, one scale for the whole admin: ${REC.map(([f, k, w], i) => `<span class="adm-rec rec-${k}">${i ? (f === -Infinity ? 'under ' + REC[i - 1][0] : f + '-' + REC[i - 1][0]) : '≥' + f}%</span> ${w}`).join(', ')} (colour-blind mode: dark blue, light blue, grey, light orange, dark orange); the number always says it, the colour only helps. Hover a reading (tap it on a phone) for the raw value. A player reads as their <b>Elo</b>, the score players see: 1000 + 200 × their level (on the same scale as photo difficulty), ± its 95% margin; hover it for the level. "vs expected" (points above or below the chance the game expected) keeps its sign: + = better than expected.</p>`;
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
@@ -1975,23 +2036,23 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
     <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
     <p><b>Tap a session</b> to unfold its summary under it; tap again to fold it. A sentence first, then start → end, length, answers, right (beside it, small, the share the game expected: the mean of each answer's logged chance) and the progress % before → after the session (the player's answers replayed with today's rules up to the session's first answer, then through it). The chart: right answers over the session's last ${SESS.WIN} (from its 5th answer) against the expected, its scale from ${SESS.PAD} points under the session's lowest point (rounded down to 10) to 100%, a dot under each genus met for the first time, ★ at a genus learned; a session under 5 answers shows its answers as dots. <b>New genera</b>: first asked in this session (<i>card</i>: its card showed, not asked yet). <b>Most improved</b>: the genera whose bar rose most (${Math.round(SESS.GAIN * 100)} points or more, at most ${SESS.TOP}). <b>Difficulties</b>: genera missed ${SESS.MISS} times or more, mix-ups (shown → answered), the photos of the questions missed, hardest first by their difficulty for everyone (the photo Elo), each with <b>recognised by N%</b>: the share of starting players (Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) of its photo Elo d, whatever the question's format; <b>hard for everyone</b>: a photo everyone misses, as on Health. <b>Achievements</b>: earned within ${SESS.EDGE / 6e4} minutes of the session's answers (from the player's saved progress). <b>Events</b>: which session it is and the time since the last one, Open all, the first-launch question, genera learned (the right exam question that passed it), mastery exam questions, typed answers, ${SESS.RUN} right or more in a row, ending on ${SESS.END} misses or more in a row. <b>Journey →</b> opens the player's full journey.</p>`;
   },
-  statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
+  statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Elo = the median player's Elo on the genus (1000 + 200 × their level on it).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no Coral Finder book, several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
     <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected (Coral Finder book pages included; hover the row for how many). <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
     <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from (Coral Finder book photos are never in games, so they have no row); <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once. Nothing here changes anything.</p>`,
-  statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; genera sorted by median. Click a dot to see the photo.</p>
+  statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience, read as <b>recognised by N%</b> (below). The coloured line under the distribution and the genera shows the bands along the axis, easier on the left. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each genus reads for a typical photo of it, its genus offset (sheet v31; the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
-  statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
-  diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
+  statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
+  diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; AGENTS.md rule 6g): yours to keep or remove, never removed automatically.</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
@@ -2008,13 +2069,15 @@ const HELP = {
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
-    <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
+    <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or clearly harder than the other photos of their genus (<b>harder than its genus</b>: a difficulty at least ${HEALTH.PH_FAR} above the median of their genus's rated photos on the photo Elo scale, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; then how many starting players recognise it (hover it for the raw difficulty and its gap to the genus median).</p>
     <p><b>Genera that don't take off.</b> Per slate genus, from the answers where it was shown: players who met it, the median of their right rates on it, and Stuck = players with ${HEALTH.G_MIN}+ answers on it still under ${Math.round(HEALTH.G_LOW * 100)}% over their last ${HEALTH.G_MIN} (out of the players with ${HEALTH.G_MIN}+ answers). Most stuck first.</p>`,
   statsstop: `<p>Where players stop and the genus sheets they open, from the answers already logged and the visits' summaries. Anonymous ids only, counts, no names. Every account counts, yours too.</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
+// The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
+const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
 function toggleHelp() {
   let h = $('admhelp');
   if (h) {
@@ -2041,7 +2104,7 @@ function toggleHelp() {
   let tab = store.get('reefid-admin-started', false) ? 'page' : 'start';
   const draw = () => {
     if (tab === 'start') store.set('reefid-admin-started', true);
-    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${HELP[tab === 'start' ? 'start' : m]}`;
+    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : HELP[m] + (REC_PAGES.has(m) ? REC_HELP : '')}`;
     h.querySelector('.adm-link').onclick = () => h.remove();
     h.querySelectorAll('[data-ht]').forEach(
       b =>
@@ -2644,10 +2707,10 @@ function pulseRows(L) {
 }
 // Player level bands (the overall level when they answered) and modes, the columns of the one-tap tables.
 const PULSE_BANDS = [
-    ['beg', 'Beginner', 'Level below −0.5'],
-    ['mid', 'Middle', 'Level −0.5 to +0.5'],
-    ['str', 'Strong', 'Level above +0.5'],
-    ['unk', 'Unknown', 'Level not logged']
+    ['beg', 'Beginner', 'Elo below 900'],
+    ['mid', 'Middle', 'Elo 900 to 1100'],
+    ['str', 'Strong', 'Elo above 1100'],
+    ['unk', 'Unknown', 'Elo not logged']
   ],
   pulseBand = lv => (typeof lv !== 'number' ? 'unk' : lv < -0.5 ? 'beg' : lv < 0.5 ? 'mid' : 'str'),
   PULSE_MODES = {quiz: 'Quiz', 'quiz-duel': 'Duel', 'quiz-custom': 'Custom'};
@@ -3944,7 +4007,7 @@ function retireOrder(n, w, cols) {
     }
     if (nn !== null && nn < 0.5) {
       c.score += 3 * (1 - nn / 0.5);
-      c.why.push(`difficulty ${sgn(c.d)} like another colony`);
+      c.why.push(`recognised by ${recPct(c.d)}, like another colony`);
     }
     if (c.ans >= 10) {
       c.score += Math.min(2, c.ans / 30);
@@ -4987,7 +5050,7 @@ function renderDiff() {
     const [d, n, r] = S[p.f];
     return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty · answers that rated it, right (weighed by experience)">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${nAns(S[p.f])} · ${pct(r, n)}</span></figcaption>
+    <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
   $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photos by difficulty</h2>${segBtns('min', [
@@ -5454,7 +5517,7 @@ function lookBanner() {
       )
         .map(
           o =>
-            `<a class="cov-lk" href="#${esc(encodeURIComponent(o.n))}" title="${esc(o.why.map(w => w[1]).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
+            `<a class="cov-lk" href="#${esc(encodeURIComponent(o.n))}" title="${esc(o.why.map(w => w[1] + (w[2] ? ` (${w[2]})` : '')).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
         )
         .join('')}<a class="adm-link" href="#~stats-needs">All ${L.length} ›</a></div>`
     : '';
@@ -5615,6 +5678,7 @@ function renderHidden() {
 // The views of Activity, Photo stats, To do › Health and the live Analyses views (~stats-*); their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
+  GD = {}, // the genus offsets of the hierarchical photo Elo (?stats=1 gd, sheet v31): {genus: [offset, weighed answers]}
   SMEM = memOf(null),
   SCONF = {},
   MEID = null,
@@ -5732,6 +5796,7 @@ function loadStats(ratingsOnly) {
           if (!fresh() || !s) return;
           STATS = s.ok ? s.photos || {} : {};
           RAS = s.ok ? s.ras || {} : {};
+          GD = (s.ok && s.gd) || {};
           // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
           SMEM = memOf(s.ok && s.mem);
           SCONF = (s.ok && s.conf) || {};
@@ -5767,15 +5832,6 @@ const nAns = s => (s ? (s[3] ?? s[1]) : 0);
 // The photo ratings: the sheet's ?stats=1, the ones the games use.
 const photoStats = () => STATS;
 const pct = (r, n) => (n ? Math.round((100 * r) / n) + '%' : '–');
-const sgn = d => (d > 0 ? '+' : '') + d.toFixed(2);
-// recognised: begin
-// A photo's difficulty d (photo Elo) in words a reader gets (Pierre, 2026-11-05): the share of starting players (level 0,
-// Elo 1000) who really recognise it, without guessing: σ(0 − d) = 1 / (1 + e^d), the part of the model that does not
-// depend on the question's format (core.js: p = 1/k + (1 − 1/k)·σ(θ − d); the guess floor 1/k is left out on purpose).
-// d = 0 → 50%, +1.44 → 19%, −1 → 73%. One helper for every admin page that shows a photo's difficulty.
-const recognised = d => 1 / (1 + Math.exp(d)),
-  recPct = d => Math.round(100 * recognised(d)) + '%';
-// recognised: end
 const days = t => {
   const d = Math.floor((Date.now() - t) / 864e5);
   return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago';
@@ -5814,6 +5870,19 @@ $v.addEventListener('mouseover', e => {
   const td = e.target.closest && e.target.closest('.adm-tbl td');
   if (td && !td.title && td.scrollWidth > td.clientWidth + 1) td.title = td.innerText.trim();
 });
+// A difficulty or Elo reading (recBadge, eloText) on a touch screen, where no title shows: a tap shows its title (the raw
+// value) in the toast, and goes no further (the row or tile it sits in does not open).
+$v.addEventListener(
+  'click',
+  e => {
+    const r = e.target.closest && e.target.closest('.adm-rec[title], .adm-elo[title]');
+    if (!r || !matchMedia('(hover: none)').matches) return;
+    e.stopPropagation();
+    e.preventDefault();
+    toast(r.title);
+  },
+  true
+);
 const segBtns = (k, L) =>
   `<span class="adm-qseg adm-sseg" role="group">${L.map(([v, t]) => `<button type="button" data-sf="${k}" data-v="${v}" aria-pressed="${String(SF[k]) === String(v)}">${t}</button>`).join('')}</span>`;
 const kpis = L => `<div class="adm-kpis">${L.map(([t, v]) => `<div><b>${v}</b><span>${t}</span></div>`).join('')}</div>`;
@@ -6047,7 +6116,7 @@ const UCOLS = [
     'Elo',
     u => u.lv ?? -99,
     0,
-    'Overall level on the photo-difficulty scale, as the Elo players see (1000 + 200 × level, shown to them from 200 answers), ± its 95% margin'
+    'Overall level as the Elo players see (1000 + 200 × level on the photo-difficulty scale, shown to them from 200 answers), ± its 95% margin'
   ],
   ['answers', 'Answers', u => u.answers, 0],
   [
@@ -6172,10 +6241,7 @@ function renderUsers() {
   const cell = (k, u) =>
     ({
       name: `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}`,
-      elo:
-        u.lv == null
-          ? '–'
-          : `${Math.round(1000 + 200 * u.lv)}${u.id && isFinite(LVM[u.id]) ? ` <small>±${Math.round((200 * LVM[u.id]) / 10) * 10}</small>` : ''}`,
+      elo: eloText(u.lv, u.id ? LVM[u.id] : null),
       answers: u.answers,
       right: pct(u.qz[1], u.qz[0]),
       recent: pct(u.q50[1], u.q50[0]),
@@ -6223,10 +6289,10 @@ function renderUsers() {
           `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th>${replayOn() ? '<th title="Replayed from their answers with the current rules">Progress</th>' : ''}<th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th title="Overall level as the Elo players see (1000 + 200 × level), ± its 95% margin">Elo</th><th>Answers</th><th>Right</th>${replayOn() ? '<th title="Replayed from their answers with the current rules">Progress</th>' : ''}<th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? eloText(RAS[id][0], LVM[id]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
           )
           .join(
             ''
@@ -6712,8 +6778,8 @@ function statsPlayers() {
         : `<p class="note">Needs answers logged by sheet script v5${ANS.v >= 5 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`
     }</section>
     <section class="adm-scard"><h3>Conditions</h3><table class="adm-tbl">${cond.map(([t, n, r]) => `<tr><td>${t}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('')}</table></section>
-    <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th><th title="Median player ability on the genus">Level</th></tr></thead><tbody>
-      ${gl.map(g => `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? sgn(med(GT[g.n])) : ''}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th><th title="Median player Elo on the genus (1000 + 200 × their level on it)">Elo</th></tr></thead><tbody>
+      ${gl.map(g => `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? eloText(med(GT[g.n]), null, {what: 'Median player Elo on the genus'}) : ''}</td></tr>`).join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Mix-ups</h3>${
       ml.length
         ? `<table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th></th><th>n</th></tr></thead><tbody>
@@ -6776,7 +6842,11 @@ function needsOf() {
         const hard = rated.length ? Math.max(...rated) : c.L.some(p => qOf(p.f) === 1) ? 1 : 0,
           top = q3(TH[n]);
         if (top - OFF > hard + 0.3) {
-          why.push(['easy', `players ${sgn(top)} vs hardest ${sgn(hard)}`]);
+          why.push([
+            'easy',
+            `players Elo ${eloNum(top)} vs hardest photo recognised by ${recPct(hard)}`,
+            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`
+          ]);
           sc += 1.5;
         }
       }
@@ -6881,7 +6951,7 @@ function needsBody() {
     <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr>${th('n', 'Genus')}${th('v', 'View')}${th('c', 'Colonies')}${th('sc', 'Why')}</tr></thead><tbody>
     ${L.map(
       o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
-      <td>${o.why.map(([k, t]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${T[k]}">${esc(t)}</span>`).join(' ')}</td></tr>`
+      <td>${o.why.map(([k, t, raw]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${esc(t)}</span>`).join(' ')}</td></tr>`
     ).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
   const save = () => {
     store.set('reefid-admin-stats', SF);
@@ -6943,7 +7013,7 @@ function healthBad(R) {
         s = PS[f],
         m = GMED[p.genus],
         far = s && nAns(s) >= H.PH_MIN && m != null ? s[0] - m : null;
-      return {p, ...o, r: o.ok / o.n, far};
+      return {p, ...o, r: o.ok / o.n, far, d: s && nAns(s) >= H.PH_MIN ? s[0] : null, gm: m};
     })
     .filter(o => o.r < H.PH_LOW || (o.far != null && o.far >= H.PH_FAR))
     .sort((a, b) => a.r - b.r || b.n - a.n);
@@ -7132,7 +7202,7 @@ function statsHealth() {
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
       <figcaption><a class="adm-gen" href="#${esc(o.p.genus)}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
-      <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')}${o.far != null ? ` · <span title="Difficulty against the genus median"${o.far >= H.PH_FAR ? ' class="warnc"' : ''}>${sgn(o.far)}</span>` : ''}</span></figcaption></figure>`;
+      <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')}</span>${o.d != null ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>` : ''}</figcaption></figure>`;
   const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
     BAD.length
       ? `<div class="adm-hphotos">${BAD.slice(0, MAXPH).map(phTile).join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
@@ -7330,6 +7400,8 @@ function statsPhotos() {
         0.5
       );
   const med = ds[Math.floor(ds.length / 2)],
+    q1 = qtl(ds, 0.25),
+    q3 = qtl(ds, 0.75),
     sd = Math.sqrt(mean(ds.map(x => (x - mean(ds)) ** 2)));
   // Histogram, 0.1 wide bins, stacked by view.
   const lo = Math.floor(ds[0] * 10),
@@ -7346,23 +7418,43 @@ function statsPhotos() {
     L.forEach(p => (O[key(p)] = O[key(p)] || []).push(p));
     return O;
   };
-  const rowsOf = (O, T) =>
+  // A row's reading m: the median of its photos; a genus (off: its offset, ?stats=1 gd, sheet v31) reads for a typical
+  // photo of it, its difficulty offset (Pierre, 2026-11-05), the median when the sheet serves none. Hardest first.
+  const rowsOf = (O, T, off) =>
     Object.entries(O)
-      .map(([k, a]) => ({
-        k,
-        t: T ? T[k] || k : k,
-        a,
-        m: median(a.map(p => p.d)),
-        n: a.reduce((t, p) => t + p.n, 0),
-        ok: a.reduce((t, p) => t + p.ok, 0)
-      }))
+      .map(([k, a]) => {
+        const md = median(a.map(p => p.d)),
+          o = off && off[k] && isFinite(off[k][0]) ? off[k][0] : null;
+        return {
+          k,
+          t: T ? T[k] || k : k,
+          a,
+          md,
+          o,
+          m: o ?? md,
+          n: a.reduce((t, p) => t + p.n, 0),
+          ok: a.reduce((t, p) => t + p.ok, 0)
+        };
+      })
       .sort((a, b) => b.m - a.m);
   const V = rowsOf(
       group(p => p.view),
       VIEW_T
     ),
     S = rowsOf(group(origin), ORIGIN_T),
-    GN = rowsOf(group(p => p.genus));
+    GN = rowsOf(
+      group(p => p.genus),
+      null,
+      GD
+    ),
+    // A genus's reading, its raw values in the title.
+    genRec = (r, short) =>
+      recBadge(r.m, {
+        short,
+        of: 'a typical photo of the genus',
+        raw: r.o != null ? 'genus offset' : `median difficulty of its ${r.a.length} photo${r.a.length === 1 ? '' : 's'} here`,
+        more: r.o != null ? `median of its ${r.a.length} photo${r.a.length === 1 ? '' : 's'} here ${rawNum(r.md)}` : ''
+      });
   // Dot strip scale: the spread of the photos shown, at least -1..+1.
   const x0 = Math.min(-1, Math.floor(ds[0] * 2) / 2),
     x1 = Math.max(1, Math.ceil(ds[ds.length - 1] * 2) / 2),
@@ -7375,7 +7467,7 @@ function statsPhotos() {
     lanes = Object.keys(VIEW_T).filter(v => L.some(p => p.view === v)),
     dot = p => {
       const k = Math.min(1, p.a / 10);
-      return `<button type="button" class="v-${p.view}" style="left:${X(p.d)};--s:${(7 + 5 * k).toFixed(1)}px;opacity:${(0.35 + 0.6 * k).toFixed(2)}" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.a} answer${p.a === 1 ? '' : 's'}, ${pct(p.ok, p.n)} right"></button>`;
+      return `<button type="button" class="v-${p.view}" style="left:${X(p.d)};--s:${(7 + 5 * k).toFixed(1)}px;opacity:${(0.35 + 0.6 * k).toFixed(2)}" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} · recognised by ${recPct(p.d)} (difficulty ${rawNum(p.d)}) · ${p.a} answer${p.a === 1 ? '' : 's'}, ${pct(p.ok, p.n)} right"></button>`;
     },
     lane = (a, v) => {
       const P = a.filter(p => p.view === v);
@@ -7391,11 +7483,11 @@ function statsPhotos() {
           hi = d.filter(x => x <= q3 + r).pop();
         box = `<u style="left:${X(lo)};right:calc(100% - ${X(hi)})"></u><s class="v-${v}" style="left:${X(q1)};right:calc(100% - ${X(q3)})"></s>`;
       }
-      return `<span class="adm-strip" title="${esc(VIEW_T[v])}: median ${sgn(med)}, ${P.length} photo${P.length === 1 ? '' : 's'}"><b style="left:${X(0)}"></b>${box}${P.map(dot).join('')}<i class="v-${v}" style="left:${X(med)}"></i></span>`;
+      return `<span class="adm-strip" title="${esc(VIEW_T[v])}: median photo recognised by ${recPct(med)} (difficulty ${rawNum(med)}), ${P.length} photo${P.length === 1 ? '' : 's'}"><b style="left:${X(0)}"></b>${box}${P.map(dot).join('')}<i class="v-${v}" style="left:${X(med)}"></i></span>`;
     },
     strip = a => `<span class="adm-lanes">${lanes.map(v => lane(a, v)).join('')}</span>`;
   const table = (Rw, first) =>
-    `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th>Median</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${sgn(r.m)}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
+    `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th title="The median photo: starting players who recognise it without guessing">Recognised</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${recBadge(r.m, {short: 1, of: 'the median photo', raw: 'median difficulty'})}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
   const legend = `<p class="adm-legend">${Object.keys(VIEW_T)
     .filter(v => L.some(p => p.view === v))
     .map(v => `<span><i class="v-${v}"></i>${VIEW_T[v]}</span>`)
@@ -7404,24 +7496,30 @@ function statsPhotos() {
     head +
     kpis([
       ['Photos rated', L.length],
-      ['Median', sgn(med)],
-      ['Spread (SD)', sd.toFixed(2)],
-      ['Hardest genus', `<i>${esc(GN[0].k)}</i>`]
+      ['Median photo, recognised by', recBadge(med, {short: 1, of: 'the median photo', raw: 'median difficulty'})],
+      [
+        'Middle half, recognised by',
+        `<span title="${esc(`Half the photos are between ${recPct(q3)} and ${recPct(q1)}: difficulty ${rawNum(q1)} to ${rawNum(q3)} (quartiles), spread (SD) ${sd.toFixed(2)}`)}">${recOf(q3)}–${recPct(q1)}</span>`
+      ],
+      ['Hardest genus', `<i>${esc(GN[0].k)}</i> ${genRec(GN[0], 1)}`]
     ]) +
     `
     <div class="adm-sgrid">
     <section class="adm-scard"><h3>Distribution</h3><div class="adm-cols stack">${H.map(
       h =>
-        `<div title="${(h.b / 10).toFixed(1)} to ${((h.b + 1) / 10).toFixed(1)}">${Object.keys(VIEW_T)
+        `<div title="${esc(`Recognised by ${recOf((h.b + 1) / 10)}–${recPct(h.b / 10)} · difficulty ${rawNum(h.b / 10)} to ${rawNum((h.b + 1) / 10)}`)}">${Object.keys(
+          VIEW_T
+        )
           .filter(v => h.v[v])
           .map(v => `<i class="v-${v}" style="height:${(100 * h.v[v]) / hm}%"></i>`)
           .join('')}</div>`
     ).join('')}</div>
-      <p class="adm-axis"><span>${sgn(lo / 10)}</span><span>easier · harder</span><span>${sgn((hi + 1) / 10)}</span></p>${legend}</section>
+${recScale(lo / 10, (hi + 1) / 10)}
+      <p class="adm-axis"><span>${recPct(lo / 10)}</span><span>easier · recognised by · harder</span><span>${recPct((hi + 1) / 10)}</span></p>${legend}</section>
     <section class="adm-scard"><h3>Views</h3>${table(V, 'View')}</section>
     <section class="adm-scard"><h3>Sources</h3>${table(S, 'Source')}</section>
-    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="#${esc(r.k)}"><i>${esc(r.k)}</i></a><span class="n">${sgn(r.m)}</span>${strip(r.a)}</div>`).join('')}</div>
-      <p class="adm-axis strip"><span>${sgn(x0)}</span><span>easier · harder</span><span>${sgn(x1)}</span></p></section>
+    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="#${esc(r.k)}"><i>${esc(r.k)}</i></a><span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
+      ${recScale(x0, x1, 'strip')}<p class="adm-axis strip"><span>${recPct(x0)}</span><span>easier · recognised by · harder</span><span>${recPct(x1)}</span></p></section>
     </div>`;
   bindStats();
 }

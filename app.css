@@ -82,6 +82,18 @@
   --bad-bg: #f7dcd6;
   --warn: #d98b2b;
   --review: #b86e0f; /* the "to review" dot of My progress (amber, calm; 2026-11-03), on a --surface ring */
+  /* Difficulty in words in the admin (admin.js recBadge; Pierre, 2026-11-05): a photo or genus "recognised by N%" in five
+     bands, fill + text, the same in every palette, stronger than the muted tints; text >= 4.5:1 on its fill (docs/DESIGN.md). */
+  --rec-veasy: #1b6b33;
+  --rec-veasy-ink: #ffffff;
+  --rec-easy: #a3d9a5;
+  --rec-easy-ink: #0b1a1e;
+  --rec-mid: #e4e9eb;
+  --rec-mid-ink: #14262d;
+  --rec-hard: #f6a54e;
+  --rec-hard-ink: #1f1300;
+  --rec-vhard: #b42318;
+  --rec-vhard-ink: #ffffff;
   /* The Coral basics trail (learn.js basicsArt), one colour per step from reef blue to coral orange: a deliberate
      exception to "one meaning per hue" (docs/DESIGN.md); each >= 4.5:1 on --surface-2 and --surface. */
   --bt1: #1d4f91;
@@ -136,6 +148,16 @@
   --bad-bg: #45231d;
   --cf-ink: #d9a75c;
   --review: #e3a649;
+  --rec-veasy: #1f7337;
+  --rec-veasy-ink: #ffffff;
+  --rec-easy: #9fd8a8;
+  --rec-easy-ink: #06210f;
+  --rec-mid: #33454c;
+  --rec-mid-ink: #e3eef0;
+  --rec-hard: #f0a04c;
+  --rec-hard-ink: #1f1300;
+  --rec-vhard: #c4342a;
+  --rec-vhard-ink: #ffffff;
   --bt1: #8db4f0;
   --bt2: #72c0ef;
   --bt3: #5cc6d3;
@@ -3693,12 +3715,29 @@ a.lt:hover {
   --good-bg: #dbe6f4;
   --bad: #c45400;
   --bad-bg: #fbe3cf;
+  /* The admin's difficulty bands (--rec-*): dark blue, light blue, grey, light orange, dark orange (Pierre, 2026-11-05). */
+  --rec-veasy: #0b4f9c;
+  --rec-veasy-ink: #ffffff;
+  --rec-easy: #a6cdee;
+  --rec-easy-ink: #0b1a1e;
+  --rec-hard: #feb672;
+  --rec-hard-ink: #1f1300;
+  --rec-vhard: #b34700;
+  --rec-vhard-ink: #ffffff;
 }
 :root[data-cvd='1'][data-theme='dark'] {
   --good: #b5dcff;
   --good-bg: #1a3047;
   --bad: #d6731a;
   --bad-bg: #45270f;
+  --rec-veasy: #1f5fae;
+  --rec-veasy-ink: #ffffff;
+  --rec-easy: #a9cff0;
+  --rec-easy-ink: #04152b;
+  --rec-hard: #feb672;
+  --rec-hard-ink: #1f1300;
+  --rec-vhard: #b34700;
+  --rec-vhard-ink: #ffffff;
 }
 /* Colour-blind mode: the dark-blue "right" is close to the accent used for selected and active states, so it also changes
    shape (design review 2026-11-01): right = filled with a white tick, wrong = dashed orange outline. */

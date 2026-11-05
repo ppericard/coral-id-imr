@@ -335,6 +335,88 @@ body.admin .hdr-tools[hidden] {
   background: var(--o);
   color: var(--band-ink);
 }
+/* Difficulty in words (admin.js recBadge; Pierre, 2026-11-05): "recognised by 19%" or "19%", one colour scale for the
+   whole admin, five bands (tokens --rec-* in app.css: light, dark, colour-blind; the same in every palette). The number
+   says it; the colour only helps. The raw value is in the title (a tap shows it on a touch screen). */
+.adm-rec {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 7px;
+  border-radius: var(--pill);
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-style: normal;
+  line-height: 1.6;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  vertical-align: baseline;
+  font-variant-numeric: tabular-nums;
+}
+.adm-rec[title],
+.adm-elo[title] {
+  cursor: help;
+}
+.rec-veasy {
+  background: var(--rec-veasy);
+}
+.adm-rec.rec-veasy {
+  color: var(--rec-veasy-ink);
+}
+.rec-easy {
+  background: var(--rec-easy);
+}
+.adm-rec.rec-easy {
+  color: var(--rec-easy-ink);
+}
+/* Middle: no colour, a grey pill with a hairline so it shows on the grey surfaces too. */
+.rec-mid {
+  background: var(--rec-mid);
+}
+.adm-rec.rec-mid {
+  color: var(--rec-mid-ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.rec-hard {
+  background: var(--rec-hard);
+}
+.adm-rec.rec-hard {
+  color: var(--rec-hard-ink);
+}
+.rec-vhard {
+  background: var(--rec-vhard);
+}
+.adm-rec.rec-vhard {
+  color: var(--rec-vhard-ink);
+}
+/* In a KPI tile: the tile's big number size (and not the label's look, .adm-kpis span). */
+.adm-kpis b span {
+  font: inherit;
+  color: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.adm-kpis b .adm-rec {
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  padding: 0 10px;
+}
+/* The bands along a chart's difficulty axis (recScale): easier on the left. */
+.adm-recscale {
+  display: flex;
+  height: 6px;
+  margin-top: 3px;
+  border-radius: var(--pill);
+  overflow: hidden;
+}
+.adm-recscale i {
+  display: block;
+  height: 100%;
+}
+.adm-recscale.strip {
+  margin-left: 156px;
+}
 .adm-filter {
   display: flex;
   flex-wrap: wrap;
@@ -3241,6 +3323,10 @@ button.adm-chip[aria-pressed='true'] {
   display: block;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+}
+/* The photo's difficulty reading (recBadge) on its own line under right · answers. */
+.adm-htile .adm-hnum + .adm-hnum {
+  margin-top: 2px;
 }
 @media (max-width: 599px) {
   .adm-hphotos {
