@@ -108,9 +108,10 @@ const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.i
 // original (iNaturalist, FishBase: core.js photoAway; Pierre, 2026-11-05) is read from there at a light size, the others
 // (IMR lecture photos, Coral Finder book scans, page art) from the site's img/. Under a service worker both stay as they
 // are: the worker keeps photos offline under their R2 address and fails at once while R2 is out (sw.js photo), and each
-// photo that fails falls back on its own.
+// photo that fails falls back on its own. With PHOTO_BASE '' (R2 switched off), AWAY from the start: the photos with an
+// online original live on R2 only since step 2 of Photos out of the repo, so they come from that original.
 let R2 = !!PHOTO_BASE,
-  AWAY = false;
+  AWAY = !PHOTO_BASE;
 const swOn = () => !!(navigator.serviceWorker && navigator.serviceWorker.controller);
 // A file of img/ (a photo with no online original, page art), where this page reads it.
 const photoUrl = path => (R2 ? PHOTO_BASE : '') + path;
@@ -127,7 +128,11 @@ const photoIdx = () => {
 const photoLook = f => photoIdx().f.get(f);
 // Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
 // iNaturalist serves 240 (small), 500 (medium) and 1024 px (large).
-const loc = (p, s) => (AWAY && p.src ? photoOnline(p.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`));
+// A bare {f} (the Lab's photos) finds its record, so its online original, by name (R2 switched off: AWAY from the start).
+const loc = (p, s) => {
+  const o = AWAY && !p.src ? photoLook(p.f) || p : p;
+  return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
+};
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
@@ -260,6 +265,7 @@ document.addEventListener('error', photoFail, true);
 // A cropped photo shown from its online original gets its crop drawn (core.js photoCropOf: the site's files have it baked
 // in): every <img> added or given a new src is checked, from the first fallback on (nothing watches before).
 let CROPW = null;
+if (AWAY) setTimeout(cropWatch); // R2 switched off: crops drawn from the start, once this file has run (FISH comes below)
 const cropSet = i => {
   if (i.style.getPropertyValue('object-view-box') && !i.dataset.vb) return; // a crop drawn by its page (none in the app yet)
   const c = photoCropOf(i.getAttribute('src') || '', photoIdx());

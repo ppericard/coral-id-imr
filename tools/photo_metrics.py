@@ -2,10 +2,11 @@
 # colour cast of every photo, measured the same way on the site's photos and on the candidates. Used ONLY as tie-breakers
 # and sanity flags next to the judging pass and Pierre's own eye (admin.js autoPlan, metFlag), never to decide alone.
 #
-#   python3 tools/photo_metrics.py             live photos (img/<f>-m.webp, 960 px) and every iNaturalist candidate
+#   python3 tools/photo_metrics.py             live photos (<f>-m.webp, 960 px: img/, or a copy from R2 kept in
+#                                              tools/.cache/r2/ for the photos that live there only) and every iNaturalist candidate
 #                                              waiting (its "large" file, 1024 px, resized to 960 px; downloaded once
 #                                              into ~/.cache/coral-id-imr/metrics/, outside the repo)
-#   python3 tools/photo_metrics.py --live      live photos only (no download)
+#   python3 tools/photo_metrics.py --live      live photos only (no iNaturalist download)
 #   python3 tools/photo_metrics.py --cand      candidates only
 #   python3 tools/photo_metrics.py --calib     how each metric ranks the photos Pierre rated (curation.json quality)
 #
@@ -53,9 +54,8 @@ def measure(im, px):
 
 
 def live(f):
-    big = os.path.join(ROOT, 'img', f + '.webp')
-    with Image.open(big) as b: px = max(b.size)
-    return measure(Image.open(os.path.join(ROOT, 'img', f + '-m.webp')), px)
+    with Image.open(photos.path(f)) as b: px = max(b.size)
+    return measure(Image.open(photos.path(f, '-m')), px)
 
 
 def cand(p):
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     S = load()
     M = S.get('m', {})
     if '--cand' not in a:
-        fs = photos.photos()
+        fs = photos.every()  # in img/ or on R2 only
         for i, f in enumerate(fs):
             try: M[f] = live(f)
             except Exception as e: print(f'{f}: {e}')

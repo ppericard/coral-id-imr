@@ -10,7 +10,9 @@ R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(R, 'tools'))
 from excluded import excluded
 from datajson import load_all
+import photos as ph  # img/, or R2 for the photos that live there only (Photos out of the repo)
 d = load_all()  # data.json + the candidates waiting in cand.json
+HAVE = set(ph.every())  # the downloaded photos, wherever their files are
 
 def photos(n):
     g = d['gen'][n]; out = {}
@@ -18,10 +20,10 @@ def photos(n):
         for L in (g.get(s) or {}).values():
             for p in L: out[p['f']] = p
     for p in d['course'].get(n, []) + (d.get('cand') or {}).get(n, []): out[p['f']] = p
-    return {f: p for f, p in out.items() if not excluded(f) and os.path.exists(f'{R}/img/{f}-s.webp')}
+    return {f: p for f, p in out.items() if not excluded(f) and f in HAVE}
 
 def load(f):
-    im = Image.open(f'{R}/img/{f}-s.webp').convert('RGB')
+    im = Image.open(ph.path(f, '-s')).convert('RGB')  # a copy from R2 for a photo that lives there only
     return im
 
 def hist(im):
