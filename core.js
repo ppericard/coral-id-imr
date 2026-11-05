@@ -242,6 +242,9 @@
       log: true,
       ach: true,
       board: true,
+      // cover: its progress is proven against the field (COVER, Pierre 2026-11-05: corals only until fish has its own
+      // study, Q110).
+      cover: true,
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       progress: ['slate', 'photos', 'groups'],
@@ -533,7 +536,7 @@
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
         // global level at the genus's last own step (core.js levelMove), which goes with its th.
-        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx', 'mf'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -547,11 +550,12 @@
       if (l.cor || r.cor) out.cor = 1;
       if (l.du || r.du) out.du = 1;
       // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices, and
-      // so do the global level's answer times (rt, rtWeight: how many timed answers took each tenth of a second).
-      ['conf', 'off', 'rt'].forEach(f => {
+      // so do the global level's answer times (rt, rtWeight: how many timed answers took each tenth of a second) and the
+      // typed offers (offT, typedOffers: fractional, kept to 2 decimals).
+      ['conf', 'off', 'rt', 'offT'].forEach(f => {
         const c = {...(r[f] || {})};
         Object.keys(l[f] || {}).forEach(k => {
-          const v = (c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0);
+          const v = Math.round(((c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0)) * 100) / 100;
           if (v > 0) c[k] = v;
           else delete c[k];
         });
@@ -647,7 +651,7 @@
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;
       // Answer times (rt, the global level's) add up like the mix-ups: the same person's.
-      ['conf', 'off', 'rt'].forEach(f => {
+      ['conf', 'off', 'rt', 'offT'].forEach(f => {
         const c = add(x[f], y[f]);
         if (Object.keys(c).length) o[f] = c;
         else delete o[f];
@@ -674,8 +678,14 @@
   // A typed answer (|t, 2026-11-03: the player types the genus instead of picking one of the choices) has no guess rate:
   // nothing to pick from, so the expected success has no 1/k floor (Code.gs guess_ v27; model.js TYPED.k).
   const TYPED_RE = /\|t(\||$)/;
+  // From rules version 6 (sheet v56, the field rule) a typed answer logs its effective set size (|ktN.NN, core.js typedK):
+  // its guess rate is 1 / that (Pierre, Q106); an older typed row (no |kt) keeps none.
+  const KT_RE = /\|kt(\d+(?:\.\d+)?)/;
   const guessOf = (mode, choices) => {
-    if (TYPED_RE.test(mode)) return 0;
+    if (TYPED_RE.test(mode)) {
+      const kt = KT_RE.exec(mode);
+      return kt && Number(kt[1]) > 1 ? 1 / Number(kt[1]) : 0;
+    }
     const kq = /\|k(\d)$/.exec(mode);
     if (kq) return 1 / Number(kq[1]);
     if (mode.indexOf('quiz-duel') === 0) return 0.5;
@@ -1655,20 +1665,124 @@
     return s.mx ? Math.max(g, PROG.M) : g;
   }
   // The bar of a genus, 0 to 1: s.pg fills 95% on its way to PROG.M, each mastery-exam question passed adds 1%, the
-  // passed exam makes it 100%.
-  function scoreOf(s) {
+  // passed exam makes it 100%. cov (coverageOf, the field rule below; undefined for a subject without it, fish, or before
+  // the sheet replays it): the within-field part times coverH(cov), and the exam steps only once the bar can stand at
+  // the exam's entry (coverIn).
+  function scoreOf(s, cov) {
     if (!s) return 0;
     if (s.mx) return 1;
-    const g = pgOf(s);
+    const g = pgOf(s),
+      f = cov == null ? 1 : coverH(cov);
     // At most 4 of the 5 exam steps before the exam is passed (Codex review #393): an exam begun before typed questions
     // can have 5 right answers still waiting for its typed ones, and only a passed exam (s.mx) makes 100%.
-    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
+    return 0.95 * Math.min(1, g / PROG.M) * f + (g >= PROG.M && coverIn(cov) && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
   }
-  // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
-  // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
-  // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
-  function pctOf(P, list) {
-    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n]), 0)) / list.length) : 0;
+
+  // Proven against the field (Pierre, 2026-11-05, Q101-Q110 on docs/reviews/2026-11-05-progress-setsize-study.md; docs/
+  // LEARNING.md "Proven against the field"): 100% means the player tells the genus from EVERY unit of the field (the
+  // units the progress counts: the slate for corals; bonus genera are out of it, neither competitors nor in the
+  // denominator), whatever they have unlocked. Units never met count as untested, so the denominator is fixed and no bar
+  // drops because a genus opens (Q108). Subject-agnostic: a subject opts in with SUBJECTS cover (corals only for now,
+  // Q110: fish keeps its bar until its own study).
+  // - The discrimination level of a pair (t, x), pairLevel, 0 to 1, continuous (Pierre's refinement of Q102: no
+  //   threshold of right answers): from the player's own pair record, the one that already exists (pairConf: n the
+  //   times the two were offered together, m the times mixed up, both directions; P[g].off, P[g].conf), plus the
+  //   offers a typed answer makes (P[t].offT[x], typedOffers: a typed answer has no choices, so a right one counts as an
+  //   offer of each genus of the player's typed vocabulary, by its similarity to t, simOf). The player's mix-up rate of
+  //   the pair is shrunk toward everyone's (q, the pooled score, confScore with its declared/family prior, as confOf and
+  //   confGap do) with COVER.W offers of prior weight; the level is how much of the pooled rate the player has removed:
+  //   D = clamp(1 - (m + W q) / (n + W) / q, 0, 1) = max(0, (n - m / q) / (n + W)). 0 until the pair has met; a mix-up
+  //   is judged against how confusable the pair is (forgivable on a look-alike, damning on a pair nobody confuses). The
+  //   same D as the fish confusion study (scratchpad fish-confusion-study.md 4.3; corals: one rank, no parent), with
+  //   one addition, Pierre's similarity weight on the typed offers.
+  // - Coverage of t, coverageOf: the mean of its pair levels over the field, each competitor weighed by its pooled score q
+  //   (so 1 - sum own / sum pooled, Luce's error mass the player has removed: look-alikes weigh most, the many unrelated
+  //   units together about half).
+  // - The bar (scoreOf with cov): 0.95 x min(1, pg / M) x coverH(cov), coverH = B + (1 - B) x min(1, cov / C)^G. The
+  //   coverage counts in full from C: the bar then reaches the exam's entry, which can start only from there
+  //   (examEntryOf, Q105 hook). pg, the moving average, is unchanged: the within-field part, which still drives the game
+  //   (the draw, the typed share, the opening, the exam's pg condition).
+  // - A typed answer's vocabulary (Q106, with Pierre's refinement of 2026-11-05): not the raw count of genera unlocked
+  //   but a similarity-weighted effective set size, typedK = max(2, 1 + sum over the unlocked competitors x of simOf),
+  //   simOf = min(1, the player's own score of the pair shrunk toward the pooled one / COVER.S): a look-alike counts
+  //   about 1, an unrelated genus about 0.1 (generate-then-recognise recall, Luce / GCM competition where dissimilar
+  //   items barely compete). It is the answer's guess rate (1 / typedK) and the evidence each pair gets (simOf).
+  // COVER: B, G the curve; W the prior weight of a pair level; C the coverage that counts in full; S the score of a
+  // full competitor in a typed answer (CONF.LOOK, a declared look-alike's prior). Provisional, for the tier-2 sweep.
+  const COVER = {B: 0.4, G: 0.5, W: 2, C: 0.9, S: 0.3};
+  const coverH = c => COVER.B + (1 - COVER.B) * Math.pow(Math.min(1, Math.max(0, Number(c) || 0) / COVER.C), COVER.G);
+  const coverIn = c => c == null || c >= COVER.C - 1e-9;
+  // A pair's prior score (CONF): a declared look-alike (gen[n].look either way), the same family, or neither. The app's
+  // pooledConf also gives CONF.FORM to genera sharing an IMR growth form; the field rule uses this prior, the one the sheet
+  // knows, so the app, the replay and the leaderboard weigh pairs the same.
+  const pairPrior = (gen, t, n) => {
+    const a = (gen || {})[t] || {},
+      b = (gen || {})[n] || {};
+    return (a.look || []).includes(n) || (b.look || []).includes(t) ? CONF.LOOK : a.fam && a.fam === b.fam ? CONF.FAM : CONF.BASE;
+  };
+  // The field of a subject: list (the units its progress counts), q(t, x) the pooled score of a pair (conf: ?stats=1
+  // conf, the app's PCONF; gen: genera with look and fam). Cached per pair.
+  function fieldOf(gen, conf, list) {
+    const C = conf || {},
+      memo = {};
+    const q = (t, n) => {
+      const k = t < n ? t + '|' + n : n + '|' + t;
+      return memo[k] !== undefined ? memo[k] : (memo[k] = confScore(C[k], pairPrior(gen, t, n)));
+    };
+    return {list: (list || []).slice(), set: new Set(list || []), q};
+  }
+  // A typed answer's offers of x beside t (offT), both directions.
+  const offT = (P, t, x) => (Number((((P || {})[t] || {}).offT || {})[x]) || 0) + (Number((((P || {})[x] || {}).offT || {})[t]) || 0);
+  function pairLevel(P, t, x, q) {
+    const [n0, m] = pairConf(P || {}, t, x),
+      n = n0 + offT(P, t, x);
+    if (!(n > 0) || !(q > 0)) return 0;
+    return Math.min(1, Math.max(0, (n - m / q) / (n + COVER.W)));
+  }
+  function coverageOf(P, t, F) {
+    let num = 0,
+      den = 0;
+    F.list.forEach(x => {
+      if (x === t) return;
+      const w = F.q(t, x);
+      den += w;
+      num += w * pairLevel(P, t, x, w);
+    });
+    return den ? num / den : 1;
+  }
+  // The bar of genus t in P under the field F (null: the bar without the field rule); a unit outside the field (a bonus
+  // genus) keeps the bar without it (it never counts in the progress).
+  const barOf = (P, t, F) => scoreOf((P || {})[t], F && F.set.has(t) ? coverageOf(P, t, F) : undefined);
+  // The similarity of x to t in the player's typed recall, and a typed answer's effective set size (see COVER).
+  const simOf = (P, t, x, F) => Math.min(1, confScore(pairConf(P || {}, t, x), F.q(t, x)) / COVER.S);
+  const typedK = (P, t, voc, F) =>
+    Math.round(100 * Math.max(2, 1 + [...new Set(voc || [])].reduce((a, x) => a + (x !== t ? simOf(P, t, x, F) : 0), 0))) / 100;
+  // The offers of a right typed answer on t (the app's quiz.js answer and the replay): simOf for each genus of its
+  // vocabulary (voc: the genera unlocked, or the custom quiz's selection), in P[t].offT. Weights under 0.01 are not
+  // stored (sparse: only pairs met). A pick's offers are the existing P[t].off (quiz.js answer counts them).
+  function typedOffers(P, t, voc, F) {
+    const s = P[t];
+    if (!s || !voc) return;
+    [...new Set(voc)].forEach(x => {
+      const w = x && x !== t ? simOf(P, t, x, F) : 0;
+      if (!(w >= 0.01)) return;
+      const d = (s.offT = s.offT || {});
+      d[x] = Math.round(((Number(d[x]) || 0) + w) * 100) / 100;
+    });
+  }
+  // The exam's entry (Q105 hook: Pierre redefines the exam with global and personal look-alikes; until then, today's rule,
+  // pg at PROG.M, plus the coverage that lets the bar reach the entry). The one place the game (model.js examOn), the
+  // replay's learned marks (replayedOf) and the bar ask.
+  const entryMet = (P, t, F) => {
+    const s = (P || {})[t];
+    return !!s && pgOf(s) >= PROG.M && (!F || !F.set.has(t) || coverIn(coverageOf(P, t, F)));
+  };
+  const examEntryOf = (P, t, F) => !((P || {})[t] || {}).mx && entryMet(P, t, F);
+  // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct), under the field F
+  // when given. The sync sheet computes the leaderboard % with it (Code.gs pctOf_ calls it with the sheet's field from
+  // v56; tests/sync.test.js; tests/draw.smoke.js compares this with the app's progPct).
+  function pctOf(P, list, F) {
+    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + barOf(P, n, F), 0)) / list.length) : 0;
   }
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
@@ -1960,7 +2074,11 @@
   // from (Infinity, model.js TYPED.k: no 1/k floor, as guessOf), |kN in the mode (the plausible choices, logged when
   // fewer than the buttons), a duel 2, else the genera offered (2-3), else 4.
   const kOf = (mode, choices) => {
-    if (TYPED_RE.test(String(mode || ''))) return Infinity;
+    if (TYPED_RE.test(String(mode || ''))) {
+      // From rules version 6: the effective set size it was scored with (|kt, typedK); before, none (Infinity).
+      const kt = KT_RE.exec(String(mode || ''));
+      return kt && Number(kt[1]) > 1 ? Number(kt[1]) : Infinity;
+    }
     const kq = /\|k(\d)/.exec(String(mode || ''));
     if (kq) return Number(kq[1]);
     if (/duel|\|d(\||$)/.test(String(mode || ''))) return 2;
@@ -2100,6 +2218,18 @@
     only: 'changed',
     min: 5
   };
+  // The apology of rules version 6 (Pierre, 2026-11-05, Q109: "an apology card"; text option A of the PR, Pierre's pick to
+  // confirm). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab; sync.js keeps it in NOTES_KEY),
+  // shown small under the text when it is set: Pierre's PS naming the player who raised the question. A name is never
+  // written in the repo (AGENTS.md rule 20f).
+  const RV_SORRY = {
+    kind: 'apology',
+    t: 'Sorry: your progress was too generous',
+    p: 'Until now a genus counted as known once you could tell it from the genera you had met, so your progress was overestimating what you can really tell apart on a reef. Now 100% means you can tell a genus from every genus on the slate. Your progress was recalculated from all your answers: {from}% → {to}%. Every answer is kept, and each genus you meet and tell apart fills the bars again.',
+    ps: 'card.rv6.ps',
+    only: 'changed',
+    min: 1
+  };
   const RVS = [
     {
       v: 1,
@@ -2135,6 +2265,14 @@
       at: '2026-11-04',
       why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h, or the band below taken with Coral basics on the fallback card, ease)',
       msg: RV_CARD
+    },
+    {
+      v: 6,
+      at: '2026-11-06',
+      why: "Proven against the field (Pierre, Q101-Q109): a genus reaches 100% only once the player tells it from every genus of the slate; each pair gets a discrimination level from the player's own records (off, conf, and offT the offers of a typed answer) shrunk toward the pooled confusion, the bar is 0.95 x min(1, pg / M) x coverH(coverage), a typed answer is scored with the similarity-weighted effective size of its vocabulary (typedK), learned marks kept only where the replayed state meets the exam entry (COVER)",
+      // Pierre, 2026-11-05 (Q109): an apology card instead of the standard one, for every player whose % the replay moved;
+      // its PS names a player from the sheet (Notes tab, key card.rv6.ps: never in the repo; progress.js rvNotice).
+      msg: RV_SORRY
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -2151,6 +2289,11 @@
   // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
   // Codex review #428); before it, the default player's prior 0, exactly as before.
   const START_SHEET = 36;
+  // The sync script version that replays the field rule (rules version 6: the typed offers offT, a typed answer's
+  // effective set size |kt, the learned marks judged at the exam entry; Code.gs v56): the app shows the bar proven against
+  // the field, scores a typed answer with typedK and judges the exam's entry with the coverage only once the script's
+  // replies say v >= COVER_SHEET (model.js coverOn); before it, exactly as before (AGENTS.md 7a).
+  const COVER_SHEET = 56;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -2339,13 +2482,15 @@
       since = o.since || {},
       memory = o.memory !== false,
       time = o.time !== false,
+      // The field rule (rules version 6, COVER): the typed offers (offT) and a typed answer's effective set size. false:
+      // the rules before it (tools, comparisons).
+      cover = o.cover !== false,
+      F = fieldOf(gen, conf, []),
       out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
-    const prior = (t, n) => {
-      const a = gen[t] || {},
-        b = gen[n] || {};
-      return (a.look || []).includes(n) || (b.look || []).includes(t) ? CONF.LOOK : a.fam && a.fam === b.fam ? CONF.FAM : CONF.BASE;
-    };
-    const pooledOf = (t, n) => confScore(conf[t < n ? t + '|' + n : n + '|' + t], prior(t, n));
+    const pooledOf = (t, n) => F.q(t, n);
+    // A typed answer's vocabulary as the log knows it (the app uses the genera unlocked, or the custom quiz's selection,
+    // which the log does not keep): the genera the player has answered on or given before this answer.
+    const vocOf = P => Object.keys(P).filter(g => g !== LEVEL && gen[g] && (P[g].ok || 0) + (P[g].ko || 0) > 0);
     // Known mix-ups (model.js confTerm, #425): the most, over the choices, of the player's own score of the pair above
     // the pooled one (confGap), on the record before this answer, on a question with 3 or more plausible choices; it adds
     // to the question's difficulty for the ability, the level and a miss's weight, as quiz.js answer adds it to dm.
@@ -2384,7 +2529,12 @@
           e = r[7],
           th = r[8],
           chs = split(r[10]),
-          k = kOf(mode, r[10]),
+          typed = TYPED_RE.test(mode),
+          // kl: the choices the app scored the answer with (its logged e is built on it); k: today's rule. A typed answer
+          // logged before rules version 6 (no |kt) is scored with the effective set size of the vocabulary the log knows.
+          kl = kOf(mode, r[10]),
+          voc = cover && typed ? vocOf(pl.P) : null,
+          k = cover && typed && !isFinite(kl) ? typedK(pl.P, t, voc, F) : kl,
           sec = typeof r[12] === 'number' ? r[12] : null,
           s = rec(t),
           hs = fs.map(f => s.ps[f]),
@@ -2406,12 +2556,13 @@
         if (replayable) {
           pl.used++;
           const fam = memFam(hs, mem),
-            q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
+            q = Math.min(0.995, Math.max(0.005, (e - 1 / kl) / (1 - 1 / kl))),
             dl = th - Math.log(q / (1 - q)), // the difficulty in the logged expectation
             // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
             d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0),
             fm = memory ? fam : 0,
-            look = chs.some(x => lookOf(pl.P, t, x)),
+            // A typed answer scored with its effective set size: the look-alike test over its vocabulary (quiz.js answer).
+            look = (voc && isFinite(k) ? voc : chs).some(x => lookOf(pl.P, t, x)),
             // The aim at the player's level before this answer's own step on it, as quiz.js answer weighs the miss.
             w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm + cf, k, 1, aimOf((pl.P[LEVEL] || {}).th));
           dm = d + fm + cf;
@@ -2455,6 +2606,9 @@
           x.lx = r[1];
           if (!mxKeeps(x.pg)) x.lm = r[1];
         }
+        // A right typed answer offers each genus of its vocabulary by its similarity (rules version 6, typedOffers, as
+        // quiz.js answer).
+        if (cover && ok && typed) typedOffers(pl.P, t, voc, F);
         s.h = (s.h + (ok ? 1 : 0)).slice(-10);
         fs.forEach(f => {
           const x = (s.ps[f] = s.ps[f] || [0, 0]);
@@ -2509,8 +2663,8 @@
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
-  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
-  function replayedOf(rep, saved, rv) {
+  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'offT', 'th', 'lt', 'vr', 'streak'];
+  function replayedOf(rep, saved, rv, F) {
     const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},
       out = {},
@@ -2567,11 +2721,28 @@
       if (s) {
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
         if (typeof s.pg === 'number' && s.mx) {
-          if (!(r.lm > s.mx)) o.mx = s.mx;
+          if (!(r.lm > s.mx)) {
+            o.mx = s.mx;
+            if (s.mf) o.mf = 1;
+          }
         } else if (typeof s.pg === 'number' && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
       }
       out[g] = o;
     });
+    // The field rule (rules version 6, Pierre Q109): a learned mark passed before it (no mf) is kept only where today's
+    // replayed state meets the exam's entry (examEntryOf: pg at PROG.M and the coverage that lets the bar reach it), and
+    // then marked mf so later replays never judge it again; otherwise it goes (the caller's mxRecalc tells the player and
+    // takes back the ACH_LEARN achievements). A mark passed under the rule carries mf from its exam (quiz.js answer).
+    if (F)
+      Object.keys(out).forEach(g => {
+        const o = out[g];
+        if (g === LEVEL || !o || !o.mx || o.mf || !F.set.has(g)) return;
+        if (entryMet(out, g, F)) o.mf = 1;
+        else {
+          delete o.mx;
+          delete o.ex;
+        }
+      });
     return out;
   }
   // The merge baseline once a replay is adopted (sync.js replayAdopt, mergeProgress's B): the history every device of the
@@ -2925,6 +3096,7 @@
     PHOTO_RETRY,
     TYPE,
     TYPED_RE,
+    KT_RE,
     typeDist,
     typeNorm,
     typeNamesOf,
@@ -2936,6 +3108,18 @@
     pgOf,
     scoreOf,
     pctOf,
+    COVER,
+    coverH,
+    coverIn,
+    pairPrior,
+    fieldOf,
+    pairLevel,
+    coverageOf,
+    barOf,
+    simOf,
+    typedK,
+    typedOffers,
+    examEntryOf,
     TARGET_P,
     AIM,
     aimOf,
@@ -2963,6 +3147,8 @@
     levelMove,
     eloStep,
     RV_CARD,
+    RV_SORRY,
+    COVER_SHEET,
     RVS,
     RV,
     RV_SHEET,

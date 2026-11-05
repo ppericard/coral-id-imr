@@ -973,6 +973,30 @@ const gdOf = j => (j && j.v >= PGD_SHEET && j.gd && typeof j.gd === 'object' ? j
 let PGD = gdOf(store.get('reefid-photo-stats', {}));
 // Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
 let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
+// Proven against the field (core.js COVER; Pierre, 2026-11-05, Q101-Q110; docs/LEARNING.md "Proven against the field"):
+// on for a subject with SUBJECTS cover (the corals; fish keeps its bar until its own study, Q110) once the sync script
+// replays it (its replies say v >= COVER_SHEET, sync.js sheetV; AGENTS.md 7a). Before: the bar, the typed answers' guess
+// rate and the exam's entry exactly as before; the typed offers (s.offT) are recorded either way, as the replay rebuilds them.
+const coverOn = () => !!SUBJ.cover && typeof sheetV === 'function' && sheetV() >= COVER_SHEET;
+// The field (core.js fieldOf): the slate, and the pooled score of each pair (PCONF, the prior the sheet knows), cached
+// until the pooled answers or the slate change. null while the rule is off.
+let FIELDC = null;
+function fieldNow() {
+  if (!coverOn()) return null;
+  const L = slateGenera();
+  if (!FIELDC || FIELDC.conf !== PCONF || FIELDC.n !== L.length) {
+    const gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})};
+    FIELDC = {conf: PCONF, n: L.length, F: fieldOf(gen, PCONF, L)};
+  }
+  return FIELDC.F;
+}
+// The field every pair is scored against even while the bar's rule is off (the offers of a typed answer need
+// the similarities): the same pooled scores.
+function fieldAny() {
+  if (coverOn()) return fieldNow();
+  const gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})};
+  return fieldOf(gen, PCONF, slateGenera());
+}
 // Photo memory (Pierre, 2026-11-03; core.js MEM, sheet v26 ?stats=1 mem): how much easier a photo is for a player who
 // has already been shown it (s.ps: [shown, right]), in logits off its difficulty, by bucket: new 0, shown never right,
 // right once, right twice or more, estimated by the sheet from every trusted answer; the prior (the old fixed rule)
@@ -1064,7 +1088,7 @@ function photoDiff(n, p) {
 // (the corals) is not touched; nor is the exam (95%). TEMPORARY (Pierre, 2026-11-04: an arbitrary bootstrap
 // threshold): remove it once fish answers are logged and the photo ratings can rank the photos (docs/ROADMAP.md).
 function easyFirst(n, L) {
-  if (!L.some(p => p.e) || genScore(n) >= LV_AT[0]) return L;
+  if (!L.some(p => p.e) || pgScore(n) >= LV_AT[0]) return L;
   const es = L.map(easeOf).sort((a, b) => b - a),
     cut = Math.min(PDIFF.EARLY, es[Math.min(PICKD.VARIETY, es.length) - 1]);
   return L.filter(p => easeOf(p) >= cut);
@@ -1126,7 +1150,14 @@ const TYPED = {
   exam: 2,
   k: Infinity
 };
-const typedP = n => typedShare(genScore(n), TYPED);
+// From the within-field score (pgScore), not the bar proven against the field (the study's point: typed questions must
+// come in as simulated; the coverage would delay them).
+// The help's line on what a typed right answer proves (progress.js, quiz.js), under the rule in force.
+const typedHelp = () =>
+  fieldNow()
+    ? `A typed right answer counts the more the ${SUBJ.many} you have met hold genera that look like it: you only hesitate between names that look alike.`
+    : 'A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.';
+const typedP = n => typedShare(pgScore(n), TYPED);
 // An exam question is typed while the typed answers it still needs fill the questions left (so all EXAM.n right always
 // include TYPED.exam typed ones), else with the genus's usual typed share: the format of an exam question then says
 // nothing a normal question at that level would not (an exam of typed questions only would give the exam away).
@@ -1135,10 +1166,9 @@ const examTyped = n => {
   return TYPED.exam - (ex.t || 0) >= EXAM.n - (ex.k || 0) || Math.random() < typedP(n);
 };
 const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
-const examOn = n => {
-  const s = P[n] || {};
-  return !s.mx && knownP(n) >= PROG.M;
-};
+// The exam's entry (core.js examEntryOf, the Q105 hook): pg at PROG.M and, under the field rule, the coverage that lets
+// the bar reach the entry.
+const examOn = n => examEntryOf(P, n, fieldNow());
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss (from PROG.M or above, a miss leaves s.pg at PROG.M × (1 − PROG.A) at
 // least) and is lost on a second one before right answers bring it back up: with the moving average a single miss
@@ -1149,9 +1179,14 @@ function missing(n) {
   const s = P[n] || {},
     m = [];
   if (s.mx) return m;
+  const F = fieldNow();
   if (knownP(n) < PROG.M)
     m.push(`more right answers, most of all against its look-alikes (about ${Math.round(100 * genScore(n))}% of the way so far)`);
-  else
+  if (F && F.set.has(n) && !coverIn(coverageOf(P, n, F)))
+    m.push(
+      `telling it apart from more genera of the slate, right answers with them among the choices or typed (proven against ${provenOf(n)})`
+    );
+  else if (knownP(n) >= PROG.M)
     m.push(
       `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the Quiz, all right, at least ${TYPED.exam} of them typed from memory`
     );
@@ -1159,7 +1194,27 @@ function missing(n) {
 }
 // Progress of a genus, 0 to 1 (core.js scoreOf): s.pg fills 95% on its way to PROG.M, each exam question passed adds
 // 1%, the passed exam makes it 100%.
-const genScore = n => scoreOf(P[n]);
+const genScore = n => barOf(P, n, fieldNow());
+// The within-field score: the bar without the field rule (core.js scoreOf), what the game reads (typed share, Open Water
+// for the first photos); and the light part of the two-tone bar (progress.js): "among the genera you've met".
+const pgScore = n => scoreOf(P[n]);
+// The two-tone ring (Pierre, Q104, 2026-11-05: built and on by default; his switch, from the screenshots): solid, the bar
+// proven against the field, what counts in the %; light behind it up to the within-field score, "among the genera you've
+// met". Only while the field rule is on (coverOn). COVER_UI.two false: one tone, the bar alone.
+const COVER_UI = {two: true};
+const twoTone = n => COVER_UI.two && !!fieldNow() && fieldNow().set.has(n) && !(P[n] || {}).mx;
+// The mini ring + % of a genus (My progress tiles, its sheet), two-tone when twoTone.
+function pctRing(n) {
+  const pc = Math.round(100 * genScore(n)),
+    pm = twoTone(n) ? Math.max(pc, Math.round(100 * pgScore(n))) : pc;
+  return `<small class="pct" style="--p:${pc}%${pm > pc ? `;--pm:${pm}%` : ''}"${pm > pc ? ` title="${pc}%, ${pm}% among the ${SUBJ.many} you've met"` : ''}>${pc}%</small>`;
+}
+// "N of M genera": the slate genera a genus is proven against, a pair counted from a level of 1/2 (core.js pairLevel).
+const provenOf = n => {
+  const F = fieldNow() || fieldAny(),
+    L = F.list.filter(x => x !== n);
+  return `${L.filter(x => pairLevel(P, n, x, F.q(n, x)) >= 0.5).length} of ${L.length} genera`;
+};
 // Mastery levels (Pierre, 2026-11-03: "0/39 learned" for weeks was discouraging; named steps on the way, a diver's ladder
 // every RA knows, one icon each): the step of a genus on the learning scale, from its % (genScore), the same colours on
 // My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%; 3 Advanced from 80%; 4 Divemaster from 95%

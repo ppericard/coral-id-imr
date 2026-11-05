@@ -171,12 +171,16 @@ function replayAdopt(rp, pending, v, cut, pre) {
             conf: PCONF,
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
             time: Number(v) >= RT_SHEET,
+            // The field rule (core.js COVER: pair evidence, typed effective set size) from the script that replays it.
+            cover: Number(v) >= COVER_SHEET,
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
             starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {}
           })[me].P
         : rp.rec,
       before = copy(P),
-      M = replayedOf({P: R}, P, rp.rv);
+      // The field rule (COVER_SHEET): a learned mark passed before it stays only where the replayed state meets the
+      // exam's entry (core.js replayedOf, Pierre Q109).
+      M = replayedOf({P: R}, P, rp.rv, Number(v) >= COVER_SHEET && SUBJ.cover ? fieldOf(gen, PCONF, slateGenera()) : null);
     // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
     // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
     // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
@@ -1030,8 +1034,13 @@ function groupsSeen(j, name, live = true) {
   // Home draws its subject row in viewHome (showSubj only updates existing buttons): redraw Home too (Codex review #540).
   if (!SUBJ_VISIT && /^#?(lab|home)?$/.test(location.hash)) route();
 }
+// Lines the sheet serves for the cards (sheet v56: notes, from its Notes tab, keys card.*; Code.gs notes_): Pierre's text
+// that must never be written in the repo, e.g. the PS of the rules version 6 apology naming a player (core.js RV_SORRY
+// ps; progress.js rvNotice). Kept on the device; an older script sends none and the card has no PS.
+const NOTES_KEY = 'reefid-sheet-notes';
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
+  if (j && j.notes && typeof j.notes === 'object' && !Array.isArray(j.notes)) store.set(NOTES_KEY, j.notes);
 }
 // The script version last seen (0 before any reply): what the app may rely on (rule D4), so a visit offline does
 // what the last one did. Also read by the answer time (model.js rtOn, core.js RT_SHEET); the full replay checks each

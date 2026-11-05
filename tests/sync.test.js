@@ -1552,11 +1552,13 @@ test("v42: the player list carries each player's replayed progress, learned and 
       L.map(a => C.logRow(a, 'ana')),
       {gen: GEN, mem: st.mem, conf: st.conf}
     ).ana.P,
-    G = C.replayedOf({P: rec}, P);
+    // v56: the field rule (core.js fieldOf over the slate and the pooled confusions), as the app adopts it.
+    F = C.fieldOf(GEN, st.conf, list),
+    G = C.replayedOf({P: rec}, P, C.RV, F);
   const ana = r.users.find(u => u.name === 'Ana');
-  assert.deepStrictEqual(ana.rp, [C.pctOf(G, list), C.learnedOf(G, list), C.pctOf(P, list)]);
+  assert.deepStrictEqual(ana.rp, [C.pctOf(G, list, F), C.learnedOf(G, list), C.pctOf(P, list, F)]);
   assert.ok(ana.rp[0] > 0);
-  assert.deepStrictEqual(r.users.find(u => u.name === 'Ben').rp, [C.pctOf(P1(), list), C.learnedOf(P1(), list), C.pctOf(P1(), list)]);
+  assert.deepStrictEqual(r.users.find(u => u.name === 'Ben').rp, [C.pctOf(P1(), list, F), C.learnedOf(P1(), list), C.pctOf(P1(), list, F)]);
   // Stored in the Replayed tab, one row a player, and reused: a marker put in Ana's record comes back in her %.
   const T = s.sheets.Replayed;
   assert.deepStrictEqual(
@@ -1566,8 +1568,14 @@ test("v42: the player list carries each player's replayed progress, learned and 
       ['Ben', C.RV, 0]
     ]
   );
-  T.rows[1][5] = JSON.stringify(Object.fromEntries(list.map(g => [g, {pg: 1, ok: 30, ko: 0, h: '1111111111', u: 1}])));
-  assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').rp[0], 95);
+  const mark = Object.fromEntries(list.map(g => [g, {pg: 1, ok: 30, ko: 0, h: '1111111111', u: 1}]));
+  T.rows[1][5] = JSON.stringify(mark);
+  // 95% each without the field rule; with it, no pair proven: 0.95 x COVER.B (38%).
+  assert.strictEqual(
+    s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').rp[0],
+    C.pctOf(C.replayedOf({P: mark}, P, C.RV, F), list, F)
+  );
+  assert.strictEqual(C.pctOf(mark, list, F), Math.round(95 * C.COVER.B));
   // A new answer: replayed again, still one row for her.
   s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [qa('r12', 12)]});
   const again = s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana');

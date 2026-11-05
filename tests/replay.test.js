@@ -203,8 +203,8 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
   );
   assert.deepStrictEqual(
     C.rvMsgs(0, C.RV).map(x => x.v),
-    [C.RV],
-    'every version so far has the standard card: one card'
+    [5, 6],
+    'the standard card once, at the last version that has it, then the apology of version 6 (Pierre, Q109)'
   );
   assert.deepStrictEqual(
     C.rvMsgs(C.RV - 1, C.RV).map(x => x.v),
@@ -509,7 +509,9 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   const replay = () => {
     const rep = C.replayProgress(
       log.map(a => C.logRow(a, 'me')),
-      {gen: GEN, mem, start: {me: {P: P0, n: 0, used: 0, rep: 0}}}
+      // cover: false, the rules before version 6: this app scores a typed answer with no guess rate (TYPED.k), as
+      // before the field rule (its own test: replay.test.js "field rule").
+      {gen: GEN, mem, start: {me: {P: P0, n: 0, used: 0, rep: 0}}, cover: false}
     ).me;
     return C.replayedOf(rep, P, 1);
   };
@@ -671,12 +673,13 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   // Typed answers and answers without seconds are not counted in the record.
   const n = Object.values(on.P[C.LEVEL].rt).reduce((a, x) => a + x, 0);
   assert.strictEqual(n, on.log.filter(a => a.rt !== undefined && !/\|t/.test(a.m)).length);
-  same(C.replayProgress(rows, {gen: GEN}).me.P, on.P, 'the whole log');
+  // cover: false, the rules before version 6 (typed answers with no guess rate, as this app steps them).
+  same(C.replayProgress(rows, {gen: GEN, cover: false}).me.P, on.P, 'the whole log');
   // The sheet's replay of the first answers, then this device's on top (sync.js replayAdopt).
-  const head = C.replayProgress(rows.slice(0, 50), {gen: GEN});
-  same(C.replayProgress(rows.slice(50), {gen: GEN, start: head}).me.P, on.P, 'going on from a replay');
+  const head = C.replayProgress(rows.slice(0, 50), {gen: GEN, cover: false});
+  same(C.replayProgress(rows.slice(50), {gen: GEN, start: head, cover: false}).me.P, on.P, 'going on from a replay');
   // What the app adopts keeps the replay's time record (replayedOf), and the merge baseline too (replayBase).
-  const rep = C.replayProgress(rows, {gen: GEN}).me;
+  const rep = C.replayProgress(rows, {gen: GEN, cover: false}).me;
   assert.deepStrictEqual(C.replayedOf(rep, {}, C.RV)[C.LEVEL].rt, on.P[C.LEVEL].rt);
   assert.deepStrictEqual(C.replayBase(rep.P, C.replayedOf(rep, {}, C.RV), C.RV, {})[C.LEVEL].rt, on.P[C.LEVEL].rt);
   // An older script (rule D4): the app does exactly what it did before, every weight 1, the replay without time.
@@ -686,7 +689,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   same(
     C.replayProgress(
       off.log.map(a => C.logRow(a, 'me')),
-      {gen: GEN, time: false}
+      {gen: GEN, time: false, cover: false}
     ).me.P,
     off.P,
     'before the script replays the time',

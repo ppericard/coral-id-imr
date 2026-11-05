@@ -96,15 +96,12 @@ function quizBoard() {
   const tip = n => {
     const s = P[n] || {ok: 0, ko: 0},
       m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : [];
-    return `${esc(unameT(n))}: ${st[n] ? MASTERY[st[n]][0] : introduced(n) ? 'Met, not asked yet' : 'Not seen'}${lv[n][0] === 'weak' ? ', to review' : ''}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}%)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
+    return `${esc(unameT(n))}: ${st[n] ? MASTERY[st[n]][0] : introduced(n) ? 'Met, not asked yet' : 'Not seen'}${lv[n][0] === 'weak' ? ', to review' : ''}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}%${twoTone(n) && pgScore(n) > genScore(n) + 0.005 ? `, ${Math.round(100 * pgScore(n))}% among the ${SUBJ.many} you've met` : ''})` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
   };
   // Learning level: the tile's colour is its step on the scale, and a thin line along its bottom shows the exact progress.
   const fill = () => '';
   // The same progress as a mini ring + number (ring alone on narrow tiles, nothing on the narrowest).
-  const pct = n =>
-    st[n] > 0 && st[n] < 5
-      ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>`
-      : '';
+  const pct = n => (st[n] > 0 && st[n] < 5 ? pctRing(n) : '');
   const gi = n => shownGroup(n) || 99,
     groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
@@ -158,15 +155,20 @@ function quizBoard() {
     UNITS[SUBJ.id].progHelp
       ? UNITS[SUBJ.id].progHelp()
       : `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
-  <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
+  <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. ${typedHelp()}</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
+  }
+  ${
+    fieldNow()
+      ? `<p class="lede"><b>Proven against the whole slate</b>: a genus reaches 100% only when you can tell it apart from <b>every</b> genus of the slate, not just the ones you've met. Each right answer with other genera among the choices, or typed from memory, proves it against them, its look-alikes most of all; meeting new genera and getting them right beside it fills the bar.${COVER_UI.two ? ` On the mini rings, the light part shows how far it has got among the ${SUBJ.many} you've met.` : ''}</p>`
+      : ''
   }
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
   <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.filter(met).length}/${list.length} met`)}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
-    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor</p>
+    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor${COVER_UI.two && fieldNow() ? `; light part: among the ${SUBJ.many} you've met` : ''}</p>
     ${
       introLeft().length
         ? `<div class="popen"><p><b>Had ${SUBJ.lecture}?</b> ${introLeft().length} ${SUBJ.many} are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all ${SUBJ.many}</button></div>`
@@ -913,6 +915,10 @@ function rvNoticeAdd(from, to, pct) {
   store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc});
   if (window.APP_READY) rvNotice();
 }
+const rvPs = m => {
+  const t = m && m.ps ? String(((typeof NOTES_KEY === 'string' ? store.get(NOTES_KEY, {}) : {}) || {})[m.ps] || '').trim() : '';
+  return t ? `<p class="cardps"><small>${esc(t)}</small></p>` : '';
+};
 let rvT = 0;
 function rvNotice() {
   clearTimeout(rvT);
@@ -928,7 +934,8 @@ function rvNotice() {
     kick: 'Update',
     title: x.msg.t,
     visual: pt != null ? cardRing(pt, pf) : '',
-    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>`,
+    // ps: a line the sheet serves (sync.js NOTES_KEY, Code.gs notes_), small under the text, when it is set.
+    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>${rvPs(x.msg)}`,
     primary: {
       text: 'Got it',
       on: () => {

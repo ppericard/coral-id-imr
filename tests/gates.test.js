@@ -57,6 +57,10 @@ const GATES = {
       startV: () => ({p: 0.7}),
       startS: () => ({log: true})
     })() !== 0,
+  // The field rule (model.js coverOn, core.js COVER: the bar proven against the field, a typed answer's effective set
+  // size, the exam's entry with the coverage): from v56, which replays it; before, as before. On a subject with
+  // SUBJECTS cover (the corals).
+  COVER_SHEET: (v, N) => fn('model.js', 'const coverOn = ', '\n', 'coverOn', {sheetV: () => v, COVER_SHEET: N, SUBJ: {cover: true}})(),
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   PGD_SHEET: (v, N) => {
     const gdOf = fn('model.js', 'const gdOf = ', '\n', 'gdOf', {PGD_SHEET: N});

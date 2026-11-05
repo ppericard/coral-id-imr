@@ -366,10 +366,9 @@ function myProg(n) {
   const [k, t] = shownLevel(n);
   if (k === 'new') return '';
   const st = lvStep(n),
-    pc = Math.round(100 * genScore(n)),
     m = k === 'ok' ? [] : missing(n);
   return (
-    `<p class="myprog"><a class="mpl s${st}${k === 'weak' ? ' weak' : ''}" href="#progress" title="My progress">${lvIcon(st)}${MASTERY[st][0]}${k === 'weak' ? ' · ' + t : ''}${st > 0 && st < 5 ? ` <small class="pct" style="--p:${pc}%">${pc}%</small>` : st === 5 ? ' ✓' : ''}</a>` +
+    `<p class="myprog"><a class="mpl s${st}${k === 'weak' ? ' weak' : ''}" href="#progress" title="My progress">${lvIcon(st)}${MASTERY[st][0]}${k === 'weak' ? ' · ' + t : ''}${st > 0 && st < 5 ? ` ${pctRing(n)}` : st === 5 ? ' ✓' : ''}</a>` +
     `<span>${k === 'weak' ? `Under ${Math.round(100 * OPEN.P)}% expected right on a typical photo of it. ` : ''}${m.length ? 'Still needed: ' + esc(m.join('; ')) + '.' : 'You know this genus.'}</span></p>`
   );
 }

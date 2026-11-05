@@ -801,10 +801,11 @@ test('the recalculation card is due only when the progress % moved by 5 points o
     };
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
-  const due = pct => {
+  // The standard card (RV_CARD, rules versions 1-5): from 5 points.
+  const due = (pct, v = 5) => {
     delete saved['reefid-rv-msg'];
-    ctx.add(0, C.RV, pct);
-    return ctx.store.get('reefid-rv-msg', {}).due.includes(C.RV);
+    ctx.add(0, v, pct);
+    return ctx.store.get('reefid-rv-msg', {}).due.includes(v);
   };
   assert.deepStrictEqual(
     [
@@ -817,6 +818,16 @@ test('the recalculation card is due only when the progress % moved by 5 points o
     ].map(due),
     [false, false, false, true, true, true],
     'a card for 5 points or more only'
+  );
+  // The apology of rules version 6 (core.js RV_SORRY, Pierre Q109): for every player whose % moved at all.
+  assert.strictEqual(C.RVS[5].msg, C.RV_SORRY);
+  assert.deepStrictEqual(
+    [
+      [60, 60],
+      [60, 59],
+      [83, 33]
+    ].map(p => due(p, 6)),
+    [false, true, true]
   );
 });
 

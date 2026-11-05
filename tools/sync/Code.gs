@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 55 (2026-11-05: v55: a deleted account leaves nothing in normal operation (Pierre, 2026-11-05, Q84-Q91): userDelete with answers deletes the account's reports too, without answers relabels them "~deleted <id>" with Verified 0 (open ones stay in the admin's Inbox as from a removed account, never thanked); the page summaries are always deleted (Pages); name mentions in Events ('old' rows) and Alerts (n:<name>) are redacted; a delete or merge clears the board, achievements and stats caches and marks the stored Analyses report stale (analysesGet head stale, ROSTER_AT), so the Action refits it at once; readAnswers flags the "~deleted" rows 2 in the anonymous column (1 stays a device that never signed in), and stats_ leaves them out of the per-player abilities (ras), the photos, genus offsets, confusions and memory keep them; a report sent with the name and code of a removed account is logged under the name it joined (merged) or with no reporter, Verified 0 (deleted); a device's Replayed row is dropped when its answers are claimed at sign-in or deleted (anonDelete); a one-shot cleanup (ONCE_ removedcleanup) deletes the Replayed rows of devices with no answer left and the reports of accounts deleted outright before this version, logged in the Deploy log; v54: comments only: this file and the embedded core.js cite Pierre's rules by their new IDs (docs/rules/), nothing the script does changes; v53: the beta groups (groupIds_) are the subjects that open to a group (core.js SUBJECTS open: 'group', subjGroup), no longer every subject with a beta label, which is now the label only; fish says open: 'group', so the groups, replies and Groups tab are the same as v52, and a subject set to open: 'all' keeps its rows in the Groups tab (read, never deleted) for a return to 'group'; v52: the embedded core.js's achievement descriptions say the runs of right answers and Sharp eye are earned in the Quiz only, not in the custom quiz or the Duel tab (Pierre, 2026-11-05, Q82; the app's progress.js achAfter), unused by the script: nothing it computes changes; v51: the embedded core.js gains the photo fallback helpers (photoOnline, photoFileOf, photoAway, photoFallback, photoIndex, photoCropOf; Pierre, 2026-11-05: when R2 fails, a photo with an online original is read from it, not from img/), unused by the script: nothing it computes changes; v50: every reply is the script's own JSON (Pierre, 2026-11-05: "save failed" too often): an exception thrown out of doGet / doPost (the script lock not had in time, a Sheets service timeout or quota, a script error) made Apps Script answer with its HTML error page, which has no CORS header, so the browser told the app "Failed to fetch" / "Load failed" although the script had answered; it is now caught and answered {ok: false, error: 'lock'} (the script lock waited for LOCK_MS, 20 s, held by another request: lock_, tryLock) or {ok: false, error: 'server', msg} (fail_), which the app retries; a save releases the script lock once its progress is written, its hold, groups and full replay computed after (the replay under its own lock, as a load's), so the lock is held for less time; the photo stats request carries the app's anonymous device id (dev) and the minutes its page has been open (up): the newest build reported is kept (BUILD_TOP), and a device on a replaced version is logged in Events as kind 'old' with its device id and version, when its page stayed open OLD_OPEN minutes on a version replaced OLD_H hours ago or it started a version replaced OLD_STUCK hours ago (behind_), at most once per device every 6 hours; v49 (2026-11-05): the embedded core.js keeps the sheet-only fish photos (use: 'ref', fish-photos.json sheet: a species with no game photo may keep one for its sheet, never in a game) out of a fish entry's game photos and lists them by species (fishGen sheet), unused by the script: the fish answers are not logged, so nothing it computes changes; v48 (2026-11-04): beta groups (Pierre, 2026-11-04: fish opens to a group of players he picks in the admin, not by one site-wide switch): a Groups tab (Group: a subject in beta, core.js SUBJECTS beta; Name; Added), admin POST {userGroup: name or [names], group, on, token} adds or removes players (existing players only, under the script lock), the admin's player list (users_) and each player's load and save replies carry the groups they are in (groups: [subject ids], [] for none: an older script sends no field, so the app keeps the beta subject closed), and a rename, a merge or a delete carries the memberships; v47: the embedded core.js asks the first-launch question per subject (SUBJECTS start, its words; core.js startKey: the fish welcome question's answer in reefid-sync-fish-start beside reefid-sync-coral-start; CHOICE.opts keeps only the ids and variables) and an account merge (mergeUsers) unites each subject's record; the coral record the replay reads (startOf_) and everything the script computes are unchanged; v46: players' reports keep a genus question's units (g:Platax); the embedded core.js lists the fish scientific genera's opt-in set (SUBJECTS fish optin sci), so a player's choice merges like the circles'; nothing else changes here; v45: the embedded core.js gains the admin's part of each subject (SUBJECTS admin: its address prefix, its part of curation.json, its admin pages), unused by the script: nothing it computes changes; v44: each answer's UTC offset on the player's device (tz, minutes east of UTC, Date.getTimezoneOffset at answer time, sign turned) in a new last Answers column, UTC offset, logged only and served by readAnswers at index 14; a one-shot migration (ONCE_ tz) fills +480 into the rows logged before (every player so far was on Philippine time), so the analyses can read the time of day at home of players outside the sheet's time zone; the app sends it with every answer (an older script ignores the field); v43 was left unused (the admin's subject switch became v45); v42: the admin's player list (users) carries each player's full replay, rp: [progress %, learned, the saved copy's %] over the slate (core.js slateOf on data.json, cached with gen_), computed here with the replay record of the Replayed tab (reused while the player's rows, reset and first-launch answer are the same), so the admin's Players page reads no saved copy one player at a time (replayedAll_); the embedded core.js keeps the sorted keys of a player's answer-time record beside it (rtMedian), so a replay no longer sorts them at every right answer, same results; v40: the embedded core.js gives a fish entry the group of the identification key in force (fishGen key, groups: fish.json key, Allen et al. 2015 for the Indo-Pacific, instead of the 10 IMR shape groups), unused by the script: the fish answers are not logged, so nothing it computes changes; v39: the embedded core.js names a page drawn with another subject than the corals on screen <subject>.<page> (pageName with the subject's prefix, SUBJECTS pv: fish.quiz, fish.home) and reads it back (pageSubj), so the Pages tab tells a fish page from a coral one, and gains the subjects' zoom tip wording (SUBJECTS zoom), unused by the script; pagesClean, which keeps these names as they come ('.' was already allowed), is unchanged, so the script stores and serves the same; v38: the Coral Finder tool became the Coral ID Key: a one-shot migration (ONCE_ idkey) renames the tool's old page names to idkey / lab-idkey in the Pages, Events and Reports tabs, logged in the Deploy log; core.js copy with the renamed identifiers and the device migration migrateIdKey. v37: the embedded core.js gains the fish starter core (fishGen marks fish.json start entries first) and the fish card cover chosen within the highest source tier (Pierre's own first), then by the judged ease of fish-photos.json, unused by the script: the fish answers are not logged, so nothing it computes changes; v36: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), the stored replay keyed by that history's fingerprint too (Replayed Since = reset#fingerprint, core.js startFp) and sent with it (fp), so the app adopts it only for the history it holds, as the app does; v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 56 (2026-11-06: v56: proven against the field, core.js rules version 6 (Pierre, 2026-11-05, Q101-Q110): the embedded core.js replays the typed offers (offT: a right typed answer offers each genus of its vocabulary by its similarity) and scores a typed answer with the similarity-weighted effective size of its vocabulary (typedK), a typed answer logged |ktN is rated with the guess rate 1 / N (guess_; older typed rows keep none), the leaderboard % (pctOf_) and the admin's replayed % (replayedAll_) use the bar proven against the field (core.js pctOf with fieldOf over the slate and the pooled confusions of stats_), and the load and save replies carry notes, the Notes tab's card.* lines (notes_: Pierre's text that is never in the repo, e.g. the PS of the rules version 6 apology card); v55 (2026-11-05): a deleted account leaves nothing in normal operation (Pierre, 2026-11-05, Q84-Q91): userDelete with answers deletes the account's reports too, without answers relabels them "~deleted <id>" with Verified 0 (open ones stay in the admin's Inbox as from a removed account, never thanked); the page summaries are always deleted (Pages); name mentions in Events ('old' rows) and Alerts (n:<name>) are redacted; a delete or merge clears the board, achievements and stats caches and marks the stored Analyses report stale (analysesGet head stale, ROSTER_AT), so the Action refits it at once; readAnswers flags the "~deleted" rows 2 in the anonymous column (1 stays a device that never signed in), and stats_ leaves them out of the per-player abilities (ras), the photos, genus offsets, confusions and memory keep them; a report sent with the name and code of a removed account is logged under the name it joined (merged) or with no reporter, Verified 0 (deleted); a device's Replayed row is dropped when its answers are claimed at sign-in or deleted (anonDelete); a one-shot cleanup (ONCE_ removedcleanup) deletes the Replayed rows of devices with no answer left and the reports of accounts deleted outright before this version, logged in the Deploy log; v54: comments only: this file and the embedded core.js cite Pierre's rules by their new IDs (docs/rules/), nothing the script does changes; v53: the beta groups (groupIds_) are the subjects that open to a group (core.js SUBJECTS open: 'group', subjGroup), no longer every subject with a beta label, which is now the label only; fish says open: 'group', so the groups, replies and Groups tab are the same as v52, and a subject set to open: 'all' keeps its rows in the Groups tab (read, never deleted) for a return to 'group'; v52: the embedded core.js's achievement descriptions say the runs of right answers and Sharp eye are earned in the Quiz only, not in the custom quiz or the Duel tab (Pierre, 2026-11-05, Q82; the app's progress.js achAfter), unused by the script: nothing it computes changes; v51: the embedded core.js gains the photo fallback helpers (photoOnline, photoFileOf, photoAway, photoFallback, photoIndex, photoCropOf; Pierre, 2026-11-05: when R2 fails, a photo with an online original is read from it, not from img/), unused by the script: nothing it computes changes; v50: every reply is the script's own JSON (Pierre, 2026-11-05: "save failed" too often): an exception thrown out of doGet / doPost (the script lock not had in time, a Sheets service timeout or quota, a script error) made Apps Script answer with its HTML error page, which has no CORS header, so the browser told the app "Failed to fetch" / "Load failed" although the script had answered; it is now caught and answered {ok: false, error: 'lock'} (the script lock waited for LOCK_MS, 20 s, held by another request: lock_, tryLock) or {ok: false, error: 'server', msg} (fail_), which the app retries; a save releases the script lock once its progress is written, its hold, groups and full replay computed after (the replay under its own lock, as a load's), so the lock is held for less time; the photo stats request carries the app's anonymous device id (dev) and the minutes its page has been open (up): the newest build reported is kept (BUILD_TOP), and a device on a replaced version is logged in Events as kind 'old' with its device id and version, when its page stayed open OLD_OPEN minutes on a version replaced OLD_H hours ago or it started a version replaced OLD_STUCK hours ago (behind_), at most once per device every 6 hours; v49 (2026-11-05): the embedded core.js keeps the sheet-only fish photos (use: 'ref', fish-photos.json sheet: a species with no game photo may keep one for its sheet, never in a game) out of a fish entry's game photos and lists them by species (fishGen sheet), unused by the script: the fish answers are not logged, so nothing it computes changes; v48 (2026-11-04): beta groups (Pierre, 2026-11-04: fish opens to a group of players he picks in the admin, not by one site-wide switch): a Groups tab (Group: a subject in beta, core.js SUBJECTS beta; Name; Added), admin POST {userGroup: name or [names], group, on, token} adds or removes players (existing players only, under the script lock), the admin's player list (users_) and each player's load and save replies carry the groups they are in (groups: [subject ids], [] for none: an older script sends no field, so the app keeps the beta subject closed), and a rename, a merge or a delete carries the memberships; v47: the embedded core.js asks the first-launch question per subject (SUBJECTS start, its words; core.js startKey: the fish welcome question's answer in reefid-sync-fish-start beside reefid-sync-coral-start; CHOICE.opts keeps only the ids and variables) and an account merge (mergeUsers) unites each subject's record; the coral record the replay reads (startOf_) and everything the script computes are unchanged; v46: players' reports keep a genus question's units (g:Platax); the embedded core.js lists the fish scientific genera's opt-in set (SUBJECTS fish optin sci), so a player's choice merges like the circles'; nothing else changes here; v45: the embedded core.js gains the admin's part of each subject (SUBJECTS admin: its address prefix, its part of curation.json, its admin pages), unused by the script: nothing it computes changes; v44: each answer's UTC offset on the player's device (tz, minutes east of UTC, Date.getTimezoneOffset at answer time, sign turned) in a new last Answers column, UTC offset, logged only and served by readAnswers at index 14; a one-shot migration (ONCE_ tz) fills +480 into the rows logged before (every player so far was on Philippine time), so the analyses can read the time of day at home of players outside the sheet's time zone; the app sends it with every answer (an older script ignores the field); v43 was left unused (the admin's subject switch became v45); v42: the admin's player list (users) carries each player's full replay, rp: [progress %, learned, the saved copy's %] over the slate (core.js slateOf on data.json, cached with gen_), computed here with the replay record of the Replayed tab (reused while the player's rows, reset and first-launch answer are the same), so the admin's Players page reads no saved copy one player at a time (replayedAll_); the embedded core.js keeps the sorted keys of a player's answer-time record beside it (rtMedian), so a replay no longer sorts them at every right answer, same results; v40: the embedded core.js gives a fish entry the group of the identification key in force (fishGen key, groups: fish.json key, Allen et al. 2015 for the Indo-Pacific, instead of the 10 IMR shape groups), unused by the script: the fish answers are not logged, so nothing it computes changes; v39: the embedded core.js names a page drawn with another subject than the corals on screen <subject>.<page> (pageName with the subject's prefix, SUBJECTS pv: fish.quiz, fish.home) and reads it back (pageSubj), so the Pages tab tells a fish page from a coral one, and gains the subjects' zoom tip wording (SUBJECTS zoom), unused by the script; pagesClean, which keeps these names as they come ('.' was already allowed), is unchanged, so the script stores and serves the same; v38: the Coral Finder tool became the Coral ID Key: a one-shot migration (ONCE_ idkey) renames the tool's old page names to idkey / lab-idkey in the Pages, Events and Reports tabs, logged in the Deploy log; core.js copy with the renamed identifiers and the device migration migrateIdKey. v37: the embedded core.js gains the fish starter core (fishGen marks fish.json start entries first) and the fish card cover chosen within the highest source tier (Pierre's own first), then by the judged ease of fish-photos.json, unused by the script: the fish answers are not logged, so nothing it computes changes; v36: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), the stored replay keyed by that history's fingerprint too (Replayed Since = reset#fingerprint, core.js startFp) and sent with it (fp), so the app adopts it only for the history it holds, as the app does; v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -37,7 +37,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 55;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 56;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -118,6 +118,7 @@ function doGet_(e){
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
   // (the app keeps its own).
   try { const o = hold_(name, resetOf_(data), Number(e.parameter.pt)); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
+  try { out.notes = notes_(); } catch (err) {}  // v56: the Notes tab's card lines (notes_)
   // v28: the full replay of the player's log, when their app applied an older rules version (replay_). A failure leaves
   // it out (the app keeps its own progress and asks again next time).
   if (e.parameter.rv !== undefined) {
@@ -211,6 +212,7 @@ function doPost_(e){
   // The hold over every answer now logged, in time order (Codex review #370: a device that sent answers older than
   // another device's must not keep the order it replayed them in): the app takes it after a send.
   try { out.groups = groupsOf_(name); } catch (err) {}  // v48, as the load reply
+  try { out.notes = notes_(); } catch (err) {}  // v56, as the load reply
   try { const o = hold_(name, resetOf_(p.data), p.pt); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
@@ -356,6 +358,25 @@ function dataJson_(){
   try { c.put('gen1', JSON.stringify(out), 21600); c.put('slate1', JSON.stringify(slate), 21600); } catch (e) {}
   return {gen: out, slate: slate.length ? slate : null};
 }
+// The field of the corals' progress (v56, core.js fieldOf: the slate, the pooled confusions of stats_ with the
+// declared/family prior of data.json), as the app's model.js fieldNow; null when data.json cannot be read.
+function field_(){
+  const gen = gen_(), slate = slate_();
+  if (!gen || !slate) return null;
+  return CORE_.fieldOf(gen, stats_().conf || {}, slate);
+}
+// Lines for the app's cards (v56; Pierre, 2026-11-05: a card may name a player, a name never written in the repo): the
+// Notes tab (Key, Text), rows whose key starts with card., served as notes: {key: text} with every load and save reply
+// (sync.js NOTES_KEY; core.js RV_SORRY ps). The tab is Pierre's: made by hand, read only here; none, an empty object.
+function notes_(){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notes'), out = {};
+  if (!sh || sh.getLastRow() < 2) return out;
+  sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach(r => {
+    const k = String(r[0] || '').trim();
+    if (/^card\.[\w.-]{1,60}$/.test(k)) out[k] = String(r[1] || '').slice(0, 300);
+  });
+  return out;
+}
 // An Answers row as a replay row (core.js replayProgress): [player, time ms, shown, answered, right, mode, photos, e, th,
 // new photos, choices, null, seconds]; blank numbers are null (answers before v5; seconds before v23). v32: the seconds
 // (at 12, as in readAnswers rows) weigh a right answer's ability steps in the replay as in the app (core.js rtWeight).
@@ -494,8 +515,9 @@ const GENUS_K = 0.4;
 // "Again: A or B?" question after a mix-up, logged plain "quiz" until 2026-11-02) is rated with its real guess rate,
 // 1 / choices (Pierre: correct the existing data too; nothing in the sheet is rewritten). core.js guessOf in step.
 // v27: a typed answer (|t: the player types the genus, nothing to pick from) has no guess rate, 0 (core.js guessOf).
+// v56: a typed answer logged with its effective set size (|ktN, core.js typedK, rules version 6) is rated 1 / N.
 const guess_ = (mode, choices) => {
-  if (/\|t(\||$)/.test(mode)) return 0;
+  if (/\|t(\||$)/.test(mode)) { const kt = /\|kt(\d+(?:\.\d+)?)/.exec(mode); return kt && Number(kt[1]) > 1 ? 1 / Number(kt[1]) : 0; }
   const kq = /\|k(\d)$/.exec(mode); if (kq) return 1 / Number(kq[1]);
   if (mode.indexOf('quiz-duel') === 0) return 0.5;
   const n = String(choices || '').split(/\s+/).filter(Boolean).length;
@@ -813,7 +835,10 @@ function readEvents_(token, pages){
 // compares them). Per genus (v22): the moving average s.pg fills 95% on its way to 0.8 (the mastery exam's entry), each
 // mastery-exam question passed adds 1%, a passed exam (mx) makes it 100%; progress saved before s.pg replays its last
 // 10 results (h) from 0, a right answer weighed 0.67, a miss in full (core.js PROG, pgOf).
-function pctOf_(P, list){
+// v56: under the field rule (F, field_: core.js pctOf with fieldOf), the bar proven against the field; without F (no
+// data.json read), the formula below.
+function pctOf_(P, list, F){
+  if (F) return CORE_.pctOf(P, list, F);
   const A = 0.15, M = 0.8, OLD = 0.67;
   const pg = s => { if (typeof s.pg === 'number') return s.pg;
     const g = String(s.h || '').split('').reduce((x, c) => x + A * (c === '1' ? OLD : 1) * ((c === '1' ? 1 : 0) - x), 0);
@@ -838,9 +863,10 @@ function board_(){
     // sync's summary), with the app's formula (pctOf_); the app-sent Progress column only when that can't be read.
     const bg = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus'),
       list = bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : [];
+    const F = field_();
     const pctFrom = r => {
       if (!list.length) return null;
-      try { return pctOf_(JSON.parse(dataKey_(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}'), 'progress') || '{}'), list); } catch (e) { return null; }
+      try { return pctOf_(JSON.parse(dataKey_(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}'), 'progress') || '{}'), list, F); } catch (e) { return null; }
     };
     out.rows = ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues()
       .filter(r => r[0] && !(r[9] !== '' && Number(r[9]) <= 0))  // 0 the player's opt-out, -1 hidden by an admin (v20)
@@ -1158,6 +1184,7 @@ function replayedAll_(users, dcol){
   const gen = gen_(), list = slate_();
   if (!gen || !list || !users.length) return;
   const ss = SpreadsheetApp.getActiveSpreadsheet(), st = stats_(), big = {}, mine = {}, cached = {};
+  const F = CORE_.fieldOf(gen, st.conf || {}, list);  // v56: the field rule, as field_
   const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[lc_(r[0])] = r.slice(2).map(String).join(''); });
   answerRows_().forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); });
@@ -1188,8 +1215,9 @@ function replayedAll_(users, dcol){
       sh.getRange(at, 1, 1, row.length).setValues([row]);
       if (!c) cached[k] = {at: at, r: row};
     }
-    const G = CORE_.replayedOf({P: rec}, P);
-    u.rp = [CORE_.pctOf(G, list), CORE_.learnedOf(G, list), CORE_.pctOf(P, list)];
+    // v56: the field rule (learned marks judged at the exam entry, the bar proven against the field), as the app adopts it.
+    const G = CORE_.replayedOf({P: rec}, P, CORE_.RV, F);
+    u.rp = [CORE_.pctOf(G, list, F), CORE_.learnedOf(G, list), CORE_.pctOf(P, list, F)];
   });
 }
 // Self-update from GitHub (v11; Pierre, 2026-11-01: "find a way to redeploy the script without me"). A time trigger
@@ -1604,6 +1632,9 @@ const CORE_ = (function () { const module = {exports: {}};
       log: true,
       ach: true,
       board: true,
+      // cover: its progress is proven against the field (COVER, Pierre 2026-11-05: corals only until fish has its own
+      // study, Q110).
+      cover: true,
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       progress: ['slate', 'photos', 'groups'],
@@ -1895,7 +1926,7 @@ const CORE_ = (function () { const module = {exports: {}};
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
         // global level at the genus's last own step (core.js levelMove), which goes with its th.
-        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx', 'mf'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -1909,11 +1940,12 @@ const CORE_ = (function () { const module = {exports: {}};
       if (l.cor || r.cor) out.cor = 1;
       if (l.du || r.du) out.du = 1;
       // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices, and
-      // so do the global level's answer times (rt, rtWeight: how many timed answers took each tenth of a second).
-      ['conf', 'off', 'rt'].forEach(f => {
+      // so do the global level's answer times (rt, rtWeight: how many timed answers took each tenth of a second) and the
+      // typed offers (offT, typedOffers: fractional, kept to 2 decimals).
+      ['conf', 'off', 'rt', 'offT'].forEach(f => {
         const c = {...(r[f] || {})};
         Object.keys(l[f] || {}).forEach(k => {
-          const v = (c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0);
+          const v = Math.round(((c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0)) * 100) / 100;
           if (v > 0) c[k] = v;
           else delete c[k];
         });
@@ -2009,7 +2041,7 @@ const CORE_ = (function () { const module = {exports: {}};
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;
       // Answer times (rt, the global level's) add up like the mix-ups: the same person's.
-      ['conf', 'off', 'rt'].forEach(f => {
+      ['conf', 'off', 'rt', 'offT'].forEach(f => {
         const c = add(x[f], y[f]);
         if (Object.keys(c).length) o[f] = c;
         else delete o[f];
@@ -2036,8 +2068,14 @@ const CORE_ = (function () { const module = {exports: {}};
   // A typed answer (|t, 2026-11-03: the player types the genus instead of picking one of the choices) has no guess rate:
   // nothing to pick from, so the expected success has no 1/k floor (Code.gs guess_ v27; model.js TYPED.k).
   const TYPED_RE = /\|t(\||$)/;
+  // From rules version 6 (sheet v56, the field rule) a typed answer logs its effective set size (|ktN.NN, core.js typedK):
+  // its guess rate is 1 / that (Pierre, Q106); an older typed row (no |kt) keeps none.
+  const KT_RE = /\|kt(\d+(?:\.\d+)?)/;
   const guessOf = (mode, choices) => {
-    if (TYPED_RE.test(mode)) return 0;
+    if (TYPED_RE.test(mode)) {
+      const kt = KT_RE.exec(mode);
+      return kt && Number(kt[1]) > 1 ? 1 / Number(kt[1]) : 0;
+    }
     const kq = /\|k(\d)$/.exec(mode);
     if (kq) return 1 / Number(kq[1]);
     if (mode.indexOf('quiz-duel') === 0) return 0.5;
@@ -3017,20 +3055,124 @@ const CORE_ = (function () { const module = {exports: {}};
     return s.mx ? Math.max(g, PROG.M) : g;
   }
   // The bar of a genus, 0 to 1: s.pg fills 95% on its way to PROG.M, each mastery-exam question passed adds 1%, the
-  // passed exam makes it 100%.
-  function scoreOf(s) {
+  // passed exam makes it 100%. cov (coverageOf, the field rule below; undefined for a subject without it, fish, or before
+  // the sheet replays it): the within-field part times coverH(cov), and the exam steps only once the bar can stand at
+  // the exam's entry (coverIn).
+  function scoreOf(s, cov) {
     if (!s) return 0;
     if (s.mx) return 1;
-    const g = pgOf(s);
+    const g = pgOf(s),
+      f = cov == null ? 1 : coverH(cov);
     // At most 4 of the 5 exam steps before the exam is passed (Codex review #393): an exam begun before typed questions
     // can have 5 right answers still waiting for its typed ones, and only a passed exam (s.mx) makes 100%.
-    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
+    return 0.95 * Math.min(1, g / PROG.M) * f + (g >= PROG.M && coverIn(cov) && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
   }
-  // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
-  // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
-  // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
-  function pctOf(P, list) {
-    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n]), 0)) / list.length) : 0;
+
+  // Proven against the field (Pierre, 2026-11-05, Q101-Q110 on docs/reviews/2026-11-05-progress-setsize-study.md; docs/
+  // LEARNING.md "Proven against the field"): 100% means the player tells the genus from EVERY unit of the field (the
+  // units the progress counts: the slate for corals; bonus genera are out of it, neither competitors nor in the
+  // denominator), whatever they have unlocked. Units never met count as untested, so the denominator is fixed and no bar
+  // drops because a genus opens (Q108). Subject-agnostic: a subject opts in with SUBJECTS cover (corals only for now,
+  // Q110: fish keeps its bar until its own study).
+  // - The discrimination level of a pair (t, x), pairLevel, 0 to 1, continuous (Pierre's refinement of Q102: no
+  //   threshold of right answers): from the player's own pair record, the one that already exists (pairConf: n the
+  //   times the two were offered together, m the times mixed up, both directions; P[g].off, P[g].conf), plus the
+  //   offers a typed answer makes (P[t].offT[x], typedOffers: a typed answer has no choices, so a right one counts as an
+  //   offer of each genus of the player's typed vocabulary, by its similarity to t, simOf). The player's mix-up rate of
+  //   the pair is shrunk toward everyone's (q, the pooled score, confScore with its declared/family prior, as confOf and
+  //   confGap do) with COVER.W offers of prior weight; the level is how much of the pooled rate the player has removed:
+  //   D = clamp(1 - (m + W q) / (n + W) / q, 0, 1) = max(0, (n - m / q) / (n + W)). 0 until the pair has met; a mix-up
+  //   is judged against how confusable the pair is (forgivable on a look-alike, damning on a pair nobody confuses). The
+  //   same D as the fish confusion study (scratchpad fish-confusion-study.md 4.3; corals: one rank, no parent), with
+  //   one addition, Pierre's similarity weight on the typed offers.
+  // - Coverage of t, coverageOf: the mean of its pair levels over the field, each competitor weighed by its pooled score q
+  //   (so 1 - sum own / sum pooled, Luce's error mass the player has removed: look-alikes weigh most, the many unrelated
+  //   units together about half).
+  // - The bar (scoreOf with cov): 0.95 x min(1, pg / M) x coverH(cov), coverH = B + (1 - B) x min(1, cov / C)^G. The
+  //   coverage counts in full from C: the bar then reaches the exam's entry, which can start only from there
+  //   (examEntryOf, Q105 hook). pg, the moving average, is unchanged: the within-field part, which still drives the game
+  //   (the draw, the typed share, the opening, the exam's pg condition).
+  // - A typed answer's vocabulary (Q106, with Pierre's refinement of 2026-11-05): not the raw count of genera unlocked
+  //   but a similarity-weighted effective set size, typedK = max(2, 1 + sum over the unlocked competitors x of simOf),
+  //   simOf = min(1, the player's own score of the pair shrunk toward the pooled one / COVER.S): a look-alike counts
+  //   about 1, an unrelated genus about 0.1 (generate-then-recognise recall, Luce / GCM competition where dissimilar
+  //   items barely compete). It is the answer's guess rate (1 / typedK) and the evidence each pair gets (simOf).
+  // COVER: B, G the curve; W the prior weight of a pair level; C the coverage that counts in full; S the score of a
+  // full competitor in a typed answer (CONF.LOOK, a declared look-alike's prior). Provisional, for the tier-2 sweep.
+  const COVER = {B: 0.4, G: 0.5, W: 2, C: 0.9, S: 0.3};
+  const coverH = c => COVER.B + (1 - COVER.B) * Math.pow(Math.min(1, Math.max(0, Number(c) || 0) / COVER.C), COVER.G);
+  const coverIn = c => c == null || c >= COVER.C - 1e-9;
+  // A pair's prior score (CONF): a declared look-alike (gen[n].look either way), the same family, or neither. The app's
+  // pooledConf also gives CONF.FORM to genera sharing an IMR growth form; the field rule uses this prior, the one the sheet
+  // knows, so the app, the replay and the leaderboard weigh pairs the same.
+  const pairPrior = (gen, t, n) => {
+    const a = (gen || {})[t] || {},
+      b = (gen || {})[n] || {};
+    return (a.look || []).includes(n) || (b.look || []).includes(t) ? CONF.LOOK : a.fam && a.fam === b.fam ? CONF.FAM : CONF.BASE;
+  };
+  // The field of a subject: list (the units its progress counts), q(t, x) the pooled score of a pair (conf: ?stats=1
+  // conf, the app's PCONF; gen: genera with look and fam). Cached per pair.
+  function fieldOf(gen, conf, list) {
+    const C = conf || {},
+      memo = {};
+    const q = (t, n) => {
+      const k = t < n ? t + '|' + n : n + '|' + t;
+      return memo[k] !== undefined ? memo[k] : (memo[k] = confScore(C[k], pairPrior(gen, t, n)));
+    };
+    return {list: (list || []).slice(), set: new Set(list || []), q};
+  }
+  // A typed answer's offers of x beside t (offT), both directions.
+  const offT = (P, t, x) => (Number((((P || {})[t] || {}).offT || {})[x]) || 0) + (Number((((P || {})[x] || {}).offT || {})[t]) || 0);
+  function pairLevel(P, t, x, q) {
+    const [n0, m] = pairConf(P || {}, t, x),
+      n = n0 + offT(P, t, x);
+    if (!(n > 0) || !(q > 0)) return 0;
+    return Math.min(1, Math.max(0, (n - m / q) / (n + COVER.W)));
+  }
+  function coverageOf(P, t, F) {
+    let num = 0,
+      den = 0;
+    F.list.forEach(x => {
+      if (x === t) return;
+      const w = F.q(t, x);
+      den += w;
+      num += w * pairLevel(P, t, x, w);
+    });
+    return den ? num / den : 1;
+  }
+  // The bar of genus t in P under the field F (null: the bar without the field rule); a unit outside the field (a bonus
+  // genus) keeps the bar without it (it never counts in the progress).
+  const barOf = (P, t, F) => scoreOf((P || {})[t], F && F.set.has(t) ? coverageOf(P, t, F) : undefined);
+  // The similarity of x to t in the player's typed recall, and a typed answer's effective set size (see COVER).
+  const simOf = (P, t, x, F) => Math.min(1, confScore(pairConf(P || {}, t, x), F.q(t, x)) / COVER.S);
+  const typedK = (P, t, voc, F) =>
+    Math.round(100 * Math.max(2, 1 + [...new Set(voc || [])].reduce((a, x) => a + (x !== t ? simOf(P, t, x, F) : 0), 0))) / 100;
+  // The offers of a right typed answer on t (the app's quiz.js answer and the replay): simOf for each genus of its
+  // vocabulary (voc: the genera unlocked, or the custom quiz's selection), in P[t].offT. Weights under 0.01 are not
+  // stored (sparse: only pairs met). A pick's offers are the existing P[t].off (quiz.js answer counts them).
+  function typedOffers(P, t, voc, F) {
+    const s = P[t];
+    if (!s || !voc) return;
+    [...new Set(voc)].forEach(x => {
+      const w = x && x !== t ? simOf(P, t, x, F) : 0;
+      if (!(w >= 0.01)) return;
+      const d = (s.offT = s.offT || {});
+      d[x] = Math.round(((Number(d[x]) || 0) + w) * 100) / 100;
+    });
+  }
+  // The exam's entry (Q105 hook: Pierre redefines the exam with global and personal look-alikes; until then, today's rule,
+  // pg at PROG.M, plus the coverage that lets the bar reach the entry). The one place the game (model.js examOn), the
+  // replay's learned marks (replayedOf) and the bar ask.
+  const entryMet = (P, t, F) => {
+    const s = (P || {})[t];
+    return !!s && pgOf(s) >= PROG.M && (!F || !F.set.has(t) || coverIn(coverageOf(P, t, F)));
+  };
+  const examEntryOf = (P, t, F) => !((P || {})[t] || {}).mx && entryMet(P, t, F);
+  // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct), under the field F
+  // when given. The sync sheet computes the leaderboard % with it (Code.gs pctOf_ calls it with the sheet's field from
+  // v56; tests/sync.test.js; tests/draw.smoke.js compares this with the app's progPct).
+  function pctOf(P, list, F) {
+    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + barOf(P, n, F), 0)) / list.length) : 0;
   }
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
@@ -3322,7 +3464,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // from (Infinity, model.js TYPED.k: no 1/k floor, as guessOf), |kN in the mode (the plausible choices, logged when
   // fewer than the buttons), a duel 2, else the genera offered (2-3), else 4.
   const kOf = (mode, choices) => {
-    if (TYPED_RE.test(String(mode || ''))) return Infinity;
+    if (TYPED_RE.test(String(mode || ''))) {
+      // From rules version 6: the effective set size it was scored with (|kt, typedK); before, none (Infinity).
+      const kt = KT_RE.exec(String(mode || ''));
+      return kt && Number(kt[1]) > 1 ? Number(kt[1]) : Infinity;
+    }
     const kq = /\|k(\d)/.exec(String(mode || ''));
     if (kq) return Number(kq[1]);
     if (/duel|\|d(\||$)/.test(String(mode || ''))) return 2;
@@ -3462,6 +3608,18 @@ const CORE_ = (function () { const module = {exports: {}};
     only: 'changed',
     min: 5
   };
+  // The apology of rules version 6 (Pierre, 2026-11-05, Q109: "an apology card"; text option A of the PR, Pierre's pick to
+  // confirm). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab; sync.js keeps it in NOTES_KEY),
+  // shown small under the text when it is set: Pierre's PS naming the player who raised the question. A name is never
+  // written in the repo (AGENTS.md rule 20f).
+  const RV_SORRY = {
+    kind: 'apology',
+    t: 'Sorry: your progress was too generous',
+    p: 'Until now a genus counted as known once you could tell it from the genera you had met, so your progress was overestimating what you can really tell apart on a reef. Now 100% means you can tell a genus from every genus on the slate. Your progress was recalculated from all your answers: {from}% → {to}%. Every answer is kept, and each genus you meet and tell apart fills the bars again.',
+    ps: 'card.rv6.ps',
+    only: 'changed',
+    min: 1
+  };
   const RVS = [
     {
       v: 1,
@@ -3497,6 +3655,14 @@ const CORE_ = (function () { const module = {exports: {}};
       at: '2026-11-04',
       why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h, or the band below taken with Coral basics on the fallback card, ease)',
       msg: RV_CARD
+    },
+    {
+      v: 6,
+      at: '2026-11-06',
+      why: "Proven against the field (Pierre, Q101-Q109): a genus reaches 100% only once the player tells it from every genus of the slate; each pair gets a discrimination level from the player's own records (off, conf, and offT the offers of a typed answer) shrunk toward the pooled confusion, the bar is 0.95 x min(1, pg / M) x coverH(coverage), a typed answer is scored with the similarity-weighted effective size of its vocabulary (typedK), learned marks kept only where the replayed state meets the exam entry (COVER)",
+      // Pierre, 2026-11-05 (Q109): an apology card instead of the standard one, for every player whose % the replay moved;
+      // its PS names a player from the sheet (Notes tab, key card.rv6.ps: never in the repo; progress.js rvNotice).
+      msg: RV_SORRY
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -3513,6 +3679,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
   // Codex review #428); before it, the default player's prior 0, exactly as before.
   const START_SHEET = 36;
+  // The sync script version that replays the field rule (rules version 6: the typed offers offT, a typed answer's
+  // effective set size |kt, the learned marks judged at the exam entry; Code.gs v56): the app shows the bar proven against
+  // the field, scores a typed answer with typedK and judges the exam's entry with the coverage only once the script's
+  // replies say v >= COVER_SHEET (model.js coverOn); before it, exactly as before (AGENTS.md 7a).
+  const COVER_SHEET = 56;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -3701,13 +3872,15 @@ const CORE_ = (function () { const module = {exports: {}};
       since = o.since || {},
       memory = o.memory !== false,
       time = o.time !== false,
+      // The field rule (rules version 6, COVER): the typed offers (offT) and a typed answer's effective set size. false:
+      // the rules before it (tools, comparisons).
+      cover = o.cover !== false,
+      F = fieldOf(gen, conf, []),
       out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
-    const prior = (t, n) => {
-      const a = gen[t] || {},
-        b = gen[n] || {};
-      return (a.look || []).includes(n) || (b.look || []).includes(t) ? CONF.LOOK : a.fam && a.fam === b.fam ? CONF.FAM : CONF.BASE;
-    };
-    const pooledOf = (t, n) => confScore(conf[t < n ? t + '|' + n : n + '|' + t], prior(t, n));
+    const pooledOf = (t, n) => F.q(t, n);
+    // A typed answer's vocabulary as the log knows it (the app uses the genera unlocked, or the custom quiz's selection,
+    // which the log does not keep): the genera the player has answered on or given before this answer.
+    const vocOf = P => Object.keys(P).filter(g => g !== LEVEL && gen[g] && (P[g].ok || 0) + (P[g].ko || 0) > 0);
     // Known mix-ups (model.js confTerm, #425): the most, over the choices, of the player's own score of the pair above
     // the pooled one (confGap), on the record before this answer, on a question with 3 or more plausible choices; it adds
     // to the question's difficulty for the ability, the level and a miss's weight, as quiz.js answer adds it to dm.
@@ -3746,7 +3919,12 @@ const CORE_ = (function () { const module = {exports: {}};
           e = r[7],
           th = r[8],
           chs = split(r[10]),
-          k = kOf(mode, r[10]),
+          typed = TYPED_RE.test(mode),
+          // kl: the choices the app scored the answer with (its logged e is built on it); k: today's rule. A typed answer
+          // logged before rules version 6 (no |kt) is scored with the effective set size of the vocabulary the log knows.
+          kl = kOf(mode, r[10]),
+          voc = cover && typed ? vocOf(pl.P) : null,
+          k = cover && typed && !isFinite(kl) ? typedK(pl.P, t, voc, F) : kl,
           sec = typeof r[12] === 'number' ? r[12] : null,
           s = rec(t),
           hs = fs.map(f => s.ps[f]),
@@ -3768,12 +3946,13 @@ const CORE_ = (function () { const module = {exports: {}};
         if (replayable) {
           pl.used++;
           const fam = memFam(hs, mem),
-            q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
+            q = Math.min(0.995, Math.max(0.005, (e - 1 / kl) / (1 - 1 / kl))),
             dl = th - Math.log(q / (1 - q)), // the difficulty in the logged expectation
             // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
             d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0),
             fm = memory ? fam : 0,
-            look = chs.some(x => lookOf(pl.P, t, x)),
+            // A typed answer scored with its effective set size: the look-alike test over its vocabulary (quiz.js answer).
+            look = (voc && isFinite(k) ? voc : chs).some(x => lookOf(pl.P, t, x)),
             // The aim at the player's level before this answer's own step on it, as quiz.js answer weighs the miss.
             w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm + cf, k, 1, aimOf((pl.P[LEVEL] || {}).th));
           dm = d + fm + cf;
@@ -3817,6 +3996,9 @@ const CORE_ = (function () { const module = {exports: {}};
           x.lx = r[1];
           if (!mxKeeps(x.pg)) x.lm = r[1];
         }
+        // A right typed answer offers each genus of its vocabulary by its similarity (rules version 6, typedOffers, as
+        // quiz.js answer).
+        if (cover && ok && typed) typedOffers(pl.P, t, voc, F);
         s.h = (s.h + (ok ? 1 : 0)).slice(-10);
         fs.forEach(f => {
           const x = (s.ps[f] = s.ps[f] || [0, 0]);
@@ -3871,8 +4053,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
-  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
-  function replayedOf(rep, saved, rv) {
+  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'offT', 'th', 'lt', 'vr', 'streak'];
+  function replayedOf(rep, saved, rv, F) {
     const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},
       out = {},
@@ -3929,11 +4111,28 @@ const CORE_ = (function () { const module = {exports: {}};
       if (s) {
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
         if (typeof s.pg === 'number' && s.mx) {
-          if (!(r.lm > s.mx)) o.mx = s.mx;
+          if (!(r.lm > s.mx)) {
+            o.mx = s.mx;
+            if (s.mf) o.mf = 1;
+          }
         } else if (typeof s.pg === 'number' && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
       }
       out[g] = o;
     });
+    // The field rule (rules version 6, Pierre Q109): a learned mark passed before it (no mf) is kept only where today's
+    // replayed state meets the exam's entry (examEntryOf: pg at PROG.M and the coverage that lets the bar reach it), and
+    // then marked mf so later replays never judge it again; otherwise it goes (the caller's mxRecalc tells the player and
+    // takes back the ACH_LEARN achievements). A mark passed under the rule carries mf from its exam (quiz.js answer).
+    if (F)
+      Object.keys(out).forEach(g => {
+        const o = out[g];
+        if (g === LEVEL || !o || !o.mx || o.mf || !F.set.has(g)) return;
+        if (entryMet(out, g, F)) o.mf = 1;
+        else {
+          delete o.mx;
+          delete o.ex;
+        }
+      });
     return out;
   }
   // The merge baseline once a replay is adopted (sync.js replayAdopt, mergeProgress's B): the history every device of the
@@ -4287,6 +4486,7 @@ const CORE_ = (function () { const module = {exports: {}};
     PHOTO_RETRY,
     TYPE,
     TYPED_RE,
+    KT_RE,
     typeDist,
     typeNorm,
     typeNamesOf,
@@ -4298,6 +4498,18 @@ const CORE_ = (function () { const module = {exports: {}};
     pgOf,
     scoreOf,
     pctOf,
+    COVER,
+    coverH,
+    coverIn,
+    pairPrior,
+    fieldOf,
+    pairLevel,
+    coverageOf,
+    barOf,
+    simOf,
+    typedK,
+    typedOffers,
+    examEntryOf,
     TARGET_P,
     AIM,
     aimOf,
@@ -4325,6 +4537,8 @@ const CORE_ = (function () { const module = {exports: {}};
     levelMove,
     eloStep,
     RV_CARD,
+    RV_SORRY,
+    COVER_SHEET,
     RVS,
     RV,
     RV_SHEET,

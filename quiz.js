@@ -36,7 +36,7 @@ const gameHelp = cur =>
     cur.startsWith('quiz-duel')
       ? ''
       : `
-  <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Small typos and old names are accepted; <b>I don't know</b> shows the answer (it counts as a miss). A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>`
+  <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Small typos and old names are accepted; <b>I don't know</b> shows the answer (it counts as a miss). ${typedHelp()}</p>`
   }`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
 // Typed questions (model.js TYPED; Pierre, 2026-11-03): the player types the genus instead of picking one of the
@@ -127,7 +127,7 @@ const qclockRead = () =>
   QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (performance.now() - QCLOCK.t0 - QCLOCK.off) / 1000)) * 10) / 10;
 function question(cur, target, choices, prompt, set, kq) {
   EXAMQ = set.exam ? target : null;
-  TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
+  TYPEDQ = set.typed ? {t: target, m: null, text: '', voc: set.voc || null, kt: set.kt} : null;
   const ph = set.shown,
     lab = SUBJ.views.length > 1 ? VIEW_LABEL : {}; // one view (fish): no caption
   let answered = false,
@@ -398,8 +398,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const first = !((s.ok || 0) + (s.ko || 0)); // the genus's first answer (model.js startStep)
   // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
   // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
+  // Under the field rule (model.js coverOn) a typed answer is scored with its effective set size (core.js typedK, kt).
   const nc = $v.querySelectorAll('[data-c]').length || 4,
-    k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
+    k = tq
+      ? coverOn() && tq.kt > 1 && isFinite(tq.kt)
+        ? tq.kt
+        : TYPED.k
+      : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
   // Known mix-ups (model.js confTerm): the question was that much harder for this player, on their record before this
   // answer (scored before it updates anything, offers included).
   const cf = confTerm(target, chs, k);
@@ -414,6 +419,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (!good) dropPlans();
   session.n++;
   session.h = [...session.h, good].slice(-10);
+  // A right typed answer offers each genus of its vocabulary by its similarity (core.js typedOffers, offT; the field rule,
+  // recorded whether it is on or not, as the replay rebuilds it). Before the counts move, as the replay does it.
+  if (good && tq && SUBJ.cover) typedOffers(P, target, tq.voc || unlocked(pool()), fieldAny());
   if (good) {
     session.ok++;
     s.ok++;
@@ -451,7 +459,14 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const seenPh = ph.filter(p => p !== unseen),
     fam = famOf(target, seenPh),
     dm = d0 + fam + cf;
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP()));
+  // A typed answer scored with its effective set size: the look-alike test runs over its vocabulary (the same rule as
+  // the choices of a pick).
+  pgObs(
+    target,
+    s,
+    good,
+    good ? pgWeight(target, tq && isFinite(k) ? tq.voc || [] : chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP())
+  );
   // The answer time (core.js rtWeight, model.js rtOn): a right answer faster than the player's usual moves the genus and
   // the global level further, a slow one less; against their earlier timed answers (P[LEVEL].rt), the seconds logged.
   const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;
@@ -505,6 +520,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     ex.at = answersSoFar();
     if (ex.k >= EXAM.n && ex.t >= TYPED.exam) {
       s.mx = Date.now(); // learned, and when (the admin's player journey; was 1 before 2026-11-02, still truthy)
+      if (fieldNow()) s.mf = 1; // passed under the field rule: a replay never judges it again (core.js replayedOf)
       delete s.ex;
       setTimeout(
         () =>
@@ -545,10 +561,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       modeBase(cur) +
       (photoQuiz(cur) && AUTOD ? '|d' : '') +
       (warm ? '|c' : '') +
-      (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
+      (!tq && k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
       // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
       // answer a is the genus read ('' for "I don't know"), never the raw text; it offered no choices (ch empty).
       (tq ? '|t' : '') +
+      // |ktN: the effective set size a typed answer was scored with (field rule, sheet v56: guess rate 1 / N, core.js
+      // guessOf, kOf). Never under the old rule (k infinite).
+      (tq && isFinite(k) ? '|kt' + k : '') +
       (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).
@@ -1675,7 +1694,10 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // counts); the custom quiz's selection may not hold them, so there the look-alikes among the choices decide
     // (Codex review #411: 4 unrelated genera picked were scored as a 4-choice question with traps).
     few = sel ? ch.filter(n => n !== t && confusable(t, n)).length < 2 : traps < 2,
-    kq = typed ? TYPED.k : few ? plausibleK(t, ch) : ch.length,
+    // A typed answer's vocabulary (Pierre, Q106): the genera unlocked, the custom quiz's selection; scored with its
+    // similarity-weighted effective size (core.js typedK) under the field rule, with no guess rate before it (TYPED.k).
+    voc = typed ? (sel ? sel.slice() : unlocked(play)) : null,
+    kq = typed ? (coverOn() ? typedK(P, t, voc, fieldNow()) : TYPED.k) : few ? plausibleK(t, ch) : ch.length,
     // Aimed lower by the hold's ease and by this player's own mix-ups among the choices (model.js confTerm; none typed).
     cf = typed ? 0 : confTerm(t, ch, kq),
     set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq),
@@ -1685,7 +1707,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       t,
       ch,
       typed ? `Which ${GX(t).one || SUBJ.one}? Type it` : `Which ${GX(t).one || SUBJ.one}?`,
-      typed ? {...set, typed: 1} : set,
+      typed ? {...set, typed: 1, voc, kt: kq} : set,
       few ? plausibleK(t, ch) : 0
     ];
   if (cards.length) Object.assign(q, {intro: cards, start});
