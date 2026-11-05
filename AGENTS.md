@@ -126,7 +126,7 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **C2** Never invent categories or information; every clue carries its source.
 - **C3** IMR lecture cues are the most important content.
 - **C4** Growth form is an entry point only: rank, never filter or group genera by it.
-- **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them yourself.
+- **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
 - **C6** ID cues and their doubts cite only species present at Dauin or in the Philippines.
 - **C7** iNaturalist API: about one request a second, batched, a User-Agent, paced retries.
 - **C8** Presence: one rule for every species (`tools/presence.py`).
