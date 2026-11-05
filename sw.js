@@ -221,8 +221,10 @@ const photo = async (req, u) => {
   };
   if (!r2) return fetch(req).then(keep);
   // R2 failed twice in a row a moment ago: the page's fallback at once, for R2_PAUSE ms (no request held open on a dead
-  // host: a new worker takes over only once this one has no fetch in flight).
-  if (Date.now() - r2Off < R2_PAUSE) return Response.error();
+  // host: a new worker takes over only once this one has no fetch in flight). A failure rejects, so the fetch handler
+  // still asks the offline cache with no time limit first (Codex review #569: a paused Cache Storage, sw.js soon,
+  // skipped the photo kept offline).
+  if (Date.now() - r2Off < R2_PAUSE) throw new Error('R2 out');
   // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the page's
   // fallback.
   for (let k = 0; k < 2; k++) {
@@ -235,7 +237,7 @@ const photo = async (req, u) => {
     if (!k) await new Promise(ok => setTimeout(ok, PHOTO_RETRY));
   }
   r2Off = Date.now();
-  return Response.error();
+  throw new Error('R2 out');
 };
 let r2Off = 0;
 const R2_PAUSE = 60e3;

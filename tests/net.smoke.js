@@ -1109,13 +1109,22 @@ const server = http.createServer((req, res) => {
       // A photo kept under its R2 address is still served while R2 is cut off.
       if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: R2 cut off, a photo kept under its R2 address was not served');
       // Offline: a photo kept under the site's address is served for its R2 address.
-      const h = f.replace(/-s\.webp$/, '-m.webp');
+      const h = f.replace(/-s\.webp$/, '-m.webp'),
+        k = fs.readdirSync(path.join(ROOT, 'img')).filter(x => x.endsWith('-s.webp'))[1]; // another photo, not shown yet (no memory cache)
       await load(base + 'img/' + h);
+      await load(base + 'img/' + k);
       await ctx.route(
         u => u.href.startsWith(R2) || u.href.startsWith(base + 'img/'),
         r => r.abort()
       );
       if (!(await load(R2 + 'img/' + h))) fails.push('Service worker: offline, a photo kept from the site was not served for R2');
+      // Offline while Cache Storage is paused (sw.js soon: a slow cache is skipped for CACHE_PAUSE ms), R2 failed a moment
+      // ago: the photo kept offline is still served, by the last lookup with no time limit (Codex review #569: the
+      // worker's failure reply skipped it).
+      const [w] = ctx.serviceWorkers();
+      if (w) await w.evaluate(() => (cacheOff = Date.now()));
+      if (!w || !(await load(R2 + 'img/' + k)))
+        fails.push('Service worker: offline with Cache Storage paused, a photo kept offline was not served');
       await ctx.close();
     }
   }
