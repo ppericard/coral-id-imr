@@ -98,17 +98,26 @@ def age(iso):
     return '%dd' % (s // 86400)
 
 
-def checks(pool, sha):
-    runs = gh('repos/%s/commits/%s/check-runs?per_page=100' % (REPO, sha)).get('check_runs', [])
+def summarise(runs):
+    """Green only when every check run completed as success, skipped or neutral (a cancelled or stale run never passed)."""
     if not runs:
         return 'no checks'
-    bad = [r for r in runs if r.get('conclusion') in ('failure', 'timed_out', 'action_required', 'startup_failure')]
     going = [r for r in runs if r.get('status') != 'completed']
+    done = [r for r in runs if r.get('status') == 'completed']
+    bad = [r for r in done if r.get('conclusion') in ('failure', 'timed_out', 'action_required', 'startup_failure')]
+    other = [r for r in done if r not in bad and r.get('conclusion') not in ('success', 'skipped', 'neutral')]
     if bad:
         return 'FAILING %d/%d' % (len(bad), len(runs))
     if going:
         return 'running %d/%d' % (len(going), len(runs))
+    if other:
+        kinds = sorted({str(r.get('conclusion')) for r in other})
+        return 'NOT GREEN %d/%d (%s)' % (len(other), len(runs), ', '.join(kinds))
     return 'green'
+
+
+def checks(pool, sha):
+    return summarise(gh('repos/%s/commits/%s/check-runs?per_page=100' % (REPO, sha)).get('check_runs', []))
 
 
 def prs(pool):

@@ -90,6 +90,31 @@ test('tools/brief.py --time runs offline and names the Rule 0 window', () => {
   ]);
 });
 
+// Codex review #561: a cancelled or stale check never succeeded, so the brief must not call the PR green.
+test('tools/brief.py calls a PR green only when every check succeeded', () => {
+  const {execFileSync} = require('child_process');
+  const sum = runs =>
+    execFileSync(
+      'python3',
+      [
+        '-B',
+        '-c',
+        'import json,sys; sys.path.insert(0, "tools"); import brief; print(brief.summarise(json.loads(sys.argv[1])))',
+        JSON.stringify(runs)
+      ],
+      {cwd: ROOT}
+    )
+      .toString()
+      .trim();
+  const done = c => ({status: 'completed', conclusion: c});
+  assert.strictEqual(sum([done('success'), done('skipped'), done('neutral')]), 'green');
+  assert.strictEqual(sum([]), 'no checks');
+  assert.match(sum([done('success'), done('failure')]), /^FAILING 1\/2/);
+  assert.match(sum([done('success'), {status: 'in_progress', conclusion: null}]), /^running 1\/2/);
+  assert.match(sum([done('success'), done('cancelled')]), /^NOT GREEN 1\/2/);
+  assert.match(sum([done('success'), done('stale')]), /^NOT GREEN 1\/2/);
+});
+
 test('the session hooks run tools/brief.py', () => {
   const hooks = JSON.parse(read('.claude/settings.json')).hooks;
   const cmd = ev => hooks[ev].flatMap(h => h.hooks.map(x => x.command)).join(' ');
