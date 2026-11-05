@@ -5,41 +5,52 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-05, about 16:30 Manila, by the integrator.
+Written 2026-11-05, about 17:10 Manila, by the integrator.
 
 Last checked: reports and events: 2026-11-05 ~13:38 Manila (nothing new since 11:30)
 
 ## Now
 
 Tracks in flight: track · PR or branch · state · next step. Decided work is launched at once (Pierre, 2026-11-05: no
-queue held back; `tests/slot.js` protects the machine).
+queue held back; `tests/slot.js` protects the machine). Priority (Pierre, 2026-11-05 evening): **public fish by Sunday
+2026-11-08**, the photos' step 3, the fish sheets at three levels and the new app icon are very short term.
 
-- Governance PR C #572 · amended today (valid statistics with Holm and pre-declared measures, multifactor method
-  rigour, "tu" with Pierre, Dependabot and stack rule) · merge when CI and Codex are green; then the URL refonte and
-  the unit-test slot lock start.
-- Analyses multiple-testing correction (Q69: Holm on 1-2 declared primaries per analysis, BH on the rest, 999 bootstrap
-  draws, "new clear" badge removed) · agent at work · before/after screenshots to Pierre, then merge.
-- Contributions #579 (Q65) and "Your feedback helped" #581 (Q66) · Q79-Q81 answered: wording A, thanked at the first
-  handled report then grouped (at most weekly), shown as cards, not toasts · agent at work · screenshots to Pierre.
-- Analyses views and player profiles (Q70-Q77 answered) · agent at work, PRs in the study's order · screenshots.
+- Fish public release · plan in the scratchpad, items A (gate split from the label), B (bug sweep), C (copy audit and
+  "Fish is here" card, draft for Pierre), D (stopgap photo health), E (admin fish Candidates 5a then 5b) · agents at
+  work · Pierre's Q92-Q100 in the morning, then the flip within his hours (not after 16:30).
+- Governance PR C #572 · merge when green; then the unit-test slot lock; the URL refonte is built but merged only
+  after the fish flip (same files).
+- Analyses: round-thousand milestones (then a forced clean recompute) · views and player profiles (Q70-Q77) · agents.
+- Contributions #579 / "Your feedback helped" #581 as cards, anti-spam, never to a deleted account, reports fixed in a
+  PR markable as handled (`reports-handled.json`) · agent · cards to Pierre before merge.
+- Deleted accounts (Q84-Q91 answered, plus self-service account deletion) · agent.
+- Streaks and Sharp eye in the Quiz only (Q82) · agent. Taxonomy reference in the tools · difficulty display · agents.
+- Prepared for Pierre's go: photos step 3 (dry run on a mirror); 4 app icon proposals; progress vs number of genera
+  study (replaces Q83).
 
 ## Next
 
 Waiting only on a real dependency (details in [ROADMAP](ROADMAP.md) "Next").
 
-1. URL refonte, app and admin (Q53-Q56 decided; [study](reviews/2026-11-05-url-scheme-study.md)): after #572.
-2. The fish track toward the beta (ROADMAP "Next", the fish rows); FishBase next steps.
-3. The fish sheets at three levels, when Pierre wants them (study:
-   [reviews/2026-11-05-fish-sheets-study.md](reviews/2026-11-05-fish-sheets-study.md); its 13 questions parked).
+1. The fish sheets at three levels ([study](reviews/2026-11-05-fish-sheets-study.md)): its 13 questions to Pierre now
+   (none blocks the release); then build.
+2. Curated fish photos in the game (admin PR 5b, then 7, then answer logging 11), right after the release.
+3. The next round of independent reviews, once fish is public.
 
 ## Questions for Pierre
 
 Open questions, numbered for good (never reset, AGENTS.md "Working mode"). An answered one goes into its PR and off
 this list. Long-standing content and trainer questions live in the admin, To do › Points (`points.json`, #571).
 
-- The 13 questions of the fish sheets study stay parked until he picks that project.
+- Q83 withdrawn (Pierre: progress is too generous beyond look-alikes; the number of genera in mind matters): a study
+  on progress vs the number of genera is running; its questions replace Q83.
+- Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep the "beta" tag (Q93);
+  a "Fish is here" card (Q94); the copy edits of PR C (Q95); level 1 on today's photos (Q96); no fish answer logging
+  for a week (Q97); smoke tests and the bug sweep as release checks (Q98); new players still start on Corals (Q99);
+  the flip Saturday ~10:00 Manila, Sunday morning as reserve (Q100). Rec. yes to each.
+- Also: his explicit go for photos step 3 (dry run ready); his pick among 4 app icons; the 13 fish-sheet questions.
 
-Last question number: Q81
+Last question number: Q100
 
 ## Pierre's hands
 
@@ -55,14 +66,10 @@ Actions only Pierre can do.
   [20](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=85893&rank=family&photos=true);
   every stony coral between order and family,
   [57](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=47532&rank=suborder,infraorder,superfamily,family&photos=true).
-
 - **Show the Astrea question to an IMR trainer** from the admin (To do › Points, first item) and Publish the answers.
 - **Sort the photos out of the presence rule** (To do › Out of the presence rule: Remove / Keep) and, when convenient, the 14 share-alike coral photos (To do › Share-alike).
 - **More photos for the genera with the fewest** (photo memory: in a thin genus players learn the photos, not the genus; Pierre, 2026-11-03): [admin Coverage › Games › Thinnest](https://ppericard.github.io/coral-id-imr/admin.html#~cov) lists them.
 - **Protect `main` on GitHub**: [HANDOVER "Protect main"](HANDOVER.md#protect-main-one-time-setup).
-- **Create the secret `ANALYSES_ADMIN_TOKEN`** (no Analyses report was ever stored without it; asked again
-  2026-11-05):
-  [HANDOVER "Analyses report"](HANDOVER.md#analyses-report-one-time-setup-2026-11-04).
 - **Archive tags, then delete branches** (the proxy refuses tag pushes and branch deletes from the agents):
   `git push origin f46f11c:refs/tags/archive/cards-mockups` and
   `git push origin dd491b0:refs/tags/archive/fishprog-mockups`, then delete the branches
@@ -84,7 +91,6 @@ _(none)_
 
 ## Last stop
 
-2026-11-05 ~16:30 Manila, integrator, end of Pierre's day (Rule 0). Merged today after 15:30: #578, #580, #582-#587
-(Recompute on phones, unstretched IMR photos, per-player replay stats, CI on Node 24 / Ubuntu 26.04 / Python 3.15,
-Analyses sort and fold, rclone 1.75.2 checked by a real Photos to R2 run, stack check). Mid-flight: #572 (CI), the
-Analyses correction agent; #579/#581 wait for Q79-Q81.
+2026-11-05 ~17:10 Manila, integrator, end of Pierre's day (Rule 0). Merged after 15:30: #578, #580, #582-#590 (incl.
+the Analyses correction #588). The night: agents keep working on the tracks above; decided work merges when green;
+questions wait here for the morning.
