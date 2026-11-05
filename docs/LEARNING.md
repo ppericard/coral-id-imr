@@ -2342,7 +2342,17 @@ over-correction. The same runs, replayed offline with other constants (the bars 
 live run): W 0.25-2 × C 0.5-0.9 × B 0.3-0.4 × G 0.5-0.75. Chosen: **W 1, C 0.6** (B 0.4, G 0.5 kept, Pierre's
 formula): overclaim at 600 +0.039 / +0.011 / −0.013 / −0.052, at 1000 +0.070 / +0.054 / +0.028 / −0.029; the expert at
 the entry with 19 genera by 600 questions and every one by 1000. **Confirmation** on fresh seeds 31-60, the chosen
-setting against today's rules, live: CONFIRM_PLACEHOLDER
+setting against today's rules, live,
+both on this code (sheet v55 / v56), paired over seeds, Holm over the 4 profiles. Natural path, overclaim at 600 (primary
+1): +0.104 → +0.044, +0.082 → +0.015, +0.033 → −0.012, −0.035 → −0.046 (beginner, lecture RA, strong RA, expert; every
+difference Holm p 0.0004); at 1000: +0.117 → +0.077, +0.069 → +0.051, +0.047 → +0.038, +0.015 → +0.012. Precision of
+Learned at 1000 (primary 2): within the margin, few runs have a Learned genus on both sides; pooled, 1,175 of the 1,176
+Learned genera under the new rule are truly known (≥ 0.8 against the whole slate). Learned at 1000: 1.5 → 0.17, 2.9 →
+1.2, 10.2 → 7.3, 32.6 → 30.6. Custom-8 (8 genera drilled 200 questions in the Custom quiz): their bar at the end of the
+drill 0.92-0.94 → 0.58-0.67 against a true whole-slate success of 0.71-0.99, so the overclaim +0.21 / +0.11 / +0.04 /
+−0.04 becomes −0.13 / −0.21 / −0.27 / −0.32 in this world of 50% transfer; Learned at 600 2.2-7.8 → 0-0.7. Guardrail:
+the expert under-claims a little more at 600 (−0.046 against −0.035; no setting of the grid does better than −0.042),
+the same by 1000.
 
 ### Typed questions (2026-11-03): why these settings
 
