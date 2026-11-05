@@ -343,7 +343,7 @@ function renderFishCand() {
       link = /^https?:/.test(p.o || '')
         ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="${p.via === 'fishbase' ? 'FishBase' : 'iNaturalist'}">${p.via === 'fishbase' ? 'FishBase' : 'iNat'} ↗</a>`
         : '';
-    $v.innerHTML = `<section class="adm-sw adm-fsw${chk ? ' adm-blind' : ''}" data-f="${esc(p.f)}" data-s="${esc(sid)}">${seg}
+    $v.innerHTML = `<section class="adm-sw adm-fsw${chk ? ' adm-blind' : ''}${FTAGS_OPEN ? ' adm-ftopen' : ''}" data-f="${esc(p.f)}" data-s="${esc(sid)}">${seg}
       <figure class="adm-swcard">
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${fishSrc(pb, 0, chk)} alt=""></button>
         <span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}${from ? `<small>from <i>${esc(fishName(from).sci)}</i></small>` : ''}</span>

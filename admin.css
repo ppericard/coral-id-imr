@@ -1735,6 +1735,14 @@ kbd {
   color: var(--accent);
   box-shadow: inset 0 0 0 1.5px var(--accent);
 }
+/* Tags unfolded: the page grows and scrolls rather than squeezing the photo out of the screen. */
+.adm-sw.adm-ftopen {
+  height: auto;
+}
+.adm-sw.adm-ftopen .adm-swcard {
+  flex: none;
+  height: min(60vh, 520px);
+}
 .adm-ftags {
   display: flex;
   flex-direction: column;
