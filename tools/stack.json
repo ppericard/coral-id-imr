@@ -99,7 +99,7 @@
       "name": "iNaturalist API",
       "version": "v1",
       "pins": [{"files": ["tools/*.py"], "pattern": "api.inaturalist.org/{v}/", "also": ["v2"], "min": 10}],
-      "latest": {"kind": "inat-api", "compare": "exact"},
+      "latest": {"kind": "inat-api", "from": 2, "compare": "exact"},
       "lookup": "https://api.inaturalist.org/v2/docs/",
       "why": "v1 in most tools, v2 (the preferred one) in tools/fetch_fish.py: move each tool to v2 when it is touched, its output files checked identical. v1 has no shutdown date yet."
     },

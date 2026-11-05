@@ -134,6 +134,11 @@ class Lookup:
         with urllib.request.urlopen(req, timeout=left) as r:
             return r.read().decode('utf8', errors='replace')
 
+    def pause(self, s):
+        if self.end - time.monotonic() < s + 0.2:
+            raise TimeoutError('out of time')
+        time.sleep(s)
+
     def json(self, url):
         return json.loads(self.get(url))
 
@@ -216,14 +221,26 @@ def github_api(lk, spec):
     return newest, 'supported: ' + ', '.join('%s (%s)' % (v, 'no end yet' if e.startswith('Not') else 'to ' + e) for v, e in sorted(rows, reverse=True))
 
 
+INAT_PACE = 1.0  # seconds between two iNaturalist requests (AGENTS.md rule 6f: about one a second, never parallel)
+
+
 def inat_api(lk, spec):
-    """The highest vN of api.inaturalist.org that answers (a probe on one taxon)."""
-    top = 0
-    for n in range(1, 6):
-        if lk.status('https://api.inaturalist.org/v%d/taxa/47218?fields=id' % n) == 200:
-            top = n
-        elif top:
+    """The highest vN of api.inaturalist.org that answers, probed upward from spec 'from' on one taxon, one request a
+    second. Only a 404 ends the climb: a 429 or a 5xx is retried once after a longer pause, then reported (unknown), so a
+    transient error never makes an older version look like the latest (Codex review #587)."""
+    n, top, retry = int(spec.get('from', 1)), 0, 0
+    while n < 10:
+        if n != int(spec.get('from', 1)) or retry:
+            lk.pause(INAT_PACE * (1 + retry))
+        code = lk.status('https://api.inaturalist.org/v%d/taxa/47218?fields=id' % n)
+        if code == 200:
+            top, retry, n = n, 0, n + 1
+        elif code == 404:
             break
+        elif (code == 429 or code >= 500) and not retry:
+            retry = 1
+        else:
+            raise ValueError('v%d answered HTTP %d' % (n, code))
     if not top:
         raise ValueError('no version answered')
     return 'v%d' % top, ''

@@ -197,3 +197,38 @@ print(json.dumps({'fresh': fresh, 'lines': lines, 'got': got, 'fast': spent < br
     fs.rmSync(d, {recursive: true, force: true});
   }
 });
+
+// Codex review #587 (AGENTS.md rule 6f): the iNaturalist probes are paced (about one request a second, never parallel), a
+// 429 or a 5xx is retried after a pause, and only a 404 means "no such version" (a transient error never makes an older
+// version look like the latest).
+test('the iNaturalist version probe is paced, retries 429/5xx after a pause, and trusts only a 404', () => {
+  const out = py(`
+import io, time, urllib.error, stack_check as s
+s.INAT_PACE = 0.05
+class Fake(s.Lookup):
+    def __init__(self, codes):
+        super().__init__(10)
+        self.codes, self.calls = list(codes), []
+    def get(self, url, accept='application/json'):
+        self.calls.append((url.split('/')[3], time.monotonic()))
+        code = self.codes.pop(0)
+        if code != 200:
+            raise urllib.error.HTTPError(url, code, 'x', {}, io.BytesIO(b''))
+        return '{}'
+res = []
+for codes in ([200, 429, 404], [200, 503, 503], [200, 404]):
+    lk = Fake(codes)
+    try:
+        got = s.inat_api(lk, {'from': 2})[0]
+    except Exception as e:
+        got = type(e).__name__
+    gaps = [b[1] - a[1] for a, b in zip(lk.calls, lk.calls[1:])]
+    res.append({'got': got, 'calls': [c[0] for c in lk.calls], 'paced': all(g >= s.INAT_PACE * 0.9 for g in gaps)})
+print(json.dumps(res))
+`);
+  assert.deepStrictEqual(out, [
+    {got: 'v2', calls: ['v2', 'v3', 'v3'], paced: true},
+    {got: 'ValueError', calls: ['v2', 'v3', 'v3'], paced: true},
+    {got: 'v2', calls: ['v2', 'v3'], paced: true}
+  ]);
+});
