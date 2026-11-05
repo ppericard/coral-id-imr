@@ -33,17 +33,24 @@ CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)
 EARLY = 4  # very easy (judging/FISH.md): the photos of an entry's first questions (model.js easyFirst)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
+# A reference photo (`rep`: the photo a reference source uses to represent the species, FishBase's main picture or
+# iNaturalist's taxon photo; Pierre, 2026-11-05: "such photos are easy to identify, so they should come early in the quiz
+# for a beginner") is one ease point easier than its visual code says, the caps applied after (a juvenile or a night shot
+# stays capped). One point lifts a medium photo (3) into the very easy ones of the first questions (model.js easyFirst).
+REP_BONUS = 1
 
 
-def cap(code, phase, juv_ok=False):
-    """(ease after the caps, tags with the phase flag): judging/FISH.md "Caps". juv_ok: the photo's juveniles show early
-    (juv_early: its entry's class A, or its species in the entry's early list), so the juvenile flag caps nothing."""
+def cap(code, phase, juv_ok=False, rep=None):
+    """(ease after the caps, tags with the phase and reference flags): judging/FISH.md "Caps" and "Reference photos".
+    juv_ok: the photo's juveniles show early (juv_early: its entry's class A, or its species in the entry's early list), so
+    the juvenile flag caps nothing. rep: the photo's `rep` (a reference source shows it for the species: FishBase's main
+    picture, iNaturalist's taxon photo), which adds the flag r and REP_BONUS to the ease, the caps applied after it."""
     m = CODE.match(code)
     if not m:
         raise ValueError(f"bad code {code!r}")
     v, w, light, loss, _c, _z, n, fl, e = m.groups()
-    fl = fl + ("p" if phase and "p" not in fl else "")
-    e = int(e)
+    fl = fl + ("p" if phase and "p" not in fl else "") + ("r" if rep else "")
+    e = min(5, int(e) + (REP_BONUS if rep else 0))
     if ("j" in fl and not juv_ok) or n == "x" or loss == "3":
         e = min(e, 2)
     # The phase flag p caps nothing (Pierre, 2026-11-04: a sex or colour phase is a species-level difficulty; an Anthias
@@ -86,7 +93,7 @@ def apply(photos, fish=None):
             for x in ("e", "jt", "c"):
                 p.pop(x, None)
             if p["f"] in J:
-                p["e"], p["jt"] = cap(J[p["f"]], tid in dim, juv_early(juv.get(tid), sp.get(p.get("sp"), ())))
+                p["e"], p["jt"] = cap(J[p["f"]], tid in dim, juv_early(juv.get(tid), sp.get(p.get("sp"), ())), p.get("rep"))
                 if p["f"] in C:
                     p["c"] = C[p["f"]]
                 k += 1

@@ -1,0 +1,22 @@
+{
+ "photos": {
+  "fish-s238-cand-fb-Hachl_m0": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s238-cand-fb-Hachl_f0": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s238-cand-fb-Hachl_m1": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s238-cand-fb-Hachl_u0": {
+   "code": "p1g0sl1j4",
+   "keep": "best",
+   "unsure": ["code"],
+   "note": "Small (5.5 cm TL), dark ocelli along the dorsal fin: perhaps a juvenile or initial phase; FishBase says unsexed."
+  }
+ }
+}

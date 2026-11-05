@@ -419,12 +419,13 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
     ['Parrotfish', 'Anthias']
   );
 });
-// judging/FISH.md "Caps", the same rule as tools/fish_judge.py cap().
+// judging/FISH.md "Caps" and "Reference photos", the same rule as tools/fish_judge.py cap(): a reference photo (rep) gets
+// the flag r and one ease point (REP_BONUS), the caps applied after it.
 const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$/;
-const capOf = (code, phase, juvOk) => {
+const capOf = (code, phase, juvOk, rep) => {
   const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
-    fl = fl0 + (phase ? 'p' : '');
-  let e = +e0;
+    fl = fl0 + (phase ? 'p' : '') + (rep ? 'r' : '');
+  let e = Math.min(5, +e0 + (rep ? 1 : 0));
   if ((/j/.test(fl) && !juvOk) || n === 'x' || k === '3') e = Math.min(e, 2);
   if (/[ca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
   return {e, jt: code.slice(0, 7) + fl};
@@ -458,7 +459,7 @@ test('judged photos: every fish game photo judged with a valid code, written int
       assert.strictEqual(codes[p.f][0], tid, `${p.f}: judged under another entry`);
       assert.deepStrictEqual(
         {e: p.e, jt: p.jt},
-        capOf(codes[p.f][1], dim.has(tid), juvEarly(tid, p)),
+        capOf(codes[p.f][1], dim.has(tid), juvEarly(tid, p), p.rep),
         `${p.f}: run python3 tools/fish_judge.py`
       );
       assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
