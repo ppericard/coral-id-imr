@@ -72,8 +72,9 @@ const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
 // rk, one: the rank of the unit asked and its word ("genus" for a fish scientific genus): see typeMatch.
 // o.t, the unit asked: the spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"; core.js typeVerdict). A
 // name of it typed within the tolerance but not exactly is still a right answer (the genus was recognised: the grading
-// is unchanged), but the player first retypes it once: "Close, but not quite: try again", the field keeps the text
-// selected and the focus, and I don't know becomes Show me (skips the retype, never a miss). Then done(m, text, sp)
+// is unchanged), but the player first retypes it once: a warm nudge, "✏️ So close! Right genus: just fix the spelling
+// and try once more" (Pierre, 2026-11-06: the first plain line read like "a mean teacher saying no"), the field keeps
+// the text selected and the focus, and I don't know becomes Show me (skips the retype, never a miss). Then done(m, text, sp)
 // with the first reading and text, sp = {r: 1 when retyped exactly, else 0; text: the retype, '' when skipped}. Another
 // unit's name is never "close": a wrong answer as before. o.close(), when the retype is asked: the quiz stops its clock
 // there (the seconds logged are the recognition's, not the spelling's).
@@ -108,7 +109,7 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
       first = {m, text};
       if (o.close) o.close();
       form.classList.add('retry');
-      msg.textContent = 'Close, but not quite: try again.';
+      msg.innerHTML = `<span class="tymed" aria-hidden="true">✏️</span><span><b>So close!</b> Right ${esc(one)}: just fix the spelling and try once more.</span>`;
       idk.textContent = 'Show me';
       inp.select();
     } else return end(m, text);
@@ -126,22 +127,27 @@ const typeSpell = (text, name) => {
     .join('')
     .replace(/<\/b><b>/g, ''); // neighbouring letters in one bold run
 };
-// How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact). sp: the
-// spelling step's outcome (typeBind): "That's it" after an exact retype, else the right spelling, its wrong letters in
-// bold against the last try.
-const typeRead = (m, text, sp) => {
-  if (!m || m.exact) return '';
-  const was = m.old ? (m.alt ? ` Read as ${uname(m.g)}.` : ` The old name of ${uname(m.g)}.`) : '';
-  if (sp) {
-    const name = m.old || unameT(m.g),
-      it = !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s => s : s => `<i>${s}</i>`; // as uname: fish entries upright
-    return sp.r ? "That's it." : `Not quite: it's spelled ${it(typeSpell(sp.text || text, name))}.${was}`;
-  }
-  return m.old
-    ? m.alt
-      ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
-      : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
-    : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
+// How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact, or when
+// the spelling step was asked: typeStep says it in the verdict's own line).
+const typeRead = (m, text, sp) =>
+  !m || m.exact || sp
+    ? ''
+    : m.old
+      ? m.alt
+        ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
+        : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
+      : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
+// The spelling step's outcome (typeBind sp) for the verdict's one line (Pierre, 2026-11-06: one line, "✓ Yes, but not
+// quite: it's spelled Galaxea", in place of "Yes, it's Galaxea" plus a second line), null when none was asked. {r: 1}
+// after an exact retype ("✓ Yes, well spelled: it's …"); else {r: 0, spelled}: the name as it is spelled, the letters
+// the last try got wrong marked (typeSpell, .tysp), in italics as uname (a fish entry upright), and old: the name typed
+// was an old one (alt: another name of a fish entry), so the line names the unit after it.
+const typeStep = (m, text, sp) => {
+  if (!sp || !m || m.exact) return null;
+  if (sp.r) return {r: 1};
+  const name = m.old || unameT(m.g),
+    s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
+  return {r: 0, spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
 };
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
@@ -701,11 +707,12 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
   if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c ? 'ko' : 'idk');
   const idk = !!tq && !c,
-    read = tq ? typeRead(tq.m, tq.text, tq.sp) : '';
+    read = tq ? typeRead(tq.m, tq.text, tq.sp) : '',
+    step = tq && good ? typeStep(tq.m, tq.text, tq.sp) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
   document.getElementById('after').innerHTML =
-    `${fbBody(target, c, good, idk, again, ph, read)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
+    `${fbBody(target, c, good, idk, again, ph, read, step)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q');
@@ -737,8 +744,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
 // The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
 // another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to
 // its sheet and to the comparison. A fish entry (a record with a name, core.js fishGen): the IMR cues, how IMR tells the
-// look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet.
-function fbBody(target, c, good, idk, again, ph, read) {
+// look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet. step: a
+// typed answer's spelling step (typeStep), said in the verdict's one line.
+function fbBody(target, c, good, idk, again, ph, read, step) {
   const g = GX(target),
     fish = !!g.name,
     C = !good && GX(c) ? GX(c) : null,
@@ -747,14 +755,24 @@ function fbBody(target, c, good, idk, again, ph, read) {
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
       `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
-  const name = fish
-      ? `<b>${uname(target)}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
-      : `<a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+  // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
+  const named = inner =>
+      fish
+        ? `<b>${inner}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
+        : `<a href="#g-${esc(target)}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+    name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
+    // The verdict, one line. The spelling step: "✓ Yes, well spelled: it's X" after an exact retype; else "✓ Yes, but
+    // not quite: it's spelled X", the same link, its wrong letters marked (an old name typed: that name, then the unit).
+    said = !step
+      ? `it's ${name}`
+      : step.r
+        ? `well spelled: it's ${name}`
+        : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   return `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> it's ${name}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     ${more}`;
 }

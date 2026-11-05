@@ -269,18 +269,21 @@ const server = http.createServer((req, res) => {
       if (answersSoFar() !== a0 || !/not a genus/.test(f().querySelector('.tymsg').textContent))
         fails.push('a word that is no genus was taken as an answer');
       // The spelling step (a player's idea, Pierre 2026-11-05; quiz.js typeBind): a close typo of the right genus is no
-      // answer yet: "Close, but not quite: try again", the text kept and selected, I don't know turned to Show me.
+      // answer yet: the warm nudge "So close! Right genus: just fix the spelling…", the text kept and selected, I don't know
+      // turned to Show me.
       f().querySelector('input').value = typo.toLowerCase();
       f().requestSubmit();
       const retryOn = () =>
         answersSoFar() === a0 &&
         f().classList.contains('retry') &&
-        /Close, but not quite/.test(f().querySelector('.tymsg').textContent) &&
+        /So close! Right genus: just fix the spelling/.test(f().querySelector('.tymsg').textContent) &&
+        !!f().querySelector('.tymsg .tymed') &&
         f().querySelector('[data-idk]').textContent === 'Show me' &&
         f().querySelector('input').value === typo.toLowerCase() &&
         !f().querySelector('input').disabled;
       if (!retryOn()) fails.push(`a close typo "${typo}" of ${g}: no retype asked (${f().querySelector('.tymsg').textContent})`);
-      // Retyped exactly: the answer (the first reading, right), "That's it", the raw text and the step logged.
+      // Retyped exactly: the answer (the first reading, right), "✓ Yes, well spelled: it's X" in one line, the raw text and
+      // the step logged.
       f().querySelector('input').value = g;
       f().requestSubmit();
       let l = logged();
@@ -295,10 +298,12 @@ const server = http.createServer((req, res) => {
         l.tr !== 1
       )
         fails.push(`typed answer "${typo}" retyped "${g}" logged ${JSON.stringify(l)}`);
-      if (!/^That's it/.test((document.querySelector('#after .tyread') || {}).textContent || ''))
-        fails.push('an exact retype does not say "That\'s it"');
+      const h1 = document.querySelector('#after .fb h3');
+      if (!h1 || !h1.textContent.startsWith(`✓ Yes, well spelled: it's ${g}`) || document.querySelector('#after .tyread'))
+        fails.push(`an exact retype: verdict "${h1 && h1.textContent}"`);
       if (document.querySelector('#tyin:not(.ok)')) fails.push('a right typed answer: the field is not marked right');
-      // Retyped wrong again: still right (grading unchanged), the spelling shown with the wrong letters in bold.
+      // Retyped wrong again: still right (grading unchanged), one line "✓ Yes, but not quite: it's spelled X" in place of
+      // "Yes, it's X" (Pierre, 2026-11-06), X the same link to the genus sheet, its wrong letters marked.
       g = typedQ();
       const sw2 = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]),
         typo2 = g.slice(0, sw2) + g[sw2 + 1] + g[sw2] + g.slice(sw2 + 2),
@@ -308,13 +313,17 @@ const server = http.createServer((req, res) => {
       f().querySelector('input').value = typo2;
       f().requestSubmit();
       l = logged();
-      const rd = document.querySelector('#after .tyread');
+      const rd = document.querySelector('#after .fb h3'),
+        ln = rd && rd.querySelector(`a[href="#g-${g}"]`);
       if (answersSoFar() !== a1 + 1 || l.a !== g || !l.ok || l.ty !== typo2 || l.tr !== 0 || P[g].h.slice(-1) !== '1')
         fails.push(`typed answer "${typo2}" retyped wrong logged ${JSON.stringify(l)}, recent ${P[g].h}`);
       if (
         !rd ||
-        !/Not quite: it's spelled/.test(rd.textContent) ||
-        rd.querySelectorAll('b').length !== 1 ||
+        !rd.textContent.startsWith(`✓ Yes, but not quite: it's spelled ${g}`) ||
+        !rd.classList.contains('ok') ||
+        !ln ||
+        ln.querySelectorAll('.tysp b').length !== 1 ||
+        document.querySelector('#after .tyread') ||
         !document.querySelector('#tyin.close')
       )
         fails.push(`a retype still wrong: feedback ${rd && rd.innerHTML}, field ${document.querySelector('#tyin').className}`);

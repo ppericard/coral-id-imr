@@ -2400,7 +2400,10 @@ kbd {
   min-height: 0;
 }
 /* The spelling step (quiz.js typeBind): a close typo of the right name is retyped once. Not a wrong answer, so never the
-   red: the warm --warn edge on the field and the message in ink. A retype still not exact keeps that look once answered. */
+   red: the warm --warn edge on the field. A retype still not exact keeps that look once answered. The nudge is a small
+   card in the cards' grammar (docs/DESIGN.md "Cards"; Pierre, 2026-11-06: warm and encouraging, never a plain line): the
+   warm kind (--warn, as the apology and step cards), its tint fading to the surface, the ✏️ in a small medallion, the
+   "So close!" in the kind's ink; it rises in with the medallion's pop (none with reduced motion). */
 .tyform.retry input,
 .tyform input.close {
   border-color: var(--warn);
@@ -2410,11 +2413,49 @@ kbd {
   outline-color: var(--warn);
 }
 .tyform.retry .tymsg {
+  --k: var(--warn);
+  --kt: color-mix(in srgb, var(--k) 16%, var(--surface));
+  --kink: color-mix(in srgb, var(--k) 62%, var(--ink));
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid color-mix(in srgb, var(--k) 40%, var(--surface));
+  border-radius: var(--r);
+  background: linear-gradient(to right, var(--kt), var(--surface) 75%);
   color: var(--ink);
-  font-weight: 600;
+  line-height: 1.35;
 }
-.fb .tyread b {
+.tymsg .tymed {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--kt);
+  border: 2px solid var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 1.05rem;
+}
+.tymsg b {
+  color: var(--kink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tyform.retry .tymsg {
+    animation: ulrise 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+  .tymsg .tymed {
+    animation: tickpop 420ms cubic-bezier(0.3, 1.6, 0.5, 1) 0.12s both;
+  }
+}
+/* The letters a retype still got wrong, in the verdict's one line (quiz.js typeStep): the "wrong" colour and a thick
+   underline of it, so they show without colour too (the colour-blind mode redefines --bad). */
+.tysp b {
   color: var(--bad);
+  text-decoration: underline 2px var(--bad);
+  text-underline-offset: 3px;
 }
 .fb {
   background: var(--surface);

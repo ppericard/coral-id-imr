@@ -68,11 +68,18 @@ LAB.add({
         const im = body.querySelector('.tystage img');
         if (im && typeof photoSrc === 'function') im.insertAdjacentHTML('afterend', photoSrc(p));
         // How it was read (a typo or an old name, quiz.js typeRead), on a miss too: "you wrote Acorpora, read as Acropora".
+        // The spelling step (quiz.js typeStep) in the same one line as the quiz: "Right, but not quite: it's spelled …".
         const read = typeRead(said, text, sp),
+          st = ok && typeStep(said, text, sp),
           how =
-            said == null ? `It was <i>${esc(t)}</i>.` : ok ? `<i>${esc(t)}</i>.` : `It was <i>${esc(t)}</i>, not <i>${esc(said.g)}</i>.`;
+            said == null ? `It was <i>${esc(t)}</i>.` : ok ? `<i>${esc(t)}</i>.` : `It was <i>${esc(t)}</i>, not <i>${esc(said.g)}</i>.`,
+          verdict = !st
+            ? `<b>${ok ? 'Right' : said == null ? 'No worries' : 'Missed'}</b>: ${how}${read ? ` ${read}` : ''}`
+            : st.r
+              ? `<b>Right</b>, well spelled: ${how}`
+              : `<b>Right</b>, but not quite: it's spelled ${st.spelled}${st.old ? `, ${st.alt ? 'read as' : 'the old name of'} <i>${esc(t)}</i>` : ''}.`;
         body.querySelector('#tyres').innerHTML =
-          `<p class="${ok ? 'ok' : said == null ? 'idk' : 'ko'}"><b>${ok ? 'Right' : said == null ? 'No worries' : 'Missed'}</b>: ${how}${read ? ` ${read}` : ''} <a href="${genLink(t)}">Genus sheet</a></p>
+          `<p class="${ok ? 'ok' : said == null ? 'idk' : 'ko'}">${verdict} <a href="${genLink(t)}">Genus sheet</a></p>
           <p>${esc(tipsText(GX(t)))}</p><p class="credit">${credit(p)}</p>${typeof repBtn === 'function' ? repBtn({g: t, a: said ? said.g : '', ph: [p.f], m: 'type'}) : ''}<button type="button" class="next" id="tynext">Next</button>`;
         const nx = body.querySelector('#tynext');
         nx.onclick = round;
