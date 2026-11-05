@@ -1408,7 +1408,9 @@ test('v50: a cached hold read before answers logged since is not reused', () => 
   const h1 = s.get({name: 'Ana', pin: '1234', av: '300'}).hold;
   // Two more misses reach the tab while the cache keeps the hold of one (as the interleaving above leaves it).
   const A = s.sheets.Answers;
-  ['h2', 'h3'].forEach(id => A.appendRow(['Ana', new Date('2026-11-01T00:00:01Z'), 'Acropora', 'Montipora', 0, 'quiz', 'p', id, 0.9, '', '', '', '', '', '']));
+  ['h2', 'h3'].forEach(id =>
+    A.appendRow(['Ana', new Date('2026-11-01T00:00:01Z'), 'Acropora', 'Montipora', 0, 'quiz', 'p', id, 0.9, '', '', '', '', '', ''])
+  );
   const h3 = s.get({name: 'Ana', pin: '1234', av: '300'}).hold;
   assert.ok(h3 > h1, `the hold of 3 misses (${h3}) is above the hold of 1 (${h1})`);
 });
