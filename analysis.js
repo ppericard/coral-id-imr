@@ -562,11 +562,11 @@
     });
     return out;
   }
-  // Milestones: the first 1000, 2000, … answers of the log (time order), and all of them.
+  // Milestones: the first 1000, 2000, 3000, … answers of the log (time order), round thousands only (Pierre, 2026-11-05:
+  // never shifted by the count of the first report), none before 1000.
   function milestones(n) {
     const L = [];
     for (let k = STEP; k <= n; k += STEP) L.push(k);
-    if (!L.length || L[L.length - 1] !== n) L.push(n);
     return L;
   }
 
@@ -2421,9 +2421,12 @@
   // B (999); the earlier ones are looks at a smaller log (history), so they take Bh (199) newest first, as long as their
   // answers add up to at most hcap (60,000: about 25 minutes in the Action), and none beyond (the model's own interval
   // only): a whole recompute (new AV, new photo features) stays inside the Action's 2 hours as the log grows.
+  // live (the admin's Recompute here only, never the stored report): all the answers as one more point after the
+  // milestones, named in live, with B draws like the newest milestone (the one selected by default).
   function report(rows, meta, prev, o = {}) {
     const all = (rows || []).slice().sort((a, b) => a[1] - b[1]),
-      Ms = milestones(all.length),
+      live = o.live && all.length % STEP ? all.length : 0,
+      Ms = milestones(all.length).concat(live ? [live] : []),
       mh = hashOf(meta && meta.ph),
       B = o.B == null ? BOOT : o.B,
       Bh = Math.min(B, o.Bh == null ? 199 : o.Bh),
@@ -2431,9 +2434,10 @@
       draws = {},
       R = {};
     let used = 0;
-    Ms.slice()
+    milestones(all.length)
       .reverse()
       .forEach((M, i) => (draws[M] = !i ? B : (used += M) <= cap ? Bh : 0));
+    if (live) draws[live] = B;
     Ms.forEach(M => {
       const fp = fpOf(all, M, mh),
         old = prev && prev.AV === AV && prev.R && prev.R[M];
@@ -2443,7 +2447,7 @@
         R[M].fp = fp;
       }
     });
-    return {AV, made: o.now || Date.now(), answers: all.length, M: Ms, R};
+    return Object.assign({AV, made: o.now || Date.now(), answers: all.length, M: Ms, R}, live ? {live} : {});
   }
   // Keeps a report under max characters of JSON (the sheet's cap): the oldest milestones lose their tables first (their
   // effects, verdicts and counts stay, for the convergence plots and the Overview).
@@ -2563,9 +2567,9 @@
   // In a Web Worker (the admin's new Worker('analysis.js?v=N'), Recompute here, and the demo): a whole report per message.
   if (typeof window === 'undefined' && typeof module === 'undefined' && typeof root.postMessage === 'function')
     root.onmessage = e => {
-      const {id, rows, meta, B, Bh, bse, seed, prev} = e.data || {};
+      const {id, rows, meta, B, Bh, bse, seed, prev, live} = e.data || {};
       try {
-        root.postMessage({id, res: report(rows, meta, prev, {B, Bh, bse, seed, progress: (M, k) => root.postMessage({id, prog: [M, k]})})});
+        root.postMessage({id, res: report(rows, meta, prev, {B, Bh, bse, seed, live, progress: (M, k) => root.postMessage({id, prog: [M, k]})})});
       } catch (err) {
         root.postMessage({id, err: String((err && err.stack) || err)});
       }

@@ -178,9 +178,11 @@ test('synthetic log: every analysis runs and gives back the generator’s effect
 });
 
 test('milestones, verdicts and the report: earlier milestones reused only for the same answers', () => {
-  assert.deepStrictEqual(A.milestones(2500), [1000, 2000, 2500]);
+  // round thousands only (Pierre, 2026-11-05), never the total
+  assert.deepStrictEqual(A.milestones(2500), [1000, 2000]);
   assert.deepStrictEqual(A.milestones(3000), [1000, 2000, 3000]);
-  assert.deepStrictEqual(A.milestones(400), [400]);
+  assert.deepStrictEqual(A.milestones(1933), [1000]);
+  assert.deepStrictEqual(A.milestones(400), []);
   assert.strictEqual(A.verdictOf({est: 0.5, lo: 0.2, hi: 0.8, sesoi: 0.25}, 1000).v, 'clear');
   assert.strictEqual(A.verdictOf({est: 0.05, lo: -0.1, hi: 0.2, sesoi: 0.25}, 1000).v, 'margin');
   const t = A.verdictOf({est: 0.2, lo: -0.4, hi: 0.8, sesoi: 0.25}, 1000);
@@ -192,9 +194,16 @@ test('milestones, verdicts and the report: earlier milestones reused only for th
     rows = A.demoLog(data, Date.UTC(2026, 10, 1), {days: 400, players: A.DEMO_PLAYERS.slice(0, 4).map(p => [p[0], p[1], 400, p[3]])});
   assert.ok(rows.length >= 1100, String(rows.length));
   const meta = {ph: A.photoMeta(data)};
-  const r1 = A.report(rows.slice(0, 1100), meta, null, {B: 0}),
-    r2 = A.report(rows, meta, r1, {B: 0});
+  // the stored report (the Action's): round milestones only; Recompute here (live) adds all the answers as one more point
+  const r0 = A.report(rows.slice(0, 1100), meta, null, {B: 0});
+  assert.deepStrictEqual(r0.M, [1000]);
+  assert.ok(!('live' in r0) && !r0.R[1100]);
+  const r1 = A.report(rows.slice(0, 1100), meta, r0, {B: 0, live: 1}),
+    r2 = A.report(rows, meta, r1, {B: 0, live: 1});
   assert.deepStrictEqual(r1.M, [1000, 1100]);
+  assert.strictEqual(r1.live, 1100);
+  assert.strictEqual(r1.R[1000], r0.R[1000], 'the live look reuses the stored milestone');
+  assert.strictEqual(A.report(rows.slice(0, 1000), meta, r0, {B: 0, live: 1}).live, undefined, 'a round total is a milestone already');
   assert.strictEqual(r2.R[1000], r1.R[1000], 'milestone 1000 reused');
   assert.notStrictEqual(r2.R[r2.M[r2.M.length - 1]], r1.R[1100]);
   const small = A.compact(JSON.parse(JSON.stringify(r2)), JSON.stringify(r2).length - 1);
@@ -234,13 +243,56 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.ok(rows.length > 1000, String(rows.length));
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'stored');
   assert.ok(JSON.parse(stored).R[1000]);
+  assert.deepStrictEqual(JSON.parse(stored).M, [1000], 'round milestones only, no "All N" point');
+  assert.ok(!('live' in JSON.parse(stored)));
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'wait', 'no new answers: nothing to do');
+  assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0, force: true}), 'stored');
   assert.ok(/1 reused|2 reused/.test(logs[logs.length - 1]), logs[logs.length - 1]);
   assert.ok(!logs.join(' ').match(/id\d|Demo/), 'the log has counts only');
   // an older sync script answers 'input': nothing done, no error
   const old = {post: async () => ({ok: false, error: 'input', v: 29}), log: t => logs.push(t)};
   assert.strictEqual(await sheetRun(old, 'tok', {B: 0}), 'old');
+  // the sheet's head counts more rows than the log read holds (rows without a player): judged again on the log, nothing stored
+  const st = {answers: rows.length, av: A.AV},
+    puts = [],
+    short = {
+      post: async b =>
+        b.analysesGet ? {ok: true, answers: 2000, stored: st} : b.readAnswers ? {ok: true, rows} : (puts.push(b), {ok: true}),
+      log: t => logs.push(t)
+    };
+  assert.strictEqual(await sheetRun(short, 'tok', {B: 0}), 'wait');
+  assert.strictEqual(puts.length, 0);
+  assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
+});
+
+// Pierre, 2026-11-05: the report sits on round milestones only (1000, 2000, 3000, …), never shifted by the count of the
+// first stored report (1933 answers then: the next one at 2000, not 2933).
+test('tools/analyses.js plan: compute when the log reaches a round thousand the stored report lacks', () => {
+  const {plan} = require('../tools/analyses.js'),
+    st = n => ({answers: n, av: A.AV}),
+    go = (n, s, f) => plan(n, s, f).go;
+  assert.deepStrictEqual(plan(1933, st(1933)), {go: false, why: 'wait', last: 1000, now: 1000, next: 2000});
+  assert.strictEqual(go(1999, st(1933)), false);
+  assert.deepStrictEqual(plan(2000, st(1933)), {go: true, why: 'new', last: 1000, now: 2000, next: 3000});
+  assert.strictEqual(go(2999, st(2000)), false);
+  assert.strictEqual(go(2999, st(2140)), false, 'stored at 2140: newest milestone 2000');
+  assert.strictEqual(plan(3000, st(2140)).why, 'new');
+  assert.strictEqual(plan(5200, st(3000)).why, 'new', 'several thousands at once');
+  assert.strictEqual(plan(1933, {answers: 1933, av: A.AV - 1}).why, 'code', 'the analysis code changed');
+  assert.strictEqual(plan(1933, st(1933), true).why, 'force');
+  assert.strictEqual(plan(1933, null).why, 'first');
+  assert.strictEqual(plan(999, null).why, 'none', 'no milestone before 1000');
+  assert.strictEqual(go(999, null, true), false, 'not even forced');
+  assert.strictEqual(plan(1990, st(2000)).why, 'new', 'answers deleted below the stored milestone: computed again');
+  // every stored report's milestones are multiples of 1000
+  [999, 1000, 1933, 2000, 2999, 3000, 12345].forEach(n =>
+    assert.ok(
+      A.milestones(n).every(M => M > 0 && M % A.STEP === 0),
+      String(n)
+    )
+  );
+  assert.strictEqual(A.STEP, 1000);
 });
 
 // Codex review #441: with few players (no bootstrap), an effect constant within each player must carry the players'

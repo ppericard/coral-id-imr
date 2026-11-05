@@ -41,13 +41,25 @@ function anLoad() {
       } catch (e) {
         rep = null;
       }
+      // a report stored before 2026-11-05 also kept all its answers as one more point ("All 1933"): round milestones only
+      if (rep && rep.M.some(M => M % ANALYSIS.STEP === 0)) rep.M = rep.M.filter(M => M % ANALYSIS.STEP === 0);
       return (ANREP = {st: rep ? 'ok' : 'none', rep, answers: j.answers, stored: j.stored});
     })
     .catch(() => (ANREP = {st: 'err', err: 'Offline'}));
 }
 const anRep = () => (AN.src === 'local' && ANLOC && ANLOC.rep ? ANLOC.rep : ANREP && ANREP.rep);
-// The milestone shown: 'all' = the latest (all the answers of the report), else a milestone of the report.
-const anM = rep => (AN.m !== 'all' && rep.R[AN.m] ? Number(AN.m) : rep.M[rep.M.length - 1]);
+// The milestones: round thousands only (Pierre, 2026-11-05: 1000, 2000, 3000, …; never shifted by the count of the first
+// report), without Recompute here's look at all the answers. The milestone shown: 'all' = the newest; 'now' = all the answers, a point only Recompute here adds
+// (analysis.js report live), never stored; else a milestone of the report.
+const anRound = rep => rep.M.filter(M => M % ANALYSIS.STEP === 0);
+const anM = rep => {
+  const L = anRound(rep);
+  if (AN.m === 'now' && rep.live) return rep.live;
+  if (L.includes(Number(AN.m))) return Number(AN.m);
+  return L.length ? L[L.length - 1] : rep.live || rep.M[rep.M.length - 1];
+};
+// A milestone's value in the switch and the links (data-anm).
+const anMv = (rep, M) => (M === rep.live ? 'now' : M === anRound(rep).slice(-1)[0] ? 'all' : String(M));
 
 /* ---------- Formatting ---------- */
 const anNum = (v, d = 2) => (v == null || !isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d));
@@ -672,7 +684,7 @@ function anOverview(rep, R) {
   const nClear = R2 => Object.values(R2.A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length;
   const ms = rep.M.map((M, i) => {
     const r = rep.R[M];
-    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#~an" data-anm="${i === rep.M.length - 1 ? 'all' : M}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${nClear(r)}</td></tr>`;
+    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#~an" data-anm="${anMv(rep, M)}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${nClear(r)}</td></tr>`;
   });
   return (
     kpis([
@@ -1166,15 +1178,22 @@ function renderAnalyses() {
   const M = anM(rep),
     R = rep.R[M],
     now = local ? rep.answers : ANREP.answers || rep.answers,
-    lastM = Math.floor(now / ANALYSIS.STEP) * ANALYSIS.STEP,
-    since = now - lastM;
-  const seg = `<span class="adm-qseg adm-sseg" role="group" aria-label="Milestone">${rep.M.slice(-5)
-    .map((m, j, L) => {
-      const v = j === L.length - 1 ? 'all' : String(m);
-      return `<button type="button" data-anm="${v}" aria-pressed="${v === 'all' ? M === rep.M[rep.M.length - 1] : M === m}">${v === 'all' ? `All ${anInt(m)}` : m >= 1000 ? m / 1000 + 'k' : m}</button>`;
+    lastM = anRound(rep).slice(-1)[0] || 0,
+    since = now - lastM,
+    nextM = lastM + ANALYSIS.STEP;
+  // the newest round milestones (the newest selected by default), and Recompute here's look at all the answers
+  const seg = `<span class="adm-qseg adm-sseg" role="group" aria-label="Milestone">${anRound(rep)
+    .slice(-5)
+    .concat(rep.live ? [rep.live] : [])
+    .map(m => {
+      const v = anMv(rep, m);
+      return `<button type="button" data-anm="${v}" aria-pressed="${M === m}">${v === 'now' ? `now (${anInt(m)} answers), this tab only` : m / 1000 + 'k'}</button>`;
     })
     .join('')}</span>`;
-  const badge = `<span class="adm-src adm-an-badge" title="${esc(`${anInt(now)} answers in the log; a milestone every ${anInt(ANALYSIS.STEP)}`)}">${anInt(since)} since ${anInt(lastM)} · next at ${anInt(lastM + ANALYSIS.STEP)}</span>`;
+  // the answers since the newest milestone; the next one is due within the hour once the log reaches it (the Action's run)
+  const badge = `<span class="adm-src adm-an-badge" title="${esc(`${anInt(now)} answers in the log; a milestone every ${anInt(ANALYSIS.STEP)}: ${anInt(ANALYSIS.STEP)}, ${anInt(2 * ANALYSIS.STEP)}, ${anInt(3 * ANALYSIS.STEP)}…`)}">${
+    lastM ? `${anInt(since)} since ${anInt(lastM)} · ` : ''
+  }${now >= nextM ? `${anInt(nextM)} due within the hour` : `next at ${anInt(nextM)}`}</span>`;
   const made = `<span class="note adm-an-made" title="${esc(local ? 'Recomputed in this tab' : 'Stored report')}">${local ? 'This tab' : dateText(rep.made, 'dmhm')}</span>`;
   AN_CARDS = [];
   const body = key ? anView(key, rep, R) : anOverview(rep, R);
@@ -1270,10 +1289,10 @@ function anRecompute() {
       if (d.res) AN.src = 'local';
       if (/^~an(-|$)/.test(cur)) render();
     };
-    // 199 draws with normal intervals from their spread (analysis.js boot): the latest milestone in a few minutes here,
-    // where the Action's 999 percentile draws would take about 5 times as long; earlier milestones not reused from the
-    // stored report keep the model's own interval only
-    ANWORK.postMessage({id: 1, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: ANREP && ANREP.rep});
+    // 199 draws with normal intervals from their spread (analysis.js boot): the newest milestone and the look at all the
+    // answers (live) in a few minutes here, where the Action's 999 percentile draws would take about 5 times as long;
+    // earlier milestones not reused from the stored report keep the model's own interval only
+    ANWORK.postMessage({id: 1, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: ANREP && ANREP.rep, live: 1});
   };
   (ANS && ANS.rows && ANS.rows.length ? Promise.resolve() : loadStats()).then(go);
 }
@@ -1288,7 +1307,7 @@ addEventListener('resize', () => {
 const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result: how much it changes the outcome named above the chart (the chance of a right answer, the time to answer, the chance to end the session, the chance to mix up genera) from its typical value, for a typical player and photo; its value is on the right. Coloured by verdict (green helps, red hurts, blue clear but neither good nor bad, grey no clear effect, dashed outline not enough data yet); the thin line is its likely range. Only the clear results show at first: the button under a chart or table shows the others there (no clear effect, too early to tell), in the same order. <b>Show</b> keeps only the clear results, what helps, what hurts or what still lacks data (all of these). <b>Sort</b>, above every chart and table: <b>Most negative first</b> or <b>Most positive first</b> (by the signed change: a chance in points, a time as the share of time gained or lost; spreads after the changes, by size), <b>By topic</b> (Overview: a sub-heading per analysis, the analyses in the menu's order, by the signed change inside each) or <b>By name</b>; on the Overview each result's topic (the analysis it comes from) is the grey line under its name. A tap on a card's title folds it; the chips under them jump to a card. These choices are kept per page, in this browser only. The words, the tables and the results over time are folded by default: tap to open.</p>
   <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
-  <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once 1000 new answers have come in (or the code changed), redoes every analysis on the first 1000, 2000, … answers in time order (the milestones) and on all of them, then stores the report in the sheet (private). This page only draws it. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab. The switch picks a milestone; the badge says how many answers came since the last one. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
+  <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once the log reaches the next round thousand (or the code changed), redoes every analysis on the first 1000, 2000, 3000, … answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). This page only draws it. The switch picks a milestone, the newest by default; the badge says how many answers came since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
   an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers), kept as history: each is another look at the same growing log, not a new finding.</p>${AN_HELP_COMMON}`,
