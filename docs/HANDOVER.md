@@ -37,7 +37,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account;
 - **Version numbers are stamped at deploy** (#499): no PR edits `?v=`, `LAB_V` or the `sw.js` cache name; `pages.yml` stamps content hashes and the build number (How to make a change 3). The sheet's `VERSION` stays manual.
 - **Presence of a species** (AGENTS.md 6e): Research Grade by 3 observers in the Philippines, or 1 plus an independent checklist, or confirmed near Dauin; cues and their doubts come only from species found here. #496 (merged) applies it to Pierre's own observations too, and to the fish (29 IMR-PDF species entered the game).
 - **The admin plan** "Admin for every subject" (ROADMAP): one admin for corals and fish in twelve small PRs; PR 1 (#463) and PR 4 (#479) are merged, PR 2 (#492) is merged; admin speed #493 and #494 merged; the Analyses group (#495 plain words, #500 Sessions, #502 charts) merged; Players › Activity over time (#501) merged; #535 (page roles, the rest) open.
-- **Agents**: Pierre runs a coordinator that dispatches a few agents at once, in one of two modes (AGENTS.md, How to make a change 16: a Claude Code agent with subagents, where the main agent merges; or claude.ai Projects threads, where each thread merges its own PRs); the workflow, resource and review rules are in AGENTS.md, How to make a change 16-17 (worktrees, one smoke at a time, the Codex review loop).
+- **Agents**: since 2026-11-05 one Claude Code session is the integrator: it starts subagents (each its own branch and PR) and merges under the merge contract (AGENTS.md "Working mode"); the workflow, resource and review rules are in AGENTS.md, How to make a change 16-17 (worktrees, one smoke at a time, the Codex review loop).
 - **Watching**: the `net.smoke.js` step-9 hang (ROADMAP, open investigation): #513 did not end it; #531 (open) bounds every Cache Storage wait.
 - **Night work** (AGENTS.md Rule 0, 2026-11-04): agents keep working without Pierre on decided work and never solicit him; anything with a choice of his stays on its branch.
 
@@ -100,7 +100,7 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Marine Research, Dauin, Philippines) since early October 2026. He builds this to learn the IMR genera himself and to train the RAs.
 
 - **Language**: he writes in French (often dictated, so expect speech-to-text typos). Reply to him in French. Everything you produce (code, UI, docs, commits, PRs) is in English, because IMR is an English-speaking workplace.
-- **Autonomy**: work on your own, branch, open PRs and **merge them yourself** once checks pass and you have looked at the result. Ask first only before destructive or irreversible steps (history rewrite, deleting data, bulk changes to his curation, anything sent outside the project).
+- **Autonomy**: work on your own: branch, build, test, open PRs. **Merging follows the merge contract** (AGENTS.md "Working mode"): only what was already decided with him; every other choice, and any destructive or irreversible step, is asked first.
 - **Fix by default**: when a review finds problems, fix everything you can without asking ("fais corriger tout ce que tu peux faire corriger", 2026-11-01). Bring him only real choices, or actions that need his hands (Apps Script redeploy, admin curation, decisions about IMR content).
 - **Questions**: ask each one once, short, with your recommendation. He likes one-line questions he can answer quickly. Never re-ask something he already answered: check ROADMAP and PR descriptions first.
 - **How he judges UX**: taps or clicks, scrolls, and what is on screen versus what must be fetched elsewhere. He uses the app on his phone a lot. He prefers visuals to text, and judges new things in use ("à voir à l'usage"): ship, then iterate on his feedback.
@@ -163,10 +163,12 @@ memory or chats. Everything you need is in the repo.
    still have to do myself (from HANDOVER "Pending actions"), (c) the top 3 backlog items you
    propose to start with. Do not start coding until I answer.
 
-Working rules: answer me in French, write everything else in English; work autonomously,
-open PRs and merge them yourself once checks pass; fix review findings without asking; ask me
-only real choices, one short question each, with your recommendation; update the docs in every
-PR. Save any new lasting rule I give you in AGENTS.md, not only in your memory.
+Working rules: answer me in French, write everything else in English; you are the integrator
+(AGENTS.md "Working mode"): start subagents on their own branches and PRs, merge only what was
+already decided with me, bring me every other choice as a short numbered question with context
+and your recommendation; fix review findings without asking; follow Rule 0 and its quiet hours;
+update the docs in every PR. Save any new lasting rule I give you in AGENTS.md, not only in your
+memory.
 ```
 
 ## Analyses report (one-time setup, 2026-11-04)
