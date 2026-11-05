@@ -11,9 +11,10 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 5; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 6; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
-  // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map)
+  // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
+  // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -513,6 +514,9 @@
         views = ph.map(f => (PH[f] || [])[0]).filter(Boolean),
         A = {
           p: String(r[0]),
+          // the answers a deleted account left (Code.gs answers_ anonymous 2, sheet v55): in the pooled fits only, never
+          // in a per-player result or a count of players (Pierre, 2026-11-05, Q86)
+          gone: r[11] === 2 ? 1 : 0,
           t: Number(r[1]) || 0,
           g: String(r[2]),
           a: String(r[3] || ''),
@@ -680,7 +684,13 @@
       hw: Math.max(sd, sesoi)
     });
   }
-  const players = D => new Set(D.map(a => a.p)).size;
+  const players = D => new Set(D.filter(a => !a.gone).map(a => a.p)).size;
+  // The players to leave out of a per-player list: those whose answers a deleted account left (gone, sheet v55).
+  const goneOf = D => new Set(D.filter(a => a.gone).map(a => a.p)),
+    livePl = (D, L) => {
+      const G = goneOf(D);
+      return G.size ? L.filter(x => !G.has(x.k)) : L;
+    };
   const centre = L => {
     const m = mean(L);
     return L.map(v => v - m);
@@ -734,7 +744,8 @@
   }
   function rt(A, B, seed) {
     const D = A.filter(a => a.s && a.x != null);
-    if (D.length < 100 || players(D) < 2) return thin(D.length, 100);
+    // the model's clusters, a deleted account's included: the count shown (players) leaves it out (Codex review #600)
+    if (D.length < 100 || new Set(D.map(a => a.p)).size < 2) return thin(D.length, 100);
     const {M, F, X} = rtFit(D),
       bi = boot(D, rtStat, B, seed),
       n = D.length,
@@ -761,7 +772,7 @@
       effects,
       genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
-      player: lv(F[0], 1).sort((a, b) => b.u - a.u),
+      player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
       ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])])
     };
   }
@@ -827,7 +838,7 @@
         eff('rel', 'Enlarged, against the player’s own habit (logit)', M.b[1], M.se[1], bi, 'logit', 0.25, n),
         eff('hab', 'Players who enlarge more (logit per share)', M.b[2], M.se[2], bi, 'logit', 0.25, n)
       ],
-      player: Object.values(by).sort((a, b) => b.z / b.n - a.z / a.n),
+      player: livePl(D, Object.values(by)).sort((a, b) => b.z / b.n - a.z / a.n),
       views: Object.values(views),
       ent: entOf(M.V, M.X, [null, 'rel', 'hab'])
     };
@@ -1133,7 +1144,7 @@
       if (a.typed || a.ch.length < 2) return;
       a.ch.forEach(c => {
         if (c === a.g) return;
-        E.push({p: a.p, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length});
+        E.push({p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length});
       });
     });
     return E;
@@ -1232,7 +1243,7 @@
       typ: {p: mixed / n},
       effects,
       pairs,
-      player: plist.sort((a, b) => b.n - a.n),
+      player: livePl(E, plist).sort((a, b) => b.n - a.n),
       ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null]),
       map: mixMap(E, M, F)
     };
@@ -1383,7 +1394,7 @@
     D.forEach(a => {
       const c = (cnt[a.g] = cnt[a.g] || {n: 0, p: new Set(), y: 0});
       c.n++;
-      c.p.add(a.p);
+      if (!a.gone) c.p.add(a.p); // a deleted account's answers count, never as a player (Codex review #600)
       c.y += a.y;
     });
     const V2 = [
@@ -1543,6 +1554,7 @@
         if (open && i === L.length - 1) return;
         rows.push({
           p: a.p,
+          gone: a.gone, // a deleted account's answers: no player in the count (Codex review #600)
           y: i === L.length - 1 ? 1 : 0,
           X: [
             1,
@@ -1626,6 +1638,7 @@
       const last = R[R.length - 1];
       return {
         p: R[0].p,
+        gone: R[0].gone,
         t0: R[0].t,
         t1: last.t,
         R,
@@ -1653,7 +1666,7 @@
       Q.forEach((s, i) => ((s.k = i + 1), (s.gap = i ? (s.t0 - Q[i - 1].t1) / 36e5 : null)));
     });
     const r2 = v => (v == null ? null : Math.round(v * 1000) / 1000);
-    const table = L.slice()
+    const table = L.filter(s => !s.gone)
       .sort((a, b) => b.t0 - a.t0)
       .slice(0, 300)
       .map(s => ({
@@ -1778,7 +1791,7 @@
       // one observation window for both outcomes (Codex review #500): a kth session that ended less than a day before
       // the log ends counts neither as a return nor as a player who did not come back
       byP.forEach(Q => {
-        if (Q.length < k || end - Q[k - 1].t1 < DAY) return;
+        if (Q[0].gone || Q.length < k || end - Q[k - 1].t1 < DAY) return; // no deleted account in the cohort (Codex #603)
         at += 1;
         if (Q.length > k) back += 1;
       });
@@ -1813,7 +1826,7 @@
     const first = [grp(L.filter(s => s.k === 1)), grp(L.filter(s => s.k === 2)), grp(L.filter(s => s.k >= 3))];
     return {
       sessions: L.length,
-      players: byP.size,
+      players: [...byP.values()].filter(Q => !Q[0].gone).length,
       table,
       hours,
       fifths,

@@ -7,7 +7,8 @@
 //                                             readAnswers and stores the report with analysesPut (sheet v35), both
 //                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until the
 //                                             log reaches a round thousand the stored report does not hold (or the
-//                                             code changed), unless --force (plan)
+//                                             code changed, or an account was removed since: sheet v55
+//                                             stale), unless --force (plan)
 //   node tools/analyses.js --in answers.json --out report.json   a saved readAnswers reply (kept outside the repo)
 //   node tools/analyses.js --demo --out report.json              the admin demo's made-up answers, no network
 // --boot N: bootstrap draws for the latest milestone (default 999, analysis.js BOOT); --boot-history N: for the earlier
@@ -34,14 +35,16 @@ const syncUrl = () => /const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.joi
 const lastOf = n => Math.floor((Number(n) || 0) / A.STEP) * A.STEP;
 // What the hourly run does with the sheet's head (answers: the log's rows; st: the stored report's meta or null): compute
 // when the log reaches a round thousand the stored report does not hold (or fell below its newest: answers deleted),
-// when the analysis code changed (AV), or by hand (force); never before the first 1000 answers. Pure, tested.
-// Returns {go, why: 'none' | 'wait' | 'first' | 'new' | 'code' | 'force', last: the stored report's newest milestone,
+// when the analysis code changed (AV), when an account left normal operation since the stored report (removed: sheet
+// v55 head stale), or by hand (force); never before the first 1000 answers. Pure, tested.
+// Returns {go, why: 'none' | 'wait' | 'first' | 'new' | 'code' | 'removed' | 'force', last: the stored report's newest milestone,
 // now: the log's, next: the one after it}.
-function plan(answers, st, force) {
+function plan(answers, st, force, removed) {
   const now = lastOf(answers),
     last = st ? lastOf(st.answers) : 0,
     next = now + A.STEP;
-  const why = !now ? 'none' : !st ? 'first' : now !== last ? 'new' : st.av !== A.AV ? 'code' : force ? 'force' : 'wait';
+  // removed with no milestone left (answers deleted below the first): the stored report is replaced by an empty one
+  const why = !now ? (st && removed ? 'removed' : 'none') : !st ? 'first' : now !== last ? 'new' : st.av !== A.AV ? 'code' : removed ? 'removed' : force ? 'force' : 'wait';
   return {go: why !== 'none' && why !== 'wait', why, last, now, next};
 }
 const planText = (answers, p) =>
@@ -60,8 +63,10 @@ async function sheetRun(io, token, o = {}) {
     return 'refused';
   }
   const st = head.stored,
-    stale = st && st.av !== A.AV,
-    p = plan(head.answers, st, o.force);
+    // sheet v55: head.stale, an account deleted, merged or archived since the stored report: refit at once, from scratch
+    // (no milestone reused), so no per-player result of a removed account stays in the report.
+    stale = st && (st.av !== A.AV || !!head.stale),
+    p = plan(head.answers, st, o.force, !!head.stale);
   if (!p.go) {
     io.log(planText(head.answers, p));
     return 'wait';
@@ -79,7 +84,7 @@ async function sheetRun(io, token, o = {}) {
     return 'refused';
   }
   // The head counts the Answers tab's rows; the log read may hold fewer (rows without a player): judge again on it.
-  const q = plan(ans.rows.length, st, o.force);
+  const q = plan(ans.rows.length, st, o.force, !!head.stale);
   if (!q.go) {
     io.log(planText(ans.rows.length, q));
     return 'wait';
@@ -91,7 +96,8 @@ async function sheetRun(io, token, o = {}) {
     io.log(`The report is still ${Math.round(text.length / 1000)} kB after compaction, over the sheet's cap: not stored.`);
     return 'refused';
   }
-  const put = await post({analysesPut: 1, report: text});
+  // sheet v55: the roster as the answers were read, so a removal during this run leaves the report stale (Codex #600)
+  const put = await post({analysesPut: 1, report: text, ...(typeof ans.roster === 'number' ? {roster: ans.roster} : {})});
   if (!put || !put.ok) {
     io.log(`The sheet did not store the report (${(put && put.error) || 'no reply'}).`);
     return 'refused';
@@ -99,7 +105,7 @@ async function sheetRun(io, token, o = {}) {
   const kept = rep.M.filter(M => old && old.R && old.R[M] && old.R[M].fp === rep.R[M].fp).length;
   const last = rep.R[rep.M[rep.M.length - 1]];
   io.log(
-    `Stored: ${rep.answers} answers, ${rep.M.length} milestones (${kept} reused), ${last.B} bootstrap draws for the latest, ${Math.round(text.length / 1000)} kB, ${Math.round((Date.now() - t0) / 1000)} s.`
+    `Stored: ${rep.answers} answers, ${rep.M.length} milestones (${kept} reused), ${last ? last.B : 0} bootstrap draws for the latest, ${Math.round(text.length / 1000)} kB, ${Math.round((Date.now() - t0) / 1000)} s.`
   );
   return 'stored';
 }
