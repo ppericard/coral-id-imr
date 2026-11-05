@@ -206,7 +206,7 @@ goes to Pierre for his OK ("agents generalise to everything and harden my words:
 - **W7** Fix by default; never re-ask what was answered.
 - **W8** Independent reviews get an open mission that questions our choices.
 - **W9** Latest stable version of every tool.
-- **W10** Never list Pierre's curation choices item by item; one general reminder is fine.
+- **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked and how; a guess is labelled.
 
 ## Read on demand

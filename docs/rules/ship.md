@@ -94,11 +94,14 @@ needs a written reason next to the pin.
 ### W10
 
 **Never list Pierre's curation choices item by item** (which photo, which candidate, which pair, content choices): not
-in status messages, not in ROADMAP. A general reminder of a need only he can meet is allowed, once, without nagging
-(e.g. "these genera are short of photos", "these 31 photos are out of the presence rule"). The points to settle (rule
-C5: IMR trainer questions, content questions, in `points.json`) stay: he asked for that list.
-*Why:* "you'll spend your time doing that"; "why note them in ROADMAP?". The first wording (2026-11-01) was written about
-one annoyance, then generalised and hardened. *Source:* Pierre, 2026-11-01; scope restored, 2026-11-05.
+in status messages, not in ROADMAP. **Reminders of what only he can do live where he reads them when he wants**: STATUS
+"Pierre's hands" (later the admin's To do › Points). In the chat, a reminder is given once, when it is useful and
+related to the work at hand (e.g. "these genera are short of photos", "these 31 photos are out of the presence rule"),
+never repeated or nagged. The points to settle (rule C5: IMR trainer questions, content questions, in `points.json`)
+stay: he asked for that list.
+*Why:* an agent reminded him every few minutes, in the chat, of things unrelated to its own work; "you'll spend your
+time doing that"; "why note them in ROADMAP?". The first wording (2026-11-01) generalised and hardened that one case.
+*Source:* Pierre, 2026-11-01; scope restored, 2026-11-05.
 
 ### W11
 
