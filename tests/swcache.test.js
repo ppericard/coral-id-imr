@@ -10,16 +10,18 @@ const test = require('node:test'),
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
 const SITE = 'https://example.org/app/';
 
-// One Cache Storage shared by the versions (as a browser keeps it across workers): name -> Map(url -> body).
+// One Cache Storage shared by the versions (as a browser keeps it across workers): name -> Map(url -> body). A relative
+// URL is the worker's (SITE), as a browser resolves it.
 function storage() {
-  const all = new Map();
+  const all = new Map(),
+    key = r => new URL(String(r.url || r), SITE).href;
   const cache = name => {
     const m = all.get(name);
     return {
-      match: async r => (m.has(String(r.url || r)) ? {ok: true, body: m.get(String(r.url || r))} : undefined),
-      put: async (r, res) => void m.set(String(r.url || r), res.body),
+      match: async r => (m.has(key(r)) ? {ok: true, body: m.get(key(r))} : undefined),
+      put: async (r, res) => void m.set(key(r), res.body),
       keys: async () => [...m.keys()].map(url => ({url})),
-      delete: async r => m.delete(String(r.url || r))
+      delete: async r => m.delete(key(r))
     };
   };
   return {
@@ -87,6 +89,7 @@ function worker(V, store, net, opts = {}) {
       });
       return L;
     },
+    install: () => wait({type: 'install'}),
     activate: () => wait({type: 'activate'}),
     get: async url => {
       const [r] = await wait({type: 'fetch', request: {url, method: 'GET', mode: 'cors'}});
@@ -172,4 +175,45 @@ test('offline while Cache Storage is paused: a photo is found under its twin add
   stall = false;
   const r = await w.dispatch(SITE + f).reply;
   assert.strictEqual(r && r.body, 'the photo');
+});
+
+// A new version on the field line (2026-11-05, found while looking for a device left on an old app; ~86 kbit/s at the field
+// station): its install took the files of the deploy before from the browser's HTTP cache (GitHub Pages keeps them 10
+// minutes), so a new version could hold the old page and run its old code once it took over; and it downloaded the whole
+// shell again (about 1 MB), unchanged files included.
+test('a new version installs the deployed page, not an HTTP-cached copy, and copies unchanged files from the version it replaces', async () => {
+  const store = storage(),
+    calls = [],
+    fetch = async (r, o) => {
+      calls.push([String(r.url || r), (o && o.cache) || 'default']);
+      return {
+        ok: true,
+        status: 200,
+        body: 'body of ' + String(r.url || r),
+        clone() {
+          return this;
+        }
+      };
+    };
+  const v1 = worker('reefid-shell-v1', store, [], {fetch});
+  await v1.install();
+  await v1.activate();
+  const shell = calls.map(c => c[0]),
+    fixed = u => /[?&]v=/.test(u) || u.startsWith('fonts/');
+  assert.ok(shell.length > 20 && shell.some(fixed) && shell.some(u => !fixed(u)), shell.join(' '));
+  calls.length = 0;
+  const v2 = worker('reefid-shell-v2', store, [], {fetch});
+  await v2.install();
+  assert.deepStrictEqual(
+    calls,
+    shell.filter(u => !fixed(u)).map(u => [u, 'no-cache']),
+    'only the page, curation.json, the manifest and the icon go to the network, past the HTTP cache'
+  );
+  await v2.activate();
+  assert.deepStrictEqual(
+    [...store.all.get('reefid-shell-v2').keys()].sort(),
+    shell.map(u => new URL(u, SITE).href).sort(),
+    'the new shell holds every file'
+  );
+  assert.ok(!store.all.has('reefid-shell-v1'));
 });

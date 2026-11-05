@@ -3550,7 +3550,8 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   question"; each run's first 80 answers are kept as a trace for `tools/fallbackeval.js`). Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
-  sheet as the photo ratings (default: none, every photo's difficulty 0, as in CI; Pierre's Easy/Medium/Hard sets until
+  sheet as the photo ratings (`--stats live` reads it at start with `av=learnsim`; a file fetched by hand needs an `av`
+  too, `curl "<SYNC_URL>?stats=1&av=tool"`, or the sheet logs the read as an old app) (default: none, every photo's difficulty 0, as in CI; Pierre's Easy/Medium/Hard sets until
   2026-11-03; its `mem`, sheet v26, the app's photo memory offsets; its `gd` and `v`, sheet v31, the genus offsets).
   `--truth truth.json` (2026-11-03) gives the learner each photo's true difficulty (`{photos: {file: d}, gd: {genus:
   d}}`), independent of the app's estimate; without it the learner takes the app's own `photoDiff`, so a change to the
