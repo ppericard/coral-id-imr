@@ -47,13 +47,13 @@ def left():
 
 # --- Rule 0 window -------------------------------------------------------------------------------------------------------
 # AGENTS.md Rule 0: before 16:30 a normal day; from 16:30 sharp close what is open with Pierre; from 17:30 quiet hours
-# until his next morning (the morning report is written before 08:00, so 00:00-08:00 is still night).
+# until his next morning (the morning report is written before 05:00, so 00:00-05:00 is still night).
 
 
 def window(hm):
     m = hm[0] * 60 + hm[1]
-    if m < 8 * 60:
-        return 'night', 'quiet hours (Rule 0): never solicit Pierre; morning report into docs/STATUS.md before 08:00'
+    if m < 5 * 60:
+        return 'night', 'quiet hours (Rule 0): never solicit Pierre; morning report into docs/STATUS.md before 05:00'
     if m < 16 * 60 + 30:
         return 'day', 'normal working day (Rule 0): nothing different until 16:30'
     if m < 17 * 60 + 30:

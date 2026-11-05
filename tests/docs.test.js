@@ -80,7 +80,7 @@ test('tools/brief.py --time runs offline and names the Rule 0 window', () => {
   const out = run();
   assert.match(out, /^Manila \w{3} \d\d \w{3} \d\d:\d\d · (night|day|closing|quiet): .+\n$/, out);
   const at = t => / · (\w+):/.exec(run('--at', t))[1];
-  assert.deepStrictEqual(['07:59', '08:00', '16:29', '16:30', '17:29', '17:30', '23:59'].map(at), [
+  assert.deepStrictEqual(['04:59', '05:00', '16:29', '16:30', '17:29', '17:30', '23:59'].map(at), [
     'night',
     'day',
     'day',
