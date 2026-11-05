@@ -728,10 +728,15 @@ const genusOfPhoto = f => {
 function sendReports() {
   const L = store.get('reefid-reports', []);
   if (!SYNC_URL || LOCAL || !L.length || navigator.onLine === false) return;
-  const k = x => JSON.stringify([x.rn || '', x.rp || '']),
+  // A report keeps the account generation it was written under (ra, sheet v58 acct): a record archived since, its name
+  // taken again, never gets it under the new account (Codex review #603).
+  const k = x => JSON.stringify([x.rn || '', x.rp || '', x.ra || '']),
     first = L.filter(x => k(x) === k(L[0])).slice(0, 50);
-  const reports = first.map(({rn, rp, ...x}) => x);
-  fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', reports})})
+  const reports = first.map(({rn, rp, ra, ...x}) => x);
+  fetch(SYNC_URL, {
+    method: 'POST',
+    body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', ...(first[0].ra ? {racct: first[0].ra} : {}), reports})
+  })
     .then(r => r.json())
     .then(j => {
       if (!j || !j.rep) return;
@@ -792,7 +797,7 @@ function reportDialog(c, btn) {
     e.preventDefault();
     if (f.who) store.set('reefid-report-name', f.who.value.trim());
     const why = f.why.value;
-    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()},
+    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin, ...(SYNC.acct ? {ra: SYNC.acct} : {})} : {rn: f.who.value.trim()},
       r = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         t: new Date().toISOString(),

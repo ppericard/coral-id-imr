@@ -2062,3 +2062,37 @@ test('v58 (Codex review #603): a self-deletion from a device of another generati
   const now = s.get({name: 'Ana', pin: '1234'}).acct;
   assert.strictEqual(s.post({selfDelete: 1, dname: 'Ana', dpin: '1234', dacct: now}).deleted, true);
 });
+
+test('v58 (Codex review #603): archiving moves the name mentions in the log tabs, so deleting the archive leaves none', () => {
+  const s = v55();
+  s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: TOK});
+  assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')) && /\(Ben-old\)/.test(tabText(s, 'Events')), 'Events names the archive');
+  assert.match(tabText(s, 'Alerts'), /n:Ben-old \(3000/);
+  s.post({userDelete: 'Ben-old', answers: true, token: TOK});
+  ['Events', 'Alerts'].forEach(t => assert.ok(!/\bben\b/i.test(tabText(s, t)), `no "Ben" left in ${t}`));
+});
+
+test('v58 (Codex review #603): a report queued under an archived record never lands on the name taken again', () => {
+  const s = seed();
+  const old = s.get({name: 'Ana', pin: '1234'}).acct;
+  s.post({userArchive: {from: 'Ana', into: 'Ana-old'}, token: TOK});
+  // Sent while the name has no account: no reporter, never verified.
+  s.post({rname: 'Ana', rpin: '1234', racct: old, reports: [rep('qa1')]});
+  // The name taken again with the same code: a report of the old generation is not the new account's.
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('n1')]});
+  s.post({rname: 'Ana', rpin: '1234', racct: old, reports: [rep('qa2')]});
+  const now = s.get({name: 'Ana', pin: '1234'}).acct;
+  assert.notStrictEqual(now, old);
+  s.post({rname: 'Ana', rpin: '1234', racct: now, reports: [rep('qa3')]});
+  const row = id => s.sheets.Reports.rows.find(x => x && x[11] === id);
+  assert.deepStrictEqual(
+    ['qa1', 'qa2', 'qa3'].map(id => [row(id)[1], row(id)[2]]),
+    [
+      ['', 0],
+      ['', 0],
+      ['Ana', 1]
+    ]
+  );
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).reps, ['qa3'], 'only its own report thanked');
+  assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').reports, 1);
+});
