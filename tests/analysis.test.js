@@ -1647,3 +1647,10 @@ test('admin: why groups are not stable names each failing check apart', () => {
   assert.strictEqual(ctx.anWhy({kept: 5, runs: 8, boot: [0.9, 0.9], at: 0.75}), ' These groups change when one player is left out.');
   assert.strictEqual(ctx.anWhy({kept: 8, runs: 8, boot: [0.9, null], at: 0.75}), '');
 });
+
+// Sheet v55 (Q86): a deleted account's answers (anonymous flag 2) make no profile.
+test('profiles: a deleted account has no row', () => {
+  const rows = styleLog().map(r => (r[0] === 'eve0' ? [...r.slice(0, 11), 2, ...r.slice(12)] : r)),
+    r = A.profiles(A.prep(rows), 0, 1);
+  assert.ok(!r.who.some(w => w.k === 'eve0') && r.players === 9, JSON.stringify(r.who.map(w => w.k)));
+});
