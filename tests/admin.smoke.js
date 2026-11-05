@@ -350,6 +350,31 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Fish Candidates: ${JSON.stringify(at)}`);
       if (at.wide > 0 || at.h < 200 || at.bottom > at.vh || at.bar > at.vh || at.scroll > 0)
         fails.push(`${w}px Fish Candidates: layout ${JSON.stringify(at)}`);
+      // Tags unfolded (5b; Pierre, 2026-11-06): Ease and the decision buttons still on the first screen, no page scroll;
+      // the tag rows scroll in their own panel, the photo keeps some room.
+      {
+        const open = async () => {
+          await p.click('.adm-fsw [data-ftags]');
+          await settle();
+        };
+        if (await p.$('.adm-fsw .adm-ftags')) await open();
+        await open();
+        const t = await p.evaluate(() => {
+          const b = q => document.querySelector(q).getBoundingClientRect(),
+            T = document.querySelector('.adm-fsw .adm-ftags');
+          return {
+            ease: Math.round(b('.adm-fsw [aria-label="Ease"]').bottom),
+            bar: Math.round(b('.adm-fsw .adm-swbar').bottom),
+            card: Math.round(b('.adm-fsw .adm-swcard').height),
+            panel: !!T && T.scrollHeight >= T.clientHeight,
+            vh: innerHeight,
+            scroll: document.documentElement.scrollHeight - innerHeight
+          };
+        });
+        if (t.ease > t.vh || t.bar > t.vh || t.scroll > 0 || t.card < 120 || !t.panel)
+          fails.push(`${w}px Fish Candidates: Tags open ${JSON.stringify(t)}`);
+        await open();
+      }
       await p.click('[data-fq="chk"]');
       await settle();
       at = await fc();
