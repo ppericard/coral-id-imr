@@ -131,10 +131,18 @@ function sims() {
   }
 }
 
-// Logistic fit with an offset (Newton-Raphson): logit p = o + X . beta.
+// Logistic fit with an offset: logit p = o + X . beta, by Newton-Raphson with step halving (each step must raise the
+// log-likelihood; Codex review #619: plain Newton steps diverged on answers far below the expectation).
 function fit(rows, cols) {
-  let b = cols.map(() => 0);
-  for (let it = 0; it < 50; it++) {
+  const llOf = b =>
+    rows.reduce((t, r) => {
+      const z = r.o + cols.reduce((a, c, j) => a + b[j] * r[c], 0);
+      // log sigmoid(z) or log(1 - sigmoid(z)), stable for large |z|
+      return t + (r.y ? -Math.log1p(Math.exp(-z)) : -Math.log1p(Math.exp(z)));
+    }, 0);
+  let b = cols.map(() => 0),
+    cur = llOf(b);
+  for (let it = 0; it < 100; it++) {
     const g = cols.map(() => 0),
       H = cols.map(() => cols.map(() => 0));
     for (const r of rows) {
@@ -157,8 +165,19 @@ function fit(rows, cols) {
         det = a * dd - bb * c;
       d = [(dd * g[0] - bb * g[1]) / det, (a * g[1] - c * g[0]) / det];
     }
-    b = b.map((x, j) => x + d[j]);
-    if (Math.max(...d.map(Math.abs)) < 1e-9) break;
+    let step = 1,
+      nb = b,
+      nl = -Infinity;
+    for (let h = 0; h < 40; h++, step /= 2) {
+      nb = b.map((x, j) => x + step * d[j]);
+      nl = llOf(nb);
+      if (Number.isFinite(nl) && nl >= cur - 1e-12) break;
+    }
+    if (!(Number.isFinite(nl) && nl >= cur - 1e-12)) break;
+    const moved = Math.max(...nb.map((x, j) => Math.abs(x - b[j])));
+    b = nb;
+    cur = nl;
+    if (moved < 1e-9) break;
   }
   return b;
 }
@@ -202,6 +221,7 @@ function realLog(file) {
         b1 = fit(tr, ['one', 'x']);
       return mean(te.map(r => ll(r, pOf(r, ['one', 'x'], b1)) - ll(r, pOf(r, ['one'], b0))));
     });
+    if (!dp.every(Number.isFinite)) return console.log(`  ${lab}: a fit did not converge (non-finite log-loss): no verdict`);
     const c = ci(dp),
       sf = signFlip(dp),
       ball = fit(R, ['one', 'x']),
@@ -245,6 +265,9 @@ function realLog(file) {
   );
 }
 
-if (args.includes('--log')) realLog(opt('log'));
-else if (files.length) sims();
-else console.log('node tools/fieldeval.js base.json other.json [--at 300,600,1000] | --log answers.json [--min 30]');
+module.exports = {fit, pOf, holm, ci};
+if (require.main === module) {
+  if (args.includes('--log')) realLog(opt('log'));
+  else if (files.length) sims();
+  else console.log('node tools/fieldeval.js base.json other.json [--at 300,600,1000] | --log answers.json [--min 30]');
+}

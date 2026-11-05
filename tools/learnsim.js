@@ -755,6 +755,7 @@ function play(cfg) {
         know: {...know},
         LS: JSON.stringify(LS),
         LM: JSON.stringify(LM),
+        X: JSON.stringify(X), // the field learner's pair skills (Codex review #619: they leaked from one break to the next)
         T,
         last,
         lastQs: [...lastQs],
@@ -776,6 +777,9 @@ function play(cfg) {
       // The photo memory comes back as it was (it does not fade across a break: a limit of this learner).
       Object.keys(LM).forEach(k => delete LM[k]);
       Object.assign(LM, JSON.parse(snap.LM));
+      // The field learner's pair skills too (they do not fade across a break either: a limit, as the photo memory).
+      Object.keys(X).forEach(k => delete X[k]);
+      Object.assign(X, JSON.parse(snap.X));
       dropPlans();
       NEXTQ = null;
       SHOWNQ = null;
