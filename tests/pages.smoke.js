@@ -1267,7 +1267,9 @@ const SHEET = () => {
       body = o && o.body ? JSON.parse(o.body) : null,
       log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
     log.push(
-      body ? {post: 1, name: body.name || '', data: !!body.data, keys: Object.keys(body.data || {})} : {get: 1, name: q.get('name') || ''}
+      body
+        ? {post: 1, name: body.name || '', data: !!body.data, keys: Object.keys(body.data || {}), del: body.selfDelete ? body.dname : ''}
+        : {get: 1, name: q.get('name') || ''}
     );
     localStorage.setItem('test-sheet-log', JSON.stringify(log));
     const at = Date.parse('2026-10-20T09:30:00Z'),
@@ -1276,11 +1278,16 @@ const SHEET = () => {
       account = localStorage.getItem('test-sheet-old')
         ? {'imr-coral-progress': prog, 'imr-coral-quiz': '{"bon":false}'} // rename-app: keep
         : {'reefid-sync-coral-progress': prog, 'reefid-sync-coral-quiz': '{"bon":false}'};
+    // sheet v56: a player deletes their own account (sync.js viewDeleteAccount): Anna's code only.
+    if (body && body.selfDelete)
+      return body.dname === 'Anna' && body.dpin === '1234' ? {ok: true, deleted: true, v: 56} : {ok: false, error: 'pin', v: 56};
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
-    return {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account};
+    // test-sheet-acct: the account's generation (sheet v56 _acct), as a name taken again after an archive has another
+    const acct = localStorage.getItem('test-sheet-acct');
+    return {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account, ...(acct ? {acct} : {})};
   };
   const f = window.fetch,
     answer = (u, o) =>
@@ -1591,6 +1598,106 @@ async function signin(base) {
     }
   );
   // rename-app: keep-end
+  // An archived record (sheet v56, Q88; the audit's G4): the sheet no longer finds the name a device saved under (found
+  // false with a revision on the device). The device pushes nothing (the record is not re-created) and says it was archived.
+  await run(
+    () => {
+      if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Bea', pin: '5555', srv: 3, last: '2026-11-04T10:00:00Z'}));
+    },
+    async p => {
+      await p
+        .waitForFunction(() => (JSON.parse(localStorage.getItem('reefid-account') || '{}') || {}).err === 'archived', null, {
+          timeout: 10000
+        })
+        .catch(() => {});
+      await p.evaluate(() => (location.hash = '#delete-account'));
+      await p.waitForSelector('.delacct', {timeout: 5000}).catch(() => {});
+      const s = await p.evaluate(() => ({
+        err: (JSON.parse(localStorage.getItem('reefid-account') || '{}') || {}).err,
+        pushed: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post && x.name === 'Bea'),
+        page: (document.querySelector('.delacct') || {}).innerText || ''
+      }));
+      if (s.err !== 'archived' || s.pushed || !/archived/.test(s.page))
+        fails.push('archived record: the device does not stop and say so: ' + JSON.stringify(s).slice(0, 200));
+    }
+  );
+  // The same name taken again after an archive (sheet v56 _acct, Codex review #603): the sheet finds an account of another
+  // generation than the one this device saved under: archived too, nothing pushed.
+  await run(
+    () => {
+      if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('test-sheet-acct', 'new222');
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234', srv: 3, acct: 'old111', dirty: true}));
+    },
+    async p => {
+      await p
+        .waitForFunction(() => (JSON.parse(localStorage.getItem('reefid-account') || '{}') || {}).err === 'archived', null, {
+          timeout: 10000
+        })
+        .catch(() => {});
+      const s = await p.evaluate(() => ({
+        err: (JSON.parse(localStorage.getItem('reefid-account') || '{}') || {}).err,
+        pushed: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post && x.name === 'Anna')
+      }));
+      if (s.err !== 'archived' || s.pushed) fails.push('name taken again after an archive: the device does not stop: ' + JSON.stringify(s));
+    }
+  );
+  // Deleting one's own account (Pierre, 2026-11-05; sheet v56 selfDelete): #delete-account, the code, a second step, then
+  // the device signed out and cleared; the request carries dname / dpin (never name / pin), and a wrong code never leaves.
+  await run(
+    () => {
+      if (sessionStorage.getItem('delinit')) return;
+      sessionStorage.setItem('delinit', '1');
+      if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sheet-v', '56');
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234', srv: 3, last: '2026-11-04T10:00:00Z'}));
+      localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({Porites: {ok: 3, ko: 0}}));
+      localStorage.setItem(
+        'reefid-reports',
+        JSON.stringify([
+          {rn: 'Anna', rp: '1234', id: 'q1', why: 'photo'},
+          {rn: 'Zed', id: 'q2', why: 'photo'}
+        ])
+      );
+      localStorage.setItem('reefid-report-name', '"Anna"');
+    },
+    async p => {
+      await p.evaluate(() => (location.hash = '#delete-account'));
+      await p.waitForSelector('.delform input[name=code]', {timeout: 5000});
+      const txt = await p.$eval('.delacct', e => e.innerText);
+      if (!/every answer you gave/.test(txt) || !/cannot be undone/.test(txt))
+        fails.push('delete account: the page does not say what is deleted');
+      await p.fill('.delform input[name=code]', '1111');
+      await p.click('.delform button[type=submit]');
+      const wrong = await p.$eval('.delacct [role=status]', e => e.textContent);
+      if (!/not this account/.test(wrong)) fails.push('delete account: a wrong code is not refused here: ' + wrong);
+      await p.fill('.delform input[name=code]', '1234');
+      await p.click('.delform button[type=submit]');
+      await p.waitForSelector('#dyes', {timeout: 3000});
+      if (JSON.parse(await p.evaluate(() => localStorage.getItem('test-sheet-log') || '[]')).some(x => x.del))
+        fails.push('delete account: sent before the second step');
+      await p.click('#dyes');
+      await p.waitForFunction(() => location.hash === '#delete-account|done' && document.querySelector('.delacct'), null, {timeout: 15000});
+      const s = await p.evaluate(() => ({
+        page: document.querySelector('.delacct').innerText,
+        account: localStorage.getItem('reefid-account'),
+        prog: localStorage.getItem('reefid-sync-coral-progress'),
+        reports: JSON.parse(localStorage.getItem('reefid-reports') || '[]').map(x => x.id),
+        rname: localStorage.getItem('reefid-report-name'),
+        posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.del)
+      }));
+      if (!/were deleted/.test(s.page) || s.account || s.prog || s.rname || s.reports.join() !== 'q2')
+        fails.push('delete account: the device is not signed out and cleared: ' + JSON.stringify(s).slice(0, 240));
+      if (s.posts.length !== 1 || s.posts[0].name) fails.push('delete account: the request: ' + JSON.stringify(s.posts));
+    }
+  );
   // The tour's sign-in step: the same question.
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),

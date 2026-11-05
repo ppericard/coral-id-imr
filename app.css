@@ -6892,3 +6892,24 @@ small.beta {
   line-height: 1.5;
   vertical-align: middle;
 }
+/* Deleting one's own account (#delete-account, sync.js viewDeleteAccount): the About page's cards, a red action. */
+.delacct .danger {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+.delacct label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.delacct input {
+  font: inherit;
+  width: 6ch;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--ink);
+  letter-spacing: 0.2em;
+}

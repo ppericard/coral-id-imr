@@ -2171,7 +2171,7 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, by anonymous id; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, by anonymous id; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v56): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it was archived and asked to sign out, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v56): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -2709,7 +2709,7 @@ function loadPages(force) {
         pgsAt = Date.now();
         return (PGS =
           j && j.ok && j.rows && Number(j.v) >= PAGES.SHEET
-            ? {rows: pagesRows(j.rows)}
+            ? {rows: pagesRows(j.rows), arch: pagesRows(j.arch || [])} // v56: an archive's apart (its Journey only)
             : {
                 err:
                   !j || !(Number(j.v) >= PAGES.SHEET)
@@ -3230,8 +3230,10 @@ function renderTriage() {
     const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
       play = !/^(photo|sheet|page)$/.test(m),
       // sheet v55: the reports of an account deleted with its answers kept are "~deleted <id>", never verified (Q85)
-      gone = /^~deleted /.test(who || '');
-    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : `<b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>`}
+      gone = /^~deleted /.test(who || ''),
+      // sheet v56: a report of an archived record (Players › Archived), its open items kept as such
+      arch = ok === 2 || !!(USERS && (USERS.archived || []).some(x => x.name === who));
+    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : arch ? `<b class="adm-repwho unv" title="${esc(who)}">From an archived record</b>` : `<b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>`}
       <span class="adm-repwhy">${esc(why === 'wrong' && !play ? 'Wrong genus' : REP_WHY[why] || why)}</span>${g ? `<span>${repUnit(g)}${a && a !== g ? ` · answered ${repUnit(a)}` : ''}</span>` : ''}${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
       <small class="adm-where">${esc(play ? 'game ' + m : m)}${w ? ` · <a href="index.html#${esc(w)}" target="_blank" rel="noopener">${esc(w)}</a>` : ''} · ${esc(when(t))}</small><button type="button" class="adm-tdone" data-rdone="${esc(id)}">✓ Done</button></div>
       ${note ? `<p class="adm-repnote">${esc(note)}</p>` : ''}${
@@ -6600,6 +6602,9 @@ const GROUP_SHEET = 48;
 // Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_); an older script would keep its reports.
 const DEL_SHEET = 55;
 const delOn = () => (USERS.v || 0) >= DEL_SHEET;
+// Sheet v56: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
+const ARCH_SHEET = 56;
+const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
 const groupOn = () => subjGroup(ASUBJ) && (USERS.v || 0) >= GROUP_SHEET;
 const inGroup = u => (u.groups || []).includes(ASUBJ.id);
 UCOLS.push(['group', 'Beta', u => (inGroup(u) ? 1 : 0), 0, 'In the beta group']);
@@ -6674,7 +6679,7 @@ function renderUsers() {
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
       ${groupOn() ? `<span>${inGroup(u) ? 'In' : 'Not in'} the ${esc(ASUBJ.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-on="${inGroup(u) ? 0 : 1}">${inGroup(u) ? 'Remove' : 'Add'}</button></span>` : ''}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
-      <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
+      <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}"${archOn() ? '' : ` disabled title="Needs the sheet script v${ARCH_SHEET}"`}>Archive…</button>
       ${
         uDel === u.name
           ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
@@ -6757,6 +6762,20 @@ function renderUsers() {
           .join(
             ''
           )}</tbody></table></div><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button>${(USERS.v || 0) < 17 ? ` <small class="note">Needs the sheet script v17 (live: v${USERS.v || '?'}).</small>` : ''}</p></details>`
+      : '') +
+    // v56: the archived records, read-only (Pierre, 2026-11-05: archived means kept, never used in normal operation): the
+    // archive's name, its last save, answers and reports, its Journey (marked archived); Delete stays (either mode).
+    ((USERS.archived || []).length
+      ? `<details class="adm-uremoved"${USERS.archived.some(a => a.name === uDel) ? ' open' : ''}><summary>Archived (${USERS.archived.length})</summary><table class="adm-tbl"><thead><tr><th>Name</th><th>Last saved</th><th>Answers</th><th>Reports</th><th></th></tr></thead><tbody>${USERS.archived
+          .map(
+            a =>
+              `<tr><td><a href="#~journey/${encodeURIComponent(a.name)}" title="Journey (archived)">${cut(a.name)}</a></td><td>${a.time ? date(a.time) : '–'}</td><td>${a.answers}</td><td>${a.reports || ''}</td><td>${
+                uDel === a.name
+                  ? `<span class="adm-udel"><button type="button" class="adm-danger" data-udel-all="${esc(a.name)}">Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(a.name)}">Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button></span>`
+                  : `<button type="button" class="adm-danger" data-udel="${esc(a.name)}">Delete…</button>`
+              }</td></tr>`
+          )
+          .join('')}</tbody></table></details>`
       : '') +
     (USERS.removed.length
       ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${cut(r.name)}</td><td>${r.into ? `merged into <b>${cut(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
@@ -6858,27 +6877,29 @@ function bindUsers() {
         return;
       group(L, true, `${L.length} players added to the ${ASUBJ.name} beta.`);
     };
-  // Rename (sheet v20, Pierre 2026-11-02): keep a record apart under a new name ("Pierre-test"), off the leaderboard; the
-  // old name is free again, so its owner can sign out on their devices and sign in under it to start over.
-  $v.querySelectorAll('[data-uren]').forEach(
+  // Archive (sheet v56, was Rename v20; Pierre 2026-11-02 and 2026-11-05, Q84/Q88): keep a record apart under an archive
+  // name ("Pierre-test"), out of normal operation (Board -2: no leaderboard, no achievement share, no beta group, no
+  // player row; the Archived fold below). The old name is free again: its devices are told the record was archived and
+  // offered to sign out (sync.js archivedOf), then its owner may sign in under it and start empty.
+  $v.querySelectorAll('[data-uarch]').forEach(
     b =>
       (b.onclick = () => {
-        const name = b.dataset.uren,
-          into = (prompt(`New name for "${name}"?`, `${name}-test`) || '').trim();
+        const name = b.dataset.uarch,
+          into = (prompt(`Archive "${name}" under which name?`, `${name}-test`) || '').trim();
         if (!into || into === name) return;
         if (
           !confirm(
-            `Rename "${name}" to "${into}"?\n\nTheir answers, reports and progress move to "${into}", hidden from the leaderboard; the app no longer opens it (an archive, here in the admin).\n"${name}" is free again: to start over under it, sign out on each device, then sign in as "${name}".`
+            `Archive "${name}" as "${into}"?\n\nTheir answers, reports and progress are kept apart under "${into}", out of the leaderboard, the players, the beta groups and every count; their answers still rate the photos. Their devices are told the record was archived and asked to sign out.\n"${name}" is free again: its owner can sign in under it and start fresh.`
           )
         )
           return;
-        userPost({userRename: {from: name, into}})
+        userPost({userArchive: {from: name, into}})
           .then(j =>
             j && j.error === 'exists'
               ? toast(`"${into}" is already a player.`)
               : j && j.error === 'input'
-                ? toast('Not done: needs the sheet script v20.')
-                : done(`"${name}" renamed "${into}".`, j)
+                ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
+                : done(`"${name}" archived as "${into}".`, j)
           )
           .catch(() => done('', null));
       })
@@ -6953,7 +6974,7 @@ function bindUsers() {
       (b.onclick = () => {
         const all = 'udelAll' in b.dataset,
           name = all ? b.dataset.udelAll : b.dataset.udelKeep,
-          u = (USERS.users || []).find(x => x.name === name) || {answers: 0, reports: 0},
+          u = [...(USERS.users || []), ...(USERS.archived || [])].find(x => x.name === name) || {answers: 0, reports: 0},
           n = (k, w) => `${k} ${w}${k === 1 ? '' : 's'}`;
         if (
           !confirm(
