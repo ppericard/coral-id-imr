@@ -414,6 +414,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (!good) dropPlans();
   session.n++;
   session.h = [...session.h, good].slice(-10);
+  pulseNote();
   if (good) {
     session.ok++;
     s.ok++;
@@ -931,9 +932,13 @@ function tipShow(t, st, cur) {
 // the next question, one question answered in one tap (or "Not now"). First after PULSE.FIRST answers in all (35 since
 // 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every PULSE.EVERY answers
 // (40 since 2026-11-03, was 60: a target that depends on the level needs a few answers per level band from each player;
-// Pierre: "all the more important to ask from time to time"), PULSE.AFTERX times that after a "Not now", never before
-// PULSE.SESSION answers of this visit; counted in answers, never time. A count that went back (a progress reset) starts
-// the spacing over, as in promptOk.
+// Pierre: "all the more important to ask from time to time"), PULSE.AFTERX times that after a "Not now"; counted in
+// answers. A count that went back (a progress reset) starts the spacing over, as in promptOk.
+// Never early in a session (Pierre, 2026-11-05, on his phone: "Getting boring?" came when he had barely started): only
+// once the current session has PULSE.SESS_N answers and has lasted PULSE.SESS_MS (pulseSess). A prompt due before that
+// waits for it, so a new session never opens on one and the spacing in answers stays as it was. A session = answers less
+// than model.js SESSION.GAP (30 min) apart, the admin's sessions (admin.js HEALTH.GAP); kept on the device (pulseNote),
+// so a reload is no new session and a page left open overnight is no long session (session.n, this page's answers, was).
 // The question varies (Pierre, 2026-11-03: "ask slightly different questions about roughly the same concept"): the bank
 // core.js PULSEQ (too easy or too hard, the flow channels, harder photos, fun, frustration, boredom), asked in rounds
 // (pulsePick: never the same wording twice in a row; the first one ever is the plain "These questions are").
@@ -941,16 +946,41 @@ function tipShow(t, st, cur) {
 // what the game knew then: the mode, answers this visit, right % of the last 10, overall level, genera met. Nothing in
 // the game changes with it (yet): it tells Pierre whether the difficulty feels right at each level (docs/LEARNING.md
 // "What the players say about the difficulty").
-const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESSION: 8, WAIT: 600},
+// reefid-pulse (this device): {at: answers when the last one showed, q: its item, left: the round's items still to ask,
+// x: 1 after "Not now", v: the session {t0: its first answer's time, t: its last, n: its answers}}.
+const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESS_N: 15, SESS_MS: 5 * 60000, WAIT: 600},
   PULSEK = 'reefid-pulse';
+const pulseSt = () => {
+  const st = store.get(PULSEK, {});
+  return st && typeof st === 'object' ? st : {};
+};
+// The session an answer at time t belongs to: the same one when the last answer is less than SESSION.GAP before it, else
+// a new one. Every answer in a game counts (answer()), whatever the subject or the game, as the admin counts sessions.
+const pulseVisit = (v, t) =>
+  v && typeof v === 'object' && [v.t0, v.t, v.n].every(x => typeof x === 'number') && t >= v.t && t - v.t < SESSION.GAP
+    ? {t0: v.t0, t, n: v.n + 1}
+    : {t0: t, t, n: 1};
+const pulseNote = (t = Date.now()) => {
+  const st = pulseSt();
+  store.set(PULSEK, {...st, v: pulseVisit(st.v, t)});
+};
+// The session is far enough along for a prompt at time now: still going (its last answer less than SESSION.GAP ago),
+// PULSE.SESS_N answers or more, PULSE.SESS_MS or more since its first.
+const pulseSess = (v, now = Date.now()) =>
+  !!v &&
+  typeof v === 'object' &&
+  [v.t0, v.t, v.n].every(x => typeof x === 'number') &&
+  now - v.t < SESSION.GAP &&
+  v.n >= PULSE.SESS_N &&
+  now - v.t0 >= PULSE.SESS_MS;
 const pulseDue = (h = hashNow()) => {
   // Its answers describe the subject the sheet logs (core.js SUBJECTS log: the corals; the fish beta is not logged yet).
   if (!SUBJ.log) return false;
-  if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock') || session.n < PULSE.SESSION) return false;
+  if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock')) return false;
   const a = answersSoFar(),
-    st = store.get(PULSEK, {}),
+    st = pulseSt(),
     at = typeof st.at === 'number' ? st.at : -1e9;
-  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1));
+  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && pulseSess(st.v);
 };
 // Response rate (Pierre, 2026-11-03: how often a prompt is shown against answered): each prompt logs its showing
 // (PULSE_SHOWN), then its answer's code, or PULSE_SKIP for "Not now" (or Escape), or PULSE_NONE when the page is left
@@ -981,10 +1011,11 @@ function pulseArm(nb) {
 // Escape is "Not now". The next question is drawn when it closes (its clock starts with its photo, as always, so the
 // card's time is not counted). "Not now" makes the next one wait PULSE.AFTERX times longer.
 function pulseAsk() {
-  const pk = pulsePick(store.get(PULSEK, {})),
+  const st = pulseSt(),
+    pk = pulsePick(st),
     it = pulseItem(pk.q),
     h = session.h;
-  store.set(PULSEK, {at: answersSoFar(), q: pk.q, left: pk.left});
+  store.set(PULSEK, {at: answersSoFar(), q: pk.q, left: pk.left, v: st.v});
   pulseOpen = {
     id: it.id,
     at: {
@@ -1021,7 +1052,7 @@ function pulseAsk() {
     onClose: how => {
       if (pulseOpen) {
         pulseEv(how === 'route' ? PULSE_NONE : PULSE_SKIP);
-        if (how !== 'route') store.set(PULSEK, {...store.get(PULSEK, {}), x: 1});
+        if (how !== 'route') store.set(PULSEK, {...pulseSt(), x: 1});
         pulseOpen = null;
       }
       if (how !== 'route') route();
