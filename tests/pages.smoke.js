@@ -977,10 +977,19 @@ async function overlays(b, base) {
       await p.check(`#repdlg input[name="why"][value="${why}"]`);
       if (note) await p.fill('#repdlg textarea[name="note"]', note);
       await p.click('#repdlg button[type="submit"]');
+      // A toast (the first) or a card (the 5th and 10th: they stay until closed, their button deaf for a moment).
       const t = await p
-        .waitForSelector('.achpop b', {timeout: 1500})
-        .then(e => e.textContent())
+        .waitForSelector('.achpop b, .unlock.achcard h3', {timeout: 1500})
+        .then(async e => ((await e.evaluate(x => !!x.closest('.unlock'))) ? 'card: ' : 'toast: ') + (await e.textContent()).trim())
         .catch(() => '');
+      if (t.startsWith('card')) {
+        const early = await p.evaluate(() => document.querySelector('.unlock.achcard [data-b="1"]').disabled);
+        await p.waitForTimeout(400);
+        const still = await p.$('.unlock.achcard'); // no time-out
+        await p.click('.unlock.achcard [data-b="1"]');
+        if (!early || !still || (await p.$('.unlock.achcard')))
+          fails.push(`Contributions card: ${JSON.stringify({early, still: !!still})}`);
+      }
       await p.evaluate(() =>
         document.querySelectorAll('.achpop a').forEach(a => {
           a.addEventListener('click', e => e.preventDefault()); // closes it, without opening #ach
@@ -1004,7 +1013,7 @@ async function overlays(b, base) {
     got.push(await send({k: 'page'}, 'bug'));
     const n = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}')._fb?.length);
     for (let i = 0; i < 5; i++) got.push(await send({k: 'page'}, 'bug'));
-    const want = ['', 'First feedback', '', '', '', '', 'Helping hand', '', '', '', '', 'Co-author'];
+    const want = ['', 'toast: First feedback', '', '', '', '', 'card: Helping hand 🥈', '', '', '', '', 'card: Co-author 🥇'];
     if (JSON.stringify(got) !== JSON.stringify(want) || n !== 5) fails.push(`Contributions: ${JSON.stringify({got, n})}`);
     await p.evaluate(() => (location.hash = 'ach'));
     await p.waitForSelector('.btitle.bsec', {timeout: 5000}).catch(() => {});
@@ -1016,6 +1025,31 @@ async function overlays(b, base) {
     }));
     if (a.title !== `0/${a.learn} earned` || !/^Contributions 10 reports sent/.test(a.sec || '') || a.on.length !== 3)
       fails.push(`Contributions on #ach: ${JSON.stringify(a)}`);
+    await c.close();
+  }
+  // A device still signed in with an account the admin deleted (the sheet said 'gone'): its reports count nothing.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Testa', pin: '1234', err: 'gone', into: ''}));
+    });
+    await p.goto(base + '#g-Acropora');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.evaluate(() => {
+      const b = document.createElement('button');
+      document.body.append(b);
+      reportDialog({k: 'page'}, b);
+    });
+    await p.check('#repdlg input[name="why"][value="bug"]');
+    await p.click('#repdlg button[type="submit"]');
+    await p.waitForTimeout(800);
+    const g = await p.evaluate(() => ({
+      toast: !!document.querySelector('.achpop'),
+      fb: (JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}')._fb || []).length
+    }));
+    if (g.toast || g.fb) fails.push(`Contributions on a deleted account: ${JSON.stringify(g)}`);
     await c.close();
   }
   // Feedback sent from About before the achievements' tier has come (progress.js, tier 2): counted once it comes, its

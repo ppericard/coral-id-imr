@@ -554,7 +554,50 @@ function achCheck(silent) {
   store.set(ACHK, A);
   if (quiet.length && had && !silent) store.set(ACHNEW, [...achUnseen(), ...quiet]);
   achDot();
-  achRecap(silent || !had ? ids : loud);
+  // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (Pierre, 2026-11-05: a toast
+  // at the top may go unread); the first stays a toast, like the learning achievements.
+  const card = id => !silent && had && (ACH.find(x => x.id === id) || {}).kind === 'contrib' && ACH.find(x => x.id === id).tier >= 2;
+  (silent || !had ? ids : loud).filter(card).forEach(id => achCard(ACH.find(x => x.id === id)));
+  achRecap((silent || !had ? ids : loud).filter(id => !card(id)));
+}
+// One card at a time (docs/DESIGN.md "Cards"): fn runs once no card or tour is open.
+function cardFree(fn) {
+  if (!document.querySelector('.unlock, #tour')) return fn();
+  const mo = new MutationObserver(() => {
+    if (document.querySelector('.unlock, #tour')) return;
+    mo.disconnect();
+    fn();
+  });
+  mo.observe(document.body, {childList: true});
+}
+// Its button takes no tap for its first moments and Enter does not press it, so a reflex tap cannot close it unread (as the
+// one-tap question, AGENTS.md 20g).
+function cardCalm(d) {
+  const b = d.querySelector('[data-b="1"]');
+  if (!b) return;
+  b.disabled = true;
+  setTimeout(() => (b.disabled = false), CARD_WAIT);
+}
+const CARD_WAIT = 600;
+// An achievement as a card (the Contributions' 5th and 10th: achCheck): its emoji in the medallion, its tier by the title.
+// Leaving the page closes it unseen; it comes back on the next one.
+function achCard(a) {
+  if (!a) return;
+  cardFree(() =>
+    cardShow({
+      kind: 'ach',
+      emoji: a.icon,
+      cls: 'achcard',
+      kick: 'Achievement unlocked',
+      title: `${esc(a.title)} ${TIER[a.tier] || ''}`,
+      body: `<p>${esc(a.desc)}</p>`,
+      primary: {text: 'OK'},
+      esc: 1,
+      focus: false,
+      bind: cardCalm,
+      onClose: how => how === 'route' && setTimeout(() => achCard(a), 300)
+    })
+  );
 }
 // The learning achievements (core.js ACH kind 'learn'): the count on the badge and on #ach; the Contributions (kind
 // 'contrib', Pierre 2026-11-05, Q65) are a family apart, never in that count, listed in their own section.
@@ -618,6 +661,8 @@ function achBasics() {
 // with a note), whatever the subject on screen, signed in or not; the tier it reaches pops up at once (achCheck), and the
 // record goes to the sheet with the next sync like the other feats.
 function achReport(r) {
+  // An account the admin deleted (the sheet answered 'gone': sync.js) counts nothing (Pierre, 2026-11-05).
+  if (SYNC && SYNC.err === 'gone') return;
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};
   if (!contribAdd(A, r)) return;
