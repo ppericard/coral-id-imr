@@ -452,9 +452,78 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
     elo: 1500,
     group: true,
     bonus: 3,
-    basics: true
+    basics: true,
+    fb: 10
   };
   assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
+});
+
+test('Contributions (Q65): a family apart, three tiers; one per photo, Other only with a note; two devices joined', () => {
+  const {ACH, newAch, contribAdd, contribKey, mergeAch, CONTRIB_MAX} = require('../core.js');
+  const C = ACH.filter(a => a.kind === 'contrib');
+  assert.deepStrictEqual(
+    C.map(a => [a.id, a.tier]),
+    [
+      ['fb1', 1],
+      ['fb5', 2],
+      ['fb10', 3]
+    ]
+  );
+  assert.ok(ACH.every(a => a.kind === 'learn' || a.kind === 'contrib'));
+  assert.strictEqual(new Set(C.map(a => a.icon)).size, 1, 'one family: one icon');
+  // Never earned by learning alone: a snapshot with everything learned and no report holds none of them.
+  const learned = {
+    total: 34,
+    met: 34,
+    q: [34, 34, 34],
+    learned: 34,
+    pct: 100,
+    streak: 30,
+    duel: true,
+    cor: true,
+    hard: true,
+    elo: 1500,
+    group: true,
+    bonus: 3,
+    basics: true
+  };
+  assert.ok(!newAch(learned, {}).some(id => C.some(a => a.id === id)));
+  assert.deepStrictEqual(newAch({...learned, fb: 1}, Object.fromEntries(ACH.filter(a => a.kind === 'learn').map(a => [a.id, 1]))), ['fb1']);
+  assert.deepStrictEqual(
+    newAch({...learned, fb: 5}, {fb1: 1}).filter(id => id.startsWith('fb')),
+    ['fb5']
+  );
+  // Counting.
+  const A = {};
+  assert.strictEqual(contribAdd(A, {id: 'a1', why: 'wrong', ph: 'x1.webp x2.webp'}), true, 'a game report');
+  assert.strictEqual(contribAdd(A, {id: 'a2', why: 'photo', ph: 'x2.webp'}), false, 'the same photo, enlarged: counted once');
+  assert.strictEqual(contribAdd(A, {id: 'a3', why: 'other', ph: 'y.webp', note: '  '}), false, 'Other without a note');
+  assert.strictEqual(contribAdd(A, {id: 'a4', why: 'other', ph: 'y.webp', note: 'blurry'}), true, 'Other with a note');
+  assert.strictEqual(contribAdd(A, {id: 'a5', why: 'bug', ph: ''}), true, 'feedback on no photo');
+  assert.strictEqual(contribAdd(A, {id: 'a5', why: 'bug', ph: ''}), false, 'the same report again');
+  assert.strictEqual(contribAdd(A, {id: 'a6', why: 'idea'}), true);
+  assert.deepStrictEqual(A._fb, ['x1.webp x2.webp', 'y.webp', 'r:a5', 'r:a6']);
+  assert.strictEqual(contribKey(null), '');
+  assert.strictEqual(contribAdd(null, {id: 'z', why: 'bug'}), false);
+  // Two devices of one player: both lists, each entry once; kept within CONTRIB_MAX.
+  const M = mergeAch({_v: 2, _fb: ['r:a5', 'y.webp']}, {_v: 2, _fb: ['y.webp', 'z.webp'], fb1: 5}, 2);
+  assert.deepStrictEqual([M._fb, M.fb1], [['r:a5', 'y.webp', 'z.webp'], 5]);
+  // One photo reported on each device before they synced (a quiz question here, its enlarged photo there): once (Codex
+  // review #579); a report on no photo by its id.
+  assert.deepStrictEqual(mergeAch({_fb: ['x.webp y.webp', 'r:a1']}, {_fb: ['x.webp', 'z.webp', 'r:a1', 'r:a2']}, undefined)._fb, [
+    'x.webp y.webp',
+    'r:a1',
+    'z.webp',
+    'r:a2'
+  ]);
+  const big = mergeAch(
+    {_fb: Array.from({length: 40}, (_, i) => 'r:a' + i)},
+    {_fb: Array.from({length: 40}, (_, i) => 'r:b' + i)},
+    undefined
+  );
+  assert.strictEqual(big._fb.length, CONTRIB_MAX);
+  // An older record (another _v) brings its feats, the list included.
+  assert.deepStrictEqual(mergeAch({_v: 2}, {_v: 1, _fb: ['r:q'], fb1: 3}, 2), {_v: 2, _fb: ['r:q']});
 });
 
 test('achRevoke and mergeAch: learned-based achievements taken back stay so through merges, until earned again', () => {
