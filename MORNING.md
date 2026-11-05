@@ -1,0 +1,14 @@
+## Pierre 2026-11-05 17:26 — idea for the progress recalculation
+- An apology card shown once to players who already played (IMR people only), when progress is recalculated: very short; says progress was recalculated, sorry; gives the intuition (we largely overestimated what players could really tell apart); then a discreet PS, smaller but readable, in-joke: blame the player A who "put me on the track(s)".
+- Integrator to propose 3 wordings in the morning. Constraint: real names never on GitHub (public repo) -> the name must come from a non-committed source (sheet / curation / admin-set text), or Pierre explicitly allows it; suggest Pierre checks player A is fine with it.
+- Belongs to Q109 (recalculation plan).
+## Photos step 3 (history rewrite) — ready, needs Pierre's explicit go
+- Dry run: fresh clone 685.7 -> 132.6 MiB (-81%); main's tree identical; 6024 paths stripped (5548 R2-only photo files all 200 on R2; 272 old candidate downloads; 204 orphan iNat photos); no no-backup / IMR / Coral Finder photo touched.
+- Plan step3/plan.md, script step3/rewrite.sh (prepare/push/verify/rollback). Freeze agents + 2 workflows; Pierre keeps his own backup; Pierre toggles "Block force pushes" off/on (ruleset 26580397); atomic guarded push of all branches; every clone re-clones after.
+- Push my ~15 local-only branches/worktrees or save patches before the freeze. Old fix-*.png screenshots (7 MB) stay unless Pierre OKs.
+- Proxy may refuse force pushes: canary first; fallback Pierre runs the script on his computer.
+- Pierre 17:28: agreed the name must not go through GitHub (read from sheet/admin text); no need to ask player A (a friendly joke, small group).
+## Fish C (#598 draft, needs-pierre): copy edits 1-7 + "Fish is here" card; screenshots in scratchpad/fishC (01-home-card … 07b). Merge with the flip. Pierre's choices: wording of each edit, kicker "New" vs "Something fishy…", "Try fish" target, once per device, 10-answer minimum, calm moment. Includes a real fix: fish report dialog showed internal ids (t02).
+## Fish A (#595): gate split, merge when CI green (no visible change); screenshots scratchpad/fishA.
+## Feedback cards #579 (v54) / #581 (v55, stacked): ready, green; show Pierre scratchpad/feedbackach/card-helping-hand, card-co-author, card-helped-one, card-helped-several (light) then merge. Both of player A's reports fixed (#577, #575) and listed in reports-handled.json; the deleted test account's report reaches no one.
+## Fish confusion study ready (scratchpad/fish-confusion-study.md): questions a-o (replaces Q110); explicit gos needed: i (log species per fish answer, sheet layout), f (cross-family penalty weighting, game rule, sim first), k (partner pull in opening). Sheet scalability (stats cache, Answers re-read, 10M cells) flagged.
