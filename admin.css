@@ -4034,9 +4034,6 @@ button.adm-chip[aria-pressed='true'] {
     padding: 6px 0;
     border-top: 1px solid var(--line);
   }
-  .adm-an-eff.adm-an-all tr {
-    grid-template-areas: 't v' 'c c' 's s';
-  }
   .adm-tbl.adm-an-eff td {
     display: block;
     padding: 1px 2px;
@@ -4045,9 +4042,11 @@ button.adm-chip[aria-pressed='true'] {
     min-width: 0;
     white-space: normal;
   }
-  .adm-an-eff td.an-t {
-    grid-area: t;
-    font-size: var(--fs-xs);
+  .adm-an-eff tr.an-grp {
+    display: block;
+  }
+  .adm-an-eff tr.an-grp th {
+    display: block;
   }
   .adm-an-eff td.an-c {
     grid-area: c;
@@ -4208,8 +4207,75 @@ button.adm-chip[aria-pressed='true'] {
   fill: var(--muted);
   font-weight: 400;
 }
+/* Sorting (Pierre, 2026-11-05): the same control above every list of results; on the Overview each result's topic on a
+   grey line of its own under its name (chart) or under what is compared (table), or a sub-heading per topic. */
+.adm-an-sort {
+  margin: 0 0 6px;
+}
+.adm-an-svg .an-name {
+  font-weight: 600;
+}
 .adm-an-svg .an-sub {
   fill: var(--muted);
+}
+.adm-an-svg .an-grp-t {
+  fill: var(--ink);
+  font-weight: 700;
+}
+.adm-an-svg .an-grp-l {
+  stroke: var(--line);
+}
+.adm-an-topic {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+.adm-an-topic a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.adm-an-eff tr.an-grp th {
+  position: static;
+  padding-top: 12px;
+  font-size: var(--fs-s);
+  text-transform: none;
+  letter-spacing: normal;
+  border-bottom: 1px solid var(--line);
+}
+.adm-an-eff tr.an-grp a {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .adm-an-topic a:hover,
+  .adm-an-eff tr.an-grp a:hover {
+    text-decoration: underline;
+  }
+}
+/* The results with no clear verdict, folded behind one toggle per list (Pierre, 2026-11-05). */
+.adm-an-morel {
+  margin: 2px 0 8px;
+}
+.adm-an-more {
+  font-size: var(--fs-s);
+}
+@media (max-width: 599px) {
+  /* show and sort on a phone: the full width, a label on two lines if it must (never wider than the screen) */
+  .adm-an-ctl .adm-sseg.adm-qseg,
+  .adm-an-sort .adm-sseg.adm-qseg {
+    display: flex;
+    width: 100%;
+  }
+  .adm-an-ctl .adm-sseg button,
+  .adm-an-sort .adm-sseg button {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 2px 4px;
+    font-size: var(--fs-xs);
+    line-height: 1.15;
+  }
 }
 .adm-an-spark path {
   fill: none;
