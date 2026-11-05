@@ -2399,6 +2399,23 @@ kbd {
 .tymsg:empty {
   min-height: 0;
 }
+/* The spelling step (quiz.js typeBind): a close typo of the right name is retyped once. Not a wrong answer, so never the
+   red: the warm --warn edge on the field and the message in ink. A retype still not exact keeps that look once answered. */
+.tyform.retry input,
+.tyform input.close {
+  border-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+}
+.tyform.retry input:focus {
+  outline-color: var(--warn);
+}
+.tyform.retry .tymsg {
+  color: var(--ink);
+  font-weight: 600;
+}
+.fb .tyread b {
+  color: var(--bad);
+}
 .fb {
   background: var(--surface);
   border: 1px solid var(--line);

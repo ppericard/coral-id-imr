@@ -218,9 +218,10 @@ const server = http.createServer((req, res) => {
       Object.assign(P, keep);
     }
     // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
-    // beginner's genus (24%) never; a typed answer is logged quiz|t with the genus read as its answer (never the raw
-    // text) and no choices; a typo is read as the genus; a typed miss naming another genus counts against both; "I
-    // don't know" is a miss for the genus shown only; a word that is no genus is no answer.
+    // beginner's genus (24%) never; a typed answer is logged quiz|t with the genus read as its answer (the raw text in
+    // ty) and no choices; a typo is read as the genus, retyped once first (the spelling step: exact, still wrong, Show
+    // me; the step in tr); a typed miss naming another genus counts against both; "I don't know" is a miss for the genus
+    // shown only; a word that is no genus is no answer.
     {
       const hi = genera.filter((n, i) => i % 2 && DATA.gen[n]),
         lo = genera.filter((n, i) => !(i % 2) && DATA.gen[n]);
@@ -267,14 +268,72 @@ const server = http.createServer((req, res) => {
       f().requestSubmit();
       if (answersSoFar() !== a0 || !/not a genus/.test(f().querySelector('.tymsg').textContent))
         fails.push('a word that is no genus was taken as an answer');
+      // The spelling step (a player's idea, Pierre 2026-11-05; quiz.js typeBind): a close typo of the right genus is no
+      // answer yet: "Close, but not quite: try again", the text kept and selected, I don't know turned to Show me.
       f().querySelector('input').value = typo.toLowerCase();
       f().requestSubmit();
+      const retryOn = () =>
+        answersSoFar() === a0 &&
+        f().classList.contains('retry') &&
+        /Close, but not quite/.test(f().querySelector('.tymsg').textContent) &&
+        f().querySelector('[data-idk]').textContent === 'Show me' &&
+        f().querySelector('input').value === typo.toLowerCase() &&
+        !f().querySelector('input').disabled;
+      if (!retryOn()) fails.push(`a close typo "${typo}" of ${g}: no retype asked (${f().querySelector('.tymsg').textContent})`);
+      // Retyped exactly: the answer (the first reading, right), "That's it", the raw text and the step logged.
+      f().querySelector('input').value = g;
+      f().requestSubmit();
       let l = logged();
-      if (answersSoFar() !== a0 + 1 || !/^quiz\|t(\|x)?$/.test(l.m) || l.a !== g || !l.ok || l.ch !== '' || !(l.e > 0 && l.e < 1))
-        fails.push(`typed answer "${typo}" for ${g} logged ${JSON.stringify(l)}`);
-      if (!/read as/.test((document.querySelector('#after .tyread') || {}).textContent || ''))
-        fails.push('a typed answer with a typo does not say how it was read');
+      if (
+        answersSoFar() !== a0 + 1 ||
+        !/^quiz\|t(\|x)?$/.test(l.m) ||
+        l.a !== g ||
+        !l.ok ||
+        l.ch !== '' ||
+        !(l.e > 0 && l.e < 1) ||
+        l.ty !== typo.toLowerCase() ||
+        l.tr !== 1
+      )
+        fails.push(`typed answer "${typo}" retyped "${g}" logged ${JSON.stringify(l)}`);
+      if (!/^That's it/.test((document.querySelector('#after .tyread') || {}).textContent || ''))
+        fails.push('an exact retype does not say "That\'s it"');
       if (document.querySelector('#tyin:not(.ok)')) fails.push('a right typed answer: the field is not marked right');
+      // Retyped wrong again: still right (grading unchanged), the spelling shown with the wrong letters in bold.
+      g = typedQ();
+      const sw2 = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]),
+        typo2 = g.slice(0, sw2) + g[sw2 + 1] + g[sw2] + g.slice(sw2 + 2),
+        a1 = answersSoFar();
+      f().querySelector('input').value = typo2;
+      f().requestSubmit();
+      f().querySelector('input').value = typo2;
+      f().requestSubmit();
+      l = logged();
+      const rd = document.querySelector('#after .tyread');
+      if (answersSoFar() !== a1 + 1 || l.a !== g || !l.ok || l.ty !== typo2 || l.tr !== 0 || P[g].h.slice(-1) !== '1')
+        fails.push(`typed answer "${typo2}" retyped wrong logged ${JSON.stringify(l)}, recent ${P[g].h}`);
+      if (
+        !rd ||
+        !/Not quite: it's spelled/.test(rd.textContent) ||
+        rd.querySelectorAll('b').length !== 1 ||
+        !document.querySelector('#tyin.close')
+      )
+        fails.push(`a retype still wrong: feedback ${rd && rd.innerHTML}, field ${document.querySelector('#tyin').className}`);
+      // Show me skips the retype: right, never a miss, the step logged as not retyped.
+      g = typedQ();
+      const a2 = answersSoFar(),
+        sw3 = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]);
+      f().querySelector('input').value = g.slice(0, sw3) + g[sw3 + 1] + g[sw3] + g.slice(sw3 + 2);
+      f().requestSubmit();
+      if (!f().classList.contains('retry')) fails.push(`a close typo of ${g}: no retype asked`);
+      f().querySelector('[data-idk]').click();
+      l = logged();
+      if (answersSoFar() !== a2 + 1 || l.a !== g || !l.ok || l.tr !== 0 || !document.querySelector('#after h3.ok'))
+        fails.push(`Show me on ${g}: logged ${JSON.stringify(l)}`);
+      // An exact answer asks nothing and logs no step.
+      g = typedQ();
+      say(g);
+      l = logged();
+      if (l.a !== g || !l.ok || l.ty !== g || 'tr' in l) fails.push(`an exact typed answer logged ${JSON.stringify(l)}`);
       g = typedQ();
       const other = hi.find(x => x !== g),
         h0 = (P[other].h || '').length,

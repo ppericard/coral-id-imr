@@ -2269,6 +2269,14 @@ before release:
   floor; a right typed answer moves the ability and the photo ratings more than a pick, a miss less, and counts in full
   in the progress (every genus, its look-alikes included, was a possible answer).
 - Never typed: comeback, "Again: A or B?" and duel questions (each has its own purpose: a quick check, a contrast).
+- **The spelling step** (a player's idea, approved by Pierre 2026-11-05: "Good idea!"): a typed name of the genus asked
+  that the tolerance accepts but is not exact is retyped once ("Close, but not quite: try again"; exact: "That's it";
+  still wrong: the right spelling, the letters missed in bold), so the player learns the spelling instead of moving on.
+  **No learning value changes**: the answer is graded on the first reading as before (the genus was recognised; a
+  retype is a spelling step, not a second chance at the genus), so progress, Elo, the exam and the replay are untouched
+  and no rules version is added; a close typo of another genus stays a wrong answer. The raw text and the step's
+  outcome are logged (sheet v59, Typed and Retyped right) so typed near-misses can be studied (the name study's
+  question g, [reviews/2026-11-05-name-confusion-study.md](reviews/2026-11-05-name-confusion-study.md)).
 
 Simulated before release (`tools/learnsim.js` with a recall learner, kept on its own branch for the dynamic version:
 a typed question is answered right with the learner's recognition chance lowered by a recall gap; 30 seeds × 600

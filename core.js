@@ -1892,6 +1892,54 @@
     if (gs.length > 1) return {near: gs};
     return {g: best[0].g, old: best[0].old, exact: best[0].d === 0, ...(best[0].alt ? {alt: 1} : {})};
   }
+  // The spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"): how a typed answer reads against the unit asked
+  // t, m being typeMatchIn's reading of it. 'exact': one of its names, spelled right (capitals, accents and spaces aside);
+  // 'close': one of its names within the spelling tolerance: still a right answer (the genus was recognised; grading
+  // unchanged), but the player retypes it once (quiz.js typeBind); 'other': another unit's name, close or exact (a wrong
+  // answer, as before); 'none': nothing close, or two names as close (no answer: the player is asked to check the spelling).
+  function typeVerdict(m, t) {
+    if (!m || m.near) return 'none';
+    if (m.g !== t) return 'other';
+    return m.exact ? 'exact' : 'close';
+  }
+  // The letters of name to show in bold once a retyped spelling is still wrong (quiz.js typeSpell): those the typed text
+  // got wrong, left out or swapped, along typeDist's alignment; a letter typed in excess marks the letter of name where it
+  // went in. Returns indexes into [...name] (spaces and other signs are never marked). norm: as typeMatchIn's.
+  function typeDiff(text, name, norm = typeNorm) {
+    const a = norm(text),
+      pos = [],
+      L = [];
+    [...String(name || '')].forEach((c, i) => {
+      const k = c
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[^a-z]/g, '');
+      if (k) (L.push(k[0]), pos.push(i));
+    });
+    const b = L.join(''),
+      n = a.length,
+      m = b.length;
+    if (!m) return [];
+    const d = Array.from({length: n + 1}, (_, i) => [i, ...Array(m).fill(0)]);
+    for (let j = 1; j <= m; j++) d[0][j] = j;
+    for (let i = 1; i <= n; i++)
+      for (let j = 1; j <= m; j++) {
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+    const mark = new Set();
+    let i = n,
+      j = m;
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && a[i - 1] === b[j - 1] && d[i][j] === d[i - 1][j - 1]) (i--, j--);
+      else if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1] && d[i][j] === d[i - 2][j - 2] + 1)
+        (mark.add(j - 1), mark.add(j - 2), (i -= 2), (j -= 2));
+      else if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + 1) (mark.add(j - 1), i--, j--);
+      else if (j > 0 && d[i][j] === d[i][j - 1] + 1) (mark.add(j - 1), j--);
+      else (mark.add(Math.min(j, m - 1)), i--);
+    }
+    return [...mark].map(k => pos[k]).sort((x, y) => x - y);
+  }
   // The share of a genus's questions asked as typed ones, from its progress x (0 to 1, the % shown): none below T.from,
   // then a straight line between the points T.at ([progress, share], in order), flat after the last (model.js TYPED).
   function typedShare(x, T) {
@@ -2929,6 +2977,8 @@
     typeNorm,
     typeNamesOf,
     typeMatchIn,
+    typeVerdict,
+    typeDiff,
     typedShare,
     PROG,
     mxKeeps,
