@@ -412,8 +412,9 @@ function paintBoard(B) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
   const me = boardMe(B.rows);
+  // Signed out: "Sign in" opens the sign-in card, as the header's button does (AGENTS.md rule 20d: sign-in is no longer in ⚙).
   const note = !SYNC
-    ? '<p class="note">Sign in (⚙ Settings) to appear on the leaderboard.</p>'
+    ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
     : !boardOn()
       ? '<p class="note">You are not on the leaderboard (⚙ Settings, Leaderboard: Off).</p>'
       : me < 0
@@ -431,6 +432,8 @@ function paintBoard(B) {
           )
           .join('')}</ol>`
       : '<p class="note">Nobody yet: be the first.</p>');
+  const bs = box.querySelector('#bsign');
+  if (bs) bs.onclick = e => document.getElementById('signb').onclick(e);
   const m = box.querySelector('.me');
   if (m && m.scrollIntoView && m.getBoundingClientRect().bottom > innerHeight) m.scrollIntoView({block: 'center'});
 }

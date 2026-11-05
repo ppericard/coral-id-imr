@@ -1055,6 +1055,24 @@ async function signin(base) {
       prog: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
+  // Signed out, the leaderboard's note opens the sign-in card itself (it sent players to ⚙ Settings, where sign-in no
+  // longer is: AGENTS.md rule 20d). A cached board paints at once, whatever the sheet stub answers.
+  await run(
+    () => {
+      if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-board-cache', JSON.stringify({rows: [['Ana B.', 40, 1200]], t: Date.now()}));
+    },
+    async p => {
+      await p.evaluate(() => go('board'));
+      await p.waitForSelector('#board #bsign', {timeout: 8000});
+      const t = await p.textContent('#board .note');
+      if (/Settings/.test(t)) fails.push('sign-in: the leaderboard note still points to ⚙ Settings: ' + t);
+      await p.click('#board #bsign');
+      await p.waitForSelector('.signnudge form.sform', {timeout: 5000});
+    }
+  );
   // The sign-in card is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not
   // the game mode"): a player who plays only fish meets it at their 20th answer, as a coral player does (it counted the
   // answers queued for the sheet, which takes no fish answers, so it never came). Fish is opened to this player in the
