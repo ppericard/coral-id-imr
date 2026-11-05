@@ -158,10 +158,10 @@ self.addEventListener('activate', e =>
   )
 );
 const SLOW = 2000;
-// Cache Storage can stop answering (2026-11-04, net.smoke step 9 on CI now and then, even after #513: the server
-// answered admin.html in 1 ms, yet the worker's own request for it never finished: nothing read its body, neither the
-// reply, waiting on caches.match, nor the cache copy, waiting on caches.open; why the browser's Cache Storage stalls is
-// not known). A reply never waits on it more than CACHE_WAIT ms: then it is served as if nothing were cached, from the
+// A safety net in case Cache Storage stops answering (2026-11-04, #531). It was added for the net.smoke step-9 hang,
+// read then as a stalled Cache Storage; that hang was traced on 2026-11-05 to the old worker stopped in the middle of a
+// navigation during a version swap (docs/ARCHITECTURE.md "Service worker"), so no stall has been seen yet; the net stays
+// (docs/ROADMAP.md). A reply never waits on it more than CACHE_WAIT ms: then it is served as if nothing were cached, from the
 // network, and the copies kept for offline wait in the background; and for CACHE_PAUSE ms the next replies do not ask it
 // at all (a page's parser-blocking scripts would each wait CACHE_WAIT in turn). soon(p): what p gives, or undefined
 // once CACHE_WAIT ms have passed without it (Cache Storage then paused), or at once while it is paused.
