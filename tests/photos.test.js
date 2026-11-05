@@ -64,7 +64,7 @@ test('fish: rejected, excluded and Not this photos are never in the game; curate
   const {fishGen, fishPhotos, fishPid, fishOn} = require('../core.js'),
     F = CUR.fish || {},
     PH = read('fish-photos.json'),
-    X = fishGen(read('fish.json'), fishPhotos(PH.photos, read('fish-game.json').photos, CUR), PH.sheet),
+    X = fishGen(read('fish.json'), fishPhotos(PH.photos, read('fish-game.json').photos, CUR, read('fish.json')), PH.sheet),
     no = new Map();
   ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));
   Object.keys(CUR.exclude || {}).forEach(f => no.set(fishPid(f), f));

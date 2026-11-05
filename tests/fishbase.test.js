@@ -366,7 +366,7 @@ test('never in a game without Pierre: FishBase photos are candidates or sheet-on
   // The game as it plays (admin plan PR 7: the curated photos of fish-game.json, downloaded to R2, beside the stopgap):
   // a FishBase photo only while Pierre has it in play for that species (core.js fishOn).
   const GM = read('fish-game.json').photos,
-    X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR), PH.sheet);
+    X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR, F), PH.sheet);
   Object.values(X.gen).forEach(g =>
     g.views.wide
       .filter(p => p.via === 'fishbase' || /fishbase\./.test(p.src || ''))

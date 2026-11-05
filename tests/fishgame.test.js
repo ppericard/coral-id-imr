@@ -40,7 +40,11 @@ const FISH = {
     {id: 't01', name: 'Damselfish', level: 1, circle: 1, species: ['s001', 's002']},
     {id: 't02', name: 'Wrasse', level: 1, circle: 1, species: ['s003']}
   ],
-  species: [{id: 's001'}, {id: 's002'}, {id: 's003'}]
+  species: [
+    {id: 's001', name: 'Fishus damselii'},
+    {id: 's002', name: 'Fishus juvenilis'},
+    {id: 's003', name: 'Fishus wrassii', now: 'Thalassoma wrassii'}
+  ]
 };
 const CAND = {
   v: 1,
@@ -175,6 +179,10 @@ test(
       ['s003', 3, 'o1g1sm1'],
       'a Not this photo in play for its new species, under that entry'
     );
+    // Named after its new species (the WoRMS name), never the identification Pierre corrected (Codex review #614); the
+    // others keep their source's name.
+    assert.strictEqual(by['fish-s001-cand-105'].t, 'Thalassoma wrassii');
+    assert.strictEqual(by['fish-s001-cand-101'].t, 'Fishus s001');
     const fb = by['fish-s003-cand-fb-Fiwra_u0'];
     assert.deepStrictEqual([fb.via, fb.rep, fb.e, fb.ph, fb.lic], ['fishbase', 'fishbase', 5, 'male', 'cc-by-nc']);
     // Again with nothing new: nothing downloaded, the same bytes (no commit).
@@ -248,6 +256,27 @@ test('fishPhotos: an entry with 5 very easy curated photos plays on them alone; 
   assert.strictEqual(C.FISHPH.MIN, 5);
   // No curation loaded yet: the lists as they are.
   assert.strictEqual(C.fishPhotos(stop, game, null).t01.length, 6);
+});
+
+test('fishPhotos: an entry on its curated photos keeps the stopgap’s photos of a genus they do not cover (Codex review #614)', () => {
+  const fish = {
+      species: [
+        {id: 's001', name: 'Chromis viridis'},
+        {id: 's002', name: 'Dascyllus aruanus'},
+        {id: 's003', name: 'Chromis ternatensis'}
+      ]
+    },
+    game = {t01: Array.from({length: 5}, (_, i) => ph(`fish-s001-cand-${700 + i}`, {sp: 's001', e: 5}))},
+    stop = {t01: [ph('fi31', {sp: 's003', e: 4}), ph('fi32', {sp: 's002', e: 4}), ph('fi33', {sp: 's002', e: 3}), ph('fi34', {e: 4})]},
+    cur = {fish: {add: Object.fromEntries(game.t01.map(p => [p.f, p.sp])), seen: {'fish-s002-cand-33': 1}}};
+  // Chromis is covered by the curated photos (s003's stopgap photo goes); Dascyllus is not (its photo stays, minus the one
+  // Pierre rejected); a stopgap photo with no species goes.
+  assert.deepStrictEqual(
+    C.fishPhotos(stop, game, cur, fish).t01.map(p => p.f),
+    [...game.t01.map(p => p.f), 'fi32']
+  );
+  // Without fish.json the curated photos alone, as before.
+  assert.strictEqual(C.fishPhotos(stop, game, cur).t01.length, 5);
 });
 
 test('fishPhotos: Pierre’s curation applies at once, to the curated photos and to the stopgap’s', () => {

@@ -592,7 +592,7 @@ let FISH = null,
   FISHRAW = null;
 const fishBuild = () => {
   const {f, ph, gm} = FISHRAW;
-  FISH = fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f);
+  FISH = fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };

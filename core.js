@@ -630,8 +630,13 @@
   // in play (fishOn on its species) and not excluded for good (curation exclude, by name or photo id); a stopgap photo
   // never shows once Pierre rejected, excluded or moved (Not this) the same photo as a candidate, nor when the entry's
   // curated photos hold that photo or its observation. With no curation (not loaded), the lists as they are.
-  function fishPhotos(stop, game, cur) {
+  // fish (fish.json, optional): an entry on its curated photos alone still keeps the stopgap's photos of every scientific
+  // genus its curated photos do not cover (the genus: the species name's first word, as app.js fishGenera reads it), so
+  // no genus unit loses its photos when its entry switches (Codex review #614).
+  function fishPhotos(stop, game, cur, fish) {
     const F = cur && cur.fish,
+      gname = new Map(((fish && fish.species) || []).map(s => [s.id, String(s.name || '').split(/\s+/)[0]])),
+      genus = p => (p && p.sp && gname.get(p.sp)) || '',
       X = (cur && cur.exclude) || {},
       xid = new Set(Object.keys(X).map(fishPid)),
       gone = new Set(xid),
@@ -646,11 +651,12 @@
     new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {
       const C = cu[t] || [],
         obs = new Set(C.map(p => p.o).filter(Boolean));
-      if (C.filter(p => (p.e || 0) >= FISHPH.EASY).length >= FISHPH.MIN) return (out[t] = C);
       const S = ((stop || {})[t] || []).filter(
         p => p && p.f && !gone.has(fishPid(p.f)) && !cid.has(fishPid(p.f)) && !(p.o && obs.has(p.o))
       );
-      out[t] = [...C, ...S];
+      if (C.filter(p => (p.e || 0) >= FISHPH.EASY).length < FISHPH.MIN) return (out[t] = [...C, ...S]);
+      const have = new Set(C.map(genus));
+      out[t] = [...C, ...S.filter(p => genus(p) && !have.has(genus(p)))];
     });
     return out;
   }

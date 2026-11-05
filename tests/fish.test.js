@@ -563,7 +563,7 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
       assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
   });
   const GM = read('fish-game.json').photos,
-    X = C.fishGen(F, C.fishPhotos(PH, GM, CUR));
+    X = C.fishGen(F, C.fishPhotos(PH, GM, CUR, F));
   X.c1.forEach(id => assert.ok(X.gen[id].views.wide.filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in the game`));
 });
 

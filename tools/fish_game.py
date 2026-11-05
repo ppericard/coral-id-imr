@@ -110,26 +110,32 @@ def entries(fish):
 
 
 def in_play(cur, cand):
-    """[(species id, candidate record)] of every photo in play that fish-cand.json still describes."""
+    """[(species id, candidate record, its fish-cand.json species)] of every photo in play that fish-cand.json still
+    describes."""
     F = (cur or {}).get('fish') or {}
     top = set((cur or {}).get('exclude') or {})
     top_ids = {pid(f) for f in top}
-    rec = {p['f']: p for L in (cand.get('cand') or {}).values() for p in L if p.get('f')}
+    rec = {p['f']: (p, s) for s, L in (cand.get('cand') or {}).items() for p in L if p.get('f')}
     out = []
     for f, sid in sorted((F.get('add') or {}).items()):
-        if not fish_on(F, f, sid) or f in top or pid(f) in top_ids or f not in rec or not rec[f].get('src'):
+        if not fish_on(F, f, sid) or f in top or pid(f) in top_ids or f not in rec or not rec[f][0].get('src'):
             continue
-        out.append((sid, rec[f]))
+        out.append((sid, *rec[f]))
     return out
 
 
 KEEP = ('f', 'o', 'src', 'a', 'lic', 't')
 
 
-def record(sid, p, F, sug):
-    """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them)."""
+def record(sid, p, F, sug, orig=None, species=None):
+    """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
+    with Not this (orig, its fish-cand.json species, is not sid) is named after its new species (fish.json species: the
+    WoRMS accepted name, else the PDF's), never the identification he corrected (Codex review #614)."""
     f, j = p['f'], (sug or {}).get(p['f']) or {}
     r = {k: p[k] for k in KEEP if k in p}
+    s = (species or {}).get(sid) or {}
+    if orig and orig != sid and (s.get('now') or s.get('name')):
+        r['t'] = s.get('now') or s.get('name')
     r.update(sp=sid, loc=p.get('loc') or 'world')
     if p.get('own'):
         r['own'] = True
@@ -153,9 +159,10 @@ def plan(fish, cur, cand, sug, prev):
     {f: record}. prev: the current fish-game.json."""
     F = (cur or {}).get('fish') or {}
     old = {p['f']: p for L in ((prev or {}).get('photos') or {}).values() for p in L if p.get('f')}
+    species = {s['id']: s for s in (fish or {}).get('species') or []}
     todo, keep = [], {}
-    for sid, p in in_play(cur, cand):
-        r, c, o = record(sid, p, F, sug), crop_of(F, p['f']), old.get(p['f'])
+    for sid, p, orig in in_play(cur, cand):
+        r, c, o = record(sid, p, F, sug, orig, species), crop_of(F, p['f']), old.get(p['f'])
         if o and o.get('src') == r.get('src') and o.get('cr') == c and o.get('ar'):
             r['ar'] = o['ar']
             if c:
