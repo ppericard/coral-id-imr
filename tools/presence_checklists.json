@@ -3533,6 +3533,9 @@
    "Sulu Sea",
    "Celebes Sea"
   ],
+  "decided": {
+   "Plesiastrea versipora": "Mapped to P. peroni by decision, not by WoRMS (which keeps P. versipora for the temperate populations): Juszkiewicz et al. 2022 revived P. peroni for the tropical ones, so the Philippine lists' P. versipora is P. peroni (Pierre, 2026-11-05, Q50; docs/reviews/2026-11-05-coral-taxonomy-study.md)"
+  },
   "names": {
    "Acanthastrea bowerbanki": [
     "Homophyllia bowerbanki"
@@ -4258,7 +4261,9 @@
    "Plerogyra discus": [],
    "Plerogyra simplex": [],
    "Plerogyra sinuosa": [],
-   "Plesiastrea versipora": [],
+   "Plesiastrea versipora": [
+    "Plesiastrea peroni"
+   ],
    "Pocillopora acuta": [],
    "Pocillopora ankeli": [],
    "Pocillopora damicornis": [],
