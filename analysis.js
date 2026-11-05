@@ -11,8 +11,9 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 4; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 5; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
+  // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map)
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -445,7 +446,14 @@
     }
     const V = inverse(I),
       c = sig(gc);
-    return {d, c, sd: Math.sqrt(Math.max(0, V[0][0])), sc: Math.sqrt(Math.max(0, V[1][1])) * c * (1 - c)};
+    // cr: the correlation of the two estimates (d and logit c), for "Effects hard to tell apart" (entOf)
+    return {
+      d,
+      c,
+      sd: Math.sqrt(Math.max(0, V[0][0])),
+      sc: Math.sqrt(Math.max(0, V[1][1])) * c * (1 - c),
+      cr: V[0][1] / Math.sqrt(Math.max(1e-300, V[0][0] * V[1][1]))
+    };
   }
 
   /* ---------- The answer log, prepared ---------- */
@@ -714,7 +722,7 @@
         )
       ];
     const M = lmm(y, X, F);
-    return {M, F};
+    return {M, F, X};
   }
   function rtStat(D) {
     const {M, F} = rtFit(D);
@@ -727,7 +735,7 @@
   function rt(A, B, seed) {
     const D = A.filter(a => a.s && a.x != null);
     if (D.length < 100 || players(D) < 2) return thin(D.length, 100);
-    const {M, F} = rtFit(D),
+    const {M, F, X} = rtFit(D),
       bi = boot(D, rtStat, B, seed),
       n = D.length,
       effects = RT_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'log', 0.1, n, {rows: M.nz[j + 1]}));
@@ -753,7 +761,8 @@
       effects,
       genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
-      player: lv(F[0], 1).sort((a, b) => b.u - a.u)
+      player: lv(F[0], 1).sort((a, b) => b.u - a.u),
+      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])])
     };
   }
 
@@ -770,11 +779,14 @@
           D.map(a => a.p)
         )
       ];
-    return glmm(
-      D.map(a => a.y),
-      X,
-      F,
-      {off: Float64Array.from(D.map(a => a.x)), g: Float64Array.from(D.map(a => a.g0))}
+    return Object.assign(
+      glmm(
+        D.map(a => a.y),
+        X,
+        F,
+        {off: Float64Array.from(D.map(a => a.x)), g: Float64Array.from(D.map(a => a.g0))}
+      ),
+      {X}
     );
   }
   function zoom(A, B, seed) {
@@ -816,7 +828,8 @@
         eff('hab', 'Players who enlarge more (logit per share)', M.b[2], M.se[2], bi, 'logit', 0.25, n)
       ],
       player: Object.values(by).sort((a, b) => b.z / b.n - a.z / a.n),
-      views: Object.values(views)
+      views: Object.values(views),
+      ent: entOf(M.V, M.X, [null, 'rel', 'hab'])
     };
   }
 
@@ -946,7 +959,13 @@
         k => ({3: 'Good', 2: 'Fair', 1: 'Poor'})[k] || k
       ),
       harder: L.slice(0, 8),
-      easier: L.slice(-8).reverse()
+      easier: L.slice(-8).reverse(),
+      ent: entOf(
+        M.V,
+        D.map(a => a.X),
+        [null, ...PH_X.map(x => x[0]), null],
+        [1, ...PH_X.map(() => -1), 1]
+      )
     };
   }
 
@@ -993,10 +1012,114 @@
       );
       effects.push(eff('oe_' + k, `${l}: right − expected`, mean(oe), se, bi, 'p', 0.05, S.length, {fmt: k}));
     });
-    return {n: D.length, players: players(D), effects, table};
+    return {n: D.length, players: players(D), effects, table, ent: fmtEnt(table)};
   }
   // The bootstrap of a difficulty is stored as the shift d; reported as -d (+ = harder).
   const remap = (bi, k) => (bi[k] ? {[k]: [-bi[k][1], -bi[k][0]]} : null);
+
+  /* ---------- Structure (the multifactor visualisation study of 2026-11-05, Pierre's Q70-Q77) ---------- */
+  // Small helpers shared by the views that show how effects, genera and players relate: correlations, clustering.
+  const r3 = v => (v == null || !isFinite(v) ? null : Math.round(v * 1000) / 1000);
+  // Pearson correlations of the columns cols of X (rows of numbers), lower triangle: R[i][j] for j < i.
+  function colCorr(X, cols) {
+    const n = X.length,
+      mu = cols.map(c => sum(X.map(x => x[c])) / n),
+      sd = cols.map((c, a) => Math.sqrt(sum(X.map(x => (x[c] - mu[a]) ** 2)) / n));
+    return cols.map((c, a) =>
+      cols.slice(0, a).map((d, b) => {
+        let s = 0;
+        for (let i = 0; i < n; i++) s += (X[i][c] - mu[a]) * (X[i][d] - mu[b]);
+        return sd[a] && sd[b] ? s / n / (sd[a] * sd[b]) : null;
+      })
+    );
+  }
+  const full = (L, diag = 1) => L.map((r, i) => L.map((_, j) => (i === j ? diag : i > j ? r[j] : L[j][i])));
+  // "Effects hard to tell apart" (study §2.2, §2.3; Pierre's "correlations between effects"): for the effects one model
+  // reports, the correlation of their estimates, from V, the fixed effects' covariance marginal over the random effects
+  // (cov2cor(vcov(fit)) in R: near ±1, one estimate could rise as the other falls with almost as good a fit, so each
+  // alone is fragile, their sum is not), and the correlation of the conditions themselves in the answers (the design
+  // matrix's columns), with each condition's variance inflation factor, the diagonal of the inverse correlation matrix
+  // over every condition of the model (VIF: 1 = independent of the others; above 5 to 10, entangled). keys[c]: the
+  // effect key of column c (null for the intercept or a column the analysis does not report); sg[c] = -1 for an effect
+  // reported with the opposite sign (a difficulty). Columns that never vary are left out. Lower triangles, 3 decimals.
+  function entOf(V, X, keys, sg = []) {
+    if (!V || !X || !X.length) return null;
+    const vary = c => X.some(x => x[c] !== X[0][c]),
+      all = keys.map((_, c) => c).filter(c => c > 0 && vary(c)),
+      rep = all.filter(c => keys[c] != null);
+    if (rep.length < 2) return null;
+    const R = colCorr(X, all),
+      Rf = full(R).map(r => r.map(v => (v == null ? 0 : v))),
+      inv = inverse(Rf.map((r, i) => r.map((v, j) => v + (i === j ? 1e-9 : 0)))),
+      at = c => all.indexOf(c),
+      s = c => sg[c] || 1;
+    return {
+      k: rep.map(c => keys[c]),
+      r: rep.map((c, a) => rep.slice(0, a).map(d => r3((s(c) * s(d) * V[c][d]) / Math.sqrt(Math.max(1e-300, V[c][c] * V[d][d]))))),
+      x: rep.map((c, a) => rep.slice(0, a).map(d => r3(R[Math.max(at(c), at(d))][Math.min(at(c), at(d))]))),
+      vif: rep.map(c => r3(Math.min(999, Math.max(1, inv[at(c)][at(c)]))))
+    };
+  }
+  // Agglomerative clustering on a distance matrix D (n × n), by the Lance-Williams update: 'average' (UPGMA, the mean
+  // distance between the two groups) or 'ward' (D holding squared Euclidean distances; heights reported as their square
+  // root). Ties go to the lowest indices, so the same input always gives the same tree. Returns m: the merges [a, b,
+  // height] (leaves 0..n-1, the k-th merge creates n + k) and order: the leaves left to right, each merge putting first
+  // the branch that holds the lowest-numbered leaf.
+  function hclust(D, link = 'average') {
+    const n = D.length,
+      d = D.map(r => r.slice()),
+      id = [...Array(n).keys()],
+      size = new Array(n).fill(1),
+      on = new Array(n).fill(true),
+      m = [];
+    for (let s = 1; s < n; s++) {
+      let bi = -1,
+        bj = -1,
+        bv = Infinity;
+      for (let i = 0; i < n; i++)
+        if (on[i]) for (let j = i + 1; j < n; j++) if (on[j] && d[i][j] < bv - 1e-12) ((bv = d[i][j]), (bi = i), (bj = j));
+      m.push([id[bi], id[bj], r3(link === 'ward' ? Math.sqrt(Math.max(0, bv)) : bv)]);
+      for (let k = 0; k < n; k++) {
+        if (!on[k] || k === bi || k === bj) continue;
+        const ni = size[bi],
+          nj = size[bj],
+          nk = size[k],
+          v =
+            link === 'ward'
+              ? ((nk + ni) * d[k][bi] + (nk + nj) * d[k][bj] - nk * d[bi][bj]) / (nk + ni + nj)
+              : (ni * d[k][bi] + nj * d[k][bj]) / (ni + nj);
+        d[k][bi] = d[bi][k] = v;
+      }
+      size[bi] += size[bj];
+      on[bj] = false;
+      id[bi] = n + s - 1;
+    }
+    const kids = new Map(m.map(([a, b], k) => [n + k, [a, b]])),
+      order = [],
+      walk = x => (x < n ? order.push(x) : kids.get(x).forEach(walk));
+    if (n) walk(n > 1 ? n + m.length - 1 : 0);
+    return {m, order};
+  }
+  // The groups left when the tree is cut at height h: lists of leaves (each in leaf order), the groups in leaf order.
+  function cutTree(T, n, h) {
+    const up = [...Array(n + T.m.length).keys()],
+      top = x => (up[x] === x ? x : (up[x] = top(up[x])));
+    T.m.forEach(([a, b, v], k) => v <= h && ((up[top(a)] = n + k), (up[top(b)] = n + k)));
+    const G = new Map();
+    T.order.forEach(i => (G.get(top(i)) || G.set(top(i), []).get(top(i))).push(i));
+    return [...G.values()];
+  }
+
+  // Each format's guess rate and difficulty are fitted together (fmtFit) and known to trade off: the correlation of the two
+  // estimates, as reported (the guess rate rises with logit c; the difficulty is -d). Formats are fitted apart, so
+  // estimates of two formats are independent: null there, and no conditions to correlate (no design matrix).
+  function fmtEnt(table) {
+    const F = table.filter(t => t.fit && isFinite(t.fit.cr)),
+      k = F.flatMap(t => ['g_' + t.k, 'd_' + t.k]);
+    return F.length
+      ? {k, r: k.map((_, a) => k.slice(0, a).map((__, b) => (a % 2 && b === a - 1 ? r3(-F[(a - 1) / 2].fit.cr) : null)))}
+      : null;
+  }
 
   /* ---------- 5. Confusions: pair × view, each player against the pooled rates ---------- */
   const CF_X = [
@@ -1102,8 +1225,83 @@
         orHi: Math.exp(Fp.u[j] + Z * Math.sqrt(Fp.cv[j]))
       };
     });
-    void X;
-    return {n, mixed, players: players(E), typ: {p: mixed / n}, effects, pairs, player: plist.sort((a, b) => b.n - a.n)};
+    return {
+      n,
+      mixed,
+      players: players(E),
+      typ: {p: mixed / n},
+      effects,
+      pairs,
+      player: plist.sort((a, b) => b.n - a.n),
+      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null]),
+      map: mixMap(E, M, F)
+    };
+  }
+
+  // The mix-up map (study §2.11, its first pick; Pierre's Q74: a phone form, the whole matrix from tablet width up):
+  // which genera form families of mix-ups. Similarity of two genera = how much more often, at the least, their pair is
+  // mixed up than a typical pair: the lower end of the 95% range of the pair's shrunk effect u in the model above (a log
+  // odds ratio: rates per offer, not counts, which mirror the app's choice of traps), 0 for a pair not clearly above a
+  // typical one or never offered, so noise makes no family; distance = 1 - similarity / the largest one; average
+  // linkage. Families: the groups of two genera or more left when the tree is cut at MIX_CUT (on average at least a
+  // fifth of the clearest pair's excess); none until a pair is clearly mixed up more than typical. Only genera mixed up
+  // at least once, as the genus shown or the one answered. Each cell (shown -> answered, the asymmetric matrix) carries its offers, its
+  // mix-ups and its rate shrunk towards the pair's model rate (MIX_K offers' worth: a direction shows only with many offers). Across: the 3 cells most mixed up
+  // between two families (or genera outside any), at least 2 mix-ups and above the typical rate: look at their photos.
+  const MIX_CUT = 0.8,
+    MIX_K = 20;
+  function mixMap(E, M, F) {
+    const P = F[0],
+      pj = new Map(P.L.map((k, j) => [k, j])),
+      cell = new Map();
+    E.forEach(e => {
+      const k = e.from + '\u0002' + e.to,
+        c = cell.get(k) || cell.set(k, {from: e.from, to: e.to, off: 0, mix: 0}).get(k);
+      c.off++;
+      c.mix += e.y;
+    });
+    const g = [...new Set([...cell.values()].filter(c => c.mix).flatMap(c => [c.from, c.to]))].sort();
+    if (g.length < 3) return null;
+    const n = g.length,
+      gi = new Map(g.map((x, i) => [x, i])),
+      typ = M.b[0] + M.b[4] * Math.log(3), // a colony photo, 4 choices
+      jOf = (a, b) => pj.get([a, b].sort().join('|')),
+      u = (a, b) => (jOf(a, b) == null ? null : P.u[jOf(a, b)]),
+      lo = (a, b) => (jOf(a, b) == null ? 0 : P.u[jOf(a, b)] - Z * Math.sqrt(P.cv[jOf(a, b)])),
+      S = g.map(a => g.map(b => (a === b ? 0 : Math.max(0, lo(a, b))))),
+      smax = Math.max(0, ...S.flat());
+    const T = hclust(S.map((r, i) => r.map((v, j) => (i === j ? 0 : smax > 0 ? 1 - v / smax : 1)))),
+      pos = new Map(T.order.map((i, k) => [i, k])),
+      fam = smax > 0 ? cutTree(T, n, MIX_CUT).filter(L => L.length > 1) : [],
+      famOf = new Map(fam.flatMap((L, f) => L.map(i => [i, f]))),
+      // leaves renumbered in display order (0 = first row and column)
+      re = i => pos.get(i),
+      cells = [...cell.values()]
+        .filter(c => gi.has(c.from) && gi.has(c.to))
+        .map(c => {
+          const i = gi.get(c.from),
+            j = gi.get(c.to),
+            pr = sig(typ + (u(c.from, c.to) || 0));
+          return [re(i), re(j), c.off, c.mix, r3((c.mix + MIX_K * pr) / (c.off + MIX_K))];
+        })
+        .sort((a, b) => a[0] - b[0] || a[1] - b[1]),
+      fo = i => (famOf.has(i) ? famOf.get(i) : 'g' + i),
+      base = sig(typ);
+    const across = cells
+      .filter(c => c[3] >= 2 && c[4] > base && fo(T.order[c[0]]) !== fo(T.order[c[1]]))
+      .sort((a, b) => b[4] - a[4] || b[3] - a[3])
+      .slice(0, 3)
+      .map(c => [c[0], c[1]]);
+    return {
+      g: T.order.map(i => g[i]),
+      m: T.m.map(([a, b, h]) => [a < n ? re(a) : a, b < n ? re(b) : b, h]),
+      fam: fam.map(L => L.map(re)),
+      cells,
+      base: r3(base),
+      cut: MIX_CUT,
+      across,
+      left: new Set(E.flatMap(e => [e.from, e.to])).size - n
+    };
   }
 
   /* ---------- 6. Learning curves: exposures to mastery, and what follows a miss ---------- */
@@ -1134,7 +1332,7 @@
       F,
       {g: Float64Array.from(D.map(a => a.g0))}
     );
-    return {M, F};
+    return {M, F, X};
   }
   // Answers to reach MASTER: 0 when the start is already there, whatever the slope (Codex review #441); 999 = not
   // reached (a flat or falling slope below it).
@@ -1159,7 +1357,7 @@
   function learning(A, B, seed) {
     const D = A;
     if (D.length < 200) return thin(D.length, 200);
-    const {M, F} = lnFit(D),
+    const {M, F, X} = lnFit(D),
       n = D.length,
       bi = boot(
         D,
@@ -1234,7 +1432,17 @@
         })()
       )
     );
-    return {n, players: players(D), typ: typOf(D), effects, genus, curve, b0: M.b[0], b1: M.b[1]};
+    return {
+      n,
+      players: players(D),
+      typ: typOf(D),
+      effects,
+      genus,
+      curve,
+      b0: M.b[0],
+      b1: M.b[1],
+      ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])])
+    };
   }
 
   /* ---------- 7. Comeback: the forgetting curve on real returns ---------- */
@@ -1661,7 +1869,12 @@
       effects: SS_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]})),
       km: curve,
       at: [5, 10, 20, 40, 80].map(k => ({k, s: at(k)})),
-      desc
+      desc,
+      ent: entOf(
+        M.V,
+        rows.map(r => r.X),
+        [null, ...SS_X.map(x => x[0])]
+      )
     };
   }
 
@@ -1673,6 +1886,7 @@
     learn: {b0: -0.3, slope: 0.55, afterMiss: -0.3, again: 0.4},
     fmt: {k2: [0.4, 0], typed: [0, -0.6], again: [0.5, 0.2]}, // [true guess rate, extra ease (logit, - = harder)]
     zoom: 0.3,
+    mix: 4, // a wrong answer goes to a look-alike offered 4 times as often as to another genus offered (the mix-up map)
     back: -0.3,
     sess: {b0: -3.3, wrong: 0.5, streak: 0.6}
   };
@@ -1683,6 +1897,12 @@
       T = TRUTH,
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       pick = L => L[Math.floor(R() * L.length)],
+      // a wrong choice: a look-alike of the genus shown is picked T.mix times as often as another (one draw, as pick)
+      pickW = (L, look) => {
+        const w = L.map(x => (look.includes(x) ? T.mix : 1));
+        let r = R() * sum(w);
+        return L.find((x, i) => (r -= w[i]) < 0) || L[L.length - 1];
+      },
       G = Object.keys(o.photos).filter(g => o.photos[g].length),
       bg = Object.fromEntries(G.map(g => [g, nrm() * 0.5])),
       rg = Object.fromEntries(G.map(g => [g, nrm() * T.rt.sdGenus])),
@@ -1751,7 +1971,7 @@
         const app = f === 'typed' ? 0 : f === 'k2' ? 0.5 : f === 'k4' ? 0.25 : 0.5,
           // the app's expectation: its own estimate of eta (a little off), its fixed guess rate
           E = app + (1 - app) * sig(eta + nrm() * 0.1),
-          ans = right ? g : f === 'typed' ? (R() < 0.5 ? '' : pick(G)) : pick(ch.slice(1)),
+          ans = right ? g : f === 'typed' ? (R() < 0.5 ? '' : pick(G)) : pickW(ch.slice(1), look),
           sec = Math.exp(
             T.rt.b0 +
               rp +
@@ -2560,7 +2780,13 @@
     confusions,
     learning,
     comeback,
-    sessions
+    sessions,
+    colCorr,
+    entOf,
+    hclust,
+    cutTree,
+    mixMap,
+    MIX_CUT
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ANALYSIS = api;

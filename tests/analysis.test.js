@@ -1188,3 +1188,192 @@ test('admin: a report without any point counts as no report', () => {
   ctx.ONE = one;
   assert.strictEqual(vm.runInContext('ANLOC = {rep: ONE}; anRep()', ctx), one);
 });
+
+/* ---------- Structure views (the multifactor visualisation study of 2026-11-05; Pierre's Q70-Q77) ---------- */
+test('entOf: two entangled conditions read as hard to tell apart, an independent one does not', () => {
+  const R = A.rng(5),
+    nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
+    y = [],
+    X = [],
+    kp = [];
+  for (let i = 0; i < 4000; i++) {
+    const a = nrm(),
+      b = a + 0.25 * nrm(), // planted: b follows a closely
+      c = nrm(); // independent
+    X.push([1, a, b, c]);
+    kp.push('p' + (i % 20));
+    y.push(0.5 * a + 0.5 * b + 0.3 * c + nrm());
+  }
+  const M = A.lmm(y, X, [A.factor('player', kp)]),
+    E = A.entOf(M.V, X, [null, 'a', 'b', 'c']);
+  assert.deepStrictEqual(E.k, ['a', 'b', 'c']);
+  assert.ok(E.r[1][0] < -0.9, `estimates of a and b: r = ${E.r[1][0]}`);
+  assert.ok(E.x[1][0] > 0.9, `conditions a and b: r = ${E.x[1][0]}`);
+  assert.ok(E.vif[0] > 5 && E.vif[1] > 5, `VIF of a and b: ${E.vif}`);
+  assert.ok(E.vif[2] < 1.2 && Math.abs(E.r[2][0]) < 0.15 && Math.abs(E.x[2][1]) < 0.15, `c stays apart: ${JSON.stringify(E)}`);
+  // an effect reported with the opposite sign (a difficulty) flips its correlations with the others, not its VIF
+  const F = A.entOf(M.V, X, [null, 'a', 'b', 'c'], [1, -1, 1, 1]);
+  assert.strictEqual(F.r[1][0], -E.r[1][0]);
+  assert.strictEqual(F.x[1][0], E.x[1][0]);
+  assert.deepStrictEqual(F.vif, E.vif);
+  // a condition that never varies is left out; fewer than two effects: nothing to compare
+  assert.deepStrictEqual(
+    A.entOf(
+      M.V,
+      X.map(x => [x[0], x[1], 0, x[3]]),
+      [null, 'a', 'b', 'c']
+    ).k,
+    ['a', 'c']
+  );
+  assert.strictEqual(A.entOf(M.V, X, [null, 'a', null, null]), null);
+});
+
+test('hclust: planted groups come back, each a block in the leaf order; cutTree splits them', () => {
+  // three groups of points on a line, far apart: average linkage and Ward find them
+  const pts = [0, 0.1, 0.25, 5, 5.2, 5.1, 10, 10.3, 9.9, 10.1],
+    D = pts.map(a => pts.map(b => Math.abs(a - b))),
+    D2 = D.map(r => r.map(v => v * v));
+  for (const [T, h] of [
+    [A.hclust(D), 2],
+    [A.hclust(D2, 'ward'), 3]
+  ]) {
+    assert.strictEqual(T.m.length, pts.length - 1);
+    assert.deepStrictEqual(
+      [...T.order].sort((a, b) => a - b),
+      pts.map((_, i) => i)
+    );
+    assert.ok(
+      T.m.every((x, k) => !k || x[2] >= T.m[k - 1][2] - 1e-9),
+      'heights never fall (monotone linkage)'
+    );
+    const G = A.cutTree(T, pts.length, h).map(L => L.slice().sort((a, b) => a - b));
+    assert.deepStrictEqual(
+      G.slice().sort((a, b) => a[0] - b[0]),
+      [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8, 9]
+      ]
+    );
+    // each group sits together in the leaf order
+    G.forEach(L => {
+      const at = L.map(i => T.order.indexOf(i)).sort((a, b) => a - b);
+      assert.strictEqual(at[at.length - 1] - at[0], L.length - 1, 'contiguous: ' + L);
+    });
+  }
+  assert.deepStrictEqual(A.hclust([[0]]), {m: [], order: [0]});
+});
+
+// A made-up log of 4-choice questions on 12 genera in 3 planted families: a wrong answer goes to a genus of the same family
+// `w` times as often as to another genus offered (w = 1: no structure).
+const mixLog = (w, seed) => {
+  const R = A.rng(seed),
+    G = ['A', 'B', 'C'].flatMap(f => [0, 1, 2, 3].map(i => f + i)),
+    fam = g => g[0],
+    rows = [];
+  let t = 0;
+  for (let p = 0; p < 8; p++)
+    for (let i = 0; i < 700; i++) {
+      const g = G[Math.floor(R() * G.length)],
+        ch = [g];
+      // two choices from its family when there are, one from elsewhere
+      while (ch.length < 4) {
+        const same = R() < 0.5,
+          L = G.filter(x => !ch.includes(x) && (fam(x) === fam(g)) === same);
+        ch.push(L[Math.floor(R() * L.length)]);
+      }
+      const right = R() < 0.7,
+        wr = ch.slice(1).map(x => (fam(x) === fam(g) ? w : 1));
+      let r = R() * wr.reduce((s, x) => s + x, 0);
+      const ans = right ? g : ch.slice(1).find((x, k) => (r -= wr[k]) < 0) || ch[3];
+      rows.push(['p' + p, (t += 60e3), g, ans, right ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, ch.sort(() => R() - 0.5).join(' '), 0, 5, 0]);
+    }
+  return rows;
+};
+
+test('mix-up map: planted families of mix-ups come back as blocks; no family from noise', () => {
+  const r = A.confusions(A.prep(mixLog(6, 3)), 0, 1),
+    m = r.map;
+  assert.ok(m && m.g.length === 12, JSON.stringify(m && m.g));
+  const F = m.fam.map(L => L.map(i => m.g[i]).sort());
+  assert.deepStrictEqual(
+    F.slice().sort((a, b) => a[0].localeCompare(b[0])),
+    [
+      ['A0', 'A1', 'A2', 'A3'],
+      ['B0', 'B1', 'B2', 'B3'],
+      ['C0', 'C1', 'C2', 'C3']
+    ]
+  );
+  m.fam.forEach(L => assert.strictEqual(Math.max(...L) - Math.min(...L), L.length - 1, 'a family is a block on the diagonal'));
+  // every merge points at leaves in display order or earlier merges; the cells are in display order and their rates shrunk
+  m.m.forEach(([a, b], k) => [a, b].forEach(x => assert.ok(x < 12 + k, 'merge ' + k)));
+  assert.ok(
+    m.cells.every(([i, j, off, mix, sr]) => i !== j && off >= mix && sr > 0 && sr < 1),
+    'cells: shown, answered, offers, mix-ups, rate'
+  );
+  const inFam = m.cells.filter(c => m.g[c[0]][0] === m.g[c[1]][0]),
+    outFam = m.cells.filter(c => m.g[c[0]][0] !== m.g[c[1]][0]),
+    avg = L => L.reduce((s, c) => s + c[4], 0) / L.length;
+  assert.ok(avg(inFam) > 2 * avg(outFam), `rates within families ${avg(inFam)} against across ${avg(outFam)}`);
+  m.across.forEach(([i, j]) => assert.notStrictEqual(m.g[i][0], m.g[j][0], 'across = between two families'));
+  // the same log with wrong answers spread evenly: no pair clearly above a typical one, so no family
+  const flat = A.confusions(A.prep(mixLog(1, 3)), 0, 1).map;
+  assert.ok(flat && flat.fam.length === 0, JSON.stringify(flat && flat.fam));
+});
+
+test('synthetic log: each analysis reports its entangled effects on its own keys; the report carries them', () => {
+  const fs = require('fs'),
+    data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json'))),
+    rows = A.demoLog(data, Date.UTC(2026, 10, 1)),
+    r = A.runAll(rows, {ph: A.photoMeta(data)}, {B: 0});
+  for (const k of ['rt', 'zoom', 'photo', 'fmt', 'conf', 'learn', 'sess']) {
+    const a = r.A[k],
+      E = a.ent;
+    assert.ok(E && E.k.length >= 2, k);
+    const keys = new Set(a.effects.map(e => e.k));
+    E.k.forEach(x => assert.ok(keys.has(x), `${k}: ${x} is one of its effects`));
+    assert.strictEqual(E.r.length, E.k.length);
+    E.r.forEach((row, i) => (assert.strictEqual(row.length, i), row.forEach(v => assert.ok(v == null || Math.abs(v) <= 1.0001, k))));
+  }
+  // Formats: a guess rate and its difficulty are estimated together (known to trade off); two formats are independent
+  const f = r.A.fmt.ent;
+  assert.ok(f.r[1][0] != null && f.r[2][0] === null && !f.x, JSON.stringify(f));
+  // the demo plays look-alikes as mix-ups (synth TRUTH.mix): the map finds families, each pair of genera of a family
+  // linked through the genus sheets' look-alikes
+  const m = r.A.conf.map,
+    look = g => (data.gen[g] && data.gen[g].look) || [];
+  assert.ok(m.fam.length >= 3, JSON.stringify(m.fam));
+  m.fam.forEach(L => {
+    const N = L.map(i => m.g[i]);
+    assert.ok(
+      N.every(a => N.some(b => b !== a && (look(a).includes(b) || look(b).includes(a)))),
+      'each genus of a family has a look-alike in it: ' + N
+    );
+  });
+});
+
+test('Recompute here: the Web Worker computes the new views, and a stored report of an older AV is not reused', () => {
+  // analysis.js run as the admin's Worker (new Worker('analysis.js?v=N')): a global scope with postMessage, no window,
+  // no module; the message handler computes a whole report
+  const vm = require('vm'),
+    fs = require('fs'),
+    path = require('path'),
+    msgs = [],
+    ctx = {postMessage: m => msgs.push(m), Date, Math, JSON, Map, Set, Float64Array, Int32Array, Number, String, Object, Array};
+  ctx.self = ctx;
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'analysis.js'), 'utf8'), ctx);
+  const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data.json'))),
+    rows = A.demoLog(data, Date.UTC(2026, 10, 1), {players: A.DEMO_PLAYERS.slice(0, 5)}),
+    meta = {ph: A.photoMeta(data)},
+    old = A.report(rows, meta, null, {B: 0});
+  // a report stored by the previous code: the same answers, without the new views
+  old.AV = A.AV - 1;
+  Object.values(old.R).forEach(r => Object.values(r.A).forEach(a => (delete a.ent, delete a.map)));
+  ctx.onmessage({data: {id: 1, rows, meta, B: 0, seed: 1, prev: JSON.parse(JSON.stringify(old))}});
+  const res = msgs.find(m => m.res);
+  assert.ok(res, JSON.stringify(msgs.find(m => m.err)));
+  const last = res.res.R[res.res.M[res.res.M.length - 1]];
+  assert.ok(last.A.conf.map && last.A.conf.map.g.length >= 3, 'the mix-up map');
+  assert.ok(last.A.rt.ent && last.A.photo.ent, 'effects hard to tell apart');
+});

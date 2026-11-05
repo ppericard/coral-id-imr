@@ -385,6 +385,53 @@ const WIDTHS = [390, 1280];
         ).length
       }));
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+      // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
+      // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
+      if (h !== '~an-back') {
+        const ent = await p.evaluate(() => {
+          const c = document.getElementById('anc-effects-hard-to-tell-apart');
+          if (!c) return null;
+          const folded = c.classList.contains('folded');
+          if (folded) c.querySelector('[data-anfold]').click();
+          return {
+            folded,
+            table: c.querySelectorAll('tbody tr').length,
+            wide: document.documentElement.scrollWidth - innerWidth,
+            small: [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length
+          };
+        });
+        if (!ent || !ent.folded || !ent.table || ent.wide > 0 || ent.small)
+          fails.push(`${w}px Analyses #${h} entangled: ${JSON.stringify(ent)}`);
+      }
+    }
+    // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
+    // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
+    {
+      await go('~an-conf');
+      const mm = () =>
+        p.evaluate(() => {
+          const c = document.getElementById('anc-mix-up-map');
+          return (
+            c && {
+              cells: c.querySelectorAll('rect.an-h').length,
+              tree: !!c.querySelector('path.an-tree'),
+              bands: c.querySelectorAll('[data-anfam]').length,
+              on: (c.querySelector('[data-anfam][aria-pressed="true"]') || {}).dataset?.anfam,
+              head: (c.querySelector('h4.adm-an-out') || {}).textContent || '',
+              wide: document.documentElement.scrollWidth - innerWidth,
+              small: [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length
+            }
+          );
+        });
+      const m0 = await mm();
+      if (!m0 || !m0.tree || m0.wide > 0 || m0.small) fails.push(`${w}px Analyses mix-up map: ${JSON.stringify(m0)}`);
+      else if (w >= 600 && (m0.cells < 50 || m0.bands)) fails.push(`${w}px Analyses mix-up map, the whole matrix: ${JSON.stringify(m0)}`);
+      else if (w < 600 && m0.bands > 1) {
+        await p.click('#anc-mix-up-map [data-anfam="1"]');
+        await settle();
+        const m1 = await mm();
+        if (m1.on !== '1' || m1.head === m0.head) fails.push(`${w}px Analyses mix-up map, a family tapped: ${JSON.stringify({m0, m1})}`);
+      }
     }
     if (once) {
       // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
