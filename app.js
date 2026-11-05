@@ -429,7 +429,7 @@ const credit = p =>
       ? `IMR Lecture 6, slide ${esc(p.slide)}`
       : `<i>${esc(p.t)}</i>${p.own && !p.nd ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 // Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
-// which would give the genus away (rule 11); the full credit comes with the answer.
+// which would give the genus away (rule P5); the full credit comes with the answer.
 const blindCredit = p => {
   const n = p.cf ? 'R. Kelley / BYOGUIDES' : p.imr ? '' : author(p);
   return p.imr ? ' · IMR lecture' : n ? ` · © ${esc(n)}` : '';
@@ -472,7 +472,7 @@ function build() {
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
 // with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of the circle-1 species of each
-// IMR entry, the genus being the first word of the PDF name (no grouping invented, rule 2; a genus never spans two
+// IMR entry, the genus being the first word of the PDF name (no grouping invented, rule C2; a genus never spans two
 // entries). Its record, beside the entries in FISH.gen under the key 'g:' + genus (ids and names never meet): rank
 // 'genus' (its questions and typed answers stay among genera: model.js sameRank), its entry (parent: it opens once the
 // entry is at Advanced, the set's units below), its entry's group as its form (easy wrong choices from other groups
@@ -536,7 +536,7 @@ function fishGenera(X, F) {
           // the PDF genus shown; its species' WoRMS-accepted genera accepted when typed (Codex review #526: Mirolabrichthys)
           names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
         };
-        // The card's photo as fishGen picks an entry's: the highest source tier first (Pierre's own, rule 7), then the
+        // The card's photo as fishGen picks an entry's: the highest source tier first (Pierre's own, rule P1), then the
         // easiest judged one (Codex review #526).
         if (wide.some(p => p.e)) {
           const tier = Math.min(...wide.map(p => (p.own ? 0 : 1))),
@@ -1561,7 +1561,7 @@ document.querySelectorAll('#size button').forEach(
       applySize();
     })
 );
-// Light / dark theme switch. Light by default (AGENTS rule 18), whatever the system's theme; the reader's pick is kept.
+// Light / dark theme switch. Light by default (rule U3), whatever the system's theme; the reader's pick is kept.
 // A Light | Dark segmented switch like the other settings (design review 2026-11-01: one control type per kind of choice).
 function isDark() {
   return document.documentElement.dataset.theme === 'dark';
@@ -1631,7 +1631,7 @@ const MODES = {
   practice: [
     // "Quiz", not "Photo → genus" (Pierre, 2026-11-03: it is a general quiz now, typed answers and duels slipped in); the
     // ids and routes stay (#quiz, quiz|… in the answer log). Phones: "Duels", so the four tabs fit 360 px without
-    // scrolling (rule 20): Quiz, Custom quiz, Duels, Memory take 262 of 328 px there; "Look-alike duels" would leave 2 px.
+    // scrolling: Quiz, Custom quiz, Duels, Memory take 262 of 328 px there; "Look-alike duels" would leave 2 px.
     ['quiz', 'Quiz', 'Name the genus'],
     ['quiz-custom', 'Custom quiz', 'The quiz on the genera you pick'],
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
@@ -2015,7 +2015,7 @@ const $help = document.getElementById('help'),
 // One rule for every page and every render path (route, tabs, toggles, Lab tools): whenever the view gets a
 // top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
 // The last line of the ? help on every page (Pierre, 2026-11-03: the credits footer left the pages): About and credits,
-// the privacy notice and Send feedback (AGENTS.md rule 11b), two taps from anywhere. So the ? shows on every page.
+// the privacy notice and Send feedback (rule U14), two taps from anywhere. So the ? shows on every page.
 const helpEnd = () =>
   `<p class="note hend"><a href="#about">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn({k: 'page'}, 'Send feedback') : ''}</p>`;
 function pageHelp() {

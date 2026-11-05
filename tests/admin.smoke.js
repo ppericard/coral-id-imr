@@ -453,7 +453,7 @@ const WIDTHS = [390, 1280];
       if (anm.pressed !== '1000' || !/^[\d,]+$/.test(anm.kpi || '') || Number(anm.kpi.replace(/,/g, '')) > 1000)
         fails.push(`${w}px Analyses: the milestone switch ${JSON.stringify(anm)}`);
       if (errs.length) fails.push(`${w}px Analyses: ${errs.slice(0, 3).join(' | ')}`);
-      // A sync script before v35 has no report: the views say so, nothing breaks (AGENTS.md 7a).
+      // A sync script before v35 has no report: the views say so, nothing breaks (rule D4).
       {
         const aq = await ctx.newPage(),
           aqe = [];
@@ -519,7 +519,7 @@ const WIDTHS = [390, 1280];
       // To do › Out of the presence rule (Pierre, 2026-11-05: he sorts these photos himself, and one out of the rule "must not
       // be there"; the demo has the real data's out-of-rule photos): Remove excludes a photo for good (the ×) and Undo brings
       // it back; Keep moves it down to the folded Kept subsection (curation seen 'rule:f'), out of the count and of Remove
-      // all, its genus page tag turning to "kept"; Remove all asks first (rule 23: bulk), does nothing when refused, excludes
+      // all, its genus page tag turning to "kept"; Remove all asks first (rule A2: bulk), does nothing when refused, excludes
       // each photo still to handle (one Undo step each) when accepted; in Kept, Remove excludes and Keep again un-keeps.
       {
         await go('~triage');
@@ -1072,7 +1072,7 @@ const WIDTHS = [390, 1280];
       }
       // Players reads no saved copy one player at a time (sheet v42, Pierre 2026-11-04: about 15 s on a phone for 40
       // players): the player list carries each player's replay (rp), the same numbers the admin gets when it replays them
-      // itself from their saved copies, which it still does with a script before v42 (one userData call each, AGENTS.md 7a).
+      // itself from their saved copies, which it still does with a script before v42 (one userData call each, rule D4).
       {
         const open = async v => {
           const q = await p.context().newPage();
@@ -1104,7 +1104,7 @@ const WIDTHS = [390, 1280];
         if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
         await q41.close();
       }
-      // The admin never gets ahead of the sheet script (AGENTS.md 7a): answering as v27, the demo's Players and Journey
+      // The admin never gets ahead of the sheet script (rule D4): answering as v27, the demo's Players and Journey
       // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
       // Journey's learned genera from the saved copy).
       {
@@ -2123,7 +2123,7 @@ const WIDTHS = [390, 1280];
         const reads = (await p.evaluate(() => PGREADS)) - n0;
         if (n0 !== 2 || reads) fails.push(`${w}px Stops genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
       }
-      // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
+      // The enlarged photo's caption links to the photo's source, as in the games (rule P5; Pierre, 2026-11-03:
       // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
       // photo's observation (new tab, noopener) and the genus sheet; a Coral Finder book photo keeps its © line, no link.
       const lbSrc = f =>
@@ -2432,7 +2432,7 @@ const WIDTHS = [390, 1280];
       if (au.rej !== 'r' || !au.seen) fails.push(`${w}px Auto: the sure near-duplicate was not rejected (${JSON.stringify(au)})`);
       if (au.cmp || au.unsure) fails.push(`${w}px Auto: decided a comparison image or an unsure judgment (${JSON.stringify(au)})`);
       if (au.chk !== '?aw2B' || !au.chkQ) fails.push(`${w}px Auto: the Check is not logged or not in the queue (${JSON.stringify(au)})`);
-      // Source priority in a cell with fewer free slots than sure adds (AGENTS.md rule 7, Codex review #400): Pierre's own
+      // Source priority in a cell with fewer free slots than sure adds (rule P1, Codex review #400): Pierre's own
       // Fair photo takes the last slot ahead of another observer's Good one; quality and sharpness only break ties.
       const pri = await p.evaluate(() => {
         const free = m =>
@@ -2698,7 +2698,7 @@ const WIDTHS = [390, 1280];
         fails.push(
           `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone})}`
         );
-      // One fish auto decision undone in the Auto details (Codex review #479, AGENTS.md rule 8): gone from the draft, logged
+      // One fish auto decision undone in the Auto details (Codex review #479, rule A1): gone from the draft, logged
       // undone, never applied again at the next run.
       if (fa) {
         await go('~cand');

@@ -94,7 +94,7 @@ test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per obs
     assert.strictEqual(new Set(obs).size, obs.length, `${id}: one photo per observation`);
     L.forEach(p => {
       assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./, p.f);
-      assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`); // Pierre's own whatever their licence (rule 6a)
+      assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`); // Pierre's own whatever their licence (rule S2)
       const s = F.species.find(x => x.id === p.sp);
       assert.ok(s && !s.out, `${p.f}: a species in the game`);
     });
@@ -143,7 +143,7 @@ test('mergeUsers: each subject on its own, a subject neither account played stay
   assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).c3, true);
 });
 
-test('fishGen cover: the easiest judged photo within the highest source tier (Pierre’s own first, AGENTS.md rule 7)', () => {
+test('fishGen cover: the easiest judged photo within the highest source tier (Pierre’s own first, rule P1)', () => {
   const F = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8')),
     PH = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-photos.json'), 'utf8')).photos,
     X = C.fishGen(F, PH);
@@ -231,7 +231,7 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
       assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./);
     });
   });
-  // Pomacentrus armillatus: the photo is filed under P. opisthostigma on iNaturalist; the name shown stays the PDF's (rule 6a).
+  // Pomacentrus armillatus: the photo is filed under P. opisthostigma on iNaturalist; the name shown stays the PDF's (rule S2).
   assert.strictEqual(SP.get('s105').name, 'Pomacentrus armillatus');
   assert.match(S.s105[0].note, /Pomacentrus opisthostigma/);
   const X = C.fishGen(F, PH.photos, PH.sheet);

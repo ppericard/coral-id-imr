@@ -1,5 +1,5 @@
 // Pierre's photo rules, checked on the real data.json + curation.json (core.js applyCuration / applySlots, the same
-// code the app runs). These are standing rules from AGENTS.md: if one fails, a data or code change broke a rule.
+// code the app runs). These are Pierre's standing rules (docs/rules/photos.md): if one fails, a data or code change broke a rule.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -35,7 +35,7 @@ const each = (d, fn) =>
     })
   );
 
-test('game photos: never a Coral Finder book photo, a several-corals photo or a sheet-only photo (rules 10, use)', () => {
+test('game photos: never a Coral Finder book photo, a several-corals photo or a sheet-only photo (rule P3, use)', () => {
   const use = CUR.use || {};
   each(D, (n, g, v, s) =>
     GAME.forEach(k =>
@@ -94,7 +94,7 @@ test("featured = Pierre's pins first, in his order; at most 3", () => {
   });
 });
 
-test("sheet order: IMR and Pierre's own photos come before other observers (rule 7), Poor last", () => {
+test("sheet order: IMR and Pierre's own photos come before other observers (rule P1), Poor last", () => {
   const q = f => (CUR.quality || {})[f] || (AUTOQ[f] === 1 && !/^imrl?-/.test(f) ? 1 : 2);
   each(D, (n, g, v, s) => {
     const L = s.more.filter(p => !p.cf && q(p.f) !== 1);
@@ -206,7 +206,7 @@ test('data.json keeps only the candidates curation.json uses; the ones waiting a
 });
 
 test('game photos of the genera off the IMR list (Millepora, bonus genera) are hosted like the others: downloaded, four files', () => {
-  const games = gameOf(RAW).filter(n => RAW.x.gen[n]); // core.js BENTHIC + BONUS (AGENTS.md 14a)
+  const games = gameOf(RAW).filter(n => RAW.x.gen[n]); // core.js BENTHIC + BONUS (rule L6)
   assert.ok(games.includes('Millepora') && games.length > 1);
   const remote = [],
     missing = [],
@@ -278,19 +278,19 @@ print(json.dumps({'ok': run(four('imr-p1_i1')), 'size': run(four('imr-p1_i1')[:3
   assert.strictEqual(out.url, require('../core.js').PHOTO_BASE + 'img/a-s.webp', 'the bucket address read from core.js');
 });
 
-// Growth forms (AGENTS.md rule 4): learn.js photoPair puts a photo next to one of the same growth form (the quiz's mix-up
+// Growth forms (rule C4): learn.js photoPair puts a photo next to one of the same growth form (the quiz's mix-up
 // montage, the Look-alikes montages); a game photo with no form matches nothing (a player's report, 2026-11-04: 222 game
 // photos added after the first form pass had none). Pierre's form (curation.json gf) or a guess (forms.json gf) is enough.
 // A report, never a failure (the integrator, 2026-11-05): a candidate Pierre approves without a form comes in with his
 // Publish, straight to main, and must not turn unrelated PRs red. The list shows in the test output (a warning line per
-// photo) and with node tools/game_forms.js; the integrator fills it with a growth-form pass (judging/AGENTS.md).
+// photo) and with node tools/game_forms.js; the integrator fills it with a growth-form pass (judging/BRIEF.md).
 test('game photos with no growth form are reported (a warning, never a failure)', t => {
   const {gamePhotos, formless} = require('../tools/game_forms.js');
   const games = gamePhotos(D, RAW);
   assert.ok(Object.keys(games).length > 1000, 'the game photos are found');
   const left = formless(games, CUR, read('forms.json'));
   if (!left.length) return;
-  const msg = `WARNING: ${left.length} game photo(s) with no growth form: look at each one, write its guess by the growth-form pass of judging/AGENTS.md, then node tools/game_forms.js --apply FILE`;
+  const msg = `WARNING: ${left.length} game photo(s) with no growth form: look at each one, write its guess by the growth-form pass of judging/BRIEF.md, then node tools/game_forms.js --apply FILE`;
   console.warn(msg);
   t.diagnostic(msg);
   left.forEach(p => (console.warn(`  ${p.genus} ${p.view} ${p.f}`), t.diagnostic(`${p.genus} ${p.view} ${p.f}`)));

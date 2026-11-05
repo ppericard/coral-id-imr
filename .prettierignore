@@ -1,4 +1,4 @@
-# Formatted: the app, admin, Lab and test JavaScript and the CSS (see AGENTS.md "How to make a change").
+# Formatted: the app, admin, Lab and test JavaScript and the CSS (rule W13, docs/rules/ship.md).
 # Not formatted: tools/ (Code.gs deploys itself on change; Python and helper scripts), HTML (the CSP pins inline
 # script hashes), JSON data files (data.json has its own layout, tools/datajson.py), Markdown.
 tools/

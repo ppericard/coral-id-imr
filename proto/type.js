@@ -35,7 +35,7 @@ LAB.add({
     const round = () => {
       // The corals' slate whatever the subject on screen: the Tools are the corals' (Codex review #442: with Fish chosen it
       // drew fish teaching ids).
-      // Only the genera unlocked on the quiz path (lab.js labPlay, AGENTS.md rule 6d), each with a photo the games may
+      // Only the genera unlocked on the quiz path (lab.js labPlay, rule L4), each with a photo the games may
       // teach from (app.js gamePhotoOk: Research Grade for the extra genera), in the view asked for, else in any view
       // (Codex review #379: no fallback around the rule). Drawn among those that have one: with a few genera unlocked,
       // drawing again until one had a photo could go on for ever.
@@ -63,7 +63,7 @@ LAB.add({
         score.streak = ok ? score.streak + 1 : 0;
         body.querySelector('.tyscore').textContent = scoreLine(); // the answer just counted (Codex review #379)
         // The photo's source pill, only now: before the answer it would give the genus away (as Blur reveal). Hidden on
-        // phones, as in every game (app.css .psrc, AGENTS rule 11): the enlarged view carries the source there.
+        // phones, as in every game (app.css .psrc, rule P5): the enlarged view carries the source there.
         const im = body.querySelector('.tystage img');
         if (im && typeof photoSrc === 'function') im.insertAdjacentHTML('afterend', photoSrc(p));
         // How it was read (a typo or an old name, quiz.js typeRead), on a miss too: "you wrote Acorpora, read as Acropora".

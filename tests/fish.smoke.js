@@ -239,7 +239,7 @@ const server = http.createServer((req, res) => {
     // Codex review #526: a genus's WoRMS-accepted name is accepted when typed (Pseudanthias tuka is now Mirolabrichthys).
     ok(typeMatch('Mirolabrichthys', 'genus') && typeMatch('Mirolabrichthys', 'genus').g === 'g:Pseudanthias', 'sci: typed accepted genus');
     // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
-    // wrong choice, as in the quiz); a genus card's photo comes from the highest source tier (Pierre's own first, rule 7).
+    // wrong choice, as in the quiz); a genus card's photo comes from the highest source tier (Pierre's own first, rule P1).
     st('t02').pg = 0.2;
     st('t04').pg = 0.72;
     const pl = pool().filter(n => GX(n).rank);
@@ -293,7 +293,7 @@ const server = http.createServer((req, res) => {
       if (w > 0) ui.push(`${width}px ${what}: ${w}px wider than the screen`);
     };
     // The two switches and the header: which subject each one shows, the chip's place (next to the logo, inside the
-    // header's one line, clear of the controls), the header's height with and without the chip (rule 18), Home's height.
+    // header's one line, clear of the controls), the header's height with and without the chip (rule U3), Home's height.
     const look = () =>
       q.evaluate(() => {
         const row = document.querySelector('#view .hsubj'),
@@ -360,8 +360,8 @@ const server = http.createServer((req, res) => {
       chip: (document.getElementById('subjb') || {}).offsetParent ? document.getElementById('subjb').getAttribute('aria-label') : ''
     }));
     if (tl.tile || tl.badge || !/Fish/.test(tl.chip)) ui.push(`${width}px Tools with Fish on: ${JSON.stringify(tl)}`);
-    // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key, AGENTS.md
-    // rule 6c), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
+    // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
+    // rule S3), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
     // them, every entry under its own group; the key credited in full under the list.
     await q.evaluate(() => (location.hash = '#genera'));
     await q.waitForFunction(() => document.querySelector('#view .gdiv'), null, {timeout: 15000});
@@ -867,7 +867,7 @@ const server = http.createServer((req, res) => {
     if ((await q.evaluate(() => SUBJ.id)) !== 'coral') all.push('Corals did not switch back');
     await c9.close();
   }
-  // Codex review #442, on the real app with a sheet stub (AGENTS.md rule 13: window.SHEET_STUB, nothing sent):
+  // Codex review #442, on the real app with a sheet stub (rule D1: window.SHEET_STUB, nothing sent):
   // (1) the sheet's opening hold is the corals': a pull with Fish on screen leaves the fish hold alone;
   // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
   //     sync does not add it again (10/2 stayed 10/2, was 20/4);

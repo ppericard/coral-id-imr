@@ -28,7 +28,7 @@ The rules (Pierre, 2026-11-05: the same as for iNaturalist photos, tools/fetch_f
   `lic: "cc-by-nc"`: never share-alike, ND or "usage conditions apply".
 - Abroad = the Indo-West Pacific box of tools/fetch_fish.py (IWP), on the photo's coordinates; a photo without
   coordinates is taken only when its country (FishBase C_Code, ISO 3166 numeric) lies wholly inside the box
-  (IWP_COUNTRIES). Abroad only for a species confirmed in the Philippines (fish.json present.ph, AGENTS.md rule 6g), as
+  (IWP_COUNTRIES). Abroad only for a species confirmed in the Philippines (fish.json present.ph, rule C8), as
   every photo from abroad.
 - Identification: FishBase's own (its staff place every picture on a species; many come from the authors who described
   the species, e.g. J. E. Randall), taken as given like a Research Grade one. The judging pass never judges the species.

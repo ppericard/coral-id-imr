@@ -1,7 +1,7 @@
 # Candidate pass of the judging agent (Pierre, 2026-11-01: "a judging agent that pre-sorts by looking at the zoom level,
 # the quality, with the aim of keeping real diversity"; run ON DEMAND, never automatically, over the candidates waiting).
 # The agent looks at every candidate photo of a genus (iNaturalist photos waiting in cand.json, whole observations) and
-# writes judging/cand/<Genus>.json (rules: judging/AGENTS.md, "Candidate pass"). Suggestions only: the admin swiper
+# writes judging/cand/<Genus>.json (rules: judging/BRIEF.md, "Candidate pass"). Suggestions only: the admin swiper
 # shows the best photo of each view of each observation first, then the other angles, and near-duplicates, poor photos
 # and other genera last. Nothing is deleted or added: Pierre still swipes every photo himself.
 #
@@ -40,7 +40,7 @@ D['gen'] = {**D['gen'], **((D.get('x') or {}).get('gen') or {})}
 FORMS = [x['id'] for x in load('forms.json', {}).get('forms', [])] + ['x']
 VIEWS = ('wide', 'medium', 'macro')
 KEEP = ('best', 'alt', 'dup')
-# AGENTS.md rule 4: the polyps flag only for the Coral Finder "extended by day" genera, never on a macro photo.
+# rule C4: the polyps flag only for the Coral Finder "extended by day" genera, never on a macro photo.
 POLYPS = {'Alveopora', 'Duncanopsammia', 'Goniopora', 'Heliofungia', 'Plerogyra', 'Tubastraea'}
 FIELDS = {'view', 'quality', 'keep', 'form', 'polyps', 'multi', 'genus', 'unsure', 'note', 'crop'}
 # Crop calibration (2026-11-03, blind test on 79 of Pierre's crops): the agent's boxes cut about twice as much as his
@@ -169,7 +169,7 @@ def check(n):
         for b in ('polyps', 'multi'):
             if b in x and x[b] is not True: E.append(f'{at}: {b} is true or omitted')
         if x.get('polyps') and (n not in POLYPS or x.get('view') == 'macro'):
-            E.append(f'{at}: polyps only for {", ".join(sorted(POLYPS))}, never on a macro photo (AGENTS.md rule 4): omit it')
+            E.append(f'{at}: polyps only for {", ".join(sorted(POLYPS))}, never on a macro photo (rule C4): omit it')
         g = x.get('genus')
         if g is not None:
             if g == n: E.append(f'{at}: omit "genus" when the photo shows {n}')

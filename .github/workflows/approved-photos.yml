@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
-      # Python pinned, not the image's own python3 (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest stable (rule 27b),
+      # Python pinned, not the image's own python3 (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest stable (rule W9),
       # the same in every workflow. Pillow pinned in tools/requirements.txt.
       - uses: actions/setup-python@v7
         with:

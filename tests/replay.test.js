@@ -679,7 +679,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   const rep = C.replayProgress(rows, {gen: GEN}).me;
   assert.deepStrictEqual(C.replayedOf(rep, {}, C.RV)[C.LEVEL].rt, on.P[C.LEVEL].rt);
   assert.deepStrictEqual(C.replayBase(rep.P, C.replayedOf(rep, {}, C.RV), C.RV, {})[C.LEVEL].rt, on.P[C.LEVEL].rt);
-  // An older script (AGENTS.md 7a): the app does exactly what it did before, every weight 1, the replay without time.
+  // An older script (rule D4): the app does exactly what it did before, every weight 1, the replay without time.
   const off = live(C.RT_SHEET - 1);
   assert.ok(off.ws.every(w => w === 1));
   // (The app still records the times, which the replay without time leaves out.)

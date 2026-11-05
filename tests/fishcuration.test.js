@@ -71,7 +71,7 @@ test('fishRun: sure adds up to the target, own first then the easiest; rejects; 
   assert.deepStrictEqual(R, {add: 10, reject: 1, check: 1, full: 4, off: 0});
   const in2 = Object.keys(F.add).filter(f => F.add[f] === 's2');
   assert.strictEqual(in2.length, 8, 'species s2 filled to its target of 8 observations');
-  assert.ok(in2.includes(ids[11]), "Pierre's own photo first (rule 7), whatever its ease");
+  assert.ok(in2.includes(ids[11]), "Pierre's own photo first (rule P1), whatever its ease");
   const eases = in2.filter(f => f !== ids[11]).map(f => sug[f].e);
   assert.ok(Math.min(...eases) >= Math.max(...cands.s2.filter(p => !in2.includes(p.f)).map(p => sug[p.f].e)), 'the easiest next');
   assert.deepStrictEqual([F.add[ids[20]], F.add[ids[21]]], ['s1', 's1']);

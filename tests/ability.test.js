@@ -2,7 +2,7 @@
 // own Elo (core.js eloStep, as model.js abilityStep runs it, replayed by tools/abilityeval.js) replayed on a made-up answer log of a strong
 // player whose misses fall on look-alikes. The old rule (a: a full miss step on the genus given, at difficulty 0,
 // its uncertainty never shrinking) drags every genus the player confuses down; the rule the app now follows (e: no
-// step on the genus given, rule 13 kept in the progress) leaves the abilities near the truth and predicts the next
+// step on the genus given, rule L2 kept in the progress) leaves the abilities near the truth and predicts the next
 // answer better.
 const test = require('node:test');
 const block = require('./block.js'); // the block of a browser file a test runs, its markers checked

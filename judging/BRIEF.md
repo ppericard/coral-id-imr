@@ -65,7 +65,7 @@ omit `form`.
 `true` when extended polyps, tentacles or vesicles cover the coral in this photo (e.g. Goniopora, Plerogyra by
 day). It is not a growth form: give the form as well (`x` if it cannot be seen). Only for the Coral Finder "extended by day"
 genera (Alveopora, Duncanopsammia, Goniopora, Heliofungia, Plerogyra, Tubastraea), and never on a `macro` photo
-(AGENTS.md rule 4): the checks reject it elsewhere.
+(rule C4): the checks reject it elsewhere.
 
 ### `quality`: 3 Good, 2 Fair, 1 Poor
 

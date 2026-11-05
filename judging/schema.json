@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "judging/schema.json",
   "title": "Photo judgments for one genus (judging/out/<Genus>.json)",
-  "description": "Written by the judging agent, checked and imported by tools/judging_import.py. Suggestions only: Pierre accepts or rejects them in admin.html. See judging/AGENTS.md for the meaning of each value.",
+  "description": "Written by the judging agent, checked and imported by tools/judging_import.py. Suggestions only: Pierre accepts or rejects them in admin.html. See judging/BRIEF.md for the meaning of each value.",
   "type": "object",
   "required": [
     "genus",

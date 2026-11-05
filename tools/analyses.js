@@ -1,4 +1,4 @@
-// The admin's Analyses report (Pierre, 2026-11-04: "every 1000 new answers", computed once; AGENTS.md rule 14i "compute
+// The admin's Analyses report (Pierre, 2026-11-04: "every 1000 new answers", computed once; rule L13 "compute
 // once"): runs every analysis of analysis.js on the answer log, at each milestone (the first 1000, 2000, 3000, …
 // answers: round thousands only, Pierre 2026-11-05), and stores the report in the sync sheet, where the admin reads it:
 // the primary source. The admin's "Recompute here" runs the same code in its own tab, on any device (Pierre,

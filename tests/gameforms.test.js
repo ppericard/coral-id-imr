@@ -1,6 +1,6 @@
-// tools/game_forms.js: the growth-form guesses for game photos with no form (AGENTS.md rule 4), written into forms.json.
+// tools/game_forms.js: the growth-form guesses for game photos with no form (rule C4), written into forms.json.
 // Its writer keeps the layout of tools/judging_import.py, and --apply checks each guess by the judging brief's
-// growth-form pass (judging/AGENTS.md) and never covers a form Pierre gave (curation.json gf, rule 8).
+// growth-form pass (judging/BRIEF.md) and never covers a form Pierre gave (curation.json gf, rule A1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

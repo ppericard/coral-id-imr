@@ -7,8 +7,8 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   A photo belongs to the most precise taxon its observation names: the species (iNaturalist's taxon query includes
   subspecies). Only species in the game (with a `circle`, never `out`), circle 1 by default (--circle).
 - Identity: Research Grade at the species level; Pierre's own observations (iNaturalist user ppericard) identified to
-  the species are usable as that species even when Needs ID (AGENTS.md rule 6a: he names a species only when nearly
-  sure), nobody else's. That is photo use only: they no longer confirm presence on their own (rule 6g; fish.json
+  the species are usable as that species even when Needs ID (rule S2: he names a species only when nearly
+  sure), nobody else's. That is photo use only: they no longer confirm presence on their own (rule C8; fish.json
   present.ph decides which species are in the game and which may have photos from abroad). Never captive (captive=false),
   never an observation annotated "Dead" (fish markets; the pre-sort sets aside the unannotated ones).
 - Licences (Pierre, 2026-11-03; fish prefer free licences, corals keep NC): only CC0, CC BY and CC BY-NC. Never a
@@ -34,14 +34,14 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   and the sources record them, at most 60 (cap_of; the phases: species_phases). Each extra phase holds PER_PHASE (10) of
   them for photos of that phase, the rest is free (phase_room), and the search fills each phase first: per phase where
   iNaturalist can filter it (Life Stage Juvenile, Sex Male, Sex Female annotations: INAT_PHASE; batched over the species,
-  rule 6f), so a species with very different juveniles does not end up with 30 adults and no juvenile; FishBase
+  rule C7), so a species with very different juveniles does not end up with 30 adults and no juvenile; FishBase
   (tools/fetch_fishbase.py) fills what is left, phases first. The cap counts the photos still usable (added by Pierre,
   set in by the pre-sort, or waiting); what Pierre rejects, excludes or sends elsewhere, and what the pre-sort sets aside
   without doubt, frees room for the next run. Each observation brings up to PER_OBS photos (fish observations rarely hold
   several individuals; more photos of one fish are near-duplicates). One function for both tools: species_room.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
-  src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule 6a).
+  src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
   fish-cand.json = {"v": 1, "cand": {species id: [photo, ...]}}, one species per line (tools/datajson.py layout).
 - Curation: curation.json "fish" (written by the admin only, never here; its full shape is the admin plan's PR 4): add
   {f: 1}, seen {f: 1} (rejected), exclude {f: reason}, out {f: species id or "x"}. The top-level "exclude" (corals) is honoured too, by iNaturalist photo id.
@@ -453,7 +453,7 @@ def game_photos(fp):
 
 
 def phase_query(ph, taxa, where):
-    """The search of one phase (INAT_PHASE) for several species at once (rule 6f): Research Grade, the licences of
+    """The search of one phase (INAT_PHASE) for several species at once (rule C7): Research Grade, the licences of
     LICENCES, in the Philippines (where "ph") or abroad in the Indo-West Pacific ("world"), by id for paging."""
     term, value = INAT_PHASE[ph]
     q = (f"taxon_id={','.join(map(str, taxa))}&term_id={term}&term_value_id={value}&captive=false&photos=true"
@@ -490,7 +490,7 @@ def phase_obs(net, ph, taxa, where):
 def covers(net, taxa):
     """{iNaturalist taxon id: the photo id of its default photo (the taxon's cover), or None when it has none}, for the
     taxa iNaturalist answered (a taxon missing from the result is unknown: a --plan run, a reply not cached); 30 taxa a
-    request (rule 6f)."""
+    request (rule C7)."""
     out, taxa = {}, sorted(set(taxa))
     for i in range(0, len(taxa), 30):
         url = TAXA + ",".join(map(str, taxa[i:i + 30])) + "?fields=id,default_photo.id&per_page=30"
@@ -683,7 +683,7 @@ def run(args):
             ctx.append({"s": s, "t": t, "R": R, "n": n, "known": known, "byid": byid, "all": dict(byid), "pools": pools,
                         "more": more, "world": world, "near": bool((s.get("present") or {}).get("near")), "pmore": {}, "pw": {}})
 
-        # 2. The phase searches (Q36), one phase at a time for every species with room in it, batched (rule 6f): the
+        # 2. The phase searches (Q36), one phase at a time for every species with room in it, batched (rule C7): the
         # Philippines first, then abroad (Indo-West Pacific) for a species confirmed in the Philippines, when it is
         # confirmed near Dauin (photos from anywhere) or the Philippines are exhausted for that phase and short of its room.
         def items(c, obs, tier=None):

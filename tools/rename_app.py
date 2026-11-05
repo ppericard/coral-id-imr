@@ -30,7 +30,7 @@ docs/reviews/ and docs/reference/ (dated records), tools/archive/ and the JSON d
    in tools/sync/Code.gs and admin.js: changing it would change every id). The repository and the URL (coral-id-imr)
    do not change now (docs/ROADMAP.md).
 4. The CSP hashes of the inline scripts of index.html and admin.html (tests/csp.test.js), recomputed.
-5. Prettier (AGENTS.md "How to make a change", the same pinned version) on the JS and CSS files it changed: longer key
+5. Prettier (rule W13, the same pinned version) on the JS and CSS files it changed: longer key
    names move line breaks.
 
 A fork run by another organisation: edit core.js ORG, then run this tool with --from "IMR Reef ID" (every earlier
@@ -41,7 +41,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SELF = 'tools/rename_app.py'
-PRETTIER = 'prettier@3.9.10'  # as AGENTS.md and .github/workflows/checks.yml
+PRETTIER = 'prettier@3.9.10'  # as rule W13 (docs/rules/ship.md) and .github/workflows/checks.yml
 EXT = {'.js', '.css', '.html', '.md', '.py', '.gs', '.yml', '.sh', '.webmanifest'}
 SKIP_DIRS = ('img/', 'docs/reviews/', 'docs/reference/', 'tools/archive/', 'judging/out/')
 OLD_NAMES = ['IMR Coral ID']

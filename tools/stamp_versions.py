@@ -14,7 +14,7 @@ the others to bump again). Run by the Pages deploy on its staged copy, never on 
 - index.html and admin.html get <meta name="build" content="N">, the deploy's run number, read with the hash by
   sync.js appVer ("higher is newer" on the admin's Errors page); left out of V, or every deploy would empty the shell.
 A reference to no file fails the deploy. Stamping a stamped copy changes nothing. Nobody edits a version number by hand
-(AGENTS.md rule 3); tools/check_versions.py checks the source and the stamped copy agree with themselves.
+(rule W15); tools/check_versions.py checks the source and the stamped copy agree with themselves.
 """
 import argparse, glob, hashlib, os, re, sys
 

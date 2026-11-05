@@ -46,7 +46,7 @@ this list. Long-standing content and trainer questions live in the admin, To do 
   questions a-m; replaces Q83): 100% = tells it from every slate unit (Q101); coverage weighted by confusion (Q102);
   how low a beginner's first genera may stop (Q103); a two-tone bar (Q104); exam entry and slate traps (Q105); typed
   vocabulary = genera unlocked (Q106); no custom-quiz cap (Q107); no decay (Q108); the recalculation plan (Q109); fish
-  fields per rank (Q110); "another genus" answers later (Q111); simulation first (Q112); rule 14f wording (Q113).
+  fields per rank (Q110); "another genus" answers later (Q111); simulation first (Q112); rule L11 wording (Q113).
 - Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep the "beta" tag (Q93);
   a "Fish is here" card (Q94); the copy edits of PR C (Q95); level 1 on today's photos (Q96); no fish answer logging
   for a week (Q97); smoke tests and the bug sweep as release checks (Q98); new players still start on Corals (Q99);
