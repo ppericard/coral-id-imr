@@ -28,7 +28,7 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus data; photos are in `img/` as WebP in four sizes (1600, 960, 480 and 240 px), mirrored to Cloudflare R2, which the app reads first (`core.js` `PHOTO_BASE`). Version numbers (`?v=`) are stamped at deploy: never edit them (AGENTS.md).
+The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus data; photos are WebP in four sizes (1600, 960, 480 and 240 px) on Cloudflare R2, which the app reads first (`core.js` `PHOTO_BASE`); `img/` keeps only the photos with no other backup (IMR lecture photos, Coral Finder book scans), the others fall back to their online original (iNaturalist, FishBase). Version numbers (`?v=`) are stamped at deploy: never edit them (AGENTS.md).
 
 ## Photos
 

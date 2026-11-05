@@ -110,7 +110,7 @@ The cloud environment needs network access to `api.inaturalist.org`, `www.inatur
 - 2026-10-31: first standalone artifacts (Coral Finder key, quiz, mind map, genus doc, now in `reference/`), then one web app on GitHub Pages, the Lab of prototypes, the admin back-office, photo curation rules, the Coral Finder rebuilt as a tolerant clue ranking (renamed the Coral ID Key on 2026-11-04: the book keeps the name Coral Finder), responsive system, adaptive difficulty.
 - 2026-11-01: expert reviews (code, admin, RA, design) and their fixes, Code.gs v6-v9, players' reports, bonus genera, welcome tour for beta testers, graded answer choices, confusion scores.
 - An incident on 2026-11-01 (a stale admin draft published as a whole copy wiped curation) led to the key-by-key Publish merge (PR #240): never go back to whole-copy publishing.
-- The photos are leaving the repo (Pierre, 2026-11-02): Cloudflare R2 first (done 2026-11-03: `img/` mirrored to the bucket, the app and the admin read from it with `img/` as the fallback, `core.js` `PHOTO_BASE`), then `img/` removed, then a history rewrite to shrink `.git` (pack 290 MiB on 2026-11-02), the force-push only with Pierre's explicit go and a backup clone. See ROADMAP "Photos out of the repo".
+- The photos are leaving the repo (Pierre, 2026-11-02; his rule of 2026-11-05: git keeps only the photos with no other backup): Cloudflare R2 first (done 2026-11-03: the app and the admin read from the bucket, `core.js` `PHOTO_BASE`), then the photos with an online original removed from `img/` (step 2: they live on R2 only and fall back to their iNaturalist / FishBase original), then a history rewrite to shrink `.git` (pack 290 MiB on 2026-11-02), the force-push only with Pierre's explicit go and a backup clone: "Photos out of the repo, step 3" below. See ROADMAP "Photos out of the repo".
 
 ## First prompt for the new account
 
@@ -156,6 +156,23 @@ GitHub does not enforce the merge rules by itself (governance review, 2026-11-05
 2. **Settings > Rules > Rulesets > New ruleset > New branch ruleset**: name `main`, Enforcement status **Active**, Target branches > Add target > **Include default branch**; under Rules tick only **Restrict deletions** and **Block force pushes**; Create.
 
 Required checks are deliberately not set: they would block the admin's Publish and the Candidate photos Action, which push straight to `main`. The planned history rewrite (ROADMAP "Photos out of the repo") will need "Block force pushes" switched off for its one push, with Pierre's go.
+
+## Photos out of the repo, step 3: the history rewrite (only with Pierre's go)
+
+Step 2 removed from `img/` every photo with an online original (they live on Cloudflare R2 only), but their old copies stay in `.git`, so every clone still downloads them. Step 3 rewrites the history so they leave `.git`. It rewrites every commit hash of `main`, so it needs **Pierre's explicit go before the force-push** (AGENTS.md "Working mode": anything irreversible), done by the integrator in one sitting, about 30 minutes:
+
+1. **Quiet window.** No open PR (merge or close them first: a PR branch built on the old history cannot be rebased on the new one by git alone), every agent session stopped, Pierre not publishing from the admin until the end; disable the photo workflows meanwhile: `gh workflow disable approved-photos.yml` and `gh workflow disable photos-r2.yml`.
+2. **Backup**, kept outside GitHub (Pierre's computer or his cloud drive) until he says it can go: `git clone --mirror https://github.com/ppericard/coral-id-imr.git coral-id-imr-backup.git` and `git -C coral-id-imr-backup.git bundle create ../coral-id-imr-backup.bundle --all`; check it: `git -C coral-id-imr-backup.git fsck` and `git bundle verify coral-id-imr-backup.bundle`.
+3. **Pierre turns off "Block force pushes"**: Settings > Rules > Rulesets > `main` > untick Block force pushes > Save (keep Restrict deletions).
+4. **The rewrite**, in a fresh full clone (never an agent's worktree): `git clone https://github.com/ppericard/coral-id-imr.git rewrite && cd rewrite && pip install git-filter-repo`, then the list of every file that ever was in `img/` and is not there now, minus the IMR lecture photos and the Coral Finder book scans (their only backup is git, even once deleted):
+   `git log --all --pretty=format: --name-only -- img/ | grep . | sort -u > /tmp/all.txt`
+   `git ls-tree -r --name-only HEAD img/ | sort > /tmp/head.txt`
+   `comm -23 /tmp/all.txt /tmp/head.txt | grep -Ev '^img/(imrl?-|[a-z]+-cf-)' > /tmp/strip.txt; wc -l /tmp/strip.txt` (about 5550 paths: the 5548 files of step 2 plus older photos removed earlier)
+   `git filter-repo --invert-paths --paths-from-file /tmp/strip.txt`, then `git count-objects -vH` (the pack shrinks by about the size of those photos and their older versions; note both sizes for Pierre) and `git ls-tree -r --name-only HEAD img/ | sort | diff - /tmp/head.txt` (empty: today's `img/` untouched).
+5. **`.git-blame-ignore-revs`** names commits by hash: rewrite it with the new hashes from `.git/filter-repo/commit-map` (old, new per line) and commit it on the rewritten `main`.
+6. **Force-push**: `git remote add origin https://github.com/ppericard/coral-id-imr.git && git push --force origin main` (then `--force` for any other branch kept, and `git push --force --tags origin`).
+7. **Pierre turns "Block force pushes" back on**; enable the two workflows again (`gh workflow enable …`); run Actions > Deploy Pages once and check the site.
+8. **Every agent and every computer re-clones** (`git clone`, sparse without `img/` as AGENTS.md 16 says); an old clone or worktree must not push (its `main` is the old history: a push would bring the photos back). GitHub keeps the old objects behind the old pull-request refs until its own clean-up, so the repository's size on GitHub may drop later than the clones'; GitHub Support can run that clean-up on request.
 
 ## Clean merged branches (one-time setup)
 
