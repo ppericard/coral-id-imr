@@ -222,3 +222,17 @@ test('game photos of the genera off the IMR list (Millepora, bonus genera) are h
   assert.deepStrictEqual(remote, [], 'still shown from iNaturalist (python3 tools/fetch_approved.py --games)');
   assert.deepStrictEqual(missing, [], 'a file missing in img/');
 });
+
+// Growth forms (AGENTS.md rule 4): learn.js photoPair puts a photo next to one of the same growth form (the quiz's mix-up
+// montage, the Look-alikes montages); a game photo with no form matches nothing (a player's report, 2026-11-04: 222 game
+// photos added after the first form pass had none). Pierre's form (curation.json gf) or a guess (forms.json gf) is enough.
+test("every game photo has a growth form, Pierre's or a guess (node tools/game_forms.js lists those without)", () => {
+  const {gamePhotos, formless} = require('../tools/game_forms.js');
+  const games = gamePhotos(D, RAW);
+  assert.ok(Object.keys(games).length > 1000, 'the game photos are found');
+  assert.deepStrictEqual(
+    formless(games, CUR, read('forms.json')).map(p => `${p.genus} ${p.view} ${p.f}`),
+    [],
+    'no growth form: look at each one, write its guess by the growth-form pass of judging/AGENTS.md, then node tools/game_forms.js --apply FILE'
+  );
+});

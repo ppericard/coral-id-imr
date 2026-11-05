@@ -3522,10 +3522,14 @@ function montPick(p) {
     fa = mine && LA.find(x => x.f === m.a),
     fb = mine && LB.find(x => x.f === m.b);
   const gap = (x, y) => (v === 'all' ? 4 * Math.abs(ZOOM[viewOf(p.A, x)] - ZOOM[viewOf(p.B, y)]) : 0);
+  // The site's automatic pick (learn.js photoPair): same growth form first, searched in every photo ("x" matches
+  // nothing), then nearest the front, then nearest zoom; with no same form, the best pair among the first 6.
   let best = null;
-  (fa ? [fa] : LA.slice(0, 6)).forEach((x, i) =>
-    (fb ? [fb] : LB.slice(0, 6)).forEach((y, j) => {
-      const sc = i + j + (fOf(x.f) && fOf(x.f) === fOf(y.f) ? 0 : 8) + gap(x, y);
+  (fa ? [fa] : LA).forEach((x, i) =>
+    (fb ? [fb] : LB).forEach((y, j) => {
+      const same = !!fOf(x.f) && fOf(x.f) !== 'x' && fOf(x.f) === fOf(y.f);
+      if (!same && (i >= 6 || j >= 6)) return;
+      const sc = (same ? 0 : 1e6) + i + j + gap(x, y);
       if (!best || sc < best[0]) best = [sc, x, y];
     })
   );
