@@ -4740,3 +4740,9 @@ button.adm-chip[aria-pressed='true'] {
   fill: var(--ink);
   font-weight: 600;
 }
+/* The Wright map's leader lines (admin-analyses.js wright). */
+.adm-an-svg .an-lead {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
