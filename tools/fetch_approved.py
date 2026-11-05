@@ -1,14 +1,19 @@
 # Downloads the candidate photos Pierre added in admin.html (curation.json genera[g].add) that are still remote
-# (data.json cand entries with r: 1, shown straight from iNaturalist until then), as img/{f}.webp (1600 px),
-# img/{f}-m.webp (960 px), img/{f}-s.webp (480 px) and img/{f}-t.webp (240 px) (tools/photos.py), then drops their r flag. Pierre's crop (curation.json "crop" {f: [l, t, r, b]} fractions)
-# is applied on the way, from the original; a photo already downloaded is redone when its crop changes (data.json "cr").
+# (data.json cand entries with r: 1, shown straight from iNaturalist until then), in their four sizes (tools/photos.py:
+# {f}.webp 1600 px, {f}-m.webp 960 px, {f}-s.webp 480 px, {f}-t.webp 240 px), then drops their r flag and stores their
+# shape (ar, as tools/apply_ratios.py). Pierre's crop (curation.json "crop" {f: [l, t, r, b]} fractions) is applied on
+# the way, from the original; a photo already downloaded is redone when its crop changes (data.json "cr").
 # Site photos (not candidates) are recropped from their original the same way when Pierre crops them (Triage, genus page).
-# Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every curation.json
-# publish and commits the result (with --games, below). Option --all-remote-unused deletes the local files of candidates nobody added.
+# Every photo it downloads has an online original (src), so it lives on Cloudflare R2 only (Photos out of the repo,
+# Pierre's rule of 2026-11-05): the files are written to --out DIR (default r2-upload/, gitignored), never to img/, and
+# the workflow uploads that folder to R2 (tools/r2_sync.sh DIR) before it commits data.json, so data.json never names a
+# photo R2 lacks. Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every
+# curation.json publish (with --games, below). Option --all-remote-unused makes the candidates nobody added remote again
+# (r: 1; their files stay on R2, unused: nothing is deleted from the bucket).
 import json, os, sys, urllib.request, urllib.parse, concurrent.futures as cf
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from PIL import Image
-import photos  # the three photo sizes
+import photos  # the four photo sizes
 from genera import game_genera  # the game genera, as core.js gameOf
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 d = load_all()
@@ -31,13 +36,18 @@ if '--games' in sys.argv:
              if p.get('r') and p['f'] not in excl and p.get('src') and id(p) not in seen]
 # Only iNaturalist photo hosts (code review 2026-11-01, L8): this runs in a GitHub Action that can write to main.
 HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org')
+OUT = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else 'r2-upload'
+os.makedirs(OUT, exist_ok=True)
 def get(p):
     host = urllib.parse.urlsplit(p['src']).hostname or ''
     if not p['src'].startswith('https://') or host not in HOSTS: raise ValueError(f"{p['f']}: not an iNaturalist photo URL: {p['src'][:80]}")
     im = Image.open(urllib.request.urlopen(urllib.request.Request(p['src'], headers=UA), timeout=120)).convert('RGB')
     c = CROP.get(p['f'])
     if c: W, H = im.size; im = im.crop((round(c[0] * W), round(c[1] * H), round(c[2] * W), round(c[3] * H)))
-    photos.save(im, p['f'])
+    photos.save(im, p['f'], OUT)
+    # The shape from the 480 px file, as tools/apply_ratios.py measures it (it only sees the files in img/).
+    w, h = Image.open(os.path.join(OUT, p['f'] + '-s.webp')).size
+    p['ar'] = round(w / h, 2)
     return p
 done = 0
 with cf.ThreadPoolExecutor(6) as ex:
@@ -54,7 +64,7 @@ if '--all-remote-unused' in sys.argv:
     for L in (d.get('cand') or {}).values():
         for p in L:
             if p['f'] in added or p.get('r') or not p.get('src'): continue
-            photos.remove(p['f'])
+            photos.remove(p['f'])  # a copy left in img/ from before the move to R2
             p['r'] = 1; gone += 1
 if done or gone: dump_all(d)
-print(f'downloaded {done}, made remote {gone}')
+print(f'downloaded {done} into {OUT}/ (upload: tools/r2_sync.sh {OUT}), made remote {gone}')

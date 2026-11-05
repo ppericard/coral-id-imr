@@ -9,6 +9,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 J = lambda p: json.load(open(os.path.join(ROOT, p)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from datajson import load_all
+import photos as ph  # where a photo's files are: img/, or R2 only (Photos out of the repo)
 d, c = load_all(), J('curation.json')  # data.json + the candidates waiting in cand.json
 VIEWS = ['wide', 'medium', 'macro']
 X = c.get('exclude', {})
@@ -22,6 +23,8 @@ def source(p):
     if p.get('own'): return 'pierre'
     return {'dauin': 'inat-dauin', 'ph': 'inat-philippines'}.get(p.get('loc'), 'inat-elsewhere')
 
+# A downloaded photo's file: in img/, or its address on R2 for a photo that lives there only (an online original).
+local = lambda f, suf='': f'img/{f}{suf}.webp' if os.path.exists(os.path.join(ROOT, 'img', f'{f}{suf}.webp')) else ph.url(f, suf)
 photos = {}
 def put(n, p, view, status, extra=False):
     f = p['f']
@@ -43,7 +46,7 @@ def put(n, p, view, status, extra=False):
     if any(f in (L or []) for L in (k.get('feat') or {}).values()): mine['featured'] = True
     if k.get('cover') == f: mine['cover'] = True
     e = {'f': f, 'genus': genus, 'view': view, 'source': source(p), 'status': status,
-         'image': p['src'].replace('/original.', '/large.') if p.get('r') else f'img/{f}.webp', 'thumb': p['src'].replace('/original.', '/medium.') if p.get('r') else f'img/{f}-s.webp'}
+         'image': p['src'].replace('/original.', '/large.') if p.get('r') else local(f), 'thumb': p['src'].replace('/original.', '/medium.') if p.get('r') else local(f, '-s')}
     if p.get('t') and p.get('t') != genus: e['inat_label'] = p['t']
     if p.get('imr'): e['slide'] = p.get('slide')
     if p.get('multi') or extra: e['multi'] = True

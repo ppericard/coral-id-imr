@@ -1,5 +1,7 @@
 # After each photo-curation publish (curation.json pushed from admin.html): download the candidates Pierre added
-# (tools/fetch_approved.py), then refill the candidate lists up to their caps (tools/fetch_local.py), and commit.
+# (tools/fetch_approved.py) and upload them to Cloudflare R2, then refill the candidate lists up to their caps
+# (tools/fetch_local.py), and commit. Photos with an online original live on R2 only (Photos out of the repo, Pierre's
+# rule of 2026-11-05): their files are never committed to img/.
 name: Candidate photos
 on:
   push:
@@ -20,14 +22,26 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pillow
-      # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2).
-      - run: python tools/fetch_approved.py --games
+      # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). The files
+      # go to r2-upload/ (gitignored), uploaded below before anything is committed.
+      - run: python tools/fetch_approved.py --games --out r2-upload
       - run: python tools/fetch_local.py
         working-directory: .
-      # Photo shapes for the quiz layout (designer re-review 2026-11-01): new photos get their `ar` too.
+      # Photo shapes for the quiz layout (designer re-review 2026-11-01) of the photos in img/; the new photos got theirs
+      # from fetch_approved.py (they live on R2 only).
       - run: python tools/apply_ratios.py
-      # Every photo in its four sizes (1600, 960, 480, 240 px): fills any smaller file missing.
+      # Every photo of img/ in its four sizes (1600, 960, 480, 240 px): fills any smaller file missing.
       - run: python tools/photos.py
+      # The new photos to R2 before the commit that marks them downloaded: if the upload fails, the job stops here and
+      # data.json keeps them remote (r: 1, shown from iNaturalist). Copies only, never deletes (tools/r2_sync.sh). Not
+      # in the photos-r2 concurrency group: an upload of new files and the other job's copy never conflict.
+      - name: Upload the new photos to R2
+        run: tools/r2_sync.sh r2-upload
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
@@ -37,9 +51,9 @@ jobs:
           git commit -m "Candidate photos: download added ones, refill the lists"
           git pull --rebase origin main
           git push origin HEAD:main
-  # The photos to R2, in their own job under the same concurrency group as photos-r2.yml, so the two writers of the
-  # bucket never run at once (Codex review #380), from today's main (the commit above, if any, is on it; a rerun with
-  # nothing to commit mirrors main too). Its push starts no other workflow (GITHUB_TOKEN), hence this job.
+  # img/ copied to R2 and the bucket checked (every photo that lives on R2 only has its four files there), in its own
+  # job under the same concurrency group as photos-r2.yml (Codex review #380), from today's main (the commit above, if
+  # any, is on it). Its push starts no other workflow (GITHUB_TOKEN), hence this job.
   r2:
     needs: photos
     runs-on: ubuntu-latest

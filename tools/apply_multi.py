@@ -5,14 +5,14 @@
 import json, os
 from datajson import dump  # the one data.json layout (one genus per line)
 from PIL import Image
-import photos  # the three photo sizes
+import photos  # the four photo sizes
 rows = lambda fn: [l.split() for l in open('tools/' + fn) if l.strip() and not l.startswith('#')]
 d = json.load(open('data.json'))
 crop = {r[0]: tuple(map(int, r[1:])) for r in rows('recrop.txt')}
 multi = {r[0] for r in rows('multi.txt')}
 for f, box in crop.items():
     if not os.path.exists(f'img/{f}c.webp'):
-        im = Image.open(f'img/{f}.webp').convert('RGB').crop(box)
+        im = Image.open(photos.path(f)).convert('RGB').crop(box)  # img/, or a copy from R2
         photos.save(im, f + 'c')
 for g, G in d['gen'].items():
     more = G.get('more', {})
