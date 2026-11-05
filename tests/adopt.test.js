@@ -1027,3 +1027,19 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   assert.deepStrictEqual(copy(c.store.get('reefid-groups', null)), {n: 'Ana', g: [fish.id]}, 'at sign-in, beta subjects only');
   assert.strictEqual(c.subjOpen(fish), true);
 });
+
+// progress.js mxLostText: a learned mark the field rule did not keep (rules version 6, sync.js replayAdopt why 'field';
+// Pierre, 2026-11-05: encouragement, not a step back) gets its own line, beside the reasons of before.
+test("mxLostText: the field rule's line for a learned mark it did not keep", () => {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    ctx = {esc: s => String(s)};
+  vm.createContext(ctx);
+  vm.runInContext(cut(src, 'const andList = ', 'let mxLostT = 0;') + '\nthis.f = mxLostText;', ctx);
+  const one = ctx.f(['Acropora'], 0, {Acropora: 'field'});
+  assert.match(one, /still yours: its Learned mark comes back as you show it against its look-alikes/);
+  assert.doesNotMatch(one, /no longer stands/);
+  const two = ctx.f(['Acropora', 'Porites'], 2, {Acropora: 'field', Porites: 'rules'});
+  assert.match(two, /<i>Acropora<\/i> is still yours/);
+  assert.match(two, /exam you passed on <i>Porites<\/i> no longer stands/);
+  assert.match(two, /badges/);
+});
