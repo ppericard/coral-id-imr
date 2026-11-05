@@ -2451,7 +2451,16 @@ kbd {
   }
 }
 /* The letters a retype still got wrong, in the verdict's one line (quiz.js typeStep): the "wrong" colour and a thick
-   underline of it, so they show without colour too (the colour-blind mode redefines --bad). */
+   underline of it, so they show without colour too (the colour-blind mode redefines --bad). The line's words in normal
+   weight, the name in bold, so the name is what the eye catches (Pierre, 2026-11-06); "✓ Yes," stays as in every verdict. */
+.fb h3.tystep {
+  font-weight: 400;
+}
+.fb h3.tystep .v,
+.fb h3.tystep a,
+.tysp {
+  font-weight: 700;
+}
 .tysp b {
   color: var(--bad);
   text-decoration: underline 2px var(--bad);

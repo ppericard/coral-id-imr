@@ -2271,7 +2271,7 @@ before release:
 - Never typed: comeback, "Again: A or B?" and duel questions (each has its own purpose: a quick check, a contrast).
 - **The spelling step** (a player's idea, approved by Pierre 2026-11-05: "Good idea!"): a typed name of the genus asked
   that the tolerance accepts but is not exact is retyped once (a warm nudge, "So close! Right genus: just fix the
-  spelling and try once more"; exact: "✓ Yes, well spelled: it's X"; still wrong: "✓ Yes, but not quite: it's spelled X",
+  spelling and try once more"; exact: the plain "✓ Yes, it's X"; still wrong: "✓ Yes, but not quite: it's spelled X",
   the letters missed marked), so the player learns the spelling instead of moving on.
   **No learning value changes**: the answer is graded on the first reading as before (the genus was recognised; a
   retype is a spelling step, not a second chance at the genus), so progress, Elo, the exam and the replay are untouched

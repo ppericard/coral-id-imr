@@ -138,16 +138,15 @@ const typeRead = (m, text, sp) =>
         : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
       : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
 // The spelling step's outcome (typeBind sp) for the verdict's one line (Pierre, 2026-11-06: one line, "✓ Yes, but not
-// quite: it's spelled Galaxea", in place of "Yes, it's Galaxea" plus a second line), null when none was asked. {r: 1}
-// after an exact retype ("✓ Yes, well spelled: it's …"); else {r: 0, spelled}: the name as it is spelled, the letters
-// the last try got wrong marked (typeSpell, .tysp), in italics as uname (a fish entry upright), and old: the name typed
-// was an old one (alt: another name of a fish entry), so the line names the unit after it.
+// quite: it's spelled Galaxea", in place of "Yes, it's Galaxea" plus a second line), null when none was asked or the
+// retype was exact (Pierre, 2026-11-06: no mistake left to point out, so the plain "✓ Yes, it's X"). Else {spelled}: the
+// name as it is spelled, the letters the last try got wrong marked (typeSpell, .tysp), in italics as uname (a fish entry
+// upright), and old: the name typed was an old one (alt: another name of a fish entry), so the line names the unit after it.
 const typeStep = (m, text, sp) => {
-  if (!sp || !m || m.exact) return null;
-  if (sp.r) return {r: 1};
+  if (!sp || !m || m.exact || sp.r) return null;
   const name = m.old || unameT(m.g),
     s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
-  return {r: 0, spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
+  return {spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
 };
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
@@ -761,18 +760,17 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
         ? `<b>${inner}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
         : `<a href="#g-${esc(target)}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
     name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
-    // The verdict, one line. The spelling step: "✓ Yes, well spelled: it's X" after an exact retype; else "✓ Yes, but
-    // not quite: it's spelled X", the same link, its wrong letters marked (an old name typed: that name, then the unit).
+    // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
+    // letters marked (an old name typed: that name, then the unit); the words in normal weight and the name in bold, so
+    // the name is what the eye catches (Pierre, 2026-11-06; .fb h3.tystep).
     said = !step
       ? `it's ${name}`
-      : step.r
-        ? `well spelled: it's ${name}`
-        : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
+      : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   return `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     ${more}`;
 }

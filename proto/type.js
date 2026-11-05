@@ -75,9 +75,7 @@ LAB.add({
             said == null ? `It was <i>${esc(t)}</i>.` : ok ? `<i>${esc(t)}</i>.` : `It was <i>${esc(t)}</i>, not <i>${esc(said.g)}</i>.`,
           verdict = !st
             ? `<b>${ok ? 'Right' : said == null ? 'No worries' : 'Missed'}</b>: ${how}${read ? ` ${read}` : ''}`
-            : st.r
-              ? `<b>Right</b>, well spelled: ${how}`
-              : `<b>Right</b>, but not quite: it's spelled ${st.spelled}${st.old ? `, ${st.alt ? 'read as' : 'the old name of'} <i>${esc(t)}</i>` : ''}.`;
+            : `<b>Right</b>, but not quite: it's spelled ${st.spelled}${st.old ? `, ${st.alt ? 'read as' : 'the old name of'} <i>${esc(t)}</i>` : ''}.`;
         body.querySelector('#tyres').innerHTML =
           `<p class="${ok ? 'ok' : said == null ? 'idk' : 'ko'}">${verdict} <a href="${genLink(t)}">Genus sheet</a></p>
           <p>${esc(tipsText(GX(t)))}</p><p class="credit">${credit(p)}</p>${typeof repBtn === 'function' ? repBtn({g: t, a: said ? said.g : '', ph: [p.f], m: 'type'}) : ''}<button type="button" class="next" id="tynext">Next</button>`;

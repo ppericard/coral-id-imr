@@ -282,8 +282,8 @@ const server = http.createServer((req, res) => {
         f().querySelector('input').value === typo.toLowerCase() &&
         !f().querySelector('input').disabled;
       if (!retryOn()) fails.push(`a close typo "${typo}" of ${g}: no retype asked (${f().querySelector('.tymsg').textContent})`);
-      // Retyped exactly: the answer (the first reading, right), "✓ Yes, well spelled: it's X" in one line, the raw text and
-      // the step logged.
+      // Retyped exactly: the answer (the first reading, right), the plain "✓ Yes, it's X" (no mistake left to point out,
+      // Pierre 2026-11-06) in one line, the raw text and the step logged.
       f().querySelector('input').value = g;
       f().requestSubmit();
       let l = logged();
@@ -299,7 +299,12 @@ const server = http.createServer((req, res) => {
       )
         fails.push(`typed answer "${typo}" retyped "${g}" logged ${JSON.stringify(l)}`);
       const h1 = document.querySelector('#after .fb h3');
-      if (!h1 || !h1.textContent.startsWith(`✓ Yes, well spelled: it's ${g}`) || document.querySelector('#after .tyread'))
+      if (
+        !h1 ||
+        !h1.textContent.startsWith(`✓ Yes, it's ${g}`) ||
+        h1.classList.contains('tystep') ||
+        document.querySelector('#after .tyread')
+      )
         fails.push(`an exact retype: verdict "${h1 && h1.textContent}"`);
       if (document.querySelector('#tyin:not(.ok)')) fails.push('a right typed answer: the field is not marked right');
       // Retyped wrong again: still right (grading unchanged), one line "✓ Yes, but not quite: it's spelled X" in place of
@@ -321,6 +326,9 @@ const server = http.createServer((req, res) => {
         !rd ||
         !rd.textContent.startsWith(`✓ Yes, but not quite: it's spelled ${g}`) ||
         !rd.classList.contains('ok') ||
+        !rd.classList.contains('tystep') ||
+        getComputedStyle(rd).fontWeight !== '400' ||
+        getComputedStyle(ln).fontWeight !== '700' ||
         !ln ||
         ln.querySelectorAll('.tysp b').length !== 1 ||
         document.querySelector('#after .tyread') ||
