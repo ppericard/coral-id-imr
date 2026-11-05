@@ -1437,3 +1437,139 @@ test('a deleted account (flag 2) is in no per-player list and no count of player
   const l = A.learning(L, 0, 1);
   assert.ok(!l.genus || l.genus.every(g => g.players <= 4), 'not in the players per genus');
 });
+
+/* ---------- Player profiles (Pierre, 2026-11-05: Q70-Q73) ---------- */
+test('eigSym: eigenvalues in decreasing order, orthonormal vectors, S v = λ v', () => {
+  const R = A.rng(9),
+    n = 6,
+    M = Array.from({length: n}, () => Array.from({length: n}, () => R() - 0.5)),
+    S = M.map((r, i) => r.map((_, j) => M[i].reduce((s, x, k) => s + x * M[j][k], 0)));
+  const E = A.eigSym(S);
+  E.val.forEach((v, k) => !k || assert.ok(v <= E.val[k - 1] + 1e-12, 'decreasing'));
+  for (let k = 0; k < n; k++) {
+    const v = E.vec.map(r => r[k]);
+    S.forEach((r, i) =>
+      near(
+        r.reduce((s, x, j) => s + x * v[j], 0),
+        E.val[k] * v[i],
+        1e-9,
+        `S v = λ v (${k}, ${i})`
+      )
+    );
+    for (let l = 0; l < n; l++)
+      near(
+        v.reduce((s, x, i) => s + x * E.vec[i][l], 0),
+        k === l ? 1 : 0,
+        1e-9,
+        'orthonormal'
+      );
+  }
+});
+
+// Made-up players of two planted styles: evening players with long sessions who enlarge often and answer slowly, and
+// morning players with short sessions who never enlarge and answer fast; the same success. One more player with too few
+// answers for a profile of their own.
+const styleLog = () => {
+  const R = A.rng(4),
+    G = ['A', 'B', 'C', 'D', 'E', 'F'],
+    rows = [],
+    DAY = 864e5;
+  const play = (id, eve, nAns) => {
+    let t = Date.UTC(2026, 9, 1, eve ? 12 : 1) + Math.floor(R() * 4) * 6e4,
+      day = 0,
+      inSess = 0;
+    for (let i = 0; i < nAns; i++) {
+      const g = G[Math.floor(R() * G.length)],
+        ok = R() < 0.75,
+        others = G.filter(x => x !== g).slice(0, 3);
+      rows.push([
+        id,
+        t,
+        g,
+        ok ? g : others[0],
+        ok ? 1 : 0,
+        'quiz',
+        'f' + g,
+        0.75,
+        0,
+        0,
+        [g, ...others].join(' '),
+        0,
+        (eve ? 9 : 4) * (0.8 + 0.4 * R()),
+        eve ? (R() < 0.6 ? 1 : 0) : 0
+      ]);
+      inSess++;
+      if (inSess >= (eve ? 40 : 8)) {
+        inSess = 0;
+        // evening players: one session a day; morning players: two, two hours apart
+        if (eve || i % 16 === 15) (day++, (t = Date.UTC(2026, 9, 1 + day, eve ? 12 : 1)));
+        else t += 2 * 36e5;
+      } else t += 30e3;
+    }
+    void DAY;
+  };
+  for (let k = 0; k < 5; k++) play('eve' + k, true, 240);
+  for (let k = 0; k < 5; k++) play('morn' + k, false, 240);
+  play('new1', true, 50);
+  return rows;
+};
+
+test('profiles: two planted styles come back as the two groups, stable when a player is left out; a short history greyed', () => {
+  const D = A.prep(styleLog()),
+    r = A.profiles(D, 0, 1),
+    id = i => r.who[i].k;
+  assert.ok(!r.thin, JSON.stringify(r).slice(0, 200));
+  assert.strictEqual(r.players, 10);
+  assert.deepStrictEqual(
+    r.feats.map(f => f.k),
+    A.PROF_F.map(f => f[0])
+  );
+  // the greyed player: last in the list, outside the tree, the map and the groups
+  const last = r.who[r.who.length - 1];
+  assert.ok(last.k === 'new1' && last.low === 1 && last.n === 50, JSON.stringify(last));
+  assert.strictEqual(r.pca.pts.length, 10);
+  // the behaviours as planted: evening share, enlarging, session length, pace
+  const f = k => A.PROF_F.findIndex(x => x[0] === k),
+    rowOf = name => r.who.find(w => w.k === name);
+  near(rowOf('eve0').v[f('eve')], 1, 1e-9, 'evening share');
+  near(rowOf('morn0').v[f('eve')], 0, 1e-9, 'morning player');
+  assert.strictEqual(rowOf('eve0').v[f('len')], 40);
+  assert.strictEqual(rowOf('morn0').v[f('len')], 8);
+  assert.ok(rowOf('eve0').v[f('zoom')] > 0.2 && rowOf('morn0').v[f('zoom')] < -0.2, 'enlarging, net of the views');
+  assert.ok(rowOf('eve0').v[f('pace')] > 0.3 && rowOf('morn0').v[f('pace')] < -0.3, 'pace');
+  near(rowOf('morn0').v[f('wk')], 14, 1.5, 'two sessions a day');
+  // two groups, each one style, each a block of the tree's order; stable in every run
+  assert.strictEqual(r.k, 2);
+  const G = r.groups.map(L => L.map(id).map(s => s.replace(/\d+$/, '')));
+  G.forEach(L => assert.strictEqual(new Set(L).size, 1, 'one style per group: ' + L));
+  r.groups.forEach(L => assert.strictEqual(L[L.length - 1] - L[0], L.length - 1, 'a block'));
+  assert.ok(r.stab.loo.every(j => j === 1) && r.stab.kept === 10, JSON.stringify(r.stab));
+  assert.ok(
+    r.stab.boot.every(j => j > 0.9),
+    JSON.stringify(r.stab)
+  );
+  // the map's first axis separates the styles; it explains most of the spread
+  const x = r.pca.pts.map(p => p[0]),
+    side = r.who.slice(0, 10).map((w, i) => [w.k.replace(/\d+$/, ''), Math.sign(x[i])]);
+  assert.ok(new Set(side.filter(s => s[0] === 'eve').map(s => s[1])).size === 1, JSON.stringify(side));
+  assert.ok(side.find(s => s[0] === 'eve')[1] !== side.find(s => s[0] === 'morn')[1], 'opposite sides');
+  assert.ok(r.pca.var[0] > 0.5, String(r.pca.var));
+  // in words: the closest pair is two players of one style
+  const [i, j] = r.close[0];
+  assert.strictEqual(id(i).replace(/\d+$/, ''), id(j).replace(/\d+$/, ''));
+});
+
+test('profiles: fewer than 3 players with 100 answers is not enough; each player’s window is their last 300 answers', () => {
+  const rows = styleLog(),
+    two = A.profiles(A.prep(rows.filter(r => /^(eve0|eve1|new1)$/.test(r[0]))), 0, 1);
+  assert.ok(two.thin && two.n === 2 && two.min === 3 && two.who.length === 3, JSON.stringify(two).slice(0, 300));
+  // a player with 500 answers: only the last 300 count
+  const extra = [];
+  for (let i = 0; i < 260; i++)
+    extra.push(['eve0', Date.UTC(2026, 8, 1) + i * 30e3, 'A', 'A', 1, 'quiz', 'fA', 0.75, 0, 0, 'A B C D', 0, 30, 1]);
+  const r = A.profiles(A.prep(rows.concat(extra)), 0, 1);
+  assert.strictEqual(r.who.find(w => w.k === 'eve0').n, 300);
+  // the whole report carries the profiles, keyed by the anonymous ids only
+  const rep = A.runAll(rows, {}, {B: 0});
+  assert.ok(rep.A.who && rep.A.who.who.length === 11 && rep.A.who.effects.length === 0);
+});

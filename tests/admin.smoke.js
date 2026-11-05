@@ -415,7 +415,7 @@ const WIDTHS = [390, 1280];
     });
     if (!anre || !anre.shown || anre.left < 0 || anre.right > anre.vw)
       fails.push(`${w}px Analyses: Recompute here ${JSON.stringify(anre)}`);
-    for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess']) {
+    for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess', '~an-who']) {
       await go(h);
       const v = await p.evaluate(() => ({
         svg: document.querySelectorAll('#view svg.adm-an-svg').length,
@@ -429,7 +429,7 @@ const WIDTHS = [390, 1280];
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
-      if (h !== '~an-back') {
+      if (h !== '~an-back' && h !== '~an-who') {
         const ent = await p.evaluate(() => {
           const c = document.getElementById('anc-effects-hard-to-tell-apart');
           if (!c) return null;
@@ -451,6 +451,30 @@ const WIDTHS = [390, 1280];
         if (!ent || !ent.folded || !ent.table || ent.wide > 0 || ent.small)
           fails.push(`${w}px Analyses #${h} entangled: ${JSON.stringify(ent)}`);
       }
+    }
+    // Player profiles (Pierre, 2026-11-05, Q70-Q73): a row per made-up player with a cell per behaviour, the greyed rows
+    // (under 100 answers) last, names from Players linked to their journeys, the tree, the stability line, the map of players
+    {
+      await go('~an-who');
+      const pr = await p.evaluate(() => {
+        const c = document.getElementById('anc-player-profiles'),
+          svg = c && c.querySelector('svg.adm-an-svg');
+        return (
+          c && {
+            rows: svg.querySelectorAll('text.an-lab').length,
+            cells: svg.querySelectorAll('rect.an-h').length,
+            dim: [...svg.querySelectorAll('text.an-lab')].map(t => t.classList.contains('an-dim')),
+            links: svg.querySelectorAll('a[href^="#~journey/"]').length,
+            tree: !!svg.querySelector('path.an-tree'),
+            stab: /runs with one player left out/.test(c.textContent),
+            map: !!document.querySelector('#view svg circle.an-dot') && !!document.querySelector('#view line.an-arrow'),
+            wide: document.documentElement.scrollWidth - innerWidth
+          }
+        );
+      });
+      const greyLast = pr && pr.dim.every((d, i) => !d || pr.dim.slice(i).every(Boolean));
+      if (!pr || pr.rows < 7 || pr.cells < 7 * pr.rows || !pr.links || !pr.tree || !pr.stab || !pr.map || pr.wide > 0 || !greyLast)
+        fails.push(`${w}px Analyses player profiles: ${JSON.stringify(pr)}`);
     }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll

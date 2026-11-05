@@ -22,7 +22,8 @@ const AN_VIEWS = [
   ['~an-conf', 'conf', 'Genera mixed up'],
   ['~an-learn', 'learn', 'Learning with practice'],
   ['~an-back', 'back', 'After a break'],
-  ['~an-sess', 'sess', 'Sessions']
+  ['~an-sess', 'sess', 'Sessions'],
+  ['~an-who', 'who', 'Player profiles']
 ];
 const anKey = h => (AN_VIEWS.find(v => v[0] === h) || [])[1];
 const anTitle = k => (AN_VIEWS.find(v => v[1] === k) || [])[2] || k;
@@ -330,25 +331,30 @@ function bars(vals, o = {}) {
 // too narrow (the columns then follow the rows' order); o.mark(i, j): an extra class for a cell (an outline); o.blocks:
 // [[first, last]] outlined on the diagonal; o.top and o.tree(x0, cell, height): room above the column labels and the
 // dendrogram drawn in it; o.ax: [rows' name, columns' name], written in the corner. o: {n, nc, rl, rcls, cl, cell(i, j)
-// -> null | {c, t, title, inv}, w, lw, cs (largest cell), title}.
+// -> null | {c, t, title, inv}, w, lw, cs (largest cell), title}; o.lt and o.ltree(top, cell, width): room left of the row
+// labels and the dendrogram drawn in it; o.rc(i): a row's extra class (a greyed row), o.href(i): its label's link.
 function heat(o) {
   const n = o.n,
     nc = o.nc ?? n,
     w = o.w || anW(),
+    L0 = o.lt || 0,
     lw = o.lw ?? Math.min(150, Math.round(w * 0.32)),
-    cs = Math.max(6, Math.min(o.cs || 28, Math.floor((w - lw - 4) / nc))),
+    cs = Math.max(6, Math.min(o.cs || 28, Math.floor((w - L0 - lw - 4) / nc))),
     up = o.cl && !o.num && cs >= 12,
     ch = up ? Math.min(112, 10 + 6.4 * Math.max(...o.cl.map(s => String(s).length))) : o.cl && o.num ? 18 : o.ax ? 16 : 0,
     tt = o.top || 0,
     top = tt + ch,
     h = top + n * cs + 2,
-    X = j => lw + j * cs,
+    X = j => L0 + lw + j * cs,
     Y = i => top + i * cs;
-  let s = o.tree ? o.tree(X(0), cs, tt) : '';
+  let s = (o.tree ? o.tree(X(0), cs, tt) : '') + (o.ltree ? o.ltree(top, cs, L0) : '');
   if (o.ax)
-    s += `<text class="an-tick" x="${lw - 6}" y="${top - 4}" text-anchor="end">${esc(o.ax[0])} ↓</text>${up || o.num ? '' : `<text class="an-tick" x="${lw}" y="${top - 4}">${esc(o.ax[1])} →</text>`}`;
-  for (let i = 0; i < n; i++)
-    s += `<text class="an-lab${o.rcls ? ' ' + o.rcls : ''}" x="${lw - 6}" y="${Y(i) + cs / 2 + 4}" text-anchor="end"><title>${esc(o.rl[i])}</title>${esc(fit(String(o.rl[i]), lw - 10))}</text>`;
+    s += `<text class="an-tick" x="${L0 + lw - 6}" y="${top - 4}" text-anchor="end">${esc(o.ax[0])} ↓</text>${up || o.num ? '' : `<text class="an-tick" x="${L0 + lw}" y="${top - 4}">${esc(o.ax[1])} →</text>`}`;
+  for (let i = 0; i < n; i++) {
+    const t = `<text class="an-lab${o.rcls ? ' ' + o.rcls : ''}${o.rc ? ' ' + o.rc(i) : ''}" x="${L0 + lw - 6}" y="${Y(i) + cs / 2 + 4}" text-anchor="end"><title>${esc(o.rl[i])}</title>${esc(fit(String(o.rl[i]), lw - 10))}</text>`,
+      href = o.href && o.href(i);
+    s += href ? `<a href="${esc(href)}">${t}</a>` : t;
+  }
   if (o.cl && (up || o.num))
     for (let j = 0; j < nc; j++) {
       const x = X(j) + cs / 2;
@@ -371,7 +377,7 @@ function heat(o) {
     ([a, b]) =>
       (s += `<rect class="an-blk" x="${X(a) - 1}" y="${Y(a) - 1}" width="${(b - a + 1) * cs + 2}" height="${(b - a + 1) * cs + 2}" rx="3"/>`)
   );
-  return svg(lw + nc * cs + 2, h, o.title || 'Heatmap', s);
+  return svg(L0 + lw + nc * cs + 2, h, o.title || 'Heatmap', s);
 }
 // A dendrogram as one path: merges [a, b, height] (leaves 0..n-1 in display order, the k-th merge = n + k); leaf(i): the
 // leaf's position along the leaves, hp(height): the position along the height axis. side 'top': leaves along x, the tree
@@ -389,6 +395,70 @@ function dendroPath(m, n, leaf, hp, side, cap = Infinity) {
     if (h < cap) d += side === 'top' ? `M${A[0]} ${A[1]}V${H}H${B[0]}V${B[1]}` : `M${A[1]} ${A[0]}H${H}V${B[0]}H${B[1]}`;
   });
   return `<path class="an-tree" d="${d}"/>`;
+}
+
+// A biplot (Gabriel 1971): points (players) and arrows (behaviours) on the first two axes of a PCA, one square scale, the
+// arrows scaled to the points' spread (their direction and relative length are what is read). Labels beside their point,
+// skipped where they would overlap another (each point keeps its hover title, and the table beside the chart has every
+// number). o: {pts: [{x, y, label, lab, title}], arrows: [{x, y, label}], var: [share 1, share 2], w, title}.
+function biplot(o) {
+  const S = Math.min(o.w || anW(), 560),
+    m = 40,
+    P = o.pts,
+    am = Math.max(1e-9, ...o.arrows.map(a => Math.hypot(a.x, a.y))),
+    pm = Math.max(1e-9, ...P.map(p => Math.hypot(p.x, p.y))),
+    k = (0.9 * pm) / am,
+    R =
+      Math.max(1e-9, ...P.flatMap(p => [Math.abs(p.x), Math.abs(p.y)]), ...o.arrows.flatMap(a => [Math.abs(a.x * k), Math.abs(a.y * k)])) *
+      1.08,
+    X = v => m + ((v + R) / (2 * R)) * (S - 2 * m),
+    Y = v => S - m - ((v + R) / (2 * R)) * (S - 2 * m),
+    boxes = [],
+    free = (x, y, w) => {
+      const b = [x - 2, y - 12, x + w + 2, y + 3];
+      if (b[0] < 0 || b[2] > S || b[1] < 0 || b[3] > S || boxes.some(c => b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]))
+        return false;
+      boxes.push(b);
+      return true;
+    };
+  let s = `<line class="an-zero" x1="${X(-R)}" x2="${X(R)}" y1="${Y(0)}" y2="${Y(0)}"/><line class="an-zero" x1="${X(0)}" x2="${X(0)}" y1="${Y(-R)}" y2="${Y(R)}"/>`;
+  // the axes' names and every dot hold their place first, so no label is written over them
+  const a1 = `Axis 1 · ${pc(o.var[0])}`,
+    a2 = `Axis 2 · ${pc(o.var[1])}`;
+  boxes.push([S - 4 - a1.length * 6.4, Y(0) - 18, S, Y(0) - 3], [X(0) + 4, 0, X(0) + 8 + a2.length * 6.4, 15]);
+  P.forEach(p => boxes.push([X(p.x) - 6, Y(p.y) - 6, X(p.x) + 6, Y(p.y) + 6]));
+  s += `<text class="an-tick" x="${S - 4}" y="${Y(0) - 6}" text-anchor="end">${a1}</text><text class="an-tick" x="${X(0) + 6}" y="12">${a2}</text>`;
+  o.arrows.forEach(a => {
+    const x = X(a.x * k),
+      y = Y(a.y * k);
+    s += `<g><title>${esc(a.title || a.label)}</title><line class="an-arrow" x1="${X(0)}" y1="${Y(0)}" x2="${x}" y2="${y}"/><circle class="an-arrowh" cx="${x}" cy="${y}" r="2.5"/></g>`;
+  });
+  P.forEach(p => (s += `<circle class="an-dot" cx="${X(p.x)}" cy="${Y(p.y)}" r="5"><title>${esc(p.title || p.label)}</title></circle>`));
+  // labels: the arrows' first, at their tips, then the points' (right of the dot, else left)
+  o.arrows.forEach(a => {
+    const x = X(a.x * k),
+      y = Y(a.y * k),
+      t = String(a.label),
+      w = t.length * 6.4,
+      lx = a.x >= 0 ? x + 4 : x - 4 - w;
+    if (free(lx, y + 4, w)) s += `<text class="an-tick an-alab" x="${lx}" y="${y + 4}">${esc(t)}</text>`;
+  });
+  P.filter(p => p.lab).forEach(p => {
+    const x = X(p.x),
+      y = Y(p.y),
+      t = fit(String(p.label), 120),
+      w = t.length * 6.4;
+    // right of the dot, else left, above, below
+    const at = [
+      [x + 8, y + 4, 'start'],
+      [x - 8 - w, y + 4, 'end'],
+      [x - w / 2, y - 9, 'middle'],
+      [x - w / 2, y + 18, 'middle']
+    ].find(([lx, ly]) => free(lx, ly, w));
+    if (at)
+      s += `<text class="an-lab" x="${at[2] === 'end' ? x - 8 : at[2] === 'middle' ? x : at[0]}" y="${at[1]}"${at[2] === 'start' ? '' : ` text-anchor="${at[2]}"`}>${esc(t)}</text>`;
+  });
+  return svg(S, S, o.title || 'Map', s);
 }
 
 /* ---------- Page pieces ---------- */
@@ -955,6 +1025,150 @@ function anMixMap(a) {
   return anCard('Mix-up map', words + tree + leg + block, 'wide');
 }
 
+// Player profiles (Pierre, 2026-11-05, Q70-Q74; analysis.js profiles): a descriptive map of how each player plays on
+// their last 300 answers, never named types. A heatmap of players × behaviours (the number in each cell: how far from the
+// players' average, in standard deviations; above in the accent, below in ink), rows ordered by Ward's tree (on their
+// left), columns by how the behaviours go together, rows under 100 answers greyed below the others; the groups and how
+// they hold when a player is left out or the players drawn again (the stability line); the closest pairs and the most
+// different player in words; a biplot beside it on a desktop, in a card of its own below (folded on a phone, its 8 points
+// furthest from the centre labelled); a table of every number. Names come from Players (the report keeps anonymous ids).
+const AN_PROF = {
+  pace: ['Time', v => (v == null ? '–' : `${anNum((Math.exp(v) - 1) * 100, 0)}% time`)],
+  zoom: ['Zoom', v => (v == null ? '–' : anPts(v))],
+  acc: ['Right+', v => (v == null ? '–' : anPts(v))],
+  stop: ['Stops', v => (v == null ? '–' : anPts(v))],
+  len: ['Session', v => (v == null ? '–' : `${anInt(v)} answers`)],
+  wk: ['Weekly', v => (v == null ? '–' : `${v.toFixed(1)} a week`)],
+  eve: ['Evening', v => (v == null ? '–' : pc(v))]
+};
+const sum0 = L => L.reduce((t, x) => t + x, 0);
+const anWhoText = (id, i) => {
+  const u = ((typeof USERS !== 'undefined' && USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
+  return u ? u.name : `P${i + 1}`;
+};
+const anWhoHref = id => {
+  const u = ((typeof USERS !== 'undefined' && USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
+  return u ? '#~journey/' + encodeURIComponent(u.name) : null;
+};
+const anZc = z => {
+  const a = Math.abs(z),
+    k = a < 0.5 ? 0 : a < 1 ? 1 : a < 1.5 ? 2 : a < 2 ? 3 : 4;
+  return {c: k ? (z > 0 ? 'an-hp' : 'an-hb') + k : 'an-h0', inv: k >= 3};
+};
+function anProfiles(a) {
+  const F = a.feats || [],
+    W = a.who || [],
+    nm = W.map((w, i) => anWhoText(w.k, i)),
+    short = f => (AN_PROF[f.k] || [f.label])[0],
+    val = (f, v) => (AN_PROF[f.k] ? AN_PROF[f.k][1](v) : String(v)),
+    cols = a.cols || F.map((_, f) => f),
+    main = W.filter(w => !w.low).length,
+    desk = matchMedia('(min-width: 1024px)').matches,
+    w = desk ? Math.floor((anW() - 12) / 2) : anW(),
+    // beyond 3 SD the number says only that (a greyed row with few answers can sit far out)
+    zt = z => (z == null ? '–' : Math.abs(z) > 3 ? (z > 0 ? '>3' : '<−3') : (z > 0 ? '+' : z < 0 ? '−' : '') + Math.abs(z).toFixed(1));
+  const hmap = heat({
+    n: W.length,
+    nc: cols.length,
+    rl: nm,
+    cl: cols.map(f => short(F[f])),
+    w,
+    cs: 40,
+    tmin: 28,
+    lt: a.m ? 34 : 0,
+    lw: Math.min(130, Math.max(80, w - 34 - cols.length * 30 - 6)),
+    ltree: a.m
+      ? (top, cs, L0) =>
+          dendroPath(
+            a.m,
+            main,
+            i => top + i * cs + cs / 2,
+            h => L0 - 2 - (h / Math.max(1e-9, ...a.m.map(x => x[2]))) * (L0 - 6),
+            'left'
+          )
+      : null,
+    rc: i => (W[i].low ? 'an-dim' : ''),
+    href: i => anWhoHref(W[i].k),
+    cell: (i, j) => {
+      const f = cols[j],
+        z = W[i].z[f],
+        v = W[i].v[f];
+      if (v == null) return {c: 'an-h0', title: `${nm[i]}: ${F[f].label}: no value (too few answers)`};
+      // a greyed row (too few answers for a profile) keeps its numbers, without colour
+      return {
+        ...(W[i].low ? {c: 'an-h0 an-dim'} : anZc(z)),
+        t: zt(z),
+        title: `${nm[i]}: ${F[f].label}: ${val(F[f], v)} (${zt(z)} SD from the players' average; ${W[i].n} answers)`
+      };
+    },
+    title: 'Players and how they play: each behaviour against the players’ average'
+  });
+  const leg = `<p class="adm-an-leg adm-an-hleg"><span><i class="an-h an-hp3"></i>Above the players’ average</span><span><i class="an-h an-hb3"></i>Below</span><span>The number: standard deviations from it</span>${W.some(x => x.low) ? `<span class="an-dim">Greyed: under ${anInt(a.at)} answers</span>` : ''}</p>`;
+  const bip = () => {
+    if (!a.pca) return '';
+    const far = new Set(
+      a.pca.pts
+        .map((p, i) => [i, Math.hypot(p[0], p[1])])
+        .sort((x, y) => y[1] - x[1])
+        .slice(0, anWide() ? 99 : 8)
+        .map(x => x[0])
+    );
+    return biplot({
+      w,
+      var: a.pca.var,
+      pts: a.pca.pts.map((p, i) => ({x: p[0], y: p[1], label: nm[i], lab: far.has(i), title: `${nm[i]} (${W[i].n} answers)`})),
+      arrows: a.pca.load.map((l, f) => ({x: l[0], y: l[1], label: short(F[f]), title: `${F[f].label}: ${anR(l[0])}, ${anR(l[1])}`})),
+      title: 'Map of players: players as points, behaviours as arrows'
+    });
+  };
+  // the stability line and the words
+  const st = a.stab,
+    rng = L => {
+      const V = L.filter(v => v != null);
+      return V.length ? (Math.min(...V) === Math.max(...V) ? anR(V[0]) : `${anR(Math.min(...V))}–${anR(Math.max(...V))}`) : '–';
+    },
+    gl = (a.groups || []).map(L => L.map(i => esc(nm[i])).join(' · ')),
+    stable = st && st.loo.every(j => j == null || j >= st.at),
+    words = a.groups
+      ? `<ul class="adm-an-says-l">${[
+          `<li>Groups of players (not types; ${a.k}, where the silhouette is best, ${anR(a.sil)}): ${gl.map((g, i) => `<b>${i + 1}</b> ${g}`).join('; ')}.</li>`,
+          `<li>${stable ? 'Stable' : 'Not stable'}: the same groups in ${st.kept} of ${st.runs} runs with one player left out (Jaccard ${rng(st.loo)}); players drawn again ${st.draws} times: ${rng(st.boot)}.${stable ? '' : ' These groups change when one player is left out.'}</li>`,
+          ...(a.close || []).map(
+            ([i, j, , fs]) =>
+              `<li>Close: <b>${esc(nm[i])}</b> and <b>${esc(nm[j])}</b>${fs.length ? ` (both ${fs.map(f => `${W[i].z[f] > 0 ? 'above' : 'below'} average in ${esc(F[f].label.toLowerCase())}`).join(', ')})` : ''}.</li>`
+          ),
+          a.far
+            ? `<li>Most different from everyone: <b>${esc(nm[a.far[0]])}</b> (${esc(F[a.far[1]].label.toLowerCase())}, ${W[a.far[0]].z[a.far[1]] > 0 ? 'above' : 'below'} average).</li>`
+            : ''
+        ].join('')}</ul>`
+      : '';
+  const table = anTable(
+    ['Player', '#Answers', ...cols.map(f => '#' + F[f].label)],
+    W.map(
+      (x, i) =>
+        `<tr${x.low ? ' class="an-dim"' : ''}><td>${esc(nm[i])}</td><td class="n">${anInt(x.n)}</td>${cols.map(f => `<td class="n">${val(F[f], x.v[f])}<small class="adm-an-ci">${zt(x.z[f])} SD</small></td>`).join('')}</tr>`
+    )
+  );
+  const ptab = a.pca
+    ? anTable(
+        ['Behaviour', '#Axis 1', '#Axis 2'],
+        a.pca.load.map((l, f) => `<tr><td>${esc(F[f].label)}</td><td class="n">${anR(l[0])}</td><td class="n">${anR(l[1])}</td></tr>`)
+      ) +
+      anTable(
+        ['Player', '#Axis 1', '#Axis 2'],
+        a.pca.pts.map((p, i) => `<tr><td>${esc(nm[i])}</td><td class="n">${anNum(p[0], 2)}</td><td class="n">${anNum(p[1], 2)}</td></tr>`)
+      )
+    : '';
+  return [
+    anCard(
+      'Player profiles',
+      (desk && a.pca ? `<div class="adm-an-pair"><div>${hmap}${leg}</div><div>${bip()}</div></div>` : hmap + leg) + words + table,
+      'wide'
+    ),
+    a.pca ? anCard('Map of players', (desk ? '' : bip()) + ptab, 'wide', desk || anWide() ? undefined : false) : ''
+  ];
+}
+
 /* ---------- Views ---------- */
 // The Overview (Pierre, 2026-11-04: "very visual"): every result as a bar, one chart per outcome (a right answer, the time
 // to answer, ending a session, mixing up genera, the app's own estimate), sorted as the page asks, coloured by verdict, the
@@ -1024,6 +1238,17 @@ function anView(key, rep, R) {
     ...(key === 'back' && a.far != null ? [['After a break', anInt(a.far)]] : []),
     ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : [])
   ]);
+  if (key === 'who')
+    return (
+      kpis([
+        ['Answers used', anInt(sum0((a.who || []).map(w => w.n)))],
+        ['Players', (a.who || []).filter(w => !w.low).length],
+        ['Answers per profile', `last ${anInt(a.win)}`]
+      ]) +
+      (a.thin
+        ? `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} players with ${anInt(a.at)} answers or more a profile map needs.</p>`
+        : `<div class="adm-sgrid adm-an-grid">${anProfiles(a).join('')}</div>`)
+    );
   if (a.thin)
     return (
       head +
@@ -1646,7 +1871,8 @@ Object.assign(HELP, {
   'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p><p><b>Mix-up map.</b> Which genera form families of mix-ups. Two genera are close when their pair is clearly mixed up more often than a typical pair, per offer (the lower end of its likely range, so chance alone makes no family); genera are grouped by average distance and a family is a group whose pairs are, on average, at least a fifth as close as the closest pair. Rows: the genus shown; columns: the genus answered instead, both in the tree's order, so families sit as blocks on the diagonal (dashed). Colour: the rate per offer, pulled towards the pair's own rate when offers are few, against a typical pair's (blank: never offered together). Outlined: look-alikes named on a genus sheet; a family with no outline is one the sheets do not name. <b>Mixed up across families</b>: the cells most mixed up between two families, worth a look at their photos. On a phone the tree is a list: tap a family's band for its block and its numbers. Only genera mixed up at least once are on the map.</p>${AN_HELP_COMMON}`,
   'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
-  'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`
+  'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`,
+  'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. The learning slope joins once the Learning model fits one per player. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out (and players drawn again with replacement, the bootstrap); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in.
 if (typeof DATA !== 'undefined' && DATA && /^~an(-|$)/.test(cur)) render();

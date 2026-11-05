@@ -11,10 +11,11 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 6; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 7; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
+  // 7: player profiles (who)
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -1891,6 +1892,318 @@
     };
   }
 
+  /* ---------- 9. Player profiles (Pierre, 2026-11-05: Q70-Q73; the multifactor visualisation study §3) ---------- */
+  // A descriptive map of how each player plays, not a typology: no named types until about 30 players (Q70; Dalmaijer et
+  // al. 2022: clusters need 20-30 people per group). Each player's current profile is computed on their last PROF_N
+  // answers (the whole history when fewer, Q71), the count shown, rows under PROF_MIN answers greyed and left out of the
+  // tree, the map and the groups. The behaviours (Q72, the study's 8; the learning slope waits for a random practice
+  // slope in Learning, ROADMAP), each net of what the app decided: the app picks the genus, the photo, the format and
+  // the difficulty from the level, so a raw share mostly measures the level.
+  const PROF_N = 300,
+    PROF_MIN = 100,
+    PROF_LOW = 20, // fewer answers than this: not on the page at all
+    PROF_K = 10, // pseudo-answers at the pooled rate for the stops after misses (a few misses in a row say little)
+    PROF_STAB = 0.75; // Hennig 2007: a group found again with a mean Jaccard of 0.75 or more is stable
+  const PROF_F = [
+    ['pace', 'Answer time'], // the player's own effect in the Answer time model (log time, net of right or wrong, format, difficulty, genus, photo)
+    ['zoom', 'Enlarging'], // share of photos enlarged, minus what the views shown predict from everyone's rates (points)
+    ['acc', 'Right beyond the app’s expectation'], // right − the app's expected chance (points), the app's choices already in it
+    ['stop', 'Stopping after misses'], // extra chance to end the session after 2+ misses in a row, against after other answers (points)
+    ['len', 'Session length'], // median answers per session (log for the map)
+    ['wk', 'Sessions per week'], // sessions per week over the window (at least a week; log for the map)
+    ['eve', 'Evening play'] // share of answers from 17:00 to midnight, Manila time
+  ];
+  // The behaviours of every player in D (any set of answers, prep's shape, in time order): {id: [value or null per
+  // PROF_F]}. Kept apart from the window so a later analysis can run it on successive windows of a player's history
+  // (Pierre, 2026-11-05: whole-history trajectories are a later level).
+  function profFeat(D) {
+    const by = new Map();
+    D.forEach(a => (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
+    const out = {},
+      ids = [...by.keys()];
+    ids.forEach(id => (out[id] = PROF_F.map(() => null)));
+    const fi = k => PROF_F.findIndex(f => f[0] === k);
+    // pace: the Answer time model on these answers, its player effects (a fast fit: no covariance needed)
+    const Dt = D.filter(a => a.s && a.x != null);
+    if (Dt.length >= 100 && players(Dt) >= 2) {
+      FAST = true;
+      try {
+        const {F} = rtFit(Dt);
+        F[0].L.forEach((id, j) => (out[id][fi('pace')] = F[0].u[j]));
+      } catch (e) {
+        void e;
+      } finally {
+        FAST = false;
+      }
+    }
+    // enlarging, net of the views: everyone's rate for the view shown is what the app's choice of photo predicts
+    const vr = {};
+    D.filter(a => a.z != null).forEach(a => {
+      const o = (vr[a.qv || '?'] = vr[a.qv || '?'] || [0, 0]);
+      o[0] += a.z;
+      o[1]++;
+    });
+    const end = D.reduce((m, a) => (a.t > m ? a.t : m), -Infinity);
+    // stops after 2+ misses in a row, pooled first (the last answer of a session ends it; a session still open is not over)
+    const stopRows = id => {
+      const L = by.get(id),
+        R = [];
+      L.forEach((a, i) => {
+        const last = i === L.length - 1 || L[i + 1].sess !== a.sess;
+        if (last && end - a.t < GAP) return;
+        R.push([a.streak >= 2 ? 1 : 0, last ? 1 : 0]);
+      });
+      return R;
+    };
+    const SR = Object.fromEntries(ids.map(id => [id, stopRows(id)])),
+      pool = f => {
+        const L = ids.flatMap(id => SR[id]).filter(r => r[0] === f);
+        return L.length ? sum(L.map(r => r[1])) / L.length : 0;
+      },
+      p2 = pool(1),
+      p0 = pool(0);
+    ids.forEach(id => {
+      const L = by.get(id),
+        o = out[id],
+        Z = L.filter(a => a.z != null),
+        E = L.filter(a => a.E != null);
+      if (Z.length >= 20) o[fi('zoom')] = mean(Z.map(a => a.z - vr[a.qv || '?'][0] / vr[a.qv || '?'][1]));
+      if (E.length >= 20) o[fi('acc')] = mean(E.map(a => a.y - a.E));
+      const S = SR[id],
+        n2 = S.filter(r => r[0]).length,
+        s2 = S.filter(r => r[0] && r[1]).length,
+        n0 = S.length - n2,
+        s0 = S.filter(r => !r[0] && r[1]).length;
+      if (S.length >= 20) o[fi('stop')] = (s2 + PROF_K * p2) / (n2 + PROF_K) - (s0 + PROF_K * p0) / (n0 + PROF_K);
+      const lens = new Map();
+      L.forEach(a => lens.set(a.sess, (lens.get(a.sess) || 0) + 1));
+      o[fi('len')] = q([...lens.values()], 0.5);
+      o[fi('wk')] = (lens.size * 7) / Math.max(7, (L[L.length - 1].t - L[0].t) / DAY);
+      o[fi('eve')] = mean(L.map(a => ((new Date(a.t).getUTCHours() + 8) % 24 >= 17 ? 1 : 0)));
+    });
+    return out;
+  }
+  // The scale each behaviour is mapped on (counts and rates on a log scale), then z-scores over the rows given.
+  const profScale = (k, v) => (v == null ? null : k === 'len' || k === 'wk' ? Math.log(Math.max(v, 0.1)) : v);
+  function zOf(V, rows) {
+    const p = PROF_F.length,
+      mu = [],
+      sd = [];
+    for (let f = 0; f < p; f++) {
+      const L = rows.map(r => V[r][f]).filter(v => v != null);
+      mu[f] = mean(L);
+      sd[f] = Math.sqrt(mean(L.map(v => (v - mu[f]) ** 2)));
+    }
+    return id => V[id].map((v, f) => (v == null || !sd[f] ? 0 : (v - mu[f]) / sd[f]));
+  }
+  // Eigen decomposition of a symmetric matrix (Jacobi rotations): values in decreasing order, vectors as columns.
+  function eigSym(S) {
+    const n = S.length,
+      a = S.map(r => r.slice()),
+      v = S.map((_, i) => S.map((__, j) => (i === j ? 1 : 0)));
+    for (let sweep = 0; sweep < 100; sweep++) {
+      let off = 0;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) off += a[i][j] * a[i][j];
+      if (off < 1e-22) break;
+      for (let p = 0; p < n; p++)
+        for (let r = p + 1; r < n; r++) {
+          if (Math.abs(a[p][r]) < 1e-300) continue;
+          const phi = 0.5 * Math.atan2(2 * a[p][r], a[r][r] - a[p][p]),
+            c = Math.cos(phi),
+            s = Math.sin(phi);
+          for (let k = 0; k < n; k++) {
+            const x = a[k][p],
+              y = a[k][r];
+            a[k][p] = c * x - s * y;
+            a[k][r] = s * x + c * y;
+          }
+          for (let k = 0; k < n; k++) {
+            const x = a[p][k],
+              y = a[r][k];
+            a[p][k] = c * x - s * y;
+            a[r][k] = s * x + c * y;
+          }
+          for (let k = 0; k < n; k++) {
+            const x = v[k][p],
+              y = v[k][r];
+            v[k][p] = c * x - s * y;
+            v[k][r] = s * x + c * y;
+          }
+        }
+    }
+    const I = a.map((_, i) => i).sort((i, j) => a[j][j] - a[i][i]);
+    return {val: I.map(i => a[i][i]), vec: v.map(r => I.map(i => r[i]))};
+  }
+  // k groups from a tree of n leaves: its first n - k merges applied.
+  function cutK(T, n, k) {
+    const up = [...Array(n + T.m.length).keys()],
+      top = x => (up[x] === x ? x : (up[x] = top(up[x])));
+    T.m.slice(0, Math.max(0, n - k)).forEach(([a, b], j) => ((up[top(a)] = n + j), (up[top(b)] = n + j)));
+    const G = new Map();
+    T.order.forEach(i => (G.get(top(i)) || G.set(top(i), []).get(top(i))).push(i));
+    return [...G.values()];
+  }
+  // Average silhouette width of a grouping (Rousseeuw 1987) on a distance matrix.
+  function silhouette(Dm, G) {
+    const lab = [];
+    G.forEach((L, g) => L.forEach(i => (lab[i] = g)));
+    const s = Dm.map((r, i) => {
+      const own = G[lab[i]].filter(j => j !== i);
+      if (!own.length) return 0;
+      const a = mean(own.map(j => r[j])),
+        b = Math.min(...G.filter((_, g) => g !== lab[i]).map(L => mean(L.map(j => r[j]))));
+      return (b - a) / Math.max(a, b, 1e-12);
+    });
+    return mean(s);
+  }
+  const jac = (A, B) => {
+    const S = new Set(B);
+    return A.filter(x => S.has(x)).length / new Set([...A, ...B]).size;
+  };
+  // Ward's tree on z-scores of the ids given (the groups' structure for the stability runs).
+  const wardOf = (ids, zf) => {
+    const Z = ids.map(zf),
+      D2 = Z.map(a => Z.map(b => sum(a.map((v, f) => (v - b[f]) ** 2))));
+    return {T: hclust(D2, 'ward'), D: D2.map(r => r.map(Math.sqrt))};
+  };
+  function profiles(A, B, seed) {
+    // a deleted account's answers (gone, sheet v55) make no profile (Pierre, 2026-11-05, Q86)
+    const by = new Map();
+    A.forEach(a => !a.gone && (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
+    const win = [...by.entries()].filter(([, L]) => L.length >= PROF_LOW).map(([id, L]) => [id, L.slice(-PROF_N)]),
+      D = win.flatMap(([, L]) => L).sort((a, b) => a.t - b.t),
+      V0 = profFeat(D),
+      V = Object.fromEntries(Object.entries(V0).map(([id, L]) => [id, L.map((v, f) => profScale(PROF_F[f][0], v))])),
+      cnt = Object.fromEntries(win.map(([id, L]) => [id, L.length])),
+      main = win.filter(([id]) => cnt[id] >= PROF_MIN).map(([id]) => id),
+      low = win
+        .filter(([id]) => cnt[id] < PROF_MIN)
+        .map(([id]) => id)
+        .sort((a, b) => cnt[b] - cnt[a]),
+      feats = PROF_F.map(([k, label]) => ({k, label})),
+      row = (id, zf) => ({k: id, n: cnt[id], low: cnt[id] < PROF_MIN ? 1 : 0, v: V0[id].map(r3), z: zf(id).map(r3)});
+    if (main.length < 3) {
+      const zf = zOf(
+        V,
+        win.map(([id]) => id)
+      );
+      return {
+        thin: true,
+        n: main.length,
+        min: 3,
+        of: 'players',
+        effects: [],
+        feats,
+        win: PROF_N,
+        at: PROF_MIN,
+        who: win.map(([id]) => row(id, zf))
+      };
+    }
+    const zf = zOf(V, main),
+      n = main.length,
+      p = PROF_F.length,
+      Z = main.map(zf),
+      {T, D: Dm} = wardOf(main, zf),
+      pos = new Map(T.order.map((i, k) => [i, k]));
+    // the behaviours ordered by how they go together across players (average linkage on 1 - r)
+    const C = PROF_F.map((_, f) => PROF_F.map((__, g) => sum(Z.map(z => z[f] * z[g])) / n)),
+      Cr = C.map((r, f) => r.map((v, g) => v / Math.sqrt(Math.max(1e-12, C[f][f] * C[g][g])))),
+      CT = hclust(Cr.map((r, f) => r.map((v, g) => (f === g ? 0 : 1 - (C[f][f] && C[g][g] ? v : 0))))),
+      // PCA of the behaviours (their correlations over players): players as points, behaviours as arrows (a biplot;
+      // the arrows are the loadings, the correlation of each behaviour with each axis). Each axis's sign is set so its
+      // largest loading is positive (the map would otherwise flip from one milestone to the next).
+      E = eigSym(Cr.map(r => r.map(v => (isFinite(v) ? v : 0)))),
+      tot = sum(E.val.map(v => Math.max(0, v))) || 1,
+      ax = [0, 1].map(k => {
+        const vec = E.vec.map(r => r[k]),
+          big = vec.reduce((m, x) => (Math.abs(x) > Math.abs(m) ? x : m), 0),
+          sg = big < 0 ? -1 : 1;
+        return {vec: vec.map(x => x * sg), val: Math.max(0, E.val[k])};
+      });
+    // groups: the Ward tree cut where the silhouette is best (2 to 5 groups, never named), and how they hold when one
+    // player is left out (each run) or the players are drawn again (bootstrap): each group's best Jaccard in the run
+    let k = 2,
+      sil = -1;
+    for (let g = 2; g <= Math.min(5, n - 1); g++) {
+      const s = silhouette(Dm, cutK(T, n, g));
+      if (s > sil + 1e-9) ((sil = s), (k = g));
+    }
+    const G = cutK(T, n, k).map(L => L.map(i => main[i])),
+      run = ids => {
+        const kk = Math.min(k, ids.length - 1);
+        if (kk < 2) return null;
+        const zz = zOf(V, ids),
+          {T: t} = wardOf(ids, zz);
+        return cutK(t, ids.length, kk).map(L => L.map(i => ids[i]));
+      },
+      best = (H, L) => (L.length ? Math.max(...H.map(h => jac(L, h))) : null),
+      loo = G.map(() => []),
+      bt = G.map(() => []);
+    let kept = 0;
+    main.forEach(id => {
+      const H = run(main.filter(x => x !== id));
+      if (!H) return;
+      const J = G.map(L =>
+        best(
+          H,
+          L.filter(x => x !== id)
+        )
+      );
+      J.forEach((j, g) => j != null && loo[g].push(j));
+      if (J.every(j => j == null || j >= PROF_STAB)) kept++;
+    });
+    const R = rng(seed || 1),
+      NB = B ? Math.min(200, Math.max(50, B)) : 100;
+    for (let b = 0; b < NB; b++) {
+      const U = [...new Set(main.map(() => main[Math.floor(R() * n)]))];
+      const H = run(U);
+      if (!H) continue;
+      G.forEach((L, g) => {
+        const j = best(
+          H,
+          L.filter(x => U.includes(x))
+        );
+        if (j != null) bt[g].push(j);
+      });
+    }
+    // in words: the closest pairs and what they share; the player furthest from everyone and their most marked behaviour
+    const pairs = [];
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) pairs.push([i, j, Dm[i][j]]);
+    pairs.sort((a, b) => a[2] - b[2]);
+    const share = (i, j) =>
+      PROF_F.map((_, f) => [f, Math.sign(Z[i][f]) === Math.sign(Z[j][f]) ? Math.min(Math.abs(Z[i][f]), Math.abs(Z[j][f])) : 0])
+        .filter(x => x[1] >= 0.5)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(x => x[0]);
+    const far = Dm.map((r, i) => [i, sum(r) / (n - 1)]).sort((a, b) => b[1] - a[1])[0][0],
+      farF = Z[far].map((v, f) => [f, Math.abs(v)]).sort((a, b) => b[1] - a[1])[0][0],
+      re = i => pos.get(i);
+    return {
+      n: D.length,
+      players: n,
+      win: PROF_N,
+      at: PROF_MIN,
+      effects: [],
+      feats,
+      who: [...T.order.map(i => row(main[i], zf)), ...low.map(id => row(id, zf))],
+      m: T.m.map(([a, b, h]) => [a < n ? re(a) : a, b < n ? re(b) : b, h]),
+      cols: CT.order,
+      cm: CT.m.map(([a, b, h]) => [a < p ? CT.order.indexOf(a) : a, b < p ? CT.order.indexOf(b) : b, h]),
+      pca: {
+        var: ax.map(a => r3(a.val / tot)),
+        load: PROF_F.map((_, f) => ax.map(a => r3(a.vec[f] * Math.sqrt(a.val)))),
+        pts: T.order.map(i => ax.map(a => r3(sum(Z[i].map((z, f) => z * a.vec[f])))))
+      },
+      k,
+      sil: r3(sil),
+      groups: G.map(L => L.map(id => re(main.indexOf(id))).sort((a, b) => a - b)),
+      stab: {loo: loo.map(L => r3(mean(L))), boot: bt.map(L => r3(mean(L))), runs: n, kept, draws: NB, at: PROF_STAB},
+      close: pairs.slice(0, 3).map(([i, j, d]) => [re(i), re(j), r3(d), share(i, j)]),
+      far: [re(far), farF]
+    };
+  }
+
   /* ---------- Synthetic answer logs with known effects (the tests and the admin demo) ---------- */
   // TRUTH: the effects the generator plays with; the tests check that the fits give them back.
   const TRUTH = {
@@ -2543,7 +2856,8 @@
     ['conf', 'Confusions', confusions],
     ['learn', 'Learning curves', learning],
     ['back', 'Comeback', comeback],
-    ['sess', 'Sessions', sessions]
+    ['sess', 'Sessions', sessions],
+    ['who', 'Player profiles', profiles]
   ];
   // rows: the answer log (readAnswers rows); M: how many of its answers (time order) this milestone takes; B: bootstrap
   // draws (BOOT by default); bse: normal bootstrap intervals (boot). progress(key) is called as each analysis finishes.
@@ -2799,7 +3113,15 @@
     hclust,
     cutTree,
     mixMap,
-    MIX_CUT
+    MIX_CUT,
+    PROF_F,
+    PROF_N,
+    PROF_MIN,
+    profFeat,
+    profiles,
+    eigSym,
+    cutK,
+    silhouette
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ANALYSIS = api;
