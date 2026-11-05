@@ -1,11 +1,13 @@
 // The admin's Analyses report (Pierre, 2026-11-04: "every 1000 new answers", computed once; AGENTS.md rule 14i "compute
-// once"): runs every analysis of analysis.js on the answer log, at each milestone (the first 1000, 2000, … answers and
-// all of them), and stores the report in the sync sheet, where the admin reads it: the primary source. The admin's
-// "Recompute here" runs the same code in its own tab, on any device (Pierre, 2026-11-05), and keeps its result there.
+// once"): runs every analysis of analysis.js on the answer log, at each milestone (the first 1000, 2000, 3000, …
+// answers: round thousands only, Pierre 2026-11-05), and stores the report in the sync sheet, where the admin reads it:
+// the primary source. The admin's "Recompute here" runs the same code in its own tab, on any device (Pierre,
+// 2026-11-05), and keeps its result there.
 //   node tools/analyses.js --sheet [--force]   the GitHub Action (.github/workflows/analyses.yml): reads the log with
 //                                             readAnswers and stores the report with analysesPut (sheet v35), both
-//                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until 1000
-//                                             new answers since the stored report (or the code changed), unless --force
+//                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until the
+//                                             log reaches a round thousand the stored report does not hold (or the
+//                                             code changed), unless --force (plan)
 //   node tools/analyses.js --in answers.json --out report.json   a saved readAnswers reply (kept outside the repo)
 //   node tools/analyses.js --demo --out report.json              the admin demo's made-up answers, no network
 // --boot N: bootstrap draws for the latest milestone (default 999, analysis.js BOOT); --boot-history N: for the earlier
@@ -27,6 +29,24 @@ const SHEET_V = 35; // analysesGet / analysesPut
 const metaOf = () => ({ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))});
 const syncUrl = () => /const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'))[1];
 
+// The newest milestone of n answers (0: none yet). A stored report holds every round thousand up to its answer count
+// (analysis.js report), so this is also the newest milestone of the stored report, read from the sheet's cheap head.
+const lastOf = n => Math.floor((Number(n) || 0) / A.STEP) * A.STEP;
+// What the hourly run does with the sheet's head (answers: the log's rows; st: the stored report's meta or null): compute
+// when the log reaches a round thousand the stored report does not hold (or fell below its newest: answers deleted),
+// when the analysis code changed (AV), or by hand (force); never before the first 1000 answers. Pure, tested.
+// Returns {go, why: 'none' | 'wait' | 'first' | 'new' | 'code' | 'force', last: the stored report's newest milestone,
+// now: the log's, next: the one after it}.
+function plan(answers, st, force) {
+  const now = lastOf(answers),
+    last = st ? lastOf(st.answers) : 0,
+    next = now + A.STEP;
+  const why = !now ? 'none' : !st ? 'first' : now !== last ? 'new' : st.av !== A.AV ? 'code' : force ? 'force' : 'wait';
+  return {go: why !== 'none' && why !== 'wait', why, last, now, next};
+}
+const planText = (answers, p) =>
+  p.now ? `${answers} answers, newest milestone ${p.now}: the next one at ${p.next}.` : `${answers} answers, no milestone yet: the first one at ${A.STEP}.`;
+
 // io: {post(body) -> reply, log(text)}; o: {force, B, Bh}. Returns what happened, in a word.
 async function sheetRun(io, token, o = {}) {
   const post = b => io.post({...b, token});
@@ -40,10 +60,10 @@ async function sheetRun(io, token, o = {}) {
     return 'refused';
   }
   const st = head.stored,
-    since = head.answers - (st ? st.answers : 0),
-    stale = st && st.av !== A.AV;
-  if (!o.force && st && !stale && since < A.STEP) {
-    io.log(`${head.answers} answers, ${since} since the stored report: the next one at ${st.answers + A.STEP}.`);
+    stale = st && st.av !== A.AV,
+    p = plan(head.answers, st, o.force);
+  if (!p.go) {
+    io.log(planText(head.answers, p));
     return 'wait';
   }
   const prev = st && !stale ? await post({analysesGet: 1}) : null;
@@ -57,6 +77,12 @@ async function sheetRun(io, token, o = {}) {
   if (!ans || !ans.ok || !Array.isArray(ans.rows)) {
     io.log(`Could not read the answer log (${(ans && ans.error) || 'no reply'}). Nothing done.`);
     return 'refused';
+  }
+  // The head counts the Answers tab's rows; the log read may hold fewer (rows without a player): judge again on it.
+  const q = plan(ans.rows.length, st, o.force);
+  if (!q.go) {
+    io.log(planText(ans.rows.length, q));
+    return 'wait';
   }
   const t0 = Date.now(),
     rep = A.compact(A.report(ans.rows, metaOf(), old, {B: o.B, Bh: o.Bh, seed: 1}), MAX),
@@ -116,4 +142,4 @@ if (require.main === module) {
     log(`${rep.answers} answers, ${rep.M.length} milestones${out ? ', written to ' + out : ''}.`);
   })();
 }
-module.exports = {sheetRun, metaOf};
+module.exports = {sheetRun, metaOf, plan, lastOf};
