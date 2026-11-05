@@ -189,7 +189,9 @@ test('admin: the "out of rule" tag keeps a bare-name tooltip (rule 23: explanati
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
   const tag = A.slice(A.indexOf('const ruleTag'), A.indexOf(';\n', A.indexOf('const ruleTag')));
   assert.match(tag, /title="Out of the presence rule"/);
-  assert.match(tag, /!ruleKept\(p\.f\)/, 'a kept photo loses its tag');
+  // A photo Pierre kept (To do › Keep, 2026-11-05) keeps a neutral "kept" tag, its tooltip a bare name too.
+  assert.match(tag, /ruleKept\(p\.f\)/);
+  assert.match(tag, /class="adm-src adm-rule kept" title="Kept out of the presence rule">out of rule · kept</);
   assert.ok(!('ruleWhy' in require('../presence.js')), 'no long explanation helper left');
   assert.match(A.slice(A.indexOf('  genus: `'), A.indexOf('\n', A.indexOf('  genus: `'))), /out of rule/);
 });

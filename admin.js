@@ -793,12 +793,19 @@ let GVIEW = store.get('reefid-admin-gview', 'all');
 // A photo taken abroad of a species the presence rule does not confirm in the Philippines (presence.js outOfRule;
 // Pierre, 2026-11-04): an "out of rule" tag next to its source, and a part of To do. Never removed automatically.
 // Kept (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself): an exception he accepted with Keep in
-// To do, curation.json seen {'rule:f': 1} like his other "decided" marks; the photo stays, loses its tag and leaves To do.
+// To do, curation.json seen {'rule:f': 1} like his other "decided" marks; the photo stays on the site and moves to To do's
+// Kept subsection, where he can still exclude it or un-keep it. Its tag stays, in a neutral "kept" style.
 const ruleKept = f => !!(DRAFT.seen || {})['rule:' + f];
 const ruleTag = p =>
-  outOfRule(p, PRES) && !ruleKept(p.f) ? `<span class="adm-src multi adm-rule" title="Out of the presence rule">out of rule</span>` : '';
-// Photos out of the rule still needing a decision, from the curated photo lists (presence.js ruleQueue), for To do.
+  !outOfRule(p, PRES)
+    ? ''
+    : ruleKept(p.f)
+      ? `<span class="adm-src adm-rule kept" title="Kept out of the presence rule">out of rule · kept</span>`
+      : `<span class="adm-src multi adm-rule" title="Out of the presence rule">out of rule</span>`;
+// Photos out of the rule still needing a decision, from the curated photo lists (presence.js ruleQueue), for To do; and
+// the ones he kept (To do's Kept subsection).
 const outOfRuleList = () => ruleQueue(Object.keys(DATA.gen), photos, hidden, offSlot, PRES, ruleKept);
+const ruleKeptList = () => ruleQueue(Object.keys(DATA.gen), photos, hidden, offSlot, PRES).filter(p => ruleKept(p.f));
 // A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
   const o = origin(p),
@@ -2009,7 +2016,7 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter. Coral Finder book photos are left out.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> takes one off its genus as the genus page's Remove does (back with the candidates; Undo works). <b>Keep</b> accepts it as an exception: it stays on the site, loses its tag everywhere and leaves this list for good (Undo before Publish brings it back). <b>Remove all</b> asks first, then removes each one (one Undo step each). All three go into your draft; Publish sends them.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
@@ -2890,22 +2897,45 @@ function fishAdmin() {
 // A unit's name in a report: a fish entry by its IMR name (plain, no genus page), a genus in italics with its page link.
 const repUnit = x =>
   FISHA && FISHA.gen[x] ? `${esc(FISHA.gen[x].name)} <small>(fish)</small>` : `<a class="adm-gen" href="#${esc(x)}"><i>${esc(x)}</i></a>`;
-// To do › Out of the presence rule (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself). Remove = the
-// genus page's Remove (ACT.hide: off the site, back with the candidates; no confirmation, Undo works); Keep = an exception
-// he accepts for good (ruleKept); Remove all asks first (rule 23: bulk), then removes each photo, one Undo step each.
-const RULE_ACTS = `<span class="adm-qseg" role="group" aria-label="Out of rule"><button type="button" data-rule="hide" title="Remove">Remove</button><button type="button" data-rule="keep" title="Keep">Keep</button></span>`;
+// To do › Out of the presence rule (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself; a photo that
+// does not meet it "must not be there"). Remove = the × of every photo (ACT.exclude: excluded for good, from every genus,
+// game and candidate list, and imports skip it; no confirmation, Undo works, Excluded restores it); Keep = an exception he
+// accepts for good (ruleKept); Remove all asks first (rule 23: bulk), then excludes each photo, one Undo step each.
+// Kept: a subsection at the bottom of the section, folded (its count shown), its photos out of the count and of Remove
+// all; Keep is pressed there, a click un-keeps (back to the list to handle).
+const ruleActs = kept =>
+  `<span class="adm-qseg" role="group" aria-label="Out of rule"><button type="button" data-rule="exclude" title="Remove">Remove</button><button type="button" data-rule="keep" title="Keep" aria-pressed="${kept}">Keep</button></span>`;
+let RULE_OPEN = false; // the Kept subsection unfolded, kept across redraws
+const ruleSec = tile => {
+  const L = outOfRuleList(),
+    K = ruleKeptList(),
+    grid = (M, kept) =>
+      `<div class="adm-grid adm-qgrid adm-ruleq">${M.map(p => tile(p, ruleActs(kept) + '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>`;
+  if (!L.length && !K.length) return '';
+  return `<div class="adm-qhead adm-tdhead" data-rulesec><h2>Out of the presence rule <small>${L.length}</small></h2>${L.length ? '<button type="button" class="adm-fchip plain" data-ruleall title="Remove all">Remove all</button>' : ''}</div>${L.length ? grid(L, false) : ''}${
+    K.length
+      ? `<details class="adm-rulekept" data-rulekept${RULE_OPEN ? ' open' : ''}><summary>Kept <small>${K.length}</small></summary>${grid(K, true)}</details>`
+      : ''
+  }`;
+};
 function bindRule() {
   $v.querySelectorAll('.adm-ruleq [data-rule]').forEach(
     b =>
       (b.onclick = () => {
         const t = b.closest('[data-f]'),
           f = t.dataset.f;
-        if (b.dataset.rule === 'hide') return ACT.hide(t.dataset.g, f);
-        DRAFT.seen = {...(DRAFT.seen || {}), ['rule:' + f]: 1};
+        if (b.dataset.rule === 'exclude') return ACT.exclude(t.dataset.g, f);
+        const S = {...(DRAFT.seen || {})};
+        if (S['rule:' + f]) delete S['rule:' + f];
+        else S['rule:' + f] = 1;
+        DRAFT.seen = S;
+        if (!Object.keys(S).length) delete DRAFT.seen;
         saveDraft();
         render();
       })
   );
+  const kd = $v.querySelector('[data-rulekept]');
+  if (kd) kd.ontoggle = () => (RULE_OPEN = kd.open);
   const all = $v.querySelector('[data-ruleall]');
   if (all)
     all.onclick = () => {
@@ -2913,12 +2943,12 @@ function bindRule() {
       if (!L.length || !confirm(`Remove ${L.length} photo${L.length === 1 ? '' : 's'} out of the presence rule?`)) return;
       QUIET = true;
       try {
-        L.forEach(p => ACT.hide(p.genus, p.f));
+        L.forEach(p => ACT.exclude(p.genus, p.f));
       } finally {
         QUIET = false;
       }
       render();
-      toast(`${L.length} removed. Undo (Ctrl+Z) brings them back one at a time.`);
+      toast(`${L.length} excluded. Undo (Ctrl+Z) brings them back one at a time, or the Excluded view.`);
     };
 }
 function renderTriage() {
@@ -3010,7 +3040,7 @@ function renderTriage() {
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
     ${all ? evSummary() : ''}
-    ${(oor => (oor.length ? `<div class="adm-qhead adm-tdhead" data-rulesec><h2>Out of the presence rule <small>${oor.length}</small></h2><button type="button" class="adm-fchip plain" data-ruleall title="Remove all">Remove all</button></div><div class="adm-grid adm-qgrid adm-ruleq">${oor.map(p => tile(p, RULE_ACTS + '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>` : ''))(outOfRuleList())}
+    ${ruleSec(tile)}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     ${sugHtml(tile)}
   </section>`;
