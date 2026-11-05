@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       # Always today's main, not the commit that started the run: a rerun of an older run would copy an older crop of a
       # photo back over a newer one, and check the bucket against an older list (Codex review #380). As pages.yml does.

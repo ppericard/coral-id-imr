@@ -15,7 +15,7 @@ jobs:
   deploy:
     # Never deploy a manually selected feature branch or consume its artifacts.
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read

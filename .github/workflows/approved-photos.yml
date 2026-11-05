@@ -15,15 +15,15 @@ concurrency:
   cancel-in-progress: false
 jobs:
   photos:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
-      # Python pinned, not the runner's python3 (it changes with the image: 3.12 on Ubuntu 24.04, 3.14 on 26.04); the
-      # latest stable (rule 27b), the same in every workflow.
+      # Python pinned, not the image's own python3 (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest stable (rule 27b),
+      # the same in every workflow. Pillow pinned in tools/requirements.txt.
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
-      - run: pip install pillow
+      - run: pip install -r tools/requirements.txt
       # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). The files
       # go to r2-upload/ (gitignored), uploaded below before anything is committed.
       - run: python tools/fetch_approved.py --games --out r2-upload
@@ -58,7 +58,7 @@ jobs:
   # any, is on it). Its push starts no other workflow (GITHUB_TOKEN), hence this job.
   r2:
     needs: photos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     concurrency:
       group: photos-r2
       cancel-in-progress: false

@@ -44,10 +44,10 @@ In the admin, Inbox › To do › Points (from [`points.json`](../points.json), 
 Nothing needs rebuilding: the site is served by GitHub Pages from `main` through `pages.yml`, so a merged PR triggers deployment. The Pages source must be GitHub Actions; see [PAGES.md](PAGES.md) for migration and recovery. There is no build step and no package manager. What a new agent needs is a working copy; the only pieces outside GitHub are the Google Sheet + Apps Script (progress sync) and Pierre's admin token, recreated only if they are ever lost.
 
 **Working copy (any machine or cloud container):**
-1. Clone `https://github.com/ppericard/coral-id-imr` (public). Python 3, Node 18+ and Chromium/Playwright are all you need.
+1. Clone `https://github.com/ppericard/coral-id-imr` (public). Python 3 (CI: 3.15), Node (CI: 26, the current LTS) and Playwright 1.64.1 with its Chromium are all you need (the versions CI pins: `.github/workflows/checks.yml`).
 2. Serve: `python3 -m http.server 8000`, open <http://localhost:8000> (app) and <http://localhost:8000/admin.html?demo> (admin without a token, every page on made-up data, nothing sent; `?readonly` shows the real curation instead). Sync and photo Elo talk to the live Apps Script even locally (read-only unless you sign in).
 3. Check: `node --test tests/*.test.js`, `node tests/pages.smoke.js`, `node tests/draw.smoke.js`, `node tests/admin.smoke.js` (Playwright; never add a `package.json`), `python3 tools/check_versions.py` (consistency only: the deploy stamps the version numbers).
-4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need `pillow` (`pip install pillow`) for photo work.
+4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need Pillow for photo work: `pip install -r tools/requirements.txt` (the version CI pins).
 
 **Hosting settings (already in place; only if the repo ever moves):**
 1. GitHub Pages: Settings > Pages > Source **GitHub Actions**, with `pages.yml` as the single deployer. This replaces the original branch `main` / root source; verify the migration in [PAGES.md](PAGES.md), since the setting is outside git. `.nojekyll` remains committed. If the site stops updating with "Please cancel <sha> first" (a known GitHub Pages glitch, hit several times on 2026-11-01), follow PAGES.md > Manual recovery.
