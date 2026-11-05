@@ -1269,6 +1269,7 @@ const GROUPS = [
           ['~an-learn', 'Practice'],
           ['~an-back', 'After a break'],
           ['~an-sess', 'Sessions'],
+          ['~an-who', 'Profiles'],
           ['~stats-log', 'Answer log'],
           ['~stats-stop', 'Stops']
         ]
