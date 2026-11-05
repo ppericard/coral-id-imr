@@ -24,7 +24,7 @@ module.exports = ROOT => {
     }
     Object.values(o).forEach(walk);
   };
-  ['data.json', 'cand.json', 'fish-photos.json'].forEach(f => {
+  ['data.json', 'cand.json', 'fish-photos.json', 'fish-game.json'].forEach(f => {
     const p = path.join(ROOT, f);
     if (fs.existsSync(p)) walk(JSON.parse(fs.readFileSync(p, 'utf8')));
   });

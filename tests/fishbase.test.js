@@ -363,12 +363,31 @@ test('never in a game without Pierre: FishBase photos are candidates or sheet-on
     .flat()
     .filter(p => p.via === 'fishbase' || /fishbase\./.test(p.src || ''))
     .forEach(p => assert.ok(added.has(p.f), `${p.f}: a FishBase game photo Pierre did not add`));
-  const X = C.fishGen(F, PH.photos, PH.sheet);
+  // The game as it plays (admin plan PR 7: the curated photos of fish-game.json, downloaded to R2, beside the stopgap):
+  // a FishBase photo only while Pierre has it in play for that species (core.js fishOn).
+  const GM = read('fish-game.json').photos,
+    X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR), PH.sheet);
   Object.values(X.gen).forEach(g =>
     g.views.wide
       .filter(p => p.via === 'fishbase' || /fishbase\./.test(p.src || ''))
-      .forEach(p => assert.ok(added.has(p.f), `${g.id} ${p.f}`))
+      .forEach(p => assert.ok(added.has(p.f) && C.fishOn(CUR.fish, p.f, p.sp), `${g.id} ${p.f}: a FishBase game photo Pierre did not add`))
   );
+  // The same with a FishBase photo in fish-game.json that Pierre never added, or took out of play since the last run.
+  const fb = {
+      f: 'fish-s091-cand-fb-Chter_u0',
+      sp: 's091',
+      src: 'https://www.fishbase.de/images/species/Chter_u0.jpg',
+      via: 'fishbase',
+      e: 5
+    },
+    cur = {...CUR, fish: {...CUR.fish, add: {...CUR.fish.add, [fb.f]: 's091'}, seen: {...CUR.fish.seen}}};
+  assert.ok(
+    C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f),
+    'in play: in the game'
+  );
+  cur.fish.seen[fb.f] = 1;
+  assert.ok(!C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f), 'rejected: out of the game at once');
+  assert.ok(!C.fishPhotos({}, {t01: [fb]}, {...CUR, fish: {...CUR.fish, add: {}}}).t01.length, 'never added: never in the game');
   // Halichoeres chlorocephalus: J. E. Randall's FishBase photo of the holotype, alive underwater at Madang, as its
   // sheet-only photo (Pierre, 2026-11-05), never a game photo nor a cover.
   const h = (PH.sheet.s238 || [])[0];

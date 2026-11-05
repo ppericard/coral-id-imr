@@ -57,6 +57,25 @@ test('an excluded photo appears nowhere (views, sheet, games, Coral ID Key)', ()
   });
 });
 
+// The fish game photos (admin plan PR 7; core.js fishPhotos, the same code the app runs, on the real fish-game.json,
+// fish-photos.json and curation.json): a photo Pierre rejected, excluded or sent to another species (Not this) never
+// plays for the species he took it from, curated or stopgap; a curated photo only while it is in play (core.js fishOn).
+test('fish: rejected, excluded and Not this photos are never in the game; curated ones only while in play', () => {
+  const {fishGen, fishPhotos, fishPid, fishOn} = require('../core.js'),
+    F = CUR.fish || {},
+    PH = read('fish-photos.json'),
+    X = fishGen(read('fish.json'), fishPhotos(PH.photos, read('fish-game.json').photos, CUR), PH.sheet),
+    no = new Map();
+  ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));
+  Object.keys(CUR.exclude || {}).forEach(f => no.set(fishPid(f), f));
+  Object.values(X.gen).forEach(g =>
+    g.views.wide.forEach(p => {
+      if (/-cand-/.test(p.f)) return assert.ok(fishOn(F, p.f, p.sp) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
+      assert.ok(!no.has(fishPid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(fishPid(p.f))}`);
+    })
+  );
+});
+
 test('a photo Pierre hid in a genus is not shown for that genus', () => {
   Object.entries(CUR.genera || {}).forEach(([n, k]) => {
     const g = D.gen[n] || ((D.x || {}).gen || {})[n];

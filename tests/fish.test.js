@@ -520,6 +520,53 @@ test('judged photos: every fish game photo judged with a valid code, written int
   );
 });
 
+// The curated photos (admin plan PR 7, tools/fish_game.py): every photo Pierre put in play carries the rubric's code and
+// an ease; where that ease is the pass's (Pierre did not change it in the admin), the caps hold, so no juvenile, night
+// shot, partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
+// write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js fishPhotos: fish-game.json and the
+// stopgap): every circle-1 entry keeps at least 5 very easy photos (Pierre, 2026-11-04).
+test('curated photos: a valid code and ease for each, the caps where the ease is the pass’s; 5 very easy per circle-1 entry', () => {
+  const {execFileSync} = require('child_process'),
+    C = require('../core.js'),
+    S = read('suggest.json').fish || {},
+    CUR = read('curation.json'),
+    FC = CUR.fish || {},
+    plan = JSON.parse(
+      execFileSync(
+        'python3',
+        [
+          '-c',
+          `import sys, json; sys.path.insert(0, 'tools')
+import fish_game as G
+L = lambda f, d=None: G.load('.', f, d)
+todo, keep = G.plan(L('fish.json'), L('curation.json', {}), L('fish-cand.json', {'cand': {}}), (L('suggest.json', {}) or {}).get('fish') or {}, L('fish-game.json', {'photos': {}}))
+print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
+        ],
+        {cwd: path.join(__dirname, '..'), encoding: 'utf8', maxBuffer: 64 << 20}
+      )
+    ),
+    entry = new Map(F.teach.flatMap(t => (t.species || []).map(s => [s, t.id])));
+  assert.strictEqual(
+    plan.length,
+    Object.keys(FC.add || {}).filter(f => C.fishOn(FC, f, FC.add[f])).length,
+    'every photo in play is listed'
+  );
+  plan.forEach(p => {
+    // The judged tags with their flags (the phase p and reference r flags included), then the ease.
+    assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
+    const pass = !(p.f in (FC.ease || {})) || (S[p.f] && S[p.f].e === FC.ease[p.f] && S[p.f].jt === FC.tags[p.f]);
+    if (!pass) return; // Pierre's own values stand (an ease he set is his choice)
+    const tid = entry.get(p.sp),
+      fl = p.jt.slice(7);
+    if ((/j/.test(fl) && !juvEarly(tid, p)) || p.jt[6] === 'x' || p.jt[3] === '3') assert.ok(p.e <= 2, `${p.f}: ${p.jt} at ease ${p.e}`);
+    if (/[ca]/.test(fl) || p.jt[2] === 'n' || p.jt[3] === '2' || /[htd]/.test(p.jt[0]) || p.jt[1] === '0')
+      assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
+  });
+  const GM = read('fish-game.json').photos,
+    X = C.fishGen(F, C.fishPhotos(PH, GM, CUR));
+  X.c1.forEach(id => assert.ok(X.gen[id].views.wide.filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in the game`));
+});
+
 test('juvenile classes: every circle-1 entry classed, with sources, as in the source file (research note of 2026-11-04)', () => {
   const c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink),
     SJ = Object.fromEntries(SRC.teach.map(t => [t.id, t.juv]));
