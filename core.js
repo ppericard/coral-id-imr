@@ -1649,7 +1649,7 @@
   // "Your feedback helped" (Pierre, 2026-11-05, Q66): when the admin marks a report done (admin To do › Reports ✓ Done:
   // curation.json seen 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js
   // achHelped). The achievements record keeps the ids of the reports the player sent (_rep: from this device at sending,
-  // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v53 reps) and those already thanked
+  // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v54 reps) and those already thanked
   // (_thx), both synced and joined across devices (mergeAch), the last LIST_MAX of each: more thanked kept than sent, and
   // twice the sheet's REPS_MAX (Code.gs) sent, so an id the sheet lists again is never one whose thanks were dropped
   // (Codex review #581: equal caps evicted a thanked id the sheet then brought back). Ids only: nothing the admin

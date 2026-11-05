@@ -115,7 +115,7 @@ function doGet_(e){
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
   // v48: the beta groups the player is in (groupsOf_), [] for none. A failure leaves it out (the app keeps what it had).
   try { out.groups = groupsOf_(name); } catch (err) {}
-  // v53: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
+  // v54: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
   try { const reps = repsOf_(name); if (reps.length) out.reps = reps; } catch (err) {}
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
   // (the app keeps its own).
@@ -595,7 +595,7 @@ function logReports_(p){
     return {ok: true, rep: true};
   } finally { lock.releaseLock(); }
 }
-// v53 (Pierre, 2026-11-05, Q66: when the admin marks a report done, the player who sent it is told once that it helped):
+// v54 (Pierre, 2026-11-05, Q66: when the admin marks a report done, the player who sent it is told once that it helped):
 // the ids of one player's reports, those sent signed in under their name with their code (Verified 1), oldest first, the
 // last REPS_MAX. The admin's Done is not here (curation.json seen 'rep:<id>', public): the app checks these ids against
 // it, with the ids it kept itself (an anonymous device's reports, matched on the device that sent them). Ids only: no
@@ -3031,7 +3031,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // "Your feedback helped" (Pierre, 2026-11-05, Q66): when the admin marks a report done (admin To do › Reports ✓ Done:
   // curation.json seen 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js
   // achHelped). The achievements record keeps the ids of the reports the player sent (_rep: from this device at sending,
-  // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v53 reps) and those already thanked
+  // sync.js reportDialog; from the sheet's load reply for those sent signed in, Code.gs v54 reps) and those already thanked
   // (_thx), both synced and joined across devices (mergeAch), the last LIST_MAX of each: more thanked kept than sent, and
   // twice the sheet's REPS_MAX (Code.gs) sent, so an id the sheet lists again is never one whose thanks were dropped
   // (Codex review #581: equal caps evicted a thanked id the sheet then brought back). Ids only: nothing the admin

@@ -169,7 +169,7 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   );
 });
 
-test("v53: a load lists the ids of the player's own verified reports (Q66), never another's or an unverified one", () => {
+test("v54: a load lists the ids of the player's own verified reports (Q66), never another's or an unverified one", () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
   s.post({name: 'Bob', pin: '5678', data: prog(1), summary: {}});
@@ -291,7 +291,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
   assert.strictEqual(s.post({name: 'Ana B', pin: '0000', data: prog(1), summary: {}}).ok, true);
 });
 
-test("v53: a name taken again after its account was deleted never gets the old account's reports (Codex review #581)", () => {
+test("v54: a name taken again after its account was deleted never gets the old account's reports (Codex review #581)", () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('old1')]});

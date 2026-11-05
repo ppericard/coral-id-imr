@@ -1081,7 +1081,7 @@ async function overlays(b, base) {
   }
   // Q66: "Your feedback helped". A report of this device's that the admin marked done (curation.json seen 'rep:<id>') is
   // told by a card that stays until closed (its OK deaf for a moment), at a calm moment; then everything handled since in
-  // one card, at most once per 7 days (anti-spam, Pierre 2026-11-05); the sheet's list counts only from v53; signed in,
+  // one card, at most once per 7 days (anti-spam, Pierre 2026-11-05); the sheet's list counts only from v54; signed in,
   // nothing before the load reply; never for an account the admin deleted.
   const helpedCtx = async (acct, rec) => {
     const [c, p] = await open(
@@ -1131,8 +1131,8 @@ async function overlays(b, base) {
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const t1 = await card(),
       r1 = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-ach')));
-    await p.evaluate(() => repsSeen({v: 52, reps: ['smk2']})); // an older script: not used
-    await p.evaluate(() => repsSeen({v: 53, reps: ['smk2', 'smk3', 'smk1']}));
+    await p.evaluate(() => repsSeen({v: 53, reps: ['smk2']})); // an older script: not used
+    await p.evaluate(() => repsSeen({v: 54, reps: ['smk2', 'smk3', 'smk1']}));
     const t2 = await card(1500); // within the 7 days: nothing
     // 8 days later (the last thanks moved back): the two handled since, in one card.
     await p.evaluate(() => {
@@ -1203,7 +1203,7 @@ async function overlays(b, base) {
     // The load reply: smk1 thanked on another device (its record merged, its thanks time far back), smk2 not.
     await p.evaluate(() => {
       achMerge(JSON.stringify({_v: 2, _rep: ['smk1'], _thx: ['smk1'], _thxAt: Date.now() - 30 * 864e5}));
-      repsSeen({ok: true, found: true, v: 53});
+      repsSeen({ok: true, found: true, v: 54});
     });
     const t = await card();
     if (early || !t || t[2] !== 'A report you sent was looked at and handled.')
@@ -1216,7 +1216,7 @@ async function overlays(b, base) {
     const card = cardOf(p);
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.evaluate(() => repsSeen({ok: true, found: true, v: 53, reps: ['smk2']}));
+    await p.evaluate(() => repsSeen({ok: true, found: true, v: 54, reps: ['smk2']}));
     const t = await card(2000);
     if (t) fails.push(`Your feedback helped, deleted account: ${JSON.stringify(t)}`);
     await c.close();
