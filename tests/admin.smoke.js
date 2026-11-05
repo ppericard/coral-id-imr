@@ -390,7 +390,12 @@ const WIDTHS = [390, 1280];
       // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
       await go('~an-fmt');
       const anf = await p.evaluate(async () => {
-        const rows = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows;
+        const log = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows,
+          // the newest milestone, shown by default: the first round thousand of answers in time order (Pierre, 2026-11-05)
+          rows = log
+            .slice()
+            .sort((a, b) => a[1] - b[1])
+            .slice(0, Math.floor(log.length / 1000) * 1000);
         // 4 choices, 4 plausible: a photo-quiz answer that is not typed, not a duel, not an exam, with 4 genera offered and
         // no |k2 or |k3, with the app's expectation logged
         const direct = rows.filter(
