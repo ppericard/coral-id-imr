@@ -93,12 +93,12 @@ needs a written reason next to the pin.
 
 ### W10
 
-**Editorial and curation choices are Pierre's: don't list them, don't track them** (photo picks, candidates to add,
-which photo for a pair, content choices): not in status messages, not in ROADMAP. Mention one only when he asks, or when
-a change he asked for cannot be done without it (then say so once, on that change). Reminders are for actions only he
-can do that unblock work (a redeploy, a key, a setting). The points to settle (rule C5: IMR trainer questions,
-content questions, in `points.json`) stay: he asked for that list.
-*Why:* "you'll spend your time doing that"; "why note them in ROADMAP?". *Source:* Pierre, 2026-11-01.
+**Never list Pierre's curation choices item by item** (which photo, which candidate, which pair, content choices): not
+in status messages, not in ROADMAP. A general reminder of a need only he can meet is allowed, once, without nagging
+(e.g. "these genera are short of photos", "these 31 photos are out of the presence rule"). The points to settle (rule
+C5: IMR trainer questions, content questions, in `points.json`) stay: he asked for that list.
+*Why:* "you'll spend your time doing that"; "why note them in ROADMAP?". The first wording (2026-11-01) was written about
+one annoyance, then generalised and hardened. *Source:* Pierre, 2026-11-01; scope restored, 2026-11-05.
 
 ### W11
 

@@ -121,10 +121,12 @@ what stops is everything that involves him.
 ## The rules
 
 Pierre's standing rules: follow them over your own taste; when in doubt, ask him. The full rule, its *Why* and
-*Source* are in its topic file.
+*Source* are in its topic file. **Writing a rule down**: keep Pierre's scope and words (his sentence quoted in the PR);
+never generalise beyond the case he spoke about nor harden it; unsure of the scope, ask; a new or changed rule's wording
+goes to Pierre for his OK ("agents generalise to everything and harden my words: a classic", Pierre, 2026-11-05).
 
 **Content** ([docs/rules/content.md](docs/rules/content.md))
-- **C1** Never contradict or "correct" the IMR course; another source only as a dated, sourced note.
+- **C1** Never contradict or "correct" the IMR course.
 - **C2** Never invent categories or information; every clue carries its source.
 - **C3** IMR lecture cues are the most important content.
 - **C4** Growth form is an entry point only: rank, never filter or group genera by it.
@@ -135,7 +137,7 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **C9** The coral tools stay standalone (not ReefRecall).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** Photo priority: IMR lecture, Pierre's own, then others; no share-alike licence.
+- **P1** Photo priority: IMR lecture, Pierre's own, then others.
 - **P2** Three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
 - **P3** No several-corals or Coral Finder book photo in games.
 - **P4** All photos of one question come from one observation.
@@ -147,7 +149,7 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **L3** Adaptive difficulty, no level selector; every account counts, Pierre's included.
 - **L4** One progression path: every game draws from `unlocked()`; only the quiz opens genera.
 - **L5** Starred genera follow their look-alikes.
-- **L6** Millepora is a slate genus, bonus genera opt-in; no genus-specific case in code.
+- **L6** Millepora counts; bonus genera opt-in; no genus-specific code.
 - **L7** Answer choices get harder gradually.
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
@@ -167,7 +169,7 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **U6** No range sliders (swipeable photo strips are fine); visual beats text.
 - **U7** Settings removed on purpose stay removed.
 - **U8** Never hardcode the genus count.
-- **U9** Sign-in never on My progress; "Is it you?" before an existing account.
+- **U9** Sign-in never on My progress.
 - **U10** Greet by first name only (`firstName()`).
 - **U11** Questions to the player come at a natural break.
 - **U12** Home = two doors, one screen.
@@ -182,7 +184,7 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **A5** Every analysis says what it can conclude.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
-- **S1** One engine, never naming a subject; a beta subject is the admin's and its group's.
+- **S1** One engine, never naming a subject.
 - **S2** Fish names are the IMR PDF's; Pierre's Needs ID confirms nothing.
 - **S3** Fish groups come from the regional identification key.
 
@@ -204,12 +206,12 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **W7** Fix by default; never re-ask what was answered.
 - **W8** Independent reviews get an open mission that questions our choices.
 - **W9** Latest stable version of every tool.
-- **W10** Editorial and curation choices are Pierre's: don't list or track them.
+- **W10** Never list Pierre's curation choices item by item; one general reminder is fine.
 - **W11** Say what you checked and how; a guess is labelled.
 
 ## Read on demand
 
-| Touching… | Read (ARCHITECTURE = [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)) |
+| Touching… | Read (ARCHITECTURE = docs/ARCHITECTURE.md) |
 |---|---|
 | IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" |
 | Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context" |
