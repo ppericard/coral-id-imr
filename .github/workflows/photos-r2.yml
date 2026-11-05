@@ -15,13 +15,17 @@ concurrency:
   cancel-in-progress: false
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       # Always today's main, not the commit that started the run: a rerun of an older run would copy an older crop of a
       # photo back over a newer one, and check the bucket against an older list (Codex review #380). As pages.yml does.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
+      # r2_sync.sh runs python3 tools/photos.py --r2-list: Python pinned as in every workflow (approved-photos.yml).
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
       - run: tools/r2_sync.sh
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}

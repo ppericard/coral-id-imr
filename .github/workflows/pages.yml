@@ -15,7 +15,7 @@ jobs:
   deploy:
     # Never deploy a manually selected feature branch or consume its artifacts.
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -38,12 +38,16 @@ jobs:
             echo '::error::Set Settings > Pages > Source to GitHub Actions. See docs/PAGES.md.'
             exit 1
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # A delayed photo run or an old rerun must not roll back the site.
           ref: main
           persist-credentials: false
-      - uses: actions/configure-pages@v5
+      # stamp_versions.py and check_versions.py below: Python pinned as in every workflow (approved-photos.yml).
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      - uses: actions/configure-pages@v6
       - name: Stage the static site
         run: |
           mkdir -p "$RUNNER_TEMP/pages"
@@ -62,7 +66,7 @@ jobs:
             echo '</details>'
           } >> "$GITHUB_STEP_SUMMARY"
           python3 tools/check_versions.py --dir "$RUNNER_TEMP/pages"
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ runner.temp }}/pages
       - name: Deploy to GitHub Pages
