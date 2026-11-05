@@ -11,9 +11,6 @@ Written 2026-11-05, about 11:00 Manila, by the integrator.
 
 Tracks in flight: track · PR or branch · state · next step.
 
-- Admin › Players › Activity session summary · [#557](https://github.com/ppericard/coral-id-imr/pull/557) · Pierre's
-  feedback built; a photo's difficulty shown as "recognised by X%" (share of level-0 players who recognise it, σ(−d);
-  Q19 answered) · merge after Q23 (colours).
 - FishBase as a fish photo source, and reference photos (ROADMAP Next) · its own PR · in progress.
 - Governance refonte (ROADMAP Next) · PR A merged (#558); PR B (this file, `tools/brief.py`, the hooks) in review · then
   PR C (short AGENTS.md, `docs/rules/` topic files, stable rule IDs by theme, `judging/AGENTS.md` renamed, Codex review
@@ -23,9 +20,10 @@ Tracks in flight: track · PR or branch · state · next step.
 
 The integrator's queue, in order (details in [ROADMAP](ROADMAP.md) "Next").
 
-1. Intuitive difficulty display across the admin (ROADMAP Next): the integrator's proposal for Q26; the colours
-   after Q23.
-2. The fish track toward the beta (ROADMAP "Next", the fish rows).
+1. Intuitive difficulty display across the admin (ROADMAP Next; "recognised by X%" started in #557): the
+   integrator's proposal for Q26; the colours after Q23.
+2. The fish track toward the beta (ROADMAP "Next", the fish rows); the fish candidates still to judge
+   (`python3 tools/judging_fish.py todo`), same process as #523-#549.
 3. The fish sheets at three levels, when Pierre wants them (study:
    [reviews/2026-11-05-fish-sheets-study.md](reviews/2026-11-05-fish-sheets-study.md); its 13 questions not asked yet).
 
@@ -38,7 +36,8 @@ this list. Long-standing content questions stay in [ROADMAP](ROADMAP.md) "Conten
 - **Q23 Colour scale for photo difficulty**: 5 levels on the recognition %: ≥75% very easy (dark green), 60-75 easy
   (light green), 40-60 middle (grey, no colour), 25-40 hard (orange), <25 very hard (red); colour-blind: dark blue,
   light blue, grey, light orange, dark orange; a fixed scale, more saturated than the theme, the same in every palette,
-  light and dark. Adopt it? Recommendation: yes. PR: [#557](https://github.com/ppericard/coral-id-imr/pull/557).
+  light and dark. Adopt it? Recommendation: yes. PR: none yet ([#557](https://github.com/ppericard/coral-id-imr/pull/557),
+  merged, shows the % without colours).
 - **Q26 Every difficulty-like metric shown intuitively across the admin** (photos, genera / taxa, players), the raw
   values kept in a tooltip or a secondary place (ROADMAP Next, "Intuitive difficulty display"). Proposal pending from
   the integrator. PR: none yet.
