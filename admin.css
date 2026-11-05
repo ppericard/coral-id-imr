@@ -2168,6 +2168,19 @@ td.cov-c .cov-off {
     width: 42px;
     height: 28px;
   }
+  /* At 360 px the view headers (uppercase, spaced) and the + column's pills made the table 26 px wider than the window:
+     tighter letters and padding on phones, and a sorted header's arrow may wrap under it (rule 19: no sideways page
+     scroll at 360). */
+  .cov-t thead th {
+    letter-spacing: 0.02em;
+  }
+  .cov-t thead th .cov-sort {
+    padding: 2px 1px;
+    white-space: normal;
+  }
+  .cov-cand span {
+    padding: 0 3px;
+  }
   td.cov-c small {
     display: block;
     margin: 0;
