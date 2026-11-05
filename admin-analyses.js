@@ -802,10 +802,14 @@ function anEnt(a, key) {
     .sort(by(p => p.r))
     .map(
       p =>
-        `<tr><td class="an-w">${esc(N[p.i])} · ${esc(N[p.j])}</td><td class="n">${anRw(p.r)}</td>${E.x ? `<td class="n">${anRw(p.x)}</td>` : ''}</tr>`
+        `<tr><td class="an-w">${esc(N[p.i])} · ${esc(N[p.j])}</td><td class="n">${anRs(p.r)}</td>${E.x ? `<td class="n">${anRs(p.x)}</td>` : ''}</tr>`
     );
   const tab =
-    anTable(['Results compared', '#Estimates', ...(E.x ? ['#Conditions'] : [])], rows, rows.length > 12 ? 'tall' : '') +
+    anTable(
+      ['Results compared (▲ the same way, ▼ opposite ways)', '#Estimates', ...(E.x ? ['#Conditions'] : [])],
+      rows,
+      rows.length > 12 ? 'tall' : ''
+    ) +
     (E.vif
       ? anTable(
           ['Result', '#VIF'],
