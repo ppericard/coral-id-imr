@@ -572,7 +572,18 @@ const server = http.createServer((req, res) => {
     await wide('the Fish ID Key');
     // The corals chosen on that page: the Coral ID Key.
     await q.evaluate(() => setSubject('coral'));
-    await q.waitForFunction(() => SUBJ.id === 'coral' && window.ROUTED === 'idkey', null, {timeout: 15000}).catch(() => {});
+    // The route is drawn (ROUTED) before the Coral ID Key's own script is in: a Tools page shows "Loading…" until then
+    // (proto/lab.js). Wait for the key's text, not only the route (on a loaded machine the check read "Loading…").
+    await q
+      .waitForFunction(
+        () =>
+          SUBJ.id === 'coral' &&
+          window.ROUTED === 'idkey' &&
+          /Coral ID Key|growth form/i.test((document.querySelector('#view') || {}).textContent || ''),
+        null,
+        {timeout: 30000}
+      )
+      .catch(() => {});
     const c = await page();
     if (c.hash !== '#idkey' || c.soon || !/Coral ID Key|growth form/i.test(c.text))
       ui.push(`${width}px corals chosen on the Fish ID Key: ${JSON.stringify({...c, text: c.text.slice(0, 160)})}`);
