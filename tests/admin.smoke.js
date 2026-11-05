@@ -301,6 +301,20 @@ const WIDTHS = [390, 1280];
       await go('~quality');
       let at = await seg();
       if (at.subj.length !== S.length || at.subj[0][1] !== 'true') fails.push(`${w}px Subjects: switch ${JSON.stringify(at.subj)}`);
+      // A mini switch in the header line at every width (Pierre, 2026-11-06), each side its subject's icon; its name shows
+      // from 600 px, a label only on phones; the header's controls all inside the window.
+      const mini = await p.evaluate(() => {
+        const mid = e => (r => r.top + r.height / 2)(e.getBoundingClientRect()),
+          sw = document.getElementById('subj');
+        return {
+          line: Math.round(Math.abs(mid(sw) - mid(document.querySelector('.brand')))),
+          right: Math.round(document.getElementById('tools').getBoundingClientRect().right - innerWidth),
+          icons: [...sw.querySelectorAll('a')].map(a => !!a.querySelector('svg.sji')),
+          names: [...sw.querySelectorAll('.adm-sjn')].map(n => n.getBoundingClientRect().width > 2)
+        };
+      });
+      if (mini.line > 4 || mini.right > 0 || mini.icons.some(v => !v) || mini.names.some(v => v !== w >= 600))
+        fails.push(`${w}px Subjects: mini switch ${JSON.stringify(mini)}`);
       await go(other.hash + '~triage');
       at = await seg();
       if (

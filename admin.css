@@ -712,31 +712,46 @@ body.adm-dragging * {
   box-shadow: var(--shadow);
 }
 
-/* The subject switch (admin plan PR 2: Corals | Fish, left of the groups), each side with its to-do count. Phones: a
-   full-width row under the header line (the study's mock-up 1). */
+/* The subject switch (admin plan PR 2: Corals | Fish, next to the logo), each side with its to-do count. A mini switch in
+   the top bar on every page and width (Pierre, 2026-11-06: as the app's header chip, app.css .subjb: a 32 px pill, the
+   subject's icon in the accent, its name; on phones the icon and the count only, the name kept as its label), one tap a
+   side (rule A2). */
 .adm-subj {
   display: inline-flex;
   flex: none;
-  padding: 3px;
+  align-items: stretch;
+  height: 32px;
+  padding: 2px;
   gap: 2px;
   background: var(--surface-2);
+  border: 1px solid var(--line);
   border-radius: var(--pill);
 }
 .adm-subj[hidden] {
   display: none;
 }
 .adm-subj a {
-  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px 0 7px;
+  font-size: var(--fs-s);
   color: var(--muted);
   text-decoration: none;
-  padding: 5px 12px;
+  white-space: nowrap;
   border-radius: var(--pill);
+}
+.adm-subj a .sji {
+  flex: none;
 }
 .adm-subj a[aria-pressed='true'] {
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
   box-shadow: var(--shadow);
+}
+.adm-subj a[aria-pressed='true'] .sji {
+  color: var(--accent);
 }
 .adm-scnt {
   font-size: var(--fs-xs);
@@ -1713,18 +1728,20 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 }
 /* Phones: header on one line (entry points in a menu; Redo and Help move into ⋯). */
 @media (max-width: 599px) {
-  body.admin header:has(.adm-subj:not([hidden])) {
-    flex-wrap: wrap;
-  }
   body.admin .adm-subj {
-    order: 10;
-    flex: 1 1 100%;
+    height: 36px;
   }
   body.admin .adm-subj a {
-    flex: 1;
-    text-align: center;
-    min-height: 36px;
-    line-height: 26px;
+    padding: 0 7px;
+    gap: 3px;
+  }
+  body.admin .adm-sjn {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   body.admin header {
     flex-wrap: nowrap;

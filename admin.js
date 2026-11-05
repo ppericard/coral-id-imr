@@ -1158,6 +1158,10 @@ const subjTodo = (S, tn) => {
   const F = DRAFT[S.admin.cur] || {};
   return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length;
 };
+// A subject's icon on the switch (core.js SUBJECTS icon, the app's set: app.js subjIcon), its name beside it on wider
+// screens only (admin.css .adm-sjn; Pierre, 2026-11-06: a mini switch in the top bar, as the app's header).
+const subjSvg = S =>
+  `<svg class="sji" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.icon}</svg>`;
 const genusHash = () => '#' + ASUBJ.admin.hash + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
@@ -1350,7 +1354,7 @@ function navs(tn, xn) {
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || homeOf(S)))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || homeOf(S)))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     sw.hidden = false;
   }
