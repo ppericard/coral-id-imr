@@ -361,11 +361,12 @@ function renderFishCand() {
     </section>${fishAutoBlock(true)}`;
     if (nx && nx.p.src) new Image().src = img(nx.p);
     // A remote photo that does not load (its host down, or the photo gone at the source): said on the card, with its link.
-    const im = $v.querySelector('.adm-swph img');
-    if (im)
+    // Only on its own card: a photo of a card already gone (Skip, a click) that fails later says nothing.
+    const im = $v.querySelector('.adm-swph img'),
+      fc = $v.querySelector('.adm-swcard figcaption');
+    if (im && fc)
       im.addEventListener('error', () => {
-        const fc = $v.querySelector('.adm-swcard figcaption');
-        if (fc && !fc.querySelector('.adm-fbad'))
+        if (fc.isConnected && !fc.querySelector('.adm-fbad'))
           fc.insertAdjacentHTML('afterbegin', '<span class="adm-src rej adm-fbad">Photo not loading</span>');
       });
     const S = $v.querySelector('.adm-sw'),
