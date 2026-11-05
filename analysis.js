@@ -1381,28 +1381,35 @@
       cnt = {},
       gone = goneOf(D);
     D.forEach(a => ((by.get(a.p) || by.set(a.p, []).get(a.p)).push(a), (cnt[a.g] = (cnt[a.g] || 0) + 1)));
+    // each place's uncertainty carries the intercept's and the slope's, with their covariance (V, as masterCI), beside the
+    // player's or genus's own effect (Codex review #620: the random effect's alone gave ranges too narrow)
+    const V = M.V || [
+        [0, 0],
+        [0, 0]
+      ],
+      fixVar = l => Math.max(0, V[0][0] + l * l * V[1][1] + 2 * l * V[0][1]),
+      lp = P.L.map(id =>
+        Math.log(
+          1 +
+            q(
+              by
+                .get(id)
+                .slice(-PROF_N)
+                .map(a => a.n),
+              0.5
+            )
+        )
+      ),
+      // a deleted account's answers are in the fit, never a player on the map (sheet v55)
+      live = P.L.map((id, j) => j).filter(j => !gone.has(P.L[j])),
+      lt = q(
+        live.map(j => lp[j]),
+        0.5
+      ); // the typical player: the median current practice, their own effect 0
     return {
-      th: P.L.map((id, j) => {
-        const L = by.get(id).slice(-PROF_N);
-        return [
-          id,
-          r3(
-            M.b[0] +
-              M.b[1] *
-                Math.log(
-                  1 +
-                    q(
-                      L.map(a => a.n),
-                      0.5
-                    )
-                ) +
-              P.u[j]
-          ),
-          by.get(id).length,
-          r3(Math.sqrt(P.cv[j]))
-        ];
-      }).filter(x => !gone.has(x[0])), // a deleted account's answers are in the fit, never a player on the map (sheet v55)
-      g: G.L.map((x, j) => [x, r3(-G.u[j]), cnt[x], r3(Math.sqrt(G.cv[j]))]),
+      th: live.map(j => [P.L[j], r3(M.b[0] + M.b[1] * lp[j] + P.u[j]), by.get(P.L[j]).length, r3(Math.sqrt(fixVar(lp[j]) + P.cv[j]))]),
+      g: G.L.map((x, j) => [x, r3(-G.u[j]), cnt[x], r3(Math.sqrt(fixVar(lt) + G.cv[j]))]),
+      mid: r3(M.b[0] + M.b[1] * lt), // the typical player's place: a genus's chance for them is sig(mid - difficulty)
       m: r3(logit(MASTER))
     };
   }

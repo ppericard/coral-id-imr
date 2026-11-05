@@ -1724,3 +1724,27 @@ test('Wright map and residuals: a deleted account is no player', () => {
   assert.ok(!L.wright.th.some(x => x[0] === 'p3') && L.wright.th.length === 9);
   assert.ok(!L.res.p.some(x => x[0] === 'p3') && L.res.p.length === 9);
 });
+
+// Codex review #620: a place's likely range carries the intercept's and the slope's uncertainty, not the random effect's
+// alone.
+test('Wright map: each place’s uncertainty includes the fixed effects (intercept, slope, covariance)', () => {
+  const D = [0, 1, 2, 3].map(n => ({p: 'p', g: 'g', n, gone: 0})),
+    F = [
+      {L: ['p'], u: [0.2], cv: [0.01]},
+      {L: ['g'], u: [-0.3], cv: [0.04]}
+    ],
+    M = {
+      b: [0.5, 0.4],
+      V: [
+        [0.09, -0.01],
+        [-0.01, 0.0225]
+      ]
+    },
+    W = A.wrightOf(D, M, F),
+    l = Math.log(1 + 1.5), // the median practice of 0..3
+    fv = 0.09 + l * l * 0.0225 + 2 * l * -0.01;
+  near(W.th[0][3], Math.sqrt(fv + 0.01), 1e-3, 'player SE');
+  near(W.g[0][3], Math.sqrt(fv + 0.04), 1e-3, 'genus SE (the typical player is this one)');
+  near(W.mid, 0.5 + 0.4 * l, 1e-3, 'the typical player');
+  near(W.th[0][1], 0.5 + 0.4 * l + 0.2, 1e-3, 'player place');
+});

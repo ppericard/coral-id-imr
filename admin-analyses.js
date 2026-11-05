@@ -1255,7 +1255,7 @@ function anWright(a) {
     // no signed number (#601): a player's place as the chance of recognising a typical genus beyond guessing, a genus's
     // difficulty as the chance the typical player recognises it beyond guessing, each with its likely range
     sg = v => 1 / (1 + Math.exp(-v)),
-    mid = q0(W.th.map(x => x[1])),
+    mid = W.mid != null ? W.mid : q0(W.th.map(x => x[1])),
     pr = (v, se) => `${pc(sg(v))} <small class="adm-an-ci">(${pc(sg(v - 1.96 * se))}–${pc(sg(v + 1.96 * se))})</small>`,
     pt = x => `a typical genus recognised ${pc(sg(x[1]))} of the time beyond guessing`,
     gt = x => `recognised by the typical player ${pc(sg(mid - x[1]))} of the time beyond guessing`;
