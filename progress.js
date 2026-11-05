@@ -571,7 +571,7 @@ function cardFree(fn) {
   mo.observe(document.body, {childList: true});
 }
 // Its button takes no tap for its first moments and Enter does not press it, so a reflex tap cannot close it unread (as the
-// one-tap question, AGENTS.md 20g).
+// one-tap question, rule U11).
 function cardCalm(d) {
   const b = d.querySelector('[data-b="1"]');
   if (!b) return;
