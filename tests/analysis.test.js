@@ -1635,3 +1635,15 @@ test('profiles: with 3 players the stability is unknown, never "not stable"', ()
   const ten = A.profiles(A.prep(styleLog()), 0, 1);
   assert.strictEqual(ten.stab.runs, 10);
 });
+
+// Codex review #604, fourth pass: the page names the check that failed (left out one player, or drawn again).
+test('admin: why groups are not stable names each failing check apart', () => {
+  const vm = require('vm'),
+    src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
+    ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(src.match(/const anWhy = st => \{[\s\S]*?\n\};/)[0] + ';this.anWhy = anWhy;', ctx);
+  assert.strictEqual(ctx.anWhy({kept: 8, runs: 8, boot: [0.9, 0.706], at: 0.75}), ' Some groups change when the players are drawn again.');
+  assert.strictEqual(ctx.anWhy({kept: 5, runs: 8, boot: [0.9, 0.9], at: 0.75}), ' These groups change when one player is left out.');
+  assert.strictEqual(ctx.anWhy({kept: 8, runs: 8, boot: [0.9, null], at: 0.75}), '');
+});

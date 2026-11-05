@@ -1050,6 +1050,13 @@ const anWhoHref = id => {
   const u = ((typeof USERS !== 'undefined' && USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
   return u ? '#~journey/' + encodeURIComponent(u.name) : null;
 };
+// Why groups are not stable, from each check apart (Codex review #604): runs with one player left out that changed them,
+// and groups the bootstrap finds again under 0.75 on average.
+const anWhy = st => {
+  const L = st.kept < st.runs ? ' These groups change when one player is left out.' : '',
+    B = st.boot.some(j => j != null && j < st.at) ? ' Some groups change when the players are drawn again.' : '';
+  return L + B;
+};
 const anZc = z => {
   const a = Math.abs(z),
     k = a < 0.5 ? 0 : a < 1 ? 1 : a < 1.5 ? 2 : a < 2 ? 3 : 4;
@@ -1143,7 +1150,7 @@ function anProfiles(a) {
           `<li>Groups of players (not types; ${a.k}, where the silhouette is best, ${a.sil < 0 ? 'below 0' : anR(a.sil)}): ${gl.map((g, i) => `<b>${i + 1}</b> ${g}`).join('; ')}.</li>`,
           st.stable == null
             ? `<li>Too few players to check whether these groups hold: with one left out, too few remain to group.</li>`
-            : `<li>${stable ? 'Stable' : 'Not stable'}: the same groups in ${st.kept} of ${st.runs} runs with one player left out (Jaccard ${rng(st.loo)}); players drawn again ${st.draws} times: ${rng(st.boot)}.${stable ? '' : ' These groups change when one player is left out.'}</li>`,
+            : `<li>${stable ? 'Stable' : 'Not stable'}: the same groups in ${st.kept} of ${st.runs} runs with one player left out (Jaccard ${rng(st.loo)}); players drawn again ${st.draws} times: ${rng(st.boot)}.${anWhy(st)}</li>`,
           ...(a.close || []).map(
             ([i, j, , fs]) =>
               `<li>Close: <b>${esc(nm[i])}</b> and <b>${esc(nm[j])}</b>${fs.length ? ` (both ${fs.map(f => `${W[i].z[f] > 0 ? 'above' : 'below'} average in ${esc(F[f].label.toLowerCase())}`).join(', ')})` : ''}.</li>`
