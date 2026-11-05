@@ -318,6 +318,25 @@ const WIDTHS = [390, 1280];
     await p
       .waitForFunction(() => document.querySelector('.adm-an .adm-kpis'), null, {timeout: 90000})
       .catch(() => fails.push(`${w}px Analyses: no report`));
+    // Only the clear results until a list's toggle shows the others (Pierre, 2026-11-05): the first chart has no unclear
+    // bar while folded, and its bars run from the most negative change (the default sort).
+    const anFold = await p.evaluate(() => {
+      const c = document.querySelector('.adm-an-card'),
+        d = [...c.querySelectorAll('g[data-d]')].map(g => Number(g.dataset.d));
+      return {
+        open: (c.querySelector('[data-anmore]') || {}).ariaExpanded,
+        unclear: c.querySelectorAll('.an-dbar.t-thin,.an-dbar.t-none').length,
+        sorted: d.every((v, i) => !i || d[i - 1] <= v),
+        n: d.length
+      };
+    });
+    if (anFold.open === 'false' && (anFold.unclear || !anFold.sorted))
+      fails.push(`${w}px Analyses folded chart: ${JSON.stringify(anFold)}`);
+    // the words: every result once the toggle shows them
+    await p.evaluate(() => {
+      const b = document.querySelector('[data-anmore="words"]');
+      if (b && b.ariaExpanded === 'false') b.click();
+    });
     const anv = await p.evaluate(() => ({
       rows: document.querySelectorAll('.adm-an-eff tbody tr').length,
       verdicts: [...document.querySelectorAll('.adm-an-eff .adm-an-v')].filter(x => x.textContent.trim()).length,
@@ -373,6 +392,33 @@ const WIDTHS = [390, 1280];
         return {direct, shown: row ? Number(row.cells[1].textContent.replace(/,/g, '')) : null};
       });
       if (anf.shown !== anf.direct) fails.push(`${w}px Analyses Formats: 4 choices ${anf.shown}, direct count ${anf.direct}`);
+      // Sort (Pierre, 2026-11-05): the same control above every list, one choice per page; most positive first reverses the
+      // bars, by topic puts a sub-heading per analysis in the charts and the words, by name; then back to the default.
+      await go('~an');
+      const anSorted = async s => {
+        await p.evaluate(s => document.querySelector(`.adm-an-card [data-ans="${s}"]`).click(), s);
+        await settle();
+        return p.evaluate(() => {
+          const c = document.querySelector('.adm-an-card'),
+            d = [...c.querySelectorAll('g[data-d]')].map(g => Number(g.dataset.d));
+          return {
+            down: d.every((v, i) => !i || d[i - 1] >= v),
+            heads: c.querySelectorAll('.an-grp-t').length,
+            subs: c.querySelectorAll('.an-sub').length,
+            rows: document.querySelectorAll('.adm-an-all tr.an-grp').length,
+            pressed: [...document.querySelectorAll('[data-ans][aria-pressed="true"]')].map(b => b.dataset.ans)
+          };
+        });
+      };
+      const sPos = await anSorted('pos'),
+        sTopic = await anSorted('topic'),
+        sName = await anSorted('name'),
+        sNeg = await anSorted('neg');
+      if (!sPos.down || sPos.pressed.some(x => x !== 'pos') || sPos.pressed.length < 2 || !sPos.subs || sPos.heads)
+        fails.push(`${w}px Analyses sort, most positive first: ${JSON.stringify(sPos)}`);
+      if (!sTopic.heads || sTopic.subs || !sTopic.rows) fails.push(`${w}px Analyses sort, by topic: ${JSON.stringify(sTopic)}`);
+      if (sName.heads || sName.rows || sNeg.pressed.some(x => x !== 'neg'))
+        fails.push(`${w}px Analyses sort, by name / back: ${JSON.stringify({sName, sNeg})}`);
       await p.click('[data-anm="1000"]');
       await settle();
       const anm = await p.evaluate(() => ({
