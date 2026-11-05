@@ -3901,7 +3901,7 @@ a.lt:hover {
     radial-gradient(closest-side, var(--lvc) 58%, transparent 60%),
     conic-gradient(
       var(--lvt) var(--p),
-      color-mix(in srgb, var(--lvt) 48%, transparent) var(--p) var(--pm, var(--p)),
+      color-mix(in srgb, var(--lvt) 60%, transparent) var(--p) var(--pm, var(--p)),
       color-mix(in srgb, var(--lvt) 22%, transparent) 0
     );
 } /* two-tone (model.js pctRing, COVER_UI): solid = the bar that counts in the %, light up to --pm = among the genera met */
