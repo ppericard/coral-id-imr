@@ -1072,7 +1072,7 @@ function fitModes() {
 addEventListener('resize', () => fitModes());
 // Nine tabs in three header groups (Pierre, 2026-11-03, mockup "Admin tabs: 17 -> 9", after "regroup the admin menus"
 // of 2026-11-01): Inbox (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes, Photo stats), Players
-// (List, Activity). No tab holds a view of its own name, and no group a tab of its own name (Pierre, 2026-11-04: the group
+// (Activity, List). No tab holds a view of its own name, and no group a tab of its own name (Pierre, 2026-11-04: the group
 // To do became Inbox, the tab Players List, the views of Activity Recent sessions and Mix-ups; addresses unchanged). Nothing was removed: every former page is a view of a tab, chosen with the segmented switch at
 // the right of the tab row (#subnav, navs()). Each view keeps its old address, so bookmarks and links in the docs still
 // land right; ALIAS maps the two addresses that are not a view of their own. Each header group reopens the tab and view
@@ -1166,10 +1166,11 @@ const GROUPS = [
     'players',
     'Players',
     [
-      ['players', 'List', [['~users', 'List']]],
+      // Activity first, so Players opens on it when no tab of the group was used yet (Pierre, 2026-11-05).
       // Activity = who plays and how much (Pierre, 2026-11-04, one role per admin page): its analysis cards and the
       // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs), their addresses unchanged.
-      ['activity', 'Activity', [['~stats', 'Recent sessions']]]
+      ['activity', 'Activity', [['~stats', 'Recent sessions']]],
+      ['players', 'List', [['~users', 'List']]]
     ]
   ],
   // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
