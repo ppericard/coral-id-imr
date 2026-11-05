@@ -1720,26 +1720,85 @@
   const PHOTO_BASE = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/';
   // The same files on the site: every R2 address in s (a URL, a srcset, an inline style) made relative again.
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
+
+  // Photos out of the repo, step 1 of Pierre's rule (2026-11-05; docs/ROADMAP.md): git will keep only the photos with no
+  // other backup (IMR lecture photos, Coral Finder book scans, our own drawings); the photos with an online original
+  // (data.json / cand.json / fish-photos.json src: iNaturalist, Pierre's own iNaturalist photos, FishBase) leave img/
+  // later. So once R2 fails, a photo with an online original is read from that original, at a light size, and only the
+  // others from the site's img/ (app.js photoFail, quiz.js pump, admin.js).
+  // Our files are 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (''); iNaturalist serves small (240 px), medium (500 px),
+  // large (1024 px) and the original (up to 2048 px, often several MB, never asked for here).
+  const ONLINE_SIZE = {t: 'small', s: 'medium', m: 'large', '': 'large'};
+  // An online original (src) at the size closest to one of our files. Other hosts (FishBase: one file per photo, about
+  // 500 px wide) as they are.
+  const photoOnline = (src, size) => String(src).replace('/original.', `/${ONLINE_SIZE[size || ''] || 'large'}.`);
+  // The photo file a site address names, on R2 or on the site: {f, size}, or null for any other address.
+  function photoFileOf(u) {
+    const m = /(?:^|\/)img\/([^/?#\s]+?)(?:-([tsm]))?\.webp(?:[?#]|$)/.exec(photoLocal(String(u || '')));
+    return m ? {f: m[1], size: m[2] || ''} : null;
+  }
+  // The address that replaces a site photo's address u once R2 has failed: its online original at the same size when it
+  // has one (look(f): the photo's record, with src), else the same file on the site. Any other address as it is.
+  function photoAway(u, look) {
+    const x = photoFileOf(u),
+      p = x && look ? look(x.f) : null;
+    return !x ? u : p && p.src ? photoOnline(p.src, x.size) : photoLocal(u);
+  }
+  // Every R2 address in a string (an src, a srcset, an inline style) replaced so.
+  const R2_ADDR = PHOTO_BASE ? new RegExp(PHOTO_BASE.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + 'img/[^\\s"\'(),]+', 'g') : null;
+  const photoAwayAll = (s, look) => (R2_ADDR && typeof s === 'string' ? s.replace(R2_ADDR, u => photoAway(u, look)) : s);
   // An element whose R2 photo failed (an <img>, or the figure holding a game photo's backdrop): its src, srcset, data-lo
-  // (the 480 px fallback) and inline style point at the site's copies. True when it had an R2 address. srcset before src:
-  // each change starts a new load, and the browser picks from the srcset.
-  function photoToSite(el) {
+  // (the 480 px fallback) and inline style point at the photo's online original, or at the site's copies for a photo with
+  // none (no look: the site for every photo). keepLo: data-lo stays on R2 (under the service worker, which keeps photos
+  // offline under their R2 address: the 480 px step then tries the offline copy first). True when it had an R2 address.
+  // srcset before src: each change starts a new load, and the browser picks from the srcset.
+  function photoFallback(el, look, keepLo) {
     let hit = false;
     if (PHOTO_BASE && el && el.getAttribute)
       for (const a of ['data-lo', 'style', 'srcset', 'src']) {
-        const v = el.getAttribute(a);
+        const v = a === 'data-lo' && keepLo ? null : el.getAttribute(a);
         if (v && v.includes(PHOTO_BASE)) {
-          el.setAttribute(a, photoLocal(v));
+          el.setAttribute(a, photoAwayAll(v, look));
           hit = true;
         }
       }
     return hit;
   }
+  // Every photo record (an object with f and src) under the roots given (data.json as built, the fish data), by name and
+  // by online original: the fallback's look and the crops' reverse lookup.
+  function photoIndex(...roots) {
+    const f = new Map(),
+      src = new Map(),
+      seen = new Set();
+    const walk = o => {
+      if (!o || typeof o !== 'object' || seen.has(o)) return;
+      seen.add(o);
+      if (Array.isArray(o)) return o.forEach(walk);
+      if (typeof o.f === 'string' && typeof o.src === 'string') {
+        if (!f.has(o.f)) f.set(o.f, o);
+        if (!src.has(o.src)) src.set(o.src, o);
+      }
+      for (const k in o) if (o[k] && typeof o[k] === 'object') walk(o[k]);
+    };
+    roots.forEach(walk);
+    return {f, src};
+  }
+  // The crop to draw on an online original shown at address u (photoAway's): the site's files have Pierre's crop baked in
+  // (curation.json crop, data.json cr, tools/fetch_approved.py), the original has not. As object-view-box
+  // inset(top right bottom left), as the admin's crop preview (admin.js crSrc); a browser without it shows the whole
+  // photo. '' for an uncropped photo, a photo still remote (r: 1: shown whole from iNaturalist anyway) or any other address.
+  function photoCropOf(u, idx) {
+    if (!idx || typeof u !== 'string') return '';
+    const p = idx.src.get(u.replace(/#.*$/, '').replace(/\/(?:small|medium|large)\.(\w+)$/, '/original.$1')),
+      c = p && !p.r && p.cr,
+      pc = v => +(v * 100).toFixed(1);
+    return Array.isArray(c) && c.length === 4 ? `inset(${pc(c[1])}% ${pc(1 - c[2])}% ${pc(1 - c[3])}% ${pc(c[0])}%)` : '';
+  }
 
   // A photo that fails on R2 is asked from R2 once more after PHOTO_RETRY ms before any other source (Pierre,
   // 2026-11-03: in a 50-player load test 2 requests in 2000 failed, passing network errors a second try gets). An
   // element whose R2 photo fails for the first time: true, and a probe asks R2 again; if it loads, the element's src
-  // and srcset are set again (the file now comes from the browser's cache), else fallback(el) runs (photoToSite).
+  // and srcset are set again (the file now comes from the browser's cache), else fallback(el) runs (photoFallback).
   // The element keeps its attributes meanwhile. False otherwise: the caller falls back at once.
   const PHOTO_RETRY = 800;
   function photoRetry(el, fallback) {
@@ -2847,7 +2906,12 @@
     starWaits,
     PHOTO_BASE,
     photoLocal,
-    photoToSite,
+    photoFallback,
+    photoOnline,
+    photoFileOf,
+    photoAway,
+    photoIndex,
+    photoCropOf,
     photoRetry,
     PHOTO_RETRY,
     TYPE,

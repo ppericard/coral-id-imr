@@ -3336,18 +3336,21 @@ async function onePath(b, base) {
         if (start) await p.click(start).catch(() => {});
       } else await p.click(again).catch(() => {});
       await p.waitForSelector(sel, {timeout: 10000}).catch(() => {});
-      // The genus of each photo shown, from the data (an IMR lecture photo's file name does not name it).
+      // The genus of each photo shown, from the data (an IMR lecture photo's file name does not name it), by its file
+      // name, or by its online original once R2 failed (core.js photoAway: R2 is cut off here).
       seen.push(
         ...(await p.evaluate(sel => {
           const of = {};
           // Its views and its game slates (app.js gamePics: the curated photos the games may use).
           Object.keys(DATA.gen).forEach(n =>
             [...Object.values(GX(n).views), ...Object.values(GX(n).sl || {}).map(x => x.game || [])].forEach(L =>
-              L.forEach(x => (of[x.f] = n))
+              L.forEach(x => ((of[x.f] = n), x.src && (of[x.src] = n)))
             )
           );
           return [...document.querySelectorAll('#view ' + sel)].map(i => {
-            const f = decodeURIComponent((i.getAttribute('src') || '').split('/').pop()).replace(/(-[smt])?\.webp.*$/, '');
+            const u = i.getAttribute('src') || '',
+              x = photoFileOf(u),
+              f = x ? x.f : u.replace(/#.*$/, '').replace(/\/(small|medium|large)\.(\w+)$/, '/original.$2');
             return of[f] || f;
           });
         }, sel))

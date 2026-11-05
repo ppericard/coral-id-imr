@@ -58,6 +58,8 @@ One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto
 
 - **Enlarge mark** (`ZOOMI` in `app.js`, `.zic` in `app.css`; Pierre, 2026-11-03, after the answer log showed players almost never enlarged a quiz photo): a magnifier with a plus (the Identify tab's magnifier + "+", 18 px) in a 32 px `--scrim` circle, `--on-photo` stroke, 8 px from the bottom-right corner of every photo that opens the enlarged view in the quiz, the duels (also on the mix-up montage from tablets up) and the genus sheet (cover and view rows). Always shown, never animated; decorative (`aria-hidden`): the photo's button carries the label, "Enlarge photo" (on the sheet "Enlarge photo: *genus*, *view*"). It replaces the old ⤢ glyph. The source pill (`.psrc`) sits bottom-left and stops short of it.
 
+- **"Photo missing" tile** (`app.js` `noPhoto`, `NOPHOTO`, `.nophoto` in `app.css`; Pierre, 2026-11-05): when a photo gave up after its whole chain (R2, its online original or `img/`, the retries, its 480 px version), its frame shows a calm tile instead of a plain one: `--surface-2` with a small inline SVG (no request, a few hundred bytes) in `--muted` round strokes, 2.5 wide, tinted fills `--accent` at 22%, 28% of the frame's width (48-96 px), centred; decorative (`aria-hidden`), the question's note says what happened. Light, dark and colour-blind come from the tokens (no right/wrong hue). Shown on quiz photos (`.qph`) and a card's photo band (`.ulphoto`). **A camera struck through** (Pierre's pick, 2026-11-05: it says "no photo" plainly, where an empty frame could read as a photo still loading).
+
 ## Screens
 
 - Phone tab bar: icon above label (same SVG set), the active tab gets the accent colour and a tinted pill behind its icon.

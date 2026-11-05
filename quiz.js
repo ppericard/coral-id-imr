@@ -1029,8 +1029,8 @@ function pulseAsk() {
   setTimeout(() => d.querySelectorAll('[data-pulse]').forEach(b => (b.disabled = false)), PULSE.WAIT);
 }
 // Card photos: the cards sit outside the page view, out of reach of app.js's retries. Here too a photo that fails is
-// tried again twice (after 1 s, then 4 s), and is kept out of sight meanwhile and if it never comes: never a broken-image
-// icon on a card (new-player walkthrough 2026-11-02, a bonus card offline).
+// tried again twice (after 1 s, then 4 s), and is kept out of sight meanwhile; if it never comes, the "photo missing"
+// tile (app.js noPhoto): never a broken-image icon on a card (new-player walkthrough 2026-11-02, a bonus card offline).
 document.addEventListener(
   'error',
   e => {
@@ -1047,14 +1047,14 @@ document.addEventListener(
         },
         1000 * (n + 1) ** 2
       );
-    }
+    } else noPhoto(i); // it gave up: the "photo missing" tile (app.js)
   },
   true
 );
 document.addEventListener(
   'load',
   e => {
-    if (e.target instanceof HTMLImageElement && e.target.closest('.unlock')) e.target.classList.remove('fail');
+    if (e.target instanceof HTMLImageElement && e.target.closest('.unlock')) (e.target.classList.remove('fail'), noPhotoGone(e.target));
   },
   true
 );
@@ -1145,7 +1145,7 @@ const pfUrls = q => {
       ...later.map(p => img(p, 's')),
       ...later.map(p => qsrc(p, n + later.length))
     ])
-  ].filter(u => ownPhoto(u) || SUBJ.remote); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown; a subject on iNaturalist photos, core.js SUBJECTS remote, has them all fetched ahead)
+  ].filter(u => ownPhoto(u) || SUBJ.remote || AWAY); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown; a subject on iNaturalist photos, core.js SUBJECTS remote, has them all fetched ahead; once R2 failed, the online originals that stand in for the site's files)
 };
 const pump = () => {
   const kept = new Set([ONQ]);
@@ -1157,21 +1157,22 @@ const pump = () => {
     while (pfLive < 2 && x.urls.length) {
       const i = new Image();
       pfLive++;
-      // Once R2 has failed, a URL queued before is asked from the site straight away (Codex review #392).
-      const u = R2 ? x.urls.shift() : photoLocal(x.urls.shift());
+      // Once R2 has failed, a URL queued before goes to its online original or the site straight away (Codex review #392).
+      const u = AWAY ? photoAway(x.urls.shift(), photoLook) : x.urls.shift();
       i.onload = () => (pfLive--, pump());
       // A preload is no element of the page (app.js photoFail): failed on R2, it is asked from R2 once more after
-      // PHOTO_RETRY ms (core.js photoRetry), then its file is asked from the site, and so are the next photos.
+      // PHOTO_RETRY ms (core.js photoRetry; under a service worker, the worker did), then its online original or its file
+      // on the site (core.js photoAway), and so are the next photos when no service worker controls the page.
       i.onerror = () => {
         pfLive--;
         if (photoLocal(u) !== u) {
           x.r2try = x.r2try || new Set();
-          if (!x.r2try.has(u)) {
+          if (!swOn() && !x.r2try.has(u)) {
             x.r2try.add(u);
             return setTimeout(() => (x.urls.unshift(u), PF.includes(x) || PF.push(x), pump()), PHOTO_RETRY);
           }
-          R2 = false;
-          x.urls.unshift(photoLocal(u));
+          if (!swOn()) r2Out();
+          x.urls.unshift(photoAway(u, photoLook));
         }
         pump();
       };
