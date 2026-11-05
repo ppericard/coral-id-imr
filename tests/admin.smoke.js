@@ -1366,6 +1366,39 @@ const WIDTHS = [390, 1280];
       });
       if (!ln.rows || ln.lanes < 2 || ln.noMedian) fails.push(`${w}px Photo difficulty: lanes per view missing ${JSON.stringify(ln)}`);
     }
+    // Difficulty in words (Pierre, 2026-11-05, Q19 and Q26): on the main views no signed raw difficulty or level is left
+    // ("+1.44", "−0.80"); every reading is a badge (admin.js recBadge) whose colour class is the band of its % (≥75 very
+    // easy, 60-75 easy, 40-60 middle, 25-40 hard, <25 very hard) and whose title holds the raw value; players read as an
+    // Elo with the level in its title. At both widths, with no sideways scroll.
+    for (const [h, need] of [
+      ['~stats-photos', 'rec'],
+      ['~diff', 'rec'],
+      ['~health', 'rec'],
+      ['~users', 'elo'],
+      ['~stats-log', 'elo'],
+      ['~journey/Carla%20Demo', 'elo']
+    ]) {
+      await go(h);
+      const r = await p.evaluate(() => {
+        const v = document.getElementById('view'),
+          B = [...v.querySelectorAll('.adm-rec')],
+          band = n => (n >= 75 ? 'veasy' : n >= 60 ? 'easy' : n >= 40 ? 'mid' : n >= 25 ? 'hard' : 'vhard');
+        return {
+          signed: (v.innerText.match(/(^|[^\w.])[+−-]\d+\.\d+(?! ?s\b)/gm) || []).slice(0, 3),
+          rec: B.length,
+          off: B.filter(b => !b.classList.contains('rec-' + band(Number((b.textContent.match(/(\d+)%/) || [])[1]))))
+            .map(b => b.className + ' ' + b.textContent)
+            .slice(0, 3),
+          noRaw: B.filter(b => !/(difficulty|offset)[^·]* [+−]?\d+\.\d\d \(\+ = harder\)/.test(b.title))
+            .map(b => b.title)
+            .slice(0, 2),
+          elo: v.querySelectorAll('.adm-elo[title*="level"]').length,
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (r.signed.length || !r[need] || r.off.length || r.noRaw.length || r.wide > 0)
+        fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
+    }
     // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
     // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
     // marks, and a plain median (sort, middle value); nothing wider than the window.
@@ -2231,6 +2264,64 @@ const WIDTHS = [390, 1280];
     if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
     await ctx.close();
   }
+  // The difficulty bands' colours (tokens --rec-* in app.css): five distinct fills, text readable on each (≥ 4.5:1), in
+  // light and dark, colour-blind off and on (the admin follows the app's ⚙ Colour-blind, reefid-sync-cvd): green to red,
+  // or dark blue to dark orange. Once, at 1280.
+  if (ws.includes(1280))
+    for (const [theme, cvd, veasy] of [
+      ['light', '0', 'rgb(27, 107, 51)'],
+      ['dark', '0', 'rgb(31, 115, 55)'],
+      ['light', '1', 'rgb(11, 79, 156)'],
+      ['dark', '1', 'rgb(31, 95, 174)']
+    ]) {
+      const c = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+      await c.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await c.addInitScript(
+        ([t, v]) => {
+          localStorage.setItem('reefid-sync-theme', t);
+          localStorage.setItem('reefid-sync-cvd', v);
+        },
+        [theme, cvd]
+      );
+      const q = await c.newPage();
+      await q.goto(base + 'admin.html?demo#~stats-photos');
+      await q.waitForFunction(() => typeof recBadge === 'function' && document.querySelector('#view .adm-recscale'), null, {
+        timeout: 30000
+      });
+      const r = await q.evaluate(() => {
+        const box = document.createElement('p');
+        box.innerHTML = [-2, -0.7, 0, 0.7, 2].map(d => recBadge(d)).join(' ');
+        document.getElementById('view').prepend(box);
+        const lum = s => {
+            const [r, g, b] = s
+              .match(/\d+/g)
+              .map(Number)
+              .map(x => x / 255)
+              .map(x => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          },
+          ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+        const B = [...box.children].map(x => {
+          const st = getComputedStyle(x);
+          return {k: x.className, bg: st.backgroundColor, cr: Math.round(ratio(st.backgroundColor, st.color) * 100) / 100};
+        });
+        box.remove();
+        return {B, cvd: document.documentElement.dataset.cvd || '', theme: document.documentElement.dataset.theme || ''};
+      });
+      const K = r.B.map(x => x.k.replace('adm-rec rec-', ''));
+      if (
+        K.join() !== 'veasy,easy,mid,hard,vhard' ||
+        new Set(r.B.map(x => x.bg)).size !== 5 ||
+        r.B.some(x => x.cr < 4.5) ||
+        r.B[0].bg !== veasy ||
+        (cvd === '1') !== (r.cvd === '1')
+      )
+        fails.push(`difficulty bands, ${theme}${cvd === '1' ? ', colour-blind' : ''}: ${JSON.stringify(r)}`);
+      await c.close();
+    }
   await b.close();
   server.close();
   if (out.length) fails.push('Calls left the page in demo mode: ' + [...new Set(out)].slice(0, 5).join(', '));
