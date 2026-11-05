@@ -2896,7 +2896,10 @@ td.cov-c .cov-off {
 .adm-sess {
   position: sticky;
   left: 0;
-  max-width: calc(100vw - 50px);
+  /* As wide as the visible part of the table's scroll box (--sw, set by admin.js bindStats; Pierre, 2026-11-05: the
+     panel ran 8 px past it on phones), else the screen less the page's margins. */
+  max-width: var(--sw, calc(100vw - 58px));
+  box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r);
@@ -2956,9 +2959,37 @@ td.cov-c .cov-off {
 .adm-sess .next {
   margin: 12px 0 0;
 }
+.adm-sesslink {
+  margin: 0;
+}
+/* Desktop (Pierre, 2026-11-05: several sessions open one under another, so denser): the chart and the Journey link on the
+   left, the lists beside it on the right, smaller photo tiles. Phones and tablets keep one column. */
 @media (min-width: 1024px) {
+  .adm-sessbody {
+    display: grid;
+    grid-template-columns: 42% minmax(0, 1fr);
+    grid-template-areas: 'chart grid' 'link grid';
+    grid-template-rows: auto 1fr;
+    gap: 0 24px;
+  }
+  .adm-sesschart {
+    grid-area: chart;
+  }
+  .adm-sessbody > .adm-sessgrid {
+    grid-area: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+  .adm-sesslink {
+    grid-area: link;
+  }
   .adm-sessgrid > .adm-swide {
     grid-column: span 2;
+  }
+  .adm-sess .adm-kpis div {
+    padding: 6px 10px;
+  }
+  .adm-sess .adm-hphotos {
+    grid-template-columns: repeat(3, minmax(0, 110px));
   }
 }
 

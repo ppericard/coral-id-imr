@@ -250,6 +250,27 @@
       NOW - 12 * 60e3,
       0
     );
+    // A photo everyone misses in the session Carla is playing now (Activity's session summary labels it "hard for
+    // everyone", Health lists it): the photo of her first miss there, also missed by 6 earlier answers of a device not
+    // signed in (taken from its own answers, so the answer count and the sessions stay the same).
+    {
+      const miss = rows
+          .filter(r => r[0] === 'Carla Demo')
+          .sort((a, b) => a[1] - b[1])
+          .slice(-24)
+          .find(r => !r[4]),
+        f = miss && miss[6].split(' ')[0];
+      if (f)
+        rows
+          .filter(r => r[0] === '~anon demo2')
+          .slice(0, 6)
+          .forEach(r => {
+            r[2] = miss[2];
+            r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
+            r[4] = 0;
+            r[6] = f;
+          });
+    }
     // Reports: [id, time, reporter, verified, why, expected, answered, suggested, note, mode, photos, where], newest first.
     const rp = (i, who, why, g, a, fix, note, m, f, w) => [
       'demorep' + i,

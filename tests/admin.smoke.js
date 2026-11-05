@@ -1215,7 +1215,18 @@ const WIDTHS = [390, 1280];
             heads: [...d.querySelectorAll('.adm-sessgrid h4')].map(x => x.textContent),
             text: d.innerText,
             link: (d.querySelector('a.next') || {}).getAttribute?.('href'),
-            wide: document.documentElement.scrollWidth - innerWidth
+            wide: document.documentElement.scrollWidth - innerWidth,
+            // Pierre, 2026-11-05: the scale starts under the session's lowest point, not at 0; the photos everyone misses
+            // say so; the panel stays inside the visible part of the table; on desktop the lists sit beside the chart.
+            low: Number((d.querySelector('svg.adm-jl text') || {}).textContent?.replace('%', '')),
+            hard: d.querySelectorAll('[data-hardall]').length,
+            past: Math.round(
+              d.getBoundingClientRect().right -
+                (d.closest('.adm-tscroll').getBoundingClientRect().left + d.closest('.adm-tscroll').clientWidth)
+            ),
+            side:
+              d.querySelector('.adm-sesschart').getBoundingClientRect().right <=
+              d.querySelector('.adm-sessgrid').getBoundingClientRect().left
           };
         });
       await p.click('[data-recent] tr[data-sopen] td:nth-child(3)');
@@ -1240,7 +1251,11 @@ const WIDTHS = [390, 1280];
         !/Session \d+ of \d+/.test(s1.text) ||
         !/Typed 2, \d right/.test(s1.text) ||
         s1.link !== '#~journey/Carla%20Demo' ||
-        s1.wide > 0
+        s1.wide > 0 ||
+        !(s1.low > 0) ||
+        s1.hard < 1 ||
+        s1.past > 0 ||
+        s1.side !== w >= 1024
       )
         fails.push(`${w}px Recent sessions: Carla's session did not unfold its summary ${JSON.stringify(s1)}`);
       if (once) {

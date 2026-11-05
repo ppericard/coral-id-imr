@@ -129,7 +129,7 @@ function journeyOf(R) {
 function journeyChart(series, top, opt = {}) {
   // Drawn at the page's width (a little under it, so never scaled down), so its labels keep the 12 px minimum (--fs-xs)
   // on a phone as on a desktop (AGENTS.md rule 18; Codex review #351).
-  // opt.w / opt.h: a smaller chart drawn at its own box's width (a session's summary, sessionSummary).
+  // opt.w / opt.h: a smaller chart drawn at its own box's width (a session's summary, sessionSummary); opt.min below.
   const W = opt.w || Math.max(300, Math.min(1100, ($v.clientWidth || 900) - 56)),
     H = opt.h || 190,
     pl = 34,
@@ -138,7 +138,9 @@ function journeyChart(series, top, opt = {}) {
     pb = 22,
     n = Math.max(2, series[0].v.length),
     x = i => pl + ((W - pl - pr) * i) / (n - 1),
-    y = v => pt + (H - pt - pb) * (1 - v / top);
+    // opt.min: the bottom of the scale (0 by default), so a session's curve uses the chart's height (Pierre, 2026-11-05).
+    lo = opt.min || 0,
+    y = v => pt + (H - pt - pb) * (1 - (v - lo) / (top - lo));
   const path = v =>
     v
       .map((p, i) => (p == null ? null : `${x(i).toFixed(1)},${y(p).toFixed(1)}`))
@@ -635,7 +637,8 @@ const SESS = {
   GAIN: 0.02, // gain of a genus's bar (2 points) before it counts as improved
   RUN: 10, // right answers in a row worth telling (the "On a roll" achievement's run)
   END: 3, // misses in a row at the end worth telling
-  EDGE: 5 * 6e4 // ms around the session's answers within which a card, an offer or an achievement belongs to it
+  EDGE: 5 * 6e4, // ms around the session's answers within which a card, an offer or an achievement belongs to it
+  PAD: 5 // the chart's scale starts this many points under the session's lowest value, rounded down to 10 (Pierre, 2026-11-05)
 };
 // The facts of a session, pure (tests/session.test.js): L its answers (one player's rows, in time order), B the player's
 // earlier answers (in time order); o: diff (photo file -> difficulty or null), prog ({genus: [bar before, bar after]}),
@@ -831,27 +834,34 @@ function sessionSummary(id, L, name) {
 
   // The chart: right answers over the session's last SESS.WIN against the expected, a dot at each new genus's first
   // question, a ★ at a genus learned; a session too short for a curve shows its answers as dots.
-  const chart =
-    F.n >= 5
-      ? `<h4>Right answers, last ${SESS.WIN} <span class="adm-jkey"><i class="acc"></i>right <i class="exp"></i>expected${F.met.length ? ' <b class="adm-sdot">○</b>first question' : ''}</span></h4>${journeyChart(
-          [
-            {v: F.expS.map(v => (v == null ? null : v * 100)), cls: 'exp'},
-            {v: F.acc.map(v => (v == null ? null : v * 100)), cls: 'acc'}
-          ],
-          100,
-          {
-            ticks: [
-              [50, '50%'],
-              [100, '100%']
+  // The scale: from under the session's lowest point (SESS.PAD, rounded down to 10) to 100%, so its evolution shows
+  // (Pierre, 2026-11-05: 0-100% squashed it). On desktop the chart takes the left of the panel, the lists the right.
+  const vals = [...F.acc, ...F.expS].filter(v => v != null).map(v => v * 100),
+    lo = vals.length ? Math.max(0, Math.min(90, Math.floor((Math.min(...vals) - SESS.PAD) / 10) * 10)) : 0,
+    pw = Math.min(innerWidth - 84, ($v.clientWidth || 900) - 48),
+    chart =
+      F.n >= 5
+        ? `<h4>Right answers, last ${SESS.WIN} <span class="adm-jkey"><i class="acc"></i>right <i class="exp"></i>expected${F.met.length ? ' <b class="adm-sdot">○</b>first question' : ''}</span></h4>${journeyChart(
+            [
+              {v: F.expS.map(v => (v == null ? null : v * 100)), cls: 'exp'},
+              {v: F.acc.map(v => (v == null ? null : v * 100)), cls: 'acc'}
             ],
-            dots: F.met.map(([i, g]) => [i, 0, `${g}: first question`]),
-            stars: (learned || []).map(g => [L.indexOf(lastX[g]), 100, `${g} learned`]),
-            label: 'Right answers in the session',
-            w: Math.max(280, Math.min(900, innerWidth - 76, ($v.clientWidth || 900) - 40)),
-            h: 140
-          }
-        )}`
-      : `<p class="adm-jdots">${L.map(r => `<i class="${r[4] ? 'ok' : 'ko'}"></i>`).join('')}</p>`;
+            100,
+            {
+              min: lo,
+              ticks: [
+                [lo, lo + '%'],
+                ...(100 - lo >= 40 ? [[Math.round((lo + 100) / 20) * 10, Math.round((lo + 100) / 20) * 10 + '%']] : []),
+                [100, '100%']
+              ],
+              dots: F.met.map(([i, g]) => [i, lo, `${g}: first question`]),
+              stars: (learned || []).map(g => [L.indexOf(lastX[g]), 100, `${g} learned`]),
+              label: 'Right answers in the session',
+              w: Math.max(280, Math.min(900, innerWidth >= 1024 ? Math.round(pw * 0.42) : pw)),
+              h: 140
+            }
+          )}`
+        : `<p class="adm-jdots">${L.map(r => `<i class="${r[4] ? 'ok' : 'ko'}"></i>`).join('')}</p>`;
 
   // The lists, in the order of Pierre's list: new genera, events, most improved, difficulties (genera, mix-ups, photos),
   // achievements.
@@ -868,10 +878,17 @@ function sessionSummary(id, L, name) {
           ? `<table class="adm-tbl">${F.improved.map(([g, a, b]) => `<tr><td>${gl(g)}</td><td class="n">${Math.round(100 * a)}% → ${Math.round(100 * b)}%</td><td class="n">${jPts(b - a)}</td></tr>`).join('')}</table>`
           : '',
     VT = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites'},
+    // A photo everyone misses (Health's rule, admin.js healthBad: under 40% right over 5 answers or more, or clearly
+    // harder than its genus's other photos) says so (Pierre, 2026-11-05), beside its difficulty.
+    hardAll = ofAns('hardAll', () => new Set(healthBad(ANS.rows || []).map(o => o.p.f))),
     tile = x => {
       const p = photos(x.g).find(q => q.f === x.f);
       return p
-        ? `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(x.g)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption>${gi(x.g)}${x.a && x.a !== x.g ? ` → ${gi(x.a)}` : ''} <span>${VT[viewOf(x.g, p)] || ''}</span>${x.d != null ? ` <span class="adm-hnum" title="Photo difficulty">${sgn(x.d)}</span>` : ''}</figcaption></figure>`
+        ? `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(x.g)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption>${gi(x.g)}${x.a && x.a !== x.g ? ` → ${gi(x.a)}` : ''} <span>${VT[viewOf(x.g, p)] || ''}</span>${
+            x.d != null || hardAll.has(p.f)
+              ? ` <span class="adm-hnum">${x.d != null ? `<span title="Photo difficulty">${sgn(x.d)}</span>` : ''}${x.d != null && hardAll.has(p.f) ? ' · ' : ''}${hardAll.has(p.f) ? '<b class="warnc" data-hardall>hard for everyone</b>' : ''}</span>`
+              : ''
+          }</figcaption></figure>`
         : '';
     },
     tiles = F.photos.map(tile).join(''),
@@ -939,10 +956,10 @@ function sessionSummary(id, L, name) {
       ],
       ...(RP ? [['Progress', sp ? `${sp.pct[0]}% → ${sp.pct[1]}%` : '…']] : [])
     ])}
-    ${chart}
+    <div class="adm-sessbody"><div class="adm-sesschart">${chart}</div>
     <div class="adm-sessgrid">${block('New genera', newG)}${block('Events', `<ul class="adm-jcards">${jOrder(ev)}</ul>`)}${block(
       'Most improved',
       impr
     )}${block('Difficulties', diff, tiles ? 'adm-swide' : '')}${block('Achievements', achs)}</div>
-    <p><a class="next" href="${link}">Journey →</a></p></div>`;
+    <p class="adm-sesslink"><a class="next" href="${link}">Journey →</a></p></div></div>`;
 }
