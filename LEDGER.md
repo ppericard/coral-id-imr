@@ -6,7 +6,7 @@ Open PRs: `gh api "repos/ppericard/coral-id-imr/pulls?state=open"`. Pierre's dec
 | Track | Branch / PR | State | Restart brief |
 |---|---|---|---|
 | Progress v5 "coverage against the field" | PR #611 draft needs-pierre at a5b99c49 (last green); agent a4fb07fae2ce3ef9f idle, WIP local branch wip/progcov-hier-diag 752e0aff + scratchpad/progcov/bin | PAUSED 06:00 Manila: Pierre rejects the over metric (bar should be difficulty-indexed: easy → medium → hard photos) and the unfitted learner model; Custom-quiz block is intended | wait for research agent ac6abc040fc981db2 (docs/reviews/2026-11-06-progress-metric-research.md, PR claude/progress-metric-research), then redefine target with Pierre, resume a4fb07fae2ce3ef9f |
-| learnsim field learner + real-log check | branch learnsim-field | sims resumed 16:27 UTC at item_path (6 configs left, ~6 h; run.sh skips finished ones) | finish fieldeval, results in LEARNING.md, PR |
+| learnsim field learner + real-log check | branch learnsim-field | ON HOLD: container restart ~16:56 UTC killed item_path (80/120 runs) and the watchdog; batch held until Pierre and research redefine the progress metric (the over metric is rejected); restart with run.sh | finish fieldeval, results in LEARNING.md, PR |
 | Analyses views + player profiles (Q70-Q77) | #592 merged; #604 profiles (rebasing); PR3 branch claude/mfviz-wright | in progress | docs/reviews/2026-11-05-multifactor-viz-study.md |
 | Deleted accounts policy + self-delete (Q84-Q91) | branch tbd | building | docs/reviews/2026-11-05-deleted-accounts-audit.md + Pierre's answers |
 | Feedback cards #579 / #581 | PRs #579 #581 | green, wait Pierre's look at cards | rebase, next Code.gs VERSION |
