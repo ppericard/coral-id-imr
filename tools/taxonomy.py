@@ -72,8 +72,10 @@ IMR_SAYS = re.compile(r"\bformerly\b|\bnow includes?\b", re.I)  # the IMR lectur
 
 def coral_inputs():
     """The coral subject's inputs: its genera (data.json gen + x.gen, role from core.js through tools/genera.py, `app`
-    verbatim), the served photo names (data.json views and more), the checklist (Corals of the World's Philippine list)."""
+    verbatim), the served photo names (data.json views and more, and the candidates Pierre approved: curation.json
+    genera[n].add, which core.js applyCuration serves), the checklist (Corals of the World's Philippine list)."""
     d = json.loads((ROOT / "data.json").read_text(encoding="utf-8"))
+    cur = json.loads((ROOT / "curation.json").read_text(encoding="utf-8")).get("genera") or {}
     X = (d.get("x") or {}).get("gen") or {}
     benthic, bonus = genera.lists()
     gen, names = {}, set()
@@ -84,7 +86,9 @@ def coral_inputs():
         if says:
             app["imr"] = says
         gen[n] = {"role": role, "app": app}
-        for v in [*(g.get("views") or {}).values(), *(g.get("more") or {}).values()]:
+        add = (cur.get(n) or {}).get("add") or {}
+        approved = [p for p in (d.get("cand") or {}).get(n) or [] if p.get("f") in add]
+        for v in [*(g.get("views") or {}).values(), *(g.get("more") or {}).values(), approved]:
             for p in v:
                 w = (p.get("t") or "").split()
                 if len(w) >= 2 and w[1][:1].islower():
@@ -283,8 +287,10 @@ def family_of(t):
 # ---------------------------------------------------------------- build
 
 def build(sub, inp, get, prev, dates):
-    """The subject's section of taxonomy.json and the report, from its inputs, a `get(url)` and the previous section
-    (its hand-kept parts: the `old` names, the watch list). Pure but for `get`."""
+    """The subject's section of taxonomy.json and the report, from its inputs, a `get(url)`, the previous section (its
+    hand-kept parts: the `old` names, the watch list) and `dates()`, the date of each source's last fetch, read once
+    the build has fetched (Codex review #570: a first run or a --refresh is dated with its own fetch). Pure but for
+    `get`."""
     G, phylum = inp["genera"], sub["phylum"]
     prev = prev or {}
     old_names = set(prev.get("old") or {}) - set(G)
@@ -456,7 +462,11 @@ def build(sub, inp, get, prev, dates):
                 rep["cotw"].append(f"{name}: the checklist gives {m}, WoRMS now {mr.get('valid_name')}")
     for name in inp["photos"]:
         r = best(CW.get(name) or [], "Species")
-        if not r:
+        g = name.split()[0]
+        same = [e for e in spp.get(g, []) if norm(f"{g} {e}") == norm(name)]
+        if not r and len(same) == 1:  # iNaturalist's spelling of a species WoRMS spells otherwise (valenciennesi)
+            row(name, f"{g} {same[0]}", None, "photo")
+        elif not r:
             rep["photos"].append(f"{name}: not in WoRMS")
         elif r.get("valid_name") and r["valid_name"] != name:
             row(name, r["valid_name"], r.get("valid_AphiaID"), "photo")
@@ -493,7 +503,8 @@ def build(sub, inp, get, prev, dates):
                            "inat_extra": (gen.get(g) or {}).get("inat", {}).get("extra", [])} for g in w.get("genera") or []}
         w["seen"] = seen
 
-    out = {"refreshed": {"worms": dates.get("worms"), "inat": dates.get("inat"), "checklist": ck.get("date")},
+    dt = dates()
+    out = {"refreshed": {"worms": dt.get("worms"), "inat": dt.get("inat"), "checklist": ck.get("date")},
            "gen": gen, "old": old, "spp": rows, "watch": watch, "log": list(prev.get("log") or [])}
     return out, rep
 
@@ -667,7 +678,7 @@ def main():
     try:
         for s, sub in SUBJECTS.items():
             prev = o.get(s) or {}
-            sec, rep = build(sub, sub["inputs"](), net.get, prev, net.dates())
+            sec, rep = build(sub, sub["inputs"](), net.get, prev, net.dates)
             date = max(d for d in sec["refreshed"].values() if d)
             changes = log_changes(sec, prev, date)
             report(s, sec, rep, changes)

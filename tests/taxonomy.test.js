@@ -115,12 +115,12 @@ def get(u):
     raise AssertionError(u)
 INP = {"genera": {"Astrea": {"role": "slate", "app": {"fam": "Merulinidae", "imr": ["Septa alternate in size; formerly Montastrea / Phymastrea."]}},
                   "Pachyseris": {"role": "slate", "app": {"fam": "Agariciidae"}}},
-       "photos": ["Astrea curta"],
+       "photos": ["Astrea curta", "Astrea curtus"],
        "checklist": {"names": {"Montastrea curta": ["Astrea curta"], "Plesiastrea versipora": ["Plesiastrea peroni"]},
                      "decided": {"Plesiastrea versipora": "a decision"}, "date": "2026-11-04"}}
 SUB = X.SUBJECTS["coral"]
 def run(prev, dates):
-    sec, rep = X.build(SUB, INP, get, prev, dates)
+    sec, rep = X.build(SUB, INP, get, prev, lambda: dates)
     ch = X.log_changes(sec, prev, max(d for d in sec["refreshed"].values() if d))
     return sec, rep, ch
 PREV = {"old": {"Phymastrea": {}}, "watch": [{"id": "w", "names": ["Favites irregularis"], "genera": ["Astrea"]}]}
@@ -138,7 +138,7 @@ print(json.dumps({"same": fa == fb, "ch1": ch1, "ch2": ch2, "log": len(b["log"])
                   "seen": a["watch"][0]["seen"], "rep": rep, "inat": [c for c in calls if c.startswith(I)][:4]}))`);
   assert.ok(R.same, 'the rerun wrote another file');
   assert.strictEqual(R.ch1.length, 1, 'the first build logs one line');
-  assert.match(R.ch1[0], /^first build: 2 genera, 1 former genus names, 3 species rows, 1 watched items$/);
+  assert.match(R.ch1[0], /^first build: 2 genera, 1 former genus names, 4 species rows, 1 watched items$/);
   assert.deepStrictEqual(R.ch2, []);
   assert.strictEqual(R.log, 1);
   // Rule 1: the app's family stays, the difference is a flag.
@@ -153,7 +153,10 @@ print(json.dumps({"same": fa == fb, "ch1": ch1, "ch2": ch2, "log": len(b["log"])
   });
   // Moves across app genera, the checklist's renames and its decisions (not WoRMS's) become species rows.
   // A WoRMS move into an app genus is a row only when iNaturalist knows its old name (Astrea solidior: no).
-  assert.deepStrictEqual(Object.keys(R.spp), ['Montastrea curta', 'Phymastrea curta', 'Plesiastrea versipora']);
+  assert.deepStrictEqual(Object.keys(R.spp), ['Astrea curtus', 'Montastrea curta', 'Phymastrea curta', 'Plesiastrea versipora']);
+  // A photo name in iNaturalist's spelling of a species WoRMS spells otherwise gets a row, not a warning.
+  assert.deepStrictEqual(R.spp['Astrea curtus'], {now: 'Astrea curta', id: null, src: ['photo']});
+  assert.deepStrictEqual(R.rep.photos, []);
   assert.deepStrictEqual(R.spp['Phymastrea curta'], {now: 'Astrea curta', id: 11, src: ['worms']});
   assert.deepStrictEqual(R.spp['Montastrea curta'], {now: 'Astrea curta', id: 11, src: ['cotw']});
   assert.deepStrictEqual(R.spp['Plesiastrea versipora'], {
@@ -183,6 +186,37 @@ print(json.dumps({"ch": ch, "log": b["log"][-1]}))`);
     'gen Pachyseris worms.fam: Agariciidae -> Pachyseridae'
   ]);
   assert.deepStrictEqual(R.log, {date: '2026-12-01', what: 'gen Pachyseris worms.fam: Agariciidae -> Pachyseridae'});
+});
+
+// Codex review #570: the dates of the data are read after the build fetched it, so a first run or a --refresh is
+// dated with its own fetch, and an offline rerun keeps those dates.
+test('taxonomy.py: the refreshed dates and the log are those of the fetch the build made', () => {
+  const R = py(`FAM = "Pachyseridae"
+${STUB}
+D = {}
+plain = get
+def get(u):
+    D["worms" if u.startswith(W) else "inat"] = "2026-12-01"
+    return plain(u)
+sec, _ = X.build(SUB, INP, get, PREV, lambda: dict(D))
+ch = X.log_changes(sec, PREV, max(d for d in sec["refreshed"].values() if d))
+print(json.dumps({"refreshed": sec["refreshed"], "log": sec["log"][0]["date"]}))`);
+  assert.deepStrictEqual(R.refreshed, {worms: '2026-12-01', inat: '2026-12-01', checklist: '2026-11-04'});
+  assert.strictEqual(R.log, '2026-12-01');
+});
+
+// Codex review #570: a candidate Pierre approved is served (curation.json genera[n].add, core.js applyCuration), so
+// its species name is a photo name too.
+test('taxonomy.py: the photo names include the approved candidates', () => {
+  const R = py(`import taxonomy as X
+d = json.load(open("data.json")); c = json.load(open("curation.json"))
+want = sorted({" ".join(p["t"].split()[:2]) for n, ps in (d.get("cand") or {}).items() for p in ps
+               if p["f"] in ((c.get("genera") or {}).get(n) or {}).get("add", {}) and len((p.get("t") or "").split()) >= 2
+               and p["t"].split()[1][:1].islower()})
+got = set(X.coral_inputs()["photos"])
+print(json.dumps({"n": len(want), "missing": [x for x in want if x not in got]}))`);
+  assert.ok(R.n > 0, 'no approved candidate with a species name');
+  assert.deepStrictEqual(R.missing, []);
 });
 
 test('taxonomy.py --offline never asks the network: a reply missing from the cache stops it, naming the URL', () => {

@@ -130,6 +130,7 @@
 "Acropora sekiseiensis":{"now":"Acropora horrida","id":207006,"src":["cotw"]},
 "Acropora tizardi":{"now":"Acropora cerealis","id":207016,"src":["cotw"]},
 "Acropora tutuilensis":{"now":"Acropora abrotanoides","id":207083,"src":["cotw"]},
+"Acropora valenciennesi":{"now":"Acropora valenciennesii","id":null,"src":["photo"],"iname":"Acropora valenciennesi"},
 "Acropora vermiculata":{"now":"Acropora sarmentosa","id":288244,"src":["cotw"]},
 "Acropora wallaceae":{"now":"Acropora samoensis","id":207055,"src":["cotw"]},
 "Australomussa rowleyensis":{"now":"Lobophyllia rowleyensis","id":888123,"src":["cotw","worms"]},
@@ -187,6 +188,7 @@
 "Favites micropentagona":{"now":"Favites micropentagonus","id":763551,"src":["cotw"]},
 "Favites paraflexuosa":{"now":"Favites paraflexuosus","id":763552,"src":["cotw"]},
 "Favites russelli":{"now":"Paragoniastrea russelli","id":817179,"src":["cotw"]},
+"Favites valenciennesi":{"now":"Favites valenciennesii","id":null,"src":["photo"],"iname":"Favites valenciennesi"},
 "Fungia concina":{"now":"Lithophyllon concinna","id":716645,"src":["worms"]},
 "Fungia concinna":{"now":"Lithophyllon concinna","id":716645,"src":["cotw","worms"]},
 "Fungia corona":{"now":"Danafungia scruposa","id":716609,"src":["cotw","worms"]},
@@ -280,7 +282,7 @@
 {"id":"cyphastrea-agassizi","what":"Cyphastrea agassizi belongs with Leptastrea (Chukaew et al. 2023); WoRMS has not followed","ref":"chukaew2023","by":"Pierre, 2026-11-05 (Q51)","names":["Cyphastrea agassizi","Leptastrea agassizi"],"genera":["Cyphastrea"],"seen":{"worms":{"Cyphastrea agassizi":"accepted","Leptastrea agassizi":"superseded combination -> Cyphastrea agassizi"},"inat":{"Cyphastrea agassizi":"active","Leptastrea agassizi":null},"spp":{"Cyphastrea":{"worms":12,"inat_miss":["kausti","magna","salae","zhongjianensis"],"inat_extra":[]}}}}
 ],
 "log":[
-{"date":"2026-11-05","what":"first build: 66 genera, 24 former genus names, 166 species rows, 4 watched items"}
+{"date":"2026-11-05","what":"first build: 66 genera, 24 former genus names, 168 species rows, 4 watched items"}
 ]
 }
 }
