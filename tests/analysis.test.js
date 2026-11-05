@@ -1573,3 +1573,31 @@ test('profiles: fewer than 3 players with 100 answers is not enough; each player
   const rep = A.runAll(rows, {}, {B: 0});
   assert.ok(rep.A.who && rep.A.who.who.length === 11 && rep.A.who.effects.length === 0);
 });
+
+// Codex review #604: three fixes in the profiles, each with a test that failed before it.
+test('profiles: misses in a row are counted within a session, not across the break', () => {
+  // two-answer sessions, both answers wrong: within a session the second miss is the one that ends it
+  const rows = [];
+  for (let p = 0; p < 4; p++)
+    for (let s = 0; s < 40; s++)
+      for (let k = 0; k < 2; k++)
+        rows.push(['p' + p, Date.UTC(2026, 9, 1) + s * 864e5 + k * 30e3, 'A', 'B', 0, 'quiz', 'fA', 0.7, 0, 0, 'A B C D', 0, 5, 0]);
+  const V = A.profFeat(A.prep(rows)),
+    f = A.PROF_F.findIndex(x => x[0] === 'stop');
+  Object.values(V).forEach(v => assert.ok(v[f] > 0.9, `stopping after 2+ misses: ${v[f]}`));
+});
+
+test('profiles: stable only when every leave-one-out run keeps every group; the map projects what the PCA diagonalised', () => {
+  // the planted styles: stable; then the same players with enlarging logged for two of them only (the rest missing)
+  const ok = A.profiles(A.prep(styleLog()), 0, 1);
+  assert.strictEqual(ok.stab.stable, 1);
+  const rows = styleLog().map(r => (/^(eve0|morn0)$/.test(r[0]) ? r : [...r.slice(0, 13), null])),
+    r = A.profiles(A.prep(rows), 0, 1);
+  assert.strictEqual(r.stab.stable, r.stab.kept === r.stab.runs && r.stab.boot.every(j => j >= r.stab.at) ? 1 : 0);
+  // each axis's spread over the players equals its eigenvalue (the sum of its squared loadings)
+  [0, 1].forEach(k => {
+    const spread = r.pca.pts.reduce((s, p) => s + p[k] ** 2, 0) / r.pca.pts.length,
+      lam = r.pca.load.reduce((s, l) => s + l[k] ** 2, 0);
+    near(spread, lam, 0.03, `axis ${k + 1}: the points' spread against its eigenvalue`);
+  });
+});

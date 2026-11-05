@@ -1944,14 +1944,18 @@
       o[1]++;
     });
     const end = D.reduce((m, a) => (a.t > m ? a.t : m), -Infinity);
-    // stops after 2+ misses in a row, pooled first (the last answer of a session ends it; a session still open is not over)
+    // stops after 2+ misses in a row, pooled first (the last answer of a session ends it; a session still open is not over).
+    // The misses are counted within the session (Codex review #604: prep's streak runs across a break, so a session's
+    // first miss after a miss that ended the one before read as two in a row).
     const stopRows = id => {
       const L = by.get(id),
         R = [];
+      let run = 0;
       L.forEach((a, i) => {
+        run = a.y ? 0 : i && L[i - 1].sess === a.sess ? run + 1 : 1;
         const last = i === L.length - 1 || L[i + 1].sess !== a.sess;
         if (last && end - a.t < GAP) return;
-        R.push([a.streak >= 2 ? 1 : 0, last ? 1 : 0]);
+        R.push([run >= 2 ? 1 : 0, last ? 1 : 0]);
       });
       return R;
     };
@@ -2193,12 +2197,24 @@
       pca: {
         var: ax.map(a => r3(a.val / tot)),
         load: PROF_F.map((_, f) => ax.map(a => r3(a.vec[f] * Math.sqrt(a.val)))),
-        pts: T.order.map(i => ax.map(a => r3(sum(Z[i].map((z, f) => z * a.vec[f])))))
+        // the players projected on the same standardised behaviours the PCA diagonalised (Codex review #604: a behaviour
+        // missing for some players has a spread under 1 once those are set to the average, and Cr rescales it)
+        pts: T.order.map(i => ax.map(a => r3(sum(Z[i].map((z, f) => (C[f][f] > 1e-12 ? z / Math.sqrt(C[f][f]) : 0) * a.vec[f])))))
       },
       k,
       sil: r3(sil),
       groups: G.map(L => L.map(id => re(main.indexOf(id))).sort((a, b) => a - b)),
-      stab: {loo: loo.map(L => r3(mean(L))), boot: bt.map(L => r3(mean(L))), runs: n, kept, draws: NB, at: PROF_STAB},
+      // stable only when every leave-one-out run keeps every group and each group's bootstrap mean reaches PROF_STAB (Codex
+      // review #604: the leave-one-out means alone called groups stable that some runs changed)
+      stab: {
+        loo: loo.map(L => r3(mean(L))),
+        boot: bt.map(L => r3(mean(L))),
+        runs: n,
+        kept,
+        draws: NB,
+        at: PROF_STAB,
+        stable: kept === n && bt.every(L => !L.length || mean(L) >= PROF_STAB) ? 1 : 0
+      },
       close: pairs.slice(0, 3).map(([i, j, d]) => [re(i), re(j), r3(d), share(i, j)]),
       far: [re(far), farF]
     };
