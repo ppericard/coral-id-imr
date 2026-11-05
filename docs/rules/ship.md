@@ -269,16 +269,16 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 
 ### W22
 
-**Several agents at once: a worktree each, one smoke at a time.** About three heavy agents at a time (more loaded the
-shared machine until tests timed out). Each agent works in a **worktree of its own** (`.claude/worktrees/<name>`), sparse
-when it does not need the photos (`git sparse-checkout set --no-cone '/*' '!/img/'`: the disk is small): link `img` to
+**Several agents at once: a worktree each, one smoke at a time.** The integrator launches decided work at once (AGENTS.md
+"Working mode"); the shared machine is protected by `tests/slot.js`, not by holding agents back. Each agent works in a
+**worktree of its own** (`.claude/worktrees/<name>`), sparse when it does not need the photos (`git sparse-checkout set --no-cone '/*' '!/img/'`: the disk is small): link `img` to
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
 only the part your change touches (rule W14), one unit-test run at a time, CI for the full runs. At most two open PRs per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
 Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
 Projects mode) still keeps at most two open PRs and runs only the smoke part its change touches.
-*Source:* 2026-11-04.
+*Source:* 2026-11-04; launch at once instead of a cap on agents, Pierre, 2026-11-05.
 
 ### W23
 
