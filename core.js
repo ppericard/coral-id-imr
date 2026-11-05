@@ -324,7 +324,8 @@
   // before other observers', Codex review #461), the easiest judged one (fish-photos.json e, judging/FISH.md), the list's
   // first among equals; the list's first when none is judged.
   // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos (Pierre, 2026-11-05: a species with no
-  // photo the game rules accept keeps one for its sheet, never in the quiz or any game; tools/fish_photos.py SHEET).
+  // game photo may keep one for its sheet, never in the quiz or any game, passing the game photo rules all the same;
+  // tools/fish_photos.py SHEET).
   // A photo marked use: 'ref' (sheet only, the corals' word) never joins an entry's game photos, wherever it is listed:
   // every game draw reads views.wide (model.js photoSet, app.js fishGenera), so none can show it. The result's sheet
   // holds them by species ({species id: [photo]}), for a species sheet to show (none yet: docs/ARCHITECTURE.md "Fish content").

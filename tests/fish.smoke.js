@@ -90,8 +90,8 @@ const server = http.createServer((req, res) => {
       ok(ch.length === 3 && ch.every(n => L.includes(n) && n !== t), `${t}: 3 choices from the fish slate`);
     }
     ok(!FISH.winks.some(n => pool().includes(n)), 'winks never in the draw');
-    // Sheet-only photos (fish-photos.json sheet, core.js fishGen; Pierre, 2026-11-05: a species with no photo the game
-    // rules accept keeps one for its sheet, never in the quiz or any game): in FISH.sheet by species, in no unit's game
+    // Sheet-only photos (fish-photos.json sheet, core.js fishGen; Pierre, 2026-11-05: a species with no game photo may
+    // keep one for its sheet, never in the quiz or any game): in FISH.sheet by species, in no unit's game
     // photos (entries, scientific genera, winks), never drawn.
     const SH = new Set(
       Object.values(FISH.sheet || {})
@@ -99,7 +99,7 @@ const server = http.createServer((req, res) => {
         .map(x => x.f)
     );
     ok(
-      ['s088', 's061', 's105', 's244'].every(id => (FISH.sheet[id] || []).every(x => x.use === 'ref') && FISH.sheet[id].length),
+      ['s105'].every(id => (FISH.sheet[id] || []).every(x => x.use === 'ref') && FISH.sheet[id].length),
       'sheet: the covers'
     );
     const units = Object.keys(FISH.gen);

@@ -159,8 +159,8 @@ test('fishGen cover: the easiest judged photo within the highest source tier (Pi
   assert.strictEqual(Y.gen.t99.cover, 'c');
 });
 
-// Sheet-only fish photos (Pierre, 2026-11-05: a species with no photo the game rules accept keeps one for its sheet,
-// never in the quiz or any game; tools/fish_photos.py SHEET, fish-photos.json "sheet"). Every game draw reads an entry's
+// Sheet-only fish photos (Pierre, 2026-11-05: a species with no game photo may keep one for its sheet, never in the
+// quiz or any game; tools/fish_photos.py SHEET, fish-photos.json "sheet"). Every game draw reads an entry's
 // views.wide (model.js photoSet; app.js fishGenera builds the genus units from it), so a photo marked use: 'ref' never
 // reaching views.wide is what keeps it out of every game.
 test('sheet-only fish photos: never in an entry’s game photos nor its cover, listed by species in fishGen sheet', () => {
@@ -186,14 +186,18 @@ test('sheet-only fish photos: never in an entry’s game photos nor its cover, l
   assert.deepStrictEqual(C.fishGen(T, {t99: []}).sheet, {});
 });
 
-test('fish-photos.json sheet: the decided species, credited, allowed licences, never among the game photos', () => {
+test('fish-photos.json sheet: the game photo rules, credited, never among the game photos', () => {
   const SP = new Map(F.species.map(s => [s.id, s])),
     S = PH.sheet || {},
     ok = new Set(['cc0', 'cc-by', 'cc-by-nc']), // Pierre, 2026-11-05: never share-alike, ND or all rights reserved
     game = new Set(Object.values(PH.photos).flatMap(L => L.map(p => p.f)));
-  // Chromis agilis, Siganus margaritiferus, Pomacentrus armillatus (their iNaturalist covers), Halichoeres marginatus
-  // (its cover is CC BY-NC-SA: another photo of the species); H. chlorocephalus had none with an allowed licence.
-  ['s088', 's061', 's105', 's244'].forEach(id => assert.ok((S[id] || []).length, `${id} has its sheet photo`));
+  // Pomacentrus armillatus: the cover of P. opisthostigma, which passes every game photo rule. The covers of Chromis
+  // agilis (the Maldives), Siganus margaritiferus (Needs ID) and a photo of Halichoeres marginatus (the Red Sea) failed
+  // them: Pierre, 2026-11-05, "if they don't pass the game rules, we don't keep them".
+  assert.ok((S.s105 || []).length, 's105 has its sheet photo');
+  ['fi421637283', 'fi542118088', 'fi11896335'].forEach(f =>
+    assert.ok(!Object.values(S).some(L => L.some(p => p.f === f)), `${f} failed the game photo rules`)
+  );
   Object.entries(S).forEach(([id, L]) => {
     const s = SP.get(id);
     assert.ok(s && s.circle, `${id}: a species in the game`);
