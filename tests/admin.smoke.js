@@ -1220,6 +1220,8 @@ const WIDTHS = [390, 1280];
             // say so; the panel stays inside the visible part of the table; on desktop the lists sit beside the chart.
             low: Number((d.querySelector('svg.adm-jl text') || {}).textContent?.replace('%', '')),
             hard: d.querySelectorAll('[data-hardall]').length,
+            // The photo's difficulty in words (Pierre, 2026-11-05): "recognised by N%", never the signed photo Elo.
+            rec: [...d.querySelectorAll('.adm-htile .adm-hnum')].map(x => x.textContent),
             past: Math.round(
               d.getBoundingClientRect().right -
                 (d.closest('.adm-tscroll').getBoundingClientRect().left + d.closest('.adm-tscroll').clientWidth)
@@ -1254,6 +1256,8 @@ const WIDTHS = [390, 1280];
         s1.wide > 0 ||
         !(s1.low > 0) ||
         s1.hard < 1 ||
+        !s1.rec.length ||
+        s1.rec.some(t => !/^recognised by \d+%( · hard for everyone)?$/.test(t)) ||
         s1.past > 0 ||
         s1.side !== w >= 1024
       )

@@ -886,7 +886,7 @@ function sessionSummary(id, L, name) {
       return p
         ? `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(x.g)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption>${gi(x.g)}${x.a && x.a !== x.g ? ` → ${gi(x.a)}` : ''} <span>${VT[viewOf(x.g, p)] || ''}</span>${
             x.d != null || hardAll.has(p.f)
-              ? ` <span class="adm-hnum">${x.d != null ? `<span title="Photo difficulty">${sgn(x.d)}</span>` : ''}${x.d != null && hardAll.has(p.f) ? ' · ' : ''}${hardAll.has(p.f) ? '<b class="warnc" data-hardall>hard for everyone</b>' : ''}</span>`
+              ? ` <span class="adm-hnum">${x.d != null ? `<span title="Starting players who recognise it, without guessing">recognised by ${recPct(x.d)}</span>` : ''}${x.d != null && hardAll.has(p.f) ? ' · ' : ''}${hardAll.has(p.f) ? '<b class="warnc" data-hardall>hard for everyone</b>' : ''}</span>`
               : ''
           }</figcaption></figure>`
         : '';

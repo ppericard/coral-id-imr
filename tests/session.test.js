@@ -115,3 +115,15 @@ test('from the saved copy: cards, the offer and achievements within SESS.EDGE of
   assert.strictEqual(sessionFacts(L, [], {saved: null}).ach, null, 'null while the saved copy is read');
   assert.strictEqual(sessionFacts(L, [], {saved: {}}).offer, null);
 });
+
+// Pierre, 2026-11-05: a photo's difficulty shown as the share of starting players (Elo 1000) who recognise it without
+// guessing, 1 / (1 + e^d), one helper for the admin (admin.js recognised, recPct).
+test('recognised: the share of starting players who recognise a photo, from its difficulty', () => {
+  const asrc = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8'),
+    {recognised, recPct} = new Function(
+      block(asrc, '// recognised: begin', '// recognised: end', {file: 'admin.js'}) + '\nreturn {recognised, recPct};'
+    )();
+  assert.strictEqual(recognised(0), 0.5);
+  assert.deepStrictEqual([recPct(0), recPct(1.44), recPct(-1), recPct(3)], ['50%', '19%', '73%', '5%']);
+  assert.ok(recognised(2) < recognised(1) && recognised(-2) > recognised(-1), 'harder photo, fewer recognise it');
+});
