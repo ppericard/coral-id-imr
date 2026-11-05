@@ -121,7 +121,7 @@ const ownPhoto = u => photoLocal(u || '').startsWith('img/');
 let PIDX = null,
   PIDX_OF = [];
 const photoIdx = () => {
-  if (!PIDX || PIDX_OF[0] !== DATA || PIDX_OF[1] !== FISH) (PIDX = photoIndex(DATA, FISH)), (PIDX_OF = [DATA, FISH]);
+  if (!PIDX || PIDX_OF[0] !== DATA || PIDX_OF[1] !== FISH) ((PIDX = photoIndex(DATA, FISH)), (PIDX_OF = [DATA, FISH]));
   return PIDX;
 };
 const photoLook = f => photoIdx().f.get(f);
@@ -249,7 +249,7 @@ const away = i => {
   // Under a service worker the 480 px step and the backdrop stay on R2, where the worker keeps its offline copies.
   const sw = swOn();
   if (!photoFallback(i, photoLook, sw)) return false;
-  if (!sw) (R2 = false), (AWAY = true), photoFallback(i.closest('figure'), photoLook);
+  if (!sw) ((R2 = false), (AWAY = true), photoFallback(i.closest('figure'), photoLook));
   cropWatch();
   return true;
 };
@@ -291,7 +291,10 @@ const NOPHOTO = {
 const noPhoto = i => {
   const box = i.closest('.qph, .ulphoto');
   if (box && !box.querySelector('.nophoto'))
-    box.insertAdjacentHTML('beforeend', `<span class="nophoto" data-v="${NOPHOTO_V}" aria-hidden="true">${(NOPHOTO[NOPHOTO_V] || NOPHOTO.frame)()}</span>`);
+    box.insertAdjacentHTML(
+      'beforeend',
+      `<span class="nophoto" data-v="${NOPHOTO_V}" aria-hidden="true">${(NOPHOTO[NOPHOTO_V] || NOPHOTO.frame)()}</span>`
+    );
 };
 const noPhotoGone = i => {
   const n = i.closest('.qph, .ulphoto');

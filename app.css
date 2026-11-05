@@ -5984,6 +5984,10 @@ html.touring .unlock {
 .qph figcaption {
   z-index: 1;
 }
+/* Nothing to enlarge: the tile takes the frame's taps, and the enlarge mark goes. */
+.qph:has(.nophoto) .zic {
+  display: none;
+}
 .nophoto svg {
   width: clamp(48px, 28%, 96px);
   height: auto;
