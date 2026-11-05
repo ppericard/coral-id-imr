@@ -1278,14 +1278,14 @@ const SHEET = () => {
       account = localStorage.getItem('test-sheet-old')
         ? {'imr-coral-progress': prog, 'imr-coral-quiz': '{"bon":false}'} // rename-app: keep
         : {'reefid-sync-coral-progress': prog, 'reefid-sync-coral-quiz': '{"bon":false}'};
-    // sheet v56: a player deletes their own account (sync.js viewDeleteAccount): Anna's code only.
+    // sheet v58: a player deletes their own account (sync.js viewDeleteAccount): Anna's code only.
     if (body && body.selfDelete)
-      return body.dname === 'Anna' && body.dpin === '1234' ? {ok: true, deleted: true, v: 56} : {ok: false, error: 'pin', v: 56};
+      return body.dname === 'Anna' && body.dpin === '1234' ? {ok: true, deleted: true, v: 58} : {ok: false, error: 'pin', v: 58};
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
-    // test-sheet-acct: the account's generation (sheet v56 _acct), as a name taken again after an archive has another
+    // test-sheet-acct: the account's generation (sheet v58 _acct), as a name taken again after an archive has another
     const acct = localStorage.getItem('test-sheet-acct');
     return {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account, ...(acct ? {acct} : {})};
   };
@@ -1598,7 +1598,7 @@ async function signin(base) {
     }
   );
   // rename-app: keep-end
-  // An archived record (sheet v56, Q88; the audit's G4): the sheet no longer finds the name a device saved under (found
+  // An archived record (sheet v58, Q88; the audit's G4): the sheet no longer finds the name a device saved under (found
   // false with a revision on the device). The device pushes nothing (the record is not re-created) and says it was archived.
   await run(
     () => {
@@ -1624,7 +1624,7 @@ async function signin(base) {
         fails.push('archived record: the device does not stop and say so: ' + JSON.stringify(s).slice(0, 200));
     }
   );
-  // The same name taken again after an archive (sheet v56 _acct, Codex review #603): the sheet finds an account of another
+  // The same name taken again after an archive (sheet v58 _acct, Codex review #603): the sheet finds an account of another
   // generation than the one this device saved under: archived too, nothing pushed.
   await run(
     () => {
@@ -1647,7 +1647,7 @@ async function signin(base) {
       if (s.err !== 'archived' || s.pushed) fails.push('name taken again after an archive: the device does not stop: ' + JSON.stringify(s));
     }
   );
-  // Deleting one's own account (Pierre, 2026-11-05; sheet v56 selfDelete): #delete-account, the code, a second step, then
+  // Deleting one's own account (Pierre, 2026-11-05; sheet v58 selfDelete): #delete-account, the code, a second step, then
   // the device signed out and cleared; the request carries dname / dpin (never name / pin), and a wrong code never leaves.
   await run(
     () => {
@@ -1656,7 +1656,7 @@ async function signin(base) {
       if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-sheet-v', '56');
+      localStorage.setItem('reefid-sheet-v', '58');
       localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234', srv: 3, last: '2026-11-04T10:00:00Z'}));
       localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({Porites: {ok: 3, ko: 0}}));
       localStorage.setItem(

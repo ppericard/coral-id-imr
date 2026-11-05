@@ -192,7 +192,7 @@ function renderJourney(name, anonId = '') {
   }
   // A device that never signed in (Pierre, 2026-11-03): #~anon/<its anonymous id>, from Players > Not signed in. Its
   // answers are all there is: no saved progress, so no cards and no learned genera.
-  // An archived record (sheet v56, the Archived fold on Players): read-only, its path as it was, marked archived.
+  // An archived record (sheet v58, the Archived fold on Players): read-only, its path as it was, marked archived.
   const u = anonId
     ? {name: 'Not signed in · ' + anonId, id: anonId}
     : (USERS.users || []).find(x => x.name === name) ||
@@ -530,7 +530,7 @@ function renderJourney(name, anonId = '') {
   // sheets, and when?): per genus the times opened and the time spent, whether the first opening came before or after
   // the genus was first asked to them (the app's own record when the sheet was opened), and from where; then the pages
   // they spent their visits on. Read from the sheet's Pages tab under this player's id, never their name.
-  // an archived record's summaries come apart from the others (sheet v56 readEvents arch): read only here
+  // an archived record's summaries come apart from the others (sheet v58 readEvents arch): read only here
   const PR = PGS && (u.arch ? PGS.arch : PGS.rows),
     SH = PR ? sheetsOf(PR.filter(x => x.id === u.id)) : null,
     secs = n =>

@@ -753,7 +753,7 @@ test("v30 pages events follow the player's answers: sign-in claim, rename, merge
     ['p1', ben],
     ['p2', ben]
   ]);
-  // Archived (v56): the archive keeps them.
+  // Archived (v58): the archive keeps them.
   assert.strictEqual(s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: T}).ok, true);
   const arch = s.post({users: 1, token: T}).archived.find(u => u.name === 'Ben-old').id;
   assert.deepStrictEqual(ids().slice(0, 2), [
@@ -912,7 +912,7 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   // Out again.
   assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: false, token: TOK}).n, 1);
   assert.deepStrictEqual(groups('Ben', '1111'), []);
-  // A merge carries the memberships; an archive (v56) and a delete remove them.
+  // A merge carries the memberships; an archive (v58) and a delete remove them.
   assert.strictEqual(s.post({userArchive: {from: 'Ana', into: 'Ana-test'}, token: TOK}).ok, true);
   assert.ok(!s.sheets.Groups.rows.some(r => /^Ana(-test)?$/.test(r[1])), 'archived: in no group');
   const m = s.post({userMerge: {from: 'Ana B', into: 'Ben', data: prog(2)}, token: TOK});
@@ -942,7 +942,7 @@ test("groups (v53): a subject that opens to all has no group, whatever its beta 
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, ['fish'], 'back to the group: the same members');
 });
 
-test('archive (v56, was rename v20): the record moves to the archive name, out of the leaderboard; the old name starts over', () => {
+test('archive (v58, was rename v20): the record moves to the archive name, out of the leaderboard; the old name starts over', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('r1'), ans('r2')]});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('rr1')]});
@@ -971,7 +971,7 @@ test('archive (v56, was rename v20): the record moves to the archive name, out o
   );
 });
 
-test('archive (v56): names merged into the archived player follow it to the archive', () => {
+test('archive (v58): names merged into the archived player follow it to the archive', () => {
   const s = seed();
   s.post({name: 'Alias', pin: '4321', data: prog(1), summary: {}, answers: [ans('al1')]});
   const al = s.post({userData: 'Alias', token: TOK}),
@@ -1564,7 +1564,7 @@ test('v28: a player whose app applied an older rules version gets the replay of 
   // Still the player's own copy, as saved.
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, data);
   const raw = JSON.parse(s.sheets['Progress data'].rows[1].slice(2).join(''));
-  assert.ok(raw._acct, 'with its generation (v56)');
+  assert.ok(raw._acct, 'with its generation (v58)');
   delete raw._acct;
   assert.deepStrictEqual(raw, data);
 });
@@ -1959,7 +1959,7 @@ test('v55 (Codex review #600): a removed account whose name is throttled still n
   assert.deepStrictEqual([row[1], row[2]], ['', 0]);
 });
 
-test('v56 archive: Board -2, out of every normal reader; its answers flagged 2 and in no ability; merge refused, delete allowed', () => {
+test('v58 archive: Board -2, out of every normal reader; its answers flagged 2 and in no ability; merge refused, delete allowed', () => {
   const s = seed();
   s.post({
     name: 'Ana',
@@ -1994,7 +1994,7 @@ test('v56 archive: Board -2, out of every normal reader; its answers flagged 2 a
   assert.strictEqual(s.post({users: 1, token: TOK}).archived.length, 0);
 });
 
-test('v56 selfDelete: the code checked, everything deleted, the tombstone written, capped; never a progress write', () => {
+test('v58 selfDelete: the code checked, everything deleted, the tombstone written, capped; never a progress write', () => {
   const s = seed();
   s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rs1', why: 'photo'}]});
   assert.strictEqual(s.post({selfDelete: 1, name: 'Ben', pin: '1111'}).error, 'input', 'name / pin are never read');
@@ -2014,7 +2014,7 @@ test('v56 selfDelete: the code checked, everything deleted, the tombstone writte
   assert.strictEqual(s.post({selfDelete: 1, dname: 'Ana-old', dpin: '1234'}).error, 'pin');
 });
 
-test('v56 (Codex review #603): a self-deletion of a name merged meanwhile deletes nothing and says gone; archived page summaries are in no normal read', () => {
+test('v58 (Codex review #603): a self-deletion of a name merged meanwhile deletes nothing and says gone; archived page summaries are in no normal read', () => {
   const s = seed();
   s.post({userMerge: {from: 'Ana B', into: 'Ana', data: prog(4)}, token: TOK});
   assert.deepStrictEqual(s.post({selfDelete: 1, dname: 'Ana B', dpin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: SV});
@@ -2029,7 +2029,7 @@ test('v56 (Codex review #603): a self-deletion of a name merged meanwhile delete
   assert.strictEqual(s.sheets.Pages.getLastRow(), 2, 'kept in the tab');
 });
 
-test('v56 (Codex review #603): each account has a generation (_acct) its saves keep; a name taken again after an archive gets another', () => {
+test('v58 (Codex review #603): each account has a generation (_acct) its saves keep; a name taken again after an archive gets another', () => {
   const s = seed(),
     acct = (n, pin) => s.get({name: n, pin}).acct;
   const a1 = acct('Ana', '1234');
@@ -2045,7 +2045,7 @@ test('v56 (Codex review #603): each account has a generation (_acct) its saves k
   assert.strictEqual(acct('Ben', '1111'), ben);
 });
 
-test('v56 (Codex review #603): a self-deletion from a device of another generation deletes nothing; an archive keeps its page summaries for its Journey', () => {
+test('v58 (Codex review #603): a self-deletion from a device of another generation deletes nothing; an archive keeps its page summaries for its Journey', () => {
   const s = seed();
   const old = s.get({name: 'Ana', pin: '1234'}).acct;
   s.post({dev: 'dev0000041', ename: 'Ana', epin: '1234', events: [{id: 'pj1', k: 'pages', t: Date.now(), av: '190', s: {quiz: [1, 60]}}]});

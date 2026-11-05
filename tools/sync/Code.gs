@@ -113,7 +113,7 @@ function doGet_(e){
   if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
   if (!e.parameter.av) oldApp_('load', name);  // only for a real account with its code (Codex review #373)
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
-  // v56: the account's generation, apart from the progress (sync.js acctChanged); the app never stores it as a key.
+  // v58: the account's generation, apart from the progress (sync.js acctChanged); the app never stores it as a key.
   if (data && typeof data._acct === 'string') { out.acct = data._acct; delete data._acct; }
   // v48: the beta groups the player is in (groupsOf_), [] for none. A failure leaves it out (the app keeps what it had).
   try { out.groups = groupsOf_(name); } catch (err) {}
@@ -143,7 +143,7 @@ function doPost_(e){
   if (Array.isArray(p.anonAnswers) && !p.av) oldApp_('anonymous answers', '~anon ' + String(p.anon || '').slice(0, 16));
   if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // v12: players not signed in (see anon_)
   if (Array.isArray(p.reports)) return json_(logReports_(p));
-  if (p.selfDelete) return json_(selfDelete_(p));  // v56: a player deletes their own account (see selfDelete_)
+  if (p.selfDelete) return json_(selfDelete_(p));  // v58: a player deletes their own account (see selfDelete_)
   if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
   if (Array.isArray(p.events)) return json_(events_(p));  // v19: error reports and one-tap answers (see events_)
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
@@ -187,9 +187,9 @@ function doPost_(e){
     // v34: the keys of a subject the saving app does not know (an app from before fish) are kept from the saved copy
     // (core.js keepSubjectKeys): replacing the record would erase that progress.
     let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
-    // v56: the account's generation (_acct), made with the account and kept by every save (sent apart as acct): a device that knew another
+    // v58: the account's generation (_acct), made with the account and kept by every save (sent apart as acct): a device that knew another
     // generation of this name (a record archived, then the name taken again) learns it was replaced (sync.js acctChanged;
-    // Codex review #603). An account saved before v56 gets one at its next save.
+    // Codex review #603). An account saved before v58 gets one at its next save.
     const kept = CORE_.keepSubjectKeys(old, p.data || {});
     kept._acct = typeof old._acct === 'string' && old._acct ? old._acct : Utilities.getUuid().replace(/-/g, '').slice(0, 12);
     const json = JSON.stringify(kept);
@@ -199,7 +199,7 @@ function doPost_(e){
       if (sh.getRange(1, 9).getValue() !== HEAD[8]) sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold');  // tab made before v14
       const pct = typeof s.pct === 'number' && isFinite(s.pct) ? Math.max(0, Math.min(100, Math.round(s.pct))) : '';
       // Board: the player's choice when the app sends it, else the one saved (an older app must not undo an opt-out).
-      // An admin's hide (-1, v20) and an archive (-2, v56) stay: the player's app never sends them back to 1.
+      // An admin's hide (-1, v20) and an archive (-2, v58) stay: the player's app never sends them back to 1.
       const saved = r ? sh.getRange(r, 10).getValue() : '',
         board = Number(saved) < 0 && saved !== '' ? Number(saved) : typeof s.board === 'number' ? (s.board ? 1 : 0) : saved === 0 ? 0 : 1;
       sh.getRange(r, 1, 1, HEAD.length).setValues([[safe_(name), new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).map(safe_).join(', '), safe_(h), json.length < CHUNK ? json : '@' + DATA_TAB, pct, board]]);
@@ -415,7 +415,7 @@ function aid_(name, salt){
 // The anonymous column of readAnswers (index 11): 1 a device that never signed in ("~anon <id>"), 2 (v55) the answers an
 // account deleted without its answers left behind ("~deleted <id>"): used only in the pooled photo statistics, never as a
 // player (Pierre, 2026-11-05, Q86); 0 a signed-in player. Readers that test it for truthy still see both as no name.
-// v56: an archived record's answers are flagged 2 too (arch: archivedSet_), as a deleted account's.
+// v58: an archived record's answers are flagged 2 too (arch: archivedSet_), as a deleted account's.
 const anonFlag_ = (w, arch) => (String(w).indexOf('~anon ') === 0 ? 1 : String(w).indexOf('~deleted ') === 0 || (arch && arch.has(lc_(w))) ? 2 : 0);
 // {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos, expected, ability, new photos, choices, anonymous 0|1|2,
 //   seconds, enlarged 0|1, UTC offset]], players: {id: [learned, seen, total, {genus: ability}]}}. Expected/ability/new photos are null
@@ -436,7 +436,7 @@ function answers_(q){
     .map(r => [id(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
       .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i])), [String(r[11] || ''), anonFlag_(r[0], arch)],
         [12, 13, 14].map(i => r[i] === '' || r[i] == null ? null : Number(r[i]))));
-  if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0] && !arch.has(lc_(r[0])))  // v56: no archive
+  if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0] && !arch.has(lc_(r[0])))  // v58: no archive
     .forEach(r => out.players[id(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(big[String(r[0]).toLowerCase()] || r[7])]);
   return out;
 }
@@ -559,7 +559,7 @@ function stats_(){
   Object.keys(G).forEach(n => out.gd[n] = [Math.round(G[n][0] * 100) / 100, Math.round(G[n][1] * 10) / 10]);
   const salt = anonSalt_();
   // v55: the answers a deleted account left ("~deleted <id>") rate the photos, never a player: no ability for them.
-  const arch = archivedSet_();  // v56: an archive's answers rate the photos, never a player either
+  const arch = archivedSet_();  // v58: an archive's answers rate the photos, never a player either
   Object.keys(R).forEach(n => { if (n.indexOf('~deleted ') !== 0 && !arch.has(n)) out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]; });
   out.mem = mem.map(x => Math.round(x * 100) / 100);
   out.memn = N.map(x => Math.round(x * 10) / 10);
@@ -642,7 +642,7 @@ function reports_(token){
   if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'), key = {}; Object.keys(WHY).forEach(k => key[WHY[k]] = k);
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
-  // v56: verified 2 = the reporter is an archived record (Players › Archived), so the Inbox says so without the player
+  // v58: verified 2 = the reporter is an archived record (Players › Archived), so the Inbox says so without the player
   // list (Codex review #603).
   const arch = archivedSet_();
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[11])
@@ -837,7 +837,7 @@ function readEvents_(token, pages){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(pages ? PAGES_TAB : 'Events');
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - (pages ? PAGES_READ : 3000));
-  // v56: an archive's page summaries stay in the tab, out of every normal view (Codex review #603).
+  // v58: an archive's page summaries stay in the tab, out of every normal view (Codex review #603).
   const salt = pages ? anonSalt_() : '', arch = pages ? new Set(liveRows_(false).map(r => aid_(String(r[0]), salt))) : new Set();
   // ...apart in arch, for the archived record's own Journey only (Codex review #603).
   const all = sh.getRange(from, 1, n - from + 2, EVH.length).getValues().filter(x => x[9])
@@ -901,7 +901,7 @@ function achs_(){
   const cache = CacheService.getScriptCache(), hit = cache.get('achs15');
   if (hit) return JSON.parse(hit);
   const out = {ok: true, n: 0, counts: {}};
-  liveRows_().forEach(r => {  // v56: an archive holds no share
+  liveRows_().forEach(r => {  // v58: an archive holds no share
     let A = null;
     try { A = JSON.parse(dataKey_(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}'), 'ach') || 'null'); } catch (e) {}
     if (!A || typeof A !== 'object') return;
@@ -918,7 +918,7 @@ function achs_(){
 //     modes: {mode: [answers, right]}, recent: [answers, right] (last 50), mix: [[shown, answered, times]] (top 5),
 //     reports, size}], removed: [{name, into, time}]}
 //   {userArchive: {from, into}, token} → {ok, answers, reports}: the record moves to an archive name, Board -2, out of
-//     normal operation (v56, was userRename v20); 'exists' when the new name is taken, 'archived' for an archive.
+//     normal operation (v58, was userRename v20); 'exists' when the new name is taken, 'archived' for an archive.
 //   {userBoard: name, hide, token} → {ok, board}: hidden from the leaderboard by an admin (-1) or shown again (1) (v20).
 //   {userData: name, token} → {ok, rev, data}: that player's saved progress (the admin merges two players in the browser,
 //     with core.js mergeUsers, then sends the result back with userMerge).
@@ -932,7 +932,7 @@ function achs_(){
 // gets error 'gone' (with into) instead of silently re-creating the account. Someone new may still pick the name with
 // another code. v55: a delete keeps nothing else in normal operation (deleteAccount_).
 const REMOVED = ['Name', 'Code hash', 'Into', 'Time'];
-// v56 (Pierre, 2026-11-05, Q84): an archived record is Board -2 in the RAs tab (no new column). Archived means kept, never
+// v58 (Pierre, 2026-11-05, Q84): an archived record is Board -2 in the RAs tab (no new column). Archived means kept, never
 // used in normal operation (rule D7): every reader of the RAs rows for a normal feature reads liveRows_.
 const ARCHIVED = -2;
 const archived_ = row => row[9] !== '' && Number(row[9]) === ARCHIVED;
@@ -991,7 +991,7 @@ function groupSet_(ra, names, g, on){
   const sh = sheet_(GROUPS.TAB, GROUPS.HEAD), rows = groupRows_(), has = k => rows.some(r => String(r[0]) === g && lc_(r[1]) === k);
   let n = 0;
   if (on) {
-    const add = [], seen = {};  // v56: live players only, never an archive
+    const add = [], seen = {};  // v58: live players only, never an archive
     names.forEach(x => { const r = find_(ra, x), k = lc_(x); if (!r || seen[k] || has(k) || archived_(ra.getRange(r, 1, 1, HEAD.length).getValues()[0])) return;  seen[k] = 1; add.push([g, safe_(String(ra.getRange(r, 1).getValue())), new Date()]); });
     if (add.length) sh.getRange(sh.getLastRow() + 1, 1, add.length, GROUPS.HEAD.length).setValues(add);
     return add.length;
@@ -1022,7 +1022,7 @@ function deleteAccount_(name, all){
   rosterChanged_();
   return {ok: true, answers: answers, reports: reports};
 }
-// v56 (Pierre, 2026-11-05: "a player can delete their own account and all their data themselves"): POST {selfDelete: 1,
+// v58 (Pierre, 2026-11-05: "a player can delete their own account and all their data themselves"): POST {selfDelete: 1,
 // dname, dpin, av} → {ok, deleted: true, answers, reports}. The player's name and code in dname / dpin, never name / pin,
 // so an older script answers 'input' and never takes it for a progress write. The code is checked as a load's (a wrong
 // one counts towards the 10-minute wait, blocked_), then everything of the account is deleted as the admin's "Delete
@@ -1090,7 +1090,7 @@ function users_(p){
     const lock = lock_();
     try {
       const u = row_(String(p.userBoard)); if (!u) return {ok: false, error: 'user'};
-      if (archived_(u.v)) return {ok: false, error: 'archived'};  // v56: an archive stays off the leaderboard
+      if (archived_(u.v)) return {ok: false, error: 'archived'};  // v58: an archive stays off the leaderboard
       const b = p.hide ? -1 : 1;
       ra.getRange(u.r, 10).setValue(b);
       CacheService.getScriptCache().remove('board14');
@@ -1113,7 +1113,7 @@ function users_(p){
   if (p.userData) {
     const u = row_(String(p.userData)); if (!u) return {ok: false, error: 'user'};
     const d = readData_(String(u.v[0]), String(u.v[7] || '')), data = JSON.parse(d.json);
-    if (data && typeof data === 'object') delete data._acct;  // v56: the generation stays the sheet's (userMerge keeps into's)
+    if (data && typeof data === 'object') delete data._acct;  // v58: the generation stays the sheet's (userMerge keeps into's)
     return {ok: true, rev: d.rev, data: data};
   }
   // v17: {anonDelete: [anonymous ids], token} deletes every answer of those ids among the rows without a name (devices
@@ -1143,7 +1143,7 @@ function users_(p){
   if (p.userDelete || p.userMerge || p.userArchive) {
     const lock = lock_();
     try {
-      // v56 (was userRename, v20): {userArchive: {from, into}, token} → the player's record moves to an archive name
+      // v58 (was userRename, v20): {userArchive: {from, into}, token} → the player's record moves to an archive name
       // (Pierre, 2026-11-02: keep his account played with the old algorithms apart, as "Pierre-test", and start over as
       // "Pierre"): RAs row, saved progress, By genus, answers and reports, marked Board -2 (ARCHIVED; Pierre, 2026-11-05,
       // Q84: no new column). An archive is kept, never used in normal operation (liveRows_). The code hash is tied to the
@@ -1164,7 +1164,7 @@ function users_(p){
         // Names merged into it before point to the archive too (Removed's Into): a device still signed in with one of
         // them must not log into the new account under the old name (Codex review #352).
         relabel_('Removed', 3, from, into);
-        dropRows_(GROUPS.TAB, from, 2);  // v56: an archive is in no beta group
+        dropRows_(GROUPS.TAB, from, 2);  // v58: an archive is in no beta group
         dropRows_(RPL.TAB, from);  // the replay (v28) is made again under the new name when asked
         rosterChanged_();  // v55: the three caches (achs15 too) and the Analyses report
         return {ok: true, answers: answers, reports: reports};
@@ -1178,7 +1178,7 @@ function users_(p){
       }
       const m = p.userMerge || {}, a = row_(String(m.from || '')), b = row_(String(m.into || ''));
       if (!a || !b || a.r === b.r || !m.data || typeof m.data !== 'object') return {ok: false, error: 'user'};
-      if (archived_(a.v) || archived_(b.v)) return {ok: false, error: 'archived'};  // v56: an archive is never merged
+      if (archived_(a.v) || archived_(b.v)) return {ok: false, error: 'archived'};  // v58: an archive is never merged
       const from = String(a.v[0]), into = String(b.v[0]), cur = readData_(into, String(b.v[7] || ''));
       if (typeof m.at === 'number' && m.at !== cur.rev) return {ok: false, error: 'stale', rev: cur.rev};
       // The merged progress is no replay of both logs (core.js mergeUsers drops it too): no rules version, so the
@@ -1186,7 +1186,7 @@ function users_(p){
       delete m.data['reefid-sync-coral-rv'];
       delete m.data['imr-coral-rv'];  // rename-app: keep (its name before the rename to IMR Reef ID, v33)
       let curData = {}; try { curData = JSON.parse(cur.json || '{}') || {}; } catch (e) {}
-      if (curData._acct) m.data._acct = curData._acct; else delete m.data._acct;  // v56: the kept account's generation
+      if (curData._acct) m.data._acct = curData._acct; else delete m.data._acct;  // v58: the kept account's generation
       const json = JSON.stringify(m.data);
       writeData_(into, json, cur.rev + 1);
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
@@ -1205,7 +1205,7 @@ function users_(p){
   }
   // The list, with each player's numbers from the Answers and Reports tabs.
   // id (v13): the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
-  // v56: archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
+  // v58: archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
   const out = {ok: true, users: [], removed: [], archived: []}, by = {}, dcol = {}, salt = anonSalt_(), arch = {};
   liveRows_(false).forEach(r => { const a = {name: String(r[0]), id: aid_(String(r[0]), salt), time: new Date(r[1]).getTime() || 0, answers: 0, reports: 0}; out.archived.push(a); arch[lc_(a.name)] = a; });
   liveRows_().forEach(r => {

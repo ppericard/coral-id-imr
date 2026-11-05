@@ -1457,7 +1457,7 @@ const WIDTHS = [390, 1280];
           await go('~users'); // the corals' page, Dio's row still open, as the steps below expect
         }
       }
-      // Archive (sheet v56, was Rename v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted,
+      // Archive (sheet v58, was Rename v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted,
       // above), out of the players' table, listed read-only under Archived.
       await p.click('[data-uopen="Ben Demo"]');
       await settle();
@@ -1800,7 +1800,7 @@ const WIDTHS = [390, 1280];
         return {
           answers: Number(k.Answers),
           players: Number(k.Players),
-          // but the answers a deleted account or an archive left (sheet v55/v56 flag 2): no player, photos only
+          // but the answers a deleted account or an archive left (sheet v55/v58 flag 2): no player, photos only
           all: ANS.rows.filter(r => r[11] !== 2).length,
           ids: new Set(ANS.rows.filter(r => r[11] !== 2).map(r => r[0])).size,
           sw: !!document.querySelector('[data-sf="who"]')

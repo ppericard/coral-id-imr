@@ -473,12 +473,12 @@ function syncPush() {
   });
   return syncing;
 }
-// An archived record (Pierre, 2026-11-05, Q88; sheet v56 userArchive, v20 rename): the trainer moved this account's
+// An archived record (Pierre, 2026-11-05, Q88; sheet v58 userArchive, v20 rename): the trainer moved this account's
 // record apart under another name, so the sheet no longer finds the name (found false), although this device holds a
 // revision it saved there (srv). Pushing would silently re-create the account under the old name with the archive's
 // progress and achievements (the audit's G4): instead the device says the record was archived and offers to sign out
 // (bindSync), which clears it; the player then signs in again, under the same name if they like, and starts empty.
-// The same name taken again after an archive (sheet v56, Codex review #603): the sheet finds an account, but another
+// The same name taken again after an archive (sheet v58, Codex review #603): the sheet finds an account, but another
 // generation of it (_acct in its saved data, made with the account) than the one this device saved under: archived too.
 // A device that saw no generation yet adopts the first one it meets.
 const acctChanged = (j, me) => {
@@ -1293,7 +1293,7 @@ function signinNudge(once = true, play = !once) {
 function signOutClear(all) {
   const me = SYNC;
   SYNC = null;
-  // v56 (the deleted-accounts audit, G7): the reports queued under an account the sheet removed or archived (not merged:
+  // v58 (the deleted-accounts audit, G7): the reports queued under an account the sheet removed or archived (not merged:
   // the sheet credits those to the name it joined) are never sent under its name; after a self-deletion, every one.
   const lcn = x =>
     String(x || '')
@@ -1512,11 +1512,11 @@ document.getElementById('sync').hidden = !SYNC_URL;
 
 // Deleting one's own account (Pierre, 2026-11-05: "a player can delete their own account and all their data themselves,
 // from a discreet page"): #delete-account, linked from About › Privacy and the privacy notice, never from a menu. Signed
-// in: what is deleted in plain words, the account's code, then a second step that asks again; the sheet (v56 selfDelete,
+// in: what is deleted in plain words, the account's code, then a second step that asks again; the sheet (v58 selfDelete,
 // Code.gs selfDelete_) checks the code and deletes everything ("delete everything": answers, reports, progress, page
 // summaries; the Removed tombstone only), then this device is signed out and cleared (signOutClear with all) and shows
-// #delete-account|done. Signed out: how to delete an account. Before sheet v56 (rule D4): a note, no form.
-const SELFDEL_SHEET = 56;
+// #delete-account|done. Signed out: how to delete an account. Before sheet v58 (rule D4): a note, no form.
+const SELFDEL_SHEET = 58;
 const selfDelOn = () => sheetV() >= SELFDEL_SHEET;
 function viewDeleteAccount(h) {
   const box = body => `<h2 class="vh">Delete my account</h2><div class="about delacct">${body}</div>`,

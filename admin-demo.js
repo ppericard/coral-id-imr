@@ -15,11 +15,11 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v56: Archive, the archived list; v55: a delete cleans up everything of the account, the
+    // The script version the demo answers as: the current one (v58: Archive, the archived list; v55: a delete cleans up everything of the account, the
     // answers it keeps flagged 2; v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
     // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; rule D4).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 56,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 58,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -591,7 +591,7 @@
         Object.values(S.users)
           .filter(u => u.board === -2)
           .map(u => lc(u.name))
-      ); // v56: archives, flag 2
+      ); // v58: archives, flag 2
     // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
     // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged.
     out.rows = S.rows.map(r => [
@@ -606,12 +606,12 @@
       r[9],
       r[10],
       r[11],
-      /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) || arch.has(lc(r[0])) ? 2 : 0, // v55/v56: a deleted account's or an archive's
+      /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) || arch.has(lc(r[0])) ? 2 : 0, // v55/v58: a deleted account's or an archive's
       r[12] ?? null,
       r[13] ?? null
     ]);
     Object.values(S.users).forEach(u => {
-      if (arch.has(lc(u.name))) return; // v56: an archive is no player
+      if (arch.has(lc(u.name))) return; // v58: an archive is no player
       const P = JSON.parse(u.data['reefid-sync-coral-progress'] || '{}'),
         th = {};
       Object.keys(P).forEach(g => (th[g] = P[g].th));
@@ -640,7 +640,7 @@
   }
   function userList() {
     const by = {},
-      // v56 (Code.gs users_ archived): the archives apart, read-only
+      // v58 (Code.gs users_ archived): the archives apart, read-only
       archived = Object.values(S.users)
         .filter(u => u.board === -2)
         .map(u => ({
@@ -731,7 +731,7 @@
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
       });
     }
-    return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse(), ...(V >= 56 ? {archived} : {})};
+    return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse(), ...(V >= 58 ? {archived} : {})};
   }
   function users(p) {
     // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
@@ -749,8 +749,8 @@
       });
       return {ok: true, group: g, n, members: Object.values(S.users).filter(u => (u.groups || []).includes(g)).length};
     }
-    // Sheet v56 (was rename, v20): archive (the record moves apart, Board -2, out of every beta group).
-    if (p.userArchive && V >= 56) {
+    // Sheet v58 (was rename, v20): archive (the record moves apart, Board -2, out of every beta group).
+    if (p.userArchive && V >= 58) {
       const m = p.userArchive,
         u = S.users[lc(m.from || '')],
         into = String(m.into || '').trim();
@@ -891,7 +891,7 @@
         p.userMerge ||
         p.anonDelete ||
         p.userBoard ||
-        (p.userArchive && V >= 56) ||
+        (p.userArchive && V >= 58) ||
         (p.userGroup && V >= 48)
       )
         return ok(users(p));

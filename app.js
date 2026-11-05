@@ -1984,7 +1984,7 @@ function route() {
   // About and credits (home.js); #credits is another name for it.
   else if (h === 'credits') location.replace('#about');
   else if (h === 'about' && window.viewAbout) viewAbout();
-  // Deleting one's own account (sync.js viewDeleteAccount, sheet v56), linked from About › Privacy and privacy.html.
+  // Deleting one's own account (sync.js viewDeleteAccount, sheet v58), linked from About › Privacy and privacy.html.
   else if (h === 'delete-account' || h === 'delete-account|done') viewDeleteAccount(h);
   // The Fish ID Key, coming soon (home.js): Identify in fish mode.
   else if (h === 'fishkey' && window.viewFishKey) viewFishKey();
