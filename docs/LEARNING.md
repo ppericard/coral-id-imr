@@ -2526,8 +2526,8 @@ What it shows:
   prints (entries, C, S); on the side-by-side path both rise together, so the bars show progress where the headline moves
   slowly.
 
-Not changed: the formula, a and b, the 25% share (nothing here argues against them). Questions it leaves for Pierre are
-in docs/EVENING.md ("Questions for the morning"): whether the slow second branch and the leaderboard order at equal effort
+Not changed: the formula, a and b, the 25% share (nothing here argues against them). Questions it left for Pierre were put to
+him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md): whether the slow second branch and the leaderboard order at equal effort
 are what he wants. Rerun when a constant of the formula changes, when the curated common names are chosen (`--names`),
 and with the real app (`tools/learnsim.js` fish profiles) once the species level exists.
 

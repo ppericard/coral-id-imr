@@ -1,6 +1,6 @@
 # IMR Reef ID
 
-> **AI agent or new developer given only this repository's link? Start here.** Read [AGENTS.md](AGENTS.md) (standing rules, how to ship a change), then [docs/HANDOVER.md](docs/HANDOVER.md) (state of play, what the owner still has to do, how to work with him, how to set up a working copy and what lives outside GitHub, a ready-made first prompt), then [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog). Nothing outside this repository is needed to understand or continue the project.
+> **AI agent or new developer given only this repository's link? Start here.** Read [AGENTS.md](AGENTS.md) (standing rules, how to ship a change), then [docs/HANDOVER.md](docs/HANDOVER.md) (how to work with the owner, how to set up a working copy and what lives outside GitHub, a ready-made first prompt), then [docs/STATUS.md](docs/STATUS.md) (where things stand, what the owner still has to do), then [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog). Nothing outside this repository is needed to understand or continue the project.
 
 A static web app for learning the coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate (the surveyed genera, the starred look-alikes and fire coral, *Millepora*), with reef fish in beta (the admin's only for now: the IMR survey families, `docs/FISH_PATH.md`).
 
@@ -10,7 +10,7 @@ Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assi
 
 **Deployment:** [Pages setup and recovery](docs/PAGES.md) (single Actions source; required migration from branch publishing).
 
-**Docs:** [AGENTS.md](AGENTS.md) (standing rules for any agent or developer) · [docs/HANDOVER.md](docs/HANDOVER.md) (state of play and how to take over) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog, open questions) · [docs/DESIGN.md](docs/DESIGN.md) (design tokens and components) · [docs/reviews/](docs/reviews/README.md) (expert reviews).
+**Docs:** [AGENTS.md](AGENTS.md) (standing rules for any agent or developer) · [docs/HANDOVER.md](docs/HANDOVER.md) (how to take over) · [docs/STATUS.md](docs/STATUS.md) (where things stand) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog, content questions) · [docs/DESIGN.md](docs/DESIGN.md) (design tokens and components) · [docs/reviews/](docs/reviews/README.md) (expert reviews).
 
 ## What's inside
 
