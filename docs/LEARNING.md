@@ -3445,6 +3445,34 @@ The analyses:
   variant predicted the run's collapse (all expected 0.76-0.80 on the photos given). Kept: the pooled median (`RTIME`,
   `rtWeight`).
 
+## Real-answer replay (`tools/abilityeval.js`): judging a paired difference (2026-11-05)
+
+The replay's last table compares each rule with the first one on the same answers: the paired difference of next-answer
+log-loss (negative: the rule predicts better). The answers cluster in players (about 10 players, about 150 answers
+each), and a player's answers are correlated (same person, same habits, a learning path over time), so a standard error
+that treats the answers as independent is too narrow: the stats study (`docs/reviews/2026-11-05-stats-methods-study.md`,
+PR #580, §0 point 4 and §5.2) estimates about 1.6 times too narrow with even a tiny correlation within a player (its
+estimate; the correlation is unknown). **Players are the unit of inference** since 2026-11-05:
+
+- each player's own mean difference d_p over their answers in the row, then the plain mean of the d_p (each player one
+  vote: a player with 400 answers weighs as much as one with 20);
+- a 95% t interval on players − 1 degrees of freedom (the standard error of the d_p over the players);
+- the two-sided p of a sign-flip test over the players (each d_p's sign flipped at random; exact, every pattern, up to 16
+  players, else 9999 draws from a fixed seed, so a run gives the same p every time). With 10 players the smallest
+  possible p is 2/1024 ≈ 0.002; with 5 it is 2/32 = 0.0625, so 5 players can never give p < 0.05.
+
+The 'all' row is the primary measure; the group rows (number of choices, level bands, response time, after a false
+alarm) are exploratory: many rows, no correction for their number. The former figure per answer (the mean over the
+answers, which is the answer-weighted mean of the d_p, ± a standard error that treats the answers as independent) stays
+as a second, descriptive table, so the two can be compared; it is not a test. A percentile bootstrap over players was not
+chosen for the interval: with about ten players it under-covers (Cameron, Gelbach & Miller 2008), and the wild cluster
+bootstrap of a mean with Rademacher weights is the sign-flip test above. `tests/ability.test.js` checks it on a made-up
+log with one dominant player (400 answers better with the second rule, five small players worse): per answer the
+interval is [−0.0148, −0.0120] (a clear gain), with the players as the unit [−0.008, +0.020], sign-flip p 0.34.
+
+Figures recorded in this file before 2026-11-05 as "paired log-loss difference per answer ± its standard error" (and
+"× 10⁻³ ± SE") are the per-answer figure: read their intervals as too narrow, and "n standard errors" as fewer.
+
 ## Simulation (`tests/profiles.smoke.js`, CI)
 
 Three players through the real quiz, 300 questions each (600 in the exploration). The learner model is ours, not the
@@ -3951,3 +3979,5 @@ is not in the simulation.
   <https://doi.org/10.1016/j.compedu.2011.02.003>
 - Maris, G., van der Maas, H. (2012). Speed-accuracy response models: scoring rules based on response time and
   accuracy. *Psychometrika* 77(4), 615-633. <https://doi.org/10.1007/s11336-012-9288-y>
+- Cameron, A. C., Gelbach, J. B., Miller, D. L. (2008). Bootstrap-based improvements for inference with clustered
+  errors. *Rev. Econ. Stat.* 90(3), 414-427. <https://www.nber.org/papers/t0344>

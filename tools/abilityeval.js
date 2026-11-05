@@ -44,7 +44,13 @@
 // was right, on its next one; each on top of the expectation (offset logit p, with an intercept).
 // A '*' in place of a number (e.g. e+X+M+T*+G) replays every value of --grid (one list per '*', ';' between lists) and
 // chooses it per player by leave one player out: each player is scored with the value best on the other players.
-// After the tables, every rule's paired log-loss difference per answer against the first one, ± its standard error.
+// After the tables, every rule's paired log-loss difference against the first one, with the players as the unit of
+// inference (the answers cluster in about ten players, docs/reviews/2026-11-05-stats-methods-study.md §5.2, PR #580): the mean of
+// the players' own mean differences (each player one vote), a 95% t interval on players - 1 degrees of freedom and the
+// two-sided p of a sign-flip test over the players (exact up to 16 players, else 9999 draws, seeded: the same p on every
+// run). The 'all' row is the primary measure, the group rows exploratory (no correction for their number). Then, as a
+// descriptive line only, the former figure per answer, ± a standard error that treats the answers as independent (too
+// narrow when the players differ).
 // Each question's difficulty d is recovered from what the app logged when it was asked (expected e, ability th, k
 // choices): e = 1/k + (1 - 1/k) sig(th - d), so the photo, its memory offset and the single-view handicap are those the
 // player really met; answers logged without e/th (before sheet v5) are skipped. The prediction for an answer is the
@@ -357,15 +363,125 @@ function groupScores(all) {
   );
   return Object.fromEntries(Object.entries(groups).map(([G, l]) => [G, score(l)]));
 }
-// Paired log-loss difference per answer of rule b against rule a (the same answers, in the same order): mean, its
-// standard error and 95% interval; only the answers keep(o) holds.
-function paired(a, b, keep = () => true) {
+// Players are the unit of inference (docs/reviews/2026-11-05-stats-methods-study.md §5.2, PR #580, docs/LEARNING.md "Real-answer
+// replay"): the answers cluster in about ten players, so an interval that treats them as independent is too narrow.
+// The sign-flip test over players: exact (every sign pattern) up to SIGN.exact players, else SIGN.draws seeded draws.
+const SIGN = {exact: 16, draws: 9999, seed: 1};
+function mulberry(seed) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Two-sided sign-flip (randomisation) test of a zero mean over the values d (one per player): the share of sign
+// patterns whose |sum| reaches the observed one; Monte Carlo p = (1 + hits) / (1 + draws), so it is never 0.
+function signFlip(d, {exact = SIGN.exact, draws = SIGN.draws, seed = SIGN.seed} = {}) {
+  const n = d.length,
+    obs = Math.abs(d.reduce((t, x) => t + x, 0)),
+    tol = 1e-12 * (1 + d.reduce((t, x) => t + Math.abs(x), 0)),
+    flip = sgn => Math.abs(d.reduce((t, x, i) => t + (sgn(i) ? -x : x), 0)) >= obs - tol;
+  if (!n) return {p: NaN, exact: true, draws: 0};
+  if (n <= exact) {
+    let hits = 0;
+    for (let mask = 0; mask < 2 ** n; mask++) hits += flip(i => (mask >>> i) & 1);
+    return {p: hits / 2 ** n, exact: true, draws: 2 ** n};
+  }
+  const r = mulberry(seed);
+  let hits = 0;
+  for (let k = 0; k < draws; k++) hits += flip(() => r() < 0.5);
+  return {p: (1 + hits) / (1 + draws), exact: false, draws};
+}
+// Student's t quantile (two-sided 95%: tQuantile(0.975, df)) by bisection on its CDF, the regularised incomplete beta
+// function (Numerical Recipes' continued fraction).
+function lnGamma(x) {
+  const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  let y = x,
+    s = 1.000000000190015;
+  c.forEach(v => (s += v / ++y));
+  const t = x + 5.5;
+  return Math.log((2.5066282746310005 * s) / x) - t + (x + 0.5) * Math.log(t);
+}
+function betaCf(a, b, x) {
+  let c = 1,
+    d = 1 - ((a + b) * x) / (a + 1);
+  d = 1 / (Math.abs(d) < 1e-300 ? 1e-300 : d);
+  let h = d;
+  for (let m = 1; m <= 300; m++) {
+    const m2 = 2 * m;
+    for (const aa of [(m * (b - m) * x) / ((a + m2 - 1) * (a + m2)), (-(a + m) * (a + b + m) * x) / ((a + m2) * (a + m2 + 1))]) {
+      d = 1 + aa * d;
+      d = 1 / (Math.abs(d) < 1e-300 ? 1e-300 : d);
+      c = 1 + aa / c;
+      if (Math.abs(c) < 1e-300) c = 1e-300;
+      h *= d * c;
+    }
+    if (Math.abs(d * c - 1) < 1e-14) break;
+  }
+  return h;
+}
+function iBeta(x, a, b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  return x < (a + 1) / (a + b + 2) ? (bt * betaCf(a, b, x)) / a : 1 - (bt * betaCf(b, a, 1 - x)) / b;
+}
+const tCdf = (t, df) => {
+  const q = 0.5 * iBeta(df / (df + t * t), df / 2, 0.5);
+  return t > 0 ? 1 - q : q;
+};
+function tQuantile(p, df) {
+  let lo = 0,
+    hi = 1e3;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (tCdf(mid, df) < p) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+// Paired log-loss difference of rule b against rule a (the same answers, in the same order), only the answers keep(o)
+// holds. Players are the unit: each player's own mean difference d_p, then their plain mean (each player one vote), its
+// standard error over the players, a 95% t interval on players - 1 degrees of freedom and the sign-flip test's p over the
+// players. The percentile cluster bootstrap was not chosen: with about ten players it under-covers (Cameron, Gelbach &
+// Miller 2008), and a wild cluster bootstrap of a mean with Rademacher weights is this sign-flip test. answer: the
+// former per-answer figure (mean over answers, which is the answer-weighted mean of the d_p, ± a standard error that
+// treats the answers as independent), descriptive only.
+function paired(a, b, keep = () => true, opt = {}) {
   const ll = o => -Math.log(o.y ? o.p : 1 - o.p),
-    d = a.scored.map((o, i) => [o, ll(b.scored[i]) - ll(o)]).filter(([o]) => keep(o)).map(x => x[1]),
-    n = d.length,
-    m = d.reduce((t, x) => t + x, 0) / n,
-    se = Math.sqrt(d.reduce((t, x) => t + (x - m) ** 2, 0) / (n - 1) / n);
-  return {n, d: m, se, lo: m - 1.96 * se, hi: m + 1.96 * se};
+    mean = l => l.reduce((t, x) => t + x, 0) / l.length,
+    sdm = l => Math.sqrt(l.reduce((t, x, _, L) => t + (x - mean(L)) ** 2, 0) / (l.length - 1) / l.length),
+    by = new Map(),
+    d = [];
+  a.scored.forEach((o, i) => {
+    if (!keep(o)) return;
+    const x = ll(b.scored[i]) - ll(o);
+    d.push(x);
+    if (!by.has(o.r.p)) by.set(o.r.p, []);
+    by.get(o.r.p).push(x);
+  });
+  const n = d.length,
+    am = mean(d),
+    ase = sdm(d),
+    dp = [...by.values()].map(mean),
+    k = dp.length,
+    m = mean(dp),
+    se = k > 1 ? sdm(dp) : NaN,
+    t = k > 1 ? tQuantile(0.975, k - 1) : NaN,
+    sf = signFlip(dp, opt);
+  return {
+    n,
+    players: k,
+    d: m,
+    se,
+    lo: m - t * se,
+    hi: m + t * se,
+    p: sf.p,
+    exact: sf.exact,
+    answer: {d: am, se: ase, lo: am - 1.96 * ase, hi: am + 1.96 * ase}
+  };
 }
 function score(list) {
   const n = list.length,
@@ -550,7 +666,7 @@ function rtFit(scored) {
   });
   return {own: logitTerm(own), next: logitTerm(next)};
 }
-module.exports = {evaluate, normalise, kOf, groupsOf, paired, GAME, useModel, RT, rtFit};
+module.exports = {evaluate, normalise, kOf, groupsOf, paired, signFlip, tQuantile, SIGN, GAME, useModel, RT, rtFit};
 if (require.main === module) {
 const args = process.argv.slice(2),
   opt = (k, d) => {
@@ -559,7 +675,11 @@ const args = process.argv.slice(2),
   },
   file = args.find((a, i) => !a.startsWith('--') && !(i && args[i - 1].startsWith('--')));
 if (!file) {
-  console.error('usage: node tools/abilityeval.js answers.json [--variants a,b,c,d,e] [--player <name>] [--min 20] [--json out.json]');
+  console.error(
+    'usage: node tools/abilityeval.js answers.json [--variants a,b,c,d,e] [--player <name>] [--min 20] [--json out.json]\n' +
+      'Paired log-loss differences against the first rule: players are the unit (mean of the players\' own means, 95% t\n' +
+      'interval on players - 1 df, sign-flip p over players); the per-answer figure is descriptive only (see the header).'
+  );
   process.exit(1);
 }
 const VARIANTS = opt('variants', 'a,b,c,d,e,e+L').split(','),
@@ -611,20 +731,36 @@ VARIANTS.filter(v => res[v].picks).forEach(v =>
   console.log(`\n${v}, value chosen for each player on the others: ` + players.map(p => `${p.slice(0, 18)} ${res[v].picks[p]}`).join(', '))
 );
 if (VARIANTS.length > 1) {
-  console.log(`\nPaired log-loss difference per answer against ${VARIANTS[0]} (negative: better), ± se [95%]:`);
-  console.log('group'.padEnd(20) + VARIANTS.slice(1).map(v => v.padEnd(34)).join(''));
-  ['all', ...G0].forEach(G => {
+  const rows = ['all', ...G0].map(G => {
     const keep = G === 'all' ? () => true : o => groupScores([o])[G];
+    return [G, VARIANTS.slice(1).map(v => paired(res[VARIANTS[0]], res[v], keep))];
+  });
+  const sg = x => (typeof x === 'number' && isFinite(x) ? (x > 0 ? '+' : '') + x.toFixed(3) : '-'),
+    pv = q => (isFinite(q.p) ? (q.p < 0.001 ? '<0.001' : q.p.toFixed(3)) : '-');
+  console.log(
+    `\nPaired log-loss difference against ${VARIANTS[0]} (negative: better), players as the unit: the mean of the players' own ` +
+      `mean differences (each player one vote) [95% t interval, players - 1 df], p of the sign-flip test over the players ` +
+      `(exact up to ${SIGN.exact} players, else ${SIGN.draws} seeded draws), (players). The 'all' row is the primary measure; ` +
+      `the group rows are exploratory (many rows, no correction):`
+  );
+  console.log('group'.padEnd(20) + VARIANTS.slice(1).map(v => v.padEnd(42)).join(''));
+  rows.forEach(([G, qs]) =>
     console.log(
       G.padEnd(20) +
-        VARIANTS.slice(1)
-          .map(v => {
-            const q = paired(res[VARIANTS[0]], res[v], keep);
-            return (q.n ? `${f(q.d, 4)} ± ${f(q.se, 4)} [${f(q.lo, 3)}, ${f(q.hi, 3)}]` : '-').padEnd(33) + ' ';
-          })
-          .join('')
-    );
-  });
+        qs.map(q => (q.n ? `${sg(q.d)} [${sg(q.lo)}, ${sg(q.hi)}] p ${pv(q)} (${q.players})` : '-').padEnd(41) + ' ').join('')
+    )
+  );
+  console.log(
+    `\nPer answer, descriptive only (mean over the answers ± a standard error [95%] that treats them as independent: ` +
+      `too narrow when the players differ):`
+  );
+  console.log('group'.padEnd(20) + VARIANTS.slice(1).map(v => v.padEnd(34)).join(''));
+  rows.forEach(([G, qs]) =>
+    console.log(
+      G.padEnd(20) +
+        qs.map(({n, answer: q}) => (n ? `${f(q.d, 4)} ± ${f(q.se, 4)} [${f(q.lo, 3)}, ${f(q.hi, 3)}]` : '-').padEnd(33) + ' ').join('')
+    )
+  );
 }
 if (args.includes('--rtfit')) {
   const q = rtFit(res[VARIANTS[0]].scored),
