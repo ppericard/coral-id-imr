@@ -2096,3 +2096,43 @@ test('v58 (Codex review #603): a report queued under an archived record never la
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).reps, ['qa3'], 'only its own report thanked');
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').reports, 1);
 });
+
+test('v58 (Codex review #603): a save of another generation is refused under the lock, nothing logged or written', () => {
+  const s = seed();
+  const old = s.get({name: 'Ana', pin: '1234'}).acct;
+  s.post({userArchive: {from: 'Ana', into: 'Ana-old'}, token: TOK});
+  // Archived between the device's load and its save: the name has no account now.
+  assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', acct: old, data: prog(9), summary: {}, answers: [ans('g1')], at: 1}), {
+    ok: false,
+    error: 'archived',
+    v: SV
+  });
+  // Taken again with the same code meanwhile: the old device's save is refused too.
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('n1')]});
+  const now = s.get({name: 'Ana', pin: '1234'}).acct;
+  assert.strictEqual(
+    s.post({name: 'Ana', pin: '1234', acct: old, data: prog(9), summary: {}, answers: [ans('g2')], at: 1}).error,
+    'archived'
+  );
+  const ids = s.sheets.Answers.rows.map(r => r[r.length - 1]).join();
+  assert.ok(!/g1|g2/.test(ids), 'no answer of the old generation logged');
+  assert.notDeepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress'], prog(9)['reefid-sync-coral-progress']);
+  // Its own generation saves as before.
+  assert.strictEqual(s.post({name: 'Ana', pin: '1234', acct: now, data: prog(2), summary: {}, answers: [ans('n2')]}).ok, true);
+});
+
+test('v58 (Codex review #603): page summaries of another generation are filed under no player', () => {
+  const s = seed();
+  const old = s.get({name: 'Ana', pin: '1234'}).acct;
+  s.post({userArchive: {from: 'Ana', into: 'Ana-old'}, token: TOK});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('n1')]});
+  const now = s.get({name: 'Ana', pin: '1234'}).acct;
+  const pg = id => ({id, k: 'pages', t: Date.now(), av: '190', s: {quiz: [1, 60]}});
+  s.post({dev: 'dev0000051', ename: 'Ana', epin: '1234', eacct: old, events: [pg('po1')]});
+  s.post({dev: 'dev0000051', ename: 'Ana', epin: '1234', eacct: now, events: [pg('po2')]});
+  const P = s.sheets.Pages.rows.slice(1);
+  assert.strictEqual(P.length, 2);
+  const who = id => P.find(r => JSON.stringify(r).includes(id))[3];
+  assert.strictEqual(who('po1'), '', 'the old generation: no player');
+  assert.notStrictEqual(who('po2'), '', 'its own generation: the player');
+});

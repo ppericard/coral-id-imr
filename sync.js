@@ -533,7 +533,10 @@ function syncOnce(tries = 0) {
             ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
             // First send after signing in: the answers this device sent anonymously move to this name (script v12).
             ...(me.anon ? {anon: me.anon} : {}),
-            ...(typeof me.srv === 'number' ? {at: me.srv} : {})
+            ...(typeof me.srv === 'number' ? {at: me.srv} : {}),
+            // The account generation this device saved under (sheet v58): checked under the sheet's lock, so a record
+            // archived between this load and this save is never overwritten (Codex review #603).
+            ...(me.acct ? {acct: me.acct} : {})
           })
         },
         info,
@@ -1130,8 +1133,13 @@ const pvOwner = () => (SYNC && SYNC.name && SYNC.pin ? pagesOwner(SYNC) : pagesO
 // Who the pages summaries of a batch belong to: the name and code when signed in (checked by the sheet, never kept),
 // else this device's anonymous answer id. Nothing for a batch without one. A batch holds only the summaries of the
 // player active now (evBatch).
+// With the account generation (sheet v58): a record archived since, its name taken again, never gets them (Codex review #603).
 const pagesWho = batch =>
-  !batch.some(x => x && x.k === 'pages') ? {} : SYNC && SYNC.name && SYNC.pin ? {ename: SYNC.name, epin: SYNC.pin} : {eanon: anonId()};
+  !batch.some(x => x && x.k === 'pages')
+    ? {}
+    : SYNC && SYNC.name && SYNC.pin
+      ? {ename: SYNC.name, epin: SYNC.pin, ...(SYNC.acct ? {eacct: SYNC.acct} : {})}
+      : {eanon: anonId()};
 // Load times (app.js loadMark): sent once a visit.
 function loadSend() {
   if (loadSent || !('t0' in LOADM)) return;
