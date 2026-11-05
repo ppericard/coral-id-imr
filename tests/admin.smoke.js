@@ -436,6 +436,87 @@ const WIDTHS = [390, 1280];
         await settle();
         if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid)) fails.push(`${w}px Hidden: Put back left the photo removed`);
       }
+      // To do › Out of the presence rule (Pierre, 2026-11-05: he sorts these photos himself; the demo has the real data's
+      // out-of-rule photos): Remove takes a photo out of the list as the genus page's Remove does and Undo brings it back;
+      // Keep takes it out for good (curation seen 'rule:f') and its "out of rule" tag goes on its genus page too; Remove
+      // all asks first (rule 23: bulk), does nothing when refused, removes each one (one Undo step each) when accepted.
+      {
+        await go('~triage');
+        const rq = () =>
+          p.evaluate(() => {
+            const t = [...document.querySelectorAll('#view .adm-ruleq [data-f]')];
+            return {
+              n: t.length,
+              head: +((document.querySelector('[data-rulesec] small') || {}).textContent || 0),
+              fs: t.map(x => [x.dataset.f, x.dataset.g]),
+              segs: t.filter(x => x.querySelectorAll('.adm-qseg [data-rule]').length === 2).length,
+              all: !!document.querySelector('[data-rulesec] button[data-ruleall]'),
+              note: !!document.querySelector('[data-rulesec] + p, [data-rulesec] p')
+            };
+          });
+        const r0 = await rq();
+        if (r0.n < 3 || r0.head !== r0.n || r0.segs !== r0.n || !r0.all || r0.note)
+          fails.push(`${w}px To do › Out of rule: not listed with Remove / Keep and Remove all ${JSON.stringify(r0)}`);
+        else {
+          const [f1, g1] = r0.fs[0],
+            [f2, g2] = r0.fs[1];
+          await p.click(`#view .adm-ruleq [data-f="${f1}"] [data-rule="hide"]`);
+          await settle();
+          let r = await rq();
+          const hid1 = await p.evaluate(a => (entry(a[1]).hide || []).includes(a[0]) || !photos(a[1]).some(x => x.f === a[0]), [f1, g1]);
+          if (r.n !== r0.n - 1 || r.fs.some(x => x[0] === f1) || !hid1)
+            fails.push(`${w}px Out of rule: Remove left ${f1} ${JSON.stringify(r)}`);
+          await p.click('#undo');
+          await settle();
+          r = await rq();
+          if (r.n !== r0.n || !r.fs.some(x => x[0] === f1)) fails.push(`${w}px Out of rule: Undo did not bring ${f1} back`);
+          // Keep: its tag on the genus page before and after.
+          const tagOn = async () => {
+            await go(g2);
+            return p.evaluate(f => !!document.querySelector(`#view .adm-tile[data-f="${f}"] .adm-rule`), f2);
+          };
+          const before = await tagOn();
+          await go('~triage');
+          await p.click(`#view .adm-ruleq [data-f="${f2}"] [data-rule="keep"]`);
+          await settle();
+          r = await rq();
+          const kept = await p.evaluate(a => (DRAFT.seen || {})['rule:' + a[0]] === 1 && photos(a[1]).some(x => x.f === a[0]), [f2, g2]);
+          if (r.n !== r0.n - 1 || r.fs.some(x => x[0] === f2) || !kept)
+            fails.push(`${w}px Out of rule: Keep left ${f2} ${JSON.stringify(r)}`);
+          const after = await tagOn();
+          if (!before || after)
+            fails.push(`${w}px Out of rule: the tag of a kept photo on its genus page, before ${before}, after ${after}`);
+          await p.click('#undo');
+          await go('~triage');
+          // Remove all: refused, nothing moves; accepted, every photo goes, one Undo step each.
+          const asked = await p.evaluate(() => {
+            const c = window.confirm,
+              h = HIST.length;
+            let m = null;
+            window.confirm = x => ((m = x), false);
+            document.querySelector('[data-ruleall]').click();
+            window.confirm = c;
+            return {m, same: HIST.length === h};
+          });
+          r = await rq();
+          if (!/^Remove \d+ photos? out of the presence rule\?$/.test(asked.m || '') || !asked.same || r.n !== r0.n)
+            fails.push(`${w}px Out of rule: Remove all did not ask first ${JSON.stringify(asked)} ${r.n}`);
+          const h0 = await p.evaluate(() => HIST.length);
+          await p.click('[data-ruleall]'); // the page's dialog handler accepts
+          await settle();
+          const gone = await p.evaluate(
+            h0 => ({sec: !!document.querySelector('[data-rulesec]'), steps: HIST.length - h0, left: outOfRuleList().length}),
+            h0
+          );
+          if (gone.sec || gone.left || gone.steps !== r0.n) fails.push(`${w}px Out of rule: Remove all ${JSON.stringify(gone)} of ${r0.n}`);
+          await p.evaluate(n => {
+            for (let i = 0; i < n; i++) undo();
+          }, gone.steps);
+          await settle();
+          r = await rq();
+          if (r.n !== r0.n) fails.push(`${w}px Out of rule: ${gone.steps} Undo steps brought back ${r.n} of ${r0.n}`);
+        }
+      }
       // Genera: the view filter of the sticky bar (Pierre, 2026-11-04). Corallites shows that section alone (Candidates and
       // Not this genus hidden, counted in one line), is remembered from genus to genus, falls back to All on a 2-zoom genus
       // without a Close-up row when Close-up is saved, and All (or the line's All views) brings the whole page back.

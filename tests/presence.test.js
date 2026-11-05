@@ -164,18 +164,32 @@ test('admin To do: the out-of-rule queue follows the curated photos (removed out
       ['cand', 'Astrea', 'macro']
     ]
   );
+  // A photo Pierre kept as an exception (To do › Keep, Pierre 2026-11-05) leaves the queue for good.
+  const K = ruleQueue(
+    ['Astrea'],
+    n => shown[n] || [],
+    (n, p) => p.f === 'hid',
+    p => !!p.extra,
+    sp,
+    f => f === 'kept'
+  );
+  assert.deepStrictEqual(
+    K.map(p => p.f),
+    ['cand']
+  );
   // The admin builds it from those helpers, and the page keeps only heading, count and actions (rule 23: the
   // explanation stays behind ?).
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
-  assert.match(A, /outOfRuleList = \(\) => ruleQueue\(Object\.keys\(DATA\.gen\), photos, hidden, offSlot, PRES\)/);
+  assert.match(A, /outOfRuleList = \(\) => ruleQueue\(Object\.keys\(DATA\.gen\), photos, hidden, offSlot, PRES, ruleKept\)/);
   const sec = A.slice(A.indexOf('<h2>Out of the presence rule'), A.indexOf('<h2>Out of the presence rule') + 400);
   assert.ok(!/<p[ >]/.test(sec.split('${oor.map')[0]), 'an explanatory paragraph on the page');
 });
 
 test('admin: the "out of rule" tag keeps a bare-name tooltip (rule 23: explanations behind ?)', () => {
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
-  const tag = A.slice(A.indexOf('const ruleTag'), A.indexOf('\n', A.indexOf('const ruleTag')));
+  const tag = A.slice(A.indexOf('const ruleTag'), A.indexOf(';\n', A.indexOf('const ruleTag')));
   assert.match(tag, /title="Out of the presence rule"/);
+  assert.match(tag, /!ruleKept\(p\.f\)/, 'a kept photo loses its tag');
   assert.ok(!('ruleWhy' in require('../presence.js')), 'no long explanation helper left');
   assert.match(A.slice(A.indexOf('  genus: `'), A.indexOf('\n', A.indexOf('  genus: `'))), /out of rule/);
 });

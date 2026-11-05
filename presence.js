@@ -13,11 +13,12 @@
   };
   // The photos still needing Pierre's decision (To do): those a genus sheet shows now (photosOf(n): the curated list,
   // removed and "not this genus" photos gone, approved candidates in), not hidden, not off the games' slots (several
-  // corals in the extra list, Coral Finder book), that are out of the rule. Codex review #496.
-  const ruleQueue = (genera, photosOf, isHidden, offSlot, sp) =>
+  // corals in the extra list, Coral Finder book), that are out of the rule. Codex review #496. A photo Pierre kept as an
+  // exception (kept(f): his Keep in To do, Pierre 2026-11-05) leaves the queue for good.
+  const ruleQueue = (genera, photosOf, isHidden, offSlot, sp, kept = () => false) =>
     genera.flatMap(n =>
       photosOf(n)
-        .filter(p => !isHidden(n, p) && !offSlot(p) && outOfRule(p, sp))
+        .filter(p => !isHidden(n, p) && !offSlot(p) && !kept(p.f) && outOfRule(p, sp))
         .map(p => ({...p, genus: n, fv: p.base}))
     );
   const API = {outOfRule, ruleQueue};
