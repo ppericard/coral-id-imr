@@ -2352,7 +2352,11 @@ Learned genera under the new rule are truly known (≥ 0.8 against the whole sla
 drill 0.92-0.94 → 0.58-0.67 against a true whole-slate success of 0.71-0.99, so the overclaim +0.21 / +0.11 / +0.04 /
 −0.04 becomes −0.13 / −0.21 / −0.27 / −0.32 in this world of 50% transfer; Learned at 600 2.2-7.8 → 0-0.7. Guardrail:
 the expert under-claims a little more at 600 (−0.046 against −0.035; no setting of the grid does better than −0.042),
-the same by 1000.
+the same by 1000. The Custom-8 under-claim is mostly the simulation's transfer assumption (τ 0.5, unmeasured; the
+study's choice model puts a drilled genus at 0.34-0.49 against the whole slate with no transfer, §3.4); B softens it
+without reopening the exam (its entry needs C): B 0.5 lifts the drilled bars 0.58 → 0.64 and the natural-path
+beginner's overclaim at 600 +0.044 → +0.054 (offline replay of the same runs). On the real log, the one player who used
+the Custom quiz (377 of 537 answers) has their drilled genera at 32-79% (95% → 69% and 79% for the two at the entry).
 
 ### Typed questions (2026-11-03): why these settings
 
