@@ -513,3 +513,18 @@ test('sign-flip test over players: exact with few players, seeded Monte Carlo wi
   assert.ok(Math.abs(tQuantile(0.975, 4) - 2.7764) < 1e-3);
   assert.ok(Math.abs(tQuantile(0.975, 100) - 1.984) < 1e-3);
 });
+// Codex review #583: the standard errors stay linear in the number of answers (a large export must not take minutes).
+test('paired difference: linear in the number of answers', () => {
+  const {paired} = require('../tools/abilityeval.js'),
+    r = rng(9),
+    a = [],
+    b = [];
+  for (let i = 0; i < 60000; i++) {
+    a.push({y: 1, p: 0.5 + 0.4 * r(), r: {p: 'p' + (i % 10)}});
+    b.push({y: 1, p: 0.5 + 0.4 * r(), r: {p: 'p' + (i % 10)}});
+  }
+  const t0 = Date.now(),
+    q = paired({scored: a}, {scored: b});
+  assert.strictEqual(q.n, 60000);
+  assert.ok(Date.now() - t0 < 2000, `${Date.now() - t0} ms`);
+});

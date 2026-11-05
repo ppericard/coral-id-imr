@@ -452,7 +452,10 @@ function tQuantile(p, df) {
 function paired(a, b, keep = () => true, opt = {}) {
   const ll = o => -Math.log(o.y ? o.p : 1 - o.p),
     mean = l => l.reduce((t, x) => t + x, 0) / l.length,
-    sdm = l => Math.sqrt(l.reduce((t, x, _, L) => t + (x - mean(L)) ** 2, 0) / (l.length - 1) / l.length),
+    sdm = l => {
+      const m = mean(l); // once, not per element (Codex review #583: quadratic on a large export)
+      return Math.sqrt(l.reduce((t, x) => t + (x - m) ** 2, 0) / (l.length - 1) / l.length);
+    },
     by = new Map(),
     d = [];
   a.scored.forEach((o, i) => {
