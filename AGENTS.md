@@ -93,6 +93,7 @@ what stops is everything that involves him.
   sent outside the project.
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
+- **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
 - **Questions to Pierre**: in batches rather than one by one (unless one blocks work), in French in the chat, numbered
   for good (Q1, Q2…, never reset; the last number used is in STATUS, so it carries across sessions and Claude accounts);
   open ones wait in STATUS "Questions for Pierre" until he answers (the answer then goes into the PR). Each gives one or
@@ -131,7 +132,7 @@ context go in the PR description, never in the rule.
 - **C3** An ID tip is short and simple for anyone; detail goes on the sheet.
 - **C4** Growth form is an entry point only: rank, never filter or group genera by it.
 - **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
-- **C6** ID cues and their doubts cite only species present at Dauin or in the Philippines.
+- **C6** ID cues cite only species present at Dauin or in the Philippines.
 - **C7** iNaturalist API: about one request a second, batched, a User-Agent, paced retries.
 - **C8** Presence: one rule for every species (`tools/presence.py`).
 
@@ -153,8 +154,8 @@ context go in the PR description, never in the rule.
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; tiered checks, valid paired statistics.
-- **L12** Check algorithm changes on the real answer log too.
+- **L11** The simplest algorithm that works; tiered checks, valid statistics.
+- **L12** Check algorithm changes on the real log too.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
 - **L15** First goal: ID on ideal photos.
@@ -173,7 +174,7 @@ context go in the PR description, never in the rule.
 - **U11** Questions to the player come at a natural break.
 - **U12** Home = two doors.
 - **U13** Lab prototypes graduate only with Pierre's OK.
-- **U14** Players can report a problem from every game.
+- **U14** Players can report a problem anywhere.
 
 **Admin** ([docs/rules/admin.md](docs/rules/admin.md))
 - **A1** Never change `curation.json` automatically or in a PR; an agent may propose a change.
@@ -198,8 +199,8 @@ context go in the PR description, never in the rule.
 **Working with Pierre** ([docs/rules/ship.md](docs/rules/ship.md))
 - **W1** Everything produced is in English; only the chat with Pierre is in French.
 - **W2** Work autonomously; ask before anything destructive.
-- **W3** Alpha: no backward compatibility; migrate data once.
-- **W4** Many prototypes first; Pierre judges by taps and scrolls.
+- **W3** Alpha: no backward compatibility.
+- **W4** Many prototypes first; Pierre judges by taps.
 - **W5** Every idea discussed but not built goes into ROADMAP.
 - **W6** No work sleeps on a branch.
 - **W7** Fix by default; never re-ask what was answered.
