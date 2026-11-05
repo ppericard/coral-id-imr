@@ -63,6 +63,9 @@ what stops is everything that involves him.
   each on its own branch, worktree and PR (rule W22), checks their work and merges it. Subagents build, test, run the
   review loop (rule W23) and report to the integrator; **subagents never merge**. About 3 heavy subagents at once (that
   build or run tests: more crashed the cloud machine); light ones (reading, reviewing, searching) do not count.
+- **No idle capacity** (Pierre, 2026-11-05): the integrator keeps an explicit list of running and queued work (its task
+  list, STATUS "Now" / "Next"); at every subagent completion and every merge it checks the list and launches the next
+  queued item at once while under the limit, never relying on memory of what runs.
 - **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold:
   1. every check is green on the current head, and no failed job was re-run to get green (rule W23);
   2. every Codex finding is fixed or answered, every review thread resolved;
@@ -130,7 +133,7 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **C6** ID cues and their doubts cite only species present at Dauin or in the Philippines.
 - **C7** iNaturalist API: about one request a second, batched, a User-Agent, paced retries.
 - **C8** Presence: one rule for every species (`tools/presence.py`).
-- **C9** The coral tools stay standalone, not part of ReefRecall.
+- **C9** The coral tools stay standalone (not ReefRecall).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
 - **P1** Photo priority: IMR lecture, Pierre's own, then others; no share-alike licence.
@@ -152,9 +155,9 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **L10** The first-launch question sets variables, never a path.
 - **L11** The simplest algorithm that works; checks in four tiers.
 - **L12** Check algorithm changes on the real answer log too.
-- **L13** Compute once (sheet, build), not on every phone.
+- **L13** Compute once, not on every phone.
 - **L14** Visual recognition and side-by-side comparison beat theory.
-- **L15** Short-term goal: ID on ideal photos.
+- **L15** First goal: ID on ideal photos.
 
 **UI** ([docs/rules/ui.md](docs/rules/ui.md))
 - **U1** Declutter: no page titles or intros; explanations behind the shared "?".
@@ -169,11 +172,11 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **U10** Greet by first name only (`firstName()`).
 - **U11** Questions to the player come at a natural break.
 - **U12** Home = two doors, one screen.
-- **U13** Lab prototypes graduate only with Pierre's explicit approval.
+- **U13** Lab prototypes graduate only with Pierre's OK.
 - **U14** Players can report a problem from every game.
 
 **Admin** ([docs/rules/admin.md](docs/rules/admin.md))
-- **A1** Never change `curation.json` automatically or in a PR; only the admin's draft and Publish.
+- **A1** Never change `curation.json` automatically or in a PR; only the admin's Publish.
 - **A2** The admin is minimal: no text on the page, one click with Undo, confirm only bulk.
 - **A3** The top level stays short: a new page goes into an existing tab or group first.
 - **A4** One Corals | Fish switch covers every admin page.
@@ -201,7 +204,7 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 - **W6** No work sleeps on a branch: a PR the same day.
 - **W7** Fix by default; never re-ask what was answered.
 - **W8** Independent reviews get an open mission that questions our choices.
-- **W9** Latest stable version of every tool, looked up.
+- **W9** Latest stable version of every tool.
 - **W10** Editorial and curation choices are Pierre's: don't list or track them.
 - **W11** Say what you checked and how; a guess is labelled.
 
@@ -217,15 +220,14 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
 | Tests, versions, `data.json`, PRs | [ship](docs/rules/ship.md) W12-W23 |
-| Where a file is, Pierre's setups, external resources | [HANDOVER.md](docs/HANDOVER.md) |
 
 ## Ship checklist
 
 1. A worktree of your own from a fresh `origin/main`; stage files by name (rule W22).
-2. Test with the logic you change; pure shared logic in `core.js` (rule W12).
+2. A test with the logic you change (rule W12).
 3. Fast tier before each push: Prettier, the checks, `node --test tests/*.test.js`, the one smoke part you touch (rule W14).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
-5. UI: look at it, light and dark, phone and desktop; every width for a big change (rule W17).
+5. UI: look at it, light and dark, phone and desktop (rule W17).
 6. `Code.gs` or `core.js` changed: rules D3-D5. Tests never reach the real sheet (rule D1).
 7. Docs in the same PR (rule W19); ideas not built into ROADMAP (rule W5).
 8. PR from the template, Decisions filled; rebase on `origin/main` before each push (rule W18).
@@ -241,4 +243,3 @@ For Codex's PR review, the rules cheapest to miss:
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` and bumps `Code.gs` `VERSION` (rule D5).
 - Tests never reach the real sheet: no made-up host, patched `LOCAL` or stubbed `navigator.webdriver` (rule D1).
-- No hardcoded genus count in user-facing text (rule U8); no growth-form filter or grouping (rule C4).
