@@ -27,7 +27,7 @@ Every review and study was first written as a private Claude doc or artifact on 
 | Desktop review (10-31) | #158, #161, #163, #206 (feedback always in the answer column) | AGENTS.md rules 17-18 |
 | Phone review (10-31) | #152-#157, #160, #162, #166, #179 (finder on phone, compact chrome) | AGENTS.md rule 19-21 |
 | Responsive report (10-31) | 3 size classes, mobile-first CSS (#168, #172), 44 px targets only for ? ⚙ ‹ › (#170) | AGENTS.md rule 19 |
-| Fact-check (10-31) | #22, then #25/#26 reverted anything that contradicted the lecture; "Other sources" notes | AGENTS.md rule 1; open lecture points in ROADMAP "Waiting on Pierre" |
+| Fact-check (10-31) | #22, then #25/#26 reverted anything that contradicted the lecture; "Other sources" notes | AGENTS.md rule 1; open lecture points in ROADMAP "Content questions for Pierre" |
 | Photo usage per context (10-31) | IMR > Pierre > others in every context, games/sheet/finder sets (#96, #134, #171) | ARCHITECTURE.md "Photos per context" |
 | Learning path + home study (10-31) | Learn > Practice > Identify, no daily-habit app; later two-door Home (#150) | AGENTS.md; leftovers in ROADMAP "Parked" |
 | Look-alikes study (10-31) | Deck of ~20 classic montages + wrong-answer montage + rematch duel (#159) | ARCHITECTURE.md; copy of the study page in the project files folder (`lookalikes-study/`) |

@@ -1,0 +1,292 @@
+#!/usr/bin/env python3
+"""Session start brief (governance refonte PR B, Pierre 2026-11-05): where things stand, computed, read-only.
+
+  python3 tools/brief.py           full brief (the integrator runs it at each stop)
+  python3 tools/brief.py --short   5 lines at most (the SessionStart hook in .claude/settings.json)
+  python3 tools/brief.py --time    one line: Manila time and the Rule 0 window (the UserPromptSubmit hook; offline)
+  --at HH:MM                       pretend it is that Manila time (tests)
+
+It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
+the remote branches with commits not in main and no PR (AGENTS.md rule 26b), the sheet script's VERSION on main against
+the live one, and the open questions for Pierre from docs/STATUS.md. Read-only and fast: GitHub through `gh api` (REST
+only), the sheet through the same read-only GET the app makes (?stats=1), all at once with a deadline of about 5 s.
+Anything missing (no network, no gh, no git remote) is said in one line and skipped. It never prints a secret or a
+player's name: from the sheet's reply it reads only the version number.
+"""
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor, wait
+from datetime import datetime, timedelta, timezone
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = 'ppericard/coral-id-imr'
+DEADLINE = 5.0  # seconds for every network call together
+START = time.monotonic()
+MANILA = timezone(timedelta(hours=8))  # Asia/Manila, UTC+8 all year (no daylight saving)
+
+
+def left():
+    return max(0.3, DEADLINE - (time.monotonic() - START))
+
+
+# --- Rule 0 window -------------------------------------------------------------------------------------------------------
+# AGENTS.md Rule 0: before 16:30 a normal day; from 16:30 sharp close what is open with Pierre; from 17:30 quiet hours
+# until his next morning (the morning report is written before 08:00, so 00:00-08:00 is still night).
+
+
+def window(hm):
+    m = hm[0] * 60 + hm[1]
+    if m < 8 * 60:
+        return 'night', 'quiet hours (Rule 0): never solicit Pierre; morning report into docs/STATUS.md before 08:00'
+    if m < 16 * 60 + 30:
+        return 'day', 'normal working day (Rule 0): nothing different until 16:30'
+    if m < 17 * 60 + 30:
+        return 'closing', 'close what is open with Pierre (Rule 0): start nothing new that needs him; day ends 17:30'
+    return 'quiet', 'quiet hours (Rule 0): never solicit Pierre; park his ideas and questions in docs/STATUS.md'
+
+
+def time_line(at):
+    now = datetime.now(MANILA)
+    if at:
+        h, m = (int(x) for x in at.split(':'))
+        now = now.replace(hour=h, minute=m)
+    name, what = window((now.hour, now.minute))
+    return 'Manila %s · %s: %s' % (now.strftime('%a %d %b %H:%M'), name, what)
+
+
+# --- GitHub (gh api, REST) -----------------------------------------------------------------------------------------------
+
+
+class Soft(Exception):
+    pass
+
+
+def gh(path):
+    try:
+        r = subprocess.run(['gh', 'api', path], capture_output=True, text=True, timeout=left())
+    except subprocess.TimeoutExpired:
+        raise Soft('no answer in time')
+    if r.returncode:
+        msg = (r.stderr or r.stdout).strip()
+        if 'auth login' in msg or 'GH_TOKEN' in msg:
+            raise Soft('gh not signed in')
+        if 'https://' in msg or 'dial ' in msg or 'connect' in msg:
+            raise Soft('no network')
+        raise Soft(msg.splitlines()[0][:80] if msg else 'gh failed')
+    return json.loads(r.stdout or 'null')
+
+
+def age(iso):
+    t = datetime.strptime(iso, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+    s = (datetime.now(timezone.utc) - t).total_seconds()
+    if s < 3600:
+        return '%dm' % max(0, s // 60)
+    if s < 48 * 3600:
+        return '%dh' % (s // 3600)
+    return '%dd' % (s // 86400)
+
+
+def checks(pool, sha):
+    runs = gh('repos/%s/commits/%s/check-runs?per_page=100' % (REPO, sha)).get('check_runs', [])
+    if not runs:
+        return 'no checks'
+    bad = [r for r in runs if r.get('conclusion') in ('failure', 'timed_out', 'action_required', 'startup_failure')]
+    going = [r for r in runs if r.get('status') != 'completed']
+    if bad:
+        return 'FAILING %d/%d' % (len(bad), len(runs))
+    if going:
+        return 'running %d/%d' % (len(going), len(runs))
+    return 'green'
+
+
+def prs(pool):
+    out = []
+    for p in gh('repos/%s/pulls?state=open&per_page=50' % REPO):
+        labels = [l['name'] for l in p.get('labels', [])]
+        out.append(
+            {
+                'n': p['number'],
+                'title': p['title'],
+                'ref': p['head']['ref'],
+                'sha': p['head']['sha'],
+                'age': age(p['created_at']),
+                'pierre': 'needs-pierre' in labels,
+                'draft': p.get('draft'),
+                'checks': pool.submit(checks, pool, p['head']['sha']),
+            }
+        )
+    return out
+
+
+def stray(pool, open_refs):
+    """Remote branches with commits not in main and no PR on their tip (rule 26b)."""
+
+    def one(b):
+        ref, sha = b['name'], b['commit']['sha']
+        owned = gh('repos/%s/pulls?state=all&per_page=10&head=%s:%s' % (REPO, REPO.split('/')[0], ref))
+        if any(p['head']['sha'] == sha for p in owned):
+            return None  # its tip is a PR's (merged, closed or open): nothing new since
+        ahead = gh('repos/%s/compare/main...%s' % (REPO, sha)).get('ahead_by', 0)
+        return ref if ahead else None
+
+    branches = [b for b in gh('repos/%s/branches?per_page=100' % REPO) if b['name'] != 'main' and b['name'] not in open_refs]
+    return [pool.submit(one, b) for b in branches]
+
+
+# --- Sheet script version ------------------------------------------------------------------------------------------------
+
+
+def main_version():
+    """VERSION of tools/sync/Code.gs on main (the local origin/main, else the working tree)."""
+    src, where = None, 'main'
+    try:
+        r = subprocess.run(['git', '-C', ROOT, 'show', 'origin/main:tools/sync/Code.gs'], capture_output=True, text=True, timeout=3)
+        if r.returncode == 0:
+            src = r.stdout
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    if src is None:
+        try:
+            src, where = open(os.path.join(ROOT, 'tools/sync/Code.gs'), encoding='utf8').read(), 'this checkout'
+        except OSError:
+            return None, None
+    m = re.search(r'const VERSION = (\d+);', src)
+    return (int(m.group(1)) if m else None), where
+
+
+def sync_url():
+    try:
+        m = re.search(r"const SYNC_URL = '([^']+)'", open(os.path.join(ROOT, 'app.js'), encoding='utf8').read())
+        return m.group(1) if m else None
+    except OSError:
+        return None
+
+
+def live_version(url):
+    # The same read-only GET the app makes for photo statistics; only the version number is read from the reply.
+    with urllib.request.urlopen(url + '?stats=1', timeout=left()) as r:
+        return json.loads(r.read()).get('v')
+
+
+# --- docs/STATUS.md ------------------------------------------------------------------------------------------------------
+
+
+def questions():
+    try:
+        text = open(os.path.join(ROOT, 'docs/STATUS.md'), encoding='utf8').read()
+    except OSError:
+        return None, None
+    sec = re.search(r'^## Questions for Pierre\n(.*?)(?=^## |\Z)', text, re.M | re.S)
+    body = sec.group(1) if sec else ''
+    n = len(re.findall(r'^- \*\*Q\d+', body, re.M))
+    last = re.search(r'Last question number: Q(\d+)', text)
+    return n, (int(last.group(1)) if last else None)
+
+
+# --- Output --------------------------------------------------------------------------------------------------------------
+
+
+def result(f):
+    """(value, None) or (None, reason) for a future, within the deadline."""
+    try:
+        return f.result(timeout=left()), None
+    except Soft as e:
+        return None, str(e)
+    except OSError:  # URLError, timeouts, refused connections
+        return None, 'no network'
+    except Exception as e:  # JSON, anything else: soft
+        return None, type(e).__name__
+
+
+def brief(short, at):
+    lines = [time_line(at)]
+    pool = ThreadPoolExecutor(max_workers=16)
+    have_gh = shutil.which('gh') is not None
+    url = sync_url()
+    f_prs = pool.submit(prs, pool) if have_gh else None
+    f_live = pool.submit(live_version, url) if url else None
+    v_main, v_where = main_version()
+    q_open, q_last = questions()
+
+    # GitHub: PRs, then the branches (the open PRs' heads are skipped)
+    pr_list, gh_err = (None, 'gh not found') if not have_gh else result(f_prs)
+    strays, stray_err = None, None
+    if pr_list is not None:
+        f_br = pool.submit(stray, pool, {p['ref'] for p in pr_list})
+        futs, stray_err = result(f_br)
+        if futs is not None:
+            got = [result(f) for f in futs]
+            errs = [e for _, e in got if e]
+            strays = [v for v, _ in got if v]
+            if errs:
+                stray_err = 'partial (%d not checked: %s)' % (len(errs), errs[0])
+    if pr_list is None:
+        lines.append('GitHub: skipped (%s): no PRs or branches listed.' % gh_err)
+    else:
+        for p in pr_list:
+            c, e = result(p['checks'])
+            p['checks'] = c or ('checks ?' if e else '')
+        if short:
+            bits = ['#%d %s%s' % (p['n'], p['checks'], ', needs-pierre' if p['pierre'] else '') for p in pr_list]
+            lines.append('PRs: %d open%s' % (len(pr_list), (': ' + '; '.join(bits)) if bits else ''))
+        else:
+            lines.append('Open PRs: %d' % len(pr_list))
+            for p in pr_list:
+                tags = [p['checks'], p['age']] + (['needs-pierre'] if p['pierre'] else []) + (['draft'] if p['draft'] else [])
+                lines.append('  #%d %s [%s]' % (p['n'], p['title'][:70], ', '.join(t for t in tags if t)))
+        if strays is None:
+            lines.append('Branches without a PR: not checked (%s).' % stray_err)
+        else:
+            names = [re.sub(r'^claude/', '', b) for b in strays] if short else strays
+            s = ', '.join(names) if names else 'none'
+            lines.append('Branches with work and no PR (rule 26b): %s%s' % (s, ' [%s]' % stray_err if stray_err else ''))
+
+    # Sheet script
+    if f_live is None:
+        live, live_err = None, 'SYNC_URL not found in app.js'
+    else:
+        live, live_err = result(f_live)
+    vm = 'v%s on %s' % (v_main, v_where) if v_main else 'VERSION not found'
+    vl = 'live v%s' % live if live is not None else 'live v unknown (%s)' % live_err
+    warn = ''
+    if v_main and live is not None and live < v_main:
+        warn = ': behind (it updates itself about 15 min after a merge; see the sheet\'s Deploy log)'
+    lines.append('Sheet script: %s · %s%s' % (vm, vl, warn))
+
+    # Questions
+    if q_open is None:
+        lines.append('Questions for Pierre: docs/STATUS.md not found.')
+    else:
+        lines.append(
+            'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
+        )
+    pool.shutdown(wait=False, cancel_futures=True)
+    return lines[:5] if short else lines
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap.add_argument('--short', action='store_true', help='5 lines at most')
+    ap.add_argument('--time', action='store_true', help='one line: Manila time and the Rule 0 window (offline)')
+    ap.add_argument('--at', metavar='HH:MM', help='pretend it is this Manila time (tests)')
+    a = ap.parse_args()
+    if a.at and not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', a.at):
+        ap.error('--at takes HH:MM')
+    if a.time:
+        print(time_line(a.at))
+        return
+    print('\n'.join(brief(a.short, a.at)))
+    sys.stdout.flush()
+    os._exit(0)  # do not wait for calls past the deadline
+
+
+if __name__ == '__main__':
+    main()
