@@ -8,7 +8,11 @@
 //                                             new answers since the stored report (or the code changed), unless --force
 //   node tools/analyses.js --in answers.json --out report.json   a saved readAnswers reply (kept outside the repo)
 //   node tools/analyses.js --demo --out report.json              the admin demo's made-up answers, no network
-// --boot N: bootstrap draws (default 40). It prints counts only, never an id, a name or a player's number: the Actions
+// --boot N: bootstrap draws for the latest milestone (default 999, analysis.js BOOT); --boot-history N: for the earlier
+// ones (default 199, until their answers add up to 60,000; none beyond: analysis.js report). Seeded: the same answers
+// give the same report. With 999 draws the latest milestone takes about 1.7 minutes per 1000 answers (docs/LEARNING.md
+// "Multifactor analyses", Runtimes); the job's limit is 2 hours. It prints counts only, never an id, a name
+// or a player's number: the Actions
 // log of a public repository is public. The report itself holds per-player results (anonymous ids): it goes to the
 // sheet (private), never to the repo, an artifact or the log.
 const fs = require('fs'),
@@ -23,7 +27,7 @@ const SHEET_V = 35; // analysesGet / analysesPut
 const metaOf = () => ({ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))});
 const syncUrl = () => /const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'))[1];
 
-// io: {post(body) -> reply, log(text)}; o: {force, B}. Returns what happened, in a word.
+// io: {post(body) -> reply, log(text)}; o: {force, B, Bh}. Returns what happened, in a word.
 async function sheetRun(io, token, o = {}) {
   const post = b => io.post({...b, token});
   const head = await post({analysesGet: 1, head: 1});
@@ -55,7 +59,7 @@ async function sheetRun(io, token, o = {}) {
     return 'refused';
   }
   const t0 = Date.now(),
-    rep = A.compact(A.report(ans.rows, metaOf(), old, {B: o.B, seed: 1}), MAX),
+    rep = A.compact(A.report(ans.rows, metaOf(), old, {B: o.B, Bh: o.Bh, seed: 1}), MAX),
     text = JSON.stringify(rep);
   if (text.length > MAX) {
     io.log(`The report is still ${Math.round(text.length / 1000)} kB after compaction, over the sheet's cap: not stored.`);
@@ -67,14 +71,18 @@ async function sheetRun(io, token, o = {}) {
     return 'refused';
   }
   const kept = rep.M.filter(M => old && old.R && old.R[M] && old.R[M].fp === rep.R[M].fp).length;
-  io.log(`Stored: ${rep.answers} answers, ${rep.M.length} milestones (${kept} reused), ${Math.round(text.length / 1000)} kB, ${Math.round((Date.now() - t0) / 1000)} s.`);
+  const last = rep.R[rep.M[rep.M.length - 1]];
+  io.log(
+    `Stored: ${rep.answers} answers, ${rep.M.length} milestones (${kept} reused), ${last.B} bootstrap draws for the latest, ${Math.round(text.length / 1000)} kB, ${Math.round((Date.now() - t0) / 1000)} s.`
+  );
   return 'stored';
 }
 
 if (require.main === module) {
   const argv = process.argv.slice(2),
     arg = k => (argv.includes(k) ? argv[argv.indexOf(k) + 1] : null),
-    B = arg('--boot') != null ? Number(arg('--boot')) : 40,
+    B = arg('--boot') != null ? Number(arg('--boot')) : A.BOOT,
+    Bh = arg('--boot-history') != null ? Number(arg('--boot-history')) : undefined,
     log = t => console.log(t);
   (async () => {
     if (argv.includes('--sheet')) {
@@ -92,7 +100,7 @@ if (require.main === module) {
             .catch(() => null),
         log
       };
-      const r = await sheetRun(io, token, {force: argv.includes('--force'), B});
+      const r = await sheetRun(io, token, {force: argv.includes('--force'), B, Bh});
       if (r === 'refused') process.exitCode = 1;
       return;
     }
@@ -102,7 +110,7 @@ if (require.main === module) {
       const J = JSON.parse(fs.readFileSync(arg('--in'), 'utf8'));
       rows = Array.isArray(J) ? J : J.rows;
     } else throw new Error('usage: node tools/analyses.js --sheet [--force] | --in answers.json --out report.json | --demo --out report.json');
-    const rep = A.compact(A.report(rows, metaOf(), null, {B, seed: 1}), MAX),
+    const rep = A.compact(A.report(rows, metaOf(), null, {B, Bh, seed: 1}), MAX),
       out = arg('--out');
     if (out) fs.writeFileSync(out, JSON.stringify(rep));
     log(`${rep.answers} answers, ${rep.M.length} milestones${out ? ', written to ' + out : ''}.`);

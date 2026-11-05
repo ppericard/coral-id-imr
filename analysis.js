@@ -11,7 +11,8 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 3; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc)
+  const AV = 4; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -37,6 +38,31 @@
 
   // Bootstrap refits stop earlier (looser tolerance): their spread matters, not their fourth decimal.
   let FAST = false;
+  // Bootstrap refits start from the full fit of the same model (warm start): the same fit, reached in fewer steps, so
+  // 999 draws fit in the Action's time (the multiple-testing study of 2026-11-05, §5.3). WARM[sig] holds the last full
+  // fit's fixed effects, variance components and shrunk effects; runAll empties it before each analysis. A player
+  // drawn twice in a bootstrap sample is named id + DUP + draw index: both copies start from that player's own effect.
+  let WARM = {};
+  const DUP = '\u0001',
+    baseOf = k => (typeof k === 'string' && k.indexOf(DUP) >= 0 ? k.slice(0, k.indexOf(DUP)) : k);
+  const sigOf = (kind, p, F) => kind + ':' + p + ':' + F.map(f => f.name).join(',');
+  function warmKeep(kind, p, F, b, s2) {
+    WARM[sigOf(kind, p, F)] = {
+      b: b.slice(),
+      s2,
+      f: F.map(f => ({tau2: f.tau2, u: new Map(f.L.map((k, j) => [k, f.u[j]]))}))
+    };
+  }
+  // Sets b, each factor's tau2 and u from the warm state (null when there is none or it does not apply).
+  function warmGet(kind, p, F) {
+    const W = FAST ? WARM[sigOf(kind, p, F)] : null;
+    if (!W) return null;
+    F.forEach((f, k) => {
+      f.tau2 = W.f[k].tau2;
+      for (let j = 0; j < f.n; j++) f.u[j] = W.f[k].u.get(baseOf(f.L[j])) || 0;
+    });
+    return W;
+  }
 
   /* ---------- Small linear algebra ---------- */
   // Solves A x = b (A symmetric positive definite, p small) by Gaussian elimination with partial pivoting; a tiny ridge
@@ -67,6 +93,10 @@
         A.map((__, i) => (i === j ? 1 : 0))
       )
     );
+  // A bootstrap draw (FAST) with no answer moving a column cannot estimate its coefficient: NaN, so boot leaves the draw
+  // out for it, rather than counting the warm start's value (the full fit's) or the ridge's 0 as a draw (Codex review
+  // #588).
+  const drawn = (b, n0) => (FAST ? b.map((v, a) => (n0[a] ? v : NaN)) : b);
   // A column the data never moves (all zero in this sample) gets a ridge, so its coefficient stays 0, not huge.
   const ridge = (A, X) => A.map((r, i) => r.map((v, j) => v + (i === j && !X.some(x => x[i]) ? 1 : 0)));
 
@@ -204,6 +234,8 @@
     let s2 = vy / 2,
       b = new Array(p).fill(0);
     F.forEach(f => ((f.tau2 = vy / (2 * F.length)), f.u.fill(0), (f.z = new Float64Array(N))));
+    const W = warmGet('lmm', p, F);
+    if (W) ((b = W.b.slice()), (s2 = W.s2), F.forEach(f => zu(f, f.z)));
     const XtX = ridge(
       X[0].map((_, a) => X[0].map((__, c) => X.reduce((s, x) => s + x[a] * x[c], 0))),
       X
@@ -259,7 +291,9 @@
     // The fixed effects' covariance, marginal over the random effects (Codex review #441: conditional on them, an effect
     // that is constant within a player looked sure from many answers of a few players).
     const V = FAST ? null : margV(X, F, null, f => s2 / f.tau2, s2, XtX);
-    return {b, se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, s2, F, nz: nz(X)};
+    if (!FAST) warmKeep('lmm', p, F, b, s2);
+    const n0 = nz(X);
+    return {b: drawn(b, n0), se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, s2, F, nz: n0};
   }
 
   /* ---------- Logistic mixed model with a guess rate (explanatory IRT) ---------- */
@@ -276,6 +310,16 @@
       W = new Float64Array(N);
     let b = new Array(p).fill(0);
     F.forEach(f => ((f.tau2 = o.tau0 || 0.5), f.u.fill(0), f.cv.fill(0)));
+    const Wm = warmGet('glmm', p, F);
+    if (Wm) {
+      b = Wm.b.slice();
+      const z = new Float64Array(N);
+      for (let i = 0; i < N; i++) for (let a = 0; a < p; a++) eta[i] += X[i][a] * b[a];
+      F.forEach(f => {
+        zu(f, z);
+        for (let i = 0; i < N; i++) eta[i] += z[i];
+      });
+    }
     const sc = () => {
       for (let i = 0; i < N; i++) {
         const s = sig(eta[i]),
@@ -285,23 +329,38 @@
         W[i] = (d * d) / (P * (1 - P)) + 1e-12;
       }
     };
+    // X flattened into one typed array (row i at i * p): the same sums in the same order, several times faster than
+    // nested arrays in the loops below, which run at every step of every bootstrap refit.
+    const Xf = new Float64Array(N * p);
+    for (let i = 0; i < N; i++) for (let a = 0; a < p; a++) Xf[i * p + a] = X[i][a];
+    const zero = X[0].map((_, a) => !X.some(x => x[a])),
+      Hf = new Float64Array(p * p);
     let H = null,
       it = 0;
     for (; it < (o.it || (FAST ? 60 : 200)); it++) {
       let move = 0;
       sc();
-      H = X[0].map((_, a) => X[0].map((__, c) => 0));
+      Hf.fill(0);
       const gr = new Array(p).fill(0);
-      for (let i = 0; i < N; i++)
+      for (let i = 0; i < N; i++) {
+        const r = i * p,
+          Si = S[i],
+          Wi = W[i];
         for (let a = 0; a < p; a++) {
-          gr[a] += X[i][a] * S[i];
-          for (let c = 0; c <= a; c++) H[a][c] += X[i][a] * X[i][c] * W[i];
+          const xa = Xf[r + a];
+          gr[a] += xa * Si;
+          for (let c = 0; c <= a; c++) Hf[a * p + c] += xa * Xf[r + c] * Wi;
         }
-      for (let a = 0; a < p; a++) for (let c = 0; c < a; c++) H[c][a] = H[a][c];
-      H = ridge(H, X).map((r, a) => r.map((v, c) => v + (a === c ? 1e-6 : 0)));
+      }
+      // as ridge(): a column the sample never moves gets 1 on its diagonal; then the small ridge
+      H = X[0].map((_, a) => X[0].map((__, c) => (c <= a ? Hf[a * p + c] : Hf[c * p + a]) + (a === c ? (zero[a] ? 1 : 0) + 1e-6 : 0)));
       const db = solve(H, gr).map(v => clamp(v, -2, 2));
       b = b.map((v, a) => v + db[a]);
-      for (let i = 0; i < N; i++) for (let a = 0; a < p; a++) eta[i] += X[i][a] * db[a];
+      for (let i = 0; i < N; i++) {
+        let d = 0;
+        for (let a = 0; a < p; a++) d += Xf[i * p + a] * db[a];
+        eta[i] += d;
+      }
       move = Math.max(move, ...db.map(Math.abs));
       F.forEach(f => {
         sc();
@@ -338,8 +397,10 @@
         X
       );
       V = margV(X, F, W, f => 1 / f.tau2, 1, XW);
+      warmKeep('glmm', p, F, b, 0);
     }
-    return {b, se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, F, eta, nz: nz(X)};
+    const n0 = nz(X);
+    return {b: drawn(b, n0), se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, F, eta, nz: n0};
   }
 
   // Two-parameter fit of one question format against the app's own expectation: P = c + (1 - c) sig(x + d), x the
@@ -517,7 +578,11 @@
     return s.length ? s[lo] + (s[Math.ceil(i)] - s[lo]) * (i - lo) : NaN;
   };
   // Cluster bootstrap over players: each draw takes as many players as there are, with replacement, every answer of a
-  // player drawn twice counted twice under two names. stat(rows) -> {key: number}. Returns {key: [2.5%, 97.5%]}.
+  // player drawn twice counted twice under two names. stat(rows) -> {key: number}. Returns {key: [2.5%, 97.5%]}: the
+  // percentiles of the draws (999 in the Action), or, when BSE is set (Recompute here: 199 draws, a few minutes in the
+  // browser), the normal interval from the draws' standard deviation around the estimate on the sample itself, never
+  // beyond the draws' own range (Efron & Tibshirani 1993: some 200 draws give a standard error, percentiles need ~1000).
+  let BSE = false;
   function boot(D, stat, B, seed) {
     const by = new Map();
     D.forEach(a => (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
@@ -529,7 +594,7 @@
       const S = [];
       P.forEach((_, j) => {
         const pl = P[Math.floor(R() * P.length)];
-        by.get(pl).forEach(a => S.push({...a, p: a.p + '#' + j}));
+        by.get(pl).forEach(a => S.push({...a, p: a.p + DUP + j}));
       });
       let v = null;
       FAST = true;
@@ -541,8 +606,26 @@
       FAST = false;
       if (v) Object.entries(v).forEach(([key, x]) => isFinite(x) && (acc[key] = acc[key] || []).push(x));
     }
+    let c = null;
+    if (BSE) {
+      FAST = true;
+      try {
+        c = stat(D);
+      } catch (e) {
+        c = null;
+      }
+      FAST = false;
+    }
     const out = {};
-    Object.entries(acc).forEach(([key, L]) => L.length >= Math.min(10, B / 2) && (out[key] = [q(L, 0.025), q(L, 0.975)]));
+    Object.entries(acc).forEach(([key, L]) => {
+      if (L.length < Math.min(10, B / 2)) return;
+      if (!c || !isFinite(c[key])) return (out[key] = [q(L, 0.025), q(L, 0.975)]);
+      const m = mean(L),
+        sd = Math.sqrt(sum(L.map(v => (v - m) ** 2)) / (L.length - 1)),
+        lo0 = L.reduce((x, v) => Math.min(x, v), c[key]),
+        hi0 = L.reduce((x, v) => Math.max(x, v), c[key]);
+      out[key] = [Math.max(lo0, c[key] - Z * sd), Math.min(hi0, c[key] + Z * sd)];
+    });
     return out;
   }
   // The answers needed for an interval of half-width h, from the current n and half-width (h scales as 1/sqrt(n)).
@@ -574,11 +657,13 @@
   function sdEff(key, label, tau2, J, bi, unit, sesoi, n, cvm = 0) {
     const sd = Math.sqrt(tau2),
       se = J > 1 ? Math.sqrt((2 * (tau2 + cvm) ** 2) / (J - 1)) / (2 * Math.max(sd, 1e-3)) : Infinity;
-    let lo = Math.max(0, sd - Z * se),
+    let lu = sd - Z * se,
       hi = sd + Z * se;
-    if (bi && bi[key]) ((lo = Math.min(lo, bi[key][0])), (hi = Math.max(hi, bi[key][1])));
-    // an SD is never below 0: "includes 0" = its lower bound under a tenth of the sesoi
-    const e = {k: key, label, est: sd, lo, hi, unit, sesoi, n, sd: true, boot: !!(bi && bi[key])};
+    if (bi && bi[key]) ((lu = Math.min(lu, bi[key][0])), (hi = Math.max(hi, bi[key][1])));
+    const lo = Math.max(0, lu);
+    // an SD is never below 0: "includes 0" = its lower bound under a tenth of the sesoi; lu, the lower bound before it is
+    // cut at 0, gives its p-value (correct)
+    const e = {k: key, label, est: sd, lo, hi, lu, unit, sesoi, n, sd: true, boot: !!(bi && bi[key])};
     if (lo > sesoi / 10) return Object.assign(e, {v: 'clear'});
     if (hi <= sesoi) return Object.assign(e, {v: 'margin'});
     return Object.assign(e, {
@@ -2006,11 +2091,14 @@
       dir = val === base ? '' : up ? 'up' : 'down';
     Object.assign(out, {base, val, lo, hi, dir});
     out.range = lo == null ? '' : `between ${f(lo)} and ${f(hi)}`;
-    // a contrast read on another guess floor (typed answers) is judged on the right answers shown: clear only when their
-    // range leaves the baseline out, no clear effect when it stays within 5 points of it (Codex review #495)
+    // a contrast read on another guess floor (typed answers) is judged on the right answers shown: clear only when the
+    // multiple-testing correction finds it clear, tested against as many right answers as the baseline (correct sets
+    // its null so: Codex review #588), else no clear effect when its range stays within 5 points of the baseline
+    // (Codex review #495)
     let v = e.v;
-    if (P.g1 != null && lo != null && v !== 'none')
-      v = lo > base || hi < base ? 'clear' : lo >= base - 0.05 && hi <= base + 0.05 ? 'margin' : 'thin';
+    // (an effect read here without that correction, its 95% range of right answers holding the baseline, is not clear)
+    if (P.g1 != null && lo != null && v !== 'none' && (v !== 'clear' || (lo <= base && hi >= base)))
+      v = lo >= base - 0.05 && hi <= base + 0.05 ? 'margin' : 'thin';
     Object.assign(out, {v, verdict: PLAIN_VERDICT[v] || ''});
     let say;
     if (P.o === 'time') say = `${up ? 'Slower' : 'Faster'}: about ${f(val)} instead of ${f(base)}`;
@@ -2040,6 +2128,179 @@
   // not a chance of a right answer (Codex review #495).
   const outOf = P => (!P ? 'right' : P.beyond ? 'beyond' : P.o || 'right');
 
+  /* ---------- Multiple testing (Pierre, 2026-11-05, Q69; the stats-methods study of 2026-11-05, §2, §5.3, §6.3) ---------- */
+  // About 40 effects per milestone, each at 95%: some would read "clear" by chance alone. Each analysis declares the 1-2
+  // questions it exists to answer (PRIMARY, chosen before looking at any result: docs/LEARNING.md "Multifactor analyses");
+  // they are tested together under Holm (family-wise error 5%: the chance of even one false "clear" among them). Every
+  // other effect is secondary, exploratory: tested together under Benjamini-Hochberg (false discovery rate 5%: of the
+  // exploratory effects called clear, about 5% may be chance on average), a lead to re-test on later answers. Effects that
+  // are not a test (the answers to mastery, a number, not a comparison) are left out of both.
+  const PRIMARY = {
+    rt: ['right', 'diff'], // is answer time a signal: right answers faster, harder questions slower
+    zoom: ['rel'], // does enlarging a photo help the same player
+    photo: ['poor', 'macro'], // the photo rules the games rest on: Poor photos harder, corallites harder than a colony
+    fmt: ['oe_k4', 'oe_typed'], // is the app's expected chance right on its main format and on typed answers
+    conf: ['macro'], // do corallites shown cut mix-ups (an SD is never primary: its test is rough near 0, see pOf)
+    learn: ['slope', 'again'], // does practice work; does "Again" after a miss help
+    back: ['slope', 'calib'], // do players forget over days; is the comeback after a break right
+    sess: ['wrong'] // do misses end sessions
+  };
+  const ALPHA = 0.05, // Holm, primary effects
+    FDR = 0.05; // Benjamini-Hochberg, secondary effects
+  // The normal tail P(Z > |z|) to double precision (Hart 1968, as written by West 2005) and the normal quantile
+  // (Acklam's rational approximation, relative error 1e-9).
+  function ntail(z) {
+    const x = Math.abs(z);
+    if (x > 37) return 0;
+    const e = Math.exp((-x * x) / 2);
+    if (x >= 7.07106781186547) {
+      let b = x + 0.65;
+      b = x + 4 / b;
+      b = x + 3 / b;
+      b = x + 2 / b;
+      b = x + 1 / b;
+      return e / b / 2.506628274631;
+    }
+    let n = 3.52624965998911e-2 * x + 0.700383064443688;
+    n = n * x + 6.37396220353165;
+    n = n * x + 33.912866078383;
+    n = n * x + 112.079291497871;
+    n = n * x + 221.213596169931;
+    n = n * x + 220.206867912376;
+    let d = 8.83883476483184e-2 * x + 1.75566716318264;
+    d = d * x + 16.064177579207;
+    d = d * x + 86.7807322029461;
+    d = d * x + 296.564248779674;
+    d = d * x + 637.333633378831;
+    d = d * x + 793.826512519948;
+    d = d * x + 440.413735824752;
+    return (e * n) / d;
+  }
+  function nq(p) {
+    const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239],
+      b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572],
+      c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783],
+      d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
+    const lo = 0.02425;
+    if (p < lo || p > 1 - lo) {
+      const r = Math.sqrt(-2 * Math.log(p < lo ? p : 1 - p)),
+        x = (((((c[0] * r + c[1]) * r + c[2]) * r + c[3]) * r + c[4]) * r + c[5]) / ((((d[0] * r + d[1]) * r + d[2]) * r + d[3]) * r + 1);
+      return p < lo ? x : -x;
+    }
+    const r = (p - 0.5) * (p - 0.5);
+    return (
+      ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * (p - 0.5)) /
+      (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+    );
+  }
+  // An effect's two-sided p-value, from its 95% interval read as a normal one on the side that faces the null value (the
+  // wider of the model's and the bootstrap's, so p < 0.05 exactly when that interval leaves the null value out). An SD
+  // is tested against a tenth of its smallest effect that matters, from its lower bound before the cut at 0 (lu): rough,
+  // as an SD's estimate never reaches 0 (EM keeps it above, and its interval is not valid at that boundary), so a spread
+  // that is really 0 can still read clear; that is why no SD is a primary effect. null: not a test (no estimate, no
+  // finite interval, or a number of answers).
+  function pOf(e) {
+    if (e.est == null || !isFinite(e.est) || !isFinite(e.lo) || !isFinite(e.hi) || e.unit === 'n' || e.v === 'none' || e.v === 'nolog')
+      return null;
+    const nul = e.sd ? e.sesoi / 10 : e.nul || 0,
+      d = e.est - nul;
+    if (e.sd && d <= 0) return 1;
+    if (!d) return 1;
+    const s = d > 0 ? (e.est - (e.sd ? e.lu : e.lo)) / Z : (e.hi - e.est) / Z;
+    return s > 0 && isFinite(s) ? Math.min(1, 2 * ntail(d / s)) : s > 0 ? 1 : 0;
+  }
+  // Adjusted p-values, in the order given: Holm (step-down, family-wise error, any dependence between the tests) and
+  // Benjamini-Hochberg (step-up, false discovery rate, valid under independence or positive dependence). raw: without
+  // the cap at 1, so that level * p / adjusted p stays the level the test faces (settle; Codex review #588).
+  function holm(P, raw) {
+    const m = P.length,
+      I = P.map((_, i) => i).sort((a, b) => P[a] - P[b]),
+      out = new Array(m);
+    let run = 0;
+    I.forEach((i, r) => ((run = Math.max(run, (m - r) * P[i])), (out[i] = raw ? run : Math.min(1, run))));
+    return out;
+  }
+  function bh(P, raw) {
+    const m = P.length,
+      I = P.map((_, i) => i).sort((a, b) => P[a] - P[b]),
+      out = new Array(m);
+    let run = Infinity;
+    for (let r = m - 1; r >= 0; r--) ((run = Math.min(run, (m * P[I[r]]) / (r + 1))), (out[I[r]] = raw ? run : Math.min(1, run)));
+    return out;
+  }
+  const sig3 = v => (v == null || !isFinite(v) || v === 0 ? v : Number(v.toPrecision(3)));
+  // The final verdict of one effect after its correction: clear when its adjusted p is at most the family's level; else
+  // "no clear effect" or "not enough data yet" from its 95% interval, as verdictOf. The answers needed are those that
+  // would carry it to either verdict: past the level it now faces (lev: the family's level times p / uncapped adjusted p, the
+  // per-test level of its rank), or inside the margin; so it never says it needs fewer answers than it has. alo /
+  // ahi: its interval at that level (it leaves the null value out exactly when the effect is clear).
+  function settle(e, pr, level) {
+    const pa = Math.min(1, pr),
+      lev = pr > 0 ? Math.min(level, (level * e.p) / pr) : level,
+      za = Math.max(Z, nq(1 - lev / 2)),
+      sl = (e.est - (e.sd ? e.lu : e.lo)) / Z,
+      sh = (e.hi - e.est) / Z;
+    Object.assign(e, {pa: sig3(pa), p: sig3(e.p), alo: sig3(e.est - za * sl), ahi: sig3(e.est + za * sh)});
+    delete e.need;
+    delete e.hw;
+    if (e.hi - e.lo > 20) return Object.assign(e, {v: 'thin', need: null});
+    if (pa <= level) return Object.assign(e, {v: 'clear'});
+    const nul = e.sd ? e.sesoi / 10 : e.nul || 0,
+      d = e.est - nul;
+    if (e.sd ? e.hi <= e.sesoi : e.lo >= nul - e.sesoi && e.hi <= nul + e.sesoi) return Object.assign(e, {v: 'margin'});
+    // Answers for either reachable verdict, the interval shrinking as 1/sqrt(n) (Codex review #588: the sesoi taken as
+    // the target half-width asked fewer answers than an effect smaller than it already had): clear, its interval at the
+    // level it faces leaving the null value out; or no clear effect, its 95% interval inside the margin. Both need more
+    // answers than it has, as it is neither now.
+    const at = f => (f > 0 && isFinite(f) ? e.n / (f * f) : Infinity),
+      clear = d > 0 ? at(d / (za * sl)) : e.sd ? Infinity : at(-d / (za * sh)),
+      margin = e.sd ? at((e.sesoi - e.est) / (Z * sh)) : at(Math.min((d + e.sesoi) / (Z * sl), (e.sesoi - d) / (Z * sh))),
+      need = Math.min(clear, margin);
+    return Object.assign(e, {v: 'thin', need: isFinite(need) ? nice(need) : null});
+  }
+
+  // Applies both corrections to one milestone's results (runAll): each tested effect gets its family (fam: 1 primary,
+  // 2 secondary), p, adjusted p (pa) and final verdict; the milestone gets mt: how many tests in each family.
+  function correct(res) {
+    const T = [];
+    Object.entries(res.A).forEach(([k, a]) =>
+      (a.effects || []).forEach(e => {
+        // An effect read as right answers on another guess floor (typed answers, PLAIN g1; plainOf) is tested, and
+        // corrected, on that contrast: its null is the coefficient at which it gets as many right answers as the
+        // typical question, not 0 (Codex review #588).
+        const P = (PLAIN[k] || {})[e.k];
+        if (P && P.g1 != null && e.est != null && isFinite(e.est)) {
+          const T0 = Object.assign({p: 0.75, g: 0.25}, a.typ || {}),
+            g = P.o === 'right' ? T0.g : 0,
+            q0 = clamp((T0.p - g) / (1 - g), 0.001, 0.999),
+            q1 = clamp((T0.p - P.g1) / (1 - P.g1), 0.001, 0.999);
+          e.nul = (logit(q1) - logit(q0)) / ((P.inv ? -1 : 1) * (P.s || 1));
+        }
+        const p = pOf(e);
+        if (p == null) return;
+        e.fam = (PRIMARY[k] || []).includes(e.k) ? 1 : 2;
+        e.p = p;
+        T.push(e);
+      })
+    );
+    const L1 = T.filter(e => e.fam === 1),
+      L2 = T.filter(e => e.fam === 2),
+      a1 = holm(
+        L1.map(e => e.p),
+        true
+      ),
+      a2 = bh(
+        L2.map(e => e.p),
+        true
+      );
+    L1.forEach((e, i) => settle(e, a1[i], ALPHA));
+    L2.forEach((e, i) => settle(e, a2[i], FDR));
+    res.mt = {m1: L1.length, m2: L2.length, a: ALPHA, q: FDR};
+    return res;
+  }
+
   /* ---------- All of them, for one milestone ---------- */
   const ANALYSES = [
     ['rt', 'Response time', rt],
@@ -2052,35 +2313,30 @@
     ['sess', 'Sessions', sessions]
   ];
   // rows: the answer log (readAnswers rows); M: how many of its answers (time order) this milestone takes; B: bootstrap
-  // draws. progress(key) is called as each analysis finishes.
+  // draws (BOOT by default); bse: normal bootstrap intervals (boot). progress(key) is called as each analysis finishes.
+  // The verdicts are final only here, after the multiple-testing correction over every analysis (correct).
+  const BOOT = 999;
   function runAll(rows, meta = {}, o = {}) {
     const all = (rows || []).slice().sort((a, b) => a[1] - b[1]),
       M = o.M || all.length,
       A = prep(all.slice(0, M), meta),
-      out = {AV, M, n: A.length, players: players(A), at: A.length ? A[A.length - 1].t : 0, A: {}};
+      B = o.B == null ? BOOT : o.B,
+      out = {AV, M, n: A.length, players: players(A), at: A.length ? A[A.length - 1].t : 0, B, bse: o.bse ? 1 : 0, A: {}};
+    BSE = !!o.bse;
     ANALYSES.forEach(([k, , fn], i) => {
       const t0 = Date.now();
+      WARM = {};
       try {
-        out.A[k] = fn(A, o.B == null ? 40 : o.B, (o.seed || 1) + i * 7919, meta);
+        out.A[k] = fn(A, B, (o.seed || 1) + i * 7919, meta);
       } catch (e) {
         out.A[k] = {err: String((e && e.message) || e), effects: []};
       }
       out.A[k].ms = Date.now() - t0;
       if (o.progress) o.progress(k);
     });
-    return out;
-  }
-  // Effects that became clear at this milestone (not clear at the previous one): the "new" marks.
-  function newly(cur, prev) {
-    const out = new Set();
-    if (!cur || !prev) return out;
-    Object.entries(cur.A).forEach(([a, R]) =>
-      (R.effects || []).forEach(e => {
-        const p = ((prev.A[a] || {}).effects || []).find(x => x.k === e.k);
-        if (e.v === 'clear' && (!p || p.v !== 'clear')) out.add(a + ':' + e.k);
-      })
-    );
-    return out;
+    BSE = false;
+    WARM = {};
+    return correct(out);
   }
 
   /* ---------- Photo features, from the public files (the same for the workflow and the admin) ---------- */
@@ -2159,19 +2415,31 @@
     return [AV, M, S.length ? S[S.length - 1][1] : 0, S.reduce((s, r) => s + (r[4] ? 1 : 0), 0), h.toString(36), mh].join(':');
   }
 
-  // rows: the whole answer log; prev: the stored report (or null); o: {B, seed, progress, now}. Returns {AV, made,
-  // answers, M: [milestones], R: {milestone: result}}; a result carries its fingerprint fp.
+  // rows: the whole answer log; prev: the stored report (or null); o: {B, Bh, hcap, bse, seed, progress, now}. Returns
+  // {AV, made, answers, M: [milestones], R: {milestone: result}}; a result carries its fingerprint fp and its draws B.
+  // Draws per milestone (Pierre, 2026-11-05: at least 999): the latest milestone, the one read for the verdicts, takes
+  // B (999); the earlier ones are looks at a smaller log (history), so they take Bh (199) newest first, as long as their
+  // answers add up to at most hcap (60,000: about 25 minutes in the Action), and none beyond (the model's own interval
+  // only): a whole recompute (new AV, new photo features) stays inside the Action's 2 hours as the log grows.
   function report(rows, meta, prev, o = {}) {
     const all = (rows || []).slice().sort((a, b) => a[1] - b[1]),
       Ms = milestones(all.length),
       mh = hashOf(meta && meta.ph),
+      B = o.B == null ? BOOT : o.B,
+      Bh = Math.min(B, o.Bh == null ? 199 : o.Bh),
+      cap = o.hcap == null ? 60000 : o.hcap,
+      draws = {},
       R = {};
+    let used = 0;
+    Ms.slice()
+      .reverse()
+      .forEach((M, i) => (draws[M] = !i ? B : (used += M) <= cap ? Bh : 0));
     Ms.forEach(M => {
       const fp = fpOf(all, M, mh),
         old = prev && prev.AV === AV && prev.R && prev.R[M];
       if (old && old.fp === fp) R[M] = old;
       else {
-        R[M] = runAll(all, meta, {M, B: o.B, seed: o.seed, progress: o.progress && (k => o.progress(M, k))});
+        R[M] = runAll(all, meta, {M, B: draws[M], bse: o.bse, seed: o.seed, progress: o.progress && (k => o.progress(M, k))});
         R[M].fp = fp;
       }
     });
@@ -2261,7 +2529,16 @@
     DEMO_PLAYERS,
     demoLog,
     runAll,
-    newly,
+    PRIMARY,
+    ALPHA,
+    FDR,
+    BOOT,
+    ntail,
+    nq,
+    pOf,
+    holm,
+    bh,
+    correct,
     photoMeta,
     fpOf,
     hashOf,
@@ -2286,9 +2563,9 @@
   // In a Web Worker (the admin's new Worker('analysis.js?v=N'), Recompute here, and the demo): a whole report per message.
   if (typeof window === 'undefined' && typeof module === 'undefined' && typeof root.postMessage === 'function')
     root.onmessage = e => {
-      const {id, rows, meta, B, seed, prev} = e.data || {};
+      const {id, rows, meta, B, Bh, bse, seed, prev} = e.data || {};
       try {
-        root.postMessage({id, res: report(rows, meta, prev, {B, seed, progress: (M, k) => root.postMessage({id, prog: [M, k]})})});
+        root.postMessage({id, res: report(rows, meta, prev, {B, Bh, bse, seed, progress: (M, k) => root.postMessage({id, prog: [M, k]})})});
       } catch (err) {
         root.postMessage({id, err: String((err && err.stack) || err)});
       }
