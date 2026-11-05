@@ -1359,7 +1359,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       when = SYNC.last ? new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
     box.classList.add(bad ? 'warn' : 'on');
     box.innerHTML = bad
-      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? 'Your trainer archived this record: it is kept apart, as it was. Sign out to start fresh; you can then sign in again, under this name if you like.' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so the sheet waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
+      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? 'This account is archived.' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? ` Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : SYNC.dirty || (SYNC.log || []).length // answers not confirmed yet, no error so far: say so, quietly
         ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
@@ -1520,7 +1520,7 @@ const SELFDEL_SHEET = 56;
 const selfDelOn = () => sheetV() >= SELFDEL_SHEET;
 function viewDeleteAccount(h) {
   const box = body => `<h2 class="vh">Delete my account</h2><div class="about delacct">${body}</div>`,
-    what = `<section><h3>What is deleted</h3><p>Deleting your account removes from the ${esc(ORG.short)} sheet, for good:</p><ul>
+    what = `<section><h3>What is deleted</h3><p>Deleting your account permanently deletes your data:</p><ul>
       <li>your name and your saved progress and settings;</li>
       <li>every answer you gave in the games;</li>
       <li>your problem reports and feedback;</li>
@@ -1529,13 +1529,13 @@ function viewDeleteAccount(h) {
       <p class="note">To keep your answers anonymously for the photo ratings instead, ask Pierre Pericard (<a href="privacy.html">privacy notice</a>).</p></section>`;
   if (h === 'delete-account|done') {
     $v.innerHTML = box(
-      `<section><h3>Account deleted</h3><p>Your account and all its data were deleted from the ${esc(ORG.short)} sheet, and this device was signed out and cleared.</p><p><a class="next" href="#home">Home</a></p></section>`
+      `<section><h3>Account deleted</h3><p>Your account and all its data were permanently deleted, and this device was signed out and cleared.</p><p><a class="next" href="#home">Home</a></p></section>`
     );
     return;
   }
   if (!SYNC) {
     $v.innerHTML = box(
-      `<section><h3>Not signed in</h3><p>To delete an account, sign in on this device with its name and code, then come back to this page.</p><p>Without an account, nothing saved in the sheet carries your name: your progress stays in this browser, and your answers were sent under a random id.</p><p><button class="chip go" type="button" id="dsin">Sign in</button></p></section>` +
+      `<section><h3>Not signed in</h3><p>To delete an account, sign in on this device with its name and code, then come back to this page.</p><p>Without an account, nothing saved carries your name: your progress stays in this browser, and your answers were sent under a random id.</p><p><button class="chip go" type="button" id="dsin">Sign in</button></p></section>` +
         what
     );
     $v.querySelector('#dsin').onclick = () => signinNudge(false, false);
@@ -1548,7 +1548,7 @@ function viewDeleteAccount(h) {
   if (!selfDelOn()) {
     $v.innerHTML = box(
       what +
-        `<section><p>Deleting your account from here needs the latest version of the sheet, which updates itself shortly. Come back later, or ask Pierre Pericard.</p></section>`
+        `<section><p>Deleting your account from here is not available yet: come back in a few minutes, or ask Pierre Pericard.</p></section>`
     );
     return;
   }
@@ -1592,13 +1592,13 @@ function viewDeleteAccount(h) {
             viewDeleteAccount('delete-account');
             $v.querySelector('.delacct [role=status]').textContent =
               e === 'archived'
-                ? 'Your trainer archived this record, and this name now belongs to a new account: nothing was deleted. Sign out in ⚙.'
+                ? 'This account is archived.'
                 : e === 'gone'
                   ? j.into
                     ? `Your trainer merged this name into ${j.into} (the same person): nothing was deleted. Sign out, sign in as ${j.into}, then delete that account.`
                     : 'This account was already removed.'
                   : e === 'pin'
-                    ? 'The sheet refused the code for this name.'
+                    ? 'The code was refused for this name.'
                     : e === 'wait'
                       ? 'Too many wrong codes for this name: try again in 10 minutes.'
                       : e === 'busy'
