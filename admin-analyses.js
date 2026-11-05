@@ -47,7 +47,12 @@ function anLoad() {
     })
     .catch(() => (ANREP = {st: 'err', err: 'Offline'}));
 }
-const anRep = () => (AN.src === 'local' && ANLOC && ANLOC.rep ? ANLOC.rep : ANREP && ANREP.rep);
+// A report with no point at all (Recompute here on an empty log: no milestone before 1000, no live point at 0) is no
+// report: the page says "No report yet" (Codex review #591).
+const anRep = () => {
+  const rep = AN.src === 'local' && ANLOC && ANLOC.rep ? ANLOC.rep : ANREP && ANREP.rep;
+  return rep && rep.M && rep.M.length ? rep : null;
+};
 // The milestones: round thousands only (Pierre, 2026-11-05: 1000, 2000, 3000, …; never shifted by the count of the first
 // report), without Recompute here's look at all the answers. The milestone shown: 'all' = the newest; 'now' = all the answers, a point only Recompute here adds
 // (analysis.js report live), never stored; else a milestone of the report.

@@ -1167,3 +1167,24 @@ test('answers needed after the correction reach a verdict, even when the adjuste
   const e2 = A.correct(r2).A.learn.effects[0];
   assert.notStrictEqual(e2.v, 'thin', `${e.need} answers: still undecided (adjusted p ${e2.pa})`);
 });
+
+// Codex review #591: Recompute here on an empty log (no milestone and, with 0 answers, no live point) gives a report with
+// no point at all; the page treats it as no report ("No report yet"), never reading a milestone that is not there.
+test('admin: a report without any point counts as no report', () => {
+  const vm = require('vm'),
+    src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
+    ctx = vm.createContext({ANALYSIS: A, store: {get: (k, d) => d, set() {}}, HELP: {}, addEventListener() {}});
+  vm.runInContext(src, ctx);
+  const empty = A.report([], {ph: {}}, null, {B: 0, live: 1});
+  assert.deepStrictEqual([empty.M, empty.live], [[], undefined]);
+  ctx.EMPTY = empty;
+  assert.strictEqual(vm.runInContext("ANREP = {st: 'ok', rep: EMPTY}; anRep()", ctx), null, 'stored');
+  assert.strictEqual(
+    vm.runInContext("AN.src = 'local'; ANLOC = {rep: EMPTY}; ANREP = {st: 'none', rep: null}; anRep()", ctx),
+    null,
+    'this tab'
+  );
+  const one = {M: [1000], R: {1000: {A: {}}}, answers: 1200};
+  ctx.ONE = one;
+  assert.strictEqual(vm.runInContext('ANLOC = {rep: ONE}; anRep()', ctx), one);
+});
