@@ -1435,8 +1435,8 @@ function syncTrouble() {
 // The sync sheet's address and this device's sign-in: state that many pages read, kept here with the pages; the code
 // that talks to the sheet is in sync.js.
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
-// How a message names it ("Progress loaded from the IMR sheet.").
-const SHEET_NAME = `the ${ORG.short} sheet`;
+// How a message names it ("Progress loaded from your account."): players are never told about "the sheet" (Pierre).
+const SHEET_NAME = 'your account';
 // A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
 // sheet (Pierre, 2026-11-02: 17 "players" in the admin were tools/perf.js runs: once the service worker was in, its
 // requests passed by the test's network mocks and reached the sheet). A browser driven by a program (Playwright,
