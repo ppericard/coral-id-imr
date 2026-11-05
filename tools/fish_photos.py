@@ -8,7 +8,7 @@ photo objects below, so nothing else changes then. Varied quality on purpose (ve
 the pipeline's goal, not this script's: here the photos come as iNaturalist ranks them.
 
 For each level-1 teaching entry of fish.json (every circle, winks too), the observations of its species in the game
-(species without `out`), in this order (AGENTS.md rules 6a and 7):
+(species without `out`), in this order (rules S2 and P1):
   1. Pierre's own observations (iNaturalist user ppericard) identified to the species, even Needs ID (Pierre,
      2026-11-03: he names a species only when very sure; his only, nobody else's), whatever their licence (his photos);
   2. Research Grade observations in the Philippines with a CC0 or CC BY photo, then CC BY-NC; never a share-alike
@@ -17,7 +17,7 @@ For each level-1 teaching entry of fish.json (every circle, winks too), the obse
      confirmed in the Philippines: fish.json keeps the others out of the game).
 Within each step the species take turns in fish.json order (the PDF cheatsheet's most sighted first), so an entry's
 photos spread over its species; at most PER observations per entry, one photo per observation (its first one, the one
-the observer chose), since a quiz question shows one observation (AGENTS.md rule 14b).
+the observer chose), since a quiz question shows one observation (rule P4).
 
 Photo object, as data.json's: {f: 'fi<photo id>' (unique, never a file), o: observation URL, src: the original photo
 URL (app.js inat() swaps the size), r: 1 (remote), a: attribution, lic, t: species name as iNaturalist has it, sp:
@@ -212,7 +212,7 @@ def sheet_photo(s, taxon, observations, names):
         out["own"] = True
     if ratio(p):
         out["ar"] = ratio(p)
-    # iNaturalist files the photo under another species of fish.json (one it lumps with this one; AGENTS.md rule 6a:
+    # iNaturalist files the photo under another species of fish.json (one it lumps with this one; rule S2:
     # the name shown stays the PDF's): say so beside the credit.
     if t != s["name"] and t in names:
         out["note"] = f"Filed under {t} on iNaturalist, which lumps the two species" + (" (as WoRMS does)" if s.get("now") == t else "") + "."

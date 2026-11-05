@@ -1,4 +1,4 @@
-"""The presence rule, defined once (Pierre, 2026-11-04, AGENTS.md rule 6g: "the same scientific rigour for everyone, me
+"""The presence rule, defined once (Pierre, 2026-11-04, rule C8: "the same scientific rigour for everyone, me
 included"). Read by tools/build_fish.py (fish.json present), tools/fetch_fish.py (through fish.json), tools/fetch_local.py
 (the coral search abroad) and tools/coral_presence.py (presence.json, the admin's "out of rule" flag).
 
@@ -14,7 +14,7 @@ Confirmed in the Philippines (`ph_confirmed`), any of:
     the Philippines; tools/presence_checklists.json). A checklist alone never brings in a species nobody observed;
   - "near": confirmed near Dauin (so the IMR list too).
 Pierre (iNaturalist user ppericard) is one observer like anyone else: his Research Grade observations count, his Needs ID
-ones do not confirm anything (his species-level photos stay usable as that species: rule 6a). Not used: the number of
+ones do not confirm anything (his species-level photos stay usable as that species: rule S2). Not used: the number of
 identifiers and the date.
 """
 import json
@@ -87,8 +87,8 @@ def species_presence(get, taxon_id, kind="coral", extra=""):
     """{species name: {"id", "rg", "chk", "by"}} for every species under an iNaturalist taxon (a genus) with a Research
     Grade observation in the Philippines; "by" = ph_confirmed's reasons (empty: not confirmed). Species with none there
     are absent (not confirmed). Three batched queries, plus an observers query for each species not already settled
-    by the checklist or near Dauin. `get(url)` returns the parsed JSON (the caller paces and caches it: AGENTS.md rule
-    6f). `extra`: more query parameters (e.g. "&captive=false")."""
+    by the checklist or near Dauin. `get(url)` returns the parsed JSON (the caller paces and caches it: rule
+    C7). `extra`: more query parameters (e.g. "&captive=false")."""
     api = "https://api.inaturalist.org/v1/observations"
     ph = get(f"{api}/species_counts?taxon_id={taxon_id}&place_id=6873&quality_grade=research{extra}&per_page=500")["results"]
     ph = [x for x in ph if x["taxon"].get("rank") == "species"]

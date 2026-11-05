@@ -708,7 +708,7 @@ svg.dim .wedges line.on {
 .rhead .rtrack {
   height: 46px;
 }
-/* 12 px on every screen (readable floor, AGENTS rule 18); phones show only the 0.5 / 2 / 8 / 50 mm ticks, so they fit. */
+/* 12 px on every screen (readable floor, rule U3); phones show only the 0.5 / 2 / 8 / 50 mm ticks, so they fit. */
 .rtick {
   position: absolute;
   top: 0;
@@ -3490,7 +3490,7 @@ body:has(.ikstart:not([hidden])) main {
   font-size: var(--fs-s);
   color: var(--muted);
 }
-/* Every photo is bounded by the screen's height (rule 17, Codex on PR #405): its width follows from --h and its ratio
+/* Every photo is bounded by the screen's height (rule U2, Codex on PR #405): its width follows from --h and its ratio
    (--ar, set inline), so on a tall-and-narrow tablet the teaching photo no longer takes half the screen. */
 .bx-ph {
   --h: 42dvh;

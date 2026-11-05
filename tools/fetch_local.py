@@ -5,7 +5,7 @@
 # Captive observations (aquariums) are left out at the source (captive=false).
 # Last resort (Pierre, 2026-11-03: "si vraiment on est en galère … seulement si l'espèce est confirmée aux Philippines"):
 # when the Philippines tiers leave room (nothing more there), Research Grade photos taken elsewhere, but only of species
-# confirmed in the Philippines by the presence rule (tools/presence.py, AGENTS.md rule 6g, 2026-11-04: Research Grade
+# confirmed in the Philippines by the presence rule (tools/presence.py, rule C8, 2026-11-04: Research Grade
 # there by 3+ distinct observers, or 1+ Research Grade there and listed by Corals of the World for a Philippine ecoregion,
 # or confirmed near Dauin by 2+ Research Grade observers), at most WORLD_CAP waiting (loc world). Accepted IDs: Research Grade, or a genus-level community
 # ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon), or, in
@@ -20,7 +20,7 @@
 # ALL its photos (PER_OBS only guards against an odd one with dozens; Pierre, 2026-11-01: "on my observations I take at
 # least three: the colony, closer, a macro"; a game question shows the views of ONE colony). No order is assumed: an
 # observer may take five photos at one zoom; sorting by view, quality and near-duplicates is for the judging pass
-# afterwards (judging/AGENTS.md), so that what Pierre sees keeps a real variety. Until then it was 2 photos per
+# afterwards (judging/BRIEF.md), so that what Pierre sees keeps a real variety. Until then it was 2 photos per
 # observation (its first and last) and the caps counted photos.
 # Key-only genera (Pierre, 2026-11-03: "quiz first"; data.json "x" genera no game asks, tools/genera.py): a sheet and
 # the Coral ID Key show at most CAP.sheet (core.js, 6) photos of a view, and only Colony and Close-up matter ("nobody uses
@@ -292,7 +292,7 @@ def main():
             loc, r = room_for(g, where)
             if where == 'world':
                 if ph_room <= 0: continue  # the Philippines still had candidates: no need to look further
-                # Only species the presence rule confirms in the Philippines (tools/presence.py, AGENTS.md rule 6g).
+                # Only species the presence rule confirms in the Philippines (tools/presence.py, rule C8).
                 sp = sorted(confirmed_species(get, tid, 'coral', '&captive=false'))
                 if not sp: continue  # no species confirmed in the Philippines: nothing from abroad
                 where = f'taxon_id={",".join(map(str, sp))}&not_in_place=6873'

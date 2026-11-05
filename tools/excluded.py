@@ -11,7 +11,7 @@ def pid(f):
 IDS = {pid(f) for f in EX} - {None}
 # Set aside by the pre-sort (admin.js aside, keep both identical; Pierre 2026-11-03): candidates the judging agent found
 # unusable, comparison images, near-duplicates (of another candidate or of a live photo of the observation), photos of
-# several corals and Poor photos, with no doubt (judging/AGENTS.md, rules learnt from 85 photos Pierre rejected). They
+# several corals and Poor photos, with no doubt (judging/BRIEF.md, rules learnt from 85 photos Pierre rejected). They
 # are not shown to Pierre, so they do not count as waiting either (Codex review #388: they would fill the caps and stop
 # new candidates from being fetched).
 try: SUG = json.load(open(f'{R}/suggest.json')).get('cand') or {}
@@ -24,7 +24,7 @@ def excluded(f=None, photo_id=None):
 def drop_excluded(d):
     """Removes excluded photos from every photo list in data.json (views, more, course, cand, cmp). A candidate the
     auto-sort excluded (reason 'auto', admin.js autoRun) keeps its entry in the candidate lists (cand.json, which players
-    never download): Pierre can undo each auto decision one by one (AGENTS.md rule 8), and its Undo brings the candidate
+    never download): Pierre can undo each auto decision one by one (rule A1), and its Undo brings the candidate
     back only if its genus, source URL and credit are still there (Codex review #400). Excluded, it is never shown nor
     counted as waiting (admin.js rawCands, fetch_local.py waiting)."""
     keep = lambda L: [p for p in L if not excluded(p.get('f'))]

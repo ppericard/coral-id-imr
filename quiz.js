@@ -566,7 +566,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     zm: tm.zm ? 1 : 0,
     // The device's UTC offset now, in minutes east of UTC (Manila +480): the time of day at home for the analyses (Pierre,
     // 2026-11-04; sheet v44 stores it, an older script ignores the field: Code.gs logAnswers_ keeps only the fields it
-    // knows, so it needs no *_SHEET gate, AGENTS.md 7a).
+    // knows, so it needs no *_SHEET gate, rule D4).
     tz: -new Date().getTimezoneOffset()
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
@@ -1062,7 +1062,7 @@ document.addEventListener(
 // A genus sheet opened from inside a game (the answer's genus name): on a computer, in a new tab,
 // so the game stays where it was (an RA tester, 2026-11-02: "so that we aren't taken out of the game"); on a phone or
 // tablet the same tab (new tabs there are clumsy, and Back returns to the game).
-// Desktop size class with a mouse: the shared AGENTS rule 19 classes (Codex review #368), no breakpoint of its own.
+// Desktop size class with a mouse: the shared rule U4 classes (Codex review #368), no breakpoint of its own.
 const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target="_blank" rel="noopener"' : '');
 // One contrast queue (independent review of 2026-11-02, item 7; docs/LEARNING.md "Contrast questions"): the "Again: A or
 // B?" after a mix-up and the look-alike duels slipped into the photo quiz are the same question, a 2-choice contrast of a
@@ -1326,7 +1326,7 @@ function startFbShow(dir) {
     next = startNext(o.c, dir),
     said = `said “${esc(startText(SUBJ.id, o.c)[0])}”`,
     // Everything opened at once (Open all): the "first genera" are all of them (Pierre, 2026-11-04: the same card, its text
-    // about the whole set, no number: the counts change; worded from the subject, rule 13b).
+    // about the whole set, no number: the counts change; worded from the subject, rule S1).
     all = Object.values(introMap()).some(e => (e || [])[3] === 'a');
   startShown(dir);
   const d = cardShow(
@@ -1648,7 +1648,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       );
     }
   }
-  // No mastery exam question in the custom quiz (rule 14e, Codex review #411): its choices come from the selection,
+  // No mastery exam question in the custom quiz (rule L9, Codex review #411): its choices come from the selection,
   // which may hold none of the genus's look-alikes, so passing there would not prove it; the exam comes in the photo quiz.
   const R = warm ? recallAt(t) : 1,
     ex = !sel && !warm && examReady(t) && examSet(t),
@@ -1658,7 +1658,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // A genus met on a card of its own now is not among this question's choices either: its card says it comes up a
     // little later (beginner review 2026-11-03: its name was a choice on the question behind the card). The custom
     // quiz: from its selection first, topped up under 4 from the other genera unlocked only (customChoices; one
-    // progression path, AGENTS.md rule 6d, Codex review #482: a locked genus, a ★ one included, as a choice).
+    // progression path, rule L4, Codex review #482: a locked genus, a ★ one included, as a choice).
     ch = shuffle([
       t,
       ...(sel
@@ -1862,7 +1862,7 @@ function quizCustom(h) {
 //   mixClusters); with no mix-up yet, the declared look-alike sets, the pairs players confuse most first (lookEdges), and
 //   a line says so;
 // - Progress: To review, Learning, Not seen yet, Learned (shownLevel, as My progress names them).
-// Never grouped by growth form (not genus-specific; AGENTS.md rule 4), no A-Z view (the search finds a name; until
+// Never grouped by growth form (not genus-specific; rule C4), no A-Z view (the search finds a name; until
 // 2026-11-03 A-Z was the default: a device that kept it opens on IMR groups once, the choice now under a new key).
 // All / None per group. Quick picks that need no knowledge replace the selection: My weakest (genera answered, lowest
 // progress first), Recently missed (a miss in their last 5 answers, latest first), Look-alikes of … (a genus and its

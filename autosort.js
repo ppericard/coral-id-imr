@@ -1,7 +1,7 @@
 // Auto-sort of the candidate photos (Pierre, 2026-11-03: "take the obvious off my hands, so I almost never validate
 // candidates by hand"). Pure functions, no DOM: loaded by admin.html only (players never download it), tested in Node
 // (tests/autosort.test.js). admin.js applies the plan to the curation draft (autoRun), which Pierre's Publish sends like
-// any of his clicks. Rules and thresholds: docs/ARCHITECTURE.md "Auto-sort", judging/AGENTS.md "What happens to a sure
+// any of his clicks. Rules and thresholds: docs/ARCHITECTURE.md "Auto-sort", judging/BRIEF.md "What happens to a sure
 // judgment".
 //
 // The log lives in curation.json "auto" {day: {photo: code}} (one map per day the admin decided, so the newest checks
@@ -33,7 +33,7 @@
     // view 0.85: 120 of 133 (90%) on the same photos; a wrong view is a one-click move, and a question of the wrong zoom.
     // quality 0.73: Pierre's own figure (2026-11-03): the blind test of the calibrated pass gave 73%, "good enough since
     //   Elo takes over" (the photo's difficulty comes from players' answers; quality only sets where it starts).
-    // form 0.80: growth form is an entry point that ranks, never filters (AGENTS.md rule 4), so an error costs less
+    // form 0.80: growth form is an entry point that ranks, never filters (rule C4), so an error costs less
     //   than a wrong view, more than a quality level; no measure yet.
     min: {keep: 0.9, view: 0.85, quality: 0.73, form: 0.8},
     n0: 10,
@@ -58,7 +58,7 @@
   // - `exclude` (unusable): excluded, as his ×;
   // - another genus or a comparison image: Pierre's (sending a photo to another genus or to the look-alike comparisons
   //   is his call; a sure comparison image stays set aside as before, admin.js aside);
-  // - a near-duplicate, several corals or Poor: rejected, as his ✕ Reject (the pre-sort's rules, judging/AGENTS.md);
+  // - a near-duplicate, several corals or Poor: rejected, as his ✕ Reject (the pre-sort's rules, judging/BRIEF.md);
   // - the best photo of its observation in its view, Fair or Good, with a view and a growth form: added to that view
   //   with that quality, form and suggested crop;
   // - another angle (alt): Pierre's (an extra angle of a colony already offered is an editorial choice).
@@ -162,7 +162,7 @@
   // decisions written as Pierre's clicks would write them, and the counts. A photo Pierre or the auto-sort decided
   // (added, rejected, excluded, Not this, logged) is never touched; a tag, ease, phase or crop he gave stays his. Adds
   // fill each species up to its target, one observation counting once (an alt joins its observation for free): Pierre's
-  // own first (AGENTS.md rule 7), then the easiest (the first questions need easy photos), then a fixed order; the rest
+  // own first (rule P1), then the easiest (the first questions need easy photos), then a fixed order; the rest
   // wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
@@ -232,7 +232,7 @@
   }
 
   // One fish auto decision taken back (Pierre's Undo on it in the Auto details; the coral autoUndo's counterpart; Codex
-  // review #479: AGENTS.md rule 8, every auto decision undoable one by one). sid: the species of the candidate (its
+  // review #479: rule A1, every auto decision undoable one by one). sid: the species of the candidate (its
   // fish-cand.json list). What the run wrote leaves the fish part, and only that: the add while it still names that
   // species, and the fields its code lists (a value Pierre gave before the run was never written, so never listed; a
   // value he sets since takes its field off the list, fishOwn). Nothing is compared with the pass's judgment, which a new
@@ -356,7 +356,7 @@
   //   the auto-sort did not apply it (its keep is off): shown on demand, as the coral pre-sort's set-aside ones;
   // - nph: it shows a phase none of its species' photos in play shows (5b: "missing phases first").
   // Order: the thinnest species first (in play / target, then the fewest in play), its photos together; within a species
-  // the missing phases first, then Pierre's own (AGENTS.md rule 7), then the pass's best photo of an observation, another
+  // the missing phases first, then Pierre's own (rule P1), then the pass's best photo of an observation, another
   // angle, not judged, a near-duplicate, then the easiest (the first questions need easy photos), then a fixed order.
   const FISHK = {best: 0, alt: 1, dup: 3};
   function fishQueue(cands, sug, species, F) {

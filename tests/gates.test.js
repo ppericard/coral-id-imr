@@ -1,4 +1,4 @@
-// AGENTS.md rule 7a: the app never gets ahead of the sheet script. Every gate on the script's version (a constant named
+// rule D4: the app never gets ahead of the sheet script. Every gate on the script's version (a constant named
 // *_SHEET in the app's own files) is listed here with the feature it turns on: off below its version N, on from N, off
 // when a reply carries no version. A new gate fails this test until it is added to the table (test-suite review,
 // 2026-11-04: PGD_SHEET had no test at all). The versions come from the source, so a recalibrated gate needs no edit here.

@@ -1,4 +1,4 @@
-// The presence rule (Pierre, 2026-11-04; AGENTS.md rule 6g: "the same scientific rigour for everyone, me included"),
+// The presence rule (Pierre, 2026-11-04; rule C8: "the same scientific rigour for everyone, me included"),
 // defined once in tools/presence.py, applied by tools/build_fish.py (fish.json present), tools/fetch_local.py and
 // tools/coral_presence.py (presence.json), read by the admin through presence.js (the "out of rule" photo flag).
 const test = require('node:test'),
@@ -177,7 +177,7 @@ test('admin To do: the out-of-rule queue follows the curated photos (removed out
     K.map(p => p.f),
     ['cand']
   );
-  // The admin builds it from those helpers, and the page keeps only heading, count and actions (rule 23: the
+  // The admin builds it from those helpers, and the page keeps only heading, count and actions (rule A2: the
   // explanation stays behind ?).
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
   assert.match(A, /outOfRuleList = \(\) => ruleQueue\(Object\.keys\(DATA\.gen\), photos, hidden, offSlot, PRES, ruleKept\)/);
@@ -185,7 +185,7 @@ test('admin To do: the out-of-rule queue follows the curated photos (removed out
   assert.ok(!/<p[ >]/.test(sec.split('${oor.map')[0]), 'an explanatory paragraph on the page');
 });
 
-test('admin: the "out of rule" tag keeps a bare-name tooltip (rule 23: explanations behind ?)', () => {
+test('admin: the "out of rule" tag keeps a bare-name tooltip (rule A2: explanations behind ?)', () => {
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
   const tag = A.slice(A.indexOf('const ruleTag'), A.indexOf(';\n', A.indexOf('const ruleTag')));
   assert.match(tag, /title="Out of the presence rule"/);

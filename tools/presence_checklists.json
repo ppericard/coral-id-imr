@@ -1,5 +1,5 @@
 {
- "_doc": "Independent checklists used by the presence rule (tools/presence.py, AGENTS.md rule 6g): a species with at least one Research Grade iNaturalist observation in the Philippines counts as confirmed there when its checklist lists it for the Philippines. A checklist alone never confirms a species nobody observed. Derived lists only (names), fetched 2026-11-04; refresh by hand from the sources named in each part.",
+ "_doc": "Independent checklists used by the presence rule (tools/presence.py, rule C8): a species with at least one Research Grade iNaturalist observation in the Philippines counts as confirmed there when its checklist lists it for the Philippines. A checklist alone never confirms a species nobody observed. Derived lists only (names), fetched 2026-11-04; refresh by hand from the sources named in each part.",
  "fishbase": {
   "src": "FishBase, country checklist of the Philippines (c_code 608, all habitats), Table 1: species currently present (endemic, native, introduced)",
   "url": "https://www.fishbase.se/Country/CountryChecklist.php?c_code=608&vhabitat=all2&csub_code=&cpresence=present",

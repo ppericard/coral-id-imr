@@ -17,7 +17,7 @@
 #   peak   the same on the sharpest part: 85th percentile, over a 8 x 8 grid, of each tile's Laplacian variance over
 #          its contrast (Pierre's method: look at the sharpest part of the coral at 100%; tools/photo_quality.py's measure)
 #   px     long side in px of the largest file measured (1600 for a live photo, at most 1024 for a candidate): a value
-#          under 1000 means the original is that small (judging/AGENTS.md: "under 1000 px ... Poor")
+#          under 1000 means the original is that small (judging/BRIEF.md: "under 1000 px ... Poor")
 #   cast   colour cast in %: (max - min) of the mean R, G, B over their mean (0 = neutral grey world; underwater
 #          photos lose red first)
 import json, os, sys, io, urllib.request

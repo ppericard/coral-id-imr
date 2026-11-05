@@ -17,7 +17,7 @@
     pick = L => L[Math.floor(rnd() * L.length)],
     // The script version the demo answers as: the current one (v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
-    // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
+    // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; rule D4).
     V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 48,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person

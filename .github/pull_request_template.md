@@ -22,7 +22,7 @@ None
 
 ## Sheet script
 
-<!-- Needs Code.gs version N (AGENTS.md How to make a change 7a), or "none". -->
+<!-- Needs Code.gs version N (rule D4), or "none". -->
 
 ## Docs
 

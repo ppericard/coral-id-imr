@@ -1,6 +1,6 @@
 {
 "v":1,
-"doc":"The admin's extract of tools/taxonomy.json, written by tools/taxonomy.py (never by hand): the admin flags a photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (AGENTS.md rule 1).",
+"doc":"The admin's extract of tools/taxonomy.json, written by tools/taxonomy.py (never by hand): the admin flags a photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (rule C1).",
 "coral":{
 "date":"2026-11-05",
 "sp":{

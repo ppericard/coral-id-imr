@@ -1,4 +1,4 @@
-# Keeps the GitHub Actions in .github/workflows/ on their latest major (rule 27b: AGENTS.md; Node 20 actions were
+# Keeps the GitHub Actions in .github/workflows/ on their latest major (rule W9, docs/rules/ship.md; Node 20 actions were
 # forced onto Node 24 before the bump of 2026-11-05) and the Python packages of tools/requirements.txt (Pillow) on their
 # latest stable. Prettier, Playwright, Node, Python, the runner image and the rest stay hand-bumped: their pins live in
 # tools/stack.json (python3 tools/stack_check.py --latest says what is behind; no package.json, Pierre's rule). One

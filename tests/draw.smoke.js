@@ -1,10 +1,10 @@
 // Question draw test (code re-review 2026-11-01, ROADMAP "Test the question draw"): runs the real photoSet() and
 // distractors() of app.js in Chromium, for every genus and several player levels, and checks Pierre's rules:
-// - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; AGENTS.md 14b);
-// - never a several-corals or Coral Finder book photo in a game (rule 10); genera off the IMR list (Millepora, bonus):
-//   Research Grade or Pierre's only (14a);
+// - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; rule P4);
+// - never a several-corals or Coral Finder book photo in a game (rule P3); genera off the IMR list (Millepora, bonus):
+//   Research Grade or Pierre's only (rule L6);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
-//   confused genera) when enough exist, none at the very start (14c);
+//   confused genera) when enough exist, none at the very start (rule L7);
 // - first meetings: genera met on cards before being asked, never right after their card (INTRO), none while the
 //   player falls behind (introHold), never on the question after a miss, even one planned before it (openRight); a
 //   starred genus never before the genera its card compares it to (core.js starRefs);
@@ -285,7 +285,7 @@ const server = http.createServer((req, res) => {
         pgO = P[other].pg;
       say(other);
       l = logged();
-      // Against both genera (rule 13): the genus shown in its ability and progress, the genus given in its progress and
+      // Against both genera (rule L2): the genus shown in its ability and progress, the genus given in its progress and
       // recent results only, no Elo step of its own (docs/LEARNING.md "The genus wrongly given in the Elo"): its own
       // estimate and the level it was stepped against unchanged; its ability moves only with the global level, as every
       // genus does ("Global level and genus"), so never by more than the level's own move.
@@ -1228,7 +1228,7 @@ const server = http.createServer((req, res) => {
         }
       // Codex review #411 (1): a selection of genera nobody confuses can't give the traps a strong player's level asks
       // for; the question is scored with the choices really shown (plausibleK), never as a 4-choice one with traps.
-      // (2): no mastery exam question in the custom quiz (rule 14e: its choices could hold no look-alike); the exam
+      // (2): no mastery exam question in the custom quiz (rule L9: its choices could hold no look-alike); the exam
       // comes in the photo quiz.
       {
         // Four genera no pair of which is confusable, sharing no IMR growth form if the data allows (then plausibleK < 4).
@@ -1286,8 +1286,8 @@ const server = http.createServer((req, res) => {
   // Learned under the former model (core.js memRecalc, model.js mxRecalc, progress.js mxLostNotice and achRecheck):
   // progress saved with a learned genus, then a reload (the drop happens at load, before achievements are set up).
   // Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned without (BKT): an announcement card
-  // at start-up, on the page opened, before any answer and even at the start of a new visit (never held: AGENTS.md rule
-  // 12), once; the mark and learn1 gone, learn1 not brought back by the sheet's older copy, nothing again on reload or
+  // at start-up, on the page opened, before any answer and even at the start of a new visit (never held: rule
+  // D6), once; the mark and learn1 gone, learn1 not brought back by the sheet's older copy, nothing again on reload or
   // answers. A drop at a pull: the card at once, or right after another card open then.
   {
     const t = await p.evaluate(() => slateGenera()[3]);

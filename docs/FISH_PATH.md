@@ -28,7 +28,7 @@ is the design's shorthand, and internal identifiers may keep it.
 
 - In EventMeasure, IMR Research Assistants tag fish with the **Latin species name** (the IMR reference PDF name), never the common name.
 - Latin is harder to learn, so it comes in progressively, tied to the common name first (Pierre, 2026-11-03).
-- Rule 6a still holds: the name shown and expected is the PDF name; the WoRMS name (`now`) and synonyms are accepted when typed.
+- Rule S2 still holds: the name shown and expected is the PDF name; the WoRMS name (`now`) and synonyms are accepted when typed.
 
 ## Levels
 
@@ -48,7 +48,7 @@ is the design's shorthand, and internal identifiers may keep it.
 - **Scientific genus names, the first step of branch B** (Pierre, 2026-11-04, decided in principle, to design; replaces "No Latin genus
   level" of 2026-11-03): an intermediate step before knowing every species's scientific name, e.g. a photo, then 4 genus names
   (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
-  invented: rule 2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
+  invented: rule C2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
 - **Built for review** (2026-11-04 night, its own PR, admin-only beta, waiting on Pierre): the genus step as an opt-in set of the fish,
   "Scientific names" (offer card once an entry is at Advanced, ⚙ row): a family's genera join the game when the family reaches
   Advanced and open one at a time; a photo, then 4 genus names (other identification groups first, then the sibling genera of the
@@ -76,7 +76,7 @@ is the design's shorthand, and internal identifiers may keep it.
 - **Selection** (a proposal, validated by Pierre in the admin): the names that recur across public sources (the iNaturalist default
   English name, the FishBase main English name, other public references), at most 3.
 - **The proposal** (2026-11-04 night, waiting on Pierre: `tools/fish_common.json`, written by `tools/fish_common.py`, every name
-  with its sources): the PDF name first (rule 1, kept as written, a likely slip flagged), then the FishBase main English name
+  with its sources): the PDF name first (rule C1, kept as written, a likely slip flagged), then the FishBase main English name
   and the iNaturalist default English name when each is found in both references, then a third only if both record it and
   FishBase 3 times or more (countries, references); at most 3. Spellings of one name count once (Pearl-scaled / Pearlscale
   angelfish; Neon damsel / damselfish), the others kept to accept when typed. A name two game species share is dropped from the
@@ -94,8 +94,8 @@ The first fish questions must be easy and readable. Two decisions, each built in
   easy, readable families. Pierre's ReefRecall design (which he reviewed) named four: butterflyfishes, angelfishes, damselfishes &
   anemonefishes, surgeonfishes & tangs. In IMR entries (`fish.json` `teach`): **Butterflyfish, Angelfish, Damselfish, Surgeonfish &
   Unicornfish**. Agreed as the starter order; after them the usual opening rules (common first, `cm`) take over, and once fish answers are
-  logged the measured difficulty can reorder them. The order belongs in the fish data, never in a list of names in the engine (AGENTS.md
-  13b, 14a).
+  logged the measured difficulty can reorder them. The order belongs in the fish data, never in a list of names in the engine (rules
+  S1, L6).
 - **The first photos are very easy**: clear light, colourful, the fish well visible in profile, an easy species. **No juveniles and no
   species with strong sexual dimorphism or colour phases (e.g. parrotfish) at the very start**: they come later (see "Juveniles and colour
   phases"). Until answers rate the photos, an annotation pass (an agent judging each fish photo on explicit criteria: light, colour, profile,
@@ -182,11 +182,11 @@ For a player learning both names (a player learning one kind sees only that one)
 ## Questions and choices at the species level
 
 - Photo, then 4 names, in the display above.
-- Wrong choices get harder gradually (rule 14c), by the species' Elo: first species of other entries the player has met, then species of
+- Wrong choices get harder gradually (rule L7), by the species' Elo: first species of other entries the player has met, then species of
   the same entry, then the same genus or IMR sub-entry; then the player's own mix-ups (confusion scores).
 - How species answers feed the entries:
   - a wrong pick **inside the same entry** never counts against the entry;
-  - a wrong pick in **another entry** counts against both entries and both species (rule 13);
+  - a wrong pick in **another entry** counts against both entries and both species (rule L2);
   - a right species answer is logged on the species; the entry keeps its own questions (no double count).
 - **A common name typed where Latin is asked counts as half a fault** (Pierre, 2026-11-04: the common name is easy to look up, but it is
   still not the Latin). Decided in principle, **to study before building** (open question 3). **It must not be gameable** (Pierre,
@@ -238,9 +238,9 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps on real photos, one plain sentence
 each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card.
 
-- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the identification groups), so rule 2
-  holds and the IMR wording is kept (rule 1).
-- **The groups are the regional identification key's** (Pierre, 2026-11-04; AGENTS.md rule 6c): for the Indo-Pacific, the index of
+- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the identification groups), so rule C2
+  holds and the IMR wording is kept (rule C1).
+- **The groups are the regional identification key's** (Pierre, 2026-11-04; rule S3): for the Indo-Pacific, the index of
   the 20 identification groups of *Reef Fish Identification – Tropical Pacific* (2nd edition), which the IMR course follows. The app
   shows the key's group numbers and titles (e.g. "7. Heavy Bodies/Large Lips"; no longer the 10 IMR shape groups), only the groups that
   hold entries in the game, in the book's order; where IMR's wording differs from the book's title, the book's title is shown. Credited
@@ -255,9 +255,9 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
   known rights (Pierre's, iNaturalist), diagrams and figures our own drawings.
 - **Inspiration, never citation**: a local fish ID course Pierre has may inspire the order and the explanations; it is never quoted,
   cited or named, in the app or in the repo.
-- **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule 1).
+- **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule C1).
 - Its words become the fish glossary (underlined in cues and feedback), as Coral basics' words are for corals. Same component and
-  format as Coral basics; Pierre's own photos first (rule 7).
+  format as Coral basics; Pierre's own photos first (rule P1).
 
 ## What `fish.json` supports, and the gaps
 
@@ -303,7 +303,7 @@ Decided from the admin pooling study:
 - **Crops**: the judging pass also proposes a crop for each photo.
 - **Look-alike pairs** from the data (same genus, same IMR sub-entry), from IMR, from the players' confusions, **and from reference
   sites**. The **ID cues** that tell two species apart are searched online (FishBase and other references), triaged, the most relevant
-  kept, and **always sourced** (rule 2).
+  kept, and **always sourced** (rule C2).
 - **How cues are taught** (Pierre, 2026-11-04): cues about a family itself, and cues taught **by comparison** with another family or
   species (learning by contrast). The cue content comes from public, sourced references.
 - **Fish answers logged to the sheet from the start**, as soon as curated photos enter the game.
@@ -437,13 +437,13 @@ on families only to an IMR RA with every species open:
 
 - **Subject switch: two places, one state.** A Corals | Fish switch on Home **and** a subject chip in the header next to the logo on
   every page; both read and set the same subject (`SUBJECT_KEY`). Shown **only to Pierre (the admin) until fish opens** to players.
-  This relaxes AGENTS.md rule 21 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
+  This relaxes rule U12 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
 - **Opening fish to players**: to a group Pierre picks in the admin (for now he will put everyone in it), not one site-wide switch. Built (2026-11-04 night, PR #540, open for Pierre's OK): docs/ARCHITECTURE.md "The beta group".
 - **Leaderboards separate per subject**, no merged ranking: corals as today (coral %, then Elo); fish by the global fish score ("My
   progress (fish)"), then the fish Elo. Needs fish answers logged in the sheet first.
-- **Achievements** (rule 14d: learning milestones, never time or days played; designed later, each one's timing checked with the real
+- **Achievements** (rule L8: learning milestones, never time or days played; designed later, each one's timing checked with the real
   game before it is added):
   - about **14 general fish achievements** to start (families met, levels, mastery, species named, scientific names, Fish basics: the
     study's proposal, to design);
@@ -484,7 +484,7 @@ on families only to an IMR RA with every species open:
 
 ## Checks before release
 
-- **learnsim fish profiles** (rule 14f-14g, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
+- **learnsim fish profiles** (rules L11, L12, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
   they also set the fish welcome answers' starting values and the answer from which each may get the open-all card.
   - IMR profile with everything open: right rate stays near the target (no lasting drop below the corals' range), Latin and typed Latin
     reached sooner than on the calm path.
@@ -493,6 +493,6 @@ on families only to an IMR RA with every species open:
 - **Held-out photos**: a fixed set per species and per entry never shown in practice, for a transfer check (recognition of unseen photos at
   the start and later) and to keep the exam honest. Pierre, 2026-11-04: fish first (many photos), corals later (few photos per genus);
   ROADMAP "A held-out photo set".
-- **Real-log replay** once fish answers reach the sheet (rule 14g); until then, say what was measured instead.
+- **Real-log replay** once fish answers reach the sheet (rule L12); until then, say what was measured instead.
 - Tests: `tests/draw.smoke.js` for the species draw (choices, display, the welcome answers and the open-all card), `tests/fish.test.js` for the data (no duplicate name
   among the choices of one question).

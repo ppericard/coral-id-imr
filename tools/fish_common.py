@@ -5,8 +5,8 @@ full reference list"; mastery of a species' common names needs all its listed na
 harder). Editorial: nothing in the game reads the proposal until Pierre has confirmed it.
 
 Sources (every name keeps the sources it was found in):
-- pdf: the IMR reference PDF's common name (fish.json `common`, "as in the PDF, never corrected": AGENTS.md rules 1 and
-  6a); slides, dauin, wink instead for a species not in the PDF (fish.json species `src`: the IMR presentation, the
+- pdf: the IMR reference PDF's common name (fish.json `common`, "as in the PDF, never corrected": rules C1 and
+  S2); slides, dauin, wink instead for a species not in the PDF (fish.json species `src`: the IMR presentation, the
   Dauin sources of circle 3, a wink).
 - fb: FishBase (Froese & Pauly, eds., www.fishbase.org; the rfishbase snapshot v25.04 of its tables `species` (FBname,
   the FishBase main English name) and `comnames` (every English common name with the country or reference it was
@@ -16,7 +16,7 @@ Sources (every name keeps the sources it was found in):
   English name (preferred_common_name, locale en).
 
 Selection, in order, at most 3 names (names compared without case, spaces, hyphens or apostrophe style):
-1. fish.json `common` (the PDF name: IMR's wording first, rule 1; or its slides, Dauin or wink source);
+1. fish.json `common` (the PDF name: IMR's wording first, rule C1; or its slides, Dauin or wink source);
 2. the FishBase main English name and the iNaturalist default English name, when not already listed (each is the main
    name of a major public reference), but only when it recurs: found in both FishBase (its main name counts, with or
    without a comnames record) and iNaturalist;
