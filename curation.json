@@ -2832,6 +2832,32 @@
     "tubastraea-cand-580500321": "excluded",
     "tubipora-cand-303711251": "auto"
   },
+  "flag": {
+    "astrea-medium-550371649": {
+      "genus": "Astrea",
+      "view": "medium",
+      "where": "quiz · level auto · lightbox",
+      "at": "2026-11-05T11:56:18.516Z"
+    },
+    "goniastrea-cand-260210180": {
+      "genus": "Goniastrea",
+      "view": "wide",
+      "where": "quiz · level auto",
+      "at": "2026-11-05T12:04:12.981Z"
+    },
+    "hydnophora-cand-245794783": {
+      "genus": "Hydnophora",
+      "view": "medium",
+      "where": "quiz · level auto · lightbox",
+      "at": "2026-11-05T12:01:06.081Z"
+    },
+    "lithophyllon-cand-358993100": {
+      "genus": "Lithophyllon",
+      "view": "wide",
+      "where": "quiz · level auto",
+      "at": "2026-11-05T12:05:24.666Z"
+    }
+  },
   "seen": {
     "cand:acropora-cand-129392908": 1,
     "cand:acropora-cand-261936738": 1,
