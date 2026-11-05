@@ -250,27 +250,6 @@
       NOW - 12 * 60e3,
       0
     );
-    // A photo everyone misses in the session Carla is playing now (Activity's session summary labels it "hard for
-    // everyone", Health lists it): the photo of her first miss there, also missed by 6 earlier answers of a device not
-    // signed in (taken from its own answers, so the answer count and the sessions stay the same).
-    {
-      const miss = rows
-          .filter(r => r[0] === 'Carla Demo')
-          .sort((a, b) => a[1] - b[1])
-          .slice(-24)
-          .find(r => !r[4]),
-        f = miss && miss[6].split(' ')[0];
-      if (f)
-        rows
-          .filter(r => r[0] === '~anon demo2')
-          .slice(0, 6)
-          .forEach(r => {
-            r[2] = miss[2];
-            r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
-            r[4] = 0;
-            r[6] = f;
-          });
-    }
     // Reports: [id, time, reporter, verified, why, expected, answered, suggested, note, mode, photos, where], newest first.
     const rp = (i, who, why, g, a, fix, note, m, f, w) => [
       'demorep' + i,
@@ -399,6 +378,41 @@
     ANA_META = {ph: ANALYSIS.photoMeta(D, cur, qual, met)};
     const more = ANALYSIS.demoLog(D, NOW - 3 * DAY, {cur, qual, met});
     more.forEach((r, i) => rows.push([...r.slice(0, 7), 'demoz' + i, ...r.slice(7, 11), r[12], r[13]]));
+    // Photos everyone misses in the session Carla is playing now (Activity's session summary labels them "hard for
+    // everyone", Health lists them; admin.js healthBad: 5 answers or more, under 40% right): each question she missed
+    // there is also missed by as many earlier answers of devices not signed in as its photos need to pass that rule,
+    // counted on every answer now in the log (taken from those devices' own answers, so the answer count and the
+    // sessions stay the same; every photo of the question, so whichever the summary shows carries the label).
+    {
+      const donors = rows.filter(r => r[0] === '~anon demo1' || r[0] === '~anon demo2'),
+        on = f => rows.filter(r => r[6].split(' ').includes(f));
+      rows
+        .filter(r => r[0] === 'Carla Demo')
+        .sort((a, b) => a[1] - b[1])
+        .slice(-24)
+        .filter(r => !r[4])
+        .forEach(miss => {
+          const need = Math.max(
+            0,
+            ...miss[6]
+              .split(' ')
+              .filter(Boolean)
+              .map(f => {
+                const L = on(f),
+                  k = L.filter(r => r[4]).length,
+                  w = L.length - k;
+                return Math.max(5 - L.length, Math.floor(1.5 * k - w) + 1);
+              })
+          );
+          if (need <= donors.length)
+            donors.splice(0, need).forEach(r => {
+              r[2] = miss[2];
+              r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
+              r[4] = 0;
+              r[6] = miss[6];
+            });
+        });
+    }
     ANALYSIS.DEMO_PLAYERS.forEach(([name]) => {
       const mine = more.filter(r => r[0] === name);
       users[name.toLowerCase()] = {
