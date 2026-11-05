@@ -212,12 +212,13 @@ def questions():
     try:
         text = open(os.path.join(ROOT, 'docs/STATUS.md'), encoding='utf8').read()
     except OSError:
-        return None, None
+        return None, None, None
     sec = re.search(r'^## Questions for Pierre\n(.*?)(?=^## |\Z)', text, re.M | re.S)
     body = sec.group(1) if sec else ''
     n = len(re.findall(r'^- \*\*Q\d+', body, re.M))
     last = re.search(r'Last question number: Q(\d+)', text)
-    return n, (int(last.group(1)) if last else None)
+    checked = re.search(r'^Last checked: reports and events: (.+)$', text, re.M)
+    return n, (int(last.group(1)) if last else None), (checked.group(1).strip() if checked else None)
 
 
 # --- Output --------------------------------------------------------------------------------------------------------------
@@ -243,7 +244,7 @@ def brief(short, at):
     f_prs = pool.submit(prs, pool) if have_gh else None
     f_live = pool.submit(live_version, url) if url else None
     v_main, v_where = main_version()
-    q_open, q_last = questions()
+    q_open, q_last, checked = questions()
 
     # GitHub: PRs, then the branches (the open PRs' heads are skipped)
     pr_list, gh_err = (None, 'gh not found') if not have_gh else result(f_prs)
@@ -291,12 +292,14 @@ def brief(short, at):
     lines.append('Sheet script: %s · %s%s' % (vm, vl, warn))
 
     # Questions
+    # The players' reports and the app's events live in the sheet, which only the agent's connector reads (AGENTS.md
+    # "Working mode", reports and events): remind of the check, with when it was last done.
+    remind = 'reports and events last checked %s: read them (sheet tabs Reports, Events; Sheets connector)' % (checked or 'never')
     if q_open is None:
-        lines.append('Questions for Pierre: docs/STATUS.md not found.')
+        lines.append('Questions for Pierre: docs/STATUS.md not found · ' + remind)
     else:
-        lines.append(
-            'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
-        )
+        q = 'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
+        lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
     pool.shutdown(wait=False, cancel_futures=True)
     return lines[:5] if short else lines
 

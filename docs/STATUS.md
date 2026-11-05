@@ -7,6 +7,8 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 
 Written 2026-11-05, about 11:00 Manila, by the integrator.
 
+Last checked: reports and events: 2026-11-05 ~11:30 Manila
+
 ## Now
 
 Tracks in flight: track · PR or branch · state · next step.

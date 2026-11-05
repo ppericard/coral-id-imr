@@ -41,6 +41,7 @@ const STATUS = read('docs/STATUS.md');
 test('docs/STATUS.md exists, has its sections and stays within its budget', () => {
   const lines = STATUS.split('\n').length;
   assert.ok(lines <= 100, 'docs/STATUS.md has ' + lines + ' lines: at most about 100 (overwrite it, never append)');
+  assert.match(STATUS, /^Last checked: reports and events: .+$/m, 'docs/STATUS.md: the "Last checked: reports and events" line');
   for (const h of ['Now', 'Next', 'Questions for Pierre', "Pierre's hands", 'Parked after hours', 'Last stop'])
     assert.ok(new RegExp('^## ' + h + '$', 'm').test(STATUS), 'docs/STATUS.md: section "## ' + h + '" missing');
 });
@@ -142,4 +143,7 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   const out = execFileSync('python3', ['-I', '-', '--short'], {input: read('tools/brief.py'), env, cwd: '/', timeout: 10000}).toString();
   assert.match(out, /^Manila /);
   assert.match(out, /Questions for Pierre: \d+ open, last number Q\d+/);
+  // brief.py cannot read the sheet (the connector is the agent's): it reminds of the reports and events check.
+  assert.match(out, /reports and events last checked .+: read them/);
+  assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
 });
