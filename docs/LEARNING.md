@@ -2250,6 +2250,79 @@ learned 9.8 genera in 1000 questions instead of 16.5); 0.8 is the success the ga
 prove something. To recalibrate with real answers: the per-genus success on look-alike questions of
 RAs who then pass the exam.
 
+### Proven against the field (rules version 6, sheet v56, 2026-11-06; waiting for Pierre's validation)
+
+**Why** (Pierre, 2026-11-05, as a scientist: "progress is too generous"; the study
+[`docs/reviews/2026-11-05-progress-setsize-study.md`](reviews/2026-11-05-progress-setsize-study.md) and his answers
+Q101-Q110 of that evening): 100% must mean that the player tells the genus from *every* genus of the slate, whatever
+they have unlocked. Before this rule a player who unlocked 8 genera and drilled them in the Custom quiz reached 95%, and
+then passed exams whose traps came only from the genera met. Identification gets harder as the set of candidates grows
+(Miller, Heise & Lichten 1951; Hick 1952; Luce 1959; Stanton & Nosofsky 2013; the study's section 1).
+
+**The rule** (`core.js` `COVER`, `pairLevel`, `coverageOf`, `scoreOf`, `typedK`, `typedOffers`, `examEntryOf`; one rule
+for every subject that opts in with `SUBJECTS` `cover`: the corals now, fish after its own study, Q110):
+
+- **Field**: the units the progress counts (the slate, 40 genera). Bonus genera are out: neither competitors nor in the
+  denominator (Q101). A unit never met counts as untested, so the denominator is fixed and no bar drops because a genus
+  opens (Q108; no decay).
+- **Discrimination level of a pair** (t, x), `pairLevel`, continuous in 0..1 (Q102 with Pierre's refinement: no
+  threshold of right answers). From the player's own pair record that already exists (`pairConf`: n the offers of the
+  two together, m the mix-ups, both directions; `P[g].off`, `P[g].conf`) and the offers a typed answer makes (`P[t].offT`,
+  below), shrunk toward the pooled score q (`confScore` with the declared/family prior, as `confOf` and `confGap` do)
+  with `COVER.W` offers of prior weight: D = max(0, (n − m / q) / (n + W)). 0 until the pair has met; a mix-up is
+  judged against how confusable the pair is: 10 offers and 1 mix-up leave 0.56 on a look-alike (q 0.3), 0 on an
+  unrelated pair (q 0.03). The same D as the fish confusion study (section 4.3; corals are its one-rank case), so fish
+  plugs in without rework. No new counter for picks (the offers exist); one sparse map for typed answers.
+- **Coverage** of t, `coverageOf`: the mean of its pair levels over the field, each competitor weighed by its pooled
+  score q (Q102). Equivalently 1 − Σ own / Σ pooled: the share of the Luce error mass the player has removed. Look-alikes
+  weigh most; the many unrelated genera together weigh about half (Pierre's "sheer number").
+- **The bar** (`scoreOf(s, cov)`): `0.95 × min(1, pg / M) × (B + (1 − B) × min(1, cov / C)^G)`, B 0.4, G 0.5 (the
+  study's h), C 0.9. Pierre's formula, with one addition: the coverage counts in full from C, so that the bar can reach
+  the exam's entry (with a continuous level the coverage never reaches 1 exactly). The exam steps (1% each) show only
+  from there. `pg`, the moving average, is unchanged: it is the within-field part and still drives the game (the draw,
+  the typed share, the opening, the first photos of a unit: `model.js` `pgScore`). The global % is the mean of the
+  bars, as before; first genera cap around 55-63% while 4-8 genera are met (Q103: expected).
+- **A typed answer's vocabulary** (Q106, with Pierre's refinement of 2026-11-05): not the raw count of genera unlocked
+  but a similarity-weighted effective set size, `typedK` = max(2, 1 + Σ over the unlocked competitors x of sim(t, x)),
+  sim = min(1, the player's own score of the pair shrunk toward the pooled one / `COVER.S`), S = 0.3 (a declared
+  look-alike's prior): a look-alike counts about 1, an unrelated genus about 0.1. 8 dissimilar genera unlocked give the
+  floor 2; 8 look-alikes about 8; the whole slate on today's pooled data about 5.7 for *Pocillopora*. The vocabulary is
+  the genera unlocked, the selection in the Custom quiz. It is the answer's guess rate (1 / typedK: the expected
+  success, the ability step, the progress weight, the photo Elo: the answer is logged `|ktN`, which the sheet rates
+  1 / N, `Code.gs` `guess_`) and the evidence it gives each pair (a right typed answer adds sim(t, x) to `P[t].offT[x]`;
+  weights under 0.01 are not stored). The look-alike factor of the progress weight (`pgRightW`) runs over the
+  vocabulary, as over a pick's choices. Older typed rows (no `|kt`) are replayed with the vocabulary the log knows: the
+  genera answered or given before that answer (the app's own vocabulary, the cards met or the custom selection, is not
+  logged); the sheet rates their photos with no guess rate, as before.
+  - *Why similarity-weighted.* People do not hold every known name when they name something: a few similar candidates
+    come to mind, then each is checked (the generate-recognise account of recall, Anderson & Bower 1972, *Psych Rev*
+    79:97, doi 10.1037/h0033773; consideration sets, Hauser & Wernerfelt 1990, *J Consumer Res* 16:393, doi
+    10.1086/209225: the set actually weighed is small, about a tenth of the options). In the similarity-choice and
+    exemplar models (Luce 1959; Shepard 1957; Nosofsky 1986, *JEP:G* 115:39) every candidate competes in proportion to
+    its similarity to the stimulus, so dissimilar ones barely count: Σ similarity is the effective number of
+    competitors. Retrieval models sample candidates in proportion to their strength (Raaijmakers & Shiffrin 1981, SAM)
+    [memory]. Checked 2026-11-06: the three citations with a doi (bibliographic records and abstracts).
+- **The exam's entry** (`examEntryOf`, the Q105 hook): today's rule (pg at `PROG.M`) plus the coverage that lets the bar
+  reach the entry (C). Pierre redefines the exam on 2026-11-06 with global and personal look-alikes; a proposal is built
+  behind `EXAMP.on` (off): the union of the field's top look-alikes and the player's own top confusions, entry once every
+  pair of it is at a level of ½ or more, traps from the union (`examUnion`, `examClear`, `examTraps`).
+- **Learned marks** (Q109): the replay keeps a mark passed before the rule only where today's replayed state meets the
+  exam's entry (`replayedOf` with the field), and marks it `mf` so no later replay judges it again; a mark passed under
+  the rule carries `mf` from its exam. `mxRecalc` tells the players concerned and takes back the `ACH_LEARN`
+  achievements only.
+- **Recalculation**: rules version 6 replays every player (`RVS`), with an apology card instead of the standard one
+  (`RV_SORRY`, Q109) for every player whose % moved; its PS names a player from the sheet's Notes tab (key
+  `card.rv6.ps`, `Code.gs` `notes_`), never from the repo.
+- **Two-tone ring** (Q104): on the mini rings of My progress and the genus sheet, solid = the bar that counts in the %,
+  light behind it up to the within-field score = "among the genera you've met" (`model.js` `COVER_UI.two`, on).
+- **Gate** (AGENTS.md 7a): everything above turns on once the sheet replies v ≥ `COVER_SHEET` (56); the typed offers are
+  recorded either way, as the replay rebuilds them.
+
+The constants (`COVER` B, G, W, C, S) are provisional, for the tier-2 sweep.
+
+**Checks.** Unit tests `tests/cover.test.js`. Tier 3 on the real log (2026-11-05, 1,933 answers, 10 players, read-only
+copy; per-player table in the PR, players anonymous): SIM_AND_REAL_PLACEHOLDER
+
 ### Typed questions (2026-11-03): why these settings
 
 Recall (typing the genus from memory) instead of recognition (picking 1 of 4): what an RA does in front of a colony,

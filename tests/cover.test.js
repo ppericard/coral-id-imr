@@ -115,3 +115,18 @@ test('field rule: a learned mark passed before it stays only where the replayed 
   // A mark passed under the rule (mf) is never judged again.
   assert.ok(C.replayedOf(rep, {...saved, L1: {...saved.L1, mf: 1}}, C.RV, F).L1.mx);
 });
+
+test('personalised exam (EXAMP, off): the union of global and own look-alikes, its entry and its traps', () => {
+  assert.strictEqual(C.EXAMP.on, false, 'off until Pierre decides (Q105)');
+  // Global: the 3 highest pooled scores (look-alikes L1-L7 tie at the prior, so 3 of them, then every one at TRAP or more).
+  const U0 = C.examUnion({}, 'T', F);
+  assert.deepStrictEqual(U0.slice().sort(), LOOK.slice().sort(), 'every declared look-alike is at CONF.TRAP or more');
+  // An unrelated genus the player mixes up joins the union.
+  const P = {T: {off: {U1: 6}, conf: {U1: 5}}};
+  assert.ok(C.examUnion(P, 'T', F).includes('U1'));
+  assert.ok(!C.examClear(P, 'T', F));
+  const all = Object.fromEntries([...LOOK, 'U1'].map(n => [n, 40]));
+  assert.ok(C.examClear({T: {off: all}}, 'T', F), 'every pair of the union at 1/2 or more');
+  assert.strictEqual(C.examTraps(P, 'T', F, () => 0.5)[0], 'U1', "the player's own strong mix-up first");
+  assert.strictEqual(C.examTraps(P, 'T', F).length, C.EXAMP.N);
+});

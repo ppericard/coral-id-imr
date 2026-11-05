@@ -1168,7 +1168,8 @@ const examTyped = n => {
 const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
 // The exam's entry (core.js examEntryOf, the Q105 hook): pg at PROG.M and, under the field rule, the coverage that lets
 // the bar reach the entry.
-const examOn = n => examEntryOf(P, n, fieldNow());
+// EXAMP.on (core.js, off: Pierre decides the exam on 2026-11-06, Q105): the personalised exam's entry too.
+const examOn = n => examEntryOf(P, n, fieldNow()) && (!EXAMP.on || !fieldNow() || examClear(P, n, fieldNow()));
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss (from PROG.M or above, a miss leaves s.pg at PROG.M × (1 − PROG.A) at
 // least) and is lost on a second one before right answers bring it back up: with the moving average a single miss

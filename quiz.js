@@ -1682,7 +1682,9 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       t,
       ...(sel
         ? customChoices(t, sel, unlocked(play), traps, known)
-        : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, known))
+        : ex && EXAMP.on && fieldNow()
+          ? examTraps(P, t, fieldNow()) // the personalised exam (core.js EXAMP, off until Pierre's Q105 answer)
+          : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, known))
     ]),
     // Typed (model.js TYPED): with the genus's typed share, from its progress (never on a genus under TYPED.from: no
     // draw is spent there, so a beginner's questions are unchanged); an exam question as examTyped says. Never a

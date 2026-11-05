@@ -1778,6 +1778,28 @@
     return !!s && pgOf(s) >= PROG.M && (!F || !F.set.has(t) || coverIn(coverageOf(P, t, F)));
   };
   const examEntryOf = (P, t, F) => !((P || {})[t] || {}).mx && entryMet(P, t, F);
+  // A personalised exam (proposal for Pierre's Q105 decision of 2026-11-06, behind EXAMP.on, off): the exam's look-alikes
+  // are the union of the field's global top look-alikes (the EXAMP.N highest pooled scores, and any pair at CONF.TRAP or
+  // more) and the player's own top confusions (their score of the pair, shrunk toward the pooled one, at CONF.TRAP or
+  // more: examUnion). Entry: today's (examEntryOf) and every pair of the union told apart (pairLevel EXAMP.L or more,
+  // the fish study's "cleared"); its traps: EXAMP.N of the union, weighed by the larger of the two scores with a little
+  // shuffle (examTraps). Nothing reads it while EXAMP.on is false.
+  const EXAMP = {on: false, L: 0.5, N: 3};
+  function examUnion(P, t, F) {
+    const L = F.list.filter(x => x !== t),
+      byQ = L.slice().sort((a, b) => F.q(t, b) - F.q(t, a)),
+      own = x => confScore(pairConf(P || {}, t, x), F.q(t, x));
+    return [...new Set([...byQ.slice(0, EXAMP.N), ...L.filter(x => F.q(t, x) >= CONF.TRAP), ...L.filter(x => own(x) >= CONF.TRAP)])];
+  }
+  const examClear = (P, t, F) => examUnion(P, t, F).every(x => pairLevel(P, t, x, F.q(t, x)) >= EXAMP.L);
+  function examTraps(P, t, F, rnd = Math.random) {
+    const w = x => Math.max(F.q(t, x), confScore(pairConf(P || {}, t, x), F.q(t, x))) * (0.8 + 0.4 * rnd());
+    return examUnion(P, t, F)
+      .map(x => [x, w(x)])
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, EXAMP.N)
+      .map(x => x[0]);
+  }
   // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct), under the field F
   // when given. The sync sheet computes the leaderboard % with it (Code.gs pctOf_ calls it with the sheet's field from
   // v56; tests/sync.test.js; tests/draw.smoke.js compares this with the app's progPct).
@@ -3120,6 +3142,10 @@
     typedK,
     typedOffers,
     examEntryOf,
+    EXAMP,
+    examUnion,
+    examClear,
+    examTraps,
     TARGET_P,
     AIM,
     aimOf,
