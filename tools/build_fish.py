@@ -20,7 +20,7 @@ cheatsheet first, and the species the slides name); 2 = seen sometimes on SVS vi
 (sources in the source file's `sources`, reason in each node's `why`), with their species confirmed near Dauin (near_dauin), plus winks
 (`wink`: unmistakable species, fun to meet, a light bonus rather than ID training). Silvery/pelagic groups are not circle 1.
 
-Identification groups (Pierre, 2026-11-04; AGENTS.md rule 6c): the regional identification key in force (the source's
+Identification groups (Pierre, 2026-11-04; rule S3): the regional identification key in force (the source's
 `deploy.key`, one of its `keys`; for the Indo-Pacific, the index of a reef fish ID book) is the reference for fish groups.
 Every teaching node gets the group of its key (`group`, the key's group number): the first key label met walking up WoRMS
 from each of its references (a subfamily label wins over its family's), the same for all of them. The build fails, naming
@@ -36,13 +36,13 @@ flagged in `check` for Pierre to check against EventMeasure (common-name slips t
 species that WoRMS treats as one stay two entries. The build prints all of these, the WoRMS / iNaturalist mismatches
 and a cross-check of the PDF sections against the teaching nodes.
 
-Presence (AGENTS.md rule 6g, Pierre 2026-11-04: "the same scientific rigour for everyone, me included"; the rule is
+Presence (rule C8, Pierre 2026-11-04: "the same scientific rigour for everyone, me included"; the rule is
 defined once in tools/presence.py): confirmed near Dauin (present.near, reasons in nearBy) = Research Grade observations
 within 40 km of Dauin (9.19, 123.26) by at least 2 distinct observers, or the IMR reference PDF list; confirmed in the
 Philippines (present.ph, reasons in phBy) = Research Grade observations there (place 6873) by at least 3 distinct
 observers, or at least 1 there and FishBase's Philippine checklist (Table 1) lists it, or confirmed near Dauin. Pierre's
 own observations (user ppericard), two halves: photos identified to the species stay usable as that species even when
-Needs ID (rule 6a: he names a species only when nearly sure); presence: he is one observer like anyone, Research Grade
+Needs ID (rule S2: he names a species only when nearly sure); presence: he is one observer like anyone, Research Grade
 only, and his observations no longer confirm anything on their own (until 2026-11-04 they did). present = {dauin, dauinNI,
 dauinU, near, nearBy, rg, phU, chk, ph, phBy, own} (presence()); circle 3 also needs near. --near recomputes dauinU and
 near on the existing fish.json, then ph and phBy (they depend on near), taking out of the game a species no
@@ -93,7 +93,7 @@ INAT = "https://api.inaturalist.org/v1/"
 PAUSE = {WORMS: 0.3, INAT: 1.0}
 DAUIN = "lat=9.19&lng=123.26&radius=40"
 PH = "place_id=6873"
-PIERRE = "ppericard"  # his observations: usable photos (rule 6a); one observer like anyone for presence (2026-11-04)
+PIERRE = "ppericard"  # his observations: usable photos (rule S2); one observer like anyone for presence (2026-11-04)
 CHORDATA = 2  # iNaturalist
 INAT_RANKS = {"class", "subclass", "infraclass", "superorder", "order", "suborder", "infraorder", "superfamily", "family",
               "subfamily", "supertribe", "tribe", "subtribe", "genus", "subgenus", "species"}
@@ -230,7 +230,7 @@ def inat_count(tid, where, grade="research"):
 
 
 def presence(tid, imr=False, names=()):
-    """present for an iNaturalist species taxon, by the presence rule (tools/presence.py, AGENTS.md rule 6g; Pierre,
+    """present for an iNaturalist species taxon, by the presence rule (tools/presence.py, rule C8; Pierre,
     2026-11-04: "the same scientific rigour for everyone, me included"). Querying by the species taxon returns
     observations identified to it or below, so a genus-level observation never counts. dauin = Research Grade observations
     within 40 km of Dauin; dauinNI = the Needs ID observations there ("not confirmed near Dauin", never "never seen");
@@ -238,7 +238,7 @@ def presence(tid, imr=False, names=()):
     Research Grade observations in the Philippines; phU = their distinct observers (asked only when rg >= PH_OBSERVERS
     and nothing else confirms it); chk = the checklist (FishBase Table 1) lists it for the Philippines (`names`: the PDF
     name, the WoRMS name, iNaturalist's, the synonyms); ph / phBy = confirmed in the Philippines and why (ph_confirmed);
-    own = all of Pierre's observations of it, anywhere: usable photos (rule 6a), no longer a confirmation by itself."""
+    own = all of Pierre's observations of it, anywhere: usable photos (rule S2), no longer a confirmation by itself."""
     own = inat_count(tid, f"user_login={PIERRE}", "")
     rg_p = inat_count(tid, PH)
     rg_d = inat_count(tid, DAUIN) if rg_p else 0
@@ -275,7 +275,7 @@ def near_fields(tid, p, imr=False):
 
 def update_near(path=OUT):
     """--near: (re)compute present.dauinU, near and nearBy on the species of an existing fish.json, then ph and phBy
-    (rule 6g: they depend on near), take out of the game a species no longer confirmed in the Philippines and a circle-3
+    (rule C8: they depend on near), take out of the game a species no longer confirmed in the Philippines and a circle-3
     species not confirmed near Dauin (out: C3_OUT, also out of its teaching node's lists), nothing else
     (the rest of the build unchanged, so its WoRMS and iNaturalist counts do not move). A species taken out comes back
     with a full build once confirmed. Returns (fish.json, changes of near, circle-3 species and nodes taken out)."""
@@ -289,7 +289,7 @@ def update_near(path=OUT):
         p.pop("near", None)
         p.pop("nearBy", None)
         p.update(near_fields(s["inat"], p, "pdf" in s))
-        # National presence depends on near (rule 6g): recompute it from the stored rg and chk, asking the national
+        # National presence depends on near (rule C8): recompute it from the stored rg and chk, asking the national
         # observers when the rule needs them; a species no longer confirmed leaves the game (Codex review #496). A species
         # newly confirmed comes in with a full build (its circle comes from the source).
         if "rg" in p:
@@ -414,7 +414,7 @@ def key_groups(key, units, tree):
             if out[u["id"]] is not None and sg != {out[u["id"]]}:
                 bad.append(f"{sub['id']} {sub['name']}: group {sorted(sg, key=str)}, its entry {u['id']} {out[u['id']]}")
     if bad:
-        sys.exit("identification groups (AGENTS.md rule 6c):\n  " + "\n  ".join(bad))
+        sys.exit("identification groups (rule S3):\n  " + "\n  ".join(bad))
     return out, waiting
 
 
@@ -769,7 +769,7 @@ def build(src, report):
         if n.get("iname"):
             o["iname"] = n["iname"]
         ref[aid] = o
-    # Identification groups under the key in force (AGENTS.md rule 6c): every node in the game has one, or the build stops.
+    # Identification groups under the key in force (rule S3): every node in the game has one, or the build stops.
     kept_ids = {o["id"] for o in out_t}
     units = [unit(t["_ref"], [(u["id"], u["name"], u["_ref"]) for u in t.get("sub", [])], t, not t.get("wink"), key["id"] if key else None)
              for t in nodes if t["id"] in kept_ids]

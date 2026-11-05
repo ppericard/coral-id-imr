@@ -412,7 +412,7 @@ function paintBoard(B) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
   const me = boardMe(B.rows);
-  // Signed out: "Sign in" opens the sign-in card, as the header's button does (AGENTS.md rule 20d: sign-in is no longer in ⚙).
+  // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
     ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
     : !boardOn()
@@ -824,7 +824,7 @@ function recalcNotice() {
   });
 }
 // A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
-// early beta): told once on this device by an announcement card, like recalcNotice (AGENTS.md rule 12: never held, no
+// early beta): told once on this device by an announcement card, like recalcNotice (rule D6: never held, no
 // visit floor or prompt spacing): at start-up once the progress is in (app.js SETUP 2) and right after a pull or an
 // answer that drops a mark (mxLost), on whatever page is open. Another card or the tour on screen: it waits for it
 // (tried again every 2 s). Names the genera, and the achievements taken back with them (achRecheck). Seen only by OK (or
@@ -890,7 +890,7 @@ function mxLostNotice() {
 }
 // The announcement card of a rules version (core.js RVS msg; Pierre, 2026-11-03: announcement cards show as soon as the
 // player opens or reconnects to the app, on whatever page they land on, one after another if several, never held by
-// the visit floor or the prompt spacing; AGENTS.md "How to make a change" 12). When this device adopts the sheet's full
+// the visit floor or the prompt spacing; rule D6). When this device adopts the sheet's full
 // replay of a newer version (sync.js replayAdopt), every version it skipped that has a msg is due, once per version
 // on this device (RVN.KEY, device only: due, the versions still to show; told, those shown; pct, the progress % before
 // and after the adoption, per version, for a msg with only: 'changed', due only when the two differ by msg.min points or

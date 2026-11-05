@@ -1,5 +1,5 @@
 {
-  "about": "Points to handle, shown in the admin (Inbox › To do › Points, admin.js renderPoints; docs/ARCHITECTURE.md \"Points to handle\"). Written by agents: questions for an IMR trainer, nomenclature points, discrepancies between sources, content questions for Pierre. Pierre's state per point (status, notes, the trainer's answers) is his curation, in curation.json points, never here. The list's order is the priority: the most important first. Wording: neutral questions, never that IMR is wrong (AGENTS.md rule 1). Fields: id (stable, never reused), kind (a key of kinds), subj (coral or fish), at (date added, Manila), title (the list's line), q (the question in plain words, shown big), ctx (context lines, folded), ask (the answer field under each photo), photos ([{f: a photo id of data.json or cand.json, with src, a, o, t as fallback when it leaves the app} or {none: why a slot is empty}]), src (sources: [{t, u?}]).",
+  "about": "Points to handle, shown in the admin (Inbox › To do › Points, admin.js renderPoints; docs/ARCHITECTURE.md \"Points to handle\"). Written by agents: questions for an IMR trainer, nomenclature points, discrepancies between sources, content questions for Pierre. Pierre's state per point (status, notes, the trainer's answers) is his curation, in curation.json points, never here. The list's order is the priority: the most important first. Wording: neutral questions, never that IMR is wrong (rule C1). Fields: id (stable, never reused), kind (a key of kinds), subj (coral or fish), at (date added, Manila), title (the list's line), q (the question in plain words, shown big), ctx (context lines, folded), ask (the answer field under each photo), photos ([{f: a photo id of data.json or cand.json, with src, a, o, t as fallback when it leaves the app} or {none: why a slot is empty}]), src (sources: [{t, u?}]).",
   "kinds": {
     "trainer": "Trainer",
     "names": "Names",
@@ -19,7 +19,7 @@
         "Slide 62's \"refer to Astrea / Phymastrea\" suggests the second; only a trainer can say.",
         "Photos: 1 Astrea curta from abroad (one of the app's Astrea photos); 2 Favites colemani from the Philippines (one of the app's 4 F. colemani photos, under Favites); 3 Plesiastrea peroni from Dauin (a look-alike, from the Coral Finder's extra genera); 4 Pierre's Favites colemani near Dauin (iNaturalist observation 406194912).",
         "Until the answer the app changes nothing: its 4 F. colemani photos stay under Favites.",
-        "Waiting on this answer (Q47): if IMR calls these corals Astrea, Pierre's F. colemani near Dauin can serve as an Astrea photo (rule 6a: his species-level photos stay usable as photos)."
+        "Waiting on this answer (Q47): if IMR calls these corals Astrea, Pierre's F. colemani near Dauin can serve as an Astrea photo (rule S2: his species-level photos stay usable as photos)."
       ],
       "ask": "ReefCloud label",
       "photos": [
@@ -65,7 +65,7 @@
       "title": "Slide 62: \"refer to Astrea / Phymastrea\"",
       "q": "Slide 62 says \"refer to Astrea / Phymastrea\". Corals of the World's Phymastrea species (colemani, valenciennesi, magnistellata) are Favites species in WoRMS, and Astrea's are under Astrea. Which corals does the slide mean?",
       "ctx": [
-        "Favites and its neighbours, for Pierre to raise with IMR (research report of 2026-11-04; only species present in the Philippines by Pierre's rule, AGENTS.md rule 6e; the app keeps the lecture's wording and adds \"Other sources\" notes, tools/apply_favites.py).",
+        "Favites and its neighbours, for Pierre to raise with IMR (research report of 2026-11-04; only species present in the Philippines by Pierre's rule, rule C6; the app keeps the lecture's wording and adds \"Other sources\" notes, tools/apply_favites.py).",
         "Slide 62: \"refer to Astrea / Phymastrea\". Corals of the World's Phymastrea pages (colemani, valenciennesi, magnistellata) are Favites species in WoRMS; Astrea's are under Astrea.",
         "See also: Which corals does IMR label Astrea in ReefCloud?"
       ],
@@ -236,7 +236,7 @@
       "at": "2026-11-05",
       "title": "Chromis agilis or Pycnochromis pacifica",
       "q": "The Pacific populations of Chromis agilis were split as Pycnochromis pacifica (Allen & Erdmann 2020). Which name does IMR use for the Dauin fish?",
-      "ctx": ["Fish (2026-11-05): Chromis agilis: its Pacific populations were split as Pycnochromis pacifica (Allen & Erdmann 2020); the Dauin fish is probably P. pacifica. The IMR name stays in the app (rule 6a)."],
+      "ctx": ["Fish (2026-11-05): Chromis agilis: its Pacific populations were split as Pycnochromis pacifica (Allen & Erdmann 2020); the Dauin fish is probably P. pacifica. The IMR name stays in the app (rule S2)."],
       "src": [{"t": "ROADMAP › Questions for an IMR trainer (2026-11-05)"}]
     },
     {
@@ -246,7 +246,7 @@
       "at": "2026-11-05",
       "title": "Siganus margaritiferus or S. fuscescens",
       "q": "WoRMS lists Siganus margaritiferus as a synonym of S. fuscescens. Which name does IMR use?",
-      "ctx": ["Fish (2026-11-05): Siganus margaritiferus is a synonym of S. fuscescens in WoRMS. The IMR name stays in the app (rule 6a)."],
+      "ctx": ["Fish (2026-11-05): Siganus margaritiferus is a synonym of S. fuscescens in WoRMS. The IMR name stays in the app (rule S2)."],
       "src": [{"t": "ROADMAP › Questions for an IMR trainer (2026-11-05)"}]
     },
     {
@@ -322,7 +322,7 @@
       "at": "2026-11-03",
       "title": "Coral basics: Corallite anatomy as the \"more\" level",
       "q": "Should the existing Corallite anatomy become the \"more\" level of the Coral basics module?",
-      "ctx": ["Coral basics, point (4): the existing Corallite anatomy becomes the module's \"more\" level (proposed 2026-11-03 with points 1-3, which shipped: the glossary links, the Learn tab, the Home line). Waiting on Pierre (rule 22: a Lab tool graduates only with his approval)."],
+      "ctx": ["Coral basics, point (4): the existing Corallite anatomy becomes the module's \"more\" level (proposed 2026-11-03 with points 1-3, which shipped: the glossary links, the Learn tab, the Home line). Waiting on Pierre (rule U13: a Lab tool graduates only with his approval)."],
       "src": [{"t": "Study, 2026-11-03"}]
     },
     {

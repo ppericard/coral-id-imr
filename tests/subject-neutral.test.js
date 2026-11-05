@@ -1,4 +1,4 @@
-// AGENTS.md rule 13b: a subject differs only by a field of core.js SUBJECTS or a function of app.js UNITS; the engine
+// Rule S1 (docs/rules/subjects.md): a subject differs only by a field of core.js SUBJECTS or a function of app.js UNITS; the engine
 // works on the current subject and never tests which one it is (test-suite review, 2026-11-04: nothing held it). In the
 // app's and the admin's files, outside the SUBJECTS list of core.js: no subject id or name as a string literal ('coral',
 // 'fish', 'Corals'...), no comparison of a subject's id with a literal, and no test of the subject by its place in
@@ -29,7 +29,7 @@ const ALLOWED = [
 ];
 const allowed = (f, line) => ALLOWED.some(([af, l]) => af === f && line.includes(l));
 
-test('rule 13b: every exception still exists, with its ROADMAP row', () => {
+test('rule S1: every exception still exists, with its ROADMAP row', () => {
   const roadmap = fs.readFileSync(path.join(ROOT, 'docs', 'ROADMAP.md'), 'utf8');
   for (const [f, line, row] of ALLOWED) {
     assert.ok(read(f).includes(line), `stale exception, its line is gone from ${f}: drop it from ALLOWED (${line})`);
@@ -38,7 +38,7 @@ test('rule 13b: every exception still exists, with its ROADMAP row', () => {
   }
 });
 
-test('rule 13b: the engine never names nor tests a subject', () => {
+test('rule S1: the engine never names nor tests a subject', () => {
   assert.ok(ids.length >= 2 && ids.includes('coral'), JSON.stringify(ids));
   const lit = new RegExp(`(['"\`])(${words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\1`),
     bad = [];

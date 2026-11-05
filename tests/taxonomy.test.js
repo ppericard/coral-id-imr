@@ -31,7 +31,7 @@ test('taxonomy.json: the shape of each record, small, and never loaded by the ap
     assert.ok(Number.isInteger(g.inat.id), `${n}: inat id`);
     assert.notStrictEqual(g.inat.act, false, `${n}: an inactive iNaturalist taxon`);
   }
-  // Rule 1: the app wording is a verbatim copy, never a correction.
+  // Rule C1: the app wording is a verbatim copy, never a correction.
   for (const [n, g] of Object.entries(C.gen)) {
     const src = D.gen[n] || D.x.gen[n];
     assert.strictEqual(g.app.fam, src.fam, n);
@@ -141,7 +141,7 @@ print(json.dumps({"same": fa == fb, "ch1": ch1, "ch2": ch2, "log": len(b["log"])
   assert.match(R.ch1[0], /^first build: 2 genera, 1 former genus names, 4 species rows, 1 watched items$/);
   assert.deepStrictEqual(R.ch2, []);
   assert.strictEqual(R.log, 1);
-  // Rule 1: the app's family stays, the difference is a flag.
+  // Rule C1: the app's family stays, the difference is a flag.
   assert.deepStrictEqual(R.gen.Pachyseris.app, {fam: 'Agariciidae'});
   assert.deepStrictEqual(R.gen.Pachyseris.flags, ['family: the app says Agariciidae, WoRMS Pachyseridae']);
   assert.deepStrictEqual(R.gen.Astrea.worms.spp, ['curta']);
@@ -169,7 +169,7 @@ print(json.dumps({"same": fa == fb, "ch1": ch1, "ch2": ch2, "log": len(b["log"])
   assert.deepStrictEqual(R.rep.cotw, [], 'a decided mapping is not reported as a disagreement');
   assert.deepStrictEqual(R.seen.worms, {'Favites irregularis': 'accepted'});
   assert.deepStrictEqual(R.seen.inat, {'Favites irregularis': null});
-  // iNaturalist in bulk (rule 6f): the genera and species of the root in one call each.
+  // iNaturalist in bulk (rule C7): the genera and species of the root in one call each.
   assert.ok(R.inat[0].includes('rank=genus') && R.inat[1].includes('rank=species'), R.inat.join('\n'));
 });
 

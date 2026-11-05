@@ -5,7 +5,7 @@ Pierre, 2026-11-03: open the genera "easy and common first": the genera RAs meet
 ReefCloud photos (Acropora, Porites, Pocillopora, Montipora, Millepora...) should come earlier in the progressive
 opening, with no list of exceptions kept by hand. The app multiplies the opening weight of each genus not met yet by
 sqrt((1 + cm) / (1 + the median cm of those genera)) (model.js weighted, core.js commonFactor; docs/LEARNING.md).
-Computed once here, never on the phones (AGENTS.md rule 14i).
+Computed once here, never on the phones (rule L13).
 
 For every game genus (the slate genera of data.json "gen", and BENTHIC and BONUS of core.js, whose records are in
 data.json "x.gen"), it asks iNaturalist (read only), within 40 km of Dauin, verifiable observations only:

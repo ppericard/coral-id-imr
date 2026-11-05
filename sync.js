@@ -23,7 +23,7 @@ document.addEventListener('visibilitychange', () => {
 // It also tells the sheet (v50, Code.gs behind_) the app's version, this device's anonymous id (devId, as its events) and
 // the minutes this page has been open (up): a device left on a replaced version is logged as 'old' with its id, so the
 // admin can find whose it is (Pierre, 2026-11-05). An older script ignores both. Never from a local copy (LOCAL: a test,
-// a developer; AGENTS.md 13): without a device id the sheet logs nothing.
+// a developer; rule D1): without a device id the sheet logs nothing.
 function loadStats() {
   if (!SYNC_URL || !DATA) return;
   statsAt = Date.now();
@@ -98,7 +98,7 @@ const syncGet = (a = SYNC, info = {}) =>
 // on top (a pull alone would let those answers keep their older model). Then the announcement card of every version
 // skipped that has one (RVS msg; progress.js rvNotice), at once. The device's own recalculations (core.js memRecalc,
 // pgOf) stay as the fallback for a device that never reaches the sheet. The app never gets ahead of the sheet script
-// (AGENTS.md 7a): v, the script version of the reply; a reply from a script before core.js RV_SHEET (28) is never
+// (rule D4): v, the script version of the reply; a reply from a script before core.js RV_SHEET (28) is never
 // adopted, whatever it carries, so the app does exactly what it did before (an older script sends no replay, and the
 // rv field the requests carry is ignored there).
 const RVK = 'reefid-sync-coral-rv';
@@ -163,7 +163,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
       gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
       // This device's answers on top, under the rules of the script that sent the replay: the answer time only from
-      // core.js RT_SHEET, as the live game (model.js rtOn; AGENTS.md 7a, Codex review #444).
+      // core.js RT_SHEET, as the live game (model.js rtOn; rule D4, Codex review #444).
       R = rows.length
         ? replayProgress(rows, {
             gen,
@@ -1001,7 +1001,7 @@ window.addEventListener('unhandledrejection', e => {
 // answers so far (na), queued as one event when the app is left (hidden) and started again if the player comes back
 // (same visit id vi). Under the id of the player's answers, never the name: the request carries this device's anonymous
 // answer id (ANONID) or, signed in, the name and code, which the sheet checks and turns into the admin's id of the
-// player (Code.gs evWho_), keeping neither. Queued only once the sheet has said v >= PAGES.SHEET (AGENTS.md 7a), and,
+// player (Code.gs evWho_), keeping neither. Queued only once the sheet has said v >= PAGES.SHEET (rule D4), and,
 // like every event, never sent from a local copy (LOCAL).
 const SHEETV = 'reefid-sheet-v',
   PVLINK = 'reefid-pv-link',
@@ -1011,7 +1011,7 @@ let pvLast = null,
   pvPre = null;
 // The script version of a reply (every reply carries v), remembered for the next visits.
 // The beta groups the sheet says this player is in (sheet v48: groups in a load or save reply, [] for none; an older
-// script sends none and nothing changes, so a subject in beta stays the admin's only: AGENTS.md 7a). Kept under the
+// script sends none and nothing changes, so a subject in beta stays the admin's only: rule D4). Kept under the
 // account's name (app.js GROUPS_KEY, subjOpen). A change shows at once: the switches follow (showSubj, the page drawn
 // again), and a subject on screen that this player may no longer have reloads the app on the corals (subjAt), their
 // saved choice and its progress kept. live: false when the app reloads anyway (signIn).
@@ -1029,7 +1029,7 @@ function groupsSeen(j, name, live = true) {
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
 }
-// The script version last seen (0 before any reply): what the app may rely on (AGENTS.md 7a), so a visit offline does
+// The script version last seen (0 before any reply): what the app may rely on (rule D4), so a visit offline does
 // what the last one did. Also read by the answer time (model.js rtOn, core.js RT_SHEET); the full replay checks each
 // reply's own v (replayAdopt).
 const sheetV = () => Number(store.get(SHEETV, 0)) || 0;

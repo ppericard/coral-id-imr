@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """presence.json: whether each coral species named on a photo (game photos, Key photos, candidates) is confirmed in the
-Philippines by the presence rule (tools/presence.py, AGENTS.md rule 6g; Pierre, 2026-11-04). The admin reads it to flag
+Philippines by the presence rule (tools/presence.py, rule C8; Pierre, 2026-11-04). The admin reads it to flag
 a photo taken abroad (loc world) of a species not confirmed here as "out of rule" (core.js outOfRule): flagged, never
-removed automatically; Pierre decides. Computed once here, not in each admin session (rule 14g).
+removed automatically; Pierre decides. Computed once here, not in each admin session (rule L12).
 
 presence.json = {v, date, sp: {species name (as iNaturalist writes it on the photo, t): {ok, by, rg, chk}}}: ok =
 confirmed, by = the rule's reasons (observers, checklist, near), rg = Research Grade observations in the Philippines, chk =

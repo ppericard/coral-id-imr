@@ -1,5 +1,5 @@
 # Checks and imports the judging agent's results (judging/out/<Genus>.json, format: judging/schema.json, rules:
-# judging/AGENTS.md) as SUGGESTIONS. Pierre's choices (curation.json) are never read for writing, never changed.
+# judging/BRIEF.md) as SUGGESTIONS. Pierre's choices (curation.json) are never read for writing, never changed.
 #   python3 tools/judging_import.py --check [Genus ...]   check only, write nothing (exit 1 on any error)
 #   python3 tools/judging_import.py [--by astra] [Genus ...]   check, then import every genus that passes
 # Import writes:
@@ -20,7 +20,7 @@ def load(p, d=None):
 def dump(p, o, indent=None):
     with open(P(p), 'w') as fh: json.dump(o, fh, indent=indent, ensure_ascii=False, separators=None if indent else (',', ':')); fh.write('\n')
 
-# AGENTS.md rule 4: the polyps flag only for the Coral Finder "extended by day" genera, never on a macro photo.
+# rule C4: the polyps flag only for the Coral Finder "extended by day" genera, never on a macro photo.
 POLYPS = {'Alveopora', 'Duncanopsammia', 'Goniopora', 'Heliofungia', 'Plerogyra', 'Tubastraea'}
 VIEWS, FIELDS = ('wide', 'medium', 'macro'), {'form', 'polyps', 'quality', 'view', 'genus', 'multi', 'unsure', 'note'}
 M = load('judging/manifest.json')
@@ -57,7 +57,7 @@ def check(n):
         if 'form' in x and x['form'] not in FORMS: E.append(f'{at}: form must be ONE of {" ".join(FORMS)}, not {x["form"]!r}')
         if 'polyps' in x and x['polyps'] is not True: E.append(f'{at}: polyps is true or omitted')
         if x.get('polyps') and (n not in POLYPS or x.get('view', p['view']) == 'macro'):
-            E.append(f'{at}: polyps only for {", ".join(sorted(POLYPS))}, never on a macro photo (AGENTS.md rule 4): omit it')
+            E.append(f'{at}: polyps only for {", ".join(sorted(POLYPS))}, never on a macro photo (rule C4): omit it')
         if 'form' not in x and p['source'] != 'book' and 'form' not in p.get('pierre', {}): E.append(f'{at}: form missing')
         if fo: pass
         elif x.get('quality') not in (1, 2, 3) and 'quality' not in p.get('pierre', {}): E.append(f'{at}: quality must be 1, 2 or 3')

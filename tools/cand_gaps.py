@@ -46,7 +46,7 @@ def short(minimum=5):
 # tools/taxonomy.json gives it (inat_taxon), near Dauin (40 km) or in the Philippines, Research Grade, a genus-level
 # community ID or an undisputed expert ID (ph_ok), an accepted licence, never share-alike (LIC, photo_ok), a photo not
 # already on the site or waiting, and not excluded. Its requests too (get: about one a second, retries on 429 / 5xx after
-# a pause; AGENTS.md rule 6f).
+# a pause; rule C7).
 from fetch_local import LIC, get as _get, ph_ok, photo_ok  # noqa: E402
 from taxonomy import inat_taxon  # noqa: E402
 

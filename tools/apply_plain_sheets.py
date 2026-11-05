@@ -9,7 +9,7 @@
 # (tools/plain_sources.json lists them: Corals of the World factsheets, Reef Corals of the Indo-Malayan Seas, the
 # ReefCloud hard coral genera guide, Wikipedia, and a few others where those are thin), plus our IMR lecture notes and
 # ID tips (gen[g].imr, qt, mn), and the genus's own photos, each looked at. Where a source differed from the IMR notes,
-# the line followed the IMR notes (rule 1 of AGENTS.md), until Pierre approved four corrections to the IMR wording
+# the line followed the IMR notes (rule C1 of AGENTS.md), until Pierre approved four corrections to the IMR wording
 # (2026-11-03: Seriatopora, Lobactis, Heliofungia, Herpolitha; tools/apply_imr_corrections.py). Never copied from the Coral Finder book (tests/plain.test.js
 # checks no 5-word run is shared with the Coral Finder features). A slate genus's line names another genus only when
 # its first card comes after that genus's (core.js starRefs). Shown right under the photo of the genus sheet and of the

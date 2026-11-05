@@ -105,7 +105,7 @@
   }
   // idkey-migration: begin
   // One-shot move of this device's data to the names of 2026-11-04 (Pierre: the Coral Finder tool became the Coral ID
-  // Key; the book keeps its name). Alpha (AGENTS.md rule 24b): no old name is read anywhere else; this moves the data
+  // Key; the book keeps its name). Alpha (rule W3): no old name is read anywhere else; this moves the data
   // once and the code forgets them. The tool's keys reefid-finder-* become reefid-idkey-*, the admin's Sheets & ID Key
   // table reefid-admin-fcov reefid-admin-kcov, and page names stored inside values: the photo size per page
   // (reefid-sync-size), the Lab votes per tool (reefid-lab-votes), the admin's remembered views (reefid-admin-view,
@@ -198,7 +198,7 @@
   // the current one (app.js SUBJ): its units (coral genera, fish teaching entries), their records (app.js GX), its
   // progress P and quiz settings Q under its own keys. Everything a subject differs in is a field here (data) or a
   // function of app.js UNITS (what reads the subject's data); the engine never names a subject.
-  //   id      key part: reefid-sync-<id>-progress, -quiz, -intro, -intro-offer, -reset (subjKey; AGENTS.md workflow rule 15)
+  //   id      key part: reefid-sync-<id>-progress, -quiz, -intro, -intro-offer, -reset (subjKey; rule W21)
   //   dev     its device-only keys: reefid-<dev><name> (subjDev): '' for corals, whose keys predate subjects
   //   base    the sign-in record's fields for the progress last sent or received ([base, pending], sync.js mergeSaved)
   //   name, one, many, what, lecture: words of the interface (Corals; genus, genera; Coral to identify; the IMR coral
@@ -322,7 +322,7 @@
   // entries of level 1 (the 27 IMR entries of circle 1, then circles 2 and 3), each made into a record the engine reads
   // like a coral genus's (app.js GX): {id, name, fam, look (teaching ids, sub-entries folded into their entry), lk (how to
   // tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, fish.json
-  // key: the index of a reef fish ID book for the Indo-Pacific; AGENTS.md rule 6c), forms (that group: the wrong choices
+  // key: the index of a reef fish ID book for the Indo-Pacific; rule S3), forms (that group: the wrong choices
   // start in other groups, as coral growth forms), ig (the same group), cm (how common near Dauin), views {wide:
   // photos}, levels 1, circle, wink, names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
   // key: the identification key in force ({id, region, cite (full), short}, null for a region with none) and groups its
@@ -330,7 +330,7 @@
   // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
   // surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
-  // cover: the card's photo (app.js cover): within the highest source tier that has photos (AGENTS.md rule 7: Pierre's own
+  // cover: the card's photo (app.js cover): within the highest source tier that has photos (rule P1: Pierre's own
   // before other observers', Codex review #461), the easiest judged one (fish-photos.json e, judging/FISH.md), the list's
   // first among equals; the list's first when none is judged.
   // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos (Pierre, 2026-11-05: a species with no
@@ -407,7 +407,7 @@
       groups: (F.key && F.key.groups) || []
     };
   }
-  // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, AGENTS.md rule 6a): its IMR name,
+  // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, rule S2): its IMR name,
   // the parts of a double one ("Surgeonfish & Unicornfish"), its family as IMR writes it and the WoRMS families, and the
   // sub-entries IMR names inside it (Chromis, Bannerfish...). The first is the name shown.
   function fishNames(t) {
@@ -786,7 +786,7 @@
   // Returns the photo ratings P (the residual, [rating, weighed answers, weighed right, answers]), the genus of each photo
   // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
   // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
-  // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule 14b).
+  // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule P4).
   function eloReplay(rows) {
     const P = {},
       PG = {},
@@ -1025,7 +1025,7 @@
   };
   const sorryDue = ({felt, now, shown}) => !shown && now < SORRY.UNTIL && !!felt && sorryFelt(felt);
   // The first name to greet a player with, from their sign-in name (Pierre, 2026-11-04, for every personalised card,
-  // AGENTS.md rule 20e): the first word ("Ana Lopez" -> "Ana", "Ana B." -> "Ana"), its first letter capitalised;
+  // rule U10): the first word ("Ana Lopez" -> "Ana", "Ana B." -> "Ana"), its first letter capitalised;
   // only the letters it starts with (an apostrophe or a hyphen inside kept: "O'Neil", "Jean-Luc"), so a name with no
   // letter first ("~a12", "123") gives '' and the card says a plain "Hi!".
   const firstName = name => {
@@ -1695,7 +1695,7 @@
     return [...slateOf(d), ...BONUS.filter(n => X[n])];
   }
   // The starred (★) genera: on the slate, not numbered (data.json gen[n].n 0, not surveyed by IMR), there because they
-  // look like surveyed genera (AGENTS.md rule 6b). lectureGroup(d, n): the IMR lecture group a genus is shown in, its own
+  // look like surveyed genera (rule L5). lectureGroup(d, n): the IMR lecture group a genus is shown in, its own
   // (ig), else, for a ★ genus the lecture doesn't group, the group most of its Coral Finder look-alikes belong to (ties:
   // the first listed); 0 for none (app learn.js shownGroup). starRefs(d, n): the surveyed look-alikes in that group, the
   // genera its card names ("★ look-alike of Turbinaria, Tubastraea", learn.js starNote); [] for any other genus.
@@ -2027,7 +2027,7 @@
   }
 
   // Response time (Pierre, 2026-11-04: "the signal is already very clear on few players; the question is how to
-  // integrate it"; AGENTS.md rule 12: the seconds taken to answer are evidence about that answer, never a decay; docs/
+  // integrate it"; rule L1: the seconds taken to answer are evidence about that answer, never a decay; docs/
   // LEARNING.md "Response time"). A right answer given faster than the player's usual is stronger evidence that they know
   // the genus, a slow one weaker: its two ability steps (the genus shown and the global level) are taken times
   // w = clamp(1 - K z, LO, HI), z = log(seconds) minus the median log(seconds) of the player's own earlier timed answers.
@@ -2085,10 +2085,10 @@
   // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
   // weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...) appends
   // an entry here: v (the next number), at (the date), why (one line for the docs), msg (null, or the announcement card
-  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once, AGENTS.md "How to
-  // make a change" 12; with only: 'changed', shown only when the adoption moved the player's progress % by min points or
-  // more, {from} and {to} in p being the two %). Every version takes RV_CARD (Pierre, 2026-11-03, a standing rule: AGENTS.md
-  // "How to make a change" 14); Pierre is asked only for a different text. The sync script, which embeds this file
+  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once, rule D6;
+  // with only: 'changed', shown only when the adoption moved the player's progress % by min points or more, {from} and
+  // {to} in p being the two %). Every version takes RV_CARD (Pierre, 2026-11-03, a standing rule: rule D5);
+  // Pierre is asked only for a different text. The sync script, which embeds this file
   // (tools/sync_core.py), replays a player's log again when their stored replay is older than RV, and the app adopts a
   // replay newer than the one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay".
   // The standard recalculation card (Pierre, 2026-11-03: "only to the players whose progress the replay moves a lot; if
@@ -2140,16 +2140,16 @@
   ];
   const RV = RVS[RVS.length - 1].v;
   // The sync script version from which the sheet replays (Code.gs replay_, v28). The app never gets ahead of the sheet
-  // script (AGENTS.md 7a, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
+  // script (rule D4, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
   // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
   const RV_SHEET = 28;
   // The sync script version that replays the answer time (Code.gs v32 reads the Seconds column into the replay rows):
   // the app weighs a right answer's steps by its time (rtWeight) only once the script's replies say v >= RT_SHEET
-  // (sync.js sheetV), so a replay never undoes what the app did live (AGENTS.md 7a); before it, exactly as before.
+  // (sync.js sheetV), so a replay never undoes what the app did live (rule D4); before it, exactly as before.
   const RT_SHEET = 32;
   // The sync script version that replays the first-launch answer's prior (Code.gs v36 replay_ reads the player's
   // reefid-sync-coral-start: its answers and the silent ease): the app shrinks a new genus's start towards that prior
-  // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (AGENTS.md 7a,
+  // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
   // Codex review #428); before it, the default player's prior 0, exactly as before.
   const START_SHEET = 36;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
@@ -2626,7 +2626,7 @@
   // feedback, a Learn page, My progress, anything else) and whether the genus had already been asked to the player
   // then (asked). The app keeps the tally (sync.js pagesRoute) with these pure functions; the sheet cleans what arrives
   // with pagesClean (Code.gs events_, through its embedded copy of this file). SHEET: the sync script version that
-  // stores them (AGENTS.md 7a: nothing is queued before the sheet says v >= SHEET).
+  // stores them (rule D4: nothing is queued before the sheet says v >= SHEET).
   const PAGES = {
     SHEET: 30,
     ROUTES: 30, // at most this many page names a summary, the most opened first

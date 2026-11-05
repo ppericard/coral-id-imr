@@ -1,5 +1,5 @@
 // The Coral Finder tool became the Coral ID Key (Pierre, 2026-11-04): the name Coral Finder is the book's (R. Kelley,
-// BYOGUIDES, 2022; copyrighted), and the app's tool must not look like it. Alpha (AGENTS.md rule 24b): renamed
+// BYOGUIDES, 2022; copyrighted), and the app's tool must not look like it. Alpha (rule W3): renamed
 // everywhere, no old name kept for old links or old app versions; the stored data moves once (core.js migrateIdKey on
 // the devices, Code.gs ONCE_ idkey in the sheet). These checks keep it so: node --test tests/
 const test = require('node:test'),

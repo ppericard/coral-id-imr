@@ -77,7 +77,7 @@ test('the 27 IMR entries are level 1, circle 1, in the order of the IMR presenta
   c1.forEach(t => assert.strictEqual(t.level, 1, t.name));
 });
 
-// Identification groups (Pierre, 2026-11-04; AGENTS.md rule 6c): the key in force for this deployment's region
+// Identification groups (Pierre, 2026-11-04; rule S3): the key in force for this deployment's region
 // (tools/fish_source.json deploy.key among keys; for the Indo-Pacific, the index of a reef fish ID book) is the reference for fish
 // groups. Every teaching node in the game (any circle, winks aside) carries one of its groups, unless the source marks it
 // as waiting (keyGroup null with keyWhy); fish.json is as `build_fish.py --regroup` gives it.
@@ -169,7 +169,7 @@ test('identification groups: the build fails, naming the node, on a node in the 
   const d = clone(SRC);
   delete d.deploy.key;
   r = regroupCheck(d);
-  assert.doesNotMatch(r.out, /identification groups \(AGENTS/);
+  assert.doesNotMatch(r.out, /identification groups \(rule S3/);
   assert.match(r.out, /is not as key \(none\) gives it/);
 });
 
@@ -559,7 +559,7 @@ test('fish-photos.json (the stopgap game photos) shows only species in the game'
 });
 
 // Curated common names, the proposal (Pierre, 2026-11-04: 1 to 3 per species; docs/FISH_PATH.md "Common names";
-// tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule 1), each with its
+// tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule C1), each with its
 // sources, no two spellings of one name listed apart, and the file is what the selection gives.
 test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;

@@ -3566,7 +3566,7 @@ button.adm-chip[aria-pressed='true'] {
 .adm-hours {
   display: grid;
   gap: 2px;
-  font-size: var(--fs-xs); /* the 12 px floor (AGENTS.md rule 18) */
+  font-size: var(--fs-xs); /* the 12 px floor (rule U3) */
 }
 .adm-hrow {
   display: grid;
@@ -3819,7 +3819,7 @@ button.adm-chip[aria-pressed='true'] {
   margin-left: auto;
 }
 /* Recompute here and its This tab's / Stored report switch: quiet links on every screen (Pierre, 2026-11-05: his phone can
-   run it), a long progress text wrapping inside the header; on touch screens a 44 px tall touch area (rule 19: touch by
+   run it), a long progress text wrapping inside the header; on touch screens a 44 px tall touch area (rule U4: touch by
    pointer, never width). */
 .adm-an-re {
   font-size: var(--fs-s);

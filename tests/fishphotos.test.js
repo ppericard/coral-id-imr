@@ -1,6 +1,6 @@
 // Fish candidate photos (tools/fetch_fish.py, fish-cand.json, tools/judging_fish.py, autosort.js fishSure; Pierre,
 // 2026-11-03, settled 2026-11-04): sources nearest first and abroad only when the Philippines are exhausted, free licences
-// first, Pierre's own species-level observations confirmed (AGENTS.md rule 6a), the pre-sort's sure decisions, the
+// first, Pierre's own species-level observations confirmed (rule S2), the pre-sort's sure decisions, the
 // stricter "confirmed near Dauin" rule (tools/build_fish.py near_dauin). Offline fixtures only: nothing here
 // asks iNaturalist (the whole script runs on a fixture cache with --offline and --plan). Needs python3.
 const test = require('node:test'),
@@ -76,7 +76,7 @@ u = lambda o, used=set(), ex=set(): (lambda x: x and [x['cls'], x['tier'], x['ow
 print(json.dumps([
   u(ob(1)),
   u(ob(2, g='needs_id')),                        # someone else's Needs ID: not confirmed
-  u(ob(3, u='ppericard', g='needs_id', lic='cc-by-nc')),  # Pierre's species-level Needs ID: confirmed (rule 6a)
+  u(ob(3, u='ppericard', g='needs_id', lic='cc-by-nc')),  # Pierre's species-level Needs ID: confirmed (rule S2)
   u(ob(4, u='ppericard', lic=None)),             # his own photo without licence: his
   u(ob(5, lic=None)),                            # another observer's photo without licence: never
   u(ob(6, lic='cc-by-nd')),                      # no derivatives: never
@@ -273,7 +273,7 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2]))`
   assert.match(bad, /code must follow judging\/FISH.md/);
   assert.match(bad, /phase is one of/);
   assert.match(bad, /crop must be \[left, top, right, bottom\]/);
-  assert.match(bad, /unknown fields \['quality', 'species'\]/); // no species judgement, no old fields (rule 24b)
+  assert.match(bad, /unknown fields \['quality', 'species'\]/); // no species judgement, no old fields (rule W3)
   assert.match(bad, /fish-s1-cand-30: not a candidate waiting/); // Pierre rejected it
   assert.match(bad, /1 candidate\(s\) not judged yet/);
   assert.match(bad, /2 photos marked best/);
@@ -284,7 +284,7 @@ test('confirmed near Dauin (build_fish near_dauin): 2+ Research Grade observers 
     `from build_fish import near_dauin\nprint(json.dumps([near_dauin(1), near_dauin(0), near_dauin(2), near_dauin(2, True), near_dauin(1, True)]))`
   );
   // A single Research Grade observation (one observer) no longer opens the whole region (Pierre, 2026-11-03); since
-  // 2026-11-04 Pierre is one observer like anyone (AGENTS.md rule 6g): his own observation there is no reason by itself.
+  // 2026-11-04 Pierre is one observer like anyone (rule C8): his own observation there is no reason by itself.
   // The reasons are recorded (present.nearBy).
   assert.deepStrictEqual(out, [[], [], ['observers'], ['observers', 'imr'], ['imr']]);
   // fish.json: every species has near, nearBy and dauinU (their agreement with the rule: tests/fish.test.js).
@@ -409,7 +409,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
     ['10', 'cc0', 'world', false],
     ['4', 'cc-by', 'ph', false]
   ]);
-  assert.strictEqual(s1[0].ni, 1, "Pierre's Needs ID observation is marked, and kept (rule 6a)");
+  assert.strictEqual(s1[0].ni, 1, "Pierre's Needs ID observation is marked, and kept (rule S2)");
   const p4 = s1.find(p => p.o.endsWith('/4'));
   assert.deepStrictEqual(Object.keys(p4), ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r']);
   assert.match(p4.f, /^fish-s1-cand-40$/);
@@ -513,7 +513,7 @@ print(json.dumps([
   assert.deepStrictEqual(out[7], ['male', 'juvenile', '', 'juvenile', 'intermediate', 'juvenile', 'male', 'intermediate']);
 });
 
-test('phase searches (Q36, rule 6f): several species in one request, paged by id, an observation to its species', () => {
+test('phase searches (Q36, rule C7): several species in one request, paged by id, an observation to its species', () => {
   const out = J(`${OBS}
 calls = []
 class N:

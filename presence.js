@@ -1,4 +1,4 @@
-// The presence rule, as the admin applies it to photos (Pierre, 2026-11-04; AGENTS.md rule 6g), the photo licences and
+// The presence rule, as the admin applies it to photos (Pierre, 2026-11-04; rule C8), the photo licences and
 // the photo names (nameFlag).
 // Pure functions, no DOM: loaded by admin.html only (players never download it), tested in Node (tests/presence.test.js). The rule itself is
 // computed once in Python (tools/presence.py) into presence.json by tools/coral_presence.py; this file only reads it.
@@ -47,7 +47,7 @@
   // fetch time) is a former combination or moved genus, or iNaturalist's spelling of a name WoRMS writes otherwise.
   // nm = names.json's section for the subject ({sp: {name: {now, iname?, inat?}}, gen: {former genus: genus now}}),
   // written by tools/taxonomy.py from its reference file, which the admin never loads. A flag only: nothing is renamed
-  // (AGENTS.md rule 1). null: nothing to say (a name the file does not know, a genus-only name of a current genus, an
+  // (rule C1). null: nothing to say (a name the file does not know, a genus-only name of a current genus, an
   // IMR lecture or Coral Finder photo). kind: 'spelling' (t is iNaturalist's spelling of `now`), 'former' (t is a former
   // name of `now`; iname: iNaturalist's spelling of `now` when it differs, inat: false when iNaturalist has no taxon
   // for it), 'genus' (t's genus is a former genus, `now` the genus accepted now).

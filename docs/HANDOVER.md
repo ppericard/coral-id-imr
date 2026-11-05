@@ -4,10 +4,11 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 ## Read in this order (15 minutes)
 
-1. [`AGENTS.md`](../AGENTS.md): who the app is for, Pierre's standing rules (do not break them), how to ship a change.
-2. This file: how to work with Pierre, where external things live, the one-time setups.
+1. [`AGENTS.md`](../AGENTS.md): the constitution: who the app is for, Rule 0, the merge contract, the index of Pierre's
+   rules; then the [`rules/`](rules/) file your task touches (its "Read on demand" table).
+2. This file: where things are, where external things live, the one-time setups only Pierre can do.
 3. [`STATUS.md`](STATUS.md): where things stand (tracks in flight, the integrator's queue), the open questions for Pierre, what only he can do. `python3 tools/brief.py` adds what can be computed (open PRs, branches without a PR, the sheet script's version).
-4. [`ROADMAP.md`](ROADMAP.md): the prioritised backlog, long-standing content questions, declined ideas.
+4. [`ROADMAP.md`](ROADMAP.md): the prioritised backlog, declined ideas; the points to settle (content questions, questions for an IMR trainer) are in [`points.json`](../points.json), shown in the admin (To do › Points).
 5. [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`DESIGN.md`](DESIGN.md) when you touch code or UI.
 6. [`reviews/`](reviews/README.md): the last expert reviews (code, admin, first-time RA, design) with what is still open.
 
@@ -15,17 +16,28 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 | You want | Look at |
 |---|---|
-| The rules you must not break | [`AGENTS.md`](../AGENTS.md): Rule 0 (Pierre's hours, Manila time), the standing rules 1-28, "How to make a change" 1-17 |
-| The app's code | `index.html` + `app.js` (start-up, routing, shared helpers), `quiz.js` (screens), `model.js` (what to ask next), `learn.js`, `progress.js`, `home.js`, `tour.js`, `tips.js`, `sync.js` (the sheet), `core.js` (pure functions shared with the admin and the sheet), `sw.js` (offline cache); AGENTS.md "Repository map" |
+| The rules you must not break | [`AGENTS.md`](../AGENTS.md): Rule 0 (Pierre's hours, Manila time), the merge contract, the index of the rules (IDs C, P, L, U, A, S, D, W); each rule in full in [`rules/`](rules/) |
+| The app's code | `index.html` + `app.js` (start-up, routing, shared helpers), `quiz.js` (screens), `model.js` (what to ask next), `learn.js`, `progress.js`, `home.js`, `tour.js`, `tips.js`, `sync.js` (the sheet), `core.js` (pure functions shared with the admin and the sheet), `sw.js` (offline cache); "Repository map" below |
 | How the learning works, and why | [`LEARNING.md`](LEARNING.md) (each rule with its measurements; `tools/learnsim.js` simulates, `tools/abilityeval.js` replays the real answers) |
 | The subjects (corals, fish) | `core.js` `SUBJECTS`, `app.js` `UNITS`; fish content `fish.json` (built by `tools/build_fish.py`), the fish path spec [`FISH_PATH.md`](FISH_PATH.md), ARCHITECTURE.md "Subjects" and "Fish content" |
 | The admin | `admin.html`, `admin*.js`, `autosort.js`, `analysis.js`; try it with `admin.html?demo`; ARCHITECTURE.md "Admin" and ROADMAP "Admin for every subject" |
 | The progress sheet | `tools/sync/Code.gs` (self-updating Apps Script; "Code.gs" below), its tests `tests/sync.test.js` on an in-memory sheet (`tests/gas.js`) |
 | Photos | `data.json` photo lists, `curation.json` (Pierre's choices), `img/` mirrored to Cloudflare R2 (`core.js` `PHOTO_BASE`), the tools in `tools/` (ARCHITECTURE.md "Photos") |
-| Tests and CI | `tests/*.test.js` (Node), `tests/*.smoke.js` (Playwright, one CI job each), `.github/workflows/checks.yml`; AGENTS.md "How to make a change" 2b |
+| Tests and CI | `tests/*.test.js` (Node), `tests/*.smoke.js` (Playwright, one CI job each), `.github/workflows/checks.yml`; rule W14 ([`rules/ship.md`](rules/ship.md)) |
 | Deploy | `.github/workflows/pages.yml` (stamps the version numbers, then publishes), [`PAGES.md`](PAGES.md) |
 | Where things stand, what waits on Pierre | [`STATUS.md`](STATUS.md) (the integrator's only); `python3 tools/brief.py` |
-| What is next, what was declined | [`ROADMAP.md`](ROADMAP.md) |
+| What is next, what was declined | [`ROADMAP.md`](ROADMAP.md): ideas discussed but not built yet, declined ideas; points to settle (content questions, IMR trainer questions): [`points.json`](../points.json), admin To do › Points |
+| Photo judging by an outside agent | `judging/`: [`judging/BRIEF.md`](../judging/BRIEF.md) is the brief for an agent that only judges photos (growth form, quality, view…), not for coding agents; `judging/PROMPT.md` what to paste |
+
+## Where decisions live
+
+- **[`AGENTS.md`](../AGENTS.md) and [`rules/`](rules/)**: the standing rules; keep them current when Pierre states a new lasting rule (rule W19).
+- **[`STATUS.md`](STATUS.md)**: where things stand, the open questions for Pierre and the last question number, his pending actions, ideas parked after hours, the last stop. The integrator's only.
+- **[`ROADMAP.md`](ROADMAP.md)**: deferred ideas. **[`points.json`](../points.json)**: long-standing content questions, questions for an IMR trainer and other points to settle (admin › To do › Points).
+- **[`reviews/`](reviews/README.md)**: the last expert reviews, with what is still open.
+- **Pull requests**: each PR description explains a decision; `git log` titles (squash merges ` (#N)`) are a good index.
+- **Code comments**: most non-obvious behaviours are explained in a comment right above the code, often with the date and "Pierre" when it was his call.
+- The original Claude project memory and the claude.ai design docs linked in ROADMAP.md are **not reachable** from the new account (handover 2026-11-01): their substance was copied into this repo. Anything that matters must be in this repo, not only in an agent's memory.
 
 ## State of play
 
@@ -37,7 +49,7 @@ In [`STATUS.md`](STATUS.md) "Pierre's hands"; the steps of the one-time setups a
 
 ## Questions for an IMR trainer
 
-In the admin, Inbox › To do › Points (from [`points.json`](../points.json), with the content questions for Pierre; since 2026-11-05). Never settle them in the app; keep the lecture's version.
+In the admin, Inbox › To do › Points (from [`points.json`](../points.json), with the content questions for Pierre; since 2026-11-05). Never settle them in the app; keep the lecture's version (rules C1, C5).
 
 ## Setting up to work, and what lives outside GitHub
 
@@ -60,25 +72,55 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 3. Deploy > New deployment > type **Web app**, Execute as **Me**, Who has access **Anyone** > Deploy, accept the permissions. Run once in the editor a function that calls `UrlFetchApp` (see "Code.gs" below) so the admins' GitHub token check works.
 4. Put the `/exec` URL in `SYNC_URL` in `app.js`. The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`, `Removed`) are created on first use. Old progress lives in the old Sheet only.
 
-**Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script, and write it with `tools/datajson.py` (one genus per line; the PR check fails on any other layout). The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools"). **The lecture photos' rights are uncertain** (Pierre, 2026-11-04): many are not IMR's own (from iNaturalist or the web without a proper source); they stay preferred for corals but are to be traced to their original and credited or replaced (ROADMAP, AGENTS.md rule 7). The IMR fish presentation's photos are mostly not IMR's own either (likely from ID books): fish never use them.
+**Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script, and write it with `tools/datajson.py` (one genus per line; the PR check fails on any other layout). The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools"). **The lecture photos' rights are uncertain** (Pierre, 2026-11-04): many are not IMR's own (from iNaturalist or the web without a proper source); they stay preferred for corals but are to be traced to their original and credited or replaced (ROADMAP, rule P1). The IMR fish presentation's photos are mostly not IMR's own either (likely from ID books): fish never use them.
 
 ## Working with Pierre
 
 Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Marine Research, Dauin, Philippines) since early October 2026. He builds this to learn the IMR genera himself and to train the RAs.
 
-- **Language**: he writes in French (often dictated, so expect speech-to-text typos). Reply to him in French. Everything you produce (code, UI, docs, commits, PRs) is in English, because IMR is an English-speaking workplace.
-- **Autonomy**: work on your own: branch, build, test, open PRs. **Merging follows the merge contract** (AGENTS.md "Working mode"): only what was already decided with him; every other choice, and any destructive or irreversible step, is asked first.
-- **Fix by default**: when a review finds problems, fix everything you can without asking ("fais corriger tout ce que tu peux faire corriger", 2026-11-01). Bring him only real choices, or actions that need his hands (Apps Script redeploy, admin curation, decisions about IMR content).
-- **Questions**: ask each one once, short, with your recommendation. He likes one-line questions he can answer quickly. Never re-ask something he already answered: check ROADMAP and PR descriptions first.
-- **How he judges UX**: taps or clicks, scrolls, and what is on screen versus what must be fetched elsewhere. He uses the app on his phone a lot. He prefers visuals to text, and judges new things in use ("à voir à l'usage"): ship, then iterate on his feedback.
-- **Many prototypes first, trim later**, but Lab tools graduate into the app only with his explicit OK.
-- **Docs in every PR** (his rule): AGENTS / ARCHITECTURE / ROADMAP / DESIGN / README / admin help updated in the same PR, or "Docs: none needed" in the description. A full docs pass every ~20 PRs.
-- **No hardcoded genus count** in user-facing text ("39"): it changes (bonus genera).
-- His Google interface is in **French**: give Apps Script steps with the French menu names (below).
+How to work with him is in [`AGENTS.md`](../AGENTS.md) (Rule 0, "Working mode": the merge contract and the questions) and [`rules/ship.md`](rules/ship.md) W1-W11 (French in chat, English everywhere else; fix by default; how he judges UX). One more thing: his Google interface is in **French**: give Apps Script steps with the French menu names (below).
+
+## Repository map
+
+| Path | What |
+|---|---|
+| `index.html`, `app.js`, `app.css` | The public app: start-up, routing, settings, shared helpers (photos, ID tips, glossary, key helpers, progress state). Its parts are classic scripts sharing one global scope, loaded in tiers by the inline loader of `index.html` (load order, ARCHITECTURE.md "Speed on poor connections"): `sync.js` with Home (`window.BOOT`, which `app.js` waits for before its first page), then `model.js`, `quiz.js`, `learn.js` (the quiz), then `progress.js` (My progress), then the Tools. A page waits for its tier (`pageTier`, `need`); code that can run before a later tier is in checks for it (`prog()` for the header pill, `typeof achAfter`). |
+| `learn.js` | The Learn pages, split out of `app.js` (2026-11-02): Genera (`viewGenera`), a genus sheet (`viewGenus`, `myProg`), Look-alikes (`viewLookalikes`, montages, `classics`, `pairs`) and Compare (`viewCompare`). |
+| `quiz.js` | The quiz screens, split out of `app.js` (2026-11-02): the question (`question`, `trail`, the hint), the stage fitted to the screen (`fitStage`, `fitTiles`, `fitLow`), the answer and its feedback (`answer`), the one-tap question (`pulseAsk`), the bonus genera offer (`bonusOfferShow`), the next question planned and preloaded (`planNext`, `NEXTQ`), the photo quiz (`quizPhoto`), the custom quiz on the genera the player picks (`quizCustom`, `viewCustom`; its draw `model.js` `customDraw`, `customChoices`) and duels (`quizDuel`). Loaded right after `model.js`. |
+| `model.js` | The learning model, split out of `app.js` (2026-11-02): next genus (`weighted`, `drawW`; opening `OPEN`, `openChance`, `openPick`), photos (`photoSet`, `PICKD`, `CAL`), photo difficulty (`photoDiff`, `PSTAT`), ability (`ELO`, `abilityStep`), progress (`pgWeight`, `knownP`; `core.js` `PROG`), the mastery exam (`EXAM`), wrong choices (`TRAP`, `distractors`, `pooledConf`). Rules and research: `docs/LEARNING.md`. Loaded right after `progress.js`. |
+| `tips.js` | "Did you know?" tips (the owner, 2026-11-04): the registry `TIPS` and its pure rules (`tipDue`, per-device counters `reefid-tips`), tested in `tests/tips.test.js`; `quiz.js` shows them at the break at Next (`tipAfter`, `tipShow`, `breakArm`). Loaded in tier 2 before `quiz.js`. A new tip is one registry entry (ROADMAP candidates). |
+| `progress.js` | My progress (`quizBoard`), the progress pill (`showProg`), the progress backup (`bindProgFile`), the public leaderboard (`viewBoard`, `loadBoard`, ⚙ Leaderboard) and achievements (`ACH`, `achCheck`, `achPop`, `viewAch`), split out of `app.js` (2026-11-02). Same loading as `sync.js`, right after it. |
+| `sync.js` | The link with the sync sheet, split out of `app.js` (code review L1, 2026-11-02): signed-in progress (`syncPush`, `syncPull`), photo statistics (`loadStats`), players' reports (`reportDialog`), answers of players not signed in (`sendAnon`), the app's own error reports and one-tap answers (`ev`, `pulse`), the pages opened in a visit (`pagesRoute`, `pagesSend`, sheet v30), signing in (`signIn`, `bindSync`). A classic script loaded right after `app.js`, with Home (it shares its top-level names); `app.js` waits for it (`window.BOOT`) before its first page. Required like `app.js` (the loader tries it 3 times, the service worker keeps it); the state the pages read (`SYNC_URL`, `LOCAL`, `SYNC`, `syncTrouble`) stays in `app.js`. |
+| `core.js` | Pure functions shared by app, admin and the sync script (embedded in `Code.gs` by `tools/sync_core.py`), tested in `tests/`: the **subjects** (`SUBJECTS`, the taxon model: corals and fish on one engine, `subjKey`, `fishGen`; ARCHITECTURE.md "Subjects"; `app.js` `UNITS` reads each subject's data, `SUBJ` is the current one, `inSubject()` visits another; never name a subject in the engine), Pierre's curation and the photos per context (`applyCuration`, `applySlots`, `CAP`), curation merge (`merge3`, `mergeOld`), two-device progress merge (`mergeProgress`), photo Elo replay (`eloOf`, same rules as `Code.gs` `stats_`), the progress engine and its full replay of the answer log (`PROG`, `eloStep`, `replayProgress`, `replayedOf`) with its rules versions (`RVS`, `RV`). |
+| `tools/rename_app.py` | The mechanical part of the rename to IMR Reef ID (visible name from `core.js` `ORG`, storage keys from `core.js` `LEGACY_KEYS`, shell cache name, CSP hashes), idempotent: re-run it after a rebase on a branch that still uses the old names (ARCHITECTURE.md "Names, storage keys and caches"). |
+| `tests/` | `node --test tests/*.test.js`: `core.js`, the sync script against an in-memory sheet (`gas.js`), and Pierre's photo rules on the real `data.json` + `curation.json` (`photos.test.js`: no book, several-corals or sheet-only photo in games, exclusions and hides applied, pins first, IMR/own first). Add a case there when you add a photo rule. `fish.smoke.js` plays the fish subject (draw from the fish slate only, circle opt-in, winks, typed names, progress kept apart from the corals'); `subjects.test.js` the registry and the fish adapter. `draw.smoke.js` runs the real `photoSet()` / `distractors()` in Chromium (one observation per question, no multi or book photo, Research Grade only for genera off the IMR list, traps as asked, Millepora in the slate, the bonus genera offer and opening): extend it when you change the question draw. |
+| `home.js`, `home-art.js`, `home.css` | Home page; `home-art.js` draws the corallite schematic beside the glossary's anatomy link. |
+| `tour.js` | First-visit guided tour (`?tour` forces it); its first step is the first-launch question (rule L10). |
+| `flag.js` | ⚑ "bad photo" button, only in Pierre's admin browser (players report problems with `repBtn()`/`reportDialog()` in `sync.js`, read in admin To do). |
+| `proto/` | Lab/Tools prototypes (`lab.js` hub + one file per tool); `idkey.js` is the graduated Coral ID Key. |
+| `admin.html`, `admin.js`, `admin.css` | Pierre's photo curation back-office: 9 tabs in 3 header groups, each former page a view (`GROUPS`, `navs()`; ARCHITECTURE.md "Admin back-office"). |
+| `autosort.js` | Admin only: the auto-sort's pure rules (sure rule per field, the fish pre-sort's `fishSure`, 1-in-20 Checks, agreement and auto-off per field, retests, metric flags), tested in `tests/autosort.test.js` and `tests/fishphotos.test.js`; `admin.js` `autoRun` applies them to the draft (ARCHITECTURE.md "Auto-sort"). |
+| `analysis.js`, `admin-analyses.js`, `tools/analyses.js` | The Analyses group (Pierre, 2026-11-04): `analysis.js` the model code (crossed random effects, explanatory IRT, verdicts, milestones; Node, browser and Web Worker; `tests/analysis.test.js` recovers known effects from synthetic data), `tools/analyses.js` the script the hourly GitHub Action `.github/workflows/analyses.yml` runs (reads the answer log with the admin token, refits every 1000 answers, stores the report in the sheet, sheet v35), `admin-analyses.js` draws it (ARCHITECTURE.md "Analyses"). |
+| `admin-fish.js` | Admin: the fish pages of the admin plan (docs/ROADMAP.md "Admin for every subject"), so far the fish Candidates swiper (`#fish/~cand`, `renderFishCand`; its pure rules in `autosort.js`: `fishQueue`, `fishAdd`, `fishReject`, `fishExclude`). Loaded after `admin.js`, whose helpers it uses. |
+| `admin-journey.js` | Admin: one player's journey (`#~journey/<name>`, opened from Players): progress, genera met over time, easiest / hardest for them, mix-ups, days; and the summary of one session unfolded on Players › Activity (`sessionSummary`, `sessionFacts`). Loaded after `admin.js`, whose helpers it uses. |
+| `data.json` | All genus data and photo lists (the served source of truth). |
+| `curation.json` | Pierre's choices, applied on top of `data.json` at load. Pierre-owned. |
+| `fish.json`, `fish-photos.json` | The fish subject's content: WoRMS reference tree + IMR teaching tree, built by `tools/build_fish.py` from `tools/fish_source.json` (ARCHITECTURE.md "Fish content"); its photos, a **stopgap** list of remote iNaturalist photos written by `tools/fish_photos.py` until the fish photo pipeline exists. Read by the app through `core.js` `fishGen` when the subject is Fish. Each photo carries its judged ease `e` (`tools/fish_judge.py`, rubric `judging/FISH.md`): the first questions on an entry show only very easy ones (`model.js` `easyFirst`). Its `sheet` holds the sheet-only photos of species with no game photo (`use: 'ref'`, never in a game: `fishGen` keeps them out; ARCHITECTURE.md "Fish content"). |
+| `fish-cand.json` | Fish candidate photos waiting for Pierre (admin only, like `cand.json`; curated in the admin's fish Candidates, `admin-fish.js`, admin plan PR 5a, docs/ROADMAP.md "Admin for every subject"), from `tools/fetch_fish.py` and `tools/fetch_fishbase.py` (FishBase, Pierre 2026-11-05: its underwater CC BY-NC photos, from its data snapshot, filling the room iNaturalist leaves; `rep` tags a reference photo, FishBase's main picture or the iNaturalist cover, one ease point easier when judged): iNaturalist, Pierre's own first, then CC0 / CC BY before CC BY-NC (never share-alike or ND), the Indo-West Pacific only abroad, poor photos kept on purpose, at most 20 observations per species; still remote, never committed as images; pre-sorted by `tools/judging_fish.py` (ARCHITECTURE.md "Fish candidates"). |
+| `forms.json`, `quality.json`, `picks.json`, `dups.json`, `suggest.json`, `metrics.json` | Machine suggestions (growth forms, quality, featured picks, duplicates, judging results, objective photo metrics). |
+| `img/` | The photos with no other backup (IMR lecture photos, Coral Finder book scans, page art), WebP in four sizes: 1600 px, 960 px `-m`, 480 px `-s`, 240 px `-t` (`tools/photos.py`; every tool that writes photos uses its `save()`, CI checks each photo has all four). No Git LFS. Every photo with an online original (iNaturalist, Pierre's own iNaturalist photos, FishBase) lives on Cloudflare R2 only (Pierre, 2026-11-05; never commit one to `img/`: `photos.py --check` fails). The app reads all of them from R2 (`core.js` `PHOTO_BASE`, the one switch); when R2 fails, a photo with an online original falls back to it, the others to these files (`core.js` `photoAway`; ARCHITECTURE.md "Photos"). |
+| `tools/` | Python build/import scripts; `tools/sync/Code.gs` is the Google Apps Script for progress sync; `tools/commonness.py` measures once how common each game genus is near Dauin (iNaturalist) into `data.json` `cm`, which the opening of genera uses (common first); `tools/learnsim.js` the learning-outcome simulation; `tools/fishscore.js` the global fish score's formula on simulated players (docs/LEARNING.md "Fish: the global score, simulated"); `tools/realcheck.js` the app's estimates against the real answer log (a saved Answers tab, aggregates only); `tools/abilityeval.js` replays the real answer log (a read-only export) with the app's Elo and scores its next-answer predictions, rule by rule; `tools/rtprep.js` and `tools/rtdecomp.py` split the response time into player, genus and photo and test the genus and photo terms (docs/LEARNING.md "Response time: genus and photo"); `tools/fallbackeval.js` scores the first-launch question's fallback rule on learnsim's traces and the real log (read-only). |
+| `judging/` | Package for an outside photo-judging agent. |
+| `.github/workflows/pages.yml` | Single Pages deployer: main pushes, manual dispatch and Candidate photos completion; requires Actions source. Recovery: `docs/PAGES.md`. |
+| `.github/workflows/approved-photos.yml` | After each `curation.json` push: download approved candidates, refill candidate lists, then mirror `img/` to R2. |
+| `.github/workflows/photos-r2.yml`, `tools/r2_sync.sh` | Copy `img/` to the Cloudflare R2 bucket (rclone, checksums: only changed files go up; never deletes from the bucket) on a push that changes `img/`, or by hand, then check the bucket holds every R2-only photo; `tools/r2_sync.sh DIR` uploads the photos `tools/fetch_approved.py` downloaded (the Candidate photos Action). Secrets `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and variable `R2_BUCKET`, set by Pierre; without them the copy does nothing and an upload fails. |
+| `.github/dependabot.yml` | Weekly check of the GitHub Actions and `tools/requirements.txt` versions, one grouped PR per ecosystem (rule W9). |
+
+Details in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ## Code.gs (progress sync) and how to redeploy
 
-- Code: [`tools/sync/Code.gs`](../tools/sync/Code.gs); details and version history in ARCHITECTURE.md "Progress sync". Bump `VERSION` (header comment + constant) on every change; keep changes backward compatible, because the app must keep working with the deployed version until Pierre redeploys.
+- Code: [`tools/sync/Code.gs`](../tools/sync/Code.gs); details and version history in ARCHITECTURE.md "Progress sync". How to change it (bump `VERSION`, stay backward compatible, the version gate): rules D3-D5 ([`rules/sheet.md`](rules/sheet.md)).
 - Live version check without writing: open `SYNC_URL?name=x&pin=ab` (`SYNC_URL` constant in `app.js`); the JSON reply carries `v`.
 - **Self-update (from v11, Pierre 2026-11-01): ACTIVE** since Pierre's setup on 2026-11-01 (Cloud project "IMR Coral ID sync", consent screen published, "Self-update ready"; v11 verified live). After a one-time setup, every `Code.gs` merged to `main` with a higher `VERSION` goes live by itself within about 15 minutes; the Sheet's "Deploy log" tab lists each install. **One-time setup (Pierre, French UI, ~5 min):** (1) open <https://script.google.com/home/usersettings> and switch **API Google Apps Script** to **Activé**; (2) in the Sheet > **Extensions > Apps Script**: **Paramètres du projet** (gear) > tick **Afficher le fichier manifeste « appsscript.json » dans l'éditeur**; back in **Éditeur**, replace `appsscript.json` with <https://raw.githubusercontent.com/ppericard/coral-id-imr/main/tools/sync/appsscript.json> and `Code.gs` with the raw link below, save; (3) in the function menu of the toolbar pick **installAutoUpdate** > **Exécuter** > accept the permissions (Google may say the app is unverified: **Paramètres avancés** > **Accéder à … (non sécurisé)**, it is his own script); (4) **Déployer > Gérer les déploiements > Modifier > Nouvelle version > Déployer** (the last manual deploy). Step (3) checks the Apps Script API at once and writes the result in the Sheet's **Deploy log** tab (and the editor's execution log): "Self-update ready" means done. **If it says "NOT ready"** (it did for Pierre on 2026-11-01: "Apps Script API has not been used in project 785247313569", the script's hidden default Cloud project, which cannot be opened; a standard Cloud project is needed): (a) <https://console.cloud.google.com> > new project (e.g. "IMR Coral ID sync"); (b) **API et services > Bibliothèque** > "Apps Script API" > **Activer**; (c) **Google Auth Platform / Écran de consentement OAuth** (<https://console.cloud.google.com/auth/overview>): app name, his address as support and contact e-mail, audience **Externe**; on **Branding**, *Application home page* `https://ppericard.github.io/coral-id-imr/`, *Application privacy policy link* `https://ppericard.github.io/coral-id-imr/privacy.html` and *Authorized domains* `ppericard.github.io` (Google greys out Publish without them), **Save**; then **Audience > Publier l'application** (**En production**): never leave it in test mode, where Google drops the authorisation after 7 days and the time trigger silently stops; for his own use no Google verification is needed (an "unverified app" warning, **Paramètres avancés > Accéder à…**); (d) copy the project **number** (Tableau de bord); (e) in Apps Script: **Paramètres du projet > Projet Google Cloud Platform (GCP) > Changer de projet** > paste the number > **Définir le projet**; (f) run **installAutoUpdate** again. If anything still fails, the manual steps below always work. An update interrupted half-way (code replaced, deployment not) is finished at the next run (`AUTO_PENDING`).
 - **Manual deploy (before the setup, or if self-update fails).** Give Pierre this raw link to copy: <https://raw.githubusercontent.com/ppericard/coral-id-imr/main/tools/sync/Code.gs>. His steps (French UI): open the Google Sheet "IMR Coral ID – RA progress" > **Extensions > Apps Script** > select all of `Code.gs` and paste the new code > save (disk icon) > **Déployer > Gérer les déploiements** > pencil icon (**Modifier**) on the existing deployment > **Version : Nouvelle version** > **Déployer**. The URL stays the same. Then check `v` with the link above.
@@ -88,9 +130,7 @@ Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Mari
 
 ## Admin workflow (what Pierre does, what you must not break)
 
-- Pierre curates photos in `admin.html`; every click is a browser draft; **Publish** merges the draft key by key onto the latest `curation.json` and commits it to `main` (commit "Photo curation: … (by ppericard)"). The GitHub Action `approved-photos.yml` then downloads approved candidates and refills candidate lists (commit "Candidate photos: …"). So `main` moves without PRs: rebase right before merging, never overwrite `curation.json` in a PR.
-- His curation is never changed automatically; no bulk reset; Undo only. Everyday per-photo actions (× exclude, Reject) are one click with no confirmation: Undo is his safety net.
-- Admin pages carry no explanatory text: help sits behind "?" (tabs "This page" / "Start here").
+Pierre curates photos in `admin.html`; every click is a browser draft; **Publish** merges the draft key by key onto the latest `curation.json` and commits it to `main` ("Photo curation: … (by ppericard)"); the GitHub Action `approved-photos.yml` then downloads approved candidates and refills candidate lists ("Candidate photos: …"). The rules (never change his curation, no bulk reset, one click with Undo, rebase before merging): A1, A2 ([`rules/admin.md`](rules/admin.md)), W18. Admin help sits behind "?" (tabs "This page" / "Start here").
 
 ## External resources
 
@@ -123,7 +163,7 @@ Dauin, Philippines. Previous work happened in another Claude account; you have n
 memory or chats. Everything you need is in the repo.
 
 1. Read AGENTS.md, then docs/HANDOVER.md, then docs/STATUS.md, then docs/ROADMAP.md. Skim docs/ARCHITECTURE.md and
-   docs/DESIGN.md. Follow the standing rules in AGENTS.md strictly.
+   docs/DESIGN.md. Follow the rules in AGENTS.md and docs/rules/ strictly.
 2. Run the tests (node --test tests/*.test.js) and serve the app locally (python3 -m http.server)
    to check that main works.
 3. Reply to me in French with: (a) a 5-line summary of where the project stands, (b) what I
@@ -134,8 +174,8 @@ Working rules: answer me in French, write everything else in English; you are th
 (AGENTS.md "Working mode"): start subagents on their own branches and PRs, merge only what was
 already decided with me, bring me every other choice as a short numbered question with context
 and your recommendation; fix review findings without asking; follow Rule 0 and its quiet hours;
-update the docs in every PR. Save any new lasting rule I give you in AGENTS.md, not only in your
-memory.
+update the docs in every PR. Save any new lasting rule I give you in docs/rules/ (with its ID in
+AGENTS.md), not only in your memory.
 ```
 
 ## Analyses report (one-time setup, 2026-11-04)
@@ -172,11 +212,11 @@ Step 2 removed from `img/` every photo with an online original (they live on Clo
 5. **`.git-blame-ignore-revs`** names commits by hash: rewrite it with the new hashes from `.git/filter-repo/commit-map` (old, new per line) and commit it on the rewritten `main`.
 6. **Force-push**: `git remote add origin https://github.com/ppericard/coral-id-imr.git && git push --force origin main` (then `--force` for any other branch kept, and `git push --force --tags origin`).
 7. **Pierre turns "Block force pushes" back on**; enable the two workflows again (`gh workflow enable …`); run Actions > Deploy Pages once and check the site.
-8. **Every agent and every computer re-clones** (`git clone`, sparse without `img/` as AGENTS.md 16 says); an old clone or worktree must not push (its `main` is the old history: a push would bring the photos back). GitHub keeps the old objects behind the old pull-request refs until its own clean-up, so the repository's size on GitHub may drop later than the clones'; GitHub Support can run that clean-up on request.
+8. **Every agent and every computer re-clones** (`git clone`, sparse without `img/` as rule W22 says); an old clone or worktree must not push (its `main` is the old history: a push would bring the photos back). GitHub keeps the old objects behind the old pull-request refs until its own clean-up, so the repository's size on GitHub may drop later than the clones'; GitHub Support can run that clean-up on request.
 
 ## Clean merged branches (one-time setup)
 
-Merged branches hide the ones that never got a PR (Pierre, 2026-11-04, AGENTS.md 26b). Agents cannot delete branches from their sessions (the git proxy refuses), so Pierre:
+Merged branches hide the ones that never got a PR (Pierre, 2026-11-04, rule W6). Agents cannot delete branches from their sessions (the git proxy refuses), so Pierre:
 
 1. Settings > General > Pull Requests > tick **Automatically delete head branches**, for the future.
 2. For the ~130 already merged: Actions > **Prune merged branches** (`prune-branches.yml`) > Run workflow once with "dry_run" ticked (it lists), then unticked (it deletes). It deletes only branches whose PR was merged and that got nothing after the merge; a deleted branch can be restored from its PR page.

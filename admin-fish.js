@@ -97,7 +97,7 @@ function fishEdit(fn) {
 }
 // The fish auto-sort's line (above the card) and its details (below it): its decisions in and set aside, the Checks
 // waiting, its keep agreement with Pierre (autosort.js fishCompare, autoState: off under 90% over the last 40), and in
-// the details the disagreements and every decision still standing, each with Undo (fishAutoUndo; rule 8).
+// the details the disagreements and every decision still standing, each with Undo (fishAutoUndo; rule A1).
 function fishAutoBlock(det) {
   const F = DRAFT.fish || {},
     I = Object.entries(fishIdx(F)),

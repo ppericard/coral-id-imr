@@ -437,7 +437,7 @@ test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps th
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-test('fetch_fish.py Net.fetch: a failed request is retried after a pause, never a crash (rule 6f; Codex review #562)', () => {
+test('fetch_fish.py Net.fetch: a failed request is retried after a pause, never a crash (rule C7; Codex review #562)', () => {
   const out = JSON.parse(
     execFileSync(
       'python3',
