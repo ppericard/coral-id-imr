@@ -3765,13 +3765,32 @@ button.adm-chip[aria-pressed='true'] {
 .adm-an-made {
   margin-left: auto;
 }
+/* Recompute here and its This tab's / Stored report switch: quiet links on every screen (Pierre, 2026-11-05: his phone can
+   run it), a long progress text wrapping inside the header; on touch screens a 44 px tall touch area (rule 19: touch by
+   pointer, never width). */
 .adm-an-re {
   font-size: var(--fs-s);
+  max-width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
-/* Recompute here is for a desktop: on a phone the page only draws the stored report. */
+/* Phones: the milestone switch takes its own row, its buttons share it (at 360 px its five buttons overflowed by 24 px). */
 @media (max-width: 599.98px) {
-  .adm-an-re[data-anre] {
-    display: none;
+  .adm-an .adm-shead .adm-sseg {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  .adm-an .adm-sseg button {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 6px;
+  }
+}
+@media (pointer: coarse) {
+  .adm-an-re {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }
 .adm-an-grid > .adm-scard {

@@ -1,5 +1,7 @@
 # The admin's Analyses report (Pierre, 2026-11-04: multifactor analyses of the answer log "every 1000 new answers",
-# computed once and stored in the sync sheet, never on a phone; docs/ARCHITECTURE.md "Analyses"). Every hour it asks the
+# computed once and stored in the sync sheet, the admin's primary source; its "Recompute here" runs the same code in that
+# tab on any device, phones included, and its result stays in that tab: Pierre, 2026-11-05; docs/ARCHITECTURE.md
+# "Analyses"). Every hour it asks the
 # sheet how many answers there are (a cheap call) and computes only when 1000 new answers came since the stored report,
 # or when the analysis code changed, or by hand (Run workflow, "force"). Needs the repository secret
 # ANALYSES_ADMIN_TOKEN (Pierre's one-time setup: docs/HANDOVER.md "Analyses report"); without it every run is skipped.

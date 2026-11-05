@@ -326,6 +326,16 @@ const WIDTHS = [390, 1280];
     }));
     if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/since .* next at/.test(anv.badge))
       fails.push(`${w}px Analyses overview: ${JSON.stringify(anv)}`);
+    // Recompute here on every screen, phones included (Pierre, 2026-11-05: it was hidden under 600 px): shown, inside the window.
+    const anre = await p.evaluate(() => {
+      const e = document.querySelector('[data-anre]'),
+        r = e && e.getBoundingClientRect();
+      return (
+        e && {shown: r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none', left: r.left, right: r.right, vw: innerWidth}
+      );
+    });
+    if (!anre || !anre.shown || anre.left < 0 || anre.right > anre.vw)
+      fails.push(`${w}px Analyses: Recompute here ${JSON.stringify(anre)}`);
     for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess']) {
       await go(h);
       const v = await p.evaluate(() => ({
