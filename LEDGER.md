@@ -22,4 +22,5 @@ Open PRs: `gh api "repos/ppericard/coral-id-imr/pulls?state=open"`. Pierre's dec
 | App icon | none | proposals ready (D2, B1-B4), wait Pierre's pick | scratchpad/icons/v2 |
 | Name-similarity confusion study | none (scratchpad/name-confusion-study.md) | running | Pierre 18:33: do players confuse genera because names look alike (Pectinia/Pavona)? literature + real-log test + app options |
 | Fish PR 7 curated photos in game | draft PR, stacked on #602 | building | fishOn rule, fetch_approved fish branch, curated list, no real R2 upload from session |
-| Merged tonight | #578 #580 #582-#597 #601 #572 #605 #606 | done | — |
+| Typed answers: retry on close misspelling (a player's idea, Pierre 'good idea') | draft PR needs-pierre | building | grading unchanged, one retry, highlight differing letters, log raw typed text if no breaking sheet change |
+| Merged tonight | #578 #580 #582-#597 #601 #572 #605 #606 #608 #613 | done | — |
