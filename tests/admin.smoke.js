@@ -1227,7 +1227,7 @@ const WIDTHS = [390, 1280];
       // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
       // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
       {
-        const beta = await p.evaluate(() => (SUBJECTS.find(S => S.beta) || {}).id);
+        const beta = await p.evaluate(() => (SUBJECTS.find(S => subjGroup(S)) || {}).id);
         const grp = () =>
           p.evaluate(() => ({
             line: (document.querySelector('.adm-ugroup') || {}).innerText || '',
@@ -1273,6 +1273,19 @@ const WIDTHS = [390, 1280];
           }));
           if (!old.note || old.btn) fails.push(`${w}px Players (${beta}) with sheet v45: ${JSON.stringify(old)}`);
           await q.close();
+          // Opened to all (core.js SUBJECTS open: 'all', the release's one field, forced here at runtime): no group line, no
+          // Beta column, no Add / Remove, though the subject keeps its beta label; back to 'group', they return.
+          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta);
+          await go('~users');
+          await go(beta + '/~users');
+          const ga = await grp(),
+            gb = await p.evaluate(() => ({btn: !!document.querySelector('[data-ugall], [data-ugroup]'), label: !!ASUBJ.beta}));
+          if (ga.line || ga.col || ga.all || gb.btn || !gb.label)
+            fails.push(`${w}px Players (${beta}) open to all: ${JSON.stringify({...ga, ...gb})}`);
+          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'group'), beta);
+          await go('~users');
+          await go(beta + '/~users');
+          if (!(await grp()).col) fails.push(`${w}px Players (${beta}) back to the group: no Beta column`);
           await go('~users'); // the corals' page, Dio's row still open, as the steps below expect
         }
       }

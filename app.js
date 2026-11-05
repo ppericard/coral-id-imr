@@ -1179,7 +1179,8 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 // the admin's only while Fish is in beta), remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
 // subject's; code that must read another subject's state runs inside inSubject() (sync.js: the sheet's summary and
 // the merge of every subject's progress). setSubject() switches (subjectLoad: each file's per-subject state).
-// A subject in beta (core.js SUBJECTS beta: fish) is the admin's only (Pierre, 2026-11-04: "some things clearly aren't
+// A subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup: fish; its "beta" tag is SUBJECTS beta, the
+// label only) is the admin's only (Pierre, 2026-11-04: "some things clearly aren't
 // ready"; its switches on Home and in the header are shown only to the admin until fish opens): anyone else opens on the corals whatever this device or the
 // account saved, and nothing switches them to it (setSubject, a link to a sheet: subjAt). The saved choice and that
 // subject's progress stay as they are (synced, merged: inSubject), back on screen if the admin view comes back.
@@ -1193,7 +1194,7 @@ const subjGroups = () => {
     a = store.get('reefid-account', null);
   return o && a && o.n === a.name && Array.isArray(o.g) ? o.g : [];
 };
-const subjOpen = S => !S.beta || IS_ADMIN || subjGroups().includes(S.id);
+const subjOpen = S => !subjGroup(S) || IS_ADMIN || subjGroups().includes(S.id);
 const subjAt = id => (subjOpen(subjectOf(id)) ? subjectOf(id) : SUBJECTS[0]);
 let SUBJ = subjAt(store.get(SUBJECT_KEY, SUBJECTS[0].id));
 const sKey = name => subjKey(SUBJ.id, name); // reefid-sync-<subject>-<name>: travels with the player
