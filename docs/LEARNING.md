@@ -3429,6 +3429,59 @@ the spread, so beginner and strong RA were run again on 15 seeds: learned 1.5 ±
 The simulated world is built on the same genus offsets the v31 app is given, so it says the rule is safe, not how
 much it gains; the real-log replay above is the measure of that.
 
+### Photos rated against the genus ability (sheet v67, 2026-11-06, Q136)
+
+The independent review of 2026-11-06 (`docs/reviews/2026-11-06-engine-algorithms-review.md` §1) found two person models
+rating the same photos: the sheet rated each photo against one global level per player (`R`, start −1, K 0.6 / (1 +
+n / 40)), while the app picks and expects each photo against the player's **genus** ability. Elo ratings calibrated on
+the fly under adaptive selection are biased when the person term is not the one that chose the item (Bolsinova,
+Gergely & Brinkhuis 2025); the review inferred hard photos rated easier and a compressed scale, to be measured first.
+Pierre (2026-11-06, Q136): measure the effect on the real log first, then change.
+
+**Measured first** (tier 3, rule L12; read-only, the sheet's Answers tab read 2026-11-06 07:30 Manila: 2,047 answers of
+10 players, 2026-11-01 to 11-05, all 10 trusted; aggregates only). Declared before running, one family under Holm with
+the per-format offsets (P1: "Per-format offsets", Q138): **P2**, the prequential next-answer log-loss of each
+answer predicted as the app predicts it (the logged genus ability minus the photo rating, its single-view handicap and
+the memory offset, guess 1/k), with the photos, genus offsets and memory offsets rated against the logged genus
+ability (B) or against the single level (A, until v63); players as the unit, an exact sign-flip test over the 10
+players' mean differences.
+
+| Measure | A: against the level | B: against the genus ability |
+| --- | --- | --- |
+| log-loss, per answer (descriptive) | 0.4846 | 0.4805 |
+| P2: mean of the players' mean differences B − A (95% t interval) | | −0.0022 [−0.0106, +0.0063], 7 of 10 better, p 0.60 |
+| mean predicted / right | 0.756 / 0.822 | 0.790 / 0.822 |
+| photos with 5+ answers (160): SD of the ratings | 0.556 | 0.518 (slope of B on A 0.88, r 0.94; mean −0.33) |
+| genus offsets: SD | 0.370 | 0.286 |
+| memory offsets (new, shown never right, right once, right twice+) | 0, 0.53, −0.84, −1.32 | 0, 0.39, −1.08, −1.52 |
+| calibration slope of the app's log-odds (descriptive) | 0.35 | 0.30 |
+
+- **Inconclusive, both ways** (P2 not significant; under Holm only P1 passed, p 0.008: "Per-format offsets", Q138).
+  The 95% interval allows the change to be up to 0.0063 per answer worse or 0.0106 better; no margin was declared
+  before the test, so no "no worse" conclusion can be drawn (rule L11: that needs a margin set first and an
+  equivalence test). Ten players and four days can show a large effect, not a small one.
+- **The compression the review inferred is not seen**: against the genus ability the ratings are slightly *less*
+  spread (SD 0.52 against 0.56), not more. What moves is the level of the scale: the logged genus abilities sit about
+  0.3 above the sheet's level (which starts every player at −1), so the photos come out 0.33 easier on the app's own
+  scale and the app's mean prediction comes nearer the real success (0.79 against 0.76, real 0.82).
+- **The large miscalibration is elsewhere**: the app's log-odds are about three times too steep under either rating
+  (slope 0.30-0.35: confident predictions too confident), the same finding as "Per-format offsets"; a person model with
+  a variance (review §2b) is where it belongs, not the photo ratings.
+
+**The rule** (Pierre's approval of the review's step 1, on its coherence argument: one person term for choosing and for
+rating the photos; the measurement above neither supports nor rules out a gain or a loss, so shipping it is his call): in `Code.gs` `stats_`
+and `core.js` `eloReplay` (in step, `tests/core.test.js`), each answer logged from `TH_FROM` (2026-11-06 00:00 Manila)
+moves the photo residuals, the genus offsets and the memory offsets by its surprise against the genus ability the app
+logged with it (the Ability column, `ability(target)` when the question was asked: the person term the photo targeting
+used); the guess, the memory, the single-view handicap and the weights are unchanged. The level `R` keeps its own
+expectation and its step and feeds only what read it before (`ras`, the trust rule, the admin's margins). **Migration**:
+the answers before `TH_FROM` keep the level as person term, so the replay of the log as it stood gives exactly the
+ratings of 2026-11-06 (checked: the same `eloOf` before and after on the measured log), and the new rule goes on from
+there; an answer logged without an ability (before sheet v5) keeps the level. Nothing the app computes changes (it
+reads the ratings as before), and the progress replay is untouched (the memory offsets it reads change only with new
+answers, as they always did): no rules version. Stats cache `stats16`. Step 2 of the review (a periodic batch refit)
+stays in ROADMAP.
+
 ### Response time: genus and photo (measured 2026-11-04, no change made)
 
 Pierre, 2026-11-04: "response time informs on several things at once: the player's knowledge of this genus, the

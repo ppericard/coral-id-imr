@@ -9,6 +9,7 @@ const {
   eloOf,
   genusOffsetsOf,
   GENUS_K,
+  TH_FROM,
   trustOf,
   confusionOf,
   confScore,
@@ -181,6 +182,53 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   // v26: the photo memory offsets and the answers behind them, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(photoMemOf(rows), {mem: st.mem, memn: st.memn});
   assert.notDeepStrictEqual(st.mem, MEM.PRIOR, 'the answers moved the offsets');
+});
+
+test('photos are rated against the logged genus ability from TH_FROM, the same in the sheet (Q136, v67)', () => {
+  const s = loadCodeGs(),
+    photos = ['acropora-1', 'acropora-2', 'porites-1', 'porites-2'];
+  let n = 0;
+  // 30 answers before the switch and 30 after, each logging the genus ability the app asked it with (th), far from the
+  // player's level so the person term shows.
+  for (const t0 of [TH_FROM - 3600e3, TH_FROM + 60e3])
+    for (let i = 0; i < 30; i++) {
+      const f = photos[i % 4];
+      s.post({
+        name: 'Ana',
+        pin: '1234',
+        data: {},
+        summary: {},
+        answers: [
+          {
+            id: 'h' + n++,
+            t: new Date(t0 + i * 1000).toISOString(),
+            g: f.startsWith('acropora') ? 'Acropora' : 'Porites',
+            a: i % 4 ? (f.startsWith('acropora') ? 'Acropora' : 'Porites') : 'Favites',
+            ok: i % 4 ? 1 : 0,
+            m: 'quiz',
+            ch: 'Acropora Porites Favites Montipora',
+            ph: f,
+            e: 0.8,
+            th: 1.5
+          }
+        ]
+      });
+    }
+  const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows,
+    st = s.get({stats: '1'});
+  assert.deepStrictEqual(eloOf(rows), st.photos);
+  assert.deepStrictEqual(genusOffsetsOf(rows), st.gd);
+  assert.deepStrictEqual(photoMemOf(rows), {mem: st.mem, memn: st.memn});
+  // The migration: a log that ends before the switch is rated exactly as before (the level as person term)...
+  const before = rows.filter(r => r[1] < TH_FROM);
+  assert.deepStrictEqual(eloOf(before), eloOf(before, Infinity));
+  // ...and the answers after it against the logged ability: the same answers from a player the app holds stronger (1.5,
+  // above their level) say the photos are harder.
+  assert.notDeepStrictEqual(eloOf(rows), eloOf(rows, Infinity));
+  ['acropora-1', 'acropora-2', 'porites-1'].forEach(f => assert.ok(eloOf(rows)[f][0] > eloOf(rows, Infinity)[f][0], f));
+  // An answer logged without its ability (before sheet v5) falls back to the level.
+  const bare = rows.map(r => [...r.slice(0, 8), null, ...r.slice(9)]);
+  assert.deepStrictEqual(eloOf(bare), eloOf(bare, Infinity));
 });
 
 test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the direction', () => {
