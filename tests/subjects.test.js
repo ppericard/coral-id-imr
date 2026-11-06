@@ -39,8 +39,12 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   // Distinct keys and sign-in record fields: no subject can overwrite another's.
   assert.strictEqual(new Set(C.SUBJECTS.flatMap(s => s.base)).size, 2 * C.SUBJECTS.length);
   assert.strictEqual(new Set(C.SUBJECTS.map(s => s.dev)).size, C.SUBJECTS.length);
-  // The leaderboard and the achievements count one subject.
-  assert.strictEqual(C.SUBJECTS.filter(s => s.board).length, 1);
+  // A leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; sheet v95); the achievements
+  // count one subject.
+  assert.ok(
+    C.SUBJECTS.every(s => s.board === true),
+    'every subject has its leaderboard'
+  );
   assert.strictEqual(C.SUBJECTS.filter(s => s.ach).length, 1);
 });
 

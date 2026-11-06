@@ -856,6 +856,80 @@ test('board: signed-in players by progress then level; opted-out players and the
   );
 });
 
+// One leaderboard per subject (v95; Pierre, 2026-11-04: separate per subject, no merged ranking): fixtures only.
+test('board (v95): each subject its own board, by its % over the units its apps sent, then its level; the corals as before', () => {
+  const s = seed();
+  const fish = (P, coral = 3) => ({...prog(coral), 'reefid-sync-fish-progress': JSON.stringify(P)});
+  const units = ['f:Chaetodontidae', 'f:Pomacanthidae', 'f:Labridae', 'f:Acanthuridae'];
+  const lvl = th => ({ok: 220, ko: 30, th});
+  // No units sent yet (apps before v95): fish players listed with no % (–), never the corals' Progress column.
+  s.post({name: 'Ana', pin: '1234', data: fish({'f:Labridae': {ok: 3, ko: 1, pg: 0.4}}), summary: {pct: 41.6, board: 1}, answers: []});
+  assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, [['Ana', null, null]], 'no units kept yet');
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  // Ana: two families mastered, Elo from 250 answers. Ben: the same %, a higher level. Ana B: opted out (her coral choice
+  // holds for every board). Cy: corals only, never on the fish board.
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({'f:Chaetodontidae': {ok: 9, ko: 0, mx: 1}, 'f:Pomacanthidae': {ok: 9, ko: 0, mx: 1}, '~level': lvl(0.5)}),
+    summary: {pct: 41.6, board: 1, boards: {fish: units, coral: ['Acropora'], nope: ['x']}},
+    answers: []
+  });
+  s.post({
+    name: 'Ben',
+    pin: '1111',
+    data: fish({'f:Labridae': {ok: 9, ko: 0, mx: 1}, 'f:Acanthuridae': {ok: 9, ko: 0, mx: 1}, '~level': lvl(1.5)}, 0),
+    summary: {pct: 2, board: 1, boards: {fish: ['=SUM(A1)', ...units]}},
+    answers: []
+  });
+  s.post({name: 'Ana B', pin: '5678', data: fish({'f:Labridae': {ok: 9, ko: 0, mx: 1}}), summary: {board: 0}, answers: []});
+  s.post({name: 'Cy', pin: '2222', data: prog(5), summary: {pct: 60, board: 1}, answers: [ans('cy1')]});
+  assert.strictEqual(
+    s.props.BOARD_UNITS_fish,
+    JSON.stringify(units),
+    'the units kept: a formula-like word dropped, no list for the corals or an unknown subject'
+  );
+  assert.ok(!('BOARD_UNITS_coral' in s.props) && !('BOARD_UNITS_nope' in s.props));
+  const F = s.get({board: '1', s: 'fish'});
+  assert.strictEqual(F.v, SV);
+  assert.deepStrictEqual(
+    F.rows,
+    [
+      ['Ben', 50, 1.5],
+      ['Ana', 50, 0.5]
+    ],
+    'by the fish % (2 of 4 families learned), then the fish level; Ana B opted out, Cy has no fish progress'
+  );
+  // The corals' board is unchanged: no s, an unknown subject, or one without a board.
+  const C = s.get({board: '1'}).rows;
+  assert.deepStrictEqual(s.get({board: '1', s: 'nope'}).rows, C);
+  assert.ok(
+    C.some(r => r[0] === 'Cy') && C.find(r => r[0] === 'Ana')[2] === null,
+    'the coral board reads the coral progress, not the fish level'
+  );
+  // Each board cached apart, 5 minutes; an admin's hide holds for every board and drops every board's cache at once.
+  assert.ok(s.cache.board14 && s.cache['board14:fish']);
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1}, answers: []});
+  assert.deepStrictEqual(
+    s.get({board: '1', s: 'fish'}).rows.map(r => r[0]),
+    ['Ben', 'Ana'],
+    'cached 5 minutes'
+  );
+  s.post({userBoard: 'Ben', hide: true, token: TOK});
+  assert.ok(!s.cache.board14 && !s.cache['board14:fish'], 'every board cache dropped');
+  s.post({name: 'Ana', pin: '1234', data: fish({'f:Labridae': {ok: 1, ko: 0, pg: 0.1}}), summary: {board: 1}, answers: []});
+  assert.deepStrictEqual(
+    s.get({board: '1', s: 'fish'}).rows.map(r => r[0]),
+    ['Ana'],
+    'hidden from the fish board too'
+  );
+  // An archive leaves both boards at once (rosterChanged_ drops every board's cache).
+  s.get({board: '1'});
+  s.post({userArchive: {from: 'Ana', into: 'Ana-test'}, token: TOK});
+  assert.ok(!s.cache['board14:fish'] && !s.cache.board14, 'every board cache dropped');
+  assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, []);
+});
+
 test('board (v20): an admin hides a player from the leaderboard; their own syncs never bring them back', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('a3')]});

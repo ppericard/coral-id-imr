@@ -219,7 +219,8 @@
   //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked)
   //   replay  the sheet computes from its logged answers: photo ratings, confusions, the opening hold, the full replay
   //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
-  //   ach, board  achievements and the leaderboard count this subject
+  //   ach     achievements count this subject
+  //   board   it has its own leaderboard (sheet v95: Code.gs board_ &s=<id>), by its % then its Elo
   //   progress    the views of My progress (progress.js quizBoard), the first by default
   //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.practice.quiz)
   //   hash    the prefix of its addresses, in the app and the admin ('' for the corals, 'fish/': #fish/practice/quiz,
@@ -458,7 +459,9 @@
       replay: false,
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       ach: false,
-      board: false,
+      // Its own leaderboard (Pierre, 2026-11-04: separate per subject, no merged ranking): by its %, then its Elo (sheet
+      // v95, Code.gs board_ &s=fish; progress.js loadBoard).
+      board: true,
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
       // them); the judged ease's prior as measured (CALIB.ease). Q186 (Pierre, 2026-11-06 15:33: the easy photos strongly
       // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
