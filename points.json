@@ -370,6 +370,19 @@
         "Pierre's own words for Q11 of the fish-sheets study (2026-11-06): \"the small spine sticking out on the cheek (preopercular spine)\"."
       ],
       "src": [{"t": "FishBase, family Pomacanthidae", "u": "https://www.fishbase.se/summary/FamilySummary.php?family=Pomacanthidae"}, {"t": "IMR fish presentation, slide 11"}]
+    },
+    {
+      "id": "wrasse-teeth",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-06",
+      "title": "Wrasses: no visible teeth, or teeth that jut forward?",
+      "q": "IMR's cue for the wrasses says \"Thick lips, no visible teeth\" (against the parrotfishes' beak); FishBase's family summary says most wrasses have jaw teeth with gaps, usually jutting outward. Should the sheet add a line on the teeth, and how?",
+      "ctx": [
+        "IMR fish presentation (fish.json f:Wrasses cues): \"Thick lips, no visible teeth\"; its look-alike line for the parrotfishes: \"Wrasse: thick lips, no visible teeth\".",
+        "FishBase, family Labridae: \"Most jaw teeth with gaps between them; teeth usually jutting outward\". The family sheet leaves this out until Pierre decides (rule C1: IMR's cue unchanged; Codex review #695)."
+      ],
+      "src": [{"t": "FishBase, family Labridae", "u": "https://www.fishbase.se/summary/FamilySummary.php?family=Labridae"}, {"t": "IMR fish presentation, Wrasse"}]
     }
   ]
 }
