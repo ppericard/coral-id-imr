@@ -305,7 +305,7 @@ const server = http.createServer((req, res) => {
       ok(opts.length >= 27 && opts.includes('Damselfish'), 'report: the fish names offered ' + opts.slice(0, 3));
       ok(!opts.some(o => /^t\d+$/.test(o)), 'report: no teaching id offered ' + opts.filter(o => /^t\d+$/.test(o)).slice(0, 3));
       const txt = dl.textContent;
-      ok(/Right family, if you know/.test(txt) && /Several fish/.test(txt), 'report: the fish words');
+      ok(/Right family, if you know/.test(txt) && /Several fish species/.test(txt), 'report: the fish words');
       ok(!/genus|coral/i.test(txt), 'report: no coral words: ' + txt.replace(/\s+/g, ' ').slice(0, 160));
       ok(!/\bt\d\d\b/.test(dl.querySelector('input[name="fix"]').placeholder), 'report: no teaching id as the example');
       dl.close();
@@ -442,10 +442,19 @@ const server = http.createServer((req, res) => {
     });
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
     await wide('the families page');
+    // A family's photo enlarges in the shared viewer, as the coral photos do (fish beta QA, 2026-11-06).
+    await q.click('#view .tipph .zoom');
+    const fz = await q.evaluate(() => {
+      const L = document.getElementById('lightbox');
+      return {open: !!L && !L.hidden && !!L.querySelector('.lb-in img'), cap: ((L && L.querySelector('.lb-cap')) || {}).textContent || ''};
+    });
+    if (!fz.open || !/Damselfish|fish/i.test(fz.cap))
+      ui.push(`${width}px families page: a photo tapped did not enlarge ${JSON.stringify(fz)}`);
+    await q.click('#lightbox [data-x]');
     // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family on the families page opens its
     // sheet, under the book's English name with its scientific name below; an old entry id links to its family; the only
     // genus of a family opens the family sheet; the species filter is on by default and one tap shows them all.
-    await q.click('#view .tipg a.tipph');
+    await q.click('#view .tipg a.tipsheet');
     await q.waitForFunction(() => document.querySelector('#view .fsheet'), null, {timeout: 15000});
     const sh = await q.evaluate(() => ({
       hash: location.hash,
@@ -480,6 +489,30 @@ const server = http.createServer((req, res) => {
       .catch(e => ({err: e.message}));
     if (sp.hash !== '#fish/learn/family/Spadefishes' || sp.all !== 5 || sp.mine !== 0)
       ui.push(`${width}px Spadefishes sheet: ${JSON.stringify(sp)}`);
+    // The filter starts on again on the next sheet opened (Codex review #675); an opt-in circle on puts its families in the
+    // sheets' previous / next, both families of an entry renamed into two included (Seahorses, Waspfishes).
+    await q.evaluate(() => (location.hash = '#fish/learn/family/Rabbitfishes'));
+    await q
+      .waitForFunction(() => location.hash.endsWith('/Rabbitfishes') && document.querySelector('#view .fsheet [data-mine]'), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const re = await q.evaluate(() => {
+      const on = (document.querySelector('#view .seg [data-mine="1"]') || {}).getAttribute?.('aria-pressed'),
+        was = Q.c3;
+      Q.c3 = true;
+      const L = fishShown();
+      Q.c3 = was;
+      return {
+        on,
+        seahorses: L.includes('f:Seahorses'),
+        wasp: L.includes('f:Waspfishes'),
+        pipe: L.includes('f:Pipefishes'),
+        off: !fishShown().includes('f:Seahorses') || !!was
+      };
+    });
+    if (re.on !== 'true' || !re.seahorses || !re.wasp || !re.pipe || !re.off)
+      ui.push(`${width}px sheet filter and circles: ${JSON.stringify(re)}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
@@ -489,6 +522,21 @@ const server = http.createServer((req, res) => {
       return {n: B.length, plain: B.every(x => x.classList.contains('plain')), fish: B.every(x => GX(x.dataset.c) && GX(x.dataset.c).name)};
     });
     if (qs.n !== 4 || !qs.plain || !qs.fish) ui.push(`${width}px question: ${JSON.stringify(qs)}`);
+    // A question drawn outside a route (as after the welcome question and the first cards) is sized with the intro
+    // already behind ? (fish beta QA, 2026-11-06: measured under it, before its observer ran, Q1 got the minimum height,
+    // a small letterboxed photo): the stage takes the window below the header, measured at once.
+    const fit1 = await q.evaluate(() => {
+      quizPhoto();
+      const Q = $v.querySelector('.q'),
+        want = innerHeight - Q.getBoundingClientRect().top - window.scrollY - 16 - tabH();
+      return {
+        qh: parseFloat(Q.style.getPropertyValue('--qh')),
+        want: Math.max(260, want),
+        lede: $v.querySelectorAll(':scope > .lede').length
+      };
+    });
+    if (Math.abs(fit1.qh - fit1.want) > 2 || fit1.lede) ui.push(`${width}px a question's stage: ${JSON.stringify(fit1)}`);
+    for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
     await wide('a fish question');
     await q.click('#view .qph .zoom');
     const blind = await q.evaluate(() => {
@@ -501,14 +549,52 @@ const server = http.createServer((req, res) => {
     await q.click('#view .ans [data-c]');
     const after = await q.evaluate(() => {
       const fb = document.querySelector('#after .fb'),
-        cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"]');
+        // The photo's source page: iNaturalist, or FishBase for its reference photos in play (#660).
+        cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"], .credit a[href*="fishbase."]');
       return {fb: !!fb, credit: !!cr, h3: fb ? fb.querySelector('h3').textContent : ''};
     });
     if (!after.fb || !after.credit) ui.push(`${width}px answer: no full credit with its link ${JSON.stringify(after)}`);
+    // A name in common use typed (Clownfish): right, the verdict's one line names the usual name gently (Pierre,
+    // 2026-11-06, Q164), as the spelling step's line (.tystep); a plain name keeps the plain line.
+    const oft = await q.evaluate(() => {
+      const line = t => {
+        const m = typeMatch(t),
+          d = document.createElement('div');
+        d.innerHTML = fbBody(m.g, m.g, true, false, false, [], typeRead(m, t, null), typeStep(m, t, null));
+        const h = d.querySelector('h3');
+        return [h.textContent.replace(/\s+/g, ' ').trim(), h.classList.contains('tystep'), !!d.querySelector('.tyread')];
+      };
+      return {clown: line('clown'), clownfish: line('Clownfish'), damsel: line('damsel')};
+    });
+    if (
+      !/^✓ Yes, Anemonefish \(often called clownfish\): it's Damselfish/.test(oft.clown[0]) ||
+      !oft.clown[1] ||
+      oft.clown[2] ||
+      oft.clownfish[0] !== oft.clown[0] ||
+      !/^✓ Yes, it's Damselfish/.test(oft.damsel[0]) ||
+      oft.damsel[1]
+    )
+      ui.push(`${width}px a name in common use typed: ${JSON.stringify(oft)}`);
     await wide('the answer');
     await q.evaluate(() => (location.hash = '#progress'));
     await q.waitForFunction(() => document.querySelector('#view .pgame'), null, {timeout: 15000});
     await wide('My progress');
+    // The bar's note names the subject's unit (SUBJECTS one), never "genus" on fish (fish beta QA, 2026-11-06).
+    const pnote = await q.evaluate(() => (document.querySelector('#view .plvlnote') || {}).textContent || '');
+    if (!pnote.includes('each family is')) ui.push(`${width}px My progress note: ${JSON.stringify(pnote)}`);
+    // The leaderboard's toast is never said on a subject without one (fish beta QA, 2026-11-06: it covered fish Home):
+    // it stays due. The sync stubbed in memory only (sent14 set: no call to the sheet, rule D1).
+    const bt = await q.evaluate(() => {
+      const s0 = SYNC;
+      store.set('reefid-board-sent14', 1);
+      store.set('reefid-board-told', 0);
+      SYNC = {name: 'Test', code: 'x'};
+      boardNotice();
+      const r = {toast: !!document.querySelector('.apptoast'), told: store.get('reefid-board-told', 0)};
+      SYNC = s0;
+      return r;
+    });
+    if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
     // A wink, made due at this count (the first threshold moved here, none shown yet).
     const wk = await q.evaluate(() => {
       location.hash = '#practice/quiz';
@@ -555,6 +641,19 @@ const server = http.createServer((req, res) => {
     }));
     if (bk.slate < 39 || bk.saved !== '"coral"' || !/Corals/.test(bk.chip) || !bk.closed || bk.expanded !== 'false')
       ui.push(`${width}px back to Corals through the header chip: ${JSON.stringify(bk)}`);
+    // On the corals it shows; switching to Fish takes it away and it is due again.
+    const bt2 = await q.evaluate(async () => {
+      const s0 = SYNC;
+      SYNC = {name: 'Test', code: 'x'};
+      boardNotice();
+      SYNC = s0;
+      const shown = !!document.querySelector('.apptoast');
+      await setSubject('fish');
+      const r = {shown, after: !!document.querySelector('.apptoast'), told: store.get('reefid-board-told', 0)};
+      await setSubject('coral');
+      return r;
+    });
+    if (!bt2.shown || bt2.after || bt2.told) ui.push(`${width}px leaderboard toast and a subject switch: ${JSON.stringify(bt2)}`);
     // The menu closes with Escape and with a tap elsewhere, choosing nothing.
     await q.evaluate(() => (location.hash = '#about'));
     await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});

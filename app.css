@@ -4113,7 +4113,11 @@ a.lt:hover {
   text-decoration: none;
   color: var(--ink);
 }
+.tipph .zoom {
+  position: relative;
+}
 .tipph img {
+  display: block;
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
@@ -6525,6 +6529,12 @@ html.touring .unlock {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The units unlocked, "30/40 genera unlocked" (progress.js unlockText): its own line under the name, in ink, the count bold. */
+.pbtxt > .pbunl {
+  font-style: normal;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
 .pbtxt > span {
   color: var(--muted);
   /* The levels line can be long ("2 Instructor · 3 Advanced diver"): its parts go to a second line instead of out of the
@@ -6537,7 +6547,8 @@ html.touring .unlock {
 .pbtxt > span > * {
   white-space: nowrap;
 }
-.pbtxt > span > :not(:first-child)::before {
+/* A dot between two parts shown (the rank stays hidden until the Elo is due, the levels line is empty at first). */
+.pbtxt > span > :not([hidden]) ~ :not([hidden])::before {
   content: ' · ';
   color: var(--muted);
 }
@@ -7205,4 +7216,16 @@ small.beta {
 }
 .lt > span > b:first-child {
   font-size: var(--fs-m);
+}
+/* The families page: a family's name opens its sheet (its photo enlarges). */
+.tipsheet {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tipsheet .cmpgo {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
 }
