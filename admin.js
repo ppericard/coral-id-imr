@@ -1988,8 +1988,13 @@ function renderFishReview(kind) {
     return;
   }
   status();
-  const U = FISHC.units,
-    u = U.find(x => x.id === FREV.fam) || U[0],
+  const U = FISHC.units;
+  // fish.json not loaded (or without families): say so, as Families does (Codex review #663).
+  if (!U.length) {
+    $v.innerHTML = '<p class="note">No families in fish.json yet.</p>';
+    return;
+  }
+  const u = U.find(x => x.id === FREV.fam) || U[0],
     D = fuData(),
     F = D.F,
     sp = FISHC.species,
@@ -2046,7 +2051,8 @@ function renderFishReview(kind) {
       })
       .join('');
   // The agreement line: over every photo in play of every family (his values against the pass's).
-  const allF = Object.keys(F.add || {}).filter(f => FISHC.byF[f] && fishOn(F, f, FISHC.byF[f].sid)),
+  // In play for the species add names now (a photo moved with Not this and added there counts: Codex review #663).
+  const allF = Object.keys(F.add || {}).filter(f => FISHC.byF[f] && fishOn(F, f, F.add[f])),
     pct = (a, b) => (b ? `${Math.floor((100 * a) / b)}%` : '–'), // floored: 100% only when every one agrees
     agree =
       kind === 'ease'
@@ -2088,7 +2094,16 @@ function renderFishReview(kind) {
         q => lbCap(fuName(q.sid), q, (sp[q.sid] || {}).common || '')
       );
     tl.querySelectorAll('[data-fre]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'ease', +b.dataset.fre))));
-    tl.querySelectorAll('[data-frp]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'phase', b.dataset.frp))));
+    // A phase word, No phase included, takes the juvenile flag off in the same step (the word wins over the flag otherwise,
+    // and No phase would leave the photo juvenile: Codex review #663).
+    tl.querySelectorAll('[data-frp]').forEach(
+      b =>
+        (b.onclick = () =>
+          fx(G => {
+            const N = fishSet(G, f, 'phase', b.dataset.frp);
+            return base().slice(7).includes('j') ? fishSet(N, f, 'tags', fishTag(base(), 'j')) : N;
+          }))
+    );
     tl.querySelectorAll('[data-frv]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv)))));
     // Juvenile: the j flag on (as the fish Candidates set it), or off together with a 'juvenile' phase word (the pass's).
     tl.querySelectorAll('[data-frj]').forEach(
@@ -2097,7 +2112,11 @@ function renderFishReview(kind) {
           fx(G => {
             const ph = f in (G.phase || {}) ? G.phase[f] : (fuJ(f) || {}).ph,
               on = base().slice(7).includes('j') || ph === 'juvenile';
-            if (!on) return fishSet(G, f, 'tags', fishTag(base(), 'j'));
+            // On: the j flag, and a phase word that would win over it cleared (Codex review #663).
+            if (!on) {
+              const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
+              return ph ? fishSet(N, f, 'phase', '') : N;
+            }
             if (base().slice(7).includes('j')) G = fishSet(G, f, 'tags', fishTag(base(), 'j'));
             return ph === 'juvenile' ? fishSet(G, f, 'phase', '') : G;
           }))

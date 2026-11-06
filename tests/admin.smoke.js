@@ -581,7 +581,13 @@ const WIDTHS = [390, 1280];
           await settle();
           if ((await p.evaluate(f => DRAFT.fish.phase[f], g.f)) !== 'male' || !(await rv()).rows.includes('Male'))
             fails.push(`${w}px Fish Photo review: phase male`);
-          await p.evaluate(() => (undo(), undo()));
+          // Juvenile on a male: the phase word goes in the same step, so the photo moves to Juvenile (Codex review #663).
+          await p.click(`#view .adm-tile[data-f="${g.f}"] [data-frj]`);
+          await settle();
+          const jv = await p.evaluate(f => [DRAFT.fish.phase[f], (DRAFT.fish.tags[f] || '').slice(7)], g.f);
+          if (jv[0] !== '' || !jv[1].includes('j') || !(await rv()).rows.includes('Juvenile'))
+            fails.push(`${w}px Fish Photo review: Juvenile on a male ${jv}`);
+          await p.evaluate(() => (undo(), undo(), undo()));
           await settle();
           if ((await p.evaluate(f => (DRAFT.fish.tags || {})[f] || '', g.f)) !== t0)
             fails.push(`${w}px Fish Photo review: Undo of the view`);
