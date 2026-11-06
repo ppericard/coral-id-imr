@@ -17,7 +17,7 @@
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
-const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5, REFW: 3};
+const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -109,9 +109,10 @@ function photoSet(n, skip, shift = 0, k = 4) {
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
   const gameOk = p => gamePhotoOk(n, p);
   const pics = v =>
-    easyFirst(n, [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])].filter(ok(v)).filter(gameOk)).filter(
-      p => p.f !== skip
-    );
+    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
+      .filter(ok(v))
+      .filter(gameOk)
+      .filter(p => p.f !== skip);
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
@@ -119,7 +120,11 @@ function photoSet(n, skip, shift = 0, k = 4) {
     s = P[n] || {},
     seen = s.ps || {},
     ro = s.ro || [],
-    tgt = ability(n) + shift - aimOff(k) - (single ? PICKD.SINGLE : 0);
+    // The start's lean (SUBJECTS calib early, Pierre 2026-11-06 14:17-14:18: no wall, the easy photos strongly favoured
+    // at the start by the difficulty engine itself): the target sits early logits lower on a unit with few answers,
+    // fading as PDIFF.W / (PDIFF.W + answers on it); 0 for the corals (their target as before).
+    lean = calibOf(SUBJ).early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
+    tgt = ability(n) + shift - aimOff(k) - (single ? PICKD.SINGLE : 0) - lean;
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
@@ -133,9 +138,9 @@ function photoSet(n, skip, shift = 0, k = 4) {
     // from right twice only). Soft: a genus whose photos are all known still shows them, the least remembered first.
     // It matters most in a genus with few photos, where repeats come soonest.
     // A reference-level photo never seen (core.js refLevel: a reference source's own, or judged ease 5 with the
-    // reference look; Pierre, 2026-11-06) weighs PICKD.REFW times more: it comes first among the photos drawn, with no
-    // exclusive rule (one photo again and again), whoever took it.
-    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? PICKD.REFW : 1);
+    // reference look; Pierre, 2026-11-06) weighs its subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1
+    // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
+    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? calibOf(SUBJ).ref : 1);
     else r *= Math.exp(PMEM[memBucket(k)]);
     return r;
   };
@@ -303,7 +308,7 @@ let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
   const je = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))].filter(p => p.e),
-    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * PDIFF.EASE, 0) / je.length : 0;
+    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * calibOf(SUBJ).ease, 0) / je.length : 0;
   return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
 };
 // Shaky: met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
@@ -1050,29 +1055,19 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // nobody has answered is its genus's offset; 0 with an older sheet. W 5: the real answer log scores 2 to 20 alike
 // (docs/LEARNING.md "Hierarchical photo Elo").
 // A judged photo (p.e, its ease 1-5: the fish photos, judged by an agent on judging/FISH.md's rubric while fish answers
-// are not logged; Pierre, 2026-11-04) adds its own prior to its genus's: (PDIFF.MID - ease) x PDIFF.EASE, so ease 5
-// starts 1 below its unit, ease 1 one above. EASE 0.5: one standard deviation of a photo's own difficulty around its
-// genus (the hierarchical photo Elo study, docs/LEARNING.md), so the 5 steps span the spread real photos show. Like every
+// are not logged; Pierre, 2026-11-04) adds its own prior to its genus's: (PDIFF.MID - ease) x its subject's calibration
+// ease (SUBJECTS calib, core.js calibOf), so ease 5 starts 1 below its unit, ease 1 one above. ease 0.5: one standard
+// deviation of a photo's own difficulty around its genus (the hierarchical photo Elo study, docs/LEARNING.md), so the
+// 5 steps span the spread real photos show. Like every
 // prior it fades as answers come (PDIFF.W). A photo with no ease (every coral photo) is as before. docs/LEARNING.md
-// "Fish photos judged".
-const PDIFF = {W: 5, EASE: 0.5, MID: 3, EARLY: 4};
-const easeOf = p => p.e || PDIFF.MID;
+// "Fish photos judged". No wall (Pierre, 2026-11-06 14:17): every photo can be drawn from the first question; the prior
+// and the aim make the easy ones far likelier at the start (until then an entry showed only its ease 4-5 photos before
+// Open Water, easyFirst, 2026-11-04).
+const PDIFF = {W: 5, MID: 3};
 function photoDiff(n, p) {
-  const prior = ((PGD[n] || [0])[0] || 0) + (p.e ? (PDIFF.MID - p.e) * PDIFF.EASE : 0),
+  const prior = ((PGD[n] || [0])[0] || 0) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
     o = PSTAT[p.f];
   return o ? (o[1] * o[0] + PDIFF.W * prior) / (o[1] + PDIFF.W) : prior;
-}
-// The first questions on a unit (Pierre, 2026-11-04, after the fish beta opened on photos too hard for a beginner): until
-// the unit reaches Open Water (LV_AT[0], 50%: the first level earned), only its very easy photos (ease PDIFF.EARLY or
-// more: judging/FISH.md, where night shots, partial fish, head-on or tail views, camouflage and the juveniles of most
-// entries are capped at 3 or less), or its PICKD.VARIETY easiest when it has fewer, so a few still take turns. A unit with no judged photo
-// (the corals) is not touched; nor is the exam (95%). TEMPORARY (Pierre, 2026-11-04: an arbitrary bootstrap
-// threshold): remove it once fish answers are logged and the photo ratings can rank the photos (docs/ROADMAP.md).
-function easyFirst(n, L) {
-  if (!L.some(p => p.e) || genScore(n) >= LV_AT[0]) return L;
-  const es = L.map(easeOf).sort((a, b) => b - a),
-    cut = Math.min(PDIFF.EARLY, es[Math.min(PICKD.VARIETY, es.length) - 1]);
-  return L.filter(p => easeOf(p) >= cut);
 }
 // Progress of a genus (2026-11-02, replaces Bayesian Knowledge Tracing): s.pg, a moving average of its answers, each
 // weighed by what it proves (core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress (moving average) and mastery").
@@ -1164,8 +1159,7 @@ const genScore = n => scoreOf(P[n]);
 // every RA knows, one icon each): the step of a genus on the learning scale, from its % (genScore), the same colours on
 // My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%; 3 Advanced from 80%; 4 Divemaster from 95%
 // (the mastery exam's entry); 5 Instructor, the exam passed (s.mx, "learned" in the code). The thresholds only name
-// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100); the game reads only Open Water, where an
-// entry's judged hard photos come in (easyFirst, 2026-11-04).
+// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100).
 const MASTERY = [
   ['Not seen', ''],
   ['Snorkeler', '<rect x="2.5" y="8" width="13" height="7.5" rx="3.2"/><path d="M9 15.5v-2.2M19.5 3v11a4.5 4.5 0 0 1-4.5 4.5h-1.5"/>'],

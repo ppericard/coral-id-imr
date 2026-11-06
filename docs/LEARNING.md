@@ -2459,13 +2459,13 @@ changes, all data the engine reads generically (the corals have none of these fi
   species, FishBase's main picture or iNaturalist's taxon cover, "is easy to identify, so it should come early in the quiz
   for a beginner"): such a candidate carries `rep`, and its judged ease gets `REP_BONUS` = 1 (`tools/fish_judge.py`
   `cap`, the flag `r` in its tags), the caps applied after it (a juvenile or a night shot stays capped). Why one point:
-  it lifts a medium photo (3) into the very easy ones of an entry's first questions (`easyFirst`, ease 4-5) and makes a
+  it lifts a medium photo (3) into the very easy ones (ease 4-5: the gate of an entry's first questions, `easyFirst`, until 2026-11-06) and makes a
   very easy one more likely the card's cover, without passing over the visual rubric (a hard reference photo stays
   hard). It reaches the game only through Pierre's curation (candidates), so nothing moves for players until he adds
   one; no learnsim run (the fish profile does not exist yet, ROADMAP). A draw that prefers `rep` photos inside the very
   easy set is not built (ROADMAP).
-- **The photo prior** (`photoDiff`): a judged photo's prior is its unit's offset + (`PDIFF.MID` 3 − ease) ×
-  `PDIFF.EASE` 0.5, so ease 5 starts at −1 and ease 1 at +1. 0.5 logit an ease point is one standard deviation of a
+- **The photo prior** (`photoDiff`): a judged photo's prior is its unit's offset + (`PDIFF.MID` 3 − ease) × its
+  subject's calibration `ease` (`SUBJECTS` `calib`, `core.js` `calibOf`, default `CALIB.ease` 0.5), so ease 5 starts at −1 and ease 1 at +1. 0.5 logit an ease point is one standard deviation of a
   photo's own difficulty around its genus (the hierarchical photo Elo study, above), so the scale spans the spread real
   photos show and no more. Like every prior it weighs `PDIFF.W` (5) answers once ratings come. The judged prior also
   counts in `easyTrust` (each judged photo as `PDIFF.W` answers), so the fish entries open easiest first from the first
@@ -2474,19 +2474,28 @@ changes, all data the engine reads generically (the corals have none of these fi
   quality, not what the players find hard. This rubric judges what a beginner must see to tell the family (profile,
   whole fish, its colours), which is closer to that, but it is a judgement: once fish answers are logged, compare the
   ease with the photos' ratings and drop or refit the prior if it does not predict them (ROADMAP).
-- **The first questions on an entry** (`easyFirst`, in `photoSet`): until the entry reaches **Open Water** (`LV_AT[0]`,
-  50%: the first level earned, an existing threshold; the exam's entry and every later question are untouched), only
-  its very easy photos (ease `PDIFF.EARLY` 4 or 5, Pierre's "very easy first"), or its `PICKD.VARIETY` (3) easiest when
-  it has fewer, so a few still take turns (the rule that keeps 3 colonies in rotation; no circle-1 entry needs it now).
-  By the caps above no night, partial or head-on photo is ever among them, nor a juvenile outside Spadefish and
-  Sweetlips. Juveniles are not a late stage
-  (FISH_PATH): they come in at Open Water on each entry, a few dozen answers in, and will later get their explanation
-  cards. **Temporary** (Pierre, 2026-11-04: an arbitrary bootstrap threshold): the gate stands in for the photo
-  ratings fish do not have yet; remove it once fish answers are logged and the automatic difficulty engine can rank the
-  photos (ROADMAP).
+- **The first questions on an entry**: no wall since 2026-11-06 (Pierre, 14:17: "NO WALL"). From 2026-11-04 to then,
+  until an entry reached Open Water only its very easy photos (ease 4-5) could be drawn (`easyFirst`, a temporary
+  bootstrap gate). Now every photo can be drawn from the first question: its judged ease sets its prior difficulty
+  (above), the draw aims at the player's level with the success target as for any unit, and the players' ratings
+  replace the prior as they come. At the start the easy photos are strongly favoured through the prior and the aim, a
+  harder one comes rarely. **One engine, a calibration per subject** (Pierre, 14:18): the constants that differ live
+  in `SUBJECTS` `calib`, read through `core.js` `calibOf` (defaults `CALIB`): `ease` (the prior's logits per ease point,
+  0.5 for both), `ref` (the draw weight of a never-seen reference-level photo: fish 3, corals 1) and `early` (the start's
+  lean: the draw aims `early` logits lower on a unit with no answer, fading as `PDIFF.W` / (`PDIFF.W` + its answers):
+  fish 1.5, corals 0). The corals keep the defaults, so their draw is unchanged (their photos carry no judged ease and
+  no reference level, and their target has no lean). Why a lean: without it, on the entries that open later, the target
+  (the player's level) sat above the easy photos and the harder ones came more often than their share (the fish smoke
+  saw 64-79% of draws under ease 4 on Wrasse, Groupers, Sweetlips, Filefish, Lionfish); 1.5 logits is the span of the
+  judged prior from ease 5 to ease 2. Measured with it (the real app in Chromium, a fresh fish player, 400 draws of each
+  opening entry's first question, `photoSet`, seeded): the share of photos under ease 4 is 5% on Damselfish (39% of its
+  pool), 8% on Butterflyfish (49%), 10% on Angelfish (57%), 29% on Spadefish (69%, no reference-level photo yet);
+  reference-level photos make 88%, 76% and 77% of the first three's draws (42%, 25% and 20% of their pools). The fish
+  smoke checks that a harder photo can come early and that every circle-1 entry draws its harder photos less often than
+  their share before Open Water.
 
-Constants: `PDIFF.EASE` 0.5 (the measured photo spread, above), `PDIFF.MID` 3 (the scale's middle), `PDIFF.EARLY` 4
-(Pierre's "very easy" band); no new threshold (Open Water, `PICKD.VARIETY`, `PDIFF.W`, `INTRO.START` exist).
+Constants: `CALIB.ease` 0.5 (the measured photo spread, above; `SUBJECTS` `calib` may set another per subject),
+`PDIFF.MID` 3 (the scale's middle); no new threshold (`PDIFF.W`, `INTRO.START` exist).
 
 **Measured** (rule L11). `tools/learnsim.js` has no fish profile yet (its learners and world are the coral genera), so
 the outcome simulation cannot judge this change; what was measured instead: the real app in Chromium, a brand-new fish
@@ -2544,7 +2553,7 @@ photo rules, FishBase's photos) join the game photos once judged. **Reference le
 reference photo (`rep`) judged very easy, or any photo judged 5 with the reference look in its tags (profile, whole, good
 light, true colours, sharp, large or medium, one fish or a school; no juvenile, camouflage, out of water), whoever took it.
 It comes before every other photo in `easyRank` (`refFirst`), so it is the card's photo and each list's first, and a
-never-seen one weighs `PICKD.REFW` = 3 times more in the draw (`model.js` `photoSet`, beside the never-seen bonus): first
+never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`; `model.js` `photoSet`, beside the never-seen bonus): first
 in priority, never alone. Why 3: a reference-level photo then wins most first draws on an entry with a few of them among
 twenty-odd very easy photos, while the others still come (a measured first-10 below). Still no source rule.
 

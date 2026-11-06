@@ -1795,6 +1795,12 @@ const CORE_ = (function () { const module = {exports: {}};
   //   tiers   its photo sources rank its photos (rule P1: IMR lecture photos, then Pierre's own, then other observers):
   //           the draw's bonus for a core photo never seen (app.js isCore, model.js photoSet). Off for fish (Pierre,
   //           2026-11-06: his photos are never forced or boosted; the ease and reference look place them, core.js easyRank)
+  //   calib   the difficulty engine's calibration for its photos (Pierre, 2026-11-06 14:18: one engine, its calibration may
+  //           differ per subject), over CALIB (calibOf): ease, the logits one judged ease point moves a photo's prior
+  //           difficulty (model.js photoDiff); ref, how many times more a never-seen reference-level photo weighs in the
+  //           draw (core.js refLevel, model.js photoSet); early, how many logits lower the draw aims on a unit with no
+  //           answer yet, fading with its answers (model.js photoSet: the easy photos favoured at the start, no wall).
+  //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
@@ -2000,6 +2006,9 @@ const CORE_ = (function () { const module = {exports: {}};
       replay: false,
       ach: false,
       board: false,
+      // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
+      // them); the judged ease's prior as measured (CALIB.ease).
+      calib: {ref: 3, early: 1.5},
       pages: ['genera', 'quiz'],
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
@@ -2031,6 +2040,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // The subject chosen on this device (Home or the header), synced with the player's settings.
   const SUBJECT_KEY = 'reefid-sync-subject';
   const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
+  // The difficulty engine's calibration (SUBJECTS calib): ease 0.5, one standard deviation of a photo's own difficulty
+  // around its unit (the hierarchical photo Elo study, docs/LEARNING.md "Fish photos judged"); ref 1, no draw bonus;
+  // early 0, no lean at the start.
+  const CALIB = {ease: 0.5, ref: 1, early: 0};
+  const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
@@ -2102,7 +2116,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // file name: the list's order says who took a photo (tools/fish_photos.py lists Pierre's first), so it never decides.
   // A reference-level photo (refLevel, below) comes before every other photo (Pierre, 2026-11-06: a player starts an
   // entry on reference photos, never on one prolific observer's easy photos): the cover and each list's first photos;
-  // the draw favours them too (model.js photoSet, PICKD.REFW). The ease ranks within each of the two groups.
+  // the draw favours them too (model.js photoSet, SUBJECTS calib ref). The ease ranks within each of the two groups.
   const fHash = f => [...String(f)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
   // Reference level (Pierre, 2026-11-06 14:02: "reference photos" are every photo of reference quality, whoever took
   // it, not only a source's cover): a reference source's own photo (rep) judged very easy, or any photo judged ease 5
@@ -5490,6 +5504,8 @@ const CORE_ = (function () { const module = {exports: {}};
     SUBJECTS,
     SUBJECT_KEY,
     subjectOf,
+    CALIB,
+    calibOf,
     subjGroup,
     replaySubject,
     LOG_SUBJ,

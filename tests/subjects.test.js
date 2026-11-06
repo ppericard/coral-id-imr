@@ -399,3 +399,14 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
   assert.strictEqual(C.logOk({}, 0), true);
   assert.strictEqual(C.logOk({s: 'coral'}, 0), true);
 });
+
+// One engine, a calibration per subject (Pierre, 2026-11-06 14:18; SUBJECTS calib): the corals keep the defaults (no
+// draw bonus, the measured ease spread), fish favour reference-level photos in the draw.
+test('calibOf: the corals keep the defaults, fish set their own', () => {
+  assert.deepStrictEqual(C.calibOf(C.subjectOf('coral')), C.CALIB);
+  assert.deepStrictEqual(C.CALIB, {ease: 0.5, ref: 1, early: 0});
+  assert.strictEqual(C.calibOf(C.subjectOf('fish')).ref, 3);
+  assert.strictEqual(C.calibOf(C.subjectOf('fish')).early, 1.5);
+  assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.5);
+  assert.ok(!C.refLevel({f: 'x'}) && !C.refLevel({f: 'x', q: 3}), 'a photo with no judged ease is never reference level');
+});

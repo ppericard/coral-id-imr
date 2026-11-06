@@ -80,6 +80,18 @@ const server = http.createServer((req, res) => {
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
     ok(slateGenera().length === 27 && slateGenera().every(n => FISH.c1.includes(n)), 'the fish slate = the 27 IMR entries');
     ok(!pool().some(n => !FISH.c1.includes(n)), 'circle 1 only before any opt-in');
+    // No wall (Pierre, 2026-11-06 14:17): on a fresh entry a photo under ease 4 can be drawn, rarely; the prior and the
+    // aim favour the easy ones (no easyFirst gate any more).
+    {
+      const hardP = p => (p.e || 3) < 4,
+        n = pool().find(x => GX(x).views.wide.some(hardP) && GX(x).views.wide.some(p => !hardP(p))),
+        W = GX(n).views.wide,
+        N = 400;
+      let hard = 0;
+      for (let i = 0; i < N; i++) hard += hardP(photoSet(n).shown[0]) ? 1 : 0;
+      ok(hard > 0, `${n}: a harder photo can be drawn early`);
+      ok(hard / N < W.filter(hardP).length / W.length, `${n}: harder photos drawn less often than their share (${hard}/${N})`);
+    }
     // The draw, many times: target and choices from the pool, one photo of one observation, never a wink.
     const L = pool();
     for (let i = 0; i < 300; i++) {
@@ -264,9 +276,11 @@ const server = http.createServer((req, res) => {
     ok(
       G.every(n => {
         const w = GX(n).views.wide;
-        return !w.length || (GX(n).cover === w[0].f && w.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
+        // the first of its reference-level photos when it has any (core.js refFirst), else its easiest
+        const top = w.filter(p => refFirst(p) === refFirst(w[0]));
+        return !w.length || (GX(n).cover === w[0].f && top.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
       }),
-      "sci: a genus card's photo is its easiest"
+      "sci: a genus card's photo is its easiest (reference level first)"
     );
     ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
     bonusSet(false, 'sci');
@@ -1224,11 +1238,18 @@ const server = http.createServer((req, res) => {
       const starters = slateGenera().filter(n => GX(n).first),
         ph = (t, f) => GX(t).views.wide.find(y => y.f === f) || {};
       ok(starters.slice().sort().join() === 't01,t02,t03,t06', `the starter core from fish.json: ${starters}`);
+      // The card: a reference-level photo where the entry has one (core.js refLevel, refFirst), else its easiest.
       ok(
-        starters.every(n => ph(n, GX(n).cover).e === Math.max(...GX(n).views.wide.map(p => p.e || 0))),
-        'each card shows its easiest photo'
+        starters.every(n => {
+          const L = GX(n).views.wide,
+            c = ph(n, GX(n).cover);
+          return L.some(refLevel) ? refLevel(c) : c.e === Math.max(...L.map(p => p.e || 0));
+        }),
+        'each card shows a reference-level photo, else its easiest'
       );
-      let gated = 0;
+      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely.
+      let gated = 0,
+        under = 0;
       for (let i = 0; i < N; i++) {
         readCards();
         if (!document.querySelector('#view .q')) quizPhoto();
@@ -1239,7 +1260,7 @@ const server = http.createServer((req, res) => {
           const p = ph(t, s.f);
           if (genScore(t) >= LV_AT[0]) return;
           gated++;
-          ok(p.e >= 4, `question ${i + 1}: ${t} photo ${s.f} of ease ${p.e} before Open Water`);
+          under += (p.e || 3) < 4 ? 1 : 0;
         });
         const ans = document.querySelectorAll('#view [data-c]');
         if (ans.length) [...ans].find(b => b.dataset.c === t).click();
@@ -1251,6 +1272,7 @@ const server = http.createServer((req, res) => {
         route();
       }
       ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
+      ok(under <= gated / 3, `${under} of ${gated} photos under ease 4 before Open Water: the easy ones should dominate`);
       const cards = Object.keys(introMap()).filter(n => introMap()[n][3] === 's');
       ok(cards.sort().join() === 't01,t02,t03,t06', `the first cards: ${cards}`);
       // The draw itself, on every circle-1 entry before and after Open Water.
@@ -1260,12 +1282,13 @@ const server = http.createServer((req, res) => {
           cut = Math.min(4, es[2]),
           s0 = st(n).pg;
         st(n).pg = 0;
-        const before = new Set();
-        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => before.add(x.f));
-        ok(
-          [...before].every(f => (ph(n, f).e || 3) >= cut),
-          `${n}: a photo under ease ${cut} before Open Water`
-        );
+        // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
+        // aim favour the easy ones; no wall).
+        let hard = 0,
+          tot = 0;
+        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => ((tot += 1), (hard += (ph(n, x.f).e || 3) < cut ? 1 : 0)));
+        const share = L.filter(p => (p.e || 3) < cut).length / L.length;
+        ok(!share || hard / tot < share, `${n}: photos under ease ${cut} drawn ${hard}/${tot}, their share ${share.toFixed(2)}`);
         st(n).pg = 0.6;
         let low = 0;
         for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));

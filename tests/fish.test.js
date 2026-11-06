@@ -484,7 +484,7 @@ test('judged photos: every fish game photo judged with a valid code, written int
     assert.ok(c.length === 4 && c[0] >= 0 && c[1] >= 0 && c[2] <= 1 && c[3] <= 1 && c[0] < c[2] && c[1] < c[3], `${f}: crop ${c}`);
   });
   // Every circle-1 entry has at least 5 very easy photos (Pierre, 2026-11-04), so its first questions take turns among
-  // them (model.js easyFirst); the photos the pass added are judged and appear once, one per observation.
+  // them (the draw strongly favours them at the start); the photos the pass added are judged and appear once, one per observation.
   c1.forEach(id => assert.ok(PH[id].filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos`));
   Object.entries(JUDGE.add || {}).forEach(([tid, L]) =>
     L.forEach(a => {

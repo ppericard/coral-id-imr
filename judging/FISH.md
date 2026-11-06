@@ -3,8 +3,8 @@
 Pierre, 2026-11-04, after trying the fish beta: the first photos were too hard. Fish answers are not logged to the sheet
 yet (`core.js` `SUBJECTS` fish `log: false`), so no player answer says how hard a fish photo is. Until they do, an agent
 looks at every fish game photo and judges it on explicit criteria. The judgement gives each photo an **ease** from 1 to
-5, which becomes its difficulty prior (`model.js` `photoDiff`) and decides which photos the first questions on an entry
-may show (`model.js` `easyFirst`). This file is the rubric, so the pass can be repeated by another agent or a person
+5, which becomes its difficulty prior (`model.js` `photoDiff`): at the start the draw strongly favours the easy photos
+through it (no wall since 2026-11-06). This file is the rubric, so the pass can be repeated by another agent or a person
 and give the same kind of result.
 
 Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `tools/fish_source.json`);
@@ -128,7 +128,7 @@ FishBase's main picture with `rep`.
 **Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
 read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it. A
 reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
-never-seen one weighs `PICKD.REFW` (3) times more in the draw (`model.js` `photoSet`), never exclusively.
+never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `model.js` `photoSet`), never exclusively.
 
 ## A proposed crop
 
@@ -141,13 +141,14 @@ Pierre to accept or change, as for coral candidates (ROADMAP).
 
 ## What the app does with it (docs/LEARNING.md "Fish photos judged")
 
-- **Prior difficulty** (`model.js` `photoDiff`): a photo's own difficulty starts at (3 − ease) x `PDIFF.EASE` (0.5
+- **Prior difficulty** (`model.js` `photoDiff`): a photo's own difficulty starts at (3 − ease) x the subject's `calib.ease` (0.5
   logit an ease point: one standard deviation of a photo's own difficulty around its genus, the hierarchical photo Elo
   study's measure), so ease 5 starts at −1, ease 1 at +1, on top of its unit's offset; it fades as real answers come
   (`PDIFF.W`, as every prior). A photo nobody judged starts at 0, as before.
-- **The first questions on an entry** (`model.js` `easyFirst`): until the entry reaches Open Water (50%, the first
-  level earned), its questions show only its very easy photos (ease 4-5); an entry with fewer than `PICKD.VARIETY` (3)
-  of them shows its 3 easiest instead. A unit without judged photos (the corals) is not touched.
+- **The first questions on an entry**: no wall (Pierre, 2026-11-06 14:17). Every photo can be drawn from the first
+  question; the prior above, the draw's aim at the player's level and the start's lean (fish `SUBJECTS` `calib.early`:
+  the aim 1.5 logits lower on an entry with no answer, fading with its answers) make the easy ones far likelier at the
+  start, a harder one comes rarely (until then, `model.js` `easyFirst` showed only the ease 4-5 photos before Open Water).
 - **The order photos are met in** (`core.js` `easyRank`, Pierre, 2026-11-06): the card's photo, the first photo of each
   list and the auto-sort's order are the easiest first, then the most reference-like by these tags (`refScore`: `r`,
   then profile, whole, good light, no colour loss, sharp, large, one fish), never by who took the photo.
@@ -211,11 +212,12 @@ way on rubric 5, the small fish looked at again on a 10 x 10 grid for 48 crops. 
 (`juv` covers circle 1), so every juvenile there keeps the cap. Many of these families are rarely shown as the rubric's
 very easy photo: the morays, snake eels, garden eels and jawfishes live with most of their body in a hole (partial, at
 most 3), the frogfishes, scorpionfishes, stonefishes and seamoths are camouflaged, the rays and seamoths are mostly seen
-from above, the sharks in blue water; seven entries have no photo at 4 or 5 and take their 3 easiest at the start
-(`model.js` `easyFirst`). The rubric was applied as written (no family exception): a question for Pierre, put to
+from above, the sharks in blue water; seven entries have no photo at 4 or 5 (they took their 3 easiest at the start
+under the `easyFirst` gate, gone since 2026-11-06). The rubric was applied as written (no family exception): a question for Pierre, put to
 him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md).
 
 ## A temporary use
 
-The very-easy-first rule (`model.js` `easyFirst`) is a bootstrap: once fish answers are logged, the players' answers
-rate the photos and the rule goes (Pierre, 2026-11-04; ROADMAP).
+The judged ease is a bootstrap prior: once fish answers are logged, the players' answers rate the photos and replace it
+(`PDIFF.W`; Pierre, 2026-11-04; ROADMAP). The very-easy-first gate (`model.js` `easyFirst`) went on 2026-11-06 (Pierre:
+"NO WALL").
