@@ -1069,9 +1069,10 @@ test('fish answers: kept queued for an older script, sent from v60 under their s
     [
       ['c1', 'coral', 'genus', ''],
       ['c2', 'coral', 'genus', ''],
-      ['f1', 'fish', 'family', 'Damselfish'],
-      ['f2', 'fish', 'family', 'Damselfish']
-    ]
+      ['f1', 'fish', 'family', 'Damselfishes'],
+      ['f2', 'fish', 'family', 'Damselfishes']
+    ],
+    'v69: an old entry id (t01) filed under its family'
   );
   assert.strictEqual(b.got[0].replay.n, 2, "the device's replay counts its 2 coral rows");
   assert.ok(!b.got[0].replay.rec.t01, 'no fish unit in the replayed coral record');
