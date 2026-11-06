@@ -94,7 +94,15 @@ const nAnswers = p => {
   return o ? (o[3] ?? o[1]) : 0;
 };
 const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
-const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + CAL.U / (1 + nAnswers(p) / CAL.N));
+// The prior's uncertainty is the subject's when it sets one (SUBJECTS calib u, core.js calibOf), CAL.U otherwise (the
+// corals): fish photos all carry a judged ease, so a narrower targeting lets that prior lead while their answers are few
+// (Pierre, 2026-11-06 15:33, Q186).
+const calU = () => calibOf(SUBJ).u ?? CAL.U;
+const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + calU() / (1 + nAnswers(p) / CAL.N));
+// The draw's floor for a unit of nObs observations (photoSet): PICKD.FLOOR of the best one's weight each, shared over the
+// subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals: PICKD.FLOOR, as before), so in
+// a big pool the floor's mass does not drown the prior's lean (Pierre, 2026-11-06 15:33, Q186).
+const drawFloor = nObs => PICKD.FLOOR * Math.min(1, calibOf(SUBJ).pool / Math.max(1, nObs));
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown, K9).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
@@ -179,8 +187,9 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     .forEach(k => {
       if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top);
     });
+  const floor = drawFloor(keys.length);
   keys.forEach(k => {
-    if (sc[k] > 0) sc[k] = Math.max(sc[k], PICKD.FLOOR * top);
+    if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top);
   });
   const o = top ? obs[wpick(keys, k => sc[k])] : keys.length ? obs[pick(keys)] : {};
   const one = v => {
