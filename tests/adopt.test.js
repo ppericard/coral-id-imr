@@ -81,6 +81,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     P,
     PMEM: undefined,
     PCONF: {},
+    PFMT: {}, // the per-format offsets (model.js; Q138): none from this test's sheet
     ACHK: 'reefid-sync-ach',
     sheetFetch: answer,
     fetch: answer,

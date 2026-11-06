@@ -659,6 +659,83 @@ questions were expected about 87% on a photo aimed 1.0 below the ability; now th
 real success much; the 4-choice questions, the bulk of the exam and of strong players' questions, are calibrated
 (expected 76%, right 77%, n 496). Typed: 5 answers, too few.
 
+### Per-format offsets (sheet v77, rules version 8, 2026-11-06, Q138)
+
+The independent review of 2026-11-06 (`docs/reviews/2026-11-06-engine-algorithms-review.md` §3, §5, §10): the
+expectation's guess model g + (1 − g) σ(θ − d), g = 1/k, misses the 2-choice questions (right 87-93% where the app
+expected 76-82%), so each such answer over-credits the ability, the level and the photos, and typed questions need an
+offset of their own. Pierre (2026-11-06, Q138): estimate per-format guess rates and offsets from the data (the Analyses
+"Formats" model, P = c + (1 − c) σ(x + d)), serve them from the sheet, use them in the expectation, the photo aim and
+later the bar. Approved for the app on 2026-11-06 (Q146), the guess rates kept at 1/k as below.
+
+**Measured first** (tier 3, rule L12; read-only, the sheet's Answers tab read 2026-11-06 07:30 Manila: 2,047 answers of
+10 players, 2026-11-01 to 11-05, all trusted; aggregates only). Declared before any comparison was run, one family
+under Holm (α 0.05), players as the unit, an exact sign-flip test over the 10 players' mean per-answer differences:
+**P1**, the leave-one-player-out next-answer log-loss of e′ = c_f + (1 − c_f) σ(x + d_f) (`analysis.js` `fmtFit` on the
+other players, the 8 formats of `analysis.js` `FORMATS`, a format with fewer than 20 training answers keeping the app's
+value) against the app's logged expectation, x the app's log-odds from the logged e; **P2**, the photos rated against
+the genus ability (Q136: "Photos rated against the genus ability").
+
+| Format | answers | players | right | app expected | P1 model (LOPO) | offset only (LOPO, as shipped) | offset d_f (all, SE) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 4 choices (k4) | 832 | 9 | 0.780 | 0.775 | 0.779 | 0.776 | 0.00 (0.10) |
+| 4 shown, 3 plausible (k3) | 77 | 7 | 0.896 | 0.706 | 0.913 | 0.874 | +1.41 (0.37) |
+| 4 shown, 2 plausible (k2) | 553 | 9 | 0.873 | 0.739 | 0.869 | 0.853 | +1.14 (0.15) |
+| Again (2 choices) | 278 | 10 | 0.820 | 0.775 | 0.824 | 0.822 | +0.44 (0.22) |
+| duel in the quiz | 55 | 7 | 0.818 | 0.816 | 0.808 | 0.813 | +0.06 (0.45) |
+| Duel tab | 197 | 4 | 0.843 | 0.795 | 0.753 | 0.735 | +0.30 (0.25) |
+| typed | 55 | 3 | 0.764 | 0.825 | 0.806 | 0.808 | −0.37 (0.32) |
+| exam | 0 | | | | | | |
+
+- **P1 passed**: −0.0269 per answer [−0.0433, −0.0105], better for 8 of 10 players, p 0.008 (Holm: P2 p 0.60 did not).
+- **Re-run on the log of 2026-11-06 13:15 Manila** (2,048 answers, one more; for the port onto the one scorer, #632):
+  the same within rounding: P1 −0.0269 [−0.0433, −0.0105], p 0.008; offset only −0.0012, p 0.89, with the prior
+  −0.0036, p 0.62; the offsets served unchanged (k2 +1.14, k3 +1.41, Again +0.44, Duel tab +0.30, duel in the quiz +0.06,
+  k4 0.00, typed −0.37); the shared slope 0.40, −0.0233, p 0.018. The table above stands.
+- **But the two-parameter fit is not a guess rate.** On all the answers it gives c 0.67 with d −1.68 for 4 choices,
+  c 0.87 with d running off to minus infinity for k2 (the app's log-odds then carry no information), the estimates of c
+  and d correlated −0.86 to −0.95 in every format: c absorbs a slope, not a guess. Put into the Elo, a guess rate of 0.87
+  would leave right answers almost no surprise and aim no photo (the target sits under the floor). Not shippable.
+- **The gain is a slope, not a format** (exploratory, uncorrected): one shared slope on the app's log-odds plus an
+  offset per format, fitted the same way, keeps most of it (−0.0236 [−0.0401, −0.0072], 7 of 10 better, p 0.016), its
+  slope 0.40: the app's log-odds are about 2.5 times too steep (the photos rated either way, Q136: 0.30-0.35). Its
+  confident predictions are too confident, in every format; that belongs to the person model with a variance (review
+  §2b, the Kalman / Glicko update), not to the formats.
+- **Offset only** (c = 1/k, d_f fitted; secondary): no log-loss gain (−0.0012 [−0.0195, +0.0171], p 0.89; with the
+  shipped prior N(0, 1): −0.0036, p 0.62), but each format's mean comes to its real success (k2 0.74 → 0.85 against
+  0.87, k3 0.71 → 0.87 against 0.90, typed 0.83 → 0.81 against 0.76). The Duel tab is the exception: 4 players, one of
+  them most of its answers, so left out it is predicted from the other three (0.74 against 0.84). By level (the logged
+  genus ability, descriptive): under 0.5 right 0.83, app 0.72, offsets 0.80; 0.5-1.5 0.81, 0.79, 0.79; 1.5 and over
+  0.84, 0.87, 0.87.
+
+**The rule** (the part of Q138 the data can carry): each format f gets an offset d_f on the app's log-odds,
+P(right) = 1/k + (1 − 1/k) σ(θ − d + d_f), the guess rate kept at 1/k. `core.js` `fmtOffsetsOf` fits it (Newton's
+method on d_f with a prior N(0, `FMT.SD`² = 1), from `FMT.N` = 20 trusted answers with their logged expectation;
+`fmtOf`, the formats of `analysis.js`); the sheet serves it in `?stats=1` `fmt` (`Code.gs` `stats_`, v77), the app
+reads it from a sheet that reports v ≥ 68 (`model.js` `PFMT`, `core.js` `FMT_SHEET`, `fmtsOf`; rule D4: before, every
+offset is 0). Where it acts:
+- **the expectation of the ability steps**, the genus's and the global level's, in the one scorer (`core.js`
+  `scoreAnswer`'s `df`, from `quiz.js` `answer`: the question's difficulty taken d_f easier), so a right 2-choice
+  answer the format explains no longer raises the ability as a surprise. **Logged with the answer**: the scoring
+  record keeps the offset the game used (`scoreRec` `o`, left out at 0), and the replay takes it from there, so a
+  replayed answer is the one the game scored (Q132), whatever the offsets served later; a row logged without a scoring
+  record (before #632) takes the offsets served now, as its memory and mix-ups term (`replayProgress` `fmt`), and a row
+  scored before this version has no `o`, so it replays without an offset, as it was played. Rules version 8, the sheet
+  replays everyone. On today's log (descriptive, the rows have no `o` yet so they take today's offsets): every
+  player's global level falls, by 0.01 to 0.65 (median 0.26), their genus abilities by 0.01 to 0.47 on average, the
+  most for the players with the most 2-choice answers; the progress % moves by at most 1 point (no recalculation card,
+  `RV_CARD` `min` 5), the progress weights not taking the offsets yet;
+- **the photo's aim** (`model.js` `aimOff(k, df)`, `photoSet`'s format): logit((P − 1/k) / (1 − 1/k)) − d_f, so a
+  format the players find easier gets a harder photo (k2 on today's offsets, at the 80% aim: the photo about 0.7
+  above the ability rather than 0.4 below) and the question still sits at the aimed success; typed a little easier;
+- **not yet**: the progress weights (`pgMissW`, `pgMemW`, `pgRightW`: the bar, being rebuilt elsewhere, "later the bar"),
+  the opening hold and the comeback (they read the logged e), the sheet's photo ratings (they keep 1/k). The logged
+  Expected stays the expectation before the offset, so the sheet always fits the same quantity.
+
+Tier 1 (`tools/learnsim.js`) cannot judge it: the simulator seeds the app's photo statistics without `fmt`, so every
+offset is 0 there and its runs are unchanged by construction; the real-log replay above is the check. The guess rates
+the data could not identify wait for the slope, whose diagnosis runs apart (Q147; ROADMAP "The expectation's slope").
+
 ### What the players say about the difficulty (one-tap questions, 2026-11-03)
 
 Why: the success target is moving to one that depends on the player's level. Papoušek, Stanislav & Pelánek (2016;

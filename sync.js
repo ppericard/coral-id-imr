@@ -39,13 +39,15 @@ function loadStats() {
         PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
         PGD = gdOf(j); // genus offsets of the photo Elo (sheet v31, model.js photoDiff); none from an older sheet
         if (typeof rankPhotos === 'function') rankPhotos(); // the fish lists' first photos follow the new ratings (app.js)
+        PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf); none from an older sheet
         store.set('reefid-photo-stats', {
           t: Date.now(),
           v: j.v,
           photos: j.photos,
           conf: PCONF,
           ...(j.mem ? {mem: j.mem} : {}),
-          ...(j.gd ? {gd: j.gd} : {})
+          ...(j.gd ? {gd: j.gd} : {}),
+          ...(j.fmt ? {fmt: j.fmt} : {})
         });
       }
     })
@@ -172,6 +174,8 @@ function replayAdopt(rp, pending, v, cut, pre) {
             gen,
             mem: PMEM,
             conf: PCONF,
+            // The per-format offsets, from the script that serves them (core.js FMT_SHEET, fmtsOf), as the live game.
+            fmt: Number(v) >= FMT_SHEET ? PFMT : {},
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
             time: Number(v) >= RT_SHEET,
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
