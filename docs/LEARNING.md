@@ -3997,6 +3997,33 @@ the shape a set-size effect predicts, but also that of the Elo's early under-est
 answers, "Learning-outcome simulation" above), which this log cannot tell apart. With 10 players, the held-out test sees no
 clear difference. A replay cannot judge what a new progress rule would teach (other questions would be asked).
 
+#### The judge: the domain score D* (2026-11-06, part 1 of the new progress bar; no rule changed)
+
+Why (Pierre, 2026-11-06, Q127-Q131 on the research note `docs/reviews/2026-11-06-progress-metric-research.md`): the bar
+was tuned against a yardstick of our own (overclaim against pOpen, success on an *average* photo). 100% is to mean
+"names right every photo of the genus, alone, without choices", over the genus's theoretical photo distribution, easy to
+hard. A new yardstick comes first, and every candidate bar is judged by it in several learner worlds.
+
+- **D\*(g)** (`tools/learnsim.js`, `JUDGE`): the learner's true success naming a photo of g alone (one view, so the
+  single-view offset), with no choices, averaged over N(μ_g, SD²) by Gauss-Hermite with 7 points.
+  - Item learner: its recognition, no guess.
+  - Field and exemplar learners: every slate genus is a possible answer.
+  - `--truth gen` draws every game photo's true difficulty from the same distribution, by a hash of its file name. μ_g
+    is the sheet's genus offset (`--stats` gd); SD is 0.8 (an assumption). The app is told the truth plus N(0, 0.3²).
+- **The exemplar learner** (`--learner exemplar`, `LEARNER.EX`): a summed-similarity model after the GCM (Nosofsky
+  1986), with a background (guessing) term; four constants. It is the third world, beside item and field. Its
+  difference: a genus never stored does not compete, so a drilled genus is truly named right.
+- **The spotty profile** knows the genera of IMR lecture groups 1-5 as an expert and the rest hardly (5%).
+- **`tools/barjudge.js`** reports:
+  - the error E(g) = bar − D\*(g), signed, per profile at q100 / 300 / 600 / 1000, over the genera met;
+  - E split into the genera the profile knows and the others, and at the end of a Custom-N drill into the drilled genera
+    and the others;
+  - the time to credit (questions until the bar reaches 50% and 80% on the genera the profile knows);
+  - with `--bar field --core <#611's core.js>`, another rule's bar on the same answers, replayed;
+  - with `--log`, the real-log calibration of the app's predicted success by tercile of ability − photo difficulty
+    (players as the unit, leave one player out).
+- The primaries and their Holm family are pre-declared in PR #624. The baseline results are added there and here.
+
 ## Decision log
 
 - 2026-11-04, Pierre (approved after review of every family's ranking): the fish species inside an entry open in
