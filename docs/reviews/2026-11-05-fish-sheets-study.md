@@ -4,19 +4,19 @@ Read-only study for Pierre's request of 2026-11-05 (a sheet per fish taxon, at t
 
 Includes Pierre's addition of the same day: "about 3 photos" per species holds only when the species has no dimorphism or juvenile section. Juveniles often go through several phases (tiny juvenile, young "teen", young adult, adult), and sexual dimorphism can be just as layered (initial and terminal phases). The number of photos follows the number of phases to show, each phase with its own photos and description.
 
-**Status: Pierre answered the 13 questions on 2026-11-06 (§9).** The summary, the family sheet (§3), the genus (§4), the species sheet (§5), the writing process (§6) and the order of work (§8) are updated to his answers. The main change: a **family sheet is one per family of the book** (an entry under one of its 20 shape groups), not one per IMR entry (§3.1). Q2 (the genus: a block or a page) waits on a mockup: `proto/fish-sheets.html`.
+**Status: Pierre answered the 13 questions on 2026-11-06 (§9).** The summary, the family sheet (§3), the genus (§4), the species sheet (§5), the writing process (§6) and the order of work (§8) are updated to his answers. The main change: a **family sheet is one per family of the book** (an entry under one of its 20 shape groups), not one per IMR entry (§3.1). Q2 (the genus: a block or a page) was decided on a mockup, `proto/fish-sheets.html`: **option B, genus rows on the family sheet, each opening a short genus page** (Pierre, 2026-11-06 13:25).
 
 ---
 
 ## 0. Summary
 
-1. **Three levels, but not three equal sheets.** The level people learn from and that carries the teaching is the **family sheet**: one per **family of the book**, an entry under one of its 20 shape groups such as Butterflyfishes or Sweetlips (Pierre, Q1, 2026-11-06). The **species sheet** is short and mostly fed by data. Whether the **genus** is a *block on the family sheet* or a short page of its own is Q2, which Pierre decides on a mockup: 42 of the 94 circle-1 genera are either the only genus of their family (11) or hold a single species (31), so a separate page would repeat another sheet for them; a genus view adds something for the 52 genera with 2 or more species in a family with 2 or more genera.
+1. **Three levels, but not three equal sheets.** The level people learn from and that carries the teaching is the **family sheet**: one per **family of the book**, an entry under one of its 20 shape groups such as Butterflyfishes or Sweetlips (Pierre, Q1, 2026-11-06). The **species sheet** is short and mostly fed by data. The **genus** is a row on the family sheet that opens a short genus page; a single-species genus opens the species sheet (Q2, option B, chosen on the mockup): 42 of the 94 circle-1 genera are either the only genus of their family (11) or hold a single species (31), so a separate page would repeat another sheet for them; a genus view adds something for the 52 genera with 2 or more species in a family with 2 or more genera.
 2. **The words (Q1, answered 2026-11-06).** "Identification groups" are the book's **20 numbered body-shape groups** (e.g. "1. Disk-shaped/Colorful"), as the app already calls them; they get no sheet. **"Families" are the book's entries inside those groups** (Butterflyfishes, Angelfishes, Sweetlips…), not the IMR entries; one family can hold several genera. "Family" here is the grouping divers and the scientific community use in ID books, not the strict taxonomic rank (Sweetlips is a subfamily, Anthias a former one). Some IMR entries are genera inside a family: Chromis, Dascyllus and Pomacentrus are genera of the Damselfishes. The sheets: one per book family, then genus and species sheets inside it. A book family can span several taxonomic families, so its sheet's title is the book's English name ("Damselfishes") with the scientific name or names below (Pierre, on the mockup, 2026-11-06).
 3. **Teach by contrast, at every level.** Good fish guides (and learning research on category learning) put look-alikes next to each other with the one mark that tells them apart. On each sheet, "How to tell it apart" matters more than a description.
 4. **Species phases are first-class.** A species has an ordered list of the phases its sources name (juvenile, subadult or transitional, initial phase, terminal phase, female, male). Each phase gets its own photos (1-2) and a one-line description, so the photo count follows the phases (Pierre's addition). Phase names are the scientific terms the sources use, never invented: "teen" was Pierre's word, not a term to show (Q4).
 5. **Mostly automatic at species level, mostly written at family level.** Names, photos (from the judging tags), presence, commonness, IMR flags, siblings, links and progress already exist in the data. Size and depth can be fetched once and cited. The writing is: one plain sentence per family, short sourced "key marks" for each species, a cue for each look-alike pair, and the phase descriptions.
 6. **Corals and fish: shared components (Q12, yes), not one rigid template.** Reuse the coral sheet's building blocks (sticky name bar, my progress, hero and plain line, highlighted IMR tip box, "Don't confuse with" hub, photo strips, Other sources, report). Each subject keeps its own blocks: three views for corals; phases, size/depth and in-the-water cues for fish.
-7. **Order of work** (§8): family sheet v1 from existing data → species sheet v1 automatic, with the "no photo" drawing → size/depth facts → the phase model → writing (key marks, look-alike cues: families first, then genera, then species, starting from what IMR provides; Pierre, Q7) → genus blocks or pages (Q2) → shared sheet components with the corals.
+7. **Order of work** (§8): family sheet v1 from existing data → species sheet v1 automatic, with the "no photo" drawing → size/depth facts → the phase model → writing (key marks, look-alike cues: families first, then genera, then species, starting from what IMR provides; Pierre, Q7) → genus rows and short genus pages (Q2, option B) → shared sheet components with the corals.
 
 ---
 
@@ -93,8 +93,8 @@ Includes Pierre's addition of the same day: "about 3 photos" per species holds o
 | F4 | ID tips (IMR) | The IMR entry's `cues`, verbatim, in the highlighted box; slide numbers (`sl`) as the source | IMR presentation | Auto (exists) |
 | F4b | Family ID marks (Q11) | The more precise family-level marks that identify the family, beyond IMR's cues, e.g. for the angelfishes the small spine sticking out on the cheek (preopercular spine) and nearly always some blue. Start from what IMR gives; each mark sourced | IMR first, then RLS, FishBase, the book (page) | **Written**: agent drafts, Pierre validates (Q7, the first writing priority) |
 | F5 | How to tell it apart | One card per look-alike: our photo and theirs at the same size, side by side, with IMR's line (`look`: "Angelfish: spine on the gill cover, iridescent blue"). Then pairs from the players' confusions, labelled as such (as the corals' `dataLooks`). Later, the cross-family species pairs (some dwarf angelfish vs some dark damselfish), applied by photo | IMR; answer log; later sourced species pairs (FISH_PATH "Look-alikes at any rank") | Auto, plus written cues for new pairs |
-| F6 | Genera in this family | **Block or page: Q2, decided on the mockup** (`proto/fish-sheets.html`). As a block: one per genus: the scientific name, its IMR sub-entry name and cues if it has one (Chromis: "Deeply forked tail…"), one written mark that separates it from its sibling genera, and a strip with one photo per species (commonness order, up to 6, "+N more"). Skipped when the family has a single genus (11 families in circle 1) | `fish.json` `sub`; the written mark sourced | Mostly auto; the genus mark written |
-| F7 | Species in this family | Every species (Q5), one thumbnail each, in commonness order (`cmi`), the IMR 24 most sighted marked, the scientific name first then the common name (Q10), a tap opening the species sheet. There will be very many, so a filter, **on by default**, shows only the species opened for the player ("Opened for me"); one tap shows them all, so everything stays reachable (Q5). A species with no photo shows the drawing | `fish.json`, photos, the player's progress | Auto |
+| F6 | Genera in this family | **One row per genus, each opening its short genus page (§4); a single-species genus's row opens the species sheet** (Q2, option B, Pierre 2026-11-06). A row: a few species photos, the scientific genus name, its number of species and how many are opened for the player, its IMR sub-entry name if it has one (option A, genus blocks with the species inside, was not chosen) | `fish.json` `sub`; the written mark sourced | Mostly auto; the genus mark written |
+| F7 | Species in this family | On the genus pages (option B, as in the chosen mockup; a family with a single genus: §4.2): every species (Q5), one thumbnail each, in commonness order (`cmi`), the IMR 24 most sighted marked, the scientific name first then the common name (Q10), a tap opening the species sheet. There will be very many, so a filter, **on by default**, shows only the species opened for the player ("Opened for me"); one tap shows them all, so everything stays reachable (Q5). A species with no photo shows the drawing | `fish.json`, photos, the player's progress | Auto |
 | F8 | Juveniles and phases | When the family's juveniles or phases differ: the IMR `phase` lines (verbatim) and the juvenile class trait (`juv.trait`, sourced, mimicry written as "resembles"), with 2-4 photos side by side (adult beside juvenile, IP beside TP). The same content as the "introduced with an explanation" card of FISH_PATH: **one source for both** | `fish.json` `phase`, `juv` | Auto (exists) |
 | F9 | Behaviour, habitat, size (Q11) | 2-4 short lines on what can be seen at a distance or on a paused frame: swimming mode, alone, in pairs or schools, near the bottom or in mid-water, typical size range ("most 10-20 cm, up to 35 cm": computed from the species' max lengths, §5). Many of these are already IMR cues (Parrotfish "flapping like a bird", Chromis "schools above the coral"); the rest come from sources | IMR cues; RLS / FishBase; the book (cited by page) | Size range auto; lines written |
 | F10 | Report a problem | `repBtn` | – | Auto |
@@ -141,12 +141,10 @@ Plain sentence (body text, no label).
 How to tell it apart
  [our photo | Angelfish photo]  "Angelfish: spine on the gill cover, iridescent blue"  IMR
  [our photo | …] Often mixed up by players
-Genera (4)
- Chaetodon · 18 species — mark …       [6 thumbs →tap species] +12
- Heniochus = Bannerfish (IMR) — "No yellow on the saddle…"  [2 thumbs]
- …
-Species (23)                 [✓ Opened for me · 6] [All species · 23]
- [3-column grid of thumbs, scientific name then common name; ★ = IMR 24 most sighted]
+Genera (4)                     (Q2, option B: one row per genus)
+ [4 thumbs] Chaetodon · 18 species · 4 opened for me          ›  → genus page
+ [4 thumbs] Heniochus · 2 species · IMR entry: Bannerfish      ›  → genus page
+ [thumb]    Coradion altivelis · its only species here         ›  → species sheet
 Family ID marks (written, sourced; Q11)
 Juveniles and phases           (only when the family has them)
  [adult | juvenile] + IMR line + sourced trait
@@ -159,17 +157,17 @@ On tablet and desktop: hero left, tip box and plain line right (as the coral `.h
 
 ---
 
-## 4. Level 2: the genus (a block or a page: Q2, on the mockup)
+## 4. Level 2: the genus (a short page, opened from its row on the family sheet)
 
-Pierre wants genus sheets inside each family (Q1) and decides on a **mockup** whether they are blocks on the family sheet or short pages (Q2, 2026-11-06). The mockup, `proto/fish-sheets.html`, shows both options on real data for the Damselfishes (several genera with many species) and the Moorish Idol (one genus, one species). The content below is the same either way.
+Pierre wants genus sheets inside each family (Q1) and chose on a **mockup** (Q2): **option B, the family sheet lists its genera as rows, each opening a short genus page; a single-species genus opens the species sheet** (2026-11-06 13:25). Option A, every genus as a block on the family sheet with its species inside, was not chosen. The mockup, `proto/fish-sheets.html`, shows both on real data for the Damselfishes and the Moorish Idol, option A marked as not chosen. The content below is the genus page's.
 
 ### 4.1 Why not a full sheet for every genus
 
 - 94 circle-1 genera. In 11 book families the genus *is* the family (Platax, Siganus, Plectorhinchus, Pseudanthias, Scolopsis, Myripristis, Parapercis, Zanclus…), and 31 genera hold one species, so their page would repeat the species sheet. That leaves 52 genera where a genus view adds something (counts with the book families, §3.1; the first version of this study counted per IMR entry: 10, 32, 52).
 - What a learner needs from a genus is **what sets it apart from its sibling genera**, which is a comparison best seen on the family sheet (F6), plus a feel for its range: one photo per species is more representative than 6 photos of whichever species has the most.
-- The genus matters for branch B (scientific genus questions, `fishGenera`). The quiz's genus card already shows the IMR sub-entry's cues or its most met species, and can link to the block.
+- The genus matters for branch B (scientific genus questions, `fishGenera`). The quiz's genus card already shows the IMR sub-entry's cues or its most met species, and can link to the genus page.
 
-### 4.2 Content (block on the family sheet; the same content as a short page for the 52)
+### 4.2 Content (the short genus page)
 
 **Must**
 
@@ -187,7 +185,7 @@ Pierre wants genus sheets inside each family (Q1) and decides on a **mockup** wh
 **Not**
 
 - No separate description or behaviour text (it belongs to the family or the species).
-- No page for a single-species genus (link straight to the species) or for the sole genus of a family (the family sheet is the genus page). The mockup shows what such a page would look like, so Pierre can judge it (Q2).
+- No page for a single-species genus: its row opens the species sheet (Pierre, Q2). The sole genus of a family with several species (e.g. *Platax* in the Spadefishes) was not part of his answer: the study's recommendation is no page (the family sheet is the genus page), to confirm when the sheets are built.
 
 ### 4.3 Wireframe (short page, phone)
 
@@ -333,13 +331,13 @@ The drafts are plain data (a `tools/fish_sheets.json` or fields in `fish_source.
 ## 8. Projects, in order
 
 1. **Family sheet v1 (existing data only).**
-   - one per book family (Q1); F1-F8 and F10, from `fish.json` and the curated or judged photos, ordered by Q3; the species filter "Opened for me", on by default (Q5); the genus as block or page once Pierre has chosen on the mockup (Q2);
+   - one per book family (Q1); F1-F8 and F10, from `fish.json` and the curated or judged photos, ordered by Q3; the species filter "Opened for me", on by default (Q5); the genera as rows opening short genus pages (Q2, option B);
    - the families page becomes the index (each family taps through to its sheet), and the first-meeting card links to it;
    - admin-only beta like the rest of fish.
    - No new writing, so it can ship once Pierre has approved the layout (screenshots).
 2. **Species sheet v1 (automatic).**
    - S1-S3, S6 seeds (same genus, IMR sub, iNaturalist similar species in the same region), S8 with the drawing, links, commonness rank;
-   - species grid on the family sheet;
+   - species grids on the genus pages;
    - needs curated species photos or, meanwhile, judged candidates (admin only).
    - The drawing: one SVG of our own.
 3. **Facts tool:** max size, depth, habitat words, fetched once from Reef Life Survey then FishBase (Q6), cached, each value with its source, shown as "up to X cm"; the family size range. Batched and paced (rule C7's spirit for any API).
@@ -352,7 +350,7 @@ The drafts are plain data (a `tools/fish_sheets.json` or fields in `fish_source.
    - then genus marks (52);
    - then species key marks and look-alike cues family by family, the most sighted first.
    - Each batch with sources and presence tests; Pierre validates and judges the quality.
-6. **Genus blocks or short genus pages** (Q2, the mockup's choice; after the scientific genera PR is settled), linked from the quiz's genus card.
+6. **Short genus pages** opened from the family sheet's genus rows (Q2, option B; after the scientific genera PR is settled), linked from the quiz's genus card.
 7. **Shared sheet components with the corals** (refactor, corals unchanged).
 8. **Later, optional:** outline drawings with pointers for the families; arrows on species photos (most sighted first); the light group card for the 20 shape groups; "Find the X" and other formats reading the same sheet data.
 
@@ -369,7 +367,8 @@ Each question as asked on 2026-11-05, with its recommendation, then Pierre's ans
   - **Answered 2026-11-06, 13:04, on the mockup:** the book's families are not always taxonomic families; some group several. So **a family sheet's title is the English common name** ("Damselfishes"), not the scientific family ("Pomacentridae"); the scientific name or names go below as a subtitle, and there may be several (§3.1 lists the book families that span more than one). ***Amphiprion* is a genus inside the Damselfishes.** ***Diploprion* goes where the book puts it (Soapfishes): for organisation the book wins over IMR's course.**
 - **Q2. The genus: a page or a block?**
   - **Recommendation:** a block on the family sheet for every genus (sibling contrast, one photo per species), plus a short page only for the 52 genera with 2+ species in an entry with 2+ genera. No page for single-species genera or for an entry's only genus.
-  - **Answered 2026-11-06:** Pierre wants a **mockup** to decide: a family sheet with genus blocks and a short genus page, for (a) a family with several multi-species genera and (b) a family whose genus has one species. Built: `proto/fish-sheets.html` (Damselfishes and Moorish Idol, option A blocks, option B pages). **Open until he chooses.**
+  - **Answered 2026-11-06:** Pierre wants a **mockup** to decide: a family sheet with genus blocks and a short genus page, for (a) a family with several multi-species genera and (b) a family whose genus has one species. Built: `proto/fish-sheets.html` (Damselfishes and Moorish Idol, option A blocks, option B pages).
+  - **Answered 2026-11-06, 13:25, on the mockup: option B.** Genus rows on the family sheet, each opening a short genus page; a single-species genus opens the species sheet.
 - **Q3. Species photos.**
   - **Recommendation:** 3 for the adult or main form, one of them a deliberately realistic, video-like photo, plus 1-2 per extra phase (your addition), picked from the judging tags with your pins winning.
   - **Answered 2026-11-06:** reference and easy photos first, whoever took them. Pierre's own photos only when they are themselves reference or easy, never by priority.

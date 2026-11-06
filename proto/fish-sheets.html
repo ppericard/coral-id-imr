@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Fish sheets mockup for Pierre's Q2 of the fish-sheets study (docs/reviews/2026-11-05-fish-sheets-study.md §9):
-     is a genus a block on its family sheet (option A) or a short page of its own (option B)? Two families from fish.json:
+     is a genus a block on its family sheet (option A) or a short page of its own (option B)? Pierre chose B on 2026-11-06. Two families from fish.json:
      Damselfishes (several genera with many species) and Moorish Idol (one genus, one species). Static, not part of the
      app: it borrows app.css for the tokens, fonts and a few components, and loads nothing else. Real data: the IMR lines,
      names, species, commonness order and photos (curated, picked by Pierre's Q3 rule: reference and easy photos first,
@@ -516,12 +516,12 @@
             ['idol', 'Moorish Idol']
           ],
           opt = view.includes('-g-') ? 'b' : view.split('-')[1];
-        return `<p><b>Mockup, not the app</b> · fish sheets, Q2: a genus as a <b>block</b> on its family sheet (A) or a short <b>page</b> of its own (B).
+        return `<p><b>Mockup, not the app</b> · fish sheets, Q2: Pierre chose <b>B</b> (2026-11-06), genus rows on the family sheet, each opening a short genus <b>page</b>; A (genus blocks) was not chosen.
           Real data from fish.json; photos by the Q3 rule; hatched boxes are placeholders.</p>
           <div class="seg" role="group" aria-label="Family">${fam.map(([k, t]) => `<button type="button" data-go="${k}-${opt}" aria-pressed="${key === k}">${t}</button>`).join('')}</div>
           <div class="seg" role="group" aria-label="Option">${[
-            ['a', 'A · genus blocks'],
-            ['b', 'B · genus pages']
+            ['b', 'B · pages ✓'],
+            ['a', 'A · not chosen']
           ]
             .map(([o, t]) => `<button type="button" data-go="${key}-${o}" aria-pressed="${opt === o}">${t}</button>`)
             .join('')}</div>
@@ -529,16 +529,16 @@
             view.includes('-g-')
               ? 'Option B · the genus page (opened from a genus row)'
               : opt === 'a'
-                ? 'Option A · every genus is a block on the family sheet, its species inside'
-                : 'Option B · the family sheet lists its genera; a tap opens the genus page'
+                ? 'Option A · NOT CHOSEN (kept for the record): every genus a block on the family sheet'
+                : 'Option B · chosen by Pierre (2026-11-06): the family sheet lists its genera; a tap opens the genus page'
           }</p>`;
       }
       function draw() {
-        const view = (location.hash.slice(1) || 'damsel-a').replace(/[^\w-]/g, ''),
+        const view = (location.hash.slice(1) || 'damsel-b').replace(/[^\w-]/g, ''),
           key = view.split('-')[0] in D ? view.split('-')[0] : 'damsel',
           g = view.split('-g-')[1];
         credits.length = 0;
-        const body = g && D[key].genera.some(x => x.g === g) ? genusB(key, g) : view.endsWith('-b') ? famB(key) : famA(key);
+        const body = g && D[key].genera.some(x => x.g === g) ? genusB(key, g) : view.endsWith('-a') ? famA(key) : famB(key);
         document.getElementById('mk').innerHTML = chrome(view, key);
         document.getElementById('v').innerHTML =
           body +
