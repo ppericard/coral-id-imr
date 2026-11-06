@@ -8,6 +8,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const A = require('../autosort.js');
+const {fishOn} = require('../core.js');
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'));
 
 test('fishOrder: featured first in his order, then the game’s order (easiest, then most reference-like); never Pierre’s own first', () => {
@@ -66,13 +67,13 @@ test('fishFeat, fishCover, fishOk: one click each, in fish genera; empties left 
 
 test('Remove, ×, Not this on a photo in play (the fish Candidates’ convention)', () => {
   const F = {add: {a: 's1', b: 's1', c: 's1'}, seen: {}};
-  assert.ok(A.fishOn(F, 'a', 's1'));
+  assert.ok(fishOn(F, 'a', 's1'));
   const R = A.fishReject(F, 'a');
-  assert.ok(!A.fishOn(R, 'a', 's1') && R.seen.a === 1 && !('a' in R.add));
+  assert.ok(!fishOn(R, 'a', 's1') && R.seen.a === 1 && !('a' in R.add));
   const X = A.fishExclude(F, 'b');
-  assert.ok(!A.fishOn(X, 'b', 's1') && X.exclude.b === 'excluded');
+  assert.ok(!fishOn(X, 'b', 's1') && X.exclude.b === 'excluded');
   const N = A.fishNotThis(F, 'c', 's2', 's1');
-  assert.ok(!A.fishOn(N, 'c', 's1') && N.out.c === 's2' && !('c' in N.add), 'its candidate in s2 now, not in play');
+  assert.ok(!fishOn(N, 'c', 's1') && N.out.c === 's2' && !('c' in N.add), 'its candidate in s2 now, not in play');
   assert.deepStrictEqual(A.fishState(N, 'c', 's1'), {sid: 's2', st: null});
   assert.deepStrictEqual(A.fishState(A.fishNotThis(F, 'c', 'x', 's1'), 'c', 's1').st, 'gone');
   assert.ok(!('c' in A.fishNotThis(N, 'c', 's1', 's1').out), 'put back: the mark goes');
