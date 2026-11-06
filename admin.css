@@ -4746,3 +4746,43 @@ button.adm-chip[aria-pressed='true'] {
   stroke: var(--line);
   stroke-width: 1;
 }
+/* The fish units page's wink (admin plan PR 6): the surprise card as players meet it, its photo beside the choices and
+   both feedback lines; the right choice marked. */
+.adm-winkc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.adm-winkc > img,
+.adm-winkc > .none {
+  width: 220px;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--line);
+}
+.adm-winkc > div {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.adm-winkc p {
+  margin: 0 0 6px;
+}
+.adm-winka {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.adm-winka span {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.adm-winka span.ok {
+  border-color: var(--good);
+  background: var(--good-bg);
+  font-weight: 600;
+}

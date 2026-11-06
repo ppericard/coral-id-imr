@@ -263,6 +263,192 @@
     return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[ar][tepc]*?)${c}`), '$1')}}};
   }
 
+  // ---- Fish photos in play, Not this, Remove (as in the fish Candidates of admin plan PR 5a and 5b) ----
+  // Not this: out {f: species id} = the iNaturalist experts got the species wrong, the photo is that species' candidate
+  // now; out {f: 'x'} = no game species (or unknown): gone. Only Pierre's click writes it (fishNotThis). A photo is in play
+  // for a species when add names it, it is neither rejected nor excluded, and its out, if any, names that same species
+  // (the convention the game reads, admin plan PR 7). fishMine stays the keep on its first species, for the agreement.
+  const fishOn = (F, f, sid) => {
+    const o = (F.out || {})[f];
+    return (F.add || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
+  };
+  // A photo's species now (orig: its fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
+  // (excluded, or Not this with no game species), or null (a candidate waiting).
+  function fishState(F, f, orig) {
+    F = F || {};
+    const o = (F.out || {})[f];
+    if ((F.exclude || {})[f] || o === 'x') return {sid: orig, st: 'gone'};
+    const sid = o || orig;
+    return {sid, st: (F.seen || {})[f] ? 'rej' : (F.add || {})[f] === sid ? 'play' : null};
+  }
+  // The extra phase a photo shows (as tools/fetch_fish.py photo_phase: juvenile, intermediate, male, female), or '' (adult
+  // or not known): Pierre's phase and tags when he set any (then the source's annotation is not read), else the pass's
+  // phase tag, its juvenile flag, else the source's life stage or sex (st), juvenile first.
+  const FPHW = {
+    juvenile: 'juvenile',
+    subadult: 'intermediate',
+    intermediate: 'intermediate',
+    initial: 'intermediate',
+    'initial phase': 'intermediate',
+    terminal: 'male',
+    'terminal phase': 'male',
+    male: 'male',
+    female: 'female'
+  };
+  const FPHASES = ['juvenile', 'intermediate', 'male', 'female'];
+  function fishPhase(p, j, F) {
+    F = F || {};
+    const mine = p.f in (F.phase || {}) || p.f in (F.tags || {}),
+      ph = p.f in (F.phase || {}) ? F.phase[p.f] : (j || {}).ph,
+      jt = (F.tags || {})[p.f] || (j || {}).jt || '';
+    if (FPHW[ph]) return FPHW[ph];
+    if (jt.slice(7).includes('j')) return 'juvenile';
+    if (mine) return '';
+    const got = new Set(
+      String(p.st || '')
+        .split('/')
+        .map(w => FPHW[w])
+        .filter(Boolean)
+    );
+    return FPHASES.find(x => got.has(x)) || '';
+  }
+  // Pierre's Not this (pure): the photo goes to species `to` as its candidate (out {f: to}), or out of every game species
+  // ('x'); its add and its rejection go with it (it waits in its new species). Back to its first species (orig) takes the
+  // mark off. The fish auto-sort never calls it (Pierre, 2026-11-04: the experts can be wrong, he says so).
+  function fishNotThis(F, f, to, orig) {
+    F = F || {};
+    const N = {...F, out: {...(F.out || {})}},
+      drop = k => {
+        if (N[k] && f in N[k]) {
+          N[k] = {...N[k]};
+          delete N[k][f];
+        }
+      };
+    if (!to || to === orig) delete N.out[f];
+    else {
+      N.out[f] = to;
+      drop('add');
+      drop('seen');
+    }
+    return N;
+  }
+  // Pierre's Reject (✕), from the swiper or on a photo in play (pure): "seen", and the add taken off when it was in play.
+  function fishReject(F, f) {
+    F = F || {};
+    const N = {...F, seen: {...(F.seen || {}), [f]: 1}};
+    if (N.add && f in N.add) {
+      N.add = {...N.add};
+      delete N.add[f];
+    }
+    return N;
+  }
+  // Pierre's × (excluded for good, imports skip it): "exclude", and the add taken off.
+  function fishExclude(F, f) {
+    F = F || {};
+    const N = {...F, exclude: {...(F.exclude || {}), [f]: 'excluded'}};
+    if (N.add && f in N.add) {
+      N.add = {...N.add};
+      delete N.add[f];
+    }
+    return N;
+  }
+
+  // ---- The fish units page (admin plan PR 6; Pierre, 2026-11-04: the coral Genera page becomes a subject-neutral units
+  // page, an IMR entry's species as its sections) ----
+  // An entry's own choices live in curation.json fish genera {entry id: {cover: f, feat: {species id: [f]}, ok: true}}: the
+  // coral key names (genera, cover, feat, ok), species in place of views. FISHFEAT photos featured per species at most,
+  // as the corals' 3 per view.
+  const FISHFEAT = 3;
+  // An entry's choices changed by fn (on a copy); an emptied feat list, feat map or entry is left out.
+  function fishPick(F, tid, fn) {
+    F = F || {};
+    const G = {...(F.genera || {})},
+      k = JSON.parse(JSON.stringify(G[tid] || {}));
+    fn(k);
+    if (k.feat) {
+      Object.keys(k.feat).forEach(s => !(k.feat[s] || []).length && delete k.feat[s]);
+      if (!Object.keys(k.feat).length) delete k.feat;
+    }
+    if (Object.keys(k).length) G[tid] = k;
+    else delete G[tid];
+    return {...F, genera: G};
+  }
+  // A photo featured or not (one click); at FISHFEAT already, nothing changes (full: true, the admin says so).
+  function fishFeat(F, tid, sid, f) {
+    const L = ((((F || {}).genera || {})[tid] || {}).feat || {})[sid] || [];
+    if (!L.includes(f) && L.length >= FISHFEAT) return {F, full: true};
+    return {
+      F: fishPick(F, tid, k => {
+        k.feat = k.feat || {};
+        k.feat[sid] = L.includes(f) ? L.filter(x => x !== f) : [...L, f];
+      }),
+      full: false
+    };
+  }
+  // The entry's cover: this photo, or none again (his pick taken off).
+  const fishCover = (F, tid, f) =>
+    fishPick(F, tid, k => {
+      if (k.cover === f) delete k.cover;
+      else k.cover = f;
+    });
+  // Validated, or not.
+  const fishOk = (F, tid) =>
+    fishPick(F, tid, k => {
+      if (k.ok) delete k.ok;
+      else k.ok = true;
+    });
+  // A photo leaving play (Remove, ×, Not this) leaves the entry's featured photos and cover too: one Undo step for all.
+  const fishDrop = (F, tid, f) =>
+    fishPick(F, tid, k => {
+      if (k.cover === f) delete k.cover;
+      Object.keys(k.feat || {}).forEach(s => (k.feat[s] = k.feat[s].filter(x => x !== f)));
+    });
+  // The photos of one species in play, in the page's order (L: the photo objects, j(f): the pass's judgment): the featured
+  // ones first, in his order; then the reference photos, then the easiest, then a fixed order. Never by who took them
+  // (Pierre, 2026-11-06: his own photos are never boosted; the easy and reference photos come first, whoever took them).
+  function fishOrder(L, F, tid, sid, j = () => null) {
+    F = F || {};
+    const fe = ((((F.genera || {})[tid] || {}).feat || {})[sid] || []).filter(f => L.some(p => p.f === f)),
+      ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
+      ref = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r'));
+    return {
+      feat: fe.map(f => L.find(p => p.f === f)),
+      rest: L.filter(p => !fe.includes(p.f)).sort((a, b) => ref(b) - ref(a) || ease(b) - ease(a) || (a.f < b.f ? -1 : 1))
+    };
+  }
+  // The IMR phases of an entry (fish.json teach phase, the presentation's phase lines; dimorph: its sexes differ), as the
+  // phase words of fishPhase: juveniles, intermediate (sub-adult, initial) and terminal phases, males and females.
+  function fishEntryPhases(t) {
+    const s = ((t && t.phase) || []).join(' ').toLowerCase(),
+      out = [];
+    if (/juvenile/.test(s)) out.push('juvenile');
+    if (/intermediate|sub-?adult|initial/.test(s)) out.push('intermediate');
+    if (/\bmales?\b|terminal/.test(s) || (t && t.dimorph)) out.push('male');
+    if (/females?\b/.test(s) || (t && t.dimorph)) out.push('female');
+    return out;
+  }
+  // What an entry still needs before Pierre's ✓ Validated (Pierre's targets, 2026-11-04, docs/ROADMAP.md "Admin for every
+  // subject"): each species' observations in play up to its target (fishTarget: 8, 12 for the cheatsheet's), 5 easy photos
+  // per entry (ease 4 or 5, judging/FISH.md) and every IMR phase at least once. play: {species id: [photo]} in play,
+  // species: {id: fish.json species} (the entry's game species), j(f): the pass's judgment.
+  const FISHEASY = 5;
+  function fishNeeds(t, play, species, F, j = () => null) {
+    F = F || {};
+    const out = [],
+      sids = ((t && t.species) || []).filter(s => species[s] && !species[s].out),
+      all = sids.flatMap(s => play[s] || []),
+      under = sids.filter(s => new Set((play[s] || []).map(p => p.o || p.f)).size < fishTarget(species[s])).length,
+      easy = all.filter(p => ((F.ease || {})[p.f] || (j(p.f) || {}).e || 0) >= 4).length,
+      shown = new Set(all.map(p => fishPhase(p, j(p.f), F)));
+    if (!all.length) out.push('No photo in play');
+    if (under) out.push(`${under} species under target`);
+    if (easy < FISHEASY) out.push(`Easy ${easy}/${FISHEASY}`);
+    fishEntryPhases(t)
+      .filter(x => !shown.has(x))
+      .forEach(x => out.push(`No ${x}`));
+    return out;
+  }
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -448,6 +634,22 @@
     fishRun,
     fishUndo,
     fishOwn,
+    fishOn,
+    fishState,
+    fishPhase,
+    fishNotThis,
+    fishReject,
+    fishExclude,
+    FISHFEAT,
+    fishPick,
+    fishFeat,
+    fishCover,
+    fishOk,
+    fishDrop,
+    fishOrder,
+    fishEntryPhases,
+    FISHEASY,
+    fishNeeds,
     autoCode,
     autoParse,
     autoIdx,

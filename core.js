@@ -256,13 +256,17 @@
       },
       // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin). hash: the
       // prefix of the subject's admin addresses ('' keeps every coral address as it was); cur: its part of curation.json
-      // ('' = the top level, as before); pages: the admin pages it has (null = every page). For the one filter bar of
-      // every photo page (admin plan PR 3, admin.js fbar): origins, where its photos come from, [key, name, short name]
-      // in the order of the chips (admin.js origin(p) gives a photo's key); csrc, the sources of its Candidates swiper.
+      // ('' = the top level, as before); pages: the admin pages it has (null = every page; '' = its units page, a genus
+      // page for the corals). For the one filter bar of every photo page (admin plan PR 3, admin.js FB): origins, where
+      // its photos come from, [key, name, short name] in the order of the chips (admin.js origin(p) gives a photo's key);
+      // csrc, the sources of its Candidates swiper. sections (admin plan PR 6, admin.js renderUnit): what the sections of
+      // its units page are, 'views' (a genus's views) or 'species' (an IMR entry's species); the page's tab is named by
+      // its unit word, many (Genera, Families).
       admin: {
         hash: '',
         cur: '',
         pages: null,
+        sections: 'views',
         origins: [
           ['imr', 'IMR lecture', 'IMR'],
           ['own', 'Pierre', 'Pierre'],
@@ -316,11 +320,13 @@
       },
       // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
       // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
+      // '' (admin plan PR 6): the units page, an IMR entry with its species as sections (curation at the species level).
       // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
       admin: {
         hash: 'fish/',
         cur: 'fish',
-        pages: ['~triage', '~events', '~users', '~journey/', '~anon/'],
+        pages: ['', '~triage', '~events', '~users', '~journey/', '~anon/'],
+        sections: 'species',
         origins: [
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],

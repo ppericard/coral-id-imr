@@ -189,7 +189,7 @@ let SHOWN_COVER = null,
   cur = null,
   AUTOQ = {},
   AUTOF = {},
-  lastGenus = null;
+  lastGenus = {}; // the unit page shown last, per subject (genusHash)
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [
@@ -1200,7 +1200,7 @@ function statusDraw({parts, sug, over}) {
   $('undo').disabled = !HIST.length;
   $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length;
-  if (cur[0] !== '~') lastGenus = cur;
+  if (cur[0] !== '~') lastGenus[ASUBJ.id] = cur;
   navs(tn, xn);
   fitModes();
 }
@@ -1244,7 +1244,11 @@ const subjTodo = (S, tn) => {
   const F = DRAFT[S.admin.cur] || {};
   return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length;
 };
-const genusHash = () => '#' + ASUBJ.admin.hash + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
+// The units page shown last in this subject, else its first unit (unitList); '-' while a subject's units are still
+// loading (fish: fishLoad), which the page reads as its first unit.
+const genusHash = () => '#' + ASUBJ.admin.hash + encodeURIComponent(lastGenus[ASUBJ.id] || (unitList()[0] || ['-'])[0]);
+// The page a hash is for: a '~' page, or '' for a units page (a genus, a fish entry: hasPage reads '' from pages).
+const pageKey = h => (h[0] === '~' ? h : '');
 const GROUPS = [
   [
     'todo',
@@ -1276,6 +1280,7 @@ const GROUPS = [
     'photos',
     'Photos',
     [
+      // The units page's tab is named by the subject's unit word (admin plan PR 6): Genera, Families (tabName).
       [
         'genera',
         'Genera',
@@ -1365,6 +1370,8 @@ const GROUPS = [
 ];
 // Every tab as [key, name, views, group key].
 const TABS = GROUPS.flatMap(([g, , L]) => L.map(t => [...t, g]));
+// A tab's name on screen: the units page's is the subject's unit word (core.js SUBJECTS many: Genera, Families).
+const tabName = t => (t[0] === 'genera' ? cap1(ASUBJ.many) : t[1]);
 // Old addresses that are not a view of their own: Montages became Look-alikes; Where to look is the banner above the Games
 // grid of Coverage, opened in full.
 const ALIAS = {'~mont': '~look', '~stats-needs': '~cov'};
@@ -1404,7 +1411,10 @@ function navs(tn, xn) {
     seen[T[0]] = page;
     store.set(subjK('reefid-admin-view'), seen);
   }
-  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-last'), cur);
+  if (hasPage(ASUBJ, pageKey(cur))) store.set(subjK('reefid-admin-last'), cur);
+  // A subject whose units come with its own data (fish: fish.json) loads it once, so the units tab names a unit; the
+  // header is drawn again then.
+  if (ASUBJ.admin.sections === 'species' && !FISHC && !FUL) FUL = fishLoad().then(() => status());
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
     href = h => (h ? '#' + ASUBJ.admin.hash + h : genusHash()),
     // The subject's pages only: a view it has, a tab with one, a group with one.
@@ -1457,11 +1467,11 @@ function navs(tn, xn) {
       `<span class="adm-subtabs">${TABS.filter(t => t[3] === g && tOk(t))
         .map(
           t =>
-            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'cov' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
+            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'cov' && OVER.n ? ` title="${esc(over)}"` : ''}>${tabName(t)}${tcnt(t)}</a>`
         )
         .join('')}</span>` +
       (V.length
-        ? `<span class="adm-qseg adm-lvseg adm-views" role="group" aria-label="${esc(T[1])} view">${V.map(
+        ? `<span class="adm-qseg adm-lvseg adm-views" role="group" aria-label="${esc(tabName(T))} view">${V.map(
             ([h, t]) => `<a href="${esc(href(h))}" data-view="${esc(h)}" aria-pressed="${h === page}">${t}${vcnt(h)}</a>`
           ).join('')}</span>`
         : '');
@@ -1473,7 +1483,9 @@ function navs(tn, xn) {
     ms.innerHTML = GROUPS.map(
       ([k, t]) =>
         `<optgroup label="${t}">${TABS.filter(x => x[3] === k && tOk(x))
-          .map(x => `<option value="${esc(href(x === T ? page : tabHash(x)))}"${x === T ? ' selected' : ''}>${x[1]}${tcnt(x)}</option>`)
+          .map(
+            x => `<option value="${esc(href(x === T ? page : tabHash(x)))}"${x === T ? ' selected' : ''}>${tabName(x)}${tcnt(x)}</option>`
+          )
           .join('')}</optgroup>`
     ).join('');
     ms.hidden = false;
@@ -1506,13 +1518,247 @@ const modeKey = () =>
               '~mont': 'mont',
               '~cand': 'cand'
             }[cur] || 'genus';
+// ---- The units page (admin plan PR 6) ----
+// One page for every subject's units (Pierre, 2026-11-04: the coral Genera page becomes a subject-neutral units page),
+// its sections from the subject's descriptor (core.js SUBJECTS admin sections): a genus with its views for the corals
+// (render), an IMR entry with its species for fish (renderUnitSp). Both draw the same frame: the list of units at the
+// left, the sticky bar (cover, name, unit select, ✓ Validated and what is missing, the filter bar), the sections. A unit
+// is [id, name]: a genus is its own name, a fish entry its id shown by its name (#fish/t01).
+const unitList = () =>
+  ASUBJ.admin.sections === 'species' ? (FISHC ? FISHC.teach.map(t => [t.id, t.name]) : []) : Object.keys(DATA.gen).map(m => [m, m]);
+const unitOpts = (U, n) =>
+  U.map(([id, t]) => `<option${id === t ? '' : ` value="${esc(id)}"`}${id === n ? ' selected' : ''}>${esc(t)}</option>`).join('');
+const unitOk = (ok, nd) =>
+  `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}`;
+const unitFrame = (U, n, side, main) => `<div class="adm">
+    <nav class="adm-side" aria-label="${cap1(ASUBJ.many)}"><select id="gsel" aria-label="${cap1(ASUBJ.one)}">${unitOpts(U, n)}</select><div class="adm-list">${side}</div></nav>
+    <section class="adm-main">
+      ${main}
+    </section></div>`;
+// The frame's clicks: the two unit selects, and ✓ Validated (needs() what is missing: not ready while anything is; ok()
+// validated now; flip() one click, one Undo step).
+function bindUnit(needs, ok, flip) {
+  [$('gsel'), $v.querySelector('.adm-gsel2')].forEach(
+    el =>
+      el &&
+      (el.onchange = e => {
+        location.hash = ASUBJ.admin.hash + e.target.value;
+      })
+  );
+  const okb = $v.querySelector('[data-ok]');
+  if (okb)
+    okb.onclick = () => {
+      const nd = needs();
+      if (!ok() && nd.length) {
+        toast('Not ready: ' + nd.join(' · '));
+        return;
+      }
+      flip();
+    };
+}
+// The fish units page (admin plan PR 6; docs/ROADMAP.md "Admin for every subject" row 6): an IMR entry (fish.json teach,
+// #fish/<id>), its game species as sections, most sighted first (fish.json r), each with its photos in play (curation.json
+// fish add, autosort.js fishOn): featured first (FISHFEAT, his order), then reference photos, then the easiest, never by
+// who took them (fishOrder). On each photo: where it comes from, auto when the auto-sort put it in play, its ease, phase
+// and what makes it harder; Feature, ★ Cover, Remove (fishReject), Not this (fishNotThis: another species of the entry
+// or none) and × (fishExclude), each one click and one Undo step. The entry's choices go to curation.json fish genera
+// (fishPick); ✓ Validated once fishNeeds has nothing to say. A wink entry shows its surprise card first, as players meet
+// it (quiz.js winkShow). Fish data (fish.json, fish-cand.json) load once (fishLoad).
+const fuJ = f => ((SUG && SUG.fish) || {})[f] || null;
+let FUL = null; // the fish data on its way for the header (navs)
+// The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
+const FU_TAGS = [
+  {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
+  {0: 'partial'},
+  {d: 'dim light', n: 'night'},
+  {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
+  {m: 'soft', b: 'blurred'},
+  {s: 'small'},
+  {s: 'several of its kind', m: 'other fish too', x: 'subject not obvious'}
+];
+const FU_FLAGS = {c: 'camouflage', a: 'out of water'};
+const fuTags = jt =>
+  !jt ? '' : [...FU_TAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FU_FLAGS[c])].filter(Boolean).map(esc).join(' · ');
+// Everything the page needs from the draft, once per render: each species' photos in play, the photos sent elsewhere
+// with Not this, and what changed since the published file (the list's dots).
+function fuData() {
+  const F = DRAFT.fish || {},
+    S0 = SAVED.fish || {},
+    play = {},
+    gone = [];
+  Object.entries(F.add || {}).forEach(([f, sid]) => {
+    if (fishOn(F, f, sid)) (play[sid] = play[sid] || []).push(FISHC.byF[f] || {f});
+  });
+  Object.entries(F.out || {}).forEach(([f, to]) => {
+    const p = FISHC.byF[f];
+    if (p && to !== p.sid) gone.push({...p, to});
+  });
+  const dirty = new Set();
+  ['add', 'seen', 'exclude', 'out'].forEach(k =>
+    [...new Set([...Object.keys(F[k] || {}), ...Object.keys(S0[k] || {})])].forEach(
+      f => !same((F[k] || {})[f], (S0[k] || {})[f]) && FISHC.byF[f] && dirty.add(FISHC.byF[f].sid)
+    )
+  );
+  return {F, play, gone, dirty};
+}
+// An entry's game species, most sighted first; its photos in play by species, in the page's order; its cover (his pick
+// while in play, else the first photo of its first species with any); what it still needs.
+function fuEntry(t, D) {
+  const sp = FISHC.species,
+    sids = (t.species || []).filter(s => sp[s] && !sp[s].out).sort((a, b) => (sp[a].r || 99) - (sp[b].r || 99)),
+    rows = sids.map(sid => ({sid, ...fishOrder(D.play[sid] || [], D.F, t.id, sid, fuJ)})),
+    k = (D.F.genera || {})[t.id] || {},
+    all = rows.flatMap(r => [...r.feat, ...r.rest]),
+    cover = (k.cover && all.find(p => p.f === k.cover)) || all[0] || null;
+  return {sids, rows, k, cover, needs: fishNeeds(t, D.play, sp, D.F, fuJ)};
+}
+const fuName = sid => (FISHC.species[sid] || {}).name || sid;
+// st: {num} for a featured photo; cover: the cover shown, picked: his pick; XI: fishIdx of the draft's fish part.
+function fuTile(sid, p, st, cover, picked, F, XI) {
+  const o = origin(p),
+    x = XI[p.f],
+    ease = (F.ease || {})[p.f] || (fuJ(p.f) || {}).e,
+    ph = fishPhase(p, fuJ(p.f), F),
+    jt = (F.tags || {})[p.f] || (fuJ(p.f) || {}).jt || '',
+    isCover = cover && cover.f === p.f;
+  return `<figure class="adm-tile${st.num ? ' is-feat' : ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-sid="${esc(sid)}">
+    <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img src="${esc(img(p, 1))}" alt="" loading="lazy" draggable="false">` : ''}</button><button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>
+    ${st.num ? `<span class="adm-num">${st.num}</span>` : ''}
+    ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
+    <figcaption><span class="adm-src o-${o}">${esc((ORIGINS.find(y => y[0] === o) || [, o])[1])}</span>${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span></figcaption>
+    <div class="adm-acts"><button type="button" data-fu="feat" aria-pressed="${!!st.num}" title="Feature">Feature</button><button type="button" data-fu="cover" class="${isCover && picked ? 'on' : ''}" title="Cover">★ Cover</button><button type="button" data-fu="remove" title="Remove">Remove</button><button type="button" data-fu="not" title="Not this species">Not this</button></div></figure>`;
+}
+// The wink's surprise card as players meet it (quiz.js winkShow): its photo, "Which family?", the entry's name among the
+// three absurd choices, and both feedback lines.
+const fuWink = (t, cover) =>
+  `<section class="adm-row adm-wink"><h3>Wink <small>a surprise card, never counted</small></h3><div class="adm-winkc">${cover && cover.src ? `<img src="${esc(img(cover, 1))}" alt="">` : '<span class="none"></span>'}<div><p class="adm-winkq">Which ${esc(ASUBJ.one)}? <span class="adm-src">Surprise</span></p><div class="adm-winka">${[[t.id, t.name], ...t.wink.choices].map(([id, l]) => `<span class="${id === t.id ? 'ok' : ''}">${esc(l)}</span>`).join('')}</div><p><b>✓</b> ${esc(t.wink.right)}</p><p><b>✗</b> ${esc(t.wink.wrong)}</p></div></div></section>`;
+function renderUnitSp() {
+  if (!FISHC) {
+    status();
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    fishLoad().then(() => pageKey(cur) === '' && ASUBJ.admin.sections === 'species' && render());
+    return;
+  }
+  const U = unitList(),
+    T = FISHC.teach;
+  let t = T.find(x => x.id === cur);
+  if (!t) {
+    t = T[0];
+    cur = t.id;
+  }
+  status();
+  const D = fuData(),
+    E = Object.fromEntries(T.map(x => [x.id, fuEntry(x, D)])),
+    e = E[t.id],
+    F = D.F,
+    S0 = SAVED.fish || {},
+    XI = fishIdx(F);
+  $('preview').href = './?draft';
+  const side = T.map(x => {
+    const c = E[x.id].cover,
+      dirty = !same((F.genera || {})[x.id], (S0.genera || {})[x.id]) || x.species.some(s => D.dirty.has(s)),
+      nd = E[x.id].needs;
+    return `<a href="#${esc(ASUBJ.admin.hash + x.id)}" class="adm-g${x.id === t.id ? ' cur' : ''}"${x.id === t.id ? ' aria-current="true"' : ''}>${c && c.src ? `<img src="${esc(img(c, 1))}" alt="" loading="lazy">` : '<span class="none"></span>'}<span>${esc(x.name)}
+      <small>${x.wink ? 'wink' : `circle ${x.circle}`} · ${E[x.id].sids.length} species${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${E[x.id].k.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`;
+  }).join('');
+  const all = e.rows.flatMap(r => [...r.feat, ...r.rest]),
+    cnt = o => all.filter(p => origin(p) === o).length,
+    cv = e.cover;
+  const body = e.rows
+    .map(({sid, feat, rest}) => {
+      const sp = FISHC.species[sid],
+        n = feat.length + rest.length,
+        obs = new Set([...feat, ...rest].map(p => p.o || p.f)).size,
+        tg = fishTarget(sp),
+        out = [...feat, ...rest].filter(p => !shown(p)).length;
+      return `<section class="adm-row" data-sid="${esc(sid)}"><h3><i>${esc(sp.name)}</i> ${esc(sp.common || '')} <small><b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${n} photo${n === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
+      <div class="adm-grid">${feat.map((p, i) => (shown(p) ? fuTile(sid, p, {num: i + 1}, cv, e.k.cover, F, XI) : '')).join('')}${rest
+        .filter(shown)
+        .map(p => fuTile(sid, p, {}, cv, e.k.cover, F, XI))
+        .join(
+          ''
+        )}</div>${n ? '' : `<p class="note">No photo in play${(FISHC.cand[sid] || []).length ? ` · ${FISHC.cand[sid].length} candidates` : ''}.</p>`}</section>`;
+    })
+    .join('');
+  // Photos of its species sent elsewhere with Not this (his click only), with Put back.
+  const G = D.gone.filter(p => t.species.includes(p.sid)),
+    outRow = G.length
+      ? `<section class="adm-row adm-out"><h3>Not this species <small>${G.length} photo${G.length > 1 ? 's' : ''}</small></h3>
+    <div class="adm-grid">${G.map(
+      p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img src="${esc(img(p, 1))}" alt="" loading="lazy">` : ''}</button>
+      <figcaption><span class="adm-t"><i>${esc(fuName(p.sid))}</i> → ${p.to === 'x' ? 'no game species' : `<i>${esc(fuName(p.to))}</i>`}</span></figcaption>
+      <div class="adm-acts"><button type="button" data-fu="back">Put back</button></div></figure>`
+    ).join('')}</div></section>`
+      : '';
+  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img src="${esc(img(cv, 1))}" alt="${esc(t.name)} cover"></button>` : ''}<b class="adm-sname">${esc(t.name)}</b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${unitOpts(U, t.id)}</select>${unitOk(e.k.ok, e.needs)}${ASUBJ.views.length > 1 ? FB.views({key: 'gv', cur: GVIEW, items: [['all', 'All'], ...ASUBJ.views], seg: true}) : ''}${FB.origins({cnt})}</div>`;
+  $v.innerHTML = unitFrame(U, t.id, side, `${filter}${t.wink ? fuWink(t, cv) : ''}${body}${outRow}`);
+  bindBar($v, {redraw: render});
+  const fx = fn => {
+    DRAFT.fish = fn(DRAFT.fish || {});
+    saveDraft();
+    render();
+  };
+  bindUnit(
+    () => e.needs,
+    () => e.k.ok,
+    () => fx(F => fishOk(F, t.id))
+  );
+  // Every photo of the entry in the page's order, for the enlarged photo's ‹ ›.
+  const Z = [...all, ...G];
+  $v.querySelectorAll('[data-fu]').forEach(el => {
+    const a = el.dataset.fu,
+      tl = el.closest('[data-f]'),
+      f = tl && tl.dataset.f,
+      sid = tl && tl.dataset.sid;
+    if (!f) return;
+    el.onclick = e2 => {
+      e2.stopPropagation();
+      if (a === 'zoom') {
+        const i = Z.findIndex(p => p.f === f);
+        return zoomSet(Z, Math.max(0, i), p => lbCap(fuName(p.sid), p, (FISHC.species[p.sid] || {}).common || ''));
+      }
+      if (a === 'feat') {
+        const r = fishFeat(DRAFT.fish, t.id, sid, f);
+        if (r.full) return toast(`Already ${FISHFEAT} featured: remove one first.`);
+        return fx(() => r.F);
+      }
+      if (a === 'cover') return fx(F => fishCover(F, t.id, f));
+      if (a === 'remove') {
+        fx(F => fishReject(fishDrop(F, t.id, f), f));
+        return toast('Removed from play. Undo (Ctrl+Z) brings it back.');
+      }
+      if (a === 'exclude') {
+        fx(F => fishExclude(fishDrop(F, t.id, f), f));
+        return toast('Excluded. Undo (Ctrl+Z) brings it back.');
+      }
+      if (a === 'back') return fx(F => fishNotThis(F, f, sid, sid));
+      if (a === 'not') {
+        // The species to send it to, drawn on demand (an entry may have 60 species and hundreds of photos).
+        const others = e.sids.filter(x => x !== sid);
+        el.outerHTML = `<select data-funot aria-label="Not this species"><option value="">Not this</option><option value="x">No game species</option>${others.length ? `<optgroup label="${esc(t.name)}">${others.map(x => `<option value="${esc(x)}">${esc(fuName(x))}</option>`).join('')}</optgroup>` : ''}</select>`;
+        const sel = tl.querySelector('[data-funot]');
+        sel.focus();
+        sel.onchange = () => {
+          if (!sel.value) return;
+          const to = sel.value;
+          fx(F => fishNotThis(fishDrop(F, t.id, f), f, to, sid));
+          toast(
+            to === 'x' ? 'Not this: no game species. Undo (Ctrl+Z) brings it back.' : `Not this: sent to ${fuName(to)} as its candidate.`
+          );
+        };
+      }
+    };
+  });
+  const c = $v.querySelector('.adm-g.cur');
+  if (c) c.scrollIntoView({block: 'nearest'});
+}
 function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
   memoFresh();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   // A page the subject on screen does not have yet (admin plan: its fish version comes in a later PR).
-  if (!hasPage(ASUBJ, cur)) {
+  if (!hasPage(ASUBJ, pageKey(cur))) {
     status();
     $v.innerHTML = `<p class="note">Not for ${esc(ASUBJ.name.toLowerCase())} yet.</p>`;
     return;
@@ -1540,7 +1786,10 @@ function render() {
   if (modeKey() === 'stats') return renderStats();
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
-  const names = Object.keys(DATA.gen);
+  // The units page: a fish entry with its species as sections (renderUnitSp), else a genus with its views (below).
+  if (ASUBJ.admin.sections === 'species') return renderUnitSp();
+  const names = Object.keys(DATA.gen),
+    U = unitList();
   if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(),
     n = cur,
@@ -1617,37 +1866,34 @@ function render() {
       )
     : '';
   const gvSeg = FB.views({key: 'gv', cur: gv, items: [['all', 'All'], ...R.map(([v]) => [v, label(n, v)])], seg: true});
-  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}${FB.origins({cnt})}</div>`;
-  $v.innerHTML = `<div class="adm">
-    <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
-    <section class="adm-main">
-      ${
-        missing(n).length
-          ? `<p class="warn"><b>${missing(n).length} choice${missing(n).length === 1 ? '' : 's'} name a photo that is no longer in the data</b>: ${missing(
-              n
-            )
-              .map(f => `<code>${esc(f)}</code>`)
-              .join(
-                ', '
-              )}. Kept but no longer applied. <button type="button" class="adm-link" data-forget>Forget them</button> (Undo brings them back), or ask Pierre.</p>`
-          : ''
-      }
-      ${filter}${hidRow}${body}${one ? '' : candRow + outRow}
-    </section></div>`;
+  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${unitOpts(U, n)}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `${unitOk(k.ok, nd)}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}${FB.origins({cnt})}</div>`;
+  $v.innerHTML = unitFrame(
+    U,
+    n,
+    side,
+    `${
+      missing(n).length
+        ? `<p class="warn"><b>${missing(n).length} choice${missing(n).length === 1 ? '' : 's'} name a photo that is no longer in the data</b>: ${missing(
+            n
+          )
+            .map(f => `<code>${esc(f)}</code>`)
+            .join(
+              ', '
+            )}. Kept but no longer applied. <button type="button" class="adm-link" data-forget>Forget them</button> (Undo brings them back), or ask Pierre.</p>`
+        : ''
+    }
+      ${filter}${hidRow}${body}${one ? '' : candRow + outRow}`
+  );
   bindBar($v, {redraw: render});
-  const okb = $v.querySelector('[data-ok]');
-  if (okb)
-    okb.onclick = () => {
-      const nd = needs(n);
-      if (!k.ok && nd.length) {
-        toast('Not ready: ' + nd.join(' · '));
-        return;
-      }
+  bindUnit(
+    () => needs(n),
+    () => k.ok,
+    () =>
       edit(n, k => {
         if (k.ok) delete k.ok;
         else k.ok = true;
-      });
-    };
+      })
+  );
   // Forget choices naming photos no longer in the data: one click, one Undo step, only on this genus (never automatic).
   const fg = $v.querySelector('[data-forget]');
   if (fg)
@@ -1682,14 +1928,6 @@ function render() {
         });
       })
   );
-  $('gsel').onchange = e => {
-    location.hash = e.target.value;
-  };
-  const g2 = $v.querySelector('.adm-gsel2');
-  if (g2)
-    g2.onchange = e => {
-      location.hash = e.target.value;
-    };
   const cd = $v.querySelector('.adm-cands');
   if (cd) cd.ontoggle = () => store.set('reefid-admin-cands', cd.open);
   bindTiles($v, () => n);
@@ -2224,6 +2462,7 @@ const HELP = {
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
+  unitsp: `<p>One IMR entry at a time, its species as sections, most sighted first; the list at the left gives every entry. A species shows its photos in play (yours and the auto-sort's proposals, an <b>auto</b> tag on these): the featured ones first, numbered, then the reference photos, then the easiest, whoever took them. Each photo says where it comes from, its ease (1 very hard to 5 very easy, the judging pass's or yours), its phase and what makes it harder (the judging rubric's tags). <b>Feature</b> puts it first in its species (${FISHFEAT} at most), <b>★ Cover</b> makes it the entry's cover (else its easiest reference photo), <b>Remove</b> takes it out of play, <b>Not this</b> says the iNaturalist experts got the species wrong (another species of the entry, or no game species: only your click does it), × excludes it for good. Each is one click, Undo steps back, Publish sends it all.</p><p><b>✓ Validated</b> is yours once the entry has what the game needs (else it says what is missing): each species' observations in play up to its target (${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), ${FISHEASY} easy photos (ease 4 or 5) and every phase the IMR presentation names at least once. A wink entry shows its surprise card as players meet it. New candidates come through Candidates.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; rule C8): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
@@ -2265,7 +2504,7 @@ function toggleHelp() {
       '~stats-stop': 'statsstop',
       '~stats-needs': 'statsneeds',
       '~diff': 'diff'
-    }[cur] || modeKey();
+    }[cur] || (modeKey() === 'genus' && ASUBJ.admin.sections === 'species' ? 'unitsp' : modeKey());
   h = document.createElement('div');
   h.id = 'admhelp';
   h.className = 'adm-help';
@@ -3991,6 +4230,8 @@ async function fishLoad() {
       .catch(() => ({}));
   const [C, F] = await Promise.all([get('fish-cand.json'), get('fish.json')]);
   return (FISHC = {
+    // The teaching entries in fish.json order, for the units page (renderUnitSp).
+    teach: F.teach || [],
     cand: C.cand || {},
     species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
     byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
@@ -4925,6 +5166,8 @@ function pubSummary() {
       'fish photo set aside'
     ],
     [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
+    // An entry's cover, featured photos and ✓ Validated (the units page, curation.json fish genera).
+    [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish entry'],
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
     [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]
@@ -5294,7 +5537,8 @@ async function start() {
       if (!a || a.closest('#subj') || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const h = decodeURIComponent(a.getAttribute('href').slice(1)),
         [S, page] = subjOfHash(h);
-      if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || !hasPage(ASUBJ, page)) return;
+      // A unit page is never rewritten: a genus link on a fish page (a coral report) opens the coral genus.
+      if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || page[0] !== '~' || !hasPage(ASUBJ, page)) return;
       e.preventDefault();
       location.hash = ASUBJ.admin.hash + page;
     },

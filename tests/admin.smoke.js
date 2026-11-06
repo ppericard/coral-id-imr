@@ -303,13 +303,45 @@ const WIDTHS = [390, 1280];
       if (at.subj.length !== S.length || at.subj[0][1] !== 'true') fails.push(`${w}px Subjects: switch ${JSON.stringify(at.subj)}`);
       await go(other.hash + '~triage');
       at = await seg();
-      if (
-        !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
-        at.note ||
-        !at.tabs.includes('To do') ||
-        at.groups.includes('photos')
-      )
+      if (!at.subj.some(([id, on]) => id === other.id && on === 'true') || at.note || !at.tabs.includes('To do'))
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
+      // The units page (admin plan PR 6): the fish side's Photos group holds its units page alone, its tab named by the
+      // subject's unit word (Families; the corals' stays Genera), an entry per page under #fish/<entry id>, its game
+      // species as sections, with no sideways scroll; an unknown entry shows the first one.
+      await p.evaluate(() => (location.hash = genusHash()));
+      await settle();
+      {
+        const u = await p.evaluate(() => ({
+          ...{tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent)},
+          menu: ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '',
+          hash: location.hash,
+          many: ASUBJ.many,
+          side: document.querySelectorAll('.adm-side .adm-g').length,
+          entries: FISHC ? FISHC.teach.length : 0,
+          rows: document.querySelectorAll('.adm-main > section.adm-row[data-sid]').length,
+          sp: FISHC ? FISHC.teach.find(t => t.id === cur).species.filter(s => FISHC.species[s] && !FISHC.species[s].out).length : -1,
+          chips: [...document.querySelectorAll('.adm-sticky [data-o]')].map(b => b.dataset.o).filter(o => o !== 'all'),
+          want: ASUBJ.admin.origins.map(o => o[0]),
+          groups: [...document.querySelectorAll('#modes [data-mode]')].filter(a => !a.hidden).map(a => a.dataset.mode),
+          wide: document.documentElement.scrollWidth - innerWidth
+        }));
+        const name = u.many[0].toUpperCase() + u.many.slice(1);
+        if (
+          u.tabs.join() !== name ||
+          u.menu !== name ||
+          !u.hash.startsWith('#' + other.hash) ||
+          !u.groups.includes('photos') ||
+          !u.entries ||
+          u.side !== u.entries ||
+          u.rows !== u.sp ||
+          u.chips.join() !== u.want.join() ||
+          u.wide > 0
+        )
+          fails.push(`${w}px Units page: ${other.id} ${JSON.stringify(u)}`);
+        await go(other.hash + 'nope');
+        const first = await p.evaluate(() => [cur, FISHC.teach[0].id, !!document.querySelector('.adm-g.cur')]);
+        if (first[0] !== first[1] || !first[2]) fails.push(`${w}px Units page: an unknown entry ${JSON.stringify(first)}`);
+      }
       await go(other.hash + '~cand');
       at = await seg();
       if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
@@ -1006,6 +1038,112 @@ const WIDTHS = [390, 1280];
         await go('~cand');
         s = await fb();
         if (s.src.join() !== s.want.src.join()) fails.push(`${w}px Filter bar: Candidates sources ${JSON.stringify(s)}`);
+      }
+      // The fish units page's actions (admin plan PR 6), on four photos of a species put in play for the test (the served
+      // curation's fish part holds no add): their order (reference photos first, then the easiest, Pierre's own never
+      // first), Feature (numbered, first), ★ Cover, Remove (rejected, off the page, Undo), Not this (no game species: its
+      // own row, Put back), × (excluded), ✓ Validated refused while something is missing; a wink entry's surprise card.
+      // Every click goes to the draft's fish part only (curation.json fish genera, add, seen, out, exclude), never a coral
+      // key; the fish part is put back as it was after.
+      {
+        const fx = await p.evaluate(() => {
+          const t = FISHC.teach.find(x => x.species.some(s => (FISHC.cand[s] || []).length >= 5 && !FISHC.species[s].out)),
+            sid = t.species.find(s => (FISHC.cand[s] || []).length >= 5 && !FISHC.species[s].out),
+            L = FISHC.cand[sid].slice(0, 5).map(p => p.f),
+            keep = JSON.stringify(DRAFT.fish || {}),
+            coral = JSON.stringify({...DRAFT, fish: null});
+          // L[0] Pierre's own (ease 2), L[1] ease 5, L[2] a reference photo (ease 3), L[3] ease 4; L[4] stays a candidate.
+          const F = JSON.parse(keep);
+          F.add = {...(F.add || {}), ...Object.fromEntries(L.slice(0, 4).map(f => [f, sid]))};
+          F.ease = {...(F.ease || {}), [L[0]]: 2, [L[1]]: 5, [L[2]]: 3, [L[3]]: 4};
+          F.tags = {...(F.tags || {}), [L[2]]: 'p1g0sm1r'};
+          FISHC.byF[L[0]] = {...FISHC.byF[L[0]], own: true};
+          DRAFT.fish = F;
+          saveDraft();
+          return {t: t.id, sid, L, keep, coral, wink: (FISHC.teach.find(x => x.wink) || {}).id};
+        });
+        await go(other.hash + fx.t);
+        const sec = () =>
+          p.evaluate(
+            ({sid}) => ({
+              tiles: [...document.querySelectorAll(`section[data-sid="${sid}"] .adm-tile`)].map(
+                t => t.dataset.f + (t.querySelector('.adm-num') ? '#' + t.querySelector('.adm-num').textContent : '')
+              ),
+              cover: (document.querySelector(`section[data-sid="${sid}"] .is-cover`) || {}).dataset?.f || '',
+              out: [...document.querySelectorAll('.adm-out .adm-tile')].map(t => t.dataset.f),
+              F: DRAFT.fish,
+              ok: (document.querySelector('[data-ok]') || {}).getAttribute?.('aria-pressed'),
+              needs: (document.querySelector('.adm-sticky .adm-needs') || {}).textContent || ''
+            }),
+            fx
+          );
+        const [a, b, c, d] = fx.L;
+        let s = await sec();
+        if (s.tiles.join() !== [c, b, d, a].join())
+          fails.push(`${w}px Units page: order ${JSON.stringify(s.tiles)}, expected ${[c, b, d, a]}`);
+        const act = async (f, what) => {
+          const el = await p.$(`.adm-tile[data-f="${f}"] [data-fu="${what}"]`);
+          if (!el) return fails.push(`${w}px Units page: no ${what} on ${f}`);
+          await el.click();
+          await settle();
+        };
+        await act(d, 'feat');
+        s = await sec();
+        if (s.tiles[0] !== d + '#1' || JSON.stringify(((s.F.genera || {})[fx.t] || {}).feat) !== JSON.stringify({[fx.sid]: [d]}))
+          fails.push(`${w}px Units page: Feature ${JSON.stringify({tiles: s.tiles, genera: s.F.genera})}`);
+        await act(b, 'cover');
+        s = await sec();
+        if (s.cover !== b || s.F.genera[fx.t].cover !== b)
+          fails.push(`${w}px Units page: Cover ${JSON.stringify({cover: s.cover, g: s.F.genera})}`);
+        await act(b, 'remove');
+        s = await sec();
+        if (s.tiles.some(x => x.startsWith(b)) || s.F.seen[b] !== 1 || b in s.F.add || s.F.genera[fx.t].cover)
+          fails.push(`${w}px Units page: Remove ${JSON.stringify({tiles: s.tiles, seen: s.F.seen[b], g: s.F.genera})}`);
+        await p.click('#undo');
+        await settle();
+        s = await sec();
+        if (!s.tiles.some(x => x.startsWith(b)) || s.F.genera[fx.t].cover !== b)
+          fails.push(`${w}px Units page: Undo of Remove ${JSON.stringify(s.tiles)}`);
+        await act(a, 'not');
+        const sel = await p.$(`.adm-tile[data-f="${a}"] [data-funot]`);
+        if (!sel) fails.push(`${w}px Units page: Not this shows no species`);
+        else {
+          await sel.selectOption('x');
+          await settle();
+          s = await sec();
+          if (s.tiles.some(x => x.startsWith(a)) || s.F.out[a] !== 'x' || s.out.join() !== a)
+            fails.push(`${w}px Units page: Not this ${JSON.stringify({tiles: s.tiles, out: s.out, o: s.F.out})}`);
+          await p.click(`.adm-out .adm-tile[data-f="${a}"] [data-fu="back"]`);
+          await settle();
+          s = await sec();
+          if (a in (s.F.out || {}) || s.out.length) fails.push(`${w}px Units page: Put back ${JSON.stringify(s.out)}`);
+        }
+        await act(c, 'exclude');
+        s = await sec();
+        if ((s.F.exclude || {})[c] !== 'excluded' || s.tiles.some(x => x.startsWith(c)))
+          fails.push(`${w}px Units page: × ${JSON.stringify(s.tiles)}`);
+        await p.click('[data-ok]');
+        await settle();
+        s = await sec();
+        if (!s.needs || s.ok !== 'false' || (s.F.genera[fx.t] || {}).ok) fails.push(`${w}px Units page: Validated while "${s.needs}"`);
+        // The coral part of the draft is untouched by all this.
+        if ((await p.evaluate(() => JSON.stringify({...DRAFT, fish: null}))) !== fx.coral)
+          fails.push(`${w}px Units page: a coral key changed`);
+        if (fx.wink) {
+          await go(other.hash + fx.wink);
+          const wk = await p.evaluate(() => ({
+            n: document.querySelectorAll('.adm-wink .adm-winka span').length,
+            ok: (document.querySelector('.adm-wink .adm-winka .ok') || {}).textContent || '',
+            name: FISHC.teach.find(t => t.id === cur).name,
+            lines: document.querySelectorAll('.adm-wink p').length
+          }));
+          if (wk.n !== 4 || wk.ok !== wk.name || wk.lines < 3) fails.push(`${w}px Units page: the wink card ${JSON.stringify(wk)}`);
+        }
+        await p.evaluate(keep => {
+          DRAFT.fish = JSON.parse(keep);
+          saveDraft();
+          render();
+        }, fx.keep);
       }
     }
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
