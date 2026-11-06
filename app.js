@@ -497,45 +497,41 @@ function build() {
   if (FISHRAW) fishBuild(); // the fish photos under the same curation
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
-// with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of the circle-1 species of each
-// IMR entry, the genus being the first word of the PDF name (no grouping invented, rule C2; a genus never spans two
-// entries). Its record, beside the entries in FISH.gen under the key 'g:' + genus (ids and names never meet): rank
-// 'genus' (its questions and typed answers stay among genera: model.js sameRank), its entry (parent: it opens once the
-// entry is at Advanced, the set's units below), its entry's group as its form (easy wrong choices from other groups
-// first) and family, its sibling genera as look-alikes (the traps, as the species level's "same entry" choices), the
-// IMR cues of the IMR sub-entry of the same name (Chromis, Dascyllus, Pomacentrus) when there is one, its species in the
-// game (scientific and common names, commonness order) and the entry's photos of those species. FISH.sci: every genus,
-// in the IMR entries' order. App only: the admin's fishGen stays the entries'.
+// with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of fish.json genera holding
+// circle-1 species, the genus being the first word of the PDF name (no grouping invented, rule C2), inside its family
+// (fish.json families: the book's; Pierre, 2026-11-06). Its record, beside the families in FISH.gen under its id
+// 'g:' + genus (ids and names never meet): rank 'genus' (its questions and typed answers stay among genera: model.js
+// sameRank), its family (parent: it opens once the family is at Advanced, the set's units below), its family's group as
+// its form (easy wrong choices from other groups first), its sibling genera as look-alikes (the traps, as the species
+// level's "same family" choices), the IMR tag (imr: the IMR sub-entry naming it, Chromis, Anemonefish, Bannerfish...)
+// with its cues when IMR has them, its species in the game (scientific and common names, commonness order) and its
+// family's photos of those species. FISH.sci: every genus, in the families' order.
 function fishGenera(X, F) {
   const sp = new Map((F.species || []).map(s => [s.id, s])),
+    gens = new Map((F.genera || []).map(g => [g.id, g])),
     sci = [];
-  (F.teach || [])
-    .filter(t => t.level === 1 && t.circle === 1 && X.gen[t.id])
-    .forEach(t => {
-      const E = X.gen[t.id],
-        by = new Map();
-      t.species
-        .map(id => sp.get(id))
-        .filter(s => s && s.circle === 1)
-        .forEach(s => {
-          const g = s.name.split(/\s+/)[0];
-          if (!by.has(g)) by.set(g, []);
-          by.get(g).push(s);
-        });
-      const ids = [...by.keys()].map(g => 'g:' + g);
-      by.forEach((L, g) => {
-        const id = 'g:' + g,
-          own = new Set(L.map(s => s.id)),
-          sub = (t.sub || []).find(u => u.name === g),
-          wide = E.views.wide.filter(p => own.has(p.sp));
+  (F.families || [])
+    .filter(f => f.circle === 1 && X.gen[f.id])
+    .forEach(f => {
+      const E = X.gen[f.id],
+        own = (f.genera || []).map(id => gens.get(id)).filter(Boolean),
+        by = new Map(own.map(G => [G.id, G.species.map(id => sp.get(id)).filter(s => s && s.circle === 1)]).filter(([, L]) => L.length)),
+        ids = [...by.keys()];
+      by.forEach((L, id) => {
+        const G = gens.get(id),
+          g = G.name,
+          set = new Set(L.map(s => s.id)),
+          cues = G.cues && G.cues.length ? G.cues : null,
+          wide = E.views.wide.filter(p => set.has(p.sp));
         X.gen[id] = {
           id,
           name: g,
           rank: 'genus',
           one: 'genus',
-          parent: t.id,
-          fam: E.name + ' · ' + t.fam, // the card's and the feedback's family line names its IMR entry
-          wfam: E.wfam,
+          parent: f.id,
+          fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
+          wfam: [],
+          imrName: G.imr || '', // the IMR tag
           fish: 1,
           circle: 1,
           group: E.group,
@@ -544,8 +540,8 @@ function fishGenera(X, F) {
           look: ids.filter(o => o !== id),
           lk: [],
           lsrc: {},
-          qt: sub && sub.cues && sub.cues.length ? sub.cues : null,
-          tl: sub && sub.cues && sub.cues.length ? 'ID tips (IMR, ' + g + ')' : 'Its species here',
+          qt: cues,
+          tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + ')' : 'Its species here',
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, then the count.
           sum:
             (L.length > 3 ? 'Most met here: ' : '') +
@@ -559,10 +555,11 @@ function fishGenera(X, F) {
           cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {}).dauin || 0), 0))),
           levels: 1,
           views: {wide},
-          // the PDF genus shown; its species' WoRMS-accepted genera accepted when typed (Codex review #526: Mirolabrichthys)
-          names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
+          // the PDF genus shown; its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) and its IMR name
+          // (Anemonefish) accepted when typed
+          names: [g, ...new Set([...L.map(s => (s.now || '').split(/\s+/)[0]), G.imr || ''].filter(x => x && x !== g))]
         };
-        // The card's photo as fishGen picks an entry's: the first of its easyRank order (the entry's, kept by the filter),
+        // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
         // whoever took it (Pierre, 2026-11-06).
         if (wide.length) X.gen[id].cover = wide[0].f;
         sci.push(id);
@@ -573,7 +570,7 @@ function fishGenera(X, F) {
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
   return X;
 }
-// A unit's rank inside its subject: '' for the corals' genera and the fish entries, 'genus' for a fish scientific genus.
+// A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
 const rankOf = n => (GX(n) || {}).rank || '';
 // A unit's name when its id is not its name (a fish entry t01: Damselfish; a scientific genus g:Chromis: Chromis), '' for
@@ -610,8 +607,8 @@ const fishLoad = () =>
     .then(([f, ph, gm]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
-      // curated photos are not required: without them every entry plays on the stopgap's.
-      if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
+      // curated photos are not required: without them every family plays on the stopgap's.
+      if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
       FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
       return fishBuild();
     })
@@ -637,6 +634,7 @@ function rankPhotos() {
 const SUBJ_HOOKS = [];
 function subjectLoad(S, keep) {
   SUBJ = S;
+  unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
   SUBJ_HOOKS.forEach(f => f(keep));
@@ -1266,6 +1264,18 @@ const subjAt = id => (subjOpen(subjectOf(id)) ? subjectOf(id) : SUBJECTS[0]);
 let SUBJ = subjAt(store.get(SUBJECT_KEY, SUBJECTS[0].id));
 const sKey = name => subjKey(SUBJ.id, name); // reefid-sync-<subject>-<name>: travels with the player
 const sDev = name => subjDev(SUBJ.id, name); // reefid-<dev><name>: stays on this device
+// A subject's stored units under their new ids (core.js renameUnits, SUBJECTS renamed: the fish entries t01... became
+// the book's families on 2026-11-06, Groupers keeping IMR's Groupers, the Soapfishes new): its progress and its
+// first-meeting cards, moved at every load, since a device on an older app may save the old ids again for a while.
+function unitsRenamed(S) {
+  ['progress', 'intro'].forEach(k => {
+    const key = subjKey(S.id, k),
+      o = store.get(key, null),
+      r = renameUnits(S, o);
+    if (r !== o) store.set(key, r);
+  });
+}
+SUBJECTS.forEach(unitsRenamed); // every subject's, played on screen or not
 // Progress per genus (per unit of the subject) {ok, ko, streak, conf}, kept in this browser and synced once signed in.
 let P = store.get(sKey('progress'), {}) || {};
 const save = () => {
@@ -1385,7 +1395,7 @@ const UNITS = {
     identify: 'fishkey',
     icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
-    pick: 'The reef fish families of the IMR surveys, as on the survey videos.',
+    pick: 'The reef fish families, as on the IMR survey videos.',
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
     // text or a function of "Tap" / "Click". Fish have one game for now (SUBJECTS pages) and their key is coming soon.
     tour: {
@@ -1398,7 +1408,7 @@ const UNITS = {
       },
       progress: {
         d: tap =>
-          `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family of the IMR fish surveys.`
+          `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family in the game.`
       }
     },
     // The cards that tell a player about the subject, one per way it opens (core.js SUBJECTS open; progress.js subjHello:
@@ -1423,7 +1433,8 @@ const UNITS = {
     // (Who made it), where its content comes from (Course content) and the works it cites (References).
     about: {
       who: 'reef fish families',
-      course: 'The fish families and their cues come from the IMR fish presentation.',
+      course:
+        'The fish families follow the reef fish ID book (References); the cues, the look-alikes and IMR’s names come from the IMR fish presentation.',
       refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
     },
     slate: () => (FISH ? FISH.c1 : []),
@@ -1459,10 +1470,10 @@ const UNITS = {
     bar: id => fishBar(id),
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
-      `<p class="lede"><b>To learn a fish family</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from 95%, Instructor once the exam is passed. The IMR families count in your progress; the SVS video extras and the families beyond IMR (⚙ Settings) and the surprise cards don't. The leaderboard and the achievements count the corals only, for now.</p>`,
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from 95%, Instructor once the exam is passed. The families of the IMR survey fish count in your progress; the SVS video extras and the families beyond IMR (⚙ Settings) and the surprise cards don't. The leaderboard and the achievements count the corals only, for now.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
-    help: () => `<p class="lede">Name the fish family in the photo, as IMR names it on the survey slate. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other IMR shape groups and the look-alikes come in as you get a family right.</p>
-  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the IMR name, the family's scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Once every IMR family is met, the barracudas seen on the SVS videos can be added; once you are good on the IMR families, the families divers look for at Dauin (⚙ Settings, any time). Neither counts in your progress. <b>Photos</b>: iNaturalist observations for now (Pierre's first), as iNaturalist ranks them.</p>`,
+    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
+  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Once every IMR family is met, the barracudas seen on the SVS videos can be added; once you are good on the IMR families, the families divers look for at Dauin (⚙ Settings, any time). Neither counts in your progress. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
       {
         k: 'c2',

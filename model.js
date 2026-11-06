@@ -378,10 +378,16 @@ function openRight(at = answersSoFar()) {
 // met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
 function openPick(fresh, list = fresh, met = introduced) {
   // The starter core first (Pierre, 2026-11-04: the fish beta opened on the wrong families): units whose record says
-  // `first` (fish.json start: Butterflyfish, Angelfish, Damselfish, Surgeonfish & Unicornfish) open before any other,
+  // `first` (fish.json start: the Butterflyfishes, Angelfishes, Damselfishes, Surgeonfishes) open before any other,
   // as long as one is left; then the rule below. Data, not code: the corals have none.
   const first = fresh.filter(n => (GX(n) || {}).first);
   if (first.length) fresh = first;
+  // "I'm at IMR" (the first-launch answer imr): the units the IMR course teaches, their IMR tag (imrName: fish.json imr on
+  // families and genera), open before the others (Pierre, 2026-11-06 13:38). Data, not code: the corals have none.
+  if ((store.get(startKey(SUBJ.id), null) || {}).c === 'imr') {
+    const tagged = fresh.filter(n => (GX(n) || {}).imrName);
+    if (tagged.length) fresh = tagged;
+  }
   const ok = fresh.filter(n => !starWaits(DATA, n, list, met));
   if (ok.length) fresh = ok;
   const gd = fresh.map(genusDiff),
@@ -535,7 +541,7 @@ const introOffer = () => {
 // answered on one device, is not made again on another. Progress reset: the cards start over with it.
 function introMerge(m, o) {
   try {
-    m = JSON.parse(m || 'null');
+    m = renameUnits(SUBJ, JSON.parse(m || 'null')); // the old unit ids another device may still save (core.js SUBJECTS renamed)
     o = JSON.parse(o || 'null');
   } catch (e) {
     return;
