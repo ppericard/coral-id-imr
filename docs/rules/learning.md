@@ -42,8 +42,10 @@ not make progress rise too fast; until then it stays).
 difficulty on one Elo scale (Pelánek 2016), ~80% target success, guaranteed variety and new photos, more single-view
 questions as the level rises (details in ARCHITECTURE.md). **Every account counts everywhere**, Pierre's included: the
 admin has no filter on his own answers or "test" accounts; the leaderboard's "hidden" changes only the public
-leaderboard. Corals: starred genera are always included in Practice. Never split practice by lecture group.
-*Why:* Pierre's account is a real player's. *Source:* Pierre, by 2026-11-01; every account, 2026-11-04; subject-neutral wording, 2026-11-06.
+leaderboard. Corals: starred genera are always included in Practice. The normal quiz is never split by a course group
+or a book's shape group; only the custom quiz picks groups.
+*Why:* Pierre's account is a real player's. *Source:* Pierre, by 2026-11-01; every account, 2026-11-04; subject-neutral wording, groups for every subject,
+2026-11-06 (Q168).
 
 ### L4
 
@@ -87,16 +89,19 @@ genus-specific case, 2026-11-03; subject-neutral wording, and no unit-specific c
 ### L7
 
 **Answer choices get harder gradually.** In the photo quiz the wrong choices for a unit start easy (corals: genera
-sharing no IMR growth form with it), and its look-alikes come in one by one, and soon (one after the first right
-answer, all three after about 5: look-alikes are one of the ways units are learned), as the player's Elo ability on
-that unit rises (`FORMAT`, `trapsFor()`, `distractors()` in `app.js`). Duels stay look-alike pairs by design. Official
-look-alikes (corals: IMR / Coral Finder) only *seed* the confusions: real player answers then decide which units get
-confused (confusion scores),
-pooled over every player first, then each player's own mix-ups weigh in as their answers on the pair build up (personal
-path, `pairConf`; performance only, never time). A unit never answered starts from the player's global level
-(`playerStart`, `core.js`: an Elo over all their answers, shrunk while they are few), so a strong player gets traps and
-harder photos on a new unit from its first question; "Learned" is still earned unit by unit.
-*Why:* the start must be simple; traps come little by little. *Source:* Pierre, 2026-11-01; subject-neutral wording, 2026-11-06.
+sharing no IMR growth form with it; fish: units from another shape group of the book), and its look-alikes come in one
+by one, and soon (one after the first right answer, all three after about 5: look-alikes are one of the ways units are
+learned), as the player's Elo ability on that unit rises (`FORMAT`, `trapsFor()`, `distractors()` in `app.js`). Duels
+stay look-alike pairs by design. Official look-alikes (corals: IMR / Coral Finder; fish: Pierre's declared look-alike
+groups in `fish.json`: Butterflyfishes ↔ Angelfishes; Snappers ↔ Coral Breams ↔ Emperors; Parrotfishes ↔ some Wrasses;
+Soldierfishes ↔ Squirrelfishes ↔ Cardinalfishes; Triggerfishes ↔ Filefishes) only *seed* the confusions: real player
+answers then decide which units get confused (confusion scores), pooled over every player first, then each player's own
+mix-ups weigh in as their answers on the pair build up (personal path, `pairConf`; performance only, never time). A unit
+never answered starts from the player's global level (`playerStart`, `core.js`: an Elo over all their answers, shrunk
+while they are few), so a strong player gets traps and harder photos on a new unit from its first question; "Learned" is
+still earned unit by unit.
+*Why:* the start must be simple; traps come little by little. *Source:* Pierre, 2026-11-01; subject-neutral wording,
+and fish's easy choices and seed look-alikes, 2026-11-06 (Q170).
 
 ### L8
 
