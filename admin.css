@@ -4809,9 +4809,6 @@ button.adm-chip[aria-pressed='true'] {
   border-color: var(--accent);
   color: var(--accent);
 }
-.adm-fimr {
-  margin: 0 0 6px;
-}
 .adm-sname small {
   display: block;
   font-weight: 400;

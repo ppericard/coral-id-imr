@@ -1740,17 +1740,20 @@ function renderFishUnits(id) {
       <div class="adm-acts"><button type="button" data-fu="back">Put back</button></div></figure>`
     ).join('')}</div></section>`
       : '';
-  const opts = U.map(
+  // The two family selects list the families the All | IMR filter shows (the phone has only the bar's; Codex review #655).
+  const opts = L.map(
     x => `<option value="${esc(x.id)}"${x.id === u.id ? ' selected' : ''}>${esc(x.name)}${x.imr || x.imrWith ? ' · IMR' : ''}</option>`
   ).join('');
-  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(u.name)} cover"></button>` : ''}<b class="adm-sname">${esc(u.name)} ${fuImr(u)}<small><i>${esc(u.sci.join(', '))}</i></small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select><button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}${FB.origins({cnt})}</div>`;
+  // All | IMR in the sticky bar, at every width (the side list is hidden on phones).
+  const imrSeg = `<span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
+    ['all', 'All'],
+    ['imr', 'IMR']
+  ]
+    .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
+    .join('')}</span>`;
+  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(u.name)} cover"></button>` : ''}<b class="adm-sname">${esc(u.name)} ${fuImr(u)}<small><i>${esc(u.sci.join(', '))}</i></small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}${FB.origins({cnt})}</div>`;
   $v.innerHTML = `<div class="adm">
-    <nav class="adm-side" aria-label="${cap1(ASUBJ.many)}"><select id="gsel" aria-label="${cap1(ASUBJ.one)}">${opts}</select><span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
-      ['all', 'All'],
-      ['imr', 'IMR']
-    ]
-      .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
-      .join('')}</span><div class="adm-list">${side}</div></nav>
+    <nav class="adm-side" aria-label="${cap1(ASUBJ.many)}"><select id="gsel" aria-label="${cap1(ASUBJ.one)}">${opts}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">${filter}${u.wink ? fuWink(u, cv) : ''}${body}${outRow}</section></div>`;
   bindBar($v, {redraw: render});
   const fx = fn => {

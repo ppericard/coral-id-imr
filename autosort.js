@@ -319,9 +319,17 @@
     female: 'female'
   };
   const FPHASES = ['juvenile', 'intermediate', 'male', 'female'];
+  // Tags or a phase the fish auto-sort wrote (its log code lists them) are the pass's, not Pierre's: the source's life stage
+  // still shows (Codex review #655). The log index is cached per fish part (a new object at every edit).
+  const IDXC = new WeakMap(),
+    idxOf = F => {
+      if (!IDXC.has(F)) IDXC.set(F, fishIdx(F));
+      return IDXC.get(F);
+    };
   function fishPhase(p, j, F) {
     F = F || {};
-    const mine = p.f in (F.phase || {}) || p.f in (F.tags || {}),
+    const w = ((idxOf(F)[p.f] || {}).d || {}).w || [],
+      mine = (p.f in (F.phase || {}) && !w.includes('phase')) || (p.f in (F.tags || {}) && !w.includes('tags')),
       ph = p.f in (F.phase || {}) ? F.phase[p.f] : (j || {}).ph,
       jt = (F.tags || {})[p.f] || (j || {}).jt || '';
     if (FPHW[ph]) return FPHW[ph];
@@ -397,8 +405,10 @@
     return {...F, genera: G};
   }
   // A photo featured or not (one click); at FISHFEAT already, nothing changes (full: true, the admin says so).
+  // Only the featured photos still in play count towards FISHFEAT (one left play elsewhere, e.g. an auto decision undone
+  // in Candidates, frees its slot: Codex review #655); a click on one cleans the list of the others.
   function fishFeat(F, tid, sid, f) {
-    const L = ((((F || {}).genera || {})[tid] || {}).feat || {})[sid] || [];
+    const L = (((((F || {}).genera || {})[tid] || {}).feat || {})[sid] || []).filter(x => x === f || fishOn(F || {}, x, sid));
     if (!L.includes(f) && L.length >= FISHFEAT) return {F, full: true};
     return {
       F: fishPick(F, tid, k => {

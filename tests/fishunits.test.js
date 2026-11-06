@@ -41,7 +41,7 @@ test('fishOrder: featured first in his order, then the game’s order (easiest, 
 });
 
 test('fishFeat, fishCover, fishOk: one click each, in fish genera; empties left out; coral keys never touched', () => {
-  let F = {add: {a: 's1'}};
+  let F = {add: {a: 's1', b: 's1', c: 's1', d: 's1'}};
   F = A.fishFeat(F, 'f:A', 's1', 'a').F;
   assert.deepStrictEqual(F.genera, {'f:A': {feat: {s1: ['a']}}});
   ['b', 'c'].forEach(f => (F = A.fishFeat(F, 'f:A', 's1', f).F));
@@ -59,7 +59,7 @@ test('fishFeat, fishCover, fishOk: one click each, in fish genera; empties left 
   assert.deepStrictEqual(F.genera['f:A'], {feat: {s1: ['a']}, ok: true});
   F = A.fishOk(A.fishDrop(F, 'f:A', 'a'), 'f:A');
   assert.deepStrictEqual(F.genera, {}, 'an emptied family goes');
-  assert.deepStrictEqual(F.add, {a: 's1'});
+  assert.deepStrictEqual(F.add, {a: 's1', b: 's1', c: 's1', d: 's1'});
   F = A.fishCover(A.fishCover(F, 'f:B', 'z'), 'f:B', 'z');
   assert.deepStrictEqual(F.genera, {}, 'a second click on the cover takes his pick off');
 });
@@ -176,4 +176,14 @@ test('fishStamp: a Remove of a photo the fish auto-sort put in play is timed in 
     S = A.fishStamp(F1, before, 36 * 36);
   assert.deepStrictEqual(S, {d1: {a: 'at@100', b: 'a'}});
   assert.strictEqual(A.fishStamp(F0, before, 1), null, 'nothing changed: nothing timed');
+});
+
+test('fishFeat frees the slot of a featured photo no longer in play; fishPhase reads the source past auto-written tags (Codex review #655)', () => {
+  const F = {add: {a: 's1', b: 's1', d: 's1'}, genera: {'f:A': {feat: {s1: ['a', 'b', 'c']}}}}; // c left play (undone)
+  const r = A.fishFeat(F, 'f:A', 's1', 'd');
+  assert.strictEqual(r.full, false);
+  assert.deepStrictEqual(r.F.genera['f:A'].feat.s1, ['a', 'b', 'd']);
+  const p = {f: 'm', st: 'male'};
+  assert.strictEqual(A.fishPhase(p, null, {tags: {m: 'p1g0sm1'}, auto: {d1: {m: 'ate'}}}), 'male', 'tags the auto-sort wrote');
+  assert.strictEqual(A.fishPhase(p, null, {tags: {m: 'p1g0sm1'}}), '', 'his tags: his "no phase"');
 });
