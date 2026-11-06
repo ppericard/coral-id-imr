@@ -76,11 +76,17 @@ def fish_on(F, f, sid):
     return (F.get('add') or {}).get(f) == sid and not (F.get('seen') or {}).get(f) and not (F.get('exclude') or {}).get(f) and (not o or o == sid)
 
 
+UNDONE_ADD = re.compile(r'^-a')  # autosort.js fish log code: an auto add Pierre undid (fishUndo writes '-' + the code)
+
+
 def gone_ids(cur):
     """The photo ids (pid) Pierre decided against: rejected (seen), excluded or moved with Not this (out) in his fish
-    curation, and the top-level exclude (core.js fishPhotos' gone)."""
+    curation, an automatic add of the auto-sort he undid (its log code '-a...': autosort.js fishUndo, "the photo waits
+    for his decision"; Codex review #674), and the top-level exclude (core.js fishGone)."""
     F = (cur or {}).get('fish') or {}
-    return {pid(f) for k in ('seen', 'exclude', 'out') for f in (F.get(k) or {})} | {pid(f) for f in (cur or {}).get('exclude') or {}}
+    undone = {f for day in (F.get('auto') or {}).values() for f, c in (day or {}).items() if UNDONE_ADD.match(str(c))}
+    return ({pid(f) for k in ('seen', 'exclude', 'out') for f in (F.get(k) or {})} | {pid(f) for f in undone}
+            | {pid(f) for f in (cur or {}).get('exclude') or {}})
 
 
 def fish_in(F, p, gone):
@@ -266,9 +272,10 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
     todo, keep = [], {}
     for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes):
         r, c, o = record(sid, p, F, sug, orig, species, route), crop_of(F, p['f']), old.get(p['f'])
-        if not c and route == 'cand':
+        mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included (Codex review #674)
+        if not mine and route == 'cand':
             c = ((sug or {}).get(p['f']) or {}).get('c')
-        if not c and route == 'ref':
+        if not mine and route == 'ref':
             c = (crops or {}).get(p['f'])
         c = list(c) if c and list(c) != [0, 0, 1, 1] else None
         if o and o.get('src') == r.get('src') and o.get('cr') == c and o.get('ar'):

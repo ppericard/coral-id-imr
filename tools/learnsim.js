@@ -340,6 +340,8 @@ function play(cfg) {
   // The subject's draw calibration overridden (--calib), and the corals' bonus genera only on the corals (--subject).
   if (cfg.calib && Object.keys(cfg.calib).length) SUBJ.calib = {...(SUBJ.calib || {}), ...cfg.calib};
   const BON = SUBJ.id === 'coral' && typeof BONUS !== 'undefined' ? BONUS : [];
+  // The fish surprise questions (quiz.js winkDue, from answer 300) count in nothing: left out of the measured path.
+  if (typeof winkDue === 'function') winkDue = () => null;
   const field = cfg.learner === 'field',
     exem = cfg.learner === 'exemplar',
     tau = cfg.tau,

@@ -4,6 +4,7 @@
 // a player's level on it (P[n]: none yet, then answers and an ability), model.js photoSet is drawn DRAWS times on a new
 // fish player and the share of the photos shown under ease 4 (judged, fish-photos.json e; unjudged count as 3) printed.
 // Usage: node tools/fish_draw_sim.js [--photos FILE] [--calib '{"u":0.25,"pool":20}'] [--entries t01,t02] [--draws 600]
+//   [--stages '[["label", {P[n] fields}], ...]']
 //   --photos  a fish-photos.json to serve instead of the repository's (e.g. a branch's with more photos)
 //   --calib   fields merged over the fish calibration (core.js SUBJECTS calib) before drawing
 // Needs Playwright (like the smokes); takes the machine slot (rule W24).
@@ -22,7 +23,7 @@ const PHOTOS = arg('photos'),
   ENTRIES = arg('entries', 't01,t02,t03,t06,t08,t09,t13,t24').split(','),
   DRAWS = +arg('draws', 600);
 // A player's level on an entry: answers right and wrong, and the ability its Elo would hold (ability(n), core.js ELO).
-const STAGES = [
+const STAGES = arg('stages') ? JSON.parse(arg('stages')) : [
   ['new', {}],
   ['10 answers, ability 0.5', {ok: 8, ko: 2, th: 0.5}],
   ['25 answers, ability 1.2', {ok: 21, ko: 4, th: 1.2}],
