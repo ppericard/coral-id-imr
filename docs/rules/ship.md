@@ -42,7 +42,9 @@ to related rows. Development ideas only (rule W10).
 
 ### W6
 
-**No work sleeps on a branch.** A branch with work worth keeping gets a PR the same day (a draft PR if unfinished), and an
+**No work sleeps on a branch.** A branch with work worth keeping gets a PR the same day (a draft PR only while an agent is still building it; a PR that waits only for
+Pierre's decision is opened ready, with the `needs-pierre` label, never as a draft: the integrator may not mark a draft
+ready, so a draft would wait for Pierre's click, Pierre 2026-11-06), and an
 active line of work (a "track": the fish mode, the analyses…) is named in `docs/ROADMAP.md` with its branch or PR and its
 next step, so a reader of `main` alone sees it. Before ending a session or a night, list the branches with commits not
 in `main` and no PR (`python3 tools/brief.py` lists them), and open or close each one.
