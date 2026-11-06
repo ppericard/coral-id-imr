@@ -445,7 +445,9 @@
       // it to that group again (the sheet keeps the Groups tab's rows).
       open: 'all',
       views: [['wide', 'Photo']],
-      optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
+      // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels"). The circles 2 and 3 were opt-in sets too
+      // (c2, c3) until every circle joined the path (Pierre, 2026-11-06, Q175): a stored c2 / c3 choice is no longer read.
+      optin: ['sci'],
       // family: a family of the book (the game's family level, f:Damselfishes: Pierre, 2026-11-06; the IMR course a tag).
       rank: 'family',
       renamed: FISH_RENAMED,
@@ -538,8 +540,8 @@
   // objects, each to its species' family).
   // key: the identification key in force ({id, region, cite (full), short}, null for a region with none) and groups its
   // groups in its order ({n, title, pages}).
-  // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
-  // surprise card, never a question of the game).
+  // c1 / c2 / c3 = the families of each circle (all on the path and in the progress since Pierre, 2026-11-06, Q175: app.js
+  // UNITS fish slate, fishGate), winks = the wink entries (a surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
   // views.wide in easyRank order (below): the easiest, most reference-like photo first, whoever took it; cover: the
   // card's photo (app.js cover), the first of that order (Pierre, 2026-11-06: no source tier any more).

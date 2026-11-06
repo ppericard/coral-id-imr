@@ -1,8 +1,9 @@
 // Fish quiz test (the taxon model, core.js SUBJECTS): runs the real app in Chromium on the fish subject and checks:
-// - the draw: fish questions only from the fish slate (circle 1, the book's families) until a circle is opted in; every
-//   choice a fish entry; one photo, from one observation; winks never asked as questions;
-// - circle opt-in: circle 2 offered once every IMR entry has been asked, circle 3 once the progress reaches FISH_C3;
-//   "Not now" kept; once on, their entries join the draw, never counted in the progress;
+// - the draw: the fish slate is every family of every circle (Pierre, 2026-11-06, Q175); every choice a fish family; one
+//   photo, from one observation; winks never asked as questions; no circle setting row or offer card;
+// - the circles on the path (Q177): circle 2 may open once every circle-1 family has been asked, circle 3 once the
+//   progress on circle 1 reaches FISH_C3, never before (the opening draws circle 1 first); every circle in the progress;
+//   "I'm at IMR": the IMR-tagged families open first;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
 //   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
 //   (quiz.js WINK.AT: 300), once due shown once, then not again on the device (reefid-fish-wink);
@@ -78,8 +79,18 @@ const server = http.createServer((req, res) => {
       ok = (c, m) => c || fails.push(m);
     const closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
-    ok(slateGenera().length === 28 && slateGenera().every(n => FISH.c1.includes(n)), 'the fish slate = the 28 families of circle 1');
-    ok(!pool().some(n => !FISH.c1.includes(n)), 'circle 1 only before any opt-in');
+    ok(
+      FISH.c1.length === 28 &&
+        FISH.c2.length > 0 &&
+        FISH.c3.length > 10 &&
+        slateGenera().join() === [...FISH.c1, ...FISH.c2, ...FISH.c3].join(),
+      'the fish slate = every family of circles 1, 2 and 3'
+    );
+    ok(slateCore().join() === FISH.c1.join(), 'Open all opens circle 1 (the IMR course)');
+    ok(
+      !SETS().some(S => S.k === 'c2' || S.k === 'c3') && !document.querySelector('[data-optin="c2"], [data-optin="c3"]'),
+      'no circle setting'
+    );
     // No wall (Pierre, 2026-11-06 14:17): on a fresh entry a photo under ease 4 can be drawn, rarely; the prior and the
     // aim favour the easy ones (no easyFirst gate any more).
     {
@@ -139,7 +150,7 @@ const server = http.createServer((req, res) => {
         route();
         continue;
       }
-      ok(q && FISH.c1.includes(q[1]), 'question on an IMR entry');
+      ok(q && FISH.c1.includes(q[1]), 'question on a circle-1 family (circles 2 and 3 wait)');
       const ans = document.querySelectorAll('#view [data-c]');
       if (ans.length) {
         ok(
@@ -210,28 +221,53 @@ const server = http.createServer((req, res) => {
       ok(!document.querySelector('#view .q.wink'), 'wink: not again in its window');
     }
     WINK.AT.splice(0, 2, ...W0);
-    // Circle 2: offered once every IMR entry was asked; "Not now" kept.
-    ok(!bonusOfferDue(), 'no offer before every IMR entry is asked');
-    FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
-    const S2 = bonusOfferDue();
-    ok(S2 && S2.k === 'c2', 'circle 2 offered once every IMR entry is asked');
-    bonusOfferShow(S2);
-    document.querySelector('.unlock .sec').click();
-    ok(Q.c2 === false && (!bonusOfferDue() || bonusOfferDue().k !== 'c2'), '"Not now" kept');
-    // Circle 3: once the progress reaches FISH_C3.
-    ok(!bonusOfferDue(), 'circle 3 not before the progress threshold');
-    FISH.c1.forEach(n => (st(n).pg = 0.7));
-    const S3 = bonusOfferDue();
-    ok(S3 && S3.k === 'c3', 'circle 3 offered at the threshold');
-    const pct = progPct();
-    bonusSet(true, 'c3');
+    // The circles on the path (Pierre, 2026-11-06, Q175, Q177): no offer card; circle 2 may open once every circle-1
+    // family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3; until then the opening never draws
+    // them (mayOpen, openPick); every circle counts in the progress.
+    const canOpen = () => slateGenera().filter(n => !introduced(n) && mayOpen(n)),
+      picks = () => [...Array(40)].map(() => canOpen().length && openPick(canOpen())).filter(Boolean);
+    ok(!bonusOfferDue(), 'no circle offer card');
     ok(
-      pool().some(n => FISH.c3.includes(n)),
-      'circle 3 in the draw once on'
+      FISH.c1.some(n => !asked(n)),
+      'some circle-1 families not asked yet'
     );
-    ok(progPct() === pct, 'circle 3 never counted in the progress');
-    bonusSet(false, 'c3');
-    ok(!pool().some(n => FISH.c3.includes(n)), 'Off: out of the draw');
+    ok(!FISH.c2.some(mayOpen) && !FISH.c3.some(mayOpen), 'circles 2 and 3 wait while a circle-1 family is not asked');
+    ok(
+      picks().every(n => FISH.c1.includes(n)),
+      'the opening draws circle 1 only'
+    );
+    FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
+    ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
+    ok(progPct(FISH.c1) < 100 * FISH_C3, 'circle 1 under FISH_C3');
+    const p2 = picks();
+    ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
+    FISH.c1.forEach(n => (st(n).pg = 0.7));
+    ok(progPct(FISH.c1) >= 100 * FISH_C3 && FISH.c3.every(mayOpen), 'circle 3 opens once circle 1 reaches FISH_C3');
+    ok(
+      picks().some(n => FISH.c3.includes(n)),
+      'the opening draws circle 3 then'
+    );
+    ok(!bonusOfferDue() || bonusOfferDue().k === 'sci', 'still no circle offer card');
+    // Every circle in the progress: a circle-3 family learned moves the %, over all the families.
+    const c3n = FISH.c3[0],
+      pct = progPct();
+    st(c3n).pg = 0.9;
+    ok(progPct() > pct && progPct() === progPct(slateGenera()), 'circle 3 counts in the progress');
+    delete P[c3n];
+    // "I'm at IMR" (the fish welcome answer imr): the IMR-tagged families first within circle 1 (Pierre, 2026-11-06 13:38): the
+    // Soapfishes (taught by IMR with the Groupers, no IMR name of their own) wait for them.
+    const sk = startKey('fish'),
+      s0 = localStorage.getItem(sk),
+      soap = FISH.c1.filter(n => !GX(n).imrName),
+      pool1 = [...soap, ...FISH.c1.filter(n => GX(n).imrName && !GX(n).first).slice(0, 3)];
+    ok(soap.length === 1, 'one circle-1 family without an IMR name: ' + soap);
+    store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: []});
+    ok(
+      [...Array(40)].every(() => GX(openPick(pool1)).imrName),
+      "I'm at IMR: the IMR-tagged families first"
+    );
+    if (s0 === null) localStorage.removeItem(sk);
+    else localStorage.setItem(sk, s0);
     // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
     // circle-1 species of each IMR entry, never two entries; offered once an entry is at Advanced, a family's genera in
     // play only from its Advanced; their questions and typed answers among genera only, an entry's among entries; never
@@ -316,7 +352,10 @@ const server = http.createServer((req, res) => {
       rb.click();
       const dl = document.querySelector('#repdlg');
       const opts = [...dl.querySelectorAll('#repgen option')].map(o => o.value);
-      ok(opts.length >= 28 && opts.includes('Damselfishes'), 'report: the fish names offered ' + opts.slice(0, 3));
+      ok(
+        opts.length >= 27 && opts.includes('Damselfishes') && opts.includes('Frogfishes'),
+        'report: the fish names offered ' + opts.slice(0, 3)
+      );
       ok(!opts.some(o => /^t\d+$/.test(o)), 'report: no teaching id offered ' + opts.filter(o => /^t\d+$/.test(o)).slice(0, 3));
       const txt = dl.textContent;
       ok(/Right family, if you know/.test(txt) && /Several fish species/.test(txt), 'report: the fish words');
@@ -430,8 +469,9 @@ const server = http.createServer((req, res) => {
     }));
     if (tl.tile || tl.badge || !/Fish/.test(tl.chip)) ui.push(`${width}px Tools with Fish on: ${JSON.stringify(tl)}`);
     // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
-    // rule S3), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
-    // them, every entry under its own group; the key credited in full under the list.
+    // rule S3), in the key's order, only those that hold a family of the slate (every circle: Pierre, 2026-11-06, Q175),
+    // each under its number and title as the key prints them, every family under its own group; the key credited in full
+    // under the list.
     await q.evaluate(() => (location.hash = '#learn/genera'));
     await q.waitForFunction(() => document.querySelector('#view .gdiv'), null, {timeout: 15000});
     const fam = await q.evaluate(() => {
@@ -443,12 +483,12 @@ const server = http.createServer((req, res) => {
           ids: [...b.querySelectorAll('.tipg .tipph b')].map(x => x.textContent)
         })),
         c1 = heads.filter(h => G.some(g => g.n === h.n)),
-        want = G.filter(g => FISH.c1.some(n => GX(n).group === g.n)).map(g => g.n),
+        want = G.filter(g => slateGenera().some(n => GX(n).group === g.n)).map(g => g.n),
         cite = (document.querySelector('#view .keycite') || {}).textContent || '';
       return {
         order: c1.map(h => h.n).join() === want.join(),
         titles: c1.every(h => (G.find(g => g.n === h.n) || {}).title === h.t),
-        placed: c1.every(h => h.ids.every(nm => FISH.c1.some(n => unameT(n) === nm && GX(n).group === h.n))),
+        placed: c1.every(h => h.ids.every(nm => slateGenera().some(n => unameT(n) === nm && GX(n).group === h.n))),
         got: c1.map(h => h.n).join(),
         want: want.join(),
         cite: !!K.cite && cite.includes(K.cite)
@@ -1399,11 +1439,11 @@ const server = http.createServer((req, res) => {
     fail = false;
     const b2 = await q.evaluate(() =>
       setSubject('fish').then(
-        () => ({subj: SUBJ.id, n: slateGenera().length}),
+        () => ({subj: SUBJ.id, n: slateGenera().length, all: FISH.c1.length + FISH.c2.length + FISH.c3.length}),
         e => ({err: String(e && e.message)})
       )
     );
-    if (a.subj !== 'coral' || a.fish || a.cached || b2.subj !== 'fish' || b2.n !== 28)
+    if (a.subj !== 'coral' || a.fish || a.cached || b2.subj !== 'fish' || b2.n !== b2.all || b2.n < 40)
       rv.push(`fish.json failing at start-up: ${JSON.stringify(a)} then ${JSON.stringify(b2)}`);
     await c4.close();
   }

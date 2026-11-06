@@ -299,7 +299,7 @@ function mergeSubject(j, d, S, mine) {
   // them, may have answered after the reset time from a copy without it, and those answers count (they are in the log
   // after the reset).
   if (lr > rr) return void (S.replay && store.set(RVK, 0));
-  // The Bonus genera choice (fish: circles 2 and 3) made on another device, if more recent than this one's (or made there
+  // The Bonus genera choice (fish: the scientific genera) made on another device, if more recent than this one's (or made there
   // only; Codex review #371); after the reset check, so a choice saved before this device's newer reset does not come back.
   try {
     const rq = JSON.parse(d[sKey('quiz')] || '{}') || {};

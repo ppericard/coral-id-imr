@@ -201,7 +201,7 @@ function quizBoard() {
       save();
       quizBoard();
       // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
-      appToast(`All ${slateGenera().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
+      appToast(`All ${slateCore().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
