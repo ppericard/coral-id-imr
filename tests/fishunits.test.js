@@ -260,4 +260,26 @@ test('fishCov and fishLook: per family, genus and species, the photos in play, t
       ['s3', 7]
     ]
   );
+  // Two waiting photos of one observation add one observation (Codex review #659).
+  const C2 = A.fishCov(
+    U,
+    play,
+    species,
+    {
+      ...cand,
+      s2: [
+        {f: 'w1', o: 'q1'},
+        {f: 'w2', o: 'q1'},
+        {f: 'w4', o: 'p0'}
+      ]
+    },
+    F
+  );
+  assert.deepStrictEqual(
+    A.fishLook(C2)
+      .filter(r => r.id === 's2')
+      .map(r => [r.wait, r.waitObs, r.gap]),
+    [[3, 1, 6]],
+    'w4 is another photo of an observation already in play'
+  );
 });

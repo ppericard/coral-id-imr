@@ -540,7 +540,8 @@
   // {id: fish.json species}; cand: fish-cand.json cand {species id: [photo]}; F: the draft's fish part; j(f): the pass's
   // judgment. Returns {fam: [row], gen: [row], sp: [row]}; a row: {id, name, fam (family id), n (photos), obs, tgt (a
   // species' target; for a genus or family the species at target, ok, of all, of), easy, ref, ph (phases shown), wait
-  // (candidates waiting), need (what is missing, as fishNeeds words), imr}.
+  // (candidates waiting; a species also waitObs, the new observations they hold), need (what is missing, as fishNeeds
+  // words), imr}.
   function fishCov(U, play, species, cand, F, j = () => null) {
     F = F || {};
     const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
@@ -550,7 +551,8 @@
           s = species[sid] || {},
           obs = new Set(L.map(p => p.o || p.f)).size,
           tgt = fishTarget(s),
-          wait = (cand[sid] || []).filter(p => fishState(F, p.f, sid).st === null && fishState(F, p.f, sid).sid === sid).length,
+          W = (cand[sid] || []).filter(p => fishState(F, p.f, sid).st === null && fishState(F, p.f, sid).sid === sid),
+          seen = new Set(L.map(p => p.o || p.f)),
           need = [];
         if (!L.length) need.push('No photo in play');
         else if (obs < tgt) need.push(`${tgt - obs} observations under target`);
@@ -567,7 +569,9 @@
           easy: L.filter(p => ease(p) >= 4).length,
           ref: L.filter(isRef).length,
           ph: [...new Set(L.map(p => fishPhase(p, j(p.f), F)).filter(Boolean))],
-          wait,
+          wait: W.length,
+          // the observations the waiting candidates would add (one observation counts once; Codex review #659)
+          waitObs: new Set(W.map(p => p.o || p.f).filter(o => !seen.has(o))).size,
           need
         };
       },
@@ -606,7 +610,7 @@
   // row, gap}], best first.
   const fishLook = C =>
     C.sp
-      .map(r => ({...r, gap: Math.max(0, r.tgt - r.obs - r.wait)}))
+      .map(r => ({...r, gap: Math.max(0, r.tgt - r.obs - r.waitObs)}))
       .filter(r => r.gap > 0)
       .sort((a, b) => (a.circle || 9) - (b.circle || 9) || b.cs - a.cs || b.gap - a.gap || (a.id < b.id ? -1 : 1));
 

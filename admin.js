@@ -1863,20 +1863,19 @@ function renderFishCov() {
       ['sp', 'Species']
     ],
     lv = lvs.some(x => x[0] === FISHCOV.lv) ? FISHCOV.lv : 'fam';
-  let R = C[lv].filter(r => !imrOn || inImr(r));
+  // To do: what to act on, each a count; a click shows only its rows, at the level it names (Codex review #659).
+  const TODO = [
+      ['spwait', 'sp', 'species under target with candidates waiting', r => r.obs < r.tgt && r.wait],
+      ['spnone', 'sp', 'species with no photo in play', r => !r.n],
+      ['famv', 'fam', 'families validated but incomplete', r => (D.F.genera || {})[r.id] && D.F.genera[r.id].ok && r.need.length],
+      ['famnr', 'fam', 'families not ready to validate', r => r.need.length]
+    ],
+    todo = TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(fn).length]).filter(x => x[3]),
+    tdo = TODO.find(x => x[0] === FISHCOV.todo && x[1] === lv);
+  let R = C[lv].filter(r => (!imrOn || inImr(r)) && (!tdo || tdo[3](r)));
   R = R.slice().sort(
     FISHCOV.order === 'book' ? (a, b) => book[a.fam] - book[b.fam] : (a, b) => fill(a) - fill(b) || a.n - b.n || book[a.fam] - book[b.fam]
   );
-  // To do: what to act on (each a count, its rows in the table at the level it names).
-  const famV = C.fam.filter(r => (D.F.genera || {})[r.id] && D.F.genera[r.id].ok && r.need.length),
-    spWait = C.sp.filter(r => r.obs < r.tgt && r.wait),
-    spNone = C.sp.filter(r => !r.n),
-    todo = [
-      [spWait.length, 'species under target with candidates waiting', 'sp'],
-      [spNone.length, 'species with no photo in play', 'sp'],
-      [famV.length, 'families validated but incomplete', 'fam'],
-      [C.fam.filter(r => r.need.length).length, 'families not ready to validate', 'fam']
-    ].filter(x => x[0]);
   const L = fishLook(C),
     all = lookAll(),
     lookRow = r =>
@@ -1901,7 +1900,7 @@ function renderFishCov() {
       ? '<th>Species</th><th title="Observations in play / target">Obs.</th>'
       : `<th>${lv === 'gen' ? 'Genus' : 'Family'}</th><th title="Species at their target / species">At target</th>`;
   $v.innerHTML = `<section class="adm-cov adm-fishcov">
-    ${todo.length ? `<div class="adm-filter adm-ftodo"><span class="label">To do</span>${todo.map(([n, t, l]) => `<button type="button" class="adm-fchip plain" data-fishlv="${l}" title="Show the ${l === 'sp' ? 'species' : 'families'}, thinnest first">${n} ${t}</button>`).join('')}</div>` : ''}
+    ${todo.length ? `<div class="adm-filter adm-ftodo"><span class="label">To do</span>${todo.map(([k, l, t, n]) => `<button type="button" class="adm-fchip plain" data-fishtodo="${k}" data-fishtl="${l}" aria-pressed="${!!tdo && tdo[0] === k}" title="Show only these">${n} ${t}</button>`).join('')}</div>` : ''}
     <div class="cov-look open">${look}</div>
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Level">${lvs.map(([k, t]) => `<button type="button" data-fishlv="${k}" aria-pressed="${lv === k}">${t}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Shown">${[
       ['all', 'All'],
@@ -1923,8 +1922,16 @@ function renderFishCov() {
     store.set('reefid-admin-fishcov', FISHCOV);
     render();
   };
-  $v.querySelectorAll('[data-fishlv]').forEach(
-    b => (b.onclick = () => ((FISHCOV.lv = b.dataset.fishlv), (FISHCOV.order = 'thin'), keep()))
+  // The level switch shows every row of its level; a To do chip only its rows (again: every row).
+  $v.querySelectorAll('[data-fishlv]').forEach(b => (b.onclick = () => ((FISHCOV.lv = b.dataset.fishlv), (FISHCOV.todo = ''), keep())));
+  $v.querySelectorAll('[data-fishtodo]').forEach(
+    b =>
+      (b.onclick = () => {
+        const k = b.dataset.fishtodo,
+          on = FISHCOV.todo === k && FISHCOV.lv === b.dataset.fishtl;
+        Object.assign(FISHCOV, {lv: b.dataset.fishtl, todo: on ? '' : k, order: 'thin'});
+        keep();
+      })
   );
   $v.querySelectorAll('[data-fishco]').forEach(b => (b.onclick = () => ((FISHCOV.order = b.dataset.fishco), keep())));
   $v.querySelectorAll('[data-fuimr]').forEach(
