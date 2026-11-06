@@ -229,6 +229,120 @@
   //           2026-11-06: his photos are never forced or boosted; the ease and reference look place them, core.js easyRank)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
+  // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
+  // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
+  // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
+  // to another family (Diploprion: the Soapfishes, not IMR's Groupers); names: each family's name. Read through the
+  // subject (SUBJECTS renamed: renamedId, renameUnits, renameLogEntry), never by name; tests/fishunits.test.js checks it
+  // against fish.json. Kept while old ids may still arrive (an app from before the switch, a saved copy, the log).
+  const FISH_RENAMED = {
+    ids: {
+      't01': 'f:Damselfishes',
+      't02': 'f:Butterflyfishes',
+      't03': 'f:Angelfishes',
+      't04': 'f:Spadefishes',
+      't05': 'f:MoorishIdol',
+      't06': 'f:Surgeonfishes',
+      't07': 'f:Rabbitfishes',
+      't08': 'f:Parrotfishes',
+      't09': 'f:Wrasses',
+      't10': 'f:Snappers',
+      't11': 'f:Emperors',
+      't12': 'f:CoralBreams',
+      't13': 'f:Groupers',
+      't14': 'f:Sweetlips',
+      't15': 'f:Anthias',
+      't16': 'f:Fusiliers',
+      't17': 'f:Boxfishes',
+      't18': 'f:Goatfishes',
+      't19': 'f:Triggerfishes',
+      't20': 'f:Puffers',
+      't21': 'f:Filefishes',
+      't22': 'f:Lionfishes',
+      't23': 'f:Soldierfishes',
+      't24': 'f:Cardinalfishes',
+      't25': 'f:Squirrelfishes',
+      't26': 'f:Lizardfishes',
+      't27': 'f:Sandperches',
+      't28': 'f:Barracudas',
+      't29': 'f:Jacks',
+      't42': 'f:Morays',
+      't43': 'f:GardenEels',
+      't44': 'f:Stingrays',
+      't45': 'f:Scorpionfishes',
+      't46': 'f:Pipefishes',
+      't47': 'f:Frogfishes',
+      't48': 'f:GhostPipefishes',
+      't49': 'f:SnakeEels',
+      't50': 'f:Porcupinefishes',
+      't51': 'f:WhaleSharks',
+      't52': 'f:Stonefishes',
+      't54': 'f:Dragonets',
+      't57': 'f:SeaMoths',
+      't58': 'f:Jawfishes',
+      't59': 'f:FlyingGurnards',
+      't60': 'f:Threshersharks',
+      't61': 'f:Stargazers',
+      't63': 'f:RequiemSharks'
+    },
+    split: {
+      't13': {'Diploprion': 'f:Soapfishes'},
+      't46': {'Hippocampus': 'f:Seahorses'},
+      't52': {'Ablabys': 'f:Waspfishes', 'Paracentropogon': 'f:Waspfishes'}
+    },
+    names: {
+      'f:Damselfishes': 'Damselfishes',
+      'f:Butterflyfishes': 'Butterflyfishes',
+      'f:Angelfishes': 'Angelfishes',
+      'f:Spadefishes': 'Spadefishes',
+      'f:MoorishIdol': 'Moorish Idol',
+      'f:Surgeonfishes': 'Surgeonfishes',
+      'f:Rabbitfishes': 'Rabbitfishes',
+      'f:Parrotfishes': 'Parrotfishes',
+      'f:Wrasses': 'Wrasses',
+      'f:Snappers': 'Snappers',
+      'f:Emperors': 'Emperors',
+      'f:CoralBreams': 'Coral Breams',
+      'f:Groupers': 'Groupers',
+      'f:Soapfishes': 'Soapfishes',
+      'f:Sweetlips': 'Sweetlips',
+      'f:Anthias': 'Anthias',
+      'f:Fusiliers': 'Fusiliers',
+      'f:Boxfishes': 'Boxfishes',
+      'f:Goatfishes': 'Goatfishes',
+      'f:Triggerfishes': 'Triggerfishes',
+      'f:Puffers': 'Puffers',
+      'f:Filefishes': 'Filefishes',
+      'f:Lionfishes': 'Lionfishes',
+      'f:Soldierfishes': 'Soldierfishes',
+      'f:Cardinalfishes': 'Cardinalfishes',
+      'f:Squirrelfishes': 'Squirrelfishes',
+      'f:Lizardfishes': 'Lizardfishes',
+      'f:Sandperches': 'Sandperches',
+      'f:Barracudas': 'Barracudas',
+      'f:Jacks': 'Jacks',
+      'f:Morays': 'Morays',
+      'f:GardenEels': 'Garden Eels',
+      'f:Stingrays': 'Stingrays',
+      'f:Scorpionfishes': 'Scorpionfishes',
+      'f:Pipefishes': 'Pipefishes',
+      'f:Seahorses': 'Seahorses',
+      'f:Frogfishes': 'Frogfishes',
+      'f:GhostPipefishes': 'Ghost Pipefishes',
+      'f:SnakeEels': 'Snake Eels',
+      'f:Porcupinefishes': 'Porcupinefishes',
+      'f:WhaleSharks': 'Whale Sharks',
+      'f:Stonefishes': 'Stonefishes',
+      'f:Waspfishes': 'Waspfishes',
+      'f:Dragonets': 'Dragonets',
+      'f:SeaMoths': 'Sea Moths',
+      'f:Jawfishes': 'Jawfishes',
+      'f:FlyingGurnards': 'Flying Gurnards',
+      'f:Threshersharks': 'Thresher sharks',
+      'f:Stargazers': 'Stargazers',
+      'f:RequiemSharks': 'Requiem Sharks'
+    }
+  };
   const SUBJECTS = [
     {
       id: 'coral',
@@ -314,6 +428,7 @@
       optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
       // family: an IMR entry (the game's family level, Damselfish; two entries may share a scientific family).
       rank: 'family',
+      renamed: FISH_RENAMED,
       replay: false,
       ach: false,
       board: false,
@@ -515,6 +630,71 @@
         if (k && !out.some(o => o.k === k && o.g === g.id)) out.push({k, g: g.id, old: i ? x : '', alt: i ? 1 : 0});
       })
     );
+    return out;
+  }
+
+  // A unit id the subject renamed (SUBJECTS renamed: a fish entry t01 → its family f:Damselfishes), else the id as it is.
+  // sp: the species shown (a name, or names joined by ', '): the genus of the first one picks the family of an entry
+  // that went to two (t13 with a Diploprion photo: the Soapfishes; any other: the Groupers).
+  function renamedId(S, id, sp) {
+    const R = S && S.renamed;
+    if (!R || typeof id !== 'string' || !R.ids[id]) return id;
+    const g = String(sp || '').split(/[\s,]+/)[0];
+    return ((R.split || {})[id] || {})[g] || R.ids[id];
+  }
+  // An object keyed by units (a progress record, the first-meeting cards) with its old ids under the new ones, the
+  // mix-up and offer maps inside each record too (conf, off). Both present (an old app saved again after the switch):
+  // the record with more answers stays (a count map adds up). The object itself when nothing is renamed.
+  function renameUnits(S, o) {
+    const R = S && S.renamed;
+    if (!R || !isObj(o) || !Object.keys(o).some(k => R.ids[k] || isObj(o[k]))) return o;
+    const n = x => (isObj(x) ? (Number(x.ok) || 0) + (Number(x.ko) || 0) : -1),
+      counts = m => {
+        if (!isObj(m) || !Object.keys(m).some(k => R.ids[k])) return m;
+        const c = {};
+        Object.entries(m).forEach(([k, v]) => {
+          const j = renamedId(S, k);
+          c[j] = typeof v === 'number' && typeof c[j] === 'number' ? c[j] + v : c[j] === undefined ? v : c[j];
+        });
+        return c;
+      },
+      inner = v => {
+        if (!isObj(v)) return v;
+        const w = {...v};
+        ['conf', 'off'].forEach(k => w[k] !== undefined && (w[k] = counts(w[k])));
+        return w;
+      },
+      out = {};
+    Object.keys(o).forEach(k => {
+      if (R.ids[k]) return;
+      out[k] = inner(o[k]);
+    });
+    Object.keys(o).forEach(k => {
+      if (!R.ids[k]) return;
+      const j = renamedId(S, k),
+        v = inner(o[k]);
+      if (!(j in out) || n(v) > n(out[j])) out[j] = v;
+    });
+    return out;
+  }
+  // One answer-log entry (the app's queue, a sheet row read back) with the subject's old unit ids renamed, the same map for
+  // the whole row so it keeps what happened: an old id is the family of the photo shown when it was the unit shown (a
+  // right answer stays right, the unit shown stays among the choices), else the family that took the entry over. g, a,
+  // ch (ids joined by spaces), m (a duel's mode: quiz-duel|A|B), tn and ta (the names at that rank). The entry itself
+  // when nothing is renamed.
+  function renameLogEntry(S, a) {
+    const R = S && S.renamed;
+    if (!R || !a) return a;
+    const one = x => (x === a.g ? renamedId(S, x, a.sp) : renamedId(S, x));
+    const touched = [a.g, a.a, ...String(a.ch || '').split(' '), ...String(a.m || '').split('|')].some(x => R.ids[x]);
+    if (!touched) return a;
+    const out = {...a};
+    if (a.g) out.g = one(a.g);
+    if (a.a) out.a = one(a.a);
+    if (a.ch) out.ch = String(a.ch).split(' ').map(one).join(' ');
+    if (a.m) out.m = String(a.m).split('|').map(one).join('|');
+    if (R.ids[a.g]) out.tn = R.names[out.g] || a.tn;
+    if (R.ids[a.a]) out.ta = R.names[out.a] || a.ta;
     return out;
   }
 
@@ -3688,6 +3868,9 @@
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
+    renamedId,
+    renameUnits,
+    renameLogEntry,
     typeNormAll,
     LEGACY_KEYS,
     keyRename,

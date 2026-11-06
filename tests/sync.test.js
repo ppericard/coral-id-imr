@@ -209,10 +209,10 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
   assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
   assert.strictEqual(a.rows[0][11], '', 'where (v8)');
-  // v34: a fish report keeps its teaching ids and its photo (Codex review #442: the ids lost their digits).
+  // v34: a fish report keeps its units and its photo (Codex review #442: the ids lost their digits); v69: an old entry id as its family.
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r3', {g: 't01', a: 't05', fix: '', ph: 'fi464458713'})]});
   const f = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r3');
-  assert.deepStrictEqual([f[5], f[6], f[10]], ['t01', 't05', 'fi464458713']);
+  assert.deepStrictEqual([f[5], f[6], f[10]], ['f:Damselfishes', 'f:MoorishIdol', 'fi464458713']);
   // v46: a scientific-genus question's units (g:Platax) are kept too (Codex review #526: they were stored empty).
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r4', {g: 'g:Platax', a: 'g:Chromis', fix: '', ph: 'fi1'})]});
   const gq = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r4');
@@ -2328,8 +2328,13 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   const R = A.rows.slice(1);
   assert.deepStrictEqual(R[0].slice(17, 22), ['coral', 'genus', '', '', '']);
   assert.deepStrictEqual(R[1].slice(15, 22), ['Acropra', 1, 'coral', 'genus', '', '', '']);
-  assert.deepStrictEqual(R[2].slice(17, 22), ['fish', 'family', 'Damselfish', 'Moorish Idol', 'Pomacentrus moluccensis']);
-  assert.deepStrictEqual([R[2][2], R[2][3], R[2][11]], ['t01', 't05', 't01 t05 t09 g:Chromis'], 'the units as the app asks them');
+  // v69: the old entry ids an app from before the switch sends are logged as the book's families (core.js renameLogEntry).
+  assert.deepStrictEqual(R[2].slice(17, 22), ['fish', 'family', 'Damselfishes', 'Moorish Idol', 'Pomacentrus moluccensis']);
+  assert.deepStrictEqual(
+    [R[2][2], R[2][3], R[2][11]],
+    ['f:Damselfishes', 'f:MoorishIdol', 'f:Damselfishes f:MoorishIdol f:Wrasses g:Chromis'],
+    'the units, old entry ids renamed to their families'
+  );
   assert.deepStrictEqual(
     [R[3][2], R[3][3], R[3][5], R[3][18], R[3][19]],
     ['g:Chromis', 'g:Dascyllus', 'quiz-duel|g:Chromis|g:Dascyllus', 'genus', 'Chromis']
@@ -2352,7 +2357,7 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
     [
       ['coral', 'genus', ''],
       ['coral', 'genus', ''],
-      ['fish', 'family', 'Damselfish'],
+      ['fish', 'family', 'Damselfishes'],
       ['fish', 'genus', 'Chromis'],
       ['coral', 'genus', '']
     ]
@@ -2417,4 +2422,85 @@ test('v60: fish rows move no coral number: photo ratings, offsets, confusions, h
     b = run(true);
   assert.deepStrictEqual(b, a);
   assert.strictEqual(a.n, 30, 'the replay counts the coral rows only');
+});
+
+// v69 (Pierre, 2026-11-06 13:04: the fish units are the book's families, not the IMR entries; Q159: the rows logged
+// before are renamed once): an old app's entry ids are logged as families, one map per row (a Diploprion photo makes t13
+// the Soapfishes, so a right answer stays right); ONCE_ fishunits renames the rows and reports logged before.
+test('v69 fish units: old entry ids logged as families (one map per row), reports too, and the one-shot for the rows before', () => {
+  const vm = require('vm'),
+    s = loadCodeGs();
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [
+      fishAns('u1', {g: 't13', a: 't13', ok: 1, ch: 't13 t01 t02 t03', tn: 'Groupers', ta: 'Groupers', sp: 'Diploprion bifasciatum'}),
+      fishAns('u2', {g: 't01', a: 't13', ch: 't13 t01', m: 'quiz-duel|t01|t13', ta: 'Groupers'}),
+      fishAns('u3', {
+        g: 'f:Soapfishes',
+        a: 'f:Groupers',
+        ch: 'f:Soapfishes f:Groupers',
+        tn: 'Soapfishes',
+        ta: 'Groupers',
+        sp: 'Diploprion bifasciatum'
+      }),
+      ans('u4', {s: 'coral', rk: 'genus', ty: '=1+1'})
+    ]
+  });
+  const A = s.sheets.Answers,
+    R = A.rows.slice(1),
+    cols = r => [r[2], r[3], r[5], r[11], r[19], r[20]];
+  assert.deepStrictEqual(cols(R[0]), [
+    'f:Soapfishes',
+    'f:Soapfishes',
+    'quiz',
+    'f:Soapfishes f:Damselfishes f:Butterflyfishes f:Angelfishes',
+    'Soapfishes',
+    'Soapfishes'
+  ]);
+  assert.deepStrictEqual(cols(R[1]), [
+    'f:Damselfishes',
+    'f:Groupers',
+    'quiz-duel|f:Damselfishes|f:Groupers',
+    'f:Groupers f:Damselfishes',
+    'Damselfishes',
+    'Groupers'
+  ]);
+  assert.deepStrictEqual(
+    cols(R[2]),
+    ['f:Soapfishes', 'f:Groupers', 'quiz', 'f:Soapfishes f:Groupers', 'Soapfishes', 'Groupers'],
+    'new ids as they come'
+  );
+  assert.strictEqual(R[3][2], 'Acropora', 'a coral row untouched');
+  const typed0 = R[3][15];
+  assert.strictEqual(typed0, '=1+1', 'stored as text (the apostrophe of safe_ hidden, as Sheets does)');
+  // Rows logged before v69: put the old ids back, then the one-shot.
+  [R[0][2], R[0][3], R[0][11], R[0][19], R[0][20]] = ['t13', 't13', 't13 t01 t02 t03', 'Groupers', 'Groupers'];
+  [R[1][2], R[1][3], R[1][5]] = ['t01', 't13', 'quiz-duel|t01|t13'];
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1', {g: 't13', a: 't01', fix: ''})]});
+  const P = s.sheets.Reports;
+  assert.deepStrictEqual(P.rows[1].slice(4, 6), ['f:Groupers', 'f:Damselfishes'], 'the units of a report renamed as they come');
+  P.rows[1][4] = 't13';
+  assert.strictEqual(
+    vm.runInContext('ONCE_.fishunits()', s.ctx),
+    'units renamed (fish entries → families): Answers 2 fish rows, Reports 1 cell'
+  );
+  assert.deepStrictEqual(cols(R[0]), [
+    'f:Soapfishes',
+    'f:Soapfishes',
+    'quiz',
+    'f:Soapfishes f:Damselfishes f:Butterflyfishes f:Angelfishes',
+    'Soapfishes',
+    'Soapfishes'
+  ]);
+  assert.deepStrictEqual(cols(R[1]).slice(0, 3), ['f:Damselfishes', 'f:Groupers', 'quiz-duel|f:Damselfishes|f:Groupers']);
+  assert.strictEqual(P.rows[1][4], 'f:Groupers');
+  assert.strictEqual(R[3][2], 'Acropora');
+  assert.strictEqual(R[3][15], typed0, 'a typed answer kept as it was stored (only the renamed columns are written: Codex review #654)');
+  assert.strictEqual(
+    vm.runInContext('ONCE_.fishunits()', s.ctx),
+    'units renamed (fish entries → families): Answers 0 fish rows, Reports 0 cells'
+  );
 });
