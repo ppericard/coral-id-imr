@@ -671,3 +671,40 @@ test('the IMR tag: IMR’s name on the 27 families and the genera IMR names; the
     Naso: 'Unicornfish'
   });
 });
+
+// Pierre's declared look-alike groups of families (2026-11-06, from experience: tools/fish_source.json look): every pair
+// of a group a look-alike both ways, its source beside IMR's in lsrc; they seed the traps and the confusion groups until
+// pooled fish answers exist (rule L7). An id that is not a family stops the build.
+test('declared look-alikes: Pierre’s family groups both ways, sourced; an unknown family stops the build', () => {
+  const by = Object.fromEntries(F.families.map(f => [f.id, f])),
+    groups = SRC.look.find(d => d.src === 'Pierre, 2026-11-06').groups;
+  assert.deepStrictEqual(groups, [
+    ['f:Butterflyfishes', 'f:Angelfishes'],
+    ['f:Snappers', 'f:CoralBreams', 'f:Emperors'],
+    ['f:Parrotfishes', 'f:Wrasses'],
+    ['f:Soldierfishes', 'f:Squirrelfishes', 'f:Cardinalfishes'],
+    ['f:Triggerfishes', 'f:Filefishes']
+  ]);
+  groups.forEach(g =>
+    g.forEach(a =>
+      g
+        .filter(b => b !== a)
+        .forEach(b => {
+          assert.ok(
+            (by[a].look || []).some(l => l[0] === b),
+            `${a} looks like ${b}`
+          );
+          assert.match(by[a].lsrc[b], /Pierre, 2026-11-06/, `${a} → ${b} sourced`);
+        })
+    )
+  );
+  assert.strictEqual(by['f:Butterflyfishes'].lsrc['f:Angelfishes'], 'IMR fish presentation, slide 10 and Pierre, 2026-11-06');
+  assert.match(by['f:Wrasses'].lsrc['f:Parrotfishes'], /some wrasse species only/);
+  assert.strictEqual(by['f:Lizardfishes'].lsrc['f:Sandperches'], 'IMR fish presentation, slide 48', 'an IMR-only pair keeps IMR alone');
+  F.families.forEach(f => (f.look || []).forEach(([b]) => assert.ok(by[b] && f.lsrc && f.lsrc[b], `${f.id} → ${b} has a source`)));
+  const bad = clone(SRC);
+  bad.look[0].groups.push(['f:Butterflyfishes', 'f:Nofishes']);
+  const r = regroupCheck(bad);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /f:Nofishes is not a family/);
+});
