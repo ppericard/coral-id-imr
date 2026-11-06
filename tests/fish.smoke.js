@@ -4,7 +4,8 @@
 // - circle opt-in: circle 2 offered once every IMR entry has been asked, circle 3 once the progress reaches FISH_C3;
 //   "Not now" kept; once on, their entries join the draw, never counted in the progress;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
-//   fish.json, never counted (progress, answers, log unchanged), never twice in a visit;
+//   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
+//   (quiz.js WINK.AT: 300), once due shown once, then not again on the device (reefid-fish-wink);
 // - typed answers: the entry's names (IMR name, family, sub-entries) read as the entry;
 // - progress per subject kept apart: fish answers in reefid-sync-fish-progress only, the corals' untouched; switching
 //   back to corals brings the coral slate and progress back;
@@ -112,13 +113,16 @@ const server = http.createServer((req, res) => {
       .forEach(n => {
         for (let i = 0; i < 3; i++) ok(!photoSet(n).shown.some(x => SH.has(x.f)), `${n}: a sheet-only photo drawn`);
       });
-    // Play the real quiz screen: 30 answers, right or wrong, cards closed (a wink that comes in between is no answer).
+    // Play the real quiz screen: 30 answers, right or wrong, cards closed; no wink so early (Pierre, 2026-11-06: his second
+    // fish question was the whale shark; none before WINK.AT[0] answers).
+    ok(answersSoFar() + 30 < WINK.AT[0], 'the smoke starts far below the first surprise');
     const coralBefore = localStorage.getItem('reefid-sync-coral-progress');
     for (let i = 0, asked = 0; asked < 30 && i < 60; i++) {
       closeCards();
       if (!document.querySelector('#view .q')) quizPhoto();
       const q = SHOWNQ;
       if (document.querySelector('#view .q.wink')) {
+        ok(false, `a wink at ${answersSoFar()} answers`);
         document.querySelector('#view [data-w]').click();
         route();
         continue;
@@ -164,32 +168,30 @@ const server = http.createServer((req, res) => {
     ok(tm('Damselfish') === 't01' && tm('Chromis') === 't01' && tm('Pomacentridae') === 't01', 'typed: names of Damselfish');
     ok(tm('unicornfish') === 't06' && tm('Moorish idol') === 't05', 'typed: parts and two-word names');
     ok(!tm('Acropora'), 'typed: a genus is no fish entry');
-    // Winks for a circle-1 player: forced due, shown, answered, never counted.
+    // Winks for a circle-1 player: made due at this count (the first threshold moved here, the counts left as they are),
+    // shown, answered, never counted.
     const P0 = JSON.stringify(P),
-      W0 = WINK.P;
-    WINK.P = 1;
-    WINKS.at = -Infinity;
+      W0 = WINK.AT.slice();
+    WINK.AT[0] = answersSoFar();
     closeCards();
     quizPhoto();
     const wk = document.querySelector('#view .q.wink');
     ok(!!wk, 'a wink comes for a circle-1 player');
     if (wk) {
-      const n = [...WINKS.seen].at(-1), // the wink just shown (an earlier one may have come in the answers above)
+      const n = UNITS[SUBJ.id].winks()[0], // the first surprise: the first wink
         w = GX(n).wink,
         labels = [...wk.querySelectorAll('[data-w]')].map(b => b.textContent.slice(1));
       ok(w.choices.every(([, l]) => labels.includes(l)) && labels.includes(GX(n).name), 'wink: its name and the absurd choices');
       wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
+      ok(localStorage.getItem('reefid-fish-wink') === '0', 'wink: kept as shown on this device');
       route();
-      WINKS.at = -Infinity;
       closeCards();
       quizPhoto();
-      const again = document.querySelector('#view .q.wink');
-      ok(!again || [...WINKS.seen].length === 2, 'wink: never the same twice in a visit');
+      ok(!document.querySelector('#view .q.wink'), 'wink: not again in its window');
     }
-    WINK.P = W0;
-    WINKS.at = answersSoFar();
+    WINK.AT.splice(0, 2, ...W0);
     // Circle 2: offered once every IMR entry was asked; "Not now" kept.
     ok(!bonusOfferDue(), 'no offer before every IMR entry is asked');
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
@@ -454,22 +456,21 @@ const server = http.createServer((req, res) => {
     await q.evaluate(() => (location.hash = '#progress'));
     await q.waitForFunction(() => document.querySelector('#view .pgame'), null, {timeout: 15000});
     await wide('My progress');
-    // A wink, forced due once (WINK.P 1), then never the same again in the visit.
+    // A wink, made due at this count (the first threshold moved here, none shown yet).
     const wk = await q.evaluate(() => {
       location.hash = '#practice/quiz';
       return new Promise(ok =>
         setTimeout(() => {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
-          WINK.P = 1;
-          WINKS.at = -Infinity;
-          const was = answersSoFar();
-          if (was < WINK.FROM) P['~level'] = {...(P['~level'] || {}), ok: WINK.FROM};
+          WINK.AT[0] = answersSoFar();
+          delete WINKS[SUBJ.id];
+          localStorage.removeItem('reefid-fish-wink');
           quizPhoto();
-          ok({wink: !!document.querySelector('#view .q.wink'), seen: WINKS.seen.size});
+          ok({wink: !!document.querySelector('#view .q.wink'), seen: WINKS[SUBJ.id]});
         }, 300)
       );
     });
-    if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
+    if (!wk.wink || wk.seen !== 0) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
     await wide('a wink');
     // Back to the corals through the header chip: its menu holds both subjects; a choice closes it.
     await q.evaluate(() => (location.hash = '#practice/quiz'));
@@ -1006,9 +1007,9 @@ const server = http.createServer((req, res) => {
             rematch = L.length > 1 ? [{pair: [L[0], L[1]], at: -10}] : [];
             twoAt = -Infinity;
             const rm = JSON.stringify(rematch);
-            WINK.P = 1;
-            WINKS.at = -Infinity;
-            if (answersSoFar() < WINK.FROM) P['~level'] = {...(P['~level'] || {}), ok: WINK.FROM};
+            WINK.AT[0] = answersSoFar();
+            delete WINKS[SUBJ.id];
+            localStorage.removeItem('reefid-fish-wink');
             quizPhoto();
             ok({
               wink: !!document.querySelector('#view .q.wink'),
