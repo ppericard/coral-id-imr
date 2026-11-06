@@ -494,17 +494,23 @@ test('misses logged after the exam take the learned mark away as the game would,
     };
     await A.syncPull();
     assert.strictEqual(A.rvApplied(), C.RV);
-    return [A.ctx.P.Acropora.mx, why];
+    // The replay's own verdict: the last miss that left the bar under the keep rule (lm), after the exam or not.
+    const lm = (s.get({name: 'Ana', pin: '1234', rv: '0'}).replay.rec.Acropora || {}).lm;
+    return [A.ctx.P.Acropora.mx, why, lm > exam];
   };
+  const lost = async later => (await run(later)).slice(0, 2);
   // Lost as in the game (quiz.js answer, mxKept), with the rules card: 10 misses after the exam (was: pg 0.19 and still
-  // learned, its exam never coming back), and already two in a row.
-  assert.deepStrictEqual(await run(miss(40, 10)), [undefined, ['rules']], '10 misses after the exam');
-  assert.deepStrictEqual(await run(miss(40, 2)), [undefined, ['rules']], '2 misses after the exam');
-  // Kept: no answer after the exam (a recalculation alone), one miss after it (the game keeps the mark through one), and
-  // misses before the exam (the bar was won back before it).
-  assert.deepStrictEqual(await run([]), [exam, []], 'no answer after the exam');
-  assert.deepStrictEqual(await run(miss(40, 1)), [exam, []], 'one miss after the exam');
-  assert.deepStrictEqual(await run(miss(10, 2)), [exam, []], 'two misses before the exam');
+  // learned, its exam never coming back), and already a few in a row (the domain-score bar under core.js DOM.KEEP: a
+  // miss on these photos takes it 2-3 points, from about 0.86).
+  assert.deepStrictEqual(await lost(miss(40, 10)), [undefined, ['rules']], '10 misses after the exam');
+  assert.deepStrictEqual(await lost(miss(40, 4)), [undefined, ['rules']], '4 misses after the exam');
+  // Kept: no answer after the exam (a recalculation alone) and misses before the exam (the bar was won back before it).
+  assert.deepStrictEqual(await lost([]), [exam, []], 'no answer after the exam');
+  assert.deepStrictEqual(await lost(miss(10, 2)), [exam, []], 'two misses before the exam');
+  // One miss after it: as the replay's keep rule says (core.js keepsMark: the bar at DOM.KEEP or above after the miss),
+  // the device adopts exactly that verdict (kept, or lost with the rules card).
+  const [mx1, why1, lm1] = await run(miss(40, 1));
+  assert.deepStrictEqual([mx1, why1], lm1 ? [undefined, ['rules']] : [exam, []], 'one miss after the exam: the replay decides');
 });
 
 // A device's learned marks lost in a sync, with the reason mxRecalc gave (the card this device shows).
@@ -577,7 +583,7 @@ test('answers queued here older than answers another device logged: no replay ad
   const a = A.ctx.P.Acropora;
   assert.deepStrictEqual([A.ctx.SYNC.log.length, A.rvApplied(), a.ok, a.ko], [0, C.RV, 20, 10]);
   assert.strictEqual(a.h, '0000000000', 'the misses are the latest results (was ten right answers on top)');
-  assert.ok(a.pg < 0.5, `pg ${a.pg} (was 0.96)`);
+  assert.ok(C.scoreOf(a) < 0.5, `bar ${C.scoreOf(a)} (was 0.96)`);
   assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora.h, '0000000000');
 });
 
@@ -613,7 +619,7 @@ test("anonymous answers older than the account's own join it at sign-in: the com
     const a = A.ctx.P.Acropora,
       back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora;
     assert.deepStrictEqual([A.rvApplied(), a.ok, a.ko, a.h], [C.RV, 20, 10, '0000000000'], sent ? 'sent' : 'queued');
-    assert.ok(a.pg < 0.5, `${sent ? 'sent' : 'queued'}: pg ${a.pg}`);
+    assert.ok(C.scoreOf(a) < 0.5, `${sent ? 'sent' : 'queued'}: bar ${C.scoreOf(a)}`);
     assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
   }
 });
@@ -666,7 +672,7 @@ test('an admin merge of two replayed accounts brings the replay of both historie
   const a = A.ctx.P.Acropora,
     back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora;
   assert.deepStrictEqual([a.ok, a.ko, a.h, A.rvApplied()], [20, 10, '0000000000', C.RV]);
-  assert.ok(a.pg < 0.5, `pg ${a.pg}`);
+  assert.ok(C.scoreOf(a) < 0.5, `bar ${C.scoreOf(a)}`);
   assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
 });
 
@@ -803,10 +809,11 @@ test('the recalculation card is due only when the progress % moved by 5 points o
     };
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
-  const due = pct => {
+  // The standard card, on the versions before the apology (rules version 9 has its own, below).
+  const due = (pct, to = C.RV - 1) => {
     delete saved['reefid-rv-msg'];
-    ctx.add(0, C.RV, pct);
-    return ctx.store.get('reefid-rv-msg', {}).due.includes(C.RV);
+    ctx.add(0, to, pct);
+    return ctx.store.get('reefid-rv-msg', {}).due.includes(to);
   };
   assert.deepStrictEqual(
     [
@@ -820,6 +827,32 @@ test('the recalculation card is due only when the progress % moved by 5 points o
     [false, false, false, true, true, true],
     'a card for 5 points or more only'
   );
+  // Rules version 9's apology (core.js RV_SORRY, Pierre 2026-11-06): from 1 point, either way; the standard card is not
+  // due beside it in the same jump.
+  assert.deepStrictEqual(
+    [
+      [60, 60],
+      [60, 61],
+      [60, 59],
+      [83, 33]
+    ].map(p => due(p, C.RV)),
+    [false, false, true, true],
+    'the apology from 1 point down, never on a rise'
+  );
+  delete saved['reefid-rv-msg'];
+  ctx.add(0, C.RV, [60, 50]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [C.RV]);
+  // A rise of 5 points or more: the standard card of the last version that has it, not the apology.
+  delete saved['reefid-rv-msg'];
+  ctx.add(0, C.RV, [50, 60]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [C.RV - 1]);
+  // From the version just before (no standard card in the jump): the standard card under the apology's version.
+  delete saved['reefid-rv-msg'];
+  ctx.add(C.RV - 1, C.RV, [50, 60]);
+  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[C.RV], [C.RV]]);
+  delete saved['reefid-rv-msg'];
+  ctx.add(C.RV - 1, C.RV, [60, 50]);
+  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[C.RV], undefined]);
 });
 
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
