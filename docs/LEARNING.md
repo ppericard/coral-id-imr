@@ -2827,6 +2827,45 @@ from a main checkout, its app ignoring the seconds), `node tools/abilityeval.js 
 --rtfit`; real answers: `node tools/abilityeval.js answers.json --variants e+X+M --model main-core.js` against
 `--variants e+X+M+A` (paired by a short script; the two runs score the same answers in the same order).
 
+### One scorer (2026-11-06, Q132; rules version 6, sheet v61)
+
+Pierre approved (2026-11-06) the coherence review's F1 and F6 (`docs/reviews/2026-11-06-engine-coherence-review.md`):
+the same answer was scored twice, live in `quiz.js` `answer` and again in `core.js` `replayProgress`, and the replay
+worked the photo difficulty back out of the rounded `e` the app logged.
+
+- **One function.** `core.js` `scoreAnswer(P, q)` scores an answer: the offers and the mix-up on the pair, the counts
+  and the run, the progress weight (`pgRightW`, `pgMemW`, `pgMissW`) and `pgStep`, the genus's Elo step and the global
+  level's (`eloStep`, `levelSeed`, `rtWeight`, `rtAdd`), the photos seen, the recent results, and the miss on the genus
+  given (rule L2). `q` is what the question was: the genus shown and given, the choices and `k`, the photos seen and the
+  corallites hint revealed after the answer, and the inputs the game had then, `d0` (photo difficulty), `fam` (photo
+  memory), `cf` (known mix-ups), `look` (a genus the player confuses it with among the choices), `R` and `Rc` (recalls on
+  a comeback), the first-launch prior, the seconds. `quiz.js` `answer` builds `q` from the device's model and calls it;
+  `replayProgress` builds `q` from a log row and calls it. What only the game knows stays in `answer` (the exam, the
+  days answered, the last observations); what only the log knows stays in the replay (the last misses `lx` / `lm`).
+- **Logged, so the replay needs no inversion.** Each answer carries its scoring record `sc` (`core.js` `scoreRec`,
+  `scoreLog`: `d`, `f`, `c`, `l`, `r`, `g`, `h`, defaults left out, numbers to 3 decimals; the game rounds them before it
+  scores, `scoreIn`, so the replay meets exactly what it used). The sheet keeps it in a new last Answers column,
+  **Scoring** (sheet v61, read by its name), `readAnswers` serves it at index 22 (column W), the replay rows carry it at index 22 too
+  (`Code.gs` `rowOf_`, `core.js` `logRow`, both through `core.js` `LOG_SC`). An older script ignores the field: no gate needed (rule D4).
+- **"Replayed" has one meaning** (F6, option c): for every answer logged with its record, the replay gives the state the
+  game had, field by field, wherever and whenever it runs (the device's replay of its unsent answers, the sheet's
+  `replay_`, the admin's `replayedAll_` and Journey), whatever pooled stats each one holds; only the rules (`core.js`)
+  can change it. `tests/scorer.test.js` replays recorded sessions (3 seeds × 160 answers: comebacks, hints left closed,
+  typed answers, "I don't know", 2-choice questions, photos seen again, the device's stats changing every 25 answers)
+  through `quiz.js`'s own question code and compares every field of every genus and of the global level, from scratch,
+  going on from an earlier replay, and from the sheet's JSON cells, with other stats than the device's: identical.
+  Option (b) (stamping the stats each replay used) is not needed for these rows; rows logged before v61 keep the
+  inversion against the sheet's current stats (below), a dependence that fades as new answers come.
+- **One fix on the way** (integrator's call): a corallites hint left closed is revealed after the answer and counts as
+  shown, never as recognised, as the code's own comment said; it counted as recognised when the question also showed a
+  close-up. The global level now keeps its recent results (`h`) in the replay too (`replayedOf` keeps the device's).
+- **Measured on the real log** (rule L12, read-only, an extract of 2,047 answers of 10 players to 2026-11-05 20:14,
+  kept outside the repo): replayed with `main`'s `core.js` and this one, every numeric field identical (max difference
+  0) and no player's % moves: these rows carry no scoring record, so they replay by their `e` exactly as before (the only
+  new field is the global level's `h`). What the logged `d0` removes: within the rounding of `e` (±0.005) the recovered
+  difficulty spans a median 0.08 logits, 0.12 at the 90th percentile, up to 0.53; 360 of 2,047 rows span more than 0.1
+  and 33 more than 0.2. The live game itself does not change (the inputs rounded to 0.001 logits; the hint fix).
+
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 
 Photo difficulty feeds every player's game (which photos, how hard), and confusions pick the traps. They must reflect
@@ -2995,8 +3034,10 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   player's own history in the log and the sheet's offsets, `pgMissW`, `pgStep`), and the ability steps as the app's
   (`eloStep`, moved from `model.js` into `core.js` for this), as if every answer had been played under these rules. The
   weights and the step live in `core.js`, and `model.js` / `quiz.js` call the same functions, so a rule changed for the
-  app is changed for the replay. Each question's difficulty is recovered from what the app logged (`e`, `th`, the
-  choices; since the photo memory, `MEM_LOGGED`, the logged `e` includes it and the replay takes it out again).
+  app is changed for the replay. Since rules version 6 both score through one function, `scoreAnswer`, and an answer
+  logged with its scoring record is replayed from it ("One scorer" above). For a row logged before, each question's
+  difficulty is recovered from what the app logged (`e`, `th`, the choices; since the photo memory, `MEM_LOGGED`, the
+  logged `e` includes it and the replay takes it out again).
   **Typed answers** (`quiz|t`, `quiz|t|x` in the exam; "Typed questions" above) are replayed as the app scores them:
   no guess rate (`core.js` `kOf` gives k infinite, as `model.js` `TYPED.k`; `e` = sig(th − d)), a right one in full
   (`pgRightW`: every genus was a possible answer), no choices offered, "I don't know" a miss for the genus shown
@@ -3006,7 +3047,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   recent results and its run reset, and no Elo step (as the app since 2026-11-03, "The genus wrongly given in the
   Elo": the replay would otherwise put that penalty back on every player; `tests/replay.test.js` checks its ability
   does not move while its progress drops).
-  Approximations, listed with the function: the abilities and photos are those the app logged (other rules would have
+  Approximations for the rows logged before rules version 6, listed with the function: the abilities and photos are those the app logged (other rules would have
   drawn other photos; the weights use the logged ability, the replayed ability is the app's step over the recovered
   difficulties), a comeback answer's recall is taken as 1, the look-alike prior leaves out the IMR growth forms, the
   ability of the genus wrongly given is the replayed one (the app's own at that moment is not logged; the same as the
@@ -3029,7 +3070,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     to 0.41 / −0.77 / −1.60 and the replayed progress moves with them). A change to `stats_` that moves what the replay
     reads from it needs a rules version too. v4 (2026-11-04): answer time weighs right answers
     ("Response time": a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5); the sheet replays it from
-    v32, which reads the Seconds column). A device that skips several versions sees the standard card once, at the
+    v32, which reads the Seconds column). v5 (2026-11-04): the first-launch question's prior. v6 (2026-11-06, sheet
+    v61): one scorer, and the rows logged with their scoring record replayed from it ("One scorer"). A device that skips several versions sees the standard card once, at the
     last of them, with its progress before and after the whole jump (`core.js` `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`

@@ -325,6 +325,9 @@
   // only subject logged before), and of an answer-log row, at index LOG_SUBJ in both the sheet's readAnswers rows and
   // its Answers tab rows (sheet v60, column Subject; blank in the rows logged before: the default subject's).
   const LOG_SUBJ = 17;
+  // The scoring record (core.js scoreRec; sheet v61, column Scoring, W) at index LOG_SC in the sheet's readAnswers rows,
+  // its Answers tab rows and the replay rows (Code.gs rowOf_, logRow) alike.
+  const LOG_SC = 22;
   const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
   const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
   // The rows (or log entries, entries) of one subject, the replayed one by default: every reader of the answer log that
@@ -2239,6 +2242,144 @@
     G.rt[x] = (G.rt[x] || 0) + 1;
   }
 
+  // One scorer for an answer (Pierre, 2026-11-06, Q132; docs/reviews/2026-11-06-engine-coherence-review.md F1, F6;
+  // docs/LEARNING.md "One scorer"): the live game (quiz.js answer) and the full replay of the answer log
+  // (replayProgress: the sheet's, the admin's, this device's own) score an answer through this one function, so a rule
+  // is written once and both give the same state. P: the player's progress (genus records and LEVEL), changed in place.
+  // q, what the question was:
+  // - t the genus shown, c the genus given ('' for none or "I don't know"), ok, k (the plausible choices, Infinity for a
+  //   typed answer), chs the choices offered, cv (c is a genus of the game: it then takes a miss too, Pierre's rule L2);
+  // - ph the photo files seen while answering, hint a corallites hint revealed after the answer without being opened
+  //   (shown, never recognised: the log keeps it in the scoring record, scoreRec h);
+  // - the inputs the game had then (null d0: an answer that moves only the counts, as the replay's rows logged before
+  //   sheet v5): d0 the photo difficulty (the mean over its photos, + PICKD.SINGLE for a photo alone), fam the photo
+  //   memory (memFam), cf the known mix-ups term (model.js confTerm), look (a genus it is confused with among the
+  //   choices: a boolean, or a function called after the offers are counted, as the game always checked it), R the recall
+  //   of a comeback question (1 otherwise), Rc the recall of the genus given (1 otherwise);
+  // - p the first-launch answer's prior (playerStart), sec the seconds, timed (the time weighs a right answer's steps,
+  //   rtWeight), rt (the seconds are recorded, rtAdd; true unless false);
+  // - th: the ability the weights use, only for a row logged before the scorer (its logged th; the replay then
+  //   recovered d0 from its rounded e). Otherwise the ability as P holds it, which is what the game logged.
+  // Returns {th0, dm, e, w, look, rw}: the ability before the answer, the question's difficulty with the memory and the
+  // mix-ups, the expected success (logged e), the progress weight, the look-alike test and the time weight.
+  // What only the game knows stays in quiz.js answer (the exam, the days answered, the last observations, the cards and
+  // the hold); what only the log knows stays in replayProgress (the last misses lx and lm, duels won from the mode).
+  function scoreAnswer(P, q) {
+    const t = q.t,
+      ok = !!q.ok,
+      k = q.k,
+      chs = q.chs || [],
+      rec = n => {
+        const x = (P[n] = P[n] || {});
+        x.ok = x.ok || 0;
+        x.ko = x.ko || 0;
+        x.h = x.h || '';
+        return x;
+      },
+      s = rec(t);
+    // The choices offered beside it and the genus given instead, before the weights (the player's own mix-up rate).
+    chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
+    s[ok ? 'ok' : 'ko']++;
+    s.streak = ok ? (s.streak || 0) + 1 : 0;
+    if (!ok && q.c) (s.conf = s.conf || {})[q.c] = (s.conf[q.c] || 0) + 1;
+    const scored = typeof q.d0 === 'number' && isFinite(q.d0),
+      d0 = scored ? q.d0 : 0,
+      fam = Number(q.fam) || 0,
+      cf = Number(q.cf) || 0,
+      R = typeof q.R === 'number' ? q.R : 1,
+      p = Number(q.p) || 0,
+      dm = d0 + fam + cf,
+      out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
+    if (scored) {
+      const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p),
+        look = typeof q.look === 'function' ? !!q.look() : !!q.look,
+        // The miss weighs against the aim at the player's level before this answer's own step on it.
+        w = ok ? pgRightW(k, look) * pgMemW(th0, d0, fam, k, R) : pgMissW(th0, dm, k, R, aimOf((P[LEVEL] || {}).th));
+      s.pg = pgStep(pgOf(s), ok, w);
+      delete s.L; // BKT's knowledge, before s.pg
+      s.u = (s.u || 0) + 1;
+      // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
+      // step weighed by its time against the player's earlier ones.
+      const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
+      eloStep(P, t, s, ok, dm, k, rw, p);
+      Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(th0 - dm)});
+    }
+    // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
+    // each, with the same weight; this answer's seconds recorded after its steps (rtWeight compares with earlier ones).
+    if (P[LEVEL]) P[LEVEL][ok ? 'ok' : 'ko']++;
+    else P[LEVEL] = levelSeed(P);
+    if (scored) eloStep(P, LEVEL, P[LEVEL], ok, dm, k, out.rw, p);
+    if (q.rt !== false) rtAdd(P[LEVEL], q.sec, k);
+    // Recent results over every game, newest last (an opening only after a right answer: model.js openRight).
+    P[LEVEL].h = ((P[LEVEL].h || '') + (ok ? 1 : 0)).slice(-10);
+    // The photos: those seen, shown and (a right answer) recognised; a hint revealed after the answer, shown only.
+    const ps = (s.ps = s.ps || {});
+    (q.ph || []).forEach(f => {
+      const x = (ps[f] = ps[f] || [0, 0]);
+      x[0]++;
+      if (ok) x[1]++;
+    });
+    if (q.hint) (ps[q.hint] = ps[q.hint] || [0, 0])[0]++;
+    s.h = (s.h + (ok ? 1 : 0)).slice(-10);
+    // Pierre's rule L2: a wrong answer counts against the genus given too: its progress by the chance the player had on it
+    // (its own ability now, against the photo's difficulty without the memory, which is of the genus shown; its recall
+    // Rc after a break), a miss in its recent results, its run reset. Not its ability (docs/LEARNING.md "The genus wrongly
+    // given in the Elo"): the Elo moves on the questions about the genus itself.
+    if (!ok && q.cv && q.c && q.c !== t) {
+      const x = rec(q.c);
+      if (scored) {
+        x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, typeof q.Rc === 'number' ? q.Rc : 1, aimOf(P[LEVEL].th)));
+        delete x.L;
+        x.u = (x.u || 0) + 1;
+      }
+      x.h = (x.h + '0').slice(-10);
+      x.streak = 0;
+    }
+    return out;
+  }
+  // The scoring record logged with each answer (quiz.js answer: the answer's sc; the sheet's Answers column Scoring,
+  // Code.gs v61, and the replay rows' index LOG_SC, 22): the inputs scoreAnswer had that the replay cannot rebuild from the log
+  // (Pierre, 2026-11-06, Q132: "replayed" means what the game scored, whenever and wherever it is replayed).
+  // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
+  // recall R, g the recall Rc of the genus given, h the hint revealed after the answer; f, c, r, g and h left out at their
+  // default (0, 0, 1, 1, none). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
+  // exactly what it used. x: the record as an object or its JSON (a sheet cell); null when it has no d (a row logged
+  // before the scorer, or broken).
+  const SC_MAX = 50;
+  const r3 = x => Math.round(x * 1000) / 1000;
+  const scNum = x => (typeof x === 'number' && isFinite(x) && Math.abs(x) <= SC_MAX ? r3(x) : null);
+  function scoreRec(x) {
+    let o = x;
+    if (typeof o === 'string') {
+      if (!o || o[0] !== '{') return null;
+      try {
+        o = JSON.parse(o);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (!isObj(o) || scNum(o.d) === null) return null;
+    const out = {d: scNum(o.d)};
+    if (scNum(o.f)) out.f = scNum(o.f);
+    if (scNum(o.c)) out.c = scNum(o.c);
+    if (o.l === 1 || o.l === true) out.l = 1;
+    if (scNum(o.r) !== null && scNum(o.r) !== 1 && o.r >= 0 && o.r <= 1) out.r = scNum(o.r);
+    if (scNum(o.g) !== null && scNum(o.g) !== 1 && o.g >= 0 && o.g <= 1) out.g = scNum(o.g);
+    if (typeof o.h === 'string' && /^[A-Za-z0-9_.-]{1,120}$/.test(o.h)) out.h = o.h;
+    return out;
+  }
+  // The game's inputs rounded as they are logged (scoreRec), before it scores with them.
+  const scoreIn = q => ({
+    ...q,
+    d0: r3(q.d0),
+    fam: r3(q.fam || 0),
+    cf: r3(q.cf || 0),
+    R: r3(q.R === undefined ? 1 : q.R),
+    Rc: r3(q.Rc === undefined ? 1 : q.Rc)
+  });
+  // The record of a question scored by scoreAnswer (q after scoreIn, res its result): what quiz.js answer logs as sc.
+  const scoreLog = (q, res) => scoreRec({d: q.d0, f: q.fam, c: q.cf, l: res.look ? 1 : 0, r: q.R, g: q.Rc, h: q.hint || undefined});
+
   // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
   // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
   // weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...) appends
@@ -2294,6 +2435,12 @@
       at: '2026-11-04',
       why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h, or the band below taken with Coral basics on the fallback card, ease)',
       msg: RV_CARD
+    },
+    {
+      v: 6,
+      at: '2026-11-06',
+      why: 'One scorer (Q132, sheet v61): the game and the replay score an answer through scoreAnswer; an answer logged with its scoring record (photo difficulty, memory, mix-ups, look-alike test, recalls, a corallites hint revealed after it, shown but not recognised) replays exactly as the game scored it, an older row by its logged e as before',
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -2332,7 +2479,9 @@
   // docs/LEARNING.md "Full replay".
   // rows: the answer log (sheet readAnswers rows, Code.gs rowOf_, or the app's own log through logRow: [id, time ms,
   // genus shown, answered, right 0|1, mode, photos, expected e, ability th, new photos, choices, (11: unused here),
-  // seconds to answer (null without)]; the seconds weigh a right answer's ability steps, rtWeight). o: gen (data.json
+  // seconds to answer (null without), (13, 14: unused here), the scoring record (15: scoreRec, null before it)]; the
+  // seconds weigh a right answer's ability steps, rtWeight). Every answer goes through scoreAnswer, the game's own
+  // scorer. o: gen (data.json
   // genera, Millepora and the bonus genera included: look-alikes `look`, family `fam`), mem (photo memory offsets,
   // ?stats=1 mem; the prior without), conf (the pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}:
   // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js), time
@@ -2349,6 +2498,10 @@
   // rule (lm, a time: mxKeeps); the global level LEVEL as the
   // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
+  // A row logged with its scoring record (2026-11-06, Q132: index LOG_SC) is scored with what the game had then: its photo
+  // difficulty d0, photo memory, mix-ups term, look-alike test, recall and hint, so the replay gives exactly the state the
+  // game had, whenever and wherever it runs (the device, the sheet, the admin), whatever pooled stats each holds; only
+  // the rules (this file) can change it. A row logged before it: as follows.
   // Each question's difficulty d (photo difficulty, + 0.5 for a photo shown alone) is recovered from what the app logged
   // then: e = 1/k + (1 - 1/k) sig(th - d), th the player's ability on the genus at that moment. A typed answer (|t,
   // 2026-11-03; kOf) has no guess rate (k infinite: e = sig(th - d)), counts in full when right (pgRightW) and was
@@ -2356,7 +2509,7 @@
   // (MEM_LOGGED) the logged e includes the memory of the photos (fam), taken out again here with the replay's own fam;
   // since the known mix-ups (CF_LOGGED) it includes the app's mix-ups term too (cf, model.js confTerm), taken out the
   // same way, and the replay adds its own to every answer, older ones included (today's rule).
-  // Approximations, explicit: the ability th and the photos are those the app logged (the game would have drawn others
+  // Approximations of such a row, explicit: the ability th and the photos are those the app logged (the game would have drawn others
   // under other rules; the weights use the logged th, the replayed th is the app's step over the recovered
   // difficulties); a comeback question's recall is taken as 1 (its e logged with it reads as a harder photo); the
   // look-alike test and the mix-ups term are the app's (declared look-alikes or confusions over CONF.TRAP, pooled and the
@@ -2551,87 +2704,57 @@
           chs = split(r[10]),
           k = kOf(mode, r[10]),
           sec = typeof r[12] === 'number' ? r[12] : null,
+          sc = scoreRec(r[LOG_SC]),
           s = rec(t),
           hs = fs.map(f => s.ps[f]),
           wrong = !ok && c && c !== t && gen[c];
+        if (wrong) rec(c);
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
-        // The mix-ups term, on the record before this answer (quiz.js answer scores it before the offers).
-        const cf = confTermOf(pl.P, t, chs, k),
-          pr = startPriorAt(starts[id], r[1]); // the first-launch answer's prior at this answer (abilityOf)
-        // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
-        chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
-        s[ok ? 'ok' : 'ko']++;
-        s.streak = ok ? (s.streak || 0) + 1 : 0;
-        if (!ok && c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
-        const replayable = typeof e === 'number' && typeof th === 'number' && fs.length && k > 1;
-        let dm = 0,
-          d0 = 0,
-          rw = 1;
+        const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
+          replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
+        const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null};
+        if (sc) {
+          // Logged by the scorer (Q132): what the game scored with, as it was then; the memory as logged unless the
+          // replay leaves it out (memory: false, a what-if).
+          Object.assign(q, {d0: sc.d, fam: memory ? sc.f || 0 : 0, cf: sc.c || 0, look: !!sc.l, R: sc.r === undefined ? 1 : sc.r});
+          Object.assign(q, {Rc: sc.g === undefined ? 1 : sc.g, hint: sc.h});
+        } else if (replayable) {
+          // A row logged before the scorer: its difficulty recovered from the logged e (rounded to 0.01), its memory and
+          // mix-ups term rebuilt with today's pooled stats, its look-alike test after the offers, as the game ran it.
+          const fam = memFam(hs, mem),
+            cf = confTermOf(pl.P, t, chs, k), // on the record before this answer (before the offers)
+            qq = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
+            dl = th - Math.log(qq / (1 - qq)), // the difficulty in the logged expectation
+            // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
+            d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0);
+          Object.assign(q, {d0: d, fam: memory ? fam : 0, cf, th, look: () => chs.some(x => lookOf(pl.P, t, x))});
+        }
+        const res = scoreAnswer(pl.P, q);
         if (replayable) {
           pl.used++;
-          const fam = memFam(hs, mem),
-            q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
-            dl = th - Math.log(q / (1 - q)), // the difficulty in the logged expectation
-            // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
-            d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0),
-            fm = memory ? fam : 0,
-            look = chs.some(x => lookOf(pl.P, t, x)),
-            // The aim at the player's level before this answer's own step on it, as quiz.js answer weighs the miss.
-            w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm + cf, k, 1, aimOf((pl.P[LEVEL] || {}).th));
-          dm = d + fm + cf;
-          d0 = d;
-          s.pg = pgStep(s.pg, ok, w);
-          s.u++;
-          if (o.onAnswer) o.onAnswer(r, {d, fam: fm, cf, k, w, look});
-          // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory,
-          // a right answer's step weighed by its time against the player's earlier ones (rtWeight; time: false, without).
-          rw = time ? rtWeight(pl.P[LEVEL], sec, k, ok) : 1;
-          eloStep(pl.P, t, s, ok, dm, k, rw, pr);
-        }
-        // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
-        if (pl.P[LEVEL]) pl.P[LEVEL][ok ? 'ok' : 'ko']++;
-        else pl.P[LEVEL] = levelSeed(pl.P);
-        if (replayable) {
-          eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, rw, pr);
-          if (time) rtAdd(pl.P[LEVEL], sec, k);
+          if (o.onAnswer) o.onAnswer(r, {d: q.d0, fam: q.fam, cf: q.cf, k, w: res.w, look: res.look});
         }
         pl.P[LEVEL].at = r[1];
         s.at = r[1];
         // The learned mark (not replayed: replayedOf takes it from the saved copy) is lost, in the game, at a miss that
         // leaves the progress below the keep rule (quiz.js answer, mxKept), on the genus shown as on the genus given: lm,
-        // the time of the last such miss, takes away a mark passed before it.
+        // the time of the last such miss, takes away a mark passed before it; lx, the last miss, ends an exam in course.
         if (!ok) s.lx = r[1];
         if (!ok && !mxKeeps(s.pg)) s.lm = r[1];
         if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
-        // Pierre's rule: a wrong answer counts against the genus given too, as quiz.js answer does it after the global
-        // level: its progress by the chance the player had on it (its own ability, as replayed so far, against the
-        // photo's difficulty without the photo memory: the memory is of the genus shown), a miss in its recent results,
-        // its run reset. Not its ability (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo"): the Elo
-        // moves on the questions about the genus itself, as quiz.js answer does since then.
         if (wrong) {
-          const x = rec(c);
-          if (replayable) {
-            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c, pr), d0, k, 1, aimOf(pl.P[LEVEL].th)));
-            x.u++;
-          }
-          x.h = (x.h + '0').slice(-10);
-          x.streak = 0;
+          const x = pl.P[c];
           x.lx = r[1];
           if (!mxKeeps(x.pg)) x.lm = r[1];
         }
-        s.h = (s.h + (ok ? 1 : 0)).slice(-10);
-        fs.forEach(f => {
-          const x = (s.ps[f] = s.ps[f] || [0, 0]);
-          x[0]++;
-          if (ok) x[1]++;
-        });
       });
     return out;
   }
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
   // player id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
-  // The seconds rt at index 12, as in the sheet's readAnswers rows (11, their anonymous flag, unused here).
+  // The seconds rt at index 12 and the scoring record sc at LOG_SC (22), as in the sheet's readAnswers rows (11, their
+  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null).
   const logRow = (a, id) => [
     id,
     Date.parse(a.t) || 0,
@@ -2645,7 +2768,9 @@
     typeof a.nw === 'number' ? a.nw : null,
     String(a.ch || ''),
     null,
-    typeof a.rt === 'number' ? a.rt : null
+    typeof a.rt === 'number' ? a.rt : null,
+    ...new Array(LOG_SC - 13).fill(null),
+    scoreRec(a.sc)
   ];
   // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
   // reefid-sync-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
@@ -3113,6 +3238,10 @@
     MEM_LOGGED,
     CF_LOGGED,
     replayProgress,
+    scoreAnswer,
+    scoreRec,
+    scoreIn,
+    scoreLog,
     startPriorAt,
     startFp,
     startEvents,
@@ -3244,6 +3373,7 @@
     subjGroup,
     replaySubject,
     LOG_SUBJ,
+    LOG_SC,
     ansSubject,
     rowSubject,
     subjRows,
