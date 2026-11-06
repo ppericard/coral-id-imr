@@ -289,17 +289,28 @@
         'Demo report: I think this is the other genus.',
         'quiz',
         pics[g1][0].f,
-        '#quiz'
+        'practice/quiz'
       ),
-      rp(1, 'Carla Demo', 'multi', g2, '', '', 'Demo report: two colonies in this photo.', 'quiz', pics[g2][0].f, '#quiz'),
-      rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, '#' + g3),
-      rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', '#' + g2),
-      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home'),
+      rp(1, 'Carla Demo', 'multi', g2, '', '', 'Demo report: two colonies in this photo.', 'quiz', pics[g2][0].f, 'practice/quiz'),
+      rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, 'learn/genus/' + g3),
+      rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', 'learn/genus/' + g2),
+      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', 'home'),
       // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
-      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', '#quiz'),
+      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', 'fish/practice/quiz'),
       // Sheet v55: an account deleted with its answers kept: its reports stay without the name, never verified.
       Object.assign(
-        rp(6, '~deleted Zq3xR8kA', 'photo', g1, '', '', 'Demo report from a removed account: too dark.', 'photo', pics[g1][0].f, '#' + g1),
+        rp(
+          6,
+          '~deleted Zq3xR8kA',
+          'photo',
+          g1,
+          '',
+          '',
+          'Demo report from a removed account: too dark.',
+          'photo',
+          pics[g1][0].f,
+          'learn/genus/' + g1
+        ),
         {3: 0}
       )
     ];
@@ -344,7 +355,7 @@
         'err',
         "TypeError: Cannot read properties of undefined (reading 'views')",
         'app.js:1234:5',
-        'quiz',
+        'practice/quiz',
         '',
         '159',
         'Chrome 140 mobile'
@@ -356,12 +367,12 @@
         'err',
         "TypeError: Cannot read properties of undefined (reading 'views')",
         'app.js:1234:5',
-        'quiz-duel',
+        'practice/duels',
         '',
         '158',
         'Safari 18 mobile'
       ],
-      ['demoevc', NOW - 5 * 3600e3, 'demodev3', 'photo', pics[g1][0].f, '', 'quiz', '', '159', 'Samsung 27 mobile'],
+      ['demoevc', NOW - 5 * 3600e3, 'demodev3', 'photo', pics[g1][0].f, '', 'practice/quiz', '', '159', 'Samsung 27 mobile'],
       [
         'demoevd',
         NOW - 9 * 3600e3,
@@ -369,7 +380,7 @@
         'sync',
         'save failed: Failed to fetch',
         'load · no reply · 0.4 s · try 5 · 76 s · 0 hidden',
-        'quiz',
+        'practice/quiz',
         '',
         '159',
         'Chrome 140 mobile'
@@ -383,7 +394,7 @@
         'sync',
         'save recovered: Load failed',
         'save · no reply · 12.3 s · try 1 · 0 s · 0 hidden · saved after 5 s',
-        'quiz',
+        'practice/quiz',
         '',
         '159',
         'Safari 18 mobile'
@@ -414,8 +425,8 @@
         'load',
         pop,
         '',
-        'quiz',
-        JSON.stringify({p0: 'home', t0, qo, q1, nx: 'quiz', bps, kb, sw, sv, th, w, st: sw}),
+        'practice/quiz',
+        JSON.stringify({p0: 'home', t0, qo, q1, nx: 'practice.quiz', bps, kb, sw, sv, th, w, st: sw}),
         '170',
         ua
       ])
@@ -538,10 +549,10 @@
           pageRow(pi++, NOW - (d0 - v * (d0 / 4)) * DAY, aid(name), {
             r: {
               home: [1, 4 + Math.round(prnd() * 10)],
-              quiz: [1 + nG, 300 + Math.round(prnd() * 900)],
-              ...(nG ? {genus: [nG, 60]} : {}),
+              'practice.quiz': [1 + nG, 300 + Math.round(prnd() * 900)],
+              ...(nG ? {'learn.genus': [nG, 60]} : {}),
               // Ana's last visit went on with Fish on screen (core.js pageName: fish.<page>).
-              ...(name === 'Ana Demo' && v === 3 ? {'fish.quiz': [2, 420], 'fish.genera': [1, 35]} : {})
+              ...(name === 'Ana Demo' && v === 3 ? {'fish.practice.quiz': [2, 420], 'fish.learn.genera': [1, 35]} : {})
             },
             g,
             vi: 'demovi' + pi,
@@ -552,12 +563,12 @@
     });
     pages.push(
       pageRow(pi++, NOW - 3 * 3600e3, aid('~anon demo0'), {
-        r: {quiz: [2, 200], genus: [1, 25]},
+        r: {'practice.quiz': [2, 200], 'learn.genus': [1, 25]},
         g: {[G[0]]: [1, 25, 'quiz', 1]},
         vi: 'demovianon',
         na: 8
       }),
-      pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], genera: [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
+      pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], 'learn.genera': [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
     pages.sort((a, b) => b[1] - a[1]);
     S = {rows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D)};

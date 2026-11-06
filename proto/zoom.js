@@ -54,7 +54,7 @@ LAB.add({
     const setGenus = n => {
       genus = n;
       alt = 0;
-      history.replaceState(null, '', '#lab-zoom|' + encodeURIComponent(n));
+      history.replaceState(null, '', hr('lab-zoom|' + n));
       explore();
     };
     const explore = () => {

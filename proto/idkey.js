@@ -4,7 +4,7 @@
 // Clues rank, they never eliminate: a clue can be wrong or misjudged (size, shape), so a genus that misses one
 // clue stays in view under "One clue off", and a size one class away counts as half a match.
 // It replaced the growth-form key and the corallite filters in Identify (#key, #key-tr, #k-, #l- redirect here).
-// State lives in the hash (#idkey|<state>), so a reload or a shared link keeps the shortlist.
+// State lives in the hash (#identify/key?<state>), so a reload or a shared link keeps the shortlist.
 LAB.add({
   id: 'idkey',
   icon: '⌕',
@@ -120,7 +120,6 @@ LAB.add({
     });
     // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
     if (FIDS.some(f => S[f].size) || S.q || S.out.size || S.not.size) S.home = false;
-    const base = location.hash.startsWith('#lab-') ? '#lab-idkey' : '#idkey';
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
       if (S.out.size) parts.push('out=' + [...S.out].join(','));
@@ -128,7 +127,7 @@ LAB.add({
       const all = [...S.all].filter(f => S[f] && S[f].size > 1);
       if (all.length) parts.push('all=' + all.join(','));
       if (S.q) parts.push('q=' + encodeURIComponent(S.q));
-      history.replaceState(null, '', base + (parts.length ? '|' + parts.join(';') : ''));
+      history.replaceState(null, '', hr('idkey' + (parts.length ? '|' + parts.join(';') : '')));
     };
     // How well a genus fits one clue family: 1 if one of its picks lists the genus, 0.5 if the best pick is a trait of
     // some of its species only (o.half) or a corallite size one class away (sizes are easy to misjudge on a photo),
@@ -500,7 +499,7 @@ LAB.add({
         ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'ikrows' : mode === 'sheet' ? 'iksheets' : 'ikgrid'}">${left.map(n => (isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n))).join('')}</div>` : `<p class="note">No ${XON ? '' : 'IMR '}genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
         ${close.length ? (foldOff ? `<details class="ikoff"><summary class="ikgrp">${close.length} genera one clue off <small>in case a clue was misjudged</small></summary><div class="ikgrid">${close.map(n => tile(n, true)).join('')}</div></details>` : `<h3 class="ikgrp">One clue off <span class="ikn">${close.length}</span> <small>in case a clue was misjudged</small></h3><div class="ikgrid">${close.map(n => tile(n, true)).join('')}</div>`) : ''}
         ${rest.length ? `<details class="ikrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="ikchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
-        ${near.length ? `<p class="iknear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="${notIMR(n) || notIMR(left[0]) ? genLink(n) : `#cmp-${esc(left[0])}|${esc(n)}`}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
+        ${near.length ? `<p class="iknear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="${notIMR(n) || notIMR(left[0]) ? genLink(n) : hr(`cmp-${left[0]}|${n}`)}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
         ${S.out.size ? `<p class="ikouts"><span class="label">Ruled out</span>${[...S.out].map(n => `<button type="button" class="chip" data-back="${esc(n)}" title="Bring back"><i>${esc(n)}</i> ↺</button>`).join('')}</p>` : ''}`;
       $main.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.z))));
       const off = $main.querySelector('.ikoff');
@@ -755,7 +754,7 @@ LAB.add({
       $cmp.hidden = !S.cmp.length;
       $cmp.innerHTML =
         S.cmp.length === 2
-          ? `<a class="next" href="#cmp-${esc(S.cmp[0])}|${esc(S.cmp[1])}">Compare <i>${esc(S.cmp[0])}</i> and <i>${esc(S.cmp[1])}</i> side by side →</a><button type="button" class="chip" data-cx>Clear</button>`
+          ? `<a class="next" href="${esc(hr('cmp-' + S.cmp[0] + '|' + S.cmp[1]))}">Compare <i>${esc(S.cmp[0])}</i> and <i>${esc(S.cmp[1])}</i> side by side →</a><button type="button" class="chip" data-cx>Clear</button>`
           : `<span><i>${esc(S.cmp[0] || '')}</i> picked: tap Compare on a second genus.</span><button type="button" class="chip" data-cx>Clear</button>`;
       const x = $cmp.querySelector('[data-cx]');
       if (x)

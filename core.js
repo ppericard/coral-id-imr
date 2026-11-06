@@ -219,10 +219,12 @@
   //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
   //   ach, board  achievements and the leaderboard count this subject
   //   progress    the views of My progress (progress.js quizBoard), the first by default
-  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.quiz)
+  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.practice.quiz)
+  //   hash    the prefix of its addresses, in the app and the admin ('' for the corals, 'fish/': #fish/practice/quiz,
+  //           #fish/inbox/todo/reports; routeOut, routeIn, admin.js subjOfHash)
   //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js; fish: no claim about what tells
   //           them apart)
-  //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, #g-); the others,
+  //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
   const SUBJECTS = [
     {
@@ -236,6 +238,7 @@
       card: 'genus',
       lecture: 'the IMR coral lecture',
       pv: '',
+      hash: '',
       zoom: 'the corallites, the detail that often tells look-alikes apart',
       views: [
         ['wide', 'Colony'],
@@ -259,10 +262,10 @@
           know: ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']
         }
       },
-      // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin). hash: the
-      // prefix of the subject's admin addresses ('' keeps every coral address as it was); cur: its part of curation.json
-      // ('' = the top level, as before); pages: the admin pages it has (null = every page).
-      admin: {hash: '', cur: '', pages: null}
+      // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin; its address
+      // prefix is the subject's hash): cur: its part of curation.json ('' = the top level, as before); pages: the admin
+      // pages it has (null = every page; a page covers the addresses under it).
+      admin: {cur: '', pages: null}
     },
     {
       id: 'fish',
@@ -275,6 +278,7 @@
       card: 'fish',
       lecture: 'the IMR fish presentation',
       pv: 'fish.',
+      hash: 'fish/',
       zoom: 'the markings and the fins',
       remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
@@ -308,7 +312,7 @@
       },
       // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
       // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
-      admin: {hash: 'fish/', cur: 'fish', pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list']}
+      admin: {cur: 'fish', pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list']}
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.
@@ -2941,26 +2945,248 @@
     GENUS: /^[A-Z][a-z]{2,30}$/,
     FROM: ['quiz', 'learn', 'progress', 'other']
   };
-  // The page name of a hash: its route without the parameters, a genus sheet (g-Acropora) is 'genus', Look-alikes
-  // ('cmp', 'cmp|A|B') 'lookalikes', a side-by-side comparison (cmp-A|B) 'compare', Home 'home'.
-  // pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn with Fish on screen is 'fish.<page>' ('fish.quiz',
-  // 'fish.home'), so the Pages tab tells a fish page from a coral one (fish UX study, 2026-11-04: fish used the corals'
-  // page names); the corals' prefix is empty. '.' is in PAGES.RE: the sheet (pagesClean) keeps these names as they come.
+  // routes: begin
+  // The app's addresses (URL refonte, Pierre 2026-11-05, Q53-Q56; docs/reviews/2026-11-05-url-scheme-study.md 3.2):
+  // #<section>/<page>[/<thing>…][?filters], in the words on screen: #learn/genus/Acropora, #practice/duels/A/B,
+  // #identify/key?form=B&box=B1, #tools/anatomy, #leaderboard/achievements; Home is the clean URL. A subject other than
+  // the corals puts its prefix first (SUBJECTS hash: #fish/practice/quiz), on the pages of the sections that follow the
+  // subject (ROUTE_SUBJ); its units' words come from SUBJECTS one / many (#fish/learn/families).
+  // Inside, the app names a page by its page key, the vocabulary its code, SUBJECTS pages, MODES and the answer modes
+  // share ('genera', 'g-Acropora', 'cmp|A|B', 'cmp-A|B', 'quiz-duel|A|B', 'idkey|form=B;box=B1', 'lab-anatomy|arr|x').
+  // routeOut and routeIn translate one into the other, here only: every link is built by them (app.js hr), every
+  // address read by them (app.js hashNow). No old address is read (rule W3): routeIn gives an unknown one no key.
+  const ROUTE_SUBJ = ['learn', 'practice', 'identify', 'progress'];
+  // A section's own page, for its bare address (#learn) and an unknown address inside it (the header tabs' targets).
+  const ROUTE_FIRST = {
+    learn: 'genera',
+    practice: 'quiz',
+    identify: 'idkey',
+    progress: 'progress',
+    leaderboard: 'board',
+    tools: 'lab',
+    about: 'about'
+  };
+  const ROUTE_FIXED = {
+    quiz: 'practice/quiz',
+    'quiz-custom': 'practice/custom',
+    'quiz-duel': 'practice/duels',
+    pairs: 'practice/memory',
+    cmp: 'learn/look-alikes',
+    basics: 'learn/basics',
+    progress: 'progress',
+    board: 'leaderboard',
+    ach: 'leaderboard/achievements',
+    about: 'about',
+    // Delete my account (sheet v58 selfDelete, #603): a page reached from About, its |done state after the deletion.
+    'delete-account': 'about/delete-account',
+    lab: 'tools',
+    idkey: 'identify/key',
+    fishkey: 'identify/key'
+  };
+  const routeEnc = x => encodeURIComponent(x).replace(/%2C/g, ',');
+  const routeSubj0 = () => SUBJECTS.find(s => !s.hash) || SUBJECTS[0];
+  // The address of page key k for subject S (default: the corals), without '#'. null for no known page.
+  function routeOut(k, S) {
+    S = S || routeSubj0();
+    const s = String(k == null ? '' : k),
+      [b, ...a] = s.split('|');
+    let p, q;
+    if (!s || s === 'home') return '';
+    if (b === 'genera' && !a.length) p = 'learn/' + S.many;
+    else if (b.startsWith('g-') && b.length > 2 && !a.length) p = 'learn/' + S.one + '/' + routeEnc(b.slice(2));
+    else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
+    else if (b.startsWith('lab-') && b.length > 4) p = 'tools/' + [b.slice(4), ...a].map(routeEnc).join('/');
+    else if ((b === 'idkey' || b === 'fishkey') && a.length <= 1) {
+      p = ROUTE_FIXED[b];
+      // The Key's clues (form=B;box=B1;not=wall.plo) as filters, kept as they are (the Key encodes its free text).
+      if (a[0]) q = a[0].split(';').filter(Boolean).join('&');
+    } else if (b === 'basics') {
+      // Coral basics: its step, glossary term or view as segments, its editing switch (|edit) as a filter.
+      const e = a[a.length - 1] === 'edit';
+      p = ['learn/basics', ...(e ? a.slice(0, -1) : a).map(routeEnc)].join('/');
+      if (e) q = 'edit=1';
+    } else if (
+      ROUTE_FIXED[b] &&
+      (!a.length ||
+        (['cmp', 'quiz-duel'].includes(b) && a.length === 2) ||
+        (b === 'quiz-custom' && a.length === 1 && a[0] === 'play') ||
+        (b === 'delete-account' && a.length === 1 && a[0] === 'done'))
+    )
+      p = [ROUTE_FIXED[b], ...a.map(routeEnc)].join('/');
+    else return null;
+    const pre = ROUTE_SUBJ.includes(p.split('/')[0]) ? S.hash || '' : '';
+    return pre + p + (q ? '?' + q : '');
+  }
+  // The page an address shows: {S: its subject, bare: no subject prefix, key: its page key (null: unknown), sec: its
+  // section (for an unknown address inside a known section), fall: the page key to show instead of an unknown one}.
+  // Split before decoding: the filters off the raw hash first, then each segment decoded alone.
+  // tool(S): the subject's Identify tool (app.js UNITS identify), 'idkey' when not given.
+  function routeIn(h, tool) {
+    const raw = String(h == null ? '' : h).replace(/^#/, ''),
+      qi = raw.indexOf('?'),
+      dec = x => {
+        try {
+          return decodeURIComponent(x);
+        } catch (e) {
+          return x;
+        }
+      };
+    let seg = (qi < 0 ? raw : raw.slice(0, qi)).split('/').map(dec);
+    const query = qi < 0 ? '' : raw.slice(qi + 1),
+      Sx = SUBJECTS.find(s => s.hash && seg[0] + '/' === s.hash),
+      S = Sx || routeSubj0();
+    if (Sx) seg = seg.slice(1);
+    while (seg.length && seg[seg.length - 1] === '') seg.pop();
+    const out = (key, sec) => ({S, bare: !Sx, key, sec: sec || seg[0] || 'home', fall: key != null ? key : ROUTE_FIRST[seg[0]] || ''});
+    const [s0, s1, ...r] = seg,
+      n = seg.length,
+      kv = query.split('&').filter(Boolean);
+    if (!n) return out(query ? null : '', 'home');
+    if (seg.some(x => x === '' || x.includes('|'))) return out(null);
+    const key = (() => {
+      if (s0 === 'learn') {
+        if (s1 === 'basics') {
+          const e = kv.some(x => /^edit(=|$)/.test(x));
+          return ['basics', ...r, ...(e ? ['edit'] : [])].join('|');
+        }
+        if (s1 === S.many && n === 2) return 'genera';
+        if (s1 === S.one && n === 3) return 'g-' + r[0];
+        if (s1 === 'look-alikes' && (n === 2 || n === 4)) return ['cmp', ...r].join('|');
+        if (s1 === 'compare' && n === 4) return 'cmp-' + r[0] + '|' + r[1];
+      } else if (s0 === 'practice') {
+        if (s1 === 'quiz' && n === 2) return 'quiz';
+        if (s1 === 'custom' && (n === 2 || (n === 3 && r[0] === 'play'))) return ['quiz-custom', ...r].join('|');
+        if (s1 === 'duels' && (n === 2 || n === 4)) return ['quiz-duel', ...r].join('|');
+        if (s1 === 'memory' && n === 2) return 'pairs';
+      } else if (s0 === 'identify') {
+        if (s1 === 'key' && n === 2) return (tool ? tool(S) : 'idkey') + (kv.length ? '|' + kv.join(';') : '');
+      } else if (s0 === 'progress' && n === 1) return 'progress';
+      else if (s0 === 'leaderboard' && n === 1) return 'board';
+      else if (s0 === 'leaderboard' && s1 === 'achievements' && n === 2) return 'ach';
+      else if (s0 === 'about' && n === 1) return 'about';
+      else if (s0 === 'about' && s1 === 'delete-account' && (n === 2 || (n === 3 && r[0] === 'done')))
+        return ['delete-account', ...r].join('|');
+      else if (s0 === 'tools') return n === 1 ? 'lab' : ['lab-' + s1, ...r].join('|');
+      return null;
+    })();
+    // A section that follows the subject is the only place a subject prefix means something.
+    if (key != null && Sx && !ROUTE_SUBJ.includes(s0)) return out(null);
+    return out(key);
+  }
+  // The page name of a page key, logged in the visit summary (sheet v30 'pages') and used for the photo size per page:
+  // its address's section and page, its things and filters dropped ('learn.genus', 'learn.look-alikes',
+  // 'practice.duels', 'identify.key', 'tools.anatomy', 'leaderboard.achievements', 'progress', 'home'), in the corals'
+  // words whatever the subject (a page's identity). pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn
+  // with Fish on screen is 'fish.<page>' ('fish.practice.quiz', 'fish.home'). '.' and '-' are in PAGES.RE: the sheet
+  // (pagesClean) keeps these names as they come.
   function pageName(h, pre = '') {
-    const s = String(h == null ? '' : h).replace(/^#/, '');
-    let n;
-    if (!s || s === 'home') n = 'home';
-    else if (s.startsWith('g-')) n = 'genus';
-    else if (s.startsWith('cmp-')) n = 'compare';
-    else if (s === 'cmp' || s.startsWith('cmp|')) n = 'lookalikes';
-    else if (s === 'quiz-board') n = 'progress';
-    else {
-      n = s.split('|')[0].split(';')[0];
-      if (!PAGES.RE.test(n)) n = 'other';
-    }
+    const s = String(h == null ? '' : h).replace(/^#/, ''),
+      p = routeOut(s, Object.assign({}, routeSubj0(), {hash: ''})),
+      seg = p == null ? null : p.split('?')[0].split('/');
+    let n = !s || s === 'home' ? 'home' : !seg ? 'other' : seg.slice(0, 2).join('.');
+    if (!PAGES.RE.test(n)) n = 'other';
     if (!pre) return n;
     return PAGES.RE.test(pre + n) ? pre + n : pre + 'other';
   }
+  // routes: end
+  // routes-migration: begin
+  // The data written under the old addresses and page names (before the URL refonte of 2026-11-05, Q53-Q56), moved once
+  // (rule W3: no old address is read anywhere else; the app moves its own stored data at start-up, migrateRoutes; the
+  // sheet moves its rows once, Code.gs ONCE_ in its own PR). The old addresses were today's page keys, so routeOut is
+  // their translation. Delete this with its callers once every device and the sheet have moved.
+  // An old address (the raw hash, without '#') to its new one; a new or unknown one is left as it is.
+  const routeRename = h => {
+    const s = String(h == null ? '' : h).replace(/^#/, ''),
+      n = s === 'home' ? 'home' : routeOut(s === 'quiz-board' ? 'progress' : s === 'credits' ? 'about' : s);
+    return n == null ? s : n;
+  };
+  // An old page name (genus, compare, lookalikes, quiz, fish.quiz, lab-anatomy…) to its new one (learn.genus,
+  // learn.compare, learn.look-alikes, practice.quiz, fish.practice.quiz, tools.anatomy); a new one is left as it is.
+  const PAGE_OLD = {genus: 'g-x', compare: 'cmp-x|y', lookalikes: 'cmp'};
+  function pageRename(n) {
+    const s = String(n == null ? '' : n),
+      S = SUBJECTS.find(x => x.pv && s.startsWith(x.pv)),
+      pre = S ? S.pv : '',
+      b = s.slice(pre.length);
+    if (
+      /^(learn|practice|identify|leaderboard|tools)\./.test(b) ||
+      ['home', 'progress', 'about', 'other', 'tools', 'leaderboard'].includes(b)
+    )
+      return s;
+    const k = PAGE_OLD[b] || (b === 'lab' ? 'lab' : b),
+      m = pageName(k, pre);
+    return m === pre + 'other' ? s : m;
+  }
+  // This device's data under the old names (app.js and admin.js at start-up, after migrateIdKey): the photo size per page
+  // (reefid-sync-size, keyed by page name: genera, genus, pair, idkey, lab-gallery, lab-elim; tips dropped), the events
+  // still queued (reefid-evq: each one's address, a visit summary's page names), the photos flagged (reefid-photo-flags:
+  // where they were seen). Idempotent (a value the sheet sends back from an older device is moved at the next start).
+  // Returns the keys it wrote.
+  const SIZE_OLD = {
+    genera: 'learn.genera',
+    genus: 'learn.genus',
+    pair: 'learn.compare',
+    idkey: 'identify.key',
+    'lab-gallery': 'tools.gallery',
+    'lab-elim': 'tools.elim',
+    tips: null
+  };
+  function migrateRoutes(s) {
+    try {
+      s = s || localStorage;
+    } catch (e) {
+      return [];
+    }
+    const done = [],
+      edit = (k, f) => {
+        try {
+          const v = s.getItem(k);
+          if (v === null) return;
+          const w = JSON.stringify(f(JSON.parse(v)));
+          if (w !== v) (s.setItem(k, w), done.push(k));
+        } catch (e) {}
+      };
+    edit('reefid-sync-size', o => {
+      if (!isObj(o)) return o;
+      Object.keys(SIZE_OLD).forEach(a => {
+        if (!Object.prototype.hasOwnProperty.call(o, a)) return;
+        if (SIZE_OLD[a] && !Object.prototype.hasOwnProperty.call(o, SIZE_OLD[a])) o[SIZE_OLD[a]] = o[a];
+        delete o[a];
+      });
+      return o;
+    });
+    edit('reefid-evq', L =>
+      !Array.isArray(L)
+        ? L
+        : L.map(x => {
+            if (!isObj(x)) return x;
+            const y = {...x};
+            if (typeof y.pg === 'string') y.pg = routeRename(y.pg).slice(0, 60);
+            if (isObj(y.r)) {
+              const r = {};
+              Object.keys(y.r).forEach(n => {
+                const m = pageRename(n),
+                  a = r[m],
+                  b = y.r[n];
+                r[m] = Array.isArray(a) && Array.isArray(b) ? [a[0] + b[0], a[1] + b[1]] : b;
+              });
+              y.r = r;
+            }
+            return y;
+          })
+    );
+    edit('reefid-photo-flags', L =>
+      !Array.isArray(L)
+        ? L
+        : L.map(x => {
+            if (!isObj(x) || typeof x.where !== 'string') return x;
+            const [h, ...rest] = x.where.split(' · ');
+            return {...x, where: [h === 'home' ? h : routeRename(h) || 'home', ...rest].join(' · ')};
+          })
+    );
+    return done;
+  }
+  // routes-migration: end
   // A page name read back (admin): its subject (by its SUBJECTS pv prefix) and its page ('fish.quiz' -> ['fish', 'quiz'],
   // 'quiz' -> ['coral', 'quiz']).
   function pageSubj(n) {
@@ -2971,9 +3197,9 @@
   // How a genus sheet was reached, from the page it was opened from.
   function pageFrom(h) {
     const n = pageName(h);
-    if (/^quiz/.test(n)) return 'quiz';
-    if (['genera', 'genus', 'compare', 'lookalikes', 'pairs'].includes(n)) return 'learn';
-    if (['progress', 'ach', 'board'].includes(n)) return 'progress';
+    if (/^practice\.(quiz|custom|duels)$/.test(n)) return 'quiz';
+    if (/^learn\.(genera|genus|compare|look-alikes)$/.test(n) || n === 'practice.memory') return 'learn';
+    if (/^(progress|leaderboard)/.test(n)) return 'progress';
     return 'other';
   }
   const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0});
@@ -2993,7 +3219,7 @@
   function pagesOpen(S, h, now, o = {}) {
     pagesStop(S, now);
     const n = pageName(h, o.pre),
-      g = n === 'genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
+      g = n === 'learn.genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
     (S.r[n] = S.r[n] || [0, 0])[0]++;
     if (g) (S.g[g] = S.g[g] || [0, 0, PAGES.FROM.includes(o.from) ? o.from : 'other', o.asked ? 1 : 0])[0]++;
     S.cur = {n, g, from: g ? S.g[g][2] : '', asked: g ? S.g[g][3] : 0};
@@ -3288,6 +3514,13 @@
     rvMsgs,
     learnedOf,
     PAGES,
+    ROUTE_SUBJ,
+    ROUTE_FIRST,
+    routeOut,
+    routeIn,
+    routeRename,
+    pageRename,
+    migrateRoutes,
     pageName,
     pageSubj,
     pageFrom,

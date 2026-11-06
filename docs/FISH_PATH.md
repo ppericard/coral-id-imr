@@ -384,7 +384,7 @@ coral Lab prototype of photo-to-trait, "Spot the feature" (`proto/spot.js`), sta
 
 ## My progress (fish)
 
-Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#lab-fishprog`), so the page reads at every stage, from a beginner
+Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#tools/fishprog`), so the page reads at every stage, from a beginner
 on families only to an IMR RA with every species open:
 
 - **One global fish progress score** (Pierre, 2026-11-04; replaces "the entry bar counts the entries only; species never enter it"): the

@@ -27,7 +27,7 @@ let gfOpen = false; // phone Filter fold on Genera, kept open across redraws
 // Step 0 of the Learn path (Pierre, 2026-11-03): Coral basics before the genus sheets, as the first card of the Genera
 // page ("0 · Coral basics" in the lecture order, the first card in the slate order), with where the player is in it.
 // It always opens step 1 (Pierre, 2026-11-04: a card at the start of the path starts the path); the Basics tab, Home and
-// the quiz's offers open #basics, which resumes at the last step seen.
+// the quiz's offers open #learn/basics, which resumes at the last step seen.
 const BASICS_STEPS = 7;
 // The card's picture (Pierre, 2026-11-04, mockup A3 of four proposals): the seven steps as a trail of line drawings,
 // from the colony down to the septal teeth and back out to the growth forms, each stop a soft disc in its own colour
@@ -111,7 +111,7 @@ function basicsCard(tips) {
         : `${BASICS_STEPS} short steps · about 5 min`,
     say = 'Polyp, corallite, septa, walls, growth forms: the words the ID tips use, on real photos.',
     art = basicsArt(),
-    to = '#basics|' + BASICS_TRAIL[0][0];
+    to = hr('basics|' + BASICS_TRAIL[0][0]);
   return tips
     ? `<article class="tipg bxtip"><a href="${to}" class="tipph">${art}<i>Coral basics</i></a><div><p class="note">${state}</p><p>${say}</p></div></article>`
     : `<a class="card bxcard${done ? ' done' : ''}" href="${to}">${art}<span class="cap"><b>Coral basics</b><small>${state}</small><p>${say}</p></span></a>`;
@@ -201,8 +201,8 @@ function viewGenera() {
   qi.onkeydown = e => {
     if (e.key !== 'Enter') return;
     const q = qi.value.trim().toLowerCase(),
-      L = [...document.querySelectorAll('#azgrid a[href^="#g-"]')];
-    const name = a => decodeURIComponent(a.getAttribute('href').slice(3)).toLowerCase();
+      L = [...document.querySelectorAll(`#azgrid a[href^="${hr('g-x').slice(0, -1)}"]`)];
+    const name = a => (routeIn(a.getAttribute('href')).key || '').slice(2).toLowerCase();
     const a = L.find(x => name(x).startsWith(q)) || L.find(x => name(x).includes(q)) || L[0];
     if (a) {
       e.preventDefault();
@@ -339,7 +339,7 @@ function viewGenus(name) {
         ${imr.length ? cfList : ''}
         ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
         ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-        <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#idkey|form=${l.id[0]};box=${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
+        <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="${esc(hr('idkey|form=' + l.id[0] + ';box=' + l.id))}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
         <p class="note refs"><b>References:</b> ${imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
         </details>
       </div>
@@ -369,7 +369,7 @@ function myProg(n) {
     pc = Math.round(100 * genScore(n)),
     m = k === 'ok' ? [] : missing(n);
   return (
-    `<p class="myprog"><a class="mpl s${st}${k === 'weak' ? ' weak' : ''}" href="#progress" title="My progress">${lvIcon(st)}${MASTERY[st][0]}${k === 'weak' ? ' · ' + t : ''}${st > 0 && st < 5 ? ` <small class="pct" style="--p:${pc}%">${pc}%</small>` : st === 5 ? ' ✓' : ''}</a>` +
+    `<p class="myprog"><a class="mpl s${st}${k === 'weak' ? ' weak' : ''}" href="${esc(hr('progress'))}" title="My progress">${lvIcon(st)}${MASTERY[st][0]}${k === 'weak' ? ' · ' + t : ''}${st > 0 && st < 5 ? ` <small class="pct" style="--p:${pc}%">${pc}%</small>` : st === 5 ? ' ✓' : ''}</a>` +
     `<span>${k === 'weak' ? `Under ${Math.round(100 * OPEN.P)}% expected right on a typical photo of it. ` : ''}${m.length ? 'Still needed: ' + esc(m.join('; ')) + '.' : 'You know this genus.'}</span></p>`
   );
 }
@@ -439,7 +439,7 @@ function lookHub(name) {
     ${L.map(n => {
       const m = mixedUp(name, n),
         side = DATA.gen[name] && DATA.gen[n];
-      return `<a class="lt" href="${side ? `#cmp-${esc(name)}|${esc(n)}` : `#g-${esc(n)}`}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : D.has(n) ? '<small class="lsrc">Often mixed up by players</small>' : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
+      return `<a class="lt" href="${esc(hr(side ? `cmp-${name}|${n}` : `g-${n}`))}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : D.has(n) ? '<small class="lsrc">Often mixed up by players</small>' : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
     }).join('')}</div>
     ${cmpShots([name])}`;
 }
@@ -541,7 +541,7 @@ const srcTag = src =>
     ? `<b class="lect">IMR lecture</b> ${esc(src.replace(/^IMR Lecture 6:?\s*/, ''))}`
     : `<b class="lect cf">Coral Finder</b> ${esc(src.replace(/^Coral Finder /, ''))}`;
 // Learn > Look-alikes: a deck of the classic pairs, one montage per screen, the reader's mix-ups first.
-// #cmp opens the first one, #cmp|A|B a given pair; arrows, keys and swipes go through the deck.
+// #learn/look-alikes opens the first one, #learn/look-alikes/A/B a given pair; arrows, keys and swipes go through the deck.
 // "Drill this pair" only for two genera the player has unlocked (model.js unlocked: the Duel tab opens none, one
 // progression path for every game, Pierre 2026-11-04).
 const drillOk = (a, b) => typeof unlocked !== 'function' || unlocked([a, b]).length === 2;
@@ -566,10 +566,10 @@ function viewLookalikes(a, b) {
       x = mix(m);
     const half = (n, p, k) =>
       `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
-    const tip = (n, g) => `<div class="lktip"><a href="#g-${esc(n)}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
+    const tip = (n, g) => `<div class="lktip"><a href="${esc(hr('g-' + n))}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
     const deck = L.map(
       (d, k) =>
-        `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="#cmp|${esc(d.A)}|${esc(d.B)}" title="${esc(d.A)} or ${esc(d.B)}"><span><img ${thumb(d.pa, '64px')} alt="" loading="lazy"><img ${thumb(d.pb, '64px')} alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`
+        `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="${esc(hr('cmp|' + d.A + '|' + d.B))}" title="${esc(d.A)} or ${esc(d.B)}"><span><img ${thumb(d.pa, '64px')} alt="" loading="lazy"><img ${thumb(d.pb, '64px')} alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`
     ).join('');
     // The intro goes behind ? (pageHelp) only on the first draw: re-adding it on each step pushed the deck down while the
     // montage was being sized, and it came out squashed once the intro left (Pierre, phone).
@@ -580,7 +580,7 @@ function viewLookalikes(a, b) {
         <div class="lkm${dir ? ' in' + (dir > 0 ? 'r' : 'l') : ''}">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}<button type="button" class="lkarr prev" data-lstep="-1" aria-label="Previous pair">‹</button><button type="button" class="lkarr nxt" data-lstep="1" aria-label="Next pair">›</button>${hint ? '<span class="lkhint" aria-hidden="true">Swipe for the next pair</span>' : ''}</div>
         <div class="lktips">${tip(m.A, gA)}${tip(m.B, gB)}</div>
         <div class="lknav"><span class="lkn">Pair ${i + 1} / ${L.length}</span>
-          <a class="linkish lkall" href="#cmp-${esc(m.A)}|${esc(m.B)}">All views</a>${drillOk(m.A, m.B) ? `<a class="next" href="#quiz-duel|${esc(m.A)}|${esc(m.B)}">Drill this pair</a>` : ''}</div>
+          <a class="linkish lkall" href="${esc(hr('cmp-' + m.A + '|' + m.B))}">All views</a>${drillOk(m.A, m.B) ? `<a class="next" href="${esc(hr('quiz-duel|' + m.A + '|' + m.B))}">Drill this pair</a>` : ''}</div>
       </div>
       <aside class="lkdeck" aria-label="Classic look-alikes">${deck}</aside>
     </div>`;
@@ -636,7 +636,7 @@ function viewLookalikes(a, b) {
       store.set('reefid-sync-lkswiped', 1);
     }
     i = (k + L.length) % L.length;
-    history.replaceState({d: pageDepth}, '', `#cmp|${L[i].A}|${L[i].B}`);
+    history.replaceState({d: pageDepth}, '', hr(`cmp|${L[i].A}|${L[i].B}`));
     draw();
   };
   const keys = e => {
@@ -665,7 +665,7 @@ function viewCompare(a, b) {
     B = gameGenus(b) && GX(b);
   if (!A || !B) return viewLookalikes();
   const col = (n, g) =>
-    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="#g-${esc(n)}">Sheet ›</a></h3><p class="note">${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
+    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="${esc(hr('g-' + n))}">Sheet ›</a></h3><p class="note">${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => {
@@ -694,7 +694,7 @@ function viewCompare(a, b) {
     back
       ? '<div class="cmpfabpad" aria-hidden="true"></div><button type="button" class="next cmpfab" data-duelback>Back to the duel</button>'
       : drillOk(a, b)
-        ? `<p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`
+        ? `<p><a class="next" href="${esc(hr('quiz-duel|' + a + '|' + b))}">Drill this pair</a></p>`
         : ''
   }`;
   $v.querySelectorAll('[data-duelback]').forEach(x => (x.onclick = duelBack));
@@ -706,7 +706,7 @@ function viewCompare(a, b) {
   bindCards();
   bindGo();
 }
-// Fish families (#genera with the fish subject, app.js UNITS list): the IMR entries by the groups of the identification
+// Fish families (#learn/genera with the fish subject, app.js UNITS list): the IMR entries by the groups of the identification
 // key in force (fish.json key: for the Indo-Pacific, the index of a reef fish ID book; rule S3), in the key's
 // order, only the groups that hold an entry, each under its number and title as the key prints them; each entry with a
 // photo, its IMR cues and how IMR tells its look-alikes apart; then the opt-in circles the player has on. The key is
