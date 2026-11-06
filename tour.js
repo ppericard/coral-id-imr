@@ -15,19 +15,39 @@
   // (no Skip and no Next until answered; Escape still closes the tour, and the quiz then asks it on a card, quiz.js
   // startAskShow). Its answer is kept at once (model.js startSet), so the first cards of the quiz under the tour already
   // follow it. "I'm new to corals" turns the last button into Coral basics (about 5 minutes), the quiz beside it.
+  // pick: which subject to start with (Pierre, 2026-11-06: new players choose between Corals and Fish, no more
+  // defaulting to Corals), only for a player who has two subjects or more (app.js subjMine; fish today: the admin and its
+  // group): a forced choice like ask, first, that also says the app has two subjects; the steps after it speak of the
+  // subject picked (UNITS tour: its words for a step, these below being the corals'), and swap shows where to switch.
+  // Everyone else gets the steps as they were, with no word of the other subjects. See plan() below.
   // "Tap" on a touch screen, "Click" with a mouse (as the tip card and the enlarge hint say).
   const TAP = matchMedia('(hover: hover) and (pointer: fine)').matches ? 'Click' : 'Tap';
-  const STEPS = [
-    {h: '', ask: true},
-    {
+  const DEF = {
+    pick: {k: 'pick', h: '', pick: true},
+    // Where to switch: the Corals | Fish row on Home (the header chip where the row is not shown).
+    swap: {
+      k: 'swap',
+      h: '',
+      sel: '.hsubj',
+      alt: '#subjb',
+      t: () =>
+        `${subjMine()
+          .map(S => S.name)
+          .join(' or ')}, any time`,
+      d: 'Switch here, or with the button next to the logo, on any page. Each subject keeps its own progress.'
+    },
+    ask: {k: 'ask', h: '', ask: true},
+    doors: {
+      k: 'doors',
       h: '',
       sel: '.hdoors',
       tall: 'end',
       t: 'Two ways in',
       d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive.'
     },
-    {h: '', signin: true},
-    {
+    signin: {k: 'signin', h: '', signin: true},
+    games: {
+      k: 'games',
       h: 'quiz',
       sel: '#modes',
       plus: 'nav [data-tab=practice]',
@@ -35,24 +55,55 @@
       t: 'Four games',
       d: 'Practice in the menu opens the games. Quiz: name the genus from photos. Custom quiz: the same on the genera you pick. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'
     },
-    {
+    progress: {
+      k: 'progress',
       h: 'quiz',
       sel: '#prog',
       alt: 'nav [data-tab=progress]',
       t: 'Your progress',
       d: `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${TAP} to see every genus of the IMR slate: the coral genera IMR records on its reef surveys, plus a few look-alikes.`
     },
-    {
+    help: {
+      k: 'help',
       h: 'quiz',
       sel: '#help',
       t: 'Help on every page',
       d: `${TAP} ? for what a page does, to send feedback, and for the credits. ⚙ sets the theme and colours. Replay this tour from ?.`,
       also: '#setb'
     }
-  ].filter(s => !s.signin || SYNC_URL);
+  };
+  // The steps for this player, worked out again at each step (the subject picked changes the words; a sign-in can open a
+  // subject). Everyone with one subject: the six steps as they were. Two subjects or more from the start: pick, the picked
+  // subject's question, swap, then the rest. A subject that opens on signing in during the tour (a player of the fish group
+  // on a new device: the sheet's reply names the group, sync.js groupsSeen, and the page reloads back on the sign-in step)
+  // brings pick and swap right after the sign-in step, the steps before it unchanged so the step number stays right, and
+  // the new subject's question when it is not the one already asked. OPEN: what the tour started with ({two, s}: two
+  // subjects or more, the subject on screen), kept across that reload.
+  let OPEN = null;
+  function plan() {
+    const two = subjMine().length > 1,
+      ks = !two
+        ? ['ask', 'doors', 'signin', 'games', 'progress', 'help']
+        : OPEN && !OPEN.two
+          ? ['ask', 'doors', 'signin', 'pick', ...(SUBJ.id !== OPEN.s ? ['ask'] : []), 'swap', 'games', 'progress', 'help']
+          : ['pick', 'ask', 'swap', 'doors', 'signin', 'games', 'progress', 'help'];
+    return ks.map(k => DEF[k]).filter(s => !s.signin || SYNC_URL);
+  }
+  let STEPS = [];
+  // A step's title and text: the subject's own words for it (UNITS tour[k]: {t, d}), else the step's (the corals'); either
+  // may be a function (d of "Tap" / "Click").
+  const words = s => {
+    const u = (UNITS[SUBJ.id].tour || {})[s.k] || {},
+      t = u.t || s.t,
+      d = u.d || s.d;
+    return [typeof t === 'function' ? t() : t, typeof d === 'function' ? d(TAP) : d];
+  };
+  const NUM = ['', 'one', 'two', 'three', 'four']; // how many subjects, in words (pick)
   let root = null,
     step = 0,
     token = 0,
+    picking = false, // a subject picked is loading (pick): the tour waits, buttons and keys alike
+    saving = Promise.resolve(), // the first-launch answer being saved (ask), for the subject it was asked for
     target = null,
     tick = null;
   const vis = el => {
@@ -72,6 +123,7 @@
   }
   // Wait for the page to render the step's element (a route can take a frame or two), then spotlight it.
   function show(i) {
+    STEPS = plan();
     step = Math.max(0, Math.min(STEPS.length - 1, i));
     try {
       sessionStorage.setItem(KEY, String(step));
@@ -130,18 +182,71 @@
     const s = STEPS[step],
       last = step === STEPS.length - 1,
       b = root.querySelector('.tbub'),
-      cur = (store.get(startKey(SUBJ.id), null) || {}).c,
+      // The answer already given: the subject's question, or the subject picked (a saved choice: this tour's, or the
+      // account's once signed in), so Back shows it and Next goes on.
+      cur = s.pick ? (store.get(SUBJECT_KEY, null) ? SUBJ.id : null) : (store.get(startKey(SUBJ.id), null) || {}).c,
+      forced = s.ask || s.pick,
       // The last step of a player new to corals: Coral basics first (5 min), the quiz beside it.
       bas = last && cur && startVars(cur).basics && basicsDue();
     // The sign-in step holds the real sign-in box (bindSync in app.js); its Next reads "Later" until the RA has signed in.
+    // The subject to start with: one big button per subject, its icon, name, beta tag and line (UNITS pick), the app's
+    // subjects named above them ("IMR Reef ID has two subjects: corals and fish").
+    const mine = subjMine(),
+      n = mine.length,
+      [t, d] = words(s);
     const body = s.signin
       ? '<section class="sync tsync"></section>'
-      : s.ask
-        ? `<h3>${esc(SUBJ.start.q)}</h3><p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(cur)}`
-        : `<h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>`;
+      : s.pick
+        ? `<h3>What do you want to start with?</h3><p>${esc(ORG.app)} has ${NUM[n] || n} subjects: ${esc(
+            mine
+              .map(S => S.name.toLowerCase())
+              .join(', ')
+              .replace(/, ([^,]*)$/, ' and $1')
+          )}. Play ${n > 2 ? 'any' : 'either'} one and switch at any time: each keeps its own progress.</p>
+          <div class="startopts tpicks" role="group" aria-label="What do you want to start with?">${mine
+            .map(
+              S =>
+                `<button type="button" class="startopt tpick" data-pick="${S.id}" aria-pressed="${S.id === cur}">${subjIcon(S, 28)}<span><b>${esc(S.name)}${S.beta ? '<small class="beta">beta</small>' : ''}</b><small>${esc(UNITS[S.id].pick || '')}</small></span></button>`
+            )
+            .join('')}</div>`
+        : s.ask
+          ? `<h3>${esc(SUBJ.start.q)}</h3><p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(cur)}`
+          : `<h3>${esc(t)}</h3><p>${esc(d)}</p>`;
     b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${body}
-      <div class="tnav">${s.ask ? '<span></span>' : `<button type="button" class="linkish tskip">${last ? (bas ? 'Start playing' : 'Close') : 'Skip tour'}</button>`}<span>
-      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}${s.ask && !cur ? '' : `<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? (bas ? 'Coral basics (5 min)' : 'Start playing') : s.signin && !SYNC ? 'Later' : 'Next'}</button>`}</span></div>`;
+      <div class="tnav">${forced ? '<span></span>' : `<button type="button" class="linkish tskip">${last ? (bas ? 'Start playing' : 'Close') : 'Skip tour'}</button>`}<span>
+      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}${forced && !cur ? '' : `<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? (bas ? 'Coral basics (5 min)' : 'Start playing') : s.signin && !SYNC ? 'Later' : 'Next'}</button>`}</span></div>`;
+    // Picked: kept on this device and synced (SUBJECT_KEY, as the switch does), the subject's data loaded and every page
+    // redrawn for it (setSubject), then the next step: that subject's question. The buttons wait meanwhile (fish.json on a
+    // slow line); a failed load leaves the choice open.
+    if (s.pick)
+      b.querySelectorAll('[data-pick]').forEach(
+        o =>
+          (o.onclick = () => {
+            const id = o.dataset.pick,
+              all = [...b.querySelectorAll('[data-pick], .tnext, .tback')],
+              my = token;
+            // Next, Back and the arrow keys wait too, so the question drawn next is the picked subject's (Codex review #629).
+            picking = true;
+            all.forEach(x => {
+              if (x.dataset.pick) x.setAttribute('aria-pressed', String(x === o));
+              x.disabled = true;
+            });
+            // An answer still being saved (tier 2 on a slow line) is kept for its own subject before the switch (Codex
+            // review #629: startSet writes to the subject on screen).
+            saving
+              .catch(() => {})
+              .then(() => setSubject(id))
+              .then(() => {
+                picking = false;
+                store.set(SUBJECT_KEY, SUBJ.id);
+                if (my === token && root) show(step + 1);
+              })
+              .catch(() => {
+                picking = false;
+                all.forEach(x => (x.disabled = false));
+              });
+          })
+      );
     if (s.ask)
       b.querySelectorAll('[data-start]').forEach(
         o =>
@@ -149,7 +254,7 @@
             const c = o.dataset.start;
             b.querySelectorAll('[data-start]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
             // model.js comes with the quiz tier; the answer is kept as soon as it is in (a first visit on a slow line).
-            if (c !== cur) need(2).then(() => startSet(c, 'tour'));
+            if (c !== cur) saving = need(2).then(() => startSet(c, 'tour'));
             show(step + 1);
           })
       );
@@ -324,8 +429,10 @@
     if (!root) return;
     const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step + 1).some(s => s.signin);
     token++;
+    picking = false;
     try {
       sessionStorage.removeItem(KEY);
+      sessionStorage.removeItem(KEY + '-open');
     } catch (e) {}
     clearInterval(tick);
     root.remove();
@@ -346,10 +453,11 @@
   function onKey(e) {
     if (e.key === 'Escape') return close(null, true);
     if (e.target.closest && e.target.closest('input, textarea, select')) return;
+    if (picking && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return e.preventDefault();
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       // The first-launch question is answered before the tour goes on (forced, Pierre 2026-11-03).
-      if (STEPS[step].ask && !root.querySelector('.tbub [data-start][aria-pressed="true"]')) return;
+      if ((STEPS[step].ask || STEPS[step].pick) && !root.querySelector('.tbub .tnext')) return;
       show(step + 1);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -360,6 +468,15 @@
     if (root || typeof DATA === 'undefined' || !DATA) return;
     try {
       localStorage.setItem(KEY, '1');
+    } catch (e) {}
+    // What the tour starts with (plan): read back when it comes back after a sign-in's reload (at > 0), else now.
+    OPEN = null;
+    try {
+      if (at) OPEN = JSON.parse(sessionStorage.getItem(KEY + '-open'));
+    } catch (e) {}
+    if (!OPEN || typeof OPEN !== 'object') OPEN = {two: subjMine().length > 1, s: SUBJ.id};
+    try {
+      sessionStorage.setItem(KEY + '-open', JSON.stringify(OPEN));
     } catch (e) {}
     $helpbox.hidden = true;
     $help.setAttribute('aria-expanded', 'false');

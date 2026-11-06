@@ -414,9 +414,15 @@ async function overlays(b, base) {
     const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('reefid-nudge', '1'));
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+    // Fish open to every player (Q158): the subject to pick first (tour.js pick), and where to switch after the question.
+    const two = !!(await p.$('#tour [data-pick="coral"]'));
+    if (two) {
+      await p.click('#tour [data-pick="coral"]');
+      await p.waitForSelector('#tour [data-start="imr"]', {timeout: 5000}).catch(() => {});
+    }
     await p.click('#tour [data-start="imr"]'); // the first-launch question first (tour.js ask): it moves on by itself
     await p.waitForTimeout(300);
-    for (let k = 0; k < at; k++) {
+    for (let k = 0; k < at + (two ? 1 : 0); k++) {
       await p.keyboard.press('ArrowRight');
       await p.waitForTimeout(300);
     }
@@ -1765,6 +1771,9 @@ async function signin(base) {
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),
     async p => {
+      // Fish open to all (Q158): the tour starts with the subject to play (#629); the corals.
+      await p.waitForSelector('#tour [data-pick], #tour [data-start]', {timeout: 10000}).catch(() => {});
+      if (await p.$('#tour [data-pick="coral"]')) await p.click('#tour [data-pick="coral"]');
       await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
       if (await p.$('#tour [data-start]')) await p.click('#tour [data-start="imr"]'); // the first-launch question
       await p.waitForSelector('#tour .tnext', {timeout: 10000}).catch(() => {});
@@ -2045,11 +2054,22 @@ async function replayAdoptCheck(base) {
 // once over a new question when the first answers do not fit, never twice; Coral basics is the first Learn tab and the
 // "0" block of Genera, out of the Lab list with a link kept there; the Home line until it is done; a glossary term
 // links to its step; done = every step seen, with its achievement. Returns the failures.
+// Fish opens to all since 2026-11-06 (Q158): a check about the corals-only onboarding (one subject: the start question
+// first, no subject pick) serves core.js with fish back to open: 'group' (the two-subject tour: subjTour).
+const oneSubject = c =>
+  c.route(
+    u => new URL(u).pathname === '/core.js',
+    async r => {
+      const res = await r.fetch();
+      await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+    }
+  );
 async function startSmoke(b, base) {
   const fails = [],
     errs = [];
   const open = async (init, vp = {width: 390, height: 844}) => {
     const c = await b.newContext({viewport: vp, serviceWorkers: 'block', intro: true});
+    await oneSubject(c);
     await c.route(
       u => !u.href.startsWith(base),
       r => r.abort()
@@ -3612,12 +3632,19 @@ async function newPlayer(b, base) {
   await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000}).catch(() => {});
   if (!(await p.$('#tour'))) fails.push('new player: no welcome tour on the first visit');
   // The tour, step by step, to its end; its first-launch question (forced, no Next) answered "I'm new to corals".
-  for (let k = 0; k < 12 && (await p.$('#tour .tnext, #tour [data-start]')); k++) {
+  // Fish open to all (Q158): the tour's first step asks which subject to start with (#629); this player picks the corals.
+  for (let k = 0; k < 12 && (await p.$('#tour .tnext, #tour [data-start], #tour [data-pick]')); k++) {
     const o = await over();
     alone(o, `tour step ${k + 1}`);
     seen.tour = k + 1;
     const step = await p.evaluate(() => document.getElementById('tour').textContent);
-    await p.click((await p.$('#tour [data-start]')) ? '#tour [data-start="new"]' : '#tour .tnext');
+    await p.click(
+      (await p.$('#tour [data-start]'))
+        ? '#tour [data-start="new"]'
+        : (await p.$('#tour [data-pick]')) && !(await p.$('#tour .tnext'))
+          ? '#tour [data-pick="coral"]'
+          : '#tour .tnext'
+    );
     await p
       .waitForFunction(s => !document.getElementById('tour') || document.getElementById('tour').textContent !== s, step, {timeout: 5000})
       .catch(() => fails.push(`new player: tour step ${k + 1} did not move on`));
@@ -3895,20 +3922,248 @@ async function onePath(b, base) {
   return fails;
 }
 
+// The subject to start with (Pierre, 2026-11-06; tour.js pick, plan): a player with one subject gets the six steps as
+// before, with no word of another subject; a player of the fish group gets the subject choice first, forced, then that
+// subject's question, where to switch, and the rest in that subject's words; a group member who signs in during the tour
+// gets the choice right after the sign-in step; with fish open to all (core.js open: 'all'), a signed-out new player
+// gets it too. Fish photos are not fetched (every other host is aborted). Returns the failures.
+async function subjTour(b, base) {
+  const fails = [],
+    errs = [];
+  // mode: 'plain' (no group), 'group' (signed in, in the fish group), 'late' (signed out; signing in to their existing
+  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out).
+  const open = async mode => {
+    const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    // Fish opens to all since 2026-11-06 (Q158): 'all' serves core.js as it is; the group cases serve it with fish back to
+    // open: 'group'.
+    await c.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
+        await r.fulfill({response: res, body: mode === 'all' ? t : t.replace("open: 'all'", "open: 'group'")});
+      }
+    );
+    await c.addInitScript(mode => {
+      try {
+        if (!sessionStorage.getItem('st-init')) {
+          sessionStorage.setItem('st-init', '1');
+          localStorage.setItem('reefid-nudge', '1');
+          localStorage.setItem('reefid-board-told', '1');
+          localStorage.setItem('reefid-board-sent14', '1');
+          if (mode === 'group') {
+            localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234'}));
+            localStorage.setItem('reefid-groups', JSON.stringify({n: 'Ana', g: ['fish']}));
+          }
+        }
+      } catch (e) {}
+      const g = mode === 'plain' || mode === 'all' ? [] : ['fish'];
+      window.SHEET_STUB = (url, o) =>
+        Promise.resolve({
+          json: () =>
+            Promise.resolve(
+              o && o.method === 'POST'
+                ? {ok: true, log: true, rev: 2, v: 56, groups: g}
+                : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: [], v: 56, groups: g}
+            )
+        });
+    }, mode);
+    const p = await c.newPage();
+    p.on('pageerror', e => errs.push(`${mode}: ${e.message}`));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY && document.querySelector('#tour .tbub .tstep'), null, {timeout: 30000});
+    return [c, p];
+  };
+  // A click that cannot happen is a failure with the bubble as it is, not a throw that hides the other cases.
+  const tap = (p, sel, what) =>
+    p.click(sel, {timeout: 10000}).catch(async () => {
+      const st = await bub(p).catch(() => null),
+        mine = await p.evaluate(() => [subjMine().map(S => S.id), sessionStorage.getItem('reefid-tour-open')]).catch(() => null);
+      fails.push(`subject tour, ${what}: no ${sel} ${JSON.stringify({st, mine})}`);
+    });
+  const bub = p =>
+    p.evaluate(() => {
+      const b = document.querySelector('#tour .tbub');
+      return b && b.querySelector('.tstep')
+        ? {
+            n: b.querySelector('.tstep').textContent.trim(),
+            h: (b.querySelector('h3') || {}).textContent || '',
+            text: b.textContent,
+            pick: [...b.querySelectorAll('[data-pick]')].map(x => x.dataset.pick + (x.querySelector('.beta') ? '+beta' : '')),
+            start: b.querySelectorAll('[data-start]').length,
+            next: (b.querySelector('.tnext') || {}).textContent || null,
+            skip: !!b.querySelector('.tskip'),
+            sync: !!b.querySelector('.tsync'),
+            ring: (document.querySelector('#tour .tring').getAttribute('d') || '').length > 0,
+            subj: SUBJ.id,
+            hash: location.hash
+          }
+        : null;
+    });
+  // Next until the step's title matches (or the tour ends); every step met is collected.
+  const walk = async (p, until) => {
+    const seen = [];
+    for (let k = 0; k < 12; k++) {
+      const s = await bub(p);
+      if (!s) return seen;
+      seen.push(s);
+      if (until && until(s)) return seen;
+      if (!s.next || s.next === 'Start playing') return seen;
+      await tap(p, '#tour .tnext', 'step');
+      await p.waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, s.n, {timeout: 10000}).catch(() => {});
+      await p.waitForTimeout(300);
+    }
+    return seen;
+  };
+  // 1. No group: the steps as before, the first-launch question first, no subject choice, no word of fish.
+  {
+    const [c, p] = await open('plain');
+    const s0 = await bub(p);
+    if (!s0 || s0.n !== '1 / 6' || s0.start !== 3 || s0.pick.length) fails.push(`subject tour, no group: first step ${JSON.stringify(s0)}`);
+    await tap(p, '#tour [data-start="imr"]', 'step');
+    await p.waitForTimeout(400);
+    const all = await walk(p);
+    if (all.length !== 5 || all.some(s => /fish/i.test(s.text) || s.pick.length || s.subj !== 'coral'))
+      fails.push(`subject tour, no group: ${JSON.stringify(all.map(s => [s.n, s.h, s.subj]))}`);
+    await c.close();
+  }
+  // 2. In the fish group: the choice first, forced, both subjects (fish with its beta tag); Fish picked: saved, the fish
+  // question, then where to switch (the Home row spotlit), the rest in fish words; Back shows the pick kept.
+  {
+    const [c, p] = await open('group');
+    const s0 = await bub(p);
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish+beta' || s0.next || s0.skip || !/two subjects/.test(s0.text))
+      fails.push(`subject tour, group: the choice ${JSON.stringify(s0)}`);
+    await p.keyboard.press('ArrowRight');
+    await p.waitForTimeout(300);
+    if (((await bub(p)) || {}).n !== '1 / 8') fails.push('subject tour, group: the arrow key passed the choice');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    const s1 = await bub(p),
+      q = await p.evaluate(() => [SUBJ.start.q, localStorage.getItem('reefid-sync-subject')]);
+    if (!s1 || s1.n !== '2 / 8' || s1.h !== q[0] || s1.subj !== 'fish' || q[1] !== '"fish"')
+      fails.push(`subject tour, group: after picking Fish ${JSON.stringify({s1, q})}`);
+    await tap(p, '#tour .tback', 'step');
+    await p.waitForTimeout(400);
+    const back = await p.evaluate(
+      () => !!document.querySelector('#tour [data-pick="fish"][aria-pressed="true"]') && !!document.querySelector('#tour .tnext')
+    );
+    if (!back) fails.push('subject tour, group: Back to the choice does not show Fish picked with Next');
+    // Picked again: Next, Back and the arrow keys wait while the subject loads, so the question that follows is the picked
+    // subject's (Codex review #629); then the tour goes on by itself, as from Next.
+    const held = await p.evaluate(() => {
+      document.querySelector('#tour [data-pick="fish"]').click();
+      const n = document.querySelector('#tour .tnext'),
+        k = document.querySelector('#tour .tback');
+      return !!n && n.disabled && (!k || k.disabled); // no Back on a first step
+    });
+    if (!held) fails.push('subject tour, group: Next or Back live while the picked subject loads');
+    await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+    await tap(p, '#tour [data-start="imr"]', 'step');
+    await p.waitForTimeout(400);
+    const all = await walk(p),
+      words = await p.evaluate(() => ({doors: UNITS.fish.tour.doors.d, games: UNITS.fish.tour.games.t}));
+    const sw = all[0] || {};
+    if (sw.n !== '3 / 8' || sw.h !== 'Corals or Fish, any time' || !sw.ring)
+      fails.push(`subject tour, group: the switch step ${JSON.stringify(sw)}`);
+    const doors = all.find(s => s.h === 'Two ways in'),
+      games = all.find(s => s.h === words.games);
+    if (!doors || !doors.text.includes(words.doors) || !games || all.some(s => /genus|genera/.test(s.text)))
+      fails.push(`subject tour, group: steps not in fish words ${JSON.stringify(all.map(s => [s.n, s.h]))}`);
+    const last = all[all.length - 1];
+    if (!last || last.n !== '8 / 8' || last.next !== 'Start playing') fails.push(`subject tour, group: last step ${JSON.stringify(last)}`);
+    await tap(p, '#tour .tnext', 'step');
+    await p
+      .waitForFunction(() => !document.getElementById('tour') && location.hash.startsWith(hr('quiz')), null, {timeout: 15000})
+      .catch(() => {});
+    const end = await p.evaluate(() => ({tour: !!document.getElementById('tour'), h: location.hash, q: hr('quiz'), subj: SUBJ.id}));
+    if (end.tour || !end.h.startsWith(end.q) || end.subj !== 'fish')
+      fails.push(`subject tour, group: Start playing ${JSON.stringify(end)}`);
+    await c.close();
+  }
+  // 3. A group member signing in on the tour's sign-in step: back on it after the reload, then the choice; Corals picked
+  // (its question already asked): no second question.
+  {
+    const [c, p] = await open('late');
+    await tap(p, '#tour [data-start="imr"]', 'step');
+    await p.waitForTimeout(400);
+    await walk(p, s => s.sync); // to the sign-in step
+    const s2 = await bub(p);
+    if (!s2 || s2.n !== '3 / 6') fails.push(`subject tour, sign-in: not on the sign-in step ${JSON.stringify(s2)}`);
+    await Promise.all([
+      p.waitForNavigation().catch(() => fails.push('subject tour, sign-in: no reload')),
+      p.evaluate(() => syncGet({name: 'Ana', pin: '1234'}).then(j => signIn('Ana', '1234', j)))
+    ]);
+    await p
+      .waitForFunction(() => window.APP_READY && document.querySelector('#tour .tbub .tstep'), null, {timeout: 30000})
+      .catch(() => fails.push('subject tour, sign-in: no tour after the reload'));
+    await p.waitForTimeout(500);
+    const s3 = await bub(p);
+    if (!s3 || s3.n !== '3 / 8' || s3.next !== 'Next') fails.push(`subject tour, sign-in: after the reload ${JSON.stringify(s3)}`);
+    await tap(p, '#tour .tnext', 'step');
+    await p.waitForSelector('#tour [data-pick]', {timeout: 10000}).catch(() => {});
+    const s4 = await bub(p);
+    if (!s4 || s4.n !== '4 / 8' || s4.pick.length !== 2) fails.push(`subject tour, sign-in: the choice ${JSON.stringify(s4)}`);
+    await tap(p, '#tour [data-pick="coral"]', 'step');
+    await p.waitForTimeout(800);
+    const s5 = await bub(p);
+    if (!s5 || s5.n !== '5 / 8' || s5.h !== 'Corals or Fish, any time')
+      fails.push(`subject tour, sign-in: after Corals ${JSON.stringify(s5)}`);
+    await c.close();
+  }
+  // 4. Fish open to all: a signed-out new player gets the choice; Corals picked: the coral question, the pick saved.
+  {
+    const [c, p] = await open('all');
+    const s0 = await bub(p);
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.length !== 2) fails.push(`subject tour, open to all: first step ${JSON.stringify(s0)}`);
+    await tap(p, '#tour [data-pick="coral"]', 'step');
+    await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+    const s1 = await bub(p),
+      k = await p.evaluate(() => [SUBJ.start.q, localStorage.getItem('reefid-sync-subject')]);
+    if (!s1 || s1.h !== k[0] || s1.subj !== 'coral' || k[1] !== '"coral"')
+      fails.push(`subject tour, open to all: Corals ${JSON.stringify({s1, k})}`);
+    await c.close();
+  }
+  if (errs.length) fails.push(`subject tour: page errors ${errs.slice(0, 3).join(' | ')}`);
+  return fails;
+}
+
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
 // the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
-// the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath).
-const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'onepath', 'signin', 'replay'],
+// the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); subjtour: the subject to start with in
+// the tour, for a player with one subject and with two (subjTour).
+const PARTS = [
+    'main',
+    'overlays',
+    'basics',
+    'credits',
+    'visit',
+    'tips',
+    'relief',
+    'start',
+    'subjtour',
+    'newplayer',
+    'onepath',
+    'signin',
+    'replay'
+  ],
   WIDTHS = [390, 1280];
 
 (async () => {
   const run = slot.parts(PARTS, {
       main: ['main', 'overlays'],
-      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'onepath', 'signin', 'replay']
+      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'subjtour', 'newplayer', 'onepath', 'signin', 'replay']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -4384,9 +4639,14 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       const qt = await ct.newPage();
       await qt.goto(base);
       await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
-      await qt.click('#tour [data-start="imr"]'); // the first-launch question, the tour's first step
+      // Fish open to every player (Q158): the tour starts with the subject to pick (tour.js pick), then the question.
+      if (await qt.$('#tour [data-pick="coral"]')) {
+        await qt.click('#tour [data-pick="coral"]');
+        await qt.waitForSelector('#tour [data-start="imr"]', {timeout: 5000}).catch(() => {});
+      }
+      await qt.click('#tour [data-start="imr"]'); // the first-launch question
       await qt.waitForTimeout(400);
-      for (let k = 0; k < 4 && (await qt.evaluate(() => location.hash !== '#practice/quiz')); k++) {
+      for (let k = 0; k < 6 && (await qt.evaluate(() => location.hash !== '#practice/quiz')); k++) {
         await qt.keyboard.press('ArrowRight');
         await qt.waitForTimeout(400);
       }
@@ -4413,7 +4673,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       // Through to the last step and its "Start playing" (already on the quiz): the waiting cards show from the first.
       const first = await qt.evaluate(() => document.querySelector('.unlock.intro h3').textContent);
       const said = [await qt.textContent('#tour')];
-      for (let k = 0; k < 4 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
+      for (let k = 0; k < 6 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
         await qt.click('#tour .tnext');
         await qt.waitForTimeout(400);
         said.push(await qt.textContent('#tour').catch(() => ''));
@@ -4671,6 +4931,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
+  if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
   await b.close();
