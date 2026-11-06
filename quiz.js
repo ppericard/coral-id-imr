@@ -782,42 +782,53 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
 // entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no answer
 // logged, no photo rating). For every player of a subject that has winks (app.js UNITS winks: fish), from circle 1 on
 // (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), whatever opt-in circles are on.
-// Rare, and late (Pierre, 2026-11-06, after his second fish question was the whale shark: the first only after at least
-// 300 fish answers, the next after about 600-700): surprise k (0, 1, ...) is due at the first photo-quiz
-// question from WINK.AT[k] answers of the player's own record for the subject (answersSoFar: P, so a reload or a sign-in
-// keeps the count), the later ones each at least the last gap after the one before (winkAt: 300, 650, 1000, 1350...).
-// It waits WINK.WIN answers at most (a card on screen, another game): past its window it is skipped, so a sign-in on
-// another device past a threshold brings no catch-up. Surprise k shows the k-th wink in turn (whale shark, thresher,
-// then again). Once shown, never again in its window: this visit (WINKS) or this device (sDev('wink'), the surprise last
-// shown). Never over a card (the first-meeting cards, an offer).
-const WINK = {AT: [300, 650], WIN: 50};
-// The answer count from which surprise k is due.
-const winkAt = k => {
-  const A = WINK.AT,
-    m = A.length - 1;
-  return k <= m ? A[k] : A[m] + (k - m) * (m ? A[m] - A[m - 1] : A[0]);
-};
-// The surprise whose window holds answer count a, or -1.
-function winkSlot(a) {
-  let k = 0;
-  while (winkAt(k + 1) <= a) k++;
-  return a >= winkAt(k) && a < winkAt(k) + WINK.WIN ? k : -1;
+// Rare, late, and once per player (Pierre, 2026-11-06: after his second fish question was the whale shark, the first only
+// after at least 300 fish answers, the next after about 600-700; then, 13:31: each surprise once per player, and that's
+// all, across devices): the winks in fish.json order (whale shark, thresher sharks), wink i due at the first photo-quiz
+// question from WINK.AT[i] answers of the player's own record for the subject (answersSoFar: P, so a reload or a sign-in
+// keeps the count) and at least the gap between the first two after the last one shown (a player already past both
+// thresholds meets them 350 answers apart, never back to back). A wink beyond WINK.AT (none yet) would come the same gap
+// later (winkAt). Shown once per player: the winks shown travel with the player (reefid-sync-fish-wink {wink id: answer
+// count when shown}, merged by union at a sync: winkMerge), so another device of the same account never shows one again.
+// Never over a card (the first-meeting cards, an offer).
+const WINK = {AT: [300, 650]};
+const winkGap = () => (WINK.AT.length > 1 ? WINK.AT[1] - WINK.AT[0] : WINK.AT[0]);
+// The answer count from which wink i is due.
+const winkAt = i => (i < WINK.AT.length ? WINK.AT[i] : WINK.AT[WINK.AT.length - 1] + (i - WINK.AT.length + 1) * winkGap());
+const WINKS = {}; // subject id -> the winks shown in this visit (kept if the storage fails)
+const WINKK = () => sKey('wink'); // reefid-sync-fish-wink (core.js subjKey): travels with the player
+const winkSeen = () => ({...(store.get(WINKK(), null) || {}), ...(WINKS[SUBJ.id] || {})});
+// The winks shown on another device of the account (sync.js mergeSubject): the union, the earlier count kept (core.js
+// winkUnion).
+function winkMerge(v) {
+  let r;
+  try {
+    r = typeof v === 'string' ? JSON.parse(v) : v;
+  } catch (e) {
+    return;
+  }
+  const s = store.get(WINKK(), null) || {},
+    m = winkUnion(s, r);
+  if (JSON.stringify(m) !== JSON.stringify(winkUnion(s))) store.set(WINKK(), m);
 }
-const WINKS = {}; // subject id -> the surprise shown in this visit
-const WINKK = () => sDev('wink'); // reefid-fish-wink: the surprise last shown on this device (core.js subjDev)
 function winkDue() {
   const L = UNITS[SUBJ.id].winks(),
-    k = winkSlot(answersSoFar());
-  if (!L.length || k < 0 || WINKS[SUBJ.id] === k || store.get(WINKK(), -1) === k || document.querySelector('.unlock')) return null;
-  return {n: L[k % L.length], k};
+    seen = winkSeen(),
+    i = L.findIndex(n => !(n in seen)),
+    a = answersSoFar(),
+    last = Math.max(-Infinity, ...L.filter(n => n in seen).map(n => seen[n]));
+  if (i < 0 || a < winkAt(i) || a < last + winkGap() || document.querySelector('.unlock')) return null;
+  return {n: L[i]};
 }
-function winkShow({n, k}) {
+function winkShow({n}) {
   const g = GX(n),
     w = g.wink,
     p = pick(g.views.wide),
     ch = shuffle([[n, g.name], ...w.choices]);
-  WINKS[SUBJ.id] = k;
-  store.set(WINKK(), k);
+  const a = answersSoFar();
+  WINKS[SUBJ.id] = {...(WINKS[SUBJ.id] || {}), [n]: a};
+  store.set(WINKK(), {...(store.get(WINKK(), null) || {}), [n]: a});
+  if (typeof syncSoon === 'function') syncSoon(); // the other devices of the account learn it was shown
   SHOWNQ = null;
   $v.innerHTML = `${gameHelp('quiz')}<div class="q bleed wink">
     <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify">${ZOOMI}</button></figure></div>
