@@ -2634,6 +2634,60 @@ never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`; `mo
 in priority, never alone. Why 3: a reference-level photo then wins most first draws on an entry with a few of them among
 twenty-odd very easy photos, while the others still come (a measured first-10 below). Still no source rule.
 
+### The fish draw in big pools (2026-11-06, Q186)
+
+Pierre, 2026-11-06 15:16 (Q180): the fish candidates judged on the rubric enter the game automatically, about 6,600
+photos at once, most of them judged ease 1-3; the four starter entries go from 452 to 2,051 photos. His rule of 14:17
+stands (no wall; the easy photos strongly favoured through the prior and the aim; a photo under ease 4 rarely before
+Open Water). It failed in big pools: an unanswered photo's targeting is wide (sd √(0.7² + `CAL.U` 1) = 1.22 logits,
+against 0.5 an ease point), so the weights of ease 5 and ease 3 differ little, and every observation keeps
+`PICKD.FLOOR` (5%) of the best one's weight, so a thousand hard observations outweigh a few hundred easy ones; the draw
+followed the photo counts. 15:33 (Q186): a per-subject calibration, the corals unchanged. Two `SUBJECTS` `calib` fields
+(`core.js` `CALIB`, `calibOf`), read by `model.js`:
+
+- **`u`** (`calU`, `calSd`): how unsure an unanswered photo's difficulty is (variance). The corals keep `CAL.U` (1: their
+  prior was only the genus's offset when it was set); the fish take **0.25**, one ease step's spread (0.5², `CALIB.ease`
+  squared): every fish photo carries a judged ease, so the prior leads until answers come, as `CAL.N` fades it.
+- **`pool`** (`drawFloor`): the floor is shared over this many observations when a unit has more (each keeps
+  `PICKD.FLOOR` × pool / observations), so the floor's total weighs what a pool-sized unit's does. The corals keep it
+  unbounded (every observation the whole floor, as before); the fish take **30** (a species' candidate cap, about an
+  entry's stopgap pool).
+
+Simulated in the real app (`node tools/fish_draw_sim.js [--photos FILE] [--calib JSON]`: `model.js` `photoSet` drawn 300
+times per entry and stage on a new fish player, the share of photos shown under ease 4). Stages: a new entry, then 10,
+25, 60 and 120 answers with the ability 0.5, 1.2, 2, 2.8. Before → after Q186:
+
+| Pool | Start: worst / mean | 10 answers: worst | 120 answers: share under ease 4 (range) |
+|---|---|---|---|
+| Today's (1,935 photos) | 41% / 18% → 31% / 10% | 59% → 42% (Groupers: 11 very easy photos) | 26-81% → 43-89% |
+| With the candidates (8,561) | 45% / 27% → 17% / 7% | 48% → 32% (Groupers) | 53-79% → 64-88% |
+
+The four starters at the start, with the candidates: Damselfish 17% → 1%, Butterflyfish 16% → 2%, Angelfish 14% → 3%,
+Surgeonfish 37% → 8%. The hard photos are not starved: as the ability rises the target rises past them, and at 60 answers
+half or more of the photos shown are under ease 4 (the distinct photos shown grow with each stage, e.g. Damselfish 136
+at the start to 264 at 120 answers). Swept: u 0.25 with an unbounded pool (start worst 61%: narrowing alone hands the
+floor even more weight), u 0.1 with pool 20 (start worst 13%, close to the chosen pair, a sharper prior than the measure
+behind `CALIB.ease`). `tests/drawcalib.test.js` checks the corals keep `CAL.U` and the whole floor for every pool size;
+`tests/fish.smoke.js` keeps its bound (at most 1/3 under ease 4 before Open Water).
+
+**Learning outcomes** (rules L11-L12; `tools/learnsim.js --subject fish`, today's pool, 4 profiles × 5 seeds, 600
+questions, 1 worker; before = `--calib '{"u":1,"pool":1e9}'`, the draw of before Q186; `tools/barjudge.js` for E and
+the time to credit). Nothing moves beyond the seeds' noise:
+
+| Profile | True knowledge q600 | Right % q600 | Judge \|E\| q600 | Mean bar 50% (question) |
+|---|---|---|---|---|
+| beginner | 0.90 → 0.90 | 73 → 75 | 0.195 → 0.172 | not reached → not reached |
+| lectureRA | 0.91 → 0.88 ± 0.06 | 76 → 76 | 0.205 → 0.193 | 269 (5/5) → 287 (3/5) |
+| strongRA | 0.93 → 0.92 | 76 → 76 | 0.234 → 0.217 | 281 → 236 |
+| expert | 0.96 → 0.96 | 96 → 95 | 0.224 → 0.216 | 228 → 233 |
+
+The real-log check (L12) cannot judge it: fish answers are not replayed by the sheet and only 27 are logged, so what
+was measured instead is the simulated learner above and the draw's easy share (`tools/fish_draw_sim.js`). The smoke's
+"after Open Water" check now sets the entry as a player reaches Open Water (its bar at 60% with 12 answers, 10 right, and
+the ability 0.5), not the bar alone: with the bar alone and the start's ability, the narrower targeting drew the harder
+photos about 3% of the time (10% before), a state no player reaches; at that Open Water state they come about a third
+of the time.
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night, in review)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a

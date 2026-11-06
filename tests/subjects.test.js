@@ -457,7 +457,10 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
 // draw bonus, the measured ease spread), fish favour reference-level photos in the draw.
 test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.deepStrictEqual(C.calibOf(C.subjectOf('coral')), C.CALIB);
-  assert.deepStrictEqual(C.CALIB, {ease: 0.5, ref: 1, early: 0});
+  assert.deepStrictEqual(C.CALIB, {ease: 0.5, ref: 1, early: 0, pool: Infinity});
+  // Q186 (Pierre, 2026-11-06 15:33): the fish draw in big pools (tests/drawcalib.test.js).
+  assert.strictEqual(C.calibOf(C.subjectOf('fish')).u, 0.25);
+  assert.strictEqual(C.calibOf(C.subjectOf('fish')).pool, 30);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).ref, 3);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).early, 1.5);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.5);
