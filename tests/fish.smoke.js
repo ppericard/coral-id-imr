@@ -543,7 +543,7 @@ const server = http.createServer((req, res) => {
       .catch(e => ({err: e.message}));
     if (sp.hash !== '#fish/learn/family/Spadefishes' || sp.all !== 5 || sp.mine !== 0)
       ui.push(`${width}px Spadefishes sheet: ${JSON.stringify(sp)}`);
-    // The filter starts on again on the next sheet opened (Codex review #675); an opt-in circle on puts its families in the
+    // The filter starts on again on the next sheet opened (Codex review #675); every circle's families are in the
     // sheets' previous / next, both families of an entry renamed into two included (Seahorses, Waspfishes).
     await q.evaluate(() => (location.hash = '#fish/learn/family/Rabbitfishes'));
     await q
@@ -552,11 +552,9 @@ const server = http.createServer((req, res) => {
       })
       .catch(() => {});
     const re = await q.evaluate(() => {
+      // Every circle is on the path (Q175, Q177): circles 2 and 3's families are in the sheets' previous / next, no opt-in.
       const on = (document.querySelector('#view .seg [data-mine="1"]') || {}).getAttribute?.('aria-pressed'),
-        was = Q.c3;
-      Q.c3 = true;
-      const L = fishShown();
-      Q.c3 = was;
+        L = fishShown();
       // The species of a family an entry was split into count with that entry (Codex review #675: t46, the Seahorses).
       const units = Object.entries(SUBJ.renamed.split || {})
         .flatMap(([t, m]) => Object.values(m).map(f => [t, f]))
@@ -566,7 +564,7 @@ const server = http.createServer((req, res) => {
         seahorses: L.includes('f:Seahorses'),
         wasp: L.includes('f:Waspfishes'),
         pipe: L.includes('f:Pipefishes'),
-        off: !fishShown().includes('f:Seahorses') || !!was,
+        off: true,
         units
       };
     });

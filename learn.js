@@ -821,8 +821,10 @@ const fishShown = () => {
         .flatMap(S => S.units())
         .flatMap(u => [sheetIdOf(SUBJ, u), ...Object.values(split[u] || {})])
     ),
-    wink = new Set(((FISH && FISH.winks) || []).map(n => sheetIdOf(SUBJ, n)));
-  return T.order.filter(id => !wink.has(id) && (T.fam[id].circle === 1 || on.has(id)));
+    wink = new Set(((FISH && FISH.winks) || []).map(n => sheetIdOf(SUBJ, n))),
+    // Every circle is on the path (Q175, Q177): the families of the slate, an entry split into two families included.
+    path = new Set(UNITS[SUBJ.id].slate().flatMap(u => [sheetIdOf(SUBJ, u), ...Object.values(split[u] || {})]));
+  return T.order.filter(id => !wink.has(id) && (T.fam[id].circle === 1 || path.has(id) || on.has(id)));
 };
 const fishIsWink = id => ((FISH && FISH.winks) || []).some(n => sheetIdOf(SUBJ, n) === id);
 const famSci = f => (f.sci || []).join(', ');
