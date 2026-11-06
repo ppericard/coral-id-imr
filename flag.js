@@ -1,8 +1,31 @@
 // "Bad photo" flag, for Pierre only: shown in the browser where the admin page holds his token (reefid-admin-vault).
-// A small ⚑ button follows the photo under the pointer (any page, game or lightbox), in its top-right corner so it never
-// covers the view label or the game source (top-left). A click records the photo, its
-// genus, where it was seen (page, game level, view) and when, in localStorage 'reefid-photo-flags'. The admin page
-// picks these up into its draft (curation.json "flag") and lists them in Triage. Nothing is sent from here.
+// A small ⚑ button follows the photo under the pointer (any page, game or lightbox, every subject), in its top-right
+// corner so it never covers the view label or the game source (top-left). A click records the photo, its subject, its
+// id in that subject's curation, its unit, where it was seen (page, game level, view) and when, in localStorage
+// 'reefid-photo-flags'. The admin page picks these up into its draft (the subject's part of curation.json, "flag") and
+// lists them in To do. Nothing is sent from here.
+// A photo's name: the data-f its page puts on it (the game, the lightbox, remote photos: an iNaturalist or FishBase URL
+// names no photo), else its file under img/. What the name means (its id, unit, view) comes from the subject's data
+// (app.js UNITS photo), the current subject first.
+const flagFile = im => {
+  if (im.dataset && im.dataset.f) return im.dataset.f;
+  // Any of the photo's sizes (tools/photos.py): -t 240, -s 480, -m 960 px, or none (1600 px).
+  const m = /img\/(.+?)(-[tsm])?\.webp/.exec(im.currentSrc || im.src || '');
+  return m ? m[1] : null;
+};
+// {s: subject id, id: its key in that subject's curation, ...what UNITS photo records}, null when no subject knows it.
+const flagWho = (f, subj, subjects, units) => {
+  for (const S of [subj, ...subjects.filter(x => x !== subj)]) {
+    const U = S && units[S.id];
+    let r = null;
+    try {
+      r = U && U.photo ? U.photo(f) : null;
+    } catch (e) {}
+    if (r) return {s: S.id, ...r};
+  }
+  return null;
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = {flagFile, flagWho};
 (() => {
   let admin = false;
   try {
@@ -22,30 +45,29 @@
       localStorage.setItem(KEY, JSON.stringify(L));
     } catch (e) {}
   };
-  const fileOf = im => {
-    // Any of the photo's sizes (tools/photos.py): -t 240, -s 480, -m 960 px, or none (1600 px).
-    const m = /img\/(.+?)(-[tsm])?\.webp/.exec(im.currentSrc || im.src || '');
-    return m ? m[1] : null;
-  };
-  // Genus and view of a photo file, from the built data (views, more, lecture photos, approved book photos).
+  const fileOf = flagFile;
+  // The photo's subject, id and unit, kept once found (the data does not change under a name); a photo no subject knows
+  // (its data not loaded yet) keeps its name as its id, under the current subject.
+  const WHO = new Map();
   const locate = f => {
-    if (typeof DATA === 'undefined' || !DATA) return {};
-    for (const [n, g] of Object.entries(DATA.gen)) {
-      for (const [v] of VIEWS) {
-        if ([...(g.views[v] || []), ...((g.more || {})[v] || [])].some(p => p.f === f)) return {genus: n, view: v};
-        if ((g.book || []).some(p => p.f === f && p.view === v)) return {genus: n, view: v};
-      }
-      const c = (DATA.course[n] || []).find(p => p.f === f);
-      if (c) return {genus: n, view: c.v};
+    const k = SUBJ.id + '|' + f;
+    if (!WHO.has(k)) {
+      const w = flagWho(f, SUBJ, SUBJECTS, UNITS);
+      if (!w) return {s: SUBJ.id, id: f};
+      WHO.set(k, w);
     }
-    return {};
+    return WHO.get(k);
+  };
+  const flagged = f => {
+    const w = locate(f);
+    return read().some(x => x.f === w.id && (x.s || SUBJECTS[0].id) === w.s);
   };
   // Where the photo was seen: the page (hash), plus the game level on Practice pages.
   const where = () => {
     const h = hashNow() || 'home',
       open = !document.getElementById('lightbox').hidden;
-    const game = /^(quiz|pairs|reveal|lab-reveal|lab-pairs)/.test(h);
-    return `${h}${game && typeof Q !== 'undefined' && !(h === 'quiz' && Q.course) ? ' · level ' + Q.level : ''}${open ? ' · lightbox' : ''}`;
+    const game = /^(quiz|pairs|lab-reveal)/.test(h);
+    return `${location.hash.slice(1) || 'home'}${game && typeof Q !== 'undefined' && !(h === 'quiz' && Q.course) ? ' · level ' + Q.level : ''}${open ? ' · lightbox' : ''}`;
   };
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -67,10 +89,7 @@
     btn.style.top = r.top + 6 + 'px';
     btn.style.right = document.documentElement.clientWidth - r.right + 6 + 'px';
     btn.hidden = false;
-    btn.classList.toggle(
-      'on',
-      read().some(x => x.f === f)
-    );
+    btn.classList.toggle('on', flagged(f));
   };
   document.addEventListener(
     'pointerover',
@@ -153,12 +172,13 @@
     if (!target) return;
     const f = fileOf(target);
     if (!f) return;
-    const L = read();
-    if (L.some(x => x.f === f)) {
+    if (flagged(f)) {
       btn.title = 'Already flagged: see To do in the admin';
       return;
     }
-    L.push({f, ...locate(f), where: where(), at: new Date().toISOString()});
+    const {id, ...w} = locate(f),
+      L = read();
+    L.push({f: id, ...w, where: where(), at: new Date().toISOString()});
     write(L);
     btn.classList.add('on');
     btn.textContent = '⚑ flagged';

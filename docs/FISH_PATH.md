@@ -32,11 +32,11 @@ is the design's shorthand, and internal identifiers may keep it.
 
 ## Levels
 
-- **Level 1, entry**: the 27 IMR entries (circle 1), as built. Unchanged.
+- **Level 1, family**: since 2026-11-06 the book's families (Pierre, 13:04: "the game's units are not the IMR entries"; 28 in circle 1, `fish.json` `families`), the IMR course a tag on the families and genera it teaches (13:38); docs/reviews/2026-11-06-fish-units-plan.md. Below, "entry" reads "family" for the game.
 - **Level 1b, IMR sub-entry** (optional): the sub-entries IMR names inside an entry (`fish.json` `sub`): Chromis, Dascyllus, Pomacentrus,
   Anemonefish (Damselfish); Bannerfish (Butterflyfish); Surgeonfish, Unicornfish (Surgeonfish & Unicornfish).
   - Opened with the others by the open-all card ("The fish welcome question and the IMR answer", below).
-  - Otherwise an optional level, offered like the opt-in circles: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
+  - Otherwise an optional level, offered like the coral bonus genera: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
     a ⚙ On / Off row. Never counted in the progress bar.
 - **Level 2, species**: the species of an entry (`teach[].species`), shown with the name-display schedule below.
 - **The path is a tree, not a line** (Pierre, 2026-11-04, later; replaces the linear "families, then common names, then genus, then
@@ -86,6 +86,21 @@ is the design's shorthand, and internal identifiers may keep it.
   in the score simulation (`tools/fishscore.js --names tools/fish_common.json`) a common-names-only player reaches 80% after
   about 2.6 times as many answers as with one name each.
 
+## Typed family names (fish beta QA, 2026-11-06)
+
+- A family (IMR entry) typed is matched against its names (`core.js` `fishNames`) and, as a general rule (Pierre,
+  2026-11-06: "trigger", "clown", "damsel"), each of them without "fish": as a suffix, a separate word or a plural
+  ("Trigger", "Trigger fish", "Triggerfishes", "Triggers"), unless that short form is within the spelling tolerance of
+  another entry's name or short form (then typing it is no answer, as before). Filefishes and Pipefishes are that close,
+  so "filefishes" asks the player to check the spelling.
+- A name in common use, accepted as right and corrected gently (Pierre, 2026-11-06, Q164): `often` in
+  `tools/fish_source.json` (copied to `fish.json`), Clownfish on Anemonefish (in Damselfish). "clown", "clownfish" typed
+  read "✓ Yes, Anemonefish (often called clownfish): it's Damselfish" (`core.js` `fishOften`, `oft`; `quiz.js`
+  `typeStep`, the spelling step's one-line style).
+- Other common names, accepted when typed, never shown (Pierre, 2026-11-06, Q164: all OK): `aka`: Tang (Surgeonfish & Unicornfish), Cowfish and Trunkfish (Boxfish),
+  Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
+  sharks).
+
 ## The very start (fish beta feedback, Pierre, 2026-11-04)
 
 The first fish questions must be easy and readable. Two decisions, each built in its own code PR:
@@ -116,7 +131,7 @@ The first fish questions must be easy and readable. Two decisions, each built in
   `species` list is in that order; "Species order: the commonness index" below). Until 2026-11-04 it was the PDF rank (`r`).
 - A species starts from its entry's ability (as `playerStart` starts a genus from the global level), so a strong player on Wrasse gets harder
   Wrasse species questions sooner.
-- Species of circles 2 and 3 follow the same rule once their circle is on.
+- Species of circles 2 and 3 follow the same rule once their family is open (every circle is on the path since Pierre, 2026-11-06, Q175).
 
 ## Species order: the commonness index (Pierre, 2026-11-04)
 
@@ -257,7 +272,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
   cited or named, in the app or in the repo.
 - **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule C1).
 - Its words become the fish glossary (underlined in cues and feedback), as Coral basics' words are for corals. Same component and
-  format as Coral basics; Pierre's own photos first (rule P1).
+  format as Coral basics; its photos the easiest, most reference-like ones, whoever took them (rule P1, fish).
 
 ## What `fish.json` supports, and the gaps
 
@@ -280,7 +295,7 @@ Gaps before species questions ship:
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
-- Fish answers are not logged to the sheet yet (no subject column): no pooled photo difficulty or confusion scores for fish until they are.
+- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
   Pierre, 2026-11-04: they are logged **from the start**, as soon as curated photos enter the game.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
@@ -306,7 +321,7 @@ Decided from the admin pooling study:
   kept, and **always sourced** (rule C2).
 - **How cues are taught** (Pierre, 2026-11-04): cues about a family itself, and cues taught **by comparison** with another family or
   species (learning by contrast). The cue content comes from public, sourced references.
-- **Fish answers logged to the sheet from the start**, as soon as curated photos enter the game.
+- **Fish answers logged to the sheet from the very first second** (Pierre, 2026-11-06; sheet v60), at whatever rank was asked, with the species shown.
 
 ## Juveniles and colour phases
 
@@ -359,6 +374,10 @@ Decided from the admin pooling study:
   the hierarchical photo Elo already do), so a species becomes a cross-family look-alike only when its rate is clearly above its
   family's.
 - Pairs inside a family (same genus, same IMR sub-entry) come later from species questions, seeded from the data (genus, `sub`).
+- **Declared family groups** (Pierre, 2026-11-06, from experience; `tools/fish_source.json` `look`, ARCHITECTURE.md "Fish
+  content"): Butterflyfishes ↔ Angelfishes; Snappers ↔ Coral Breams ↔ Emperors; Parrotfishes ↔ Wrasses (some wrasse
+  species only: at species level the pair will hold only for those); Soldierfishes ↔ Squirrelfishes ↔ Cardinalfishes;
+  Triggerfishes ↔ Filefishes. The seeds of the traps and the confusion groups until pooled fish answers exist.
 - Candidates to define at species level, no species chosen yet (never invented): some dwarf angelfish against some dark
   damselfish; some yellow butterflyfish against some yellow rabbitfish (Pierre, 2026-11-04).
 - Engine support comes with the species level and the logging of fish answers (ROADMAP).
@@ -384,7 +403,7 @@ coral Lab prototype of photo-to-trait, "Spot the feature" (`proto/spot.js`), sta
 
 ## My progress (fish)
 
-Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#lab-fishprog`), so the page reads at every stage, from a beginner
+Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#tools/fishprog`), so the page reads at every stage, from a beginner
 on families only to an IMR RA with every species open:
 
 - **One global fish progress score** (Pierre, 2026-11-04; replaces "the entry bar counts the entries only; species never enter it"): the
@@ -401,8 +420,8 @@ on families only to an IMR RA with every species open:
     2. **Per species**: its scientific value is *S* = max(species mastery, ½ × its genus's mastery), so knowing a genus already gives
        half the scientific credit for each of its species. Its identification credit is
        **a·C + b·S + (1 − a − b)·C·S**: *a* with common names only, *b* with the scientific name only, 1 only with both (the C·S term).
-    3. **Global**: **25% × the entries' mean mastery + 75% × the mean identification credit of every species in the game** (circle 1;
-       unopened species at 0, so the % is absolute, as for corals).
+    3. **Global**: **25% × the entries' mean mastery + 75% × the mean identification credit of every species in the game** (every
+       circle since Pierre, 2026-11-06, Q175, until then circle 1 only; unopened species at 0, so the % is absolute, as for corals).
     - With these, *b* = 0.80 and *a* ≈ 0.73 put the targets exactly on 80% and 85%. Worked values: entries only 25%; entries and every
       genus 55%; every common name 80%; every scientific name 85%; every common name and every genus 90%; everything with both names 100%.
     - It is not additive across the branches (an additive split would put families alone near 65%), every right answer on either branch
@@ -415,8 +434,9 @@ on families only to an IMR RA with every species open:
       learning both names scores below one learning a single kind for most of the path (at 30,000 simulated answers: 62% against
       80% common only). Rerun with `tools/learnsim.js` fish profiles once the species level exists.
     - **My progress** can show three bars under the headline %: Entries, Common names, Scientific names.
-  - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the circle-1 entries
-    (27) and their circle-1 species (340 since the one presence rule, #496); unopened units at 0; circles 2 and 3 never count (as now).
+  - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the families of every
+    circle (since the units migration, the book's families: 28 of circle 1, 1 of circle 2, 19 of circle 3) and their species; unopened
+    units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families, automatically (Q177: circle 2 once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `fishGate`); the two opt-in settings are gone.
   - What counts as a species' scientific name known (the exam passed, or the progress on the questions shown in Latin) is part of the
     same study.
   - **The Elo level stays alongside** as the player's overall level.
@@ -440,7 +460,7 @@ on families only to an IMR RA with every species open:
   This relaxes rule U12 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
-- **Opening fish to players**: to a group Pierre picks in the admin (for now he will put everyone in it), not one site-wide switch. Built (2026-11-04 night, PR #540, open for Pierre's OK): docs/ARCHITECTURE.md "The beta group".
+- **Opening fish to players**: **open to every player since 2026-11-06** (Pierre, Q158: "open fish to everyone now", during IMR's fish course), signed out included, the *beta* label kept (`core.js` `SUBJECTS` fish `open: 'all'`, sheet v67). Before, from 2026-11-04 (PR #540), to a group Pierre picked in the admin; the group mechanics stay for a subject set back to `open: 'group'` (docs/ARCHITECTURE.md "Opening", "The beta group").
 - **Leaderboards separate per subject**, no merged ranking: corals as today (coral %, then Elo); fish by the global fish score ("My
   progress (fish)"), then the fish Elo. Needs fish answers logged in the sheet first.
 - **Achievements** (rule L8: learning milestones, never time or days played; designed later, each one's timing checked with the real

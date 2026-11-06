@@ -3,6 +3,7 @@
 // token, draft and Undo history included. Before anything reads them.
 migrateStorage();
 migrateIdKey(); // the renamed Coral ID Key (2026-11-04): its keys moved once (core.js)
+migrateRoutes(); // the URL refonte (2026-11-05): page names and addresses in this device's data moved once (core.js)
 // Edits curation.json: per genus, the cover photo, the featured photos of each view (in order),
 // hidden photos and photos moved to another view. app.js applies it on top of data.json (applyCuration).
 // Saving commits curation.json to the repo through the GitHub API with a fine-grained token. The token is
@@ -115,9 +116,10 @@ document.addEventListener(
   true
 );
 const clone = o => JSON.parse(JSON.stringify(o));
-// The page hash, decoded; a malformed %-escape no longer throws (code re-review L2).
+// The page's address without its filter (after '?', split off before decoding: hashQuery), decoded; a malformed
+// %-escape no longer throws (code re-review L2). A name in it is the last segment, so a '/' in a player's name stays in it.
 const hashNow = () => {
-  const h = location.hash.slice(1);
+  const h = location.hash.slice(1).split('?')[0];
   try {
     return decodeURIComponent(h);
   } catch (e) {
@@ -299,15 +301,24 @@ function step(from, to, msg) {
 // the agreement window follows the order he answered in (Codex review #400). Found by comparing his answers per photo
 // with those of the draft before this click (snap; recomputed only when undo, redo or another tab changed it).
 let ASIG = null,
+  FSIG = null,
   ASIG_OF = null;
+// The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG): a
+// Remove, × or Not this on a photo the fish auto-sort put in play (Photos › Families) is timed (Codex review #655).
 function autoWhen() {
   if (ASIG_OF !== snap) {
-    ASIG = autoSigs(JSON.parse(snap));
+    const S = JSON.parse(snap);
+    ASIG = autoSigs(S);
+    FSIG = fishSigs((S || {}).fish);
     ASIG_OF = snap;
   }
-  const A = autoStamp(DRAFT, ASIG, Date.now() / 1000);
+  const t = Date.now() / 1000,
+    A = autoStamp(DRAFT, ASIG, t),
+    FA = DRAFT.fish && fishStamp(DRAFT.fish, FSIG, t);
   if (A) DRAFT.auto = A;
+  if (FA) DRAFT.fish = {...DRAFT.fish, auto: FA};
   ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
+  FSIG = fishSigs(DRAFT.fish);
 }
 const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
@@ -323,17 +334,25 @@ const seenOf = (o, cand) => Object.fromEntries(Object.entries(o.seen || {}).filt
 const sgChanged = () => !same(seenOf(DRAFT, false), seenOf(SAVED, false)) || !same(DRAFT.use || {}, SAVED.use || {});
 // Candidates rejected in the Candidates view: curation.json "seen" {'cand:f': 1}. Only a "reviewed" mark: the photo stays a candidate.
 const cdChanged = () => !same(seenOf(DRAFT, true), seenOf(SAVED, true));
+// Each flag goes to its subject's part of the curation (flag.js s, core.js SUBJECTS admin.cur; a flag without one came
+// from the corals, the only subject flagged before), under its id there (fish: core.js fishPid), never to another's.
+const flagsOf = (C, S = ASUBJ) => (S.admin.cur ? (C[S.admin.cur] || {}).flag : C.flag) || {};
+function flagsSet(C, S, F) {
+  if (!S.admin.cur) return (C.flag = F);
+  C[S.admin.cur] = {...(C[S.admin.cur] || {}), flag: F};
+}
 function importFlags() {
   const L = store.get('reefid-photo-flags', []);
   if (!L || !L.length) return 0;
-  DRAFT.flag = {...(DRAFT.flag || {})};
   let n = 0;
   L.forEach(x => {
-    if (x && x.f && !DRAFT.flag[x.f]) {
-      const {f, ...rest} = x;
-      DRAFT.flag[f] = rest;
-      n++;
-    }
+    if (!x || !x.f) return;
+    const S = subjectOf(x.s),
+      F = flagsOf(DRAFT, S);
+    if (F[x.f]) return;
+    const {f, s, ...rest} = x;
+    flagsSet(DRAFT, S, {...F, [f]: rest});
+    n++;
   });
   store.set('reefid-photo-flags', null);
   if (n) saveDraft();
@@ -790,17 +809,10 @@ function needs(n) {
 const rows = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium' && !photos(n).some(p => viewOf(n, p) === 'medium')));
 const label = (n, v) => (lv(n) === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(x => x[0] === v)[1]);
 // Photo origin: IMR lecture, Pierre's own iNaturalist photos, or other iNaturalist observers split by place
-// (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits.
-// Short chip labels for the genus bar (full name in the tooltip), so the whole bar fits on one line.
-const SHORT_O = {imr: 'IMR', own: 'Pierre', dauin: 'Dauin', ph: 'PH', world: 'World', book: 'CF'};
-const ORIGINS = [
-  ['imr', 'IMR lecture'],
-  ['own', 'Pierre'],
-  ['dauin', 'iNat Dauin'],
-  ['ph', 'iNat Philippines'],
-  ['world', 'iNat elsewhere'],
-  ['book', 'CF book']
-];
+// (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits. Each subject lists its origins
+// in core.js SUBJECTS admin origins, [key, name, short name] (the short one on the genus bar's chips, the name in the
+// tooltip, so the whole bar fits on one line); ORIGINS are the corals', every origin a photo can have.
+const ORIGINS = (SUBJECTS.find(s => !s.hash) || SUBJECTS[0]).admin.origins;
 const origin = p => (p.cf ? 'book' : p.imr ? 'imr' : p.own ? 'own' : {dauin: 'dauin', ph: 'ph'}[p.loc] || 'world');
 let SHOW = new Set(
   store.get(
@@ -813,6 +825,99 @@ const shown = p => SHOW.has(origin(p));
 // are reached without scrolling past every colony photo. Kept across genera and visits; on a genus without the saved
 // view (a 2-zoom genus has no Close-up row) the page shows All, and the choice stays for the next genus.
 let GVIEW = store.get('reefid-admin-gview', 'all');
+// ---- One filter bar (admin plan PR 3, docs/ROADMAP.md "Admin for every subject") ----
+// Every photo page draws its filters with these parts, filled from the subject on screen (core.js SUBJECTS: views, the
+// unit words one / many, admin origins and csrc), and wires them with bindBar: the genus page (origin chips with counts,
+// the view filter), Photo review (origins, view, unit, its check boxes) and Candidates (the sources). Each filter keeps
+// one state, shared by every page that shows it: SHOW (reefid-admin-origins), GVIEW, each page's own (QF, FF, CSRC).
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+const FB = {
+  // The origin chips. With counts (cnt(o)): the genus bar's, short names, the full one in the tooltip, and All once one is
+  // off; else a "Show" row of full names. skip: origins a page never shows (Growth form: CF book photos never go on its
+  // tiles).
+  origins({cnt, skip = []} = {}) {
+    const O = ASUBJ.admin.origins.filter(([o]) => !skip.includes(o));
+    return cnt
+      ? `<span class="adm-shows" role="group" aria-label="Show photos from">${O.map(([o, t, s]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${s} <b>${cnt(o)}</b></button>`).join('')}${O.some(([o]) => !SHOW.has(o)) ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span>`
+      : `<div class="adm-filter"><span class="label">Show</span>${O.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>`;
+  },
+  // The view filter, items [[value, name]]: on the genus bar a segmented control (key gv), on Photo review filter chips
+  // (key qv, fv) over every photo (viewItems).
+  views: ({key, cur, items, seg}) =>
+    seg
+      ? `<span class="adm-qseg adm-lvseg adm-gview" role="group" aria-label="Show view">${items.map(([v, t]) => `<button type="button" data-${key}="${v}" aria-pressed="${cur === v}">${t}</button>`).join('')}</span>`
+      : items
+          .map(([v, t]) => `<button type="button" class="adm-fchip plain" data-${key}="${v}" aria-pressed="${cur === v}">${t}</button>`)
+          .join(''),
+  viewItems: () => [['all', 'All'], ...ASUBJ.views, ['cand', 'Candidates']],
+  // One unit or all of them (Photo review).
+  unit: ({id, cur, names}) =>
+    `<select id="${id}" aria-label="${cap1(ASUBJ.one)}"><option value="">All ${ASUBJ.many}</option>${names.map(m => `<option${m === cur ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>`,
+  check: (id, on, text) => `<label class="adm-todo"><input type="checkbox" id="${id}"${on ? ' checked' : ''}> ${text}</label>`,
+  // The Candidates swiper's sources (admin csrc, by their short names), then All; n(s) the candidates of each.
+  srcs: () => [...(ASUBJ.admin.csrc || []).map(k => [k, ASUBJ.admin.origins.find(o => o[0] === k)[2]]), ['all', 'All']],
+  sources: (cur, n) =>
+    `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${FB.srcs()
+      .map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === cur}">${t} <b>${n(s)}</b></button>`)
+      .join('')}</span>`
+};
+// The bar's clicks, then redraw(): the origin chips and the genus bar's views on every page; with f (the page's filter
+// state, kept under the storage key k), its view chips (data-<view>), its unit select (id unit) and check boxes ({id: field});
+// src: the Candidates sources.
+function bindBar(scope, {redraw, f, k, view, unit, checks = {}, src}) {
+  scope.querySelectorAll('[data-o]').forEach(
+    b =>
+      (b.onclick = () => {
+        const o = b.dataset.o;
+        if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0]));
+        else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
+        store.set('reefid-admin-origins', [...SHOW]);
+        redraw();
+      })
+  );
+  scope.querySelectorAll('[data-gv]').forEach(
+    b =>
+      (b.onclick = () => {
+        GVIEW = b.dataset.gv;
+        store.set('reefid-admin-gview', GVIEW);
+        redraw();
+      })
+  );
+  if (src)
+    scope.querySelectorAll('[data-src]').forEach(
+      b =>
+        (b.onclick = () => {
+          CSRC = b.dataset.src;
+          store.set('reefid-admin-csrc2', CSRC);
+          redraw();
+        })
+    );
+  if (!f) return;
+  const save = () => {
+    store.set(k, f);
+    redraw();
+  };
+  if (view)
+    scope.querySelectorAll(`[data-${view}]`).forEach(
+      b =>
+        (b.onclick = () => {
+          f.view = b.dataset[view];
+          save();
+        })
+    );
+  if (unit)
+    $(unit).onchange = e => {
+      f.genus = e.target.value;
+      save();
+    };
+  Object.entries(checks).forEach(
+    ([id, x]) =>
+      ($(id).onchange = e => {
+        f[x] = e.target.checked;
+        save();
+      })
+  );
+}
 // A photo taken abroad of a species the presence rule does not confirm in the Philippines (presence.js outOfRule;
 // Pierre, 2026-11-04): an "out of rule" tag next to its source, and a part of To do. Never removed automatically.
 // Kept (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself): an exception he accepted with Keep in
@@ -1103,7 +1208,7 @@ function statusDraw({parts, sug, over}) {
     bs.setAttribute('aria-pressed', String(bookOn(DRAFT)));
     bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`;
   }
-  const tn = Object.keys(DRAFT.flag || {}).length + sug + repsOpen().length,
+  const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen().length,
     xn = Object.keys(DRAFT.exclude || {}).length;
   OVER = over;
   const t = draftAt ? ` (saved ${dateText(draftAt, 'hm')})` : '';
@@ -1114,7 +1219,7 @@ function statusDraw({parts, sug, over}) {
   $('undo').disabled = !HIST.length;
   $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length;
-  if (cur[0] !== '~') lastGenus = cur;
+  if (cur.startsWith(LIVE + '/') && DATA.gen[cur.slice(LIVE.length + 1)]) lastGenus = cur.slice(LIVE.length + 1);
   navs(tn, xn);
   fitModes();
 }
@@ -1128,64 +1233,83 @@ function fitModes() {
 addEventListener('resize', () => fitModes());
 // Nine tabs in three header groups (Pierre, 2026-11-03, mockup "Admin tabs: 17 -> 9", after "regroup the admin menus"
 // of 2026-11-01): Inbox (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes, Photo stats), Players
-// (Activity, List). No tab holds a view of its own name, and no group a tab of its own name (Pierre, 2026-11-04: the group
-// To do became Inbox, the tab Players List, the views of Activity Recent sessions and Mix-ups; addresses unchanged). Nothing was removed: every former page is a view of a tab, chosen with the segmented switch at
-// the right of the tab row (#subnav, navs()). Each view keeps its old address, so bookmarks and links in the docs still
-// land right; ALIAS maps the two addresses that are not a view of their own. Each header group reopens the tab and view
-// used last in it (reefid-admin-sub), each tab its view used last (reefid-admin-view). Phones: one menu with every tab.
-// [group key, group name, [[tab key, tab name, [[address, view name], ...]], ...]]; '' = a genus page.
+// (Activity, List), plus Analyses (below). No tab holds a view of its own name, and no group a tab of its own name
+// (Pierre, 2026-11-04). The views of a tab are chosen with the segmented switch at the right of the tab row (#subnav,
+// navs()). Each header group reopens the tab and view used last in it (reefid-admin-nav-group), each tab its view used
+// last (reefid-admin-nav-tab). Phones: one menu with every tab.
+// Addresses (URL refonte, Pierre, 2026-11-05, Q53-Q56): #<group>/<tab>/<view>, each segment the word on screen, computed
+// from GROUPS; a tab with one view has no view segment (#players/activity); a thing the page is about follows as a
+// further segment (#photos/genera/live/<Genus>, #players/list/journey/<name>, #inbox/todo/points/<id>), a filter after
+// '?' (#inbox/coverage/games?look=all). A shorter address (a group, a tab) opens its first view; an old or unknown one
+// opens its group's first view, else the landing page (rule W3: no table of old addresses).
+// [group slug, group name, [[tab slug, tab name, [[view slug, view name], ...]], ...], options]; '' = the tab's one view.
 // The subject on screen (admin plan PR 2; Pierre, 2026-11-04: one Corals | Fish switch for the whole admin, To do
-// included, each side showing its own to-do count). Each subject describes its admin part in core.js SUBJECTS admin:
-// hash, the prefix of its addresses ('' for the corals, whose addresses are unchanged: #fish/~triage is the fish side's
-// Reports); cur, its part of curation.json ('' = the top level); pages, the admin pages it has (null = all). A page a
-// subject does not have yet says so; its tabs are left out of the header.
-const ADM0 = SUBJECTS.find(s => !s.admin.hash);
+// included, each side showing its own to-do count). Each subject's addresses carry its core.js SUBJECTS hash ('' for
+// the corals: #fish/inbox/todo/reports is the fish side's Reports); its admin part (SUBJECTS admin) says cur, its
+// part of curation.json ('' = the top level); pages, the admin pages it has (null = all; a page covers the addresses
+// under it). A page a subject does not have yet says so; its tabs are left out of the header.
+const ADM0 = SUBJECTS.find(s => !s.hash);
 let ASUBJ = ADM0;
 const subjOfHash = h => {
-  const S = SUBJECTS.find(s => s.admin.hash && h.startsWith(s.admin.hash)) || ADM0;
-  return [S, h.slice(S.admin.hash.length)];
+  const S = SUBJECTS.find(s => s.hash && h.startsWith(s.hash)) || ADM0;
+  return [S, h.slice(S.hash.length)];
 };
-const hasPage = (S, p) => !S.admin.pages || S.admin.pages.some(x => (x.endsWith('/') ? p.startsWith(x) : p === x));
-// A subject's landing page: Players › Activity, or Players › List for a subject without Activity yet (fish; Codex review
-// #554).
-const homeOf = S => (hasPage(S, '~stats') ? '~stats' : '~users');
-// The per-subject memories (last tab, view and page): the corals keep their keys.
-const subjK = (k, S = ASUBJ) => (S.admin.hash ? `${k}-${S.id}` : k);
+// p is the page x or an address under it (a player's journey is under players/list).
+const under = (p, x) => p === x || p.startsWith(x + '/');
+// The Players pages are every subject's (Pierre, 2026-11-06: "the Players section needs rethinking now that we have two
+// game modes"; docs/reviews/2026-11-06-admin-players-two-subjects.md): Activity and a player's Journey follow the switch,
+// each under its subject's prefix; the list of players is one page for both (SHARED): no prefix, the same table on either
+// side (a group of columns per subject), the switch inert there, the subject on screen kept for the other pages.
+const SHARED = ['players/list'];
+const shared = p => SHARED.includes(p);
+const hasPage = (S, p) =>
+  p.startsWith('players/') ||
+  (!TABS.some(t => t[4].rank && t[4].rank !== S.rank && under(p, t[0])) && (!S.admin.pages || S.admin.pages.some(x => under(p, x))));
+// A subject's landing page: Players › Activity (every subject has it).
+const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'players/list');
+// A player's page (a journey, a device's): the switch keeps it, as the page's own subject toggle does (renderJourney).
+const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('players/list/anon/');
+// The per-subject memories (last tab, view and page): the corals' keys carry no subject.
+const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
-// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine).
+// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine) and its photos flagged
+// on the site (its flag).
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
-  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length;
+  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length + Object.keys(F.flag || {}).length;
 };
 // A subject's icon on the switch (core.js SUBJECTS icon, the app's set: app.js subjIcon), its name beside it on wider
 // screens only (admin.css .adm-sjn; Pierre, 2026-11-06: a mini switch in the top bar, as the app's header).
 const subjSvg = S =>
   `<svg class="sji" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.icon}</svg>`;
-const genusHash = () => '#' + ASUBJ.admin.hash + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
+// A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
+const LIVE = 'photos/genera/live';
+const genusHref = g => '#' + LIVE + '/' + encodeURIComponent(g);
+const genusHash = () => '#' + ASUBJ.hash + LIVE + '/' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
-    'todo',
+    'inbox',
     'Inbox',
     [
       [
         'todo',
         'To do',
         [
-          ['~todo', 'All'],
-          ['~triage', 'Reports'],
-          ['~events', 'Errors'],
-          ['~health', 'Health'],
+          ['all', 'All'],
+          ['reports', 'Reports'],
+          ['errors', 'Errors'],
+          ['health', 'Health'],
           // The points to handle (Pierre, 2026-11-05): trainer questions, names, sources, content (renderPoints).
-          ['~points', 'Points']
+          ['points', 'Points']
         ]
       ],
       [
-        'cov',
+        'coverage',
         'Coverage',
         [
-          ['~cov', 'Games'],
-          ['~kcov', 'Sheets & ID Key']
+          ['games', 'Games'],
+          ['sheets-id-key', 'Sheets & ID Key']
         ]
       ]
     ]
@@ -1198,28 +1322,31 @@ const GROUPS = [
         'genera',
         'Genera',
         [
-          ['', 'Live'],
-          ['~hidden', 'Hidden'],
-          ['~excluded', 'Excluded']
+          ['live', 'Live'],
+          ['hidden', 'Hidden'],
+          ['excluded', 'Excluded']
         ]
       ],
-      ['cand', 'Candidates', [['~cand', 'Candidates']]],
+      // A subject's book families (admin plan PR 6 on the book's families, renderFishUnits): the tab of a subject whose unit
+      // rank is the family (core.js SUBJECTS rank), never shown for the corals (hasPage).
+      ['families', 'Families', [['', 'Families']], {rank: 'family'}],
+      ['candidates', 'Candidates', [['', 'Candidates']]],
       [
         'review',
         'Photo review',
         [
-          ['~quality', 'Quality'],
-          ['~form', 'Growth form'],
-          ['~diff', 'By difficulty']
+          ['quality', 'Quality'],
+          ['growth-form', 'Growth form'],
+          ['by-difficulty', 'By difficulty']
         ]
       ],
-      ['look', 'Look-alikes', [['~look', 'Look-alikes']]],
+      ['look-alikes', 'Look-alikes', [['', 'Look-alikes']]],
       [
-        'pstats',
+        'stats',
         'Photo stats',
         [
-          ['~pstats', 'Overview'],
-          ['~stats-photos', 'Difficulty']
+          ['overview', 'Overview'],
+          ['difficulty', 'Difficulty']
         ]
       ]
     ]
@@ -1230,101 +1357,152 @@ const GROUPS = [
     [
       // Activity first, so Players opens on it when no tab of the group was used yet (Pierre, 2026-11-05).
       // Activity = who plays and how much (Pierre, 2026-11-04, one role per admin page): its analysis cards and the
-      // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs), their addresses unchanged.
-      ['activity', 'Activity', [['~stats', 'Recent sessions']]],
-      ['players', 'List', [['~users', 'List']]]
+      // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs).
+      ['activity', 'Activity', [['', 'Recent sessions']]],
+      ['list', 'List', [['', 'List']]]
     ],
     // fixed: a click on the group always opens its first tab, never the tab used last (Pierre, 2026-11-05: "Players
     // always opens Activity").
     {fixed: true}
   ],
   // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
-  // every 1000 answers): the one group added after the nine tabs (rule A3); drawn by admin-analyses.js. Analyses
-  // = what we learn (Pierre, 2026-11-04, one role per admin page): the views read live from the answer log (~stats-*,
-  // admin.js renderStats) sit here too: Pairs (formerly Players › Activity › Mix-ups), Answer log (Activity's analysis
-  // cards) and Stops (Health's "where players stop" and genus sheets opened).
+  // every 1000 answers): the one group added after the nine tabs (docs/rules/admin.md A3); drawn by admin-analyses.js.
+  // Analyses = what we learn (Pierre, 2026-11-04, one role per admin page): the views read live from the answer log
+  // (admin.js renderStats, LIVE_STATS) sit here too: Pairs (formerly Players › Activity › Mix-ups), Answer log
+  // (Activity's analysis cards) and Stops (Health's "where players stop" and genus sheets opened).
   [
     'analyses',
     'Analyses',
     [
-      ['an', 'Overview', [['~an', 'Overview']]],
+      ['overview', 'Overview', [['', 'Overview']]],
       [
-        'anspeed',
+        'speed',
         'Speed',
         [
-          ['~an-rt', 'Answer time'],
-          ['~an-zoom', 'Enlarging']
+          ['answer-time', 'Answer time'],
+          ['enlarging', 'Enlarging']
         ]
       ],
       [
-        'andiff',
+        'difficulty',
         'Difficulty',
         [
-          ['~an-photo', 'Photos'],
-          ['~an-fmt', 'Formats'],
-          ['~an-conf', 'Mix-ups'],
-          ['~stats-conf', 'Pairs']
+          ['photos', 'Photos'],
+          ['formats', 'Formats'],
+          ['mix-ups', 'Mix-ups'],
+          ['pairs', 'Pairs']
         ]
       ],
       [
-        'anlearn',
+        'learning',
         'Learning',
         [
-          ['~an-learn', 'Practice'],
-          ['~an-back', 'After a break'],
-          ['~an-sess', 'Sessions'],
-          ['~an-who', 'Profiles'],
-          ['~stats-log', 'Answer log'],
-          ['~stats-stop', 'Stops']
+          ['practice', 'Practice'],
+          ['after-a-break', 'After a break'],
+          ['sessions', 'Sessions'],
+          ['profiles', 'Profiles'],
+          ['answer-log', 'Answer log'],
+          ['stops', 'Stops']
         ]
       ]
     ]
   ]
 ];
-// Every tab as [key, name, views, group key].
-const TABS = GROUPS.flatMap(([g, , L]) => L.map(t => [...t, g]));
-// Old addresses that are not a view of their own: Montages became Look-alikes; Where to look is the banner above the Games
-// grid of Coverage, opened in full.
-const ALIAS = {'~mont': '~look', '~stats-needs': '~cov'};
-// A point's own page (To do › Points; renderPoint): its address in one place, as it will move with the admin's URL
-// refonte. Not a view: it sits under Points.
-const POINT_R = '~point/',
+// Every tab as [address, name, [[view address, view name], ...], group slug, options]; every page's address. options.rank:
+// the tab is only for a subject whose unit rank it names (core.js SUBJECTS rank).
+const TABS = GROUPS.flatMap(([g, , L]) =>
+  L.map(([t, n, V, o]) => [g + '/' + t, n, V.map(([v, w]) => [[g, t, v].filter(Boolean).join('/'), w]), g, o || {}])
+);
+const ADM_PAGES = TABS.flatMap(t => t[2].map(([h]) => h));
+// The pages drawn by renderStats from the live answer log (the other Analyses views read the stored report).
+const LIVE_STATS = [
+  'players/activity',
+  'photos/stats/difficulty',
+  'photos/review/by-difficulty',
+  'analyses/difficulty/pairs',
+  'analyses/learning/answer-log',
+  'analyses/learning/stops'
+];
+const anPage = p => p.startsWith('analyses/') && !LIVE_STATS.includes(p);
+// The addresses that take a thing after their page: a genus, a player, a device, a point.
+const FAMS = 'photos/families';
+const ADM_PARAM = [LIVE + '/', FAMS + '/', 'players/list/journey/', 'players/list/anon/', 'inbox/todo/points/'];
+// An address for the page cur names (cur is decoded): the thing after its page encoded again, so a '/' or '?' in a
+// player's name stays in it (Codex review #610).
+const admAddr = p => {
+  const x = ADM_PARAM.find(x => p.startsWith(x) && p.length > x.length);
+  return x ? x + encodeURIComponent(p.slice(x.length)) : p;
+};
+// The page an address shows: itself, the page it sits under (a genus under Live, a journey under List, a point under
+// Points), its first view for a group or a tab, else its group's first view, else the subject's landing page.
+function admRoute(p, S = ASUBJ) {
+  if (ADM_PAGES.includes(p) || ADM_PARAM.some(x => p.startsWith(x) && p.length > x.length)) return p;
+  // The subject's own tabs and views first (a fish #photos opens Families, a tab the corals do not have).
+  const seg = p.split('/'),
+    has = t => t[2].some(([h]) => hasPage(S, h)),
+    T = TABS.find(t => t[0] === seg.slice(0, 2).join('/')) || TABS.find(t => t[3] === seg[0] && has(t)) || TABS.find(t => t[3] === seg[0]);
+  return T ? (T[2].find(([h]) => hasPage(S, h)) || T[2][0])[0] : homeOf(S);
+}
+// The filter after '?' of the address on screen (URLSearchParams).
+const hashQuery = () => new URLSearchParams(location.hash.split('?')[1] || '');
+// Coverage › Games with Where to look open in full (the banner above its grid; renderCov).
+const lookAll = () => cur === 'inbox/coverage/games' && hashQuery().get('look') === 'all';
+// A point's own page (To do › Points; renderPoint). Not a view: it sits under Points.
+const POINT_R = 'inbox/todo/points/',
   pointHash = id => '#' + POINT_R + encodeURIComponent(id);
 let ptFlush = () => {}; // a point's page: writes the note being typed to the draft (renderPoint)
-const pageOf = () =>
-  cur.startsWith('~journey/') || cur.startsWith('~anon/')
-    ? '~users'
-    : cur.startsWith(POINT_R)
-      ? '~points'
-      : ALIAS[cur] || (cur[0] === '~' ? cur : ''); // '' = a genus page; a player's journey sits under Players, a point under Points
-const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'genera');
+// The view on screen: the longest page address cur sits under.
+const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.length - a.length)[0] || LIVE;
+// The address on screen into ASUBJ and cur (the address after the subject's prefix, without the filter). An address
+// that shows another page (a group, a tab, an old or unknown address: admRoute) is replaced by that page's, in place.
+// A shared page (SHARED) keeps the subject on screen, whatever prefix it was reached with, and its address drops the
+// prefix (#fish/players/list becomes #players/list, the fish side kept); opened first (a reload, a bookmark), the subject
+// on screen last (reefid-admin-nav-subj).
+let subjRead = false;
+function readHash() {
+  let [S, p] = subjOfHash(hashNow());
+  const q = admRoute(p, S),
+    pre = S !== ADM0;
+  if (shared(q) && !pre) S = subjRead ? ASUBJ : SUBJECTS.find(x => x.id === store.get('reefid-admin-nav-subj', '')) || ADM0;
+  subjRead = true;
+  ASUBJ = S;
+  cur = q;
+  if (cur !== p || (shared(cur) && pre)) history.replaceState(null, '', '#' + (shared(cur) ? '' : ASUBJ.hash) + admAddr(cur));
+  store.set('reefid-admin-nav-subj', ASUBJ.id);
+}
+const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'photos/genera');
 const groupKey = () => tabOf()[3];
 // Genus x view cells over their cap (capOf: CELL_MAX colonies for a game genus, CAP.sheet for a Key-only one; after
 // "Add anyway"): a warning on the To do tab and on the page that shows the cell (Pierre, 2026-11-02: "at least a
 // warning"): Game coverage for a game genus, Sheet & ID Key coverage for a Key-only one. n = both.
-let OVER = {'~cov': 0, '~kcov': 0, n: 0};
+let OVER = {'inbox/coverage/games': 0, 'inbox/coverage/sheets-id-key': 0, n: 0};
 const overCap = () => {
-  const o = {'~cov': 0, '~kcov': 0};
-  Object.keys(DATA.gen).forEach(n => (o[isGame(n) ? '~cov' : '~kcov'] += capViews(n).filter(([v]) => covOf(n, v).obs > capOf(n)).length));
-  return {...o, n: o['~cov'] + o['~kcov']};
+  const o = {'inbox/coverage/games': 0, 'inbox/coverage/sheets-id-key': 0};
+  Object.keys(DATA.gen).forEach(
+    n =>
+      (o[isGame(n) ? 'inbox/coverage/games' : 'inbox/coverage/sheets-id-key'] += capViews(n).filter(
+        ([v]) => covOf(n, v).obs > capOf(n)
+      ).length)
+  );
+  return {...o, n: o['inbox/coverage/games'] + o['inbox/coverage/sheets-id-key']};
 };
 function navs(tn, xn) {
   const T = tabOf(),
     g = T[3],
     page = pageOf(),
-    last = store.get(subjK('reefid-admin-sub'), {}) || {},
-    seen = store.get(subjK('reefid-admin-view'), {}) || {};
+    last = store.get(subjK('reefid-admin-nav-group'), {}) || {},
+    seen = store.get(subjK('reefid-admin-nav-tab'), {}) || {};
   if (last[g] !== page) {
     last[g] = page;
-    store.set(subjK('reefid-admin-sub'), last);
+    store.set(subjK('reefid-admin-nav-group'), last);
   }
   if (seen[T[0]] !== page) {
     seen[T[0]] = page;
-    store.set(subjK('reefid-admin-view'), seen);
+    store.set(subjK('reefid-admin-nav-tab'), seen);
   }
-  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-last'), cur);
+  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-nav-last'), cur);
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
-    href = h => (h ? '#' + ASUBJ.admin.hash + h : genusHash()),
+    href = h => (h === LIVE ? genusHash() : '#' + (shared(h) ? '' : ASUBJ.hash) + h),
     // The subject's pages only: a view it has, a tab with one, a group with one.
     vOk = ([h]) => hasPage(ASUBJ, h),
     tOk = t => t[2].some(vOk),
@@ -1338,24 +1516,35 @@ function navs(tn, xn) {
     over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Key-only genus, Coverage › Sheets & ID Key)`,
     // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
     vcnt = h =>
-      (h === '~todo' || h === '~triage') && tn
+      (h === 'inbox/todo/all' || h === 'inbox/todo/reports') && tn
         ? ` ${tn}`
-        : h === '~excluded' && xn
+        : h === 'photos/genera/excluded' && xn
           ? ` ${xn}`
-          : h === '~hidden' && hn
+          : h === 'photos/genera/hidden' && hn
             ? ` ${hn}`
-            : h === '~points' && ptOpen()
+            : h === 'inbox/todo/points' && ptOpen()
               ? ` ${ptOpen()}`
               : OVER[h]
                 ? ` ⚠ ${OVER[h]}`
                 : '',
-    tcnt = t => (t[0] === 'todo' && tn ? ` (${tn})` : t[0] === 'cov' && OVER.n ? ' ⚠' : '');
+    tcnt = t => (t[0] === 'inbox/todo' && tn ? ` (${tn})` : t[0] === 'inbox/coverage' && OVER.n ? ' ⚠' : '');
   const sw = $('subj');
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || homeOf(S)))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
+      // The subject's page used last (a remembered value is checked against today's addresses).
+      // A player's page stays that player's (their journey in the other subject).
+      const back = store.get(subjK('reefid-admin-nav-last', S), ''),
+        to = playerPage(cur)
+          ? cur
+          : typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) && !shared(back)
+            ? back
+            : homeOf(S);
+      return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
+    // On a shared page (the list of players) the switch is inert: the page is the same on both sides; it still shows the
+    // side the other pages are on.
+    sw.classList.toggle('off', shared(cur));
     sw.hidden = false;
   }
   $('modes').hidden = false;
@@ -1364,8 +1553,8 @@ function navs(tn, xn) {
     a.hidden = !TABS.some(t => t[3] === G[0] && tOk(t));
     if (a.hidden) return;
     a.href = href(groupHash(G));
-    a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : '') + (G[0] === 'todo' && OVER.n ? ' ⚠' : '');
-    if (G[0] === 'todo') a.title = OVER.n ? over : '';
+    a.textContent = G[1] + (G[0] === 'inbox' && tn ? ` (${tn})` : '') + (G[0] === 'inbox' && OVER.n ? ' ⚠' : '');
+    if (G[0] === 'inbox') a.title = OVER.n ? over : '';
     a.setAttribute('aria-current', String(G[0] === g));
   });
   const sub = $('subnav');
@@ -1375,7 +1564,7 @@ function navs(tn, xn) {
       `<span class="adm-subtabs">${TABS.filter(t => t[3] === g && tOk(t))
         .map(
           t =>
-            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'cov' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
+            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'inbox/coverage' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
         )
         .join('')}</span>` +
       (V.length
@@ -1399,82 +1588,335 @@ function navs(tn, xn) {
 }
 // Which kind of page this is (help text, the Stats-style views): not the header tab, see groupKey().
 const modeKey = () =>
-  cur.startsWith('~journey/') || cur.startsWith('~anon/')
+  cur.startsWith('players/list/journey/') || cur.startsWith('players/list/anon/')
     ? 'journey'
     : cur.startsWith(POINT_R)
       ? 'point'
-      : /^~an(-|$)/.test(cur)
-        ? cur.slice(1)
-        : cur.startsWith('~stats') || cur === '~diff'
+      : anPage(cur)
+        ? (k => (k ? 'an-' + k : 'an'))(typeof anKey === 'function' && anKey(cur)) // its help (admin-analyses.js)
+        : LIVE_STATS.includes(cur)
           ? 'stats'
           : {
-              '~users': 'users',
-              '~quality': 'quality',
-              '~form': 'form',
-              '~excluded': 'excluded',
-              '~hidden': 'hidden',
-              '~todo': 'todo',
-              '~triage': 'triage',
-              '~events': 'events',
-              '~health': 'health',
-              '~points': 'points',
-              '~cov': 'cov',
-              '~kcov': 'kcov',
-              '~look': 'mont',
-              '~mont': 'mont',
-              '~cand': 'cand'
-            }[cur] || 'genus';
+              'players/list': 'users',
+              'photos/review/quality': 'quality',
+              'photos/review/growth-form': 'form',
+              'photos/genera/excluded': 'excluded',
+              'photos/genera/hidden': 'hidden',
+              'inbox/todo/all': 'todo',
+              'inbox/todo/reports': 'triage',
+              'inbox/todo/errors': 'events',
+              'inbox/todo/health': 'health',
+              'inbox/todo/points': 'points',
+              'inbox/coverage/games': 'cov',
+              'inbox/coverage/sheets-id-key': 'kcov',
+              'photos/look-alikes': 'mont',
+              'photos/candidates': 'cand'
+            }[cur] || (under(cur, FAMS) ? 'units' : 'genus');
+// ---- The fish units page (admin plan PR 6, on the book's families: docs/reviews/2026-11-06-fish-units-plan.md §6) ----
+// Photos › Families (#fish/photos/families/<family id>): the book's families by key group at the left, English name first,
+// the scientific names below, an IMR tag on the families and genera in the IMR course (Pierre, 2026-11-06 13:38: "a tag
+// on the families and genera in the course"; the list's All | IMR filter, FU_IMR). A family's page: one block per genus
+// (its IMR tag, its species count), inside it one section per species (common name first, scientific name below, its
+// observations in play against its target), each with its photos in play (curation.json fish add, autosort.js fishOn):
+// featured first (FISHFEAT, his order), then the game's order (the easiest, then the most reference-like: core.js easyRank),
+// never by who took them (fishOrder; rule P1 for fish, #635). On each photo: where it comes from, auto when the auto-sort put it in play, its ease, phase and what
+// makes it harder; Feature, ★ Cover, Remove (fishReject), Not this (fishNotThis: another species of the family or none;
+// Pierre's click only) and × (fishExclude), one click and one Undo step each. The family's choices go to curation.json
+// fish genera keyed by family id (fishPick), through the draft and Publish only (rule A1); ✓ Validated once fishNeeds has
+// nothing to say. A wink family shows its surprise card first, as players meet it. Fish data load once (fishLoad).
+const fuJ = f => ((SUG && SUG.fish) || {})[f] || null;
+let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
+// The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
+const FU_TAGS = [
+  {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
+  {0: 'partial'},
+  {d: 'dim light', n: 'night'},
+  {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
+  {m: 'soft', b: 'blurred'},
+  {s: 'small'},
+  {s: 'several of its kind', m: 'other fish too', x: 'subject not obvious'}
+];
+const FU_FLAGS = {c: 'camouflage', a: 'out of water'};
+const fuTags = jt =>
+  !jt ? '' : [...FU_TAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FU_FLAGS[c])].filter(Boolean).map(esc).join(' · ');
+// A unit's IMR tag: "IMR", its IMR name in the tooltip; a family IMR teaches with another (the Soapfishes) says so.
+const fuImr = u =>
+  u.imr
+    ? `<span class="adm-src adm-imrt" title="IMR course: ${esc(u.imr)}">IMR</span>`
+    : u.imrWith
+      ? `<span class="adm-src adm-imrt" title="IMR course: taught with the ${esc(u.imrWith)}">IMR</span>`
+      : '';
+// A fish photo with its crop for the previews (crSrc, through its suggested-crop path): Pierre's (curation.json fish crop,
+// [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655).
+const fuP = p => (p ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null}} : p);
+const fuHref = id => '#' + ASUBJ.hash + FAMS + '/' + encodeURIComponent(id);
+// Everything the page needs from the draft, once per render: each species' photos in play, the photos sent elsewhere
+// with Not this, and the species whose photos changed since the published file (the list's dots).
+function fuData() {
+  const F = DRAFT.fish || {},
+    S0 = SAVED.fish || {},
+    play = {},
+    gone = [];
+  Object.entries(F.add || {}).forEach(([f, sid]) => {
+    if (fishOn(F, f, sid)) (play[sid] = play[sid] || []).push(FISHC.byF[f] || {f});
+  });
+  Object.entries(F.out || {}).forEach(([f, to]) => {
+    const p = FISHC.byF[f];
+    if (p && to !== p.sid) gone.push({...p, to});
+  });
+  const dirty = new Set();
+  ['add', 'seen', 'exclude', 'out'].forEach(k =>
+    [...new Set([...Object.keys(F[k] || {}), ...Object.keys(S0[k] || {})])].forEach(
+      f => !same((F[k] || {})[f], (S0[k] || {})[f]) && FISHC.byF[f] && dirty.add(FISHC.byF[f].sid)
+    )
+  );
+  return {F, play, gone, dirty};
+}
+// A family's game species (fish.json order: most common first) and its photos in play by species, in the page's order;
+// its cover (his pick while in play, else the family's first photo in the game's order); what it still needs.
+function fuFam(u, D) {
+  const sp = FISHC.species,
+    ok = s => sp[s] && !sp[s].out,
+    rows = Object.fromEntries(u.species.filter(ok).map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
+    k = (D.F.genera || {})[u.id] || {},
+    all = u.species.filter(ok).flatMap(s => [...rows[s].feat, ...rows[s].rest]),
+    // his pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
+    // as the game's card cover: reference-level first; Codex review #655)
+    cover = fishCoverOf(all, D.F, u.id, fuJ);
+  return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, D.F, fuJ), n: u.species.filter(ok).length};
+}
+const fuName = sid => (FISHC.species[sid] || {}).name || sid;
+// st: {num} for a featured photo; cover: the cover shown, picked: his pick; XI: fishIdx of the draft's fish part.
+function fuTile(sid, p, st, cover, picked, F, XI) {
+  const o = origin(p),
+    x = XI[p.f],
+    ease = (F.ease || {})[p.f] || (fuJ(p.f) || {}).e,
+    ph = fishPhase(p, fuJ(p.f), F),
+    jt = (F.tags || {})[p.f] || (fuJ(p.f) || {}).jt || '',
+    isCover = cover && cover.f === p.f;
+  return `<figure class="adm-tile${st.num ? ' is-feat' : ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-sid="${esc(sid)}">
+    <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button><button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>
+    ${st.num ? `<span class="adm-num">${st.num}</span>` : ''}
+    ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
+    <figcaption><span class="adm-src o-${o}">${esc((ASUBJ.admin.origins.find(y => y[0] === o) || [, o])[2])}</span>${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span></figcaption>
+    <div class="adm-acts"><button type="button" data-fu="feat" aria-pressed="${!!st.num}" title="Feature">Feature</button><button type="button" data-fu="cover" aria-pressed="${!!(isCover && picked)}" title="Cover">★ Cover</button><button type="button" data-fu="remove" title="Remove">Remove</button><button type="button" data-fu="not" title="Not this species">Not this</button></div></figure>`;
+}
+// The wink's surprise card as players meet it (quiz.js winkShow): its photo, "Which family?", its name among the three
+// absurd choices (the right one marked), and both feedback lines.
+const fuWink = (u, cover) =>
+  `<section class="adm-row adm-wink"><h3>Wink <small>a surprise card, never counted</small></h3><div class="adm-winkc">${cover && cover.src ? `<img ${crSrc(fuP(cover), 1)} alt="">` : '<span class="none"></span>'}<div><p class="adm-winkq">Which ${esc(ASUBJ.one)}? <span class="adm-src">Surprise</span></p><div class="adm-winka">${[[u.id, u.name], ...(u.wink.choices || [])].map(([id, l]) => `<span class="${id === u.id ? 'ok' : ''}">${esc(l)}</span>`).join('')}</div>${u.wink.right ? `<p><b>✓</b> ${esc(u.wink.right)}</p>` : ''}${u.wink.wrong ? `<p><b>✗</b> ${esc(u.wink.wrong)}</p>` : ''}</div></div></section>`;
+function renderFishUnits(id) {
+  if (!FISHC) {
+    status();
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    fishLoad().then(() => under(cur, FAMS) && render());
+    return;
+  }
+  const U = FISHC.units;
+  status();
+  if (!U.length) {
+    $v.innerHTML = '<p class="note">No families in fish.json yet.</p>';
+    return;
+  }
+  const u = U.find(x => x.id === id) || U[0];
+  const D = fuData(),
+    E = Object.fromEntries(U.map(x => [x.id, fuFam(x, D)])),
+    e = E[u.id],
+    F = D.F,
+    S0 = SAVED.fish || {},
+    XI = fishIdx(F),
+    imrOn = FU_IMR === 'imr',
+    L = U.filter(x => !imrOn || x.imr || x.imrWith || x.id === u.id);
+  $('preview').href = './?draft';
+  // The list: by key group (a small heading for each), English name first, the scientific names below.
+  let lastG;
+  const side = L.map(x => {
+    const c = E[x.id].cover,
+      dirty = !same((F.genera || {})[x.id], (S0.genera || {})[x.id]) || x.species.some(s => D.dirty.has(s)),
+      nd = E[x.id].needs,
+      gh =
+        x.group !== lastG
+          ? `<p class="adm-fgrp">${x.group == null ? 'No key group' : `${x.group} · ${esc(FISHC.groups[x.group] || '')}`}</p>`
+          : '';
+    lastG = x.group;
+    return `${gh}<a href="${esc(fuHref(x.id))}" class="adm-g${x.id === u.id ? ' cur' : ''}"${x.id === u.id ? ' aria-current="true"' : ''}>${c && c.src ? `<img ${crSrc(fuP(c), 1)} alt="" loading="lazy">` : '<span class="none"></span>'}<span>${esc(x.name)} ${fuImr(x)}
+      <small><i>${esc(x.sci.join(', '))}</i> · ${x.wink ? 'wink' : `circle ${x.circle}`} · ${E[x.id].n} sp.${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${E[x.id].k.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`;
+  }).join('');
+  const cnt = o => e.all.filter(p => origin(p) === o).length,
+    cv = e.cover,
+    sp = FISHC.species;
+  // One block per genus, one section per species inside it.
+  const body = u.genera
+    .map(g => {
+      const S = g.species.filter(s => e.rows[s]);
+      if (!S.length) return '';
+      return `<section class="adm-fgen" data-gen="${esc(g.id)}"><h3 class="adm-fgenh"><i>${esc(g.name)}</i> ${fuImr(g)} <small>${S.length} species</small></h3>${S.map(
+        sid => {
+          const {feat, rest} = e.rows[sid],
+            s = sp[sid],
+            n = feat.length + rest.length,
+            obs = new Set([...feat, ...rest].map(p => p.o || p.f)).size,
+            tg = fishTarget(s),
+            out = [...feat, ...rest].filter(p => !shown(p)).length,
+            nc = (FISHC.cand[sid] || []).length;
+          return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${esc(s.common || s.name)} <small><i>${esc(s.name)}</i> · <b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${n} photo${n === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
+      <div class="adm-grid">${feat.map((p, i) => (shown(p) ? fuTile(sid, p, {num: i + 1}, cv, e.k.cover, F, XI) : '')).join('')}${rest
+        .filter(shown)
+        .map(p => fuTile(sid, p, {}, cv, e.k.cover, F, XI))
+        .join(
+          ''
+        )}</div>${n ? '' : `<p class="note">No photo in play${nc ? ` · ${nc} candidate${nc === 1 ? '' : 's'}` : ''}.</p>`}</section>`;
+        }
+      ).join('')}</section>`;
+    })
+    .join('');
+  // Photos of its species sent elsewhere with Not this (his click only), with Put back.
+  const G = D.gone.filter(p => u.species.includes(p.sid)),
+    outRow = G.length
+      ? `<section class="adm-row adm-out"><h3>Not this species <small>${G.length} photo${G.length > 1 ? 's' : ''}</small></h3>
+    <div class="adm-grid">${G.map(
+      p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy">` : ''}</button>
+      <figcaption><span class="adm-t"><i>${esc(fuName(p.sid))}</i> → ${p.to === 'x' ? 'no game species' : `<i>${esc(fuName(p.to))}</i>`}</span></figcaption>
+      <div class="adm-acts"><button type="button" data-fu="back">Put back</button></div></figure>`
+    ).join('')}</div></section>`
+      : '';
+  // The two family selects list the families the All | IMR filter shows (the phone has only the bar's; Codex review #655).
+  const opts = L.map(
+    x => `<option value="${esc(x.id)}"${x.id === u.id ? ' selected' : ''}>${esc(x.name)}${x.imr || x.imrWith ? ' · IMR' : ''}</option>`
+  ).join('');
+  // All | IMR in the sticky bar, at every width (the side list is hidden on phones).
+  const imrSeg = `<span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
+    ['all', 'All'],
+    ['imr', 'IMR']
+  ]
+    .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
+    .join('')}</span>`;
+  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(u.name)} cover"></button>` : ''}<b class="adm-sname">${esc(u.name)} ${fuImr(u)}<small><i>${esc(u.sci.join(', '))}</i></small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}${FB.origins({cnt})}</div>`;
+  $v.innerHTML = `<div class="adm">
+    <nav class="adm-side" aria-label="${cap1(ASUBJ.many)}"><select id="gsel" aria-label="${cap1(ASUBJ.one)}">${opts}</select><div class="adm-list">${side}</div></nav>
+    <section class="adm-main">${filter}${u.wink ? fuWink(u, cv) : ''}${body}${outRow}</section></div>`;
+  bindBar($v, {redraw: render});
+  const fx = fn => {
+    DRAFT.fish = fn(DRAFT.fish || {});
+    saveDraft();
+    render();
+  };
+  [$('gsel'), $v.querySelector('.adm-gsel2')].forEach(el => el && (el.onchange = ev => (location.hash = fuHref(ev.target.value))));
+  $v.querySelectorAll('[data-fuimr]').forEach(
+    b =>
+      (b.onclick = () => {
+        FU_IMR = b.dataset.fuimr;
+        store.set('reefid-admin-fu-imr', FU_IMR);
+        render();
+      })
+  );
+  const okb = $v.querySelector('[data-ok]');
+  if (okb)
+    okb.onclick = () => {
+      if (!e.k.ok && e.needs.length) return toast('Not ready: ' + e.needs.join(' · '));
+      fx(F => fishOk(F, u.id));
+    };
+  // Every photo of the family in the page's order, for the enlarged photo's ‹ ›.
+  const Z = [...e.all, ...G].map(fuP);
+  $v.querySelectorAll('[data-fu]').forEach(el => {
+    const a = el.dataset.fu,
+      tl = el.closest('[data-f]'),
+      f = tl && tl.dataset.f,
+      sid = tl && tl.dataset.sid;
+    if (!f) return;
+    el.onclick = ev => {
+      ev.stopPropagation();
+      if (a === 'zoom') {
+        const i = Z.findIndex(p => p.f === f);
+        return zoomSet(Z, Math.max(0, i), p => lbCap(fuName(p.sid), p, (sp[p.sid] || {}).common || ''));
+      }
+      if (a === 'feat') {
+        const r = fishFeat(DRAFT.fish, u.id, sid, f);
+        if (r.full) return toast(`Already ${FISHFEAT} featured: remove one first.`);
+        return fx(() => r.F);
+      }
+      if (a === 'cover') return fx(F => fishCover(F, u.id, f));
+      if (a === 'remove') {
+        fx(F => fishReject(fishDrop(F, u.id, f), f));
+        return toast('Removed from play. Undo (Ctrl+Z) brings it back.');
+      }
+      if (a === 'exclude') {
+        fx(F => fishExclude(fishDrop(F, u.id, f), f));
+        return toast('Excluded. Undo (Ctrl+Z) brings it back.');
+      }
+      if (a === 'back') return fx(F => fishNotThis(F, f, sid, sid));
+      if (a === 'not') {
+        // The species to send it to, drawn on demand (a family may have 60 species and hundreds of photos).
+        const others = u.species.filter(x => x !== sid && sp[x] && !sp[x].out);
+        el.outerHTML = `<select data-funot aria-label="Not this species"><option value="">Not this</option><option value="x">No game species</option>${others.length ? `<optgroup label="${esc(u.name)}">${others.map(x => `<option value="${esc(x)}">${esc(fuName(x))}</option>`).join('')}</optgroup>` : ''}</select>`;
+        const sel = tl.querySelector('[data-funot]');
+        sel.focus();
+        sel.onchange = () => {
+          if (!sel.value) return;
+          const to = sel.value;
+          fx(F => fishNotThis(fishDrop(F, u.id, f), f, to, sid));
+          toast(
+            to === 'x' ? 'Not this: no game species. Undo (Ctrl+Z) brings it back.' : `Not this: sent to ${fuName(to)} as its candidate.`
+          );
+        };
+      }
+    };
+  });
+  const c = $v.querySelector('.adm-g.cur');
+  if (c) c.scrollIntoView({block: 'nearest'});
+}
 function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
   memoFresh();
-  document.body.classList.toggle('adm-cmode', cur === '~cand');
+  document.body.classList.toggle('adm-cmode', cur === 'photos/candidates');
   // A page the subject on screen does not have yet (admin plan: its fish version comes in a later PR).
   if (!hasPage(ASUBJ, cur)) {
     status();
     $v.innerHTML = `<p class="note">Not for ${esc(ASUBJ.name.toLowerCase())} yet.</p>`;
     return;
   }
-  if (cur === '~quality') return renderQuality();
-  if (cur === '~form') return renderForm();
-  if (cur === '~excluded') return renderExcluded();
-  if (cur === '~hidden') return renderHidden();
-  if (cur === '~todo' || cur === '~triage') return renderTriage();
-  if (cur === '~events') return renderEvents();
-  if (cur === '~health') return renderStats();
-  if (cur === '~points') return renderPoints();
+  if (cur === 'photos/review/quality') return renderQuality();
+  if (cur === 'photos/review/growth-form') return renderForm();
+  if (cur === 'photos/genera/excluded') return renderExcluded();
+  if (cur === 'photos/genera/hidden') return renderHidden();
+  if (cur === 'inbox/todo/all' || cur === 'inbox/todo/reports') return renderTriage();
+  if (cur === 'inbox/todo/errors') return renderEvents();
+  if (cur === 'inbox/todo/health') return renderStats();
+  if (cur === 'inbox/todo/points') return renderPoints();
   if (cur.startsWith(POINT_R)) return renderPoint(cur.slice(POINT_R.length));
-  // Game coverage with the Where to look banner above it (folded on ~cov, open in full on ~stats-needs).
-  if (cur === '~cov' || cur === '~stats-needs') return renderCov();
-  if (cur === '~kcov') return renderKcov();
-  if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
-  if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
-  if (/^~an(-|$)/.test(cur))
-    return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
+  // Game coverage with the Where to look banner above it (folded, open in full with ?look=all: lookAll).
+  if (cur === 'inbox/coverage/games') return renderCov();
+  if (cur === 'inbox/coverage/sheets-id-key') return renderKcov();
+  if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
+  if (cur.startsWith('players/list/journey/')) return renderJourney(cur.slice('players/list/journey/'.length)); // one player's path (admin-journey.js)
+  if (anPage(cur)) return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
-  if (cur.startsWith('~anon/')) return renderJourney('', cur.slice(6));
-  if (cur === '~diff') return renderDiff();
-  if (cur === '~pstats') return renderPstats();
+  if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
+  if (cur === 'photos/review/by-difficulty') return renderDiff();
+  if (cur === 'photos/stats/overview') return renderPstats();
   if (modeKey() === 'stats') return renderStats();
-  if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
-  if (cur === '~cand') return renderCand();
+  if (cur === 'photos/look-alikes') return renderMont();
+  if (cur === 'photos/candidates') return renderCand();
+  if (under(cur, FAMS)) return renderFishUnits(cur.slice(FAMS.length + 1));
   const names = Object.keys(DATA.gen);
-  if (!DATA.gen[cur]) cur = names[0];
+  // A genus page (Photos › Genera › Live): the genus is the address's last segment; none or an unknown one, the first.
+  const gn = cur.slice(LIVE.length + 1);
   const ch = changed(),
-    n = cur,
+    n = DATA.gen[gn] ? gn : names[0],
     g = DATA.gen[n],
     cv = coverOf(n),
     k = entry(n);
   SHOWN_COVER = cv && cv.f;
   status();
-  $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
+  $('preview').href = `./?draft#${routeOut('g-' + n)}`;
   const side = names
     .map(m => {
       const c = coverOf(m),
         e = DRAFT.genera[m] || {},
         dirty = ch.includes(m),
         h = (e.hide || []).length;
-      return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
+      return `<a href="${esc(genusHref(m))}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
       <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} waiting` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`;
     })
     .join('');
@@ -1534,13 +1976,8 @@ function render() {
           .map(([c, a, b]) => `${c} ${c === 1 ? a : b}`)
       )
     : '';
-  const gvSeg = `<span class="adm-qseg adm-lvseg adm-gview" role="group" aria-label="Show view">${[
-    ['all', 'All'],
-    ...R.map(([v]) => [v, label(n, v)])
-  ]
-    .map(([v, t]) => `<button type="button" data-gv="${v}" aria-pressed="${gv === v}">${t}</button>`)
-    .join('')}</span>`;
-  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
+  const gvSeg = FB.views({key: 'gv', cur: gv, items: [['all', 'All'], ...R.map(([v]) => [v, label(n, v)])], seg: true});
+  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#${routeOut('g-' + n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}${FB.origins({cnt})}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
@@ -1557,24 +1994,7 @@ function render() {
       }
       ${filter}${hidRow}${body}${one ? '' : candRow + outRow}
     </section></div>`;
-  $v.querySelectorAll('[data-o]').forEach(
-    b =>
-      (b.onclick = () => {
-        const o = b.dataset.o;
-        if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0]));
-        else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('reefid-admin-origins', [...SHOW]);
-        render();
-      })
-  );
-  $v.querySelectorAll('[data-gv]').forEach(
-    b =>
-      (b.onclick = () => {
-        GVIEW = b.dataset.gv;
-        store.set('reefid-admin-gview', GVIEW);
-        render();
-      })
-  );
+  bindBar($v, {redraw: render});
   const okb = $v.querySelector('[data-ok]');
   if (okb)
     okb.onclick = () => {
@@ -1623,12 +2043,12 @@ function render() {
       })
   );
   $('gsel').onchange = e => {
-    location.hash = e.target.value;
+    location.hash = genusHref(e.target.value);
   };
   const g2 = $v.querySelector('.adm-gsel2');
   if (g2)
     g2.onchange = e => {
-      location.hash = e.target.value;
+      location.hash = genusHref(e.target.value);
     };
   const cd = $v.querySelector('.adm-cands');
   if (cd) cd.ontoggle = () => store.set('reefid-admin-cands', cd.open);
@@ -1792,7 +2212,7 @@ function pointerDrag(tiles, hover, drop, cancel) {
 // credit line only.
 const inatObs = p => /^https:\/\/(www\.)?inaturalist\.org\/observations\//.test(p.o || '');
 const lbCap = (n, p, what) =>
-  `${DATA.gen[n] ? `<a href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
+  `${DATA.gen[n] ? `<a href="./?draft#${routeOut('g-' + n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
     p.cf
       ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
       : p.imr
@@ -1924,49 +2344,21 @@ function renderQuality() {
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   const sec = ([q, t]) => {
     const L = all.filter(p => qOf(p.f) === q);
     return `<section class="adm-row adm-qrow"><h3><span class="adm-q q${q}">${t}</span> <small>${L.length} photo${L.length === 1 ? '' : 's'}${q === 3 ? ' · for covers and featured photos' : q === 1 ? ' · for a realistic mode' : ''}</small></h3>
       <div class="adm-grid adm-qgrid" data-qdrop="${q}">${L.map(card).join('')}</div></section>`;
   };
-  const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-qv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Photo quality</h2></div>
-    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
-    <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', QF.view)}${VIEWS.map(([v, t]) => opt(v, t, QF.view)).join('')}${opt('cand', 'Candidates', QF.view)}
-      <select id="qgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === QF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="qtodo"${QF.todo ? ' checked' : ''}> Not checked yet</label></div>
+    ${FB.origins()}
+    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'qv', cur: QF.view, items: FB.viewItems()})}
+      ${FB.unit({id: 'qgen', cur: QF.genus, names})}
+      ${FB.check('qtodo', QF.todo, 'Not checked yet')}</div>
     ${QUAL.map(sec).join('')}</section>`;
-  const saveQF = () => {
-    store.set('reefid-admin-qfilter', QF);
-    renderQuality();
-  };
-  $v.querySelectorAll('[data-o]').forEach(
-    b =>
-      (b.onclick = () => {
-        const o = b.dataset.o;
-        SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('reefid-admin-origins', [...SHOW]);
-        renderQuality();
-      })
-  );
-  $v.querySelectorAll('[data-qv]').forEach(
-    b =>
-      (b.onclick = () => {
-        QF.view = b.dataset.qv;
-        saveQF();
-      })
-  );
-  $('qgen').onchange = e => {
-    QF.genus = e.target.value;
-    saveQF();
-  };
-  $('qtodo').onchange = e => {
-    QF.todo = e.target.checked;
-    saveQF();
-  };
+  bindBar($v, {redraw: renderQuality, f: QF, k: 'reefid-admin-qfilter', view: 'qv', unit: 'qgen', checks: {qtodo: 'todo'}});
   $v.querySelectorAll('[data-act="zoom"]').forEach(
     b =>
       (b.onclick = () => {
@@ -1994,7 +2386,7 @@ function renderQuality() {
     };
   });
   document.onkeydown = e => {
-    if (cur !== '~quality' || !over || e.target.closest('input,select,textarea')) return;
+    if (cur !== 'photos/review/quality' || !over || e.target.closest('input,select,textarea')) return;
     const q = {'1': 1, '2': 2, '3': 3}[e.key];
     if (q) {
       e.preventDefault();
@@ -2108,7 +2500,7 @@ const RECENT = {
 // d = 0 → 50%, +1.44 → 19%, −1 → 73%. A genus (any grouping) reads the same for a typical photo of it (its offset).
 // Five bands on the whole % shown (so the colour never disagrees with the number): REC [floor, class, word], tokens
 // --rec-<class> / --rec-<class>-ink in app.css (light, dark, colour-blind). The raw value stays in the title (a tap
-// on a touch screen shows it: recTap). Players read as their Elo (1000 + 200 × level, as players see it), ± its margin.
+// on a touch screen shows it: recTap). Players read as an Elo (1000 + 200 × level, the scale players see), ± its margin.
 const recognised = d => 1 / (1 + Math.exp(d)),
   recOf = d => Math.round(100 * recognised(d)),
   recPct = d => recOf(d) + '%',
@@ -2144,7 +2536,7 @@ const recognised = d => 1 / (1 + Math.exp(d)),
       return r > l ? `<i class="rec-${k}" style="width:${((100 * (r - l)) / (b - a)).toFixed(2)}%" title="${w}"></i>` : '';
     }).join('')}</span>`;
   },
-  // A player's level lv as the Elo players see (1000 + 200 × lv), with its 95% margin m (on the level scale) when known.
+  // A player's level lv on the players' Elo scale (1000 + 200 × lv), with its 95% margin m (on the level scale) when known.
   eloNum = lv => Math.round(1000 + 200 * lv),
   eloMargin = m => (m != null && isFinite(m) ? Math.round((200 * m) / 10) * 10 : null),
   eloText = (lv, m, o = {}) => {
@@ -2160,11 +2552,11 @@ const REC_HELP = `<p><b>Difficulty in words</b> (Pierre, 2026-11-05). A photo re
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
   get journey() {
-    return `<p>One player's path, from their answers in the sheet (signed in). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
+    return `<p>One player's path, from their answers in the sheet (signed in), <b>in one subject</b>: the Corals | Fish at the top shows how many answers they gave in each and opens the other (the header switch keeps the player too); from the list of players it opens on the subject they played last. A subject whose progress the admin does not replay yet shows what its answers say: no progress, cards, learned units, Elo or sheets opened. <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Four groups</b>. <b>Inbox</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Activity</b> (opened first) and <b>List</b> (who plays, merge or delete names); Activity (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last (Players always Activity), each tab the view you used last. The address says where you are, in the same words: <code>#group/tab/view</code> (<code>#photos/review/quality</code>), a genus or a player after it.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
@@ -2175,7 +2567,7 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, by anonymous id; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A rename or a merge keeps the membership, a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -2204,7 +2596,8 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter. Coral Finder book photos are left out.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; on a fish photo, Remove excludes it from the fish games for good (Undo brings it back) and Done clears the flag.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  units: `<p>The book's families (Allen et al. 2015, the key in force), by key group: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (8, 12 for the PDF's most sighted) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the family's), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only) and <b>×</b> (excluded for good): one click each, Undo steps back. <b>✓ Validated</b> once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. Candidates are added in Candidates. Publish sends it all (curation.json fish).</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
@@ -2223,17 +2616,17 @@ function toggleHelp() {
     h.remove();
     return;
   }
-  const m =
-    {
-      '~users': 'users',
-      '~stats-photos': 'statsph',
-      '~pstats': 'pstats',
-      '~stats-conf': 'statsconf',
-      '~stats-log': 'statslog',
-      '~stats-stop': 'statsstop',
-      '~stats-needs': 'statsneeds',
-      '~diff': 'diff'
-    }[cur] || modeKey();
+  const m = lookAll()
+    ? 'statsneeds'
+    : {
+        'players/list': 'users',
+        'photos/stats/difficulty': 'statsph',
+        'photos/stats/overview': 'pstats',
+        'analyses/difficulty/pairs': 'statsconf',
+        'analyses/learning/answer-log': 'statslog',
+        'analyses/learning/stops': 'statsstop',
+        'photos/review/by-difficulty': 'diff'
+      }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
   h.className = 'adm-help';
@@ -2337,13 +2730,13 @@ function formTile(t, v) {
   const p = {f: t.dataset.f};
   t.querySelector('.adm-fseg').outerHTML = fSeg(p, !!t.closest('.adm-blind'));
   pinRefresh(t);
-  if (cur === '~form') t.classList.add('rated');
+  if (cur === 'photos/review/growth-form') t.classList.add('rated');
   bindF(t);
   agreeRefresh();
   status();
 }
 const agreeRefresh = () => {
-  const d = cur === '~form' && $('fagree');
+  const d = cur === 'photos/review/growth-form' && $('fagree');
   if (d) agreeFill(d);
 };
 // One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
@@ -2383,7 +2776,7 @@ function renderForm() {
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
     <div class="adm-acts">${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}</div></figure>`;
   // Still to classify: grouped by the old Coral Finder letter, as a hint.
   const rows = [
@@ -2403,56 +2796,25 @@ function renderForm() {
     return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small>${todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : ''}</h3>
       <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`;
   };
-  const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Growth form</h2></div>
     <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
-    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book')
-      .map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`)
-      .join('')}</div>
-    <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
-      <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label><label class="adm-todo"><input type="checkbox" id="fgfirst"${FF.gfirst ? ' checked' : ''}> Guesses first</label></div>
+    ${FB.origins({skip: ['book']})}
+    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'fv', cur: FF.view, items: FB.viewItems()})}
+      ${FB.unit({id: 'fgen', cur: FF.genus, names})}
+      ${FB.check('ftodo', FF.todo, 'Not checked yet')}${FB.check('fpol', FF.pol, '✿ Polyps out')}${FB.check('fgfirst', FF.gfirst, 'Guesses first')}</div>
     ${rows.map(sec).join('')}</section>`;
   const fag = $('fagree');
   agreeFill(fag);
   fag.ontoggle = () => (FAG_OPEN = fag.open);
-  const saveFF = () => {
-    store.set('reefid-admin-ffilter', FF);
-    renderForm();
-  };
-  $v.querySelectorAll('[data-o]').forEach(
-    b =>
-      (b.onclick = () => {
-        const o = b.dataset.o;
-        SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('reefid-admin-origins', [...SHOW]);
-        renderForm();
-      })
-  );
-  $v.querySelectorAll('[data-fv]').forEach(
-    b =>
-      (b.onclick = () => {
-        FF.view = b.dataset.fv;
-        saveFF();
-      })
-  );
-  $('fgen').onchange = e => {
-    FF.genus = e.target.value;
-    saveFF();
-  };
-  $('ftodo').onchange = e => {
-    FF.todo = e.target.checked;
-    saveFF();
-  };
-  $('fpol').onchange = e => {
-    FF.pol = e.target.checked;
-    saveFF();
-  };
-  $('fgfirst').onchange = e => {
-    FF.gfirst = e.target.checked;
-    saveFF();
-  };
+  bindBar($v, {
+    redraw: renderForm,
+    f: FF,
+    k: 'reefid-admin-ffilter',
+    view: 'fv',
+    unit: 'fgen',
+    checks: {ftodo: 'todo', fpol: 'pol', fgfirst: 'gfirst'}
+  });
   $v.querySelectorAll('[data-act="zoom"]').forEach(
     b =>
       (b.onclick = () => {
@@ -2506,7 +2868,8 @@ function renderForm() {
     };
   });
   document.onkeydown = e => {
-    if (cur !== '~form' || !over || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,select,textarea')) return;
+    if (cur !== 'photos/review/growth-form' || !over || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,select,textarea'))
+      return;
     const k = e.key.toUpperCase();
     if (k === 'P') {
       e.preventDefault();
@@ -2568,7 +2931,7 @@ function renderExcluded() {
             .map(
               p => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${!p.gone ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : p.inat ? `<img src="${io(p.inat)}.jpg" alt="" loading="lazy" data-ext="0">` : '<span class="none">no preview</span>'}</button>
-      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : p.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(p.slide))}</i>` : ''}</figcaption>
+      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : p.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(p.slide))}</i>` : ''}</figcaption>
       <div class="adm-acts"><button type="button" data-act="restore">Restore</button></div></figure>`
             )
             .join('')}</div>`
@@ -2713,7 +3076,7 @@ function loadPages(force) {
         pgsAt = Date.now();
         return (PGS =
           j && j.ok && j.rows && Number(j.v) >= PAGES.SHEET
-            ? {rows: pagesRows(j.rows)}
+            ? {rows: pagesRows(j.rows), arch: pagesRows(j.arch || [])} // v58: an archive's apart (its Journey only)
             : {
                 err:
                   !j || !(Number(j.v) >= PAGES.SHEET)
@@ -2832,7 +3195,7 @@ function evSummary() {
     G = evGroup(R, r => r[3] + '|' + r[4] + (r[3] === 'err' ? ' @ ' + r[5] : '')),
     K = {err: 'App error', photo: 'Photo not loaded', sync: 'Failed save'};
   if (!G.length) return '';
-  return `<div class="adm-qhead adm-tdhead"><h2>Errors <small>${R.length}</small></h2><a class="adm-link" href="#~events">All errors ›</a></div>
+  return `<div class="adm-qhead adm-tdhead"><h2>Errors <small>${R.length}</small></h2><a class="adm-link" href="#inbox/todo/errors">All errors ›</a></div>
     <div class="adm-tscroll"><table class="adm-tbl adm-tderr"><thead><tr><th>What</th><th>Devices</th><th>Times</th><th>Last</th></tr></thead><tbody>${G.slice(
       0,
       8
@@ -2975,7 +3338,7 @@ function renderEvents() {
   status();
   if (!EVS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    loadEvents().then(() => cur === '~events' && renderEvents());
+    loadEvents().then(() => cur === 'inbox/todo/errors' && renderEvents());
     return;
   }
   const head = `<div class="adm-shead"><h2>Errors & feedback</h2><button type="button" class="adm-link" data-evr>Refresh</button></div>`;
@@ -3079,32 +3442,40 @@ function renderEvents() {
 }
 function bindEv() {
   const r = $v.querySelector('[data-evr]');
-  if (r) r.onclick = () => loadEvents(true).then(() => cur === '~events' && renderEvents());
+  if (r) r.onclick = () => loadEvents(true).then(() => cur === 'inbox/todo/errors' && renderEvents());
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
 }
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 // The fish beta's reports (Codex review #442): a report from a fish question names a teaching id (t01) and remote
-// iNaturalist photos (fi…), none in the coral photo registry. fish.json and fish-photos.json are read once, when To do
-// first shows: {gen: teaching id -> record (core.js fishGen), ph: photo id -> {photo, entry id}}.
+// iNaturalist photos (fi…), none in the coral photo registry. fish.json, fish-photos.json and fish-game.json (the curated
+// photos on R2, admin plan PR 7) are read once, when To do first shows: {gen: teaching id -> record (core.js fishGen),
+// ph: photo id -> {photo, entry id}}, every photo either list holds (a report may name a photo shown before a Publish).
 let FISHP_ADM = null;
 function fishAdmin() {
   return (FISHP_ADM =
     FISHP_ADM ||
-    Promise.all(['fish.json', 'fish-photos.json'].map(u => fetch(u, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
-      .then(([f, ph]) => {
+    Promise.all(
+      ['fish.json', 'fish-photos.json', 'fish-game.json'].map(u => fetch(u, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))
+    )
+      .then(([f, ph, gm]) => {
         if (!f || !ph || !ph.photos) return;
-        const F = fishGen(f, ph.photos),
+        const G = (gm && gm.photos) || {},
+          all = {};
+        new Set([...Object.keys(ph.photos), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(ph.photos[t] || [])]));
+        const F = fishGen(f, all),
           P = {};
         Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (P[x.f] = {...x, entry: g.id})));
         FISHA = {gen: F.gen, ph: P};
-        if (cur === '~triage') render();
+        if (cur === 'inbox/todo/reports') render();
       })
       .catch(() => {}));
 }
 // A unit's name in a report: a fish entry by its IMR name (plain, no genus page), a genus in italics with its page link.
 const repUnit = x =>
-  FISHA && FISHA.gen[x] ? `${esc(FISHA.gen[x].name)} <small>(fish)</small>` : `<a class="adm-gen" href="#${esc(x)}"><i>${esc(x)}</i></a>`;
+  FISHA && FISHA.gen[x]
+    ? `${esc(FISHA.gen[x].name)} <small>(fish)</small>`
+    : `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
 // To do › Out of the presence rule (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself; a photo that
 // does not meet it "must not be there") and To do › Share-alike (Pierre, 2026-11-05: share-alike photos already on the
 // site are never removed automatically; same actions). Remove = the × of every photo (ACT.exclude: excluded for good,
@@ -3136,7 +3507,7 @@ const decSec = (k, tile) => {
   const L = DECIDE[k].list(),
     K = DECIDE[k].kept(),
     grid = (M, kept) =>
-      `<div class="adm-grid adm-qgrid adm-${k}q">${M.map(p => tile(p, decActs(k, kept) + '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>`;
+      `<div class="adm-grid adm-qgrid adm-${k}q">${M.map(p => tile(p, decActs(k, kept) + '<a class="chip" href="' + esc(genusHref(p.genus)) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>`;
   if (!L.length && !K.length) return '';
   return `<div class="adm-qhead adm-tdhead" data-${k}sec><h2>${DECIDE[k].title} <small>${L.length}</small></h2>${L.length ? `<button type="button" class="adm-fchip plain" data-${k}all title="Remove all">Remove all</button>` : ''}</div>${L.length ? grid(L, false) : ''}${
     K.length
@@ -3179,8 +3550,12 @@ function bindDecide(k) {
 }
 function renderTriage() {
   status();
-  const F = DRAFT.flag || {},
-    flagged = Object.keys(F).map(f => ({...(PHOTOS[f] || {genus: F[f].genus || '?'}), f, fl: F[f]}));
+  // The photos flagged on the site for the subject on screen (flagsOf): a coral one with its genus, a photo of a subject
+  // with its own part of the curation (fish) by its photo (fl.file) and unit, once its data is read (fishAdmin).
+  const F = flagsOf(DRAFT),
+    own = !ASUBJ.admin.cur,
+    flagged = Object.keys(F).map(f => ({...((own && PHOTOS[f]) || {genus: F[f].genus || '?'}), f, fl: F[f]}));
+  if (!own && flagged.length && !FISHA) fishAdmin();
   const when = t => {
     try {
       return dateText(t, 'dmhm');
@@ -3190,9 +3565,10 @@ function renderTriage() {
   };
   const tile = (p, acts, cap) => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${PHOTOS[p.f] ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : '<span class="none">missing</span>'}</button>
-      <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
+      <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
   // A flagged photo still on a genus page gets every tool of that page (Pierre: often flagged for its zoom level), plus Done.
   const flagTile = p => {
+    if (!own) return unitFlagTile(p);
     const n = p.genus,
       q = DATA.gen[n] && [...photos(n), ...pending(n)].find(x => x.f === p.f),
       where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`;
@@ -3210,7 +3586,18 @@ function renderTriage() {
     })
       .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`)
       .replace(GRIP, '')
-      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>${where}`);
+      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>${where}`);
+  };
+  // A flagged photo of a subject with its own part of the curation: the photo, its unit, where it was seen; Remove excludes
+  // it for good from that subject's games (autosort.js fishExclude, the × of Photos › Families, by the photo's name:
+  // core.js fishPhotos and fishOn honour it, its other copies by their photo id). Both clear the flag; Undo takes either back.
+  const unitFlagTile = p => {
+    const fp = FISHA && FISHA.ph[p.fl.file || p.f],
+      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`,
+      ph = fp
+        ? `<a class="adm-ph" href="${esc(fp.o || '')}" target="_blank" rel="noopener"><img src="${img(fp, 1)}" alt="" loading="lazy"></a>`
+        : '<span class="adm-ph none">missing</span>';
+    return `<figure class="adm-tile" data-f="${esc(p.f)}">${ph}<figcaption>${p.fl.unit ? repUnit(p.fl.unit) : ''} <small>${esc((fp && fp.t) || '')}</small>${where}</figcaption><div class="adm-acts"><button type="button" data-act="tdrop">Remove</button><button type="button" data-act="tdone">Done</button></div></figure>`;
   };
   // A reported photo: every tool of its genus page, like a flagged one; Done is per report.
   const repTile = (f, g0) => {
@@ -3226,16 +3613,20 @@ function renderTriage() {
     return tile0(n, q, viewOf(n, q), {cls: hidden(n, q) ? 'is-hidden' : ''})
       .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`)
       .replace(GRIP, '')
-      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`);
+      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`);
   };
   const reps = repsOpen();
-  if (!FISHA && reps.some(r => /^fi\d/.test(r[10] || '') || /^t\d/.test(r[5] || ''))) fishAdmin();
+  // A fish report: an old entry id (t01) or a family or genus id (f:, g:; units plan PR 4), or a fish photo (stopgap fi…,
+  // FishBase reference fb…, curated candidate fish-…; Codex review #656).
+  if (!FISHA && reps.some(r => /^(fi\d|fb|fish-)/.test(r[10] || '') || /^(t\d|f:|g:)/.test(r[5] || ''))) fishAdmin();
   const repCard = r => {
     const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
       play = !/^(photo|sheet|page)$/.test(m),
       // sheet v55: the reports of an account deleted with its answers kept are "~deleted <id>", never verified (Q85)
-      gone = /^~deleted /.test(who || '');
-    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : `<b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>`}
+      gone = /^~deleted /.test(who || ''),
+      // sheet v58: a report of an archived record (Players › Archived), its open items kept as such
+      arch = ok === 2 || !!(USERS && (USERS.archived || []).some(x => x.name === who));
+    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : arch ? `<b class="adm-repwho unv" title="${esc(who)}">From an archived record</b>` : `<b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>`}
       <span class="adm-repwhy">${esc(why === 'wrong' && !play ? 'Wrong genus' : REP_WHY[why] || why)}</span>${g ? `<span>${repUnit(g)}${a && a !== g ? ` · answered ${repUnit(a)}` : ''}</span>` : ''}${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
       <small class="adm-where">${esc(play ? 'game ' + m : m)}${w ? ` · <a href="index.html#${esc(w)}" target="_blank" rel="noopener">${esc(w)}</a>` : ''} · ${esc(when(t))}</small><button type="button" class="adm-tdone" data-rdone="${esc(id)}">✓ Done</button></div>
       ${note ? `<p class="adm-repnote">${esc(note)}</p>` : ''}${
@@ -3259,9 +3650,9 @@ function renderTriage() {
   // All (To do, Pierre 2026-11-03): by urgency, Health's red line first (only when something is wrong), then the
   // reports and flags, the devices' errors, Featured photos rated Poor, the judging agent's suggestions last. Reports =
   // the same without Health and the errors (the old Triage page). Answers and errors load behind the page.
-  const all = cur === '~todo';
-  if (all && !ANS) loadStats().then(() => cur === '~todo' && render());
-  if (all && !EVS) loadEvents().then(() => cur === '~todo' && render());
+  const all = cur === 'inbox/todo/all';
+  if (all && !ANS) loadStats().then(() => cur === 'inbox/todo/all' && render());
+  if (all && !EVS) loadEvents().then(() => cur === 'inbox/todo/all' && render());
   $v.innerHTML = `<section class="adm-quality">${all ? healthLine() : ''}
     <div class="adm-qhead"><h2>Reports and feedback <small>${REPS && REPS.rows ? reps.length : ''}</small></h2>${REPS && REPS.err ? `<small class="adm-where">${esc(REPS.err)}</small>` : ''}<button type="button" class="adm-fchip plain" data-rload title="Reload">↻</button></div>
     ${reps.length ? reps.map(repCard).join('') : REPS && REPS.rows ? '<p class="note">Nothing reported.</p>' : ''}
@@ -3280,15 +3671,16 @@ function renderTriage() {
     ${all ? evSummary() : ''}
     ${decSec('rule', tile)}
     ${decSec('sa', tile)}
-    ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
+    ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="' + esc(genusHref(p.genus)) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     ${sugHtml(tile)}
   </section>`;
   bindSug();
   bindDecide('rule');
   bindDecide('sa');
   const done = f => {
-    DRAFT.flag = {...(DRAFT.flag || {})};
-    delete DRAFT.flag[f];
+    const L = {...flagsOf(DRAFT)};
+    delete L[f];
+    flagsSet(DRAFT, ASUBJ, L);
   };
   $v.querySelectorAll('[data-act="tdone"],[data-tdone]').forEach(
     b =>
@@ -3316,12 +3708,12 @@ function renderTriage() {
   if (rl)
     rl.onclick = () =>
       loadReports(true).then(() => {
-        if (cur === '~triage' || cur === '~todo') render();
+        if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
       });
-  if (!HANDLEDF) handledLoad().then(() => (cur === '~triage' || cur === '~todo') && render());
+  if (!HANDLEDF) handledLoad().then(() => (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') && render());
   if (!REPS)
     loadReports().then(() => {
-      if (cur === '~triage' || cur === '~todo') render();
+      if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
     });
   $v.querySelectorAll('[data-act="tpoor"]').forEach(
     b =>
@@ -3331,6 +3723,17 @@ function renderTriage() {
         done(f);
         saveDraft();
         render();
+      })
+  );
+  $v.querySelectorAll('[data-act="tdrop"]').forEach(
+    b =>
+      (b.onclick = () => {
+        const f = b.closest('[data-f]').dataset.f;
+        DRAFT[ASUBJ.admin.cur] = fishExclude(DRAFT[ASUBJ.admin.cur], (flagsOf(DRAFT)[f] || {}).file || f);
+        done(f);
+        saveDraft();
+        render();
+        toast('Excluded. Undo (Ctrl+Z) brings it back.');
       })
   );
   $v.querySelectorAll('[data-act="thide"]').forEach(
@@ -3415,7 +3818,7 @@ function renderPoint(id) {
   status();
   const p = ptList().find(x => x.id === id);
   if (!p) {
-    $v.innerHTML = `<p class="note">No point ${esc(id)}. <a href="#~points">Points</a></p>`;
+    $v.innerHTML = `<p class="note">No point ${esc(id)}. <a href="#inbox/todo/points">Points</a></p>`;
     return;
   }
   const st = (DRAFT.points || {})[id] || {},
@@ -3440,7 +3843,7 @@ function renderPoint(id) {
       }</figcaption></figure>`;
     };
   $v.innerHTML = `<article class="adm-point" data-point="${esc(id)}">
-    <div class="adm-ptbar"><a class="adm-link" href="#~points">‹ Points</a><span class="adm-src adm-ptk k-${esc(p.kind)}">${esc(ptKind(p))}</span>${ptSubj(p)}<small>${esc(pointAge(p.at))}</small>${
+    <div class="adm-ptbar"><a class="adm-link" href="#inbox/todo/points">‹ Points</a><span class="adm-src adm-ptk k-${esc(p.kind)}">${esc(ptKind(p))}</span>${ptSubj(p)}<small>${esc(pointAge(p.at))}</small>${
       ph.some(x => !x.none)
         ? `<button type="button" class="adm-fchip plain" data-ptnames aria-pressed="${PT_NAMES}" title="Names">Names</button>`
         : ''
@@ -3823,13 +4226,7 @@ function zoomOne(p) {
 // in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines, CF book.
 const CK = f => 'cand:' + f,
   rejected = f => !!(DRAFT.seen || {})[CK(f)];
-const CSRCS = [
-  ['own', 'Pierre'],
-  ['dauin', 'Dauin'],
-  ['ph', 'PH'],
-  ['book', 'CF'],
-  ['all', 'All']
-];
+// Sources of the swiper: the subject's (core.js SUBJECTS admin csrc, FB.srcs), then All.
 let CSRC = store.get('reefid-admin-csrc2', 'dauin'),
   CSKIP = new Set(),
   CFULL = false, // this tab: also show the candidates waiting in full cells
@@ -4019,6 +4416,8 @@ async function fishLoad() {
       .catch(() => ({}));
   const [C, F] = await Promise.all([get('fish-cand.json'), get('fish.json')]);
   return (FISHC = {
+    units: fishUnits(F),
+    groups: Object.fromEntries(((F.key || {}).groups || []).map(g => [g.n, g.title])),
     cand: C.cand || {},
     species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
     byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
@@ -4418,7 +4817,11 @@ function retireOrder(n, w, cols) {
     }
     if (nn !== null && nn < 0.5) {
       c.score += 3 * (1 - nn / 0.5);
-      c.why.push(`recognised by ${recPct(c.d)}, like another colony`);
+      // [text for the tile's title, HTML for the note: the reading as a badge, its raw value in the badge's title].
+      c.why.push([
+        `recognised by ${recPct(c.d)} (difficulty ${rawNum(c.d)}), like another colony`,
+        `recognised by ${recBadge(c.d, {short: 1, of: 'its photos', raw: 'mean photo difficulty'})}, like another colony`
+      ]);
     }
     if (c.ans >= 10) {
       c.score += Math.min(2, c.ans / 30);
@@ -4465,11 +4868,11 @@ function renderRepl() {
   const QN = {1: 'Poor', 2: 'Fair', 3: 'Good'};
   $v.innerHTML = `<section class="adm-repl">
     <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
-    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${esc(sug.why.join(', '))})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
+    <p class="note">${cols.length} colonies in the games (cap ${capOf(n)}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${sug.why.map(x => (Array.isArray(x) ? x[1] : esc(x))).join(', ')})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
     <figure class="adm-repl-new"><img ${crSrc(p)} alt=""><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
     <div class="adm-repl-grid">${cols
       .map(
-        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
+        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.map(x => (Array.isArray(x) ? x[0] : x)).join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
         <span>${c === sug ? '<b>Suggested</b> · ' : ''}${QN[c.q] || ''}${c.ft ? ' · featured' : ''}${c.L.length > 1 ? ` · ${c.L.length} photos` : ''}${c.keep ? ` · keep (${esc(c.keep)})` : ''}</span></button>`
       )
       .join('')}</div>
@@ -4506,7 +4909,9 @@ function renderCand() {
   // priority order, that still has candidates to go through. Only a source with no candidate at all: one whose
   // candidates are skipped or wait in full cells stays, so they can still be shown (Codex review #340).
   if (!candQueue(CSRC).length) {
-    const s = CSRCS.map(([k]) => k).find(k => candQueue(k).filter(shown).length);
+    const s = FB.srcs()
+      .map(([k]) => k)
+      .find(k => candQueue(k).filter(shown).length);
     if (s) CSRC = s;
   }
   const Q0 = candQueue(CSRC),
@@ -4518,7 +4923,7 @@ function renderCand() {
     c = live[0],
     nx = live[1];
   const seg =
-    `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
+    FB.sources(CSRC, s => (s === CSRC ? live.length : candQueue(s).filter(shown).length)) +
     // What the queue leaves out, as one row of small toggles (Pierre, 2026-11-03: three lines of notes took the room of
     // the photo on a phone); each chip's tooltip says what it is.
     (nFull || nAside || nJ
@@ -4557,7 +4962,7 @@ function renderCand() {
     $v.innerHTML = `<section class="adm-sw${chk ? ' adm-blind' : ''}" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
       <figure class="adm-swcard">
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(pb)} alt=""></button>
-        <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
+        <a class="adm-swg" href="${esc(genusHref(n))}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>${chk ? '' : jLine(p)}
@@ -4619,14 +5024,7 @@ function renderCand() {
     bindQ();
     bindF(S);
   }
-  $v.querySelectorAll('[data-src]').forEach(
-    b =>
-      (b.onclick = () => {
-        CSRC = b.dataset.src;
-        store.set('reefid-admin-csrc2', CSRC);
-        render();
-      })
-  );
+  bindBar($v, {redraw: render, src: true});
   const ca = $v.querySelector('[data-caside]');
   if (ca)
     ca.onclick = () => {
@@ -4648,7 +5046,14 @@ function renderCand() {
     };
   if (!candKey) {
     candKey = e => {
-      if (cur !== '~cand' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,textarea,select') || !$('lightbox').hidden)
+      if (
+        cur !== 'photos/candidates' ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.target.closest('input,textarea,select') ||
+        !$('lightbox').hidden
+      )
         return;
       const S = $v.querySelector('.adm-sw[data-f]');
       if (!S) return;
@@ -4958,6 +5363,9 @@ function pubSummary() {
       'fish photo set aside'
     ],
     [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
+    // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera).
+    [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish family'],
+    [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
     [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]
@@ -5315,28 +5723,31 @@ async function start() {
   });
   // The page opens on Players › Activity, the recent sessions, phone and desktop (Pierre, 2026-11-05: what he looks at
   // first; Players › List from 2026-11-04, the candidates or the first genus before).
-  [ASUBJ, cur] = subjOfHash(hashNow());
-  cur = cur || homeOf(ASUBJ);
+  readHash();
   // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs (Codex review
   // #492). A link without a prefix clicked on a subject's page (a player's journey from Players) is given that
-  // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject.
+  // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject, and so
+  // does a link that names its subject itself (data-own: a journey link on the list of players, a journey's own toggle),
+  // and a shared page's link keeps no prefix (SHARED).
   document.addEventListener(
     'click',
     e => {
       const a = e.target.closest && e.target.closest('a[href^="#"]');
       if (!a || a.closest('#subj') || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const h = decodeURIComponent(a.getAttribute('href').slice(1)),
-        [S, page] = subjOfHash(h);
-      if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || !hasPage(ASUBJ, page)) return;
+      let h = a.getAttribute('href').slice(1).split('?')[0];
+      try {
+        h = decodeURIComponent(h);
+      } catch (e) {}
+      const [S, page] = subjOfHash(h);
+      if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || shared(page) || a.hasAttribute('data-own') || !hasPage(ASUBJ, page)) return;
       e.preventDefault();
-      location.hash = ASUBJ.admin.hash + page;
+      location.hash = ASUBJ.hash + admAddr(page);
     },
     true
   );
   window.onhashchange = () => {
     if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
-    [ASUBJ, cur] = subjOfHash(hashNow());
-    cur = cur || homeOf(ASUBJ);
+    readHash();
     const h = $('admhelp');
     if (h) h.remove();
     render();
@@ -5418,7 +5829,7 @@ function signOut() {
 // The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
 // names exist then). A token refused drops them all, so nothing read with it is kept.
 const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'reports'];
-const early = () => queueMicrotask(() => TOKEN && sheetEarly(hashNow() || '~stats'));
+const early = () => queueMicrotask(() => TOKEN && sheetEarly((([S, p]) => admRoute(p, S))(subjOfHash(hashNow()))));
 (async () => {
   if (DEMO) {
     TOKEN = 'demo';
@@ -5482,7 +5893,7 @@ function renderDiff() {
   if (!STATS || !ANS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
     loadStats().then(() => {
-      if (cur === '~diff') render();
+      if (cur === 'photos/review/by-difficulty') render();
     });
     return;
   }
@@ -5495,7 +5906,7 @@ function renderDiff() {
     const [d, n, r] = S[p.f];
     return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
   $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photos by difficulty</h2>${segBtns('min', [
@@ -5614,7 +6025,7 @@ function renderPstats() {
   if (!STATS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
     loadStats(true).then(() => {
-      if (cur === '~pstats') render();
+      if (cur === 'photos/stats/overview') render();
     });
     return;
   }
@@ -5624,7 +6035,7 @@ function renderPstats() {
     go = distOf(R.map(r => r.obs.size)),
     colonies = R.reduce((t, r) => t + r.obs.size, 0),
     withAny = R.filter(r => r.k).length,
-    gen = n => `<a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`;
+    gen = n => `<a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`;
   // Every photo the admin knows, by state, each counted once (what each row means: the ? help).
   const total = st.play + st.off + st.cmp + st.removed + st.wait + st.rej + st.excl,
     S = [
@@ -5910,7 +6321,7 @@ function renderCov() {
       <dt>Sources</dt><dd>all photos of the genus by origin (hover a segment)</dd></dl></details>
     <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
-      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : DATA.gen[r.n].x ? ' <small class="kcov-x">not IMR</small>' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : DATA.gen[r.n].x ? ' <small class="kcov-x">not IMR</small>' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
         ([k]) => r.cby[k]
       )
@@ -5931,14 +6342,14 @@ function renderCov() {
   $v.querySelectorAll('.cov-t tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
-        if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
+        if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
       })
   );
   lookBanner();
 }
 // Where to look (Pierre, 2026-11-03: a banner above the Games grid, no longer a page of its own): the few genus x view
 // cells most worth a candidate search now, ranked as in the full list (needsOf: most reasons first, then fewest
-// colonies); "All N" opens the full list in the banner (~stats-needs: reason cards, view and genus filters, sort).
+// colonies); "All N" opens the full list in the banner (?look=all: reason cards, view and genus filters, sort).
 // It needs the answer log: the grid shows at once, the banner once the log is loaded.
 const LOOK_N = 5;
 function lookBanner() {
@@ -5946,25 +6357,25 @@ function lookBanner() {
   if (!el) return;
   if (!ANS) {
     el.innerHTML = '<p class="note">Loading…</p>';
-    loadStats().then(() => (cur === '~cov' || cur === '~stats-needs') && lookBanner());
+    loadStats().then(() => cur === 'inbox/coverage/games' && lookBanner());
     return;
   }
-  if (cur === '~stats-needs') {
+  if (lookAll()) {
     el.classList.add('open');
     return statsNeeds(el);
   }
   const VO = {wide: 0, medium: 1, macro: 2, zoom: 3},
     L = (NEEDS = needsOf()).slice().sort((a, b) => b.sc - a.sc || a.c.obs - b.c.obs || a.n.localeCompare(b.n) || VO[a.v] - VO[b.v]);
   el.innerHTML = L.length
-    ? `<div class="cov-lookb"><a class="cov-lookt" href="#~stats-needs" title="Where to look for photos: the full list">Where to look</a>${L.slice(
+    ? `<div class="cov-lookb"><a class="cov-lookt" href="#inbox/coverage/games?look=all" title="Where to look for photos: the full list">Where to look</a>${L.slice(
         0,
         LOOK_N
       )
         .map(
           o =>
-            `<a class="cov-lk" href="#${esc(encodeURIComponent(o.n))}" title="${esc(o.why.map(w => w[1] + (w[2] ? ` (${w[2]})` : '')).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
+            `<a class="cov-lk" href="${esc(genusHref(encodeURIComponent(o.n)))}" title="${esc(o.why.map(w => w[1] + (w[2] ? ` (${w[2]})` : '')).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
         )
-        .join('')}<a class="adm-link" href="#~stats-needs">All ${L.length} ›</a></div>`
+        .join('')}<a class="adm-link" href="#inbox/coverage/games?look=all">All ${L.length} ›</a></div>`
     : '';
 }
 
@@ -6061,7 +6472,7 @@ function renderKcov() {
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
     <table class="cov-t kcov-t"><thead><tr><th></th>${colTh(KCOV)}<th class="kcov-fh">Forms</th><th class="kcov-sh">Species</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
-      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="kcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="kcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="kcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
       <td class="kcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
         ([k]) => r.cby[k]
@@ -6084,7 +6495,7 @@ function renderKcov() {
   $v.querySelectorAll('tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
-        if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
+        if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
       })
   );
 }
@@ -6102,7 +6513,7 @@ function renderHidden() {
         ? `<div class="adm-grid adm-qgrid">${L.map(
             ([n, p]) => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-g="${esc(n)}">
       ${p.gone ? '<span class="adm-ph"><span class="none">no longer in the data</span></span>' : `<button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(n)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>`}
-      <figcaption><a class="adm-gen" href="#${esc(encodeURIComponent(n))}"><i>${esc(n)}</i></a>${p.gone ? `<code class="adm-t">${esc(p.f)}</code>` : `<span class="adm-src view">${esc(label(n, viewOf(n, p)))}</span>${srcTag(p)}`}</figcaption>
+      <figcaption><a class="adm-gen" href="${esc(genusHref(encodeURIComponent(n)))}"><i>${esc(n)}</i></a>${p.gone ? `<code class="adm-t">${esc(p.f)}</code>` : `<span class="adm-src view">${esc(label(n, viewOf(n, p)))}</span>${srcTag(p)}`}</figcaption>
       <div class="adm-acts"><button type="button" data-unhide>Put back</button></div></figure>`
           ).join('')}</div>`
         : '<p class="note">No photo removed.</p>'
@@ -6120,12 +6531,13 @@ function renderHidden() {
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
-// The views of Activity, Photo stats, To do › Health and the live Analyses views (~stats-*); their tab and view switch are in #subnav (navs()).
+// The views of Activity, Photo stats, To do › Health and the live Analyses views (LIVE_STATS); their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
   GD = {}, // the genus offsets of the hierarchical photo Elo (?stats=1 gd, sheet v31): {genus: [offset, weighed answers]}
   SMEM = memOf(null),
   SCONF = {},
+  SFMT = {},
   MEID = null,
   SF = Object.assign({min: 1, nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('reefid-admin-stats', {}));
 // Numbers replayed over the whole answer log (playSplit, levelMargin, confusionOf): once per log loaded, not at every
@@ -6175,23 +6587,23 @@ function sheetAgain(...kinds) {
 // finds them on their way (sheetRead). Called once the script has run (its let names exist).
 function sheetEarly(h) {
   const need =
-    h === '~users'
-      ? ['users', 'ans']
-      : /^~(journey|anon)\//.test(h)
+    h === 'players/list'
+      ? ['users', 'ans', 'pages']
+      : /^players\/list\/(journey|anon)\//.test(h)
         ? ['users', 'ans', 'pages']
-        : h === '~stats'
+        : h === 'players/activity'
           ? ['users', 'ans']
-          : h === '~stats-stop'
+          : h === 'analyses/learning/stops'
             ? ['ans', 'pages']
-            : h === '~todo'
+            : h === 'inbox/todo/all'
               ? ['ans', 'events', 'reports']
-              : h === '~triage'
+              : h === 'inbox/todo/reports'
                 ? ['reports']
-                : h === '~events'
+                : h === 'inbox/todo/errors'
                   ? ['events']
-                  : /^~(stats-|cov$|diff$|health$)/.test(h)
+                  : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
                     ? ['ans']
-                    : h === '~pstats'
+                    : h === 'photos/stats/overview'
                       ? ['ratings']
                       : [];
   const go = {
@@ -6247,6 +6659,7 @@ function loadStats(ratingsOnly) {
           // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
           SMEM = memOf(s.ok && s.mem);
           SCONF = (s.ok && s.conf) || {};
+          SFMT = s.ok ? fmtsOf(s) : {}; // the per-format offsets (sheet v68, core.js fmtOffsetsOf), as the app's PFMT
         })
       );
   const ga = ratingsOnly
@@ -6264,6 +6677,10 @@ function loadStats(ratingsOnly) {
           if (!fresh()) return;
           if (a && a.me) MEID = a.me;
           ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+          // Every page reads the replayed subject's answers (the corals'; core.js subjRows, sheet v60 logs every subject's):
+          // a fish answer counts in no coral page, Health, journey or analysis. ANS.all keeps every subject's rows.
+          ANS.all = ANS.rows;
+          ANS.rows = subjRows(ANS.all);
           ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
         })
       );
@@ -6479,7 +6896,9 @@ function savedPump() {
         savedPump();
         if (
           gen === savedGen &&
-          (cur === '~journey/' + name || (cur === '~users' && !savedRun && !savedQ.length) || (cur === '~stats' && SOPEN.size))
+          (cur === 'players/list/journey/' + name ||
+            (cur === 'players/list' && !savedRun && !savedQ.length) ||
+            (cur === 'players/activity' && SOPEN.size))
         )
           render();
       });
@@ -6502,6 +6921,9 @@ function savedClear() {
 // players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
 // column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
 const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
+// The domain-score bar (core.js DOM) in the admin's replays only from the script that replays it (core.js DOM_SHEET; rule
+// D4), with the sheet's genus offsets (?stats=1 gd) for the rows logged without them; before, the moving average.
+const domReplay = () => ({dom: Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= DOM_SHEET, gd: GD});
 const PROGM = new Map();
 let ROWSBY = null;
 // From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
@@ -6537,6 +6959,8 @@ function progOf(u, full) {
       gen: DATA.gen,
       mem: SMEM,
       conf: SCONF,
+      fmt: SFMT,
+      ...domReplay(),
       since: reset ? {[u.id]: reset} : {},
       starts: S.err ? {} : {[u.id]: S.start} // the first-launch answer (core.js startPriorAt)
     })[u.id],
@@ -6559,60 +6983,166 @@ const withSaved = (v, sv) => (sv == null || sv === v ? v : `${v} <small class="a
 // each player's anonymous id (users_ id, sheet v13). One row per signed-in player, sortable by any column; a row opens
 // their games, mix-ups, genera to review and Merge / Delete. Answers of devices that never signed in (and of deleted
 // accounts) have no name: they are counted apart, below. Activity keeps the class-wide charts.
+// The list of players, one page for every subject (Pierre, 2026-11-06: "the players list must not depend on Corals or
+// Fish: it is independent of the game mode, the same page that doesn't change between the two worlds"; "maybe fish
+// columns and coral columns, but there may be too much: Journey has the details"): the player's own columns (UCOLS),
+// then a group of columns per subject (SCOLS). Elo, the quiz's right shares, Duels, Days, Learned and the units seen are
+// on the player's Journey (its numbers at the top, per subject); Reports on the row's bar.
 const UCOLS = [
   ['name', 'Name', u => u.name.toLowerCase(), 1],
-  // One column for the level (Pierre, 2026-11-03: Level and Elo said the same thing): the Elo players see.
-  [
-    'elo',
-    'Elo',
-    u => u.lv ?? -99,
-    0,
-    'Overall level as the Elo players see (1000 + 200 × level on the photo-difficulty scale, shown to them from 200 answers), ± its 95% margin'
-  ],
-  ['answers', 'Answers', u => u.answers, 0],
+  // Last answer, any subject (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
+  // to the minute, sorted by its exact time; the default sort, most recent first.
+  ['last', 'Last', u => u.at || 0, 0, `Last answer, any subject (now = less than ${RECENT.NOW} minutes ago)`],
+  // The devices they used: the distinct devices of their pages-opened summaries (sheet v30 Pages, loadPages).
+  ['dev', 'Devices', u => devsOf(u) ?? -1, 0, 'Devices they opened the app on (from the pages-opened summaries)'],
+  ['groups', 'Groups', u => (u.groups || []).length, 0, 'The beta groups they are in']
+];
+// A subject's group: [key, title, sort value (u, S), ascending first, tip (S), cell (u, S), shown for S]. sxOf(u, S): the
+// player's answers in S ({n, ok, at, s: sessions, len: their median length in minutes}), from the answer log.
+const SCOLS = [
+  ['n', 'Answers', (u, S) => sxOf(u, S).n, 0, S => `Answers in ${S.name}`, (u, S) => sxOf(u, S).n || '–', () => true],
   [
     'right',
-    'Quiz',
-    u => (u.qz[0] ? u.qz[1] / u.qz[0] : -1),
+    'Right',
+    (u, S) => (x => (x.n ? x.ok / x.n : -1))(sxOf(u, S)),
     0,
-    'Right in the Quiz and the Custom quiz (duels slipped into them included; not the Duels tab)'
+    S => `Right answers in ${S.name}, every game`,
+    (u, S) => (x => (x.n ? pct(x.ok, x.n) : '–'))(sxOf(u, S)),
+    () => true
   ],
-  ['recent', 'Last 50', u => (u.q50[0] ? u.q50[1] / u.q50[0] : -1), 0, 'Right among their last 50 Quiz answers'],
-  ['duels', 'Duels', u => u.du[0], 0, 'Answers in the Duel tab (2 choices), with their right share'],
-  ['days', 'Days', u => u.days, 0, 'Days with answers'],
+  [
+    'at',
+    'Last',
+    (u, S) => sxOf(u, S).at,
+    0,
+    S => `Last answer in ${S.name}`,
+    (u, S) => (x => (x.n ? ago(x.at) : '–'))(sxOf(u, S)),
+    () => true
+  ],
+  [
+    'sess',
+    'Sessions',
+    (u, S) => sxOf(u, S).s,
+    0,
+    () => `Sessions (answers less than ${HEALTH.GAP} minutes apart) · their median length`,
+    (u, S) => (x => (x.s ? `${x.s} <small>· ${x.len < 1 ? '<1' : x.len} min</small>` : '–'))(sxOf(u, S)),
+    () => true
+  ],
+  // The replayed subject's progress (SUBJECTS replay; the Progress column from sheet script v28, replayOn).
   [
     'prog',
     'Progress',
     u => (u.pg ? u.pg.pct : -1),
     0,
-    'Progress %, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)'
+    () => 'Progress %, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)',
+    u => (!u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')),
+    S => !!S.replay && replayOn()
   ],
-  ['learned', 'Learned', u => (u.pg && !u.pg.err ? u.pg.learned : u.learned), 0, 'Genera learned (mastery exam passed)'],
-  ['seen', 'Seen', u => u.seen, 0, 'Genera seen'],
-  ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent']
+  // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191; docs/reviews/2026-11-06-photo-exposure-study.md §5), per subject
+  // (Code.gs exposure_: ex {subject id: [seen, of, hit, asked, units]}). Photos = Seen %; Spread = Spread %, the one to
+  // act on: whether the draw used the room it had.
+  [
+    'photos',
+    'Photos',
+    (u, S) => (x => (x && x[1] ? x[0] / x[1] : -1))(exOf(u, S)),
+    0,
+    () => 'Seen %: the game photos they have been shown, out of the game photos of the units they have met',
+    (u, S) => EXPO_CELL.photos(u, S),
+    () => expoOn()
+  ],
+  [
+    'spread',
+    'Spread',
+    (u, S) => (x => (x && x[3] ? x[2] / x[3] : -1))(exOf(u, S)),
+    0,
+    () =>
+      'Spread %, in time order: of their questions on a unit that still had colonies they had never been shown, the share that showed one (100% = no colony repeated while an unseen one was left)',
+    (u, S) => EXPO_CELL.spread(u, S),
+    () => expoOn()
+  ]
 ];
+// Each player's answers and sessions per subject, from the whole log (rowsOf): {player id: {subject id: {n, ok, at, s,
+// len}}}.
+const sxOf = (u, S) => {
+  const X = ofAns('sx', () => {
+    const o = Object.create(null),
+      at = (id, T) => {
+        const P = (o[id] = o[id] || {});
+        return (P[T.id] = P[T.id] || {n: 0, ok: 0, at: 0, s: 0, len: 0, L: []});
+      };
+    SUBJECTS.forEach(T => {
+      rowsOf(T).forEach(r => {
+        const x = at(r[0], T);
+        x.n++;
+        x.ok += r[4];
+        if (r[1] > x.at) x.at = r[1];
+      });
+      sessionsOf(rowsOf(T)).forEach(z => at(z.id, T).L.push((z.L[z.L.length - 1][1] - z.L[0][1]) / 6e4));
+    });
+    Object.values(o).forEach(P =>
+      Object.values(P).forEach(x => {
+        const L = x.L.sort((a, b) => a - b);
+        x.s = L.length;
+        x.len = L.length ? Math.round(L[Math.floor(L.length / 2)]) : 0;
+      })
+    );
+    return o;
+  });
+  return (u && u.id && X[u.id] && X[u.id][S.id]) || {n: 0, ok: 0, at: 0, s: 0, len: 0};
+};
+// The devices a player used: distinct device ids of their pages-opened summaries; null while those are not read.
+let DEVS = {of: null, by: null};
+const devsOf = u => {
+  if (!PGS) return null;
+  if (PGS.err || !u.id) return 0;
+  if (DEVS.of !== PGS) {
+    const o = Object.create(null);
+    (PGS.rows || []).forEach(x => x.id && x.dev && (o[x.id] = o[x.id] || new Set()).add(x.dev));
+    DEVS = {of: PGS, by: o};
+  }
+  return DEVS.by[u.id] ? DEVS.by[u.id].size : 0;
+};
+// The subject a player answered last in (their Journey opens there; Pierre's list, 2026-11-06), else the first.
+const lastSubj = u => SUBJECTS.reduce((b, S) => (sxOf(u, S).at > sxOf(u, b).at ? S : b), SUBJECTS[0]);
+const journeyHref = u => '#' + lastSubj(u).hash + 'players/list/journey/' + encodeURIComponent(u.name);
+// Sheet v81: each player's photo exposure per subject (ex); an older script sends none, and the two columns stay away.
+const EXPO_SHEET = 81;
+const expoOn = () => ((USERS && USERS.v) || 0) >= EXPO_SHEET;
+const exOf = (u, S = ASUBJ) => (u && u.ex && u.ex[S.id]) || null;
+// A cell: the share, its counts in the title; – when the player has no answer on a unit with game photos.
+const exCell = (k, n, tip) => (n ? `<span title="${esc(tip)}">${pct(k, n)}</span>` : '–');
+// The two cells, beside their column definitions above, so the pair moves as one (S: the subject, the switch's by default).
+const EXPO_CELL = {
+  photos: (u, S = ASUBJ) =>
+    (x => (x ? exCell(x[0], x[1], `${x[0]} of the ${x[1]} game photos of the ${x[4]} ${x[4] === 1 ? S.one : S.many} met`) : '–'))(
+      exOf(u, S)
+    ),
+  spread: (u, S = ASUBJ) => (x => (x ? exCell(x[2], x[3], `${x[2]} of ${x[3]} questions showed a colony new to them`) : '–'))(exOf(u, S))
+};
 // The beta group (sheet v48; Pierre, 2026-11-04: a subject in beta opens to a group he picks here, for now everyone, not
-// by one site-wide switch): on the Players page of a subject that opens to a group (core.js SUBJECTS open: 'group',
-// subjGroup; none once it opens to all, even with its "beta" tag kept; the admin's subject switch), whether each player is
-// in its group (Code.gs groupSet_; the app opens the subject to them, app.js subjOpen). Add / Remove under the row, Add
-// all above the table.
+// by one site-wide switch): for each subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup; none once
+// it opens to all, even with its "beta" tag kept), whether each player is in its group (Code.gs groupSet_; the app opens
+// the subject to them, app.js subjOpen): its Beta column in the subject's group, Add / Remove on the row's bar, Add all
+// above the table.
 const GROUP_SHEET = 48;
 // Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_); an older script would keep its reports.
 const DEL_SHEET = 55;
 const delOn = () => (USERS.v || 0) >= DEL_SHEET;
-const groupOn = () => subjGroup(ASUBJ) && (USERS.v || 0) >= GROUP_SHEET;
-const inGroup = u => (u.groups || []).includes(ASUBJ.id);
-UCOLS.push(['group', 'Beta', u => (inGroup(u) ? 1 : 0), 0, 'In the beta group']);
-// Last answer, second column (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
-// to the minute, sorted by its exact time; the default sort, most recent first.
-UCOLS.splice(1, 0, ['last', 'Last', u => u.at || 0, 0, `Last answer (now = less than ${RECENT.NOW} minutes ago)`]);
+// Sheet v58: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
+const ARCH_SHEET = 58;
+const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
+const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= GROUP_SHEET;
+const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><h2>Players</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
+  // The pages opened (the Devices column) come after the table, drawn again once in (read again once stale; Codex
+  // review #690).
+  pagesFresh('players/list');
   if (!USERS || !ANS) {
     $v.innerHTML = head + '<p class="note">Loading…</p>';
     Promise.all([loadUsers(), ANS ? null : loadStats()]).then(() => {
-      if (cur === '~users') render();
+      if (cur === 'players/list') render();
     });
     return;
   }
@@ -6623,40 +7153,44 @@ function renderUsers() {
     bindUsers();
     return;
   }
-  // The Progress column only from sheet script v28 (replayOn).
-  const COLS = UCOLS.filter(c => (c[0] !== 'prog' || replayOn()) && (c[0] !== 'group' || groupOn())),
-    col = COLS.find(c => c[0] === SF.us) || COLS.find(c => c[0] === 'last'),
-    sk = col[0],
-    sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
-  // Quiz and Duel tab apart (core.js playSplit), on each row before the sort reads them (Codex review #383); a player whose
-  // answers did not load keeps the sheet's all-games counts.
-  const SPLIT = ofAns('split', () => playSplit(ANS.rows || [])),
-    psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]},
-    // Each player's last answer in the log loaded (ms), fresher than the player list's (kept 2 minutes, loadUsers).
-    LAST = ofAns('last', () => {
-      const o = Object.create(null);
-      (ANS.rows || []).forEach(r => r[1] > (o[r[0]] || 0) && (o[r[0]] = r[1]));
-      return o;
-    });
+  // The columns: the player's, then each subject's group (its key prefixed by the subject's id), each shown when it applies
+  // (the Progress column only from sheet script v28, replayOn; a Beta column only for a subject that opens to a group).
+  const GRP = SUBJECTS.map(S => [
+      S,
+      SCOLS.filter(c => c[6](S)).map(([k, t, f, asc, tip, cl]) => ({
+        k: S.id + ':' + k,
+        t,
+        f: u => f(u, S),
+        asc,
+        tip: tip(S),
+        cl: u => cl(u, S)
+      }))
+    ]).filter(([, L]) => L.length),
+    COLS = [
+      ...UCOLS.map(([k, t, f, asc, tip]) => ({k, t, f, asc, tip, cl: u => cell(k, u)})),
+      ...GRP.flatMap(([, L]) => L.map((c, i) => ({...c, g0: !i})))
+    ],
+    col = COLS.find(c => c.k === SF.us) || COLS.find(c => c.k === 'last'),
+    sk = col.k,
+    sd = SF.us === sk && SF.ud ? SF.ud : col.asc ? 'asc' : 'desc';
+  // Each player's last answer in the log loaded (ms), any subject, fresher than the player list's (kept 2 minutes,
+  // loadUsers).
+  const LAST = ofAns('last', () => {
+    const o = Object.create(null);
+    (ANS.all || ANS.rows || []).forEach(r => r[1] > (o[r[0]] || 0) && (o[r[0]] = r[1]));
+    return o;
+  });
   const U = USERS.users
-      .map(u => {
-        const p = psOf(u);
-        return {
-          ...u,
-          lv: u.id && RAS[u.id] ? RAS[u.id][0] : null,
-          qz: p.q,
-          q50: p.q50,
-          du: p.d,
-          at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
-          pg: replayOn() ? progOf(u) : null
-        };
-      })
-      .sort((a, b) => {
-        const x = col[2](a),
-          y = col[2](b);
-        return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || b.at - a.at;
-      }),
-    total = DATA ? Object.keys(DATA.gen).length : 0;
+    .map(u => ({
+      ...u,
+      at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
+      pg: replayOn() ? progOf(u) : null
+    }))
+    .sort((a, b) => {
+      const x = col.f(a),
+        y = col.f(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || b.at - a.at;
+    });
   const date = t => (t ? dateText(t, 'dm') : '–');
   const opts = n =>
     U.filter(u => u.name !== n)
@@ -6669,70 +7203,64 @@ function renderUsers() {
   // One compact bar under the row (Pierre, 2026-11-03: a big card for one Journey link and a tall Manage card wasted the
   // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
   const detail = u => `<tr class="adm-udet"><td colspan="${COLS.length + 1}"><div class="adm-ubar">
-      <a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a>
-      ${u.pg ? `<span class="adm-uprog">Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
+      <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
+      ${u.pg ? `<span class="adm-uprog">${esc(SUBJECTS.find(S => S.replay).name)}: Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
-      ${groupOn() ? `<span>${inGroup(u) ? 'In' : 'Not in'} the ${esc(ASUBJ.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-on="${inGroup(u) ? 0 : 1}">${inGroup(u) ? 'Remove' : 'Add'}</button></span>` : ''}
+      ${u.reports ? `<span>${u.reports} report${u.reports === 1 ? '' : 's'}</span>` : ''}
+      ${SUBJECTS.filter(S => groupOn(S))
+        .map(
+          S =>
+            `<span>${inGroup(u, S) ? 'In' : 'Not in'} the ${esc(S.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-gid="${esc(S.id)}" data-on="${inGroup(u, S) ? 0 : 1}">${inGroup(u, S) ? 'Remove' : 'Add'}</button></span>`
+        )
+        .join('')}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
-      <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
+      <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}"${archOn() ? '' : ` disabled title="Needs the sheet script v${ARCH_SHEET}"`}>Archive…</button>
       ${
         uDel === u.name
           ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
           : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
       }</div></td></tr>`;
-  // Answers without a name: devices that never signed in (~anon), by anonymous id. The answers a deleted account left
-  // (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
-  const LVM = ofAns('margin', () => levelMargin(ANS.rows || [])), // 95% margin of each player's level (core.js)
-    named = new Set(U.map(u => u.id).filter(Boolean)),
+  // Answers without a name: devices that never signed in (~anon), by anonymous id, every subject's. The answers a deleted
+  // account left (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
+  const named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
   // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
   if ((USERS.v || 0) >= 13)
-    (ANS.rows || []).forEach(r => {
+    (ANS.all || ANS.rows || []).forEach(r => {
       if (named.has(r[0]) || goneRow(r)) return;
-      const a = (A[r[0]] = A[r[0]] || {n: 0, ok: 0, last: 0, first: Infinity});
+      const a = (A[r[0]] = A[r[0]] || {n: 0, by: {}, last: 0, first: Infinity});
       a.n++;
-      a.ok += r[4];
+      a.by[rowSubject(r)] = (a.by[rowSubject(r)] || 0) + 1;
       if (r[1] > a.last) a.last = r[1];
       if (r[1] < a.first) a.first = r[1];
     });
   const anon = Object.entries(A).sort((a, b) => b[1].last - a[1].last);
-  const act = U.filter(u => u.last && Date.now() - u.last < 7 * 864e5).length,
-    ans = U.reduce((t, u) => t + u.answers, 0);
-  const cell = (k, u) =>
-    ({
-      name: `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}`,
-      elo: eloText(u.lv, u.id ? LVM[u.id] : null),
-      answers: u.answers,
-      right: pct(u.qz[1], u.qz[0]),
-      recent: pct(u.q50[1], u.q50[0]),
-      duels: u.du[0] ? `${u.du[0]} <small>${pct(u.du[1], u.du[0])}</small>` : '',
-      days: u.days,
-      prog: !u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%'),
-      learned: !replayOn()
-        ? `${u.learned}/${u.total || total}`
-        : !u.pg
-          ? '…'
-          : u.pg.err
-            ? `${u.learned}/${u.total || total}`
-            : withSaved(`${u.pg.learned}/${u.pg.total}`, u.pg.saved && `${u.pg.saved.learned}/${u.pg.total}`),
-      seen: u.seen,
-      reports: u.reports || '',
-      last: ago(u.at),
-      group: inGroup(u) ? 'In' : '–'
-    })[k];
-  // The beta group's line above the table (groupOn): how many players are in it, and Add all for the others.
-  const gOut = groupOn() ? U.filter(u => !inGroup(u)) : [],
-    gLine = !subjGroup(ASUBJ)
-      ? ''
-      : !groupOn()
-        ? `<p class="note">The ${esc(ASUBJ.name)} beta group needs the sheet script v${GROUP_SHEET} (live: v${USERS.v || '?'}).</p>`
-        : `<p class="adm-ugroup"><span>${esc(ASUBJ.name)} beta: <b>${U.length - gOut.length}</b> of ${U.length} players</span>${gOut.length ? ` <button type="button" class="adm-fchip" data-ugall>Add all ${gOut.length}</button>` : ''}</p>`;
+  const act = U.filter(u => u.at && Date.now() - u.at < 7 * 864e5).length;
+  function cell(k, u) {
+    return k === 'name'
+      ? `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}`
+      : k === 'dev'
+        ? (d => (d == null ? '…' : d || '–'))(devsOf(u))
+        : k === 'groups'
+          ? esc((u.groups || []).map(g => subjectOf(g).name).join(', ')) || '–'
+          : ago(u.at);
+  }
+  // Each beta group's line above the table (groupOn): how many players are in it, and Add all for the others.
+  const gLine = SUBJECTS.filter(S => subjGroup(S))
+    .map(S => {
+      if (!groupOn(S))
+        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${GROUP_SHEET} (live: v${USERS.v || '?'}).</p>`;
+      const out = U.filter(u => !inGroup(u, S)).length;
+      return `<p class="adm-ugroup"><span>${esc(S.name)} beta: <b>${U.length - out}</b> of ${U.length} players</span>${out ? ` <button type="button" class="adm-fchip" data-ugall="${esc(S.id)}">Add all ${out}</button>` : ''}</p>`;
+    })
+    .join('');
   $v.innerHTML =
     head +
     kpis([
       ['Players', U.length],
       ['Active 7 d', act],
-      ['Answers', ans],
+      // Each subject's answers by the players listed.
+      ...SUBJECTS.map(S => [`${S.name} answers`, U.reduce((t, u) => t + sxOf(u, S).n, 0)]),
       ['Not signed in', anon.length]
     ]) +
     (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
@@ -6740,23 +7268,39 @@ function renderUsers() {
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
-    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr>${COLS.map(
-      ([k, t, , , tip]) =>
-        `<th${tip ? ` title="${esc(tip)}"` : ''}><button type="button" class="adm-usort" data-usort="${k}" aria-pressed="${k === sk}">${t}${k === sk ? (sd === 'asc' ? ' ▴' : ' ▾') : ''}</button></th>`
+    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr class="adm-ugrp"><th colspan="${UCOLS.length}"></th>${GRP.map(
+      ([S, L]) => `<th colspan="${L.length}" class="adm-ug0">${esc(S.name)}</th>`
+    ).join('')}<th></th></tr><tr>${COLS.map(
+      ({k, t, tip, asc, g0}) =>
+        `<th${tip ? ` title="${esc(tip)}"` : ''}${g0 ? ' class="adm-ug0"' : ''}><button type="button" class="adm-usort" data-usort="${esc(k)}" data-uasc="${asc ? 1 : 0}" aria-pressed="${k === sk}">${t}${k === sk ? (sd === 'asc' ? ' ▴' : ' ▾') : ''}</button></th>`
     ).join('')}<th></th></tr></thead><tbody>
       ${U.map(
         u =>
-          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
+          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(c => `<td${c.g0 ? ' class="adm-ug0"' : ''}>${c.cl(u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th title="Overall level as the Elo players see (1000 + 200 × level), ± its 95% margin">Elo</th><th>Answers</th><th>Right</th>${replayOn() ? '<th title="Replayed from their answers with the current rules">Progress</th>' : ''}<th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th>${SUBJECTS.map(S => `<th title="Answers in ${esc(S.name)}">${esc(S.name)}</th>`).join('')}<th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? eloText(RAS[id][0], LVM[id]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#${esc(SUBJECTS.reduce((b, S) => ((a.by[S.id] || 0) > (a.by[b.id] || 0) ? S : b), SUBJECTS[0]).hash)}players/list/anon/${encodeURIComponent(id)}" data-own title="Journey"><code>${esc(id)}</code></a></td>${SUBJECTS.map(S => `<td>${a.by[S.id] || '–'}</td>`).join('')}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
           )
           .join(
             ''
           )}</tbody></table></div><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button>${(USERS.v || 0) < 17 ? ` <small class="note">Needs the sheet script v17 (live: v${USERS.v || '?'}).</small>` : ''}</p></details>`
+      : '') +
+    // v58: the archived records, read-only (Pierre, 2026-11-05: archived means kept, never used in normal operation): the
+    // archive's name, its last save, answers and reports, its Journey (marked archived); Delete stays (either mode).
+    ((USERS.archived || []).length
+      ? `<details class="adm-uremoved"${USERS.archived.some(a => a.name === uDel) ? ' open' : ''}><summary>Archived (${USERS.archived.length})</summary><table class="adm-tbl"><thead><tr><th>Name</th><th>Last saved</th><th>Answers</th><th>Reports</th><th></th></tr></thead><tbody>${USERS.archived
+          .map(
+            a =>
+              `<tr><td><a href="#players/list/journey/${encodeURIComponent(a.name)}" title="Journey (archived)">${cut(a.name)}</a></td><td>${a.time ? date(a.time) : '–'}</td><td>${a.answers}</td><td>${a.reports || ''}</td><td>${
+                uDel === a.name
+                  ? `<span class="adm-udel"><button type="button" class="adm-danger" data-udel-all="${esc(a.name)}">Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(a.name)}">Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button></span>`
+                  : `<button type="button" class="adm-danger" data-udel="${esc(a.name)}">Delete…</button>`
+              }</td></tr>`
+          )
+          .join('')}</tbody></table></details>`
       : '') +
     (USERS.removed.length
       ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${cut(r.name)}</td><td>${r.into ? `merged into <b>${cut(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
@@ -6768,8 +7312,8 @@ function bindUsers() {
     b =>
       (b.onclick = () => {
         const k = b.dataset.usort,
-          c = UCOLS.find(x => x[0] === k);
-        SF.ud = SF.us === k ? ((SF.ud || (c[3] ? 'asc' : 'desc')) === 'asc' ? 'desc' : 'asc') : c[3] ? 'asc' : 'desc';
+          a0 = b.dataset.uasc === '1' ? 'asc' : 'desc';
+        SF.ud = SF.us === k ? ((SF.ud || a0) === 'asc' ? 'desc' : 'asc') : a0;
         SF.us = k;
         store.set('reefid-admin-stats', SF);
         render();
@@ -6778,7 +7322,7 @@ function bindUsers() {
   const rl = $v.querySelector('[data-uload]');
   if (rl)
     rl.onclick = () => {
-      sheetAgain('users', 'ans', 'stats'); // levels (ras) too, not only the counts
+      sheetAgain('users', 'ans', 'stats', 'pages'); // levels (ras) too; the pages opened (Devices)
       savedClear(); // the players' saved progress (Progress, Learned, the journeys' cards) too
       render();
     };
@@ -6841,44 +7385,49 @@ function bindUsers() {
     b =>
       (b.onclick = () => {
         const name = b.dataset.ugroup,
-          on = b.dataset.on === '1';
-        group(name, on, on ? `"${name}" added to the ${ASUBJ.name} beta.` : `"${name}" removed from the ${ASUBJ.name} beta.`);
+          on = b.dataset.on === '1',
+          S = subjectOf(b.dataset.gid);
+        group(name, on, on ? `"${name}" added to the ${S.name} beta.` : `"${name}" removed from the ${S.name} beta.`, S.id);
       })
   );
-  const ga = $v.querySelector('[data-ugall]');
-  if (ga)
-    ga.onclick = () => {
-      const L = USERS.users.filter(u => !inGroup(u)).map(u => u.name);
-      if (
-        !L.length ||
-        !confirm(
-          `Add all ${L.length} players not in it yet to the ${ASUBJ.name} beta?\n\n${ASUBJ.name} opens in the app for them at their next sync. Players who sign up later are not in it.`
-        )
-      )
-        return;
-      group(L, true, `${L.length} players added to the ${ASUBJ.name} beta.`);
-    };
-  // Rename (sheet v20, Pierre 2026-11-02): keep a record apart under a new name ("Pierre-test"), off the leaderboard; the
-  // old name is free again, so its owner can sign out on their devices and sign in under it to start over.
-  $v.querySelectorAll('[data-uren]').forEach(
-    b =>
-      (b.onclick = () => {
-        const name = b.dataset.uren,
-          into = (prompt(`New name for "${name}"?`, `${name}-test`) || '').trim();
-        if (!into || into === name) return;
+  $v.querySelectorAll('[data-ugall]').forEach(
+    ga =>
+      (ga.onclick = () => {
+        const S = subjectOf(ga.dataset.ugall),
+          L = USERS.users.filter(u => !inGroup(u, S)).map(u => u.name);
         if (
+          !L.length ||
           !confirm(
-            `Rename "${name}" to "${into}"?\n\nTheir answers, reports and progress move to "${into}", hidden from the leaderboard; the app no longer opens it (an archive, here in the admin).\n"${name}" is free again: to start over under it, sign out on each device, then sign in as "${name}".`
+            `Add all ${L.length} players not in it yet to the ${S.name} beta?\n\n${S.name} opens in the app for them at their next sync. Players who sign up later are not in it.`
           )
         )
           return;
-        userPost({userRename: {from: name, into}})
+        group(L, true, `${L.length} players added to the ${S.name} beta.`, S.id);
+      })
+  );
+  // Archive (sheet v58, was Rename v20; Pierre 2026-11-02 and 2026-11-05, Q84/Q88): keep a record apart under an archive
+  // name ("Pierre-test"), out of normal operation (Board -2: no leaderboard, no achievement share, no beta group, no
+  // player row; the Archived fold below). The old name is free again: its devices are told the record was archived and
+  // offered to sign out (sync.js archivedOf), then its owner may sign in under it and start empty.
+  $v.querySelectorAll('[data-uarch]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.uarch,
+          into = (prompt(`Archive "${name}" under which name?`, `${name}-test`) || '').trim();
+        if (!into || into === name) return;
+        if (
+          !confirm(
+            `Archive "${name}" as "${into}"?\n\nTheir answers, reports and progress are kept apart under "${into}", out of the leaderboard, the players, the beta groups and every count; their answers still rate the photos. Their devices are told the record was archived and asked to sign out.\n"${name}" is free again: its owner can sign in under it and start fresh.`
+          )
+        )
+          return;
+        userPost({userArchive: {from: name, into}})
           .then(j =>
             j && j.error === 'exists'
               ? toast(`"${into}" is already a player.`)
               : j && j.error === 'input'
-                ? toast('Not done: needs the sheet script v20.')
-                : done(`"${name}" renamed "${into}".`, j)
+                ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
+                : done(`"${name}" archived as "${into}".`, j)
           )
           .catch(() => done('', null));
       })
@@ -6953,7 +7502,7 @@ function bindUsers() {
       (b.onclick = () => {
         const all = 'udelAll' in b.dataset,
           name = all ? b.dataset.udelAll : b.dataset.udelKeep,
-          u = (USERS.users || []).find(x => x.name === name) || {answers: 0, reports: 0},
+          u = [...(USERS.users || []), ...(USERS.archived || [])].find(x => x.name === name) || {answers: 0, reports: 0},
           n = (k, w) => `${k} ${w}${k === 1 ? '' : 's'}`;
         if (
           !confirm(
@@ -6973,21 +7522,21 @@ function bindUsers() {
 function renderStats() {
   status();
   // Activity's Recent sessions name the signed-in players (USERS); the other views need the answer log only.
-  const named = cur === '~stats' && !USERS;
+  const named = cur === 'players/activity' && !USERS;
   if (!ANS || named) {
     $v.innerHTML = '<p class="note">Loading…</p>';
     Promise.all([ANS ? null : loadStats(), named ? loadUsers() : null]).then(() => {
-      if (cur.startsWith('~stats') || cur === '~health') render();
+      if (LIVE_STATS.includes(cur) || cur === 'inbox/todo/health') render();
     });
     // Stops' pages opened leave with the answer log, not after it.
-    if (cur === '~stats-stop' && pagesStale()) loadPages().catch(() => {});
+    if (cur === 'analyses/learning/stops' && pagesStale()) loadPages().catch(() => {});
     return;
   }
-  return cur === '~stats-photos'
+  return cur === 'photos/stats/difficulty'
     ? statsPhotos()
-    : cur === '~stats-conf'
+    : cur === 'analyses/difficulty/pairs'
       ? statsConf()
-      : cur === '~health' || cur === '~stats-stop'
+      : cur === 'inbox/todo/health' || cur === 'analyses/learning/stops'
         ? statsHealth()
         : statsPlayers();
 }
@@ -6995,6 +7544,10 @@ function renderStats() {
 // readAnswers anonymous 2): they rate the photos only, never count as a player (Pierre, 2026-11-05, Q86).
 const goneRow = r => r[11] === 2;
 const playerRows = () => (ANS.rows || []).filter(r => !goneRow(r));
+// A subject's answer rows (ANS.all holds every subject's, ANS.rows the replayed one's), a deleted account's left out: the
+// Players pages read the subject on screen's (Activity, a Journey, a session's summary; the list of players, each
+// subject's in its own columns).
+const rowsOf = (S = ASUBJ) => (ANS ? ofAns('rows:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id).filter(r => !goneRow(r))) : []);
 const statRows = () => playerRows();
 // Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
@@ -7036,8 +7589,8 @@ function recentSessions(R) {
     },
     who = id =>
       NM[id]
-        ? `<a href="#~journey/${encodeURIComponent(NM[id].name)}">${pname(NM[id].name, NM[id].board === -1)}</a>`
-        : `<a href="#~anon/${encodeURIComponent(id)}" title="Not signed in"><code>${esc(id)}</code></a>`;
+        ? `<a href="#players/list/journey/${encodeURIComponent(NM[id].name)}">${pname(NM[id].name, NM[id].board === -1)}</a>`
+        : `<a href="#players/list/anon/${encodeURIComponent(id)}" title="Not signed in"><code>${esc(id)}</code></a>`;
   const live = S.filter(s => isNow(s.L[s.L.length - 1][1])).length;
   return `<section class="adm-scard adm-recent" data-recent><h3>Recent sessions${
     live ? ` <span class="adm-ago now">${live} playing now</span>` : ''
@@ -7129,10 +7682,10 @@ function activityCard(R) {
     (n, h) => `<div title="${h}:00-${h + 1}:00: ${n} answers"><i style="height:${Math.round((100 * n) / hm)}%"></i></div>`
   ).join('')}</div><p class="adm-axis"><span>0 h</span><span>12 h</span><span>23 h</span></p></section>`;
 }
-// Players › Activity (~stats: who plays and how much) and Analyses › Learning › Answer log (~stats-log: what the answers
+// Players › Activity (players/activity: who plays and how much) and Analyses › Learning › Answer log (analyses/learning/answer-log: what the answers
 // say, live; Pierre, 2026-11-04, one role per admin page): one reading of the answer log, each view its own cards.
 function statsPlayers() {
-  const log = cur === '~stats-log',
+  const log = cur === 'analyses/learning/answer-log',
     head = `<div class="adm-shead"><h2>${log ? 'Answer log' : 'Activity'}</h2><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
   if (ANS.old) {
     $v.innerHTML =
@@ -7141,7 +7694,10 @@ function statsPlayers() {
     bindStats();
     return;
   }
-  const R = statRows(),
+  // Activity: the subject on screen's answers (every subject has its Activity); the Answer log: the replayed subject's.
+  // Another subject's units are named from its entries (fishAdmin, read once; Codex review #690).
+  if (!log && !ASUBJ.replay && !FISHA) fishAdmin().then(() => cur === 'players/activity' && FISHA && render());
+  const R = log ? statRows() : rowsOf(),
     P = {};
   R.forEach(r => {
     const p = (P[r[0]] = P[r[0]] || {id: r[0], L: [], d: new Set()});
@@ -7265,14 +7821,14 @@ function statsPlayers() {
     }</section>
     <section class="adm-scard"><h3>Conditions</h3><table class="adm-tbl">${cond.map(([t, n, r]) => `<tr><td>${t}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('')}</table></section>
     <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th><th title="Median player Elo on the genus (1000 + 200 × their level on it)">Elo</th></tr></thead><tbody>
-      ${gl.map(g => `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? eloText(med(GT[g.n]), null, {what: 'Median player Elo on the genus'}) : ''}</td></tr>`).join('')}</tbody></table></div></section>
+      ${gl.map(g => `<tr><td><a class="adm-gen" href="${esc(genusHref(g.n))}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? eloText(med(GT[g.n]), null, {what: 'Median player Elo on the genus'}) : ''}</td></tr>`).join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Mix-ups</h3>${
       ml.length
         ? `<table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th></th><th>n</th></tr></thead><tbody>
       ${ml
         .map(([k, n]) => {
           const [a, b] = k.split('|');
-          return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
+          return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
         })
         .join('')}</tbody></table>`
         : '<p class="note">None.</p>'
@@ -7331,7 +7887,9 @@ function needsOf() {
           why.push([
             'easy',
             `players Elo ${eloNum(top)} vs hardest photo recognised by ${recPct(hard)}`,
-            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`
+            `level ${rawNum(top)} vs difficulty ${rawNum(hard)}`,
+            // The chip's HTML in the full list: the Elo and the reading as everywhere else (raw values in their titles).
+            `players Elo ${eloText(top, null, {what: 'Players at the top quarter of the genus, Elo'})} vs hardest photo recognised by ${recBadge(hard, {short: 1, raw: 'photo difficulty'})}`
           ]);
           sc += 1.5;
         }
@@ -7378,9 +7936,9 @@ function needsOf() {
   });
   return out;
 }
-// Where to look, in full: into el (the banner above Coverage › Games, open on ~stats-needs).
+// Where to look, in full: into el (the banner above Coverage › Games, open with ?look=all).
 function statsNeeds(el) {
-  const head = `<div class="adm-shead"><h2>Where to look for photos</h2><a class="adm-link" href="#~cov">Fold</a></div>`,
+  const head = `<div class="adm-shead"><h2>Where to look for photos</h2><a class="adm-link" href="#inbox/coverage/games">Fold</a></div>`,
     out = needsOf();
   NEEDS = out;
   NGEN = NGEN || '';
@@ -7436,8 +7994,8 @@ function needsBody() {
     .join('')}</div>
     <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr>${th('n', 'Genus')}${th('v', 'View')}${th('c', 'Colonies')}${th('sc', 'Why')}</tr></thead><tbody>
     ${L.map(
-      o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
-      <td>${o.why.map(([k, t, raw]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${esc(t)}</span>`).join(' ')}</td></tr>`
+      o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="${esc(genusHref(o.n))}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
+      <td>${o.why.map(([k, t, raw, h]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${h || esc(t)}</span>`).join(' ')}</td></tr>`
     ).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
   const save = () => {
     store.set('reefid-admin-stats', SF);
@@ -7462,7 +8020,7 @@ function needsBody() {
   box.querySelectorAll('.adm-needs tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
-        if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
+        if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
       })
   );
 }
@@ -7560,19 +8118,19 @@ function healthLine0() {
       bad && `${bad} photo${bad === 1 ? '' : 's'} everyone misses`,
       stuck && `${stuck} ${stuck === 1 ? 'genus' : 'genera'} players are stuck on`
     ].filter(Boolean);
-  return L.length ? `<p class="warn adm-hline" data-hline><a href="#~health"><b>Health</b></a>: ${L.join(' · ')}</p>` : '';
+  return L.length ? `<p class="warn adm-hline" data-hline><a href="#inbox/todo/health"><b>Health</b></a>: ${L.join(' · ')}</p>` : '';
 }
 // Health (Pierre, 2026-11-02: "most RAs will not send feedback"): what the answers already logged say about how the
 // app works for players, with no new data. One role per admin page (Pierre, 2026-11-04): Inbox › To do › Health
-// (~health, is something wrong?) keeps what needs action: photos everyone misses (maybe mislabelled or bad: a link to
-// the genus page) and genera that don't take off for players; Analyses › Learning › Stops (~stats-stop, what we learn)
+// (inbox/todo/health, is something wrong?) keeps what needs action: photos everyone misses (maybe mislabelled or bad: a link to
+// the genus page) and genera that don't take off for players; Analyses › Learning › Stops (analyses/learning/stops, what we learn)
 // has where players stop (sessions = answers less than GAP minutes apart; how long they last; what the short ones
 // ended on) and the genus sheets they open. One reading of the answer log, each view its own sections. The answers and
 // players per day went with Players › Activity (activityCard). Anonymous ids only, like the other stats pages; every
 // account counts (Pierre, 2026-11-04).
 function statsHealth() {
   const H = HEALTH,
-    stops = cur === '~stats-stop',
+    stops = cur === 'analyses/learning/stops',
     head = `<div class="adm-shead"><h2>${stops ? 'Stops' : 'Health'}</h2></div>`;
   if (ANS.old) {
     $v.innerHTML =
@@ -7676,7 +8234,7 @@ function statsHealth() {
         ? tbl(
             ['Genus', 'n:Sessions'],
             top(early, r => r[2], 5).map(
-              ([g, n]) => `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a></td><td class="n">${n}</td></tr>`
+              ([g, n]) => `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a></td><td class="n">${n}</td></tr>`
             )
           ) +
           tbl(
@@ -7690,7 +8248,7 @@ function statsHealth() {
   const MAXPH = 24,
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
-      <figcaption><a class="adm-gen" href="#${esc(o.p.genus)}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
+      <figcaption><a class="adm-gen" href="${esc(genusHref(o.p.genus))}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
       <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>${o.d != null ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>` : ''}</figcaption></figure>`;
   const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
     BAD.length
@@ -7709,7 +8267,7 @@ function statsHealth() {
     ],
     GR.map(
       g =>
-        `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
+        `<tr><td><a class="adm-gen" href="${esc(genusHref(g.n))}"><i>${esc(g.n)}</i></a></td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
     )
   )}</div></section>`;
 
@@ -7726,7 +8284,7 @@ function statsHealth() {
   bindStats();
   // The pages summaries (sheet v30) come with their own read: the section fills in when they arrive, and is read again
   // once stale.
-  if (stops) pagesFresh('~stats-stop');
+  if (stops) pagesFresh('analyses/learning/stops');
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
@@ -7753,7 +8311,7 @@ function statsConf() {
   const prior = (a, b) =>
     look(a, b) ? ['Look-alike', CONF.LOOK] : gx(a).fam && gx(a).fam === gx(b).fam ? ['Family', CONF.FAM] : ['Other', CONF.BASE];
   const cmp = (a, b) =>
-    `<a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`;
+    `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`;
   const PR = Object.entries(C.pair)
     .filter(([, c]) => c[0] >= SF.min)
     .map(([k, c]) => {
@@ -8007,7 +8565,7 @@ ${recScale(lo / 10, (hi + 1) / 10)}
       <p class="adm-axis"><span>${recPct(lo / 10)}</span><span>easier · recognised by · harder</span><span>${recPct((hi + 1) / 10)}</span></p>${legend}</section>
     <section class="adm-scard"><h3>Views</h3>${table(V, 'View')}</section>
     <section class="adm-scard"><h3>Sources</h3>${table(S, 'Source')}</section>
-    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="#${esc(r.k)}"><i>${esc(r.k)}</i></a><span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
+    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="${esc(genusHref(r.k))}"><i>${esc(r.k)}</i></a><span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
       ${recScale(x0, x1, 'strip')}<p class="adm-axis strip"><span>${recPct(x0)}</span><span>easier · recognised by · harder</span><span>${recPct(x1)}</span></p></section>
     </div>`;
   bindStats();

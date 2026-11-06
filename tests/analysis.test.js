@@ -37,6 +37,27 @@ test('formats read from the mode and the choices', () => {
   assert.strictEqual(A.fmtOf('quiz|s|t', 0), 'typed');
 });
 
+test('core.js fmtOf (the per-format offsets of the sheet and the app) reads the formats as analysis.js', () => {
+  const C = require('../core.js');
+  for (const [m, n] of [
+    ['quiz', 4],
+    ['quiz|k3', 4],
+    ['quiz|k2', 4],
+    ['quiz|k2', 2],
+    ['quiz', 2],
+    ['quiz|d|k2', 2],
+    ['quiz|s|d|k2', 2],
+    ['quiz-duel|A|B', 2],
+    ['quiz-duel', 2],
+    ['quiz|x', 4],
+    ['quiz|t|x', 0],
+    ['quiz|s|t', 0],
+    ['quiz|c|k2', 4],
+    ['quiz|s|c', 4]
+  ])
+    assert.strictEqual(C.fmtOf(m, n), A.fmtOf(m, n), m + ' ' + n);
+});
+
 test('prep: sessions, exposures, the previous answer on the genus, an Again after a miss', () => {
   const M = 6e4,
     r = (t, g, a, ok, m = 'quiz', ch = 'A B C D') => ['p1', t, g, a, ok, m, 'f1', 0.7, 0, 0, ch, 0, 5, 0];
@@ -126,6 +147,41 @@ test('glmm with a guess rate recovers its effects; fmtFit a real guess rate and 
   near(f.d, -0.5, 0.15, 'difficulty');
 });
 
+// The admin demo's made-up answers (admin-demo.js, analysis.js demoLog) changed from one load to the next in Chromium: a
+// random-comparator sort (sort(() => R() - 0.5)) calls its comparator a number of times that depends on the engine and on
+// whether the code is optimised yet, so every later seeded draw moved, and tests/admin.smoke.js failed now and then on
+// Health's "difficulty in words" (2026-11-06). shuffle draws exactly n - 1 numbers.
+test('shuffle: a permutation from exactly n - 1 draws; no seeded stream feeds a random-comparator sort', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    L = ['a', 'b', 'c', 'd', 'e'];
+  for (const x of [0, 0.37, 0.999]) {
+    let n = 0;
+    const o = A.shuffle(L, () => (n++, x));
+    assert.deepStrictEqual(o.slice().sort(), L, 'the same items');
+    assert.strictEqual(n, L.length - 1, 'n - 1 draws');
+  }
+  assert.deepStrictEqual(L, ['a', 'b', 'c', 'd', 'e'], 'the list itself is left as it was');
+  assert.deepStrictEqual(A.shuffle([], Math.random), []);
+  const a = A.shuffle(
+      L,
+      (
+        s => () =>
+          (s = (s * 16807) % 2147483647) / 2147483647
+      )(7)
+    ),
+    b = A.shuffle(
+      L,
+      (
+        s => () =>
+          (s = (s * 16807) % 2147483647) / 2147483647
+      )(7)
+    );
+  assert.deepStrictEqual(a, b, 'the same seed, the same order');
+  for (const f of ['analysis.js', 'admin-demo.js'])
+    assert.ok(!/\.sort\(\(\)\s*=>/.test(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')), `${f}: a random-comparator sort`);
+});
+
 test('synthetic log: every analysis runs and gives back the generator’s effects', () => {
   const V = ['wide', 'medium', 'macro'],
     S = ['imr', 'own', 'inat'],
@@ -150,7 +206,7 @@ test('synthetic log: every analysis runs and gives back the generator’s effect
     }
   }
   const pl = Array.from({length: 12}, (_, i) => ['P' + i, ((i % 5) - 2) * 0.4, 600, 0.05 + 0.03 * (i % 6)]);
-  const rows = A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 11});
+  const rows = A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 1});
   const r = A.runAll(rows, meta, {B: 0});
   const T = A.TRUTH,
     e = (a, k) => r.A[a].effects.find(x => x.k === k);
@@ -1297,7 +1353,7 @@ const mixLog = (w, seed) => {
         wr = ch.slice(1).map(x => (fam(x) === fam(g) ? w : 1));
       let r = R() * wr.reduce((s, x) => s + x, 0);
       const ans = right ? g : ch.slice(1).find((x, k) => (r -= wr[k]) < 0) || ch[3];
-      rows.push(['p' + p, (t += 60e3), g, ans, right ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, ch.sort(() => R() - 0.5).join(' '), 0, 5, 0]);
+      rows.push(['p' + p, (t += 60e3), g, ans, right ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, A.shuffle(ch, R).join(' '), 0, 5, 0]);
     }
   return rows;
 };
@@ -1747,4 +1803,51 @@ test('Wright map: each place’s uncertainty includes the fixed effects (interce
   near(W.g[0][3], Math.sqrt(fv + 0.04), 1e-3, 'genus SE (the typical player is this one)');
   near(W.mid, 0.5 + 0.4 * l, 1e-3, 'the typical player');
   near(W.th[0][1], 0.5 + 0.4 * l + 0.2, 1e-3, 'player place');
+});
+
+// Codex review #604 (comment 4479472198): players with the same value of a behaviour, a value whose floating-point mean
+// is not exact (log 40), have no spread in it; the rounding left in the mean must not become ±1 SD for every player.
+test('profiles: a behaviour every player shares reads 0 SD, never the rounding of its mean', () => {
+  const V = Object.fromEntries('abcdefg'.split('').map(k => [k, A.PROF_F.map(() => Math.log(40))]));
+  assert.notStrictEqual(Object.values(V).reduce((s, L) => s + L[0], 0) / 7, Math.log(40), 'the case needs a rounded mean');
+  assert.deepStrictEqual(
+    A.zOf(V, Object.keys(V))('a'),
+    A.PROF_F.map(() => 0)
+  );
+  // seven players, each five sessions of 40 answers at the same hours: identical profiles, no axis of the map explains
+  // anything
+  const rows = [];
+  'abcdefg'.split('').forEach(p => {
+    for (let s = 0; s < 5; s++)
+      for (let i = 0; i < 40; i++)
+        rows.push(['p' + p, Date.UTC(2026, 9, 1 + s, 2) + i * 30e3, 'A', 'A', 1, 'quiz', 'fA', 0.7, 0, 0, 'A B C D', 0, 5, 0]);
+  });
+  const r = A.profiles(A.prep(rows), 0, 1);
+  assert.ok(!r.thin && r.players === 7, JSON.stringify(r).slice(0, 200));
+  r.who.forEach(w => w.z.forEach((z, f) => assert.strictEqual(z, 0, `${w.k} ${A.PROF_F[f][0]}: ${z} SD`)));
+  assert.deepStrictEqual(r.pca.var, [0, 0]);
+});
+
+// Codex review #604 (comment 4479472191): a milestone compacted to the sheet's cap keeps only its profiles' counts; the
+// page shows those counts and the compacted note, never an empty heatmap reading 0 answers and 0 players.
+test('admin: a compacted milestone shows its profiles’ counts, not an empty heatmap', () => {
+  const vm = require('vm'),
+    src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
+    ctx = vm.createContext({ANALYSIS: A, store: {get: (k, d) => d, set() {}}, HELP: {}, addEventListener() {}});
+  vm.runInContext(src, ctx);
+  ctx.kpis = L => L.map(([t, v]) => `<div><b>${v}</b><span>${t}</span></div>`).join('');
+  const who = {n: 900, players: 3, win: 300, at: 100, effects: [], feats: [], who: [{k: 'p1', n: 300, low: 0, v: [], z: []}]},
+    rep = {M: [1000, 2000], R: {1000: {A: {who}}, 2000: {A: {who: Object.assign({}, who)}}}, answers: 2000};
+  A.compact(rep, JSON.stringify(rep).length - 1);
+  const lean = rep.R[1000].A.who;
+  assert.ok(lean.lean && !lean.who, 'the first milestone was compacted');
+  ctx.REP = rep;
+  const html = vm.runInContext("anView('who', REP, REP.R[1000])", ctx);
+  assert.match(html, /<b>900<\/b><span>Answers used/);
+  assert.match(html, /<b>3<\/b><span>Players/);
+  assert.match(html, /Only the main results are kept/);
+  assert.doesNotMatch(html, /<svg|Infinity/);
+  lean.thin = true;
+  lean.n = 2;
+  assert.match(vm.runInContext("anView('who', REP, REP.R[1000])", ctx), /<b>2<\/b><span>Players/);
 });

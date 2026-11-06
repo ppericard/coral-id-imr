@@ -42,7 +42,7 @@ test('admin.html: img-src allows every host of the fish candidates', () => {
 });
 
 // When R2 fails, a photo with an online original is read from it (core.js photoAway; Pierre, 2026-11-05: Photos out
-// of the repo, step 1): every host of those originals (data.json, cand.json and fish-photos.json src: iNaturalist,
+// of the repo, step 1): every host of those originals (data.json, cand.json, fish-photos.json and fish-game.json src: iNaturalist,
 // FishBase) must be allowed by the app's img-src, or the fallback would be blocked.
 test('index.html: img-src allows every host of the photos’ online originals', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
@@ -59,7 +59,8 @@ test('index.html: img-src allows every host of the photos’ online originals', 
       if (typeof o.f === 'string' && typeof o.src === 'string' && /^https:/.test(o.src)) hosts.add(new URL(o.src).origin);
       Object.values(o).forEach(walk);
     };
-  for (const f of ['data.json', 'cand.json', 'fish-photos.json']) walk(JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')));
+  for (const f of ['data.json', 'cand.json', 'fish-photos.json', 'fish-game.json'])
+    walk(JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')));
   assert.ok(hosts.size >= 2, 'online originals found');
   hosts.forEach(h => assert.ok(img.includes(h), `${h} missing from index.html img-src`));
 });

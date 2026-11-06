@@ -39,6 +39,19 @@
       return s / 4294967296;
     };
   }
+  // A copy of L in random order from R (Fisher-Yates): exactly L.length - 1 draws, so a seeded stream stays the same in
+  // every engine. Never sort with a random comparator (sort(() => R() - 0.5)): how many times sort calls it is up to the
+  // engine, and Chromium calls it a different number of times once the code is optimised, so every later draw moved and
+  // the admin demo's made-up answers changed from one load to the next (the Health photos with no difficulty to show,
+  // tests/admin.smoke.js "difficulty in words", 2026-11-06).
+  function shuffle(L, R) {
+    const o = L.slice();
+    for (let i = o.length - 1; i > 0; i--) {
+      const j = Math.floor(R() * (i + 1));
+      [o[i], o[j]] = [o[j], o[i]];
+    }
+    return o;
+  }
 
   // Bootstrap refits stop earlier (looser tolerance): their spread matters, not their fourth decimal.
   let FAST = false;
@@ -2118,6 +2131,9 @@
       const L = rows.map(r => V[r][f]).filter(v => v != null);
       mu[f] = mean(L);
       sd[f] = Math.sqrt(mean(L.map(v => (v - mu[f]) ** 2)));
+      // players who all share one value have no spread: what is left is the rounding of the mean (Codex review #604:
+      // seven identical log(40) read ±1 SD each), so a spread under a billionth of the values' size counts as none
+      if (sd[f] <= 1e-9 * Math.max(1, Math.abs(mu[f]))) sd[f] = 0;
     }
     return id => V[id].map((v, f) => (v == null || !sd[f] ? 0 : (v - mu[f]) / sd[f]));
   }
@@ -2470,7 +2486,7 @@
           Math.round(E * 100) / 100,
           Math.round(th * 100) / 100,
           0,
-          ch.sort(() => R() - 0.5).join(' '),
+          shuffle(ch, R).join(' '),
           0,
           Math.round(clamp(sec, 0.5, 600) * 10) / 10,
           z
@@ -3225,6 +3241,7 @@
     sessRows,
     sessDesc,
     TRUTH,
+    shuffle,
     synth,
     DEMO_PLAYERS,
     demoLog,

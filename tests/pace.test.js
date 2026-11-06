@@ -403,3 +403,44 @@ test('the apology card: greeted by the first word of the sign-in name, else "Hi!
   assert.match(C.sorryText('', Date.parse('2026-11-06T03:00:00Z'), manila).p, /^On 3 November we adjusted/);
   assert.match(C.sorryText('', Date.parse('2026-11-04T03:00:00Z'), 0).p, /^Yesterday morning we adjusted/);
 });
+
+// One genus difficulty (Pierre, 2026-11-06, Q133; docs/LEARNING.md "One genus difficulty"): genusDiff is the sheet's genus
+// offset (PGD, ?stats=1 gd), plus the mean judged-ease prior of a unit's judged photos (the fish); never the mean of its
+// photos' ratings (adding or curating out a photo moved it) nor a confusion term (the misses counted twice).
+test('genusDiff: the genus offset, whatever photos the genus has; the judged-ease prior for judged photos', () => {
+  const src = read('model.js'),
+    views = {
+      A: [{f: 'a1'}, {f: 'a2'}],
+      B: [{f: 'b1'}],
+      F: [
+        {f: 'f1', e: 5},
+        {f: 'f2', e: 2}
+      ]
+    },
+    ctx = {
+      VIEWS: [['wide']],
+      gamePics: n => views[n] || [],
+      PGD: {A: [-0.54, 80], B: [0.9, 12]},
+      PDIFF: {W: 5, MID: 3},
+      // The subject's calibration (core.js calibOf, SUBJECTS calib): the judged ease's logits per point.
+      SUBJ: {},
+      calibOf: () => ({ease: 0.5}),
+      // A photo rating far from its genus and a pooled mix-up the old rule counted: neither is read.
+      PSTAT: {a1: [3, 50, 10]},
+      pooledConf: () => 0.9
+    };
+  vm.createContext(ctx);
+  vm.runInContext(
+    cut(src, 'let GDIFF = {};', '\n};\n', {through: true}) + '\nthis.genusDiff = genusDiff; this.clear = () => (GDIFF = {});',
+    ctx
+  );
+  assert.deepStrictEqual(['A', 'B', 'C'].map(ctx.genusDiff), [-0.54, 0.9, 0]);
+  // A new photo, and a photo curated out: the same.
+  views.A.push({f: 'a3'});
+  views.B = [];
+  ctx.clear();
+  assert.deepStrictEqual(['A', 'B'].map(ctx.genusDiff), [-0.54, 0.9]);
+  // Judged photos (ease 5 and 2): their priors (3 - 5) x 0.5 and (3 - 2) x 0.5, on top of a genus offset of 0.
+  assert.strictEqual(ctx.genusDiff('F'), -0.25);
+  assert.ok(!/OPEN\.CONF|pooledConf/.test(cut(src, 'const genusDiff = ', '\n};\n', {through: true})));
+});

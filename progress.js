@@ -7,9 +7,10 @@
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 // The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
 // with the ring, at the top of the page, not under the slate tiles): the overall ring with its %, then the name, place and
-// Elo on the leaderboard (filled once it loads; the Elo from this device until then; nothing before the Elo is due and
-// while not on the board: it comes by itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the
-// last three. The rank links to the leaderboard, the achievements to their page.
+// Elo (the rank filled once the leaderboard loads; nothing before the Elo is due and while not on the board: it comes by
+// itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the last three. The rank links to the
+// leaderboard, the achievements to their page. One level everywhere (Pierre, 2026-11-06, Q134): the Elo is always this
+// device's own level (P[LEVEL], eloLine), never the board's copy of it, so it does not change when the board arrives.
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH_L()
@@ -19,9 +20,10 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
+    <em class="pbunl">${unlockText(slateGenera(), true)}</em>
+    <span>${sub ? `<span>${sub}</span>` : ''}${SUBJ.board ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
       SUBJ.ach
-        ? `<a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
+        ? `<a href="${esc(hr('ach'))}"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
             .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
             .slice(0, 3)
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
@@ -42,15 +44,13 @@ const shyName = n => {
 function quizBoard() {
   const list = slateGenera(),
     // A unit's page: its genus sheet, or the subject's list when it has no sheets (fish); a pair's comparison likewise.
-    href = n => (SUBJ.pages.includes('sheet') ? `#g-${esc(n)}` : '#genera'),
-    hrefPair = (a, b) => (SUBJ.pages.includes('cmp') ? `#cmp-${esc(a)}|${esc(b)}` : '#genera');
+    href = n => esc(hr(SUBJ.pages.includes('sheet') ? `g-${n}` : 'genera')),
+    hrefPair = (a, b) => esc(hr(SUBJ.pages.includes('cmp') ? `cmp-${a}|${b}` : 'genera'));
   // Bonus genera (off the slate), once on (⚙ or the offer card): tiles after the slate genera (Pierre, 2026-11-01).
   // They stay out of the ring and the counts.
   const BO = bonusList();
   const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
-  const count = k => list.filter(n => lv[n][0] === k).length,
-    // Met: a card or an answer (docs/LEARNING.md), as "N not open yet" below counts the others.
-    met = n => lv[n][0] !== 'new' || introduced(n);
+  const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Mastery level on a 6-step scale (one colour ramp, light to dark; model.js MASTERY: Not seen, Snorkeler, Open Water,
   // Advanced, Divemaster, Instructor). "Review" is a separate marker, so it never hides the level.
@@ -119,12 +119,12 @@ function quizBoard() {
         R = num.filter(n => GX(n).n > 20),
         S = list.filter(n => !GX(n).n);
       const ps = n =>
-        `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
+        `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
       const bx = BO.map(
         n =>
-          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
+          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
       // The left column padded to the row count, so 21 always starts the right column (Codex review #371: with
       // Millepora the right column outgrew the left and 21 slipped to the bottom of the left one).
@@ -141,13 +141,13 @@ function quizBoard() {
               ? ['F', 'IMR benthic slate, not a hard coral']
               : ['★', 'Not covered in the lecture'];
         return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${t}">${mk}</span><span class="pgt">${t}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
       })
       .join('')}
       ${
         BO.length
           ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
-        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
+        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
           : ''
       }</div>`
   };
@@ -159,16 +159,16 @@ function quizBoard() {
   $v.innerHTML = `${
     UNITS[SUBJ.id].progHelp
       ? UNITS[SUBJ.id].progHelp()
-      : `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
-  <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
+      : `<p class="lede"><b>To learn a genus</b>, keep getting it right: its % is the share of all its photos, easy to hard, you would name alone and typed, as far as your answers on it have shown. Hard photos and typed answers prove the most; a right pick among 2 easy choices proves little. It fills up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+  <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
-  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
+  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
-  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
-  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.filter(met).length}/${list.length} met`)}<div class="pgwrap"></div>
+  <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
+  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list))}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
-    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor</p>
+    <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
     ${
       introLeft().length
         ? `<div class="popen"><p><b>Had ${SUBJ.lecture}?</b> ${introLeft().length} ${SUBJ.many} are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all ${SUBJ.many}</button></div>`
@@ -201,15 +201,16 @@ function quizBoard() {
       save();
       quizBoard();
       // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
-      appToast(`All ${slateGenera().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
+      appToast(`All ${slateCore().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
-  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
+  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
+  // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
   const rank = B => {
     const a = document.getElementById('pbrank'),
       i = B && B.rows ? boardMe(B.rows) : -1;
     if (!a || i < 0) return;
-    const elo = B.rows[i][2] == null ? eloLine(P[LEVEL]) : `Elo ${eloScore(B.rows[i][2])}`;
+    const elo = eloLine(P[LEVEL]);
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
     a.hidden = false;
   };
@@ -240,7 +241,7 @@ function quizBoard() {
   show();
 }
 
-// The two highest levels reached, with their counts, for the card and the header pill (Pierre, 2026-11-03: "0/39
+// The two highest levels reached, with their counts, for the card (Pierre, 2026-11-03: "0/39
 // learned" for weeks was discouraging): "3 Divemaster · 12 Open Water". From Open Water up; '' before any genus reaches Open Water.
 function lvSummary(list = slateGenera(), icons = true) {
   const st = list.map(lvStep);
@@ -251,15 +252,21 @@ function lvSummary(list = slateGenera(), icons = true) {
     .map(([k, c]) => `${icons ? lvIcon(k) : ''}${c} ${MASTERY[k][0]}`)
     .join(' · ');
 }
+// The units unlocked (Pierre, 2026-11-05: "30/40 genera unlocked"): the subject's units opened on the path (a card, an
+// answer, Open all: model.js introduced), out of every unit the progress counts (slateGenera, whatever the subject puts in
+// it); the units "not open yet" on this page (introLeft) are the rest. A unit counts from its card, a couple of answers
+// before the draw asks it (model.js INTRO.GAP). [unlocked, all].
+const unlockN = (list = slateGenera()) => [list.filter(introduced).length, list.length];
+const unlockText = (list = slateGenera(), html = false) => {
+  const [k, n] = unlockN(list);
+  return `${html ? `<b>${k}</b>` : k}/${n} ${SUBJ.many} unlocked`;
+};
 // Header progress pill: always in view; the page itself is #progress.
-const $prog = document.getElementById('prog');
 function showProg() {
   if (!DATA) return;
   const n = slateGenera();
-  const pt = `${progPct(n)}%`,
-    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new' || introduced(x)).length}/${n.length} ${SUBJ.many} met`;
+  const pt = `${progPct(n)}%`;
   document.getElementById('progn').textContent = pt;
-  $prog.title = `Your progress: ${pt} (${lt})`;
   const p2 = document.getElementById('progn2');
   if (p2) p2.textContent = pt;
   // Not signed in: the pill's tooltip says so, so RAs find where to save their progress.
@@ -269,11 +276,13 @@ function showProg() {
   pill.style.setProperty('--pp', progPct(n));
   // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
   // "Not saved" pill beside it already says so in words (design re-review p9).
-  pill.title = SYNC
-    ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
-    : out
-      ? 'Your progress (not saved online yet: Sign in, top right)'
-      : `Your progress per ${SUBJ.one}`;
+  pill.title = `${
+    SYNC
+      ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
+      : out
+        ? 'Your progress (not saved online yet: Sign in, top right)'
+        : `Your progress per ${SUBJ.one}`
+  }. ${pt}, ${unlockText(n)}.`; // the count in words: the header has no room for it (one line at 1024 px, rule U3)
   // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
   // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
   // back as "Not saved", which opens ⚙ where the problem is explained.
@@ -341,7 +350,9 @@ function bindProgFile() {
 }
 
 // Public leaderboard (Pierre, 2026-11-01): every signed-in player by progress %, then Elo (their ability from every
-// answer, so players at 100% keep competing). 🏆 in the header opens it from any page; My progress shows the player's
+// answer, so players at 100% keep competing). The Elo is the app's own level, P[LEVEL].th, the one My progress shows
+// (Pierre, 2026-11-06, Q134): the sheet reads it from each player's saved progress (Code.gs board_, v63; older scripts
+// sent their own chain, stats_ R), and the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it from any page; My progress shows the player's
 // rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
 // sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
 const BOARD = 'reefid-sync-board'; // a reefid-sync key: it travels with the progress, so the choice holds on every device
@@ -413,7 +424,12 @@ function viewBoard() {
 function paintBoard(B) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
-  const me = boardMe(B.rows);
+  const me = boardMe(B.rows),
+    // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
+    // device has none to show (Q134), or when the subject on screen is not the board's (SUBJ.board: P is another
+    // subject's progress). Other rows: the level the sheet read from their saved progress.
+    mine = me >= 0 && SUBJ.board ? eloLine(P[LEVEL]) : '',
+    eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
     ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
@@ -430,7 +446,7 @@ function paintBoard(B) {
       ? `<ol class="blist">${B.rows
           .map(
             (r, i) =>
-              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
           )
           .join('')}</ol>`
       : '<p class="note">Nobody yet: be the first.</p>');
@@ -615,7 +631,7 @@ const ACHNEW = 'reefid-ach-new',
   achNew = () => achUnseen().length;
 function achDot() {
   const bg = document.getElementById('boardgo'),
-    tab = document.querySelector('.btabs a[href="#ach"]'); // the Achievements tab of the leaderboard page (boardTabs)
+    tab = document.querySelector(`.btabs a[href="${hr('ach')}"]`); // the Achievements tab of the leaderboard page (boardTabs)
   if (bg) bg.classList.toggle('hasnew', achNew() > 0);
   if (tab) tab.classList.toggle('hasnew', achNew() > 0);
 }
@@ -800,7 +816,7 @@ function achNext() {
   el.setAttribute('role', 'status');
   // The cards' look (app.js cardShow, docs/DESIGN.md "Cards"), as a toast: the achievement's own emoji in a small medallion
   // with its tier at the edge, on the pale tint of the kind's hue.
-  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  el.innerHTML = `<a href="${esc(hr('ach'))}" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
   const mo = new MutationObserver(() => {
@@ -834,8 +850,8 @@ function achRecap(ids) {
       .join(' ')
   });
 }
-// #ach: every achievement, earned ones first with their date, the others greyed with what earns them.
-// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#board) and Achievements (#ach).
+// #leaderboard/achievements: every achievement, earned ones first with their date, the others greyed with what earns them.
+// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#leaderboard) and Achievements (#leaderboard/achievements).
 const boardTabs = cur =>
   `<nav class="btabs" aria-label="Leaderboard and achievements">${[
     ['board', '🏆 Leaderboard'],
@@ -845,7 +861,7 @@ const boardTabs = cur =>
     // (Pierre, 2026-11-02: on the leaderboard, nothing said where the new ones were).
     .map(
       ([h, t]) =>
-        `<a href="#${h}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
+        `<a href="${esc(hr(h))}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
     )
     .join('')}</nav>`;
 // How many signed-in players hold each achievement (sheet v15, GET ?achs=1: {n, counts}), 5 minutes in memory.
@@ -918,12 +934,16 @@ function boardNotice() {
         syncSoon();
       }
     });
-  if (!SYNC || store.get('reefid-board-told', 0)) return;
+  // Said on a subject that has the leaderboard (SUBJECTS board) only: on another (Fish), it waits for a later load
+  // (fish beta QA, 2026-11-06: it covered the bottom of fish Home right after Fish was chosen). A switch of subject
+  // while it shows takes it away and it is due again (app.js setSubject, toastsOff).
+  if (!SYNC || store.get('reefid-board-told', 0) || !SUBJ.board) return;
   store.set('reefid-board-told', 1);
   const t = appToast(
-    '🏆 New: a <a href="#board">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+    '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
     15000
   );
+  t.dataset.again = 'reefid-board-told';
   t.querySelector('a').onclick = () => t.remove();
 }
 // Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
@@ -991,7 +1011,7 @@ function recalcNotice() {
     esc: 1,
     enter: 1,
     // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
-    // player opening straight at #quiz had it closed by the first route, before ever seeing it).
+    // player opening straight at #practice/quiz had it closed by the first route, before ever seeing it).
     onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
   });
 }
@@ -1076,20 +1096,40 @@ function rvNoticeAdd(from, to, pct) {
     told = M.told || [],
     due = (M.due || []).filter(v => !told.includes(v)),
     pc = M.pct || {};
-  rvMsgs(from, to).forEach(x => {
+  // An apology (core.js RV_SORRY down) only when the % went down by its min points or more; otherwise the jump's other
+  // cards, the standard one included (rvMsgs skip).
+  let L = rvMsgs(from, to);
+  const sorry = L.find(x => x.msg.down),
+    std = [];
+  if (sorry && !(pct && pct[0] - pct[1] >= (sorry.msg.min || 0))) {
+    L = rvMsgs(from, to, true);
+    // No earlier version in the jump with the standard card (an upgrade from the version just before): the standard card
+    // under the apology's version (M.std; rvNotice shows RV_CARD for it; Codex review #646).
+    if (!L.some(x => x.msg === RV_CARD)) (L.push({v: sorry.v, msg: RV_CARD}), std.push(sorry.v));
+  }
+  L.forEach(x => {
     if (told.includes(x.v) || due.includes(x.v)) return;
     if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1] && Math.abs(pct[1] - pct[0]) >= (x.msg.min || 0))) return;
     if (pct) pc[x.v] = pct;
     due.push(x.v);
   });
-  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc});
+  const st = [...new Set([...(M.std || []).filter(v => !std.length || v !== std[0]), ...std.filter(v => due.includes(v))])];
+  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc, ...(st.length ? {std: st} : {})});
   if (window.APP_READY) rvNotice();
 }
 let rvT = 0;
+// A card's PS (core.js RV_SORRY ps): a line the sheet serves (sync.js NOTES_KEY, Code.gs notes_), small under the text,
+// when it is set; never written in the repo.
+const rvPs = m => {
+  const t = m && m.ps ? String(((typeof NOTES_KEY === 'string' ? store.get(NOTES_KEY, {}) : {}) || {})[m.ps] || '').trim() : '';
+  return t ? `<p class="cardps"><small>${esc(t)}</small></p>` : '';
+};
 function rvNotice() {
   clearTimeout(rvT);
   const M = store.get(RVN.KEY, {}) || {},
-    x = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v));
+    r0 = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v)),
+    // A version whose standard card replaced its apology (rvNoticeAdd std): the standard card.
+    x = r0 && (M.std || []).includes(r0.v) ? {...r0, msg: RV_CARD} : r0;
   if (!x || document.querySelector('.rvmsg')) return;
   if (document.querySelector('#tour, .unlock')) return void (rvT = setTimeout(rvNotice, 2000));
   // The progress ring in the medallion: the % after the recalculation, the one before faint behind it (app.js cardRing).
@@ -1097,10 +1137,13 @@ function rvNotice() {
   cardShow({
     kind: x.msg.kind || 'update',
     cls: 'rvmsg',
-    kick: 'Update',
+    kick: x.msg.kick || 'Update',
     title: x.msg.t,
     visual: pt != null ? cardRing(pt, pf) : '',
-    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>`,
+    // pct: the two % on a line of their own that never wraps (core.js RV_SORRY); ps: the sheet's line (rvPs).
+    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>${
+      x.msg.pct && pt != null ? `<p class="cardpct">${esc(x.msg.pct.replace('{from}', pf).replace('{to}', pt))}</p>` : ''
+    }${rvPs(x.msg)}`,
     primary: {
       text: 'Got it',
       on: () => {
@@ -1124,13 +1167,13 @@ function rvNotice() {
 // device); leaving the page closes it unseen and it comes back.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
-  if (!SUBJ.log) return; // the apology is about the corals' opening: it waits until the player is on them
+  if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
   if (!F || typeof F !== 'object') {
     let log = [];
     try {
-      log = [...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])];
+      log = subjEntries([...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])], SUBJ.id); // its own answers only
     } catch (e) {}
     F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
     store.set(SORRYK.FIRST, F);
@@ -1149,6 +1192,76 @@ function sorryNotice() {
     esc: 1,
     enter: 1,
     onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
+  });
+}
+// The cards that tell a player about a subject (app.js UNITS hello), one per way the subject opens (core.js SUBJECTS open,
+// subjGroup): hello.group while it opens to a group, hello.all once it opens to everyone (fish since Q158: the same
+// invitation to every player, while the subject keeps its beta label). Pierre, 2026-11-05: "a proper card the player
+// closes, shown once, at a calm moment", not a toast, which may go unread; 2026-11-06: while fish stays open to a group
+// he picks, the card is an invitation to test the fish beta, for the players of that group only.
+// Each card is seen once per device, under its own key (subjDev: reefid-fish-hello-group), so a later card is not hidden
+// by an earlier one. hello.group goes only to a player in the subject's group (subjGroups: never the admin's own access,
+// IS_ADMIN, nor anyone while the subject is open to all); hello.all to anyone the subject is open to (subjOpen). Never in
+// the admin's browser (as the tour), and only to a player settled in the subject on screen (the corals): at least
+// HELLO.MIN answers (a new player meets the switch with the tour and the first questions). A player who has played the
+// subject already (it is on screen, its welcome question is answered, or it has progress) is never told: marked seen at
+// once. The calm moment: Home, HELLO.WAIT after it is drawn and still on it, nothing else on screen (the tour, a card, a
+// toast, the help, ⚙, an enlarged photo) and the prompt spacing met (quiz.js promptOk, which it then pushes back as the
+// other prompts do). Not calm: tried again at the next Home. Seen by either button or Escape; leaving the page closes it
+// unseen and it comes back at the next calm Home. "Try fish" switches to the subject and opens its quiz (its welcome
+// question first, quiz.js startGate).
+const HELLO = {KEY: 'hello-', MIN: 10, WAIT: 1500};
+// The way S opens ('group' or 'all'): the name of its card in UNITS hello and of the card's seen mark.
+const helloMode = S => (subjGroup(S) ? 'group' : 'all');
+// 'show', 'met' (mark it seen, say nothing), or '' (not now). Pure on its inputs: tests call it.
+const helloDue = ({card, member, admin, seen, met, answers}) =>
+  !card || !member || admin || seen ? '' : met ? 'met' : answers >= HELLO.MIN ? 'show' : '';
+let helloT = 0;
+function subjHello() {
+  clearTimeout(helloT);
+  const home = () => (hashNow() || 'home') === 'home';
+  if (!home()) return;
+  // The 'all' card is the beta invitation: only while the subject keeps its beta label (SUBJECTS beta).
+  const card = S => (helloMode(S) === 'all' && !S.beta ? null : (UNITS[S.id].hello || {})[helloMode(S)]),
+    member = S => (helloMode(S) === 'group' ? subjGroups().includes(S.id) : subjOpen(S));
+  const S = SUBJECTS.find(x => card(x) && member(x)); // a subject with a card for the player, never by its place
+  if (!S) return;
+  const H = card(S),
+    key = subjDev(S.id, HELLO.KEY + helloMode(S)),
+    P2 = store.get(subjKey(S.id, 'progress'), null),
+    due = helloDue({
+      card: H,
+      member: member(S),
+      admin: HAS_ADMIN_TOKEN,
+      seen: !!store.get(key, null),
+      met: SUBJ === S || !!store.get(startKey(S.id), null) || !!(P2 && typeof P2 === 'object' && Object.keys(P2).length),
+      answers: answersSoFar() // the subject on screen's, another subject than S (met otherwise)
+    });
+  if (due === 'met') return void store.set(key, 'met');
+  if (due !== 'show') return;
+  helloT = setTimeout(() => {
+    const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .hello');
+    if (!home() || busy || store.get(key, null) || !member(S) || !promptOk()) return;
+    promptMark();
+    const seen = () => store.set(key, Date.now());
+    cardShow({
+      kind: S.card,
+      cls: 'hello',
+      kick: H.kick,
+      title: H.title,
+      body: H.body,
+      primary: {text: `Try ${esc(S.name.toLowerCase())}`, on: () => (seen(), setSubject(S.id).then(() => (location.hash = hr('quiz'))))},
+      secondary: {text: 'Later', on: seen},
+      esc: 2
+    });
+  }, HELLO.WAIT);
+}
+// The notes on screen go when the subject changes (they speak of the subject that was on screen); one marked
+// data-again (its "told" key) is due again later.
+function toastsOff() {
+  document.querySelectorAll('.apptoast').forEach(t => {
+    if (t.dataset.again) store.set(t.dataset.again, 0);
+    t.remove();
   });
 }
 // A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by

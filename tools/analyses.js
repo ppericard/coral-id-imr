@@ -20,7 +20,8 @@
 // sheet (private), never to the repo, an artifact or the log.
 const fs = require('fs'),
   path = require('path');
-const A = require('../analysis.js');
+const A = require('../analysis.js'),
+  C = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const MAX = 2400000; // under the sheet's 2.5 MB cap (Code.gs AN_MAX)
@@ -83,6 +84,8 @@ async function sheetRun(io, token, o = {}) {
     io.log(`Could not read the answer log (${(ans && ans.error) || 'no reply'}). Nothing done.`);
     return 'refused';
   }
+  // The analyses are the replayed subject's (the corals'): sheet v60 logs every subject's answers (core.js subjRows).
+  ans.rows = C.subjRows(ans.rows);
   // The head counts the Answers tab's rows; the log read may hold fewer (rows without a player): judge again on it.
   const q = plan(ans.rows.length, st, o.force, !!head.stale);
   if (!q.go) {
@@ -141,7 +144,7 @@ if (require.main === module) {
     if (argv.includes('--demo')) rows = A.demoLog(rd('data.json'), Date.now() - 3 * 864e5, {cur: rd('curation.json'), qual: rd('quality.json'), met: rd('metrics.json')});
     else if (arg('--in')) {
       const J = JSON.parse(fs.readFileSync(arg('--in'), 'utf8'));
-      rows = Array.isArray(J) ? J : J.rows;
+      rows = C.subjRows(Array.isArray(J) ? J : J.rows);
     } else throw new Error('usage: node tools/analyses.js --sheet [--force] | --in answers.json --out report.json | --demo --out report.json');
     const rep = A.compact(A.report(rows, metaOf(), null, {B, Bh, seed: 1}), MAX),
       out = arg('--out');

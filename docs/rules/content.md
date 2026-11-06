@@ -24,23 +24,24 @@ Coral Finder 2022 categories/boxes, the 7 IMR growth forms, or a mix. Every clue
 ### C3
 
 **An ID tip is short, simple and understandable by everyone, whatever its source** (IMR or another one): one tip or
-a few essentials. The tips are what the app puts forward: the **ID tip** (`gen[g].qt`, from `tools/id_tips.txt`) is
-shown everywhere (quiz feedback, cards, ID tips view, comparisons) in a highlighted box. The technical, descriptive
-detail of what separates a genus from another goes on the genus sheet: there the full lecture cues (`gen[g].imr`, incl.
-review slides and presenter notes) appear under "IMR lecture notes".
+a few essentials. The tips are what the app puts forward: the **ID tip** (`gen[g].qt`; corals: from
+`tools/id_tips.txt`) is shown everywhere (quiz feedback, cards, ID tips view, comparisons) in a highlighted box. The
+technical, descriptive detail of what separates a unit from another goes on its sheet (corals: the full lecture cues,
+`gen[g].imr`, incl. review slides and presenter notes, appear there under "IMR lecture notes").
 *Why:* tips had once turned into scientific manuals; a tip must work at a glance for anyone.
-*Source:* Pierre, by 2026-11-01; what a tip is, 2026-11-05.
+*Source:* Pierre, by 2026-11-01; what a tip is, 2026-11-05; subject-neutral wording, 2026-11-06.
 
 ### C4
 
-**Growth form is an entry point only**: never genus-specific, never a strict filter (rank, don't filter), and never a
+**Corals: growth form is an entry point only**: never genus-specific, never a strict filter (rank, don't filter), and never a
 way to group or pick genera: a list of genera is A-Z, the slate order or the IMR lecture groups. Photos use the 7 IMR
 (AIMS lifeform) forms: Branching, Tabulate, Encrusting, Foliose/Plating, Massive, Submassive, Mushroom (+ "x" too close
 to tell, + a separate "polyps extended" flag); one form per photo, the dominant visible one. The polyps flag ✿ only for
 polyps visibly extended at colony scale, only for the Coral Finder "extended by day" genera (Alveopora, Duncanopsammia,
 Goniopora, Heliofungia, Plerogyra, Tubastraea), never on macro photos.
 *Why:* many genera take 3-4 forms or more; only the solitary mushroom corals keep one.
-*Source:* Pierre, by 2026-11-01; grouping by form, 2026-11-03 (the custom quiz's selection screen).
+*Source:* Pierre, by 2026-11-01; grouping by form, 2026-11-03 (the custom quiz's selection screen); subject-neutral
+wording, 2026-11-06.
 
 ### C5
 
@@ -58,9 +59,9 @@ admin's points list, 2026-11-05 (#571).
 the reasons a cue may fail) come only from species found around Dauin, at most in the Philippines. Never add doubt to a
 cue with a species from elsewhere (the Caribbean, the Red Sea…). A species is present in the Philippines by rule C8
 (Needs ID alone, Pierre's included, never confirms). Check it before citing a species, with observers and not only
-Research Grade counts (batched, rule C7; `tools/presence.py` `species_presence` does it per genus), and say in the PR
+Research Grade counts (batched, rule C7; `tools/presence.py` `species_presence` does it per taxon), and say in the PR
 which test each species passes. Example: the Favites notes (`tools/apply_favites.py` lists them).
-*Why:* the app teaches recognising the corals where the RAs dive. *Source:* Pierre, 2026-11-04.
+*Why:* the app teaches recognising the corals where the RAs dive. *Source:* Pierre, 2026-11-04; subject-neutral wording, 2026-11-06.
 
 ### C7
 

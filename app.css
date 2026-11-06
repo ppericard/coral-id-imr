@@ -2399,6 +2399,73 @@ kbd {
 .tymsg:empty {
   min-height: 0;
 }
+/* The spelling step (quiz.js typeBind): a close typo of the right name is retyped once. Not a wrong answer, so never the
+   red: the warm --warn edge on the field. A retype still not exact keeps that look once answered. The nudge is a small
+   card in the cards' grammar (docs/DESIGN.md "Cards"; Pierre, 2026-11-06: warm and encouraging, never a plain line): the
+   warm kind (--warn, as the apology and step cards), its tint fading to the surface, the ✏️ in a small medallion, the
+   "So close!" in the kind's ink; it rises in with the medallion's pop (none with reduced motion). */
+.tyform.retry input,
+.tyform input.close {
+  border-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+}
+.tyform.retry input:focus {
+  outline-color: var(--warn);
+}
+.tyform.retry .tymsg {
+  --k: var(--warn);
+  --kt: color-mix(in srgb, var(--k) 16%, var(--surface));
+  --kink: color-mix(in srgb, var(--k) 62%, var(--ink));
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid color-mix(in srgb, var(--k) 40%, var(--surface));
+  border-radius: var(--r);
+  background: linear-gradient(to right, var(--kt), var(--surface) 75%);
+  color: var(--ink);
+  line-height: 1.35;
+}
+.tymsg .tymed {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--kt);
+  border: 2px solid var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 1.05rem;
+}
+.tymsg b {
+  color: var(--kink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tyform.retry .tymsg {
+    animation: ulrise 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+  .tymsg .tymed {
+    animation: tickpop 420ms cubic-bezier(0.3, 1.6, 0.5, 1) 0.12s both;
+  }
+}
+/* The letters a retype still got wrong, in the verdict's one line (quiz.js typeStep): the "wrong" colour and a thick
+   underline of it, so they show without colour too (the colour-blind mode redefines --bad). The line's words in normal
+   weight, the name in bold, so the name is what the eye catches (Pierre, 2026-11-06); "✓ Yes," stays as in every verdict. */
+.fb h3.tystep {
+  font-weight: 400;
+}
+.fb h3.tystep .v,
+.fb h3.tystep a,
+.tysp {
+  font-weight: 700;
+}
+.tysp b {
+  color: var(--bad);
+  text-decoration: underline 2px var(--bad);
+  text-underline-offset: 3px;
+}
 .fb {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -4046,7 +4113,11 @@ a.lt:hover {
   text-decoration: none;
   color: var(--ink);
 }
+.tipph .zoom {
+  position: relative;
+}
 .tipph img {
+  display: block;
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
@@ -5825,6 +5896,17 @@ html.touring .unlock {
 .ulmed.vis + .ulpanel {
   padding-top: 62px;
 }
+/* A recalculation card's two % (progress.js rvNotice, core.js RV_SORRY pct): one line, never wrapped mid-way. */
+.cardpct {
+  white-space: nowrap;
+  font-weight: 700;
+  margin-top: 0.5em;
+}
+/* A card's PS (progress.js rvPs: a line of the sheet's Notes tab, core.js RV_SORRY ps), quieter than the text. */
+.cardps {
+  margin-top: 0.6em;
+  color: var(--muted);
+}
 .ulkick {
   margin: 0;
   color: var(--kink);
@@ -6130,6 +6212,32 @@ html.touring .unlock {
     border-color: var(--accent);
   }
 }
+/* The subject to start with (tour.js pick): the same buttons, the subject's icon in the accent beside its name, beta tag
+   and line. */
+.startopt.tpick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* (#tour svg is the tour's full-screen dim layer: the icon keeps its own size.) */
+#tour .tpick .sji {
+  position: static;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+.tpick > span {
+  min-width: 0;
+}
+.tpick b small.beta {
+  display: inline-block;
+  margin-top: 0;
+  color: var(--bg);
+}
+.startopt:disabled {
+  cursor: progress;
+}
 @keyframes ulfade {
   from {
     opacity: 0;
@@ -6432,6 +6540,12 @@ html.touring .unlock {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The units unlocked, "30/40 genera unlocked" (progress.js unlockText): its own line under the name, in ink, the count bold. */
+.pbtxt > .pbunl {
+  font-style: normal;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
 .pbtxt > span {
   color: var(--muted);
   /* The levels line can be long ("2 Instructor · 3 Advanced diver"): its parts go to a second line instead of out of the
@@ -6444,7 +6558,8 @@ html.touring .unlock {
 .pbtxt > span > * {
   white-space: nowrap;
 }
-.pbtxt > span > :not(:first-child)::before {
+/* A dot between two parts shown (the rank stays hidden until the Elo is due, the levels line is empty at first). */
+.pbtxt > span > :not([hidden]) ~ :not([hidden])::before {
   content: ' · ';
   color: var(--muted);
 }
@@ -6891,4 +7006,297 @@ small.beta {
   font-weight: 600;
   line-height: 1.5;
   vertical-align: middle;
+}
+/* Deleting one's own account (#delete-account, sync.js viewDeleteAccount): the About page's cards, a red action. */
+.delacct .danger {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+.delacct label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.delacct input {
+  font: inherit;
+  width: 6ch;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--ink);
+  letter-spacing: 0.2em;
+}
+
+/* ---------- Fish sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B) ---------- */
+/* The family's English name, its scientific name(s) below and its group in the key (Pierre, Q1 on the mockup). */
+.fnames {
+  margin: 6px 0 0;
+}
+.fnames p {
+  margin: 0;
+}
+.fnames .fn-t {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--fs-2xl);
+  line-height: 1;
+}
+.fnames .fn-s {
+  margin-top: 4px;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.fnames .fn-s span,
+.fnames .fn-g {
+  color: var(--muted);
+  font-weight: 400;
+}
+.fnames .fn-g {
+  margin-top: 2px;
+  font-size: var(--fs-s);
+}
+.fsheet h3 small {
+  margin-left: 6px;
+  font-family: var(--body);
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* The one "No photo yet" drawing (Pierre, Q9), in the "Photo missing" tile's style. */
+.nofish {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+.nofish svg {
+  width: 46%;
+  max-width: 96px;
+  height: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nofish .np-t {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.nofish .eye {
+  fill: currentColor;
+  stroke: none;
+}
+.hero-ph .nofish {
+  border-radius: var(--r);
+}
+/* Species tiles: the scientific name first, then the common name (Pierre, Q10). */
+.ftiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+@media (min-width: 600px) {
+  .ftiles {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+}
+.ftile {
+  margin: 0;
+  min-width: 0;
+  background: var(--surface);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.ftile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+.ftile .zoom {
+  position: relative;
+}
+.ftile :is(figcaption, .fcap) {
+  display: block;
+  padding: 6px 8px 8px;
+  font-size: var(--fs-s);
+  line-height: 1.25;
+}
+.ftile :is(figcaption, .fcap) i {
+  display: block;
+  font-weight: 600;
+}
+.ftile :is(figcaption, .fcap) span,
+.ftile :is(figcaption, .fcap) small {
+  display: block;
+  color: var(--muted);
+}
+.ftile :is(figcaption, .fcap) small {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+}
+.ftile :is(figcaption, .fcap) small i {
+  display: inline;
+  font-weight: 400;
+}
+.fmore {
+  margin: 6px 0 0;
+}
+/* Genus rows (option B): a few species' photos, the genus, its counts and its IMR name. */
+.frows {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+@media (min-width: 1024px) {
+  .frows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.frow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: inherit;
+  text-decoration: none;
+}
+.fstack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  flex: none;
+  width: 104px;
+}
+.fstack.one {
+  grid-template-columns: 1fr;
+}
+.fstack img,
+.fstack .nofish {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: var(--r-xs);
+}
+.fstack .nofish span {
+  display: none;
+}
+.ftxt {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-s);
+  line-height: 1.3;
+}
+.ftxt > i {
+  display: block;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.ftxt > span,
+.ftxt > small {
+  display: block;
+  color: var(--muted);
+}
+.ftxt > small {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+}
+.fjuv {
+  max-width: 70ch;
+  margin: 6px 0;
+}
+.srcn {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.lt > span > b:first-child {
+  font-size: var(--fs-m);
+}
+a.frow:hover {
+  border-color: var(--accent);
+}
+.fgo {
+  flex: none;
+  font-size: var(--fs-l);
+  color: var(--muted);
+}
+/* The families page: a family's name opens its sheet (its photo enlarges). */
+.tipsheet {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tipsheet .cmpgo {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+}
+a.ftile {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+a.ftile:hover {
+  box-shadow: var(--shadow-hover);
+}
+/* Species sheet: its family, genus, IMR flags and presence as plain chips; its photos, the first one large. */
+.fbadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+.fbadges .chip {
+  text-decoration: none;
+}
+.fphotos {
+  margin: 10px 0 4px;
+}
+.fphotos > figure {
+  margin: 0;
+}
+.fbig {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.fbig img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+}
+.fphotos figcaption {
+  margin-top: 4px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fphotos figcaption a {
+  color: var(--muted);
+}
+@media (min-width: 600px) {
+  .fphotos > figure,
+  .fphotos > .fbig {
+    max-width: 640px;
+  }
 }

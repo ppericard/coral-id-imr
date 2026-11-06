@@ -3,8 +3,8 @@
 Pierre, 2026-11-04, after trying the fish beta: the first photos were too hard. Fish answers are not logged to the sheet
 yet (`core.js` `SUBJECTS` fish `log: false`), so no player answer says how hard a fish photo is. Until they do, an agent
 looks at every fish game photo and judges it on explicit criteria. The judgement gives each photo an **ease** from 1 to
-5, which becomes its difficulty prior (`model.js` `photoDiff`) and decides which photos the first questions on an entry
-may show (`model.js` `easyFirst`). This file is the rubric, so the pass can be repeated by another agent or a person
+5, which becomes its difficulty prior (`model.js` `photoDiff`): at the start the draw strongly favours the easy photos
+through it (no wall since 2026-11-06). This file is the rubric, so the pass can be repeated by another agent or a person
 and give the same kind of result.
 
 Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `tools/fish_source.json`);
@@ -112,6 +112,25 @@ at most 2, a head-on one at most 3. So a medium reference photo (3) joins an ent
 easy one is more often the card's cover. `python3 tools/judging_fish.py rep` re-applies the flag to the judged
 candidates after a new tag. Where the source is FishBase, the photo page (`o`) gives the author and the licence.
 
+**The units' reference photos in play** (Pierre, 2026-11-06: the covers and first photos of the families, genera and
+species must be reference photos, whoever took them; 14:02: "reference" means every photo of reference quality, and
+FishBase enters automatically when its licence allows: "a maximum of good photos to complement the weaker ones on
+iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every circle-1 genus and every
+entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: up to
+3 for a species, the first for a genus or a family) that pass the game photo rules on their observation (Research Grade,
+CC0 / CC BY / CC BY-NC, the Indo-West Pacific box, not captive or dead; for a genus or a family, a photo of a game species
+of the entry), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
+`tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
+--todo`, codes under their entry in `tools/fish_judge.json` `photos`. Once judged, each joins its entry's game photos
+(`tools/fish_judge.py` `add_refs`; never in place of a game photo: one of an observation already in the game stays out), the iNaturalist ones and
+FishBase's main picture with `rep`.
+
+**Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
+read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it; in both cases
+one kind of fish only (count `1` or `s`: never other kinds of fish nor an unclear subject, rule P3). A
+reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
+never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `model.js` `photoSet`), never exclusively.
+
 ## A proposed crop
 
 When the fish is small in the frame, or the margins distract (another fish, a diver, empty water), the pass proposes a
@@ -123,13 +142,17 @@ Pierre to accept or change, as for coral candidates (ROADMAP).
 
 ## What the app does with it (docs/LEARNING.md "Fish photos judged")
 
-- **Prior difficulty** (`model.js` `photoDiff`): a photo's own difficulty starts at (3 − ease) x `PDIFF.EASE` (0.5
+- **Prior difficulty** (`model.js` `photoDiff`): a photo's own difficulty starts at (3 − ease) x the subject's `calib.ease` (0.5
   logit an ease point: one standard deviation of a photo's own difficulty around its genus, the hierarchical photo Elo
   study's measure), so ease 5 starts at −1, ease 1 at +1, on top of its unit's offset; it fades as real answers come
   (`PDIFF.W`, as every prior). A photo nobody judged starts at 0, as before.
-- **The first questions on an entry** (`model.js` `easyFirst`): until the entry reaches Open Water (50%, the first
-  level earned), its questions show only its very easy photos (ease 4-5); an entry with fewer than `PICKD.VARIETY` (3)
-  of them shows its 3 easiest instead. A unit without judged photos (the corals) is not touched.
+- **The first questions on an entry**: no wall (Pierre, 2026-11-06 14:17). Every photo can be drawn from the first
+  question; the prior above, the draw's aim at the player's level and the start's lean (fish `SUBJECTS` `calib.early`:
+  the aim 1.5 logits lower on an entry with no answer, fading with its answers) make the easy ones far likelier at the
+  start, a harder one comes rarely (until then, `model.js` `easyFirst` showed only the ease 4-5 photos before Open Water).
+- **The order photos are met in** (`core.js` `easyRank`, Pierre, 2026-11-06): the card's photo, the first photo of each
+  list and the auto-sort's order are the easiest first, then the most reference-like by these tags (`refScore`: `r`,
+  then profile, whole, good light, no colour loss, sharp, large, one fish), never by who took the photo.
 - **The order the entries open**: the starter core first (`fish.json` `start`), then the existing rule, easiest and
   most common first (`openPick`): an entry's difficulty is the mean of its photos' difficulty, so the judged ease
   orders it too.
@@ -160,11 +183,17 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    passing species into `suggest.json` `"fish"`: `{jt, e, k, ph, c, u, n}`, `jt` and `e` after the caps as in
    `fish-photos.json`. Commit only `judging/fish/*.json` and `suggest.json`.
 
-**What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`, through the admin's auto-sort once the fish
-curation exists, admin plan PR 4): `best` or `alt` → proposed in, with its tags, ease, phase and crop, whatever its ease
-(hard photos stand in for SVS video frames); `dup`, an unclear subject (count `x`) or a fish out of the water (flag `a`)
-→ set aside. About 1 candidate in 20 goes to Pierre as a Check instead, and his answers measure the agreement. So add
-`unsure` at the least doubt: it costs Pierre one swipe, a wrong sure decision costs the players.
+**What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`): `best` or `alt` → **in play at once**, with its
+tags, ease, phase and crop, whatever its ease (hard photos stand in for SVS video frames; the judged ease is the photo's
+prior difficulty, the players' answers refine it); `dup`, an unclear subject (count `x`), other kinds of fish (count `m`:
+rule P3, as for the reference photos) or a fish out of the water (flag `a`) → stays out. Pierre, 2026-11-06 15:16 and
+16:20 (Q180, Q199): a judged candidate enters the game by itself, treated exactly like a photo he adds in the admin and
+hosted on R2 like it (`tools/fish_game.py` `in_play`, the Candidate photos workflow), each judged batch as soon as it
+is ready, without waiting for his swipe; his curation only removes or corrects (a photo he rejects, excludes or moves
+with Not this leaves the game at once, `core.js` `fishIn`). The admin's auto-sort still puts the same sure judgements
+into his draft (admin plan PR 4), and about 1 candidate in 20 goes to him as a Check, his answers measuring the
+agreement. So add `unsure` at the least doubt: an unsure candidate stays out of the game until a fresh look settles it,
+while a wrong sure decision costs the players.
 
 ## Agreement with other sources
 
@@ -190,11 +219,12 @@ way on rubric 5, the small fish looked at again on a 10 x 10 grid for 48 crops. 
 (`juv` covers circle 1), so every juvenile there keeps the cap. Many of these families are rarely shown as the rubric's
 very easy photo: the morays, snake eels, garden eels and jawfishes live with most of their body in a hole (partial, at
 most 3), the frogfishes, scorpionfishes, stonefishes and seamoths are camouflaged, the rays and seamoths are mostly seen
-from above, the sharks in blue water; seven entries have no photo at 4 or 5 and take their 3 easiest at the start
-(`model.js` `easyFirst`). The rubric was applied as written (no family exception): a question for Pierre, put to
+from above, the sharks in blue water; seven entries have no photo at 4 or 5 (they took their 3 easiest at the start
+under the `easyFirst` gate, gone since 2026-11-06). The rubric was applied as written (no family exception): a question for Pierre, put to
 him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md).
 
 ## A temporary use
 
-The very-easy-first rule (`model.js` `easyFirst`) is a bootstrap: once fish answers are logged, the players' answers
-rate the photos and the rule goes (Pierre, 2026-11-04; ROADMAP).
+The judged ease is a bootstrap prior: once fish answers are logged, the players' answers rate the photos and replace it
+(`PDIFF.W`; Pierre, 2026-11-04; ROADMAP). The very-easy-first gate (`model.js` `easyFirst`) went on 2026-11-06 (Pierre:
+"NO WALL").

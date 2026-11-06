@@ -79,11 +79,11 @@ print(json.dumps([[r['n'] for r in L], FB.record(s, 123, L[0]), FB.record(s, 123
     f: 'fish-s9-cand-fb-Fishu_m0',
     a: '(c) J.E. Randall, via FishBase, some rights reserved (CC BY-NC 4.0)',
     lic: 'cc-by-nc',
-    o: 'https://www.fishbase.de/photos/PicturesSummary.php?ID=123&what=species&pic=Fishu_m0.jpg',
+    o: 'https://www.fishbase.se/photos/PicturesSummary.php?ID=123&what=species&pic=Fishu_m0.jpg',
     t: 'Fishus fishii',
     own: false,
     loc: 'world',
-    src: 'https://www.fishbase.de/images/species/Fishu_m0.jpg',
+    src: 'https://www.fishbase.se/images/species/Fishu_m0.jpg',
     r: 1,
     via: 'fishbase',
     rep: 'fishbase',
@@ -216,8 +216,8 @@ test('fish-cand.json: every FishBase candidate passes the rules on tools/fishbas
     assert.strictEqual(p.lic, 'cc-by-nc');
     assert.strictEqual(r.kind, 'underwater photo');
     assert.match(p.a, /^\(c\) .+, via FishBase, some rights reserved \(CC BY-NC 4\.0\)$/);
-    assert.match(p.o, /^https:\/\/www\.fishbase\.de\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
-    assert.match(p.src, /^https:\/\/www\.fishbase\.de\/images\/species\/[\w-]+\.jpg$/);
+    assert.match(p.o, /^https:\/\/www\.fishbase\.se\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
+    assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[\w-]+\.jpg$/);
     assert.strictEqual(p.rep, r.main ? 'fishbase' : undefined, `${p.f}: rep only for FishBase's main picture`);
     assert.strictEqual(p.f, `fish-${sid}-cand-fb-${r.n.replace(/\.jpg$/, '')}`);
   });
@@ -328,7 +328,7 @@ print(json.dumps([REP_BONUS, cap('p1g0sm13', False), cap('p1g0sm13', False, rep=
   );
   assert.strictEqual(out[0], 1);
   assert.deepStrictEqual(out[1], [3, 'p1g0sm1']);
-  assert.deepStrictEqual(out[2], [4, 'p1g0sm1r'], 'a medium reference photo joins the very easy ones (model.js easyFirst)');
+  assert.deepStrictEqual(out[2], [4, 'p1g0sm1r'], 'a medium reference photo joins the very easy ones');
   assert.deepStrictEqual(out[3], [5, 'p1g0sm1r'], 'never above 5');
   assert.deepStrictEqual(out[4], [2, 'p1g0sm1jr'], 'a juvenile stays capped at 2');
   assert.deepStrictEqual(out[5], [3, 'h1g0sm1r'], 'a head-on view stays capped at 3');
@@ -353,29 +353,60 @@ test('suggest.json: every tagged judged candidate carries the flag r, and only t
     });
 });
 
-test('never in a game without Pierre: FishBase photos are candidates or sheet-only, a game photo only once he added it', () => {
+test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under the rules and it was judged reference level', () => {
   const PH = read('fish-photos.json'),
     F = read('fish.json'),
     CUR = read('curation.json'),
-    added = new Set(Object.keys((CUR.fish || {}).add || {}));
-  // A FishBase photo reaches fish-photos.json's game photos only through Pierre's curation (admin plan PR 7).
+    added = new Set(Object.keys((CUR.fish || {}).add || {})),
+    refs = new Set(Object.values(read('tools/fish_refs.json').photos).flatMap(L => L.filter(p => p.via === 'fishbase').map(p => p.f))),
+    isFb = p => p.via === 'fishbase' || /fishbase\./.test(p.src || '');
+  // Pierre, 2026-11-06 14:02: FishBase photos enter automatically when their licence allows (until then only through his
+  // curation): every FishBase game photo is his addition or a reference photo of tools/fish_refs.json judged at the
+  // reference level (tools/fish_judge.py ref_level, core.js refLevel); on R2 (fish-game.json), also a photo in play by
+  // itself (auto: a candidate judged sure, a reference-level photo; Q180, Q199; tools/fish_game.py in_play).
   Object.values(PH.photos)
     .flat()
-    .filter(p => p.via === 'fishbase' || /fishbase\./.test(p.src || ''))
-    .forEach(p => assert.ok(added.has(p.f), `${p.f}: a FishBase game photo Pierre did not add`));
-  const X = C.fishGen(F, PH.photos, PH.sheet);
+    .filter(isFb)
+    .forEach(p => assert.ok(added.has(p.f) || (refs.has(p.f) && C.refLevel(p)), `${p.f}: a FishBase game photo outside the rules`));
+  // The game as it plays (admin plan PR 7: the curated photos of fish-game.json, downloaded to R2, beside the stopgap):
+  // a FishBase photo only while Pierre has it in play for that species (core.js fishOn), or a judged reference photo.
+  const GM = read('fish-game.json').photos,
+    X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR, F), PH.sheet);
   Object.values(X.gen).forEach(g =>
     g.views.wide
-      .filter(p => p.via === 'fishbase' || /fishbase\./.test(p.src || ''))
-      .forEach(p => assert.ok(added.has(p.f), `${g.id} ${p.f}`))
+      .filter(isFb)
+      .forEach(p =>
+        assert.ok(
+          (added.has(p.f) && C.fishOn(CUR.fish, p.f, p.sp)) ||
+            (refs.has(p.f) && C.refLevel(p)) ||
+            (!!p.auto && C.fishIn(CUR.fish, p, C.fishGone(CUR))),
+          `${g.id} ${p.f}: a FishBase game photo outside the rules`
+        )
+      )
   );
+  // The same with a FishBase photo in fish-game.json that Pierre never added, or took out of play since the last run.
+  const fb = {
+      f: 'fish-s091-cand-fb-Chter_u0',
+      sp: 's091',
+      src: 'https://www.fishbase.de/images/species/Chter_u0.jpg',
+      via: 'fishbase',
+      e: 5
+    },
+    cur = {...CUR, fish: {...CUR.fish, add: {...CUR.fish.add, [fb.f]: 's091'}, seen: {...CUR.fish.seen}}};
+  assert.ok(
+    C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f),
+    'in play: in the game'
+  );
+  cur.fish.seen[fb.f] = 1;
+  assert.ok(!C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f), 'rejected: out of the game at once');
+  assert.ok(!C.fishPhotos({}, {t01: [fb]}, {...CUR, fish: {...CUR.fish, add: {}}}).t01.length, 'never added: never in the game');
   // Halichoeres chlorocephalus: J. E. Randall's FishBase photo of the holotype, alive underwater at Madang, as its
   // sheet-only photo (Pierre, 2026-11-05), never a game photo nor a cover.
   const h = (PH.sheet.s238 || [])[0];
   assert.ok(h, 's238 has its sheet photo');
   assert.deepStrictEqual(
     [h.f, h.src, h.lic, h.use, h.from, h.via, h.rep, h.sp],
-    ['fbHachl_m0', 'https://www.fishbase.de/images/species/Hachl_m0.jpg', 'cc-by-nc', 'ref', 'fishbase', 'fishbase', 'fishbase', 's238']
+    ['fbHachl_m0', 'https://www.fishbase.se/images/species/Hachl_m0.jpg', 'cc-by-nc', 'ref', 'fishbase', 'fishbase', 'fishbase', 's238']
   );
   assert.match(h.a, /J\.E\. Randall, via FishBase/);
   assert.match(h.o, /PicturesSummary\.php\?ID=58178&what=species&pic=Hachl_m0\.jpg$/);
@@ -463,4 +494,28 @@ print(json.dumps([ff.covers(net, [501]), len(calls), sum(1 for p in pauses if p 
     )
   );
   assert.deepStrictEqual(out, [{501: 7}, 2, 1]);
+});
+
+// The host (2026-11-06): www.fishbase.de answers 500 (an HTML page) to a browser's image request for every photo tried,
+// so the admin showed "Photo not loading" and Chrome players lost the FishBase sheet photo; the www.fishbase.se mirror
+// answers 200 image/jpeg. The tool builds .se links, and no FishBase photo of the data files points at .de.
+test('FishBase links use the www.fishbase.se mirror, never www.fishbase.de', () => {
+  const [src, o] = py(
+    `print(json.dumps([FB.record({'id': 's9', 'name': 'Fishus fishii'}, 123, {'n': 'Fishu_u0.jpg', 'cp': 'free use'})[k] for k in ('src', 'o')]))`
+  );
+  assert.strictEqual(src, 'https://www.fishbase.se/images/species/Fishu_u0.jpg');
+  assert.strictEqual(o, 'https://www.fishbase.se/photos/PicturesSummary.php?ID=123&what=species&pic=Fishu_u0.jpg');
+  let n = 0;
+  const walk = (o, file) => {
+    if (!o || typeof o !== 'object') return;
+    if (Array.isArray(o)) return o.forEach(x => walk(x, file));
+    if (typeof o.f === 'string' && o.via === 'fishbase') {
+      n++;
+      for (const k of ['src', 'o']) assert.ok(!/fishbase\.de\//.test(o[k] || ''), `${file} ${o.f} ${k}: ${o[k]}`);
+      assert.ok(/^https:\/\/www\.fishbase\.se\/images\/species\//.test(o.src), `${file} ${o.f} src: ${o.src}`);
+    }
+    Object.values(o).forEach(x => walk(x, file));
+  };
+  for (const f of ['fish-cand.json', 'fish-photos.json', 'data.json', 'cand.json']) if (fs.existsSync(path.join(ROOT, f))) walk(read(f), f);
+  assert.ok(n > 100, `FishBase photos found: ${n}`);
 });

@@ -42,7 +42,7 @@ if (!file) {
 }
 require('../tests/slot.js').guard('tools/memreplay.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
 const J = JSON.parse(fs.readFileSync(file, 'utf8')),
-  rows = (Array.isArray(J) ? J : J.rows || []).filter(r => r && r[0]),
+  rows = C.subjRows((Array.isArray(J) ? J : J.rows || []).filter(r => r && r[0])), // the corals' (sheet v60 Subject)
   ONLY = opt('player', null),
   MIN = Number(opt('min', 5));
 const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
@@ -118,8 +118,10 @@ if (dif.length) {
 
 // App side, per player: core.js replayProgress, the full replay the admin shows (docs/LEARNING.md "Full replay"), under
 // the rule before the photo memory (memory: false) and today's. The opening hold (model.js holdNext, INTRO.SLACK 0.1) on
-// each rule's expectation, from the difficulty the replay recovers.
-const opts = {gen: GEN, mem: MEMV, conf: C.confusionOf(rows).pair},
+// each rule's expectation, from the difficulty the replay recovers. The bar of the moving average (dom: false, the rules
+// before version 7): this tool measures the photo memory's silent recalculation of s.pg (core.js memRecalc), which the
+// domain-score bar does not need.
+const opts = {gen: GEN, mem: MEMV, conf: C.confusionOf(rows).pair, dom: false},
   hold = {},
   run = memory =>
     C.replayProgress(rows, {

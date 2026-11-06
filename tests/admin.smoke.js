@@ -196,6 +196,8 @@ const WIDTHS = [390, 1280];
       await settle();
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
     };
+    // A genus page: Photos › Genera › Live, the genus as the last segment.
+    const goGenus = g => go('photos/genera/live/' + encodeURIComponent(g));
     const text = () => p.evaluate(() => document.getElementById('view').innerText);
     await p.goto(base + 'admin.html?demo');
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
@@ -207,9 +209,10 @@ const WIDTHS = [390, 1280];
       const tab = await p.evaluate(() => (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '');
       const menu = await p.evaluate(() => ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '');
       if (!/Activity/.test(tab + ' ' + menu)) fails.push(`${w}px: opened with no address on "${tab || menu}", not Players › Activity`);
-      // A subject without Activity yet (fish) lands on Players › List, never on "Not for fish yet" (Codex review #554).
+      // Every subject has its Activity (Pierre, 2026-11-06, the Players pages per subject): the Fish switch lands on it.
       const fishHref = await p.evaluate(() => (document.querySelector('#subj [data-subj="fish"]') || {}).getAttribute?.('href') || '');
-      if (fishHref && !/^#fish\/~users$/.test(fishHref)) fails.push(`${w}px: the Fish switch opens ${fishHref}, not #fish/~users`);
+      if (fishHref && fishHref !== '#fish/players/activity')
+        fails.push(`${w}px: the Fish switch opens ${fishHref}, not #fish/players/activity`);
     }
     // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
     // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
@@ -224,13 +227,16 @@ const WIDTHS = [390, 1280];
         wide: document.documentElement.scrollWidth - innerWidth
       }));
     const ROUTES = await p.evaluate(() => {
-      const L = TABS.flatMap(t => t[2].map(([h, v]) => ({h, tab: t[1], view: t[2].length > 1 ? h : null, n: t[2].length, name: v})));
-      // Old addresses that are not a view of their own, and a player's journey (under Players).
+      // The corals' tabs (a tab for one unit rank only, Families, is checked on the fish side below).
+      const L = TABS.filter(t => !t[4].rank).flatMap(t =>
+        t[2].map(([h, v]) => ({h, tab: t[1], view: t[2].length > 1 ? h : null, n: t[2].length, name: v}))
+      );
+      // Deep links under a view: a genus page, Where to look open in full (a filter after '?'), a player's journey.
       return [
         ...L,
-        {h: '~mont', tab: 'Look-alikes', view: null, n: 1},
-        {h: '~stats-needs', tab: 'Coverage', view: '~cov', n: 2},
-        {h: '~journey/Ana Demo', tab: 'List', view: null, n: 1}
+        {h: 'photos/genera/live/' + Object.keys(DATA.gen)[1], tab: 'Genera', view: 'photos/genera/live', n: 3},
+        {h: 'inbox/coverage/games?look=all', tab: 'Coverage', view: 'inbox/coverage/games', n: 2},
+        {h: 'players/list/journey/Ana Demo', tab: 'List', view: null, n: 1}
       ];
     });
     // Pierre, 2026-11-04: no tab holds a view of its own name, no group a tab of its own name.
@@ -239,14 +245,33 @@ const WIDTHS = [390, 1280];
       ...GROUPS.filter(([, g, L]) => L.some(t => t[1] === g)).map(([, g]) => g)
     ]);
     if (same.length) fails.push(`${w}px: a tab or group named like what it holds: ${same.join(', ')}`);
-    const OLD = ['~triage', '~stats-needs', '~cov', '~kcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
-    OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
-    const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
-    if (miss.length) fails.push(`${w}px: old addresses without a tab: ${miss.join(' ')}`);
-    if (ROUTES.filter(r => r.tab && !['~mont', '~stats-needs', '~journey/Ana Demo'].includes(r.h)).length < 18)
-      fails.push(`${w}px: fewer than 18 views`);
+    // Addresses (URL refonte, Q53-Q56): #group/tab/view, each segment the word on screen, lower case, joined by '-'.
+    {
+      const bad = await p.evaluate(() =>
+        TABS.flatMap(t =>
+          t[2]
+            .filter(([h, v]) => {
+              const seg = h.split('/'),
+                word = x =>
+                  x
+                    .toLowerCase()
+                    .replace(/&/g, '')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '');
+              return (
+                seg.length !== (t[2].length > 1 ? 3 : 2) ||
+                !/^[a-z0-9-]+(\/[a-z0-9-]+)+$/.test(h) ||
+                (t[2].length > 1 && seg[2] !== word(v))
+              );
+            })
+            .map(([h]) => h)
+        )
+      );
+      if (bad.length) fails.push(`${w}px: addresses not #group/tab/view in the words on screen: ${bad.join(' ')}`);
+    }
+    if (ROUTES.length - 3 < 18) fails.push(`${w}px: fewer than 18 views`);
     for (const r of ROUTES) {
-      const h = r.h || (await p.evaluate(() => Object.keys(DATA.gen)[0]));
+      const h = r.h;
       await go(h);
       const at = await where();
       const strip = x => x.replace(/ \(\d+\)$| ⚠$/, '');
@@ -256,7 +281,7 @@ const WIDTHS = [390, 1280];
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
     }
-    // The narrowest width of rule U4, 360 px, with the phone run (no job of its own): every view and old address with no
+    // The narrowest width of rule U4, 360 px, with the phone run (no job of its own): every view with no
     // page wider than the window, and Coverage's two grids with a view column sorted (its ▲ widens the header), in a
     // context of its own so the sort it leaves behind touches nothing else (Coverage's table.cov-t was 26 px too wide).
     if (w === 390) {
@@ -286,11 +311,11 @@ const WIDTHS = [390, 1280];
         return q.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       };
       for (const r of ROUTES) {
-        const h = r.h || (await q.evaluate(() => Object.keys(DATA.gen)[0])),
+        const h = r.h,
           x = await wide(h);
         if (x > 0) fails.push(`360px #${h}: page ${x} px wider than the window`);
       }
-      for (const h of ['~cov', '~kcov']) {
+      for (const h of ['inbox/coverage/games', 'inbox/coverage/sheets-id-key']) {
         await wide(h);
         await q.click('.cov-t [data-cs="macro"]');
         const x = await wide(h);
@@ -299,11 +324,11 @@ const WIDTHS = [390, 1280];
       await c3.close();
     }
     // The subject switch (admin plan PR 2): one segment per subject in the header, the corals' addresses unchanged (the
-    // loop above), a subject's pages under its prefix (core.js SUBJECTS admin.hash), only the tabs of the pages it has, a
+    // loop above), a subject's pages under its prefix (core.js SUBJECTS hash), only the tabs of the pages it has, a
     // page it does not have yet saying so, a link without a prefix keeping the subject when it has that page, and the
     // switch going back to the corals' page used last.
     {
-      const S = await p.evaluate(() => SUBJECTS.map(s => ({id: s.id, name: s.name, hash: s.admin.hash, pages: s.admin.pages})));
+      const S = await p.evaluate(() => SUBJECTS.map(s => ({id: s.id, name: s.name, hash: s.hash, pages: s.admin.pages})));
       const other = S.find(s => s.hash),
         seg = () =>
           p.evaluate(() => ({
@@ -314,7 +339,7 @@ const WIDTHS = [390, 1280];
             groups: [...document.querySelectorAll('#modes [data-mode]')].filter(a => !a.hidden).map(a => a.dataset.mode),
             wide: document.documentElement.scrollWidth - innerWidth
           }));
-      await go('~quality');
+      await go('photos/review/quality');
       let at = await seg();
       if (at.subj.length !== S.length || at.subj[0][1] !== 'true') fails.push(`${w}px Subjects: switch ${JSON.stringify(at.subj)}`);
       // A mini switch in the header line at every width (Pierre, 2026-11-06), each side its subject's icon; its name shows
@@ -331,62 +356,317 @@ const WIDTHS = [390, 1280];
       });
       if (mini.line > 4 || mini.right > 0 || mini.icons.some(v => !v) || mini.names.some(v => v !== w >= 600))
         fails.push(`${w}px Subjects: mini switch ${JSON.stringify(mini)}`);
-      await go(other.hash + '~triage');
+      await go(other.hash + 'inbox/todo/reports');
       at = await seg();
       if (
         !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
         at.note ||
         !at.tabs.includes('To do') ||
-        at.groups.includes('photos')
+        !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
-      await go(other.hash + '~cand');
+      // The fish units page (admin plan PR 6 on the book's families): Photos › Families, the fish side's only Photos tab
+      // (never on the corals' side), the book's families by key group with the IMR tag on those in the IMR course, a
+      // family's page with one block per genus and one section per species, deep links by family id.
+      {
+        const fu = () =>
+          p.evaluate(() => ({
+            hash: location.hash,
+            tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent),
+            name: (document.querySelector('.adm-sname') || {}).textContent || '',
+            sel: (document.querySelector('.adm-gsel2') || {}).value || '',
+            fams: document.querySelectorAll('.adm-side .adm-g').length,
+            imr: document.querySelectorAll('.adm-side .adm-g .adm-imrt').length,
+            gens: [...document.querySelectorAll('.adm-fgen')].map(g => g.dataset.gen),
+            rows: document.querySelectorAll('.adm-fgen .adm-row[data-sid]').length,
+            imrGen: document.querySelectorAll('.adm-fgenh .adm-imrt').length,
+            grp: document.querySelectorAll('.adm-side .adm-fgrp').length,
+            want: FISHC && FISHC.units.length,
+            wantImr: FISHC && FISHC.units.filter(u => u.imr || u.imrWith).length,
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        await go(other.hash + 'photos');
+        let u = await fu();
+        if (u.hash !== '#' + other.hash + 'photos/families' || u.tabs.join() !== 'Families' || u.note)
+          fails.push(`${w}px Families: #${other.hash}photos ${JSON.stringify(u)}`);
+        if (w === 1280 && (u.fams !== u.want || u.fams < 28 || u.imr !== u.wantImr || u.imr < 28 || u.grp < 5))
+          fails.push(`${w}px Families: the list ${JSON.stringify(u)}`);
+        if (u.wide > 0) fails.push(`${w}px Families: page ${u.wide} px wider than the window`);
+        await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+        u = await fu();
+        if (
+          u.sel !== 'f:Damselfishes' ||
+          !u.gens.includes('g:Chromis') ||
+          !u.gens.includes('g:Amphiprion') ||
+          u.rows < 20 ||
+          u.imrGen < 4 ||
+          u.wide > 0
+        )
+          fails.push(`${w}px Families: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
+        // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers); an unknown family shows the first.
+        await go(other.hash + 'photos/families/' + encodeURIComponent('f:Soapfishes'));
+        u = await fu();
+        if (u.sel !== 'f:Soapfishes' || u.gens.join() !== 'g:Diploprion' || !/IMR/.test(u.name))
+          fails.push(`${w}px Families: Soapfishes ${JSON.stringify(u)}`);
+        await go(other.hash + 'photos/families/f%3ANone');
+        u = await fu();
+        if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Families: an unknown family ${JSON.stringify(u)}`);
+        // The corals have no Families tab, and its address says so.
+        await go('photos/families');
+        u = await fu();
+        if (!/Not for corals yet/.test(u.note) || u.tabs.includes('Families'))
+          fails.push(`${w}px Families on the corals' side ${JSON.stringify(u)}`);
+        if (once) {
+          // All | IMR: the IMR course's families only, then all again (one click each, remembered).
+          await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+          await p.click('[data-fuimr="imr"]');
+          u = await fu();
+          if (u.fams !== u.imr || u.fams !== u.wantImr) fails.push(`${w}px Families: the IMR filter ${JSON.stringify(u)}`);
+          await p.click('[data-fuimr="all"]');
+          // The actions on a family with photos in play: the order (the easiest, then the most reference-like: core.js
+          // easyRank; nobody's photos moved up),
+          // Feature, Cover, Remove and Undo, Not this → no game species → Put back, ×, Validated refused while something
+          // is missing; the coral part of the draft untouched; everything undone after.
+          // Four candidates of a species nobody decided put in play (one draft step, undone with the rest).
+          const st = await p.evaluate(() => ({coral: JSON.stringify({...DRAFT, fish: null}), h: HIST.length}));
+          const fam = await p.evaluate(() => {
+            const F = DRAFT.fish || {},
+              mine = f => [F.add, F.seen, F.exclude, F.out].some(m => m && f in m),
+              u = FISHC.units.find(
+                x => x.genera.length > 1 && x.species.some(s => (FISHC.cand[s] || []).filter(p => !mine(p.f)).length >= 4)
+              ),
+              sid = u.species.find(s => (FISHC.cand[s] || []).filter(p => !mine(p.f)).length >= 4),
+              L = FISHC.cand[sid].filter(p => !mine(p.f)).slice(0, 4);
+            DRAFT.fish = {...F, add: {...(F.add || {}), ...Object.fromEntries(L.map(p => [p.f, sid]))}};
+            saveDraft();
+            return u.id;
+          });
+          await go(other.hash + 'photos/families/' + encodeURIComponent(fam));
+          const order = await p.evaluate(() => {
+            const sec = [...document.querySelectorAll('.adm-fgen .adm-row[data-sid]')].find(
+                r => r.querySelectorAll('.adm-tile').length >= 4
+              ),
+              F = DRAFT.fish,
+              key = f => {
+                const j = (SUG && SUG.fish && SUG.fish[f]) || {},
+                  jt = (F.tags || {})[f] || j.jt || '';
+                const e = (F.ease || {})[f] || j.e || 3,
+                  p = FISHC.byF[f] || {};
+                // the game's order (core.js easyRank): reference-level first, then the easiest, then refScore
+                return [refLevel({e, jt, rep: p.rep || jt.slice(7).includes('r')}) ? 1 : 0, e, refScore(jt)];
+              };
+            const K = [...sec.querySelectorAll('.adm-tile:not(.is-feat)')].map(t => key(t.dataset.f)),
+              ge = (x, y) => x[0] > y[0] || (x[0] === y[0] && (x[1] > y[1] || (x[1] === y[1] && x[2] >= y[2])));
+            return {
+              sid: sec.dataset.sid,
+              ok: K.every((k, i) => !i || ge(K[i - 1], k)),
+              K
+            };
+          });
+          if (!order.ok) fails.push(`${w}px Families: photo order ${JSON.stringify(order)}`);
+          const sec = `.adm-row[data-sid="${order.sid}"]`,
+            nth = i => p.evaluate(([sec, i]) => document.querySelectorAll(sec + ' .adm-tile')[i].dataset.f, [sec, i]);
+          const f0 = await nth(0);
+          await p.click(`${sec} [data-f="${f0}"] [data-fu="feat"]`);
+          await p.click(`${sec} [data-f="${f0}"] [data-fu="cover"]`);
+          const f1 = await nth(1);
+          await p.click(`${sec} [data-f="${f1}"] [data-fu="remove"]`);
+          let d = await p.evaluate(
+            ([fam, sid, f0, f1]) => ({
+              g: DRAFT.fish.genera[fam],
+              seen: DRAFT.fish.seen[f1],
+              add: DRAFT.fish.add[f1],
+              tile: !!document.querySelector(`[data-f="${f1}"]`),
+              num: (document.querySelector(`[data-f="${f0}"] .adm-num`) || {}).textContent
+            }),
+            [fam, order.sid, f0, f1]
+          );
+          if (!d.g || !d.g.feat || d.g.feat[order.sid][0] !== f0 || d.g.cover !== f0 || d.seen !== 1 || d.add || d.tile || d.num !== '1')
+            fails.push(`${w}px Families: Feature / Cover / Remove ${JSON.stringify(d)}`);
+          await p.evaluate(() => undo());
+          await settle();
+          d = await p.evaluate(f1 => ({seen: (DRAFT.fish.seen || {})[f1], tile: !!document.querySelector(`[data-f="${f1}"]`)}), f1);
+          if (d.seen || !d.tile) fails.push(`${w}px Families: Undo of Remove ${JSON.stringify(d)}`);
+          await p.click(`${sec} [data-f="${f1}"] [data-fu="not"]`);
+          await p.selectOption(`${sec} [data-f="${f1}"] [data-funot]`, 'x');
+          await settle();
+          d = await p.evaluate(f1 => ({out: (DRAFT.fish.out || {})[f1], row: !!document.querySelector(`.adm-out [data-f="${f1}"]`)}), f1);
+          if (d.out !== 'x' || !d.row) fails.push(`${w}px Families: Not this ${JSON.stringify(d)}`);
+          await p.click(`.adm-out [data-f="${f1}"] [data-fu="back"]`);
+          await settle();
+          d = await p.evaluate(f1 => ({out: (DRAFT.fish.out || {})[f1]}), f1);
+          if (d.out) fails.push(`${w}px Families: Put back ${JSON.stringify(d)}`);
+          const f2 = await nth(2);
+          await p.click(`${sec} [data-f="${f2}"] [data-fu="exclude"]`);
+          await settle();
+          if (!(await p.evaluate(f2 => (DRAFT.fish.exclude || {})[f2], f2))) fails.push(`${w}px Families: × did not exclude`);
+          const needs = await p.evaluate(() => (document.querySelector('.adm-needs') || {}).textContent || '');
+          await p.click('[data-ok]');
+          await settle();
+          const ok = await p.evaluate(fam => !!((DRAFT.fish.genera || {})[fam] || {}).ok, fam);
+          if (needs && ok) fails.push(`${w}px Families: Validated while "${needs}" is missing`);
+          const after = await p.evaluate(() => JSON.stringify({...DRAFT, fish: null}));
+          if (after !== st.coral) fails.push(`${w}px Families: the coral part of the draft changed`);
+          if (!/fish family/.test(await p.evaluate(() => pubSummary())))
+            fails.push(`${w}px Families: Publish does not count the fish family`);
+          await p.evaluate(h => {
+            while (HIST.length > h) undo();
+          }, st.h);
+          await settle();
+          if (await p.evaluate(fam => (DRAFT.fish.genera || {})[fam], fam)) fails.push(`${w}px Families: Undo left the family's choices`);
+        }
+      }
+      await go(other.hash + 'photos/candidates');
       at = await seg();
       if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
         fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
       // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
-      await p.evaluate(() => {
-        const a = document.createElement('a');
-        a.href = '#~users';
-        a.id = 'subjtest';
-        a.textContent = 'test';
-        document.getElementById('view').prepend(a);
-      });
+      const link = h =>
+        p.evaluate(h => {
+          const a = document.createElement('a');
+          a.href = h;
+          a.id = 'subjtest';
+          a.textContent = 'test';
+          document.getElementById('view').prepend(a);
+        }, h);
+      await link('#players/activity');
       await p.click('#subjtest');
       await settle();
       at = await seg();
-      if (at.hash !== '#' + other.hash + '~users' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
-        fails.push(`${w}px Subjects: a shared page without prefix left the ${other.id} side ${JSON.stringify(at)}`);
+      if (at.hash !== '#' + other.hash + 'players/activity' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: a link without prefix left the ${other.id} side ${JSON.stringify(at)}`);
+      // The list of players is one page for every subject (admin.js SHARED; Pierre, 2026-11-06): no prefix, the side on
+      // screen kept (the switch inert there, its side still pressed), #fish/players/list taken to #players/list.
+      await link('#players/list');
+      await p.click('#subjtest');
+      await settle();
+      at = await seg();
+      const inert = await p.evaluate(() => document.getElementById('subj').classList.contains('off'));
+      if (at.hash !== '#players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true') || !inert)
+        fails.push(`${w}px Subjects: the shared list from the ${other.id} side ${JSON.stringify({...at, inert})}`);
+      await go(other.hash + 'players/list');
+      at = await seg();
+      if (at.hash !== '#players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: #${other.hash}players/list ${JSON.stringify(at)}`);
       // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
-      // (Codex review #492): #~users, then #fish/~triage, then Back.
-      await go('~users');
+      // (Codex review #492): #players/activity, then #fish/inbox/todo/reports, then Back.
+      await go('players/activity');
       at = await seg();
       const n0 = await p.evaluate(() => history.length);
-      if (at.hash !== '#~users' || at.subj[0][1] !== 'true')
-        fails.push(`${w}px Subjects: #~users not on the corals' side ${JSON.stringify(at)}`);
-      await go(other.hash + '~triage');
+      if (
+        at.hash !== '#players/activity' ||
+        at.subj[0][1] !== 'true' ||
+        (await p.evaluate(() => document.getElementById('subj').classList.contains('off')))
+      )
+        fails.push(`${w}px Subjects: #players/activity not on the corals' side ${JSON.stringify(at)}`);
+      await go(other.hash + 'inbox/todo/reports');
       await p.evaluate(() => history.back());
       await settle();
       at = await seg();
       const n1 = await p.evaluate(() => history.length);
-      if (at.hash !== '#~users' || at.subj[0][1] !== 'true' || n1 !== n0 + 1)
-        fails.push(`${w}px Subjects: Back to #~users ${JSON.stringify({...at, n0, n1})}`);
+      if (at.hash !== '#players/activity' || at.subj[0][1] !== 'true' || n1 !== Math.min(50, n0 + 1))
+        // the browser keeps 50 entries
+        fails.push(`${w}px Subjects: Back to #players/activity ${JSON.stringify({...at, n0, n1})}`);
       await p.evaluate(() => history.forward());
       await settle();
       at = await seg();
-      if (at.hash !== '#' + other.hash + '~triage' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+      if (at.hash !== '#' + other.hash + 'inbox/todo/reports' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
         fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
       if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
       await p.click(`#subj [data-subj="${S[0].id}"]`);
       await settle();
       at = await seg();
-      if (at.subj[0][1] !== 'true' || at.hash !== '#~users') fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
+      if (at.subj[0][1] !== 'true' || at.hash !== '#players/activity')
+        fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
+    }
+    // A shorter address opens its first view; an old (pre-refonte) or unknown address opens its group's first view, else
+    // the landing page, the address replaced in place (rule W3: old addresses are not translated; Q53-Q56). A deep link
+    // keeps what it is about, a player's name with '/' and '?' included.
+    {
+      const first = await p.evaluate(() => Object.keys(DATA.gen)[0]);
+      const RED = [
+        ['inbox', '#inbox/todo/all', 'To do'],
+        ['inbox/coverage', '#inbox/coverage/games', 'Coverage'],
+        ['photos/review', '#photos/review/quality', 'Photo review'],
+        ['photos/stats/nothing', '#photos/stats/overview', 'Photo stats'],
+        ['analyses', '#analyses/overview', 'Overview'],
+        ['players', '#players/activity', 'Activity'],
+        ['~triage', '#players/activity', 'Activity'],
+        ['~stats-needs', '#players/activity', 'Activity'],
+        ['Acropora', '#players/activity', 'Activity'],
+        ['fish/~users', '#fish/players/activity', 'Activity'],
+        ['photos', '#photos/genera/live', 'Genera']
+      ];
+      for (const [from, to, tab] of RED) {
+        await go(from);
+        const at = await where(),
+          hash = await p.evaluate(() => location.hash),
+          strip = x => x.replace(/ \(\d+\)$| ⚠$/, '');
+        if (hash !== to || strip(at.tab || at.menu) !== tab)
+          fails.push(`${w}px #${from}: ${hash} on ${at.tab || at.menu}, not ${to} on ${tab}`);
+      }
+      // #photos lands on the first genus page.
+      await go('photos');
+      if (!(await p.evaluate(g => (document.querySelector('.adm-sname') || {}).textContent === g, first)))
+        fails.push(`${w}px #photos: not the first genus page`);
+      // Deep links: a genus page, and a journey whose name holds the separators (split before decoding).
+      await go('photos/genera/live/' + encodeURIComponent('Porites'));
+      if ((await p.evaluate(() => (document.querySelector('.adm-sname') || {}).textContent)) !== 'Porites')
+        fails.push(`${w}px #photos/genera/live/Porites: not the Porites page`);
+      const odd = 'A/B?c=1&d';
+      await go('players/list/journey/' + encodeURIComponent(odd));
+      const j = await p.evaluate(() => ({
+        cur,
+        hash: location.hash,
+        tab: (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || ''
+      }));
+      if (j.cur !== 'players/list/journey/' + odd || !/^List/.test(j.tab) || j.hash !== '#players/list/journey/' + encodeURIComponent(odd))
+        fails.push(`${w}px a journey with '/' and '?' in the name: ${JSON.stringify(j)}`);
+      // ...and keeps it through the subject switch, there and back (the page used last, encoded again: Codex review #610).
+      if (await p.$('#subj [data-subj="fish"]')) {
+        await p.click('#subj [data-subj="fish"]');
+        await settle();
+        await p.click('#subj [data-subj="coral"]');
+        await settle();
+        const back = await p.evaluate(() => cur);
+        if (back !== 'players/list/journey/' + odd) fails.push(`${w}px a journey with '/' and '?' after the subject switch: ${back}`);
+      }
+      // A journey link without a prefix clicked on the fish side: the fish journey, the name whole (Codex review #610).
+      await go('fish/inbox/todo/reports');
+      await p.evaluate(odd => {
+        const a = document.createElement('a');
+        a.href = '#players/list/journey/' + encodeURIComponent(odd);
+        a.id = 'oddtest';
+        a.textContent = 'odd';
+        document.getElementById('view').prepend(a);
+      }, odd);
+      await p.click('#oddtest');
+      await settle();
+      const fj = await p.evaluate(() => ({cur, s: ASUBJ.id}));
+      if (fj.cur !== 'players/list/journey/' + odd || fj.s !== 'fish')
+        fails.push(`${w}px a fish journey link with '/' and '?': ${JSON.stringify(fj)}`);
+      // Opened straight from an address (a bookmark, a link), a deep link draws its page.
+      const q = await ctx.newPage();
+      await q.goto(base + 'admin.html?demo#photos/review/growth-form');
+      await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
+      const dl = await q.evaluate(() => ({
+        cur,
+        tab: (document.querySelector('#subnav .adm-views [aria-pressed="true"]') || {}).textContent || ''
+      }));
+      if (dl.cur !== 'photos/review/growth-form' || !/Growth form/.test(dl.tab))
+        fails.push(`${w}px deep link #photos/review/growth-form opened ${JSON.stringify(dl)}`);
+      await q.goto(base + 'admin.html?demo#~kcov');
+      await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
+      const ol = await q.evaluate(() => location.hash);
+      if (ol !== '#players/activity') fails.push(`${w}px old address #~kcov opened ${ol}, not the landing page`);
+      await q.close();
     }
     // Analyses (Pierre, 2026-11-04): the stored report (the demo computes it as the GitHub Action would, tools/analyses.js)
     // drawn in every view, with charts and no sideways scroll; the 4-choice count of Formats equals a direct count of the
     // demo's answer log; the milestone switch; the verdicts say something for every effect.
     errs.length = 0;
-    await go('~an');
+    await go('analyses/overview');
     await p
       .waitForFunction(() => document.querySelector('.adm-an .adm-kpis'), null, {timeout: 90000})
       .catch(() => fails.push(`${w}px Analyses: no report`));
@@ -445,7 +725,17 @@ const WIDTHS = [390, 1280];
     });
     if (!anre || !anre.shown || anre.left < 0 || anre.right > anre.vw)
       fails.push(`${w}px Analyses: Recompute here ${JSON.stringify(anre)}`);
-    for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess', '~an-who']) {
+    for (const h of [
+      'analyses/speed/answer-time',
+      'analyses/speed/enlarging',
+      'analyses/difficulty/photos',
+      'analyses/difficulty/formats',
+      'analyses/difficulty/mix-ups',
+      'analyses/learning/practice',
+      'analyses/learning/after-a-break',
+      'analyses/learning/sessions',
+      'analyses/learning/profiles'
+    ]) {
       await go(h);
       const v = await p.evaluate(() => ({
         svg: document.querySelectorAll('#view svg.adm-an-svg').length,
@@ -459,7 +749,7 @@ const WIDTHS = [390, 1280];
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
-      if (h !== '~an-back' && h !== '~an-who') {
+      if (h !== 'analyses/learning/after-a-break' && h !== 'analyses/learning/profiles') {
         const ent = await p.evaluate(() => {
           const c = document.getElementById('anc-effects-hard-to-tell-apart');
           if (!c) return null;
@@ -476,7 +766,10 @@ const WIDTHS = [390, 1280];
         });
         const pos = ent && ent.words.filter(t => /hard to tell apart \(correlation [\d.]+, the same way\)/.test(t)),
           neg = ent && ent.words.filter(t => /hard to tell apart \(correlation [\d.]+, opposite ways\)/.test(t));
-        if (ent && (pos.some(t => !/difference/.test(t)) || neg.some(t => !/sum/.test(t)) || (h === '~an-fmt' && !pos.length)))
+        if (
+          ent &&
+          (pos.some(t => !/difference/.test(t)) || neg.some(t => !/sum/.test(t)) || (h === 'analyses/difficulty/formats' && !pos.length))
+        )
           fails.push(`${w}px Analyses #${h} entangled words: ${JSON.stringify(ent.words)}`);
         if (!ent || !ent.folded || !ent.table || ent.wide > 0 || ent.small)
           fails.push(`${w}px Analyses #${h} entangled: ${JSON.stringify(ent)}`);
@@ -485,7 +778,7 @@ const WIDTHS = [390, 1280];
     // Player profiles (Pierre, 2026-11-05, Q70-Q73): a row per made-up player with a cell per behaviour, the greyed rows
     // (under 100 answers) last, names from Players linked to their journeys, the tree, the stability line, the map of players
     {
-      await go('~an-who');
+      await go('analyses/learning/profiles');
       const pr = await p.evaluate(() => {
         const c = document.getElementById('anc-player-profiles'),
           svg = c && c.querySelector('svg.adm-an-svg');
@@ -494,7 +787,7 @@ const WIDTHS = [390, 1280];
             rows: svg.querySelectorAll('text.an-lab').length,
             cells: svg.querySelectorAll('rect.an-h').length,
             dim: [...svg.querySelectorAll('text.an-lab')].map(t => t.classList.contains('an-dim')),
-            links: svg.querySelectorAll('a[href^="#~journey/"]').length,
+            links: svg.querySelectorAll('a[href^="#players/list/journey/"]').length,
             tree: !!svg.querySelector('path.an-tree'),
             stab: /runs with one player left out/.test(c.textContent),
             map: !!document.querySelector('#view svg circle.an-dot') && !!document.querySelector('#view line.an-arrow'),
@@ -509,7 +802,7 @@ const WIDTHS = [390, 1280];
     // The Wright map and the genus × player residuals (Learning › Practice): players and genera on one scale with their
     // names, the second-skill biplot with its words; no sideways scroll
     {
-      await go('~an-learn');
+      await go('analyses/learning/practice');
       const wr = await p.evaluate(() => {
         const W = document.getElementById('anc-players-and-genera-on-one-scale'),
           S = document.getElementById('anc-a-second-skill');
@@ -527,7 +820,7 @@ const WIDTHS = [390, 1280];
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
     {
-      await go('~an-conf');
+      await go('analyses/difficulty/mix-ups');
       const mm = () =>
         p.evaluate(() => {
           const c = document.getElementById('anc-mix-up-map');
@@ -563,7 +856,7 @@ const WIDTHS = [390, 1280];
     }
     if (once) {
       // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
-      await go('~an-fmt');
+      await go('analyses/difficulty/formats');
       const anf = await p.evaluate(async () => {
         const log = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows,
           // the newest milestone, shown by default: the first round thousand of answers in time order (Pierre, 2026-11-05)
@@ -592,7 +885,7 @@ const WIDTHS = [390, 1280];
       if (anf.shown !== anf.direct) fails.push(`${w}px Analyses Formats: 4 choices ${anf.shown}, direct count ${anf.direct}`);
       // Sort (Pierre, 2026-11-05): the same control above every list, one choice per page; most positive first reverses the
       // bars, by topic puts a sub-heading per analysis in the charts and the words, by name; then back to the default.
-      await go('~an');
+      await go('analyses/overview');
       const anSorted = async s => {
         await p.evaluate(s => document.querySelector(`.adm-an-card [data-ans="${s}"]`).click(), s);
         await settle();
@@ -633,7 +926,7 @@ const WIDTHS = [390, 1280];
         const aq = await ctx.newPage(),
           aqe = [];
         aq.on('pageerror', e => aqe.push(e.message));
-        await aq.goto(base + 'admin.html?demo&v=30#~an-rt');
+        await aq.goto(base + 'admin.html?demo&v=30#analyses/speed/answer-time');
         await aq
           .waitForFunction(() => /No report yet/.test(document.getElementById('view').textContent), null, {timeout: 30000})
           .catch(() => aqe.push('no "No report yet"'));
@@ -643,23 +936,31 @@ const WIDTHS = [390, 1280];
 
       // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs),
       // except Players, which always opens Activity (fixed group, Pierre 2026-11-05), List having been used before.
-      await go('~kcov');
-      await go('~triage');
+      await go('inbox/coverage/sheets-id-key');
+      await go('inbox/todo/reports');
       const mem = await p.evaluate(() => ({
         cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
-        todo: document.querySelector('#modes [data-mode="todo"]').getAttribute('href'),
+        todo: document.querySelector('#modes [data-mode="inbox"]').getAttribute('href'),
         players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
-        kept: (store.get('reefid-admin-view', {}) || {}).cov
+        kept: (store.get('reefid-admin-nav-tab', {}) || {})['inbox/coverage'],
+        // the app's ⚙ View (reefid-admin-view, a string) is no longer the admin's tab memory (URL scheme study, side finding)
+        appView: store.get('reefid-admin-view', null)
       }));
-      if (mem.cov !== '#~kcov' || mem.todo !== '#~triage' || mem.kept !== '~kcov' || mem.players !== '#~stats')
+      if (
+        mem.cov !== '#inbox/coverage/sheets-id-key' ||
+        mem.todo !== '#inbox/todo/reports' ||
+        mem.kept !== 'inbox/coverage/sheets-id-key' ||
+        mem.players !== '#players/activity' ||
+        mem.appView !== null
+      )
         fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
       await p.reload();
       await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
       await settle();
-      if ((await p.evaluate(() => document.querySelector('#modes [data-mode="todo"]').getAttribute('href'))) !== '#~triage')
+      if ((await p.evaluate(() => document.querySelector('#modes [data-mode="inbox"]').getAttribute('href'))) !== '#inbox/todo/reports')
         fails.push(`${w}px: the To do group forgot its last view after a reload`);
       // To do › All: Health's red line (the demo has photos everyone misses), the reports, the devices' errors, suggestions last.
-      await go('~todo');
+      await go('inbox/todo/all');
       await p
         .waitForFunction(() => document.querySelector('[data-hline]') && /Errors/.test(document.getElementById('view').innerText), null, {
           timeout: 15000
@@ -669,7 +970,7 @@ const WIDTHS = [390, 1280];
         const v = document.getElementById('view'),
           t = v.innerText;
         return {
-          line: !!v.querySelector('[data-hline] a[href="#~health"]'),
+          line: !!v.querySelector('[data-hline] a[href="#inbox/todo/health"]'),
           rep: /Demo report/.test(t),
           err: !!v.querySelector('.adm-tderr'),
           first: v.querySelector('section > *')?.matches('[data-hline]'),
@@ -688,7 +989,7 @@ const WIDTHS = [390, 1280];
         const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
           f = photos(n)[0].f;
         ACT.hide(n, f);
-        location.hash = '~hidden';
+        location.hash = 'photos/genera/hidden';
         return {n, f};
       });
       await settle();
@@ -704,7 +1005,7 @@ const WIDTHS = [390, 1280];
       // all, its genus page tag turning to "kept"; Remove all asks first (rule A2: bulk), does nothing when refused, excludes
       // each photo still to handle (one Undo step each) when accepted; in Kept, Remove excludes and Keep again un-keeps.
       {
-        await go('~triage');
+        await go('inbox/todo/reports');
         const rq = () =>
           p.evaluate(() => {
             const t = [...document.querySelectorAll('#view .adm-ruleq:not(.adm-rulekept .adm-ruleq) [data-f]')],
@@ -738,14 +1039,14 @@ const WIDTHS = [390, 1280];
           if (r.n !== r0.n || !r.fs.some(x => x[0] === f1)) fails.push(`${w}px Out of rule: Undo did not bring ${f1} back`);
           // Keep: down to Kept, out of the count; its tag on the genus page turns to "kept".
           const tag = async () => {
-            await go(g2);
+            await goGenus(g2);
             return p.evaluate(f => {
               const e = document.querySelector(`#view .adm-tile[data-f="${f}"] .adm-rule`);
               return e ? (e.classList.contains('kept') ? 'kept' : 'out') : 'none';
             }, f2);
           };
           const before = await tag();
-          await go('~triage');
+          await go('inbox/todo/reports');
           await p.click(`#view .adm-ruleq [data-f="${f2}"] [data-rule="keep"]`);
           await settle();
           r = await rq();
@@ -764,7 +1065,7 @@ const WIDTHS = [390, 1280];
           const after = await tag();
           if (before !== 'out' || after !== 'kept')
             fails.push(`${w}px Out of rule: the tag of a kept photo on its genus page, ${before} → ${after}`);
-          await go('~triage');
+          await go('inbox/todo/reports');
           // Remove all: refused, nothing moves; accepted, every photo still to handle is excluded, one Undo step each, Kept stays.
           const asked = await p.evaluate(() => {
             const c = window.confirm,
@@ -826,7 +1127,7 @@ const WIDTHS = [390, 1280];
       // same actions as Out of the presence rule: Remove (the ×, Undo), Keep → Kept (curation seen 'sa:f', tag "kept"),
       // un-keep, Remove all asks first and acts only on the photos still to handle.
       {
-        await go('~triage');
+        await go('inbox/todo/reports');
         const sq = () =>
           p.evaluate(() => {
             const t = [...document.querySelectorAll('#view .adm-saq:not([data-sakept] .adm-saq) [data-f]')],
@@ -870,14 +1171,14 @@ const WIDTHS = [390, 1280];
           await settle();
           if ((await sq()).n !== s0.n) fails.push(`${w}px Share-alike: Undo did not bring ${f1} back`);
           const tag = async () => {
-            await go(g2);
+            await goGenus(g2);
             return p.evaluate(f => {
               const e = document.querySelector(`#view .adm-tile[data-f="${f}"] .adm-sa`);
               return e ? (e.classList.contains('kept') ? 'kept' : 'sa') : 'none';
             }, f2);
           };
           const before = await tag();
-          await go('~triage');
+          await go('inbox/todo/reports');
           await p.click(`#view .adm-saq [data-f="${f2}"] [data-sa="keep"]`);
           await settle();
           r = await sq();
@@ -886,7 +1187,7 @@ const WIDTHS = [390, 1280];
             fails.push(`${w}px Share-alike: Keep did not move ${f2} to Kept ${JSON.stringify(r)}`);
           const after = await tag();
           if (before !== 'sa' || after !== 'kept') fails.push(`${w}px Share-alike: the tag of a kept photo, ${before} → ${after}`);
-          await go('~triage');
+          await go('inbox/todo/reports');
           const asked = await p.evaluate(() => {
             const c = window.confirm,
               h = HIST.length;
@@ -938,14 +1239,14 @@ const WIDTHS = [390, 1280];
           cands: !!document.querySelector('.adm-main .adm-cands'),
           note: (document.querySelector('.adm-gvnote') || {}).textContent || '',
           saved: localStorage.getItem('demo:reefid-admin-gview'),
-          all: rows(cur).map(([v]) => label(cur, v)),
-          nc: unused(cur).length
+          all: rows(cur.slice(LIVE.length + 1)).map(([v]) => label(cur.slice(LIVE.length + 1), v)),
+          nc: unused(cur.slice(LIVE.length + 1)).length
         }));
       // A missing button is a failure, not a 30 s wait: the checks after it then fail too.
       const pick = async sel => ((await p.$(sel)) ? p.click(sel) : fails.push(`${w}px View filter: no ${sel}`));
       if (gg.three.length < 2 || !gg.two) fails.push(`${w}px View filter: no test genera ${JSON.stringify(gg)}`);
       else {
-        await go(gg.three[0]);
+        await goGenus(gg.three[0]);
         let s = await gstate();
         if (s.btns.join('|') !== 'All|Colony|Close-up|Corallites' || s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands)
           fails.push(`${w}px View filter: All on ${gg.three[0]} ${JSON.stringify(s)}`);
@@ -961,13 +1262,13 @@ const WIDTHS = [390, 1280];
         )
           fails.push(`${w}px View filter: Corallites on ${gg.three[0]} ${JSON.stringify(s)}`);
         if (s.saved !== '"macro"') fails.push(`${w}px View filter: Corallites not remembered (${s.saved})`);
-        await go(gg.three[1]);
+        await goGenus(gg.three[1]);
         s = await gstate();
         if (s.on.join() !== 'macro' || s.rows.join() !== 'Corallites' || s.cands)
           fails.push(`${w}px View filter: Corallites not kept on ${gg.three[1]} ${JSON.stringify(s)}`);
         await pick('.adm-sticky [data-gv="medium"]');
         await settle();
-        await go(gg.two);
+        await goGenus(gg.two);
         s = await gstate();
         if (
           s.btns.join('|') !== ['All', ...s.all].join('|') ||
@@ -978,7 +1279,7 @@ const WIDTHS = [390, 1280];
         )
           fails.push(`${w}px View filter: a saved Close-up on 2-zoom ${gg.two} ${JSON.stringify(s)}`);
         if (s.saved !== '"medium"') fails.push(`${w}px View filter: the fallback overwrote the saved view (${s.saved})`);
-        await go(gg.three[0]);
+        await goGenus(gg.three[0]);
         s = await gstate();
         if (s.rows.join() !== 'Close-up') fails.push(`${w}px View filter: Close-up not back on ${gg.three[0]} ${JSON.stringify(s)}`);
         await pick('.adm-gvnote [data-gv="all"]');
@@ -987,6 +1288,63 @@ const WIDTHS = [390, 1280];
         if (s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands || s.note || s.saved !== '"all"')
           fails.push(`${w}px View filter: All views ${JSON.stringify(s)}`);
       }
+      // One filter bar (admin plan PR 3, admin.js FB): every photo page's chips come from the subject's descriptor (core.js
+      // SUBJECTS admin origins, csrc, views), and an origin switched off on one page is off on the others (one state, SHOW):
+      // the genus bar (short names with counts), Quality and Growth form (full names; Growth form without the CF book),
+      // their view chips and unit select, the Candidates sources. The origin is switched back on after.
+      {
+        const fb = () =>
+          p.evaluate(() => ({
+            o: [...document.querySelectorAll('#view [data-o]')]
+              .filter(b => b.dataset.o !== 'all')
+              .map(b => b.dataset.o + ':' + b.textContent.trim()),
+            off: [...document.querySelectorAll('#view [data-o][aria-pressed="false"]')].map(b => b.dataset.o),
+            v: [...document.querySelectorAll('#view [data-qv], #view [data-fv]')].map(b => b.dataset.qv || b.dataset.fv),
+            unit: (s => s && [s.getAttribute('aria-label'), s.options[0].textContent])(document.querySelector('#qgen, #fgen')),
+            src: [...document.querySelectorAll('#view [data-src]')].map(b => b.dataset.src),
+            want: {
+              o: ASUBJ.admin.origins.map(o => o[0]),
+              short: ASUBJ.admin.origins.map(o => o[2]),
+              name: ASUBJ.admin.origins.map(o => o[1]),
+              v: ['all', ...ASUBJ.views.map(x => x[0]), 'cand'],
+              src: [...ASUBJ.admin.csrc, 'all']
+            }
+          }));
+        await goGenus(gg.three[0] || 'Acropora');
+        let s = await fb();
+        if (s.o.map(x => x.split(':')[0]).join() !== s.want.o.join() || s.o.some((x, i) => !x.split(':')[1].startsWith(s.want.short[i])))
+          fails.push(`${w}px Filter bar: genus page origins ${JSON.stringify(s)}`);
+        await go('photos/review/quality');
+        s = await fb();
+        if (
+          s.o.join() !== s.want.o.map((o, i) => o + ':' + s.want.name[i]).join() ||
+          s.v.join() !== s.want.v.join() ||
+          JSON.stringify(s.unit) !== '["Genus","All genera"]'
+        )
+          fails.push(`${w}px Filter bar: Quality ${JSON.stringify(s)}`);
+        await p.click('#view [data-o="dauin"]');
+        await settle();
+        await go('photos/review/growth-form');
+        s = await fb();
+        if (
+          s.o.map(x => x.split(':')[0]).join() !== s.want.o.filter(o => o !== 'book').join() ||
+          s.off.join() !== 'dauin' ||
+          s.v.join() !== s.want.v.join() ||
+          JSON.stringify(s.unit) !== '["Genus","All genera"]'
+        )
+          fails.push(`${w}px Filter bar: Growth form (Dauin switched off on Quality) ${JSON.stringify(s)}`);
+        await goGenus(gg.three[0] || 'Acropora');
+        s = await fb();
+        if (s.off.join() !== 'dauin' || !(await p.$('.adm-sticky [data-o="all"]')))
+          fails.push(`${w}px Filter bar: Dauin off on Quality, not on the genus page ${JSON.stringify(s)}`);
+        await p.click('.adm-sticky [data-o="all"]');
+        await settle();
+        s = await fb();
+        if (s.off.length || (await p.$('.adm-sticky [data-o="all"]'))) fails.push(`${w}px Filter bar: All ${JSON.stringify(s)}`);
+        await go('photos/candidates');
+        s = await fb();
+        if (s.src.join() !== s.want.src.join()) fails.push(`${w}px Filter bar: Candidates sources ${JSON.stringify(s)}`);
+      }
     }
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
     // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
@@ -994,7 +1352,7 @@ const WIDTHS = [390, 1280];
     // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
     // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
     {
-      await go('~points');
+      await go('inbox/todo/points');
       const pl = () =>
         p.evaluate(() => ({
           open: [...document.querySelectorAll('[data-ptsec="open"] + .adm-pts [data-pt]')].map(a => a.dataset.pt),
@@ -1002,7 +1360,7 @@ const WIDTHS = [390, 1280];
           done: [...document.querySelectorAll('[data-ptfold="done"] [data-pt]')].map(a => a.dataset.pt),
           head: +((document.querySelector('[data-ptsec="open"] small') || {}).textContent || 0),
           meta: ((document.querySelector('[data-ptsec="open"] + .adm-pts [data-pt] .adm-ptmeta') || {}).textContent || '').trim(),
-          count: ((document.querySelector('#subnav .adm-views [data-view="~points"]') || {}).textContent || '').trim(),
+          count: ((document.querySelector('#subnav .adm-views [data-view="inbox/todo/points"]') || {}).textContent || '').trim(),
           wide: document.documentElement.scrollWidth - innerWidth
         }));
       const l0 = await pl();
@@ -1031,7 +1389,7 @@ const WIDTHS = [390, 1280];
         }));
       const g0 = await pg();
       if (
-        g0.hash !== '#~point/astrea-reefcloud' ||
+        g0.hash !== '#inbox/todo/points/astrea-reefcloud' ||
         !/ReefCloud label/.test(g0.q) ||
         g0.slots !== 7 ||
         g0.imgs !== 7 ||
@@ -1041,7 +1399,7 @@ const WIDTHS = [390, 1280];
         !g0.notes ||
         g0.acts.join() !== 'Resolved,Stand-by,Dismiss' ||
         !/^To do/.test(g0.tab) ||
-        g0.view !== '~points'
+        g0.view !== 'inbox/todo/points'
       )
         fails.push(`${w}px Points: the Astrea page ${JSON.stringify(g0)}`);
       if (g0.wide > 0) fails.push(`${w}px Points: the Astrea page ${g0.wide} px wider than the window`);
@@ -1067,7 +1425,7 @@ const WIDTHS = [390, 1280];
         let g = await pg();
         if (!s1 || s1.s !== 'wait' || g.acts.join() !== 'Resolved,Stand-by*,Dismiss,Reopen')
           fails.push(`${w}px Points: Stand-by ${JSON.stringify({s1, acts: g.acts})}`);
-        await go('~points');
+        await go('inbox/todo/points');
         let l = await pl();
         if (
           l.open[0] === 'astrea-reefcloud' ||
@@ -1082,7 +1440,7 @@ const WIDTHS = [390, 1280];
         if (l.open[0] !== 'astrea-reefcloud' || l.wait.length || (await st()))
           fails.push(`${w}px Points: Undo did not bring it back first ${JSON.stringify({...l, open: l.open.slice(0, 3)})}`);
         // A note and an answer reach the draft; Resolved folds it at the bottom; Reopen brings it back to the open ones.
-        await go('~point/astrea-reefcloud');
+        await go('inbox/todo/points/astrea-reefcloud');
         await p.fill('.adm-ptph [data-pta]', 'Astrea');
         await p.fill('[data-ptn]', 'Asked at the morning briefing');
         await p.click('[data-pts="done"]');
@@ -1091,13 +1449,13 @@ const WIDTHS = [390, 1280];
         if (!s2 || s2.s !== 'done' || s2.n !== 'Asked at the morning briefing' || s2.a['astrea-wide-502260981'] !== 'Astrea')
           fails.push(`${w}px Points: note, answer and Resolved in the draft ${JSON.stringify(s2)}`);
         g = await pg();
-        await go('~points');
+        await go('inbox/todo/points');
         l = await pl();
         if (l.open.includes('astrea-reefcloud') || l.done.join() !== 'astrea-reefcloud' || (await p.$('[data-ptfold="done"][open]')))
           fails.push(`${w}px Points: Resolved is not folded at the bottom ${JSON.stringify({...l, open: l.open.slice(0, 3)})}`);
         const out = await p.evaluate(() => ((output().points || {})['astrea-reefcloud'] || {}).s);
         if (out !== 'done') fails.push(`${w}px Points: the resolved point is not in the curation to publish (${out})`);
-        await go('~point/astrea-reefcloud');
+        await go('inbox/todo/points/astrea-reefcloud');
         const vals = await p.evaluate(() => [document.querySelector('[data-pta]').value, document.querySelector('[data-ptn]').value]);
         if (vals.join('|') !== 'Astrea|Asked at the morning briefing')
           fails.push(`${w}px Points: the page does not show the note and answer ${vals}`);
@@ -1114,7 +1472,7 @@ const WIDTHS = [390, 1280];
           fails.push(`${w}px Points: Undo did not bring the point back to how it was, or something was published`);
         // An edit still waiting for its 0.8 s reaches the draft when the page is hidden or left (Codex review #571: a reload
         // or a phone sending the browser to the background right after typing lost it).
-        await go('~point/astrea-reefcloud');
+        await go('inbox/todo/points/astrea-reefcloud');
         for (const ev of ['pagehide', 'visibilitychange']) {
           const got = await p.evaluate(ev => {
             const t = document.querySelector('[data-ptn]');
@@ -1134,24 +1492,24 @@ const WIDTHS = [390, 1280];
           await settle();
         }
         // A point that does not exist says so.
-        await go('~point/no-such-point');
+        await go('inbox/todo/points/no-such-point');
         if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);
       }
     }
     // Users: the made-up players, one opened, a merge and a delete.
-    await go('~users');
+    await go('players/list');
     let t = await text();
     if (!/Ana Demo/.test(t) || !/mara demo2/.test(t)) fails.push(`${w}px Users: demo players missing`);
     if (once) {
       // Once: an anonymous id's Journey.
-      // Each anonymous id opens its own Journey (#~anon/<id>, so a name starting with @ keeps its own; Codex review #375).
-      const anon = await p.$eval('a[href^="#~anon/"]', a => a.getAttribute('href')).catch(() => null);
+      // Each anonymous id opens its own Journey (#players/list/anon/<id>, so a name starting with @ keeps its own; Codex review #375).
+      const anon = await p.$eval('a[href^="#players/list/anon/"]', a => a.getAttribute('href')).catch(() => null);
       if (!anon) fails.push(`${w}px Users: no Journey link on the anonymous ids`);
       else {
         await go(anon.slice(1));
         if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text()))
           fails.push(`${w}px ${anon}: anonymous Journey missing`);
-        await go('~users');
+        await go('players/list');
       }
     }
     // Who played last (Pierre, 2026-11-03): Last is the second column, to the minute, and the default sort, most recent
@@ -1182,9 +1540,10 @@ const WIDTHS = [390, 1280];
     if (once) {
       // Once: sorts, the replayed progress, scripts before v42 and v28, sheet reads, the leaderboard, rename, greyed names.
       if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
-      // Names joined with the anonymous stats: every demo player has a level; sorting by name puts Ana first, reversed last.
-      const lv = await p.$$eval('.adm-urow td:nth-child(3)', L => L.map(td => td.textContent.trim()));
-      if (!lv.length || lv.some(x => x === '–')) fails.push(`${w}px Players: a level is missing (${lv.join(' ')})`);
+      // Names joined with the answer log by anonymous id: every demo player has answers in the corals' group (the fifth
+      // column); sorting by name puts Ana first, reversed last.
+      const lv = await p.$$eval('.adm-urow td:nth-child(5)', L => L.map(td => td.textContent.trim()));
+      if (!lv.length || lv.some(x => !/^\d+$/.test(x))) fails.push(`${w}px Players: answers missing (${lv.join(' ')})`);
       if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
       const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
       await p.click('[data-usort="name"]');
@@ -1193,8 +1552,8 @@ const WIDTHS = [390, 1280];
       await p.click('[data-usort="name"]');
       await settle();
       if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
-      // The quiz / Duel-tab columns sort too (Codex review #383: they were filled after the sort, which threw).
-      for (const k of ['right', 'recent', 'duels']) {
+      // Each subject's columns sort too (Codex review #383: they were filled after the sort, which threw).
+      for (const k of await p.$$eval('[data-usort*=":"]', L => L.map(b => b.dataset.usort))) {
         await p.click(`[data-usort="${k}"]`);
         await settle();
         if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
@@ -1212,7 +1571,8 @@ const WIDTHS = [390, 1280];
         .waitForFunction(() => !/…/.test(document.querySelector('.adm-utbl').innerText), null, {timeout: 10000})
         .catch(() => fails.push(`${w}px Players: Progress still reading the saved copies`));
       const rp = await p.evaluate(() => {
-        const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === k),
+        const col = k =>
+            [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === SUBJECTS[0].id + ':' + k),
           row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n),
           cell = (n, k) => row(n).querySelectorAll('td')[col(k)];
         return Object.fromEntries(
@@ -1220,7 +1580,6 @@ const WIDTHS = [390, 1280];
             n,
             {
               prog: cell(n, 'prog').innerText.trim(),
-              learned: cell(n, 'learned').innerText.trim(),
               marks: row(n).querySelectorAll('.adm-saved').length
             }
           ])
@@ -1230,7 +1589,6 @@ const WIDTHS = [390, 1280];
         rp['Ana Demo'].marks ||
         !/^\d+%$/.test(rp['Ana Demo'].prog) ||
         !/^\d+%\s*↻ saved \d+%$/.test(rp['Dio Demo'].prog) ||
-        !/^0\/40\s*↻ saved 1\/40$/.test(rp['Dio Demo'].learned) ||
         !/↻ saved/.test(rp['Ben Demo'].prog)
       )
         fails.push(`${w}px Players: replayed progress ${JSON.stringify(rp)}`);
@@ -1242,7 +1600,7 @@ const WIDTHS = [390, 1280];
         ['Dio Demo', true],
         ['Ana Demo', false]
       ]) {
-        await go('~journey/' + encodeURIComponent(n));
+        await go('players/list/journey/' + encodeURIComponent(n));
         await p.waitForFunction(() => !/…/.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000}).catch(() => {});
         const k = await p.evaluate(() => ({
           kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
@@ -1259,7 +1617,7 @@ const WIDTHS = [390, 1280];
         const open = async v => {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px Players v${v} page error: ${e.message}`));
-          await q.goto(base + `admin.html?demo&v=${v}#~users`);
+          await q.goto(base + `admin.html?demo&v=${v}#players/list`);
           await q
             .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
             .then(() => q.waitForTimeout(1000))
@@ -1285,6 +1643,30 @@ const WIDTHS = [390, 1280];
         const q41 = await open(41);
         if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
         await q41.close();
+        // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191): Photos (Seen %) and Spread columns from the list's ex, in the
+        // subject of the switch, each cell a share (its counts in the title) or –; none before v81 (rule D4).
+        const cols = q =>
+          q.evaluate(() => {
+            const H = [...document.querySelectorAll('.adm-utbl thead button')].map(b => b.dataset.usort),
+              at = k => H.indexOf(SUBJECTS[0].id + ':' + k); // the corals' group (one pair per subject)
+            return {
+              at: [at('photos'), at('spread')],
+              cells: [...document.querySelectorAll('.adm-urow')].map(r =>
+                ['photos', 'spread'].map(k => (at(k) < 0 ? null : r.querySelectorAll('td')[at(k)].innerText.trim()))
+              ),
+              tips: [...document.querySelectorAll('.adm-urow td span[title]')].filter(x => / of /.test(x.title)).length
+            };
+          });
+        const qx = await open(81),
+          ox = await cols(qx);
+        const ok = ox.at.every(i => i >= 0) && ox.cells.length && ox.cells.every(c => c.every(x => /^(\d{1,3}%|–)$/.test(x)));
+        if (!ok || !ox.cells.some(c => /%$/.test(c[0]) && /%$/.test(c[1])) || !ox.tips)
+          fails.push(`${w}px Players (v81): Photos and Spread ${JSON.stringify({...ox, cells: ox.cells.slice(0, 3)})}`);
+        await qx.close();
+        const q80 = await open(80),
+          o80 = await cols(q80);
+        if (o80.at.some(i => i >= 0)) fails.push(`${w}px Players (v80): exposure columns before the script serves them`);
+        await q80.close();
       }
       // The admin never gets ahead of the sheet script (rule D4): answering as v27, the demo's Players and Journey
       // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
@@ -1292,22 +1674,19 @@ const WIDTHS = [390, 1280];
       {
         const q = await p.context().newPage();
         q.on('pageerror', e => fails.push(`${w}px v27 page error: ${e.message}`));
-        await q.goto(base + 'admin.html?demo&v=27#~users');
+        await q.goto(base + 'admin.html?demo&v=27#players/list');
         await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
         await q.waitForTimeout(1500);
         const o = await q.evaluate(() => {
-          const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === k),
-            row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Dio Demo');
+          const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort.endsWith(':' + k));
           return {
             prog: col('prog'),
             marks: document.querySelectorAll('.adm-saved').length,
-            learned: row && row.querySelectorAll('td')[col('learned')].innerText.trim(),
             anonProg: [...document.querySelectorAll('.adm-uremoved th')].some(t => t.textContent === 'Progress')
           };
         });
-        if (o.prog !== -1 || o.marks || !/^1\/\d+$/.test(o.learned) || o.anonProg)
-          fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
-        await q.goto(base + 'admin.html?demo&v=27#~journey/' + encodeURIComponent('Dio Demo'));
+        if (o.prog !== -1 || o.marks || o.anonProg) fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
+        await q.goto(base + 'admin.html?demo&v=27#players/list/journey/' + encodeURIComponent('Dio Demo'));
         await q.waitForSelector('.adm-kpis', {timeout: 20000}).catch(() => {});
         // The learned genus (under BKT) comes with the saved copy, read after the page is drawn.
         await q.waitForSelector('.adm-jlearn', {timeout: 10000}).catch(() => {});
@@ -1324,6 +1703,74 @@ const WIDTHS = [390, 1280];
             timeout: 10000
           })
           .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
+        await q.close();
+      }
+      // Two subjects on the Players pages (Pierre, 2026-11-06): with every subject's answers logged (sheet v60; the demo's
+      // other subject played by Ben last, Ana and Mara), the list shows a group of columns per subject, each player's
+      // answers in it; a row's Journey opens on the subject they played last; that Journey is the subject's own (its
+      // answers only, its units' word, no progress or Elo for a subject the admin does not replay) with its Corals | Fish
+      // at the top; the other subject's Activity shows its sessions.
+      {
+        const q = await p.context().newPage();
+        q.on('pageerror', e => fails.push(`${w}px two subjects page error: ${e.message}`));
+        const calm = () =>
+          q
+            .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+              timeout: 20000
+            })
+            .then(() => q.waitForTimeout(800))
+            .catch(() => fails.push(`${w}px two subjects: never settled`));
+        await q.goto(base + 'admin.html?demo&v=81#players/list');
+        await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+        await calm();
+        const L = await q.evaluate(() => {
+          const F = SUBJECTS.find(S => !S.replay),
+            col = [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === F.id + ':n'),
+            row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n);
+          return {
+            F: F.id,
+            groups: [...document.querySelectorAll('.adm-ugrp th.adm-ug0')].map(th => th.textContent),
+            ben: col >= 0 && row('Ben Demo').querySelectorAll('td')[col].innerText.trim(),
+            dio: col >= 0 && row('Dio Demo').querySelectorAll('td')[col].innerText.trim()
+          };
+        });
+        if (L.groups.length !== 2 || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
+        await q.click('[data-uopen="Ben Demo"]');
+        const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
+        if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
+        await q.click('.adm-ubar a.next');
+        await calm();
+        const j = await q.evaluate(() => ({
+          hash: location.hash,
+          kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+          seg: [...document.querySelectorAll('.adm-jsubj a')].map(a => [a.getAttribute('aria-pressed'), a.innerText.replace(/\s+/g, ' ')])
+        }));
+        if (
+          j.hash !== jh ||
+          !/^48 Answers/i.test(j.kpis) ||
+          /Elo|Progress|Learned/i.test(j.kpis) ||
+          !/Families met/i.test(j.kpis) ||
+          j.seg.length !== 2 ||
+          j.seg[1][0] !== 'true' ||
+          !/ 48$/.test(j.seg[1][1])
+        )
+          fails.push(`${w}px two subjects: Ben's ${L.F} Journey ${JSON.stringify(j)}`);
+        await q.click('.adm-jsubj a[aria-pressed="false"]');
+        await calm();
+        const c = await q.evaluate(() => ({hash: location.hash, kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' ')}));
+        if (c.hash !== '#players/list/journey/Ben%20Demo' || !/Elo/i.test(c.kpis) || !/Genera met/i.test(c.kpis))
+          fails.push(`${w}px two subjects: Ben's corals Journey from the toggle ${JSON.stringify(c)}`);
+        await q.evaluate(F => (location.hash = F + '/players/activity'), L.F);
+        await calm();
+        const a = await q.evaluate(() => ({
+          rows: [...document.querySelectorAll('[data-recent] .adm-urow')].map(r => r.querySelector('td').innerText.trim()),
+          off: document.getElementById('subj').classList.contains('off')
+        }));
+        if (!a.rows.length || a.rows.some(n => !['Ben Demo', 'Ana Demo', 'Mara Demo'].includes(n.replace(/ you$/, ''))) || a.off)
+          fails.push(`${w}px two subjects: the ${L.F} Activity ${JSON.stringify(a)}`);
+        await q.click('[data-recent] .adm-urow');
+        await calm();
+        if (!(await q.$('[data-sdet]'))) fails.push(`${w}px two subjects: a ${L.F} session does not unfold`);
         await q.close();
       }
       // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
@@ -1350,13 +1797,13 @@ const WIDTHS = [390, 1280];
             )
             .then(() => q.waitForTimeout(1500))
             .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
-        await q.goto(base + 'admin.html?demo#~todo');
+        await q.goto(base + 'admin.html?demo#inbox/todo/all');
         await quiet();
         const n = count(await calls());
         if (n.answers !== 1 || n.stats !== 1 || n.events !== 1 || n.reports !== 1)
           fails.push(`sheet reads: To do asked ${JSON.stringify(n)}, once each expected`);
         await q.route(/\/cand\.json$/, r => setTimeout(() => r.continue().catch(() => {}), 2000));
-        await q.goto(base + 'admin.html?demo&load=2#~users');
+        await q.goto(base + 'admin.html?demo&load=2#players/list');
         await quiet();
         const [a] = (await calls()).filter(c => c.k === 'answers'),
           cj = await q.evaluate(
@@ -1365,10 +1812,10 @@ const WIDTHS = [390, 1280];
         if (!a || !(cj > 0) || !(a.t0 < cj))
           fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
         await q.unroute(/\/cand\.json$/);
-        await q.goto(base + 'admin.html?demo&load=3#~cand');
+        await q.goto(base + 'admin.html?demo&load=3#photos/candidates');
         await quiet();
         const before = (await calls()).length;
-        await q.evaluate(() => (location.hash = '~stats-stop'));
+        await q.evaluate(() => (location.hash = 'analyses/learning/stops'));
         await quiet();
         const L = (await calls()).slice(before),
           ans = L.find(c => c.k === 'answers'),
@@ -1388,12 +1835,12 @@ const WIDTHS = [390, 1280];
             } catch (e) {} // before admin.js has run
           }, 10);
         });
-        await q.goto(base + 'admin.html?demo&slow=stats&load=4#~health');
+        await q.goto(base + 'admin.html?demo&slow=stats&load=4#inbox/todo/health');
         await quiet();
         if (await q.evaluate(() => window.__early)) fails.push('sheet reads: the answer log was published before the photo ratings');
         await q.close();
       }
-      await go('~users');
+      await go('players/list');
       await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
       await settle();
       // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
@@ -1409,23 +1856,31 @@ const WIDTHS = [390, 1280];
       // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
       // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
       {
-        const beta = await p.evaluate(() => (SUBJECTS.find(S => subjGroup(S)) || {}).id);
+        // Fish opens to all since 2026-11-06 (Q158): the group page, kept for a subject that opens to a group, checked on
+        // fish set back to 'group' at runtime, then opened to all again.
         const grp = () =>
           p.evaluate(() => ({
             line: (document.querySelector('.adm-ugroup') || {}).innerText || '',
-            col: [...document.querySelectorAll('.adm-utbl th')].some(th => /^beta/i.test(th.textContent.trim())),
+            // Dio's Groups cell names a group (the common Groups column).
+            col: (r => !!r && r.querySelectorAll('td')[3].innerText.trim() !== '–')(
+              [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Dio Demo')
+            ),
             all: !!document.querySelector('[data-ugall]'),
             bar: (document.querySelector('.adm-ubar') || {}).innerText || ''
           }));
+        // No subject opens to a group: no line, no Beta column on the list.
         const coral = await grp();
-        if (coral.line || coral.col) fails.push(`${w}px Players (corals): a beta group line or column ${JSON.stringify(coral)}`);
-        if (beta) {
-          await go(beta + '/~users');
+        if (coral.line || coral.col) fails.push(`${w}px Players: a beta group line or column ${JSON.stringify(coral)}`);
+        await p.evaluate(() => (SUBJECTS.find(S => S.id === 'fish').open = 'group'));
+        const beta = await p.evaluate(() => (SUBJECTS.find(S => subjGroup(S)) || {}).id);
+        if (!beta) fails.push(`${w}px Players: no subject set to open to a group`);
+        else {
+          await go(beta + '/players/list');
           const g0 = await grp(),
             n = await p.evaluate(() => USERS.users.length);
           if (
             !new RegExp(`beta:\\s+0\\s+of\\s+${n}\\s+players`).test(g0.line) ||
-            !g0.col ||
+            g0.col ||
             !g0.all ||
             !/Not in the \S+ beta\s*Add/.test(g0.bar)
           )
@@ -1433,7 +1888,7 @@ const WIDTHS = [390, 1280];
           await p.click('[data-ugroup="Dio Demo"]');
           await settle();
           const g1 = await grp();
-          if (!new RegExp(`beta:\\s+1\\s+of\\s+${n}\\s+players`).test(g1.line) || !/In the \S+ beta\s*Remove/.test(g1.bar))
+          if (!new RegExp(`beta:\\s+1\\s+of\\s+${n}\\s+players`).test(g1.line) || !/In the \S+ beta\s*Remove/.test(g1.bar) || !g1.col)
             fails.push(`${w}px Players (${beta}): Add did not put Dio in the group ${JSON.stringify(g1)}`);
           await p.click('[data-ugall]');
           await settle();
@@ -1445,7 +1900,15 @@ const WIDTHS = [390, 1280];
           if (!new RegExp(`beta:\\s+${n - 1}\\s+of\\s+${n}\\s+players`).test((await grp()).line))
             fails.push(`${w}px Players (${beta}): Remove did not take Dio out`);
           const q = await p.context().newPage();
-          await q.goto(base + `admin.html?demo&v=45#${beta}/~users`);
+          // A fresh page reads core.js again: fish served back to open: 'group' there too (open to all since Q158).
+          await q.route(
+            u => u.pathname === '/core.js',
+            async r => {
+              const res = await r.fetch();
+              await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+            }
+          );
+          await q.goto(base + `admin.html?demo&v=45#${beta}/players/list`);
           await q
             .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
             .catch(() => {});
@@ -1458,34 +1921,38 @@ const WIDTHS = [390, 1280];
           // Opened to all (core.js SUBJECTS open: 'all', the release's one field, forced here at runtime): no group line, no
           // Beta column, no Add / Remove, though the subject keeps its beta label; back to 'group', they return.
           await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta);
-          await go('~users');
-          await go(beta + '/~users');
+          await go('players/list');
+          await go(beta + '/players/list');
           const ga = await grp(),
             gb = await p.evaluate(() => ({btn: !!document.querySelector('[data-ugall], [data-ugroup]'), label: !!ASUBJ.beta}));
           if (ga.line || ga.col || ga.all || gb.btn || !gb.label)
             fails.push(`${w}px Players (${beta}) open to all: ${JSON.stringify({...ga, ...gb})}`);
           await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'group'), beta);
-          await go('~users');
-          await go(beta + '/~users');
-          if (!(await grp()).col) fails.push(`${w}px Players (${beta}) back to the group: no Beta column`);
-          await go('~users'); // the corals' page, Dio's row still open, as the steps below expect
+          await go('players/list');
+          await go(beta + '/players/list');
+          if (!(await grp()).line) fails.push(`${w}px Players (${beta}) back to the group: no group line`);
+          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta); // as it is now
+          await go('players/list'); // the corals' page, Dio's row still open, as the steps below expect
         }
       }
-      // Rename (sheet v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted, above), hidden
-      // from the leaderboard.
+      // Archive (sheet v58, was Rename v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted,
+      // above), out of the players' table, listed read-only under Archived.
       await p.click('[data-uopen="Ben Demo"]');
       await settle();
       await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
-      await p.click('[data-uren="Ben Demo"]');
+      await p.click('[data-uarch="Ben Demo"]');
       await p
-        .waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+        .waitForFunction(() => /Archived \(1\)/.test(document.getElementById('view').innerText), null, {timeout: 10000})
         .catch(() => {});
-      // The rename reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
+      // The archive reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
       // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
       await settle();
-      const ren = await text();
-      if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
-        fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
+      const arc = await p.evaluate(() => ({
+        rows: [...document.querySelectorAll('.adm-urow')].map(r => r.dataset.uopen),
+        fold: [...document.querySelectorAll('details.adm-uremoved')].map(d => d.textContent).join(' ')
+      }));
+      if (arc.rows.some(n => /^Ben Demo/.test(n)) || !/Archived \(1\)/.test(arc.fold) || !/Ben Demo-test/.test(arc.fold))
+        fails.push(`${w}px Players: archive Ben Demo → Ben Demo-test not shown apart (${JSON.stringify(arc)})`);
       // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
       // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
       const nameOf = n =>
@@ -1507,7 +1974,7 @@ const WIDTHS = [390, 1280];
             };
           })
           .catch(() => null);
-      for (const n of ['Ben Demo-test', 'Test Demo']) {
+      for (const n of ['Test Demo']) {
         const h = await nameOf(n);
         if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
         else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
@@ -1524,15 +1991,16 @@ const WIDTHS = [390, 1280];
       const size = () =>
         p.evaluate(() => {
           const t = document.querySelector('.adm-utbl'),
-            th = t.querySelector('thead th');
+            th = t.querySelector('thead tr:last-child th'); // the Name column (the row above names the column groups)
           return {table: t.offsetWidth, name: th.offsetWidth, cap: 9 * parseFloat(getComputedStyle(t).fontSize) + 12 + 1};
         });
       const LONG = 'Bartholomew Alexander Montgomery-Fitzgerald Demo LongName-60';
       const before = await size();
-      await p.click('[data-uopen="Ben Demo"]');
-      await settle();
-      await p.evaluate(n => (window.prompt = () => n), LONG);
-      await p.click('[data-uren="Ben Demo"]');
+      // A player with that name (the table only: renaming moved to Archive, which takes the record out of it).
+      await p.evaluate(n => {
+        USERS.users.find(u => u.name === 'Carla Demo').name = n;
+        render();
+      }, LONG);
       await p.waitForFunction(n => document.querySelector(`[data-uopen="${n}"]`), LONG, {timeout: 10000}).catch(() => {});
       const after = await size(),
         cut = await p
@@ -1542,6 +2010,10 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Players: a 60-character name widened the table (${JSON.stringify({before, after})})`);
       if (!cut || !cut.cut || !cut.title.startsWith(LONG))
         fails.push(`${w}px Players: the 60-character name is not cut with its title (${JSON.stringify(cut)})`);
+      await p.evaluate(n => {
+        USERS.users.find(u => u.name === n).name = 'Carla Demo';
+        render();
+      }, LONG);
     }
     if (once) {
       // Once: merge and delete.
@@ -1569,7 +2041,7 @@ const WIDTHS = [390, 1280];
     // A player's journey (admin-journey.js), opened from their row: numbers, both curves, the genera in the order met.
     await p.click('[data-uopen="Ana Demo"]');
     await settle();
-    await p.click('.adm-udet a[href^="#~journey/"]');
+    await p.click('.adm-udet a[href^="#players/list/journey/"]');
     await settle();
     const jo = await p.evaluate(() => {
       const v = document.getElementById('view'),
@@ -1609,7 +2081,7 @@ const WIDTHS = [390, 1280];
       if (!lrn.tags || !lrn.stars || !lrn.games) fails.push(`${w}px journey learned / games: ${JSON.stringify(lrn)}`);
       if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
         fails.push(`${w}px journey cards (Ana): ${JSON.stringify(cards).slice(0, 300)}`);
-      await go('~journey/' + encodeURIComponent('Carla Demo'));
+      await go('players/list/journey/' + encodeURIComponent('Carla Demo'));
       await p
         .waitForFunction(() => /Opened all genera/.test(document.getElementById('view').innerText), null, {timeout: 10000})
         .catch(() => {});
@@ -1623,7 +2095,7 @@ const WIDTHS = [390, 1280];
         !carla.line
       )
         fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
-      await go('~journey/' + encodeURIComponent('Ana Demo'));
+      await go('players/list/journey/' + encodeURIComponent('Ana Demo'));
       await p.click('[data-jsort="hard"]');
       await settle();
       const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
@@ -1654,17 +2126,19 @@ const WIDTHS = [390, 1280];
         !/after asked/.test(sa.t) ||
         !/Learn/.test(sa.t) ||
         !/4 visits recorded/.test(sa.t) ||
-        !/quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.quiz) read back with its subject
+        !/practice\.quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.practice.quiz) read back with its subject
       )
         fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
-      await go('~journey/' + encodeURIComponent('Dio Demo'));
+      await go('players/list/journey/' + encodeURIComponent('Dio Demo'));
       const sd = await jsheets();
       if (!sd || sd.rows || !/None opened/.test(sd.t)) fails.push(`${w}px journey sheets (Dio): ${JSON.stringify(sd)}`);
-      await go('~users');
-      const anonIds = await p.$$eval('a[href^="#~anon/"]', L => [...new Set(L.map(a => a.getAttribute('href').slice(7)))]);
+      await go('players/list');
+      const anonIds = await p.$$eval('a[href^="#players/list/anon/"]', L => [
+        ...new Set(L.map(a => a.getAttribute('href').slice('#players/list/anon/'.length)))
+      ]);
       const anonSheets = [];
       for (const id of anonIds) {
-        await go('~anon/' + id);
+        await go('players/list/anon/' + id);
         const x = await jsheets();
         anonSheets.push(x ? x.rows : -1);
       }
@@ -1673,7 +2147,7 @@ const WIDTHS = [390, 1280];
 
       // To do › Reports lists the demo reports; Activity shows the demo players' answers.
       // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
-      await go('~events');
+      await go('inbox/todo/errors');
       await p
         .waitForFunction(() => /Saves that failed/i.test(document.getElementById('view').innerText), null, {timeout: 10000})
         .catch(() => {});
@@ -1768,7 +2242,7 @@ const WIDTHS = [390, 1280];
         }
       });
       if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
-      await go('~triage');
+      await go('inbox/todo/reports');
       if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
       // Sheet v55: a report an account deleted with its answers kept left behind reads "From a removed account", no id.
       if (!/From a removed account/.test(await text()) || /~deleted/.test(await text()))
@@ -1780,7 +2254,7 @@ const WIDTHS = [390, 1280];
             () => {
               const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
               const im = c && c.querySelector('.adm-tile img');
-              return c && im && /Damselfish \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
+              return c && im && /Damselfishes \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
             },
             null,
             {timeout: 10000}
@@ -1790,7 +2264,7 @@ const WIDTHS = [390, 1280];
         if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
       }
     }
-    await go('~stats');
+    await go('players/activity');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     if (once) {
       // Once: every account counts.
@@ -1806,8 +2280,9 @@ const WIDTHS = [390, 1280];
         return {
           answers: Number(k.Answers),
           players: Number(k.Players),
-          all: ANS.rows.length,
-          ids: new Set(ANS.rows.map(r => r[0])).size,
+          // but the answers a deleted account or an archive left (sheet v55/v58 flag 2): no player, photos only
+          all: ANS.rows.filter(r => r[11] !== 2).length,
+          ids: new Set(ANS.rows.filter(r => r[11] !== 2).map(r => r[0])).size,
           sw: !!document.querySelector('[data-sf="who"]')
         };
       });
@@ -1848,9 +2323,10 @@ const WIDTHS = [390, 1280];
           fails.push(`${w}px Recent sessions: modes ${c.modes}`);
         if (R.filter(x => x.now).length !== 1)
           fails.push(`${w}px Recent sessions: ${R.filter(x => x.now).length} sessions now, expected 1`);
-        if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)
+        if (!/^1[2-4] min ago$/.test(an.last) || an.n !== 8 || !/^#players\/list\/anon\//.test(an.link) || R[1] !== an)
           fails.push(`${w}px Recent sessions: the device not signed in ${JSON.stringify(an)}`);
-        if (!R.some(x => /^#~journey\//.test(x.link) && !x.now)) fails.push(`${w}px Recent sessions: no other signed-in player`);
+        if (!R.some(x => /^#players\/list\/journey\//.test(x.link) && !x.now))
+          fails.push(`${w}px Recent sessions: no other signed-in player`);
       }
     }
     // A session unfolds its summary under it and folds again (Pierre, 2026-11-05): Carla's session playing now (made-up
@@ -1911,7 +2387,7 @@ const WIDTHS = [390, 1280];
         !/A quarter/.test(s1.text) ||
         !/Session \d+ of \d+/.test(s1.text) ||
         !/Typed 2, \d right/.test(s1.text) ||
-        s1.link !== '#~journey/Carla%20Demo' ||
+        s1.link !== '#players/list/journey/Carla%20Demo' ||
         s1.wide > 0 ||
         !(s1.low > 0) ||
         s1.hard < 1 ||
@@ -2013,7 +2489,7 @@ const WIDTHS = [390, 1280];
       if (!re || re.R.length !== 10 || !(await p.evaluate(b => ANS && ANS.at > b, before)))
         fails.push(`${w}px Activity ↻: the answers were not read again`);
       // Photo difficulty by genus: one lane per view, a median bar in every lane that has photos.
-      await go('~stats-photos');
+      await go('photos/stats/difficulty');
       const ln = await p.evaluate(() => {
         const rows = [...document.querySelectorAll('.adm-gstrips .adm-lanes')];
         return {
@@ -2030,12 +2506,11 @@ const WIDTHS = [390, 1280];
     // easy, 60-75 easy, 40-60 middle, 25-40 hard, <25 very hard) and whose title holds the raw value; players read as an
     // Elo with the level in its title. At both widths, with no sideways scroll.
     for (const [h, need] of [
-      ['~stats-photos', 'rec'],
-      ['~diff', 'rec'],
-      ['~health', 'rec'],
-      ['~users', 'elo'],
-      ['~stats-log', 'elo'],
-      ['~journey/Carla%20Demo', 'elo']
+      ['photos/stats/difficulty', 'rec'],
+      ['photos/review/by-difficulty', 'rec'],
+      ['inbox/todo/health', 'rec'],
+      ['analyses/learning/answer-log', 'elo'],
+      ['players/list/journey/Carla%20Demo', 'elo']
     ]) {
       await go(h);
       const r = await p.evaluate(() => {
@@ -2058,10 +2533,49 @@ const WIDTHS = [390, 1280];
       if (r.signed.length || !r[need] || r.off.length || r.noRaw.length || r.wide > 0)
         fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
     }
+    // ...and everywhere else in the admin (ROADMAP "Intuitive difficulty display everywhere", Pierre, 2026-11-05): on every
+    // view of every tab, Coverage's full "Where to look" list and both demo journeys, no signed raw number in the page's
+    // text (seconds and "pts" aside; the one-tap tables' felt difficulty, the players' own −1…+1 survey scale, aside), every
+    // badge in the band of its %, and no "recognised by N%" written as plain text outside a badge. Once, at 1280.
+    if (once)
+      for (const h of new Set([
+        ...ROUTES.map(r => r.h).filter(h => h && !h.startsWith('players/list/journey/')),
+        'inbox/coverage/games?look=all',
+        'players/list/journey/Ana Demo',
+        'players/list/journey/Carla Demo'
+      ])) {
+        await go(h);
+        const r = await p.evaluate(() => {
+          const v = document.getElementById('view'),
+            band = n => (n >= 75 ? 'veasy' : n >= 60 ? 'easy' : n >= 40 ? 'mid' : n >= 25 ? 'hard' : 'vhard'),
+            felt = [...v.querySelectorAll('.adm-pscale')];
+          felt.forEach(x => (x.style.display = 'none'));
+          const signed = (v.innerText.match(/(^|[^\w.])[+−-]\d+\.\d+(?! ?(s|pts?)\b)/gm) || []).slice(0, 3);
+          felt.forEach(x => (x.style.display = ''));
+          const plain = [],
+            tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
+          for (let n; (n = tw.nextNode());)
+            if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
+              plain.push(n.textContent.trim().slice(0, 80));
+          return {
+            signed,
+            plain: plain.slice(0, 3),
+            off: [...v.querySelectorAll('.adm-rec')]
+              .filter(
+                b =>
+                  !b.classList.contains('rec-' + band(Number((b.textContent.match(/(\d+)%/) || [])[1]))) || !/[+−]?\d+\.\d\d/.test(b.title)
+              )
+              .map(b => b.className + ' ' + b.textContent)
+              .slice(0, 3)
+          };
+        });
+        if (r.signed.length || r.plain.length || r.off.length)
+          fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
+      }
     // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
     // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
     // marks, and a plain median (sort, middle value); nothing wider than the window.
-    await go('~pstats');
+    await go('photos/stats/overview');
     const ov = await p.evaluate(() => {
       const cells = sel => [...document.querySelectorAll(sel)].map(r => [...r.children].map(c => c.innerText.trim()));
       const med = L => {
@@ -2170,18 +2684,20 @@ const WIDTHS = [390, 1280];
       // Photo list moved to Photo review (By difficulty) and kept its address; the Photo stats tab opens on Overview, also
       // in a browser that remembered Photo list as its view.
       const mv = await p.evaluate(() => ({
-        diff: tabOf('~diff')[1],
-        diffs: tabOf('~stats-photos')[1],
-        first: TABS.find(t => t[0] === 'pstats')[2][0][0]
+        diff: tabOf('photos/review/by-difficulty')[1],
+        diffs: tabOf('photos/stats/difficulty')[1],
+        first: TABS.find(t => t[0] === 'photos/stats')[2][0][0]
       }));
-      if (mv.diff !== 'Photo review' || mv.diffs !== 'Photo stats' || mv.first !== '~pstats')
+      if (mv.diff !== 'Photo review' || mv.diffs !== 'Photo stats' || mv.first !== 'photos/stats/overview')
         fails.push(`${w}px Photo stats tabs: ${JSON.stringify(mv)}`);
-      await p.evaluate(() => store.set('reefid-admin-view', {...store.get('reefid-admin-view', {}), pstats: '~diff'}));
-      await go('~quality');
+      await p.evaluate(() =>
+        store.set('reefid-admin-nav-tab', {...store.get('reefid-admin-nav-tab', {}), 'photos/stats': 'photos/review/by-difficulty'})
+      );
+      await go('photos/review/quality');
       const ps = await p.evaluate(() =>
         [...document.querySelectorAll('#subnav .adm-subtabs a')].find(a => /Photo stats/.test(a.textContent)).getAttribute('href')
       );
-      if (ps !== '#~pstats') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
+      if (ps !== '#photos/stats/overview') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
     }
     // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
     // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
@@ -2195,7 +2711,7 @@ const WIDTHS = [390, 1280];
         sheets: [...document.querySelectorAll('[data-health="sheets"] tbody tr')].map(r => r.innerText.replace(/\s+/g, ' ').trim()),
         wide: document.documentElement.scrollWidth - innerWidth
       }));
-    await go('~health');
+    await go('inbox/todo/health');
     // Every account counts (Pierre, 2026-11-04): no "Without me", "Others / Me" or "This is also me" anywhere.
     if (await p.$('[data-sf="elo"], [data-sf="who"], [data-ume]')) fails.push(`${w}px Health: a filter on your own answers is back`);
     {
@@ -2203,7 +2719,7 @@ const WIDTHS = [390, 1280];
       if (hs.secs !== 'photos genera' || !hs.rows) fails.push(`${w}px Health: sections ${JSON.stringify(hs)}`);
       if (hs.wide > 0) fails.push(`${w}px Health: page ${hs.wide} px wider than the window`);
     }
-    await go('~stats-stop');
+    await go('analyses/learning/stops');
     {
       await p
         .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
@@ -2219,11 +2735,11 @@ const WIDTHS = [390, 1280];
     {
       const cards = () => p.evaluate(() => [...document.querySelectorAll('#view .adm-scard h3')].map(h => h.textContent.trim()));
       const ANALYSIS_CARDS = ['Learning curve', 'Calibration', 'Conditions', 'Genera', 'Mix-ups'];
-      await go('~stats-log');
+      await go('analyses/learning/answer-log');
       const lg = await cards();
       if (ANALYSIS_CARDS.some(t => !lg.includes(t)) || lg.some(t => /^Recent sessions|^Activity over time/.test(t)))
         fails.push(`${w}px Answer log: cards ${JSON.stringify(lg)}`);
-      await go('~stats');
+      await go('players/activity');
       const ac = await cards();
       if (
         ANALYSIS_CARDS.some(t => ac.includes(t)) ||
@@ -2248,13 +2764,13 @@ const WIDTHS = [390, 1280];
           };
         });
         const stale = async (label, prep) => {
-          await go('~stats');
+          await go('players/activity');
           await p.evaluate(prep);
           if (label === 'reload') {
             await p.click('[data-sload]');
             await settle();
           }
-          await go('~stats-stop');
+          await go('analyses/learning/stops');
           await p
             .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
               timeout: 8000
@@ -2273,8 +2789,8 @@ const WIDTHS = [390, 1280];
           pgsAt = Date.now();
         });
         const n0 = await p.evaluate(() => PGREADS);
-        await go('~stats');
-        await go('~stats-stop');
+        await go('players/activity');
+        await go('analyses/learning/stops');
         await p.waitForTimeout(1500);
         const reads = (await p.evaluate(() => PGREADS)) - n0;
         if (n0 !== 2 || reads) fails.push(`${w}px Stops genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
@@ -2298,10 +2814,10 @@ const WIDTHS = [390, 1280];
           if (!/inaturalist\.org\/observations\//.test(ph.o || '')) return a.length ? 'a link on a photo with no iNat page' : '';
           if (a.length !== 1 || a[0].href !== ph.o) return `no link to ${ph.o}`;
           if (a[0].target !== '_blank' || !/noopener/.test(a[0].rel)) return 'source link not in a new tab with noopener';
-          if (!cap.querySelector(`a[href$="#g-${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
+          if (!cap.querySelector(`a[href$="#learn/genus/${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
           return '';
         }, f);
-      await go('~health');
+      await go('inbox/todo/health');
       if (await p.$('[data-health="photos"] [data-zf]')) {
         await p.click('[data-health="photos"] [data-zf]');
         if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
@@ -2338,7 +2854,7 @@ const WIDTHS = [390, 1280];
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
       // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
       // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.
-      await go('~form');
+      await go('photos/review/growth-form');
       const fag = () =>
         p.evaluate(() => {
           const d = document.getElementById('fagree');
@@ -2405,7 +2921,7 @@ const WIDTHS = [390, 1280];
       // Game genera first (Pierre, 2026-11-03; core.js gameOf): Game coverage lists every genus a game asks, Millepora and
       // the bonus genera included; in Candidates no Key-only genus comes before a game genus of the same source, none
       // is proposed for Corallites, and a Key-only genus is full at CAP.sheet colonies.
-      await go('~cov');
+      await go('inbox/coverage/games');
       const gq = await p.evaluate(() => {
         const rows = [...document.querySelectorAll('.cov-t tbody tr')].map(tr => tr.dataset.g),
           game = gameOf(DATA),
@@ -2438,13 +2954,13 @@ const WIDTHS = [390, 1280];
         grid: !!document.querySelector('.cov-t')
       }));
       if (!lk.links || !lk.grid) fails.push(`${w}px Coverage › Games: Where to look banner ${JSON.stringify(lk)}`);
-      await go('~stats-needs');
+      await go('inbox/coverage/games?look=all');
       if (!(await p.evaluate(() => (NEEDS || []).length && NEEDS.every(r => isGame(r.n)))))
         fails.push(`${w}px Where to look: empty, or a row for a genus no game asks`);
       if (!(await p.evaluate(() => !!document.querySelector('#cov-look.open .adm-needs') && !!document.querySelector('.cov-t'))))
         fails.push(`${w}px Where to look: not open above the Games grid`);
       // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
-      await go('~cand');
+      await go('photos/candidates');
       if (await p.$('[data-skip]')) {
         await p.click('[data-skip]');
         await settle();
@@ -2480,7 +2996,7 @@ const WIDTHS = [390, 1280];
             .map(b => (b.classList.contains('sug') ? 's' : /keep \(/.test(b.textContent) ? 'k' : 'o'))
             .join(''),
           over: OVER.n,
-          warn: /⚠/.test(document.querySelector('#modes [data-mode="todo"]').textContent)
+          warn: /⚠/.test(document.querySelector('#modes [data-mode="inbox"]').textContent)
         };
       });
       if (cap.bookFull) fails.push(`${w}px Cap: a Coral Finder book candidate (never in games) counted as full`);
@@ -2513,7 +3029,7 @@ const WIDTHS = [390, 1280];
       if (jd.v !== 'macro' || jd.q !== 3) fails.push(`${w}px Judged: view or quality guess not applied (${jd.v}, ${jd.q})`);
       if (!(jd.wb < jd.wa / 10)) fails.push(`${w}px Judged: a Poor near-duplicate is not pushed back (${jd.wa} vs ${jd.wb})`);
       if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
-      await go('~cand');
+      await go('photos/candidates');
       if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
       // A suggested crop (suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
       const sc = await p.evaluate(F => {
@@ -2617,7 +3133,7 @@ const WIDTHS = [390, 1280];
       if (!pri.mine || pri.other) fails.push(`${w}px Auto: source priority in a nearly full cell ${JSON.stringify(pri)}`);
       // The Check card: tagged, blind (no judgment line, no suggested view, no dashed quality), answered like any other;
       // rated Good where the pass said Fair, form not given (so not compared).
-      await go('~cand');
+      await go('photos/candidates');
       const ck = await p.evaluate(C => {
         CSRC = 'all';
         candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
@@ -2754,7 +3270,7 @@ const WIDTHS = [390, 1280];
       // An auto-added photo carries an "auto" tag on its genus page.
       if (au.added) {
         const g = await p.evaluate(F => Object.keys(DRAFT.genera).find(n => (DRAFT.genera[n].add || {})[F[0]]), CF);
-        await go(g);
+        await goGenus(g);
         if (!(await p.$(`[data-f="${CF[0]}"] .adm-autot`))) fails.push(`${w}px Auto: no auto tag on ${g}`);
         // Remove on the genus page of a photo the auto-sort added: rejected, a Keep disagreement, timed as the latest
         // comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is unchanged.
@@ -2792,7 +3308,7 @@ const WIDTHS = [390, 1280];
         if (own && (own.rej || own.added)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
       }
       // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.
-      await go('~cand');
+      await go('photos/candidates');
       const rt = await p.evaluate(() => {
         CDONE = AUTO.retest;
         render();
@@ -2857,7 +3373,7 @@ const WIDTHS = [390, 1280];
       // One fish auto decision undone in the Auto details (Codex review #479, rule A1): gone from the draft, logged
       // undone, never applied again at the next run.
       if (fa) {
-        await go('~cand');
+        await go('photos/candidates');
         await p.evaluate(() => {
           ADET = true;
           render();
@@ -2946,7 +3462,7 @@ const WIDTHS = [390, 1280];
         [theme, cvd]
       );
       const q = await c.newPage();
-      await q.goto(base + 'admin.html?demo#~stats-photos');
+      await q.goto(base + 'admin.html?demo#photos/stats/difficulty');
       await q.waitForFunction(() => typeof recBadge === 'function' && document.querySelector('#view .adm-recscale'), null, {
         timeout: 30000
       });
