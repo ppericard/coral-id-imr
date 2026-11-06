@@ -5,6 +5,29 @@ the "proven against the field" rule of PR #611 (branch `claude/progress-coverage
 **Addendum, 2026-11-06 morning:** Pierre's answers to a-e (section 6) and his refinement, a bar stable when photos are
 added (section 7).
 
+## Corrections after review (2026-11-06)
+
+Codex's review of PR #622 found four faults in the estimator of sections 5 and 7. Each is right. The independent
+[algorithms review §14](2026-11-06-engine-algorithms-review.md) reached the same conclusions. Its design supersedes the
+estimator below; Pierre approved it (Q135). That design is the posterior expected domain score, on a grid, from the
+player's own answers on the genus, with per-format offsets and a fitted μ_g. **The meaning of the bar is unchanged**:
+the expected share of the genus's photo population the player names right, judged by the signed error against the true
+domain score (sections 5(ii), 6 and 7).
+
+1. **The Fisher information ignores guessing.** Under p = g + (1 − g)σ(θ − d), the information is (dp/dθ)² / (p(1 − p))
+   (`core.js` `stInfo`), not p(1 − p). The formula in 5(i) credits answers near the guessing floor, which prove almost
+   nothing.
+2. **θ_g is not own evidence only.** The game's genus ability includes `levelMove` (`abilityOf`): a later rise of the
+   global level raises an answered genus without a new answer on it. That breaks Q128. The bar needs its own estimate:
+   a fixed population prior and the player's answers on that genus.
+3. **θ − z·SE mixes credit with forecasting.** A lower bound is deliberately biased, so calibration and log-loss would
+   punish the caution and favour z = 0. The review also shows it is not monotone: the bar can rise after a miss. The
+   posterior expected domain score is a calibrated forecast whose caution comes from the prior, and it always falls
+   after a miss.
+4. **G is a cold-start predictor, not a fitted population mean.** `eloReplay` moves G and the photo residuals together
+   without re-centring them, so μ_g = G misplaces the genus's mean difficulty. Section 7 needs a fitted μ_g, and τ_g
+   computed after the photo-rating fix the review asks for (its §1).
+
 **Pierre's challenge.** We tuned the bar to zero "overclaim" = bar − pOpen (success on an *average* photo, open
 question against all 40 genera), a yardstick of our own. He wants ONE simple, difficulty-indexed quantity (no bands,
 no pile of thresholds) that rises fast for a strong player and never credits genera the player has not shown.
