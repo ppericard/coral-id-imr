@@ -122,6 +122,18 @@ const WIDTHS = [390, 1280];
           .slice(0, 40)
           .map(k => [k.slice(5), 'r'])
       );
+    // To do › Share-alike needs share-alike photos on the site, and Pierre may remove the real ones at any Publish (he
+    // removed the last ones on 2026-11-06): three of his own photos (never out of the presence rule) are served as CC BY-NC-SA.
+    const SA = Object.entries(DJ.gen)
+      .flatMap(([g, x]) => Object.values(x.views || {}).flatMap(L => L.filter(p => p.own && p.src).slice(0, 1)))
+      .filter(p => !named(p.f))
+      .slice(0, 3);
+    if (SA.length < 3) throw new Error('not enough photos of Pierre to stand for share-alike ones');
+    SA.forEach(p => Object.assign(p, {lic: 'cc-by-nc-sa', a: p.a.replace(/\(CC[^)]*\)/, '(CC BY-NC-SA)')}));
+    await ctx.route(
+      u => u.href.startsWith(base) && u.pathname === '/data.json',
+      r => r.fulfill({contentType: 'application/json', body: JSON.stringify(DJ)})
+    );
     await ctx.route(
       u => u.href.startsWith(base) && u.pathname === '/curation.json',
       r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, auto: {[day]: LOG}, fish: {out: {[FF[2][1]]: 'x'}}})})
@@ -785,7 +797,7 @@ const WIDTHS = [390, 1280];
         }
       }
       // To do › Share-alike (Pierre, 2026-11-05: no share-alike for corals any more, but the ones on the site are never
-      // removed automatically; the demo has the real data's share-alike photos): a "share-alike" tag on the genus page; the
+      // removed automatically; three of Pierre's photos stand for share-alike ones, SA above): a "share-alike" tag on the genus page; the
       // same actions as Out of the presence rule: Remove (the ×, Undo), Keep → Kept (curation seen 'sa:f', tag "kept"),
       // un-keep, Remove all asks first and acts only on the photos still to handle.
       {
@@ -952,7 +964,7 @@ const WIDTHS = [390, 1280];
       }
     }
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
-    // points.json, the Astrea question first among the open ones; its page shows the question and its 4 photo slots
+    // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
     // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
     // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
@@ -996,11 +1008,11 @@ const WIDTHS = [390, 1280];
       if (
         g0.hash !== '#~point/astrea-reefcloud' ||
         !/ReefCloud label/.test(g0.q) ||
-        g0.slots !== 4 ||
-        g0.imgs !== 4 ||
-        g0.nums !== '1,2,3,4' ||
+        g0.slots !== 7 ||
+        g0.imgs !== 7 ||
+        g0.nums !== '1,2,3,4,5,6,7' ||
         g0.names ||
-        g0.answers !== 4 ||
+        g0.answers !== 7 ||
         !g0.notes ||
         g0.acts.join() !== 'Resolved,Stand-by,Dismiss' ||
         !/^To do/.test(g0.tab) ||
@@ -1008,7 +1020,7 @@ const WIDTHS = [390, 1280];
       )
         fails.push(`${w}px Points: the Astrea page ${JSON.stringify(g0)}`);
       if (g0.wide > 0) fails.push(`${w}px Points: the Astrea page ${g0.wide} px wider than the window`);
-      // The enlarged photo: blind (number and credit, no taxon), ‹ › through the 4.
+      // The enlarged photo: blind (number and credit, no taxon), ‹ › through the 7.
       await p.click('[data-ptz="1"]');
       const lb = await p.evaluate(() => {
         const c = () => (document.querySelector('#lightbox .lb-cap') || {}).textContent || '';
