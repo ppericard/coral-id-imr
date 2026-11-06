@@ -271,8 +271,15 @@ const server = http.createServer((req, res) => {
       // The spelling step (a player's idea, Pierre 2026-11-05; quiz.js typeBind): a close typo of the right genus is no
       // answer yet: the warm nudge "So close! Right genus: just fix the spelling…", the text kept and selected, I don't know
       // turned to Show me.
+      // The nudge makes the answer column taller: the stage is refitted (fitStage) so it all stays on one screen on a phone
+      // (Codex review #616: the stage kept its height and the nudge went under the tab bar until a resize).
+      const fit0 = fitStage;
+      let fits = 0;
+      window.fitStage = (...x) => (fits++, fit0(...x));
       f().querySelector('input').value = typo.toLowerCase();
       f().requestSubmit();
+      window.fitStage = fit0;
+      if (!fits) fails.push('the spelling nudge appeared without the stage being refitted');
       const retryOn = () =>
         answersSoFar() === a0 &&
         f().classList.contains('retry') &&

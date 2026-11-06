@@ -107,10 +107,10 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
     else if (o.t && typeVerdict(m, o.t) === 'close') {
       first = {m, text};
-      if (o.close) o.close();
       form.classList.add('retry');
       msg.innerHTML = `<span class="tymed" aria-hidden="true">✏️</span><span><b>So close!</b> Right ${esc(one)}: just fix the spelling and try once more.</span>`;
       idk.textContent = 'Show me';
+      if (o.close) o.close(); // after the nudge is in: the quiz refits its stage around it
       inp.select();
     } else return end(m, text);
     inp.focus();
@@ -270,10 +270,12 @@ function question(cur, target, choices, prompt, set, kq) {
       GX(target).one || SUBJ.one,
       {
         t: target,
-        // The spelling step (typeBind): the answer is given, only its spelling waits; the hint stays as it was.
+        // The spelling step (typeBind): the answer is given, only its spelling waits; the hint stays as it was. The nudge
+        // makes the answer column taller: the stage gives up that room so it stays on one screen (Codex review #616).
         close: () => {
           tm0 = {rt: qclockRead(), zm: QCLOCK.zm};
           if (hb) hb.hidden = true;
+          fitStage();
         }
       }
     );
