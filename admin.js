@@ -2511,6 +2511,15 @@ const recognised = d => 1 / (1 + Math.exp(d)),
 // The method behind every difficulty reading, shown in the "?" of each page that has one.
 const REC_HELP = `<p><b>Difficulty in words</b> (Pierre, 2026-11-05). A photo reads as <b>recognised by N%</b>: the share of starting players (level 0, Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) for its difficulty d on the photo Elo scale (0 → 50%, +1 → 27%, −1 → 73%; + = harder). The lucky guess a question's choices allow (1 in 4 with four choices) is left out on purpose: it depends on the question, not the photo. A genus reads the same, for a typical photo of it (its difficulty offset). A higher % is an easier photo, and sorting follows it. Colours, one scale for the whole admin: ${REC.map(([f, k, w], i) => `<span class="adm-rec rec-${k}">${i ? (f === -Infinity ? 'under ' + REC[i - 1][0] : f + '-' + REC[i - 1][0]) : '≥' + f}%</span> ${w}`).join(', ')} (colour-blind mode: dark blue, light blue, grey, light orange, dark orange); the number always says it, the colour only helps. Hover a reading (tap it on a phone) for the raw value. A player reads as their <b>Elo</b>, the score players see: 1000 + 200 × their level (on the same scale as photo difficulty), ± its 95% margin; hover it for the level. "vs expected" (points above or below the chance the game expected) keeps its sign: + = better than expected.</p>`;
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
+// The calibration goal (Pierre, 2026-11-06, Q192; the photo exposure study, docs/reviews/2026-11-06-photo-exposure-study.md
+// §4: per-photo ratings cannot converge at this traffic, so the genus offset carries the level and each photo needs its
+// first answers): 3 to 5 answers per photo (RATE.MIN, the share shown per genus on Photo stats › Overview), and a flag on
+// the photos far harder than their genus once they have them: the photo's own part of its difficulty (its residual,
+// ?stats=1 difficulty minus its genus's offset gd, sheet v31) of FAR.D logits or more after FAR.N answers or more (the
+// study's ±1.5 logit after 5+ answers; only the harder side: a photo far easier is no problem to fix). At a genus
+// recognised 4 times in 5, such a photo is recognised about 1 time in 2: unclear, mislabelled or the wrong view.
+const RATE = {MIN: 3},
+  FAR = {N: 5, D: 1.5};
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
   get journey() {
@@ -2541,8 +2550,8 @@ const HELP = {
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no Coral Finder book, several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
     <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected (Coral Finder book pages included; hover the row for how many). <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
-    <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from (Coral Finder book photos are never in games, so they have no row); <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once. Nothing here changes anything.</p>`,
-  statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience, read as <b>recognised by N%</b> (below). The coloured line under the distribution and the genera shows the bands along the axis, easier on the left. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each genus reads for a typical photo of it, its genus offset (sheet v31; the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo.</p>
+    <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from (Coral Finder book photos are never in games, so they have no row); <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per genus</b> (Pierre, 2026-11-06, Q192): the goal is 3 to 5 answers per photo, enough to flag the photos far harder than their genus (their count in the last column, the list on Difficulty); the least covered genera first. Nothing here changes anything.</p>`,
+  statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience, read as <b>recognised by N%</b> (below). The coloured line under the distribution and the genera shows the bands along the axis, easier on the left. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each genus reads for a typical photo of it, its genus offset (sheet v31; the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo. <b>Far harder than their genus</b> (Pierre, 2026-11-06, Q192; the photo exposure study): the photos in play whose own part of the difficulty (the photo's difficulty minus its genus's offset) is ${FAR.D} logits or more after ${FAR.N} answers or more, the farthest first: where a typical photo of the genus is recognised 4 times in 5, such a photo is about 1 time in 2. Look at each: unclear, mislabelled, or the wrong view (Photo review). Per-photo ratings stay rough at this traffic (the study: about 50 answers rate one photo to ±0.5), so the goal is the first 3 to 5 answers per photo, enough for this flag; a photo shown with other views shares each answer with them, so it needs more answers to stand out.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
@@ -6020,6 +6029,17 @@ function renderPstats() {
       ['30+', 30, Infinity]
     ].map(([t, a, b]) => [t, A.filter(x => x >= a && x <= b).length]),
     bm = Math.max(1, ...B.map(b => b[1]));
+  // Per genus: its photos in play, how many have the goal's first answers (RATE.MIN), and how many are far harder than the
+  // genus (farHarder); the least covered first.
+  const far = farHarder(play),
+    CG = G.map(n => ({n, k: 0, a: 0, f: far.filter(p => p.genus === n).length}));
+  play.forEach(p => {
+    const r = CG.find(x => x.n === p.genus);
+    r.k++;
+    if (nAns(STATS[p.f]) >= RATE.MIN) r.a++;
+  });
+  CG.sort((a, b) => (a.k ? a.a / a.k : 2) - (b.k ? b.a / b.k : 2) || b.k - a.k || a.n.localeCompare(b.n));
+  const covered = A.filter(x => x >= RATE.MIN).length;
   $v.innerHTML =
     `<section class="adm-pov"><div class="adm-shead"><h2>Photo overview</h2></div>` +
     kpis([
@@ -6056,7 +6076,11 @@ function renderPstats() {
       ([t, k]) => `<tr><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, A.length)}</td><td>${sbar(k, bm)}</td></tr>`
     ).join(
       ''
-    )}</tbody></table><p class="note">Median ${iqrTxt(da)}, mean ${numTxt(da.mean)}${dr.n ? `; the ${dr.n} rated: median ${iqrTxt(dr)}` : ''}.</p></section>
+    )}</tbody></table><p class="note">Median ${iqrTxt(da)}, mean ${numTxt(da.mean)}${dr.n ? `; the ${dr.n} rated: median ${iqrTxt(dr)}` : ''}. ${RATE.MIN}+ answers: ${covered} (${pct(covered, A.length)}).</p></section>
+    <section class="adm-scard wide" data-pov="rated"><h3>${RATE.MIN}+ answers per genus</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Photos</th><th class="n">${RATE.MIN}+ answers</th><th class="n">Share</th><th></th><th class="n" title="Far harder than their genus: ${FAR.D} logits or more after ${FAR.N}+ answers (Difficulty)">Far harder</th></tr></thead><tbody>${CG.map(
+      r =>
+        `<tr><td>${gen(r.n)}</td><td class="n">${r.k}</td><td class="n">${r.a}</td><td class="n">${pct(r.a, r.k)}</td><td>${sbar(r.a, r.k || 1)}</td><td class="n">${r.f ? `<a href="#photos/stats/difficulty">${r.f}</a>` : ''}</td></tr>`
+    ).join('')}</tbody></table></div></section>
     </div></section>`;
 }
 
@@ -6624,6 +6648,16 @@ const isMe = id => !!id && id === MEID;
 const nAns = s => (s ? (s[3] ?? s[1]) : 0);
 // The photo ratings: the sheet's ?stats=1, the ones the games use.
 const photoStats = () => STATS;
+// The photos in play (poolStats play: {f, genus, view}) far harder than their genus (FAR, above HELP), the farthest first: {...p, d, gd, r,
+// a, n, ok} (difficulty, genus offset, residual, answers, weighed answers and right). None before sheet v31 (no gd).
+function farHarder(play) {
+  const S = photoStats() || {};
+  return play
+    .filter(p => S[p.f] && GD[p.genus] && isFinite(GD[p.genus][0]) && nAns(S[p.f]) >= FAR.N)
+    .map(p => ({...p, d: S[p.f][0], gd: GD[p.genus][0], r: S[p.f][0] - GD[p.genus][0], a: nAns(S[p.f]), n: S[p.f][1], ok: S[p.f][2]}))
+    .filter(p => p.r >= FAR.D - 1e-9)
+    .sort((a, b) => b.r - a.r || b.a - a.a);
+}
 const pct = (r, n) => (n ? Math.round((100 * r) / n) + '%' : '–');
 const days = t => {
   const d = Math.floor((Date.now() - t) / 864e5);
@@ -8348,6 +8382,16 @@ function statsPhotos() {
     strip = a => `<span class="adm-lanes">${lanes.map(v => lane(a, v)).join('')}</span>`;
   const table = (Rw, first) =>
     `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th title="The median photo: starting players who recognise it without guessing">Recognised</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${recBadge(r.m, {short: 1, of: 'the median photo', raw: 'median difficulty'})}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
+  // Far harder than their genus (farHarder), among the photos in play: the photo, its reading and its genus's, the gap.
+  const FH = farHarder(poolStats().play),
+    farCard = `<section class="adm-scard wide" data-pst="far"><h3>Far harder than their genus <small>${FH.length}</small></h3>${
+      FH.length
+        ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Photo</th><th title="Starting players who recognise it without guessing">Recognised</th><th title="A typical photo of its genus (genus offset)">Genus</th><th class="n" title="Its own part of the difficulty: logits above its genus">Gap</th><th class="n">Answers</th><th class="n">Right</th></tr></thead><tbody>${FH.map(
+            p =>
+              `<tr><td><button type="button" class="adm-link" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}"><i>${esc(p.genus)}</i> ${esc(VIEW_T[p.view] || '')}</button></td><td>${recBadge(p.d, {short: 1, raw: 'photo difficulty'})}</td><td>${recBadge(p.gd, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}</td><td class="n">${rawNum(p.r)}</td><td class="n">${p.a}</td><td class="n">${pct(p.ok, p.n)}</td></tr>`
+          ).join('')}</tbody></table></div>`
+        : `<p class="note">None: no photo in play is ${FAR.D} logits or more above its genus after ${FAR.N}+ answers.</p>`
+    }</section>`;
   const legend = `<p class="adm-legend">${Object.keys(VIEW_T)
     .filter(v => L.some(p => p.view === v))
     .map(v => `<span><i class="v-${v}"></i>${VIEW_T[v]}</span>`)
@@ -8380,6 +8424,7 @@ ${recScale(lo / 10, (hi + 1) / 10)}
     <section class="adm-scard"><h3>Sources</h3>${table(S, 'Source')}</section>
     <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="${esc(genusHref(r.k))}"><i>${esc(r.k)}</i></a><span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
       ${recScale(x0, x1, 'strip')}<p class="adm-axis strip"><span>${recPct(x0)}</span><span>easier · recognised by · harder</span><span>${recPct(x1)}</span></p></section>
+    ${farCard}
     </div>`;
   bindStats();
 }
