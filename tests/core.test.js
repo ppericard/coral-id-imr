@@ -526,6 +526,64 @@ test('Contributions (Q65): a family apart, three tiers; one per photo, Other onl
   assert.deepStrictEqual(mergeAch({_v: 2}, {_v: 1, _fb: ['r:q'], fb1: 3}, 2), {_v: 2, _fb: ['r:q']});
 });
 
+test('Your feedback helped (Q66): the reports sent, those the admin marked done thanked once, across devices', () => {
+  const {repsAdd, helpedDue, helpedMark, mergeAch, LIST_MAX, HELPED_GAP} = require('../core.js');
+  const T = 1e12,
+    take = (A, seen, t = T) => {
+      const ids = helpedDue(A, seen, t);
+      helpedMark(A, ids, t);
+      return ids;
+    };
+  const A = {};
+  assert.strictEqual(repsAdd(A, ['a1', 'a2', 'a1', 'BAD id', 3]), true);
+  assert.deepStrictEqual(A._rep, ['a1', 'a2', '3']);
+  assert.strictEqual(repsAdd(A, ['a2']), false, 'nothing new');
+  // Done in curation.json seen ('rep:<id>'); other seen keys never match.
+  const seen = {'rep:a2': 1, 'rep:zz': 1, a1: 1};
+  assert.deepStrictEqual(helpedDue(A, seen, T), ['a2'], 'the first report handled: at once');
+  assert.deepStrictEqual(helpedDue(A, seen, T), ['a2'], 'helpedDue changes nothing');
+  assert.deepStrictEqual(take(A, seen), ['a2']);
+  assert.strictEqual(A._thxAt, T);
+  assert.deepStrictEqual(take(A, seen, T + HELPED_GAP * 2), [], 'once');
+  // Handled in a PR (reports-handled.json) counts as Pierre's Done; other seen keys and bad ids never.
+  const {handledSeen} = require('../core.js');
+  assert.deepStrictEqual(handledSeen({'rep:a1': 1, 'cand:x': 1, 'rep:zz': 0}, {b2: {pr: 577, at: '2026-11-05'}, 'BAD id': {}}), {
+    'rep:a1': 1,
+    'rep:b2': 1
+  });
+  assert.deepStrictEqual(handledSeen(null, null), {});
+  assert.deepStrictEqual(helpedDue({_rep: ['b2']}, handledSeen({}, {b2: {pr: 577}}), T), ['b2']);
+  // Anti-spam (Pierre, 2026-11-05): within 7 days of the last thanks, nothing; then everything handled since, in one.
+  const more = {...seen, 'rep:a1': 1, 'rep:3': 1};
+  assert.deepStrictEqual(helpedDue(A, more, T + HELPED_GAP - 1), [], 'within the 7 days');
+  assert.deepStrictEqual(take(A, more, T + HELPED_GAP), ['a1', '3'], 'grouped, once the 7 days are over');
+  assert.deepStrictEqual(helpedDue({}, seen, T), []);
+  assert.deepStrictEqual(helpedDue(A, null, T), []);
+  // Thanked on one device: never again on another once their records meet; the latest thanks time of the two.
+  const B = {_rep: ['a2', 'b1'], _thxAt: 5},
+    M = mergeAch(B, {_rep: A._rep, _thx: A._thx, _thxAt: A._thxAt}, undefined);
+  assert.strictEqual(M._thxAt, T + HELPED_GAP);
+  assert.deepStrictEqual(helpedDue(M, {'rep:a2': 1, 'rep:b1': 1}, T + 3 * HELPED_GAP), ['b1']);
+  // 50 reports sent signed in and thanked, one more sent signed out on the device, then the sheet lists the 50 again:
+  // none thanked twice (Codex review #581: the lists' caps evicted a thanked id, which the sheet brought back).
+  const R = {},
+    S50 = Array.from({length: 50}, (_, i) => 's' + i),
+    done = Object.fromEntries([...S50, 'a1'].map(x => ['rep:' + x, 1]));
+  repsAdd(R, S50);
+  assert.strictEqual(take(R, done).length, 50);
+  repsAdd(R, ['a1']);
+  assert.deepStrictEqual(take(R, done, T + HELPED_GAP), ['a1']);
+  repsAdd(R, S50);
+  assert.deepStrictEqual(helpedDue(mergeAch({...R}, {_rep: S50}, undefined), done, T + 9 * HELPED_GAP), []);
+  const big = {};
+  repsAdd(
+    big,
+    Array.from({length: 150}, (_, i) => 'r' + i)
+  );
+  assert.deepStrictEqual([big._rep.length, big._rep[0]], [LIST_MAX._rep, 'r50'], 'the latest kept');
+  assert.ok(LIST_MAX._thx > LIST_MAX._rep, 'more thanked kept than sent');
+});
+
 test('achRevoke and mergeAch: learned-based achievements taken back stay so through merges, until earned again', () => {
   const {ACH_LEARN, achRevoke, mergeAch} = require('../core.js');
   assert.deepStrictEqual(ACH_LEARN, ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group']);

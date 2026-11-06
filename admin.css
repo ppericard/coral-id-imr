@@ -3022,6 +3022,18 @@ td.cov-c .cov-off {
 .adm-rep .adm-flagged {
   margin-top: 6px;
 }
+/* Reports handled in a PR (reports-handled.json): folded under the to-do list, one line each. */
+.adm-repspr {
+  margin: 4px 0 12px;
+}
+.adm-repspr summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.adm-repline {
+  margin: 4px 0;
+  font-size: var(--fs-s);
+}
 .adm-qhead:has([data-rload]) {
   display: flex;
   align-items: baseline;

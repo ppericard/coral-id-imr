@@ -15,11 +15,11 @@ test('points.json: every point has the right shape, ids unique', () => {
   assert.ok(J.points.length >= 20);
 });
 
-test('points.json: the Astrea question first, with its 4 photos to show, each in the app', () => {
+test('points.json: the Astrea question first, with its 7 photos to show, each in the app', () => {
   const p = J.points[0];
   assert.strictEqual(p.id, 'astrea-reefcloud');
   assert.strictEqual(p.kind, 'trainer');
-  assert.strictEqual(p.photos.length, 4);
+  assert.strictEqual(p.photos.length, 7);
   const D = read('data.json'),
     C = read('cand.json'),
     F = new Set();
@@ -29,7 +29,8 @@ test('points.json: the Astrea question first, with its 4 photos to show, each in
   walk(C);
   assert.deepStrictEqual(
     p.photos.map(x => x.t),
-    ['Astrea curta', 'Favites colemani', 'Plesiastrea peroni', 'Favites colemani']
+    // 5-7: the photos Pierre flagged in his reports of 2026-11-05 (two "?", one "Astrea?").
+    ['Astrea curta', 'Favites colemani', 'Plesiastrea peroni', 'Favites colemani', 'Astrea curta', 'Astrea curta', 'Favites valenciennesi']
   );
   p.photos.forEach(x => assert.ok(F.has(x.f), `${x.f} is not a photo of data.json or cand.json`));
   // Pierre's own F. colemani observation (iNaturalist 406194912) is the fourth.
