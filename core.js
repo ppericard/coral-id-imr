@@ -606,8 +606,8 @@
   // (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish), take the place of the
   // stopgap list (fish-photos.json, remote iNaturalist photos) entry by entry.
   // fishOn(F, f, sid): photo f is in play for species sid, F being curation.json fish: add names sid, the photo is neither
-  // rejected (seen) nor excluded, and its Not this (out), if set, names that same species (the admin's rule, PR 5b; the
-  // auto-sort counts its targets with it; tools/fish_game.py fish_on is its copy).
+  // rejected (seen) nor excluded, and its Not this (out), if set, names that same species (the admin's rule, Not this
+  // coming with admin plan PR 5b; tools/fish_game.py fish_on is its copy).
   const fishOn = (F, f, sid) => {
     const o = ((F && F.out) || {})[f];
     return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);

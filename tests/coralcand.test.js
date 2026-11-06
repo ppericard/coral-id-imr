@@ -203,7 +203,7 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
     sizes = job.indexOf('python tools/photos.py');
   assert.ok(files > 0 && files < sizes && sizes < tidy, 'a restored lecture photo: its file from history, its sizes, then back');
   assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
-  assert.match(job, /git add data\.json cand\.json excluded\.json img/);
+  assert.match(job, /git add data\.json cand\.json excluded\.json fish-game\.json img/);
 });
 
 // One full refill for genus A, near Dauin only (the other tiers answer nothing), against a stubbed iNaturalist.
