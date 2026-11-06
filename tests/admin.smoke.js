@@ -414,6 +414,74 @@ const WIDTHS = [390, 1280];
         await go(other.hash + 'photos/families/f%3ANone');
         u = await fu();
         if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Families: an unknown family ${JSON.stringify(u)}`);
+        // Fish Coverage (admin plan PR 8): Inbox › Coverage › Games on the fish side, per family, genus or species, To do
+        // and Where to look; the corals keep their grid.
+        await go(other.hash + 'inbox/coverage/games');
+        const cv = () =>
+          p.evaluate(() => ({
+            tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent.replace(/ \(\d+\)$/, '')),
+            views: document.querySelectorAll('#subnav .adm-views a').length,
+            rows: document.querySelectorAll('.adm-fishcovt tbody tr').length,
+            head: (document.querySelector('.adm-fishcovt thead th') || {}).textContent || '',
+            look: document.querySelectorAll('.adm-fishcov .cov-lk').length,
+            todo: document.querySelectorAll('.adm-ftodo [data-fishlv]').length,
+            coral: !!document.querySelector('.cov-t:not(.adm-fishcovt)'),
+            fams: FISHC && FISHC.units.length,
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        let c = await cv();
+        if (!c.tabs.includes('Coverage') || c.views || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
+          fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
+        if (once) {
+          await p.click('[data-fishlv="sp"][aria-pressed]');
+          c = await cv();
+          const nsp = await p.evaluate(
+            () => Object.values(FISHC.species).filter(s => !s.out && FISHC.units.some(u => u.species.includes(s.id))).length
+          );
+          if (c.head !== 'Species' || c.rows !== nsp) fails.push(`${w}px Fish Coverage, species: ${JSON.stringify({...c, nsp})}`);
+          await p.click('[data-fishlv="gen"][aria-pressed]');
+          c = await cv();
+          if (c.head !== 'Genus' || c.rows < 100) fails.push(`${w}px Fish Coverage, genera: ${JSON.stringify(c)}`);
+          await p.click('.adm-fishcov [data-fuimr="imr"]');
+          c = await cv();
+          const ng = await p.evaluate(() => FISHC.units.filter(u => u.imr || u.imrWith).reduce((a, u) => a + u.genera.length, 0));
+          if (c.rows !== ng) fails.push(`${w}px Fish Coverage, IMR genera: ${JSON.stringify({...c, ng})}`);
+          await p.click('.adm-fishcov [data-fuimr="all"]');
+          // A To do chip shows only its rows; a second click, every row again (Codex review #659).
+          // ...also under IMR: the chip's count is the rows it shows (Codex review #659).
+          await p.click('.adm-fishcov [data-fuimr="imr"]');
+          const ci = await p.evaluate(() => {
+            const b = document.querySelector('[data-fishtodo]');
+            return b && {k: b.dataset.fishtodo, n: parseInt(b.textContent, 10)};
+          });
+          if (ci) {
+            await p.click(`[data-fishtodo="${ci.k}"]`);
+            if ((await cv()).rows !== ci.n) fails.push(`${w}px Fish Coverage, To do ${ci.k} under IMR: not ${ci.n} rows`);
+            await p.click(`[data-fishtodo="${ci.k}"]`);
+          }
+          await p.click('.adm-fishcov [data-fuimr="all"]');
+          const chip = await p.evaluate(() => {
+            const b = document.querySelector('[data-fishtodo="spnone"]') || document.querySelector('[data-fishtodo]');
+            return b && {k: b.dataset.fishtodo, n: parseInt(b.textContent, 10)};
+          });
+          if (chip) {
+            await p.click(`[data-fishtodo="${chip.k}"]`);
+            c = await cv();
+            if (c.rows !== chip.n) fails.push(`${w}px Fish Coverage, To do ${chip.k}: ${c.rows} rows, not ${chip.n}`);
+            await p.click(`[data-fishtodo="${chip.k}"]`);
+            if ((await cv()).rows === chip.n && chip.n < 20)
+              fails.push(`${w}px Fish Coverage, To do ${chip.k}: the second click kept the filter`);
+          }
+          await p.click('[data-fishlv="fam"][aria-pressed]');
+          await go(other.hash + 'inbox/coverage/games?look=all');
+          const n5 = (await cv()).look;
+          await go(other.hash + 'inbox/coverage/games');
+          if ((await cv()).look > 5 || n5 < (await cv()).look) fails.push(`${w}px Fish Coverage, Where to look: ${n5} in full`);
+        }
+        await go('inbox/coverage/games');
+        c = await cv();
+        if (!c.coral || c.rows) fails.push(`${w}px Coverage on the corals' side: ${JSON.stringify(c)}`);
         // The corals have no Families tab, and its address says so.
         await go('photos/families');
         u = await fu();
