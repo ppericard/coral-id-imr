@@ -25,12 +25,8 @@
    "keep": "best"
   },
   "fish-s129-cand-743168191": {
-   "code": "p1g2smx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "The obvious fish is another kind, maybe a parrotfish"
+   "code": "o1g2mmx1",
+   "keep": "best"
   },
   "fish-s129-cand-606000773": {
    "code": "p1g1sl14",
@@ -110,6 +106,10 @@
   },
   "fish-s129-cand-591272046": {
    "code": "p1g2sms2",
+   "keep": "best"
+  },
+  "fish-s129-cand-fb-Luful_u3": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }

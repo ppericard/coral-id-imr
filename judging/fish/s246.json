@@ -55,6 +55,18 @@
   "fish-s246-cand-195001819": {
    "code": "p1g1sm13",
    "keep": "best"
+  },
+  "fish-s246-cand-fb-Habin_m0": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s246-cand-fb-Habin_u1": {
+   "code": "o1n0sl13",
+   "keep": "best"
+  },
+  "fish-s246-cand-fb-Habin_u0": {
+   "code": "p1n0sl13",
+   "keep": "best"
   }
  }
 }

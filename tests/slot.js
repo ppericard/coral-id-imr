@@ -1,5 +1,6 @@
 // The machine slot shared by every heavy run (rule W24): every Playwright script (tests/*.smoke.js, tests/calm.js,
-// tools/learnsim.js, tools/perf.js, tools/rtprep.js, tools/og/make_og.js), full unit-test runs and heavy tools (1b).
+// tools/learnsim.js, tools/perf.js, tools/rtprep.js, tools/og/make_og.js, tools/fish_draw_sim.js), full unit-test runs
+// and heavy tools (1b).
 //
 // 1. slot(name): at most SMOKE_SLOTS Playwright runs on this machine at once (default: one per 2 cores, at least 1), and
 //    none starts while the machine is already saturated (1-minute load average above LOAD x the cores: 8 on 4 cores; the

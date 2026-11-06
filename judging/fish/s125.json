@@ -109,15 +109,15 @@
    "keep": "best"
   },
   "fish-s125-cand-580500493": {
-   "code": "p1g1sl14",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Pale, short fish on sand: maybe a juvenile"
+   "code": "p1g0sl1j2",
+   "keep": "best"
   },
   "fish-s125-cand-29892074": {
    "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s125-cand-fb-Luruf_u0": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }

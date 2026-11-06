@@ -9,12 +9,8 @@
    "keep": "dup"
   },
   "fish-s448-cand-413589812": {
-   "code": "d0g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the moray for sure among the seagrass"
+   "code": "o0g1msx1",
+   "keep": "best"
   },
   "fish-s448-cand-106235102": {
    "code": "d0g1sm13",
@@ -53,12 +49,8 @@
    "keep": "dup"
   },
   "fish-s448-cand-541754479": {
-   "code": "p0g1sl13",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a clear container, not in the wild"
+   "code": "p0g0sl1a1",
+   "keep": "best"
   },
   "fish-s448-cand-541754582": {
    "code": "p0g1sl13",
@@ -169,12 +161,8 @@
    "keep": "dup"
   },
   "fish-s448-cand-594697587": {
-   "code": "d0g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the moray for sure among the seagrass"
+   "code": "o0g1msx1",
+   "keep": "best"
   },
   "fish-s448-cand-594697590": {
    "code": "d0g1ssxc1",

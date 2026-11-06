@@ -42,11 +42,7 @@
   },
   "fish-s201-cand-705116938": {
    "code": "p1g1smm3",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "The obvious fish may be another kind"
+   "keep": "best"
   },
   "fish-s201-cand-725490365": {
    "code": "p1g3bsx1",
@@ -130,6 +126,14 @@
   },
   "fish-s201-cand-711966587": {
    "code": "p1g3bsx1",
+   "keep": "best"
+  },
+  "fish-s201-cand-fb-Scriv_m1": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s201-cand-fb-Scriv_u0": {
+   "code": "p1g1sl14",
    "keep": "best"
   }
  }

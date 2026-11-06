@@ -21,12 +21,8 @@
    "keep": "best"
   },
   "fish-s401-cand-491069815": {
-   "code": "o1g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the fish for sure among the rubble"
+   "code": "d1g0smxc1",
+   "keep": "best"
   },
   "fish-s401-cand-332636774": {
    "code": "d1g2sl1c1",
@@ -65,12 +61,12 @@
    "keep": "dup"
   },
   "fish-s401-cand-512824269": {
-   "code": "o1g2sm1c1",
+   "code": "p1g1sl1c3",
    "keep": "best",
    "unsure": [
-    "keep"
+    "code"
    ],
-   "note": "A screenshot of a phone screen, with the app's buttons on the photo"
+   "note": "A screenshot of a phone screen, the app's buttons on it: never a game photo"
   },
   "fish-s401-cand-350331120": {
    "code": "h1g1sl1c2",

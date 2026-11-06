@@ -74,5 +74,6 @@ print(f'downloaded {done} into {OUT}/ (upload: tools/r2_sync.sh {OUT}), made rem
 # FishBase, into the same folder, and fish-game.json, which the fish game reads (tools/fish_game.py).
 if '--fish' in sys.argv:
     import fish_game
-    fish_done, fish_failed, fish_n = fish_game.run(OUT)
-    print(f'fish: downloaded {fish_done} into {OUT}/, {len(fish_failed)} failed; {fish_n} photos in fish-game.json')
+    fish_done, fish_failed, fish_n, fish_wait = fish_game.run(OUT)
+    print(f'fish: downloaded {fish_done} into {OUT}/, {len(fish_failed)} failed; {fish_n} photos in fish-game.json'
+          + (f'; {fish_wait} more wait for the next run (tools/fish_game.py MAX)' if fish_wait else ''))

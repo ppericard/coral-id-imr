@@ -41,12 +41,8 @@
    "keep": "best"
   },
   "fish-s308-cand-49774351": {
-   "code": "d1g0sm1a2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Dead fish on black sand? Out of water by its look"
+   "code": "d1n0sl1a1",
+   "keep": "best"
   },
   "fish-s308-cand-681577490": {
    "code": "p1g1sl14",
@@ -98,6 +94,10 @@
   },
   "fish-s308-cand-347765399": {
    "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s308-cand-fb-Patet_u0": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }
