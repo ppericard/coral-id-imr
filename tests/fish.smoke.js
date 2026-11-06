@@ -543,6 +543,38 @@ const server = http.createServer((req, res) => {
     if (gp.name !== 'Chromis' || gp.tips !== 2 || gp.tiles !== 13 || gp.sib < 2 || !/genus/.test(gp.bar))
       ui.push(`${width}px genus page: ${JSON.stringify(gp)}`);
     await wide('a genus page');
+    // A species tile opens its species sheet (scientific name first, its common name, badges, photos, the other species of
+    // its genus); a genus with one species opens that species' sheet (option B).
+    await q.click('#view .ftiles a.ftile');
+    await q
+      .waitForFunction(() => location.hash.startsWith('#fish/learn/species/') && document.querySelector('#view .fbadges'), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const ss = await q.evaluate(() => ({
+      hash: location.hash,
+      name: (document.querySelector('#view .fn-t') || {}).textContent || '',
+      badges: document.querySelectorAll('#view .fbadges .chip').length,
+      fam: !!document.querySelector('#view .fbadges a[href="#fish/learn/family/Damselfishes"]'),
+      photo: !!document.querySelector('#view .fphotos img, #view .fphotos .nofish'),
+      sib: document.querySelectorAll('#view .ftiles a.ftile').length,
+      bar: (document.querySelector('#modes .ctx-t') || {}).textContent || ''
+    }));
+    if (
+      !/^Chromis /.test(ss.name) ||
+      decodeURIComponent(ss.hash) !== '#fish/learn/species/' + ss.name ||
+      ss.badges < 3 ||
+      !ss.fam ||
+      !ss.photo ||
+      ss.sib !== 12 ||
+      !ss.bar.includes(ss.name)
+    )
+      ui.push(`${width}px species sheet: ${JSON.stringify(ss)}`);
+    await wide('a species sheet');
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Zanclus'));
+    await q.waitForFunction(() => location.hash === '#fish/learn/species/Zanclus%20cornutus', null, {timeout: 15000}).catch(() => {});
+    const zh = await q.evaluate(() => location.hash);
+    if (zh !== '#fish/learn/species/Zanclus%20cornutus') ui.push(`${width}px a one-species genus: ${zh}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
