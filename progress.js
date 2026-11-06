@@ -165,11 +165,11 @@ function quizBoard() {
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
-  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
+  <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the ${SUBJ.one}: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
   <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.filter(met).length}/${list.length} met`)}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
-    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor</p>
+    <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
     ${
       introLeft().length
         ? `<div class="popen"><p><b>Had ${SUBJ.lecture}?</b> ${introLeft().length} ${SUBJ.many} are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all ${SUBJ.many}</button></div>`
@@ -1159,6 +1159,68 @@ function sorryNotice() {
     enter: 1,
     onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
   });
+}
+// The cards that tell a player about a subject (app.js UNITS hello), one per way the subject opens (core.js SUBJECTS open,
+// subjGroup): hello.group while it opens to a group, hello.all once it opens to everyone (none yet: Pierre will open fish
+// to all himself, and its "Big news" card comes then). Pierre, 2026-11-05: "a proper card the player closes, shown once,
+// at a calm moment", not a toast, which may go unread; 2026-11-06: while fish stays open to a group he picks, the card is
+// an invitation to test the fish beta, for the players of that group only.
+// Each card is seen once per device, under its own key (subjDev: reefid-fish-hello-group), so a later card is not hidden
+// by an earlier one. hello.group goes only to a player in the subject's group (subjGroups: never the admin's own access,
+// IS_ADMIN, nor anyone while the subject is open to all); hello.all to anyone the subject is open to (subjOpen). Never in
+// the admin's browser (as the tour), and only to a player settled in the subject on screen (the corals): at least
+// HELLO.MIN answers (a new player meets the switch with the tour and the first questions). A player who has played the
+// subject already (it is on screen, its welcome question is answered, or it has progress) is never told: marked seen at
+// once. The calm moment: Home, HELLO.WAIT after it is drawn and still on it, nothing else on screen (the tour, a card, a
+// toast, the help, ⚙, an enlarged photo) and the prompt spacing met (quiz.js promptOk, which it then pushes back as the
+// other prompts do). Not calm: tried again at the next Home. Seen by either button or Escape; leaving the page closes it
+// unseen and it comes back at the next calm Home. "Try fish" switches to the subject and opens its quiz (its welcome
+// question first, quiz.js startGate).
+const HELLO = {KEY: 'hello-', MIN: 10, WAIT: 1500};
+// The way S opens ('group' or 'all'): the name of its card in UNITS hello and of the card's seen mark.
+const helloMode = S => (subjGroup(S) ? 'group' : 'all');
+// 'show', 'met' (mark it seen, say nothing), or '' (not now). Pure on its inputs: tests call it.
+const helloDue = ({card, member, admin, seen, met, answers}) =>
+  !card || !member || admin || seen ? '' : met ? 'met' : answers >= HELLO.MIN ? 'show' : '';
+let helloT = 0;
+function subjHello() {
+  clearTimeout(helloT);
+  const home = () => (hashNow() || 'home') === 'home';
+  if (!home()) return;
+  // The 'all' card is the beta invitation: only while the subject keeps its beta label (SUBJECTS beta).
+  const card = S => (helloMode(S) === 'all' && !S.beta ? null : (UNITS[S.id].hello || {})[helloMode(S)]),
+    member = S => (helloMode(S) === 'group' ? subjGroups().includes(S.id) : subjOpen(S));
+  const S = SUBJECTS.find(x => card(x) && member(x)); // a subject with a card for the player, never by its place
+  if (!S) return;
+  const H = card(S),
+    key = subjDev(S.id, HELLO.KEY + helloMode(S)),
+    P2 = store.get(subjKey(S.id, 'progress'), null),
+    due = helloDue({
+      card: H,
+      member: member(S),
+      admin: HAS_ADMIN_TOKEN,
+      seen: !!store.get(key, null),
+      met: SUBJ === S || !!store.get(startKey(S.id), null) || !!(P2 && typeof P2 === 'object' && Object.keys(P2).length),
+      answers: answersSoFar() // the subject on screen's, another subject than S (met otherwise)
+    });
+  if (due === 'met') return void store.set(key, 'met');
+  if (due !== 'show') return;
+  helloT = setTimeout(() => {
+    const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .hello');
+    if (!home() || busy || store.get(key, null) || !member(S) || !promptOk()) return;
+    promptMark();
+    const seen = () => store.set(key, Date.now());
+    cardShow({
+      kind: S.card,
+      cls: 'hello',
+      kick: H.kick,
+      title: H.title,
+      body: H.body,
+      primary: {text: `Try ${esc(S.name.toLowerCase())}`, on: () => (seen(), setSubject(S.id).then(() => (location.hash = hr('quiz'))))},
+      secondary: {text: 'Later', on: seen},
+      esc: 2
+    });
+  }, HELLO.WAIT);
 }
 // A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by
 // ✕ or after ms.
