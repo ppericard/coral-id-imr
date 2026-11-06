@@ -92,3 +92,24 @@ test('the family sheets lines (tools/fish_sheets.json): families of fish.json, e
     assert.deepStrictEqual(by[id].msrc, x.src, `${id} sources in fish.json`);
   }
 });
+
+test('size and depth facts (tools/fish_facts.json): Reef Life Survey, else FishBase, each with its source, built into fish.json', () => {
+  const X = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_facts.json'), 'utf8')),
+    sp = Object.fromEntries(F.species.map(s => [s.id, s]));
+  for (const [id, x] of Object.entries(X)) {
+    assert.ok(sp[id], id);
+    if (x.len != null) {
+      assert.ok(x.len > 0 && x.len < 2000 && ['rls', 'fishbase'].includes(x.lsrc), `${id} size`);
+      assert.ok(x.lsrc !== 'rls' || x.rls, `${id}: its Reef Life Survey page`);
+      assert.ok(x.lsrc !== 'fishbase' || x.fb, `${id}: its FishBase page`);
+      assert.strictEqual(sp[id].size.len, x.len, `${id} size in fish.json`);
+      assert.ok(/^https:\/\/(reeflifesurvey\.com|www\.fishbase\.se)\//.test(sp[id].size.src.u), id);
+    }
+    if (x.dep) {
+      assert.ok(x.dep.length === 2 && x.dep[0] <= x.dep[1] && ['rls', 'fishbase'].includes(x.dsrc), `${id} depth`);
+      assert.deepStrictEqual(sp[id].depth.m, x.dep, `${id} depth in fish.json`);
+    }
+  }
+  // Reef Life Survey first: FishBase only where it gives nothing.
+  assert.ok(Object.values(X).some(x => x.lsrc === 'rls'));
+});

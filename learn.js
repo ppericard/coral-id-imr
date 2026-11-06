@@ -961,15 +961,41 @@ function fishGenusRow(g, flat) {
 // The family ID marks and the behaviour, habitat and size lines (study F4b, F9; Pierre, Q11), written in our words from
 // the sources the family lists (tools/fish_sheets.json, built into fish.json: marks, life, msrc), published at once
 // (Pierre, 2026-11-06 16:54: he corrects them in place), with their sources and a report link right under them.
+// The size and depth of a species (fish.json species size, depth: Reef Life Survey, else FishBase; Pierre, Q6), each
+// with its source: "Up to 10 cm · 1-36 m deep". '' when neither was fetched (never a value of our own).
+// FishBase's length types other than total length (species LTypeMaxM), in words.
+const LTYPE = {SL: 'standard length', FL: 'fork length', WD: 'disc width', OT: '(another measure)'};
+const srcA = x => `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`;
+const spFacts = s => {
+  const z = s.size,
+    d = s.depth;
+  if (!z && !d) return '';
+  const same = z && d && z.src.u === d.src.u;
+  return `<p class="ffacts">${z ? `Up to ${z.len} cm${z.lt ? ' ' + esc(LTYPE[z.lt] || z.lt) : ''}${same ? '' : ` <small>(${srcA(z.src)})</small>`}` : ''}${z && d ? ' · ' : ''}${
+    d ? `${d.m[0]}-${d.m[1]} m deep <small>(${srcA(d.src)})</small>` : ''
+  }</p>`;
+};
+// The range of its species' largest sizes, on the family sheet (study F9): "Its species reach 8 to 35 cm".
+const famSizes = f => {
+  const L = famSpecies(f)
+    .map(s => s.size && s.size.len)
+    .filter(x => x > 0);
+  if (!L.length) return '';
+  const a = Math.min(...L),
+    b = Math.max(...L);
+  return `<li>${L.length > 1 && a !== b ? `Its species reach ${a} to ${b} cm` : `Up to ${b} cm`} <small>(the largest size of each species: Reef Life Survey, else FishBase; ${L.length} of ${famSpecies(f).length} species)</small></li>`;
+};
 const fishMarks = f =>
-  (f.marks || []).length || (f.life || []).length
+  (f.marks || []).length || (f.life || []).length || famSizes(f)
     ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${
-        (f.life || []).length
-          ? `<h3>Behaviour, habitat, size</h3><ul class="crit">${f.life.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+        (f.life || []).length || famSizes(f)
+          ? `<h3>Behaviour, habitat, size</h3><ul class="crit">${(f.life || []).map(x => `<li>${esc(x)}</li>`).join('')}${famSizes(f)}</ul>`
           : ''
-      }<p class="note msrc">Sources: ${(f.msrc || [])
+      }<p class="note msrc">${(f.msrc || []).length ? 'Sources: ' : ''}${(f.msrc || [])
         .map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)))
-        .join('; ')} · ${repBtn({k: 'sheet', g: f.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`
+        .join(
+          '; '
+        )}${(f.msrc || []).length ? ' · ' : ''}${repBtn({k: 'sheet', g: f.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`
     : '';
 // The family sheet (study §3.2: F1 names, F2 my progress, F3 hero, F4 IMR tips, F5 look-alikes, F6 genera, F7 species
 // when the family has one genus, F8 juveniles and phases, F10 report).
@@ -1128,6 +1154,7 @@ function fishSpecies(s) {
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${s.common ? `<p class="fn-s">${esc(s.common)}</p>` : ''}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i></a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
+    ${spFacts(s)}
     ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} around Dauin, by how often it is met.</p>` : ''}
     ${
       shown.length
