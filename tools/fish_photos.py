@@ -9,12 +9,15 @@ the pipeline's goal, not this script's: here the photos come as iNaturalist rank
 
 For each level-1 teaching entry of fish.json (every circle, winks too), the observations of its species in the game
 (species without `out`), in this order (rules S2 and P1):
-  1. Pierre's own observations (iNaturalist user ppericard) identified to the species, even Needs ID (Pierre,
-     2026-11-03: he names a species only when very sure; his only, nobody else's), whatever their licence (his photos);
-  2. Research Grade observations in the Philippines with a CC0 or CC BY photo, then CC BY-NC; never a share-alike
+  1. Research Grade observations in the Philippines with a CC0 or CC BY photo, then CC BY-NC; never a share-alike
      licence nor an ND one (Pierre's rules, 2026-11-03; a crop is a derivative);
-  3. when that leaves an entry short: Research Grade observations anywhere, same licence order (its species are all
+  2. when that leaves an entry short: Research Grade observations anywhere, same licence order (its species are all
      confirmed in the Philippines: fish.json keeps the others out of the game).
+Pierre's own observations (iNaturalist user ppericard) identified to the species are usable even Needs ID (Pierre,
+2026-11-03: he names a species only when very sure; his only, nobody else's), whatever their licence (his photos).
+Every compatible photo of his is in the list (Pierre, 2026-11-06, Q148: never left out, never boosted; his_ok), all of
+an observation's compatible photos, and they take none of the other observers' PER places (until then his came first
+and filled them).
 Within each step the species take turns in fish.json order (the PDF cheatsheet's most sighted first), so an entry's
 photos spread over its species; at most PER observations per entry, one photo per observation (its first one, the one
 the observer chose), since a quiz question shows one observation (rule P4).
@@ -31,7 +34,8 @@ photo passes every game photo rule all the same (Pierre, 2026-11-05: "if they do
 them"): licence CC0, CC BY or CC BY-NC (Pierre's own: any), Research Grade or Pierre's own identified to the species,
 taken in the Indo-West Pacific box of tools/fetch_fish.py (the Philippines are inside it), never captive, never
 annotated Dead. For each species of SHEET, in this order: its iNaturalist cover (the taxon's default photo), the taxon's
-other photos (those iNaturalist shows on the taxon page, in its order), then its observations, Pierre's own first, each
+other photos (those iNaturalist shows on the taxon page, in its order), then its observations in iNaturalist's order
+(Pierre's own with no priority since 2026-11-06), each
 taken only when it passes those rules on the observation that holds it (a photo with no observation found is not
 taken); then FishBase (tools/fetch_fishbase.py, the same rules: underwater, CC BY-NC as FishBase states it, the box),
 its main picture first (from: fishbase, via: fishbase); none, and the species stays without a photo (its future sheet
@@ -99,56 +103,104 @@ def ratio(p):
     return round(dim["width"] / dim["height"], 3) if dim.get("width") and dim.get("height") else None
 
 
+def photo_of(o, p, sp):
+    """Photo p of observation o as a photo object, or None (no original URL)."""
+    lic = (p.get("license_code") or "").lower()
+    url = (p.get("url") or "").replace("/square.", "/original.")
+    if "/original." not in url:
+        return None
+    out = {"f": f"fi{p['id']}", "o": f"https://www.inaturalist.org/observations/{o['id']}", "src": url, "r": 1,
+           "a": p.get("attribution") or "", "lic": lic or "c", "t": (o.get("taxon") or {}).get("name", ""), "sp": sp,
+           "loc": where(o)}
+    if (o.get("user") or {}).get("login") == bf.PIERRE:
+        out["own"] = True
+    if ratio(p):
+        out["ar"] = ratio(p)
+    return out
+
+
 def photo(o, sp, lic_ok):
     """The observation's first photo with an accepted licence, as a photo object, or None."""
     for p in o.get("photos") or []:
-        lic = (p.get("license_code") or "").lower()
-        if not lic_ok(lic):
-            continue
-        url = (p.get("url") or "").replace("/square.", "/original.")
-        if "/original." not in url:
-            continue
-        ar = ratio(p)
-        loc = where(o)
-        out = {"f": f"fi{p['id']}", "o": f"https://www.inaturalist.org/observations/{o['id']}", "src": url, "r": 1,
-               "a": p.get("attribution") or "", "lic": lic or "c", "t": (o.get("taxon") or {}).get("name", ""), "sp": sp,
-               "loc": loc}
-        if (o.get("user") or {}).get("login") == bf.PIERRE:
-            out["own"] = True
-        if ar:
-            out["ar"] = ar
-        return out
+        if lic_ok((p.get("license_code") or "").lower()):
+            out = photo_of(o, p, sp)
+            if out:
+                return out
     return None
 
 
+def mine(o):
+    return (o.get("user") or {}).get("login") == bf.PIERRE
+
+
+# What Pierre decided on fish photos (curation.json) and what the judging pass said (tools/fish_judge.json codes,
+# suggest.json "fish"), read once by his_ok: loaded by main(); empty in a test unless given.
+DECIDED = {"gone": set(), "codes": {}, "sug": {}}
+
+
+def load_decided(root=None):
+    """The iNaturalist photo ids Pierre rejected, excluded or moved with Not this (curation.json fish seen, exclude,
+    out; the top-level exclude), the game photos' judged codes by photo id and the candidates' judgements by photo id."""
+    root = root or ROOT
+    pid = lambda f: str(f).rsplit("-", 1)[-1].removeprefix("fi")  # noqa: E731
+    cur = json.loads((root / "curation.json").read_text(encoding="utf-8")) if (root / "curation.json").exists() else {}
+    fish = cur.get("fish") or {}
+    gone = {pid(f) for k in ("seen", "exclude", "out") for f in (fish.get(k) or {})} | {pid(f) for f in cur.get("exclude") or {}}
+    codes = {pid(f): c for f, c in fish_judge.load_src()[0].items()}
+    sug = json.loads((root / "suggest.json").read_text(encoding="utf-8")).get("fish", {}) if (root / "suggest.json").exists() else {}
+    DECIDED.update(gone=gone, codes=codes, sug={pid(f): v for f, v in sug.items()})
+
+
+def his_ok(p, o, inat):
+    """Pierre's photo p of his observation o of iNaturalist taxon inat is compatible (Pierre, 2026-11-06, Q148): it passes
+    the game photo rules (sheet_ok: identified to this species, even Needs ID; any licence, his; the Indo-West Pacific
+    box; never captive or Dead), he did not reject, exclude or move it (curation.json), and the judging rubric does not
+    set it aside (judging/FISH.md: a near-duplicate of its observation's best photo, an unclear subject, out of the
+    water). Such a photo is always in the pool."""
+    if not mine(o) or not sheet_ok(p, o, inat):
+        return False
+    i = str(p["id"])
+    if i in DECIDED["gone"]:
+        return False
+    j = DECIDED["sug"].get(i) or {}
+    code = DECIDED["codes"].get(i) or j.get("jt") or ""
+    return j.get("k") != "dup" and code[6:7] != "x" and "a" not in code[7:].rstrip("12345")
+
+
 def entry(node, species):
-    """The photos of one teaching entry: steps in order, species taking turns, at most PER observations."""
+    """The photos of one teaching entry. Pierre's own (Pierre, 2026-11-06, Q148): every compatible photo of his
+    observations (his_ok), whatever their number, never left out and never boosted: they take no room. Then the other
+    observers', steps in order, species taking turns, at most PER observations, one photo each (its first)."""
     sp = [s for s in (species[i] for i in node.get("species", [])) if not s.get("out") and s.get("inat")]
     if not sp:
         return []
     by_taxon = {s["inat"]: s for s in sp}
     taxa = [s["inat"] for s in sp]
+    tx = lambda o: (o.get("taxon") or {}).get("min_species_taxon_id") or (o.get("taxon") or {}).get("id")  # noqa: E731
+    got, seen = [], set()
+    for o in sorted(obs(taxa, f"user_login={bf.PIERRE}&hrank=species&lrank=species"), key=lambda o: -o["id"]):
+        if tx(o) in by_taxon and o["id"] not in seen:
+            seen.add(o["id"])
+            got += [x for x in (photo_of(o, p, by_taxon[tx(o)]["id"]) for p in o.get("photos") or [] if his_ok(p, o, tx(o))) if x]
     steps = [
-        (f"user_login={bf.PIERRE}&hrank=species&lrank=species", lambda lic: True),
         (f"quality_grade=research&place_id=6873&photo_license={LIC1}", lambda lic: lic in LIC1.split(",")),
         (f"quality_grade=research&place_id=6873&photo_license={LIC2}", lambda lic: lic in LIC2.split(",")),
         (f"quality_grade=research&photo_license={LIC1}", lambda lic: lic in LIC1.split(",")),
         (f"quality_grade=research&photo_license={LIC2}", lambda lic: lic in LIC2.split(",")),
     ]
-    got, seen = [], set()
+    n = 0  # the other observers' photos: PER at most
     for k, (q, ok) in enumerate(steps):
-        if len(got) >= PER:
+        if n >= PER:
             break
-        if k >= 3 and len(got) >= PER // 2:  # worldwide only for an entry left short in the Philippines
+        if k >= 2 and n >= PER // 2:  # worldwide only for an entry left short in the Philippines
             break
         queues = {t: [] for t in taxa}
-        for o in obs(taxa, q):
-            t = (o.get("taxon") or {}).get("min_species_taxon_id") or (o.get("taxon") or {}).get("id")
-            if t in queues and o["id"] not in seen:
-                queues[t].append(o)
-        while len(got) < PER and any(queues.values()):
+        for o in sorted(obs(taxa, q), key=lambda o: -o["id"]):  # iNaturalist's order, the newest first
+            if tx(o) in queues and o["id"] not in seen and not mine(o):
+                queues[tx(o)].append(o)
+        while n < PER and any(queues.values()):
             for t in taxa:
-                if len(got) >= PER:
+                if n >= PER:
                     break
                 while queues[t]:
                     o = queues[t].pop(0)
@@ -156,6 +208,7 @@ def entry(node, species):
                     if p:
                         seen.add(o["id"])
                         got.append(p)
+                        n += 1
                         break
     return got
 
@@ -189,7 +242,7 @@ def sheet_pick(taxon, observations):
     for p, src in [(taxon.get("default_photo"), "cover")] + [(tp.get("photo"), "taxon") for tp in taxon.get("taxon_photos") or []]:
         if p and sheet_ok(p, held.get(p.get("id")), inat):
             return p, held[p["id"]], src
-    for o in sorted(observations, key=lambda o: (o.get("user") or {}).get("login") != bf.PIERRE):  # Pierre's own first
+    for o in observations:  # iNaturalist's order, whoever observed (Pierre, 2026-11-06: his own take no priority)
         for p in o.get("photos") or []:
             if sheet_ok(p, o, inat):
                 return p, o, "obs"
@@ -286,6 +339,7 @@ def main():
         fish_judge.write(doc)
         return
     species = {s["id"]: s for s in F["species"]}
+    load_decided()
     photos = {}
     try:
         for t in F["teach"]:

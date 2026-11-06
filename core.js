@@ -224,6 +224,9 @@
   //           #fish/inbox/todo/reports; routeOut, routeIn, admin.js subjOfHash)
   //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js; fish: no claim about what tells
   //           them apart)
+  //   tiers   its photo sources rank its photos (rule P1: IMR lecture photos, then Pierre's own, then other observers):
+  //           the draw's bonus for a core photo never seen (app.js isCore, model.js photoSet). Off for fish (Pierre,
+  //           2026-11-06: his photos are never forced or boosted; the ease and reference look place them, core.js easyRank)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
   const SUBJECTS = [
@@ -248,6 +251,7 @@
       optin: ['bon'],
       rank: 'genus',
       replay: true,
+      tiers: true,
       ach: true,
       board: true,
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
@@ -382,9 +386,8 @@
   // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
   // surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
-  // cover: the card's photo (app.js cover): within the highest source tier that has photos (rule P1: Pierre's own
-  // before other observers', Codex review #461), the easiest judged one (fish-photos.json e, judging/FISH.md), the list's
-  // first among equals; the list's first when none is judged.
+  // views.wide in easyRank order (below): the easiest, most reference-like photo first, whoever took it; cover: the
+  // card's photo (app.js cover), the first of that order (Pierre, 2026-11-06: no source tier any more).
   // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos (Pierre, 2026-11-05: a species with no
   // game photo may keep one for its sheet, never in the quiz or any game, passing the game photo rules all the same;
   // tools/fish_photos.py SHEET).
@@ -392,17 +395,40 @@
   // every game draw reads views.wide (model.js photoSet, app.js fishGenera), so none can show it. The result's sheet
   // holds them by species ({species id: [photo]}), for a species sheet to show (none yet: docs/ARCHITECTURE.md "Fish content").
   const sheetOnly = p => !!p && p.use === 'ref';
+  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
+  // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
+  // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
+  // juvenile, camouflage or out of the water. 0 for a photo with no tags. Ties only: the ease ranks first (easyRank).
+  const REF = {rep: 8, good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
+  function refScore(jt) {
+    const c = String(jt || '');
+    if (c.length < 7) return 0;
+    const fl = c.slice(7).replace(/\d+$/, '');
+    return (
+      (fl.includes('r') ? REF.rep : 0) +
+      REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) -
+      [...REF.bad].filter(x => fl.includes(x)).length
+    );
+  }
+  // The order a unit's photos are met in when the order matters (the card's photo, the list's first photo, the sheets),
+  // Pierre, 2026-11-06: "the first photos a player sees, by whatever mechanism, must be easy, near-reference photos";
+  // his own photos stay but are never forced or boosted, so the source never ranks. d(p): the photo's difficulty, lower
+  // = easier: by default its judged ease (fish-photos.json e, judging/FISH.md; the curated ease once the game reads his
+  // curation), a photo with none as a middle one (3); app.js passes model.js photoDiff, which blends the ease with the
+  // players' answers once they are logged. Then the most reference-like (refScore), then a fixed hash of the photo's
+  // file name: the list's order says who took a photo (tools/fish_photos.py lists Pierre's first), so it never decides.
+  const fHash = f => [...String(f)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+  function easyRank(L, d = p => -(p.e || 3)) {
+    return (L || [])
+      .map(p => ({p, d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
+      .sort((a, b) => a.d - b.d || b.r - a.r || a.h - b.h)
+      .map(x => x.p);
+  }
   function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
       start = new Set(F.start || []),
-      top = id => String(id).slice(0, 3),
-      tier = p => (p.own ? 0 : 1),
-      easiest = L => {
-        const t = Math.min(...L.map(tier)),
-          T = L.filter(p => tier(p) === t);
-        return T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
-      };
+      top = id => String(id).slice(0, 3);
     (F.teach || [])
       .filter(t => t.level === 1)
       .forEach(t => {
@@ -430,9 +456,11 @@
           levels: 1,
           // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
           views: {
-            wide: ((photos || {})[t.id] || [])
-              .filter(p => p && p.f && p.src && !sheetOnly(p))
-              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+            wide: easyRank(
+              ((photos || {})[t.id] || [])
+                .filter(p => p && p.f && p.src && !sheetOnly(p))
+                .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+            )
           },
           ...(start.has(t.id) ? {first: 1} : {}),
           ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
@@ -440,7 +468,7 @@
         };
       });
     Object.values(gen).forEach(g => {
-      if (g.views.wide.some(p => p.e)) g.cover = easiest(g.views.wide);
+      if (g.views.wide.length) g.cover = g.views.wide[0].f;
     });
     const ids = Object.keys(gen),
       play = n => !gen[n].wink,
@@ -3655,6 +3683,8 @@
     subjKey,
     subjDev,
     fishGen,
+    easyRank,
+    refScore,
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
