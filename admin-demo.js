@@ -15,7 +15,7 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v58: Archive, the archived list; v55: a delete cleans up everything of the account, the
+    // The script version the demo answers as: the current one (v81, with ?demo&v=81: each player's photo exposure, ex; v58: Archive, the archived list; v55: a delete cleans up everything of the account, the
     // answers it keeps flagged 2; v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
     // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; rule D4).
@@ -571,7 +571,16 @@
       pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], 'learn.genera': [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
     pages.sort((a, b) => b[1] - a[1]);
-    S = {rows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D)};
+    S = {rows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}};
+    // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
+    if (V >= 81)
+      await Promise.all(
+        SUBJECTS.filter(X => X.pool).map(X =>
+          Promise.all(X.pool.files.map(f => real(f, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
+            .then(F => (S.pools[X.id] = unitPool(X, F)))
+            .catch(() => {})
+        )
+      );
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
@@ -794,6 +803,16 @@
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
       });
     }
+    // v81 (Code.gs exposure_): each player's photo exposure per subject, ex {subject id: [seen, of, hit, asked, units]}.
+    if (V >= 81)
+      SUBJECTS.forEach(X => {
+        if (!S.pools[X.id]) return;
+        const E = exposureOf(
+          subjRows(S.rows, X.id).map(r => [lc(r[0]), r[1], r[2], r[3], r[4], r[5], r[6]]),
+          S.pools[X.id]
+        );
+        Object.keys(E).forEach(k => by[k] && ((by[k].ex = by[k].ex || {})[X.id] = E[k]));
+      });
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse(), ...(V >= 58 ? {archived} : {})};
   }
   function users(p) {
