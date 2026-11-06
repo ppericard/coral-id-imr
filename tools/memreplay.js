@@ -118,8 +118,10 @@ if (dif.length) {
 
 // App side, per player: core.js replayProgress, the full replay the admin shows (docs/LEARNING.md "Full replay"), under
 // the rule before the photo memory (memory: false) and today's. The opening hold (model.js holdNext, INTRO.SLACK 0.1) on
-// each rule's expectation, from the difficulty the replay recovers.
-const opts = {gen: GEN, mem: MEMV, conf: C.confusionOf(rows).pair},
+// each rule's expectation, from the difficulty the replay recovers. The bar of the moving average (dom: false, the rules
+// before version 7): this tool measures the photo memory's silent recalculation of s.pg (core.js memRecalc), which the
+// domain-score bar does not need.
+const opts = {gen: GEN, mem: MEMV, conf: C.confusionOf(rows).pair, dom: false},
   hold = {},
   run = memory =>
     C.replayProgress(rows, {

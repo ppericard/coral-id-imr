@@ -582,7 +582,61 @@
       pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], 'learn.genera': [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
     pages.sort((a, b) => b[1] - a[1]);
-    S = {rows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}};
+    // Another subject's answers (sheet v60 logs every subject's, column Subject): a few players on the second subject's
+    // first circle, with its own random numbers so the rest of the demo stays the same. Kept apart (frows): the sheet's
+    // own numbers (levels, the replay, the player list's counts) are the replayed subject's only; readAnswers serves both.
+    // Ben played it last (his Journey opens on it from Players), Ana a little, Mara once.
+    const frows = [],
+      FS = SUBJECTS.find(x => !x.replay);
+    if (V >= 60 && FS) {
+      const [fj, fp] = await Promise.all(['fish.json', 'fish-photos.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json())));
+      let fs = 11;
+      const frnd = () => (fs = (fs * 1103515245 + 12345) % 2147483648) / 2147483648,
+        E = fj.teach.filter(e => e.circle === 1 && (fp.photos[e.id] || []).length).map(e => e.id),
+        fpick = a => a[Math.floor(frnd() * a.length)];
+      [
+        ['Ben Demo', 0.55, 48, 1.2, NOW - 40 * 60e3],
+        ['Ana Demo', 0.8, 30, 4, NOW - 3 * DAY],
+        ['Mara Demo', 0.4, 9, 6, NOW - 6 * DAY]
+      ].forEach(([name, skill, n, days, end]) =>
+        [...Array(n)].forEach((_, i) => {
+          // The first half in three sessions over the days before, the second half one session ending at end, 30 s apart.
+          const h = Math.ceil(n / 2),
+            b = Math.ceil(h / 3),
+            t = i < h ? end - days * DAY + (Math.floor(i / b) * days * DAY) / 3 + (i % b) * 30e3 : end - (n - 1 - i) * 30e3,
+            g = fpick(E.slice(0, Math.min(E.length, 4 + Math.floor(i / 6)))),
+            ch = [g];
+          while (ch.length < 4) {
+            const x = fpick(E);
+            if (!ch.includes(x)) ch.push(x);
+          }
+          const right = frnd() < skill + Math.min(0.2, i * 0.01),
+            ans = right ? g : fpick(ch.slice(1));
+          frows.push([
+            name,
+            Math.round(t),
+            g,
+            ans,
+            right ? 1 : 0,
+            'quiz',
+            fpick(fp.photos[g]).f,
+            'demof' + frows.length,
+            0.6,
+            0,
+            0,
+            ch.join(' '),
+            4 + Math.round(frnd() * 80) / 10,
+            0,
+            null,
+            null,
+            null,
+            null,
+            FS.id
+          ]);
+        })
+      );
+    }
+    S = {rows, frows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}};
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     if (V >= 81)
       await Promise.all(
@@ -592,6 +646,7 @@
             .catch(() => {})
         )
       );
+
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
@@ -601,21 +656,33 @@
     // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}};
+      // The domain-score bar from the script version that replays it (core.js DOM_SHEET), as the real admin.
+      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, dom: V >= DOM_SHEET};
     const rep = replayProgress(A, opt);
     const savedOf = (u, R) => {
       const old = JSON.parse(u.data['reefid-sync-coral-progress']),
         P = {};
       Object.entries(R).forEach(([g, r]) => {
         if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
-        // A mark the game would have taken away at a later miss (core.js mxKeeps; the replay's lm) is not in the copy the
+        // A mark the game would have taken away at a later miss (core.js keepsMark; the replay's lm) is not in the copy the
         // app saved.
         const o = {...(old[g] || {})};
         if (o.mx && r.lm > o.mx) delete o.mx;
         P[g] =
           u.name === 'Dio Demo'
             ? {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, L: Math.round(Math.min(0.97, 0.2 + 0.12 * r.ok) * 100) / 100}
-            : {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, pg: r.pg, ps: r.ps, off: r.off, conf: r.conf, pm: 1, ...(o.mx ? {mx: o.mx} : {})};
+            : {
+                ok: r.ok,
+                ko: r.ko,
+                h: r.h,
+                th: o.th || 0,
+                ...(domOn(r) ? {dp: r.dp, ds: r.ds} : {pg: r.pg}),
+                ps: r.ps,
+                off: r.off,
+                conf: r.conf,
+                pm: 1,
+                ...(o.mx ? {mx: o.mx} : {})
+              };
       });
       // Dio's best genus was learned under the former model (an exam passed before 2026-11-02: mx 1, no time).
       if (u.name === 'Dio Demo') {
@@ -684,6 +751,10 @@
       r[12] ?? null,
       r[13] ?? null
     ]);
+    // v60: the other subject's answers, the subject at index 17 (core.js LOG_SUBJ).
+    S.frows.forEach(r =>
+      out.rows.push([aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], 0, r[12], r[13], null, null, null, r[18]])
+    );
     Object.values(S.users).forEach(u => {
       if (arch.has(lc(u.name))) return; // v58: an archive is no player
       const P = JSON.parse(u.data['reefid-sync-coral-progress'] || '{}'),
@@ -808,7 +879,7 @@
           start = json('reefid-sync-coral-start'),
           rep = replayProgress(
             A.filter(r => r[0] === id),
-            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, starts: start ? {[id]: start} : {}}
+            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, dom: V >= DOM_SHEET, starts: start ? {[id]: start} : {}}
           )[id],
           G = replayedOf(rep, P);
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];

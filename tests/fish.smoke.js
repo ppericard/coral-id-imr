@@ -227,6 +227,14 @@ const server = http.createServer((req, res) => {
     const canOpen = () => slateGenera().filter(n => !introduced(n) && mayOpen(n)),
       picks = () => [...Array(40)].map(() => canOpen().length && openPick(canOpen())).filter(Boolean);
     ok(!bonusOfferDue(), 'no circle offer card');
+    // A unit's bar set through the former moving average (s.pg), whatever rule its record is under: a unit answered above
+    // took the domain-score bar (core.js DOM; the fish are not replayed, model.js domRules), which s.pg alone would not move.
+    const pgAt = (n, x) => {
+      const s = st(n);
+      delete s.dp;
+      delete s.ds;
+      s.pg = x;
+    };
     ok(
       FISH.c1.some(n => !asked(n)),
       'some circle-1 families not asked yet'
@@ -241,7 +249,7 @@ const server = http.createServer((req, res) => {
     ok(progPct(FISH.c1) < 100 * FISH_C3, 'circle 1 under FISH_C3');
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
-    FISH.c1.forEach(n => (st(n).pg = 0.7));
+    FISH.c1.forEach(n => pgAt(n, 0.7));
     ok(progPct(FISH.c1) >= 100 * FISH_C3 && FISH.c3.every(mayOpen), 'circle 3 opens once circle 1 reaches FISH_C3');
     ok(
       picks().some(n => FISH.c3.includes(n)),
@@ -251,7 +259,7 @@ const server = http.createServer((req, res) => {
     // Every circle in the progress: a circle-3 family learned moves the %, over all the families.
     const c3n = FISH.c3[0],
       pct = progPct();
-    st(c3n).pg = 0.9;
+    pgAt(c3n, 0.9);
     ok(progPct() > pct && progPct() === progPct(slateGenera()), 'circle 3 counts in the progress');
     delete P[c3n];
     // "I'm at IMR" (the fish welcome answer imr): the IMR-tagged families first within circle 1 (Pierre, 2026-11-06 13:38): the
@@ -284,9 +292,9 @@ const server = http.createServer((req, res) => {
       G.every(n => isBonus(n) && setOf(n) === sci),
       'sci: every genus in its set, opened or not'
     );
-    FISH.c1.forEach(n => (st(n).pg = 0.2));
+    FISH.c1.forEach(n => pgAt(n, 0.2));
     ok(!sci.units().length, 'sci: no genus in play before an entry is at Advanced');
-    st('f:Butterflyfishes').pg = 0.72;
+    pgAt('f:Butterflyfishes', 0.72);
     ok(
       sci.units().length && sci.units().every(n => GX(n).parent === 'f:Butterflyfishes'),
       'sci: the genera of the family at Advanced only'
@@ -318,8 +326,8 @@ const server = http.createServer((req, res) => {
     // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
     // wrong choice, as in the quiz); a genus card's photo is its easiest, most reference-like one, whoever took it
     // (Pierre, 2026-11-06: no source tier for fish), and a never-seen photo of Pierre's gets no draw bonus.
-    st('f:Butterflyfishes').pg = 0.2;
-    st('f:Spadefishes').pg = 0.72;
+    pgAt('f:Butterflyfishes', 0.2);
+    pgAt('f:Spadefishes', 0.72);
     const pl = pool().filter(n => GX(n).rank);
     ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
@@ -1554,8 +1562,13 @@ const server = http.createServer((req, res) => {
         const L = GX(n).views.wide,
           es = L.map(p => p.e || 3).sort((a, b) => b - a),
           cut = Math.min(4, es[Math.min(3, es.length) - 1]), // as easyFirst: its 3 easiest when it has fewer (the Soapfishes have 2)
-          s0 = st(n).pg;
-        st(n).pg = 0;
+          s0 = JSON.parse(JSON.stringify(st(n))),
+          pgAt = x => {
+            delete st(n).dp;
+            delete st(n).ds;
+            st(n).pg = x;
+          };
+        pgAt(0);
         // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
         // aim favour the easy ones; no wall).
         let hard = 0,
@@ -1567,13 +1580,12 @@ const server = http.createServer((req, res) => {
         // it there (12 answers, 10 right, ability 0.5: the low end), not the bar alone, since the draw leans on the
         // answers and the ability (SUBJECTS calib early fades with the answers, Q186's narrower targeting follows the
         // ability): the harder photos come in.
-        const s1 = {...st(n)};
-        Object.assign(st(n), {pg: 0.6, ok: 10, ko: 2, th: 0.5});
+        pgAt(0.6);
+        Object.assign(st(n), {ok: 10, ko: 2, th: 0.5});
         let low = 0;
         for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
-        Object.keys(st(n)).forEach(k => delete st(n)[k]);
-        Object.assign(st(n), s1, {pg: s0});
+        P[n] = s0;
       });
       return {fails, gated};
     }, 15);
