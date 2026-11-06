@@ -1083,6 +1083,47 @@ test('typed answers: spelling tolerance, old names, a word that is no genus, two
   assert.deepStrictEqual(near, {near: ['Abcdef', 'Abcdeg']});
 });
 
+test('the spelling step: exact, close to the right name, close to another, nothing (typeVerdict), the letters to bold (typeDiff)', () => {
+  // A player's idea, Pierre 2026-11-05: a close typo of the right genus is retyped once (quiz.js typeBind); a close typo
+  // of another genus stays a wrong answer; the grading never changes.
+  const {typeNamesOf, typeMatchIn, typeVerdict, typeDiff, typeNormAll} = require('../core.js'),
+    D = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'), 'utf8')),
+    G = {...D.gen, ...((D.x || {}).gen || {})},
+    names = typeNamesOf(Object.keys(G), n => G[n]),
+    V = (t, g) => typeVerdict(typeMatchIn(names, t), g);
+  // Exact: the name, capitals, accents and a trailing "sp." aside; an old name typed right is exact too.
+  assert.deepStrictEqual(
+    [V('Pectinia', 'Pectinia'), V('  pectinia sp.', 'Pectinia'), V('Favia', 'Dipsastraea')],
+    ['exact', 'exact', 'exact']
+  );
+  // Close to the right name: a letter wrong, left out, doubled, two swapped; an old name misspelt.
+  assert.deepStrictEqual(
+    ['Pectinea', 'Pactinia', 'Acropra', 'Acroppora', 'acorpora', 'Pocilopora'].map((t, i) =>
+      V(t, ['Pectinia', 'Pectinia', 'Acropora', 'Acropora', 'Acropora', 'Pocillopora'][i])
+    ),
+    ['close', 'close', 'close', 'close', 'close', 'close']
+  );
+  assert.strictEqual(V('Favai', 'Dipsastraea'), 'close');
+  // Close to (or exactly) another genus: wrong, never "close".
+  assert.deepStrictEqual([V('Pavonna', 'Pectinia'), V('Anacropra', 'Acropora'), V('Echinopora', 'Pectinia')], ['other', 'other', 'other']);
+  // Nothing within the tolerance, or two names as close: no answer.
+  assert.strictEqual(V('xyzcoral', 'Pectinia'), 'none');
+  assert.strictEqual(typeVerdict({near: ['Abcdef', 'Abcdeg']}, 'Abcdef'), 'none');
+  assert.strictEqual(typeVerdict(null, 'Abcdef'), 'none');
+  // The letters of the right spelling that the try got wrong: a wrong letter, one left out, a swap (both), one doubled
+  // (the letter where it went in); spaces never; nothing when exact.
+  assert.deepStrictEqual(typeDiff('Pactinia', 'Pectinia'), [1]);
+  assert.deepStrictEqual(typeDiff('Pectinea', 'Pectinia'), [6]);
+  assert.deepStrictEqual(typeDiff('Acropra', 'Acropora'), [5]);
+  assert.deepStrictEqual(typeDiff('Acorpora', 'Acropora'), [2, 3]);
+  assert.deepStrictEqual(typeDiff('Acroppora', 'Acropora'), [4]);
+  assert.deepStrictEqual(typeDiff('acropora', 'Acropora'), []);
+  assert.deepStrictEqual(typeDiff('', 'Pavona'), [0, 1, 2, 3, 4, 5], 'the retype skipped against an empty try: every letter');
+  // Fish names: whole names, read with typeNormAll, the space never marked.
+  assert.deepStrictEqual(typeDiff('Morish Idol', 'Moorish Idol', typeNormAll), [1], 'an o left out: one of the two o');
+  assert.deepStrictEqual(typeDiff('Moorish Idoll', 'Moorish Idol', typeNormAll), [11]);
+});
+
 test('typed share: none below its start, a straight line between the points, flat after the last', () => {
   const {typedShare} = require('../core.js'),
     T = {
