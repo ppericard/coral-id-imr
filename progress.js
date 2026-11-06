@@ -543,7 +543,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
     bonus: bonusList().filter(introduced).length,
     core: {total: C.length, met: C.filter(n => lvStep(n) >= 1).length, learned: C.filter(n => lvStep(n) >= 5).length},
-    sets: Object.fromEntries((U.sets || []).map(S => [S.k, S.all().filter(n => lvStep(n) >= 2).length])),
+    sets: Object.fromEntries((U.sets || []).map(S => [S.k, (S.all ? S.all() : S.units()).filter(n => lvStep(n) >= 2).length])),
     basics: !!A._basics,
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
@@ -656,7 +656,7 @@ const achSubj = () => (SUBJ.ach ? SUBJ : subjectOf(ACHS())),
   ACH_C = () => ACH_CONTRIB,
   achTests = () => [...ACH_L(), ...ACH_C()];
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
-const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
+const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
 // Achievements earned quietly and not seen yet: a dot on 🏆 in the header, on the Achievements tab and on 🏅 in the
 // player's card. Kept on this

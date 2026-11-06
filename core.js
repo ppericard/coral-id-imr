@@ -2267,7 +2267,7 @@
       'Divemaster: 5 families',
       '5 families at Divemaster level or above (95%: their mastery exam is on)',
       2,
-      '🪸',
+      '🐠',
       s => s.q[2] >= 5
     ],
     ['flearn1', 'First fish Instructor', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],

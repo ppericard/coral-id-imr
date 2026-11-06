@@ -3911,6 +3911,7 @@ const CORE_ = (function () { const module = {exports: {}};
     ['fmetcore', 'The IMR line-up', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
     ['fmetall', 'Whole reef', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
     ['fq50a', 'Open Water: 5 families', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
+    ['fq50b', 'Open Water: 20 families', '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
     ['fq80a', 'Advanced: 5 families', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
     ['fq80b', 'Advanced: 15 families', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
     [
@@ -3918,7 +3919,7 @@ const CORE_ = (function () { const module = {exports: {}};
       'Divemaster: 5 families',
       '5 families at Divemaster level or above (95%: their mastery exam is on)',
       2,
-      '🪸',
+      '🐠',
       s => s.q[2] >= 5
     ],
     ['flearn1', 'First fish Instructor', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
@@ -3940,8 +3941,7 @@ const CORE_ = (function () { const module = {exports: {}};
       2,
       '🏷️',
       s => (s.sets.sci || 0) >= 5
-    ],
-    ['felo1200', 'Fish Elo 1200', 'Reached a fish Elo of 1200', 2, '⭐', s => s.elo >= 1200]
+    ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id.
