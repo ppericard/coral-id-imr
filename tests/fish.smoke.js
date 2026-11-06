@@ -1343,7 +1343,108 @@ const server = http.createServer((req, res) => {
     if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
     await c7.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome];
+  // (11) The fish beta invitation (progress.js subjHello, app.js UNITS hello.group; Pierre, 2026-11-05: "a proper card the
+  // player closes, shown once, at a calm moment"; 2026-11-06: while fish opens to a group he picks, an invitation to test
+  // the fish beta, for the players of that group only): a player who is not the admin, in the fish group (sheet stub,
+  // nothing sent), settled on the corals, gets it once on Home, nothing else on screen; Later marks it seen, and it never
+  // comes back; Try fish switches to Fish and opens its quiz. Never for a player outside the group, nor one who has played
+  // fish already (marked seen, no card), nor a new player (not marked: it waits until they are settled). Fish open to all
+  // (Q158, core.js as it is): the same invitation to a settled player, once, its own seen mark (hello.all).
+  const hello = [];
+  for (const who of ['later', 'try', 'closed', 'met', 'new', 'all']) {
+    const c9 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c9.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    // Fish opens to all since Q158: 'all' serves core.js as it is; the group cases serve it with fish back to 'group'.
+    await c9.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) hello.push('core.js: fish does not open to all');
+        await r.fulfill({response: res, body: who === 'all' ? t : t.replace("open: 'all'", "open: 'group'")});
+      }
+    );
+    await c9.addInitScript(who => {
+      try {
+        if (!sessionStorage.getItem('fish-hello')) {
+          sessionStorage.setItem('fish-hello', '1');
+          const s = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+          s('reefid-tour', 'done');
+          s('reefid-board-told', 1);
+          s('reefid-account', {name: 'Ana', pin: '1234'});
+          s('reefid-groups', {n: 'Ana', g: who === 'closed' ? [] : ['fish']});
+          s('reefid-sync-coral-start', {c: 'imr', t: 1});
+          if (who !== 'new') s('reefid-sync-coral-progress', {'~level': {ok: 30, ko: 10}, Acropora: {ok: 5, ko: 1, h: '110111'}});
+          if (who === 'met') s('reefid-sync-fish-start', {c: 'new', t: 1});
+        }
+      } catch (e) {}
+      window.SHEET_STUB = (url, o) => {
+        const g = (JSON.parse(localStorage.getItem('reefid-groups') || 'null') || {g: []}).g,
+          reply =
+            o && o.method === 'POST' ? {ok: true, log: true, rev: 2} : {ok: true, found: true, data: {}, rev: 1, hold: 0, holdIds: []};
+        return Promise.resolve({json: () => Promise.resolve({...reply, v: 48, groups: g})});
+      };
+    }, who);
+    const q = await c9.newPage();
+    q.on('pageerror', e => errs.push(`hello ${who}: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    // The announcement cards a returning player may have due at start-up (recalculations: never held, rule D6)
+    // come first; the release card waits for a calm Home, here the next one.
+    await q.waitForTimeout(2500);
+    if (await q.evaluate(() => !!document.querySelector('.unlock:not(.hello)'))) {
+      await q.evaluate(() => document.querySelectorAll('.unlock:not(.hello) [data-b="1"]').forEach(b => b.click()));
+      await q.evaluate(() => route());
+    }
+    const shown = await q
+      .waitForSelector('.unlock.hello', {timeout: 6000})
+      .then(() => true)
+      .catch(() => false);
+    const seen = () => q.evaluate(k => localStorage.getItem(k), who === 'all' ? 'reefid-fish-hello-all' : 'reefid-fish-hello-group');
+    if (who === 'closed' || who === 'met' || who === 'new') {
+      if (shown) hello.push(`${who}: the card showed`);
+      const s = await seen();
+      if (who === 'met' ? !s : s) hello.push(`${who}: seen mark ${s}`);
+      await c9.close();
+      continue;
+    }
+    if (!shown) {
+      hello.push(`${who}: no card on Home`);
+      await c9.close();
+      continue;
+    }
+    const card = await q.evaluate(() => {
+      const d = document.querySelector('.unlock.hello');
+      return {
+        n: document.querySelectorAll('.unlock').length,
+        title: d.querySelector('h3').textContent,
+        btns: [...d.querySelectorAll('[data-b]')].map(b => b.textContent),
+        med: d.querySelector('.ulmed').textContent
+      };
+    });
+    if (card.n !== 1 || card.title !== 'Test the fish beta' || JSON.stringify(card.btns) !== '["Try fish","Later"]' || card.med !== '🐟')
+      hello.push(`${who}: the card ${JSON.stringify(card)}`);
+    await q.click(`.unlock.hello [data-b="${who === 'try' ? 1 : 2}"]`);
+    if (!(await seen())) hello.push(`${who}: not marked seen`);
+    if (who === 'try') {
+      const on = await q
+        .waitForFunction(() => SUBJ.id === 'fish' && location.hash === hr('quiz'), null, {timeout: 15000})
+        .then(() => true)
+        .catch(() => false);
+      if (!on) hello.push(`try: ${JSON.stringify(await q.evaluate(() => [SUBJ.id, location.hash]))}`);
+    } else {
+      // Never again: back to Home, a reload.
+      await q.reload();
+      await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+      await q.waitForTimeout(3000);
+      if (await q.evaluate(() => !!document.querySelector('.unlock.hello'))) hello.push(`${who}: shown again`);
+    }
+    await c9.close();
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));
