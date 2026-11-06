@@ -488,6 +488,28 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // - look, a genus the player gets confused with among the choices (model.js pgWeight), after the offers are counted;
   // - R, Rc: the recall of the genus shown and of the genus given on a comeback question (model.js recallAt).
   // A corallites hint revealed after the answer when it was not opened: seen, never recognised (hint).
+  // The question's format and its offset (core.js fmtOf, fmtOff; the sheet's PFMT, Pierre 2026-11-06, Q138): the ability
+  // steps expect the question as the players really find its format (a 2-choice question easier than 1 in 2 explains).
+  // Never from the custom quiz, which serves no exam question (Pierre, 2026-11-03: exams only in the photo quiz).
+  const exq = EXAMQ === target && cur !== CUSTOM_H;
+  // |x: a question of the mastery exam (never with |k: an exam has every trap), for the admin's player journey.
+  // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
+  // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
+  // |d: a look-alike duel slipped into the photo quiz (CONTRAST), before |kN (the sheet reads |kN at the end).
+  // |c: a comeback question after a break (model.js comebackOf), before |kN too; counted in the opening hold like any
+  // answer, with its own expectation e. (|w, 2026-11-02 until the comeback: the gentle restart, left out of the hold by
+  // the app and the sheet's hold_; old rows only.)
+  // |s: the custom quiz (quizCustom), right after quiz, so the sheet stores and rates it as any photo-quiz answer
+  // (guess_ reads |kN at the end and |t anywhere; its mode split keeps quiz) and the admin tells it apart.
+  const mq =
+    modeBase(cur) +
+    (photoQuiz(cur) && AUTOD ? '|d' : '') +
+    (warm ? '|c' : '') +
+    (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
+    // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
+    // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
+    (tq ? '|t' : '') +
+    (exq ? '|x' : '');
   const q = scoreIn({
     t: target,
     c,
@@ -506,7 +528,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     p: startP(),
     sec: tm.rt,
     // The answer time (core.js rtWeight, model.js rtOn): only once the sheet replays it; recorded either way.
-    timed: rtOn()
+    timed: rtOn(),
+    // The format's offset (core.js fmtOff; 0 with a sheet before FMT_SHEET), logged in sc (o) with the rest.
+    df: fmtOff(PFMT, fmtOf(mq, chs.length))
   });
   const res = scoreAnswer(P, q),
     {th0, dm} = res,
@@ -516,8 +540,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
   // genus as the answer for another one.
-  // Never from the custom quiz, which serves no exam question (Pierre, 2026-11-03: exams only in the photo quiz).
-  const exq = EXAMQ === target && cur !== CUSTOM_H;
+  // (exq, above: never from the custom quiz.)
   EXAMQ = null;
   // It needs TYPED.exam typed right answers among its EXAM.n (model.js examTyped asks them; an exam begun before the
   // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
@@ -558,24 +581,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     g: target,
     a: c,
     ok: good ? 1 : 0,
-    // |x: a question of the mastery exam (never with |k: an exam has every trap), for the admin's player journey.
-    // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
-    // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
-    // |d: a look-alike duel slipped into the photo quiz (CONTRAST), before |kN (the sheet reads |kN at the end).
-    // |c: a comeback question after a break (model.js comebackOf), before |kN too; counted in the opening hold like any
-    // answer, with its own expectation e. (|w, 2026-11-02 until the comeback: the gentle restart, left out of the hold by
-    // the app and the sheet's hold_; old rows only.)
-    // |s: the custom quiz (quizCustom), right after quiz, so the sheet stores and rates it as any photo-quiz answer
-    // (guess_ reads |kN at the end and |t anywhere; its mode split keeps quiz) and the admin tells it apart.
-    m:
-      modeBase(cur) +
-      (photoQuiz(cur) && AUTOD ? '|d' : '') +
-      (warm ? '|c' : '') +
-      (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
-      // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
-      // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
-      (tq ? '|t' : '') +
-      (exq ? '|x' : ''),
+    m: mq, // the mode, built before the scorer (its format's offset, df)
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).
     ph: ph
@@ -1687,7 +1693,13 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       rustNow();
       const R = cbIn(cur) ? recallAt(t) : 1;
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), `Again: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, Math.log(R) + ease, 2)],
+        [
+          cur,
+          t,
+          shuffle(pair.slice()),
+          `Again: ${uname(pair[0])} or ${uname(pair[1])}?`,
+          photoSet(t, null, Math.log(R) + ease, 2, 'again')
+        ],
         {again: 1, ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
     }
@@ -1757,7 +1769,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2)],
+        [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2, 'qduel')],
         {auto: twoPair, ...(sel ? {custom: 1} : {})}
       );
     }
@@ -1792,7 +1804,9 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     kq = typed ? TYPED.k : few ? plausibleK(t, ch) : ch.length,
     // Aimed lower by the hold's ease and by this player's own mix-ups among the choices (model.js confTerm; none typed).
     cf = typed ? 0 : confTerm(t, ch, kq),
-    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq),
+    // Its format (core.js fmtOf, as answer logs it): the aim takes the format's offset (model.js aimOff, PFMT).
+    fq = typed ? 'typed' : ch.length === 2 ? 'again' : kq < 4 ? (kq >= 3 ? 'k3' : 'k2') : 'k4',
+    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq, fq),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [
       cur,
@@ -1861,7 +1875,7 @@ function planDuel(a, b) {
   // hold is on (model.js holdEase), as every question of the photo quiz but an exam: the photo and the single views aim
   // lower (photoSet's shift; a duel has its two choices, no traps). The expectation logged is the photo's own (answer),
   // so it stays that of the photo shown.
-  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, holdEase(), 2);
+  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, holdEase(), 2, 'duel');
   return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `${uname(pair[0])} or ${uname(pair[1])}?`, set];
 }
 // The relief card of the Duel tab (Pierre, 2026-11-04). A player drilled one pair ("Drill this pair"), 10 right, then
