@@ -1485,22 +1485,23 @@ const ONCE_ = {
   fishunits: () => {
     const ss = SpreadsheetApp.getActiveSpreadsheet(), an = ss.getSheetByName('Answers'), out = [];
     const RS = CORE_.SUBJECTS.filter(S => S.renamed), C = n => LOG.indexOf(n);
+    // Only the six renamed columns are written back, each a whole column, and only when one of its cells changed: every
+    // value in them passed a letters-first check when logged, so none can read as a formula (Codex review #654: writing
+    // whole rows back would drop the apostrophe safe_() put before a name or a typed answer).
     if (an && an.getLastRow() > 1 && an.getLastColumn() >= LOG.length - 1) {
-      const rg = an.getRange(2, 1, an.getLastRow() - 1, LOG.length), v = rg.getValues(); let k = 0;
-      const nv = v.map(r => {
+      const n = an.getLastRow() - 1, v = an.getRange(2, 1, n, LOG.length).getValues(), cols = ['Genus shown', 'Answered', 'Mode', 'Choices', 'Taxon shown', 'Taxon answered'];
+      const nv = cols.map(c => v.map(r => [r[C(c)]])), key = ['g', 'a', 'm', 'ch', 'tn', 'ta']; let k = 0;
+      v.forEach((r, i) => {
         const FS = RS.find(S => S.id === String(r[C('Subject')]));
-        if (!FS) return r;
+        if (!FS) return;
         const a = {g: String(r[C('Genus shown')]), a: String(r[C('Answered')]), m: String(r[C('Mode')]), ch: String(r[C('Choices')]),
           tn: String(r[C('Taxon shown')]), ta: String(r[C('Taxon answered')]), sp: String(r[C('Species shown')])};
         const b = CORE_.renameLogEntry(FS, a);
-        if (b === a) return r;
+        if (b === a) return;
         k++;
-        const w = r.slice();
-        w[C('Genus shown')] = b.g; w[C('Answered')] = b.a; w[C('Mode')] = b.m; w[C('Choices')] = b.ch;
-        w[C('Taxon shown')] = b.tn; w[C('Taxon answered')] = b.ta;
-        return w;
+        key.forEach((x, j) => (nv[j][i] = [b[x]]));
       });
-      if (k) rg.setValues(nv);
+      if (k) cols.forEach((c, j) => an.getRange(2, C(c) + 1, n, 1).setValues(nv[j]));
       out.push('Answers ' + k + ' fish row' + (k === 1 ? '' : 's'));
     }
     const re = ss.getSheetByName('Reports');

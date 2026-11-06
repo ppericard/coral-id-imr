@@ -2446,7 +2446,7 @@ test('v69 fish units: old entry ids logged as families (one map per row), report
         ta: 'Groupers',
         sp: 'Diploprion bifasciatum'
       }),
-      ans('u4')
+      ans('u4', {s: 'coral', rk: 'genus', ty: '=1+1'})
     ]
   });
   const A = s.sheets.Answers,
@@ -2474,6 +2474,8 @@ test('v69 fish units: old entry ids logged as families (one map per row), report
     'new ids as they come'
   );
   assert.strictEqual(R[3][2], 'Acropora', 'a coral row untouched');
+  const typed0 = R[3][15];
+  assert.strictEqual(typed0, '=1+1', 'stored as text (the apostrophe of safe_ hidden, as Sheets does)');
   // Rows logged before v69: put the old ids back, then the one-shot.
   [R[0][2], R[0][3], R[0][11], R[0][19], R[0][20]] = ['t13', 't13', 't13 t01 t02 t03', 'Groupers', 'Groupers'];
   [R[1][2], R[1][3], R[1][5]] = ['t01', 't13', 'quiz-duel|t01|t13'];
@@ -2496,6 +2498,7 @@ test('v69 fish units: old entry ids logged as families (one map per row), report
   assert.deepStrictEqual(cols(R[1]).slice(0, 3), ['f:Damselfishes', 'f:Groupers', 'quiz-duel|f:Damselfishes|f:Groupers']);
   assert.strictEqual(P.rows[1][4], 'f:Groupers');
   assert.strictEqual(R[3][2], 'Acropora');
+  assert.strictEqual(R[3][15], typed0, 'a typed answer kept as it was stored (only the renamed columns are written: Codex review #654)');
   assert.strictEqual(
     vm.runInContext('ONCE_.fishunits()', s.ctx),
     'units renamed (fish entries → families): Answers 0 fish rows, Reports 0 cells'
