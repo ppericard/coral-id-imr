@@ -83,6 +83,7 @@ import fish_commonness
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_source.json"
+SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (add_families)
 OUT = ROOT / "fish.json"
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
@@ -562,6 +563,22 @@ def add_families(o, key, declared=()):
         if "lsrc" in r:
             ls = r.pop("lsrc")
             out[i] = {k2: v for k, v in r.items() for k2, v in ([(k, v), ("lsrc", ls)] if k == "look" else [(k, v)])}
+    # The family sheets' own lines (tools/fish_sheets.json: marks, life, apart and their sources, msrc): the families it
+    # names that are families of fish.json (another key's families are left aside; tests/fishsheets.test.js checks the
+    # file against fish.json); apart only for families of fish.json.
+    sheets = json.loads(SHEETS.read_text(encoding="utf-8")).get("families", {}) if SHEETS.exists() else {}
+    for r in out:
+        x = sheets.get(r["id"])
+        if not x:
+            continue
+        for k in ("marks", "life"):
+            if x.get(k):
+                r[k] = x[k]
+        ap = {b: t for b, t in (x.get("apart") or {}).items() if b in by}
+        if ap:
+            r["apart"] = ap
+        if x.get("src"):
+            r["msrc"] = x["src"]
     o["families"] = out
     go = []
     for g, x in gens.items():
