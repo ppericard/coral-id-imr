@@ -829,16 +829,27 @@
   // moves anything, 0.2 and 0.4 both beat a photo-only Elo and the Easy / Medium / Hard prior, 0.8 moves too fast.
   // Code.gs GENUS_K in step; ?stats=1 serves the offsets as gd (sheet v31), the photos' ratings as totals.
   const GENUS_K = 0.4;
+  // Photos rated against the genus ability (Pierre, 2026-11-06, Q136; docs/LEARNING.md "Photos rated against the genus
+  // ability"): from TH_FROM on, the photos, the genus offsets and the memory offsets move by the surprise against the
+  // genus ability the app logged with the answer (row index 8, ability(target) when it was asked: the person term its
+  // photo targeting used), no longer against the single level per player (R), which keeps its own expectation and only
+  // feeds the admin (ras, levelMargin) and nothing the app reads. The answers before TH_FROM keep the level, so the
+  // ratings of 2026-11-06 are the starting point (the migration: the replay of the log as it was gives the same
+  // ratings). Elo ratings fitted against another person term than the one that picked the item are biased under
+  // adaptive selection (Bolsinova, Gergely & Brinkhuis 2025). Code.gs TH_FROM in step; thFrom: another switch time, for
+  // the tests and the measurement (0: every answer; Infinity: the rule before).
+  const TH_FROM = Date.UTC(2026, 10, 5, 16); // 2026-11-06 00:00 Manila
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf, v17),
-  // weighed as above. All against the same expectation, photo memory included (until v25 the level ignored memory
-  // and the photos used the fixed rule, so the two pulled apart).
+  // weighed as above. All with the same photo memory (until v25 the level ignored memory and the photos used the fixed
+  // rule, so the two pulled apart); from TH_FROM the photos' expectation takes the logged genus ability, the level's its
+  // own level (above).
   // Returns the photo ratings P (the residual, [rating, weighed answers, weighed right, answers]), the genus of each photo
   // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
   // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
   // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule P4).
-  function eloReplay(rows) {
+  function eloReplay(rows, thFrom = TH_FROM) {
     const P = {},
       PG = {},
       G = {},
@@ -864,7 +875,11 @@
           ph = fs.map(f => ((PG[f] = gs), (P[f] = P[f] || [0, 0, 0, 0]))),
           b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
         const hs = fs.map(f => (H[r[0] + '|' + f] = H[r[0] + '|' + f] || [0, 0])),
-          s = sig(ra[0] - b - memFam(hs, mem)),
+          mf = memFam(hs, mem),
+          sR = sig(ra[0] - b - mf),
+          eR = g + (1 - g) * sR,
+          th = r[1] >= thFrom && typeof r[8] === 'number' && isFinite(r[8]) ? r[8] : ra[0],
+          s = sig(th - b - mf),
           e = g + (1 - g) * s,
           d = ok - e,
           n = ra[1];
@@ -891,8 +906,8 @@
           N[0] += A[0];
         }
         // Fisher information about the level from this answer, on the same model as the level's step (levelMargin).
-        ra[2] = (ra[2] || 0) + ((1 - g) * s * (1 - s)) ** 2 / Math.max(1e-6, e * (1 - e));
-        ra[0] += (0.6 / (1 + n / 40)) * d;
+        ra[2] = (ra[2] || 0) + ((1 - g) * sR * (1 - sR)) ** 2 / Math.max(1e-6, eR * (1 - eR));
+        ra[0] += (0.6 / (1 + n / 40)) * (ok - eR);
         ra[1]++;
         hs.forEach(h => {
           h[0]++;
@@ -958,9 +973,9 @@
     return true;
   }
   // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
-  // answers].
-  function eloOf(rows) {
-    const {P, PG, G} = eloReplay(rows);
+  // answers]. thFrom: TH_FROM's stand-in (eloReplay).
+  function eloOf(rows, thFrom = TH_FROM) {
+    const {P, PG, G} = eloReplay(rows, thFrom);
     const out = {};
     Object.keys(P).forEach(
       f =>
@@ -3610,6 +3625,7 @@
     eloOf,
     genusOffsetsOf,
     GENUS_K,
+    TH_FROM,
     levelMargin,
     playSplit,
     trustOf,
