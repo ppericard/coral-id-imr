@@ -449,98 +449,63 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     s = st(target),
     chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
   const first = !((s.ok || 0) + (s.ko || 0)); // the genus's first answer (model.js startStep)
-  // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
-  // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
+  // The plausible choices k (what a right answer proves, the guess rate). A typed answer: no guess rate (TYPED.k,
+  // Infinity: the expected success has no 1/k floor).
   const nc = $v.querySelectorAll('[data-c]').length || 4,
     k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
-  // Known mix-ups (model.js confTerm): the question was that much harder for this player, on their record before this
-  // answer (scored before it updates anything, offers included).
-  const cf = confTerm(target, chs, k);
-  // Offers: every wrong choice shown beside the target, so the player's own mix-up rate per pair is known (confOf).
-  chs.forEach(x => {
-    if (x !== target) {
-      s.off = s.off || {};
-      s.off[x] = (s.off[x] || 0) + 1;
-    }
-  });
   // A wrong answer changes what comes next ("Again", traps, the exam): the questions chosen ahead are chosen again.
   if (!good) dropPlans();
   session.n++;
   session.h = [...session.h, good].slice(-10);
   pulseNote();
-  if (good) {
-    session.ok++;
-    s.ok++;
-    s.streak++;
-  } else {
-    s.ko++;
-    s.streak = 0;
-    if (c) {
-      s.conf = s.conf || {};
-      s.conf[c] = (s.conf[c] || 0) + 1;
-    }
-  }
-  const th0 = ability(target),
-    nw = ph.filter(p => !(s.ps || {})[p.f]).length;
-  const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
-  const ps = (s.ps = s.ps || {}),
-    d0 = solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
-  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
-  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
-  // the opening hold is the one the question really had.
-  const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
-    rT = warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
-    rC = warm && !good && GX(c) ? recallAt(c) : 1;
-  // Photo memory (model.js famOf, core.js MEM, sheet v26; Pierre, 2026-11-03): the photos seen when answering (a corallites
-  // hint left closed was not), as the player knew them before this answer, make the question that much easier (fam,
-  // logits, 0 when all are new). One expectation for everything this answer moves: the ability (a right answer on a known
-  // photo raises it less, a miss lowers it more), the global level, the logged e (the sheet's opening hold replays it),
-  // the opening hold and the comeback. Progress: a right answer counts only for what memory does not explain (pgMemW, 1
-  // on new photos); a miss weighs the chance the player really had (pgMissW), so on a known photo it counts in full.
+  if (good) session.ok++;
   // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
   mxRecalc(() => {
     memRecalc(s, PMEM);
     if (!good && GX(c)) memRecalc(st(c), PMEM);
   });
-  const seenPh = ph.filter(p => p !== unseen),
-    fam = famOf(target, seenPh),
-    dm = d0 + fam + cf;
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP()));
-  // The answer time (core.js rtWeight, model.js rtOn): a right answer faster than the player's usual moves the genus and
-  // the global level further, a slow one less; against their earlier timed answers (P[LEVEL].rt), the seconds logged.
-  const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;
-  abilityStep(target, s, good, dm, k, rw);
-  // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
-  // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
-  if (P[LEVEL]) P[LEVEL][good ? 'ok' : 'ko']++;
-  else P[LEVEL] = levelSeed(P);
-  abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);
-  rtAdd(P[LEVEL], tm.rt, k); // this answer's time, for the next ones
-  // Recent results over every game, newest last: an opening only after a right answer (model.js openRight).
-  P[LEVEL].h = ((P[LEVEL].h || '') + (good ? 1 : 0)).slice(-10);
-  // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
-  ph.forEach(p => {
-    const x = (ps[p.f] = ps[p.f] || [0, 0]);
-    x[0]++;
-    if (good && (cor || p.view !== 'macro')) x[1]++;
+  const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
+  const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
+  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
+  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
+  // the opening hold is the one the question really had.
+  const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
+    seenPh = ph.filter(p => p !== unseen);
+  // One scorer (core.js scoreAnswer; Pierre, 2026-11-06, Q132): the question as the game had it, what the full replay of
+  // the log meets again from the answer's scoring record (sc, core.js scoreLog), so the replayed state is this one.
+  // - d0, the photo difficulty (model.js photoDiff: the device's pooled ratings now);
+  // - fam, the photo memory (model.js famOf, core.js MEM; Pierre, 2026-11-03): the photos seen when answering (a
+  //   corallites hint left closed was not), as the player knew them before this answer, make the question that much
+  //   easier: a right answer on a known photo counts only for what memory does not explain (pgMemW), a miss weighs the
+  //   chance the player really had (pgMissW);
+  // - cf, the known mix-ups (model.js confTerm), on the player's record before this answer;
+  // - look, a genus the player gets confused with among the choices (model.js pgWeight), after the offers are counted;
+  // - R, Rc: the recall of the genus shown and of the genus given on a comeback question (model.js recallAt).
+  // A corallites hint revealed after the answer when it was not opened: seen, never recognised (hint).
+  const q = scoreIn({
+    t: target,
+    c,
+    ok: good,
+    k,
+    chs,
+    cv: !!GX(c),
+    ph: seenPh.map(p => p.f),
+    hint: unseen ? unseen.f : undefined,
+    d0: solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length),
+    fam: famOf(target, seenPh),
+    cf: confTerm(target, chs, k),
+    look: () => pgLook(target, chs),
+    R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
+    Rc: warm && !good && GX(c) ? recallAt(c) : 1,
+    p: startP(),
+    sec: tm.rt,
+    // The answer time (core.js rtWeight, model.js rtOn): only once the sheet replays it; recorded either way.
+    timed: rtOn()
   });
+  const res = scoreAnswer(P, q),
+    {th0, dm} = res,
+    rT = q.R;
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
-  s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10); // recent results, newest last
-  // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too. Without
-  // the photo memory: the player's memory of a photo is of its own genus, the one shown; it says nothing of genus c.
-  // In the progress, its recent results and its runs; not in its Elo ability (2026-11-03, docs/LEARNING.md "The genus
-  // wrongly given in the Elo"): as in the Elo learner models of adaptive practice (Pelánek et al. 2017: a learner's
-  // knowledge of an item is not updated when it is a distractor), the ability moves on the questions about the genus
-  // itself. The step it had (a full miss on an average photo, its uncertainty never shrinking) made the app
-  // under-rate strong players: on the real answers, a strong RA's genera averaged 0.11 against 0.73 fitted, and the
-  // next answer is predicted better without it (log-loss 0.481 -> 0.465). The mix-up itself counts on the pair
-  // (s.conf: traps, duels, Again).
-  if (!good && GX(c)) {
-    const w = st(c);
-    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC, aimP())); // as for the genus shown: the photo's difficulty against its level
-    w.h = ((w.h || '') + '0').slice(-10);
-    w.streak = 0;
-  }
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
@@ -612,8 +577,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       .map(p => p.f)
       .join(' '),
     ch: chs.join(' '),
-    e: Math.round(100 * (1 / k + (1 - 1 / k) * rT * sig(th0 - dm))) / 100,
+    e: Math.round(100 * res.e) / 100,
     th: th0,
+    // What the game scored this answer with (core.js scoreLog: photo difficulty, memory, mix-ups, look-alike test,
+    // recalls, the hint revealed after it), so the full replay scores it the same (core.js replayProgress; sheet v61
+    // keeps it in the Answers column Scoring; an older script ignores the field, Code.gs logAnswers_ keeps only the
+    // fields it knows: no *_SHEET gate, rule D4).
+    sc: scoreLog(q, res),
     nw,
     // Seconds to answer (they weighed the steps above: rtWeight; the replay reads them back from the log, Code.gs v32)
     // and a photo enlarged before answering (logged only), QCLOCK in question (sheet v23).

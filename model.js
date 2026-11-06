@@ -1,7 +1,7 @@
 // IMR Reef ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). Which genus comes next (weighted, the progressive opening OPEN, the easiest first), which photos (photoSet,
 // PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT and genus offsets PGD), the player's ability per genus (Elo,
-// ELO, abilityStep), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
+// ELO, ability; each answer scored by core.js scoreAnswer), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
 // pooledConf). docs/LEARNING.md explains every rule. A classic script like app.js, loaded right after progress.js
 // (index.html, in order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
 // A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
@@ -939,7 +939,8 @@ const misses = h => [...h].filter(x => x === '0').length;
 // The ability: core.js ELO, abilityOf (a genus already answered: its own estimate s.th plus the global level's move since
 // its last own step, levelMove; the global + concept skill of Pelánek et al. 2017, as a lazy update; 2026-11-03,
 // docs/LEARNING.md "Global level and genus") and eloStep (the level's step without the kmin floor, kept to 4 decimals;
-// the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay. A genus never
+// the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay: quiz.js answer steps
+// both through core.js scoreAnswer, the replay's own scorer. A genus never
 // answered starts from the global level shrunk towards the first-launch answer's level (startV().p, core.js
 // playerStart; each subject's own answer).
 // The prior only once the sync script replays it (core.js START_SHEET; rule D4, Codex review #428): before, 0, the
@@ -947,7 +948,6 @@ const misses = h => [...h].filter(x => x === '0').length;
 // (SUBJECTS replay: fish) has no replay to wait for: its prior applies at once.
 const startP = () => (!startS().replay || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
 const ability = n => abilityOf(P, n, startP());
-const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
 // (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule D4); before, every
 // step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
@@ -1087,17 +1087,12 @@ function easyFirst(n, L) {
 // pgMemW, 2026-11-03) so the full replay of the answer log (core.js replayProgress) runs the same rules as the app.
 // A typed answer (k infinite, TYPED) counts in full: every genus, its look-alikes included, was a possible answer
 // (core.js pgRightW).
+// pgLook: a genus the player gets confused with among the choices (the look-alike test, core.js scoreAnswer's look).
+const pgLook = (t, chs) => chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
 function pgWeight(t, chs, k) {
-  return pgRightW(
-    k,
-    chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)))
-  );
+  return pgRightW(k, pgLook(t, chs));
 }
 const knownP = n => pgOf(P[n]);
-function pgObs(n, s, good, w) {
-  s.pg = pgStep(knownP(n), good, w);
-  delete s.L; // BKT's knowledge, before s.pg
-}
 // Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Its count (2/5) is shown nowhere:
 // the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is at 95% (s.pg at PROG.M),
 // EXAM.n questions on it are slipped into the photo quiz, unannounced (a test on one genus alone would give the answer
