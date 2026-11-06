@@ -1420,6 +1420,7 @@ const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join('
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';
   if (SYNC.err === 'pin') return 'Not saved: code refused';
+  if (SYNC.err === 'archived') return 'This account is archived.'; // sync.js archivedOf (Q88); Pierre's wording, no explanation
   if (SYNC.err === 'gone')
     return SYNC.into ? `Not saved: this account was merged into ${SYNC.into}` : 'Not saved: this account was removed';
   // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
@@ -1434,8 +1435,8 @@ function syncTrouble() {
 // The sync sheet's address and this device's sign-in: state that many pages read, kept here with the pages; the code
 // that talks to the sheet is in sync.js.
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
-// How a message names it ("Progress loaded from the IMR sheet.").
-const SHEET_NAME = `the ${ORG.short} sheet`;
+// How a message names it ("Progress loaded from your account."): players are never told about "the sheet" (Pierre).
+const SHEET_NAME = 'your account';
 // A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
 // sheet (Pierre, 2026-11-02: 17 "players" in the admin were tools/perf.js runs: once the service worker was in, its
 // requests passed by the test's network mocks and reached the sheet). A browser driven by a program (Playwright,
@@ -1655,7 +1656,7 @@ function sectionOf(h) {
   if (h === 'progress' || h === 'quiz-board') return 'progress';
   if (h === 'board') return 'board';
   if (h === 'ach') return 'board';
-  if (h === 'about') return 'about'; // no tab: reached from the Home credit line and the ? help
+  if (h === 'about' || h.startsWith('delete-account')) return 'about'; // no tab: reached from the Home credit line and the ? help
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -1670,6 +1671,7 @@ function generaOrder() {
 function ctxBar(h) {
   const back = `<button type="button" class="up" data-back aria-label="Back">‹<span>Back</span></button>`;
   if (h === 'about') return `${back}<h2 class="ctx-t">About and credits</h2>`;
+  if (h.startsWith('delete-account')) return `${back}<h2 class="ctx-t">Delete my account</h2>`;
   if (h.startsWith('g-') && GX(h.slice(2))) {
     const n = h.slice(2),
       g = GX(n),
@@ -1693,7 +1695,9 @@ function showModes(tab, h) {
     $modes.setAttribute('aria-label', 'Page');
     $modes.innerHTML = ctx;
     $modes.querySelector('[data-back]').onclick = () =>
-      pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : 'cmp');
+      pageDepth > 0
+        ? history.back()
+        : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : h.startsWith('delete-account') ? 'about' : 'cmp');
     return;
   }
   // A section with a single tool needs no tab bar. Learn and Practice show the subject's pages only (SUBJECTS pages),
@@ -1980,6 +1984,8 @@ function route() {
   // About and credits (home.js); #credits is another name for it.
   else if (h === 'credits') location.replace('#about');
   else if (h === 'about' && window.viewAbout) viewAbout();
+  // Deleting one's own account (sync.js viewDeleteAccount, sheet v58), linked from About › Privacy and privacy.html.
+  else if (h === 'delete-account' || h === 'delete-account|done') viewDeleteAccount(h);
   // The Fish ID Key, coming soon (home.js): Identify in fish mode.
   else if (h === 'fishkey' && window.viewFishKey) viewFishKey();
   else if (h.startsWith('quiz-duel')) {
@@ -2277,7 +2283,7 @@ const STARTED = new Promise(r => (started = r)),
   // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
   // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral ID Key (proto/) 5.
   pageTier = h =>
-    !h || h === 'home' || h === 'about' || h === 'credits'
+    !h || h === 'home' || h === 'about' || h === 'credits' || h.startsWith('delete-account')
       ? 1
       : /^(quiz|genera|g-|cmp|tips|key-imr$|progress|quiz-board|board|ach)/.test(h)
         ? 2
