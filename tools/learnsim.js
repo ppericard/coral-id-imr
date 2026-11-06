@@ -142,6 +142,9 @@
 //   right % on all of them and on those repeats, mean progress bar against true know (prog-know) and Elo against
 //   logit(know) (th-lk) over the genera met, genera learned; and, per genus that entered the exam or was learned, the
 //   true reference success then (ref@exam, ref@learn) and the question it happened.
+// - Per run, in --out only (2026-11-06, photo exposure, Q187-Q190): expo, each question's [genus, colony (observation),
+//   photos shown], and pool (seed 1's runs), each game genus's photos as [file, colony]: repeats, photos never shown,
+//   answers per photo (docs/LEARNING.md "Photo exposure").
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
