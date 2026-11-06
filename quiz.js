@@ -768,23 +768,42 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
 // entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no answer
 // logged, no photo rating). For every player of a subject that has winks (app.js UNITS winks: fish), from circle 1 on
 // (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), whatever opt-in circles are on.
-// Rare: from WINK.FROM answers on, WINK.P of the questions, at least WINK.GAP answers apart, never the same wink twice in
-// a visit (WINKS, this page only). Never over a card (the first-meeting cards, an offer).
-const WINK = {FROM: 15, P: 0.04, GAP: 20};
-const WINKS = {seen: new Set(), at: -Infinity};
-function winkDue() {
-  const L = UNITS[SUBJ.id].winks().filter(n => !WINKS.seen.has(n)),
-    a = answersSoFar();
-  if (!L.length || a < WINK.FROM || a - WINKS.at < WINK.GAP || document.querySelector('.unlock')) return null;
-  return Math.random() < WINK.P ? pick(L) : null;
+// Rare, and late (Pierre, 2026-11-06, after his second fish question was the whale shark: the first only after at least
+// 300 fish answers, the next after about 600-700): surprise k (0, 1, ...) is due at the first photo-quiz
+// question from WINK.AT[k] answers of the player's own record for the subject (answersSoFar: P, so a reload or a sign-in
+// keeps the count), the later ones each at least the last gap after the one before (winkAt: 300, 650, 1000, 1350...).
+// It waits WINK.WIN answers at most (a card on screen, another game): past its window it is skipped, so a sign-in on
+// another device past a threshold brings no catch-up. Surprise k shows the k-th wink in turn (whale shark, thresher,
+// then again). Once shown, never again in its window: this visit (WINKS) or this device (sDev('wink'), the surprise last
+// shown). Never over a card (the first-meeting cards, an offer).
+const WINK = {AT: [300, 650], WIN: 50};
+// The answer count from which surprise k is due.
+const winkAt = k => {
+  const A = WINK.AT,
+    m = A.length - 1;
+  return k <= m ? A[k] : A[m] + (k - m) * (m ? A[m] - A[m - 1] : A[0]);
+};
+// The surprise whose window holds answer count a, or -1.
+function winkSlot(a) {
+  let k = 0;
+  while (winkAt(k + 1) <= a) k++;
+  return a >= winkAt(k) && a < winkAt(k) + WINK.WIN ? k : -1;
 }
-function winkShow(n) {
+const WINKS = {}; // subject id -> the surprise shown in this visit
+const WINKK = () => sDev('wink'); // reefid-fish-wink: the surprise last shown on this device (core.js subjDev)
+function winkDue() {
+  const L = UNITS[SUBJ.id].winks(),
+    k = winkSlot(answersSoFar());
+  if (!L.length || k < 0 || WINKS[SUBJ.id] === k || store.get(WINKK(), -1) === k || document.querySelector('.unlock')) return null;
+  return {n: L[k % L.length], k};
+}
+function winkShow({n, k}) {
   const g = GX(n),
     w = g.wink,
     p = pick(g.views.wide),
     ch = shuffle([[n, g.name], ...w.choices]);
-  WINKS.seen.add(n);
-  WINKS.at = answersSoFar();
+  WINKS[SUBJ.id] = k;
+  store.set(WINKK(), k);
   SHOWNQ = null;
   $v.innerHTML = `${gameHelp('quiz')}<div class="q bleed wink">
     <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify">${ZOOMI}</button></figure></div>
@@ -2133,7 +2152,8 @@ function viewCustom() {
   draw();
 }
 // A switch of subject (app.js subjectLoad): the typed names are the subject's; on a real switch the questions planned
-// ahead, the "Again" and duel spacing, the winks seen and this visit's trail go too (a short visit, keep, keeps them).
+// ahead, the "Again" and duel spacing and this visit's trail go too (a short visit, keep, keeps them); the surprises shown
+// stay, per subject (WINKS).
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     TYPEN = null;
@@ -2144,8 +2164,6 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     rematch = [];
     twoAt = -Infinity;
     twoPair = '';
-    WINKS.seen.clear();
-    WINKS.at = -Infinity;
     DUELRUN = {up: 0, shown: 0}; // the other subject's hold: a new duel run
     DUELBACK = null;
     session = {ok: 0, n: 0, h: []};
