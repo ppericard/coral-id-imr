@@ -543,12 +543,13 @@ const server = http.createServer((req, res) => {
         rate = CAL.RATE,
         share = (c, rt) => {
           CAL.RATE = rt;
+          // 10000 draws: at 2000 a share near 0.05 moved by 0.01 from one run to the next, past the 1.3 ratio below.
           let hit = 0;
-          for (let i = 0; i < 2000; i++) {
+          for (let i = 0; i < 10000; i++) {
             P[n] = {ok: 20, ko: 2, h: '1111111111', th: 1.2, pg: 0.6, ps: JSON.parse(JSON.stringify(ps))};
             if (photoSet(n).shown.some(x => key(x) === c)) hit++;
           }
-          return hit / 2000;
+          return hit / 10000;
         };
       Object.keys(ps).forEach(f => ps[f] === undefined && delete ps[f]);
       const a = share(ca, 0),
