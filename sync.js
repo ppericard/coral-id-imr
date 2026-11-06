@@ -473,6 +473,25 @@ function syncPush() {
   });
   return syncing;
 }
+// An archived record (Pierre, 2026-11-05, Q88; sheet v58 userArchive, v20 rename): the trainer moved this account's
+// record apart under another name, so the sheet no longer finds the name (found false), although this device holds a
+// revision it saved there (srv). Pushing would silently re-create the account under the old name with the archive's
+// progress and achievements (the audit's G4): instead the device says the record was archived and offers to sign out
+// (bindSync), which clears it; the player then signs in again, under the same name if they like, and starts empty.
+// The same name taken again after an archive (sheet v58, Codex review #603): the sheet finds an account, but another
+// generation of it (_acct in its saved data, made with the account) than the one this device saved under: archived too.
+// A device that saw no generation yet adopts the first one it meets.
+const acctChanged = (j, me) => {
+  const a = j && j.ok && j.found && typeof j.acct === 'string' ? j.acct : '';
+  if (!a) return false;
+  if (me.acct && me.acct !== a) return true;
+  if (!me.acct) {
+    me.acct = a;
+    store.set('reefid-account', me);
+  }
+  return false;
+};
+const archivedOf = (j, me) => !!(j && j.ok && ((!j.found && typeof me.srv === 'number' && me.srv > 0) || acctChanged(j, me)));
 // at = the sheet revision merged against (script v6): if another device wrote in between, the sheet answers 'stale'
 // (answers logged all the same) and the whole pull-merge-send runs again, at most twice (code review M1).
 function syncOnce(tries = 0) {
@@ -485,6 +504,7 @@ function syncOnce(tries = 0) {
     .then(j => {
       if (SYNC !== me) return null;
       if (!j.ok) return j;
+      if (archivedOf(j, me)) return {ok: false, error: 'archived'}; // nothing pushed: the record is not re-created
       groupsSeen(j, me.name); // the beta groups first (v48): they never depend on the merge
       if (j.found) mergeSaved(j);
       repsSeen(j); // the player's reports (v57), after the merge: their thanks on another device came with it
@@ -513,7 +533,10 @@ function syncOnce(tries = 0) {
             ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
             // First send after signing in: the answers this device sent anonymously move to this name (script v12).
             ...(me.anon ? {anon: me.anon} : {}),
-            ...(typeof me.srv === 'number' ? {at: me.srv} : {})
+            ...(typeof me.srv === 'number' ? {at: me.srv} : {}),
+            // The account generation this device saved under (sheet v58): checked under the sheet's lock, so a record
+            // archived between this load and this save is never overwritten (Codex review #603).
+            ...(me.acct ? {acct: me.acct} : {})
           })
         },
         info,
@@ -522,6 +545,12 @@ function syncOnce(tries = 0) {
     })
     .then(j => {
       if (!j || SYNC !== me) return j;
+      // The account's generation from the save's reply (sheet v58): the device that created the account knows it at once,
+      // so a record archived and taken again before its next load is still told apart (Codex review #603).
+      if (j.ok && typeof j.acct === 'string' && j.acct && !me.acct) {
+        me.acct = j.acct;
+        store.set('reefid-account', me);
+      }
       // Answers the sheet confirmed are dropped from the queue even when the progress write itself was refused.
       if (j.log && log.length) {
         const done = new Set(log.map(x => x.id));
@@ -573,7 +602,7 @@ function syncOnce(tries = 0) {
       } else if (j && SYNC === me) {
         // A refused code, a removed account, the wrong-code wait: red at once, no retry mends them. Anything else the sheet
         // answered (busy, stale again, lock or server from v50, a failed write) is a passing failure, tried again.
-        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone') {
+        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone' || j.error === 'archived') {
           me.err = j.error;
           if (j.error === 'gone') me.into = j.into || '';
           delete me.fail;
@@ -615,8 +644,9 @@ function syncPull() {
   syncing = syncGet(me)
     .then(j => {
       if (SYNC !== me) return null;
+      if (archivedOf(j, me)) j = {ok: false, error: 'archived'};
       if (!j.ok) {
-        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone') {
+        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone' || j.error === 'archived') {
           me.err = j.error;
           if (j.error === 'gone') me.into = j.into || '';
           store.set('reefid-account', me);
@@ -707,10 +737,15 @@ const genusOfPhoto = f => {
 function sendReports() {
   const L = store.get('reefid-reports', []);
   if (!SYNC_URL || LOCAL || !L.length || navigator.onLine === false) return;
-  const k = x => JSON.stringify([x.rn || '', x.rp || '']),
+  // A report keeps the account generation it was written under (ra, sheet v58 acct): a record archived since, its name
+  // taken again, never gets it under the new account (Codex review #603).
+  const k = x => JSON.stringify([x.rn || '', x.rp || '', x.ra || '']),
     first = L.filter(x => k(x) === k(L[0])).slice(0, 50);
-  const reports = first.map(({rn, rp, ...x}) => x);
-  fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', reports})})
+  const reports = first.map(({rn, rp, ra, ...x}) => x);
+  fetch(SYNC_URL, {
+    method: 'POST',
+    body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', ...(first[0].ra ? {racct: first[0].ra} : {}), reports})
+  })
     .then(r => r.json())
     .then(j => {
       if (!j || !j.rep) return;
@@ -771,7 +806,7 @@ function reportDialog(c, btn) {
     e.preventDefault();
     if (f.who) store.set('reefid-report-name', f.who.value.trim());
     const why = f.why.value;
-    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()},
+    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin, ...(SYNC.acct ? {ra: SYNC.acct} : {})} : {rn: f.who.value.trim()},
       r = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         t: new Date().toISOString(),
@@ -1104,8 +1139,13 @@ const pvOwner = () => (SYNC && SYNC.name && SYNC.pin ? pagesOwner(SYNC) : pagesO
 // Who the pages summaries of a batch belong to: the name and code when signed in (checked by the sheet, never kept),
 // else this device's anonymous answer id. Nothing for a batch without one. A batch holds only the summaries of the
 // player active now (evBatch).
+// With the account generation (sheet v58): a record archived since, its name taken again, never gets them (Codex review #603).
 const pagesWho = batch =>
-  !batch.some(x => x && x.k === 'pages') ? {} : SYNC && SYNC.name && SYNC.pin ? {ename: SYNC.name, epin: SYNC.pin} : {eanon: anonId()};
+  !batch.some(x => x && x.k === 'pages')
+    ? {}
+    : SYNC && SYNC.name && SYNC.pin
+      ? {ename: SYNC.name, epin: SYNC.pin, ...(SYNC.acct ? {eacct: SYNC.acct} : {})}
+      : {eanon: anonId()};
 // Load times (app.js loadMark): sent once a visit.
 function loadSend() {
   if (loadSent || !('t0' in LOADM)) return;
@@ -1264,6 +1304,68 @@ function signinNudge(once = true, play = !once) {
   label();
   new MutationObserver(label).observe(box, {childList: true});
 }
+// Signing out clears this device's progress (it is in the sheet): the next player starts empty, and progress left here is
+// always the anonymous play of whoever signs in next, which signIn merges into their account. Moved out of bindSync
+// (2026-11-05) so that deleting one's own account (viewDeleteAccount) clears the device the same way. Call it once the
+// quiz tier is in (need(2): INTRO, ACHK). all (a self-deletion): every report this account queued and the name typed
+// for reports go too.
+function signOutClear(all) {
+  const me = SYNC;
+  SYNC = null;
+  // v58 (the deleted-accounts audit, G7): the reports queued under an account the sheet removed or archived (not merged:
+  // the sheet credits those to the name it joined) are never sent under its name; after a self-deletion, every one.
+  const lcn = x =>
+    String(x || '')
+      .trim()
+      .toLowerCase();
+  if (me && (all || (me.err === 'gone' && !me.into) || me.err === 'archived'))
+    store.set(
+      'reefid-reports',
+      store.get('reefid-reports', []).filter(x => !(x && lcn(x.rn) === lcn(me.name)))
+    );
+  if (all)
+    try {
+      localStorage.removeItem('reefid-report-name');
+    } catch (e) {}
+  // The pages summaries still queued are the account's: dropped, never sent under the next player (Codex review #423).
+  store.set(
+    EVQ,
+    store.get(EVQ, []).filter(x => !(x && x.k === 'pages'))
+  );
+  // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
+  // The first-meeting cards too (Codex review #350): the next player meets their own genera.
+  [
+    'reefid-account',
+    GROUPS_KEY, // the beta groups are this account's (app.js subjOpen)
+    // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
+    // the comeback belong to this player, Codex review #374).
+    ...SUBJECTS.flatMap(S => [
+      // the first-launch question's answer is the player's too (model.js startSet)
+      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)),
+      ...['hold', 'comeback'].map(k => subjDev(S.id, k))
+    ]),
+    BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
+    ACHK,
+    'reefid-ach-new',
+    CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
+    'reefid-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
+    RVK, // the rules version this player's progress was replayed with (replayAdopt)
+    'reefid-rv-msg', // progress.js RVN.KEY: the announcement cards of the rules versions, this player's
+    BOARD,
+    LOG0,
+    NUDGE,
+    ANONB,
+    ANONID,
+    ANONQ
+  ]
+    // And their names before the rename (core.js withOldNames): one left by a migration that could not write it.
+    .flatMap(k => withOldNames([k]))
+    .forEach(k => {
+      try {
+        localStorage.removeItem(k);
+      } catch (e) {}
+    });
+}
 // The account box: the top of ⚙ (#sync), or the sign-in card (tour, nudge, header button) while one is open.
 function bindSync(box = document.querySelector('.tsync') || document.getElementById('sync')) {
   prog();
@@ -1276,7 +1378,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       when = SYNC.last ? new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
     box.classList.add(bad ? 'warn' : 'on');
     box.innerHTML = bad
-      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so the sheet waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
+      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : SYNC.dirty || (SYNC.log || []).length // answers not confirmed yet, no error so far: say so, quietly
         ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
@@ -1310,45 +1412,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       (typeof need === 'function' ? need(2) : Promise.resolve()).then(signOff);
     };
     const signOff = () => {
-      SYNC = null;
-      // The pages summaries still queued are the account's: dropped, never sent under the next player (Codex review #423).
-      store.set(
-        EVQ,
-        store.get(EVQ, []).filter(x => !(x && x.k === 'pages'))
-      );
-      // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
-      // The first-meeting cards too (Codex review #350): the next player meets their own genera.
-      [
-        'reefid-account',
-        GROUPS_KEY, // the beta groups are this account's (app.js subjOpen)
-        // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
-        // the comeback belong to this player, Codex review #374).
-        ...SUBJECTS.flatMap(S => [
-          // the first-launch question's answer is the player's too (model.js startSet)
-          ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)),
-          ...['hold', 'comeback'].map(k => subjDev(S.id, k))
-        ]),
-        BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
-        ACHK,
-        'reefid-ach-new',
-        CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
-        'reefid-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
-        RVK, // the rules version this player's progress was replayed with (replayAdopt)
-        'reefid-rv-msg', // progress.js RVN.KEY: the announcement cards of the rules versions, this player's
-        BOARD,
-        LOG0,
-        NUDGE,
-        ANONB,
-        ANONID,
-        ANONQ
-      ]
-        // And their names before the rename (core.js withOldNames): one left by a migration that could not write it.
-        .flatMap(k => withOldNames([k]))
-        .forEach(k => {
-          try {
-            localStorage.removeItem(k);
-          } catch (e) {}
-        });
+      signOutClear();
       location.reload();
     };
     return;
@@ -1464,3 +1528,104 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
 // Ask the browser not to evict saved progress when storage runs low.
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 document.getElementById('sync').hidden = !SYNC_URL;
+
+// Deleting one's own account (Pierre, 2026-11-05: "a player can delete their own account and all their data themselves,
+// from a discreet page"): #delete-account, linked from About › Privacy and the privacy notice, never from a menu. Signed
+// in: what is deleted in plain words, the account's code, then a second step that asks again; the sheet (v58 selfDelete,
+// Code.gs selfDelete_) checks the code and deletes everything ("delete everything": answers, reports, progress, page
+// summaries; the Removed tombstone only), then this device is signed out and cleared (signOutClear with all) and shows
+// #delete-account|done. Signed out: how to delete an account. Before sheet v58 (rule D4): a note, no form.
+const SELFDEL_SHEET = 58;
+const selfDelOn = () => sheetV() >= SELFDEL_SHEET;
+function viewDeleteAccount(h) {
+  const box = body => `<h2 class="vh">Delete my account</h2><div class="about delacct">${body}</div>`,
+    what = `<section><h3>What is deleted</h3><p>Deleting your account permanently deletes your data:</p><ul>
+      <li>your name and your saved progress and settings;</li>
+      <li>every answer you gave in the games;</li>
+      <li>your problem reports and feedback;</li>
+      <li>the summaries of the pages you opened.</li></ul>
+      <p>Your name also leaves the app's technical logs and the statistics reports. Only your name and your scrambled code stay, in a list of removed accounts, so that another device still signed in is told the account was deleted. This device is then signed out and cleared. This cannot be undone.</p>
+      <p class="note">To keep your answers anonymously for the photo ratings instead, ask Pierre Pericard (<a href="privacy.html">privacy notice</a>).</p></section>`;
+  if (h === 'delete-account|done') {
+    $v.innerHTML = box(
+      `<section><h3>Account deleted</h3><p>Your account and all its data were permanently deleted, and this device was signed out and cleared.</p><p><a class="next" href="#home">Home</a></p></section>`
+    );
+    return;
+  }
+  if (!SYNC) {
+    $v.innerHTML = box(
+      `<section><h3>Not signed in</h3><p>To delete an account, sign in on this device with its name and code, then come back to this page.</p><p>Without an account, nothing saved carries your name: your progress stays in this browser, and your answers were sent under a random id.</p><p><button class="chip go" type="button" id="dsin">Sign in</button></p></section>` +
+        what
+    );
+    $v.querySelector('#dsin').onclick = () => signinNudge(false, false);
+    return;
+  }
+  if (SYNC.err === 'gone' || SYNC.err === 'archived') {
+    $v.innerHTML = box(`<section><h3>${esc(syncTrouble())}</h3><p>Sign out in ⚙ to clear this device.</p></section>`);
+    return;
+  }
+  if (!selfDelOn()) {
+    $v.innerHTML = box(
+      what +
+        `<section><p>Deleting your account from here is not available yet: come back in a few minutes, or ask Pierre Pericard.</p></section>`
+    );
+    return;
+  }
+  const me = SYNC;
+  $v.innerHTML = box(
+    what +
+      `<section><h3>Delete the account “${esc(me.name)}”</h3><form class="delform" novalidate><label>Your 4-digit code <input name="code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><p><button class="reset danger" type="submit">Delete my account…</button></p></form><p class="note" role="status"></p></section>`
+  );
+  const sec = $v.querySelector('.delform').parentNode,
+    msg = t => (sec.querySelector('[role=status]').textContent = t);
+  const step1 = () => {
+    const f = sec.querySelector('.delform');
+    f.onsubmit = e => {
+      e.preventDefault();
+      const code = f.code.value.trim();
+      if (!/^\d{4}$/.test(code)) return msg('Type the 4 digits of your code.');
+      // The code this device signed in with: a wrong one never reaches the sheet (it would count towards its wait).
+      if (code !== String(me.pin)) return msg('That is not this account’s code.');
+      msg('');
+      f.innerHTML = `<p><b>Delete “${esc(me.name)}” and all its data now?</b> This cannot be undone.</p><p><button class="reset danger" type="button" id="dyes">Yes, delete everything</button> <button class="chip" type="button" id="dno">Cancel</button></p>`;
+      f.querySelector('#dno').onclick = () => viewDeleteAccount('delete-account');
+      f.querySelector('#dyes').onclick = () => {
+        f.querySelectorAll('button').forEach(b => (b.disabled = true));
+        msg('Deleting…');
+        sheetFetch(SYNC_URL, {
+          method: 'POST',
+          body: JSON.stringify({selfDelete: 1, dname: me.name, dpin: me.pin, ...(me.acct ? {dacct: me.acct} : {}), av: appVer()})
+        })
+          .then(r => r.json())
+          .then(j => {
+            sheetSeen(j);
+            if (!(j && j.ok && j.deleted)) throw j || {};
+            return (typeof need === 'function' ? need(2) : Promise.resolve()).then(() => {
+              signOutClear(true);
+              location.replace('#delete-account|done');
+              location.reload();
+            });
+          })
+          .catch(j => {
+            const e = j && j.error;
+            viewDeleteAccount('delete-account');
+            $v.querySelector('.delacct [role=status]').textContent =
+              e === 'archived'
+                ? 'This account is archived.'
+                : e === 'gone'
+                  ? j.into
+                    ? `Your trainer merged this name into ${j.into} (the same person): nothing was deleted. Sign out, sign in as ${j.into}, then delete that account.`
+                    : 'This account was already removed.'
+                  : e === 'pin'
+                    ? 'The code was refused for this name.'
+                    : e === 'wait'
+                      ? 'Too many wrong codes for this name: try again in 10 minutes.'
+                      : e === 'busy'
+                        ? 'Too many tries for now: try again later, or ask Pierre Pericard.'
+                        : 'Could not delete the account now: check your connection and try again. Nothing was deleted.';
+          });
+      };
+    };
+  };
+  step1();
+}

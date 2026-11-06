@@ -1457,21 +1457,24 @@ const WIDTHS = [390, 1280];
           await go('~users'); // the corals' page, Dio's row still open, as the steps below expect
         }
       }
-      // Rename (sheet v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted, above), hidden
-      // from the leaderboard.
+      // Archive (sheet v58, was Rename v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted,
+      // above), out of the players' table, listed read-only under Archived.
       await p.click('[data-uopen="Ben Demo"]');
       await settle();
       await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
-      await p.click('[data-uren="Ben Demo"]');
+      await p.click('[data-uarch="Ben Demo"]');
       await p
-        .waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+        .waitForFunction(() => /Archived \(1\)/.test(document.getElementById('view').innerText), null, {timeout: 10000})
         .catch(() => {});
-      // The rename reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
+      // The archive reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
       // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
       await settle();
-      const ren = await text();
-      if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
-        fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
+      const arc = await p.evaluate(() => ({
+        rows: [...document.querySelectorAll('.adm-urow')].map(r => r.dataset.uopen),
+        fold: [...document.querySelectorAll('details.adm-uremoved')].map(d => d.textContent).join(' ')
+      }));
+      if (arc.rows.some(n => /^Ben Demo/.test(n)) || !/Archived \(1\)/.test(arc.fold) || !/Ben Demo-test/.test(arc.fold))
+        fails.push(`${w}px Players: archive Ben Demo → Ben Demo-test not shown apart (${JSON.stringify(arc)})`);
       // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
       // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
       const nameOf = n =>
@@ -1493,7 +1496,7 @@ const WIDTHS = [390, 1280];
             };
           })
           .catch(() => null);
-      for (const n of ['Ben Demo-test', 'Test Demo']) {
+      for (const n of ['Test Demo']) {
         const h = await nameOf(n);
         if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
         else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
@@ -1515,10 +1518,11 @@ const WIDTHS = [390, 1280];
         });
       const LONG = 'Bartholomew Alexander Montgomery-Fitzgerald Demo LongName-60';
       const before = await size();
-      await p.click('[data-uopen="Ben Demo"]');
-      await settle();
-      await p.evaluate(n => (window.prompt = () => n), LONG);
-      await p.click('[data-uren="Ben Demo"]');
+      // A player with that name (the table only: renaming moved to Archive, which takes the record out of it).
+      await p.evaluate(n => {
+        USERS.users.find(u => u.name === 'Carla Demo').name = n;
+        render();
+      }, LONG);
       await p.waitForFunction(n => document.querySelector(`[data-uopen="${n}"]`), LONG, {timeout: 10000}).catch(() => {});
       const after = await size(),
         cut = await p
@@ -1528,6 +1532,10 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Players: a 60-character name widened the table (${JSON.stringify({before, after})})`);
       if (!cut || !cut.cut || !cut.title.startsWith(LONG))
         fails.push(`${w}px Players: the 60-character name is not cut with its title (${JSON.stringify(cut)})`);
+      await p.evaluate(n => {
+        USERS.users.find(u => u.name === n).name = 'Carla Demo';
+        render();
+      }, LONG);
     }
     if (once) {
       // Once: merge and delete.
@@ -1792,8 +1800,9 @@ const WIDTHS = [390, 1280];
         return {
           answers: Number(k.Answers),
           players: Number(k.Players),
-          all: ANS.rows.length,
-          ids: new Set(ANS.rows.map(r => r[0])).size,
+          // but the answers a deleted account or an archive left (sheet v55/v58 flag 2): no player, photos only
+          all: ANS.rows.filter(r => r[11] !== 2).length,
+          ids: new Set(ANS.rows.filter(r => r[11] !== 2).map(r => r[0])).size,
           sw: !!document.querySelector('[data-sf="who"]')
         };
       });

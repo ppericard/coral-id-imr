@@ -192,14 +192,18 @@ function renderJourney(name, anonId = '') {
   }
   // A device that never signed in (Pierre, 2026-11-03): #~anon/<its anonymous id>, from Players > Not signed in. Its
   // answers are all there is: no saved progress, so no cards and no learned genera.
-  const u = anonId ? {name: 'Not signed in · ' + anonId, id: anonId} : (USERS.users || []).find(x => x.name === name);
+  // An archived record (sheet v58, the Archived fold on Players): read-only, its path as it was, marked archived.
+  const u = anonId
+    ? {name: 'Not signed in · ' + anonId, id: anonId}
+    : (USERS.users || []).find(x => x.name === name) ||
+      ((USERS.archived || []).find(x => x.name === name) && {...USERS.archived.find(x => x.name === name), arch: 1});
   if (!u || !u.id) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(anonId ? 'Not signed in · ' + anonId : name)}</h2></div><p class="note">${u ? 'No anonymous id for this player yet (sheet script v13).' : 'No player by this name.'}</p>`;
     bindJReload();
     return;
   }
   const R = (ANS.rows || []).filter(r => r[0] === u.id).sort((a, b) => a[1] - b[1]);
-  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}</div>`;
+  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}${u.arch ? '<small class="note">archived</small>' : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindJReload();
@@ -526,7 +530,9 @@ function renderJourney(name, anonId = '') {
   // sheets, and when?): per genus the times opened and the time spent, whether the first opening came before or after
   // the genus was first asked to them (the app's own record when the sheet was opened), and from where; then the pages
   // they spent their visits on. Read from the sheet's Pages tab under this player's id, never their name.
-  const SH = PGS && PGS.rows ? sheetsOf(PGS.rows.filter(x => x.id === u.id)) : null,
+  // an archived record's summaries come apart from the others (sheet v58 readEvents arch): read only here
+  const PR = PGS && (u.arch ? PGS.arch : PGS.rows),
+    SH = PR ? sheetsOf(PR.filter(x => x.id === u.id)) : null,
     secs = n =>
       n < 60
         ? `${n} s`
@@ -536,15 +542,13 @@ function renderJourney(name, anonId = '') {
     FROM_T = {quiz: 'Quiz feedback', learn: 'Learn', progress: 'My progress', other: 'Other'},
     RT_ = Object.create(null);
   if (SH)
-    PGS.rows
-      .filter(x => x.id === u.id)
-      .forEach(x =>
-        Object.entries(x.r).forEach(([k, [n, sc]]) => {
-          const o = (RT_[k] = RT_[k] || [0, 0]);
-          o[0] += n;
-          o[1] += sc;
-        })
-      );
+    PR.filter(x => x.id === u.id).forEach(x =>
+      Object.entries(x.r).forEach(([k, [n, sc]]) => {
+        const o = (RT_[k] = RT_[k] || [0, 0]);
+        o[0] += n;
+        o[1] += sc;
+      })
+    );
   // A page of another subject than the corals is logged as <subject>.<page> (core.js pageName): "quiz (Fish)".
   const pageLabel = k => {
     const [sj, pg] = pageSubj(k),
