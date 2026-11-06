@@ -1618,7 +1618,7 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
   const st = s.get({stats: '1'}),
     want = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
     ).ana.P;
   assert.deepStrictEqual(r.replay.rec, want);
   // Scored from the records, not from the stats: other stats give the same record.
@@ -1647,11 +1647,16 @@ test('v28: a player whose app applied an older rules version gets the replay of 
   const st = s.get({stats: '1'}),
     want = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
     ).ana.P;
   assert.deepStrictEqual(r.replay.rec, want, 'the same engine over the same rows');
   assert.deepStrictEqual([r.replay.rv, r.replay.n, r.replay.ids.length], [C.RV, 12, 12]);
-  assert.ok(r.replay.rec.Acropora.pg > 0 && typeof r.replay.rec.Acropora.th === 'number' && r.replay.rec['~level'].ok === 9);
+  assert.ok(
+    r.replay.rec.Acropora.ds > 0 &&
+      Array.isArray(r.replay.rec.Acropora.dp) &&
+      typeof r.replay.rec.Acropora.th === 'number' &&
+      r.replay.rec['~level'].ok === 9
+  );
   // The Replayed tab: Name, Rules, Rows, Since, Updated, Record.
   const T = s.sheets.Replayed;
   assert.deepStrictEqual([...T.rows[0]], ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']);
@@ -1708,7 +1713,7 @@ test("v42: the player list carries each player's replayed progress, learned and 
     P = JSON.parse(data['reefid-sync-coral-progress']),
     rec = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
     ).ana.P,
     G = C.replayedOf({P: rec}, P);
   const ana = r.users.find(u => u.name === 'Ana');
@@ -1732,7 +1737,8 @@ test("v42: the player list carries each player's replayed progress, learned and 
   assert.strictEqual(T.rows[1][2], 13);
   assert.strictEqual(T.rows.length, 3);
   assert.ok(Array.isArray(again.rp));
-  assert.strictEqual(f.n.c, 1, 'data.json read once (cached with the slate)');
+  // Twice in all: once for the replay (cached with the slate), once for the photo pool of the list (v81 pools_, cached).
+  assert.strictEqual(f.n.c, 2, 'data.json read once for each, then cached');
   // Without data.json: no rp (the admin reads the saved copies itself, as before v42).
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});
@@ -1874,7 +1880,7 @@ test('v36: the stored replay is not reused when the first-launch history changes
     want = c =>
       C.replayProgress(
         L.map(a => C.logRow(a, 'ana')),
-        {gen: GEN, mem: st.mem, conf: st.conf, starts: {ana: rec(c)}}
+        {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd, starts: {ana: rec(c)}}
       ).ana.P;
   assert.deepStrictEqual(r1.replay.rec, want('new'));
   assert.notDeepStrictEqual(want('know'), want('new'), 'the prior changes the replay of these answers');
@@ -1899,7 +1905,7 @@ const v55 = () => {
     "oldApp_('load', 'Ben'); sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ben (3000 per 6 h)'])",
     s.ctx
   );
-  s.cache.board14 = s.cache.achs15 = s.cache.stats15 = '{}';
+  s.cache.board14 = s.cache.achs15 = s.cache.stats17 = '{}';
   return s;
 };
 const rplAdd = (s, ...names) =>
@@ -1920,7 +1926,7 @@ test('v55 delete everything: answers, reports, page summaries, name mentions and
   assert.match(tabText(s, 'Events'), /\(~deleted [^)]+\)/);
   assert.match(tabText(s, 'Alerts'), /n:~deleted \S+ \(3000/);
   assert.ok(/Ben/.test(tabText(s, 'Removed')), 'the tombstone stays');
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined], 'caches cleared');
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined], 'caches cleared');
   assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).error, 'gone');
 });
 
@@ -1948,7 +1954,7 @@ test('v55 merge clears the caches and moves name mentions to the name it joined'
   const s = v55();
   const m = s.post({userMerge: {from: 'Ben', into: 'Ana', data: prog(4)}, token: TOK});
   assert.strictEqual(m.ok, true);
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined]);
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined]);
   assert.match(tabText(s, 'Events'), /\(Ana\)/);
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')));
 });
@@ -2503,4 +2509,22 @@ test('v69 fish units: old entry ids logged as families (one map per row), report
     vm.runInContext('ONCE_.fishunits()', s.ctx),
     'units renamed (fish entries → families): Answers 0 fish rows, Reports 0 cells'
   );
+});
+
+test("v81: the load and save replies carry the Notes tab's card lines (notes_), Pierre's text never in the repo", () => {
+  const s = loadCodeGs(withData());
+  // No Notes tab: an empty object.
+  const r0 = s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
+  assert.deepStrictEqual(r0.notes, {});
+  const N = s.ctx.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Notes');
+  N.appendRow(['Key', 'Text']);
+  N.appendRow(['card.rv8.ps', 'PS: thanks to a player who asked the right question.']);
+  N.appendRow(['private', 'not a card line: never served']);
+  N.appendRow(['card.bad key', 'a key with a space: never served']);
+  N.appendRow(['card.long', 'x'.repeat(400)]);
+  const want = {'card.rv8.ps': 'PS: thanks to a player who asked the right question.', 'card.long': 'x'.repeat(300)};
+  assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []}).notes, want);
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).notes, want);
+  // The card's PS key is the one rules version 9's apology reads (core.js RV_SORRY ps).
+  assert.ok(C.RV_SORRY.ps in want);
 });

@@ -229,9 +229,11 @@ async function overlays(b, base) {
       ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
       ['account', () => signinNudge(false, false)],
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
-      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
-      // the learned mark taken away (progress.js mxLostNotice), through their real callers.
-      ['update', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), the
+      // apology of rules version 9 (core.js RV_SORRY), and the learned mark taken away (progress.js mxLostNotice), through
+      // their real callers.
+      ['update', () => (store.set('reefid-rv-msg', {due: [RV - 1], told: [], pct: {[RV - 1]: [50, 42]}}), rvNotice())],
+      ['apology', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
       ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
       ['feedback', () => pulseAsk()]
     ];
@@ -1825,13 +1827,15 @@ async function replayAdoptCheck(base) {
       A('s3', 3, 'Acropora', 'Montipora', 'acropora-wide-745206089')
     ],
     mine = A('m1', 4, 'Acropora', 'Acropora', 'acropora-wide-745675208'),
+    // The stub answers as a script before the domain-score bar (sv below core.js DOM_SHEET): its replay, and the app's
+    // own answers on top, keep the moving average (dom: false, rule D4).
     rec = C.replayProgress(
       sheet.map(a => C.logRow(a, 'ana')),
-      {gen: RGEN}
+      {gen: RGEN, dom: false}
     ).ana.P,
     all = C.replayProgress(
       [...sheet, mine].map(a => C.logRow(a, 'ana')),
-      {gen: RGEN}
+      {gen: RGEN, dom: false}
     ).ana.P,
     // The sheet's copy, saved under the older rules (wrong bars), and this device's: the same plus its unsent answer.
     old = {
@@ -1934,29 +1938,44 @@ async function replayAdoptCheck(base) {
     if (a.pg !== dev.Acropora.pg || a.ok !== 2 || 'rv' in a || s.rv || s.pending || s.card)
       fails.push(`replay: adopted from a script before v${C.RV_SHEET}: ${JSON.stringify({a, rv: s.rv, pending: s.pending, card: s.card})}`);
     // The standard card (core.js RV_CARD, only: 'changed', min 5) is due only when the progress % moved by 5 points or
-    // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice).
-    const due = await p.evaluate(v => {
-      const d = [];
-      for (const pct of [
-        [10, 10],
-        [10, 14],
-        [10, 5]
-      ]) {
+    // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice): on the versions before the apology.
+    const card = v =>
+      p.evaluate(v => {
+        const d = [];
+        for (const pct of [
+          [10, 10],
+          [10, 14],
+          [10, 5]
+        ]) {
+          localStorage.removeItem('reefid-rv-msg');
+          rvNoticeAdd(0, v, pct);
+          // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
+          document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
+          rvNotice();
+          // The card's text without its heading (the % may be on a line of its own: core.js RV_SORRY pct).
+          const t = [...document.querySelectorAll('.rvmsg p:not(.ulkick)')].map(e => e.textContent).join(' ');
+          d.push([JSON.parse(localStorage.getItem('reefid-rv-msg')).due, t]);
+          document.querySelectorAll('.rvmsg').forEach(e => e.remove());
+        }
         localStorage.removeItem('reefid-rv-msg');
-        rvNoticeAdd(0, v, pct);
-        // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
-        document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
-        rvNotice();
-        const t = (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '';
-        d.push([JSON.parse(localStorage.getItem('reefid-rv-msg')).due, t]);
-        document.querySelectorAll('.rvmsg').forEach(e => e.remove());
-      }
-      localStorage.removeItem('reefid-rv-msg');
-      return d;
-    }, C.RV);
-    // Every version since 0 has the standard card (RV_CARD): it is due once, for the last version (core.js rvMsgs).
-    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV) || !due[2][1].includes('went from 10% to 5%'))
+        return d;
+      }, v);
+    const due = await card(C.RV - 1);
+    // Every version before the apology has the standard card (RV_CARD): it is due once, for the last of them (core.js rvMsgs).
+    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV - 1) || !due[2][1].includes('went from 10% to 5%'))
       fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
+    // Rules version 9's apology (core.js RV_SORRY, min 1): due from a point, alone in the jump, with the two %.
+    // Only on a drop (RV_SORRY down): 10% → 14% gets no card (a rise under the standard card's 5 points), 10% → 5% the
+    // apology.
+    const sorry = await card(C.RV);
+    if (
+      sorry[0][0].length ||
+      sorry[1][0].length ||
+      sorry[2][0].join() !== String(C.RV) ||
+      !sorry[2][1].includes('Your progress: 10% → 5%') ||
+      !sorry[2][1].startsWith("You've been learning so fast")
+    )
+      fails.push(`replay: the apology card: ${JSON.stringify(sorry)}`);
     await c.close();
   }
   // A stale device: the replay adopted once, its own answer on top.
@@ -1970,7 +1989,7 @@ async function replayAdoptCheck(base) {
       log: JSON.parse(localStorage.getItem('test-sheet-log') || '[]'),
       pending: (JSON.parse(localStorage.getItem('reefid-account') || '{}').log || []).length,
       card: !!document.querySelector('.rvmsg'),
-      text: (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '',
+      text: [...document.querySelectorAll('.rvmsg p:not(.ulkick)')].map(e => e.textContent).join(' '),
       rvm: JSON.parse(localStorage.getItem('reefid-rv-msg') || '{}'),
       pct: genScore('Acropora')
     }));
@@ -1990,12 +2009,12 @@ async function replayAdoptCheck(base) {
     if (!last || Math.abs(JSON.parse(last.data).Acropora.pg - all.Acropora.pg) > 1e-9)
       fails.push('replay: the adopted progress was not sent');
     if (s.pending) fails.push('replay: its own answer was not sent');
-    // Version 1's card is due only when the replay moved the progress % by 5 points or more (Pierre, 2026-11-03), and
-    // says the two % (it may wait behind the learned-mark card).
+    // The card of the last version (rules version 9's apology, core.js RV_SORRY) is due only when the replay moved the
+    // progress % by its min points or more, and says the two % (it may wait behind the learned-mark card).
     const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
     if (
-      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && Math.abs(pt - pf) >= C.RV_CARD.min) ||
-      (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`))
+      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && pf - pt >= C.RVS[C.RVS.length - 1].msg.min) ||
+      (s.card && !s.text.includes(`${pf}% → ${pt}%`))
     )
       fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
     // The next load: not adopted again (the sheet now sends another record: the progress stays), and the load says the
@@ -4512,21 +4531,22 @@ const PARTS = [
       }
       if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
       // One count of the genera met (a card or an answer) everywhere on the page (new-player walkthrough 2026-11-04: "23/40
-      // met" beside "12 not open yet" after 28 cards): the badge says the 4 first cards' genera are met, the genera not
-      // open yet are the others, and a genus met on a card but never asked does not read "Not seen".
+      // met" beside "12 not open yet" after 28 cards): the card says the 4 first cards' genera are unlocked (Pierre,
+      // 2026-11-05: "30/40 genera unlocked", on its own line under the name), the genera not open yet are the others, and a
+      // genus met on a card but never asked does not read "Not seen".
       const mc = await q2.evaluate(() => {
         const n = slateGenera().length,
           met = slateGenera().filter(introduced),
           tile = document.querySelector(`#view a[href="#learn/genus/${encodeURIComponent(met[0])}"]`);
         return {
-          badge: (document.querySelector('#view .pbadge') || {}).textContent || '',
+          badge: (document.querySelector('#view .pbadge .pbunl') || {}).textContent || '',
           met: met.length,
           left: introLeft().length,
           n,
           tip: tile ? tile.title : null
         };
       });
-      if (!mc.badge.includes(`${mc.met}/${mc.n} met`) || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
+      if (mc.badge !== `${mc.met}/${mc.n} genera unlocked` || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
         fails.push(`${w}px My progress, genera met: ${JSON.stringify(mc)}`);
       else {
         await q2.click('#openall');
@@ -4535,6 +4555,9 @@ const PARTS = [
         // ... and says so (the box just went before).
         const said = await q2.evaluate(() => document.querySelector('.apptoast')?.textContent || '');
         if (!/All \d+ genera are open/.test(said)) fails.push(`${w}px open all genera: no confirmation (${said})`);
+        // The card follows at once: every genus unlocked.
+        const un = await q2.evaluate(() => (document.querySelector('#view .pbadge .pbunl') || {}).textContent || '');
+        if (un !== `${mc.n}/${mc.n} genera unlocked`) fails.push(`${w}px open all genera: the card says "${un}"`);
       }
       // Every slate genus is now met, so the bonus genera offer (a prompt, tested in draw.smoke.js) would come at 30 and
       // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off). Likewise the card offering

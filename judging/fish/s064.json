@@ -97,12 +97,8 @@
    "keep": "dup"
   },
   "fish-s064-cand-168057900": {
-   "code": "p1g2bmm1",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "A drawn arrow points at the fish"
+   "code": "o1g2mmx1",
+   "keep": "best"
   },
   "fish-s064-cand-581931636": {
    "code": "p1g0sl1a2",

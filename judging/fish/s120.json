@@ -151,6 +151,14 @@
   "fish-s120-cand-404276297": {
    "code": "p1g2bm11",
    "keep": "dup"
+  },
+  "fish-s120-cand-fb-Potri_u8": {
+   "code": "o1g2ml13",
+   "keep": "best"
+  },
+  "fish-s120-cand-fb-Potri_j2": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
   }
  }
 }

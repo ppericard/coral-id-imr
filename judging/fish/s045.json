@@ -53,12 +53,12 @@
    "keep": "best"
   },
   "fish-s045-cand-757066012": {
-   "code": "p1g1sm13",
+   "code": "p1g1mm13",
    "keep": "best",
    "unsure": [
-    "keep"
+    "code"
    ],
-   "note": "The obvious fish is red; check it is the observed one"
+   "note": "A red fish, not this species' colours: maybe the wrong fish (Q180), for Pierre"
   },
   "fish-s045-cand-703243946": {
    "code": "o1g1sss2",

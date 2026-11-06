@@ -73,12 +73,8 @@
    "keep": "best"
   },
   "fish-s315-cand-674726798": {
-   "code": "d1g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "A drawn blue circle marks the fish"
+   "code": "d1g1bsx1",
+   "keep": "best"
   },
   "fish-s315-cand-609535834": {
    "code": "d1g2sm1c2",
@@ -118,6 +114,10 @@
   },
   "fish-s315-cand-636832130": {
    "code": "d1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s315-cand-fb-Syvar_u4": {
+   "code": "p1g1slsc3",
    "keep": "best"
   }
  }

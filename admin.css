@@ -712,31 +712,54 @@ body.adm-dragging * {
   box-shadow: var(--shadow);
 }
 
-/* The subject switch (admin plan PR 2: Corals | Fish, left of the groups), each side with its to-do count. Phones: a
-   full-width row under the header line (the study's mock-up 1). */
+/* The subject switch (admin plan PR 2: Corals | Fish, next to the logo), each side with its to-do count. A mini switch in
+   the top bar on every page and width (Pierre, 2026-11-06: as the app's header chip, app.css .subjb: a 32 px pill, the
+   subject's icon in the accent, its name; on phones the icon and the count only, the name kept as its label), one tap a
+   side (rule A2). */
 .adm-subj {
   display: inline-flex;
   flex: none;
-  padding: 3px;
+  align-items: stretch;
+  height: 32px;
+  padding: 2px;
   gap: 2px;
   background: var(--surface-2);
+  border: 1px solid var(--line);
   border-radius: var(--pill);
 }
 .adm-subj[hidden] {
   display: none;
 }
 .adm-subj a {
-  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px 0 7px;
+  font-size: var(--fs-s);
   color: var(--muted);
   text-decoration: none;
-  padding: 5px 12px;
+  white-space: nowrap;
   border-radius: var(--pill);
+}
+.adm-subj a .sji {
+  flex: none;
 }
 .adm-subj a[aria-pressed='true'] {
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
   box-shadow: var(--shadow);
+}
+.adm-subj a[aria-pressed='true'] .sji {
+  color: var(--accent);
+}
+/* Inert on a shared page (admin.js SHARED: the list of players, the same on both sides): it shows the side the other
+   pages are on, and takes no click. */
+.adm-subj.off {
+  opacity: 0.45;
+}
+.adm-subj.off a {
+  pointer-events: none;
 }
 .adm-scnt {
   font-size: var(--fs-xs);
@@ -1713,18 +1736,31 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 }
 /* Phones: header on one line (entry points in a menu; Redo and Help move into ⋯). */
 @media (max-width: 599px) {
-  body.admin header:has(.adm-subj:not([hidden])) {
-    flex-wrap: wrap;
+  /* Phones: the logo steps aside while the switch shows (the page menu keeps its room), each side its icon over its
+     count, the name its label only. */
+  body.admin header:has(.adm-subj:not([hidden])) .brand {
+    display: none;
   }
   body.admin .adm-subj {
-    order: 10;
-    flex: 1 1 100%;
+    height: 40px;
   }
   body.admin .adm-subj a {
-    flex: 1;
-    text-align: center;
-    min-height: 36px;
-    line-height: 26px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-width: 34px;
+    padding: 0 6px;
+  }
+  body.admin .adm-scnt {
+    line-height: 1;
+  }
+  body.admin .adm-sjn {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   body.admin header {
     flex-wrap: nowrap;
@@ -1738,9 +1774,9 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
     flex: 1;
     min-width: 0;
     font: inherit;
-    font-size: 0.95rem;
+    font-size: var(--fs-s);
     min-height: 44px;
-    padding: 0 8px;
+    padding: 0 6px;
     border: 1px solid var(--line);
     border-radius: var(--pill);
     background: var(--surface);
@@ -1787,7 +1823,7 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 @media (max-width: 599px) {
   body.admin .chip.adm-save {
     min-width: 0;
-    padding: 0 12px;
+    padding: 0 9px;
   }
   .adm-swbar button {
     font-size: 0.86rem;
@@ -4757,4 +4793,109 @@ button.adm-chip[aria-pressed='true'] {
   fill: none;
   stroke: var(--line);
   stroke-width: 1;
+}
+/* The fish units page's wink (admin plan PR 6): the surprise card as players meet it, its photo beside the choices and
+   both feedback lines; the right choice marked. */
+.adm-winkc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.adm-winkc > img,
+.adm-winkc > .none {
+  width: 220px;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--line);
+}
+.adm-winkc > div {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.adm-winkc p {
+  margin: 0 0 6px;
+}
+.adm-winka {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.adm-winka span {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.adm-winka span.ok {
+  border-color: var(--good);
+  background: var(--good-bg);
+  font-weight: 600;
+}
+/* The fish units page (admin plan PR 6 on the book's families): the key group headings of the family list, the IMR tag,
+   the All | IMR filter, one block per genus with its species inside. */
+.adm-fgrp {
+  margin: 10px 4px 2px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.adm-src.adm-imrt {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.adm-sname small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.adm-fgen {
+  margin: 0 0 18px;
+}
+.adm-fgenh {
+  margin: 14px 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+/* A player's Journey, one per subject (admin-journey.js jseg): Corals | Fish at the right of the title, each with the
+   player's answers in it; links styled as the segmented buttons. */
+.adm-jsubj {
+  margin-left: auto;
+}
+.adm-jsubj a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  min-height: 30px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--muted);
+  text-decoration: none;
+}
+.adm-jsubj a + a {
+  border-left: 1px solid var(--line);
+}
+.adm-jsubj a[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-jsubj small {
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+}
+/* The list of players (admin.js renderUsers): a group of columns per subject, its name over them, a rule at its left. */
+.adm-utbl .adm-ugrp th {
+  padding-bottom: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.adm-utbl .adm-ug0 {
+  border-left: 1px solid var(--line);
+  padding-left: 10px;
 }

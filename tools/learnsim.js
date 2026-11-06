@@ -10,6 +10,12 @@
 //                          [--rt off] [--rtapp off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
+//                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}']
+// --subject fish (2026-11-06, Q186: the fish draw's learning outcomes, rules L11-L12): the player plays the fish subject
+// (its slate of IMR entries, its photos and calibration); the coral-only measures (Millepora, bonus genera) stay empty.
+// --photos FILE serves that file as fish-photos.json (another pool, e.g. a branch's); --calib merges fields over the
+// subject's draw calibration (core.js SUBJECTS calib) before the run: '{"u":1,"pool":1e9}' gives back the fish draw of
+// before Q186 (model.js CAL.U, the whole floor for every observation).
 //
 // --learner field (2026-11-05, the progress and set-size study; docs/LEARNING.md "Field learner"): a learner whose
 // confusions grow with the number of genera it holds in mind and with how much they look alike (below, "The field
@@ -142,6 +148,9 @@
 //   right % on all of them and on those repeats, mean progress bar against true know (prog-know) and Elo against
 //   logit(know) (th-lk) over the genera met, genera learned; and, per genus that entered the exam or was learned, the
 //   true reference success then (ref@exam, ref@learn) and the question it happened.
+// - Per run, in --out only (2026-11-06, photo exposure, Q187-Q190): expo, each question's [genus, colony (observation),
+//   photos shown], and pool (seed 1's runs), each game genus's photos as [file, colony]: repeats, photos never shown,
+//   answers per photo (docs/LEARNING.md "Photo exposure").
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -254,7 +263,11 @@ const SEEDS = Number(arg('seeds', 5)),
   LEARN = arg('learner', 'item'),
   TAU = Number(arg('tau', 0.5)),
   CUSTOMN = Number(arg('custom', 0)),
-  DRILL = Number(arg('drill', 200));
+  DRILL = Number(arg('drill', 200)),
+  SUBJECT = arg('subject', 'coral'),
+  PHOTOS = arg('photos', null),
+  CALIBX = JSON.parse(arg('calib', '{}'));
+if (!['coral', 'fish'].includes(SUBJECT)) throw new Error('--subject coral or fish');
 if (!['item', 'field', 'exemplar'].includes(LEARN)) throw new Error('--learner item, field or exemplar');
 if (!(TAU >= 0 && TAU <= 1)) throw new Error('--tau between 0 and 1');
 if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or more genera, --drill 1 or more questions');
@@ -308,8 +321,9 @@ const TYPES = {
 };
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
-    f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
-  if (!f.startsWith(ROOT)) {
+    own = PHOTOS && u === '/fish-photos.json',
+    f = own ? path.resolve(PHOTOS) : path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
+  if (!own && !f.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end();
   }
@@ -326,6 +340,11 @@ const server = http.createServer((req, res) => {
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
   const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg;
+  // The subject's draw calibration overridden (--calib), and the corals' bonus genera only on the corals (--subject).
+  if (cfg.calib && Object.keys(cfg.calib).length) SUBJ.calib = {...(SUBJ.calib || {}), ...cfg.calib};
+  const BON = SUBJ.id === 'coral' && typeof BONUS !== 'undefined' ? BONUS : [];
+  // The fish surprise questions (quiz.js winkDue, from answer 300) count in nothing: left out of the measured path.
+  if (typeof winkDue === 'function') winkDue = () => null;
   const field = cfg.learner === 'field',
     exem = cfg.learner === 'exemplar',
     tau = cfg.tau,
@@ -363,7 +382,7 @@ function play(cfg) {
   if (tg) {
     // Every game photo of every genus the game can ask: its true difficulty, and the app's estimate of it.
     const ps = {};
-    [...slateGenera(), ...BONUS].forEach(g =>
+    [...slateGenera(), ...BON].forEach(g =>
       VIEWS.forEach(([v]) =>
         gamePics(g, v).forEach(p => {
           const d = muOf(g) + TSD * probit(hashU(p.f, 1));
@@ -414,7 +433,7 @@ function play(cfg) {
     TRACE = 80,
     know = {};
   SL.forEach((g, i) => (know[g] = (prof.grp ? prof.grp.includes(shownGroup(g)) : i % 5 < prof.m) ? prof.hi : prof.lo));
-  BONUS.forEach(g => (know[g] = prof.lo));
+  BON.forEach(g => (know[g] = prof.lo));
   const kn = g => know[g] ?? prof.lo;
   const teach = (g, x) => {
     if (g in know) know[g] += x * (1 - know[g]);
@@ -467,14 +486,14 @@ function play(cfg) {
     pField = (t, V, d, single, mem = 0) =>
       1 / (1 + Math.exp(d + (single ? L.SINGLE : 0) - mem) * V.reduce((a, c) => a + (c === t ? 0 : rOf(t, c)), 0)),
     // The genera a field learner holds in mind for a typed answer: those it has met, and the genus asked.
-    vocab = t => [...new Set([t, ...SL.concat(BONUS).filter(introduced)])];
+    vocab = t => [...new Set([t, ...SL.concat(BON).filter(introduced)])];
   // The exemplar learner (--learner exemplar; LEARNER.EX above): its stored exemplars per genus, [atypicality, weight,
   // photo file or null], prior knowledge as w0 = know / (1 - know) typical ones.
   const EXC = L.EX,
     EXS = {},
     rAt = d => EXC.R * sig(d),
     exAdd = (g, r, f, w = 1) => (EXS[g] = EXS[g] || []).push([r, w, f]);
-  if (exem) [...SL, ...BONUS].forEach(g => exAdd(g, rAt(0), null, Math.min(50, kn(g) / (1 - kn(g)))));
+  if (exem) [...SL, ...BON].forEach(g => exAdd(g, rAt(0), null, Math.min(50, kn(g) / (1 - kn(g)))));
   // The summed similarity of a photo of t (atypicality rx, file fx or null) to c's exemplars.
   const exS = (t, c, rx, fx) => {
     const D = c === t ? 0 : EXC.D * (1.1 - sim(t, c));
@@ -511,6 +530,16 @@ function play(cfg) {
     memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
   // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
   const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v).map(p => p.f))).size])),
+    // Photo exposure (2026-11-06, Q187-Q190): each question's unit, colony (observation) and photos shown, and the game
+    // photos of each unit with their colony, for the repeat rate, the photos never shown and the answers per photo.
+    okey = p => p.o || p.f,
+    expo = [],
+    POOL = Object.fromEntries(
+      SL.concat(BONUS).map(g => [
+        g,
+        [...new Map(VIEWS.flatMap(([v]) => gamePics(g, v).filter(p => gamePhotoOk(g, p))).map(p => [p.f, okey(p)])).entries()]
+      ])
+    ),
     grpOf = g => (!(g in NPH) ? null : NPH[g] <= L.FEW ? 'few' : NPH[g] >= L.MANY ? 'many' : null),
     GRP = {few: SL.filter(g => grpOf(g) === 'few'), many: SL.filter(g => grpOf(g) === 'many')},
     gq = {few: {n: 0, ok: 0, rep: 0, repOk: 0}, many: {n: 0, ok: 0, rep: 0, repOk: 0}};
@@ -632,7 +661,10 @@ function play(cfg) {
       if (bon.offer === null && i >= 0) bon.offer = i + 1;
       bo.click();
     }
-    for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not([data-back]):not(.sec)'));) b.click();
+    for (let b, k = 0; k < 50 && (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not([data-back]):not(.sec)')); k++) {
+      b.click();
+      if (k === 49) throw new Error('a first-meeting card does not close: ' + (b.closest('.unlock') || {}).className);
+    }
     // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen (Codex
     // review #393). Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
     // it is taken for (the same confusion weights, the genus itself left out).
@@ -646,6 +678,7 @@ function play(cfg) {
       rep = fs.some(f => LM[f] && LM[f][0]),
       pRec = sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)),
       first = !asked(t);
+    if (shown.length) expo.push([t, okey(shown[0]), ...fs]);
     let pick = t,
       pTrue;
     if (exem) {
@@ -832,7 +865,7 @@ function play(cfg) {
     blk.n++;
     blk.ok += good;
     if (mill.met === null && introduced('Millepora')) mill.met = i + 1;
-    SL.concat(BONUS).forEach(g => !(g in metAt) && introduced(g) && (metAt[g] = i + 1));
+    SL.concat(BON).forEach(g => !(g in metAt) && introduced(g) && (metAt[g] = i + 1));
     if (mill.asked === null && t === 'Millepora') mill.asked = i + 1;
     if (bon.offer !== null && bon.offer <= i + 1) {
       bon.q++;
@@ -1017,13 +1050,15 @@ function play(cfg) {
     learnedAt,
     metAt,
     nph: NPH,
+    expo,
+    pool: seed === 1 ? POOL : null,
     pairs: PAIRS.length,
     breaks: out,
     millMet: mill.met,
     millAsked: mill.asked,
     bonusOffer: bon.offer,
     bonusShare: bon.q ? bon.n / bon.q : null,
-    bonusMet: BONUS.filter(introduced).length,
+    bonusMet: BON.filter(introduced).length,
     openAll: openall ? oa : null,
     choice,
     early,
@@ -1043,12 +1078,13 @@ async function run(browser, base, name, seed) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  await ctx.addInitScript(([st, rtapp, sv]) => {
+  await ctx.addInitScript(([st, rtapp, sv, subj]) => {
     localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
     // The sync script version the app last saw (sync.js sheetV): one that replays the answer time (core.js RT_SHEET), so
     // the app weighs its steps by it; --rtapp off: an older one.
     if (rtapp) localStorage.setItem('reefid-sheet-v', String(sv));
-    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+    localStorage.setItem(`reefid-sync-${subj}-start`, '{"c":"new","t":1}');
     if (st)
       localStorage.setItem(
         'reefid-photo-stats',
@@ -1061,7 +1097,7 @@ async function run(browser, base, name, seed) {
           ...(st.gd ? {gd: st.gd} : {})
         })
       );
-  }, [STATS_JSON, RTAPP, SHEETV]);
+  }, [STATS_JSON, RTAPP, SHEETV, SUBJECT]);
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));
@@ -1090,7 +1126,8 @@ async function run(browser, base, name, seed) {
     learner: LEARN,
     tau: TAU,
     custom: CUSTOMN,
-    drill: DRILL
+    drill: DRILL,
+    calib: CALIBX
   });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
