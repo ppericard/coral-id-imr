@@ -371,6 +371,29 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
   }
 );
 
+// Pierre's word stands over a photo in play by itself (Codex review #674): an automatic add of the auto-sort he undid
+// (log code '-a...', autosort.js fishUndo) keeps the photo out, and his explicit full-photo crop [0, 0, 1, 1] beats the
+// pass's proposed crop.
+test("fish_game.py: an undone auto add stays out, and Pierre's full-photo crop beats the proposal", () => {
+  const dir = autoWorld(),
+    cur = JSON.parse(fs.readFileSync(path.join(dir, 'curation.json'), 'utf8'));
+  cur.fish.auto = {'2026-11-06': {'fish-s003-cand-302': '-ae', 'fish-s003-cand-305': '-r'}};
+  cur.fish.crop['fish-s003-cand-301'] = [0, 0, 1, 1];
+  fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(cur));
+  const got = JSON.parse(
+    py(`import fish_game as G
+fish, cur, cand, sug, refs, codes, crops = G.inputs(${JSON.stringify(dir)})
+todo, keep, _ = G.plan(fish, cur, cand, sug, {'photos': {}}, refs, codes, crops)
+print(json.dumps({r['f']: c for r, c, _ in todo}))`)
+  );
+  assert.ok(!('fish-s003-cand-302' in got), 'an undone auto add stays out');
+  assert.strictEqual(got['fish-s003-cand-301'], null, 'his full-photo crop, not the proposal');
+  const rec = {f: 'fish-s003-cand-302', sp: 's003', auto: 'cand'};
+  assert.ok(!C.fishIn(cur.fish, rec, C.fishGone(cur)), 'core.js agrees');
+  assert.ok(C.fishIn(cur.fish, {...rec, f: 'fish-s003-cand-301'}, C.fishGone(cur)));
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
 // core.js fishPhotos: curated photos where an entry has enough very easy ones, the stopgap's joining them otherwise.
 const ph = (f, k = {}) => ({f, o: 'https://www.inaturalist.org/observations/' + f, src: INAT(f.replace(/\D/g, '') || 1), ...k});
 test('fishPhotos: an entry with 5 very easy curated photos plays on them alone; fewer, the stopgap joins', () => {

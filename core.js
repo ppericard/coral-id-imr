@@ -671,9 +671,15 @@
   // (p.auto: a candidate judged sure, a reference photo judged at the reference level; tools/fish_game.py in_play) whose
   // photo id (fishPid) he did not reject, exclude or move with Not this (gone: those ids, fishGone; tools/fish_game.py
   // fish_in is its copy).
+  // An automatic add of the auto-sort he undid counts as decided against too (its log code '-a...', autosort.js fishUndo:
+  // "the photo waits for his decision"; Codex review #674).
   const fishGone = (cur, F = (cur && cur.fish) || {}) =>
     new Set(
-      [...['seen', 'exclude', 'out'].flatMap(k => Object.keys(F[k] || {})), ...Object.keys((cur && cur.exclude) || {})].map(f => fishPid(f))
+      [
+        ...['seen', 'exclude', 'out'].flatMap(k => Object.keys(F[k] || {})),
+        ...Object.values(F.auto || {}).flatMap(d => Object.keys(d || {}).filter(f => /^-a/.test(String(d[f])))),
+        ...Object.keys((cur && cur.exclude) || {})
+      ].map(f => fishPid(f))
     );
   const fishIn = (F, p, gone) => !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f))));
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
@@ -710,8 +716,9 @@
       cu = {},
       cid = new Set();
     if (F) ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => gone.add(fishPid(f))));
+    const autoGone = F ? fishGone(cur) : gone;
     Object.entries(game || {}).forEach(([t, L]) => {
-      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)));
+      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, autoGone)) && !X[p.f] && !xid.has(fishPid(p.f)));
       cu[t].forEach(p => cid.add(fishPid(p.f)));
     });
     new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {
