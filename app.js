@@ -1798,7 +1798,7 @@ function cardShow(o) {
   const btn = (b, n) =>
     b ? `<button class="next${n === 2 ? ' sec' : ''}" type="button" data-b="${n}"${b.attr ? ' ' + b.attr : ''}>${b.text}</button>` : '';
   const draw = () => {
-    const e = `<span class="e" aria-hidden="true">${CARD_KINDS[o.kind] || ''}</span>`,
+    const e = `<span class="e" aria-hidden="true">${o.emoji || CARD_KINDS[o.kind] || ''}</span>`, // o.emoji: its own (an achievement's)
       band = !!o.photo;
     d.innerHTML = `<div class="ulcard${band ? ' band' : ''}" data-k="${o.kind || ''}">${
       band ? '' : `<div class="ulmed${o.visual ? ' vis' : ''}" aria-hidden="true">${o.visual || e}</div>`

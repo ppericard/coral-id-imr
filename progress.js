@@ -12,14 +12,16 @@
 // last three. The rank links to the leaderboard, the achievements to their page.
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
-    got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
+    got = ACH_L()
+      .filter(a => A[a.id])
+      .sort((x, y) => A[y.id] - A[x.id]),
     name = SYNC && SYNC.name ? SYNC.name : '',
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
     <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
       SUBJ.ach
-        ? `<a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH.length} ${got
+        ? `<a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
             .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
             .slice(0, 3)
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
@@ -505,7 +507,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
     bonus: bonusList().filter(introduced).length,
-    basics: !!A._basics
+    basics: !!A._basics,
+    fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
 }
 // Full recount, once per device (Pierre, 2026-11-01: "redo the calculation cleanly for everyone, achievements too,
@@ -519,7 +522,7 @@ function achMigrate() {
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
   const B = {_v: ACH_V};
-  if (A) ['_run', '_best', '_cor', '_hard', '_gone', '_basics'].forEach(k => A[k] && (B[k] = A[k]));
+  if (A) Object.keys(A).forEach(k => k[0] === '_' && k !== '_v' && A[k] && (B[k] = A[k])); // the feats (_run, _best, _cor, _hard, _gone, _basics, _fb)
   const snap = achSnap(B),
     t = Date.now();
   ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
@@ -537,22 +540,69 @@ function achCheck(silent) {
   }
   // Only the first achievement of each family and the top tier pop up (Pierre, 2026-11-02, after a walkthrough counted
   // 7-9 toasts in 60 answers): a new kind stays a surprise, an intermediate step lands quietly on the achievements page
-  // with a "new" dot on 🏅 / 🏆. Several at once make one toast.
+  // with a "new" dot on 🏅 / 🏆. Several at once make one toast. Every Contributions tier pops up (Pierre, 2026-11-05, Q65).
   const fams = new Set(ACH.filter(a => A[a.id]).map(achFam)),
     t = Date.now(),
     loud = [],
     quiet = [];
   ids.forEach(id => {
     const a = ACH.find(x => x.id === id);
-    (a.tier === 3 || !fams.has(achFam(a)) ? loud : quiet).push(id);
+    (a.tier === 3 || a.kind === 'contrib' || !fams.has(achFam(a)) ? loud : quiet).push(id);
     fams.add(achFam(a));
     A[id] = t;
   });
   store.set(ACHK, A);
   if (quiet.length && had && !silent) store.set(ACHNEW, [...achUnseen(), ...quiet]);
   achDot();
-  achRecap(silent || !had ? ids : loud);
+  // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (Pierre, 2026-11-05: a toast
+  // at the top may go unread); the first stays a toast, like the learning achievements.
+  const card = id => !silent && had && (ACH.find(x => x.id === id) || {}).kind === 'contrib' && ACH.find(x => x.id === id).tier >= 2;
+  (silent || !had ? ids : loud).filter(card).forEach(id => achCard(ACH.find(x => x.id === id)));
+  achRecap((silent || !had ? ids : loud).filter(id => !card(id)));
 }
+// One card at a time (docs/DESIGN.md "Cards"): fn runs once no card or tour is open.
+function cardFree(fn) {
+  if (!document.querySelector('.unlock, #tour')) return fn();
+  const mo = new MutationObserver(() => {
+    if (document.querySelector('.unlock, #tour')) return;
+    mo.disconnect();
+    fn();
+  });
+  mo.observe(document.body, {childList: true});
+}
+// Its button takes no tap for its first moments and Enter does not press it, so a reflex tap cannot close it unread (as the
+// one-tap question, rule U11).
+function cardCalm(d) {
+  const b = d.querySelector('[data-b="1"]');
+  if (!b) return;
+  b.disabled = true;
+  setTimeout(() => (b.disabled = false), CARD_WAIT);
+}
+const CARD_WAIT = 600;
+// An achievement as a card (the Contributions' 5th and 10th: achCheck): its emoji in the medallion, its tier by the title.
+// Leaving the page closes it unseen; it comes back on the next one.
+function achCard(a) {
+  if (!a) return;
+  cardFree(() =>
+    cardShow({
+      kind: 'ach',
+      emoji: a.icon,
+      cls: 'achcard',
+      kick: 'Achievement unlocked',
+      title: `${esc(a.title)} ${TIER[a.tier] || ''}`,
+      body: `<p>${esc(a.desc)}</p>`,
+      primary: {text: 'OK'},
+      esc: 1,
+      focus: false,
+      bind: cardCalm,
+      onClose: how => how === 'route' && setTimeout(() => achCard(a), 300)
+    })
+  );
+}
+// The learning achievements (core.js ACH kind 'learn'): the count on the badge and on #ach; the Contributions (kind
+// 'contrib', Pierre 2026-11-05, Q65) are a family apart, never in that count, listed in their own section.
+const ACH_L = () => ACH.filter(a => a.kind !== 'contrib'),
+  ACH_C = () => ACH.filter(a => a.kind === 'contrib');
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
 const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
@@ -603,6 +653,19 @@ function achBasics() {
   const A = store.get(ACHK, {}) || {};
   if (A._basics) return;
   A._basics = 1;
+  store.set(ACHK, A);
+  achCheck();
+  if (SYNC) syncSoon();
+}
+// A report sent (sync.js reportDialog): counted for the Contributions (core.js contribAdd: one per photo, Other only
+// with a note), whatever the subject on screen, signed in or not; the tier it reaches pops up at once (achCheck), and the
+// record goes to the sheet with the next sync like the other feats.
+function achReport(r) {
+  // An account the admin deleted (the sheet answered 'gone': sync.js) counts nothing (Pierre, 2026-11-05).
+  if (SYNC && SYNC.err === 'gone') return;
+  if (!store.get(ACHK, null)) achCheck(true);
+  const A = store.get(ACHK, {}) || {};
+  if (!contribAdd(A, r)) return;
   store.set(ACHK, A);
   achCheck();
   if (SYNC) syncSoon();
@@ -718,17 +781,27 @@ function viewAch() {
   }
   const draw = S => {
     const pc = a => (S && S.n ? (100 * (S.counts[a.id] || 0)) / S.n : null),
-      got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
-      left = ACH.filter(a => !A[a.id]).sort((x, y) => (pc(y) || 0) - (pc(x) || 0));
+      got = ACH_L()
+        .filter(a => A[a.id])
+        .sort((x, y) => A[y.id] - A[x.id]),
+      left = ACH_L()
+        .filter(a => !A[a.id])
+        .sort((x, y) => (pc(y) || 0) - (pc(x) || 0)),
+      fb = Array.isArray(A._fb) ? A._fb.length : 0;
     const share = a => {
       const p = pc(a);
       return p == null ? '' : `<span class="achp">${p < 1 && p > 0 ? '<1' : Math.round(p)}% of players</span>`;
     };
     const card = (a, on) =>
       `<li class="achc${on ? ' on' : ''}${fresh.has(a.id) ? ' new' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
-    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. The share of players counts everyone who signed in.</p>
-  <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH.length} earned</h2>
-  <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;
+    // The Contributions apart, below the learning ones, in their order (1st, 5th, 10th report), with the count so far.
+    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback): one per photo, and an "Other" report with a note; they never count in your progress. The share of players counts everyone who signed in.</p>
+  <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH_L().length} earned</h2>
+  <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul>
+  <h2 class="btitle bsec">Contributions <small>${fb ? `${fb} report${fb > 1 ? 's' : ''} sent` : 'reports and feedback you send'}</small></h2>
+  <ul class="achl">${ACH_C()
+    .map(a => card(a, !!A[a.id]))
+    .join('')}</ul></div>`;
   };
   draw(store.get('reefid-achs-cache', null));
   loadAchs().then(S => {

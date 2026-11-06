@@ -14,7 +14,7 @@ import json, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATH = os.path.join(ROOT, 'data.json')
 # Dicts written one entry per line, as key paths from the top (the top level itself always is).
-SPLIT = {('gen',), ('course',), ('cand',), ('x',), ('x', 'gen')}
+SPLIT = {('gen',), ('course',), ('cand',), ('x',), ('x', 'gen'), ('photos',)}  # photos: excluded.json
 
 
 def _c(v):
@@ -39,7 +39,9 @@ CUR_PATH = os.path.join(ROOT, 'curation.json')
 
 
 def curated(cur_path=CUR_PATH):
-    """Every photo id curation.json names under its genera (add, move, out, hide, feat, cover...)."""
+    """Every photo id curation.json names under its genera (add, move, out, hide, feat, cover...), except the excluded
+    ones (curation.json "exclude"): an excluded photo is used nowhere, so it is not kept. Pierre's own exclusion takes
+    the candidate out of every list (tools/excluded.py drop_excluded); the auto-sort's stays in cand.json, for its Undo."""
     out = set()
     def walk(v):
         if isinstance(v, dict):
@@ -50,10 +52,11 @@ def curated(cur_path=CUR_PATH):
         elif isinstance(v, str):
             out.add(v)
     try:
-        walk(json.load(open(cur_path, encoding='utf-8')).get('genera') or {})
+        cur = json.load(open(cur_path, encoding='utf-8'))
     except FileNotFoundError:
-        pass
-    return out
+        return out
+    walk(cur.get('genera') or {})
+    return out - set(cur.get('exclude') or {})
 
 
 def load_all(path=PATH, cand_path=CAND_PATH):
