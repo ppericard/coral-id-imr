@@ -1379,14 +1379,14 @@ const UNITS = {
       group: {
         kick: 'Invitation',
         title: 'Test the fish beta',
-        body: '<p>You’re invited to try fish: the reef fish families of the IMR surveys, with the same game as the corals.</p><p>Switch between Corals and Fish at the top of Home, any time: your coral progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
+        body: '<p>You’re invited to try fish: learn the reef fish families with the same game as the corals.</p><p>Switch between Corals and Fish at the top of Home, any time: your coral progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
       },
       // all (Pierre, Q158: fish opened to all, the beta label kept): the same card to each player, once, while fish keeps
       // its beta label (progress.js subjHello), as an invitation to try the beta.
       all: {
         kick: 'Invitation',
         title: 'Test the fish beta',
-        body: '<p>Try fish, now in beta: the reef fish families of the IMR surveys, with the same game as the corals.</p><p>Switch between Corals and Fish at the top of Home, any time: your coral progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
+        body: '<p>Try fish, now in beta: learn the reef fish families with the same game as the corals.</p><p>Switch between Corals and Fish at the top of Home, any time: your coral progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
       }
     },
     // About and credits (home.js viewAbout), shown only to a player the subject is open to (subjMine): what they learn
