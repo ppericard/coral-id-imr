@@ -5896,6 +5896,17 @@ html.touring .unlock {
 .ulmed.vis + .ulpanel {
   padding-top: 62px;
 }
+/* A recalculation card's two % (progress.js rvNotice, core.js RV_SORRY pct): one line, never wrapped mid-way. */
+.cardpct {
+  white-space: nowrap;
+  font-weight: 700;
+  margin-top: 0.5em;
+}
+/* A card's PS (progress.js rvPs: a line of the sheet's Notes tab, core.js RV_SORRY ps), quieter than the text. */
+.cardps {
+  margin-top: 0.6em;
+  color: var(--muted);
+}
 .ulkick {
   margin: 0;
   color: var(--kink);

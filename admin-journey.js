@@ -464,8 +464,8 @@ function renderJourney(name, anonId = '') {
   const SP = (!anonId && (PSAVED[name] || {}).P) || null,
     genProg = g => {
       if (!PG) return '…';
-      const v = Math.round(100 * scoreOf(PG.G[g])),
-        o = SP && !PG.err ? Math.round(100 * scoreOf(SP[g])) : v;
+      const v = Math.round(100 * scoreOf(PG.G[g], PG.G, g)),
+        o = SP && !PG.err ? Math.round(100 * scoreOf(SP[g], SP, g)) : v;
       return `${withSaved(v + '%', o + '%')} ${sbar(v, 100)}`;
     };
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
@@ -791,7 +791,15 @@ function sessProg(id, all, L, S, PG) {
   if (m && m.ans === ANS && m.S === S && m.PG === PG && m.mem === SMEM && m.n === L.length) return m.v;
   const ok = S && !S.err,
     reset = ok && S.reset ? Date.parse(S.reset) : 0,
-    o = {gen: DATA.gen, mem: SMEM, conf: SCONF, fmt: SFMT, since: reset ? {[id]: reset} : {}, starts: ok && S.start ? {[id]: S.start} : {}},
+    o = {
+      gen: DATA.gen,
+      mem: SMEM,
+      conf: SCONF,
+      fmt: SFMT,
+      ...domReplay(),
+      since: reset ? {[id]: reset} : {},
+      starts: ok && S.start ? {[id]: S.start} : {}
+    },
     t0 = L[0][1],
     A = replayProgress(
       all.filter(r => r[1] < t0),
@@ -809,7 +817,9 @@ function sessProg(id, all, L, S, PG) {
     Pb = marked(B.P, L[L.length - 1][1] + SESS.EDGE),
     slate = slateOf(DATA),
     prog = {};
-  new Set(L.flatMap(r => [r[2], r[3]])).forEach(g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g]), scoreOf(Pb[g])]));
+  new Set(L.flatMap(r => [r[2], r[3]])).forEach(
+    g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g], Pa, g), scoreOf(Pb[g], Pb, g)])
+  );
   const v = {prog, pct: [pctOf(Pa, slate), pctOf(Pb, slate)]};
   SPROG.set(key, {ans: ANS, S, PG, mem: SMEM, n: L.length, v});
   return v;
