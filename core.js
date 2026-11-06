@@ -235,6 +235,9 @@
   //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
+  //   pool    where its game photos come from, for the sheet's photo exposure per player (Code.gs pools_, core.js
+  //           unitPool; Pierre, 2026-11-06, Q191): files, the site's files it reads (fetched from main, in this order),
+  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
@@ -373,6 +376,7 @@
       optin: ['bon'],
       rank: 'genus',
       replay: true,
+      pool: {files: ['data.json', 'curation.json'], of: 'slots'},
       tiers: true,
       ach: true,
       board: true,
@@ -441,6 +445,7 @@
       rank: 'family',
       renamed: FISH_RENAMED,
       replay: false,
+      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       ach: false,
       board: false,
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
@@ -2308,6 +2313,110 @@
     const X = xGen(d);
     return [...slateOf(d), ...BONUS.filter(n => X[n])];
   }
+  // The game photos of a subject's units, for the sheet's photo exposure per player (Pierre, 2026-11-06, Q191; the photo
+  // exposure study, docs/reviews/2026-11-06-photo-exposure-study.md §5), as its games can draw them: SUBJECTS pool names
+  // the site's files a subject reads and its builder here, which gets them parsed, in that order. slots: data.json with
+  // Pierre's curation and the photos per context applied (as app.js build), the game list of every game genus (gameOf:
+  // the slate, Millepora, the bonus genera) in each view; entries: the photos of each entry played (fishPhotos, fishGen
+  // views.wide). Only which photos are in play matters here, not their order (no picks, no automatic quality). Not
+  // applied: the Colony slot's "form not visible" rule (model.js photoSet: 9 colony photos in 4 genera on 2026-11-06,
+  // most kept by the one-form exception, which needs the Coral Finder key: app.js imrFormsOf).
+  const POOLS = {
+    slots: ([raw, cur]) => {
+      const d = JSON.parse(JSON.stringify(raw)),
+        out = {};
+      applyCuration(d, cur);
+      applySlots(d, cur);
+      if (d.x) {
+        const x = {gen: d.x.gen, course: {}, cand: d.cand};
+        applyCuration(x, cur);
+        applySlots(x, cur);
+      }
+      gameOf(raw).forEach(n => {
+        const g = d.gen[n] || xGen(d)[n];
+        // The games' Research Grade rule for the genera off data.json gen (app.js gamePhotoOk: Millepora, the bonus
+        // genera; Codex review #680).
+        if (g) out[n] = VIEWS.flatMap(([v]) => ((g.sl || {})[v] || {}).game || []).filter(p => !g.x || p.own || !p.gid);
+      });
+      return out;
+    },
+    entries: ([f, ph, gm, cur]) => {
+      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (gm || {}).photos, cur, f), (ph || {}).sheet);
+      return Object.fromEntries(
+        Object.values(F.gen)
+          .filter(g => !g.wink)
+          .map(g => [g.id, g.views.wide])
+      );
+    }
+  };
+  // unitPool(S, files): {unit: [[photo file, …] for each colony]}, subject S's game photos grouped by colony (one
+  // observation, o; a photo without one stands alone), its units under the ids its answer log holds (renamedId, with the
+  // photo's species: a fish entry logs as its family); null when S names no pool or one of its files is missing.
+  function unitPool(S, files) {
+    const P = S && S.pool,
+      make = P && POOLS[P.of];
+    if (!make || !Array.isArray(files) || files.length < P.files.length || files.some(x => !x)) return null;
+    const by = {};
+    Object.entries(make(files) || {}).forEach(([n, L]) =>
+      (L || []).forEach(p => {
+        if (!p || !p.f) return;
+        const O = (by[renamedId(S, n, p.t)] = by[renamedId(S, n, p.t)] || {}),
+          c = (O[String(p.o || p.f)] = O[String(p.o || p.f)] || []);
+        if (!c.includes(p.f)) c.push(p.f);
+      })
+    );
+    return Object.fromEntries(Object.entries(by).map(([u, O]) => [u, Object.values(O)]));
+  }
+  // exposureOf(rows, pool): each player's photo exposure in one subject (Pierre, 2026-11-06, Q191; the exposure study
+  // §5), from that subject's answer-log rows ([player, time ms, unit shown, answered, right, mode, photos], any order)
+  // and its unitPool: {player: [seen, of, hit, asked, units]}.
+  // - Seen % = seen / of: the distinct game photos the player has been shown, out of the game photos of the units they
+  //   have met (a question on it; units: how many, those with no game photo left out).
+  // - Spread % = hit / asked, in time order: of the questions on a unit asked while it still had game colonies the player
+  //   had never been shown, the share that showed one (a colony is one observation; a photo out of play now counts as a
+  //   colony of its own). A count of colonies seen against questions would hide repeats (A, A, B scores 100%).
+  function exposureOf(rows, pool) {
+    const P = pool || {},
+      col = new Map(),
+      by = {};
+    Object.entries(P).forEach(([u, L]) => L.forEach((c, i) => c.forEach(f => col.set(u + '|' + f, i))));
+    (rows || [])
+      .map((r, i) => [r, i])
+      .filter(([r]) => r && r[0] && P[r[2]] && String(r[6] || '').trim())
+      .sort((a, b) => (Number(a[0][1]) || 0) - (Number(b[0][1]) || 0) || a[1] - b[1])
+      .forEach(([r]) => {
+        const u = String(r[2]),
+          b = (by[r[0]] = by[r[0]] || {hit: 0, asked: 0, U: {}}),
+          s = (b.U[u] = b.U[u] || {ph: new Set(), co: new Set(), left: P[u].length}),
+          fs = String(r[6]).split(/\s+/).filter(Boolean),
+          cs = new Set(fs.map(f => (col.has(u + '|' + f) ? col.get(u + '|' + f) : 'out|' + f)));
+        if (s.left > 0) {
+          b.asked++;
+          if ([...cs].some(c => !s.co.has(c))) b.hit++;
+        }
+        cs.forEach(c => {
+          if (s.co.has(c)) return;
+          s.co.add(c);
+          if (typeof c === 'number') s.left--;
+        });
+        fs.forEach(f => col.has(u + '|' + f) && s.ph.add(f));
+      });
+    return Object.fromEntries(
+      Object.entries(by).map(([w, b]) => {
+        const U = Object.entries(b.U);
+        return [
+          w,
+          [
+            U.reduce((t, [, s]) => t + s.ph.size, 0),
+            U.reduce((t, [u]) => t + P[u].reduce((k, c) => k + c.length, 0), 0),
+            b.hit,
+            b.asked,
+            U.length
+          ]
+        ];
+      })
+    );
+  }
   // The starred (★) genera: on the slate, not numbered (data.json gen[n].n 0, not surveyed by IMR), there because they
   // look like surveyed genera (rule L5). lectureGroup(d, n): the IMR lecture group a genus is shown in, its own
   // (ig), else, for a ★ genus the lecture doesn't group, the group most of its Coral Finder look-alikes belong to (ties:
@@ -4173,6 +4282,8 @@
     fishPid,
     FISHPH,
     fishPhotos,
+    unitPool,
+    exposureOf,
     keepSubjectKeys,
     fishNames,
     fishTypeNames,

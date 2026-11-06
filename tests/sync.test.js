@@ -1732,7 +1732,8 @@ test("v42: the player list carries each player's replayed progress, learned and 
   assert.strictEqual(T.rows[1][2], 13);
   assert.strictEqual(T.rows.length, 3);
   assert.ok(Array.isArray(again.rp));
-  assert.strictEqual(f.n.c, 1, 'data.json read once (cached with the slate)');
+  // Twice in all: once for the replay (cached with the slate), once for the photo pool of the list (v81 pools_, cached).
+  assert.strictEqual(f.n.c, 2, 'data.json read once for each, then cached');
   // Without data.json: no rp (the admin reads the saved copies itself, as before v42).
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});

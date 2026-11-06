@@ -1607,6 +1607,30 @@ const WIDTHS = [390, 1280];
         const q41 = await open(41);
         if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
         await q41.close();
+        // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191): Photos (Seen %) and Spread columns from the list's ex, in the
+        // subject of the switch, each cell a share (its counts in the title) or –; none before v81 (rule D4).
+        const cols = q =>
+          q.evaluate(() => {
+            const H = [...document.querySelectorAll('.adm-utbl thead button')].map(b => b.dataset.usort),
+              at = k => H.indexOf(k);
+            return {
+              at: [at('photos'), at('spread')],
+              cells: [...document.querySelectorAll('.adm-urow')].map(r =>
+                ['photos', 'spread'].map(k => (at(k) < 0 ? null : r.querySelectorAll('td')[at(k)].innerText.trim()))
+              ),
+              tips: [...document.querySelectorAll('.adm-urow td span[title]')].filter(x => / of /.test(x.title)).length
+            };
+          });
+        const qx = await open(81),
+          ox = await cols(qx);
+        const ok = ox.at.every(i => i >= 0) && ox.cells.length && ox.cells.every(c => c.every(x => /^(\d{1,3}%|–)$/.test(x)));
+        if (!ok || !ox.cells.some(c => /%$/.test(c[0]) && /%$/.test(c[1])) || !ox.tips)
+          fails.push(`${w}px Players (v81): Photos and Spread ${JSON.stringify({...ox, cells: ox.cells.slice(0, 3)})}`);
+        await qx.close();
+        const q80 = await open(80),
+          o80 = await cols(q80);
+        if (o80.at.some(i => i >= 0)) fails.push(`${w}px Players (v80): exposure columns before the script serves them`);
+        await q80.close();
       }
       // The admin never gets ahead of the sheet script (rule D4): answering as v27, the demo's Players and Journey
       // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
