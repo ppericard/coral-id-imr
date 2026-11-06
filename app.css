@@ -6197,6 +6197,32 @@ html.touring .unlock {
     border-color: var(--accent);
   }
 }
+/* The subject to start with (tour.js pick): the same buttons, the subject's icon in the accent beside its name, beta tag
+   and line. */
+.startopt.tpick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* (#tour svg is the tour's full-screen dim layer: the icon keeps its own size.) */
+#tour .tpick .sji {
+  position: static;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+.tpick > span {
+  min-width: 0;
+}
+.tpick b small.beta {
+  display: inline-block;
+  margin-top: 0;
+  color: var(--bg);
+}
+.startopt:disabled {
+  cursor: progress;
+}
 @keyframes ulfade {
   from {
     opacity: 0;
