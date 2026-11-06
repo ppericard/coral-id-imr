@@ -462,8 +462,15 @@ const introReady = n => {
 // "I've had the IMR lecture" (Pierre, 2026-11-02): an RA has seen every genus in the lecture and has little time, so
 // one card at a time would hold them back. On the first cards and in My progress, one tap opens every slate genus at
 // once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
-// The bonus genera are not opened with them: they open one at a time once on (opt-in, app.js BONUS).
-const introLeft = () => slateGenera().filter(n => !introduced(n));
+// The bonus genera are not opened with them: they open one at a time once on (opt-in, app.js BONUS). Only the units the
+// lecture teaches (app.js UNITS core: the fish circle 1, the IMR course's families; the corals, the whole slate): the
+// later fish circles open one at a time after them (app.js fishGate).
+const unitsNow = () => (typeof UNITS === 'object' && UNITS[SUBJ.id]) || {};
+const slateCore = () => (unitsNow().core || slateGenera)();
+const introLeft = () => slateCore().filter(n => !introduced(n));
+// Whether a unit may open now (app.js UNITS gate: the fish circles 2 and 3 wait for their thresholds; Pierre, 2026-11-06,
+// Q175); always for a subject with no gate. The opening's candidates only (quiz.js introStart, planPhoto).
+const mayOpen = n => !unitsNow().gate || unitsNow().gate(n);
 // One progression path for every game (Pierre, 2026-11-04: "one path for the quiz, the duels, Memory and any future game
 // or mode, no exceptions"): the genera this player has unlocked, met on the path (a card, an answer, Open all) and ready
 // (introReady), among the genera in play. The photo quiz is the path: it opens genera one at a time (its cards, the ★ rule

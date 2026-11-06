@@ -36,7 +36,7 @@ is the design's shorthand, and internal identifiers may keep it.
 - **Level 1b, IMR sub-entry** (optional): the sub-entries IMR names inside an entry (`fish.json` `sub`): Chromis, Dascyllus, Pomacentrus,
   Anemonefish (Damselfish); Bannerfish (Butterflyfish); Surgeonfish, Unicornfish (Surgeonfish & Unicornfish).
   - Opened with the others by the open-all card ("The fish welcome question and the IMR answer", below).
-  - Otherwise an optional level, offered like the opt-in circles: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
+  - Otherwise an optional level, offered like the coral bonus genera: a card (Add / Not now) once the parent entry reaches Advanced (80%), and
     a ⚙ On / Off row. Never counted in the progress bar.
 - **Level 2, species**: the species of an entry (`teach[].species`), shown with the name-display schedule below.
 - **The path is a tree, not a line** (Pierre, 2026-11-04, later; replaces the linear "families, then common names, then genus, then
@@ -131,7 +131,7 @@ The first fish questions must be easy and readable. Two decisions, each built in
   `species` list is in that order; "Species order: the commonness index" below). Until 2026-11-04 it was the PDF rank (`r`).
 - A species starts from its entry's ability (as `playerStart` starts a genus from the global level), so a strong player on Wrasse gets harder
   Wrasse species questions sooner.
-- Species of circles 2 and 3 follow the same rule once their circle is on.
+- Species of circles 2 and 3 follow the same rule once their family is open (every circle is on the path since Pierre, 2026-11-06, Q175).
 
 ## Species order: the commonness index (Pierre, 2026-11-04)
 
@@ -420,8 +420,8 @@ on families only to an IMR RA with every species open:
     2. **Per species**: its scientific value is *S* = max(species mastery, ½ × its genus's mastery), so knowing a genus already gives
        half the scientific credit for each of its species. Its identification credit is
        **a·C + b·S + (1 − a − b)·C·S**: *a* with common names only, *b* with the scientific name only, 1 only with both (the C·S term).
-    3. **Global**: **25% × the entries' mean mastery + 75% × the mean identification credit of every species in the game** (circle 1;
-       unopened species at 0, so the % is absolute, as for corals).
+    3. **Global**: **25% × the entries' mean mastery + 75% × the mean identification credit of every species in the game** (every
+       circle since Pierre, 2026-11-06, Q175, until then circle 1 only; unopened species at 0, so the % is absolute, as for corals).
     - With these, *b* = 0.80 and *a* ≈ 0.73 put the targets exactly on 80% and 85%. Worked values: entries only 25%; entries and every
       genus 55%; every common name 80%; every scientific name 85%; every common name and every genus 90%; everything with both names 100%.
     - It is not additive across the branches (an additive split would put families alone near 65%), every right answer on either branch
@@ -434,8 +434,9 @@ on families only to an IMR RA with every species open:
       learning both names scores below one learning a single kind for most of the path (at 30,000 simulated answers: 62% against
       80% common only). Rerun with `tools/learnsim.js` fish profiles once the species level exists.
     - **My progress** can show three bars under the headline %: Entries, Common names, Scientific names.
-  - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the circle-1 entries
-    (27) and their circle-1 species (340 since the one presence rule, #496); unopened units at 0; circles 2 and 3 never count (as now).
+  - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the families of every
+    circle (since the units migration, the book's families: 28 of circle 1, 1 of circle 2, 19 of circle 3) and their species; unopened
+    units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families, automatically (Q177: circle 2 once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `fishGate`); the two opt-in settings are gone.
   - What counts as a species' scientific name known (the exam passed, or the progress on the questions shown in Latin) is part of the
     same study.
   - **The Elo level stays alongside** as the player's overall level.

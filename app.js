@@ -1313,7 +1313,9 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //   pick     its line where a player with two subjects picks the one to start with (tour.js, the welcome tour's first step)
 //   tour     the welcome tour's words for its steps on this subject, where they differ from the steps' own (tour.js words)
 //   slate()  the units the games teach and the progress counts ("the slate" in the code): for corals the IMR coral slate
-//            (data.json order, starred genera last) and BENTHIC (core.js slateOf); for fish the IMR entries (circle 1)
+//            (data.json order, starred genera last) and BENTHIC (core.js slateOf); for fish every family of every circle
+//   core()   the part of the slate the lecture teaches, which "Open all" opens (model.js introLeft); the slate if absent
+//   gate(n)  whether slate unit n may open now (the opening, model.js mayOpen); always if absent
 //   sets     the opt-in sets (core.js SUBJECTS optin), offered once by a card (quiz.js bonusOfferShow) when due() and
 //            switched in ⚙ ([data-optin] rows): units() once on, the card's words, tag (cards, My progress)
 // Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
@@ -1326,11 +1328,20 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // the slate tiles, the sync summary), and their ID tips come from the Coral Finder, labelled as such.
 // Game photos: Research Grade observations (or Pierre's own) only, never multi-coral (tools/apply_bonus.py).
 // The list: core.js BONUS.
-// Fish circles (fish.json, Pierre 2026-11-03): circle 1 (the 27 IMR entries) is the slate; circle 2 (seen now and then
-// on SVS video: barracudas) is offered once every IMR entry has been asked, as the coral bonus genera are; circle 3
-// ("beyond IMR": the families divers want to recognise, muck diving above all) once the player is good on the IMR
-// entries (FISH_C3 of the progress: 50%, "Open Water" on average). Neither counts in the progress.
+// Fish circles (fish.json, per family: its best species' circle). Circle 1: the families the IMR course teaches (IMR's
+// list of survey fish); circle 2: seen now and then on the SVS videos (barracudas); circle 3: the families divers look for
+// around Dauin, muck diving above all. Every circle is on the path and counts in the progress (Pierre, 2026-11-06, Q175:
+// the two opt-in settings, "SVS video extras" and "Beyond IMR", are gone). Circles 2 and 3 open after the IMR course's
+// families, as its continuation, at the thresholds the opt-in offers had (2026-11-03), now automatic (fishGate): circle 2
+// once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3 (50%, "Open Water" on
+// average; Pierre, 2026-11-06, Q177). Within what may open, the usual weighted opening (model.js openPick).
 const FISH_C3 = 0.5;
+const fishGate = n => {
+  const c = (GX(n) || {}).circle || 1;
+  if (c < 2) return true;
+  const c1 = FISH ? FISH.c1 : [];
+  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : progPct(c1) >= 100 * FISH_C3;
+};
 const UNITS = {
   coral: {
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
@@ -1438,7 +1449,9 @@ const UNITS = {
         'The fish families follow the reef fish ID book (References); the cues, the look-alikes and IMR’s names come from the IMR fish presentation.',
       refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
     },
-    slate: () => (FISH ? FISH.c1 : []),
+    slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
+    core: () => (FISH ? FISH.c1 : []),
+    gate: fishGate,
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
@@ -1462,7 +1475,7 @@ const UNITS = {
         .filter(g => !g.rank) // the scientific genera's siblings are traps, not duels
         .flatMap(g => g.look.filter(o => FISH.gen[o] && (g.id < o || !FISH.gen[o].look.includes(g.id))).map(o => [g.id, o])),
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the
-    // people working on the IMR course), whatever opt-in circles are on.
+    // people working on the IMR course).
     winks: () => (FISH ? FISH.winks.filter(n => FISH.gen[n].views.wide.length) : []),
     list: () => viewFishList(),
     // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
@@ -1471,35 +1484,11 @@ const UNITS = {
     bar: id => fishBar(id),
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
-      `<p class="lede"><b>To learn a fish family</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from 95%, Instructor once the exam is passed. The families of the IMR survey fish count in your progress; the SVS video extras and the families beyond IMR (⚙ Settings) and the surprise cards don't. The leaderboard and the achievements count the corals only, for now.</p>`,
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from 95%, Instructor once the exam is passed. Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The leaderboard and the achievements count the corals only, for now.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
     help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
-  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Once every IMR family is met, the barracudas seen on the SVS videos can be added; once you are good on the IMR families, the families divers look for at Dauin (⚙ Settings, any time). Neither counts in your progress. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
+  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
-      {
-        k: 'c2',
-        units: () => (FISH ? FISH.c2 : []),
-        due: () => slateGenera().every(n => asked(n) && introduced(n)),
-        kick: 'Every IMR family met',
-        title: n => (n > 1 ? `${n} more families?` : 'One more family?'),
-        body: 'Not an IMR survey family, but seen now and then on the SVS videos.',
-        note: "⚙ Settings, SVS video extras, any time. It doesn't count in your progress.",
-        tag: 'SVS video extra',
-        name: 'SVS video extras',
-        card: 'Not an IMR survey family, but seen now and then on the SVS videos.'
-      },
-      {
-        k: 'c3',
-        units: () => (FISH ? FISH.c3 : []),
-        due: () => progPct() >= 100 * FISH_C3,
-        kick: 'Good on the IMR families',
-        title: n => `${n} families beyond IMR?`,
-        body: 'The fish divers want to recognise at Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',
-        note: "⚙ Settings, Beyond IMR, any time. They don't count in your progress.",
-        tag: 'Beyond IMR',
-        name: 'Beyond IMR',
-        card: 'Beyond IMR: a family divers look for at Dauin.'
-      },
       // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once an IMR family is at
       // Advanced, the level at which its species open (FISH_PATH "Unlock rules"); on, a family's genera join the game
       // when the family reaches Advanced, then open one at a time like any unit (a genus met stays in). all: every genus,
@@ -1525,7 +1514,7 @@ const UNITS = {
 const SETS = () => UNITS[SUBJ.id].sets;
 // The genera the games teach and the progress counts (the units of the subject): "the slate" in the code means this list.
 const slateGenera = () => UNITS[SUBJ.id].slate();
-// The opt-in set a unit belongs to (bonus genera, fish circles 2 and 3), or null.
+// The opt-in set a unit belongs to (the coral bonus genera, the fish scientific genera), or null.
 const setOf = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;
 const isBonus = n => !!setOf(n);
 // Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
@@ -1536,7 +1525,7 @@ if (Q.bon === undefined && Q.bu > 1) {
 }
 // The units of the opt-in sets the player has on.
 const bonusList = () => SETS().flatMap(S => (Q[S.k] ? S.units() : []));
-// ⚙ Bonus genera On / Off (fish: SVS video extras, Beyond IMR), and the offer card (quiz.js bonusOfferShow): saved in the
+// ⚙ Bonus genera On / Off (fish: Scientific names), and the offer card (quiz.js bonusOfferShow): saved in the
 // quiz settings, synced with them. Off takes them out of the photo quiz and the duels; their progress is kept. Questions
 // planned ahead with the old units are dropped by themselves (planKey names the units in play).
 const showBon = () =>
@@ -2249,7 +2238,7 @@ document.getElementById('signb').onclick = e => {
         P = {};
         delete Q.bu;
         delete Q.ba;
-        // the bonus genera (fish: circles 2 and 3) are offered again once due
+        // the bonus genera (fish: the scientific genera) are offered again once due
         SUBJ.optin.forEach(k => {
           delete Q[k];
           delete Q[k + 'T'];

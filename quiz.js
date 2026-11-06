@@ -1646,7 +1646,7 @@ function introCard(n, o = {}) {
       ${o.note ? `<p class="ulnote">${o.note}</p>` : ''}`,
     primary: {text: o.btn || 'Got it'},
     after: o.all
-      ? `<div class="ulall"><p><b>Had ${SUBJ.lecture}?</b> Skip the cards and play with all ${slateGenera().length} ${SUBJ.many}.</p><button class="next sec" type="button" data-all>Open all ${SUBJ.many}</button></div>`
+      ? `<div class="ulall"><p><b>Had ${SUBJ.lecture}?</b> Skip the cards and play with all ${slateCore().length} ${SUBJ.many}.</p><button class="next sec" type="button" data-all>Open all ${SUBJ.many}</button></div>`
       : '',
     hinted
   };
@@ -1659,7 +1659,11 @@ function introStart(list) {
     want = INTRO.START - slate.filter(introduced).length,
     L = [],
     met = n => introduced(n) || L.includes(n);
-  for (let fresh = slate.filter(n => !introduced(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
+  for (
+    let fresh = slate.filter(n => !introduced(n) && mayOpen(n));
+    L.length < want && fresh.length;
+    fresh = fresh.filter(n => n !== L[L.length - 1])
+  )
     L.push(openPick(fresh, fresh, met));
   return L;
 }
@@ -1742,7 +1746,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       !introHold() &&
       openPace(at, soon) &&
       openRight(at)
-        ? list.filter(n => !introduced(n))
+        ? list.filter(n => !introduced(n) && mayOpen(n))
         : [];
   if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say); with a card of

@@ -253,7 +253,7 @@ test('mergeUsers: each subject on its own, a subject neither account played stay
   const A = {
       ...coral,
       'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 3, ko: 1, h: '1101'}}),
-      'reefid-sync-fish-quiz': JSON.stringify({c3: true})
+      'reefid-sync-fish-quiz': JSON.stringify({sci: true})
     },
     B = {'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 1, ko: 0, h: '1'}, t02: {ok: 1, ko: 0, h: '1'}})},
     M = C.mergeUsers(A, B),
@@ -263,7 +263,19 @@ test('mergeUsers: each subject on its own, a subject neither account played stay
   assert.strictEqual(f.t02.ok, 1);
   assert.ok(!('Acropora' in f) && !('t01' in c), 'kept apart');
   assert.strictEqual(c.Acropora.ok, 2);
-  assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).c3, true);
+  assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).sci, true);
+});
+
+test('fish circles on the path (Pierre, 2026-11-06, Q175): no circle opt-in set, no ⚙ row, every circle in the slate', () => {
+  const S = C.SUBJECTS.find(x => x.id === 'fish'),
+    html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
+    app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert.deepStrictEqual(S.optin, ['sci']);
+  assert.ok(!/data-optin="c[23]"/.test(html) && !/SVS video extras|Beyond IMR/.test(html), 'no circle row in ⚙');
+  assert.ok(app.includes('slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : [])'), 'the fish slate holds every circle');
+  // A stored c3 choice is no longer an opt-in: a merge does not force it on.
+  const M = C.mergeUsers({'reefid-sync-fish-quiz': JSON.stringify({c3: true})}, {'reefid-sync-fish-quiz': JSON.stringify({c3: false})});
+  assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).c3, false);
 });
 
 test('fishGen order and cover: the easiest, most reference-like photo first, whoever took it (Pierre, 2026-11-06)', () => {
