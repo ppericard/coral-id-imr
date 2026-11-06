@@ -657,6 +657,16 @@
     const o = ((F && F.out) || {})[f];
     return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
   };
+  // fishIn(F, p, gone): game record p (fish-game.json) is in play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in
+  // play", every fish photo in play hosted on R2): his own add (fishOn on its species), or a photo that entered by itself
+  // (p.auto: a candidate judged sure, a reference photo judged at the reference level; tools/fish_game.py in_play) whose
+  // photo id (fishPid) he did not reject, exclude or move with Not this (gone: those ids, fishGone; tools/fish_game.py
+  // fish_in is its copy).
+  const fishGone = (cur, F = (cur && cur.fish) || {}) =>
+    new Set(
+      [...['seen', 'exclude', 'out'].flatMap(k => Object.keys(F[k] || {})), ...Object.keys((cur && cur.exclude) || {})].map(f => fishPid(f))
+    );
+  const fishIn = (F, p, gone) => !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f))));
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
   // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
   // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),
@@ -692,7 +702,7 @@
       cid = new Set();
     if (F) ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => gone.add(fishPid(f))));
     Object.entries(game || {}).forEach(([t, L]) => {
-      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishOn(F, p.f, p.sp)) && !X[p.f] && !xid.has(fishPid(p.f)));
+      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)));
       cu[t].forEach(p => cid.add(fishPid(p.f)));
     });
     new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {
@@ -4124,6 +4134,8 @@
     refLevel,
     refScore,
     fishOn,
+    fishIn,
+    fishGone,
     fishPid,
     FISHPH,
     fishPhotos,

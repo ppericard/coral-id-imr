@@ -3,9 +3,16 @@
 Candidates, downloaded in the four sizes and hosted on Cloudflare R2, which the fish game reads instead of the stopgap
 list (fish-photos.json, tools/fish_photos.py) wherever an entry has enough of them (core.js fishPhotos).
 
-In play (the admin's rule, core.js fishOn, ported here as fish_on): curation.json fish.add names the photo's species, the
-photo is neither rejected (seen) nor excluded, and its Not this (out), if set, names that same species. The top-level
-"exclude" (photos excluded for good everywhere) is honoured too, by name and by iNaturalist photo id.
+In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish photo in play hosted on R2; in_play):
+  - Pierre's adds (the admin's rule, core.js fishOn, ported here as fish_on): curation.json fish.add names the photo's
+    species, the photo is neither rejected (seen) nor excluded, and its Not this (out), if set, names that same species;
+  - the candidates judged sure (suggest.json "fish", cand_sure: autosort.js fishSure's add, one kind of fish) he has not
+    decided on, listed with auto: "cand", the pass's proposed crop applied as the auto-sort would write it;
+  - the units' reference photos (tools/fish_refs.json) judged at the reference level (tools/fish_judge.json; tools/
+    fish_judge.py ref_level), auto: "ref", unless their observation is already in play (rule P4).
+  A photo in play by itself leaves play once Pierre rejects, excludes or moves it (by photo id: core.js fishIn, fish_in).
+  The top-level "exclude" (photos excluded for good everywhere) is honoured too, by name and by photo id. At most MAX
+  downloads a run (--max), the reference photos and the starter entries first; the rest at the next runs.
 
 For each photo in play, from its fish-cand.json record (the original: iNaturalist, or FishBase):
   - downloaded from its original (src: iNaturalist's photo hosts or www.fishbase.de only; FishBase answers 500 at times,
@@ -24,7 +31,7 @@ A photo that fails to download is left out until the next run (printed); one no 
 files stay on R2, unused: nothing is deleted from the bucket). Entries in fish.json order, an entry's photos by its
 species order, then the easiest, then by name (never Pierre's own by priority: Q148). One photo per line.
 
-  python3 tools/fish_game.py [--out DIR]   download what is new and write fish-game.json (run by tools/fetch_approved.py
+  python3 tools/fish_game.py [--out DIR] [--max N]   download what is new and write fish-game.json (run by tools/fetch_approved.py
                                            --fish in the Candidate photos workflow, after each Publish)
   python3 tools/fish_game.py --plan        print what a run would download, the expected R2 volume, and the entries that
                                            would still use the stopgap; writes nothing, downloads nothing
@@ -50,8 +57,10 @@ OUT_FILE = 'fish-game.json'
 V = 1
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 # Only these photo hosts (this runs in a GitHub Action that can write to main; code review 2026-11-01, L8).
-HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org', 'www.fishbase.de')
-FB_HOST = 'www.fishbase.de'
+HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org', 'www.fishbase.de', 'www.fishbase.se')
+# FishBase's hosts: www.fishbase.se, the mirror the candidates and reference photos name since 2026-11-06 (www.fishbase.de
+# answers 500 to browsers), and www.fishbase.de.
+FB_HOSTS = ('www.fishbase.de', 'www.fishbase.se')
 FB_TRIES, FB_PAUSE = 4, 5.0  # FishBase answers 500 at times: up to 4 tries, 5 s, 10 s, 15 s apart
 # core.js FISHPH: an entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more; tools/
 # fish_judge.py WANT and EARLY, Pierre 2026-11-04: at least 5 very easy photos per circle-1 entry), else with the stopgap's.
@@ -65,6 +74,20 @@ def fish_on(F, f, sid):
     """core.js fishOn: photo f is in play for species sid."""
     o = (F.get('out') or {}).get(f)
     return (F.get('add') or {}).get(f) == sid and not (F.get('seen') or {}).get(f) and not (F.get('exclude') or {}).get(f) and (not o or o == sid)
+
+
+def gone_ids(cur):
+    """The photo ids (pid) Pierre decided against: rejected (seen), excluded or moved with Not this (out) in his fish
+    curation, and the top-level exclude (core.js fishPhotos' gone)."""
+    F = (cur or {}).get('fish') or {}
+    return {pid(f) for k in ('seen', 'exclude', 'out') for f in (F.get(k) or {})} | {pid(f) for f in (cur or {}).get('exclude') or {}}
+
+
+def fish_in(F, p, gone):
+    """core.js fishIn: game record p is in play. Pierre's own add (fish_on), or a photo that entered automatically (auto:
+    a candidate judged sure, a reference photo judged at the reference level; Pierre, 2026-11-06, Q180 and Q199) that he
+    did not reject, exclude or move (gone: gone_ids)."""
+    return fish_on(F, p['f'], p.get('sp')) or (bool(p.get('auto')) and pid(p['f']) not in gone)
 
 
 def pid(f):
@@ -110,28 +133,92 @@ def entries(fish):
     return of, order
 
 
-def in_play(cur, cand):
-    """[(species id, candidate record, its fish-cand.json species)] of every photo in play that fish-cand.json still
-    describes."""
+def cand_sure(j):
+    """A judged candidate that enters play by itself (suggest.json "fish" {jt, e, k, ph, c, u}; Pierre, 2026-11-06, Q180):
+    autosort.js fishSure's add (no unsure field, keep best or alt, valid tags and ease, never an unclear subject, count x,
+    nor a fish out of the water, flag a) and one kind of fish (count 1 or s, never m: rule P3, as the reference level)."""
+    if not j or j.get('u') or j.get('k') not in ('best', 'alt'):
+        return False
+    jt, e = j.get('jt') or '', j.get('e')
+    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in '1s' and 'a' not in jt[7:]
+
+
+TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$')  # autosort.js FISH_TAGS
+
+
+def ref_play(fish, refs, codes):
+    """[(species id, reference photo with e and jt)] of the units' reference photos (tools/fish_refs.json, by species)
+    judged at the reference level (tools/fish_judge.json codes, the rubric's caps and reference flag: tools/fish_judge.py
+    cap, ref_level), in tools/fish_refs.json order."""
+    import fish_judge as J
+    dim = {t['id'] for t in fish.get('teach') or [] if t.get('dimorph')}
+    juv = {t['id']: t.get('juv') for t in fish.get('teach') or []}
+    of, _ = entries(fish)
+    names = {s['id']: (s.get('name'), s.get('now')) for s in fish.get('species') or []}
+    out = []
+    for sid, L in (refs or {}).items():
+        t = of.get(sid)
+        for r in L:
+            if not t or r.get('f') not in codes or not r.get('src'):
+                continue
+            e, jt = J.cap(codes[r['f']], t in dim, J.juv_early(juv.get(t), names.get(sid, ())), r.get('rep'))
+            q = {k: v for k, v in r.items() if k != 'for'}
+            q.update(e=e, jt=jt)
+            if J.ref_level(q):
+                out.append((sid, q))
+    return out
+
+
+def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None):
+    """[(species id, record, its fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
+    Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that fish-cand.json still
+    describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved);
+    "ref", the reference photos judged at the reference level (ref_play), unless he decided against the same photo. Never
+    the same photo twice (pid), and a reference photo only on an observation not already in play (rule P4); a candidate's
+    sure best and alt both enter, as fishSure proposes them."""
     F = (cur or {}).get('fish') or {}
     top = set((cur or {}).get('exclude') or {})
-    top_ids = {pid(f) for f in top}
-    rec = {p['f']: (p, s) for s, L in (cand.get('cand') or {}).items() for p in L if p.get('f')}
-    out = []
+    gone = gone_ids(cur)
+    rec = {p['f']: (p, s) for s, L in ((cand or {}).get('cand') or {}).items() for p in L if p.get('f')}
+    out, have, obs = [], set(), set()
+
+    def put(sid, p, orig, route):
+        out.append((sid, p, orig, route))
+        have.add(pid(p['f']))
+        obs.add(p.get('o'))
     for f, sid in sorted((F.get('add') or {}).items()):
-        if not fish_on(F, f, sid) or f in top or pid(f) in top_ids or f not in rec or not rec[f][0].get('src'):
+        if not fish_on(F, f, sid) or f in top or pid(f) in {pid(x) for x in top} or f not in rec or not rec[f][0].get('src'):
             continue
-        out.append((sid, *rec[f]))
+        put(sid, *rec[f], None)
+    decided = {f for k in ('add', 'seen', 'exclude', 'out') for f in (F.get(k) or {})}
+    for s, L in ((cand or {}).get('cand') or {}).items():
+        for p in L:
+            f = p.get('f')
+            if f and p.get('src') and f not in decided and pid(f) not in gone and pid(f) not in have and cand_sure((sug or {}).get(f)):
+                put(s, p, s, 'cand')
+    if fish and refs and codes:
+        for sid, r in ref_play(fish, refs, codes):
+            if pid(r['f']) not in gone and pid(r['f']) not in have and r.get('o') not in obs:
+                put(sid, r, sid, 'ref')
     return out
 
 
 KEEP = ('f', 'o', 'src', 'a', 'lic', 't')
 
 
-def record(sid, p, F, sug, orig=None, species=None):
+def record(sid, p, F, sug, orig=None, species=None, route=None):
     """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
     with Not this (orig, its fish-cand.json species, is not sid) is named after its new species (fish.json species: the
-    WoRMS accepted name, else the PDF's), never the identification he corrected (Codex review #614)."""
+    WoRMS accepted name, else the PDF's), never the identification he corrected (Codex review #614). route (in_play):
+    "cand" or "ref" for a photo that entered automatically, recorded as auto (core.js fishIn); a reference photo keeps its
+    judged e and jt, and from (cover, taxon, fishbase)."""
+    if route == 'ref':
+        r = {k: p[k] for k in KEEP if k in p}
+        r.update(sp=sid, loc=p.get('loc') or 'world', e=int(p['e']), jt=p['jt'], auto='ref')
+        for k in ('via', 'rep', 'from', 'own'):
+            if p.get(k):
+                r[k] = p[k]
+        return r
     f, j = p['f'], (sug or {}).get(p['f']) or {}
     r = {k: p[k] for k in KEEP if k in p}
     s = (species or {}).get(sid) or {}
@@ -152,18 +239,38 @@ def record(sid, p, F, sug, orig=None, species=None):
     for k in ('via', 'rep'):
         if p.get(k):
             r[k] = p[k]
+    if route:
+        r['auto'] = route
     return r
 
 
-def plan(fish, cur, cand, sug, prev):
-    """(todo, keep): the records to download [(record, crop, iv)] and the ones already downloaded with the right crop,
-    {f: record}. prev: the current fish-game.json."""
+def tier(fish):
+    """The download order when a run cannot take every photo (--max): the reference photos first, then the starter
+    entries' photos (fish.json start), circle 1's, then the rest (Pierre, 2026-11-06, Q199: starters and reference photos
+    first). (record, route) -> a sort key."""
+    of, _ = entries(fish)
+    start = set(fish.get('start') or [])
+    circle = {t['id']: t.get('circle') or 9 for t in fish.get('teach') or []}
+    return lambda r, route: (0 if route == 'ref' else 1 if of.get(r['sp']) in start else 2 if circle.get(of.get(r['sp'])) == 1 else 3)
+
+
+def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=None):
+    """(todo, keep, wait): the records to download [(record, crop, iv)], the ones already downloaded with the right crop
+    {f: record}, and how many more are in play than this run takes (limit: at most that many downloads, tier order).
+    prev: the current fish-game.json; refs, codes, crops: tools/fish_refs.json photos and tools/fish_judge.json codes and
+    proposed crops (the reference route). A crop: Pierre's, else the pass's proposal for a photo that entered
+    automatically (as the auto-sort writes it into his draft: judging/FISH.md "What a sure judgement does")."""
     F = (cur or {}).get('fish') or {}
     old = {p['f']: p for L in ((prev or {}).get('photos') or {}).values() for p in L if p.get('f')}
     species = {s['id']: s for s in (fish or {}).get('species') or []}
     todo, keep = [], {}
-    for sid, p, orig in in_play(cur, cand):
-        r, c, o = record(sid, p, F, sug, orig, species), crop_of(F, p['f']), old.get(p['f'])
+    for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes):
+        r, c, o = record(sid, p, F, sug, orig, species, route), crop_of(F, p['f']), old.get(p['f'])
+        if not c and route == 'cand':
+            c = ((sug or {}).get(p['f']) or {}).get('c')
+        if not c and route == 'ref':
+            c = (crops or {}).get(p['f'])
+        c = list(c) if c and list(c) != [0, 0, 1, 1] else None
         if o and o.get('src') == r.get('src') and o.get('cr') == c and o.get('ar'):
             r['ar'] = o['ar']
             if c:
@@ -172,8 +279,11 @@ def plan(fish, cur, cand, sug, prev):
                 r['iv'] = o['iv']
             keep[p['f']] = r
         else:
-            todo.append((r, c, (o.get('iv', 0) + 1) if o else 0))
-    return todo, keep
+            todo.append((r, c, (o.get('iv', 0) + 1) if o else 0, route))
+    key = tier(fish or {})
+    todo.sort(key=lambda x: key(x[0], x[3]))
+    wait = max(0, len(todo) - limit) if limit is not None else 0
+    return [x[:3] for x in todo[:limit]], keep, wait
 
 
 def doc(fish, recs, built=None):
@@ -208,7 +318,7 @@ def fetch(src, get=opener, pause=FB_PAUSE, tries=FB_TRIES):
     host = urllib.parse.urlsplit(src).hostname or ''
     if not src.startswith('https://') or host not in HOSTS:
         raise ValueError(f'not an iNaturalist or FishBase photo URL: {src[:80]}')
-    n = tries if host == FB_HOST else 1
+    n = tries if host in FB_HOSTS else 1
     for k in range(n):
         try:
             return get(src)
@@ -238,16 +348,32 @@ def load(root, name, default=None):
     return json.load(open(p, encoding='utf-8')) if os.path.exists(p) else default
 
 
-def run(out='r2-upload', root=ROOT, get=opener, pause=FB_PAUSE, workers=6, write=True):
-    """Downloads what is new into out and writes fish-game.json; returns (downloaded, failed, listed)."""
+def inputs(root=ROOT):
+    """(fish, curation, candidates, their judgements, reference photos, reference codes, reference crops): what plan reads."""
     fish, cur = load(root, 'fish.json'), load(root, 'curation.json', {})
     cand, sug = load(root, 'fish-cand.json', {'cand': {}}), (load(root, 'suggest.json', {}) or {}).get('fish') or {}
+    refs = (load(root, os.path.join('tools', 'fish_refs.json'), {}) or {}).get('photos') or {}
+    J = load(root, os.path.join('tools', 'fish_judge.json'), {}) or {}
+    codes = {f: c for m in (J.get('photos') or {}).values() for f, c in m.items()}
+    return fish, cur, cand, sug, refs, codes, J.get('crops') or {}
+
+
+# At most this many downloads a run (the Candidate photos workflow; FISH_MAX or --max overrides): about 8,300 photos were in
+# play on 2026-11-06 (Q180, Q199), and the workflow's run of that day took 9 minutes for Pierre's 3,822 (about 7 a
+# second); past it, the rest come at the next runs, the reference photos and the starters first.
+MAX = int(os.environ.get('FISH_MAX', '5000'))
+
+
+def run(out='r2-upload', root=ROOT, get=opener, pause=FB_PAUSE, workers=6, write=True, limit=None):
+    """Downloads what is new into out (at most limit photos, MAX by default) and writes fish-game.json; returns
+    (downloaded, failed, listed, waiting)."""
+    fish, cur, cand, sug, refs, codes, crops = inputs(root)
     prev = load(root, OUT_FILE, {'photos': {}})
-    todo, keep = plan(fish, cur, cand, sug, prev)
+    todo, keep, wait = plan(fish, cur, cand, sug, prev, refs, codes, crops, MAX if limit is None else limit)
     os.makedirs(out, exist_ok=True)
     done, failed = 0, []
     # FishBase one at a time, after the rest (it is the host that fails under load).
-    fb = [x for x in todo if (urllib.parse.urlsplit(x[0]['src']).hostname or '') == FB_HOST]
+    fb = [x for x in todo if (urllib.parse.urlsplit(x[0]['src']).hostname or '') in FB_HOSTS]
     rest = [x for x in todo if x not in fb]
 
     def one(x):
@@ -284,7 +410,7 @@ def run(out='r2-upload', root=ROOT, get=opener, pause=FB_PAUSE, workers=6, write
         p = os.path.join(root, OUT_FILE)
         if not os.path.exists(p) or open(p, encoding='utf-8').read() != text:
             open(p, 'w', encoding='utf-8').write(text)
-    return done, failed, sum(len(L) for L in d['photos'].values())
+    return done, failed, sum(len(L) for L in d['photos'].values()), wait
 
 
 def stopgap_entries(fish, game_photos):
@@ -297,24 +423,28 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--out', default='r2-upload')
     ap.add_argument('--plan', action='store_true')
+    ap.add_argument('--max', type=int, default=MAX, help='at most this many downloads in this run (FISH_MAX)')
     a = ap.parse_args()
     if a.plan:
-        fish, cur = load(ROOT, 'fish.json'), load(ROOT, 'curation.json', {})
-        cand, sug = load(ROOT, 'fish-cand.json', {'cand': {}}), (load(ROOT, 'suggest.json', {}) or {}).get('fish') or {}
-        todo, keep = plan(fish, cur, cand, sug, load(ROOT, OUT_FILE, {'photos': {}}))
+        fish, cur, cand, sug, refs, codes, crops = inputs(ROOT)
+        todo, keep, _ = plan(fish, cur, cand, sug, load(ROOT, OUT_FILE, {'photos': {}}), refs, codes, crops)
         allr = {**keep, **{r['f']: r for r, _, _ in todo}}
         d = doc(fish, allr)
         fb = sum(1 for r, _, _ in todo if r.get('via') == 'fishbase')
-        print(f'in play: {len(allr)} photos over {len({r["sp"] for r in allr.values()})} species; '
+        how = {k: sum(1 for r in allr.values() if r.get('auto') == k) for k in ('cand', 'ref')}
+        print(f'in play: {len(allr)} photos over {len({r["sp"] for r in allr.values()})} species (Pierre\'s adds '
+              f'{len(allr) - how["cand"] - how["ref"]}, candidates judged sure {how["cand"]}, reference photos {how["ref"]}); '
               f'to download: {len(todo)} ({fb} from FishBase), {len(todo) * 4} files, about {len(todo) * KB_PER_PHOTO / 1024:.0f} MB '
-              f'(the whole list: about {len(allr) * KB_PER_PHOTO / 1024:.0f} MB on R2)')
+              f'(the whole list: about {len(allr) * KB_PER_PHOTO / 1024:.0f} MB on R2); at most {a.max} a run: '
+              f'{-(-len(todo) // a.max) if todo else 0} run(s), the reference photos and the starters first')
         st = stopgap_entries(fish, d['photos'])
         print(f'entries still with the stopgap photos (fewer than {MIN} very easy curated ones): {len(st)}: ' + ', '.join(st))
         return
     import slot
     slot.guard('tools/fish_game.py')  # one heavy run at a time on the machine (rule W24)
-    done, failed, n = run(a.out)
-    print(f'fish: downloaded {done} into {a.out}/ (upload: tools/r2_sync.sh {a.out}), {len(failed)} failed; {n} photos in {OUT_FILE}')
+    done, failed, n, wait = run(a.out, limit=a.max)
+    print(f'fish: downloaded {done} into {a.out}/ (upload: tools/r2_sync.sh {a.out}), {len(failed)} failed; {n} photos in {OUT_FILE}'
+          + (f'; {wait} more wait for the next run' if wait else ''))
 
 
 if __name__ == '__main__':

@@ -539,18 +539,22 @@ test('curated photos: a valid code and ease for each, the caps where the ease is
           `import sys, json; sys.path.insert(0, 'tools')
 import fish_game as G
 L = lambda f, d=None: G.load('.', f, d)
-todo, keep = G.plan(L('fish.json'), L('curation.json', {}), L('fish-cand.json', {'cand': {}}), (L('suggest.json', {}) or {}).get('fish') or {}, L('fish-game.json', {'photos': {}}))
+fish, cur, cand, sug, refs, codes, crops = G.inputs('.')
+todo, keep, _ = G.plan(fish, cur, cand, sug, L('fish-game.json', {'photos': {}}), refs, codes, crops)
 print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
         ],
         {cwd: path.join(__dirname, '..'), encoding: 'utf8', maxBuffer: 64 << 20}
       )
     ),
     entry = new Map(F.teach.flatMap(t => (t.species || []).map(s => [s, t.id])));
+  // Pierre's adds in play, then the photos that entered by themselves (Q180, Q199: candidates judged sure, reference-level
+  // photos; tests/fishgame.test.js checks the routes on a fixture).
   assert.strictEqual(
-    plan.length,
+    plan.filter(p => !p.auto).length,
     Object.keys(FC.add || {}).filter(f => C.fishOn(FC, f, FC.add[f])).length,
-    'every photo in play is listed'
+    'every photo Pierre has in play is listed'
   );
+  assert.ok(plan.some(p => p.auto === 'cand') && plan.some(p => p.auto === 'ref'), 'and the photos in play by themselves');
   plan.forEach(p => {
     // The judged tags with their flags (the phase p and reference r flags included), then the ease.
     assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
