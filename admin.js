@@ -2077,7 +2077,7 @@ function renderFishReview(kind) {
             e != null ? String(e) : null,
             eAuto
           )
-        : `${frevRow('Juvenile', 'data-frj', [['j', 'Juvenile']], code.slice(7).includes('j') || ph === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? frevRow('Phase', 'data-frp', FREV_PH, ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${frevRow('View', 'data-frv', FREV_VIEW, code ? code[0] : null, tAuto)}`;
+        : `${frevRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? frevRow('Phase', 'data-frp', FREV_PH, ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${frevRow('View', 'data-frv', FREV_VIEW, code ? code[0] : null, tAuto)}`;
     return `<figure class="adm-tile${guess(p) ? ' adm-guess' : ''}" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-frz aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>
       <figcaption><span class="adm-src o-${origin(p)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span><span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span></figcaption>
       <div class="adm-acts adm-frev">${ctl}</div></figure>`;
@@ -2158,20 +2158,21 @@ function renderFishReview(kind) {
             return fishSet(N, f, 'phase', ph0);
           }))
     );
-    // Juvenile: the j flag on (as the fish Candidates set it), or off together with a 'juvenile' phase word (the pass's).
+    // Juvenile: on and off as the photo shows now (fishPhase: his values, the pass's, else the source's annotation p.st), so
+    // a juvenile by its source alone is taken off in one click (Codex review #663). On: the j flag (as the fish Candidates
+    // set it), and a phase word that would win over it cleared. Off: the j flag taken off and No phase written as his,
+    // which also stops the source's annotation from showing through.
     tl.querySelectorAll('[data-frj]').forEach(
       b =>
         (b.onclick = () =>
           fx(G => {
-            const ph = f in (G.phase || {}) ? G.phase[f] : (fuJ(f) || {}).ph,
-              on = base().slice(7).includes('j') || ph === 'juvenile';
-            // On: the j flag, and a phase word that would win over it cleared (Codex review #663).
-            if (!on) {
+            const ph = f in (G.phase || {}) ? G.phase[f] : (fuJ(f) || {}).ph;
+            if (fishPhase(p, fuJ(f), G) !== 'juvenile') {
               const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
               return ph ? fishSet(N, f, 'phase', '') : N;
             }
             if (base().slice(7).includes('j')) G = fishSet(G, f, 'tags', fishTag(base(), 'j'));
-            return ph === 'juvenile' ? fishSet(G, f, 'phase', '') : G;
+            return fishSet(G, f, 'phase', '');
           }))
     );
     if (!p) tl.remove();
