@@ -53,7 +53,8 @@ rows.forEach(r => r[11] !== '' && (timed[r[0]] = (timed[r[0]] || 0) + 1));
 const PLAYERS = Object.keys(timed)
   .filter(p => timed[p] >= 20)
   .sort((a, b) => timed[b] - timed[a]);
-const statsOf = rs => ({photos: C.eloOf(rs), conf: C.confusionOf(rs).pair, mem: C.photoMemOf(rs).mem});
+// gd: the genus offsets (core.js genusOffsetsOf, the sheet's ?stats=1 gd), the app's genus difficulty since 2026-11-06 (Q133).
+const statsOf = rs => ({photos: C.eloOf(rs), conf: C.confusionOf(rs).pair, mem: C.photoMemOf(rs).mem, gd: C.genusOffsetsOf(rs)});
 
 // ---- the photo Elo with time on the photo's step (a copy of core.js eloReplay with the time hook) ----
 const sig = x => 1 / (1 + Math.exp(-x));
@@ -209,7 +210,7 @@ const server = http.createServer((req, res) => {
     );
     await ctx.addInitScript(st => {
       localStorage.setItem('reefid-tour', '"done"');
-      localStorage.setItem('reefid-photo-stats', JSON.stringify({t: Date.now(), photos: st.photos, conf: st.conf, mem: st.mem}));
+      localStorage.setItem('reefid-photo-stats', JSON.stringify({t: Date.now(), v: 1000, photos: st.photos, conf: st.conf, mem: st.mem, gd: st.gd}));
     }, st);
     const page = await ctx.newPage();
     page.on('pageerror', e => console.error('page error:', e.message));
@@ -223,7 +224,7 @@ const server = http.createServer((req, res) => {
         .filter(n => GX(n))
         .forEach(n => {
           gd[n] = genusDiff(n);
-          // the confusion part of genusDiff (its mean of the two highest pooled scores), to split it from the photo part
+          // the two highest pooled confusion scores (genusDiff's confusion part until 2026-11-06, Q133; 0 since: openconf)
           const cs = slateGenera()
             .filter(x => x !== n)
             .map(x => pooledConf(n, x))
@@ -232,7 +233,7 @@ const server = http.createServer((req, res) => {
           cf[n] = cs.length ? cs.reduce((a, x) => a + x, 0) / cs.length : 0;
           VIEWS.forEach(([v]) => gamePics(n, v).forEach(ph => (pd[ph.f] = photoDiff(n, ph))));
         });
-      return {gd, pd, cf, conftrap: CONF.TRAP, openconf: OPEN.CONF};
+      return {gd, pd, cf, conftrap: CONF.TRAP, openconf: 0};
     });
     out.sets[k] = {...r, photos: st.photos};
     await ctx.close();

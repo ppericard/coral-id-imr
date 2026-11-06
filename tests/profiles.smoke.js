@@ -161,8 +161,9 @@ const server = http.createServer((req, res) => {
         allEase: +mean(G.map(genusDiff)).toFixed(2)
       };
     }
-    // Easiest first: with nothing met and the players' answers behind the photo ratings, the easiest genus (genusDiff)
-    // is drawn far more often than the hardest. Made-up ratings: one genus's photos rated easy, another's hard.
+    // Easiest first: with nothing met and the players' answers behind the photo ratings, the easiest genus (genusDiff,
+    // the sheet's genus offset since 2026-11-06, Q133) is drawn far more often than the hardest. Made-up ratings: one
+    // genus's photos rated easy and its offset low, another's hard and high.
     {
       P = {};
       INTROS = {};
@@ -170,6 +171,7 @@ const server = http.createServer((req, res) => {
       CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const keep = PSTAT,
+        keepGd = PGD,
         fake = {},
         [ga, gb] = [G[3], G[7]];
       [ga, gb].forEach((g, k) =>
@@ -178,6 +180,7 @@ const server = http.createServer((req, res) => {
           .forEach(p => (fake[p.f] = k ? [1.5, 40, 10] : [-1.5, 40, 36]))
       );
       PSTAT = fake;
+      PGD = {[ga]: [-1.5, 80], [gb]: [1.5, 80]};
       GDIFF = {};
       const byD = G.slice().sort((a, b) => genusDiff(a) - genusDiff(b)),
         easy = byD[0],
@@ -191,6 +194,7 @@ const server = http.createServer((req, res) => {
       // Without any rating from the players, no difficulty order: the two are drawn about as often. Their iNaturalist
       // commonness (data.json cm, a separate order: common first) is made equal for this check, then put back.
       PSTAT = {};
+      PGD = {};
       GDIFF = {};
       const cms = [GX(easy).cm, GX(hard).cm];
       GX(easy).cm = GX(hard).cm;
@@ -202,6 +206,7 @@ const server = http.createServer((req, res) => {
       [GX(easy).cm, GX(hard).cm] = cms;
       out.noData = m;
       PSTAT = keep;
+      PGD = keepGd;
       GDIFF = {};
     }
     // Bonus genera (opt-in, 2026-11-02; their own weight cap and 15% share went with it): once on, they are the genera
