@@ -302,9 +302,10 @@
         kick: 'Something fishy…',
         line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
       },
-      // Opens to the admin and the beta group (Pierre, 2026-11-04: "a group I pick in the admin, for now everyone; not one
-      // site-wide switch"); 'all' opens it to every player.
-      open: 'group',
+      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
+      // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
+      // it to that group again (the sheet keeps the Groups tab's rows).
+      open: 'all',
       views: [['wide', 'Photo']],
       optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
       // family: an IMR entry (the game's family level, Damselfish; two entries may share a scientific family).

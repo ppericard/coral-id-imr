@@ -1576,6 +1576,9 @@ const WIDTHS = [390, 1280];
       // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
       // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
       {
+        // Fish opens to all since 2026-11-06 (Q158): the group page, kept for a subject that opens to a group, checked on
+        // fish set back to 'group' at runtime, then opened to all again.
+        await p.evaluate(() => (SUBJECTS.find(S => S.id === 'fish').open = 'group'));
         const beta = await p.evaluate(() => (SUBJECTS.find(S => subjGroup(S)) || {}).id);
         const grp = () =>
           p.evaluate(() => ({
@@ -1586,7 +1589,8 @@ const WIDTHS = [390, 1280];
           }));
         const coral = await grp();
         if (coral.line || coral.col) fails.push(`${w}px Players (corals): a beta group line or column ${JSON.stringify(coral)}`);
-        if (beta) {
+        if (!beta) fails.push(`${w}px Players: no subject set to open to a group`);
+        else {
           await go(beta + '/players/list');
           const g0 = await grp(),
             n = await p.evaluate(() => USERS.users.length);
@@ -1612,6 +1616,14 @@ const WIDTHS = [390, 1280];
           if (!new RegExp(`beta:\\s+${n - 1}\\s+of\\s+${n}\\s+players`).test((await grp()).line))
             fails.push(`${w}px Players (${beta}): Remove did not take Dio out`);
           const q = await p.context().newPage();
+          // A fresh page reads core.js again: fish served back to open: 'group' there too (open to all since Q158).
+          await q.route(
+            u => u.pathname === '/core.js',
+            async r => {
+              const res = await r.fetch();
+              await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+            }
+          );
           await q.goto(base + `admin.html?demo&v=45#${beta}/players/list`);
           await q
             .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
@@ -1635,6 +1647,7 @@ const WIDTHS = [390, 1280];
           await go('players/list');
           await go(beta + '/players/list');
           if (!(await grp()).col) fails.push(`${w}px Players (${beta}) back to the group: no Beta column`);
+          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta); // as it is now
           await go('players/list'); // the corals' page, Dio's row still open, as the steps below expect
         }
       }
