@@ -1845,8 +1845,9 @@ const WIDTHS = [390, 1280];
       // Two subjects on the Players pages (Pierre, 2026-11-06): with every subject's answers logged (sheet v60; the demo's
       // other subject played by Ben last, Ana and Mara), the list shows a group of columns per subject, each player's
       // answers in it; a row's Journey opens on the subject they played last; that Journey is the subject's own (its
-      // answers only, its units' word, no progress or Elo for a subject the admin does not replay) with its Corals | Fish
-      // at the top; the other subject's Activity shows its sessions.
+      // answers only, its units' word, its progress replayed in the admin from them with the saved copy beside it, no Elo
+      // for a subject the sheet does not replay, its sessions unfolding as on Activity) with its Corals | Fish at the top;
+      // the other subject's Activity shows its sessions.
       {
         const q = await p.context().newPage();
         q.on('pageerror', e => fails.push(`${w}px two subjects page error: ${e.message}`));
@@ -1877,25 +1878,40 @@ const WIDTHS = [390, 1280];
         if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
         await q.click('.adm-ubar a.next');
         await calm();
+        // The fish units are read once (fishAdmin), then the page draws its progress.
+        await q
+          .waitForFunction(() => /Progress/i.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000})
+          .catch(() => {});
         const j = await q.evaluate(() => ({
           hash: location.hash,
           kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+          col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
+          sess: document.querySelectorAll('.adm-journey [data-recent] [data-sopen]').length,
           seg: [...document.querySelectorAll('.adm-jsubj a')].map(a => [a.getAttribute('aria-pressed'), a.innerText.replace(/\s+/g, ' ')])
         }));
         if (
           j.hash !== jh ||
           !/^48 Answers/i.test(j.kpis) ||
-          /Elo|Progress|Learned/i.test(j.kpis) ||
+          /Elo/i.test(j.kpis) ||
+          !/\d+%( ↻ saved \d+%)? Progress/i.test(j.kpis) ||
+          !/Learned/i.test(j.kpis) ||
+          !j.col ||
+          !j.sess ||
           !/Families met/i.test(j.kpis) ||
           j.seg.length !== 2 ||
           j.seg[1][0] !== 'true' ||
           !/ 48$/.test(j.seg[1][1])
         )
           fails.push(`${w}px two subjects: Ben's ${L.F} Journey ${JSON.stringify(j)}`);
+        // A session of the Journey unfolds, with the progress it brought.
+        await q.click('.adm-journey [data-recent] [data-sopen]');
+        await calm();
+        if (!(await q.$('.adm-journey [data-sdet]'))) fails.push(`${w}px two subjects: a session of Ben's ${L.F} Journey does not unfold`);
         await q.click('.adm-jsubj a[aria-pressed="false"]');
         await calm();
         const c = await q.evaluate(() => ({hash: location.hash, kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' ')}));
-        if (c.hash !== '#players/list/journey/Ben%20Demo' || !/Elo/i.test(c.kpis) || !/Genera met/i.test(c.kpis))
+        const cs = await q.$$eval('.adm-journey [data-recent] [data-sopen]', L => L.length);
+        if (c.hash !== '#players/list/journey/Ben%20Demo' || !/Elo/i.test(c.kpis) || !/Genera met/i.test(c.kpis) || !cs)
           fails.push(`${w}px two subjects: Ben's corals Journey from the toggle ${JSON.stringify(c)}`);
         await q.evaluate(F => (location.hash = F + '/players/activity'), L.F);
         await calm();
@@ -1905,8 +1921,11 @@ const WIDTHS = [390, 1280];
         }));
         if (!a.rows.length || a.rows.some(n => !['Ben Demo', 'Ana Demo', 'Mara Demo'].includes(n.replace(/ you$/, ''))) || a.off)
           fails.push(`${w}px two subjects: the ${L.F} Activity ${JSON.stringify(a)}`);
-        await q.click('[data-recent] .adm-urow');
-        await calm();
+        // Ben's last session is still open from his Journey (one set of open sessions): unfolded already, else a tap.
+        if (!(await q.$('[data-sdet]'))) {
+          await q.click('[data-recent] .adm-urow');
+          await calm();
+        }
         if (!(await q.$('[data-sdet]'))) fails.push(`${w}px two subjects: a ${L.F} session does not unfold`);
         await q.close();
       }

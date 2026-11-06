@@ -2010,6 +2010,8 @@ function render() {
   if (cur === 'inbox/coverage/games') return renderCov();
   if (cur === 'inbox/coverage/sheets-id-key') return renderKcov();
   if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
+  // A journey opened from its address can be drawn before admin-journey.js is in (a read answered while it downloads).
+  if (playerPage(cur) && typeof renderJourney !== 'function') return addEventListener('load', () => render(), {once: true});
   if (cur.startsWith('players/list/journey/')) return renderJourney(cur.slice('players/list/journey/'.length)); // one player's path (admin-journey.js)
   if (anPage(cur)) return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
@@ -2611,7 +2613,8 @@ function sessionsOf(rows) {
 // seconds after each answer, a device not signed in sends them 10 at a time (sync.js sendAnon), so a few minutes.
 const RECENT = {
   NOW: 5, // minutes: a last answer more recent than this = playing now
-  N: 10 // sessions in Recent sessions
+  N: 10, // sessions in Recent sessions
+  OWN: 30 // a Journey's sessions, the latest
 };
 
 // recognised: begin
@@ -2683,7 +2686,7 @@ const RATE = {MIN: 3},
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
   get journey() {
-    return `<p>One player's path, from their answers in the sheet (signed in), <b>in one subject</b>: the Corals | Fish at the top shows how many answers they gave in each and opens the other (the header switch keeps the player too); from the list of players it opens on the subject they played last. A subject whose progress the admin does not replay yet shows what its answers say: no progress, cards, learned units, Elo or sheets opened. <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
+    return `<p>One player's path, from their answers in the sheet (signed in), <b>in one subject</b>: the Corals | Fish at the top shows how many answers they gave in each and opens the other (the header switch keeps the player too); from the list of players it opens on the subject they played last. Every subject's progress is replayed here from its answers with today's rules (the corals' as the sheet does, the other subjects' in this page, without the sheet's photo memory and confusion numbers it does not compute for them yet), with the cards and mastery exams of the player's saved copy; <b>↻ saved</b> beside a number = what that copy says when it differs. The Elo and the genus sheets opened are the corals' only. <b>Sessions</b>: the player's last ${RECENT.OWN} sessions in this subject, as on Activity (tap one to unfold its summary). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
@@ -3603,7 +3606,7 @@ function fishAdmin() {
         const F = fishGen(f, all),
           P = {};
         Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (P[x.f] = {...x, entry: g.id})));
-        FISHA = {gen: F.gen, ph: P};
+        FISHA = {gen: F.gen, ph: P, slate: [...F.c1, ...F.c2, ...F.c3]}; // the slate: the app's (app.js UNITS slate)
         if (cur === 'inbox/todo/reports') render();
       })
       .catch(() => {}));
@@ -6959,28 +6962,7 @@ function bindStats() {
       })
   );
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
-  // An unfolded session's panel is as wide as the visible part of the table's scroll box (.adm-sess, --sw), never past it.
-  const rsc = $v.querySelector('.adm-recent .adm-tscroll');
-  if (rsc) rsc.style.setProperty('--sw', rsc.clientWidth + 'px');
-  // Recent sessions: a tap (or Enter / Space) on a session unfolds its summary, again folds it; its player's link opens
-  // the Journey as before.
-  $v.querySelectorAll('[data-sopen]').forEach(tr => {
-    const flip = () => {
-      const k = tr.dataset.sopen;
-      SOPEN.has(k) ? SOPEN.delete(k) : SOPEN.add(k);
-      render();
-    };
-    tr.onclick = e => !e.target.closest('a, button') && flip();
-    tr.onkeydown = e => {
-      if (e.target === tr && (e.key === 'Enter' || e.key === ' ')) {
-        e.preventDefault();
-        const k = tr.dataset.sopen;
-        flip();
-        const back = [...$v.querySelectorAll('[data-sopen]')].find(x => x.dataset.sopen === k);
-        if (back) back.focus({preventScroll: true});
-      }
-    };
-  });
+  bindSess();
   // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. A manual
   // reload only, no timer: each read sends the whole answer log (docs/ARCHITECTURE.md "Recent sessions and who is playing now").
   const rl = $v.querySelector('[data-sload]');
@@ -7077,14 +7059,20 @@ function savedPump() {
               return null;
             }
           };
-        PSAVED[name] = {
-          P: P('reefid-sync-coral-progress') || {},
-          intro: P('reefid-sync-coral-intro') || {},
-          offer: P('reefid-sync-coral-intro-offer'),
-          start: P('reefid-sync-coral-start'), // the first-launch question (admin-journey.js)
-          reset: P('reefid-sync-coral-reset'),
-          ach: P('reefid-sync-ach') // achievements {id: time} (progress.js ACHK): a session's summary (sessionSummary)
-        };
+        // Each subject's part of the copy (core.js subjKey: reefid-sync-<subject>-progress…): its progress, first-meeting
+        // cards and Open all offer, first-launch answer (admin-journey.js) and reset; the achievements are the player's
+        // (progress.js ACHK: a session's summary). The replayed subject's at the top level, as before; savedFor reads any.
+        const ach = P('reefid-sync-ach'),
+          one = S => ({
+            P: P(subjKey(S.id, 'progress')) || {},
+            intro: P(subjKey(S.id, 'intro')) || {},
+            offer: P(subjKey(S.id, 'intro-offer')),
+            start: P(startKey(S.id)),
+            reset: P(subjKey(S.id, 'reset')),
+            ach
+          }),
+          by = Object.fromEntries(SUBJECTS.map(S => [S.id, one(S)]));
+        PSAVED[name] = {...by[replayS().id], by};
       })
       .catch(() => gen === savedGen && (PSAVED[name] = {err: 'unreachable'}))
       .then(() => {
@@ -7121,7 +7109,6 @@ const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >=
 // D4), with the sheet's genus offsets (?stats=1 gd) for the rows logged without them; before, the moving average.
 const domReplay = () => ({dom: Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= DOM_SHEET, gd: GD});
 const PROGM = new Map();
-let ROWSBY = null;
 // From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
 // time, about 15 s on a phone for 40 players) the player list carries that same replay, computed by the sheet (Code.gs
 // replayedAll_: rp = [progress %, learned, the saved copy's %]), and Players reads no saved copy. The Journey (full) still
@@ -7129,9 +7116,32 @@ let ROWSBY = null;
 // their copy) is replayed here as before.
 const RP_SHEET = 42;
 const rpOn = () => ((USERS && USERS.v) || 0) >= RP_SHEET;
-function progOf(u, full) {
-  if (!ANS || !DATA || !u || !u.id) return null;
-  if (!full && !u.anon && rpOn() && Array.isArray(u.rp) && replayOn()) {
+// The subject the sheet replays (SUBJECTS replay): the corals.
+const replayS = () => SUBJECTS.find(S => S.replay) || SUBJECTS[0];
+// A player's saved copy for one subject (savedOf): null while read, {err} when it could not be.
+const savedFor = (name, S) => (x => (!x || x.err ? x : x.by[S.id]))(savedOf(name));
+// A subject's units for a replay in the admin (Pierre, 2026-11-06: follow every subject's progress on the Journey): the
+// replayed subject's from data.json; another's from its entries (fishAdmin: fishGen, its circles as the app's slate),
+// once read; null before. stats: the sheet's photo numbers the replay reads (?stats=1, the replayed subject's only for
+// now: another subject replays without memory offsets, pooled confusions or format offsets).
+let UNITM = {d: null, f: null, by: {}};
+function unitsOf(S) {
+  if (UNITM.d !== DATA || UNITM.f !== FISHA) UNITM = {d: DATA, f: FISHA, by: {}};
+  if (!(S.id in UNITM.by))
+    UNITM.by[S.id] = S.replay
+      ? DATA && {gen: DATA.gen, slate: slateOf(DATA)}
+      : FISHA && FISHA.slate
+        ? {gen: FISHA.gen, slate: FISHA.slate}
+        : null;
+  return UNITM.by[S.id];
+}
+const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, ...domReplay()} : {dom: domReplay().dom});
+// One player's progress in a subject (S: the replayed one by default), replayed from their answers in it with today's
+// rules and their saved copy's mastery exams; saved: what the copy says (↻ saved when it differs).
+function progOf(u, full, S = replayS()) {
+  const M = unitsOf(S);
+  if (!ANS || !M || !u || !u.id) return null;
+  if (S.replay && !full && !u.anon && rpOn() && Array.isArray(u.rp) && replayOn()) {
     const [pct, learned, spct] = u.rp;
     return {
       pct,
@@ -7141,33 +7151,34 @@ function progOf(u, full) {
       stale: spct !== pct || u.learned !== learned
     };
   }
-  const S = u.anon ? {P: {}} : savedOf(u.name);
-  if (!S) return null;
-  if (!replayOn()) return {off: 1, G: S.err ? {} : S.P || {}, err: S.err};
-  const m = PROGM.get(u.id);
-  if (m && m.ans === ANS && m.S === S && m.mem === SMEM && m.learned === u.learned) return m.v;
-  if (!ROWSBY || ROWSBY.ans !== ANS) {
-    ROWSBY = {ans: ANS, by: {}};
-    (ANS.rows || []).forEach(r => (ROWSBY.by[r[0]] = ROWSBY.by[r[0]] || []).push(r));
-  }
-  const reset = !S.err && S.reset ? Date.parse(S.reset) : 0,
-    rep = replayProgress(ROWSBY.by[u.id] || [], {
-      gen: DATA.gen,
-      mem: SMEM,
-      conf: SCONF,
-      fmt: SFMT,
-      ...domReplay(),
+  const X = u.anon ? {P: {}} : savedFor(u.name, S);
+  if (!X) return null;
+  if (!replayOn()) return {off: 1, G: X.err ? {} : X.P || {}, err: X.err};
+  const key = S.id + '|' + u.id,
+    m = PROGM.get(key);
+  if (m && m.ans === ANS && m.S === X && m.M === M && m.mem === SMEM && m.learned === u.learned) return m.v;
+  // Each player's rows of the subject (every row of theirs, an archived record's too).
+  const BY = ofAns('by:' + S.id, () => {
+    const o = Object.create(null);
+    subjRows(ANS.all || ANS.rows || [], S.id).forEach(r => (o[r[0]] = o[r[0]] || []).push(r));
+    return o;
+  });
+  const reset = !X.err && X.reset ? Date.parse(X.reset) : 0,
+    rep = replayProgress(BY[u.id] || [], {
+      gen: M.gen,
+      ...statsFor(S),
       since: reset ? {[u.id]: reset} : {},
-      starts: S.err ? {} : {[u.id]: S.start} // the first-launch answer (core.js startPriorAt)
+      starts: X.err ? {} : {[u.id]: X.start} // the first-launch answer (core.js startPriorAt)
     })[u.id],
-    L = slateOf(DATA), // the slate as the app counts it (core.js slateOf): the progress % and Learned are over it
-    G = replayedOf(rep, S.err ? {} : S.P),
-    v = {G, pct: pctOf(G, L), learned: learnedOf(G, L), total: L.length, err: S.err};
-  if (!u.anon && !S.err) {
-    v.saved = {pct: pctOf(S.P, L), learned: u.learned};
+    L = M.slate, // the slate as the app counts it (core.js slateOf; another subject's circles): the % and Learned are over it
+    G = replayedOf(rep, X.err ? {} : X.P),
+    v = {G, pct: pctOf(G, L), learned: learnedOf(G, L), total: L.length, err: X.err};
+  if (!u.anon && !X.err) {
+    // The sheet's Learned column is the replayed subject's (RAs); another's, from its copy.
+    v.saved = {pct: pctOf(X.P, L), learned: S.replay ? u.learned : learnedOf(X.P, L)};
     v.stale = v.saved.pct !== v.pct || v.saved.learned !== v.learned;
   }
-  PROGM.set(u.id, {ans: ANS, S, mem: SMEM, learned: u.learned, v});
+  PROGM.set(key, {ans: ANS, S: X, M, mem: SMEM, learned: u.learned, v});
   return v;
 }
 // The replayed value, and discreetly what the saved copy says when it differs (↻ saved …: the copy in the sheet is stale).
@@ -7768,12 +7779,39 @@ const sessLen = L => {
 // The sessions unfolded on Recent sessions (Pierre, 2026-11-05: a tap unfolds a session's summary under it, a tap folds
 // it), by player id and first answer time, so a session stays open when the page is drawn again (↻, a saved copy read).
 const SOPEN = new Set();
-function recentSessions(R) {
+// Sessions (Activity's recent ones, a Journey's): a tap (or Enter / Space) on a session unfolds its summary, again folds
+// it; its player's link opens the Journey as before. An unfolded session's panel is as wide as the visible part of the
+// table's scroll box (.adm-sess, --sw), never past it.
+function bindSess() {
+  const rsc = $v.querySelector('.adm-recent .adm-tscroll');
+  if (rsc) rsc.style.setProperty('--sw', rsc.clientWidth + 'px');
+  // Recent sessions: a tap (or Enter / Space) on a session unfolds its summary, again folds it; its player's link opens
+  // the Journey as before.
+  $v.querySelectorAll('[data-sopen]').forEach(tr => {
+    const flip = () => {
+      const k = tr.dataset.sopen;
+      SOPEN.has(k) ? SOPEN.delete(k) : SOPEN.add(k);
+      render();
+    };
+    tr.onclick = e => !e.target.closest('a, button') && flip();
+    tr.onkeydown = e => {
+      if (e.target === tr && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        const k = tr.dataset.sopen;
+        flip();
+        const back = [...$v.querySelectorAll('[data-sopen]')].find(x => x.dataset.sopen === k);
+        if (back) back.focus({preventScroll: true});
+      }
+    };
+  });
+}
+// o.own: one player's sessions on their Journey (R their rows): the last RECENT.OWN, no player column, unfolding the same.
+function recentSessions(R, o = {}) {
   const NM = Object.create(null);
   ((USERS && USERS.users) || []).forEach(u => u.id && (NM[u.id] = u));
   const S = sessionsOf(R)
     .sort((a, b) => b.L[b.L.length - 1][1] - a.L[a.L.length - 1][1])
-    .slice(0, RECENT.N);
+    .slice(0, o.own ? RECENT.OWN : RECENT.N);
   const dur = s => sessLen(s.L),
     modes = s => {
       const c = {};
@@ -7788,21 +7826,23 @@ function recentSessions(R) {
         ? `<a href="#players/list/journey/${encodeURIComponent(NM[id].name)}">${pname(NM[id].name, NM[id].board === -1)}</a>`
         : `<a href="#players/list/anon/${encodeURIComponent(id)}" title="Not signed in"><code>${esc(id)}</code></a>`;
   const live = S.filter(s => isNow(s.L[s.L.length - 1][1])).length;
-  return `<section class="adm-scard adm-recent" data-recent><h3>Recent sessions${
+  return `<section class="adm-scard adm-recent${o.own ? ' adm-jwide' : ''}" data-recent><h3>${o.own ? `Sessions <small>${sessionsOf(R).length}</small>` : 'Recent sessions'}${
     live ? ` <span class="adm-ago now">${live} playing now</span>` : ''
   } <small class="note" title="When the answers were loaded (↻ reloads)">as of ${dateText(ANS.at || Date.now(), 'hm')}</small></h3>${
     S.length
-      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player</th><th>Last</th><th class="n">Answers</th><th class="n">Right</th><th title="From the first to the last answer">Length</th><th>Started</th><th>Modes</th><th></th></tr></thead><tbody>${S.map(
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr>${o.own ? '' : '<th>Player</th>'}<th>Last</th><th class="n">Answers</th><th class="n">Right</th><th title="From the first to the last answer">Length</th><th>Started</th><th>Modes</th><th></th></tr></thead><tbody>${S.map(
           s => {
             const k = s.id + '|' + s.L[0][1],
               open = SOPEN.has(k);
             // A tap on the row (not on the player's link) unfolds the session's summary under it (sessionSummary,
             // admin-journey.js), as a Players row unfolds its actions.
-            return `<tr class="adm-urow${open ? ' open' : ''}${isNow(s.L[s.L.length - 1][1]) ? ' now' : ''}" data-sopen="${esc(k)}" tabindex="0" aria-expanded="${open}"><td>${who(s.id)}${isMe(s.id) ? ' <small>you</small>' : ''}</td><td>${ago(s.L[s.L.length - 1][1])}</td><td class="n">${s.L.length}</td><td class="n">${pct(
+            return `<tr class="adm-urow${open ? ' open' : ''}${isNow(s.L[s.L.length - 1][1]) ? ' now' : ''}" data-sopen="${esc(k)}" tabindex="0" aria-expanded="${open}">${o.own ? '' : `<td>${who(s.id)}${isMe(s.id) ? ' <small>you</small>' : ''}</td>`}<td>${ago(s.L[s.L.length - 1][1])}</td><td class="n">${s.L.length}</td><td class="n">${pct(
               s.L.filter(r => r[4]).length,
               s.L.length
             )}</td><td>${dur(s)}</td><td>${clock(s.L[0][1])}</td><td>${modes(s)}</td><td>${open ? '▾' : '▸'}</td></tr>${
-              open ? `<tr class="adm-udet" data-sdet><td colspan="8">${sessionSummary(s.id, s.L, NM[s.id] && NM[s.id].name)}</td></tr>` : ''
+              open
+                ? `<tr class="adm-udet" data-sdet><td colspan="${o.own ? 7 : 8}">${sessionSummary(s.id, s.L, NM[s.id] && NM[s.id].name)}</td></tr>`
+                : ''
             }`;
           }
         ).join('')}</tbody></table></div>`

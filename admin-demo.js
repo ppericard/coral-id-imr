@@ -592,7 +592,9 @@
       const [fj, fp] = await Promise.all(['fish.json', 'fish-photos.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json())));
       let fs = 11;
       const frnd = () => (fs = (fs * 1103515245 + 12345) % 2147483648) / 2147483648,
-        E = fj.teach.filter(e => e.circle === 1 && (fp.photos[e.id] || []).length).map(e => e.id),
+        // The game's units as the app builds them (core.js fishGen: the book's families), those with photos.
+        FG = fishGen(fj, fp.photos).gen,
+        E = Object.keys(FG).filter(id => FG[id].circle === 1 && !FG[id].wink && FG[id].views.wide.length),
         fpick = a => a[Math.floor(frnd() * a.length)];
       [
         ['Ben Demo', 0.55, 48, 1.2, NOW - 40 * 60e3],
@@ -619,7 +621,7 @@
             ans,
             right ? 1 : 0,
             'quiz',
-            fpick(fp.photos[g]).f,
+            fpick(FG[g].views.wide).f,
             'demof' + frows.length,
             0.6,
             0,
