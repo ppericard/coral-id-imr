@@ -603,6 +603,64 @@
       groups: (F.key && F.key.groups) || []
     };
   }
+  // The fish game photos (admin plan PR 7): the photos Pierre put in play in the admin's fish Candidates, downloaded to R2
+  // (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish), take the place of the
+  // stopgap list (fish-photos.json, remote iNaturalist photos) entry by entry.
+  // fishOn(F, f, sid): photo f is in play for species sid, F being curation.json fish: add names sid, the photo is neither
+  // rejected (seen) nor excluded, and its Not this (out), if set, names that same species (the admin's rule, Not this
+  // coming with admin plan PR 5b; tools/fish_game.py fish_on is its copy).
+  const fishOn = (F, f, sid) => {
+    const o = ((F && F.out) || {})[f];
+    return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
+  };
+  // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
+  // fish-<species>-cand-<id>), b + its FishBase file stem (fish-<species>-cand-fb-<stem>), else its name.
+  function fishPid(f) {
+    const s = String(f),
+      m = /^fi(\d+)$/.exec(s) || /-cand-(\d+)[cd]?$/.exec(s),
+      b = /-cand-fb-(.+)$/.exec(s);
+    return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
+  }
+  // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more, model.js PDIFF.EARLY:
+  // the photos of its first questions, easyFirst), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
+  // easy photos; tools/fish_judge.py WANT); with fewer, the stopgap's photos join its curated ones.
+  const FISHPH = {MIN: 5, EASY: 4};
+  // fishPhotos(stop, game, cur): {teaching id: [photo]}, what fishGen takes. stop: fish-photos.json photos; game:
+  // fish-game.json photos (each with sp, the species it is in play for); cur: curation.json (or a draft), null when not
+  // loaded yet. Pierre's curation applies at once, before the workflow runs again: a curated photo shows only while it is
+  // in play (fishOn on its species) and not excluded for good (curation exclude, by name or photo id); a stopgap photo
+  // never shows once Pierre rejected, excluded or moved (Not this) the same photo as a candidate, nor when the entry's
+  // curated photos hold that photo or its observation. With no curation (not loaded), the lists as they are.
+  // fish (fish.json, optional): an entry on its curated photos alone still keeps the stopgap's photos of every scientific
+  // genus its curated photos do not cover (the genus: the species name's first word, as app.js fishGenera reads it), so
+  // no genus unit loses its photos when its entry switches (Codex review #614).
+  function fishPhotos(stop, game, cur, fish) {
+    const F = cur && cur.fish,
+      gname = new Map(((fish && fish.species) || []).map(s => [s.id, String(s.name || '').split(/\s+/)[0]])),
+      genus = p => (p && p.sp && gname.get(p.sp)) || '',
+      X = (cur && cur.exclude) || {},
+      xid = new Set(Object.keys(X).map(fishPid)),
+      gone = new Set(xid),
+      out = {},
+      cu = {},
+      cid = new Set();
+    if (F) ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => gone.add(fishPid(f))));
+    Object.entries(game || {}).forEach(([t, L]) => {
+      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishOn(F, p.f, p.sp)) && !X[p.f] && !xid.has(fishPid(p.f)));
+      cu[t].forEach(p => cid.add(fishPid(p.f)));
+    });
+    new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {
+      const C = cu[t] || [],
+        obs = new Set(C.map(p => p.o).filter(Boolean));
+      const S = ((stop || {})[t] || []).filter(
+        p => p && p.f && !gone.has(fishPid(p.f)) && !cid.has(fishPid(p.f)) && !(p.o && obs.has(p.o))
+      );
+      if (C.filter(p => (p.e || 0) >= FISHPH.EASY).length < FISHPH.MIN) return (out[t] = [...C, ...S]);
+      const have = new Set(C.map(genus));
+      out[t] = [...C, ...S.filter(p => genus(p) && !have.has(genus(p)))];
+    });
+    return out;
+  }
   // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, rule S2): its IMR name,
   // the parts of a double one ("Surgeonfish & Unicornfish"), its family as IMR writes it and the WoRMS families, and the
   // sub-entries IMR names inside it (Chromis, Bannerfish...). The first is the name shown.
@@ -3866,6 +3924,10 @@
     fishGen,
     easyRank,
     refScore,
+    fishOn,
+    fishPid,
+    FISHPH,
+    fishPhotos,
     keepSubjectKeys,
     fishNames,
     fishTypeNames,

@@ -292,11 +292,9 @@
   // Not this (5b): out {f: species id} = the iNaturalist experts got the species wrong, the photo is that species' candidate
   // now; out {f: 'x'} = no game species (or unknown): gone. Only Pierre's click writes it (fishNotThis). A photo is in play
   // for a species when add names it, it is neither rejected nor excluded, and its out, if any, names that same species
-  // (the convention the game reads, admin plan PR 7). fishMine stays the keep on its first species, for the agreement.
-  const fishOn = (F, f, sid) => {
-    const o = (F.out || {})[f];
-    return (F.add || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
-  };
+  // (core.js fishOn: the convention the game reads, admin plan PR 7). fishMine stays the keep on its first species, for
+  // the agreement.
+  const fishOn = (typeof module !== 'undefined' && module.exports ? require('./core.js') : root).fishOn;
   // A photo's species now (orig: its fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
   // (excluded, or Not this with no game species), or null (a candidate waiting).
   function fishState(F, f, orig) {

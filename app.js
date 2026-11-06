@@ -433,7 +433,10 @@ const photoSrc = p =>
         ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
         : p.o && p.o.includes('inaturalist.org')
           ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
-          : '';
+          : // A FishBase photo Pierre put in play (fish, admin plan PR 7): its author and FishBase's photo page.
+            p.via === 'fishbase' && p.o
+            ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p))}: open the FishBase photo page"><span class="pa">${esc(author(p).replace(/,\s*via FishBase$/i, ''))} · </span>FishBase ↗</a>`
+            : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
 const credit = p =>
@@ -483,6 +486,7 @@ function build() {
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
   DATA = d;
+  if (FISHRAW) fishBuild(); // the fish photos under the same curation
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
 // with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of the circle-1 species of each
@@ -579,21 +583,29 @@ const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.uni
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (FISH, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
-// Fish (core.js fishGen over fish.json and fish-photos.json): fetched the first time the fish subject is needed.
-// fish-photos.json is the stopgap photo list (remote iNaturalist photos, tools/fish_photos.py) until the fish photo
-// pipeline exists.
+// Fish (core.js fishGen over fish.json and the photos): fetched the first time the fish subject is needed. The photos:
+// fish-game.json, the ones Pierre put in play, hosted on R2 (tools/fish_game.py, admin plan PR 7), and fish-photos.json,
+// the stopgap list (remote iNaturalist photos, tools/fish_photos.py) and the sheet-only photos; core.js fishPhotos
+// picks per entry under Pierre's curation (CUR), so FISH is made again whenever the curation is (build, fishBuild).
 let FISH = null,
-  FISHP = null;
+  FISHP = null,
+  FISHRAW = null;
+const fishBuild = () => {
+  const {f, ph, gm} = FISHRAW;
+  FISH = fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f);
+  rankPhotos(); // the photos in easyRank order on their difficulty (below)
+  return FISH;
+};
 const fishLoad = () =>
   FISHP ||
-  (FISHP = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6')])
-    .then(([f, ph]) => {
+  (FISHP = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6'), json('fish-game.json?v=1')])
+    .then(([f, ph, gm]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
-      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
+      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
+      // curated photos are not required: without them every entry plays on the stopgap's.
       if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      FISH = fishGenera(fishGen(f, ph.photos, ph.sheet), f);
-      rankPhotos();
-      return FISH;
+      FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
+      return fishBuild();
     })
     .catch(e => {
       FISHP = null;
@@ -1272,6 +1284,8 @@ let session = {ok: 0, n: 0, h: []},
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // What each subject's units are, read from its data (core.js SUBJECTS holds the rest of the taxon model):
 //   load()   its data, before its pages open (corals: data.json, always loaded; fish: fishLoad)
+//   pick     its line where a player with two subjects picks the one to start with (tour.js, the welcome tour's first step)
+//   tour     the welcome tour's words for its steps on this subject, where they differ from the steps' own (tour.js words)
 //   slate()  the units the games teach and the progress counts ("the slate" in the code): for corals the IMR coral slate
 //            (data.json order, starred genera last) and BENTHIC (core.js slateOf); for fish the IMR entries (circle 1)
 //   sets     the opt-in sets (core.js SUBJECTS optin), offered once by a card (quiz.js bonusOfferShow) when due() and
@@ -1298,6 +1312,8 @@ const UNITS = {
     // The subject's icon in its switches (app.js subjIcon): a branching coral.
     icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
     load: () => Promise.resolve(),
+    // Its line under its name where a new player picks the subject to start with (tour.js pick).
+    pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
     // The species a photo shows, for the answer log (app.js speciesShown): none, a coral question is about the genus.
     species: () => '',
@@ -1339,6 +1355,22 @@ const UNITS = {
     identify: 'fishkey',
     icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
+    pick: 'The reef fish families of the IMR surveys, as on the survey videos.',
+    // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
+    // text or a function of "Tap" / "Click". Fish have one game for now (SUBJECTS pages) and their key is coming soon.
+    tour: {
+      doors: {
+        d: 'Learn & practise while you learn the families. Identify when you need to name a fish on a survey video, or one you photographed on a dive: its key is coming soon.'
+      },
+      games: {
+        t: 'The fish quiz',
+        d: 'Practice in the menu opens the quiz: name the family from photos. Its look-alikes come in as you get a family right.'
+      },
+      progress: {
+        d: tap =>
+          `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family of the IMR fish surveys.`
+      }
+    },
     slate: () => (FISH ? FISH.c1 : []),
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',

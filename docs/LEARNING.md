@@ -2449,7 +2449,12 @@ changes, all data the engine reads generically (the corals have none of these fi
   Fusilier 0, Sandperch 1, Emperor 2, Anthias 2, Lizardfish 3, Moorish Idol, Goatfish, Triggerfish, Filefish, Lionfish
   4). 214 research-grade candidates of `fish-cand.json` (PR #463: CC0, CC BY or CC BY-NC, Indo-West Pacific) were looked
   at and judged with the same rubric, and 37 very easy ones added (`tools/fish_judge.json` `add`, to 6 per entry; Fusilier
-  5): every circle-1 entry now has 5 to 13, and 24 to 30 photos in all.
+  5): every circle-1 entry now has 5 to 13, and 24 to 30 photos in all. **The same 5 decide when Pierre's curated photos
+  replace the stopgap** (admin plan PR 7, `core.js` `FISHPH`, `fishPhotos`; docs/ARCHITECTURE.md "Curated game photos"):
+  an entry with 5 very easy photos in play plays on them alone, so its first questions always have 5 to take turns
+  among; with fewer, the stopgap's photos (minus those Pierre rejected) join its curated ones. Their ease is Pierre's
+  (`fish.ease`, written with the pass's value when he or the auto-sort adds a photo), so the prior and `easyFirst` read
+  it unchanged.
 - **Reference photos one ease point easier** (2026-11-05, Pierre: a photo a reference source uses to represent the
   species, FishBase's main picture or iNaturalist's taxon cover, "is easy to identify, so it should come early in the quiz
   for a beginner"): such a candidate carries `rep`, and its judged ease gets `REP_BONUS` = 1 (`tools/fish_judge.py`

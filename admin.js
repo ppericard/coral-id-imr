@@ -3152,16 +3152,22 @@ function bindEv() {
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 // The fish beta's reports (Codex review #442): a report from a fish question names a teaching id (t01) and remote
-// iNaturalist photos (fi…), none in the coral photo registry. fish.json and fish-photos.json are read once, when To do
-// first shows: {gen: teaching id -> record (core.js fishGen), ph: photo id -> {photo, entry id}}.
+// iNaturalist photos (fi…), none in the coral photo registry. fish.json, fish-photos.json and fish-game.json (the curated
+// photos on R2, admin plan PR 7) are read once, when To do first shows: {gen: teaching id -> record (core.js fishGen),
+// ph: photo id -> {photo, entry id}}, every photo either list holds (a report may name a photo shown before a Publish).
 let FISHP_ADM = null;
 function fishAdmin() {
   return (FISHP_ADM =
     FISHP_ADM ||
-    Promise.all(['fish.json', 'fish-photos.json'].map(u => fetch(u, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
-      .then(([f, ph]) => {
+    Promise.all(
+      ['fish.json', 'fish-photos.json', 'fish-game.json'].map(u => fetch(u, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))
+    )
+      .then(([f, ph, gm]) => {
         if (!f || !ph || !ph.photos) return;
-        const F = fishGen(f, ph.photos),
+        const G = (gm && gm.photos) || {},
+          all = {};
+        new Set([...Object.keys(ph.photos), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(ph.photos[t] || [])]));
+        const F = fishGen(f, all),
           P = {};
         Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (P[x.f] = {...x, entry: g.id})));
         FISHA = {gen: F.gen, ph: P};
