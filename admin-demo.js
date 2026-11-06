@@ -656,21 +656,33 @@
     // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}};
+      // The domain-score bar from the script version that replays it (core.js DOM_SHEET), as the real admin.
+      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, dom: V >= DOM_SHEET};
     const rep = replayProgress(A, opt);
     const savedOf = (u, R) => {
       const old = JSON.parse(u.data['reefid-sync-coral-progress']),
         P = {};
       Object.entries(R).forEach(([g, r]) => {
         if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
-        // A mark the game would have taken away at a later miss (core.js mxKeeps; the replay's lm) is not in the copy the
+        // A mark the game would have taken away at a later miss (core.js keepsMark; the replay's lm) is not in the copy the
         // app saved.
         const o = {...(old[g] || {})};
         if (o.mx && r.lm > o.mx) delete o.mx;
         P[g] =
           u.name === 'Dio Demo'
             ? {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, L: Math.round(Math.min(0.97, 0.2 + 0.12 * r.ok) * 100) / 100}
-            : {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, pg: r.pg, ps: r.ps, off: r.off, conf: r.conf, pm: 1, ...(o.mx ? {mx: o.mx} : {})};
+            : {
+                ok: r.ok,
+                ko: r.ko,
+                h: r.h,
+                th: o.th || 0,
+                ...(domOn(r) ? {dp: r.dp, ds: r.ds} : {pg: r.pg}),
+                ps: r.ps,
+                off: r.off,
+                conf: r.conf,
+                pm: 1,
+                ...(o.mx ? {mx: o.mx} : {})
+              };
       });
       // Dio's best genus was learned under the former model (an exam passed before 2026-11-02: mx 1, no time).
       if (u.name === 'Dio Demo') {
@@ -867,7 +879,7 @@
           start = json('reefid-sync-coral-start'),
           rep = replayProgress(
             A.filter(r => r[0] === id),
-            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, starts: start ? {[id]: start} : {}}
+            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, dom: V >= DOM_SHEET, starts: start ? {[id]: start} : {}}
           )[id],
           G = replayedOf(rep, P);
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];

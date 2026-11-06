@@ -87,6 +87,9 @@ const GATES = {
     assert.strictEqual(logOk({}, v), true, 'an answer without a subject is a coral one');
     return logOk({s: 'fish'}, v);
   },
+  // The domain-score bar (core.js DOM, rules version 9) for a genus first answered in the game (model.js domRules): from
+  // v87, which replays it; before, the moving average s.pg. On the corals, the subject the sheet replays (fish: at once).
+  DOM_SHEET: (v, N) => fn('model.js', 'const domRules = ', '\n', 'domRules', {sheetV: () => v, DOM_SHEET: N, SUBJ: {replay: true}})(),
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   // The per-format offsets (core.js fmtsOf, ?stats=1 fmt; Q138): from the version that serves them and replays with them;
   // before, every offset is 0 (the app's PFMT, the admin's SFMT, the device's replay on top of the sheet's).

@@ -1,7 +1,7 @@
 // IMR Reef ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). Which genus comes next (weighted, the progressive opening OPEN, the easiest first), which photos (photoSet,
 // PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT and genus offsets PGD), the player's ability per genus (Elo,
-// ELO, ability; each answer scored by core.js scoreAnswer), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
+// ELO, ability; each answer scored by core.js scoreAnswer), their progress (core.js DOM, barOf, examOpen; PROG for a record not rebuilt yet), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
 // pooledConf). docs/LEARNING.md explains every rule. A classic script like app.js, loaded right after progress.js
 // (index.html, in order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
 // A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
@@ -17,7 +17,7 @@
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
-const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -987,6 +987,11 @@ const ability = n => abilityOf(P, n, startP());
 // (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule D4); before, every
 // step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
 const rtOn = () => typeof sheetV === 'function' && sheetV() >= RT_SHEET;
+// The domain-score bar (core.js DOM, domStep; Pierre, 2026-11-06, Q135): a genus first answered now takes it only once the
+// sync script replays it (its replies say v >= DOM_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule
+// D4); before, every genus keeps the moving average s.pg, as before. A subject the sheet does not replay (SUBJECTS
+// replay: fish) has no replay to wait for: a unit first answered takes it at once (one answered before keeps s.pg).
+const domRules = () => !SUBJ.replay || (typeof sheetV === 'function' && sheetV() >= DOM_SHEET);
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
 const photoBand = n => {
   const t = ability(n) - aimOff(4);
@@ -1122,15 +1127,15 @@ const pgLook = (t, chs) => chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >
 function pgWeight(t, chs, k) {
   return pgRightW(k, pgLook(t, chs));
 }
-const knownP = n => pgOf(P[n]);
 // Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Its count (2/5) is shown nowhere:
-// the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is at 95% (s.pg at PROG.M),
+// the genus's % creeping up, then falling back on a miss, keeps the mystery (Pierre). Once a genus reaches the exam's
+// entry (core.js examOpen: the domain score at DOM.EX, a record not rebuilt yet s.pg at PROG.M),
 // EXAM.n questions on it are slipped into the photo quiz, unannounced (a test on one genus alone would give the answer
 // away), at least EXAM.gap other answers apart (recognition, not short-term memory; counted in answers, never time).
 // Each is as hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest
 // of its view, the views taking turns (colony, close-up, corallites), 3 look-alike traps (examSet, quizPhoto). Every one
 // right: the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
-// is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when s.pg is back at PROG.M.
+// is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when the genus is back at the entry.
 const EXAM = {n: 5, gap: 8};
 // Typed questions (Pierre, 2026-11-03; docs/ROADMAP.md "Free-text answers"): the player types the genus instead of picking
 // 1 of 4, recall rather than recognition, what an RA does in front of a colony. They come in progressively as the
@@ -1161,36 +1166,54 @@ const examTyped = n => {
   return TYPED.exam - (ex.t || 0) >= EXAM.n - (ex.k || 0) || Math.random() < typedP(n);
 };
 const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
+// The exam's entry: the bar at core.js examOpen and pair coverage (Q129, core.js looksLeft): the genus asked beside each
+// of its declared look-alikes the player can be asked (the slate and the bonus genera turned on), either way, or mixed
+// up with it. examLooks: those look-alikes, declared on either side as isLook reads them (Acropora lists Montipora,
+// Montipora does not list Acropora: the pair is still one to compare); lookLeft: the ones not compared yet.
+const examLooks = n => {
+  const on = new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])]),
+    own = (GX(n) || {}).look || [];
+  return [...on].filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
+};
+const lookLeft = n => looksLeft(P, n, examLooks(n));
 const examOn = n => {
   const s = P[n] || {};
-  return !s.mx && knownP(n) >= PROG.M;
+  return !s.mx && examOpen(s, P, n) && !lookLeft(n).length;
 };
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
-// A learned genus stays learned through one miss (from PROG.M or above, a miss leaves s.pg at PROG.M × (1 − PROG.A) at
-// least) and is lost on a second one before right answers bring it back up: with the moving average a single miss
-// already takes 15% off, so losing it at once took learned genera away from a simulated expert at every slip (rule of
-// code review #327: kept only while the genus stays known).
-const mxKept = n => mxKeeps(knownP(n)); // core.js mxKeeps, the replay's rule too (replayProgress lm)
+// A learned genus stays learned through one miss and is lost on a second one before right answers bring it back up
+// (core.js keepsMark: the domain score at DOM.KEEP or above, about one miss below the exam's entry; a record not rebuilt
+// yet, s.pg at PROG.M × (1 − PROG.A)): losing it at once took learned genera away from a simulated expert at every slip
+// (rule of code review #327: kept only while the genus stays known).
+const mxKept = n => keepsMark(P[n], P, n); // core.js keepsMark, the replay's rule too (replayProgress lm)
 function missing(n) {
   const s = P[n] || {},
     m = [];
   if (s.mx) return m;
-  if (knownP(n) < PROG.M)
-    m.push(`more right answers, most of all against its look-alikes (about ${Math.round(100 * genScore(n))}% of the way so far)`);
-  else
+  const left = lookLeft(n);
+  if (!examOpen(s, P, n))
+    m.push(
+      `more right answers, most of all on hard photos and typed ones (so far you would name about ${Math.round(100 * genScore(n))}% of its photos)`
+    );
+  if (left.length)
+    m.push(
+      `being asked beside its look-alike${left.length > 1 ? 's' : ''} ${(typeof andList === 'function' ? andList : L => L.join(', '))(left.map(unameT))}`
+    );
+  if (examOpen(s, P, n) && !left.length)
     m.push(
       `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the Quiz, all right, at least ${TYPED.exam} of them typed from memory`
     );
   return m;
 }
-// Progress of a genus, 0 to 1 (core.js scoreOf): s.pg fills 95% on its way to PROG.M, each exam question passed adds
-// 1%, the passed exam makes it 100%.
-const genScore = n => scoreOf(P[n]);
+// Progress of a genus, 0 to 1 (core.js scoreOf): the domain score up to 95% (barOf), each exam question passed fills a
+// fifth of what is left, the passed exam makes it 100%.
+const genScore = n => scoreOf(P[n], P, n); // the false-alarm correction reads the whole record (core.js faOf)
 // Mastery levels (Pierre, 2026-11-03: "0/39 learned" for weeks was discouraging; named steps on the way, a diver's ladder
 // every RA knows, one icon each): the step of a genus on the learning scale, from its % (genScore), the same colours on
-// My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%; 3 Advanced from 80%; 4 Divemaster from 95%
-// (the mastery exam's entry); 5 Instructor, the exam passed (s.mx, "learned" in the code). The thresholds only name
-// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100).
+// My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%; 3 Advanced from 80%; 4 Divemaster from the
+// mastery exam's entry (examOn: core.js examOpen, DOM.EX, 85%, 95% for a record not rebuilt yet, and pair coverage); 5
+// Instructor, the exam passed (s.mx, "learned" in the code). The thresholds only name points on the % (Khan Academy's
+// Familiar 50 / Proficient 80 / Mastered 100).
 const MASTERY = [
   ['Not seen', ''],
   ['Snorkeler', '<rect x="2.5" y="8" width="13" height="7.5" rx="3.2"/><path d="M9 15.5v-2.2M19.5 3v11a4.5 4.5 0 0 1-4.5 4.5h-1.5"/>'],
@@ -1203,13 +1226,13 @@ const MASTERY = [
   ['Divemaster', '<path d="M5 21.5V2.5"/><rect x="5" y="3.5" width="15" height="10.5" rx="1.2"/><path d="M5 14 20 3.5"/>'],
   ['Instructor', '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v4.8c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2V11M22 9v6"/>']
 ];
-const LV_AT = [0.5, 0.8, 0.95]; // Open Water, Advanced, Divemaster
+const LV_AT = [0.5, 0.8, DOM.EX]; // Open Water, Advanced, Divemaster (the exam's entry: examOpen)
 const lvStep = n => {
   const k = level(n)[0];
   if (k === 'new') return 0;
   if (k === 'ok') return 5;
-  const g = genScore(n) + 1e-9; // genScore gives 0.95 exactly at the exam's entry
-  return 1 + LV_AT.filter(x => g >= x).length;
+  const g = genScore(n) + 1e-9;
+  return 1 + LV_AT.slice(0, 2).filter(x => g >= x).length + (examOn(n) ? 1 : 0);
 };
 // The icon of a level (24 px grid, 1.75 stroke, currentColor: the app's icon set), with its name for screen readers.
 const lvIcon = (k, cls = 'lvi') =>
