@@ -257,7 +257,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
   cited or named, in the app or in the repo.
 - **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule C1).
 - Its words become the fish glossary (underlined in cues and feedback), as Coral basics' words are for corals. Same component and
-  format as Coral basics; Pierre's own photos first (rule P1).
+  format as Coral basics; its photos the easiest, most reference-like ones, whoever took them (rule P1, fish).
 
 ## What `fish.json` supports, and the gaps
 
@@ -280,7 +280,7 @@ Gaps before species questions ship:
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
-- Fish answers are not logged to the sheet yet (no subject column): no pooled photo difficulty or confusion scores for fish until they are.
+- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
   Pierre, 2026-11-04: they are logged **from the start**, as soon as curated photos enter the game.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
@@ -306,7 +306,7 @@ Decided from the admin pooling study:
   kept, and **always sourced** (rule C2).
 - **How cues are taught** (Pierre, 2026-11-04): cues about a family itself, and cues taught **by comparison** with another family or
   species (learning by contrast). The cue content comes from public, sourced references.
-- **Fish answers logged to the sheet from the start**, as soon as curated photos enter the game.
+- **Fish answers logged to the sheet from the very first second** (Pierre, 2026-11-06; sheet v60), at whatever rank was asked, with the species shown.
 
 ## Juveniles and colour phases
 
@@ -384,7 +384,7 @@ coral Lab prototype of photo-to-trait, "Spot the feature" (`proto/spot.js`), sta
 
 ## My progress (fish)
 
-Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#lab-fishprog`), so the page reads at every stage, from a beginner
+Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#tools/fishprog`), so the page reads at every stage, from a beginner
 on families only to an IMR RA with every species open:
 
 - **One global fish progress score** (Pierre, 2026-11-04; replaces "the entry bar counts the entries only; species never enter it"): the
@@ -440,7 +440,7 @@ on families only to an IMR RA with every species open:
   This relaxes rule U12 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
-- **Opening fish to players**: to a group Pierre picks in the admin (for now he will put everyone in it), not one site-wide switch. Built (2026-11-04 night, PR #540, open for Pierre's OK): docs/ARCHITECTURE.md "The beta group".
+- **Opening fish to players**: **open to every player since 2026-11-06** (Pierre, Q158: "open fish to everyone now", during IMR's fish course), signed out included, the *beta* label kept (`core.js` `SUBJECTS` fish `open: 'all'`, sheet v67). Before, from 2026-11-04 (PR #540), to a group Pierre picked in the admin; the group mechanics stay for a subject set back to `open: 'group'` (docs/ARCHITECTURE.md "Opening", "The beta group").
 - **Leaderboards separate per subject**, no merged ranking: corals as today (coral %, then Elo); fish by the global fish score ("My
   progress (fish)"), then the fish Elo. Needs fish answers logged in the sheet first.
 - **Achievements** (rule L8: learning milestones, never time or days played; designed later, each one's timing checked with the real

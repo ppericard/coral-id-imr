@@ -130,6 +130,9 @@ Pierre to accept or change, as for coral candidates (ROADMAP).
 - **The first questions on an entry** (`model.js` `easyFirst`): until the entry reaches Open Water (50%, the first
   level earned), its questions show only its very easy photos (ease 4-5); an entry with fewer than `PICKD.VARIETY` (3)
   of them shows its 3 easiest instead. A unit without judged photos (the corals) is not touched.
+- **The order photos are met in** (`core.js` `easyRank`, Pierre, 2026-11-06): the card's photo, the first photo of each
+  list and the auto-sort's order are the easiest first, then the most reference-like by these tags (`refScore`: `r`,
+  then profile, whole, good light, no colour loss, sharp, large, one fish), never by who took the photo.
 - **The order the entries open**: the starter core first (`fish.json` `start`), then the existing rule, easiest and
   most common first (`openPick`): an entry's difficulty is the mean of its photos' difficulty, so the judged ease
   orders it too.

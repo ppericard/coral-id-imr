@@ -68,7 +68,8 @@ function app({fail = () => undefined} = {}) {
     performance: {now: () => 0},
     localStorage: storage(),
     sessionStorage: storage(),
-    location: {hash: '#quiz', reload: () => {}},
+    location: {hash: '#practice/quiz', reload: () => {}},
+    hashNow: () => 'quiz', // app.js: the page key on screen
     IS_ADMIN: false,
     showSubj: () => {},
     document: doc,

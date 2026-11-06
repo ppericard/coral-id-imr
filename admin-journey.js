@@ -3,7 +3,7 @@
 // log the Players page already loads (ANS.rows, sheet readAnswers: [anonymous id, time, genus shown, answered, right,
 // mode, photos, expected, ability, new photos, choices, anonymous]), joined to the name by the player's anonymous id
 // (USERS, sheet v13); and the genus sheets they opened (sheet v30 'pages', admin.js loadPages, under the same id). Opened
-// from a row of Players (#~journey/<name>). Loaded after admin.js,
+// from a row of Players (#players/list/journey/<name>). Loaded after admin.js,
 // whose helpers it uses (esc, pct, kpis, sbar, sgn, loadUsers, loadStats, HEALTH, DATA). The explanations are in the
 // page help (HELP.journey, rule A2).
 const JOURNEY = {
@@ -178,9 +178,9 @@ function journeyChart(series, top, opt = {}) {
 }
 
 function renderJourney(name, anonId = '') {
-  const here = anonId ? '~anon/' + anonId : '~journey/' + name;
+  const here = anonId ? 'players/list/anon/' + anonId : 'players/list/journey/' + name;
   status();
-  const back = `<a class="adm-fchip plain" href="#~users">← Players</a><button type="button" class="adm-fchip plain" data-jload title="Reload">↻</button>`;
+  const back = `<a class="adm-fchip plain" href="#players/list">← Players</a><button type="button" class="adm-fchip plain" data-jload title="Reload">↻</button>`;
   if (!USERS || !ANS) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(anonId ? 'Not signed in · ' + anonId : name)}</h2></div><p class="note">Loading…</p>`;
     Promise.all([USERS ? null : loadUsers(), ANS ? null : loadStats()]).then(() => {
@@ -190,16 +190,20 @@ function renderJourney(name, anonId = '') {
     if (pagesStale()) loadPages().catch(() => {});
     return;
   }
-  // A device that never signed in (Pierre, 2026-11-03): #~anon/<its anonymous id>, from Players > Not signed in. Its
+  // A device that never signed in (Pierre, 2026-11-03): #players/list/anon/<its anonymous id>, from Players > Not signed in. Its
   // answers are all there is: no saved progress, so no cards and no learned genera.
-  const u = anonId ? {name: 'Not signed in · ' + anonId, id: anonId} : (USERS.users || []).find(x => x.name === name);
+  // An archived record (sheet v58, the Archived fold on Players): read-only, its path as it was, marked archived.
+  const u = anonId
+    ? {name: 'Not signed in · ' + anonId, id: anonId}
+    : (USERS.users || []).find(x => x.name === name) ||
+      ((USERS.archived || []).find(x => x.name === name) && {...USERS.archived.find(x => x.name === name), arch: 1});
   if (!u || !u.id) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(anonId ? 'Not signed in · ' + anonId : name)}</h2></div><p class="note">${u ? 'No anonymous id for this player yet (sheet script v13).' : 'No player by this name.'}</p>`;
     bindJReload();
     return;
   }
   const R = (ANS.rows || []).filter(r => r[0] === u.id).sort((a, b) => a[1] - b[1]);
-  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}</div>`;
+  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}${u.arch ? '<small class="note">archived</small>' : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindJReload();
@@ -382,7 +386,7 @@ function renderJourney(name, anonId = '') {
       .slice(0, JOURNEY.TOP);
   const gl = L =>
     L.length
-      ? `<table class="adm-tbl">${L.map(([g, s]) => `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a></td><td class="n">${pct(s.ok, s.n)}</td><td class="n">${jPts(s.score)}</td><td class="n">${s.n}</td></tr>`).join('')}</table>`
+      ? `<table class="adm-tbl">${L.map(([g, s]) => `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a></td><td class="n">${pct(s.ok, s.n)}</td><td class="n">${jPts(s.score)}</td><td class="n">${s.n}</td></tr>`).join('')}</table>`
       : `<p class="note">Not enough answers yet (${JOURNEY.MIN} per genus).</p>`;
   const mixes = Object.entries(J.mix)
     .sort((a, b) => b[1] - a[1])
@@ -449,7 +453,7 @@ function renderJourney(name, anonId = '') {
           .slice(0, 2)
           .map(([x, n]) => `<i>${esc(x)}</i> ${n}×`)
           .join(', ');
-        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
+        return `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 
@@ -526,7 +530,9 @@ function renderJourney(name, anonId = '') {
   // sheets, and when?): per genus the times opened and the time spent, whether the first opening came before or after
   // the genus was first asked to them (the app's own record when the sheet was opened), and from where; then the pages
   // they spent their visits on. Read from the sheet's Pages tab under this player's id, never their name.
-  const SH = PGS && PGS.rows ? sheetsOf(PGS.rows.filter(x => x.id === u.id)) : null,
+  // an archived record's summaries come apart from the others (sheet v58 readEvents arch): read only here
+  const PR = PGS && (u.arch ? PGS.arch : PGS.rows),
+    SH = PR ? sheetsOf(PR.filter(x => x.id === u.id)) : null,
     secs = n =>
       n < 60
         ? `${n} s`
@@ -536,15 +542,13 @@ function renderJourney(name, anonId = '') {
     FROM_T = {quiz: 'Quiz feedback', learn: 'Learn', progress: 'My progress', other: 'Other'},
     RT_ = Object.create(null);
   if (SH)
-    PGS.rows
-      .filter(x => x.id === u.id)
-      .forEach(x =>
-        Object.entries(x.r).forEach(([k, [n, sc]]) => {
-          const o = (RT_[k] = RT_[k] || [0, 0]);
-          o[0] += n;
-          o[1] += sc;
-        })
-      );
+    PR.filter(x => x.id === u.id).forEach(x =>
+      Object.entries(x.r).forEach(([k, [n, sc]]) => {
+        const o = (RT_[k] = RT_[k] || [0, 0]);
+        o[0] += n;
+        o[1] += sc;
+      })
+    );
   // A page of another subject than the corals is logged as <subject>.<page> (core.js pageName): "quiz (Fish)".
   const pageLabel = k => {
     const [sj, pg] = pageSubj(k),
@@ -565,7 +569,7 @@ function renderJourney(name, anonId = '') {
               SH.G.length
                 ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Times</th><th class="n">Time</th><th>First opened</th><th>From</th></tr></thead><tbody>${SH.G.map(
                     o =>
-                      `<tr><td><a class="adm-gen" href="#${esc(o.g)}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td title="Opened first ${esc(jTime(o.first))}">${o.asked ? 'after asked' : '<b>before asked</b>'}</td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
+                      `<tr><td><a class="adm-gen" href="${esc(genusHref(o.g))}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td title="Opened first ${esc(jTime(o.first))}">${o.asked ? 'after asked' : '<b>before asked</b>'}</td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
                   ).join('')}</tbody></table></div>`
                 : '<p class="note">None opened.</p>'
             }<p class="note">${SH.visits} visit${SH.visits === 1 ? '' : 's'} recorded · most time on ${pagesTop.map(([k, [n, sc]]) => `${pageLabel(k)} ${secs(sc)} (${n}×)`).join(', ')}</p>`
@@ -578,7 +582,9 @@ function renderJourney(name, anonId = '') {
       ['Quiz right', pct(sp.q[1], sp.q[0])],
       ['Last 50', pct(sp.q50[1], sp.q50[0])],
       ...(sp.d[0] ? [['Duels', `${sp.d[0]} · ${pct(sp.d[1], sp.d[0])}`]] : []),
-      // The Elo players see, ± its 95% margin (Pierre, 2026-11-05: the signed level read as good or bad); the level in its title.
+      // The sheet's level chain (stats_ ras, the photo Elo's player term) ± its 95% margin (Pierre, 2026-11-05: the signed
+      // level read as good or bad); the level in its title. Not the number players see since v63 (Q134: they see the app's
+      // '~level'): it is the one level every device has, signed in or not, and the one the margin (levelMargin) is for.
       ['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])],
       ['Genera met', `${J.marks.length}/${total}`],
       // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never
@@ -793,7 +799,7 @@ function sessionSummary(id, L, name) {
       saved: !name ? undefined : S && !S.err ? S : S && {}
     }),
     gi = g => `<i>${esc(g)}</i>`,
-    gl = g => `<a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>`,
+    gl = g => `<a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a>`,
     names = G =>
       G.map(gi)
         .join(', ')
@@ -945,7 +951,7 @@ function sessionSummary(id, L, name) {
       ...(F.best >= SESS.RUN ? [[null, `<li><b>${F.best} right</b> in a row</li>`]] : []),
       ...(F.end >= SESS.END ? [[null, `<li><b>Ended</b> on ${F.end} misses in a row</li>`]] : [])
     ],
-    link = name ? `#~journey/${encodeURIComponent(name)}` : `#~anon/${encodeURIComponent(id)}`;
+    link = name ? `#players/list/journey/${encodeURIComponent(name)}` : `#players/list/anon/${encodeURIComponent(id)}`;
   return `<div class="adm-sess" data-sess>
     <p class="adm-sesssum">${said.join(' ')}</p>
     ${kpis([

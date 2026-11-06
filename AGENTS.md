@@ -137,7 +137,7 @@ context go in the PR description, never in the rule.
 - **C8** Presence: one rule for every species (`tools/presence.py`).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** Photo priority: IMR lecture (corals only), Pierre's own, then others.
+- **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish: easiest first, never by source.
 - **P2** Three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
 - **P3** No several-corals or Coral Finder book photo in games.
 - **P4** All photos of one question come from one observation.

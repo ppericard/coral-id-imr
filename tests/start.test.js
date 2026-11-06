@@ -626,9 +626,11 @@ test('synced: the latest answer wins, the cards shown on either device count; a 
 // Coral basics included (its completion would hide the next beginner's offers and block their achievement).
 test('sign-out clears the first-launch answer and Coral basics with the progress', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
-    i = src.indexOf('const signOff = () => {'),
+    // sync.js signOutClear (2026-11-05: Sign out and deleting one's own account clear the device the same way)
+    i = src.indexOf('function signOutClear('),
     list = src.slice(i, src.indexOf('].forEach', i));
-  assert.ok(i > 0, 'signOff found');
+  assert.ok(i > 0, 'signOutClear found');
+  assert.match(src, /const signOff = \(\) => \{\s*signOutClear\(\);/, 'Sign out clears through it');
   // Every subject's record (reefid-sync-<subject>-start, core.js startKey) goes with that subject's other keys.
   assert.match(list, /\[[^\]]*'start'[^\]]*\]\.map\(k => subjKey\(S\.id, k\)\)/);
   assert.match(list, /\bBASICS_KEY\b/);
@@ -644,11 +646,11 @@ test('glossary links to Coral basics: one mapping, the same before the Tools tie
   const ctx = {window: {}};
   vm.createContext(ctx);
   vm.runInContext(src.slice(a, b) + '\nthis.H = basicsHref;', ctx);
-  assert.strictEqual(ctx.H('Septa'), '#basics|septa');
-  assert.strictEqual(ctx.H('Coenosteum'), '#basics|walls|separate');
-  assert.strictEqual(ctx.H('Columella'), '#lab-anatomy|con|columella', 'an anatomy word: its Corallite anatomy card');
-  assert.strictEqual(ctx.H('Paliform lobes'), '#lab-anatomy|con|pali');
-  assert.strictEqual(ctx.H('Verrucae'), '#basics|words', 'a word with no step: the Words list');
+  assert.strictEqual(ctx.H('Septa'), 'basics|septa');
+  assert.strictEqual(ctx.H('Coenosteum'), 'basics|walls|separate');
+  assert.strictEqual(ctx.H('Columella'), 'lab-anatomy|con|columella', 'an anatomy word: its Corallite anatomy card');
+  assert.strictEqual(ctx.H('Paliform lobes'), 'lab-anatomy|con|pali');
+  assert.strictEqual(ctx.H('Verrucae'), 'basics|words', 'a word with no step: the Words list');
   assert.strictEqual(ctx.H('Solitary'), '', 'not a Coral basics word: no link');
 });
 
@@ -700,17 +702,10 @@ test('replay: the prior of the first-launch answer in force at each answer, as t
     ],
     plain = C.replayProgress(rows, {gen: GEN}).p.P,
     said = C.replayProgress(rows, {gen: GEN, starts: {p: {c: 'know', t: 1000, h: [['know', 0, 1000, 'tour']]}}}).p.P;
-  // The app's own steps on the same answers (model.js ability / abilityStep = core.js abilityOf / eloStep with p).
+  // The app's own steps on the same answers (quiz.js answer: core.js scoreAnswer with the prior p).
   const app = {},
     p = startVars('know').p,
-    step = (g, ok, d) => {
-      const s = (app[g] = app[g] || {ok: 0, ko: 0});
-      s[ok ? 'ok' : 'ko']++;
-      C.eloStep(app, g, s, ok, d, 4, 1, p);
-      if (app[C.LEVEL]) app[C.LEVEL][ok ? 'ok' : 'ko']++;
-      else app[C.LEVEL] = C.levelSeed(app);
-      C.eloStep(app, C.LEVEL, app[C.LEVEL], ok, d, 4, 1, p);
-    };
+    step = (g, ok, d) => C.scoreAnswer(app, {t: g, c: ok ? g : 'C', ok, k: 4, chs: [], ph: [], d0: d, p, timed: false});
   const dOf = (e, th) => th - Math.log((e - 0.25) / 0.75 / (1 - (e - 0.25) / 0.75));
   step('A', true, dOf(0.8, 0));
   step('B', false, dOf(0.8, 0));

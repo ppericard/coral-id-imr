@@ -74,7 +74,7 @@ LAB.add({
           <p><b><i>${esc(focus)}</i> only:</b> ${only.length ? only.map(esc).join(', ') : '<span class="note">nothing in this grid</span>'}</p>
           <p><b><i>${esc(n)}</i> only:</b> ${other.length ? other.map(esc).join(', ') : '<span class="note">nothing in this grid</span>'}</p>
           ${!only.length && !other.length ? '<p class="note">Same dots: the difference is in finer details, see the comparison.</p>' : ''}
-          <a href="#cmp-${encodeURIComponent(focus + '|' + n)}">Compare photos</a></div>`;
+          <a href="${esc(hr('cmp-' + (focus + '|' + n)))}">Compare photos</a></div>`;
         })
         .join('')}</div>`;
     };

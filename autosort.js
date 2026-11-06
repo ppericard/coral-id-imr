@@ -161,9 +161,11 @@
   // "fish"), the species records ({id: fish.json species}) and the curation's fish part, a new fish part with the sure
   // decisions written as Pierre's clicks would write them, and the counts. A photo Pierre or the auto-sort decided
   // (added, rejected, excluded, Not this, logged) is never touched; a tag, ease, phase or crop he gave stays his. Adds
-  // fill each species up to its target, one observation counting once (an alt joins its observation for free): Pierre's
-  // own first (rule P1), then the easiest (the first questions need easy photos), then a fixed order; the rest
-  // wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
+  // fill each species up to its target, one observation counting once (an alt joins its observation for free): the
+  // easiest first (the first questions need easy photos), then the most reference-like (core.js refScore), then a fixed
+  // order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; before, they came first); the
+  // rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
+  const refScore = (typeof module !== 'undefined' && module.exports ? require('./core.js') : root).refScore;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
     const I = fishIdx(F),
@@ -181,8 +183,8 @@
     plan.sort(
       (a, b) =>
         (b.s.keep === 'add') - (a.s.keep === 'add') ||
-        !!b.p.own - !!a.p.own ||
         (b.s.ease || 0) - (a.s.ease || 0) ||
+        refScore(b.s.tags) - refScore(a.s.tags) ||
         (a.p.f < b.p.f ? -1 : 1)
     );
     const obsOf = {};

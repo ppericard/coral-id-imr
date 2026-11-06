@@ -212,14 +212,137 @@
   //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
   //   views   the views a question may show, [code, label] (one view: one photo per question)
   //   optin   the opt-in sets: Q[k] true = on, Q[k + 'T'] when chosen (app.js UNITS[id].sets: units, card, ⚙ row)
-  //   log     answers go to the sheet's Answers tab (photo ratings, confusions, the admin, the opening hold's replay)
+  //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins: a fish scientific genus): logged
+  //           with every answer (sheet v60 Answers Rank). Every subject's answers go to the sheet's Answers tab under its
+  //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked)
+  //   replay  the sheet computes from its logged answers: photo ratings, confusions, the opening hold, the full replay
+  //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
   //   ach, board  achievements and the leaderboard count this subject
   //   progress    the views of My progress (progress.js quizBoard), the first by default
-  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.quiz)
+  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.practice.quiz)
+  //   hash    the prefix of its addresses, in the app and the admin ('' for the corals, 'fish/': #fish/practice/quiz,
+  //           #fish/inbox/todo/reports; routeOut, routeIn, admin.js subjOfHash)
   //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js; fish: no claim about what tells
   //           them apart)
-  //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, #g-); the others,
+  //   tiers   its photo sources rank its photos (rule P1: IMR lecture photos, then Pierre's own, then other observers):
+  //           the draw's bonus for a core photo never seen (app.js isCore, model.js photoSet). Off for fish (Pierre,
+  //           2026-11-06: his photos are never forced or boosted; the ease and reference look place them, core.js easyRank)
+  //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
+  // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
+  // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
+  // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
+  // to another family (Diploprion: the Soapfishes, not IMR's Groupers); names: each family's name. Read through the
+  // subject (SUBJECTS renamed: renamedId, renameUnits, renameLogEntry), never by name; tests/fishunits.test.js checks it
+  // against fish.json. Kept while old ids may still arrive (an app from before the switch, a saved copy, the log).
+  const FISH_RENAMED = {
+    ids: {
+      't01': 'f:Damselfishes',
+      't02': 'f:Butterflyfishes',
+      't03': 'f:Angelfishes',
+      't04': 'f:Spadefishes',
+      't05': 'f:MoorishIdol',
+      't06': 'f:Surgeonfishes',
+      't07': 'f:Rabbitfishes',
+      't08': 'f:Parrotfishes',
+      't09': 'f:Wrasses',
+      't10': 'f:Snappers',
+      't11': 'f:Emperors',
+      't12': 'f:CoralBreams',
+      't13': 'f:Groupers',
+      't14': 'f:Sweetlips',
+      't15': 'f:Anthias',
+      't16': 'f:Fusiliers',
+      't17': 'f:Boxfishes',
+      't18': 'f:Goatfishes',
+      't19': 'f:Triggerfishes',
+      't20': 'f:Puffers',
+      't21': 'f:Filefishes',
+      't22': 'f:Lionfishes',
+      't23': 'f:Soldierfishes',
+      't24': 'f:Cardinalfishes',
+      't25': 'f:Squirrelfishes',
+      't26': 'f:Lizardfishes',
+      't27': 'f:Sandperches',
+      't28': 'f:Barracudas',
+      't29': 'f:Jacks',
+      't42': 'f:Morays',
+      't43': 'f:GardenEels',
+      't44': 'f:Stingrays',
+      't45': 'f:Scorpionfishes',
+      't46': 'f:Pipefishes',
+      't47': 'f:Frogfishes',
+      't48': 'f:GhostPipefishes',
+      't49': 'f:SnakeEels',
+      't50': 'f:Porcupinefishes',
+      't51': 'f:WhaleSharks',
+      't52': 'f:Stonefishes',
+      't54': 'f:Dragonets',
+      't57': 'f:SeaMoths',
+      't58': 'f:Jawfishes',
+      't59': 'f:FlyingGurnards',
+      't60': 'f:Threshersharks',
+      't61': 'f:Stargazers',
+      't63': 'f:RequiemSharks'
+    },
+    split: {
+      't13': {'Diploprion': 'f:Soapfishes'},
+      't46': {'Hippocampus': 'f:Seahorses'},
+      't52': {'Ablabys': 'f:Waspfishes', 'Paracentropogon': 'f:Waspfishes'}
+    },
+    names: {
+      'f:Damselfishes': 'Damselfishes',
+      'f:Butterflyfishes': 'Butterflyfishes',
+      'f:Angelfishes': 'Angelfishes',
+      'f:Spadefishes': 'Spadefishes',
+      'f:MoorishIdol': 'Moorish Idol',
+      'f:Surgeonfishes': 'Surgeonfishes',
+      'f:Rabbitfishes': 'Rabbitfishes',
+      'f:Parrotfishes': 'Parrotfishes',
+      'f:Wrasses': 'Wrasses',
+      'f:Snappers': 'Snappers',
+      'f:Emperors': 'Emperors',
+      'f:CoralBreams': 'Coral Breams',
+      'f:Groupers': 'Groupers',
+      'f:Soapfishes': 'Soapfishes',
+      'f:Sweetlips': 'Sweetlips',
+      'f:Anthias': 'Anthias',
+      'f:Fusiliers': 'Fusiliers',
+      'f:Boxfishes': 'Boxfishes',
+      'f:Goatfishes': 'Goatfishes',
+      'f:Triggerfishes': 'Triggerfishes',
+      'f:Puffers': 'Puffers',
+      'f:Filefishes': 'Filefishes',
+      'f:Lionfishes': 'Lionfishes',
+      'f:Soldierfishes': 'Soldierfishes',
+      'f:Cardinalfishes': 'Cardinalfishes',
+      'f:Squirrelfishes': 'Squirrelfishes',
+      'f:Lizardfishes': 'Lizardfishes',
+      'f:Sandperches': 'Sandperches',
+      'f:Barracudas': 'Barracudas',
+      'f:Jacks': 'Jacks',
+      'f:Morays': 'Morays',
+      'f:GardenEels': 'Garden Eels',
+      'f:Stingrays': 'Stingrays',
+      'f:Scorpionfishes': 'Scorpionfishes',
+      'f:Pipefishes': 'Pipefishes',
+      'f:Seahorses': 'Seahorses',
+      'f:Frogfishes': 'Frogfishes',
+      'f:GhostPipefishes': 'Ghost Pipefishes',
+      'f:SnakeEels': 'Snake Eels',
+      'f:Porcupinefishes': 'Porcupinefishes',
+      'f:WhaleSharks': 'Whale Sharks',
+      'f:Stonefishes': 'Stonefishes',
+      'f:Waspfishes': 'Waspfishes',
+      'f:Dragonets': 'Dragonets',
+      'f:SeaMoths': 'Sea Moths',
+      'f:Jawfishes': 'Jawfishes',
+      'f:FlyingGurnards': 'Flying Gurnards',
+      'f:Threshersharks': 'Thresher sharks',
+      'f:Stargazers': 'Stargazers',
+      'f:RequiemSharks': 'Requiem Sharks'
+    }
+  };
   const SUBJECTS = [
     {
       id: 'coral',
@@ -232,6 +355,7 @@
       card: 'genus',
       lecture: 'the IMR coral lecture',
       pv: '',
+      hash: '',
       zoom: 'the corallites, the detail that often tells look-alikes apart',
       views: [
         ['wide', 'Colony'],
@@ -239,7 +363,9 @@
         ['macro', 'Corallites']
       ],
       optin: ['bon'],
-      log: true,
+      rank: 'genus',
+      replay: true,
+      tiers: true,
       ach: true,
       board: true,
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
@@ -254,10 +380,25 @@
           know: ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']
         }
       },
-      // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin). hash: the
-      // prefix of the subject's admin addresses ('' keeps every coral address as it was); cur: its part of curation.json
-      // ('' = the top level, as before); pages: the admin pages it has (null = every page).
-      admin: {hash: '', cur: '', pages: null}
+      // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin; its address
+      // prefix is the subject's hash): cur: its part of curation.json ('' = the top level, as before); pages: the admin
+      // pages it has (null = every page; a page covers the addresses under it).
+      // For the one filter bar of every photo page (admin plan PR 3, admin.js fbar): origins, where its photos come
+      // from, [key, name, short name] in the order of the chips (admin.js origin(p) gives a photo's key); csrc, the
+      // sources of its Candidates swiper.
+      admin: {
+        cur: '',
+        pages: null,
+        origins: [
+          ['imr', 'IMR lecture', 'IMR'],
+          ['own', 'Pierre', 'Pierre'],
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World'],
+          ['book', 'CF book', 'CF']
+        ],
+        csrc: ['own', 'dauin', 'ph', 'book']
+      }
     },
     {
       id: 'fish',
@@ -270,6 +411,7 @@
       card: 'fish',
       lecture: 'the IMR fish presentation',
       pv: 'fish.',
+      hash: 'fish/',
       zoom: 'the markings and the fins',
       remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
@@ -278,12 +420,16 @@
         kick: 'Something fishy…',
         line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
       },
-      // Opens to the admin and the beta group (Pierre, 2026-11-04: "a group I pick in the admin, for now everyone; not one
-      // site-wide switch"); 'all' opens it to every player.
-      open: 'group',
+      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
+      // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
+      // it to that group again (the sheet keeps the Groups tab's rows).
+      open: 'all',
       views: [['wide', 'Photo']],
       optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
-      log: false,
+      // family: an IMR entry (the game's family level, Damselfish; two entries may share a scientific family).
+      rank: 'family',
+      renamed: FISH_RENAMED,
+      replay: false,
       ach: false,
       board: false,
       pages: ['genera', 'quiz'],
@@ -302,7 +448,17 @@
       // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) and the
       // fish pages the admin plan has built so far (docs/ROADMAP.md "Admin for every subject"): Candidates (PR 5a,
       // admin-fish.js).
-      admin: {hash: 'fish/', cur: 'fish', pages: ['~triage', '~events', '~users', '~journey/', '~anon/', '~cand']}
+      // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
+      admin: {
+        cur: 'fish',
+        pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list', 'photos/candidates'],
+        origins: [
+          ['own', 'Pierre', 'Pierre'],
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World']
+        ]
+      }
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.
@@ -313,6 +469,22 @@
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
   // keep a group for it (app.js subjOpen, admin.js groupOn, Code.gs groupIds_). Any other value opens it to all.
   const subjGroup = S => !!S && S.open === 'group';
+  // The subject whose answers the sheet computes from (SUBJECTS replay: the corals): its replay, hold and photo ratings.
+  const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
+  // The subject of an answer: the app's log entry (s, from 2026-11-06; an entry without one came from the corals, the
+  // only subject logged before), and of an answer-log row, at index LOG_SUBJ in both the sheet's readAnswers rows and
+  // its Answers tab rows (sheet v60, column Subject; blank in the rows logged before: the default subject's).
+  const LOG_SUBJ = 17;
+  // The scoring record (core.js scoreRec; sheet v61, column Scoring, W) at index LOG_SC in the sheet's readAnswers rows,
+  // its Answers tab rows and the replay rows (Code.gs rowOf_, logRow) alike.
+  const LOG_SC = 22;
+  const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
+  const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
+  // The rows (or log entries, entries) of one subject, the replayed one by default: every reader of the answer log that
+  // computes a subject's statistics (the analyses, the evaluation tools, the admin) keeps only that subject's rows, so a
+  // fish answer never counts in a coral result.
+  const subjRows = (rows, id = replaySubject()) => (Array.isArray(rows) ? rows : []).filter(r => r && rowSubject(r) === id);
+  const subjEntries = (log, id = replaySubject()) => (Array.isArray(log) ? log : []).filter(a => a && ansSubject(a) === id);
   // A subject's first-launch answer (CHOICE): reefid-sync-<subject>-start, synced with the player's progress.
   const startKey = s => subjKey(s, 'start');
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
@@ -330,9 +502,8 @@
   // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
   // surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
-  // cover: the card's photo (app.js cover): within the highest source tier that has photos (rule P1: Pierre's own
-  // before other observers', Codex review #461), the easiest judged one (fish-photos.json e, judging/FISH.md), the list's
-  // first among equals; the list's first when none is judged.
+  // views.wide in easyRank order (below): the easiest, most reference-like photo first, whoever took it; cover: the
+  // card's photo (app.js cover), the first of that order (Pierre, 2026-11-06: no source tier any more).
   // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos (Pierre, 2026-11-05: a species with no
   // game photo may keep one for its sheet, never in the quiz or any game, passing the game photo rules all the same;
   // tools/fish_photos.py SHEET).
@@ -340,17 +511,40 @@
   // every game draw reads views.wide (model.js photoSet, app.js fishGenera), so none can show it. The result's sheet
   // holds them by species ({species id: [photo]}), for a species sheet to show (none yet: docs/ARCHITECTURE.md "Fish content").
   const sheetOnly = p => !!p && p.use === 'ref';
+  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
+  // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
+  // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
+  // juvenile, camouflage or out of the water. 0 for a photo with no tags. Ties only: the ease ranks first (easyRank).
+  const REF = {rep: 8, good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
+  function refScore(jt) {
+    const c = String(jt || '');
+    if (c.length < 7) return 0;
+    const fl = c.slice(7).replace(/\d+$/, '');
+    return (
+      (fl.includes('r') ? REF.rep : 0) +
+      REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) -
+      [...REF.bad].filter(x => fl.includes(x)).length
+    );
+  }
+  // The order a unit's photos are met in when the order matters (the card's photo, the list's first photo, the sheets),
+  // Pierre, 2026-11-06: "the first photos a player sees, by whatever mechanism, must be easy, near-reference photos";
+  // his own photos stay but are never forced or boosted, so the source never ranks. d(p): the photo's difficulty, lower
+  // = easier: by default its judged ease (fish-photos.json e, judging/FISH.md; the curated ease once the game reads his
+  // curation), a photo with none as a middle one (3); app.js passes model.js photoDiff, which blends the ease with the
+  // players' answers once they are logged. Then the most reference-like (refScore), then a fixed hash of the photo's
+  // file name: the list's order says who took a photo (tools/fish_photos.py lists Pierre's first), so it never decides.
+  const fHash = f => [...String(f)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+  function easyRank(L, d = p => -(p.e || 3)) {
+    return (L || [])
+      .map(p => ({p, d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
+      .sort((a, b) => a.d - b.d || b.r - a.r || a.h - b.h)
+      .map(x => x.p);
+  }
   function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
       start = new Set(F.start || []),
-      top = id => String(id).slice(0, 3),
-      tier = p => (p.own ? 0 : 1),
-      easiest = L => {
-        const t = Math.min(...L.map(tier)),
-          T = L.filter(p => tier(p) === t);
-        return T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
-      };
+      top = id => String(id).slice(0, 3);
     (F.teach || [])
       .filter(t => t.level === 1)
       .forEach(t => {
@@ -378,9 +572,11 @@
           levels: 1,
           // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
           views: {
-            wide: ((photos || {})[t.id] || [])
-              .filter(p => p && p.f && p.src && !sheetOnly(p))
-              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+            wide: easyRank(
+              ((photos || {})[t.id] || [])
+                .filter(p => p && p.f && p.src && !sheetOnly(p))
+                .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+            )
           },
           ...(start.has(t.id) ? {first: 1} : {}),
           ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
@@ -388,7 +584,7 @@
         };
       });
     Object.values(gen).forEach(g => {
-      if (g.views.wide.some(p => p.e)) g.cover = easiest(g.views.wide);
+      if (g.views.wide.length) g.cover = g.views.wide[0].f;
     });
     const ids = Object.keys(gen),
       play = n => !gen[n].wink,
@@ -435,6 +631,71 @@
         if (k && !out.some(o => o.k === k && o.g === g.id)) out.push({k, g: g.id, old: i ? x : '', alt: i ? 1 : 0});
       })
     );
+    return out;
+  }
+
+  // A unit id the subject renamed (SUBJECTS renamed: a fish entry t01 → its family f:Damselfishes), else the id as it is.
+  // sp: the species shown (a name, or names joined by ', '): the genus of the first one picks the family of an entry
+  // that went to two (t13 with a Diploprion photo: the Soapfishes; any other: the Groupers).
+  function renamedId(S, id, sp) {
+    const R = S && S.renamed;
+    if (!R || typeof id !== 'string' || !R.ids[id]) return id;
+    const g = String(sp || '').split(/[\s,]+/)[0];
+    return ((R.split || {})[id] || {})[g] || R.ids[id];
+  }
+  // An object keyed by units (a progress record, the first-meeting cards) with its old ids under the new ones, the
+  // mix-up and offer maps inside each record too (conf, off). Both present (an old app saved again after the switch):
+  // the record with more answers stays (a count map adds up). The object itself when nothing is renamed.
+  function renameUnits(S, o) {
+    const R = S && S.renamed;
+    if (!R || !isObj(o) || !Object.keys(o).some(k => R.ids[k] || isObj(o[k]))) return o;
+    const n = x => (isObj(x) ? (Number(x.ok) || 0) + (Number(x.ko) || 0) : -1),
+      counts = m => {
+        if (!isObj(m) || !Object.keys(m).some(k => R.ids[k])) return m;
+        const c = {};
+        Object.entries(m).forEach(([k, v]) => {
+          const j = renamedId(S, k);
+          c[j] = typeof v === 'number' && typeof c[j] === 'number' ? c[j] + v : c[j] === undefined ? v : c[j];
+        });
+        return c;
+      },
+      inner = v => {
+        if (!isObj(v)) return v;
+        const w = {...v};
+        ['conf', 'off'].forEach(k => w[k] !== undefined && (w[k] = counts(w[k])));
+        return w;
+      },
+      out = {};
+    Object.keys(o).forEach(k => {
+      if (R.ids[k]) return;
+      out[k] = inner(o[k]);
+    });
+    Object.keys(o).forEach(k => {
+      if (!R.ids[k]) return;
+      const j = renamedId(S, k),
+        v = inner(o[k]);
+      if (!(j in out) || n(v) > n(out[j])) out[j] = v;
+    });
+    return out;
+  }
+  // One answer-log entry (the app's queue, a sheet row read back) with the subject's old unit ids renamed, the same map for
+  // the whole row so it keeps what happened: an old id is the family of the photo shown when it was the unit shown (a
+  // right answer stays right, the unit shown stays among the choices), else the family that took the entry over. g, a,
+  // ch (ids joined by spaces), m (a duel's mode: quiz-duel|A|B), tn and ta (the names at that rank). The entry itself
+  // when nothing is renamed.
+  function renameLogEntry(S, a) {
+    const R = S && S.renamed;
+    if (!R || !a) return a;
+    const one = x => (x === a.g ? renamedId(S, x, a.sp) : renamedId(S, x));
+    const touched = [a.g, a.a, ...String(a.ch || '').split(' '), ...String(a.m || '').split('|')].some(x => R.ids[x]);
+    if (!touched) return a;
+    const out = {...a};
+    if (a.g) out.g = one(a.g);
+    if (a.a) out.a = one(a.a);
+    if (a.ch) out.ch = String(a.ch).split(' ').map(one).join(' ');
+    if (a.m) out.m = String(a.m).split('|').map(one).join('|');
+    if (R.ids[a.g]) out.tn = R.names[out.g] || a.tn;
+    if (R.ids[a.a]) out.ta = R.names[out.a] || a.ta;
     return out;
   }
 
@@ -1984,6 +2245,54 @@
     if (gs.length > 1) return {near: gs};
     return {g: best[0].g, old: best[0].old, exact: best[0].d === 0, ...(best[0].alt ? {alt: 1} : {})};
   }
+  // The spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"): how a typed answer reads against the unit asked
+  // t, m being typeMatchIn's reading of it. 'exact': one of its names, spelled right (capitals, accents and spaces aside);
+  // 'close': one of its names within the spelling tolerance: still a right answer (the genus was recognised; grading
+  // unchanged), but the player retypes it once (quiz.js typeBind); 'other': another unit's name, close or exact (a wrong
+  // answer, as before); 'none': nothing close, or two names as close (no answer: the player is asked to check the spelling).
+  function typeVerdict(m, t) {
+    if (!m || m.near) return 'none';
+    if (m.g !== t) return 'other';
+    return m.exact ? 'exact' : 'close';
+  }
+  // The letters of name to show in bold once a retyped spelling is still wrong (quiz.js typeSpell): those the typed text
+  // got wrong, left out or swapped, along typeDist's alignment; a letter typed in excess marks the letter of name where it
+  // went in. Returns indexes into [...name] (spaces and other signs are never marked). norm: as typeMatchIn's.
+  function typeDiff(text, name, norm = typeNorm) {
+    const a = norm(text),
+      pos = [],
+      L = [];
+    [...String(name || '')].forEach((c, i) => {
+      const k = c
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[^a-z]/g, '');
+      if (k) (L.push(k[0]), pos.push(i));
+    });
+    const b = L.join(''),
+      n = a.length,
+      m = b.length;
+    if (!m) return [];
+    const d = Array.from({length: n + 1}, (_, i) => [i, ...Array(m).fill(0)]);
+    for (let j = 1; j <= m; j++) d[0][j] = j;
+    for (let i = 1; i <= n; i++)
+      for (let j = 1; j <= m; j++) {
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+    const mark = new Set();
+    let i = n,
+      j = m;
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && a[i - 1] === b[j - 1] && d[i][j] === d[i - 1][j - 1]) (i--, j--);
+      else if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1] && d[i][j] === d[i - 2][j - 2] + 1)
+        (mark.add(j - 1), mark.add(j - 2), (i -= 2), (j -= 2));
+      else if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + 1) (mark.add(j - 1), i--, j--);
+      else if (j > 0 && d[i][j] === d[i][j - 1] + 1) (mark.add(j - 1), j--);
+      else (mark.add(Math.min(j, m - 1)), i--);
+    }
+    return [...mark].map(k => pos[k]).sort((x, y) => x - y);
+  }
   // The share of a genus's questions asked as typed ones, from its progress x (0 to 1, the % shown): none below T.from,
   // then a straight line between the points T.at ([progress, share], in order), flat after the last (model.js TYPED).
   function typedShare(x, T) {
@@ -2111,7 +2420,8 @@
     // hundred answers, and rounding them to 2 decimals lost every one (Codex review #415: 1000 right answers left it at 1).
     const r = n === LEVEL ? 1e4 : 100;
     s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + w * K * ((good ? 1 : 0) - e))) * r) / r;
-    // The level this step was taken against (the level before this answer's own step on it, as quiz.js answer orders them).
+    // The level this step was taken against (the level before this answer's own step on it); scoreAnswer moves it on to
+    // the level after that step (Q137 part 1), so the genus never takes its own answer twice.
     if (n !== LEVEL && P && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
     delete s.lv;
     delete s.run;
@@ -2172,6 +2482,152 @@
     G.rt[x] = (G.rt[x] || 0) + 1;
   }
 
+  // One scorer for an answer (Pierre, 2026-11-06, Q132; docs/reviews/2026-11-06-engine-coherence-review.md F1, F6;
+  // docs/LEARNING.md "One scorer"): the live game (quiz.js answer) and the full replay of the answer log
+  // (replayProgress: the sheet's, the admin's, this device's own) score an answer through this one function, so a rule
+  // is written once and both give the same state. P: the player's progress (genus records and LEVEL), changed in place.
+  // q, what the question was:
+  // - t the genus shown, c the genus given ('' for none or "I don't know"), ok, k (the plausible choices, Infinity for a
+  //   typed answer), chs the choices offered, cv (c is a genus of the game: it then takes a miss too, Pierre's rule L2);
+  // - ph the photo files seen while answering, hint a corallites hint revealed after the answer without being opened
+  //   (shown, never recognised: the log keeps it in the scoring record, scoreRec h);
+  // - the inputs the game had then (null d0: an answer that moves only the counts, as the replay's rows logged before
+  //   sheet v5): d0 the photo difficulty (the mean over its photos, + PICKD.SINGLE for a photo alone), fam the photo
+  //   memory (memFam), cf the known mix-ups term (model.js confTerm), look (a genus it is confused with among the
+  //   choices: a boolean, or a function called after the offers are counted, as the game always checked it), R the recall
+  //   of a comeback question (1 otherwise), Rc the recall of the genus given (1 otherwise);
+  // - p the first-launch answer's prior (playerStart), sec the seconds, timed (the time weighs a right answer's steps,
+  //   rtWeight), rt (the seconds are recorded, rtAdd; true unless false);
+  // - th: the ability the weights use, only for a row logged before the scorer (its logged th; the replay then
+  //   recovered d0 from its rounded e). Otherwise the ability as P holds it, which is what the game logged.
+  // Returns {th0, dm, e, w, look, rw}: the ability before the answer, the question's difficulty with the memory and the
+  // mix-ups, the expected success (logged e), the progress weight, the look-alike test and the time weight.
+  // What only the game knows stays in quiz.js answer (the exam, the days answered, the last observations, the cards and
+  // the hold); what only the log knows stays in replayProgress (the last misses lx and lm, duels won from the mode).
+  function scoreAnswer(P, q) {
+    const t = q.t,
+      ok = !!q.ok,
+      k = q.k,
+      chs = q.chs || [],
+      rec = n => {
+        const x = (P[n] = P[n] || {});
+        x.ok = x.ok || 0;
+        x.ko = x.ko || 0;
+        x.h = x.h || '';
+        return x;
+      },
+      s = rec(t);
+    // The choices offered beside it and the genus given instead, before the weights (the player's own mix-up rate).
+    chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
+    s[ok ? 'ok' : 'ko']++;
+    s.streak = ok ? (s.streak || 0) + 1 : 0;
+    if (!ok && q.c) (s.conf = s.conf || {})[q.c] = (s.conf[q.c] || 0) + 1;
+    const scored = typeof q.d0 === 'number' && isFinite(q.d0),
+      d0 = scored ? q.d0 : 0,
+      fam = Number(q.fam) || 0,
+      cf = Number(q.cf) || 0,
+      R = typeof q.R === 'number' ? q.R : 1,
+      p = Number(q.p) || 0,
+      dm = d0 + fam + cf,
+      out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
+    if (scored) {
+      const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p),
+        look = typeof q.look === 'function' ? !!q.look() : !!q.look,
+        // The miss weighs against the aim at the player's level before this answer's own step on it.
+        w = ok ? pgRightW(k, look) * pgMemW(th0, d0, fam, k, R) : pgMissW(th0, dm, k, R, aimOf((P[LEVEL] || {}).th));
+      s.pg = pgStep(pgOf(s), ok, w);
+      delete s.L; // BKT's knowledge, before s.pg
+      s.u = (s.u || 0) + 1;
+      // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
+      // step weighed by its time against the player's earlier ones.
+      const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
+      eloStep(P, t, s, ok, dm, k, rw, p);
+      Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(th0 - dm)});
+    }
+    // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
+    // each, with the same weight; this answer's seconds recorded after its steps (rtWeight compares with earlier ones).
+    if (P[LEVEL]) P[LEVEL][ok ? 'ok' : 'ko']++;
+    else P[LEVEL] = levelSeed(P);
+    if (scored) {
+      eloStep(P, LEVEL, P[LEVEL], ok, dm, k, out.rw, p);
+      // One surprise counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md
+      // §2a; docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it stands after this
+      // answer's step on it, so its levelMove carries only the level's moves from the other answers. Taken against the
+      // level before (eloStep's s.lt), it moved the genus once by its own step and again, at its next question, by the
+      // share of the level's step on the same answer (a first right answer: 0.30, then 0.22 more).
+      s.lt = P[LEVEL].th;
+    }
+    if (q.rt !== false) rtAdd(P[LEVEL], q.sec, k);
+    // Recent results over every game, newest last (an opening only after a right answer: model.js openRight).
+    P[LEVEL].h = ((P[LEVEL].h || '') + (ok ? 1 : 0)).slice(-10);
+    // The photos: those seen, shown and (a right answer) recognised; a hint revealed after the answer, shown only.
+    const ps = (s.ps = s.ps || {});
+    (q.ph || []).forEach(f => {
+      const x = (ps[f] = ps[f] || [0, 0]);
+      x[0]++;
+      if (ok) x[1]++;
+    });
+    if (q.hint) (ps[q.hint] = ps[q.hint] || [0, 0])[0]++;
+    s.h = (s.h + (ok ? 1 : 0)).slice(-10);
+    // Pierre's rule L2: a wrong answer counts against the genus given too: its progress by the chance the player had on it
+    // (its own ability now, against the photo's difficulty without the memory, which is of the genus shown; its recall
+    // Rc after a break), a miss in its recent results, its run reset. Not its ability (docs/LEARNING.md "The genus wrongly
+    // given in the Elo"): the Elo moves on the questions about the genus itself.
+    if (!ok && q.cv && q.c && q.c !== t) {
+      const x = rec(q.c);
+      if (scored) {
+        x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, typeof q.Rc === 'number' ? q.Rc : 1, aimOf(P[LEVEL].th)));
+        delete x.L;
+        x.u = (x.u || 0) + 1;
+      }
+      x.h = (x.h + '0').slice(-10);
+      x.streak = 0;
+    }
+    return out;
+  }
+  // The scoring record logged with each answer (quiz.js answer: the answer's sc; the sheet's Answers column Scoring,
+  // Code.gs v61, and the replay rows' index LOG_SC, 22): the inputs scoreAnswer had that the replay cannot rebuild from the log
+  // (Pierre, 2026-11-06, Q132: "replayed" means what the game scored, whenever and wherever it is replayed).
+  // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
+  // recall R, g the recall Rc of the genus given, h the hint revealed after the answer; f, c, r, g and h left out at their
+  // default (0, 0, 1, 1, none). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
+  // exactly what it used. x: the record as an object or its JSON (a sheet cell); null when it has no d (a row logged
+  // before the scorer, or broken).
+  const SC_MAX = 50;
+  const r3 = x => Math.round(x * 1000) / 1000;
+  const scNum = x => (typeof x === 'number' && isFinite(x) && Math.abs(x) <= SC_MAX ? r3(x) : null);
+  function scoreRec(x) {
+    let o = x;
+    if (typeof o === 'string') {
+      if (!o || o[0] !== '{') return null;
+      try {
+        o = JSON.parse(o);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (!isObj(o) || scNum(o.d) === null) return null;
+    const out = {d: scNum(o.d)};
+    if (scNum(o.f)) out.f = scNum(o.f);
+    if (scNum(o.c)) out.c = scNum(o.c);
+    if (o.l === 1 || o.l === true) out.l = 1;
+    if (scNum(o.r) !== null && scNum(o.r) !== 1 && o.r >= 0 && o.r <= 1) out.r = scNum(o.r);
+    if (scNum(o.g) !== null && scNum(o.g) !== 1 && o.g >= 0 && o.g <= 1) out.g = scNum(o.g);
+    if (typeof o.h === 'string' && /^[A-Za-z0-9_.-]{1,120}$/.test(o.h)) out.h = o.h;
+    return out;
+  }
+  // The game's inputs rounded as they are logged (scoreRec), before it scores with them.
+  const scoreIn = q => ({
+    ...q,
+    d0: r3(q.d0),
+    fam: r3(q.fam || 0),
+    cf: r3(q.cf || 0),
+    R: r3(q.R === undefined ? 1 : q.R),
+    Rc: r3(q.Rc === undefined ? 1 : q.Rc)
+  });
+  // The record of a question scored by scoreAnswer (q after scoreIn, res its result): what quiz.js answer logs as sc.
+  const scoreLog = (q, res) => scoreRec({d: q.d0, f: q.fam, c: q.cf, l: res.look ? 1 : 0, r: q.R, g: q.Rc, h: q.hint || undefined});
+
   // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
   // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
   // weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...) appends
@@ -2227,6 +2683,18 @@
       at: '2026-11-04',
       why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h, or the band below taken with Coral basics on the fallback card, ease)',
       msg: RV_CARD
+    },
+    {
+      v: 6,
+      at: '2026-11-06',
+      why: 'One scorer (Q132, sheet v61): the game and the replay score an answer through scoreAnswer; an answer logged with its scoring record (photo difficulty, memory, mix-ups, look-alike test, recalls, a corallites hint revealed after it, shown but not recognised) replays exactly as the game scored it, an older row by its logged e as before',
+      msg: RV_CARD
+    },
+    {
+      v: 7,
+      at: '2026-11-06',
+      why: "One surprise counted once (Q137 part 1): the genus shown takes the global level as it stands after this answer's step on it, so levelMove carries only the level's moves from the other answers (a first right answer moved a genus 0.30, then 0.22 more through the level)",
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -2243,6 +2711,12 @@
   // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
   // Codex review #428); before it, the default player's prior 0, exactly as before.
   const START_SHEET = 36;
+  // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
+  // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
+  // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
+  // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
+  const LOG_SHEET = 60;
+  const logOk = (a, v) => ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -2259,7 +2733,9 @@
   // docs/LEARNING.md "Full replay".
   // rows: the answer log (sheet readAnswers rows, Code.gs rowOf_, or the app's own log through logRow: [id, time ms,
   // genus shown, answered, right 0|1, mode, photos, expected e, ability th, new photos, choices, (11: unused here),
-  // seconds to answer (null without)]; the seconds weigh a right answer's ability steps, rtWeight). o: gen (data.json
+  // seconds to answer (null without), (13, 14: unused here), the scoring record (15: scoreRec, null before it)]; the
+  // seconds weigh a right answer's ability steps, rtWeight). Every answer goes through scoreAnswer, the game's own
+  // scorer. o: gen (data.json
   // genera, Millepora and the bonus genera included: look-alikes `look`, family `fam`), mem (photo memory offsets,
   // ?stats=1 mem; the prior without), conf (the pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}:
   // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js), time
@@ -2276,6 +2752,10 @@
   // rule (lm, a time: mxKeeps); the global level LEVEL as the
   // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
+  // A row logged with its scoring record (2026-11-06, Q132: index LOG_SC) is scored with what the game had then: its photo
+  // difficulty d0, photo memory, mix-ups term, look-alike test, recall and hint, so the replay gives exactly the state the
+  // game had, whenever and wherever it runs (the device, the sheet, the admin), whatever pooled stats each holds; only
+  // the rules (this file) can change it. A row logged before it: as follows.
   // Each question's difficulty d (photo difficulty, + 0.5 for a photo shown alone) is recovered from what the app logged
   // then: e = 1/k + (1 - 1/k) sig(th - d), th the player's ability on the genus at that moment. A typed answer (|t,
   // 2026-11-03; kOf) has no guess rate (k infinite: e = sig(th - d)), counts in full when right (pgRightW) and was
@@ -2283,7 +2763,7 @@
   // (MEM_LOGGED) the logged e includes the memory of the photos (fam), taken out again here with the replay's own fam;
   // since the known mix-ups (CF_LOGGED) it includes the app's mix-ups term too (cf, model.js confTerm), taken out the
   // same way, and the replay adds its own to every answer, older ones included (today's rule).
-  // Approximations, explicit: the ability th and the photos are those the app logged (the game would have drawn others
+  // Approximations of such a row, explicit: the ability th and the photos are those the app logged (the game would have drawn others
   // under other rules; the weights use the logged th, the replayed th is the app's step over the recovered
   // difficulties); a comeback question's recall is taken as 1 (its e logged with it reads as a harder photo); the
   // look-alike test and the mix-ups term are the app's (declared look-alikes or confusions over CONF.TRAP, pooled and the
@@ -2478,87 +2958,57 @@
           chs = split(r[10]),
           k = kOf(mode, r[10]),
           sec = typeof r[12] === 'number' ? r[12] : null,
+          sc = scoreRec(r[LOG_SC]),
           s = rec(t),
           hs = fs.map(f => s.ps[f]),
           wrong = !ok && c && c !== t && gen[c];
+        if (wrong) rec(c);
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
-        // The mix-ups term, on the record before this answer (quiz.js answer scores it before the offers).
-        const cf = confTermOf(pl.P, t, chs, k),
-          pr = startPriorAt(starts[id], r[1]); // the first-launch answer's prior at this answer (abilityOf)
-        // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
-        chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
-        s[ok ? 'ok' : 'ko']++;
-        s.streak = ok ? (s.streak || 0) + 1 : 0;
-        if (!ok && c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
-        const replayable = typeof e === 'number' && typeof th === 'number' && fs.length && k > 1;
-        let dm = 0,
-          d0 = 0,
-          rw = 1;
+        const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
+          replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
+        const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null};
+        if (sc) {
+          // Logged by the scorer (Q132): what the game scored with, as it was then; the memory as logged unless the
+          // replay leaves it out (memory: false, a what-if).
+          Object.assign(q, {d0: sc.d, fam: memory ? sc.f || 0 : 0, cf: sc.c || 0, look: !!sc.l, R: sc.r === undefined ? 1 : sc.r});
+          Object.assign(q, {Rc: sc.g === undefined ? 1 : sc.g, hint: sc.h});
+        } else if (replayable) {
+          // A row logged before the scorer: its difficulty recovered from the logged e (rounded to 0.01), its memory and
+          // mix-ups term rebuilt with today's pooled stats, its look-alike test after the offers, as the game ran it.
+          const fam = memFam(hs, mem),
+            cf = confTermOf(pl.P, t, chs, k), // on the record before this answer (before the offers)
+            qq = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
+            dl = th - Math.log(qq / (1 - qq)), // the difficulty in the logged expectation
+            // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
+            d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0);
+          Object.assign(q, {d0: d, fam: memory ? fam : 0, cf, th, look: () => chs.some(x => lookOf(pl.P, t, x))});
+        }
+        const res = scoreAnswer(pl.P, q);
         if (replayable) {
           pl.used++;
-          const fam = memFam(hs, mem),
-            q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
-            dl = th - Math.log(q / (1 - q)), // the difficulty in the logged expectation
-            // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
-            d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0),
-            fm = memory ? fam : 0,
-            look = chs.some(x => lookOf(pl.P, t, x)),
-            // The aim at the player's level before this answer's own step on it, as quiz.js answer weighs the miss.
-            w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm + cf, k, 1, aimOf((pl.P[LEVEL] || {}).th));
-          dm = d + fm + cf;
-          d0 = d;
-          s.pg = pgStep(s.pg, ok, w);
-          s.u++;
-          if (o.onAnswer) o.onAnswer(r, {d, fam: fm, cf, k, w, look});
-          // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory,
-          // a right answer's step weighed by its time against the player's earlier ones (rtWeight; time: false, without).
-          rw = time ? rtWeight(pl.P[LEVEL], sec, k, ok) : 1;
-          eloStep(pl.P, t, s, ok, dm, k, rw, pr);
-        }
-        // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
-        if (pl.P[LEVEL]) pl.P[LEVEL][ok ? 'ok' : 'ko']++;
-        else pl.P[LEVEL] = levelSeed(pl.P);
-        if (replayable) {
-          eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, rw, pr);
-          if (time) rtAdd(pl.P[LEVEL], sec, k);
+          if (o.onAnswer) o.onAnswer(r, {d: q.d0, fam: q.fam, cf: q.cf, k, w: res.w, look: res.look});
         }
         pl.P[LEVEL].at = r[1];
         s.at = r[1];
         // The learned mark (not replayed: replayedOf takes it from the saved copy) is lost, in the game, at a miss that
         // leaves the progress below the keep rule (quiz.js answer, mxKept), on the genus shown as on the genus given: lm,
-        // the time of the last such miss, takes away a mark passed before it.
+        // the time of the last such miss, takes away a mark passed before it; lx, the last miss, ends an exam in course.
         if (!ok) s.lx = r[1];
         if (!ok && !mxKeeps(s.pg)) s.lm = r[1];
         if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
-        // Pierre's rule: a wrong answer counts against the genus given too, as quiz.js answer does it after the global
-        // level: its progress by the chance the player had on it (its own ability, as replayed so far, against the
-        // photo's difficulty without the photo memory: the memory is of the genus shown), a miss in its recent results,
-        // its run reset. Not its ability (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo"): the Elo
-        // moves on the questions about the genus itself, as quiz.js answer does since then.
         if (wrong) {
-          const x = rec(c);
-          if (replayable) {
-            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c, pr), d0, k, 1, aimOf(pl.P[LEVEL].th)));
-            x.u++;
-          }
-          x.h = (x.h + '0').slice(-10);
-          x.streak = 0;
+          const x = pl.P[c];
           x.lx = r[1];
           if (!mxKeeps(x.pg)) x.lm = r[1];
         }
-        s.h = (s.h + (ok ? 1 : 0)).slice(-10);
-        fs.forEach(f => {
-          const x = (s.ps[f] = s.ps[f] || [0, 0]);
-          x[0]++;
-          if (ok) x[1]++;
-        });
       });
     return out;
   }
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
   // player id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
-  // The seconds rt at index 12, as in the sheet's readAnswers rows (11, their anonymous flag, unused here).
+  // The seconds rt at index 12 and the scoring record sc at LOG_SC (22), as in the sheet's readAnswers rows (11, their
+  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null).
   const logRow = (a, id) => [
     id,
     Date.parse(a.t) || 0,
@@ -2572,7 +3022,9 @@
     typeof a.nw === 'number' ? a.nw : null,
     String(a.ch || ''),
     null,
-    typeof a.rt === 'number' ? a.rt : null
+    typeof a.rt === 'number' ? a.rt : null,
+    ...new Array(LOG_SC - 13).fill(null),
+    scoreRec(a.sc)
   ];
   // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
   // reefid-sync-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
@@ -2728,26 +3180,248 @@
     GENUS: /^[A-Z][a-z]{2,30}$/,
     FROM: ['quiz', 'learn', 'progress', 'other']
   };
-  // The page name of a hash: its route without the parameters, a genus sheet (g-Acropora) is 'genus', Look-alikes
-  // ('cmp', 'cmp|A|B') 'lookalikes', a side-by-side comparison (cmp-A|B) 'compare', Home 'home'.
-  // pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn with Fish on screen is 'fish.<page>' ('fish.quiz',
-  // 'fish.home'), so the Pages tab tells a fish page from a coral one (fish UX study, 2026-11-04: fish used the corals'
-  // page names); the corals' prefix is empty. '.' is in PAGES.RE: the sheet (pagesClean) keeps these names as they come.
+  // routes: begin
+  // The app's addresses (URL refonte, Pierre 2026-11-05, Q53-Q56; docs/reviews/2026-11-05-url-scheme-study.md 3.2):
+  // #<section>/<page>[/<thing>…][?filters], in the words on screen: #learn/genus/Acropora, #practice/duels/A/B,
+  // #identify/key?form=B&box=B1, #tools/anatomy, #leaderboard/achievements; Home is the clean URL. A subject other than
+  // the corals puts its prefix first (SUBJECTS hash: #fish/practice/quiz), on the pages of the sections that follow the
+  // subject (ROUTE_SUBJ); its units' words come from SUBJECTS one / many (#fish/learn/families).
+  // Inside, the app names a page by its page key, the vocabulary its code, SUBJECTS pages, MODES and the answer modes
+  // share ('genera', 'g-Acropora', 'cmp|A|B', 'cmp-A|B', 'quiz-duel|A|B', 'idkey|form=B;box=B1', 'lab-anatomy|arr|x').
+  // routeOut and routeIn translate one into the other, here only: every link is built by them (app.js hr), every
+  // address read by them (app.js hashNow). No old address is read (rule W3): routeIn gives an unknown one no key.
+  const ROUTE_SUBJ = ['learn', 'practice', 'identify', 'progress'];
+  // A section's own page, for its bare address (#learn) and an unknown address inside it (the header tabs' targets).
+  const ROUTE_FIRST = {
+    learn: 'genera',
+    practice: 'quiz',
+    identify: 'idkey',
+    progress: 'progress',
+    leaderboard: 'board',
+    tools: 'lab',
+    about: 'about'
+  };
+  const ROUTE_FIXED = {
+    quiz: 'practice/quiz',
+    'quiz-custom': 'practice/custom',
+    'quiz-duel': 'practice/duels',
+    pairs: 'practice/memory',
+    cmp: 'learn/look-alikes',
+    basics: 'learn/basics',
+    progress: 'progress',
+    board: 'leaderboard',
+    ach: 'leaderboard/achievements',
+    about: 'about',
+    // Delete my account (sheet v58 selfDelete, #603): a page reached from About, its |done state after the deletion.
+    'delete-account': 'about/delete-account',
+    lab: 'tools',
+    idkey: 'identify/key',
+    fishkey: 'identify/key'
+  };
+  const routeEnc = x => encodeURIComponent(x).replace(/%2C/g, ',');
+  const routeSubj0 = () => SUBJECTS.find(s => !s.hash) || SUBJECTS[0];
+  // The address of page key k for subject S (default: the corals), without '#'. null for no known page.
+  function routeOut(k, S) {
+    S = S || routeSubj0();
+    const s = String(k == null ? '' : k),
+      [b, ...a] = s.split('|');
+    let p, q;
+    if (!s || s === 'home') return '';
+    if (b === 'genera' && !a.length) p = 'learn/' + S.many;
+    else if (b.startsWith('g-') && b.length > 2 && !a.length) p = 'learn/' + S.one + '/' + routeEnc(b.slice(2));
+    else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
+    else if (b.startsWith('lab-') && b.length > 4) p = 'tools/' + [b.slice(4), ...a].map(routeEnc).join('/');
+    else if ((b === 'idkey' || b === 'fishkey') && a.length <= 1) {
+      p = ROUTE_FIXED[b];
+      // The Key's clues (form=B;box=B1;not=wall.plo) as filters, kept as they are (the Key encodes its free text).
+      if (a[0]) q = a[0].split(';').filter(Boolean).join('&');
+    } else if (b === 'basics') {
+      // Coral basics: its step, glossary term or view as segments, its editing switch (|edit) as a filter.
+      const e = a[a.length - 1] === 'edit';
+      p = ['learn/basics', ...(e ? a.slice(0, -1) : a).map(routeEnc)].join('/');
+      if (e) q = 'edit=1';
+    } else if (
+      ROUTE_FIXED[b] &&
+      (!a.length ||
+        (['cmp', 'quiz-duel'].includes(b) && a.length === 2) ||
+        (b === 'quiz-custom' && a.length === 1 && a[0] === 'play') ||
+        (b === 'delete-account' && a.length === 1 && a[0] === 'done'))
+    )
+      p = [ROUTE_FIXED[b], ...a.map(routeEnc)].join('/');
+    else return null;
+    const pre = ROUTE_SUBJ.includes(p.split('/')[0]) ? S.hash || '' : '';
+    return pre + p + (q ? '?' + q : '');
+  }
+  // The page an address shows: {S: its subject, bare: no subject prefix, key: its page key (null: unknown), sec: its
+  // section (for an unknown address inside a known section), fall: the page key to show instead of an unknown one}.
+  // Split before decoding: the filters off the raw hash first, then each segment decoded alone.
+  // tool(S): the subject's Identify tool (app.js UNITS identify), 'idkey' when not given.
+  function routeIn(h, tool) {
+    const raw = String(h == null ? '' : h).replace(/^#/, ''),
+      qi = raw.indexOf('?'),
+      dec = x => {
+        try {
+          return decodeURIComponent(x);
+        } catch (e) {
+          return x;
+        }
+      };
+    let seg = (qi < 0 ? raw : raw.slice(0, qi)).split('/').map(dec);
+    const query = qi < 0 ? '' : raw.slice(qi + 1),
+      Sx = SUBJECTS.find(s => s.hash && seg[0] + '/' === s.hash),
+      S = Sx || routeSubj0();
+    if (Sx) seg = seg.slice(1);
+    while (seg.length && seg[seg.length - 1] === '') seg.pop();
+    const out = (key, sec) => ({S, bare: !Sx, key, sec: sec || seg[0] || 'home', fall: key != null ? key : ROUTE_FIRST[seg[0]] || ''});
+    const [s0, s1, ...r] = seg,
+      n = seg.length,
+      kv = query.split('&').filter(Boolean);
+    if (!n) return out(query ? null : '', 'home');
+    if (seg.some(x => x === '' || x.includes('|'))) return out(null);
+    const key = (() => {
+      if (s0 === 'learn') {
+        if (s1 === 'basics') {
+          const e = kv.some(x => /^edit(=|$)/.test(x));
+          return ['basics', ...r, ...(e ? ['edit'] : [])].join('|');
+        }
+        if (s1 === S.many && n === 2) return 'genera';
+        if (s1 === S.one && n === 3) return 'g-' + r[0];
+        if (s1 === 'look-alikes' && (n === 2 || n === 4)) return ['cmp', ...r].join('|');
+        if (s1 === 'compare' && n === 4) return 'cmp-' + r[0] + '|' + r[1];
+      } else if (s0 === 'practice') {
+        if (s1 === 'quiz' && n === 2) return 'quiz';
+        if (s1 === 'custom' && (n === 2 || (n === 3 && r[0] === 'play'))) return ['quiz-custom', ...r].join('|');
+        if (s1 === 'duels' && (n === 2 || n === 4)) return ['quiz-duel', ...r].join('|');
+        if (s1 === 'memory' && n === 2) return 'pairs';
+      } else if (s0 === 'identify') {
+        if (s1 === 'key' && n === 2) return (tool ? tool(S) : 'idkey') + (kv.length ? '|' + kv.join(';') : '');
+      } else if (s0 === 'progress' && n === 1) return 'progress';
+      else if (s0 === 'leaderboard' && n === 1) return 'board';
+      else if (s0 === 'leaderboard' && s1 === 'achievements' && n === 2) return 'ach';
+      else if (s0 === 'about' && n === 1) return 'about';
+      else if (s0 === 'about' && s1 === 'delete-account' && (n === 2 || (n === 3 && r[0] === 'done')))
+        return ['delete-account', ...r].join('|');
+      else if (s0 === 'tools') return n === 1 ? 'lab' : ['lab-' + s1, ...r].join('|');
+      return null;
+    })();
+    // A section that follows the subject is the only place a subject prefix means something.
+    if (key != null && Sx && !ROUTE_SUBJ.includes(s0)) return out(null);
+    return out(key);
+  }
+  // The page name of a page key, logged in the visit summary (sheet v30 'pages') and used for the photo size per page:
+  // its address's section and page, its things and filters dropped ('learn.genus', 'learn.look-alikes',
+  // 'practice.duels', 'identify.key', 'tools.anatomy', 'leaderboard.achievements', 'progress', 'home'), in the corals'
+  // words whatever the subject (a page's identity). pre: the prefix of the subject on screen (SUBJECTS pv): a page drawn
+  // with Fish on screen is 'fish.<page>' ('fish.practice.quiz', 'fish.home'). '.' and '-' are in PAGES.RE: the sheet
+  // (pagesClean) keeps these names as they come.
   function pageName(h, pre = '') {
-    const s = String(h == null ? '' : h).replace(/^#/, '');
-    let n;
-    if (!s || s === 'home') n = 'home';
-    else if (s.startsWith('g-')) n = 'genus';
-    else if (s.startsWith('cmp-')) n = 'compare';
-    else if (s === 'cmp' || s.startsWith('cmp|')) n = 'lookalikes';
-    else if (s === 'quiz-board') n = 'progress';
-    else {
-      n = s.split('|')[0].split(';')[0];
-      if (!PAGES.RE.test(n)) n = 'other';
-    }
+    const s = String(h == null ? '' : h).replace(/^#/, ''),
+      p = routeOut(s, Object.assign({}, routeSubj0(), {hash: ''})),
+      seg = p == null ? null : p.split('?')[0].split('/');
+    let n = !s || s === 'home' ? 'home' : !seg ? 'other' : seg.slice(0, 2).join('.');
+    if (!PAGES.RE.test(n)) n = 'other';
     if (!pre) return n;
     return PAGES.RE.test(pre + n) ? pre + n : pre + 'other';
   }
+  // routes: end
+  // routes-migration: begin
+  // The data written under the old addresses and page names (before the URL refonte of 2026-11-05, Q53-Q56), moved once
+  // (rule W3: no old address is read anywhere else; the app moves its own stored data at start-up, migrateRoutes; the
+  // sheet moves its rows once, Code.gs ONCE_ in its own PR). The old addresses were today's page keys, so routeOut is
+  // their translation. Delete this with its callers once every device and the sheet have moved.
+  // An old address (the raw hash, without '#') to its new one; a new or unknown one is left as it is.
+  const routeRename = h => {
+    const s = String(h == null ? '' : h).replace(/^#/, ''),
+      n = s === 'home' ? 'home' : routeOut(s === 'quiz-board' ? 'progress' : s === 'credits' ? 'about' : s);
+    return n == null ? s : n;
+  };
+  // An old page name (genus, compare, lookalikes, quiz, fish.quiz, lab-anatomy…) to its new one (learn.genus,
+  // learn.compare, learn.look-alikes, practice.quiz, fish.practice.quiz, tools.anatomy); a new one is left as it is.
+  const PAGE_OLD = {genus: 'g-x', compare: 'cmp-x|y', lookalikes: 'cmp'};
+  function pageRename(n) {
+    const s = String(n == null ? '' : n),
+      S = SUBJECTS.find(x => x.pv && s.startsWith(x.pv)),
+      pre = S ? S.pv : '',
+      b = s.slice(pre.length);
+    if (
+      /^(learn|practice|identify|leaderboard|tools)\./.test(b) ||
+      ['home', 'progress', 'about', 'other', 'tools', 'leaderboard'].includes(b)
+    )
+      return s;
+    const k = PAGE_OLD[b] || (b === 'lab' ? 'lab' : b),
+      m = pageName(k, pre);
+    return m === pre + 'other' ? s : m;
+  }
+  // This device's data under the old names (app.js and admin.js at start-up, after migrateIdKey): the photo size per page
+  // (reefid-sync-size, keyed by page name: genera, genus, pair, idkey, lab-gallery, lab-elim; tips dropped), the events
+  // still queued (reefid-evq: each one's address, a visit summary's page names), the photos flagged (reefid-photo-flags:
+  // where they were seen). Idempotent (a value the sheet sends back from an older device is moved at the next start).
+  // Returns the keys it wrote.
+  const SIZE_OLD = {
+    genera: 'learn.genera',
+    genus: 'learn.genus',
+    pair: 'learn.compare',
+    idkey: 'identify.key',
+    'lab-gallery': 'tools.gallery',
+    'lab-elim': 'tools.elim',
+    tips: null
+  };
+  function migrateRoutes(s) {
+    try {
+      s = s || localStorage;
+    } catch (e) {
+      return [];
+    }
+    const done = [],
+      edit = (k, f) => {
+        try {
+          const v = s.getItem(k);
+          if (v === null) return;
+          const w = JSON.stringify(f(JSON.parse(v)));
+          if (w !== v) (s.setItem(k, w), done.push(k));
+        } catch (e) {}
+      };
+    edit('reefid-sync-size', o => {
+      if (!isObj(o)) return o;
+      Object.keys(SIZE_OLD).forEach(a => {
+        if (!Object.prototype.hasOwnProperty.call(o, a)) return;
+        if (SIZE_OLD[a] && !Object.prototype.hasOwnProperty.call(o, SIZE_OLD[a])) o[SIZE_OLD[a]] = o[a];
+        delete o[a];
+      });
+      return o;
+    });
+    edit('reefid-evq', L =>
+      !Array.isArray(L)
+        ? L
+        : L.map(x => {
+            if (!isObj(x)) return x;
+            const y = {...x};
+            if (typeof y.pg === 'string') y.pg = routeRename(y.pg).slice(0, 60);
+            if (isObj(y.r)) {
+              const r = {};
+              Object.keys(y.r).forEach(n => {
+                const m = pageRename(n),
+                  a = r[m],
+                  b = y.r[n];
+                r[m] = Array.isArray(a) && Array.isArray(b) ? [a[0] + b[0], a[1] + b[1]] : b;
+              });
+              y.r = r;
+            }
+            return y;
+          })
+    );
+    edit('reefid-photo-flags', L =>
+      !Array.isArray(L)
+        ? L
+        : L.map(x => {
+            if (!isObj(x) || typeof x.where !== 'string') return x;
+            const [h, ...rest] = x.where.split(' · ');
+            return {...x, where: [h === 'home' ? h : routeRename(h) || 'home', ...rest].join(' · ')};
+          })
+    );
+    return done;
+  }
+  // routes-migration: end
   // A page name read back (admin): its subject (by its SUBJECTS pv prefix) and its page ('fish.quiz' -> ['fish', 'quiz'],
   // 'quiz' -> ['coral', 'quiz']).
   function pageSubj(n) {
@@ -2758,9 +3432,9 @@
   // How a genus sheet was reached, from the page it was opened from.
   function pageFrom(h) {
     const n = pageName(h);
-    if (/^quiz/.test(n)) return 'quiz';
-    if (['genera', 'genus', 'compare', 'lookalikes', 'pairs'].includes(n)) return 'learn';
-    if (['progress', 'ach', 'board'].includes(n)) return 'progress';
+    if (/^practice\.(quiz|custom|duels)$/.test(n)) return 'quiz';
+    if (/^learn\.(genera|genus|compare|look-alikes)$/.test(n) || n === 'practice.memory') return 'learn';
+    if (/^(progress|leaderboard)/.test(n)) return 'progress';
     return 'other';
   }
   const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0});
@@ -2780,7 +3454,7 @@
   function pagesOpen(S, h, now, o = {}) {
     pagesStop(S, now);
     const n = pageName(h, o.pre),
-      g = n === 'genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
+      g = n === 'learn.genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
     (S.r[n] = S.r[n] || [0, 0])[0]++;
     if (g) (S.g[g] = S.g[g] || [0, 0, PAGES.FROM.includes(o.from) ? o.from : 'other', o.asked ? 1 : 0])[0]++;
     S.cur = {n, g, from: g ? S.g[g][2] : '', asked: g ? S.g[g][3] : 0};
@@ -3021,6 +3695,8 @@
     typeNorm,
     typeNamesOf,
     typeMatchIn,
+    typeVerdict,
+    typeDiff,
     typedShare,
     PROG,
     mxKeeps,
@@ -3038,6 +3714,10 @@
     MEM_LOGGED,
     CF_LOGGED,
     replayProgress,
+    scoreAnswer,
+    scoreRec,
+    scoreIn,
+    scoreLog,
     startPriorAt,
     startFp,
     startEvents,
@@ -3060,6 +3740,8 @@
     RV_SHEET,
     RT_SHEET,
     START_SHEET,
+    LOG_SHEET,
+    logOk,
     RTIME,
     rtMedian,
     rtWeight,
@@ -3067,6 +3749,13 @@
     rvMsgs,
     learnedOf,
     PAGES,
+    ROUTE_SUBJ,
+    ROUTE_FIRST,
+    routeOut,
+    routeIn,
+    routeRename,
+    pageRename,
+    migrateRoutes,
     pageName,
     pageSubj,
     pageFrom,
@@ -3165,12 +3854,24 @@
     SUBJECT_KEY,
     subjectOf,
     subjGroup,
+    replaySubject,
+    LOG_SUBJ,
+    LOG_SC,
+    ansSubject,
+    rowSubject,
+    subjRows,
+    subjEntries,
     subjKey,
     subjDev,
     fishGen,
+    easyRank,
+    refScore,
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
+    renamedId,
+    renameUnits,
+    renameLogEntry,
     typeNormAll,
     LEGACY_KEYS,
     keyRename,

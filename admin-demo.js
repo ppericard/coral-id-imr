@@ -15,11 +15,11 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v55: a delete cleans up everything of the account, the
+    // The script version the demo answers as: the current one (v58: Archive, the archived list; v55: a delete cleans up everything of the account, the
     // answers it keeps flagged 2; v48: the beta groups, userGroup and each player's groups; v42: the player list carries each player's replay, rp; v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
     // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
     // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; rule D4).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 55,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 58,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -67,7 +67,7 @@
       users = {},
       // The made-up sessions end 2 hours ago at the latest; then a few recent ones, relative to now, for Players' Last
       // column and Activity's Recent sessions (Pierre, 2026-11-03): Carla playing now (her last answer 1 minute ago,
-      // quiz, duels and typed answers), a device not signed in that stopped 12 minutes ago.
+      // quiz, duels and typed answers), a device not signed in that stopped 12 minutes ago, mara demo2 2 hours ago.
       END = NOW - 2 * 3600e3;
     let k = 0;
     PLAYERS.forEach(([name, skill, n, d0, d1]) => {
@@ -121,12 +121,21 @@
           Math.round(100 * pe) / 100,
           st.th,
           0,
-          ch.sort(() => rnd() - 0.5).join(' '),
+          ANALYSIS.shuffle(ch, rnd).join(' '), // never sort(() => rnd() - 0.5): see analysis.js shuffle
           // Seconds to answer and a photo enlarged (sheet v23), from the answer's number (the random draws stay the same).
           Math.round((3 + ((k * 37) % 120) / 10 + (right ? 0 : 5)) * 10) / 10,
           k % 7 ? 0 : 1
         ]);
       }
+      // A signed-in player besides Carla among Activity's Recent sessions: mara demo2's last 10 answers end 2 hours ago (the
+      // devices not signed in answer every few hours, so a last session left a day back fell out of the 10 newest).
+      if (name === 'mara demo2')
+        live(
+          rows.filter(r => r[0] === name),
+          10,
+          END,
+          0
+        );
       // Carla is playing now: her last 24 answers moved to the last 15 minutes, two of them typed (quiz|t, no choices).
       if (name === 'Carla Demo') {
         live(
@@ -280,17 +289,28 @@
         'Demo report: I think this is the other genus.',
         'quiz',
         pics[g1][0].f,
-        '#quiz'
+        'practice/quiz'
       ),
-      rp(1, 'Carla Demo', 'multi', g2, '', '', 'Demo report: two colonies in this photo.', 'quiz', pics[g2][0].f, '#quiz'),
-      rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, '#' + g3),
-      rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', '#' + g2),
-      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home'),
+      rp(1, 'Carla Demo', 'multi', g2, '', '', 'Demo report: two colonies in this photo.', 'quiz', pics[g2][0].f, 'practice/quiz'),
+      rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, 'learn/genus/' + g3),
+      rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', 'learn/genus/' + g2),
+      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', 'home'),
       // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
-      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', '#quiz'),
+      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', 'fish/practice/quiz'),
       // Sheet v55: an account deleted with its answers kept: its reports stay without the name, never verified.
       Object.assign(
-        rp(6, '~deleted Zq3xR8kA', 'photo', g1, '', '', 'Demo report from a removed account: too dark.', 'photo', pics[g1][0].f, '#' + g1),
+        rp(
+          6,
+          '~deleted Zq3xR8kA',
+          'photo',
+          g1,
+          '',
+          '',
+          'Demo report from a removed account: too dark.',
+          'photo',
+          pics[g1][0].f,
+          'learn/genus/' + g1
+        ),
         {3: 0}
       )
     ];
@@ -335,7 +355,7 @@
         'err',
         "TypeError: Cannot read properties of undefined (reading 'views')",
         'app.js:1234:5',
-        'quiz',
+        'practice/quiz',
         '',
         '159',
         'Chrome 140 mobile'
@@ -347,12 +367,12 @@
         'err',
         "TypeError: Cannot read properties of undefined (reading 'views')",
         'app.js:1234:5',
-        'quiz-duel',
+        'practice/duels',
         '',
         '158',
         'Safari 18 mobile'
       ],
-      ['demoevc', NOW - 5 * 3600e3, 'demodev3', 'photo', pics[g1][0].f, '', 'quiz', '', '159', 'Samsung 27 mobile'],
+      ['demoevc', NOW - 5 * 3600e3, 'demodev3', 'photo', pics[g1][0].f, '', 'practice/quiz', '', '159', 'Samsung 27 mobile'],
       [
         'demoevd',
         NOW - 9 * 3600e3,
@@ -360,7 +380,7 @@
         'sync',
         'save failed: Failed to fetch',
         'load · no reply · 0.4 s · try 5 · 76 s · 0 hidden',
-        'quiz',
+        'practice/quiz',
         '',
         '159',
         'Chrome 140 mobile'
@@ -374,7 +394,7 @@
         'sync',
         'save recovered: Load failed',
         'save · no reply · 12.3 s · try 1 · 0 s · 0 hidden · saved after 5 s',
-        'quiz',
+        'practice/quiz',
         '',
         '159',
         'Safari 18 mobile'
@@ -405,8 +425,8 @@
         'load',
         pop,
         '',
-        'quiz',
-        JSON.stringify({p0: 'home', t0, qo, q1, nx: 'quiz', bps, kb, sw, sv, th, w, st: sw}),
+        'practice/quiz',
+        JSON.stringify({p0: 'home', t0, qo, q1, nx: 'practice.quiz', bps, kb, sw, sv, th, w, st: sw}),
         '170',
         ua
       ])
@@ -437,19 +457,29 @@
         ),
         pool = {};
       rows.filter(r => /^~anon demo\d$/.test(r[0]) && !live0.has(r)).forEach(r => (pool[r[0]] = pool[r[0]] || []).push(r));
-      const tally = f => photoAnswers(rows.filter(r => r[6].split(' ').includes(f)))[f] || {n: 0, ok: 0, by: {}};
+      const tally = f => photoAnswers(rows.filter(r => r[6].split(' ').includes(f)))[f] || {n: 0, ok: 0, by: {}},
+        // Answers of the signed-in players (the photo ratings' raters): a question whose photo has PH_MIN of them is
+        // planted first, so Health's tile shows its difficulty in words (tests/admin.smoke.js "difficulty in words").
+        signed = new Set(PLAYERS.map(p => p[0])),
+        rated = F => Math.max(...F.map(f => rows.filter(r => signed.has(r[0]) && r[6].split(' ').includes(f)).length)),
+        // the answers already on its photos: the more players answered them, the more donor answers the rule needs
+        cost = F => Math.max(...F.map(f => tally(f).n));
       rows
         .filter(r => r[0] === 'Carla Demo')
         .sort((a, b) => a[1] - b[1])
         .slice(-24)
         .filter(r => !r[4])
-        .forEach(miss => {
-          const F = miss[6].split(' ').filter(Boolean);
+        .map(miss => ({miss, F: miss[6].split(' ').filter(Boolean)}))
+        .map(q => ({...q, ok: rated(q.F) >= HEALTH.PH_MIN, c: cost(q.F)}))
+        .sort((a, b) => b.ok - a.ok || a.c - b.c || a.miss[1] - b.miss[1])
+        .forEach(({miss, F}) => {
           // One donor answer at a time, from the device that helps most on a photo still short of the rule: one that
-          // never answered it (a new player who misses it), then one that does not miss it yet, then any.
+          // never answered it (a new player who misses it), then one that does not miss it yet, then any. A question
+          // the few donors cannot bring under the rule gives its donor answers back, so they go to the next one.
+          const taken = [];
           for (let guard = 0; guard < 12; guard++) {
             const f = F.find(x => !everyoneMisses(tally(x)));
-            if (!f) break;
+            if (!f) return;
             const by = tally(f).by,
               rank = d => (!by[d] ? 0 : by[d][1] / by[d][0] >= HEALTH.PL_LOW ? 1 : 2),
               d = Object.keys(pool)
@@ -457,11 +487,17 @@
                 .sort((a, b) => rank(a) - rank(b) || pool[b].length - pool[a].length)[0];
             if (!d) break;
             const r = pool[d].shift();
+            taken.push([d, r, r.slice()]);
             r[2] = miss[2];
             r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
             r[4] = 0;
             r[6] = miss[6];
           }
+          if (F.every(x => everyoneMisses(tally(x)))) return;
+          taken.reverse().forEach(([d, r, was]) => {
+            was.forEach((v, i) => (r[i] = v));
+            pool[d].unshift(r);
+          });
         });
     }
     ANALYSIS.DEMO_PLAYERS.forEach(([name]) => {
@@ -513,10 +549,10 @@
           pageRow(pi++, NOW - (d0 - v * (d0 / 4)) * DAY, aid(name), {
             r: {
               home: [1, 4 + Math.round(prnd() * 10)],
-              quiz: [1 + nG, 300 + Math.round(prnd() * 900)],
-              ...(nG ? {genus: [nG, 60]} : {}),
+              'practice.quiz': [1 + nG, 300 + Math.round(prnd() * 900)],
+              ...(nG ? {'learn.genus': [nG, 60]} : {}),
               // Ana's last visit went on with Fish on screen (core.js pageName: fish.<page>).
-              ...(name === 'Ana Demo' && v === 3 ? {'fish.quiz': [2, 420], 'fish.genera': [1, 35]} : {})
+              ...(name === 'Ana Demo' && v === 3 ? {'fish.practice.quiz': [2, 420], 'fish.learn.genera': [1, 35]} : {})
             },
             g,
             vi: 'demovi' + pi,
@@ -527,12 +563,12 @@
     });
     pages.push(
       pageRow(pi++, NOW - 3 * 3600e3, aid('~anon demo0'), {
-        r: {quiz: [2, 200], genus: [1, 25]},
+        r: {'practice.quiz': [2, 200], 'learn.genus': [1, 25]},
         g: {[G[0]]: [1, 25, 'quiz', 1]},
         vi: 'demovianon',
         na: 8
       }),
-      pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], genera: [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
+      pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], 'learn.genera': [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
     pages.sort((a, b) => b[1] - a[1]);
     S = {rows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D)};
@@ -540,19 +576,15 @@
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
     // Dio's is from the former model (BKT: L and the last results, no pg) with a genus learned then, which today's rules
-    // take back (core.js memRecalc, replayedOf); Ben's was saved 20 answers ago. The others match the replay (no ↻ mark).
+    // take back (core.js memRecalc, replayedOf); Ben's was saved 20 answers ago, or more until its progress % reads
+    // otherwise than the replay's (Players' ↻ saved mark; 20 answers can round to the same %). The others match the
+    // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      cut = Object.fromEntries(Object.values(users).map(u => [aid(u.name), Infinity]));
-    const benRows = A.filter(r => r[0] === aid('Ben Demo')).sort((a, b) => a[1] - b[1]);
-    cut[aid('Ben Demo')] = benRows[benRows.length - 21][1];
-    const rep = replayProgress(
-      A.filter(r => !(r[1] > cut[r[0]])),
-      {gen, mem: st.mem, conf: st.conf}
-    );
-    Object.values(users).forEach(u => {
+      opt = {gen, mem: st.mem, conf: st.conf};
+    const rep = replayProgress(A, opt);
+    const savedOf = (u, R) => {
       const old = JSON.parse(u.data['reefid-sync-coral-progress']),
-        R = (rep[aid(u.name)] || {P: {}}).P,
         P = {};
       Object.entries(R).forEach(([g, r]) => {
         if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
@@ -570,6 +602,28 @@
         const best = Object.keys(P).sort((a, b) => P[b].ok - P[a].ok)[0];
         if (best) P[best].mx = 1;
       }
+      return P;
+    };
+    Object.values(users).forEach(u => {
+      const id = aid(u.name);
+      let P = savedOf(u, (rep[id] || {P: {}}).P);
+      if (u.name === 'Ben Demo') {
+        // as Players reads it (userList rp): the full replay against the saved copy
+        const mine = A.filter(r => r[0] === id).sort((a, b) => a[1] - b[1]),
+          start = JSON.parse(u.data['reefid-sync-coral-start'] || 'null'),
+          full = replayProgress(mine, {...opt, starts: start ? {[id]: start} : {}})[id];
+        for (let back = 20; back < mine.length; back += 10) {
+          const cut = mine[mine.length - 1 - back][1];
+          P = savedOf(
+            u,
+            replayProgress(
+              mine.filter(r => r[1] <= cut),
+              opt
+            )[id].P
+          );
+          if (pctOf(replayedOf(full, P), S.slate) !== pctOf(P, S.slate)) break;
+        }
+      }
       u.data['reefid-sync-coral-progress'] = JSON.stringify(P);
       u.learned = list.filter(g => P[g] && P[g].mx).length;
     });
@@ -586,7 +640,12 @@
       .trim()
       .toLowerCase();
   function answers() {
-    const out = {ok: true, rows: [], players: {}, me: aid(ME)};
+    const out = {ok: true, rows: [], players: {}, me: aid(ME)},
+      arch = new Set(
+        Object.values(S.users)
+          .filter(u => u.board === -2)
+          .map(u => lc(u.name))
+      ); // v58: archives, flag 2
     // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
     // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged.
     out.rows = S.rows.map(r => [
@@ -601,11 +660,12 @@
       r[9],
       r[10],
       r[11],
-      /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) ? 2 : 0, // sheet v55: 2 the answers a deleted account left
+      /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) || arch.has(lc(r[0])) ? 2 : 0, // v55/v58: a deleted account's or an archive's
       r[12] ?? null,
       r[13] ?? null
     ]);
     Object.values(S.users).forEach(u => {
+      if (arch.has(lc(u.name))) return; // v58: an archive is no player
       const P = JSON.parse(u.data['reefid-sync-coral-progress'] || '{}'),
         th = {};
       Object.keys(P).forEach(g => (th[g] = P[g].th));
@@ -633,8 +693,19 @@
     return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair, ...photoMemOf(A), gd: genusOffsetsOf(A)};
   }
   function userList() {
-    const by = {};
+    const by = {},
+      // v58 (Code.gs users_ archived): the archives apart, read-only
+      archived = Object.values(S.users)
+        .filter(u => u.board === -2)
+        .map(u => ({
+          name: u.name,
+          id: aid(u.name),
+          time: u.updated,
+          answers: S.rows.filter(r => lc(r[0]) === lc(u.name)).length,
+          reports: S.reports.filter(r => lc(r[2] || '') === lc(u.name)).length
+        }));
     Object.values(S.users).forEach(u => {
+      if (u.board === -2) return;
       by[lc(u.name)] = {
         name: u.name,
         board: u.board ?? 1,
@@ -714,7 +785,7 @@
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
       });
     }
-    return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
+    return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse(), ...(V >= 58 ? {archived} : {})};
   }
   function users(p) {
     // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
@@ -732,16 +803,17 @@
       });
       return {ok: true, group: g, n, members: Object.values(S.users).filter(u => (u.groups || []).includes(g)).length};
     }
-    // Sheet v20: rename (the record moves, hidden from the leaderboard).
-    if (p.userRename) {
-      const m = p.userRename,
+    // Sheet v58 (was rename, v20): archive (the record moves apart, Board -2, out of every beta group).
+    if (p.userArchive && V >= 58) {
+      const m = p.userArchive,
         u = S.users[lc(m.from || '')],
         into = String(m.into || '').trim();
       if (!u || !into) return {ok: false, error: 'user'};
       if (S.users[lc(into)]) return {ok: false, error: 'exists'};
       const from = u.name;
       delete S.users[lc(from)];
-      S.users[lc(into)] = {...u, name: into, board: -1};
+      if ((u.board ?? 1) === -2) return {ok: false, error: 'archived'};
+      S.users[lc(into)] = {...u, name: into, board: -2, groups: []};
       let answers = 0;
       S.rows.forEach(r => lc(r[0]) === lc(from) && ((r[0] = into), answers++));
       S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
@@ -866,7 +938,16 @@
       if (p.readStats) return ok(stats());
       // v35: the stored Analyses report. A script before v35 answers 'input' (?demo&v=30: the admin shows no report).
       if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head));
-      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename || (p.userGroup && V >= 48))
+      if (
+        p.users ||
+        p.userData ||
+        p.userDelete ||
+        p.userMerge ||
+        p.anonDelete ||
+        p.userBoard ||
+        (p.userArchive && V >= 58) ||
+        (p.userGroup && V >= 48)
+      )
         return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }

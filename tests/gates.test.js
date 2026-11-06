@@ -46,16 +46,20 @@ const GATES = {
   // Players › Delete…'s two choices (admin.js delOn, Code.gs deleteAccount_): from v55, which deletes or anonymises the
   // account's reports, page summaries and log mentions; before, they are disabled with a note.
   DEL_SHEET: (v, N) => fn('admin.js', 'const delOn = ', '\n', 'delOn', {USERS: v === undefined ? {} : {v}, DEL_SHEET: N})(),
+  // Deleting one's own account (sync.js selfDelOn, #about/delete-account; Code.gs selfDelete_): from v58; before, a note.
+  SELFDEL_SHEET: (v, N) => fn('sync.js', 'const selfDelOn = ', '\n', 'selfDelOn', {sheetV: () => v, SELFDEL_SHEET: N})(),
+  // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
+  ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
   // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0. On
-  // the corals, the subject the sheet logs and replays (a subject it does not log, fish, has no replay to wait for).
+  // the corals, the subject the sheet replays (a subject it does not replay, fish, has no replay to wait for).
   START_SHEET: (v, N) =>
     fn('model.js', 'const startP = ', '\n', 'startP', {
       sheetV: () => v,
       START_SHEET: N,
       startV: () => ({p: 0.7}),
-      startS: () => ({log: true})
+      startS: () => ({replay: true})
     })() !== 0,
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
@@ -66,6 +70,19 @@ const GATES = {
       reps: ['r1']
     });
     return !!got;
+  },
+  // The answers of a subject the sheet does not replay (fish) are sent (sync.js syncOnce, sendAnon, through core.js logOk):
+  // from v60, which files each answer under its subject; before, they stay queued (an older script would file them as
+  // coral answers). The replayed subject's answers are always sent.
+  LOG_SHEET: (v, N) => {
+    const logOk = fn('core.js', 'const logOk = ', '\n', 'logOk', {
+      LOG_SHEET: N,
+      ansSubject: a => a.s || 'coral',
+      replaySubject: () => 'coral'
+    });
+    assert.strictEqual(logOk({s: 'coral'}, v), true, 'a coral answer is always sent');
+    assert.strictEqual(logOk({}, v), true, 'an answer without a subject is a coral one');
+    return logOk({s: 'fish'}, v);
   },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   PGD_SHEET: (v, N) => {

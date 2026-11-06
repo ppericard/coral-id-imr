@@ -79,11 +79,11 @@ print(json.dumps([[r['n'] for r in L], FB.record(s, 123, L[0]), FB.record(s, 123
     f: 'fish-s9-cand-fb-Fishu_m0',
     a: '(c) J.E. Randall, via FishBase, some rights reserved (CC BY-NC 4.0)',
     lic: 'cc-by-nc',
-    o: 'https://www.fishbase.de/photos/PicturesSummary.php?ID=123&what=species&pic=Fishu_m0.jpg',
+    o: 'https://www.fishbase.se/photos/PicturesSummary.php?ID=123&what=species&pic=Fishu_m0.jpg',
     t: 'Fishus fishii',
     own: false,
     loc: 'world',
-    src: 'https://www.fishbase.de/images/species/Fishu_m0.jpg',
+    src: 'https://www.fishbase.se/images/species/Fishu_m0.jpg',
     r: 1,
     via: 'fishbase',
     rep: 'fishbase',
@@ -216,8 +216,8 @@ test('fish-cand.json: every FishBase candidate passes the rules on tools/fishbas
     assert.strictEqual(p.lic, 'cc-by-nc');
     assert.strictEqual(r.kind, 'underwater photo');
     assert.match(p.a, /^\(c\) .+, via FishBase, some rights reserved \(CC BY-NC 4\.0\)$/);
-    assert.match(p.o, /^https:\/\/www\.fishbase\.de\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
-    assert.match(p.src, /^https:\/\/www\.fishbase\.de\/images\/species\/[\w-]+\.jpg$/);
+    assert.match(p.o, /^https:\/\/www\.fishbase\.se\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
+    assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[\w-]+\.jpg$/);
     assert.strictEqual(p.rep, r.main ? 'fishbase' : undefined, `${p.f}: rep only for FishBase's main picture`);
     assert.strictEqual(p.f, `fish-${sid}-cand-fb-${r.n.replace(/\.jpg$/, '')}`);
   });
@@ -375,7 +375,7 @@ test('never in a game without Pierre: FishBase photos are candidates or sheet-on
   assert.ok(h, 's238 has its sheet photo');
   assert.deepStrictEqual(
     [h.f, h.src, h.lic, h.use, h.from, h.via, h.rep, h.sp],
-    ['fbHachl_m0', 'https://www.fishbase.de/images/species/Hachl_m0.jpg', 'cc-by-nc', 'ref', 'fishbase', 'fishbase', 'fishbase', 's238']
+    ['fbHachl_m0', 'https://www.fishbase.se/images/species/Hachl_m0.jpg', 'cc-by-nc', 'ref', 'fishbase', 'fishbase', 'fishbase', 's238']
   );
   assert.match(h.a, /J\.E\. Randall, via FishBase/);
   assert.match(h.o, /PicturesSummary\.php\?ID=58178&what=species&pic=Hachl_m0\.jpg$/);
@@ -463,4 +463,28 @@ print(json.dumps([ff.covers(net, [501]), len(calls), sum(1 for p in pauses if p 
     )
   );
   assert.deepStrictEqual(out, [{501: 7}, 2, 1]);
+});
+
+// The host (2026-11-06): www.fishbase.de answers 500 (an HTML page) to a browser's image request for every photo tried,
+// so the admin showed "Photo not loading" and Chrome players lost the FishBase sheet photo; the www.fishbase.se mirror
+// answers 200 image/jpeg. The tool builds .se links, and no FishBase photo of the data files points at .de.
+test('FishBase links use the www.fishbase.se mirror, never www.fishbase.de', () => {
+  const [src, o] = py(
+    `print(json.dumps([FB.record({'id': 's9', 'name': 'Fishus fishii'}, 123, {'n': 'Fishu_u0.jpg', 'cp': 'free use'})[k] for k in ('src', 'o')]))`
+  );
+  assert.strictEqual(src, 'https://www.fishbase.se/images/species/Fishu_u0.jpg');
+  assert.strictEqual(o, 'https://www.fishbase.se/photos/PicturesSummary.php?ID=123&what=species&pic=Fishu_u0.jpg');
+  let n = 0;
+  const walk = (o, file) => {
+    if (!o || typeof o !== 'object') return;
+    if (Array.isArray(o)) return o.forEach(x => walk(x, file));
+    if (typeof o.f === 'string' && o.via === 'fishbase') {
+      n++;
+      for (const k of ['src', 'o']) assert.ok(!/fishbase\.de\//.test(o[k] || ''), `${file} ${o.f} ${k}: ${o[k]}`);
+      assert.ok(/^https:\/\/www\.fishbase\.se\/images\/species\//.test(o.src), `${file} ${o.f} src: ${o.src}`);
+    }
+    Object.values(o).forEach(x => walk(x, file));
+  };
+  for (const f of ['fish-cand.json', 'fish-photos.json', 'data.json', 'cand.json']) if (fs.existsSync(path.join(ROOT, f))) walk(read(f), f);
+  assert.ok(n > 100, `FishBase photos found: ${n}`);
 });

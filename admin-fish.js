@@ -2,7 +2,7 @@
 // admin.js, whose state and helpers it uses (DRAFT, saveDraft, render, toast, esc, img, srcTag, fishLoad, FISHC...), as
 // admin-journey.js does. Admin only: players never download it.
 //
-// PR 5a, the fish Candidates swiper (#fish/~cand): the candidates of fish-cand.json one at a time, as the coral swiper,
+// PR 5a, the fish Candidates swiper (#fish/photos/candidates): the candidates of fish-cand.json one at a time, as the coral swiper,
 // with what the fish curation needs: the thinnest species first, stopping at each species' target, the pass's judgment
 // (suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species' photos in
 // play beside the card (most of them the auto-sort's proposals, which Pierre can take out of play), the fish auto-sort's
@@ -309,7 +309,7 @@ function renderFishCand() {
   status();
   if (!FISHC) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad().then(() => cur === '~cand' && ASUBJ.admin.cur && render());
+    fishLoad().then(() => cur === 'photos/candidates' && ASUBJ.admin.cur && render());
     return;
   }
   const F = DRAFT.fish || {},

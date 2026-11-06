@@ -5,6 +5,7 @@
 // X" in the genus's own lines), no suggestions while typing (that would turn it back into a pick from a list), the phone's
 // autocorrect and capitals off, an "I don't know" button (a miss), the right spelling shown after the answer. A word
 // that is no game genus, even with the tolerance, is not counted: the player is asked to check the spelling.
+// A close typo of the genus asked is retyped once before the result (the quiz's spelling step, quiz.js typeBind).
 // The matching (core.js TYPE, typeNorm, typeDist, typeNamesOf, typeMatchIn) and the form with its messages (quiz.js
 // typeForm, typeBind, typeRead) are the quiz's own: one code for both.
 
@@ -16,7 +17,7 @@ LAB.add({
   icon: '⌨',
   title: 'Type the genus',
   blurb: 'Name the coral by typing its genus, with no choices to pick from: proves you recognise it, not just tell 4 apart.',
-  lede: 'Type the genus and press Enter. Small typos and old names are accepted; no suggestions while you type.',
+  lede: 'Type the genus and press Enter. Old names are accepted; a small typo still counts, retyped once to learn the spelling; no suggestions while you type.',
   render(root) {
     const score = {ok: 0, n: 0, streak: 0},
       scoreLine = () => `${score.ok}/${score.n} right · streak ${score.streak}`;
@@ -44,7 +45,7 @@ LAB.add({
         all = (typeof slateGenera === 'function' ? CORALS(slateGenera) : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
         pool = (typeof unlocked === 'function' ? CORALS(() => unlocked(all)) : all).filter(n => any(n).length);
       if (!pool.length) {
-        body.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+        body.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
         return;
       }
       const t = pick(pool),
@@ -57,7 +58,7 @@ LAB.add({
           <div id="tyres"></div>
           <p class="note tyscore">${scoreLine()}</p>${chips()}</div></div>`;
       // said: the genus read ({g, old, exact}), null for "I don't know"; text: what was typed.
-      const finish = (ok, said, text) => {
+      const finish = (ok, said, text, sp) => {
         score.n++;
         score.ok += ok ? 1 : 0;
         score.streak = ok ? score.streak + 1 : 0;
@@ -67,11 +68,16 @@ LAB.add({
         const im = body.querySelector('.tystage img');
         if (im && typeof photoSrc === 'function') im.insertAdjacentHTML('afterend', photoSrc(p));
         // How it was read (a typo or an old name, quiz.js typeRead), on a miss too: "you wrote Acorpora, read as Acropora".
-        const read = typeRead(said, text),
+        // The spelling step (quiz.js typeStep) in the same one line as the quiz: "Right, but not quite: it's spelled …".
+        const read = typeRead(said, text, sp),
+          st = ok && typeStep(said, text, sp),
           how =
-            said == null ? `It was <i>${esc(t)}</i>.` : ok ? `<i>${esc(t)}</i>.` : `It was <i>${esc(t)}</i>, not <i>${esc(said.g)}</i>.`;
+            said == null ? `It was <i>${esc(t)}</i>.` : ok ? `<i>${esc(t)}</i>.` : `It was <i>${esc(t)}</i>, not <i>${esc(said.g)}</i>.`,
+          verdict = !st
+            ? `<b>${ok ? 'Right' : said == null ? 'No worries' : 'Missed'}</b>: ${how}${read ? ` ${read}` : ''}`
+            : `<b>Right</b>, but not quite: it's spelled ${st.spelled}${st.old ? `, ${st.alt ? 'read as' : 'the old name of'} <i>${esc(t)}</i>` : ''}.`;
         body.querySelector('#tyres').innerHTML =
-          `<p class="${ok ? 'ok' : said == null ? 'idk' : 'ko'}"><b>${ok ? 'Right' : said == null ? 'No worries' : 'Missed'}</b>: ${how}${read ? ` ${read}` : ''} <a href="${genLink(t)}">Genus sheet</a></p>
+          `<p class="${ok ? 'ok' : said == null ? 'idk' : 'ko'}">${verdict} <a href="${genLink(t)}">Genus sheet</a></p>
           <p>${esc(tipsText(GX(t)))}</p><p class="credit">${credit(p)}</p>${typeof repBtn === 'function' ? repBtn({g: t, a: said ? said.g : '', ph: [p.f], m: 'type'}) : ''}<button type="button" class="next" id="tynext">Next</button>`;
         const nx = body.querySelector('#tynext');
         nx.onclick = round;
@@ -84,8 +90,11 @@ LAB.add({
       };
       typeBind(
         body.querySelector('.tyform'),
-        (m, text) => finish(!!m && m.g === t, m, text),
-        CORALS(() => SUBJ)
+        (m, text, sp) => finish(!!m && m.g === t, m, text, sp),
+        CORALS(() => SUBJ),
+        undefined,
+        undefined,
+        {t} // the spelling step, as in the quiz (a close typo of t is retyped once)
       );
       body.querySelectorAll('[data-v]').forEach(
         b =>

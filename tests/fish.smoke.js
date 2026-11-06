@@ -4,7 +4,8 @@
 // - circle opt-in: circle 2 offered once every IMR entry has been asked, circle 3 once the progress reaches FISH_C3;
 //   "Not now" kept; once on, their entries join the draw, never counted in the progress;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
-//   fish.json, never counted (progress, answers, log unchanged), never twice in a visit;
+//   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
+//   (quiz.js WINK.AT: 300), once due shown once, then not again on the device (reefid-fish-wink);
 // - typed answers: the entry's names (IMR name, family, sub-entries) read as the entry;
 // - progress per subject kept apart: fish answers in reefid-sync-fish-progress only, the corals' untouched; switching
 //   back to corals brings the coral slate and progress back;
@@ -14,6 +15,9 @@
 //   admin token.
 // iNaturalist photos are not fetched (every other host is aborted): the logic only. Needs Playwright, like
 // draw.smoke.js. Locally: node tests/fish.smoke.js
+// A page key's address (core.js routeOut), for the corals.
+const C = require('../core.js'),
+  addr = k => C.routeOut(k) ?? k;
 const http = require('http'),
   fs = require('fs'),
   path = require('path');
@@ -67,7 +71,7 @@ const server = http.createServer((req, res) => {
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));
-  await p.goto(base + '#quiz');
+  await p.goto(base + '#practice/quiz');
   await p.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH, null, {timeout: 30000});
   const out = await p.evaluate(() => {
     const fails = [],
@@ -109,13 +113,16 @@ const server = http.createServer((req, res) => {
       .forEach(n => {
         for (let i = 0; i < 3; i++) ok(!photoSet(n).shown.some(x => SH.has(x.f)), `${n}: a sheet-only photo drawn`);
       });
-    // Play the real quiz screen: 30 answers, right or wrong, cards closed (a wink that comes in between is no answer).
+    // Play the real quiz screen: 30 answers, right or wrong, cards closed; no wink so early (Pierre, 2026-11-06: his second
+    // fish question was the whale shark; none before WINK.AT[0] answers).
+    ok(answersSoFar() + 30 < WINK.AT[0], 'the smoke starts far below the first surprise');
     const coralBefore = localStorage.getItem('reefid-sync-coral-progress');
     for (let i = 0, asked = 0; asked < 30 && i < 60; i++) {
       closeCards();
       if (!document.querySelector('#view .q')) quizPhoto();
       const q = SHOWNQ;
       if (document.querySelector('#view .q.wink')) {
+        ok(false, `a wink at ${answersSoFar()} answers`);
         document.querySelector('#view [data-w]').click();
         route();
         continue;
@@ -145,38 +152,46 @@ const server = http.createServer((req, res) => {
     );
     ok(answersSoFar() >= 30, 'answers counted in the fish progress');
     ok(localStorage.getItem('reefid-sync-coral-progress') === coralBefore, 'coral progress untouched by fish answers');
-    ok(!localStorage.getItem('reefid-log0') && !localStorage.getItem('reefid-anonq'), 'fish answers not logged for the sheet');
+    // Fish answers are logged from the first answer (Pierre, 2026-11-06; sheet v60): queued for the sheet (signed out:
+    // LOG0 and the anonymous queue; a local copy sends nothing, rule D1) with their subject, the rank asked, the names
+    // at that rank and the species shown; never the corals' anonymous base (ANONB: the corals' replay only).
+    const L0 = JSON.parse(localStorage.getItem('reefid-log0') || '[]');
+    ok(
+      L0.length >= 30 && L0.every(a => a.s === 'fish' && ['family', 'genus'].includes(a.rk) && a.tn === GX(a.g).name),
+      'fish answers logged with their subject, rank and name: ' + JSON.stringify(L0.slice(0, 2))
+    );
+    ok(JSON.parse(localStorage.getItem('reefid-anonq') || '[]').length === L0.length, 'fish answers queued for the anonymous send');
+    ok(L0.filter(a => a.sp).length >= L0.length / 2, 'the species shown logged: ' + JSON.stringify(L0.map(a => a.sp).slice(0, 5)));
+    ok(!localStorage.getItem('reefid-anon-base'), 'no coral anonymous base from fish answers');
     // Typed names.
     const tm = x => typeMatch(x) && typeMatch(x).g;
     ok(tm('Damselfish') === 't01' && tm('Chromis') === 't01' && tm('Pomacentridae') === 't01', 'typed: names of Damselfish');
     ok(tm('unicornfish') === 't06' && tm('Moorish idol') === 't05', 'typed: parts and two-word names');
     ok(!tm('Acropora'), 'typed: a genus is no fish entry');
-    // Winks for a circle-1 player: forced due, shown, answered, never counted.
+    // Winks for a circle-1 player: made due at this count (the first threshold moved here, the counts left as they are),
+    // shown, answered, never counted.
     const P0 = JSON.stringify(P),
-      W0 = WINK.P;
-    WINK.P = 1;
-    WINKS.at = -Infinity;
+      W0 = WINK.AT.slice();
+    WINK.AT[0] = answersSoFar();
     closeCards();
     quizPhoto();
     const wk = document.querySelector('#view .q.wink');
     ok(!!wk, 'a wink comes for a circle-1 player');
     if (wk) {
-      const n = [...WINKS.seen].at(-1), // the wink just shown (an earlier one may have come in the answers above)
+      const n = UNITS[SUBJ.id].winks()[0], // the first surprise: the first wink
         w = GX(n).wink,
         labels = [...wk.querySelectorAll('[data-w]')].map(b => b.textContent.slice(1));
       ok(w.choices.every(([, l]) => labels.includes(l)) && labels.includes(GX(n).name), 'wink: its name and the absurd choices');
       wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
+      ok(localStorage.getItem('reefid-fish-wink') === '0', 'wink: kept as shown on this device');
       route();
-      WINKS.at = -Infinity;
       closeCards();
       quizPhoto();
-      const again = document.querySelector('#view .q.wink');
-      ok(!again || [...WINKS.seen].length === 2, 'wink: never the same twice in a visit');
+      ok(!document.querySelector('#view .q.wink'), 'wink: not again in its window');
     }
-    WINK.P = W0;
-    WINKS.at = answersSoFar();
+    WINK.AT.splice(0, 2, ...W0);
     // Circle 2: offered once every IMR entry was asked; "Not now" kept.
     ok(!bonusOfferDue(), 'no offer before every IMR entry is asked');
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
@@ -239,7 +254,8 @@ const server = http.createServer((req, res) => {
     // Codex review #526: a genus's WoRMS-accepted name is accepted when typed (Pseudanthias tuka is now Mirolabrichthys).
     ok(typeMatch('Mirolabrichthys', 'genus') && typeMatch('Mirolabrichthys', 'genus').g === 'g:Pseudanthias', 'sci: typed accepted genus');
     // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
-    // wrong choice, as in the quiz); a genus card's photo comes from the highest source tier (Pierre's own first, rule P1).
+    // wrong choice, as in the quiz); a genus card's photo is its easiest, most reference-like one, whoever took it
+    // (Pierre, 2026-11-06: no source tier for fish), and a never-seen photo of Pierre's gets no draw bonus.
     st('t02').pg = 0.2;
     st('t04').pg = 0.72;
     const pl = pool().filter(n => GX(n).rank);
@@ -247,12 +263,12 @@ const server = http.createServer((req, res) => {
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
-        const w = GX(n).views.wide,
-          c = w.find(p => p.f === GX(n).cover);
-        return !c || c.own || !w.some(p => p.own && p.e);
+        const w = GX(n).views.wide;
+        return !w.length || (GX(n).cover === w[0].f && w.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
       }),
-      "sci: a genus card's photo is Pierre's own when he has a judged one"
+      "sci: a genus card's photo is its easiest"
     );
+    ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
     bonusSet(false, 'sci');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
     // Report a problem after a fish answer (fish beta sweep, 2026-11-05: the right-answer list offered the teaching ids,
@@ -377,7 +393,7 @@ const server = http.createServer((req, res) => {
       ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the chip is there, on every page.
-    await q.evaluate(() => (location.hash = '#lab'));
+    await q.evaluate(() => (location.hash = '#tools'));
     await q.waitForFunction(() => document.querySelector('#view .labhub'), null, {timeout: 15000});
     const tl = await q.evaluate(() => ({
       tile: !!document.querySelector('#view .labsubj, #view [data-subj]'),
@@ -388,7 +404,7 @@ const server = http.createServer((req, res) => {
     // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
     // rule S3), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
     // them, every entry under its own group; the key credited in full under the list.
-    await q.evaluate(() => (location.hash = '#genera'));
+    await q.evaluate(() => (location.hash = '#learn/genera'));
     await q.waitForFunction(() => document.querySelector('#view .gdiv'), null, {timeout: 15000});
     const fam = await q.evaluate(() => {
       const K = FISH.key || {},
@@ -412,7 +428,7 @@ const server = http.createServer((req, res) => {
     });
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
     await wide('the families page');
-    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
     for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
@@ -441,25 +457,24 @@ const server = http.createServer((req, res) => {
     await q.evaluate(() => (location.hash = '#progress'));
     await q.waitForFunction(() => document.querySelector('#view .pgame'), null, {timeout: 15000});
     await wide('My progress');
-    // A wink, forced due once (WINK.P 1), then never the same again in the visit.
+    // A wink, made due at this count (the first threshold moved here, none shown yet).
     const wk = await q.evaluate(() => {
-      location.hash = '#quiz';
+      location.hash = '#practice/quiz';
       return new Promise(ok =>
         setTimeout(() => {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
-          WINK.P = 1;
-          WINKS.at = -Infinity;
-          const was = answersSoFar();
-          if (was < WINK.FROM) P['~level'] = {...(P['~level'] || {}), ok: WINK.FROM};
+          WINK.AT[0] = answersSoFar();
+          delete WINKS[SUBJ.id];
+          localStorage.removeItem('reefid-fish-wink');
           quizPhoto();
-          ok({wink: !!document.querySelector('#view .q.wink'), seen: WINKS.seen.size});
+          ok({wink: !!document.querySelector('#view .q.wink'), seen: WINKS[SUBJ.id]});
         }, 300)
       );
     });
-    if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
+    if (!wk.wink || wk.seen !== 0) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
     await wide('a wink');
     // Back to the corals through the header chip: its menu holds both subjects; a choice closes it.
-    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
     await q.click('#subjb');
@@ -553,15 +568,15 @@ const server = http.createServer((req, res) => {
         coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
       };
     });
-    if (door.title !== 'Identify a fish' || door.links !== '#fishkey' || door.coral)
+    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral)
       ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
     await wide('Home, Fish on');
-    await q.evaluate(() => (location.hash = '#idkey'));
+    await q.evaluate(() => (location.hash = '#identify/key'));
     await q.waitForFunction(() => window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
     const f = await page();
     if (
       f.subj !== 'fish' ||
-      f.hash !== '#fishkey' ||
+      f.hash !== '#fish/identify/key' ||
       !f.soon ||
       !/Fish ID Key/.test(f.text) ||
       !/coming soon/i.test(f.text) ||
@@ -569,6 +584,10 @@ const server = http.createServer((req, res) => {
       !f.tab
     )
       ui.push(`${width}px Identify, Fish on: ${JSON.stringify({...f, text: f.text.slice(0, 160)})}`);
+    // The header's Identify tab links to the Fish ID Key's own address, its prefix included (Codex review #612): copied
+    // and opened on a device with the corals on, it opens the fish page.
+    const idh = await q.evaluate(() => [...document.querySelectorAll('a[data-tab="identify"]')].map(a => a.getAttribute('href')).join());
+    if (!idh || idh.split(',').some(x => x !== '#fish/identify/key')) ui.push(`${width}px the header's Identify link, Fish on: ${idh}`);
     await wide('the Fish ID Key');
     // The corals chosen on that page: the Coral ID Key.
     await q.evaluate(() => setSubject('coral'));
@@ -585,25 +604,40 @@ const server = http.createServer((req, res) => {
       )
       .catch(() => {});
     const c = await page();
-    if (c.hash !== '#idkey' || c.soon || !/Coral ID Key|growth form/i.test(c.text))
+    if (c.hash !== '#identify/key' || c.soon || !/Coral ID Key|growth form/i.test(c.text))
       ui.push(`${width}px corals chosen on the Fish ID Key: ${JSON.stringify({...c, text: c.text.slice(0, 160)})}`);
-    // The Fish ID Key's address with the corals on: the Coral ID Key.
-    await q.evaluate(() => (location.hash = '#fishkey'));
-    await q.waitForFunction(() => window.ROUTED === 'idkey', null, {timeout: 15000}).catch(() => {});
+    // The Fish ID Key's address with the corals on: the address says its subject, so Fish comes on screen (URL refonte,
+    // Q53-Q56: a fish page can be linked).
+    await q.evaluate(() => (location.hash = '#fish/identify/key'));
+    await q.waitForFunction(() => SUBJ.id === 'fish' && window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
     const c2b = await page();
-    if (c2b.subj !== 'coral' || c2b.hash !== '#idkey' || c2b.soon)
-      ui.push(`${width}px #fishkey with the corals on: ${JSON.stringify({...c2b, text: ''})}`);
+    if (c2b.subj !== 'fish' || c2b.hash !== '#fish/identify/key' || !c2b.soon)
+      ui.push(`${width}px #fish/identify/key with the corals on: ${JSON.stringify({...c2b, text: ''})}`);
     // Back to fish; then a link into the Coral ID Key with its clues brings the corals.
     await q.evaluate(() => setSubject('fish'));
     await q.waitForFunction(() => SUBJ.id === 'fish' && window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
     const f2 = await page();
-    if (f2.hash !== '#fishkey' || !f2.soon) ui.push(`${width}px Fish chosen on the Coral ID Key: ${JSON.stringify({...f2, text: ''})}`);
-    await q.evaluate(() => (location.hash = '#idkey|form=B'));
+    if (f2.hash !== '#fish/identify/key' || !f2.soon)
+      ui.push(`${width}px Fish chosen on the Coral ID Key: ${JSON.stringify({...f2, text: ''})}`);
+    await q.evaluate(() => (location.hash = '#identify/key?form=B'));
     await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
     await q.waitForTimeout(400);
     const d = await page();
-    if (d.subj !== 'coral' || !d.hash.startsWith('#idkey|form=B') || d.soon)
+    if (d.subj !== 'coral' || !d.hash.startsWith('#identify/key?form=B') || d.soon)
       ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    // A fish page linked straight (URL refonte, Q53-Q56: the subject prefix in the app's addresses): a new tab on a fish
+    // address opens that page with Fish on screen; a coral address without a prefix keeps the subject chosen there.
+    for (const [h, key] of [
+      ['fish/practice/quiz', 'quiz'],
+      ['fish/learn/' + C.SUBJECTS.find(x => x.hash).many, 'genera']
+    ]) {
+      const q5 = await c5.newPage();
+      await q5.goto(base + '#' + h);
+      await q5.waitForFunction(k => window.ROUTED === k && SUBJ.id === 'fish', key, {timeout: 20000}).catch(() => {});
+      const at = await q5.evaluate(() => ({subj: SUBJ.id, key: window.ROUTED, hash: location.hash}));
+      if (at.subj !== 'fish' || at.key !== key || at.hash !== '#' + h) ui.push(`${width}px fish deep link #${h}: ${JSON.stringify(at)}`);
+      await q5.close();
+    }
     await c5.close();
   }
   // The admin's header with the subject chip fits one line on the narrowest phones, signed out (the Sign in pill shown)
@@ -634,7 +668,8 @@ const server = http.createServer((req, res) => {
     }
     await c4.close();
   }
-  // A player who is not the admin (no admin token; or the admin token in ⚙ View: User), with Fish saved on this device
+  // Fish opening to a group (served so here, above): a player who is not the admin (no admin token; or the admin token in
+  // ⚙ View: User), with Fish saved on this device
   // (chosen when the switch was on Home) and fish progress: the corals on screen, fish.json not even loaded, no subject
   // switch on Home, in the header, in ⚙ or in Tools, no fish emoji on the link to Tools; a switch or a link asking for
   // Fish keeps the corals; the saved choice and the fish progress stay as they were. 390 and 1280 px.
@@ -647,6 +682,17 @@ const server = http.createServer((req, res) => {
     await c6.route(
       u => !u.href.startsWith(base),
       r => r.abort()
+    );
+    // Fish opens to all since 2026-11-06 (Q158): closed to a player outside its group, checked on fish served with
+    // open: 'group'.
+    await c6.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) ui.push("core.js: no open: 'all' to set back to 'group'");
+        await r.fulfill({response: res, body: t.replace("open: 'all'", "open: 'group'")});
+      }
     );
     await c6.addInitScript(asUser => {
       try {
@@ -691,7 +737,7 @@ const server = http.createServer((req, res) => {
     const h = await look();
     if (h.subj !== 'coral' || h.fish || h.sw || h.words || h.badge) ui.push(`${width}px ${user}, Home: ${JSON.stringify(h)}`);
     await wide('Home');
-    await q.evaluate(() => (location.hash = '#lab'));
+    await q.evaluate(() => (location.hash = '#tools'));
     await q.waitForFunction(() => document.querySelector('#view .labhub'), null, {timeout: 30000});
     const t = await look();
     if (t.subj !== 'coral' || t.sw || t.words || t.badge) ui.push(`${width}px ${user}, Tools: ${JSON.stringify(t)}`);
@@ -699,7 +745,7 @@ const server = http.createServer((req, res) => {
     // Asked for anyway: a switch (an old page's button, the console), then the Learn and Practice pages.
     await q.evaluate(() => setSubject('fish'));
     for (const hash of ['genera', 'quiz']) {
-      await q.evaluate(x => (location.hash = '#' + x), hash);
+      await q.evaluate(x => (location.hash = '#' + x), addr(hash));
       await q.waitForTimeout(600);
       const g = await q.evaluate(() => ({
         subj: SUBJ.id,
@@ -727,6 +773,17 @@ const server = http.createServer((req, res) => {
     await c8.route(
       u => !u.href.startsWith(base),
       r => r.abort()
+    );
+    // Fish opens to all since 2026-11-06 (Q158): the group, kept for a subject that opens to a group, on fish served
+    // with open: 'group'.
+    await c8.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) grp.push("core.js: no open: 'all' to set back to 'group'");
+        await r.fulfill({response: res, body: t.replace("open: 'all'", "open: 'group'")});
+      }
     );
     await c8.addInitScript(old => {
       try {
@@ -801,8 +858,8 @@ const server = http.createServer((req, res) => {
     if (t2.subj !== 'coral' || t2.saved !== '"fish"') grp.push(`taken out of the group: ${JSON.stringify(t2)}`);
     await c8.close();
   }
-  // (6c) Fish open to all (core.js SUBJECTS open: 'all', the release's one field; forced here by serving core.js with fish's
-  // open: 'all'): a player who is not the admin, signed out, sees the Corals | Fish row on Home (the beta tag kept),
+  // (6c) Fish open to all (core.js SUBJECTS open: 'all', the release's one field, Pierre 2026-11-06, Q158; core.js as it
+  // is): a player who is not the admin, signed out, sees the Corals | Fish row on Home (the beta tag kept),
   // switches to Fish, answers fish questions; a reload keeps Fish; signing in (the sheet's replies put them in no group)
   // keeps Fish open and the fish progress made signed out; Corals switches back.
   const all = [];
@@ -817,8 +874,9 @@ const server = http.createServer((req, res) => {
       async r => {
         const res = await r.fetch(),
           t = await res.text();
-        if (!t.includes("open: 'group'")) all.push("core.js: no open: 'group' to force");
-        await r.fulfill({response: res, body: t.replace("open: 'group'", "open: 'all'")});
+        // Fish opens to all as it is (Pierre, 2026-11-06, Q158), served unchanged.
+        if (!t.includes("open: 'all'")) all.push('core.js: fish does not open to all');
+        await r.fulfill({response: res, body: t});
       }
     );
     await c9.addInitScript(() => {
@@ -961,7 +1019,7 @@ const server = http.createServer((req, res) => {
     if (Number(r.fishHold || 0) !== 0 || Number(r.coralHold) !== 5)
       rv.push(`the sheet's hold went to the wrong subject: ${JSON.stringify(r)}`);
     // (3) A wink with questions planned and a mix-up queued: neither is taken.
-    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForSelector('#view .q');
     const w = await q.evaluate(
       () =>
@@ -974,9 +1032,9 @@ const server = http.createServer((req, res) => {
             rematch = L.length > 1 ? [{pair: [L[0], L[1]], at: -10}] : [];
             twoAt = -Infinity;
             const rm = JSON.stringify(rematch);
-            WINK.P = 1;
-            WINKS.at = -Infinity;
-            if (answersSoFar() < WINK.FROM) P['~level'] = {...(P['~level'] || {}), ok: WINK.FROM};
+            WINK.AT[0] = answersSoFar();
+            delete WINKS[SUBJ.id];
+            localStorage.removeItem('reefid-fish-wink');
             quizPhoto();
             ok({
               wink: !!document.querySelector('#view .q.wink'),
@@ -991,20 +1049,29 @@ const server = http.createServer((req, res) => {
     // (4) A coral genus sheet and a comparison with Fish chosen.
     for (const h of ['g-Acropora', 'cmp-Acropora|Montipora']) {
       await q.evaluate(() => setSubject('fish'));
-      await q.evaluate(x => (location.hash = '#' + x), h);
+      await q.evaluate(x => (location.hash = '#' + x), addr(h));
       await q.waitForTimeout(800);
       const g = await q.evaluate(() => ({
         subj: SUBJ.id,
         hash: location.hash,
         view: !!document.querySelector('#view h2, #view .gsheet, #view .cmp, #view [data-g]')
       }));
-      if (g.subj !== 'coral' || g.hash !== '#' + h) rv.push(`#${h} with Fish chosen: ${JSON.stringify(g)}`);
+      if (g.subj !== 'coral' || g.hash !== '#' + addr(h)) rv.push(`#${h} with Fish chosen: ${JSON.stringify(g)}`);
     }
     // (5) Fish chosen by the player on a coral genus sheet: the fish page of the section, not straight back to corals.
     await q.evaluate(() => setSubject('fish'));
     await q.waitForTimeout(800);
     const ex = await q.evaluate(() => ({subj: SUBJ.id, hash: location.hash}));
-    if (ex.subj !== 'fish' || ex.hash !== '#genera') rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
+    if (
+      ex.subj !== 'fish' ||
+      ex.hash !==
+        '#' +
+          C.routeOut(
+            'genera',
+            C.SUBJECTS.find(s => s.hash)
+          )
+    )
+      rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
     await c3.close();
   }
   // (7) A saved copy without fish keys (saved by an app from before fish) is not an empty fish record (Codex review
@@ -1051,7 +1118,7 @@ const server = http.createServer((req, res) => {
     if (o.here !== 10 || o.sent !== 10) rv.push(`a saved copy without fish keys erased the fish progress: ${JSON.stringify(o)}`);
     // (8) Tools › Type the genus with Fish chosen: the corals' genera (the Tools are the corals'; Codex review #442: it
     // drew fish teaching ids, "It was t01").
-    await q.evaluate(() => (location.hash = '#lab-type'));
+    await q.evaluate(() => (location.hash = '#tools/type'));
     await q.waitForSelector('#view .tyform', {timeout: 15000});
     await q.click('#view .tyform [data-idk]');
     const ty = await q.evaluate(() => ({
@@ -1088,9 +1155,20 @@ const server = http.createServer((req, res) => {
       } catch (e) {}
     });
     const q = await c4.newPage();
-    await q.goto(base + '#quiz');
+    await q.goto(base + '#practice/quiz');
     await q.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const a = await q.evaluate(() => ({subj: SUBJ.id, fish: !!FISH, cached: !!FISHP}));
+    // A link to a fish page while fish.json still fails (Codex review #612): the corals' page, never stuck on Loading.
+    await q.evaluate(() => (location.hash = '#fish/practice/quiz'));
+    await q.waitForFunction(() => location.hash === '#practice/quiz' && window.ROUTED === 'quiz', null, {timeout: 15000}).catch(() => {});
+    const dl = await q.evaluate(() => ({
+      hash: location.hash,
+      subj: SUBJ.id,
+      routed: window.ROUTED,
+      loading: /Loading/.test(document.getElementById('view').innerText)
+    }));
+    if (dl.hash !== '#practice/quiz' || dl.subj !== 'coral' || dl.routed !== 'quiz' || dl.loading)
+      rv.push(`a fish link while fish.json fails: ${JSON.stringify(dl)}`);
     fail = false;
     const b2 = await q.evaluate(() =>
       setSubject('fish').then(
@@ -1130,7 +1208,7 @@ const server = http.createServer((req, res) => {
     }, seed);
     const q = await c6.newPage();
     q.on('pageerror', e => errs.push(`new player ${seed}: ${e.message}`));
-    await q.goto(base + '#quiz');
+    await q.goto(base + '#practice/quiz');
     await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('#view .q'), null, {
       timeout: 30000
     });
@@ -1223,7 +1301,7 @@ const server = http.createServer((req, res) => {
     });
     const q = await c7.newPage();
     q.on('pageerror', e => errs.push(`welcome ${pick}: ${e.message}`));
-    await q.goto(base + '#quiz');
+    await q.goto(base + '#practice/quiz');
     await q.waitForFunction(() => window.APP_READY && document.querySelector('.unlock.startq'), null, {timeout: 30000});
     const card = await q.evaluate(() => {
       const d = document.querySelector('.unlock.startq');
