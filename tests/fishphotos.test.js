@@ -677,11 +677,49 @@ print(json.dumps([rules, picks, p]))`
   assert.deepStrictEqual(rules, [true, false, false, false, false, true, false, false, false, false, false, false, false]);
   assert.deepStrictEqual(picks[0], [1, 10, 'cover'], 'the cover when it passes the rules');
   assert.deepStrictEqual(picks[1], [2, 11, 'taxon'], 'a cover from outside the box: the next taxon photo that passes');
-  assert.deepStrictEqual(picks[2], [5, 13, 'obs'], 'then the observations, Pierre’s own first');
+  assert.deepStrictEqual(
+    picks[2],
+    [4, 12, 'obs'],
+    'then the observations in iNaturalist’s order, Pierre’s own with no priority (2026-11-06)'
+  );
   assert.strictEqual(picks[3], null, 'nothing passes: no photo');
   assert.strictEqual(p.use, 'ref');
   assert.strictEqual(p.f, 'fi7');
   assert.strictEqual(p.o, 'https://www.inaturalist.org/observations/12');
   assert.match(p.src, /\/photos\/7\/original\.jpg$/);
   assert.strictEqual(p.note, 'Filed under Fishus a on iNaturalist, which lumps the two species (as WoRMS does).');
+});
+
+// Pierre's own photos in the fish pool (Pierre, 2026-11-06, Q148): every compatible photo of his is in, never left out
+// and never boosted: they take none of the other observers' PER places; a photo he rejected, a near-duplicate, an
+// unclear subject, out of the water or out of the Indo-West Pacific box is not compatible.
+test('fish photo list: every compatible photo of Pierre’s own is in, beside the other observers’ PER', () => {
+  const out = execFileSync(
+    'python3',
+    [
+      '-c',
+      `import sys, json; sys.path.insert(0, 'tools')
+import fish_photos as fp
+ph = lambda i, lic='cc-by': {'id': i, 'license_code': lic, 'attribution': f'(c) u{i}', 'url': f'https://inaturalist-open-data.s3.amazonaws.com/photos/{i}/square.jpg'}
+def ob(i, *P, u='x', ll='9.2,123.3', g='research'):
+    return {'id': i, 'quality_grade': g, 'taxon': {'id': 5, 'name': 'Fishus a', 'rank': 'species'}, 'location': ll, 'place_ids': [6873], 'captive': False, 'annotations': [], 'user': {'login': u}, 'photos': list(P)}
+his = [ob(1000 + k, ph(10 * k + 1, None), ph(10 * k + 2, None), u='ppericard', g='needs_id') for k in range(30)]
+his.append(ob(2000, ph(9001), u='ppericard', ll='26.99,33.91'))   # the Red Sea: out of the box
+others = [ob(k, ph(50000 + k)) for k in range(1, 41)]
+fp.obs = lambda taxa, q: his if 'user_login' in q else others
+fp.DECIDED.update(gone={'11'}, codes={'21': 'p1g0smx1'}, sug={'31': {'k': 'dup', 'jt': 'p1g0sm1', 'e': 3}})
+L = fp.entry({'species': ['s1']}, {'s1': {'id': 's1', 'inat': 5}})
+print(json.dumps([sorted(int(p['f'][2:]) for p in L if p.get('own')), sum(1 for p in L if not p.get('own'))]))`
+    ],
+    {cwd: ROOT, encoding: 'utf8'}
+  );
+  const [own, rest] = JSON.parse(out);
+  const want = [];
+  for (let k = 0; k < 30; k++) [10 * k + 1, 10 * k + 2].forEach(i => ![11, 21, 31].includes(i) && want.push(i));
+  assert.deepStrictEqual(
+    own,
+    want.sort((a, b) => a - b),
+    'all 57 compatible photos of his 30 observations, every photo of each'
+  );
+  assert.strictEqual(rest, 24, 'the other observers keep their 24 places');
 });

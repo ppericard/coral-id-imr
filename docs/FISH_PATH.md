@@ -257,7 +257,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
   cited or named, in the app or in the repo.
 - **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule C1).
 - Its words become the fish glossary (underlined in cues and feedback), as Coral basics' words are for corals. Same component and
-  format as Coral basics; Pierre's own photos first (rule P1).
+  format as Coral basics; its photos the easiest, most reference-like ones, whoever took them (rule P1, fish).
 
 ## What `fish.json` supports, and the gaps
 

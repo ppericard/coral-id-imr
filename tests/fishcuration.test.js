@@ -51,7 +51,7 @@ test('fish log codes: a / r, a Check, an undo, a time', () => {
   assert.strictEqual(I.f1.day, '2026-11-04');
 });
 
-test('fishRun: sure adds up to the target, own first then the easiest; rejects; Checks drawn, not applied', () => {
+test('fishRun: sure adds up to the target, the easiest first whoever took them; rejects; Checks drawn, not applied', () => {
   const cands = {
     s2: ids.slice(0, 12).map((f, i) => ({f, o: `obs${i}`, own: i === 11})),
     s1: [
@@ -63,6 +63,7 @@ test('fishRun: sure adds up to the target, own first then the easiest; rejects; 
   };
   const sug = {};
   cands.s2.forEach((p, i) => (sug[p.f] = sure(1 + (i % 5))));
+  sug[ids[11]] = sure(1); // Pierre's own, very hard
   sug[ids[20]] = {...sure(5), ph: 'female', c: [0.1, 0, 0.9, 1]};
   sug[ids[21]] = sure(3, 'alt'); // the same observation: joins it for free
   sug[ids[22]] = sure(4, 'dup');
@@ -71,9 +72,10 @@ test('fishRun: sure adds up to the target, own first then the easiest; rejects; 
   assert.deepStrictEqual(R, {add: 10, reject: 1, check: 1, full: 4, off: 0});
   const in2 = Object.keys(F.add).filter(f => F.add[f] === 's2');
   assert.strictEqual(in2.length, 8, 'species s2 filled to its target of 8 observations');
-  assert.ok(in2.includes(ids[11]), "Pierre's own photo first (rule P1), whatever its ease");
-  const eases = in2.filter(f => f !== ids[11]).map(f => sug[f].e);
-  assert.ok(Math.min(...eases) >= Math.max(...cands.s2.filter(p => !in2.includes(p.f)).map(p => sug[p.f].e)), 'the easiest next');
+  // Pierre's own photo (ease 2) has no priority (Pierre, 2026-11-06): it waits behind easier ones.
+  assert.ok(!in2.includes(ids[11]), "Pierre's own photo is not forced in");
+  const eases = in2.map(f => sug[f].e);
+  assert.ok(Math.min(...eases) >= Math.max(...cands.s2.filter(p => !in2.includes(p.f)).map(p => sug[p.f].e)), 'the easiest first');
   assert.deepStrictEqual([F.add[ids[20]], F.add[ids[21]]], ['s1', 's1']);
   assert.deepStrictEqual([F.tags[ids[20]], F.ease[ids[20]], F.phase[ids[20]], F.crop[ids[20]]], ['p1g0sm1', 5, 'female', [0.1, 0, 0.9, 1]]);
   assert.strictEqual(F.seen[ids[22]], 1);
