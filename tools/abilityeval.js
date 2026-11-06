@@ -118,7 +118,7 @@ const timeOf = x => (typeof x === 'number' ? x : x instanceof Date ? x.getTime()
 // few answers without it after that time (no per-answer app version in the log). --cf-from moves it.
 let CF_FROM = timeOf('2026-11-03 23:35');
 function normalise(raw) {
-  // The replayed subject's rows only (core.js subjRows; sheet v60 logs every subject's, at index 15 in both layouts).
+  // The replayed subject's rows only (core.js subjRows; sheet v60 logs every subject's, at index 17 in both layouts).
   raw = C.subjRows(raw.filter(r => r && r[0] && r[0] !== 'Name'));
   let last = -Infinity;
   raw = raw

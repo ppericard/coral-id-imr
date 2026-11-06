@@ -24,7 +24,7 @@ const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   V = Array.isArray(J) ? J : J.values || J.rows || [];
 const H = Array.isArray(V[0]) && V[0][0] === 'Name' ? V[0] : null,
   col = k => (H ? H.indexOf(k) : ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability'].indexOf(k));
-const rows = C.subjRows(H ? V.slice(1) : V) // the corals' rows (sheet v60 Subject, index 15 in both layouts)
+const rows = C.subjRows(H ? V.slice(1) : V) // the corals' rows (sheet v60 Subject, index 17 in both layouts)
   .map(r => ({
     who: r[col('Name')],
     t: r[col('Time')],
