@@ -47,12 +47,17 @@ signal detection correction, 2026-11-06 (Q163, Q174).
 
 **Difficulty is adaptive and continuous; no manual Easy/Medium/Hard selector.** Per-unit player ability vs photo
 difficulty on one Elo scale (Pelánek 2016), ~80% target success, guaranteed variety and new photos, more single-view
-questions as the level rises (details in ARCHITECTURE.md). **Every account counts everywhere**, Pierre's included: the
+questions as the level rises (details in ARCHITECTURE.md). **Photo exposure** (Q187-Q190): a colony (fish: an
+observation) counts as seen whatever view or photo of it was shown; 30% of the questions on a unit the player holds
+explore, drawing a colony never seen at the difficulty aimed for; a beginner's multi-view question weighs a colony by its
+share of the views (corals only: fish have one view); corals: up to 40 colonies per genus in the Colony view (fish: no
+cap). **Every account counts everywhere**, Pierre's included: the
 admin has no filter on his own answers or "test" accounts; the leaderboard's "hidden" changes only the public
 leaderboard. Corals: starred genera are always included in Practice. The normal quiz is never split by a course group
 or a book's shape group; only the custom quiz picks groups.
-*Why:* Pierre's account is a real player's. *Source:* Pierre, by 2026-11-01; every account, 2026-11-04; subject-neutral wording, groups for every subject,
-2026-11-06 (Q168).
+*Why:* Pierre's account is a real player's; players went round a unit's photos fast. *Source:* Pierre, by 2026-11-01;
+every account, 2026-11-04; subject-neutral wording, groups for every subject, 2026-11-06 (Q168); photo exposure,
+2026-11-06 (Q187-Q190; fish too, 15:36).
 
 ### L4
 
