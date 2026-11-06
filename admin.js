@@ -1490,6 +1490,8 @@ const overCap = () => {
   return {...o, n: o['inbox/coverage/games'] + o['inbox/coverage/sheets-id-key']};
 };
 function navs(tn, xn) {
+  // The corals' cells over the cap (OVER) on the corals' side only.
+  const OV = ASUBJ.admin.cur ? {n: 0} : OVER;
   const T = tabOf(),
     g = T[3],
     page = pageOf(),
@@ -1516,7 +1518,7 @@ function navs(tn, xn) {
       !(G[3] && G[3].fixed) && TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) && hasPage(ASUBJ, last[G[0]])
         ? last[G[0]]
         : tabHash(TABS.find(t => t[3] === G[0] && tOk(t)) || TABS.find(t => t[3] === G[0])),
-    over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Key-only genus, Coverage › Sheets & ID Key)`,
+    over = `${OV.n} genus × view cell${OV.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Key-only genus, Coverage › Sheets & ID Key)`,
     // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
     vcnt = h =>
       (h === 'inbox/todo/all' || h === 'inbox/todo/reports') && tn
@@ -1527,10 +1529,10 @@ function navs(tn, xn) {
             ? ` ${hn}`
             : h === 'inbox/todo/points' && ptOpen()
               ? ` ${ptOpen()}`
-              : OVER[h]
-                ? ` ⚠ ${OVER[h]}`
+              : OV[h]
+                ? ` ⚠ ${OV[h]}`
                 : '',
-    tcnt = t => (t[0] === 'inbox/todo' && tn ? ` (${tn})` : t[0] === 'inbox/coverage' && OVER.n ? ' ⚠' : '');
+    tcnt = t => (t[0] === 'inbox/todo' && tn ? ` (${tn})` : t[0] === 'inbox/coverage' && OV.n ? ' ⚠' : '');
   const sw = $('subj');
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
@@ -1556,8 +1558,8 @@ function navs(tn, xn) {
     a.hidden = !TABS.some(t => t[3] === G[0] && tOk(t));
     if (a.hidden) return;
     a.href = href(groupHash(G));
-    a.textContent = G[1] + (G[0] === 'inbox' && tn ? ` (${tn})` : '') + (G[0] === 'inbox' && OVER.n ? ' ⚠' : '');
-    if (G[0] === 'inbox') a.title = OVER.n ? over : '';
+    a.textContent = G[1] + (G[0] === 'inbox' && tn ? ` (${tn})` : '') + (G[0] === 'inbox' && OV.n ? ' ⚠' : '');
+    if (G[0] === 'inbox') a.title = OV.n ? over : '';
     a.setAttribute('aria-current', String(G[0] === g));
   });
   const sub = $('subnav');
@@ -1567,7 +1569,7 @@ function navs(tn, xn) {
       `<span class="adm-subtabs">${TABS.filter(t => t[3] === g && tOk(t))
         .map(
           t =>
-            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'inbox/coverage' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
+            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'inbox/coverage' && OV.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
         )
         .join('')}</span>` +
       (V.length
@@ -1591,30 +1593,32 @@ function navs(tn, xn) {
 }
 // Which kind of page this is (help text, the Stats-style views): not the header tab, see groupKey().
 const modeKey = () =>
-  cur.startsWith('players/list/journey/') || cur.startsWith('players/list/anon/')
-    ? 'journey'
-    : cur.startsWith(POINT_R)
-      ? 'point'
-      : anPage(cur)
-        ? (k => (k ? 'an-' + k : 'an'))(typeof anKey === 'function' && anKey(cur)) // its help (admin-analyses.js)
-        : LIVE_STATS.includes(cur)
-          ? 'stats'
-          : {
-              'players/list': 'users',
-              'photos/review/quality': 'quality',
-              'photos/review/growth-form': 'form',
-              'photos/genera/excluded': 'excluded',
-              'photos/genera/hidden': 'hidden',
-              'inbox/todo/all': 'todo',
-              'inbox/todo/reports': 'triage',
-              'inbox/todo/errors': 'events',
-              'inbox/todo/health': 'health',
-              'inbox/todo/points': 'points',
-              'inbox/coverage/games': 'cov',
-              'inbox/coverage/sheets-id-key': 'kcov',
-              'photos/look-alikes': 'mont',
-              'photos/candidates': 'cand'
-            }[cur] || (under(cur, FAMS) ? 'units' : 'genus');
+  cur === 'inbox/coverage/games' && ASUBJ.rank === 'family'
+    ? 'fishcov'
+    : cur.startsWith('players/list/journey/') || cur.startsWith('players/list/anon/')
+      ? 'journey'
+      : cur.startsWith(POINT_R)
+        ? 'point'
+        : anPage(cur)
+          ? (k => (k ? 'an-' + k : 'an'))(typeof anKey === 'function' && anKey(cur)) // its help (admin-analyses.js)
+          : LIVE_STATS.includes(cur)
+            ? 'stats'
+            : {
+                'players/list': 'users',
+                'photos/review/quality': 'quality',
+                'photos/review/growth-form': 'form',
+                'photos/genera/excluded': 'excluded',
+                'photos/genera/hidden': 'hidden',
+                'inbox/todo/all': 'todo',
+                'inbox/todo/reports': 'triage',
+                'inbox/todo/errors': 'events',
+                'inbox/todo/health': 'health',
+                'inbox/todo/points': 'points',
+                'inbox/coverage/games': 'cov',
+                'inbox/coverage/sheets-id-key': 'kcov',
+                'photos/look-alikes': 'mont',
+                'photos/candidates': 'cand'
+              }[cur] || (under(cur, FAMS) ? 'units' : 'genus');
 // ---- The fish units page (admin plan PR 6, on the book's families: docs/reviews/2026-11-06-fish-units-plan.md §6) ----
 // Photos › Families (#fish/photos/families/<family id>): the book's families by key group at the left, English name first,
 // the scientific names below, an IMR tag on the families and genera in the IMR course (Pierre, 2026-11-06 13:38: "a tag
@@ -1868,6 +1872,118 @@ function renderFishUnits(id) {
   const c = $v.querySelector('.adm-g.cur');
   if (c) c.scrollIntoView({block: 'nearest'});
 }
+// ---- Fish Coverage (admin plan PR 8; docs/ROADMAP.md "Admin for every subject" row 8) ----
+// Inbox › Coverage › Games on the fish side (#fish/inbox/coverage/games): per family, genus or species (the level switch),
+// the photos in play, the observations against the targets, the easy and reference photos, the phases shown (the IMR ones
+// still missing marked) and what is missing, with the candidates still waiting (autosort.js fishCov); the IMR filter of
+// the Families page (FU_IMR); Thinnest or Book order. Above it, To do (what to act on, each with its count) and Where to
+// look (the species most worth a candidate search, fishLook; ?look=all, every one).
+let FISHCOV = Object.assign({lv: 'fam', order: 'thin'}, store.get('reefid-admin-fishcov', {}));
+function renderFishCov() {
+  if (!FISHC) {
+    status();
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    fishLoad().then(() => cur === 'inbox/coverage/games' && render());
+    return;
+  }
+  status();
+  const U = FISHC.units,
+    D = fuData(),
+    C = fishCov(U, D.play, FISHC.species, FISHC.cand, D.F, fuJ),
+    UB = Object.fromEntries(U.map(u => [u.id, u])),
+    imrOn = FU_IMR === 'imr',
+    inImr = r => {
+      const u = UB[r.fam];
+      return u.imr || u.imrWith;
+    },
+    book = Object.fromEntries(U.map((u, i) => [u.id, i])),
+    fill = r => (r.of ? r.ok / r.of : Math.min(1, r.obs / r.tgt)),
+    lvs = [
+      ['fam', 'Families'],
+      ['gen', 'Genera'],
+      ['sp', 'Species']
+    ],
+    lv = lvs.some(x => x[0] === FISHCOV.lv) ? FISHCOV.lv : 'fam';
+  // To do: what to act on, each a count; a click shows only its rows, at the level it names (Codex review #659).
+  const TODO = [
+      ['spwait', 'sp', 'species under target with candidates waiting', r => r.obs < r.tgt && r.wait],
+      ['spnone', 'sp', 'species with no photo in play', r => !r.n],
+      ['famv', 'fam', 'families validated but incomplete', r => (D.F.genera || {})[r.id] && D.F.genera[r.id].ok && r.need.length],
+      ['famnr', 'fam', 'families not ready to validate', r => r.need.length]
+    ],
+    todo = TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(r => (!imrOn || inImr(r)) && fn(r)).length]).filter(x => x[3]), // under All | IMR, as the rows (Codex review #659)
+    tdo = TODO.find(x => x[0] === FISHCOV.todo && x[1] === lv);
+  let R = C[lv].filter(r => (!imrOn || inImr(r)) && (!tdo || tdo[3](r)));
+  R = R.slice().sort(
+    FISHCOV.order === 'book' ? (a, b) => book[a.fam] - book[b.fam] : (a, b) => fill(a) - fill(b) || a.n - b.n || book[a.fam] - book[b.fam]
+  );
+  const L = fishLook(C),
+    all = lookAll(),
+    lookRow = r =>
+      `<a class="cov-lk" href="${esc(fuHref(r.fam))}" title="${esc(`${r.obs}/${r.tgt} observations · ${r.wait} candidate${r.wait === 1 ? '' : 's'} waiting · circle ${r.circle}`)}">${esc(r.name)} <small><i>${esc(r.sci)}</i> · ${r.gap} to find</small></a>`,
+    look = L.length
+      ? `<div class="cov-lookb"><a class="cov-lookt" href="#${esc(ASUBJ.hash)}inbox/coverage/games?look=all" title="Where to look for photos: the full list">Where to look</a>${(all ? L : L.slice(0, LOOK_N)).map(lookRow).join('')}${all ? '' : `<a class="adm-link" href="#${esc(ASUBJ.hash)}inbox/coverage/games?look=all">All ${L.length} ›</a>`}</div>`
+      : '';
+  const name = r =>
+      lv === 'sp'
+        ? `<a href="${esc(fuHref(r.fam))}">${esc(r.name)}</a> <small><i>${esc(r.sci)}</i>${r.cs ? ' · most sighted' : ''}</small>`
+        : `<a href="${esc(fuHref(r.fam))}">${lv === 'gen' ? `<i>${esc(r.name)}</i>` : esc(r.name)}</a>${r.imr ? ` <span class="adm-src adm-imrt" title="IMR course: ${esc(r.imr)}">IMR</span>` : ''}${lv === 'gen' ? ` <small>${esc(UB[r.fam].name)}</small>` : ''}`,
+    lvl = r => (fill(r) >= 1 ? 4 : fill(r) >= 0.6 ? 3 : fill(r) >= 0.3 ? 2 : r.n ? 1 : 0),
+    phases = r => {
+      const want = r.want || [];
+      return [
+        ...want.map(x => (r.ph.includes(x) ? esc(x) : `<b class="warnc">${esc(x)}?</b>`)),
+        ...r.ph.filter(x => !want.includes(x)).map(esc)
+      ].join(' · ');
+    };
+  const head =
+    lv === 'sp'
+      ? '<th>Species</th><th title="Observations in play / target">Obs.</th>'
+      : `<th>${lv === 'gen' ? 'Genus' : 'Family'}</th><th title="Species at their target / species">At target</th>`;
+  $v.innerHTML = `<section class="adm-cov adm-fishcov">
+    ${todo.length ? `<div class="adm-filter adm-ftodo"><span class="label">To do</span>${todo.map(([k, l, t, n]) => `<button type="button" class="adm-fchip plain" data-fishtodo="${k}" data-fishtl="${l}" aria-pressed="${!!tdo && tdo[0] === k}" title="Show only these">${n} ${t}</button>`).join('')}</div>` : ''}
+    <div class="cov-look open">${look}</div>
+    <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Level">${lvs.map(([k, t]) => `<button type="button" data-fishlv="${k}" aria-pressed="${lv === k}">${t}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Shown">${[
+      ['all', 'All'],
+      ['imr', 'IMR']
+    ]
+      .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
+      .join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${[
+      ['thin', 'Thinnest'],
+      ['book', 'Book']
+    ]
+      .map(([k, t]) => `<button type="button" data-fishco="${k}" aria-pressed="${FISHCOV.order === k}">${t}</button>`)
+      .join('')}</span><b>${R.length} ${lvs.find(x => x[0] === lv)[1].toLowerCase()}</b></div>
+    <div class="adm-fishcovw"><table class="cov-t adm-fishcovt"><thead><tr>${head}<th>Photos</th><th title="Ease 4-5">Easy</th><th title="Reference photos">Ref.</th><th title="Phases shown (an IMR phase still missing: ?)">Phases</th><th title="Candidates waiting">+</th><th>Missing</th></tr></thead>
+    <tbody>${R.map(
+      r =>
+        `<tr data-id="${esc(r.id)}"><th scope="row">${name(r)}</th><td class="cov-c cov-${lvl(r)}">${r.of ? `${r.ok}/${r.of}` : `${r.obs}/${r.tgt}`}</td><td>${r.n}</td><td>${lv === 'fam' && r.easy < FISHEASY ? `<b class="warnc">${r.easy}/${FISHEASY}</b>` : r.easy}</td><td>${r.ref}</td><td class="adm-fph">${phases(r)}</td><td>${r.wait || ''}</td><td class="adm-fneed">${r.need.map(esc).join(' · ')}</td></tr>`
+    ).join('')}</tbody></table></div></section>`;
+  const keep = () => {
+    store.set('reefid-admin-fishcov', FISHCOV);
+    render();
+  };
+  // The level switch shows every row of its level; a To do chip only its rows (again: every row).
+  $v.querySelectorAll('[data-fishlv]').forEach(b => (b.onclick = () => ((FISHCOV.lv = b.dataset.fishlv), (FISHCOV.todo = ''), keep())));
+  $v.querySelectorAll('[data-fishtodo]').forEach(
+    b =>
+      (b.onclick = () => {
+        const k = b.dataset.fishtodo,
+          on = FISHCOV.todo === k && FISHCOV.lv === b.dataset.fishtl;
+        Object.assign(FISHCOV, {lv: b.dataset.fishtl, todo: on ? '' : k, order: 'thin'});
+        keep();
+      })
+  );
+  $v.querySelectorAll('[data-fishco]').forEach(b => (b.onclick = () => ((FISHCOV.order = b.dataset.fishco), keep())));
+  $v.querySelectorAll('[data-fuimr]').forEach(
+    b =>
+      (b.onclick = () => {
+        FU_IMR = b.dataset.fuimr;
+        store.set('reefid-admin-fu-imr', FU_IMR);
+        render();
+      })
+  );
+}
 function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
@@ -1889,6 +2005,8 @@ function render() {
   if (cur === 'inbox/todo/points') return renderPoints();
   if (cur.startsWith(POINT_R)) return renderPoint(cur.slice(POINT_R.length));
   // Game coverage with the Where to look banner above it (folded, open in full with ?look=all: lookAll).
+  // A subject whose units are families (fish): its own coverage (renderFishCov); the corals' grid otherwise.
+  if (cur === 'inbox/coverage/games' && ASUBJ.rank === 'family') return renderFishCov();
   if (cur === 'inbox/coverage/games') return renderCov();
   if (cur === 'inbox/coverage/sheets-id-key') return renderKcov();
   if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
@@ -2610,6 +2728,7 @@ const HELP = {
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; on a fish photo, Remove excludes it from the fish games for good (Undo brings it back) and Done clears the flag.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  fishcov: `<p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates, <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Families). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   units: `<p>The book's families (Allen et al. 2015, the key in force), by key group: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (8, 12 for the PDF's most sighted) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the family's), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only) and <b>×</b> (excluded for good): one click each, Undo steps back. <b>✓ Validated</b> once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. Candidates are added in Candidates. Publish sends it all (curation.json fish).</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; the <b>Auto</b> chip after the toggles opens its line ("off" on the chip when a field is off); Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
