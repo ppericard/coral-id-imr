@@ -12,7 +12,13 @@ const test = require('node:test'),
 const C = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-const py = code => execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\n${code}`], {cwd: ROOT, encoding: 'utf8'});
+// maxBuffer: fish-game.json grew past Node's default 1 MB of output (2026-11-06, 7555397b: spawnSync ENOBUFS).
+const py = code =>
+  execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\n${code}`], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    maxBuffer: 1 << 28
+  });
 const pil = (() => {
   try {
     py('import PIL');
