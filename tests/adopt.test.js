@@ -974,10 +974,15 @@ test('a replay made with another first-launch history is not adopted; the next s
 // Sheet v48 (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch): the sheet's replies
 // to a load and a save say which groups the signed-in player is in; the app opens the beta subject to them, for that
 // account only, and closes it again when taken out (a reload on the corals when it was on screen).
-test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async () => {
+test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async t => {
   const s = loadCodeGs(withData()),
     TOK = 'ghp_write000000000000000000',
     fish = C.SUBJECTS.find(S => S.beta);
+  // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
+  // back to 'group' here, in the app (it shares core.js's objects) and in the sheet.
+  fish.open = 'group';
+  require('vm').runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
+  t.after(() => (fish.open = 'all'));
   assert.ok(s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: []}).ok);
   const a = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await a.syncPull();

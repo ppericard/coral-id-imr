@@ -1576,6 +1576,9 @@ const WIDTHS = [390, 1280];
       // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
       // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
       {
+        // Fish opens to all since 2026-11-06 (Q158): the group page, kept for a subject that opens to a group, checked on
+        // fish set back to 'group' at runtime, then opened to all again.
+        await p.evaluate(() => (SUBJECTS.find(S => S.id === 'fish').open = 'group'));
         const beta = await p.evaluate(() => (SUBJECTS.find(S => subjGroup(S)) || {}).id);
         const grp = () =>
           p.evaluate(() => ({
@@ -1586,7 +1589,8 @@ const WIDTHS = [390, 1280];
           }));
         const coral = await grp();
         if (coral.line || coral.col) fails.push(`${w}px Players (corals): a beta group line or column ${JSON.stringify(coral)}`);
-        if (beta) {
+        if (!beta) fails.push(`${w}px Players: no subject set to open to a group`);
+        else {
           await go(beta + '/players/list');
           const g0 = await grp(),
             n = await p.evaluate(() => USERS.users.length);
@@ -1635,6 +1639,7 @@ const WIDTHS = [390, 1280];
           await go('players/list');
           await go(beta + '/players/list');
           if (!(await grp()).col) fails.push(`${w}px Players (${beta}) back to the group: no Beta column`);
+          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta); // as it is now
           await go('players/list'); // the corals' page, Dio's row still open, as the steps below expect
         }
       }

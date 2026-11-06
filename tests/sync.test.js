@@ -882,6 +882,9 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
 // v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch).
 test("groups (v48): the admin adds and removes players of a beta subject's group; the replies carry each player's", () => {
   const s = seed();
+  // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
+  // back to 'group' here.
+  require('vm').runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
   const groups = (n, pin) => s.get({name: n, pin}).groups;
   assert.deepStrictEqual(groups('Ana', '1234'), [], 'in no group: [] (the app closes the beta subject)');
   assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true}).error, 'token', 'admin only');
@@ -928,8 +931,9 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
 // group (its rows kept in the tab, read again once it is back to 'group').
 test("groups (v53): a subject that opens to all has no group, whatever its beta label; back to 'group', its rows count again", () => {
   const s = seed();
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
   const open = v => require('vm').runInContext(`CORE_.SUBJECTS.find(S => S.id === 'fish').open = ${JSON.stringify(v)}`, s.ctx);
+  open('group'); // fish opens to all since Q158: a group first, then open to all as it is now
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
   open('all');
   assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'fish').beta", s.ctx), 'the beta label kept');
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
