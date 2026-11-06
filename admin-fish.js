@@ -393,7 +393,7 @@ function renderFishCand() {
     S.querySelector('[data-add]').onclick = () => {
       FSKIP.delete(f);
       FPIN = null;
-      fishEdit(G => fishAdd(G, f, sid, j));
+      fishEdit(G => fishAdd(G, f, sid, j, p));
       if (!chk) toast(`Added: ${n.sci} (${new Set(fishInPlay(DRAFT.fish, sid).map(q => q.o || q.f)).size}/${c.target}).`);
       told();
     };

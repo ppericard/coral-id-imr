@@ -216,7 +216,8 @@
           r.add(o);
         }
         N.add[f] = sid;
-        L[f] = 'a' + put('tags', f, s.tags) + put('ease', f, s.ease) + put('phase', f, s.phase) + put('crop', f, s.crop);
+        const c = fishCopy(p, {jt: s.tags, ph: s.phase});
+        L[f] = 'a' + put('tags', f, c.tags) + put('ease', f, s.ease) + put('phase', f, c.phase) + put('crop', f, s.crop);
         R.add++;
       } else {
         N.seen[f] = 1;
@@ -317,8 +318,8 @@
   }
   // The extra phase a photo shows (as tools/fetch_fish.py photo_phase: juvenile, intermediate, male, female), or '' (adult
   // or not known): Pierre's phase and tags when he set any (then the source's annotation is not read), else the pass's
-  // phase tag, its juvenile flag, else the source's life stage or sex (st), juvenile first. Tags equal to the pass's are
-  // the copy Add and the auto-sort write beside an add, not his word (Codex review #602).
+  // phase tag, its juvenile flag, else the source's life stage or sex (st), juvenile first. The copy of the pass's values
+  // that Add and the auto-sort write beside an add carries the source's phase (fishCopy), so it is kept once added.
   const FPHW = {
     juvenile: 'juvenile',
     subadult: 'intermediate',
@@ -333,7 +334,7 @@
   const FPHASES = ['juvenile', 'intermediate', 'male', 'female'];
   function fishPhase(p, j, F) {
     F = F || {};
-    const mine = p.f in (F.phase || {}) || (p.f in (F.tags || {}) && F.tags[p.f] !== (j || {}).jt),
+    const mine = p.f in (F.phase || {}) || p.f in (F.tags || {}),
       ph = p.f in (F.phase || {}) ? F.phase[p.f] : (j || {}).ph,
       jt = (F.tags || {})[p.f] || (j || {}).jt || '';
     if (FPHW[ph]) return FPHW[ph];
@@ -346,6 +347,19 @@
         .filter(Boolean)
     );
     return FPHASES.find(x => got.has(x)) || '';
+  }
+  // The pass's tags and phase as Add and the auto-sort copy them beside an add (j: the judgment, or the auto-sort's sure
+  // values {jt, ph}), with the source's phase (p.st) when the pass gives none: the j flag for a juvenile, else the phase
+  // word. Without it the copy would read as the draft's word over the source in fishPhase, and a juvenile by its source
+  // would count as an adult once added (Codex review #602); his own edits then change it like any value.
+  function fishCopy(p, j) {
+    let tags = j && j.jt,
+      phase = (j && j.ph) || null;
+    if (FPHW[phase] || !FISH_TAGS.test(tags || '') || tags.slice(7).includes('j')) return {tags, phase};
+    const src = fishPhase({f: '', st: (p || {}).st}, null, {});
+    if (src === 'juvenile') tags = fishTag(tags, 'j');
+    else if (src) phase = src;
+    return {tags, phase};
   }
   // The swiper's queue (pure): every candidate Pierre has not decided in its species now (fishState: added, rejected,
   // excluded, sent elsewhere with Not this, where it waits as that species' candidate, marked from), each with its species
@@ -472,7 +486,7 @@
   // carries its tags and ease for the game, admin plan PR 7), and its "seen" mark taken off (a photo he rejected
   // before and adds now). Not logged as auto: his own decision. A Check he answers this way keeps its log code, which
   // fishCompare reads against his keep.
-  function fishAdd(F, f, sid, j) {
+  function fishAdd(F, f, sid, j, p) {
     F = F || {};
     const N = {...F, add: {...(F.add || {}), [f]: sid}},
       put = (k, v) => {
@@ -486,9 +500,10 @@
     // An unsure judgment too (u: the judge doubted its code or its keep): the best description of the photo there is
     // until Pierre's own tags (admin plan PR 5b).
     if (j) {
-      put('tags', j.jt);
+      const c = fishCopy(p, j);
+      put('tags', c.tags);
       put('ease', j.e);
-      put('phase', j.ph);
+      put('phase', c.phase);
       put('crop', j.c);
     }
     return N;
