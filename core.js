@@ -2475,6 +2475,42 @@
   // Whether a record is under the domain-score rules (s.dp), and the three readings every consumer goes through:
   // barOf (the dynamic bar, 0 to 0.95), examOpen (the mastery exam may start), keepsMark (a learned genus stays learned).
   const domOn = s => !!s && Array.isArray(s.dp) && typeof s.ds === 'number';
+  // A record of a subject the sheet does not replay (SUBJECTS replay false: fish), kept under the former moving average
+  // s.pg, rebuilt on the device under the domain-score rules (Pierre, 2026-11-06, Q200; model.js domRecalcAll), silently.
+  // Signed-in devices keep no log of the answers the sheet has confirmed, and the sheet's answer log is not readable by
+  // players, so the rebuild works from what every copy of the record holds: its right and wrong answers (ok, ko) and the
+  // order of its last 10 (h). The earlier answers are spread evenly, rights among misses, then the last 10 in their
+  // order, each on a photo of the unit's average difficulty d (its genus offset with one view alone) among k choices.
+  // Approximate (the photos, formats and memory of each answer are not kept), deterministic, the same on every device.
+  // A false alarm (this unit named on another unit's photo, scoreAnswer) adds a 0 to h and no ko: it is no miss on the
+  // unit's own photos (Q174, faOf takes it), so h keeps at most ko of its zeros, the latest (Codex review #688: its
+  // earlier zeros could be false alarms, and an own miss invented there would count each false alarm twice).
+  // Returns the record's new dp and ds (domStep from the prior), the record itself unchanged.
+  function domFromCounts(s, d, k = 4, mu = 0) {
+    const ok = Math.max(0, s.ok || 0),
+      ko = Math.max(0, s.ko || 0),
+      h0 = String(s.h || '').replace(/[^01]/g, ''),
+      z0 = [...h0].filter(c => c === '0').length;
+    let drop = Math.max(0, z0 - ko);
+    const h = [...h0]
+        .filter(c => c === '1' || (drop > 0 ? (drop--, false) : true))
+        .join('')
+        .slice(-(ok + ko)),
+      hr = [...h].filter(c => c === '1').length,
+      r0 = Math.max(0, ok - hr),
+      m0 = Math.max(0, ko - (h.length - hr)),
+      seq = [];
+    for (let i = 0, r = 0; i < r0 + m0; i++) {
+      // Bresenham: the i-th earlier answer is right when the rights so far fall behind their share.
+      const right = r0 > 0 && (m0 === 0 || (r + 1) * (r0 + m0) <= (i + 1) * r0 + r0 / 2);
+      seq.push(right);
+      if (right) r++;
+    }
+    [...h].forEach(c => seq.push(c === '1'));
+    const x = {};
+    seq.forEach(ok1 => domStep(x, ok1, d, k, 1, {mu}));
+    return {dp: x.dp, ds: x.ds};
+  }
   // The false-alarm correction (Pierre, 2026-11-06, Q174; it replaces rule L2's miss on the genus wrongly given in the
   // bar). Naming genus n for a photo of another genus is a false alarm: it says the player answers n too readily (a
   // response bias), not that they fail to name n's own photos, so it does not enter n's posterior. Signal detection
@@ -4474,6 +4510,7 @@
     barOf,
     examOpen,
     keepsMark,
+    domFromCounts,
     faOf,
     looksLeft,
     afterBkt,

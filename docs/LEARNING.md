@@ -2517,7 +2517,14 @@ the sheet's leaderboard (Code.gs `pctOf_` now calls `core.js` `pctOf`, no copy) 
 (saved with `s.pg`) keeps it, and the former rule with it, until the sheet's full replay under rules version 9 reaches
 the device; a genus first answered in the app takes the new bar only once the sheet replies v ≥ 87 (`DOM_SHEET`,
 model.js `domRules`), and the app's own replay of its queued answers follows the same version. The fish are not
-replayed: a fish unit first answered takes the new bar at once, one answered before keeps `s.pg`. The `pgStep` code
+replayed: a fish unit first answered takes the new bar at once, and one answered before is rebuilt on the device, silently
+(Pierre, 2026-11-06, Q200; no card, the apology is the corals' only). The device keeps no log of the answers the sheet has
+confirmed, and players cannot read the sheet's log, so the rebuild works from what every copy of the record holds
+(`core.js` `domFromCounts`, model.js `domRecalcAll`, at load, at a subject switch and after a pull): its right and wrong
+answers and the order of its last 10. The earlier answers are spread evenly, then the last 10 in order, each on a photo of
+the unit's average difficulty (`genusDiff` with one view alone) among 4 choices. It is approximate but the same on every
+device, done once per record, and a learned mark is kept (`afterBkt`). Simulated, a unit at 71% after 6 right answers
+falls to about 60% (on an average photo; less on easy units). The `pgStep` code
 remains only for those records and can be deleted once none is left.
 
 **The shared slope (Q147, pending Pierre).** One input, `q.S` (logged `s`), used in the expectation (the ability step,
