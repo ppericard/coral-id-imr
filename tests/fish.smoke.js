@@ -747,7 +747,11 @@ const server = http.createServer((req, res) => {
         boardAt.fish = 0;
         viewBoard();
         const fresh = await shown();
+        // ⚙ Leaderboard On / Off drops every subject's board in memory, so the next visit asks again (Codex review #693).
+        document.querySelector('#boardset button[data-board="1"]').click();
+        const dropped = !Object.keys(boardP).length;
         return {
+          dropped,
           asked,
           old,
           fresh,
@@ -759,6 +763,7 @@ const server = http.createServer((req, res) => {
       }
     });
     if (
+      !fb.dropped ||
       !fb.asked.length ||
       !fb.asked.every(a => a === 'board=1&s=fish') ||
       !/not available yet/.test(fb.old) ||

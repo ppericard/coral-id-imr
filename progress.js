@@ -1300,7 +1300,7 @@ document.querySelectorAll('#boardset button').forEach(
     (b.onclick = () => {
       store.set(BOARD, {v: b.dataset.board === '1' ? 1 : 0, t: Date.now()});
       showBoardSet();
-      boardP = null;
+      Object.keys(boardP).forEach(k => delete boardP[k]); // every subject's board fetched again (Codex review #693)
       syncSoon();
     })
 );
