@@ -611,7 +611,9 @@ const fishLoad = () =>
       // curated photos are not required: without them every family plays on the stopgap's.
       if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
       FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
-      return fishBuild();
+      const F = fishBuild();
+      if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
+      return F;
     })
     .catch(e => {
       FISHP = null;
