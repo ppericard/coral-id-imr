@@ -1286,7 +1286,7 @@ test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it 
     answers: [ans('z1', {tz: 480}), ans('z2', {tz: -300}), ans('z3', {tz: 900}), ans('z4', {tz: '480'}), ans('z5', {tz: 330.5}), ans('z6')]
   });
   const A = s.sheets.Answers;
-  assert.deepStrictEqual([...A.rows[0].slice(13)], ['Enlarged', 'UTC offset']);
+  assert.deepStrictEqual([...A.rows[0].slice(13, 15)], ['Enlarged', 'UTC offset']);
   assert.deepStrictEqual(
     A.rows.slice(1).map(r => r[14]),
     [480, -300, '', '', '', '']
@@ -1294,6 +1294,39 @@ test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it 
   assert.deepStrictEqual(
     s.post({readAnswers: 1, token: T}).rows.map(x => x[14]),
     [480, -300, null, null, null, null]
+  );
+});
+
+test("v59 Answers: a typed answer's raw text and its spelling step at the end, sanitised, logged only", () => {
+  // A player's idea, Pierre 2026-11-05: a close typo of the right name is retyped once (quiz.js typeBind); the name
+  // study's question g: the raw text of typed answers, so near-misses can be studied.
+  const s = loadCodeGs();
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [
+      ans('y1', {ty: 'Pectinea', tr: 1}),
+      ans('y2', {ty: '  pactinia ', tr: 0}),
+      ans('y3', {ty: '=HYPERLINK("x")'}),
+      ans('y4', {ty: 'a'.repeat(60) + '\u0007', tr: 'yes'}),
+      ans('y5', {ty: 42}),
+      ans('y6')
+    ]
+  });
+  const A = s.sheets.Answers;
+  assert.deepStrictEqual([...A.rows[0].slice(15)], ['Typed', 'Retyped right']);
+  assert.deepStrictEqual(
+    A.rows.slice(1).map(r => [r[15], r[16]]),
+    [
+      ['Pectinea', 1],
+      ['pactinia', 0],
+      ['=HYPERLINK("x")', ''], // stored as text behind the quote prefix (safe_), never a formula
+      ['a'.repeat(40), ''],
+      ['', ''],
+      ['', '']
+    ]
   );
 });
 

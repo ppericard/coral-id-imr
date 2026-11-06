@@ -36,7 +36,7 @@ const gameHelp = cur =>
     cur.startsWith('quiz-duel')
       ? ''
       : `
-  <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Small typos and old names are accepted; <b>I don't know</b> shows the answer (it counts as a miss). A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>`
+  <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer (it counts as a miss). A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>`
   }`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
 // Typed questions (model.js TYPED; Pierre, 2026-11-03): the player types the genus instead of picking one of the
@@ -66,47 +66,88 @@ const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
     <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${S.one}">
     <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="next sec" data-idk>I don't know</button></div>
     <p class="tymsg" aria-live="polite"></p></form>`;
-// Binds a typed form: done(m, text) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
+// Binds a typed form: done(m, text, sp) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
 // word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it.
 // After the answer the field is locked; after "I don't know" it is emptied (a word rejected earlier is no answer).
 // rk, one: the rank of the unit asked and its word ("genus" for a fish scientific genus): see typeMatch.
-function typeBind(form, done, S = SUBJ, rk, one = S.one) {
+// o.t, the unit asked: the spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"; core.js typeVerdict). A
+// name of it typed within the tolerance but not exactly is still a right answer (the genus was recognised: the grading
+// is unchanged), but the player first retypes it once: a warm nudge, "✏️ So close! Right genus: just fix the spelling
+// and try once more" (Pierre, 2026-11-06: the first plain line read like "a mean teacher saying no"), the field keeps
+// the text selected and the focus, and I don't know becomes Show me (skips the retype, never a miss). Then done(m, text, sp)
+// with the first reading and text, sp = {r: 1 when retyped exactly, else 0; text: the retype, '' when skipped}. Another
+// unit's name is never "close": a wrong answer as before. o.close(), when the retype is asked: the quiz stops its clock
+// there (the seconds logged are the recognition's, not the spelling's).
+function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
   const inp = form.querySelector('input'),
-    msg = form.querySelector('.tymsg');
-  let over = false;
-  const end = (m, text) => {
+    msg = form.querySelector('.tymsg'),
+    idk = form.querySelector('[data-idk]');
+  let over = false,
+    first = null; // {m, text}: the close reading, while the player retypes it
+  const end = (m, text, sp) => {
     over = true;
     msg.textContent = '';
+    form.classList.remove('retry');
     if (!m) inp.value = '';
     inp.disabled = true;
     form.querySelectorAll('button').forEach(b => (b.disabled = true));
     inp.blur(); // the phone's keyboard closes, so the feedback is in view
-    done(m, text);
+    done(m, text, sp);
   };
+  const read = text => (S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk)));
   form.onsubmit = e => {
     e.preventDefault();
     if (over) return;
     const text = inp.value.trim();
     if (!text) return inp.focus();
-    const m = S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk));
+    // The retype: one only, whatever it reads as (exact or not, the first reading is the answer).
+    if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t) === 'exact' ? 1 : 0, text});
+    const m = read(text);
     if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
-    else return end(m, text);
+    else if (o.t && typeVerdict(m, o.t) === 'close') {
+      first = {m, text};
+      form.classList.add('retry');
+      msg.innerHTML = `<span class="tymed" aria-hidden="true">✏️</span><span><b>So close!</b> Right ${esc(one)}: just fix the spelling and try once more.</span>`;
+      idk.textContent = 'Show me';
+      if (o.close) o.close(); // after the nudge is in: the quiz refits its stage around it
+      inp.select();
+    } else return end(m, text);
     inp.focus();
   };
-  form.querySelector('[data-idk]').onclick = () => !over && end(null, '');
+  idk.onclick = () => !over && (first ? end(first.m, first.text, {r: 0, text: ''}) : end(null, ''));
   // A hardware keyboard types at once; on a phone the keyboard opens only on a tap (no focus without one).
   if (!matchMedia('(pointer: coarse)').matches) inp.focus({preventScroll: true});
 }
-// How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact).
-const typeRead = (m, text) =>
-  !m || m.exact
+// The spelling of name with the letters text got wrong in bold (core.js typeDiff), escaped.
+const typeSpell = (text, name) => {
+  const at = new Set(typeDiff(text, name, UNITS[SUBJ.id].norm));
+  return [...String(name)]
+    .map((c, i) => (at.has(i) ? `<b>${esc(c)}</b>` : esc(c)))
+    .join('')
+    .replace(/<\/b><b>/g, ''); // neighbouring letters in one bold run
+};
+// How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact, or when
+// the spelling step was asked: typeStep says it in the verdict's own line).
+const typeRead = (m, text, sp) =>
+  !m || m.exact || sp
     ? ''
     : m.old
       ? m.alt
         ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
         : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
       : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
+// The spelling step's outcome (typeBind sp) for the verdict's one line (Pierre, 2026-11-06: one line, "✓ Yes, but not
+// quite: it's spelled Galaxea", in place of "Yes, it's Galaxea" plus a second line), null when none was asked or the
+// retype was exact (Pierre, 2026-11-06: no mistake left to point out, so the plain "✓ Yes, it's X"). Else {spelled}: the
+// name as it is spelled, the letters the last try got wrong marked (typeSpell, .tysp), in italics as uname (a fish entry
+// upright), and old: the name typed was an old one (alt: another name of a fish entry), so the line names the unit after it.
+const typeStep = (m, text, sp) => {
+  if (!sp || !m || m.exact || sp.r) return null;
+  const name = m.old || unameT(m.g),
+    s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
+  return {spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
+};
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
 // steps, core.js rtWeight, the enlarged mark is logged only): the clock starts when the question's first photo is in
@@ -202,9 +243,10 @@ function question(cur, target, choices, prompt, set, kq) {
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k, ph.length + R.length)).join(''));
     fitStage();
   };
+  let tm0 = null; // the clock read when a typed answer's retype was asked (typeBind o.close): the seconds of the recognition
   const go = c => {
     const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'),
-      tm = {rt: qclockRead(), zm: QCLOCK.zm};
+      tm = tm0 || {rt: qclockRead(), zm: QCLOCK.zm};
     showHint();
     reveal();
     answered = true;
@@ -219,13 +261,23 @@ function question(cur, target, choices, prompt, set, kq) {
   if (tf)
     typeBind(
       tf,
-      (m, text) => {
-        Object.assign(TYPEDQ || {}, {m, text});
+      (m, text, sp) => {
+        Object.assign(TYPEDQ || {}, {m, text, sp});
         go(m ? m.g : '');
       },
       SUBJ,
       rankOf(target),
-      GX(target).one || SUBJ.one
+      GX(target).one || SUBJ.one,
+      {
+        t: target,
+        // The spelling step (typeBind): the answer is given, only its spelling waits; the hint stays as it was. The nudge
+        // makes the answer column taller: the stage gives up that room so it stays on one screen (Codex review #616).
+        close: () => {
+          tm0 = {rt: qclockRead(), zm: QCLOCK.zm};
+          if (hb) hb.hidden = true;
+          fitStage();
+        }
+      }
     );
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
@@ -548,7 +600,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       (warm ? '|c' : '') +
       (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
       // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
-      // answer a is the genus read ('' for "I don't know"), never the raw text; it offered no choices (ch empty).
+      // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
       (tq ? '|t' : '') +
       (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
@@ -568,7 +620,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // The device's UTC offset now, in minutes east of UTC (Manila +480): the time of day at home for the analyses (Pierre,
     // 2026-11-04; sheet v44 stores it, an older script ignores the field: Code.gs logAnswers_ keeps only the fields it
     // knows, so it needs no *_SHEET gate, rule D4).
-    tz: -new Date().getTimezoneOffset()
+    tz: -new Date().getTimezoneOffset(),
+    // A typed answer's raw text (ty: what was typed first, '' for "I don't know") and its spelling step (tr: 1 retyped
+    // exactly, 0 retyped wrong or skipped; absent when none was asked): the name study's question g (docs/reviews/
+    // 2026-11-05-name-confusion-study.md). Sheet v59 stores them (Typed, Retyped right); an older script ignores them
+    // (Code.gs logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
+    ...(tq ? {ty: String(tq.text || '').slice(0, 40)} : {}),
+    ...(tq && tq.sp ? {tr: tq.sp.r ? 1 : 0} : {})
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
@@ -648,13 +706,15 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   });
   // A typed answer: the field takes the right / wrong look of a choice, a quiet one after "I don't know".
   const tyIn = tq && $v.querySelector('#tyin');
-  if (tyIn) tyIn.classList.add(good ? 'ok' : c ? 'ko' : 'idk');
+  // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
+  if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c ? 'ko' : 'idk');
   const idk = !!tq && !c,
-    read = tq ? typeRead(tq.m, tq.text) : '';
+    read = tq ? typeRead(tq.m, tq.text, tq.sp) : '',
+    step = tq && good ? typeStep(tq.m, tq.text, tq.sp) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
   document.getElementById('after').innerHTML =
-    `${fbBody(target, c, good, idk, again, ph, read)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
+    `${fbBody(target, c, good, idk, again, ph, read, step)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q');
@@ -688,8 +748,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
 // The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
 // another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to
 // its sheet and to the comparison. A fish entry (a record with a name, core.js fishGen): the IMR cues, how IMR tells the
-// look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet.
-function fbBody(target, c, good, idk, again, ph, read) {
+// look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet. step: a
+// typed answer's spelling step (typeStep), said in the verdict's one line.
+function fbBody(target, c, good, idk, again, ph, read, step) {
   const g = GX(target),
     fish = !!g.name,
     C = !good && GX(c) ? GX(c) : null,
@@ -698,14 +759,23 @@ function fbBody(target, c, good, idk, again, ph, read) {
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
       `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
-  const name = fish
-      ? `<b>${uname(target)}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
-      : `<a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+  // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
+  const named = inner =>
+      fish
+        ? `<b>${inner}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
+        : `<a href="#g-${esc(target)}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+    name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
+    // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
+    // letters marked (an old name typed: that name, then the unit); the words in normal weight and the name in bold, so
+    // the name is what the eye catches (Pierre, 2026-11-06; .fb h3.tystep).
+    said = !step
+      ? `it's ${name}`
+      : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   return `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> it's ${name}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     ${more}`;
 }
