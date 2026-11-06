@@ -1041,8 +1041,8 @@ const WIDTHS = [390, 1280];
       }
       // The fish units page's actions (admin plan PR 6), on four photos of a species put in play for the test (the served
       // curation's fish part holds no add): their order (reference photos first, then the easiest, Pierre's own never
-      // first), Feature (numbered, first), ★ Cover, Remove (rejected, off the page, Undo), Not this (no game species: its
-      // own row, Put back), × (excluded), ✓ Validated refused while something is missing; a wink entry's surprise card.
+      // first), Feature (numbered, first), ★ Cover, Remove (rejected, off the page, Undo), Not this (no game species: in its
+      // row with any the served curation already holds, Put back), × (excluded), ✓ Validated refused while something is missing; a wink entry's surprise card.
       // Every click goes to the draft's fish part only (curation.json fish genera, add, seen, out, exclude), never a coral
       // key; the fish part is put back as it was after.
       {
@@ -1112,12 +1112,12 @@ const WIDTHS = [390, 1280];
           await sel.selectOption('x');
           await settle();
           s = await sec();
-          if (s.tiles.some(x => x.startsWith(a)) || s.F.out[a] !== 'x' || s.out.join() !== a)
+          if (s.tiles.some(x => x.startsWith(a)) || s.F.out[a] !== 'x' || !s.out.includes(a))
             fails.push(`${w}px Units page: Not this ${JSON.stringify({tiles: s.tiles, out: s.out, o: s.F.out})}`);
           await p.click(`.adm-out .adm-tile[data-f="${a}"] [data-fu="back"]`);
           await settle();
           s = await sec();
-          if (a in (s.F.out || {}) || s.out.length) fails.push(`${w}px Units page: Put back ${JSON.stringify(s.out)}`);
+          if (a in (s.F.out || {}) || s.out.includes(a)) fails.push(`${w}px Units page: Put back ${JSON.stringify(s.out)}`);
         }
         await act(c, 'exclude');
         s = await sec();
