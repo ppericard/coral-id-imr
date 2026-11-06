@@ -2104,7 +2104,19 @@ function renderFishReview(kind) {
             return base().slice(7).includes('j') ? fishSet(N, f, 'tags', fishTag(base(), 'j')) : N;
           }))
     );
-    tl.querySelectorAll('[data-frv]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv)))));
+    // The view only: taking the tags as his must not drop a phase the photo shows through its source's annotation (p.st)
+    // or the auto-sort's tags: it is written as his too, in the same step (Codex review #663).
+    tl.querySelectorAll('[data-frv]').forEach(
+      b =>
+        (b.onclick = () =>
+          fx(G => {
+            const ph0 = fishPhase(p, fuJ(f), G);
+            let N = fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv));
+            if (fishPhase(p, fuJ(f), N) === ph0) return N;
+            if (ph0 === 'juvenile') return fishSet(N, f, 'tags', fishTag(N.tags[f], 'j'));
+            return fishSet(N, f, 'phase', ph0);
+          }))
+    );
     // Juvenile: the j flag on (as the fish Candidates set it), or off together with a 'juvenile' phase word (the pass's).
     tl.querySelectorAll('[data-frj]').forEach(
       b =>
