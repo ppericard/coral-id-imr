@@ -596,6 +596,36 @@ const WIDTHS = [390, 1280];
           await settle();
           if (await p.$('#view [data-frp]')) fails.push(`${w}px Fish Photo review: a phase row on the Butterflyfishes`);
         }
+        // Fish Look-alikes (admin plan PR 10): one row per IMR pair of families, phase-matched photos, Auto / Manual, Shown /
+        // Hidden; the corals keep their pairs (the photos put in play above are still there).
+        await go(other.hash + 'photos/look-alikes');
+        const lk = () =>
+          p.evaluate(() => ({
+            rows: [...document.querySelectorAll('.adm-fishmont .adm-mrow')].map(r => r.querySelector('.adm-mhead b').textContent),
+            prev: document.querySelectorAll('.adm-fishmont .adm-mprev img').length,
+            want: fishPairs(FISHC.units).length,
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        let l = await lk();
+        if (l.rows.length !== l.want || l.want < 5 || !l.rows.includes('Butterflyfishes / Angelfishes') || l.wide > 0)
+          fails.push(`${w}px Fish Look-alikes: ${JSON.stringify(l)}`);
+        if (once) {
+          const k = 'f:Angelfishes|f:Butterflyfishes',
+            row = `.adm-fishmont .adm-mrow:has([data-k="${k}"])`;
+          if (await p.$(`${row} .adm-mth[data-side="a"]:not(.on)`)) {
+            const f = await p.evaluate(r => document.querySelector(r + ' .adm-mth[data-side="a"]:not(.on)').dataset.f, row);
+            await p.click(`${row} .adm-mth[data-f="${f}"]`);
+            await p.click(`${row} [data-fmhide="1"]`);
+            const e = await p.evaluate(k => (DRAFT.fish.mont || {})[k], k);
+            if (!e || e.a !== f || !e.hide || !e.v || !/fish look-alike pair/.test(await p.evaluate(() => pubSummary())))
+              fails.push(`${w}px Fish Look-alikes: pick and hide ${JSON.stringify(e)}`);
+            await p.click(`${row} [data-fmauto]`);
+            const e2 = await p.evaluate(k => (DRAFT.fish.mont || {})[k], k);
+            if (!e2 || !e2.hide || e2.a || e2.v) fails.push(`${w}px Fish Look-alikes: Auto keeps only Hidden ${JSON.stringify(e2)}`);
+          } else fails.push(`${w}px Fish Look-alikes: no photo to pick in ${k}`);
+        }
+        await go('photos/look-alikes');
+        if (await p.$('.adm-fishmont')) fails.push(`${w}px Look-alikes on the corals' side drew the fish pairs`);
         await p.evaluate(h => {
           while (HIST.length > h) undo();
         }, h0);

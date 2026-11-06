@@ -471,7 +471,8 @@
           'players/list',
           'photos/families',
           'photos/review/ease',
-          'photos/review/phase-framing'
+          'photos/review/phase-framing',
+          'photos/look-alikes'
         ],
         origins: [
           ['own', 'Pierre', 'Pierre'],
