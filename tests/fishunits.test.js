@@ -323,3 +323,43 @@ test('Photo review: fishSet through fishOwn, fishTag, fishAgree against the pass
     'male = male; juvenile (j flag) = juvenile'
   );
 });
+
+test('Look-alikes: fishPairs from the IMR lines, fishMontPick phase-matched, fishMontSet', () => {
+  const U = [
+    {id: 'f:B', look: [['f:A', 'B: no spine']], lsrc: {'f:A': 'IMR fish presentation, slide 3'}},
+    {
+      id: 'f:A',
+      look: [
+        ['f:B', 'A: a spine'],
+        ['f:Z', 'not a game family'],
+        ['f:B', 'A: a spine']
+      ]
+    },
+    {id: 'f:C', look: []}
+  ];
+  assert.deepStrictEqual(A.fishPairs(U), [
+    {
+      k: 'f:A|f:B',
+      A: 'f:B',
+      B: 'f:A',
+      cues: [
+        ['f:B', 'B: no spine', 'IMR fish presentation, slide 3'],
+        ['f:A', 'A: a spine', 'IMR course']
+      ]
+    }
+  ]);
+  const ph = p => p.ph || '',
+    LA = [{f: 'a1'}, {f: 'a2', ph: 'juvenile'}, {f: 'a3', ph: 'male'}],
+    LB = [{f: 'b1', ph: 'juvenile'}, {f: 'b2'}];
+  let m = A.fishMontPick(null, LA, LB, ph);
+  assert.deepStrictEqual([m.v, m.a.f, m.b.f, m.set, m.LA.map(p => p.f)], ['adult', 'a1', 'b2', false, ['a1', 'a3']], 'a male is an adult');
+  m = A.fishMontPick({v: 'juvenile', a: 'a1', b: 'b1'}, LA, LB, ph);
+  assert.deepStrictEqual([m.v, m.a.f, m.b.f, m.set], ['juvenile', 'a2', 'b1', true], 'his photo out of the phase: the first of it');
+  m = A.fishMontPick({v: 'juvenile'}, LA, [{f: 'b2'}], ph);
+  assert.strictEqual(m.v, 'adult', 'a phase one family lacks: adult');
+  assert.strictEqual(A.fishMontPick({hide: true}, [], LB, ph).v, null);
+  let F = A.fishMontSet({}, 'f:A|f:B', {v: 'adult', a: 'a3', b: null, hide: false});
+  assert.deepStrictEqual(F.mont, {'f:A|f:B': {v: 'adult', a: 'a3'}});
+  F = A.fishMontSet(F, 'f:A|f:B', {hide: false});
+  assert.deepStrictEqual(F.mont, {}, 'Auto with nothing hidden: automatic again');
+});

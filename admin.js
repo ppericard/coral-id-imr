@@ -1624,7 +1624,7 @@ const modeKey = () =>
                 'inbox/todo/points': 'points',
                 'inbox/coverage/games': 'cov',
                 'inbox/coverage/sheets-id-key': 'kcov',
-                'photos/look-alikes': 'mont',
+                'photos/look-alikes': ASUBJ.rank === 'family' ? 'fishmont' : 'mont',
                 'photos/candidates': 'cand'
               }[cur] || (under(cur, FAMS) ? 'units' : 'genus');
 // ---- The fish units page (admin plan PR 6, on the book's families: docs/reviews/2026-11-06-fish-units-plan.md §6) ----
@@ -2178,6 +2178,108 @@ function renderFishReview(kind) {
     if (!p) tl.remove();
   });
 }
+// ---- Fish Look-alikes (admin plan PR 10; docs/ROADMAP.md "Admin for every subject" row 10) ----
+// Photos › Look-alikes on the fish side (#fish/photos/look-alikes): one row per pair of families the IMR course compares
+// (autosort.js fishPairs, from fish.json families look), with IMR's lines on them (sourced), a phase switch (Adult,
+// Juvenile, All: the two photos phase-matched), Auto / Manual and Shown / Hidden as the coral pairs, the two photos side
+// by side and a strip of each family's photos in play (the page's order: the families page's) to pick from. His picks
+// in curation.json fish mont {pair: {v, a, b, hide}} (the coral key names), through the draft and Publish (rule A1).
+const FMONT_T = {adult: 'Adult', juvenile: 'Juvenile', all: 'All'};
+function renderFishMont() {
+  if (!FISHC) {
+    status();
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    fishLoad().then(() => cur === 'photos/look-alikes' && render());
+    return;
+  }
+  status();
+  const U = FISHC.units,
+    UB = Object.fromEntries(U.map(u => [u.id, u])),
+    D = fuData(),
+    F = D.F,
+    P = fishPairs(U),
+    ph = p => fishPhase(p, fuJ(p.f), F),
+    famL = id => (u => fuFam(u, D).all)(UB[id]),
+    STRIP = 24;
+  const thumb = (p, side, x, on) =>
+    `<button type="button" class="adm-mth${on ? ' on' : ''}" data-k="${esc(p.k)}" data-side="${side}" data-f="${esc(x.f)}" title="${esc(fuName(x.sid))}"><img ${crSrc(fuP(x), 1)} alt="" loading="lazy"><span class="adm-src o-${origin(x)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(x)) || [, , origin(x)])[2])}</span></button>`;
+  $v.innerHTML = `<section class="adm-quality adm-mont adm-fishmont">${
+    P.length
+      ? P.map(p => {
+          const LA = famL(p.A),
+            LB = famL(p.B),
+            m = fishMontPick((F.mont || {})[p.k], LA, LB, ph),
+            phases = FMONT_V.filter(v => fishMontPick({v}, LA, LB, ph).v === v);
+          return `<article class="adm-mrow${m.set ? ' set' : ''}${m.hide ? ' off' : ''}"><div class="adm-mhead"><b>${esc(UB[p.A].name)} / ${esc(UB[p.B].name)}</b><small>${p.cues.map(([, w, s]) => `${esc(w)} (${esc(s)})`).join(' · ')}</small>
+      <span class="adm-qseg adm-lvseg" role="group" aria-label="Phase">${FMONT_V.map(v => `<button type="button" data-k="${esc(p.k)}" data-fmv="${v}" aria-pressed="${m.v === v}"${phases.includes(v) ? '' : ' disabled'}>${FMONT_T[v]}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Pick"><button type="button" data-k="${esc(p.k)}" data-fmauto aria-pressed="${!m.set}" title="Automatic pick">Auto</button><button type="button" aria-pressed="${m.set}" disabled title="Manual">Manual</button></span>
+      <span class="adm-qseg adm-lvseg adm-mvis" role="group" aria-label="On the site"><button type="button" data-k="${esc(p.k)}" data-fmhide="0" aria-pressed="${!m.hide}" title="Shown on the site">Shown</button><button type="button" data-k="${esc(p.k)}" data-fmhide="1" aria-pressed="${m.hide}" title="Hidden from the site">Hidden</button></span></div>
+      ${
+        m.v
+          ? `<div class="adm-mbody"><div class="adm-mprev"><img ${crSrc(fuP(m.a))} alt="${esc(UB[p.A].name)}"><img ${crSrc(fuP(m.b))} alt="${esc(UB[p.B].name)}"></div>
+        <div class="adm-msides"><div>${esc(UB[p.A].name)} <small><i>${esc(fuName(m.a.sid))}</i></small><div class="adm-mstrip">${m.LA.slice(
+          0,
+          STRIP
+        )
+          .map(x => thumb(p, 'a', x, x.f === m.a.f))
+          .join('')}</div></div><div>${esc(UB[p.B].name)} <small><i>${esc(fuName(m.b.sid))}</i></small><div class="adm-mstrip">${m.LB.slice(
+          0,
+          STRIP
+        )
+          .map(x => thumb(p, 'b', x, x.f === m.b.f))
+          .join('')}</div></div></div></div>`
+          : '<p class="note">No photo in play in both families yet.</p>'
+      }</article>`;
+        }).join('')
+      : '<p class="note">No look-alike pairs in fish.json.</p>'
+  }</section>`;
+  const curE = k => ({...((DRAFT.fish || {}).mont || {})[k]});
+  const keep = e2 => {
+    const y = window.scrollY;
+    DRAFT.fish = fishMontSet(DRAFT.fish, e2[0], e2[1]);
+    saveDraft();
+    renderFishMont();
+    window.scrollTo(0, y);
+  };
+  const pickOf = k => {
+    const p = P.find(x => x.k === k);
+    return [p, fishMontPick(curE(k), famL(p.A), famL(p.B), ph)];
+  };
+  // A phase keeps the two photos on show when they belong to it (always so for All).
+  $v.querySelectorAll('[data-fmv]').forEach(
+    b =>
+      (b.onclick = () => {
+        const k = b.dataset.k,
+          [p, m] = pickOf(k),
+          n = fishMontPick({v: b.dataset.fmv, a: m.a && m.a.f, b: m.b && m.b.f}, famL(p.A), famL(p.B), ph);
+        keep([
+          k,
+          {hide: curE(k).hide, v: n.v, a: n.a && n.a.f === (m.a && m.a.f) ? n.a.f : null, b: n.b && n.b.f === (m.b && m.b.f) ? n.b.f : null}
+        ]);
+      })
+  );
+  $v.querySelectorAll('.adm-fishmont .adm-mth').forEach(
+    b =>
+      (b.onclick = () => {
+        const k = b.dataset.k,
+          [, m] = pickOf(k);
+        keep([k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [b.dataset.side]: b.dataset.f}]);
+      })
+  );
+  $v.querySelectorAll('[data-fmauto]').forEach(
+    b =>
+      (b.onclick = () => {
+        if (curE(b.dataset.k).v) keep([b.dataset.k, {hide: curE(b.dataset.k).hide}]);
+      })
+  );
+  $v.querySelectorAll('[data-fmhide]').forEach(
+    b =>
+      (b.onclick = () => {
+        const e = curE(b.dataset.k),
+          h = b.dataset.fmhide === '1';
+        if (!!e.hide !== h) keep([b.dataset.k, {...e, hide: h}]);
+      })
+  );
+}
 function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
@@ -2213,7 +2315,7 @@ function render() {
   if (cur === 'photos/review/by-difficulty') return renderDiff();
   if (cur === 'photos/stats/overview') return renderPstats();
   if (modeKey() === 'stats') return renderStats();
-  if (cur === 'photos/look-alikes') return renderMont();
+  if (cur === 'photos/look-alikes') return ASUBJ.rank === 'family' ? renderFishMont() : renderMont();
   // A subject with its own part of curation.json (fish) has its own swiper (admin-fish.js, admin plan PR 5a).
   if (cur === 'photos/candidates') return ASUBJ.admin.cur && typeof renderFishCand === 'function' ? renderFishCand() : renderCand();
   if (under(cur, FAMS)) return renderFishUnits(cur.slice(FAMS.length + 1));
@@ -2926,6 +3028,7 @@ const HELP = {
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; on a fish photo, Remove excludes it from the fish games for good (Undo brings it back) and Done clears the flag.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   fishcov: `<p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates, <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Families). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
+  fishmont: `<p>The pairs of families the IMR course compares (its lines, from fish.json), one row each. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in the Families page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p>`,
   units: `<p>The book's families (Allen et al. 2015, the key in force), by key group: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (8, 12 for the PDF's most sighted) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the family's), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only) and <b>×</b> (excluded for good): one click each, Undo steps back. <b>✓ Validated</b> once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. Candidates are added in Candidates. Publish sends it all (curation.json fish).</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; the <b>Auto</b> chip after the toggles opens its line ("off" on the chip when a field is off); Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
@@ -5720,6 +5823,8 @@ function pubSummary() {
     // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera).
     [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish family'],
     [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
+    // A fish look-alike pair's picks (Photos › Look-alikes: phase, photos, hidden; curation.json fish mont).
+    [nDiff((DRAFT.fish || {}).mont, (SAVED.fish || {}).mont), 'fish look-alike pair'],
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
     [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]

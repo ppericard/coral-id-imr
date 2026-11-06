@@ -594,7 +594,8 @@
   // gives: [{id: 'f:Damselfishes', name (the book's English label), sci: [scientific names], group (key group n), circle,
   // imr (the IMR course's name for it, a tag: Pierre, 2026-11-06 13:38, "the IMR course is a tag on the families and
   // genera in the course"), imrWith (taught by IMR with another family: the Soapfishes with the Groupers), phase,
-  // dimorph, wink, species: [ids], genera: [{id: 'g:Chromis', name, imr, species: [ids]}]}]
+  // dimorph, wink, look (IMR's look-alike lines: [other family id, words]), species: [ids], genera: [{id: 'g:Chromis',
+  // name, imr, species: [ids]}]}]
   // in the book's order (key group, then fish.json's order). A genus's species come from its genus list, else each
   // species' genus, else the species name's first word. [] when fish.json has no families yet.
   function fishUnits(J) {
@@ -618,6 +619,8 @@
           phase: f.phase || [],
           dimorph: !!f.dimorph,
           wink: f.wink || null,
+          look: f.look || [],
+          lsrc: f.lsrc || {},
           species: sids,
           genera: gids.map(g => ({
             id: g,
@@ -772,6 +775,63 @@
       if (field === 'ease' && Math.abs(m - p) <= 1) near++;
     });
     return {n, both, same, near};
+  }
+
+  // ---- Fish Look-alikes (admin plan PR 10; docs/ROADMAP.md "Admin for every subject" row 10) ----
+  // The pairs: two families the IMR course compares (fish.json families look: [other family id, IMR's words]), once each,
+  // in the book's order, with every IMR line about them, each with its own source (fish.json families lsrc: the slide,
+  // and Pierre's additions; "IMR course" when none is recorded; rule C2, Codex review #667). [{k: 'f:A|f:B' (sorted), A,
+  // B (ids, in the book's order), cues: [[family id the line is on, words, source]]}].
+  function fishPairs(U) {
+    const at = Object.fromEntries((U || []).map((u, i) => [u.id, i])),
+      P = {};
+    (U || []).forEach(u =>
+      (u.look || []).forEach(([b, w]) => {
+        if (!(b in at) || b === u.id) return;
+        const k = [u.id, b].sort().join('|');
+        P[k] = P[k] || {k, A: at[u.id] <= at[b] ? u.id : b, B: at[u.id] <= at[b] ? b : u.id, cues: []};
+        if (w && !P[k].cues.some(c => c[1] === w)) P[k].cues.push([u.id, w, (u.lsrc || {})[b] || 'IMR course']);
+      })
+    );
+    return Object.values(P).sort((x, y) => at[x.A] - at[y.A] || at[x.B] - at[y.B]);
+  }
+  // A pair's two photos (phase-matched, as the coral pairs match the view): e, his entry {v: phase, a, b, hide} in
+  // curation.json fish mont (the coral key names); LA / LB each family's photos in play in the page's order, ph(p) a
+  // photo's phase ('' adult). The phase: his while both families have photos of it, else adult, juvenile, then all; the
+  // photos: his while in that phase's list, else the first of each. {v, a, b, LA, LB (that phase's lists), set, hide}.
+  // A phase: adult = every photo not of a juvenile.
+  const FMONT_V = ['adult', 'juvenile', 'all'];
+  function fishMontPick(e, LA, LB, ph) {
+    e = e || {};
+    // adult: every photo not of a juvenile (males, females and intermediate phases included); juvenile; all.
+    const of = (L, v) => (v === 'all' ? L : L.filter(p => (ph(p) === 'juvenile') === (v === 'juvenile'))),
+      ok = v => v && of(LA, v).length && of(LB, v).length,
+      v = ok(e.v) ? e.v : FMONT_V.find(ok);
+    if (!v) return {v: null, hide: !!e.hide, set: !!e.v};
+    const A = of(LA, v),
+      B = of(LB, v),
+      mine = e.v === v;
+    return {
+      v,
+      a: (mine && A.find(p => p.f === e.a)) || A[0],
+      b: (mine && B.find(p => p.f === e.b)) || B[0],
+      LA: A,
+      LB: B,
+      set: !!e.v,
+      hide: !!e.hide
+    };
+  }
+  // One pair's entry written (empty fields dropped; an empty entry removed: the pair is automatic again), on a copy.
+  function fishMontSet(F, k, e) {
+    F = F || {};
+    const out = {};
+    Object.entries(e || {}).forEach(([x, y]) => {
+      if (y) out[x] = y;
+    });
+    const M = {...(F.mont || {})};
+    if (Object.keys(out).length) M[k] = out;
+    else delete M[k];
+    return {...F, mont: M};
   }
 
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
@@ -986,6 +1046,10 @@
     fishSet,
     fishTag,
     fishAgree,
+    fishPairs,
+    FMONT_V,
+    fishMontPick,
+    fishMontSet,
     autoCode,
     autoParse,
     autoIdx,

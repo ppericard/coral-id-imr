@@ -497,7 +497,8 @@
           'photos/families',
           'photos/candidates',
           'photos/review/ease',
-          'photos/review/phase-framing'
+          'photos/review/phase-framing',
+          'photos/look-alikes'
         ],
         origins: [
           ['own', 'Pierre', 'Pierre'],
