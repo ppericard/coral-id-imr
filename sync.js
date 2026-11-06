@@ -340,6 +340,7 @@ function mergeSubject(j, d, S, mine) {
       store.set(RVK, 0);
     store.set(sKey('progress'), P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
+    if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
     notesSeen(j);
     if (S.replay) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
@@ -389,6 +390,7 @@ function mergeSubject(j, d, S, mine) {
   store.set('reefid-account', SYNC);
   store.set(sKey('progress'), P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
+  if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
   notesSeen(j);
   if (S.replay) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
   prog();

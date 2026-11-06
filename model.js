@@ -1038,6 +1038,34 @@ function memRecalcAll() {
   if (ch) save();
   return ch;
 }
+// The domain-score bar for a subject the sheet does not replay (SUBJECTS replay false: fish; Pierre, 2026-11-06, Q200): a
+// unit record still under the former moving average (s.pg) is rebuilt on the device from its own counts (core.js
+// domFromCounts: ok, ko and its last 10 results, each on a photo of the unit's average difficulty, genusDiff with one
+// view alone, 4 choices), silently (no card: the apology is the corals' only, Pierre 16:30). A learned mark is kept
+// (core.js afterBkt: the rebuilt record has s.ds). Once per record: a record with s.dp is never rebuilt again. A
+// replayed subject (the corals) waits for the sheet's full replay instead (sync.js replayAdopt). Logged once per run
+// that changed something (event 'recalc', the subject and the units rebuilt). Saved and synced when it changed anything.
+// Only a unit whose data is in (GX: fish.json and the judged photos, lazy-loaded by app.js fishLoad; Codex review #688):
+// a pull read on another subject (sync.js inSubject) finds FISH null and leaves the record as it is, rebuilt once the fish
+// data comes (app.js fishLoad, the subject's switch), never on the fallback difficulty, since the rebuild is for good.
+function domRecalcAll() {
+  if (SUBJ.replay || !domRules()) return false;
+  const L = Object.keys(P).filter(
+    n => n !== LEVEL && P[n] && typeof P[n].pg === 'number' && !domOn(P[n]) && (P[n].ok || 0) + (P[n].ko || 0) > 0 && !!GX(n)
+  );
+  L.forEach(n => {
+    delete GDIFF[n]; // a difficulty cached before the data came
+    const s = P[n],
+      r = domFromCounts(s, genusDiff(n) + PICKD.SINGLE, 4, genusDiff(n));
+    s.dp = r.dp;
+    s.ds = r.ds;
+    delete s.pg;
+  });
+  if (!L.length) return false;
+  save();
+  if (typeof ev === 'function') ev('recalc', {msg: `${SUBJ.id}: ${L.length} units rebuilt under the domain-score bar from their counts`});
+  return true;
+}
 // A learned mark taken away by a recalculation (Pierre, 2026-11-03: "players know they test an early beta"): told once
 // with an announcement card (progress.js mxLostNotice: at once, never held), and the learned-based achievements the
 // progress no longer meets are taken back (progress.js achRecheck).
@@ -1483,6 +1511,7 @@ function mixClusters(edges, cap = CUSTOM.CLUSTER) {
 }
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();
+domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
 // A switch of subject (app.js subjectLoad): this file's state is the subject's (its cards, opening hold and comeback, kept
 // on the device under its keys; the genera's difficulty and the last ones asked). A record from before the photo memory
 // is recalculated, as at start-up, unless the visit is a short one (keep: sync.js reading another subject).
@@ -1496,4 +1525,5 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     lastQs = [];
     last = null;
     memRecalcAll();
+    domRecalcAll();
   });

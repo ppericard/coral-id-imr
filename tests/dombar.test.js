@@ -432,3 +432,76 @@ test('the replay judge reads the bar with the record, so the false-alarm correct
   assert.match(src, /C\.scoreOf\(P\[g\], P, g\)/);
   assert.doesNotMatch(src, /C\.scoreOf\(P\[g\]\)/);
 });
+
+test('a non-replayed subject (fish, Q200): its units rebuilt on the device from their counts, silently, marks kept', () => {
+  // core.js domFromCounts: deterministic, the earlier answers spread evenly, the last 10 in their order.
+  const fast = {ok: 6, ko: 0, h: '111111', pg: 0.6}; // the moving average after 6 right answers: 71% on the bar
+  const r = C.domFromCounts(fast, 0.5, 4, 0);
+  assert.deepStrictEqual(C.domFromCounts(fast, 0.5, 4, 0), r, 'the same on every device');
+  assert.ok(C.barOf(fast) > 0.7 && r.ds < C.barOf(fast) - 0.05, `an over-fast record drops: ${C.barOf(fast)} -> ${r.ds}`);
+  // More answers, the same share right: more credit; a run of misses last: less than the same misses first.
+  assert.ok(C.domFromCounts({ok: 24, ko: 0, h: '1111111111'}, 0.5).ds > r.ds);
+  assert.ok(C.domFromCounts({ok: 10, ko: 5, h: '1111100000'}, 0.5).ds < C.domFromCounts({ok: 10, ko: 5, h: '0000011111'}, 0.5).ds);
+  // model.js domRecalcAll, run from its source on stubs: units with s.pg rebuilt once, learned marks kept, saved and
+  // logged; a replayed subject (the corals) left to the sheet's replay.
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    block = require('./block.js'),
+    src = block(fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'), 'function domRecalcAll() {', '\n}\n', {
+      through: true,
+      file: 'model.js'
+    });
+  const run = (subj, P, GX = () => ({})) => {
+    const ctx = {
+      ...C,
+      SUBJ: subj,
+      P,
+      GX,
+      GDIFF: {},
+      LEVEL: '~level',
+      PICKD: {SINGLE: 0.5},
+      domRules: () => true,
+      genusDiff: () => 0,
+      saved: 0,
+      logs: []
+    };
+    ctx.save = () => ctx.saved++;
+    ctx.ev = (k, o) => ctx.logs.push([k, o.msg]);
+    vm.createContext(ctx);
+    vm.runInContext(src + '\nthis.out = domRecalcAll();', ctx);
+    return ctx;
+  };
+  const P = {
+    'f:Angelfishes': {ok: 6, ko: 0, h: '111111', pg: 0.6},
+    'f:Butterflyfishes': {ok: 30, ko: 2, h: '1111111111', pg: 0.85, mx: 1793900000000},
+    'f:Gobies': {ok: 0, ko: 0, h: ''},
+    '~level': {ok: 38, ko: 2, th: 1}
+  };
+  const a = run({id: 'fish', replay: false}, P);
+  assert.ok(a.out && a.saved === 1 && a.logs.length === 1 && a.logs[0][0] === 'recalc');
+  assert.ok(C.domOn(P['f:Angelfishes']) && !('pg' in P['f:Angelfishes']) && P['f:Angelfishes'].ds < 0.7);
+  assert.ok(P['f:Butterflyfishes'].mx && C.afterBkt(P['f:Butterflyfishes']), 'the learned mark kept');
+  assert.ok(!('dp' in P['f:Gobies']), 'a unit never answered is left alone');
+  const again = run({id: 'fish', replay: false}, P);
+  assert.ok(!again.out && again.saved === 0, 'once per record');
+  const Q = {Acropora: {ok: 6, ko: 0, h: '111111', pg: 0.6}};
+  assert.ok(!run({id: 'coral', replay: true}, Q).out && Q.Acropora.pg === 0.6, 'a replayed subject waits for the sheet');
+  // Codex review #688: a pull read while the fish data is not in (FISH null: GX knows no fish unit) rebuilds nothing,
+  // since the rebuild is for good and the difficulty would be the fallback one; it waits for the data.
+  const W = {'f:Wrasses': {ok: 6, ko: 0, h: '111111', pg: 0.6}};
+  const w = run({id: 'fish', replay: false}, W, () => undefined);
+  assert.ok(!w.out && w.saved === 0 && W['f:Wrasses'].pg === 0.6 && !('dp' in W['f:Wrasses']), 'no data, no rebuild');
+  assert.ok(run({id: 'fish', replay: false}, W).out && C.domOn(W['f:Wrasses']), 'rebuilt once the data is in');
+});
+
+test("the fish rebuild replays no false alarm as an own miss (Codex review #688): h's zeros capped at ko", () => {
+  // A false alarm (this unit named on another's photo) adds a 0 to h and no ko: six right answers and one false alarm
+  // rebuild as six right answers, the false alarm left to faOf.
+  const six = C.domFromCounts({ok: 6, ko: 0, h: '111111'}, 0.5);
+  assert.deepStrictEqual(C.domFromCounts({ok: 6, ko: 0, h: '111110'}, 0.5), six);
+  assert.deepStrictEqual(C.domFromCounts({ok: 6, ko: 0, h: '101111'}, 0.5), six);
+  // An own miss is kept: one ko, two zeros in h, the latest zero kept.
+  assert.deepStrictEqual(C.domFromCounts({ok: 6, ko: 1, h: '0111110'}, 0.5), C.domFromCounts({ok: 6, ko: 1, h: '1111110'}, 0.5));
+  assert.ok(C.domFromCounts({ok: 6, ko: 1, h: '1111110'}, 0.5).ds < six.ds);
+});
