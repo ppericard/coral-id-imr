@@ -80,6 +80,18 @@ const server = http.createServer((req, res) => {
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
     ok(slateGenera().length === 27 && slateGenera().every(n => FISH.c1.includes(n)), 'the fish slate = the 27 IMR entries');
     ok(!pool().some(n => !FISH.c1.includes(n)), 'circle 1 only before any opt-in');
+    // No wall (Pierre, 2026-11-06 14:17): on a fresh entry a photo under ease 4 can be drawn, rarely; the prior and the
+    // aim favour the easy ones (no easyFirst gate any more).
+    {
+      const hardP = p => (p.e || 3) < 4,
+        n = pool().find(x => GX(x).views.wide.some(hardP) && GX(x).views.wide.some(p => !hardP(p))),
+        W = GX(n).views.wide,
+        N = 400;
+      let hard = 0;
+      for (let i = 0; i < N; i++) hard += hardP(photoSet(n).shown[0]) ? 1 : 0;
+      ok(hard > 0, `${n}: a harder photo can be drawn early`);
+      ok(hard / N < W.filter(hardP).length / W.length, `${n}: harder photos drawn less often than their share (${hard}/${N})`);
+    }
     // The draw, many times: target and choices from the pool, one photo of one observation, never a wink.
     const L = pool();
     for (let i = 0; i < 300; i++) {
@@ -264,9 +276,11 @@ const server = http.createServer((req, res) => {
     ok(
       G.every(n => {
         const w = GX(n).views.wide;
-        return !w.length || (GX(n).cover === w[0].f && w.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
+        // the first of its reference-level photos when it has any (core.js refFirst), else its easiest
+        const top = w.filter(p => refFirst(p) === refFirst(w[0]));
+        return !w.length || (GX(n).cover === w[0].f && top.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
       }),
-      "sci: a genus card's photo is its easiest"
+      "sci: a genus card's photo is its easiest (reference level first)"
     );
     ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
     bonusSet(false, 'sci');
@@ -1224,11 +1238,18 @@ const server = http.createServer((req, res) => {
       const starters = slateGenera().filter(n => GX(n).first),
         ph = (t, f) => GX(t).views.wide.find(y => y.f === f) || {};
       ok(starters.slice().sort().join() === 't01,t02,t03,t06', `the starter core from fish.json: ${starters}`);
+      // The card: a reference-level photo where the entry has one (core.js refLevel, refFirst), else its easiest.
       ok(
-        starters.every(n => ph(n, GX(n).cover).e === Math.max(...GX(n).views.wide.map(p => p.e || 0))),
-        'each card shows its easiest photo'
+        starters.every(n => {
+          const L = GX(n).views.wide,
+            c = ph(n, GX(n).cover);
+          return L.some(refLevel) ? refLevel(c) : c.e === Math.max(...L.map(p => p.e || 0));
+        }),
+        'each card shows a reference-level photo, else its easiest'
       );
-      let gated = 0;
+      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely.
+      let gated = 0,
+        under = 0;
       for (let i = 0; i < N; i++) {
         readCards();
         if (!document.querySelector('#view .q')) quizPhoto();
@@ -1239,7 +1260,7 @@ const server = http.createServer((req, res) => {
           const p = ph(t, s.f);
           if (genScore(t) >= LV_AT[0]) return;
           gated++;
-          ok(p.e >= 4, `question ${i + 1}: ${t} photo ${s.f} of ease ${p.e} before Open Water`);
+          under += (p.e || 3) < 4 ? 1 : 0;
         });
         const ans = document.querySelectorAll('#view [data-c]');
         if (ans.length) [...ans].find(b => b.dataset.c === t).click();
@@ -1251,6 +1272,7 @@ const server = http.createServer((req, res) => {
         route();
       }
       ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
+      ok(under <= gated / 3, `${under} of ${gated} photos under ease 4 before Open Water: the easy ones should dominate`);
       const cards = Object.keys(introMap()).filter(n => introMap()[n][3] === 's');
       ok(cards.sort().join() === 't01,t02,t03,t06', `the first cards: ${cards}`);
       // The draw itself, on every circle-1 entry before and after Open Water.
@@ -1260,12 +1282,13 @@ const server = http.createServer((req, res) => {
           cut = Math.min(4, es[2]),
           s0 = st(n).pg;
         st(n).pg = 0;
-        const before = new Set();
-        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => before.add(x.f));
-        ok(
-          [...before].every(f => (ph(n, f).e || 3) >= cut),
-          `${n}: a photo under ease ${cut} before Open Water`
-        );
+        // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
+        // aim favour the easy ones; no wall).
+        let hard = 0,
+          tot = 0;
+        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => ((tot += 1), (hard += (ph(n, x.f).e || 3) < cut ? 1 : 0)));
+        const share = L.filter(p => (p.e || 3) < cut).length / L.length;
+        ok(!share || hard / tot < share, `${n}: photos under ease ${cut} drawn ${hard}/${tot}, their share ${share.toFixed(2)}`);
         st(n).pg = 0.6;
         let low = 0;
         for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
@@ -1343,7 +1366,108 @@ const server = http.createServer((req, res) => {
     if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
     await c7.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome];
+  // (11) The fish beta invitation (progress.js subjHello, app.js UNITS hello.group; Pierre, 2026-11-05: "a proper card the
+  // player closes, shown once, at a calm moment"; 2026-11-06: while fish opens to a group he picks, an invitation to test
+  // the fish beta, for the players of that group only): a player who is not the admin, in the fish group (sheet stub,
+  // nothing sent), settled on the corals, gets it once on Home, nothing else on screen; Later marks it seen, and it never
+  // comes back; Try fish switches to Fish and opens its quiz. Never for a player outside the group, nor one who has played
+  // fish already (marked seen, no card), nor a new player (not marked: it waits until they are settled). Fish open to all
+  // (Q158, core.js as it is): the same invitation to a settled player, once, its own seen mark (hello.all).
+  const hello = [];
+  for (const who of ['later', 'try', 'closed', 'met', 'new', 'all']) {
+    const c9 = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c9.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    // Fish opens to all since Q158: 'all' serves core.js as it is; the group cases serve it with fish back to 'group'.
+    await c9.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) hello.push('core.js: fish does not open to all');
+        await r.fulfill({response: res, body: who === 'all' ? t : t.replace("open: 'all'", "open: 'group'")});
+      }
+    );
+    await c9.addInitScript(who => {
+      try {
+        if (!sessionStorage.getItem('fish-hello')) {
+          sessionStorage.setItem('fish-hello', '1');
+          const s = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+          s('reefid-tour', 'done');
+          s('reefid-board-told', 1);
+          s('reefid-account', {name: 'Ana', pin: '1234'});
+          s('reefid-groups', {n: 'Ana', g: who === 'closed' ? [] : ['fish']});
+          s('reefid-sync-coral-start', {c: 'imr', t: 1});
+          if (who !== 'new') s('reefid-sync-coral-progress', {'~level': {ok: 30, ko: 10}, Acropora: {ok: 5, ko: 1, h: '110111'}});
+          if (who === 'met') s('reefid-sync-fish-start', {c: 'new', t: 1});
+        }
+      } catch (e) {}
+      window.SHEET_STUB = (url, o) => {
+        const g = (JSON.parse(localStorage.getItem('reefid-groups') || 'null') || {g: []}).g,
+          reply =
+            o && o.method === 'POST' ? {ok: true, log: true, rev: 2} : {ok: true, found: true, data: {}, rev: 1, hold: 0, holdIds: []};
+        return Promise.resolve({json: () => Promise.resolve({...reply, v: 48, groups: g})});
+      };
+    }, who);
+    const q = await c9.newPage();
+    q.on('pageerror', e => errs.push(`hello ${who}: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    // The announcement cards a returning player may have due at start-up (recalculations: never held, rule D6)
+    // come first; the release card waits for a calm Home, here the next one.
+    await q.waitForTimeout(2500);
+    if (await q.evaluate(() => !!document.querySelector('.unlock:not(.hello)'))) {
+      await q.evaluate(() => document.querySelectorAll('.unlock:not(.hello) [data-b="1"]').forEach(b => b.click()));
+      await q.evaluate(() => route());
+    }
+    const shown = await q
+      .waitForSelector('.unlock.hello', {timeout: 6000})
+      .then(() => true)
+      .catch(() => false);
+    const seen = () => q.evaluate(k => localStorage.getItem(k), who === 'all' ? 'reefid-fish-hello-all' : 'reefid-fish-hello-group');
+    if (who === 'closed' || who === 'met' || who === 'new') {
+      if (shown) hello.push(`${who}: the card showed`);
+      const s = await seen();
+      if (who === 'met' ? !s : s) hello.push(`${who}: seen mark ${s}`);
+      await c9.close();
+      continue;
+    }
+    if (!shown) {
+      hello.push(`${who}: no card on Home`);
+      await c9.close();
+      continue;
+    }
+    const card = await q.evaluate(() => {
+      const d = document.querySelector('.unlock.hello');
+      return {
+        n: document.querySelectorAll('.unlock').length,
+        title: d.querySelector('h3').textContent,
+        btns: [...d.querySelectorAll('[data-b]')].map(b => b.textContent),
+        med: d.querySelector('.ulmed').textContent
+      };
+    });
+    if (card.n !== 1 || card.title !== 'Test the fish beta' || JSON.stringify(card.btns) !== '["Try fish","Later"]' || card.med !== '🐟')
+      hello.push(`${who}: the card ${JSON.stringify(card)}`);
+    await q.click(`.unlock.hello [data-b="${who === 'try' ? 1 : 2}"]`);
+    if (!(await seen())) hello.push(`${who}: not marked seen`);
+    if (who === 'try') {
+      const on = await q
+        .waitForFunction(() => SUBJ.id === 'fish' && location.hash === hr('quiz'), null, {timeout: 15000})
+        .then(() => true)
+        .catch(() => false);
+      if (!on) hello.push(`try: ${JSON.stringify(await q.evaluate(() => [SUBJ.id, location.hash]))}`);
+    } else {
+      // Never again: back to Home, a reload.
+      await q.reload();
+      await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+      await q.waitForTimeout(3000);
+      if (await q.evaluate(() => !!document.querySelector('.unlock.hello'))) hello.push(`${who}: shown again`);
+    }
+    await c9.close();
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));
