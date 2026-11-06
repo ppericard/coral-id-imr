@@ -409,4 +409,6 @@ test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).early, 1.5);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.5);
   assert.ok(!C.refLevel({f: 'x'}) && !C.refLevel({f: 'x', q: 3}), 'a photo with no judged ease is never reference level');
+  assert.ok(!C.refLevel({f: 'x', e: 5, jt: 'p1g0slm', rep: 'inaturalist'}), 'never one with other kinds of fish (rule P3)');
+  assert.ok(C.refLevel({f: 'x', e: 4, jt: 'o1g0sms', rep: 'inaturalist'}) && C.refLevel({f: 'x', e: 5, jt: 'p1g0sl1'}));
 });

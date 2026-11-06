@@ -800,6 +800,7 @@ test('reference photos: game photo rules, in play once judged, the cover where o
     if (lvl && C.refLevel({...p, ...lvl}) && !L.some(x => x.o === p.o && x.f !== f))
       assert.ok(g && g.rep === p.rep, `${tid} ${f}: not in play`);
     if (g && g.from) assert.ok(C.refLevel(g), `${tid} ${f}: in play below the reference level`);
+    if (g && g.from) assert.ok(/^[1s]$/.test(g.jt[6]), `${tid} ${f}: other kinds of fish in a reference photo (rule P3)`);
     if (!(f in codes) && g) assert.ok(!g.from, `${f}: a reference photo in play without a judgement`);
   });
   Object.entries(PH).forEach(([tid, L]) =>

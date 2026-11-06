@@ -126,7 +126,8 @@ of the entry), and adds FishBase's photos of each species that pass its rules (i
 FishBase's main picture with `rep`.
 
 **Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
-read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it. A
+read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it; in both cases
+one kind of fish only (count `1` or `s`: never other kinds of fish nor an unclear subject, rule P3). A
 reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
 never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `model.js` `photoSet`), never exclusively.
 

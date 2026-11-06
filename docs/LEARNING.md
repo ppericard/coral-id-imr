@@ -2551,7 +2551,7 @@ source's cover, and never an exclusive rule that would show one photo again and 
 (`tools/fish_refs.py`, judging/FISH.md "Reference photos": iNaturalist's cover and taxon-page photos passing the game
 photo rules, FishBase's photos) join the game photos once judged. **Reference level** (`core.js` `refLevel`): a source's
 reference photo (`rep`) judged very easy, or any photo judged 5 with the reference look in its tags (profile, whole, good
-light, true colours, sharp, large or medium, one fish or a school; no juvenile, camouflage, out of water), whoever took it.
+light, true colours, sharp, large or medium, one fish or a school; no juvenile, camouflage, out of water), whoever took it; in both cases one kind of fish (rule P3).
 It comes before every other photo in `easyRank` (`refFirst`), so it is the card's photo and each list's first, and a
 never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`; `model.js` `photoSet`, beside the never-seen bonus): first
 in priority, never alone. Why 3: a reference-level photo then wins most first draws on an entry with a few of them among

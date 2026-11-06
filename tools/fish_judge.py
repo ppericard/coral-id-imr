@@ -131,8 +131,13 @@ LOOK = re.compile(r"^p1g0s[lm][1s]$")
 
 def ref_level(p):
     """core.js refLevel: a reference source's photo (rep) judged very easy (4-5), or any photo judged 5 with the reference
-    look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school; no j, c or a)."""
+    look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school; no j, c or a); in both
+    cases one kind of fish (count 1 or s)."""
     e, jt = p.get("e") or 0, p.get("jt") or ""
+    # Never a photo with other kinds of fish (count m) or an unclear subject (x), whatever its source (rule P3: one
+    # species per game photo; Codex review #660).
+    if len(jt) < 7 or jt[6] not in "1s":
+        return False
     return (e >= EARLY and bool(p.get("rep"))) or (e == 5 and bool(LOOK.match(jt[:7])) and not set(jt[7:]) & set("jca"))
 
 

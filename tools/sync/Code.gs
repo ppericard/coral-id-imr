@@ -2123,8 +2123,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // with the reference look in its tags (profile, whole, good light, true colours, sharp, large or medium, one fish or a
   // school of it; no juvenile, camouflage or out of water).
   const REF_LOOK = /^p1g0s[lm][1s]$/;
+  // In both cases one kind of fish (count 1 or s): never a photo with other kinds (m) or an unclear subject (x), rule P3
+  // (Codex review #660).
   const refLevel = p =>
     !!p &&
+    /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
     (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
   const refFirst = p => (refLevel(p) ? 0 : 1);
   function easyRank(L, d = p => -(p.e || 3)) {
