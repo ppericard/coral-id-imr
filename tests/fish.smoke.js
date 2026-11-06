@@ -480,6 +480,31 @@ const server = http.createServer((req, res) => {
       .catch(e => ({err: e.message}));
     if (sp.hash !== '#fish/learn/family/Spadefishes' || sp.all !== 5 || sp.mine !== 0)
       ui.push(`${width}px Spadefishes sheet: ${JSON.stringify(sp)}`);
+    // A genus row opens its short genus page (option B): its species, the filter, its IMR cues, its sibling genera.
+    await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
+    await q.waitForFunction(() => document.querySelector('#view .fsheet a.frow'), null, {timeout: 15000});
+    await q.click('#view .fsheet a.frow[href$="/genus/Chromis"]');
+    await q
+      .waitForFunction(() => location.hash === '#fish/learn/genus/Chromis' && document.querySelector('#view .fsheet .fn-t i'), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const gp = await q
+      .evaluate(() => {
+        document.querySelector('#view .seg [data-mine="0"]').click();
+        return {
+          hash: location.hash,
+          name: (document.querySelector('#view .fn-t') || {}).textContent,
+          tips: document.querySelectorAll('#view .tipbox .idtips li').length,
+          tiles: document.querySelectorAll('#view .ftiles .ftile').length,
+          sib: document.querySelectorAll('#view .hubsec a.lt').length,
+          bar: (document.querySelector('#modes .ctx-t') || {}).textContent || ''
+        };
+      })
+      .catch(e => ({err: e.message}));
+    if (gp.name !== 'Chromis' || gp.tips !== 2 || gp.tiles !== 13 || gp.sib < 2 || !/genus/.test(gp.bar))
+      ui.push(`${width}px genus page: ${JSON.stringify(gp)}`);
+    await wide('a genus page');
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
@@ -501,7 +526,8 @@ const server = http.createServer((req, res) => {
     await q.click('#view .ans [data-c]');
     const after = await q.evaluate(() => {
       const fb = document.querySelector('#after .fb'),
-        cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"]');
+        // The photo's source page: iNaturalist, or FishBase for its reference photos in play (#660).
+        cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"], .credit a[href*="fishbase."]');
       return {fb: !!fb, credit: !!cr, h3: fb ? fb.querySelector('h3').textContent : ''};
     });
     if (!after.fb || !after.credit) ui.push(`${width}px answer: no full credit with its link ${JSON.stringify(after)}`);
