@@ -103,11 +103,11 @@ const WIDTHS = [390, 1280];
     if (CF.some(f => !f) || !CHK) throw new Error(`not enough undecided candidates for the auto-sort test: ${CF} ${CHK}`);
     // The fish auto-sort (admin plan PR 4, autosort.js fishRun): FF[0] a sure add, FF[1] a sure near-duplicate, FF[2] a
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
+    // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
     const FCAND = rd('fish-cand.json').cand,
-      FF = Object.entries(FCAND)
-        .flatMap(([sid, L]) => L.map(x => [sid, x.f]))
-        .filter(([, f]) => !autoCheck(f))
-        .slice(0, 3);
+      FALL = Object.entries(FCAND).flatMap(([sid, L]) => L.map(x => [sid, x.f])),
+      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 3),
+      FC = FALL.find(([, f]) => autoCheck(f));
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
     // the same day, rejections of photos he rejected too (no comparison, so the agreement is the test's own). The test's
@@ -157,7 +157,8 @@ const WIDTHS = [390, 1280];
           fish: {
             [FF[0][1]]: {jt: 'p1g0sm1', e: 5, k: 'best', ph: 'female'},
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
-            [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'}
+            [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
+            [FC[1]]: {jt: 'o1g1ssm', e: 3, k: 'best', n: 'Demo check'}
           }
         })
       })
@@ -362,72 +363,11 @@ const WIDTHS = [390, 1280];
         !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
         at.note ||
         !at.tabs.includes('To do') ||
+        // Its Photos group: the pages it has (Families since admin plan PR 6, Candidates since PR 5a).
         !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
-      await go(other.hash + 'photos/candidates');
-      at = await seg();
-      if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
-        fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
-      // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
-      const link = h =>
-        p.evaluate(h => {
-          const a = document.createElement('a');
-          a.href = h;
-          a.id = 'subjtest';
-          a.textContent = 'test';
-          document.getElementById('view').prepend(a);
-        }, h);
-      await link('#players/activity');
-      await p.click('#subjtest');
-      await settle();
-      at = await seg();
-      if (at.hash !== '#' + other.hash + 'players/activity' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
-        fails.push(`${w}px Subjects: a link without prefix left the ${other.id} side ${JSON.stringify(at)}`);
-      // The list of players is one page for every subject (admin.js SHARED; Pierre, 2026-11-06): no prefix, the side on
-      // screen kept (the switch inert there, its side still pressed), #fish/players/list taken to #players/list.
-      await link('#players/list');
-      await p.click('#subjtest');
-      await settle();
-      at = await seg();
-      const inert = await p.evaluate(() => document.getElementById('subj').classList.contains('off'));
-      if (at.hash !== '#players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true') || !inert)
-        fails.push(`${w}px Subjects: the shared list from the ${other.id} side ${JSON.stringify({...at, inert})}`);
-      await go(other.hash + 'players/list');
-      at = await seg();
-      if (at.hash !== '#players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
-        fails.push(`${w}px Subjects: #${other.hash}players/list ${JSON.stringify(at)}`);
-      // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
-      // (Codex review #492): #players/activity, then #fish/inbox/todo/reports, then Back.
-      await go('players/activity');
-      at = await seg();
-      const n0 = await p.evaluate(() => history.length);
-      if (
-        at.hash !== '#players/activity' ||
-        at.subj[0][1] !== 'true' ||
-        (await p.evaluate(() => document.getElementById('subj').classList.contains('off')))
-      )
-        fails.push(`${w}px Subjects: #players/activity not on the corals' side ${JSON.stringify(at)}`);
-      await go(other.hash + 'inbox/todo/reports');
-      await p.evaluate(() => history.back());
-      await settle();
-      at = await seg();
-      const n1 = await p.evaluate(() => history.length);
-      if (at.hash !== '#players/activity' || at.subj[0][1] !== 'true' || n1 !== Math.min(50, n0 + 1))
-        // the browser keeps 50 entries
-        fails.push(`${w}px Subjects: Back to #players/activity ${JSON.stringify({...at, n0, n1})}`);
-      await p.evaluate(() => history.forward());
-      await settle();
-      at = await seg();
-      if (at.hash !== '#' + other.hash + 'inbox/todo/reports' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
-        fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
-      if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
-      await p.click(`#subj [data-subj="${S[0].id}"]`);
-      await settle();
-      at = await seg();
-      if (at.subj[0][1] !== 'true' || at.hash !== '#players/activity')
-        fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
-      // The fish units page (admin plan PR 6 on the book's families): Photos › Families, the fish side's only Photos tab
+      // The fish units page (admin plan PR 6 on the book's families): Photos › Families, the fish side's first Photos tab (Candidates the other)
       // (never on the corals' side), the book's families by key group with the IMR tag on those in the IMR course, a
       // family's page with one block per genus and one section per species, deep links by family id.
       {
@@ -450,7 +390,7 @@ const WIDTHS = [390, 1280];
           }));
         await go(other.hash + 'photos');
         let u = await fu();
-        if (u.hash !== '#' + other.hash + 'photos/families' || u.tabs.join() !== 'Families' || u.note)
+        if (u.hash !== '#' + other.hash + 'photos/families' || u.tabs.join() !== 'Families,Candidates' || u.note)
           fails.push(`${w}px Families: #${other.hash}photos ${JSON.stringify(u)}`);
         if (w === 1280 && (u.fams !== u.want || u.fams < 28 || u.imr !== u.wantImr || u.imr < 28 || u.grp < 5))
           fails.push(`${w}px Families: the list ${JSON.stringify(u)}`);
@@ -647,6 +587,109 @@ const WIDTHS = [390, 1280];
           if (await p.evaluate(fam => (DRAFT.fish.genera || {})[fam], fam)) fails.push(`${w}px Families: Undo left the family's choices`);
         }
       }
+      await go(other.hash + 'photos/review/quality');
+      at = await seg();
+      if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
+        fails.push(`${w}px Subjects: ${other.id} Photo review ${JSON.stringify(at)}`);
+      // The fish Candidates swiper (admin plan PR 5a, admin-fish.js): one candidate on screen with its species and
+      // its IMR entry, the thinnest species first, the queue segment (All, Checks), the photo filling the screen without
+      // a sideways scroll; the Check (FC) blind in the Checks queue: no judgment line, a Check tag, no suggested Add.
+      await go(other.hash + 'photos/candidates');
+      const fc = () =>
+        p.evaluate(() => {
+          const S = document.querySelector('.adm-fsw'),
+            r = S && S.querySelector('.adm-swcard').getBoundingClientRect();
+          return {
+            f: S && S.dataset.f,
+            sid: S && S.dataset.s,
+            sp: ((S && S.querySelector('.adm-swg i')) || {}).textContent || '',
+            sub: ((S && S.querySelector('.adm-swg small')) || {}).textContent || '',
+            judge: !!(S && S.querySelector('.adm-judge')),
+            chk: !!(S && S.querySelector('.adm-chk')),
+            sug: !!(S && S.querySelector('[data-add].sug')),
+            seg: [...document.querySelectorAll('[data-fq]')].map(b => [b.dataset.fq, b.getAttribute('aria-pressed')]),
+            play: (document.querySelector('.adm-fplayn') || {}).textContent || '',
+            h: r ? Math.round(r.height) : 0,
+            bottom: r ? Math.round(r.bottom) : 0,
+            // The decision buttons on the first screen, no page scroll (Pierre, 2026-11-06: one phone screen).
+            bar: S ? Math.round(S.querySelector('.adm-swbar').getBoundingClientRect().bottom) : 0,
+            scroll: document.documentElement.scrollHeight - innerHeight,
+            vh: innerHeight,
+            wide: document.documentElement.scrollWidth - innerWidth,
+            note: (document.querySelector('#view > .note') || {}).textContent || ''
+          };
+        });
+      at = await fc();
+      const FS = await p.evaluate(() => FISHC && Object.fromEntries(Object.entries(FISHC.species).map(([k, v]) => [k, v.name])));
+      if (!at.f || at.note || !FS || at.sp !== FS[at.sid] || !at.sub || at.seg.length !== 2 || !/In play \d+\/\d+/.test(at.play))
+        fails.push(`${w}px Fish Candidates: ${JSON.stringify(at)}`);
+      if (at.wide > 0 || at.h < 200 || at.bottom > at.vh || at.bar > at.vh || at.scroll > 0)
+        fails.push(`${w}px Fish Candidates: layout ${JSON.stringify(at)}`);
+      await p.click('[data-fq="chk"]');
+      await settle();
+      at = await fc();
+      if (at.f !== FC[1] || at.sid !== FC[0] || at.judge || !at.chk || at.sug || at.wide > 0)
+        fails.push(`${w}px Fish Candidates: the Check ${FC[1]} is not shown blind ${JSON.stringify(at)}`);
+      await p.click('[data-fq="all"]');
+      await settle();
+      // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
+      const link = h =>
+        p.evaluate(h => {
+          const a = document.createElement('a');
+          a.href = h;
+          a.id = 'subjtest';
+          a.textContent = 'test';
+          document.getElementById('view').prepend(a);
+        }, h);
+      await link('#players/activity');
+      await p.click('#subjtest');
+      await settle();
+      at = await seg();
+      if (at.hash !== '#' + other.hash + 'players/activity' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: a link without prefix left the ${other.id} side ${JSON.stringify(at)}`);
+      // The list of players is one page for every subject (admin.js SHARED; Pierre, 2026-11-06): no prefix, the side on
+      // screen kept (the switch inert there, its side still pressed), #fish/players/list taken to #players/list.
+      await link('#players/list');
+      await p.click('#subjtest');
+      await settle();
+      at = await seg();
+      const inert = await p.evaluate(() => document.getElementById('subj').classList.contains('off'));
+      if (at.hash !== '#players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true') || !inert)
+        fails.push(`${w}px Subjects: the shared list from the ${other.id} side ${JSON.stringify({...at, inert})}`);
+      await go(other.hash + 'players/list');
+      at = await seg();
+      if (at.hash !== '#players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: #${other.hash}players/list ${JSON.stringify(at)}`);
+      // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
+      // (Codex review #492): #players/activity, then #fish/inbox/todo/reports, then Back.
+      await go('players/activity');
+      at = await seg();
+      const n0 = await p.evaluate(() => history.length);
+      if (
+        at.hash !== '#players/activity' ||
+        at.subj[0][1] !== 'true' ||
+        (await p.evaluate(() => document.getElementById('subj').classList.contains('off')))
+      )
+        fails.push(`${w}px Subjects: #players/activity not on the corals' side ${JSON.stringify(at)}`);
+      await go(other.hash + 'inbox/todo/reports');
+      await p.evaluate(() => history.back());
+      await settle();
+      at = await seg();
+      const n1 = await p.evaluate(() => history.length);
+      if (at.hash !== '#players/activity' || at.subj[0][1] !== 'true' || n1 !== Math.min(50, n0 + 1))
+        // the browser keeps 50 entries
+        fails.push(`${w}px Subjects: Back to #players/activity ${JSON.stringify({...at, n0, n1})}`);
+      await p.evaluate(() => history.forward());
+      await settle();
+      at = await seg();
+      if (at.hash !== '#' + other.hash + 'inbox/todo/reports' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
+      if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
+      await p.click(`#subj [data-subj="${S[0].id}"]`);
+      await settle();
+      at = await seg();
+      if (at.subj[0][1] !== 'true' || at.hash !== '#players/activity')
+        fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
     }
     // A shorter address opens its first view; an old (pre-refonte) or unknown address opens its group's first view, else
     // the landing page, the address replaced in place (rule W3: old addresses are not translated; Q53-Q56). A deep link
@@ -3312,6 +3355,10 @@ const WIDTHS = [390, 1280];
         CSKIP.clear();
         render();
       });
+      // The line is folded behind the Auto chip (Pierre, 2026-11-06: one phone screen); the chip opens it.
+      if (await p.$('.adm-auto')) fails.push(`${w}px Auto: the line shows before its chip is tapped`);
+      await p.click('[data-aopen]');
+      await settle();
       const line = await p.$eval('.adm-auto', e => e.textContent).catch(() => '');
       if (!/Keep 100%/.test(line) || !/Quality 0%/.test(line)) fails.push(`${w}px Auto: agreement line ${line}`);
       if (line) await p.click('[data-adet]');
@@ -3388,6 +3435,8 @@ const WIDTHS = [390, 1280];
       if (!ux.gone || ux.gone.ex || /back in Candidates/.test(ux.gone.toast) || !/no longer in the candidate files/.test(ux.gone.toast))
         fails.push(`${w}px Auto: Undo of an auto exclusion whose candidate entry is gone ${JSON.stringify(ux.gone)}`);
       if (line) await p.click('[data-adet]');
+      await settle();
+      await p.click('[data-aopen]');
       await settle();
       // An auto-added photo carries an "auto" tag on its genus page.
       if (au.added) {
@@ -3495,8 +3544,12 @@ const WIDTHS = [390, 1280];
       // One fish auto decision undone in the Auto details (Codex review #479, rule A1): gone from the draft, logged
       // undone, never applied again at the next run.
       if (fa) {
+        // The coral Candidates no longer list the fish decisions: they are on the fish side's Candidates.
         await go('photos/candidates');
+        if (await p.$('[data-ff]')) fails.push(`${w}px Candidates: fish auto decisions on the coral Candidates`);
+        await go('fish/photos/candidates');
         await p.evaluate(() => {
+          AOPEN = true; // the Auto line unfolded (its chip), Details open
           ADET = true;
           render();
         });
@@ -3540,7 +3593,80 @@ const WIDTHS = [390, 1280];
         if (fl.n0 !== 30 || !fl.b || fl.n1 < 36) fails.push(`${w}px Fish auto-sort: All for over 30 decisions ${JSON.stringify(fl)}`);
         await p.evaluate(() => {
           ADET = false;
+          AOPEN = false;
         });
+        // The fish swiper's clicks (admin plan PR 5a, admin-fish.js; autosort.js fishAdd, fishReject, fishExclude): the
+        // Check FC answered + Add (in play for its species with the pass's tags and ease, its log code timed, the
+        // auto-sort's answer told: same), a photo in play taken out of play from its enlarged view, a candidate rejected
+        // with ←, the next one excluded with ×, Undo taking the last click back; never "out" (Not this is Pierre's, PR
+        // 5b), no coral key touched.
+        await go('fish/photos/candidates');
+        const coral0 = await p.evaluate(() => JSON.stringify([DRAFT.genera, DRAFT.seen || {}, DRAFT.exclude || {}, DRAFT.auto || {}]));
+        await p.click('[data-fq="chk"]');
+        await settle();
+        await p.click('.adm-fsw [data-add]');
+        await settle();
+        const r1 = await p.evaluate(F => {
+          const x = DRAFT.fish,
+            day = Object.keys(x.auto || {}).find(d => x.auto[d][F[1]]);
+          return {
+            add: (x.add || {})[F[1]],
+            tags: (x.tags || {})[F[1]],
+            ease: (x.ease || {})[F[1]],
+            code: day && x.auto[day][F[1]],
+            left: (document.querySelector('.adm-fsw') || {dataset: {}}).dataset.f || null,
+            toast: (document.querySelector('.adm-toast') || {}).textContent || ''
+          };
+        }, FC);
+        if (
+          r1.add !== FC[0] ||
+          r1.tags !== 'o1g1ssm' ||
+          r1.ease !== 3 ||
+          !/^\?a@[0-9a-z]+$/.test(r1.code || '') ||
+          r1.left ||
+          !/same/.test(r1.toast)
+        )
+          fails.push(`${w}px Fish Candidates: Add on the Check ${JSON.stringify(r1)}`);
+        await p.evaluate(F => fishZoom(FISHC.byF[F[1]], F[0], true), FC);
+        await p.click('#lightbox [data-fout]');
+        await settle();
+        const r2 = await p.evaluate(
+          F => ({add: F[1] in (DRAFT.fish.add || {}), seen: (DRAFT.fish.seen || {})[F[1]], lb: $('lightbox').hidden}),
+          FC
+        );
+        if (r2.add || r2.seen !== 1 || !r2.lb) fails.push(`${w}px Fish Candidates: Out of play ${JSON.stringify(r2)}`);
+        await p.click('[data-fq="all"]');
+        await settle();
+        const f0 = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
+        await p.keyboard.press('ArrowLeft');
+        await settle();
+        const f1 = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
+        await p.click('.adm-fsw [data-x]');
+        await settle();
+        const r3 = await p.evaluate(([a, b]) => ({seen: (DRAFT.fish.seen || {})[a], ex: (DRAFT.fish.exclude || {})[b]}), [f0, f1]);
+        await p.click('#undo');
+        await settle();
+        const r4 = await p.evaluate(
+          ([a, b, F2]) => ({
+            seen: (DRAFT.fish.seen || {})[a],
+            ex: b in (DRAFT.fish.exclude || {}),
+            back: document.querySelector('.adm-fsw').dataset.f === b,
+            out: Object.keys(DRAFT.fish.out || {}).filter(f => f !== F2),
+            coral: JSON.stringify([DRAFT.genera, DRAFT.seen || {}, DRAFT.exclude || {}, DRAFT.auto || {}])
+          }),
+          [f0, f1, FF[2][1]]
+        );
+        if (
+          f0 === f1 ||
+          r3.seen !== 1 ||
+          r3.ex !== 'excluded' ||
+          r4.seen !== 1 ||
+          r4.ex ||
+          !r4.back ||
+          r4.out.length ||
+          r4.coral !== coral0
+        )
+          fails.push(`${w}px Fish Candidates: Reject, ×, Undo ${JSON.stringify({f0, f1, r3, r4: {...r4, coral: r4.coral === coral0}})}`);
       }
       errs.length = 0;
       if (await p.isEnabled('#save')) {
