@@ -462,7 +462,9 @@ on families only to an IMR RA with every species open:
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
 - **Opening fish to players**: **open to every player since 2026-11-06** (Pierre, Q158: "open fish to everyone now", during IMR's fish course), signed out included, the *beta* label kept (`core.js` `SUBJECTS` fish `open: 'all'`, sheet v67). Before, from 2026-11-04 (PR #540), to a group Pierre picked in the admin; the group mechanics stay for a subject set back to `open: 'group'` (docs/ARCHITECTURE.md "Opening", "The beta group").
 - **Leaderboards separate per subject**, no merged ranking: corals as today (coral %, then Elo); fish by the global fish score ("My
-  progress (fish)"), then the fish Elo. Needs fish answers logged in the sheet first.
+  progress (fish)"), then the fish Elo. **Built** (sheet v95): the 🏆 page follows the subject switch; the fish board ranks by the fish %
+  as My progress shows it (its ring, over the fish slate; the global score once built), then the fish Elo (docs/ARCHITECTURE.md
+  "Leaderboard").
 - **Achievements** (rule L8: learning milestones, never time or days played; designed later, each one's timing checked with the real
   game before it is added):
   - about **14 general fish achievements** to start (families met, levels, mastery, species named, scientific names, Fish basics: the

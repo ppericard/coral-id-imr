@@ -705,18 +705,76 @@ const server = http.createServer((req, res) => {
     const pnote = await q.evaluate(() => (document.querySelector('#view .plvlnote') || {}).textContent || '');
     if (!pnote.includes('each family is')) ui.push(`${width}px My progress note: ${JSON.stringify(pnote)}`);
     // The leaderboard's toast is never said on a subject without one (fish beta QA, 2026-11-06: it covered fish Home):
-    // it stays due. The sync stubbed in memory only (sent14 set: no call to the sheet, rule D1).
+    // it stays due. Every subject has a leaderboard since sheet v95, so this one is made one without for the check. The
+    // sync stubbed in memory only (sent14 set: no call to the sheet, rule D1).
     const bt = await q.evaluate(() => {
-      const s0 = SYNC;
+      const s0 = SYNC,
+        b0 = SUBJ.board;
       store.set('reefid-board-sent14', 1);
       store.set('reefid-board-told', 0);
       SYNC = {name: 'Test', code: 'x'};
+      SUBJ.board = false;
       boardNotice();
       const r = {toast: !!document.querySelector('.apptoast'), told: store.get('reefid-board-told', 0)};
       SYNC = s0;
+      SUBJ.board = b0;
       return r;
     });
     if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
+    // The fish leaderboard (Pierre, 2026-11-04: separate per subject): #leaderboard on Fish asks the sheet for the fish
+    // board (&s=fish), shown only from a script that serves it (sheet v95, rule D4), kept apart from the corals' copy.
+    // The sheet's reply is a fixture (the page's fetch wrapped in memory; nothing leaves this computer, rule D1).
+    const fb = await q.evaluate(async () => {
+      const f0 = window.fetch,
+        asked = [];
+      let v = BOARD_SHEET - 1;
+      window.fetch = u => {
+        asked.push(String(u).replace(/^.*\?/, ''));
+        const rows = /s=fish/.test(u)
+          ? [
+              ['Fish P', 63, 0.8],
+              ['Other P', 20, null]
+            ]
+          : [['Coral P', 90, 1.1]];
+        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v})));
+      };
+      const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 150));
+      try {
+        localStorage.removeItem('reefid-fish-board-cache');
+        go('board');
+        const old = await shown(); // a script before BOARD_SHEET answers with the corals' board: never shown as the fish one
+        v = BOARD_SHEET;
+        boardAt.fish = 0;
+        viewBoard();
+        const fresh = await shown();
+        // ⚙ Leaderboard On / Off drops every subject's board in memory, so the next visit asks again (Codex review #693).
+        document.querySelector('#boardset button[data-board="1"]').click();
+        const dropped = !Object.keys(boardP).length;
+        return {
+          dropped,
+          asked,
+          old,
+          fresh,
+          kept: localStorage.getItem('reefid-fish-board-cache'),
+          coral: localStorage.getItem('reefid-board-cache')
+        };
+      } finally {
+        window.fetch = f0;
+      }
+    });
+    if (
+      !fb.dropped ||
+      !fb.asked.length ||
+      !fb.asked.every(a => a === 'board=1&s=fish') ||
+      !/not available yet/.test(fb.old) ||
+      /Coral P/.test(fb.old) ||
+      !/Fish P/.test(fb.fresh) ||
+      !/63%/.test(fb.fresh) ||
+      !/Fish P/.test(fb.kept || '') ||
+      /Fish P/.test(fb.coral || '')
+    )
+      ui.push(`${width}px fish leaderboard: ${JSON.stringify(fb)}`);
+    await wide('the fish leaderboard');
     // A wink, made due at this count (the first threshold moved here, none shown yet).
     const wk = await q.evaluate(() => {
       location.hash = '#practice/quiz';

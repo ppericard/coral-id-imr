@@ -215,8 +215,9 @@ function quizBoard() {
     a.hidden = false;
   };
   if (SUBJ.board) {
-    rank(boardCached());
-    loadBoard().then(rank);
+    const S = SUBJ;
+    rank(boardCached(S));
+    loadBoard(S).then(B => S === SUBJ && rank(B)); // the subject's own board (another chosen meanwhile: nothing)
   }
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => {
@@ -349,7 +350,7 @@ function bindProgFile() {
   };
 }
 
-// Public leaderboard (Pierre, 2026-11-01): every signed-in player by progress %, then Elo (their ability from every
+// Public leaderboard (Pierre, 2026-11-01), one per subject (2026-11-04): every signed-in player by progress %, then Elo (their ability from every
 // answer, so players at 100% keep competing). The Elo is the app's own level, P[LEVEL].th, the one My progress shows
 // (Pierre, 2026-11-06, Q134): the sheet reads it from each player's saved progress (Code.gs board_, v63; older scripts
 // sent their own chain, stats_ R), and the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it from any page; My progress shows the player's
@@ -376,59 +377,72 @@ const eloLine = G => {
 // on this device (BOARD_C, not a reefid-sync key: it never travels with the progress) and shown at once, then replaced
 // when the fresh one arrives (Pierre, 2026-11-01: "the leaderboard takes long to load"). It is also fetched a few seconds
 // after start-up, so the first visit to the page is usually instant too.
-const BOARD_C = 'reefid-board-cache';
-let boardAt = 0,
-  boardP = null;
+// One leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; core.js SUBJECTS board): the
+// page shows the subject on screen's (boardSubj), the first subject's on one without a leaderboard. The first one's is
+// GET ?board=1 as before; another's adds &s=<id>, served from sheet v95 (BOARD_SHEET): an older script answers with the
+// first one's, which is never shown as another subject's (rule D4: "not available yet" until the script has it).
+// Each subject's board is kept apart (BOARD_C, the subject's device key: reefid-board-cache for the corals).
+const BOARD_C = 'board-cache';
+const BOARD_SHEET = 95;
+const board0 = () => SUBJECTS.find(x => x.board);
+// A board reply to show: the first subject's from any script, another's only from BOARD_SHEET (tests/gates.test.js).
+const boardOk = (j, first) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= BOARD_SHEET);
+const boardSubj = () => (SUBJ.board ? SUBJ : board0());
+const boardAt = {},
+  boardP = {};
 const ago = t => {
   const m = Math.round((Date.now() - (t || 0)) / 60000);
   return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
 };
-const boardCached = () => {
-  const c = store.get(BOARD_C, null);
+const boardCached = (S = boardSubj()) => {
+  const c = store.get(subjDev(S.id, BOARD_C), null);
   return c && Array.isArray(c.rows) ? c : null;
 };
-const loadBoard = () => {
-  if (!boardP || Date.now() - boardAt > 60000) {
-    boardAt = Date.now();
-    boardP = fetch(SYNC_URL + '?board=1')
+const loadBoard = (S = boardSubj()) => {
+  const k = S.id,
+    first = S === board0();
+  if (!boardP[k] || Date.now() - (boardAt[k] || 0) > 60000) {
+    boardAt[k] = Date.now();
+    boardP[k] = fetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
       .then(r => r.json())
-      .then(j => (j && j.ok && Array.isArray(j.rows) ? j : {err: j && j.v < 14 ? 'old' : 'na'}))
+      .then(j => (boardOk(j, first) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
-        if (!j.err) store.set(BOARD_C, {rows: j.rows, t: Date.now()});
-        else boardAt = 0; // a failure is not kept for a minute: the next visit tries again
+        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, t: Date.now()});
+        else boardAt[k] = 0; // a failure is not kept for a minute: the next visit tries again
         return j;
       });
   }
-  return boardP;
+  return boardP[k];
 };
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
   $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
-  const C = boardCached();
-  if (C) paintBoard({...C, old: true});
-  loadBoard().then(B => {
+  const S = boardSubj(),
+    C = boardCached(S);
+  if (C) paintBoard({...C, old: true}, S);
+  loadBoard(S).then(B => {
     const box = document.getElementById('board');
-    if (!box || hashNow() !== 'board') return;
+    if (!box || hashNow() !== 'board' || boardSubj() !== S) return; // left, or another subject chosen meanwhile
     if (!B || B.err) {
       // Offline or failing: the last board stays, marked as such.
-      if (C) return paintBoard({...C, old: true, off: true});
+      if (C) return paintBoard({...C, old: true, off: true}, S);
       box.innerHTML = `<p class="note">${B && B.err === 'offline' ? 'The leaderboard needs a connection.' : 'The leaderboard is not available yet.'}</p>`;
       return;
     }
-    paintBoard(B);
+    paintBoard(B, S);
   });
 }
-function paintBoard(B) {
+function paintBoard(B, S = boardSubj()) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
   const me = boardMe(B.rows),
     // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
-    // device has none to show (Q134), or when the subject on screen is not the board's (SUBJ.board: P is another
-    // subject's progress). Other rows: the level the sheet read from their saved progress.
-    mine = me >= 0 && SUBJ.board ? eloLine(P[LEVEL]) : '',
+    // device has none to show (Q134), or when the subject on screen is not the board's (P is another subject's
+    // progress). Other rows: the level the sheet read from their saved progress.
+    mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '',
     eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
@@ -928,7 +942,7 @@ function boardNotice() {
   // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet). Only
   // once the sheet serves the leaderboard (v14): an older script ignores the %, which left everyone at 0% (2026-11-01).
   if (SYNC && !store.get('reefid-board-sent14', 0))
-    loadBoard().then(B => {
+    loadBoard(board0()).then(B => {
       if (B && !B.err && SYNC && !store.get('reefid-board-sent14', 0)) {
         store.set('reefid-board-sent14', 1);
         syncSoon();
@@ -1286,7 +1300,7 @@ document.querySelectorAll('#boardset button').forEach(
     (b.onclick = () => {
       store.set(BOARD, {v: b.dataset.board === '1' ? 1 : 0, t: Date.now()});
       showBoardSet();
-      boardP = null;
+      Object.keys(boardP).forEach(k => delete boardP[k]); // every subject's board fetched again (Codex review #693)
       syncSoon();
     })
 );
