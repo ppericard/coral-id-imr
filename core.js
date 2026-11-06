@@ -2181,7 +2181,8 @@
     // hundred answers, and rounding them to 2 decimals lost every one (Codex review #415: 1000 right answers left it at 1).
     const r = n === LEVEL ? 1e4 : 100;
     s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + w * K * ((good ? 1 : 0) - e))) * r) / r;
-    // The level this step was taken against (the level before this answer's own step on it, as quiz.js answer orders them).
+    // The level this step was taken against (the level before this answer's own step on it); scoreAnswer moves it on to
+    // the level after that step (Q137 part 1), so the genus never takes its own answer twice.
     if (n !== LEVEL && P && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
     delete s.lv;
     delete s.run;
@@ -2308,7 +2309,15 @@
     // each, with the same weight; this answer's seconds recorded after its steps (rtWeight compares with earlier ones).
     if (P[LEVEL]) P[LEVEL][ok ? 'ok' : 'ko']++;
     else P[LEVEL] = levelSeed(P);
-    if (scored) eloStep(P, LEVEL, P[LEVEL], ok, dm, k, out.rw, p);
+    if (scored) {
+      eloStep(P, LEVEL, P[LEVEL], ok, dm, k, out.rw, p);
+      // One surprise counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md
+      // §2a; docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it stands after this
+      // answer's step on it, so its levelMove carries only the level's moves from the other answers. Taken against the
+      // level before (eloStep's s.lt), it moved the genus once by its own step and again, at its next question, by the
+      // share of the level's step on the same answer (a first right answer: 0.30, then 0.22 more).
+      s.lt = P[LEVEL].th;
+    }
     if (q.rt !== false) rtAdd(P[LEVEL], q.sec, k);
     // Recent results over every game, newest last (an opening only after a right answer: model.js openRight).
     P[LEVEL].h = ((P[LEVEL].h || '') + (ok ? 1 : 0)).slice(-10);
@@ -2440,6 +2449,12 @@
       v: 6,
       at: '2026-11-06',
       why: 'One scorer (Q132, sheet v61): the game and the replay score an answer through scoreAnswer; an answer logged with its scoring record (photo difficulty, memory, mix-ups, look-alike test, recalls, a corallites hint revealed after it, shown but not recognised) replays exactly as the game scored it, an older row by its logged e as before',
+      msg: RV_CARD
+    },
+    {
+      v: 7,
+      at: '2026-11-06',
+      why: "One surprise counted once (Q137 part 1): the genus shown takes the global level as it stands after this answer's step on it, so levelMove carries only the level's moves from the other answers (a first right answer moved a genus 0.30, then 0.22 more through the level)",
       msg: RV_CARD
     }
   ];
