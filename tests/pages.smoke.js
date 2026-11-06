@@ -4512,21 +4512,22 @@ const PARTS = [
       }
       if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
       // One count of the genera met (a card or an answer) everywhere on the page (new-player walkthrough 2026-11-04: "23/40
-      // met" beside "12 not open yet" after 28 cards): the badge says the 4 first cards' genera are met, the genera not
-      // open yet are the others, and a genus met on a card but never asked does not read "Not seen".
+      // met" beside "12 not open yet" after 28 cards): the card says the 4 first cards' genera are unlocked (Pierre,
+      // 2026-11-05: "30/40 genera unlocked", on its own line under the name), the genera not open yet are the others, and a
+      // genus met on a card but never asked does not read "Not seen".
       const mc = await q2.evaluate(() => {
         const n = slateGenera().length,
           met = slateGenera().filter(introduced),
           tile = document.querySelector(`#view a[href="#learn/genus/${encodeURIComponent(met[0])}"]`);
         return {
-          badge: (document.querySelector('#view .pbadge') || {}).textContent || '',
+          badge: (document.querySelector('#view .pbadge .pbunl') || {}).textContent || '',
           met: met.length,
           left: introLeft().length,
           n,
           tip: tile ? tile.title : null
         };
       });
-      if (!mc.badge.includes(`${mc.met}/${mc.n} met`) || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
+      if (mc.badge !== `${mc.met}/${mc.n} genera unlocked` || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
         fails.push(`${w}px My progress, genera met: ${JSON.stringify(mc)}`);
       else {
         await q2.click('#openall');
@@ -4535,6 +4536,9 @@ const PARTS = [
         // ... and says so (the box just went before).
         const said = await q2.evaluate(() => document.querySelector('.apptoast')?.textContent || '');
         if (!/All \d+ genera are open/.test(said)) fails.push(`${w}px open all genera: no confirmation (${said})`);
+        // The card follows at once: every genus unlocked.
+        const un = await q2.evaluate(() => (document.querySelector('#view .pbadge .pbunl') || {}).textContent || '');
+        if (un !== `${mc.n}/${mc.n} genera unlocked`) fails.push(`${w}px open all genera: the card says "${un}"`);
       }
       // Every slate genus is now met, so the bonus genera offer (a prompt, tested in draw.smoke.js) would come at 30 and
       // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off). Likewise the card offering

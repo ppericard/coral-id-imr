@@ -2067,7 +2067,7 @@ function route() {
   resetHelp();
   $gpop.hidden = true;
   prog();
-  const pg0 = document.getElementById('prog'); // the pill ($prog in progress.js, tier 4)
+  const pg0 = document.getElementById('prog'); // the pill (progress.js showProg, tier 4)
   tab === 'progress' ? pg0.setAttribute('aria-current', 'page') : pg0.removeAttribute('aria-current');
   const bg = document.getElementById('boardgo');
   if (bg) tab === 'board' ? bg.setAttribute('aria-current', 'page') : bg.removeAttribute('aria-current');
