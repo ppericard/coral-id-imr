@@ -3055,6 +3055,9 @@ async function credits(b, base) {
     // screen; side by side: Learn's column wider.
     if (w < 600 ? !(ld[1] > id[1] && lb[1] > ib[1] && la[1] <= 0.28 * h + 1) : !(ld[0] > id[0]))
       fails.push(`${w}x${h} Home: Learn & practise is not the main door: ${JSON.stringify(r.doors)}`);
+    // Tablet and desktop: the Learn door's photo band keeps its height with the subject switch above the doors (the phone
+    // rule that shortens it on the shortest screens never applies there; Codex review #650).
+    if (w >= 600 && la[1] < 120) fails.push(`${w}x${h} Home: the Learn photo band collapsed to ${la[1]} px`);
     if (!/Pierre Pericard/.test(r.text) || !/IMR/.test(r.text) || !r.link || BOOK.test(r.text) || r.footer)
       fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
     await c.close();
