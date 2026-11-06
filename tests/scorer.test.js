@@ -43,7 +43,9 @@ function session(seed, n) {
     log = [];
   let pdiff = {}, // the device's photo ratings, refreshed now and then
     pmem = [0, -0.4, -1, -1.6],
-    pconf = {};
+    pconf = {},
+    pfmt = {}, // the device's per-format offsets (?stats=1 fmt, Q138), refreshed with the rest
+    pgd = {};
   const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
   for (let i = 0; i < n; i++) {
     if (i % 25 === 0) {
@@ -51,6 +53,8 @@ function session(seed, n) {
       pdiff = Object.fromEntries(G.flatMap(g => [0, 1, 2, 3, 4].map(j => [g.toLowerCase() + j, Math.round((r() * 3 - 1.2) * 1e4) / 1e4])));
       pmem = [0, -0.2 - r() * 0.5, -0.8 - r() * 0.5, -1.3 - r() * 0.6];
       pconf = {'A|B': [20 + i, 3 + Math.floor(r() * 8)], 'C|D': [10, Math.floor(r() * 5)]};
+      pfmt = {k4: [0, 500], again: [Math.round(r() * 1500) / 1000, 200], typed: [-0.4, 60]};
+      pgd = Object.fromEntries(G.map(g => [g, Math.round((r() * 2 - 1) * 1e3) / 1e3]));
     }
     const target = pick(G),
       typed = r() < 0.15,
@@ -70,7 +74,8 @@ function session(seed, n) {
       warm = r() < 0.3,
       SHOWNQ = warm ? {warm: true, cb: Math.round(r() * 1000) / 1000} : null,
       tm = {rt: r() < 0.9 ? Math.round((2 + r() * 12) * 10) / 10 : undefined},
-      k = typed ? Infinity : k4;
+      k = typed ? Infinity : k4,
+      mode = 'quiz' + (warm ? '|c' : '') + (!typed && k4 < 4 ? '|k' + k4 : '') + (typed ? '|t' : '');
     // model.js's inputs on the device now (stubbed): photo ratings, memory, mix-ups (pooled and the player's own),
     // look-alike test, recall.
     const pooled = (t, x) => C.confScore(pconf[t < x ? t + '|' + x : x + '|' + t], GEN[t].look.includes(x) ? C.CONF.LOOK : C.CONF.BASE);
@@ -100,7 +105,14 @@ function session(seed, n) {
         L.some(x => x !== t && (pooled(t, x) >= C.CONF.TRAP || C.confScore(C.pairConf(P, t, x), pooled(t, x)) >= C.CONF.TRAP)),
       recallAt: () => Math.round((0.5 + r() * 0.5) * 1000) / 1000,
       startP: () => 0,
-      rtOn: () => true
+      rtOn: () => true,
+      mq: mode,
+      fmtOf: C.fmtOf,
+      fmtOff: C.fmtOff,
+      PFMT: pfmt,
+      // The domain-score bar's genus offsets (model.js genusDiff), which the device's ?stats=1 replies move too.
+      domRules: () => true,
+      genusDiff: t => pgd[t] || 0
     };
     vm.createContext(env);
     st(target);
@@ -112,7 +124,7 @@ function session(seed, n) {
       g: target,
       a: c,
       ok: good ? 1 : 0,
-      m: 'quiz' + (warm ? '|c' : '') + (!typed && k4 < 4 ? '|k' + k4 : '') + (typed ? '|t' : ''),
+      m: mode,
       ph: env.seenPh.map(p => p.f).join(' '),
       ch: choices.join(' '),
       e: Math.round(100 * res.e) / 100,
@@ -158,8 +170,9 @@ test('a recorded session replays to the state the game had, field by field, what
     assert.ok(sc.some(x => x.r !== undefined) && sc.some(x => x.g !== undefined), 'recalls logged');
     assert.ok(sc.some(x => x.h) && sc.some(x => x.f) && sc.some(x => x.c) && sc.some(x => x.l) && sc.some(x => !x.l));
     assert.ok(log.some(a => /\|t/.test(a.m) && !a.a) && log.some(a => !a.ok && GEN[a.a]));
+    assert.ok(sc.some(x => x.o) && sc.some(x => !x.o), 'format offsets logged (o), and answers without one');
     // Other pooled stats than any the device held: the replay does not read them for a row with its scoring record.
-    for (const o of [{}, {mem: [0, -1, -2, -3], conf: {'A|B': [500, 400]}}]) {
+    for (const o of [{}, {mem: [0, -1, -2, -3], conf: {'A|B': [500, 400]}, fmt: {again: [2, 900], k4: [-1, 900]}}]) {
       same(C.replayProgress(rows, {gen: GEN, ...o}).me.P, P, `seed ${seed}, the whole log`);
       // The sheet's replay of the first answers, then this device's on top (sync.js replayAdopt).
       const head = C.replayProgress(rows.slice(0, 70), {gen: GEN, ...o});

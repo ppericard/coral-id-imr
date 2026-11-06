@@ -8,8 +8,9 @@ Pierre's standing rules on the learning logic. The model, its research, every co
 
 **Time between sessions never decays progress, mastery or ability** (no spaced-repetition days, no decay, no
 "refresh"). The app is a practical tool, not a retention or daily-habit app (no streaks, lessons, Duolingo-style units):
-someone should be able to master everything in a few hours. Progress (`s.pg`), mastery (`s.mx`) and the Elo ability
-(`s.th`) move only with answers (and how fast a right one came).
+someone should be able to master everything in a few hours. Progress (the domain-score bar `s.ds`; `s.pg` before rules
+version 9), mastery (`s.mx`) and the Elo ability (`s.th`) move only with answers (and how fast a right one came): the
+bar's drift, which lets old answers fade, is taken per own answer on the genus, never per day.
 - **The seconds taken to answer are another matter**: they are evidence about that answer and may weigh how much it
   moves the ability (a right answer given fast proves more than one given slowly: `core.js` `rtWeight`, LEARNING.md
   "Response time"); never a decay, never a penalty for being slow on its own.
@@ -30,22 +31,33 @@ progress). For B it is a false alarm, not a failure to recognise a photo of B: i
 traps, rule L7). It does **not** move **B's ability (Elo)**: standard Elo learner models update only the item asked
 (Pelánek et al. 2017), and on the real answers a false alarm on B did not make the next B photo harder
 (docs/LEARNING.md "The genus wrongly given in the Elo").
+**In the domain-score bar** (rules version 9) the false alarm counts through signal detection theory, not as a miss on
+B's own photos: B's bar is its domain score from B's own photos less B's false-alarm rate (the times B was named for
+another unit's photo over the questions where B could have been named), the two-high-threshold corrected recognition
+Pr = H − FA (Snodgrass & Corwin 1988; Green & Swets 1966; Macmillan & Creelman 2005). The ability is untouched.
 *Why:* keeping the false alarm in B's progress keeps the bar from over-claiming a unit the player keeps naming wrongly;
 keeping it out of B's ability keeps strong players from being under-rated (one wrong pick used to cost about three
-right answers). Whether the new domain-score bar should keep it is open (Pierre, 2026-11-06: only if dropping it does
-not make progress rise too fast; until then it stays).
-*Source:* Pierre, by 2026-11-01; ability, 2026-11-03; wording clarified and made subject-neutral, 2026-11-06.
+right answers). As a full miss in the domain-score bar it took units a player knows well to 0 ("0 means you know
+nothing, and that's not true", Pierre); as a false-alarm rate it keeps the over-claim in check (simulated, +3 points at
+most on the path) without that.
+*Source:* Pierre, by 2026-11-01; ability, 2026-11-03; wording clarified and made subject-neutral, 2026-11-06; the bar's
+signal detection correction, 2026-11-06 (Q163, Q174).
 
 ### L3
 
 **Difficulty is adaptive and continuous; no manual Easy/Medium/Hard selector.** Per-unit player ability vs photo
 difficulty on one Elo scale (Pelánek 2016), ~80% target success, guaranteed variety and new photos, more single-view
-questions as the level rises (details in ARCHITECTURE.md). **Every account counts everywhere**, Pierre's included: the
+questions as the level rises (details in ARCHITECTURE.md). **Photo exposure** (Q187-Q190): a colony (fish: an
+observation) counts as seen whatever view or photo of it was shown; 30% of the questions on a unit the player holds
+explore, drawing a colony never seen at the difficulty aimed for; a beginner's multi-view question weighs a colony by its
+share of the views (corals only: fish have one view); corals: up to 40 colonies per genus in the Colony view (fish: no
+cap). **Every account counts everywhere**, Pierre's included: the
 admin has no filter on his own answers or "test" accounts; the leaderboard's "hidden" changes only the public
 leaderboard. Corals: starred genera are always included in Practice. The normal quiz is never split by a course group
 or a book's shape group; only the custom quiz picks groups.
-*Why:* Pierre's account is a real player's. *Source:* Pierre, by 2026-11-01; every account, 2026-11-04; subject-neutral wording, groups for every subject,
-2026-11-06 (Q168).
+*Why:* Pierre's account is a real player's; players went round a unit's photos fast. *Source:* Pierre, by 2026-11-01;
+every account, 2026-11-04; subject-neutral wording, groups for every subject, 2026-11-06 (Q168); photo exposure,
+2026-11-06 (Q187-Q190; fish too, 15:36).
 
 ### L4
 
@@ -113,14 +125,18 @@ before adding it).
 
 ### L9
 
-**Learned = the silent mastery exam.** A unit fills up to 95% with its progress, a moving average of its answers (right
-answers against its look-alikes count most, each point harder to earn than the last; LEARNING.md); learned (100%) takes
+**Learned = the silent mastery exam.** A unit fills up to 95% with its progress, the share of all its possible photos the
+player would name alone and typed, from their own answers on that unit only (the posterior expected domain score;
+LEARNING.md "The domain-score bar"; a unit never answered is at 0, a miss never raises it); its exam opens at 85%,
+once the unit has been asked beside each of its look-alikes (pair coverage, Q129);
+learned (100%) takes
 5 exam questions slipped unannounced into the photo quiz, several answers apart, each as hard as the game gets (one
 photo alone, never seen, look-alike traps), all right, at least 2 of them typed from memory (typed questions come in
 progressively as the level on a unit rises, never as an on/off mode; `model.js` `TYPED`). Any miss on the unit, or
 giving it as the answer for another one, restarts it. No milestone that a player can pass by luck or in a few
 questions.
-*Source:* Pierre, 2026-11-01; progress weights, 2026-11-02; typed, 2026-11-03; subject-neutral wording, 2026-11-06.
+*Source:* Pierre, 2026-11-01; progress weights, 2026-11-02; typed, 2026-11-03; subject-neutral wording, 2026-11-06;
+the domain-score bar, 2026-11-06 (Q127, Q128, Q135; the exam's entry at 85% and the keep rule are open choices).
 
 ### L10
 

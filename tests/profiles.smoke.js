@@ -48,6 +48,9 @@ const server = http.createServer((req, res) => {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
+  // The rules the sheet replays today (core.js DOM_SHEET): a genus first answered takes the domain-score bar (model.js
+  // domRules), so the learning paths below are those of the current model, not of the moving average (Codex review #646).
+  await ctx.addInitScript(v => localStorage.setItem('reefid-sheet-v', String(v)), require('../core.js').DOM_SHEET);
   await ctx.addInitScript(() => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
@@ -131,8 +134,7 @@ const server = http.createServer((req, res) => {
         know[t] += rate * (1 - know[t]);
         // Progress (core.js PROG): a genus reaches its exam's entry (95%) only once it has been asked beside one of its
         // look-alikes (Pierre, 2026-11-02: never confirmed before it has been compared with the genera it gets confused with).
-        if (knownP(t) >= PROG.M && !typedOk.has(t) && !Object.keys(P[t].off || {}).some(n => GX(n) && pooledConf(t, n) >= CONF.TRAP))
-          early.add(t);
+        if (examOn(t) && !typedOk.has(t) && !Object.keys(P[t].off || {}).some(n => GX(n) && pooledConf(t, n) >= CONF.TRAP)) early.add(t);
         if ((i + 1) % 100 === 0) {
           rows.push({
             q: i + 1,
@@ -142,9 +144,11 @@ const server = http.createServer((req, res) => {
             met: G.filter(introduced).length,
             asked: G.filter(asked).length,
             learned: G.filter(g => (P[g] || {}).mx).length,
-            sure: G.filter(g => knownP(g) >= PROG.M).length,
+            sure: G.filter(g => examOn(g)).length,
             half: G.filter(g => genScore(g) >= 0.5).length,
-            pct: progPct(G)
+            pct: progPct(G),
+            // Every genus answered is under the domain-score bar (core.js domOn), none left on the moving average.
+            dom: G.filter(asked).every(g => domOn(P[g]))
           });
           blk = {n: 0, ok: 0, traps: 0, tn: 0, ty: 0};
         }
@@ -315,6 +319,8 @@ const server = http.createServer((req, res) => {
   // Progress (core.js PROG, a moving average weighed by what each answer proves) climbs progressively: after 300
   // questions an expert (every genus open by question 200) has many genera half way and far more progress than a
   // beginner, while genera at their exam's entry (95%) come from about question 400 on (6 seeds, docs/LEARNING.md).
+  for (const [k, v] of Object.entries(R))
+    if (v.rows && v.rows.some(r => !r.dom)) fails.push(`${k}: a genus answered not under the domain-score bar`);
   if (e3.half < 10) fails.push(`expert has ${e3.half} genera at 50% or more after 300 questions`);
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))

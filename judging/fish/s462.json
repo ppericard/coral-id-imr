@@ -29,12 +29,8 @@
    "keep": "dup"
   },
   "fish-s462-cand-731169344": {
-   "code": "d1g2bs1c1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Blurry; I cannot find the ray for sure on the sand"
+   "code": "d1g2bsx1",
+   "keep": "best"
   },
   "fish-s462-cand-313188141": {
    "code": "d1g1sl13",
@@ -125,24 +121,16 @@
    "keep": "dup"
   },
   "fish-s462-cand-733436263": {
-   "code": "h0g1sm1c2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Only the eyes show out of the sand; the ray is hard to make out"
+   "code": "d0g0smx1",
+   "keep": "best"
   },
   "fish-s462-cand-733436268": {
    "code": "h0g1sm1c2",
    "keep": "dup"
   },
   "fish-s462-cand-2172206": {
-   "code": "d1g2ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the ray for sure on the sand"
+   "code": "d1g2bsx1",
+   "keep": "best"
   },
   "fish-s462-cand-472624349": {
    "code": "d0g3sl12",

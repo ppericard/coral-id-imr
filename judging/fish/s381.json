@@ -21,12 +21,8 @@
    "keep": "dup"
   },
   "fish-s381-cand-113159495": {
-   "code": "o1g1sm1j2",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a container, not in the wild"
+   "code": "p1g0sl1ja1",
+   "keep": "best"
   },
   "fish-s381-cand-113159529": {
    "code": "p1g1sm1j2",
@@ -41,12 +37,8 @@
    "keep": "best"
   },
   "fish-s381-cand-339000510": {
-   "code": "p1g0sl13",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a container, not in the wild"
+   "code": "p1g0sl1a1",
+   "keep": "best"
   },
   "fish-s381-cand-339000515": {
    "code": "p1g1sm13",

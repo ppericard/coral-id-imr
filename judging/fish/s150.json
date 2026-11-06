@@ -53,12 +53,8 @@
    "keep": "best"
   },
   "fish-s150-cand-606707255": {
-   "code": "p1g3bmx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Blue and blurry; I cannot find the jack for sure"
+   "code": "p1g3bsx1",
+   "keep": "best"
   },
   "fish-s150-cand-705142276": {
    "code": "p1g2sm13",
@@ -98,6 +94,10 @@
   },
   "fish-s150-cand-747337016": {
    "code": "d1g1sm1ja2",
+   "keep": "best"
+  },
+  "fish-s150-cand-fb-Camel_u0": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }

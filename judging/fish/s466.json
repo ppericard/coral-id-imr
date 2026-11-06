@@ -65,12 +65,8 @@
    "keep": "dup"
   },
   "fish-s466-cand-650829029": {
-   "code": "p1g2ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Distant over the reef; I cannot find the jack for sure"
+   "code": "o1g1msx1",
+   "keep": "best"
   },
   "fish-s466-cand-650834911": {
    "code": "p1g2ssx1",
@@ -89,12 +85,8 @@
    "keep": "best"
   },
   "fish-s466-cand-664956790": {
-   "code": "d1g2bsx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Green and murky over seagrass; I cannot find the jack for sure"
+   "code": "p1g2bsx1",
+   "keep": "best"
   },
   "fish-s466-cand-664956852": {
    "code": "d1g2bm11",
