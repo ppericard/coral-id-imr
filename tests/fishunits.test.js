@@ -302,3 +302,24 @@ test('fishCov counts a candidate sent with Not this as waiting in its new specie
     by = Object.fromEntries(C.sp.map(r => [r.id, r]));
   assert.deepStrictEqual([by.s1.wait, by.s2.wait, by.s2.waitObs], [1, 1, 1]);
 });
+
+test('Photo review: fishSet through fishOwn, fishTag, fishAgree against the pass', () => {
+  // An auto-sort add that wrote the ease (log code at): Pierre's ease takes the e out of the code, so its Undo keeps it.
+  let F = {add: {a: 's1'}, ease: {a: 4}, auto: {d1: {a: 'ae'}}};
+  F = A.fishSet(F, 'a', 'ease', 2);
+  assert.deepStrictEqual([F.ease.a, F.auto.d1.a], [2, 'a']);
+  assert.ok(!('a' in A.fishSet(F, 'a', 'ease', null).ease), 'null takes his value off');
+  assert.strictEqual(A.fishTag('p1g0sm1r', 0, 'd'), 'd1g0sm1r');
+  assert.strictEqual(A.fishTag('p1g0sm1r', 'j'), 'p1g0sm1jr', 'flags in the rubric order');
+  assert.strictEqual(A.fishTag('p1g0sm1jr', 'j'), 'p1g0sm1r');
+  assert.strictEqual(A.fishTag('bad', 0, 'o'), 'o1g0sm1', 'an unreadable code starts from a plain profile one');
+  const j = f => ({a: {e: 4, jt: 'p1g0sm1', ph: 'male'}, b: {e: 3, jt: 'o1g0sm1j'}, c: {e: 5, jt: 'p1g0sm1'}})[f] || null,
+    G = {ease: {a: 4, b: 5, c: 1}, tags: {a: 'p1g0sm1', b: 'p1g0sm1j'}, phase: {a: 'male'}};
+  assert.deepStrictEqual(A.fishAgree(G, ['a', 'b', 'c', 'x'], 'ease', j), {n: 3, both: 3, same: 1, near: 1});
+  assert.deepStrictEqual(A.fishAgree(G, ['a', 'b', 'c'], 'view', j), {n: 2, both: 2, same: 1, near: 0});
+  assert.deepStrictEqual(
+    A.fishAgree(G, ['a', 'b', 'c'], 'phase', j),
+    {n: 2, both: 2, same: 2, near: 0},
+    'male = male; juvenile (j flag) = juvenile'
+  );
+});

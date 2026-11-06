@@ -464,7 +464,15 @@
       // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
       admin: {
         cur: 'fish',
-        pages: ['inbox/todo/reports', 'inbox/todo/errors', 'inbox/coverage/games', 'players/list', 'photos/families'],
+        pages: [
+          'inbox/todo/reports',
+          'inbox/todo/errors',
+          'inbox/coverage/games',
+          'players/list',
+          'photos/families',
+          'photos/review/ease',
+          'photos/review/phase-framing'
+        ],
         origins: [
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],

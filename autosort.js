@@ -623,6 +623,60 @@
       .filter(r => r.gap > 0)
       .sort((a, b) => (a.circle || 9) - (b.circle || 9) || b.cs - a.cs || b.gap - a.gap || (a.id < b.id ? -1 : 1));
 
+  // ---- Fish Photo review (admin plan PR 9): Pierre's ease, phase and view on photos in play ----
+  // Pierre's value of one field on a photo (pure; the fish Candidates' convention, #602): through fishOwn, so the auto-sort's
+  // Undo never takes it back; null takes it off (the pass's shows again).
+  function fishSet(F, f, field, v) {
+    F = fishOwn(F || {}, f, field);
+    const M = {...(F[field] || {})};
+    if (v == null) delete M[f];
+    else M[f] = v;
+    return {...F, [field]: M};
+  }
+  // One tag of a rubric code changed (pos 0-6: view, whole, light, colour loss, clarity, size, count), or a flag toggled
+  // (pos 'j' juvenile, 'c' camouflage), on Pierre's code, else the pass's, else a plain profile one; the tool-made flags
+  // (p phase entry, r reference photo) kept as they were, in the rubric's order.
+  const FFLAGORD = 'jcapr';
+  function fishTag(code, pos, v) {
+    const c = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$/.test(code || '') ? code : 'p1g0sm1';
+    if (typeof pos === 'number') return c.slice(0, pos) + v + c.slice(pos + 1);
+    const fl = new Set(c.slice(7));
+    if (fl.has(pos)) fl.delete(pos);
+    else fl.add(pos);
+    return c.slice(0, 7) + [...FFLAGORD].filter(x => fl.has(x)).join('');
+  }
+  // The agreement line of a review view: over the photos fs where Pierre gave his value and the pass gave one, how often
+  // they agree. field: 'ease' (exact, and within one point), 'phase' (fishPhase's words, juvenile included), 'view' (the
+  // tags' first letter). {n: his values, both, same, near (ease only)}.
+  function fishAgree(F, fs, field, j = () => null) {
+    F = F || {};
+    const mine = f =>
+        field === 'ease'
+          ? (F.ease || {})[f]
+          : field === 'view'
+            ? ((F.tags || {})[f] || '')[0]
+            : f in (F.phase || {}) || f in (F.tags || {})
+              ? fishPhase({f}, null, {phase: F.phase, tags: F.tags})
+              : undefined,
+      pass = f =>
+        field === 'ease' ? (j(f) || {}).e : field === 'view' ? ((j(f) || {}).jt || '')[0] : j(f) ? fishPhase({f}, j(f), {}) : undefined;
+    let n = 0,
+      both = 0,
+      same = 0,
+      near = 0;
+    fs.forEach(f => {
+      const m = mine(f),
+        p = pass(f);
+      if (m == null || (m === '' && field !== 'phase')) return;
+      n++;
+      if (p == null || (p === '' && field !== 'phase')) return;
+      both++;
+      if (m === p) same++;
+      if (field === 'ease' && Math.abs(m - p) <= 1) near++;
+    });
+    return {n, both, same, near};
+  }
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -829,6 +883,9 @@
     fishUnits,
     fishCov,
     fishLook,
+    fishSet,
+    fishTag,
+    fishAgree,
     autoCode,
     autoParse,
     autoIdx,

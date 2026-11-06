@@ -4843,3 +4843,29 @@ button.adm-chip[aria-pressed='true'] {
   text-align: left;
   font-size: 0.8rem;
 }
+/* Fish Photo review (admin plan PR 9): the value rows of a tile, wrapping; the pass's value (not Pierre's yet) dashed. */
+.adm-frev .adm-ftag button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.adm-frev {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.adm-frev .adm-ftag {
+  flex-wrap: wrap;
+  border-radius: var(--r-sm);
+}
+.adm-frev .adm-ftag button {
+  flex: 1 0 auto;
+}
+.adm-frev .adm-ftag.auto button[aria-pressed='true'] {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  outline: 1.5px dashed var(--accent);
+  outline-offset: -1.5px;
+}
+.adm-agree {
+  margin: 6px 0;
+}
