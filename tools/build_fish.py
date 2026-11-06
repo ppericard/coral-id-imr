@@ -424,7 +424,7 @@ def family_id(name):
     return "f:" + "".join(c for c in name if c.isalpha())
 
 
-def add_families(o, key):
+def add_families(o, key, declared=()):
     """The game's units above the species (Pierre, 2026-11-06 13:04: "the game's units are not the IMR entries: they are
     the families, the genera and the species"; 13:38: the IMR course is a tag on the families and genera it teaches, not
     a structure of its own; docs/reviews/2026-11-06-fish-units-plan.md).
@@ -437,8 +437,14 @@ def add_families(o, key):
     A family: {id (family_id), name, sci, group, circle (its species' best), imr (the IMR course's tag: the IMR entry's
     name, on the family that holds most species of that entry, the first in order on a tie), imrWith (the IMR entry
     that teaches its species when another family carries it: the Soapfishes, taught with IMR's Groupers), sl, cues
-    (IMR's, verbatim), look ([[family id, IMR's words]]), phase, dimorph, juv, why, note, wink (the IMR entry's, or the
-    teaching node's for circles 2-3), genera, species (in their teaching nodes' order: commonness)}.
+    (IMR's, verbatim), look ([[family id, IMR's words]]), lsrc ({family id: where the pair comes from}, as data.json
+    gen lsrc), phase, dimorph, juv, why, note, wink (the IMR entry's, or the teaching node's for circles 2-3), genera,
+    species (in their teaching nodes' order: commonness)}.
+    declared: fish_source.json "look", look-alike groups of families declared beyond the IMR course, each {src, key (the
+    key whose family labels the ids name; applied only while that key is in force), groups [[family id, ...]], note
+    {"a|b": words}} (Pierre, 2026-11-06: "Butterflyfishes and Angelfishes..."). Every pair of a
+    group is a look-alike both ways; its source joins the IMR one in lsrc, or starts the pair (IMR words "") when IMR
+    does not name it. They seed the traps and the confusion groups until pooled fish answers exist (rule L7).
     o["genera"]: every genus of a game species (the PDF name's first word, rule S2), {id g:<Genus>, name, family,
     circle, imr (the tag: the IMR sub-entry naming it, Anemonefish for Amphiprion; Surgeonfish names three genera), sl,
     cues (the sub-entry's), species}, in the families' order. Each game species gains family and genus (their ids).
@@ -524,12 +530,38 @@ def add_families(o, key):
             look = [[carried[i[:3]], txt] for i, txt in t.get("look", []) if carried.get(i[:3])]
             if look:
                 r["look"] = look
+                imr = "IMR fish presentation" + (", slide " + ", ".join(map(str, t["sl"])) if t.get("sl") else "")
+                r["lsrc"] = {b: imr for b, _ in look}
             for k in ("phase", "dimorph", "juv", "why", "note", "wink"):
                 if t.get(k):
                     r[k] = t[k]
         r["genera"] = list(dict.fromkeys(sp[sid]["genus"] for sid in f["species"]))
         r["species"] = f["species"]
         out.append(r)
+    by = {r["id"]: r for r in out}
+    for d in declared:
+        if d.get("key") != (key["id"] if key else None):
+            continue  # family ids of another key (or none): data only, as a key for another region
+        for grp in d["groups"]:
+            for a in grp:
+                if a not in by:
+                    sys.exit(f"tools/fish_source.json look: {a} is not a family of fish.json")
+            for a in grp:
+                r = by[a]
+                for b in grp:
+                    if b == a:
+                        continue
+                    note = (d.get("note") or {}).get(f"{a}|{b}") or (d.get("note") or {}).get(f"{b}|{a}")
+                    src = d["src"] + (f" ({note})" if note else "")
+                    look, ls = r.setdefault("look", []), r.setdefault("lsrc", {})
+                    if b not in [x[0] for x in look]:
+                        look.append([b, ""])
+                    ls[b] = ls[b] + " and " + src if ls.get(b) else src
+    # The keys in the order the families have always had them (look and lsrc together).
+    for i, r in enumerate(out):
+        if "lsrc" in r:
+            ls = r.pop("lsrc")
+            out[i] = {k2: v for k, v in r.items() for k2, v in ([(k, v), ("lsrc", ls)] if k == "look" else [(k, v)])}
     o["families"] = out
     go = []
     for g, x in gens.items():
@@ -565,7 +597,7 @@ def regroup(src_path, check):
         teach.append(t)
     o["teach"], o["key"] = teach, key_out(key)
     o.pop("groups", None)
-    add_families(o, key)
+    add_families(o, key, src.get("look", []))
     if check:
         if render(o) != OUT.read_text(encoding="utf-8"):
             kid = key["id"] if key else "(none)"
@@ -583,7 +615,8 @@ def commonness(check):
     fish.json as it is (offline). --check: write nothing, fail when fish.json differs (tests/fish.test.js runs it)."""
     o = json.loads(OUT.read_text(encoding="utf-8"))
     missing = fish_commonness.apply(o)
-    add_families(o, key_in_force(json.loads(SRC.read_text(encoding="utf-8"))))
+    src = json.loads(SRC.read_text(encoding="utf-8"))
+    add_families(o, key_in_force(src), src.get("look", []))
     if check:
         if render(o) != OUT.read_text(encoding="utf-8"):
             sys.exit(f"{OUT.relative_to(ROOT)} is not as the commonness index gives it: run python3 tools/build_fish.py --commonness")
@@ -658,7 +691,8 @@ def main():
         for x in left:
             print("  " + x)
         show_missing(fish_commonness.apply(o))
-        add_families(o, key_in_force(json.loads(SRC.read_text(encoding="utf-8"))))
+        src = json.loads(SRC.read_text(encoding="utf-8"))
+        add_families(o, key_in_force(src), src.get("look", []))
         if not a.dry:
             write(o)
             print(f"wrote {OUT.relative_to(ROOT)}")
@@ -670,7 +704,7 @@ def main():
     finally:
         NET.save()
     show_missing(fish_commonness.apply(out))
-    add_families(out, key_in_force(src))
+    add_families(out, key_in_force(src), src.get("look", []))
     show(out, report)
     if not a.dry:
         write(out)
