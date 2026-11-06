@@ -433,7 +433,10 @@ const photoSrc = p =>
         ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
         : p.o && p.o.includes('inaturalist.org')
           ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
-          : '';
+          : // A FishBase photo Pierre put in play (fish, admin plan PR 7): its author and FishBase's photo page.
+            p.via === 'fishbase' && p.o
+            ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p))}: open the FishBase photo page"><span class="pa">${esc(author(p).replace(/,\s*via FishBase$/i, ''))} · </span>FishBase ↗</a>`
+            : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
 const credit = p =>
@@ -483,6 +486,7 @@ function build() {
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
   DATA = d;
+  if (FISHRAW) fishBuild(); // the fish photos under the same curation
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
 // with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of the circle-1 species of each
@@ -579,21 +583,29 @@ const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.uni
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (FISH, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
-// Fish (core.js fishGen over fish.json and fish-photos.json): fetched the first time the fish subject is needed.
-// fish-photos.json is the stopgap photo list (remote iNaturalist photos, tools/fish_photos.py) until the fish photo
-// pipeline exists.
+// Fish (core.js fishGen over fish.json and the photos): fetched the first time the fish subject is needed. The photos:
+// fish-game.json, the ones Pierre put in play, hosted on R2 (tools/fish_game.py, admin plan PR 7), and fish-photos.json,
+// the stopgap list (remote iNaturalist photos, tools/fish_photos.py) and the sheet-only photos; core.js fishPhotos
+// picks per entry under Pierre's curation (CUR), so FISH is made again whenever the curation is (build, fishBuild).
 let FISH = null,
-  FISHP = null;
+  FISHP = null,
+  FISHRAW = null;
+const fishBuild = () => {
+  const {f, ph, gm} = FISHRAW;
+  FISH = fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f);
+  rankPhotos(); // the photos in easyRank order on their difficulty (below)
+  return FISH;
+};
 const fishLoad = () =>
   FISHP ||
-  (FISHP = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6')])
-    .then(([f, ph]) => {
+  (FISHP = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6'), json('fish-game.json?v=1')])
+    .then(([f, ph, gm]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
-      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
+      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
+      // curated photos are not required: without them every entry plays on the stopgap's.
       if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      FISH = fishGenera(fishGen(f, ph.photos, ph.sheet), f);
-      rankPhotos();
-      return FISH;
+      FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
+      return fishBuild();
     })
     .catch(e => {
       FISHP = null;
