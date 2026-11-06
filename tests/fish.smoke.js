@@ -1,11 +1,12 @@
 // Fish quiz test (the taxon model, core.js SUBJECTS): runs the real app in Chromium on the fish subject and checks:
-// - the draw: fish questions only from the fish slate (circle 1, the IMR entries) until a circle is opted in; every
-//   choice a fish entry; one photo, from one observation; winks never asked as questions;
-// - circle opt-in: circle 2 offered once every IMR entry has been asked, circle 3 once the progress reaches FISH_C3;
-//   "Not now" kept; once on, their entries join the draw, never counted in the progress;
+// - the draw: the fish slate is every family of every circle (Pierre, 2026-11-06, Q175); every choice a fish family; one
+//   photo, from one observation; winks never asked as questions; no circle setting row or offer card;
+// - the circles on the path (Q177): circle 2 may open once every circle-1 family has been asked, circle 3 once the
+//   progress on circle 1 reaches FISH_C3, never before (the opening draws circle 1 first); every circle in the progress;
+//   "I'm at IMR": the IMR-tagged families open first;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
 //   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
-//   (quiz.js WINK.AT: 300), once due shown once, then not again on the device (reefid-fish-wink);
+//   (quiz.js WINK.AT: 300), once due shown once, then not again for the player (reefid-sync-fish-wink, travels);
 // - typed answers: the entry's names (IMR name, family, sub-entries) read as the entry;
 // - progress per subject kept apart: fish answers in reefid-sync-fish-progress only, the corals' untouched; switching
 //   back to corals brings the coral slate and progress back;
@@ -78,8 +79,18 @@ const server = http.createServer((req, res) => {
       ok = (c, m) => c || fails.push(m);
     const closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
-    ok(slateGenera().length === 27 && slateGenera().every(n => FISH.c1.includes(n)), 'the fish slate = the 27 IMR entries');
-    ok(!pool().some(n => !FISH.c1.includes(n)), 'circle 1 only before any opt-in');
+    ok(
+      FISH.c1.length === 28 &&
+        FISH.c2.length > 0 &&
+        FISH.c3.length > 10 &&
+        slateGenera().join() === [...FISH.c1, ...FISH.c2, ...FISH.c3].join(),
+      'the fish slate = every family of circles 1, 2 and 3'
+    );
+    ok(slateCore().join() === FISH.c1.join(), 'Open all opens circle 1 (the IMR course)');
+    ok(
+      !SETS().some(S => S.k === 'c2' || S.k === 'c3') && !document.querySelector('[data-optin="c2"], [data-optin="c3"]'),
+      'no circle setting'
+    );
     // No wall (Pierre, 2026-11-06 14:17): on a fresh entry a photo under ease 4 can be drawn, rarely; the prior and the
     // aim favour the easy ones (no easyFirst gate any more).
     {
@@ -139,7 +150,7 @@ const server = http.createServer((req, res) => {
         route();
         continue;
       }
-      ok(q && FISH.c1.includes(q[1]), 'question on an IMR entry');
+      ok(q && FISH.c1.includes(q[1]), 'question on a circle-1 family (circles 2 and 3 wait)');
       const ans = document.querySelectorAll('#view [data-c]');
       if (ans.length) {
         ok(
@@ -177,8 +188,14 @@ const server = http.createServer((req, res) => {
     ok(!localStorage.getItem('reefid-anon-base'), 'no coral anonymous base from fish answers');
     // Typed names.
     const tm = x => typeMatch(x) && typeMatch(x).g;
-    ok(tm('Damselfish') === 't01' && tm('Chromis') === 't01' && tm('Pomacentridae') === 't01', 'typed: names of Damselfish');
-    ok(tm('unicornfish') === 't06' && tm('Moorish idol') === 't05', 'typed: parts and two-word names');
+    ok(
+      tm('Damselfishes') === 'f:Damselfishes' &&
+        tm('Damselfish') === 'f:Damselfishes' &&
+        tm('Chromis') === 'f:Damselfishes' &&
+        tm('Pomacentridae') === 'f:Damselfishes',
+      'typed: names of the Damselfishes'
+    );
+    ok(tm('unicornfish') === 'f:Surgeonfishes' && tm('Moorish idol') === 'f:MoorishIdol', 'typed: parts and two-word names');
     ok(!tm('Acropora'), 'typed: a genus is no fish entry');
     // Winks for a circle-1 player: made due at this count (the first threshold moved here, the counts left as they are),
     // shown, answered, never counted.
@@ -197,42 +214,75 @@ const server = http.createServer((req, res) => {
       wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
-      ok(localStorage.getItem('reefid-fish-wink') === '0', 'wink: kept as shown on this device');
+      ok(n in JSON.parse(localStorage.getItem('reefid-sync-fish-wink') || '{}'), 'wink: kept as shown for the player');
       route();
       closeCards();
       quizPhoto();
       ok(!document.querySelector('#view .q.wink'), 'wink: not again in its window');
     }
     WINK.AT.splice(0, 2, ...W0);
-    // Circle 2: offered once every IMR entry was asked; "Not now" kept.
-    ok(!bonusOfferDue(), 'no offer before every IMR entry is asked');
-    FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
-    const S2 = bonusOfferDue();
-    ok(S2 && S2.k === 'c2', 'circle 2 offered once every IMR entry is asked');
-    bonusOfferShow(S2);
-    document.querySelector('.unlock .sec').click();
-    ok(Q.c2 === false && (!bonusOfferDue() || bonusOfferDue().k !== 'c2'), '"Not now" kept');
-    // Circle 3: once the progress reaches FISH_C3.
-    ok(!bonusOfferDue(), 'circle 3 not before the progress threshold');
-    FISH.c1.forEach(n => (st(n).pg = 0.7));
-    const S3 = bonusOfferDue();
-    ok(S3 && S3.k === 'c3', 'circle 3 offered at the threshold');
-    const pct = progPct();
-    bonusSet(true, 'c3');
+    // The circles on the path (Pierre, 2026-11-06, Q175, Q177): no offer card; circle 2 may open once every circle-1
+    // family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3; until then the opening never draws
+    // them (mayOpen, openPick); every circle counts in the progress.
+    const canOpen = () => slateGenera().filter(n => !introduced(n) && mayOpen(n)),
+      picks = () => [...Array(40)].map(() => canOpen().length && openPick(canOpen())).filter(Boolean);
+    ok(!bonusOfferDue(), 'no circle offer card');
+    // A unit's bar set through the former moving average (s.pg), whatever rule its record is under: a unit answered above
+    // took the domain-score bar (core.js DOM; the fish are not replayed, model.js domRules), which s.pg alone would not move.
+    const pgAt = (n, x) => {
+      const s = st(n);
+      delete s.dp;
+      delete s.ds;
+      s.pg = x;
+    };
     ok(
-      pool().some(n => FISH.c3.includes(n)),
-      'circle 3 in the draw once on'
+      FISH.c1.some(n => !asked(n)),
+      'some circle-1 families not asked yet'
     );
-    ok(progPct() === pct, 'circle 3 never counted in the progress');
-    bonusSet(false, 'c3');
-    ok(!pool().some(n => FISH.c3.includes(n)), 'Off: out of the draw');
+    ok(!FISH.c2.some(mayOpen) && !FISH.c3.some(mayOpen), 'circles 2 and 3 wait while a circle-1 family is not asked');
+    ok(
+      picks().every(n => FISH.c1.includes(n)),
+      'the opening draws circle 1 only'
+    );
+    FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
+    ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
+    ok(progPct(FISH.c1) < 100 * FISH_C3, 'circle 1 under FISH_C3');
+    const p2 = picks();
+    ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
+    FISH.c1.forEach(n => pgAt(n, 0.7));
+    ok(progPct(FISH.c1) >= 100 * FISH_C3 && FISH.c3.every(mayOpen), 'circle 3 opens once circle 1 reaches FISH_C3');
+    ok(
+      picks().some(n => FISH.c3.includes(n)),
+      'the opening draws circle 3 then'
+    );
+    ok(!bonusOfferDue() || bonusOfferDue().k === 'sci', 'still no circle offer card');
+    // Every circle in the progress: a circle-3 family learned moves the %, over all the families.
+    const c3n = FISH.c3[0],
+      pct = progPct();
+    pgAt(c3n, 0.9);
+    ok(progPct() > pct && progPct() === progPct(slateGenera()), 'circle 3 counts in the progress');
+    delete P[c3n];
+    // "I'm at IMR" (the fish welcome answer imr): the IMR-tagged families first within circle 1 (Pierre, 2026-11-06 13:38): the
+    // Soapfishes (taught by IMR with the Groupers, no IMR name of their own) wait for them.
+    const sk = startKey('fish'),
+      s0 = localStorage.getItem(sk),
+      soap = FISH.c1.filter(n => !GX(n).imrName),
+      pool1 = [...soap, ...FISH.c1.filter(n => GX(n).imrName && !GX(n).first).slice(0, 3)];
+    ok(soap.length === 1, 'one circle-1 family without an IMR name: ' + soap);
+    store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: []});
+    ok(
+      [...Array(40)].every(() => GX(openPick(pool1)).imrName),
+      "I'm at IMR: the IMR-tagged families first"
+    );
+    if (s0 === null) localStorage.removeItem(sk);
+    else localStorage.setItem(sk, s0);
     // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
     // circle-1 species of each IMR entry, never two entries; offered once an entry is at Advanced, a family's genera in
     // play only from its Advanced; their questions and typed answers among genera only, an entry's among entries; never
     // counted in the progress, never a duel pair.
     const sci = SETS().find(S => S.k === 'sci'),
       G = FISH.sci;
-    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the IMR entries');
+    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the circle-1 families');
     ok(
       G.every(n => GX(n).species.every(id => GX(GX(n).parent).views && FISH.gen[GX(n).parent])) &&
         new Set(G.map(n => GX(n).name)).size === G.length,
@@ -242,17 +292,23 @@ const server = http.createServer((req, res) => {
       G.every(n => isBonus(n) && setOf(n) === sci),
       'sci: every genus in its set, opened or not'
     );
-    FISH.c1.forEach(n => (st(n).pg = 0.2));
+    FISH.c1.forEach(n => pgAt(n, 0.2));
     ok(!sci.units().length, 'sci: no genus in play before an entry is at Advanced');
-    st('t02').pg = 0.72;
-    ok(sci.units().length && sci.units().every(n => GX(n).parent === 't02'), 'sci: the genera of the entry at Advanced only');
+    pgAt('f:Butterflyfishes', 0.72);
+    ok(
+      sci.units().length && sci.units().every(n => GX(n).parent === 'f:Butterflyfishes'),
+      'sci: the genera of the family at Advanced only'
+    );
     ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once an entry is at Advanced');
     const pc = progPct();
     bonusSet(true, 'sci');
-    ok(pool().some(n => GX(n).rank) && pool().every(n => !GX(n).rank || GX(n).parent === 't02'), 'sci: on, the genera in play');
+    ok(
+      pool().some(n => GX(n).rank) && pool().every(n => !GX(n).rank || GX(n).parent === 'f:Butterflyfishes'),
+      'sci: on, the genera in play'
+    );
     ok(progPct() === pc, 'sci: never counted in the progress');
     const g0 = pool().find(n => GX(n).rank),
-      e0 = 't02';
+      e0 = 'f:Butterflyfishes';
     ok(
       distractors(g0, pool(), 3).every(n => GX(n).rank === 'genus'),
       'sci: a genus question offers genera only'
@@ -262,16 +318,18 @@ const server = http.createServer((req, res) => {
       'sci: an entry question offers entries only'
     );
     ok(!UNITS.fish.pairs().some(pr => pr.some(n => GX(n).rank)), 'sci: no duel pair of genera');
-    ok(typeMatch('Chromis').g === 't01' && typeMatch('Chromis', 'genus').g === 'g:Chromis', 'sci: typed Chromis by rank');
+    ok(typeMatch('Chromis').g === 'f:Damselfishes' && typeMatch('Chromis', 'genus').g === 'g:Chromis', 'sci: typed Chromis by rank');
     // Codex review #526: a genus's WoRMS-accepted name is accepted when typed (Pseudanthias tuka is now Mirolabrichthys).
     ok(typeMatch('Mirolabrichthys', 'genus') && typeMatch('Mirolabrichthys', 'genus').g === 'g:Pseudanthias', 'sci: typed accepted genus');
+    // A common name (IMR's Anemonefish) never answers a genus question (docs/FISH_PATH.md; Codex review #656).
+    ok((typeMatch('Anemonefish', 'genus') || {}).g !== 'g:Amphiprion', 'sci: IMR common name not a genus answer');
     // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
     // wrong choice, as in the quiz); a genus card's photo is its easiest, most reference-like one, whoever took it
     // (Pierre, 2026-11-06: no source tier for fish), and a never-seen photo of Pierre's gets no draw bonus.
-    st('t02').pg = 0.2;
-    st('t04').pg = 0.72;
+    pgAt('f:Butterflyfishes', 0.2);
+    pgAt('f:Spadefishes', 0.72);
     const pl = pool().filter(n => GX(n).rank);
-    ok(pl.length === 1 && GX(pl[0]).parent === 't04', 'sci: Spadefish alone, one genus in play');
+    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
@@ -302,7 +360,10 @@ const server = http.createServer((req, res) => {
       rb.click();
       const dl = document.querySelector('#repdlg');
       const opts = [...dl.querySelectorAll('#repgen option')].map(o => o.value);
-      ok(opts.length >= 27 && opts.includes('Damselfish'), 'report: the fish names offered ' + opts.slice(0, 3));
+      ok(
+        opts.length >= 27 && opts.includes('Damselfishes') && opts.includes('Frogfishes'),
+        'report: the fish names offered ' + opts.slice(0, 3)
+      );
       ok(!opts.some(o => /^t\d+$/.test(o)), 'report: no teaching id offered ' + opts.filter(o => /^t\d+$/.test(o)).slice(0, 3));
       const txt = dl.textContent;
       ok(/Right family, if you know/.test(txt) && /Several fish species/.test(txt), 'report: the fish words');
@@ -416,8 +477,9 @@ const server = http.createServer((req, res) => {
     }));
     if (tl.tile || tl.badge || !/Fish/.test(tl.chip)) ui.push(`${width}px Tools with Fish on: ${JSON.stringify(tl)}`);
     // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
-    // rule S3), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
-    // them, every entry under its own group; the key credited in full under the list.
+    // rule S3), in the key's order, only those that hold a family of the slate (every circle: Pierre, 2026-11-06, Q175),
+    // each under its number and title as the key prints them, every family under its own group; the key credited in full
+    // under the list.
     await q.evaluate(() => (location.hash = '#learn/genera'));
     await q.waitForFunction(() => document.querySelector('#view .gdiv'), null, {timeout: 15000});
     const fam = await q.evaluate(() => {
@@ -429,12 +491,12 @@ const server = http.createServer((req, res) => {
           ids: [...b.querySelectorAll('.tipg .tipph b')].map(x => x.textContent)
         })),
         c1 = heads.filter(h => G.some(g => g.n === h.n)),
-        want = G.filter(g => FISH.c1.some(n => GX(n).group === g.n)).map(g => g.n),
+        want = G.filter(g => slateGenera().some(n => GX(n).group === g.n)).map(g => g.n),
         cite = (document.querySelector('#view .keycite') || {}).textContent || '';
       return {
         order: c1.map(h => h.n).join() === want.join(),
         titles: c1.every(h => (G.find(g => g.n === h.n) || {}).title === h.t),
-        placed: c1.every(h => h.ids.every(nm => FISH.c1.some(n => unameT(n) === nm && GX(n).group === h.n))),
+        placed: c1.every(h => h.ids.every(nm => slateGenera().some(n => unameT(n) === nm && GX(n).group === h.n))),
         got: c1.map(h => h.n).join(),
         want: want.join(),
         cite: !!K.cite && cite.includes(K.cite)
@@ -489,7 +551,7 @@ const server = http.createServer((req, res) => {
       .catch(e => ({err: e.message}));
     if (sp.hash !== '#fish/learn/family/Spadefishes' || sp.all !== 5 || sp.mine !== 0)
       ui.push(`${width}px Spadefishes sheet: ${JSON.stringify(sp)}`);
-    // The filter starts on again on the next sheet opened (Codex review #675); an opt-in circle on puts its families in the
+    // The filter starts on again on the next sheet opened (Codex review #675); every circle's families are in the
     // sheets' previous / next, both families of an entry renamed into two included (Seahorses, Waspfishes).
     await q.evaluate(() => (location.hash = '#fish/learn/family/Rabbitfishes'));
     await q
@@ -498,11 +560,9 @@ const server = http.createServer((req, res) => {
       })
       .catch(() => {});
     const re = await q.evaluate(() => {
+      // Every circle is on the path (Q175, Q177): circles 2 and 3's families are in the sheets' previous / next, no opt-in.
       const on = (document.querySelector('#view .seg [data-mine="1"]') || {}).getAttribute?.('aria-pressed'),
-        was = Q.c3;
-      Q.c3 = true;
-      const L = fishShown();
-      Q.c3 = was;
+        L = fishShown();
       // The species of a family an entry was split into count with that entry (Codex review #675: t46, the Seahorses).
       const units = Object.entries(SUBJ.renamed.split || {})
         .flatMap(([t, m]) => Object.values(m).map(f => [t, f]))
@@ -512,7 +572,7 @@ const server = http.createServer((req, res) => {
         seahorses: L.includes('f:Seahorses'),
         wasp: L.includes('f:Waspfishes'),
         pipe: L.includes('f:Pipefishes'),
-        off: !fishShown().includes('f:Seahorses') || !!was,
+        off: true,
         units
       };
     });
@@ -543,6 +603,38 @@ const server = http.createServer((req, res) => {
     if (gp.name !== 'Chromis' || gp.tips !== 2 || gp.tiles !== 13 || gp.sib < 2 || !/genus/.test(gp.bar))
       ui.push(`${width}px genus page: ${JSON.stringify(gp)}`);
     await wide('a genus page');
+    // A species tile opens its species sheet (scientific name first, its common name, badges, photos, the other species of
+    // its genus); a genus with one species opens that species' sheet (option B).
+    await q.click('#view .ftiles a.ftile');
+    await q
+      .waitForFunction(() => location.hash.startsWith('#fish/learn/species/') && document.querySelector('#view .fbadges'), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const ss = await q.evaluate(() => ({
+      hash: location.hash,
+      name: (document.querySelector('#view .fn-t') || {}).textContent || '',
+      badges: document.querySelectorAll('#view .fbadges .chip').length,
+      fam: !!document.querySelector('#view .fbadges a[href="#fish/learn/family/Damselfishes"]'),
+      photo: !!document.querySelector('#view .fphotos img, #view .fphotos .nofish'),
+      sib: document.querySelectorAll('#view .ftiles a.ftile').length,
+      bar: (document.querySelector('#modes .ctx-t') || {}).textContent || ''
+    }));
+    if (
+      !/^Chromis /.test(ss.name) ||
+      decodeURIComponent(ss.hash) !== '#fish/learn/species/' + ss.name ||
+      ss.badges < 3 ||
+      !ss.fam ||
+      !ss.photo ||
+      ss.sib !== 12 ||
+      !ss.bar.includes(ss.name)
+    )
+      ui.push(`${width}px species sheet: ${JSON.stringify(ss)}`);
+    await wide('a species sheet');
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Zanclus'));
+    await q.waitForFunction(() => location.hash === '#fish/learn/species/Zanclus%20cornutus', null, {timeout: 15000}).catch(() => {});
+    const zh = await q.evaluate(() => location.hash);
+    if (zh !== '#fish/learn/species/Zanclus%20cornutus') ui.push(`${width}px a one-species genus: ${zh}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
@@ -633,13 +725,13 @@ const server = http.createServer((req, res) => {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
           WINK.AT[0] = answersSoFar();
           delete WINKS[SUBJ.id];
-          localStorage.removeItem('reefid-fish-wink');
+          localStorage.removeItem('reefid-sync-fish-wink');
           quizPhoto();
-          ok({wink: !!document.querySelector('#view .q.wink'), seen: WINKS[SUBJ.id]});
+          ok({wink: !!document.querySelector('#view .q.wink'), seen: Object.keys(WINKS[SUBJ.id] || {}).length});
         }, 300)
       );
     });
-    if (!wk.wink || wk.seen !== 0) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
+    if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
     await wide('a wink');
     // Back to the corals through the header chip: its menu holds both subjects; a choice closes it.
     await q.evaluate(() => (location.hash = '#practice/quiz'));
@@ -937,7 +1029,7 @@ const server = http.createServer((req, res) => {
     }
     const kept = await q.evaluate(() => ({
       saved: localStorage.getItem('reefid-sync-subject'),
-      fp: JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}').t01
+      fp: JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}')['f:Damselfishes'] // t01 stored before the switch, moved at load
     }));
     if (kept.saved !== '"fish"' || !kept.fp || kept.fp.ok !== 4)
       ui.push(`${width}px ${user}: saved Fish or fish progress lost ${JSON.stringify(kept)}`);
@@ -1163,12 +1255,14 @@ const server = http.createServer((req, res) => {
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
           localStorage.setItem('reefid-sync-subject', '"fish"');
           localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
+          localStorage.setItem('reefid-sync-fish-wink', '{"f:Threshersharks":700}'); // the thresher, met here before signing in
         }
       } catch (e) {}
       // The sheet: the account (coral and fish progress), a hold of 5 on every load; saves recorded.
       const data = {
         'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 3, ko: 1}}),
-        'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}})
+        'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}}),
+        'reefid-sync-fish-wink': JSON.stringify({'f:WhaleSharks': 300}) // the whale shark, shown on another device of the account
       };
       window.SAVES = [];
       window.SHEET_STUB = (url, o) => {
@@ -1190,11 +1284,29 @@ const server = http.createServer((req, res) => {
     await q.evaluate(() => syncPush());
     const r = await q.evaluate(() => ({
       subj: SUBJ.id,
-      saved: JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}').t01,
-      here: P.t01,
+      saved: JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}')['f:Damselfishes'],
+      here: P['f:Damselfishes'],
       fishHold: localStorage.getItem('reefid-fish-hold'),
-      coralHold: localStorage.getItem('reefid-hold')
+      coralHold: localStorage.getItem('reefid-hold'),
+      // The surprise shown on the other device and the one met here before signing in (Codex review #652): both kept here
+      // and in the save, so neither comes again for this player.
+      wink: localStorage.getItem('reefid-sync-fish-wink'),
+      winkSaved: SAVES[SAVES.length - 1].data['reefid-sync-fish-wink'],
+      next: (() => {
+        const W0 = WINK.AT.slice();
+        WINK.AT.splice(0, 2, 0, 0);
+        const L0 = P['~level'];
+        P['~level'] = {...(L0 || {}), ok: 1000};
+        const w = winkDue();
+        WINK.AT.splice(0, 2, ...W0);
+        if (L0) P['~level'] = L0;
+        else delete P['~level'];
+        return w && w.n;
+      })()
     }));
+    const both = w => JSON.stringify(JSON.parse(w || '{}')) === '{"f:WhaleSharks":300,"f:Threshersharks":700}';
+    if (!both(r.wink) || !both(r.winkSaved) || r.next !== null)
+      rv.push(`sign-in: a surprise met on another device or before signing in could come again ${JSON.stringify(r)}`);
     if (r.subj !== 'fish' || !r.saved || r.saved.ok !== 10 || r.saved.ko !== 2 || r.here.ok !== 10)
       rv.push(`sign-in on a device that never played fish: fish progress ${JSON.stringify(r)} (want 10/2)`);
     if (Number(r.fishHold || 0) !== 0 || Number(r.coralHold) !== 5)
@@ -1215,7 +1327,7 @@ const server = http.createServer((req, res) => {
             const rm = JSON.stringify(rematch);
             WINK.AT[0] = answersSoFar();
             delete WINKS[SUBJ.id];
-            localStorage.removeItem('reefid-fish-wink');
+            localStorage.removeItem('reefid-sync-fish-wink');
             quizPhoto();
             ok({
               wink: !!document.querySelector('#view .q.wink'),
@@ -1293,8 +1405,8 @@ const server = http.createServer((req, res) => {
     await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH, null, {timeout: 30000});
     await q.evaluate(() => syncPush());
     const o = await q.evaluate(() => ({
-      here: (P.t01 || {}).ok,
-      sent: SAVES.length ? (JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}').t01 || {}).ok : null
+      here: (P['f:Damselfishes'] || {}).ok,
+      sent: SAVES.length ? (JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}')['f:Damselfishes'] || {}).ok : null
     }));
     if (o.here !== 10 || o.sent !== 10) rv.push(`a saved copy without fish keys erased the fish progress: ${JSON.stringify(o)}`);
     // (8) Tools › Type the genus with Fish chosen: the corals' genera (the Tools are the corals'; Codex review #442: it
@@ -1353,11 +1465,11 @@ const server = http.createServer((req, res) => {
     fail = false;
     const b2 = await q.evaluate(() =>
       setSubject('fish').then(
-        () => ({subj: SUBJ.id, n: slateGenera().length}),
+        () => ({subj: SUBJ.id, n: slateGenera().length, all: FISH.c1.length + FISH.c2.length + FISH.c3.length}),
         e => ({err: String(e && e.message)})
       )
     );
-    if (a.subj !== 'coral' || a.fish || a.cached || b2.subj !== 'fish' || b2.n !== 27)
+    if (a.subj !== 'coral' || a.fish || a.cached || b2.subj !== 'fish' || b2.n !== b2.all || b2.n < 40)
       rv.push(`fish.json failing at start-up: ${JSON.stringify(a)} then ${JSON.stringify(b2)}`);
     await c4.close();
   }
@@ -1404,8 +1516,11 @@ const server = http.createServer((req, res) => {
       };
       const starters = slateGenera().filter(n => GX(n).first),
         ph = (t, f) => GX(t).views.wide.find(y => y.f === f) || {};
-      ok(starters.slice().sort().join() === 't01,t02,t03,t06', `the starter core from fish.json: ${starters}`);
-      // The card: a reference-level photo where the entry has one (core.js refLevel, refFirst), else its easiest.
+      ok(
+        starters.slice().sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes',
+        `the starter core from fish.json: ${starters}`
+      );
+      // The card: a reference-level photo where the family has one (core.js refLevel, refFirst), else its easiest.
       ok(
         starters.every(n => {
           const L = GX(n).views.wide,
@@ -1441,14 +1556,19 @@ const server = http.createServer((req, res) => {
       ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
       ok(under <= gated / 3, `${under} of ${gated} photos under ease 4 before Open Water: the easy ones should dominate`);
       const cards = Object.keys(introMap()).filter(n => introMap()[n][3] === 's');
-      ok(cards.sort().join() === 't01,t02,t03,t06', `the first cards: ${cards}`);
+      ok(cards.sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes', `the first cards: ${cards}`);
       // The draw itself, on every circle-1 entry before and after Open Water.
       FISH.c1.forEach(n => {
         const L = GX(n).views.wide,
           es = L.map(p => p.e || 3).sort((a, b) => b - a),
-          cut = Math.min(4, es[2]),
-          s0 = st(n).pg;
-        st(n).pg = 0;
+          cut = Math.min(4, es[Math.min(3, es.length) - 1]), // as easyFirst: its 3 easiest when it has fewer (the Soapfishes have 2)
+          s0 = JSON.parse(JSON.stringify(st(n))),
+          pgAt = x => {
+            delete st(n).dp;
+            delete st(n).ds;
+            st(n).pg = x;
+          };
+        pgAt(0);
         // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
         // aim favour the easy ones; no wall).
         let hard = 0,
@@ -1456,11 +1576,16 @@ const server = http.createServer((req, res) => {
         for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => ((tot += 1), (hard += (ph(n, x.f).e || 3) < cut ? 1 : 0)));
         const share = L.filter(p => (p.e || 3) < cut).length / L.length;
         ok(!share || hard / tot < share, `${n}: photos under ease ${cut} drawn ${hard}/${tot}, their share ${share.toFixed(2)}`);
-        st(n).pg = 0.6;
+        // After Open Water: the entry as a player reaches it, its bar at 60% with the answers and the ability that take
+        // it there (12 answers, 10 right, ability 0.5: the low end), not the bar alone, since the draw leans on the
+        // answers and the ability (SUBJECTS calib early fades with the answers, Q186's narrower targeting follows the
+        // ability): the harder photos come in.
+        pgAt(0.6);
+        Object.assign(st(n), {ok: 10, ko: 2, th: 0.5});
         let low = 0;
-        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
+        for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
-        st(n).pg = s0;
+        P[n] = s0;
       });
       return {fails, gated};
     }, 15);
@@ -1634,7 +1759,79 @@ const server = http.createServer((req, res) => {
     }
     await c9.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello];
+  // The admin's ⚑ "Bad photo" flag on a fish quiz photo, as on a coral one (flag.js, one brick for every subject; Pierre,
+  // 2026-11-06: none on the fish quiz): a phone (no hover: the flag goes by itself on the question's photo), the photos
+  // answered by a stand-in (every outside host: iNaturalist, FishBase, R2). A tap records the fish photo by its photo id
+  // (core.js fishPid), its subject, its unit and where it was seen.
+  const flag = [];
+  {
+    const stand = fs.readFileSync(require('./photostub.js')(ROOT).stand['-s']);
+    const cf = await b.newContext({viewport: {width: 390, height: 844}, hasTouch: true, isMobile: true, serviceWorkers: 'block'});
+    await cf.route(
+      u => !u.href.startsWith(base),
+      r => (r.request().resourceType() === 'image' ? r.fulfill({contentType: 'image/webp', body: stand}) : r.abort())
+    );
+    await cf.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-flag')) {
+          sessionStorage.setItem('fish-flag', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}');
+        }
+      } catch (e) {}
+    });
+    const q = await cf.newPage();
+    q.on('pageerror', e => errs.push(`flag: ${e.message}`));
+    await q.goto(base + '#practice/quiz');
+    await q.waitForFunction(() => window.APP_READY && SUBJ.id === 'fish' && document.querySelector('#view .qph img'), null, {
+      timeout: 30000
+    });
+    for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
+    const shown = await q
+      .waitForFunction(
+        () => {
+          const f = document.querySelector('.pflag'),
+            im = document.querySelector('#view .qph img');
+          if (!f || f.hidden || !im) return false;
+          const a = f.getBoundingClientRect(),
+            r = im.getBoundingClientRect();
+          return a.top >= r.top && a.bottom <= r.bottom && a.right <= r.right + 1 && a.left >= r.left;
+        },
+        null,
+        {timeout: 15000}
+      )
+      .then(() => true)
+      .catch(() => false);
+    if (!shown) flag.push('no ⚑ on the fish quiz photo');
+    else {
+      await q.tap('.pflag');
+      const rec = await q.evaluate(() => {
+        const im = document.querySelector('#view .qph img'),
+          L = JSON.parse(localStorage.getItem('reefid-photo-flags') || '[]'),
+          x = L[L.length - 1] || {};
+        return {
+          n: L.length,
+          x,
+          id: fishPid(im.dataset.f),
+          file: im.dataset.f,
+          holds: !!(x.unit && GX(x.unit) && GX(x.unit).views.wide.some(p => p.f === im.dataset.f))
+        };
+      });
+      if (
+        rec.n !== 1 ||
+        rec.x.s !== 'fish' ||
+        rec.x.f !== rec.id ||
+        rec.x.file !== rec.file ||
+        !rec.holds ||
+        !/quiz · level/.test(rec.x.where)
+      )
+        flag.push('the fish flag recorded: ' + JSON.stringify(rec));
+    }
+    await cf.close();
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

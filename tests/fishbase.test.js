@@ -362,7 +362,8 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
     isFb = p => p.via === 'fishbase' || /fishbase\./.test(p.src || '');
   // Pierre, 2026-11-06 14:02: FishBase photos enter automatically when their licence allows (until then only through his
   // curation): every FishBase game photo is his addition or a reference photo of tools/fish_refs.json judged at the
-  // reference level (tools/fish_judge.py ref_level, core.js refLevel).
+  // reference level (tools/fish_judge.py ref_level, core.js refLevel); on R2 (fish-game.json), also a photo in play by
+  // itself (auto: a candidate judged sure, a reference-level photo; Q180, Q199; tools/fish_game.py in_play).
   Object.values(PH.photos)
     .flat()
     .filter(isFb)
@@ -376,7 +377,9 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
       .filter(isFb)
       .forEach(p =>
         assert.ok(
-          (added.has(p.f) && C.fishOn(CUR.fish, p.f, p.sp)) || (refs.has(p.f) && C.refLevel(p)),
+          (added.has(p.f) && C.fishOn(CUR.fish, p.f, p.sp)) ||
+            (refs.has(p.f) && C.refLevel(p)) ||
+            (!!p.auto && C.fishIn(CUR.fish, p, C.fishGone(CUR))),
           `${g.id} ${p.f}: a FishBase game photo outside the rules`
         )
       )

@@ -42,7 +42,7 @@ test('a right answer against a look-alike weighs more than one among easy choice
     rows.push(row('look', i, 'A', 'A', 'a' + i, 'A B C D'));
     rows.push(row('easy', i, 'A', 'A', 'a' + i, 'A C D E'));
   }
-  const R = C.replayProgress(rows, {gen: GEN});
+  const R = C.replayProgress(rows, {gen: GEN, dom: false});
   const look = R.look.P.A.pg,
     easy = R.easy.P.A.pg;
   assert.strictEqual(look, steps([1, 1, 1, 1, 1], [1, 1, 1, 1, 1]), 'in full against a look-alike, 4 choices, new photos');
@@ -51,7 +51,7 @@ test('a right answer against a look-alike weighs more than one among easy choice
   // Two plausible choices (|k2) prove less than four.
   const k2 = C.replayProgress(
     [row('k', 0, 'A', 'A', 'x', 'A B')].map(r => ((r[5] = 'quiz|k2'), r)),
-    {gen: GEN}
+    {gen: GEN, dom: false}
   ).k.P.A.pg;
   assert.ok(Math.abs(k2 - C.pgStep(0, true, C.pgRightW(2, true))) < 1e-9 && k2 < C.pgStep(0, true, 1));
   // Counts, results and photos as the app keeps them.
@@ -64,7 +64,7 @@ test('a right answer against a look-alike weighs more than one among easy choice
 test('a miss counts against both genera, less on a photo harder than the player', () => {
   const at = C.replayProgress(
       [row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D'), row('p', 2, 'A', 'B', 'a2', 'A B C D')],
-      {gen: GEN}
+      {gen: GEN, dom: false}
     ).p,
     hard = C.replayProgress(
       [
@@ -72,12 +72,14 @@ test('a miss counts against both genera, less on a photo harder than the player'
         row('p', 1, 'A', 'A', 'a1', 'A B C D'),
         row('p', 2, 'A', 'B', 'a2', 'A B C D', eAt(1, 3)) // a photo 3 units above the player
       ],
-      {gen: GEN}
+      {gen: GEN, dom: false}
     ).p;
   const before = steps([1, 1], [1, 1]),
     // The success aimed for at the player's global level before the miss (core.js aimOf, as quiz.js answer weighs it).
     aim = C.aimOf(
-      C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D')], {gen: GEN}).p.P[C.LEVEL].th
+      C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D')], {gen: GEN, dom: false}).p.P[
+        C.LEVEL
+      ].th
     );
   // At the game's target (e logged ≈ 0.80, ability 1 above the photo): in full, against the aim at the player's level.
   assert.ok(Math.abs(at.P.A.pg - C.pgStep(before, false, C.pgMissW(1, 0, 4, 1, aim))) < 2e-4, `${at.P.A.pg}`);
@@ -96,15 +98,15 @@ test('photo repeats: a right answer on a photo already right counts only what me
     fresh.push(row('p', i, 'A', 'A', 'n' + i, 'A B C D'));
     same.push(row('p', i, 'A', 'A', 'same', 'A B C D'));
   }
-  const F = C.replayProgress(fresh, {gen: GEN, mem}).p.P.A,
-    S = C.replayProgress(same, {gen: GEN, mem}).p.P.A,
-    off = C.replayProgress(same, {gen: GEN, mem, memory: false}).p.P.A;
+  const F = C.replayProgress(fresh, {gen: GEN, mem, dom: false}).p.P.A,
+    S = C.replayProgress(same, {gen: GEN, mem, dom: false}).p.P.A,
+    off = C.replayProgress(same, {gen: GEN, mem, memory: false, dom: false}).p.P.A;
   assert.ok(S.pg < F.pg, `${S.pg} vs ${F.pg}`);
   assert.strictEqual(off.pg, F.pg, 'the rule before the photo memory: repeats count in full');
   assert.deepStrictEqual(S.ps.same, [6, 6]);
   // The 2nd answer on it: right once before, offset mem[2], weight pgMemW.
   const w = [];
-  C.replayProgress(same.slice(0, 2), {gen: GEN, mem, onAnswer: (r, x) => w.push(x.w)});
+  C.replayProgress(same.slice(0, 2), {gen: GEN, mem, dom: false, onAnswer: (r, x) => w.push(x.w)});
   assert.strictEqual(w[0], 1);
   assert.ok(Math.abs(w[1] - C.pgMemW(1, 0, mem[2], 4)) < 0.01, `${w}`);
 });
@@ -198,13 +200,32 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
   assert.strictEqual(C.RVS[0].msg, C.RV_CARD);
   // A device that skips several versions with the standard card sees it once, at the last of them.
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV),
-    C.RVS.filter((x, i) => x.msg && !C.RVS.slice(i + 1).some(y => y.msg === x.msg))
+    C.rvMsgs(0, C.RV - 1),
+    C.RVS.slice(0, -1).filter((x, i) => x.msg && !C.RVS.slice(i + 1, -1).some(y => y.msg === x.msg))
   );
+  assert.deepStrictEqual(
+    C.rvMsgs(0, C.RV - 1).map(x => x.v),
+    [C.RV - 1],
+    'the versions before the last have the standard card: one card'
+  );
+  // The domain-score bar's apology (rules version 9, Pierre 2026-11-06; PR #611's card, Q109): every player whose %
+  // moved by a point, its PS from the sheet's Notes tab; in a jump it replaces the standard card (it says more).
+  assert.strictEqual(C.RVS[C.RVS.length - 1].msg, C.RV_SORRY);
+  assert.deepStrictEqual(
+    [C.RV_SORRY.kind, C.RV_SORRY.only, C.RV_SORRY.min, C.RV_SORRY.ps, C.RV_SORRY.down],
+    ['apology', 'changed', 1, 'card.rv8.ps', true]
+  );
+  assert.deepStrictEqual(
+    C.rvMsgs(0, C.RV, true).map(x => x.v),
+    [C.RV - 1],
+    'the apology left out: the standard card back'
+  );
+  assert.match(C.RV_SORRY.pct, /\{from\}%.*\{to\}%/);
+  assert.doesNotMatch(C.RV_SORRY.t + C.RV_SORRY.p, /\bbars?\b/i, 'never "bars": players say progress (Pierre)');
   assert.deepStrictEqual(
     C.rvMsgs(0, C.RV).map(x => x.v),
     [C.RV],
-    'every version so far has the standard card: one card'
+    'a jump through the apology: the apology alone'
   );
   assert.deepStrictEqual(
     C.rvMsgs(C.RV - 1, C.RV).map(x => x.v),
@@ -240,7 +261,7 @@ test('RVS v3: the genus offset moves the memory offsets, and the replayed progre
   const before = [0, 0.47, -0.79, -1.66],
     now = C.photoMemOf(rows).mem;
   assert.notDeepStrictEqual(now, before, 'the genus offset changes the memory offsets');
-  const pg = mem => C.replayProgress(rows, {mem}).ana.P.Acropora.pg;
+  const pg = mem => C.replayProgress(rows, {mem, dom: false}).ana.P.Acropora.pg;
   assert.notStrictEqual(pg(now), pg(before), 'and the replayed progress');
   const v3 = C.RVS.find(x => x.v === 3);
   assert.ok(v3 && v3.msg === C.RVS.find(x => x.v === 2).msg && C.RV >= 3, 'rules version 3, with the standard card');
@@ -298,8 +319,8 @@ test('replayProgress: the genus wrongly given loses progress, gets a miss and it
   // B is answered right twice, then given for a photo of A three times.
   const rows = [row('p', 0, 'B', 'B', 'b0', 'B A C D'), row('p', 1, 'B', 'B', 'b1', 'B A C D')];
   for (let i = 2; i < 5; i++) rows.push(row('p', i, 'A', 'B', 'a' + i, 'A B C D'));
-  const before = C.replayProgress(rows.slice(0, 2), {gen: GEN}).p.P.B,
-    R = C.replayProgress(rows, {gen: GEN}).p.P;
+  const before = C.replayProgress(rows.slice(0, 2), {gen: GEN, dom: false}).p.P.B,
+    R = C.replayProgress(rows, {gen: GEN, dom: false}).p.P;
   assert.deepStrictEqual([R.B.th, R.B.vr], [before.th, before.vr], 'the Elo of the genus given is left alone');
   assert.ok(R.B.pg < before.pg, `its progress drops (${before.pg} -> ${R.B.pg})`);
   assert.deepStrictEqual([R.B.h, R.B.streak, R.B.ok, R.B.ko, R.B.u], ['11000', 0, 2, 0, 5]);
@@ -856,8 +877,14 @@ test('replayProgress with the format offsets: a right 2-choice answer the format
   // each miss more; the global level the same way.
   assert.ok(th({fmt: {again: [1, 100]}}) < th({}), [th({fmt: {again: [1, 100]}}), th({})].join(' '));
   assert.ok(lv({fmt: {again: [1, 100]}}) < lv({}));
-  // The progress weights are not the offsets' (the bar comes later): the moving average replays the same.
-  assert.strictEqual(C.replayProgress(rows, {gen: GEN, fmt: {again: [1, 100]}}).p.P.A.pg !== undefined, true);
+  // The domain-score bar takes the offset too (rules version 9, Q146): the right answers the format explains prove less.
+  const ds = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P.A.ds;
+  assert.ok(ds({fmt: {again: [1, 100]}}) < ds({}), [ds({fmt: {again: [1, 100]}}), ds({})].join(' '));
+  // The moving average (a record of the former rules, dom: false) replays the same as before: the offsets are not its.
+  assert.strictEqual(
+    C.replayProgress(rows, {gen: GEN, dom: false, fmt: {again: [1, 100]}}).p.P.A.pg,
+    C.replayProgress(rows, {gen: GEN, dom: false}).p.P.A.pg
+  );
 });
 
 test('the format offset is scored by scoreAnswer, logged in the scoring record (o) and replayed as logged, not from fmt', () => {
