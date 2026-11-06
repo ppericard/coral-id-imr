@@ -8279,8 +8279,22 @@ function statsPhotos() {
     [3, '≥3'],
     [10, '≥10']
   ])}<span class="note">answers</span></div>`;
+  // Far harder than their genus (farHarder), among the photos in play: the photo, its reading and its genus's, the gap.
+  // Its own threshold (FAR.N answers), so it shows whatever the answers filter, an empty one included (Codex review #682).
+  const FH = farHarder(poolStats().play),
+    farCard = `<section class="adm-scard wide" data-pst="far"><h3>Far harder than their genus <small>${FH.length}</small></h3>${
+      FH.length
+        ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Photo</th><th title="Starting players who recognise it without guessing">Recognised</th><th title="A typical photo of its genus (genus offset)">Genus</th><th class="n" title="Its own part of the difficulty: logits above its genus">Gap</th><th class="n">Answers</th><th class="n">Right</th></tr></thead><tbody>${FH.map(
+            p =>
+              `<tr><td><button type="button" class="adm-link" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}"><i>${esc(p.genus)}</i> ${esc(VIEW_T[p.view] || '')}</button></td><td>${recBadge(p.d, {short: 1, raw: 'photo difficulty'})}</td><td>${recBadge(p.gd, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}</td><td class="n">${rawNum(p.r)}</td><td class="n">${p.a}</td><td class="n">${pct(p.ok, p.n)}</td></tr>`
+          ).join('')}</tbody></table></div>`
+        : `<p class="note">None: no photo in play is ${FAR.D} logits or more above its genus after ${FAR.N}+ answers.</p>`
+    }</section>`;
   if (!L.length) {
-    $v.innerHTML = head + '<p class="note">No answers yet.</p>';
+    $v.innerHTML =
+      head +
+      `<p class="note">${SF.min > 1 ? `No photo with ${SF.min}+ answers yet.` : 'No answers yet.'}</p>` +
+      (FH.length ? `<div class="adm-sgrid">${farCard}</div>` : '');
     bindStats();
     return;
   }
@@ -8382,16 +8396,6 @@ function statsPhotos() {
     strip = a => `<span class="adm-lanes">${lanes.map(v => lane(a, v)).join('')}</span>`;
   const table = (Rw, first) =>
     `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th title="The median photo: starting players who recognise it without guessing">Recognised</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${recBadge(r.m, {short: 1, of: 'the median photo', raw: 'median difficulty'})}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
-  // Far harder than their genus (farHarder), among the photos in play: the photo, its reading and its genus's, the gap.
-  const FH = farHarder(poolStats().play),
-    farCard = `<section class="adm-scard wide" data-pst="far"><h3>Far harder than their genus <small>${FH.length}</small></h3>${
-      FH.length
-        ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Photo</th><th title="Starting players who recognise it without guessing">Recognised</th><th title="A typical photo of its genus (genus offset)">Genus</th><th class="n" title="Its own part of the difficulty: logits above its genus">Gap</th><th class="n">Answers</th><th class="n">Right</th></tr></thead><tbody>${FH.map(
-            p =>
-              `<tr><td><button type="button" class="adm-link" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}"><i>${esc(p.genus)}</i> ${esc(VIEW_T[p.view] || '')}</button></td><td>${recBadge(p.d, {short: 1, raw: 'photo difficulty'})}</td><td>${recBadge(p.gd, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}</td><td class="n">${rawNum(p.r)}</td><td class="n">${p.a}</td><td class="n">${pct(p.ok, p.n)}</td></tr>`
-          ).join('')}</tbody></table></div>`
-        : `<p class="note">None: no photo in play is ${FAR.D} logits or more above its genus after ${FAR.N}+ answers.</p>`
-    }</section>`;
   const legend = `<p class="adm-legend">${Object.keys(VIEW_T)
     .filter(v => L.some(p => p.view === v))
     .map(v => `<span><i class="v-${v}"></i>${VIEW_T[v]}</span>`)

@@ -2549,6 +2549,20 @@ const WIDTHS = [390, 1280];
         return {a: L.includes(a), b: L.includes(b), n: L.length, all: farHarder(poolStats().play).length};
       }, inj);
       if (!far.a || far.b || far.n !== far.all) fails.push(`${w}px Difficulty: far harder than their genus ${JSON.stringify(far)}`);
+      // Its own threshold: shown when the answers filter leaves no photo too (Codex review #682).
+      const empty = await p.evaluate(a => {
+        const m = SF.min;
+        SF.min = 1e6;
+        render();
+        const r = {
+          far: [...document.querySelectorAll('[data-pst="far"] [data-zf]')].some(x => x.dataset.zf === a),
+          note: !!document.querySelector('#view .note')
+        };
+        SF.min = m;
+        render();
+        return r;
+      }, inj.a);
+      if (!empty.far || !empty.note) fails.push(`${w}px Difficulty: far harder with an empty filter ${JSON.stringify(empty)}`);
       await go('photos/stats/overview');
       const cnt = await p.evaluate(g => {
         const r = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].find(x => x.children[0].innerText.trim() === g);
