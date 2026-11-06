@@ -2052,7 +2052,7 @@ const CORE_ = (function () { const module = {exports: {}};
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
       beta: {
         kick: 'Something fishy…',
-        line: '<b>Fish is in beta</b>: the families of the IMR survey fish, iNaturalist photos for now. Feedback welcome.'
+        line: '<b>Fish is in beta</b>: the reef fish families, iNaturalist photos for now. Feedback welcome.'
       },
       // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
       // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
