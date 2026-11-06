@@ -6917,6 +6917,9 @@ function savedClear() {
 // players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
 // column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
 const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
+// The domain-score bar (core.js DOM) in the admin's replays only from the script that replays it (core.js DOM_SHEET; rule
+// D4), with the sheet's genus offsets (?stats=1 gd) for the rows logged without them; before, the moving average.
+const domReplay = () => ({dom: Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= DOM_SHEET, gd: GD});
 const PROGM = new Map();
 let ROWSBY = null;
 // From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
@@ -6953,6 +6956,7 @@ function progOf(u, full) {
       mem: SMEM,
       conf: SCONF,
       fmt: SFMT,
+      ...domReplay(),
       since: reset ? {[u.id]: reset} : {},
       starts: S.err ? {} : {[u.id]: S.start} // the first-launch answer (core.js startPriorAt)
     })[u.id],

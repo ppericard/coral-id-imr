@@ -14,7 +14,7 @@ const C = require('../core.js');
 const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8');
 
 function engine(subject, PSTAT = {}) {
-  const ctx = {SUBJ: C.subjectOf(subject), calibOf: C.calibOf, PSTAT, Math};
+  const ctx = {SUBJ: C.subjectOf(subject), calibOf: C.calibOf, DOM: C.DOM, PSTAT, Math};
   vm.createContext(ctx);
   const pick = cut(src, 'const PICKD = {', '\n', {file: 'model.js'}),
     cal = cut(src, 'const CAL = {', 'function photoSet', {file: 'model.js'});

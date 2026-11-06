@@ -2301,6 +2301,9 @@ denominator; without accepting the offer (first run, same seeds), 600 questions 
 
 ### Progress (moving average) and mastery
 
+*The bar until rules version 9 (2026-11-06): replaced by "The domain-score bar" below; kept for the records not
+rebuilt yet.*
+
 Until 2026-11-02 the bar of a genus was Bayesian Knowledge Tracing (BKT: `P[genus].L`, `L0` 0.1, learning `T` 0.08,
 guess and slip from the photo's difficulty, a start up to 0.5 for a strong player, `bktStart`). Pierre: it climbed far
 too fast (from scratch about 7 right answers to 95%, 4 for a strong player), and a right answer among a few genera met
@@ -2419,6 +2422,141 @@ genus at 50%+ by question 600 and nearly all learned by 1500. The entry: 0.85 ke
 learned 9.8 genera in 1000 questions instead of 16.5); 0.8 is the success the game aims at, held on questions that
 prove something. To recalibrate with real answers: the per-genus success on look-alike questions of
 RAs who then pass the exam.
+
+### The domain-score bar (2026-11-06, Q127-Q129, Q135; rules version 9, sheet v87)
+
+**What the bar means** (Pierre, Q127, Q128): the bar of a genus is the share of **all its possible photos**, easy to
+hard, the player would name right, one photo alone with no choices to guess from (100% = every photo named), as far as
+**their own answers on that genus** have shown. Never the global level, never another genus: a genus never answered
+shows 0. This is the IRT domain score (Bock, Thissen & Zimowski 1997) over the genus's photo *population* (random-item
+IRT, De Boeck 2008): a photo's difficulty d ~ N(μ_g, τ²), μ_g the sheet's genus offset `gd` (one genus difficulty, Q133),
+so adding photos moves no bar (Pierre's refinement; docs/reviews/2026-11-06-progress-metric-research.md §7).
+
+**The estimator** (docs/reviews/2026-11-06-engine-algorithms-review.md §14, Q135): the **posterior expected** domain
+score, on a grid of abilities (`core.js` `DOM`, `domStep`):
+
+- prior: one fixed population prior N(`M0` −2, `SD0` 1.5) for a genus never answered (most players start a genus not
+  knowing it; broad enough that an expert's first right answers on hard photos lift it within a handful);
+- each own answer on the genus: likelihood g + (1 − g)·R·σ(S·(θ − d)), g = 1/k the guess rate (none typed), R the recall
+  of a comeback question, d the question's difficulty as the game scores it (photo, memory, mix-ups term: `scoreAnswer`'s
+  `dm`) less this format's offset (`q.df`, Q138 / Q146: the offsets PR #638 fits; 0 until the game passes them, so a
+  2-choice question, right more often than a 1 in 2 guess explains, will prove less when right and cost less when
+  missed); S the shared slope (kept at 1);
+- the domain score of the posterior: E over θ of E over d of σ(S·(θ − d)), the inner one in closed form,
+  σ(S(θ − μ′)/√(1 + π S²τ²/8)), μ′ = μ_g + 0.5 (one view alone, `PICKD.SINGLE`) + the typed format's offset;
+- learners change: before each own answer the posterior **drifts** by `Q` 0.1 (the process noise of a Kalman filter,
+  Glicko's growing deviation), so old answers fade and a genus learned late is credited;
+- stored per genus: `s.dp`, the log posterior on 21 points (θ from −4 to 6 by 0.5, relative to its top, 2 decimals,
+  clipped at −30; under 200 bytes), and `s.ds`, the bar, recomputed at each own answer. The bar moves only when the
+  player answers on the genus (or a replay rebuilds it), never when the photo stats change; the genus offsets the game
+  used are logged with the answer (`sc` m, n) so the replay meets the same ones.
+
+**The genus wrongly given: a false alarm, not a miss** (Pierre, 2026-11-06, Q163, Q174; rule L2). Naming B for a photo
+of another genus says the player answers B too readily (a response bias), not that they fail to name B's own photos.
+As a full miss in B's posterior it took genera a real player knew well to 0 (21 right answers in 26 on a genus they
+had named 13 times for others: 0%; Pierre: "0 means you know nothing, and that's not true"). Signal detection theory
+separates the two (Green & Swets 1966; Macmillan & Creelman 2005): B's bar is its domain score from B's own photos (H)
+less B's false-alarm rate FA, the two-high-threshold corrected recognition Pr = H − FA (Snodgrass & Corwin 1988, J.
+Exp. Psychol. Gen. 117(1)) (`core.js` `faOf`, applied by `barOf`, `examOpen`, `keepsMark`). FA = the times B was given
+for another genus's photo (the other records' `conf[B]`) over the questions where B was a possible answer: offered
+among the choices (the other records' `off[B]`) or any typed question on another genus (`P[LEVEL].ty − s.ty`; the
+typed questions are counted, `ty`, merged and replayed like the counts). Measured before the change:
+
+| | Worst over-claim, path cells | Custom-8 drilled genera | Busiest real player's progress (main 38%) |
+|---|---|---|---|
+| L2 as a full miss | −3 | +10 | 23% |
+| false-alarm correction | +3.2 | +14 | 31% |
+| no false-alarm effect | +6.1 | +16 | 33% |
+
+The ability is untouched; B's recent results and runs still take the miss (rule L2). A false alarm never raises a bar:
+B's falls by its new rate. A question that offers B without B being given lowers B's rate a little (a correct
+rejection), so B's bar can rise a hair without an answer on B: evidence, not time (rule L1).
+
+**A miss never raises the bar** (the review's §14 point 1: θ − z·SE rose after a miss). With a logistic likelihood a miss
+shifts the posterior down (monotone likelihood ratio) and a right answer up, so the expectation follows; the drift alone
+can move it a hair either way between answers, so the stored bar moves the answer's way only (a right answer never
+lowers it, a miss never raises it). Tested over random histories (`tests/dombar.test.js`). A miss says the same about the
+ability among 2 choices, 4 or typed (the guess rate only explains right answers); what a right answer proves grows with
+the choices, typed most, and with the photo's difficulty.
+
+**Zero for a genus never answered.** The prior's own domain score D0 is not 0 (about 0.15 on an average genus), and Pierre
+wants nothing credited before it is shown. The bar is the domain score itself from a knee up and a straight ramp from 0
+at D0 below (`domBar`); the knee is 2·D0, or halfway from D0 to 1 for a very easy genus (D0 over 1/3), so every value up
+to 1 stays reachable. An increasing map, so a miss from a fresh genus leaves 0 and the property above holds.
+
+**Display and the exam** (Pierre's decisions of 2026-11-06): the dynamic bar runs from 0 to 95% (`barOf`, at most 0.95);
+the mastery exam opens at a domain score of `DOM.EX` 0.85 (Divemaster) and only the exam takes the genus to 100%, each
+exam question passed filling a fifth of what is left (1% a question from 95%, as before). A learned genus keeps its mark
+while its domain score stays at `DOM.KEEP` 0.8 or above, about one miss below the entry (simulated: one miss at that level
+takes 2-4 points). `EX` and `KEEP` are choices for Pierre.
+
+**Pair coverage at the exam's entry** (Q129; Pierre's rule of 2026-11-02: "a genus can't be confirmed as learned before
+it has been compared with the genera it gets confused with"). The bar no longer weighs look-alikes, so the exam does:
+a genus takes its exam only once it has been asked beside each of its declared look-alikes the player can be asked
+(the slate and the bonus genera turned on), either way, or mixed up with one of them (`core.js` `looksLeft`, model.js
+`examOn`, `examLooks`). Until then it can sit at 85% or more without the exam; its sheet says which look-alikes it
+still needs ("Still needed"), and Divemaster waits for it too. The exam photos at a fixed hard quantile (Q139) and the
+exam over two visits (Q143) are part 3.
+
+**The recalculation** (rules version 9). The sheet replays every player once. The players whose % went down by a point or more see an
+apology card (a rise of 5 points or more gets the standard card, `RV_SORRY` `down`) (`RV_SORRY`, PR #611's card, Q109; the text Pierre approved, Q172: "Sorry: we recalculated your progress", the % on a line of its own). In a jump
+through several versions it replaces the standard card. Its PS is a line of the sheet's Notes tab (key `card.rv8.ps`,
+served as `notes` with every load and save reply, Code.gs `notes_`), which may name a player and so is never written in
+the repo (rule D2). The learned marks passed since 2026-11-02 are kept unless a miss logged after the exam takes the
+genus under `DOM.KEEP` (the replay's `lm`); the marks passed under BKT are dropped (`afterBkt`).
+
+**One reading for every consumer** (the coherence review's F2, F5): `barOf`, `examOpen`, `keepsMark`, `scoreOf` and `pctOf`
+in `core.js`; the game (model.js `examOn`, `mxKept`, `missing`, `lvStep`, `typedP`), the full replay (lm), the admin and
+the sheet's leaderboard (Code.gs `pctOf_` now calls `core.js` `pctOf`, no copy) go through them.
+
+**The learned-mark protection** (the coherence review's F8, F9): a mark passed under Bayesian Knowledge Tracing (before
+2026-11-02) is recognised by a record with neither the moving average `s.pg` nor the domain-score bar `s.ds`
+(`afterBkt`), no longer by `typeof s.pg !== 'number'`, which would have dropped every mark of the new rules.
+
+**The transition (rule D4).** The moving average `s.pg` is no longer the bar. A record the new rules have not rebuilt
+(saved with `s.pg`) keeps it, and the former rule with it, until the sheet's full replay under rules version 9 reaches
+the device; a genus first answered in the app takes the new bar only once the sheet replies v ≥ 87 (`DOM_SHEET`,
+model.js `domRules`), and the app's own replay of its queued answers follows the same version. The fish are not
+replayed: a fish unit first answered takes the new bar at once, one answered before keeps `s.pg`. The `pgStep` code
+remains only for those records and can be deleted once none is left.
+
+**The shared slope (Q147, pending Pierre).** One input, `q.S` (logged `s`), used in the expectation (the ability step,
+the logged e) and in the bar's posterior; 1, the Elo's own, until the sheet estimates it (#638 measured about 0.4 on the
+real log). The per-format offsets (Q138) enter the same way (`q.fo`, `q.ft`, logged `o`, `t`), 0 until the sheet serves
+them.
+
+**Tuning (Q155, Pierre 2026-11-06; pre-declared in PR #646 before any tuning run).** Pierre: *"I prefer progress that
+doesn't move fast enough, even if we speed it up later, rather than too fast, because every time we lower it people
+feel they go backwards."*
+
+- **Target (asymmetric):**
+  - over-claim at most +3 points in every cell;
+  - then the least under-claim;
+  - the expert at q100 and q300 as the main secondary measure.
+- **Cells:**
+  - the field (τ 0.5), exemplar and item worlds;
+  - five profiles, all genera met, at questions 100, 300, 600 and 1,000;
+  - the spotty player's unknown genera;
+  - Custom-8's drilled genera at the end of the drill.
+- **Grid:** Q ∈ {0.1, 0.15, 0.2, 0.3, 0.4, 0.5} × SD0 ∈ {1, 1.5, 2, 2.5}, with the knee at 2. A knee of 1.5 or 3 is tried only if no setting meets the constraint.
+- **Tuning data:** seeds 1-30, the bar replayed on PR #624's runs.
+- **Confirmation:** live on seeds 61-90. One Holm family of six primaries:
+  - per world, the constraint as an intersection-union of one-sided t-tests;
+  - per world, less under-claim than the untuned bar, paired by run.
+- **Result (seeds 1-30):** no setting meets the constraint. All 72 were tried: the grid, then the knee at 1.5 and 3.
+  - The cell that fails every time is the field world's beginner on the 8 genera drilled in Custom-8. They really name
+    68% of those genera's photos; main shows 92%, #646 as opened 78%, and the most cautious setting still +5 points.
+  - The drill only offers the 8 genera, so a right answer there proves less than one against the whole slate, and no
+    constant of the bar can see it. Pair coverage at the exam's entry (above) is where it is handled.
+  - Pierre's decision (2026-11-06): keep the cautious constants as opened (Q 0.1, SD0 1.5). Rule L2 in the bar became
+    the false-alarm correction below (Q174).
+  - The plain numbers are in the PR.
+
+**Constants** (set from principle, not tuned; Q141: no tuning before the three-world judge): the grid, the prior (M0, SD0),
+τ 0.5 (a photo's own spread around its genus, the hierarchical photo Elo study; `PDIFF.EASE`), Q 0.1. A toy check (a
+learner of fixed ability shown photos near the game's target, 4 choices, 60 answers): the bar settles within 0.03 of the
+true domain score on average over five abilities. The judge of PR #624 (three learner worlds, the real log) measures it
+before any change.
 
 ### Typed questions (2026-11-03): why these settings
 
@@ -3310,7 +3448,10 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     ("Response time": a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5); the sheet replays it from
     v32, which reads the Seconds column). v5 (2026-11-04): the first-launch question's prior. v6 (2026-11-06, sheet
     v61): one scorer, and the rows logged with their scoring record replayed from it ("One scorer"). v7 (2026-11-06,
-    sheet v62): one surprise counted once ("One surprise, counted once"). A device that skips several versions sees the standard card once, at the
+    sheet v62): one surprise counted once ("One surprise, counted once"). v8 (2026-11-06, sheet v77): per-format
+    offsets ("Per-format offsets"). v9 (2026-11-06, sheet v87): the domain-score bar ("The domain-score bar"), the genus
+    offsets `gd` of `stats_` given to the replay for the rows logged without them; its card is the apology (the
+    Notes key `card.rv8.ps`, named before the renumbering). A device that skips several versions sees the standard card once, at the
     last of them, with its progress before and after the whole jump (`core.js` `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
@@ -4183,6 +4324,11 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 - The primaries and their Holm family are pre-declared in PR #624. The baseline results are added there and here.
 
 ## Decision log
+
+- 2026-11-06, Pierre (Q127-Q129, Q135; PR "domain-score bar"): the bar is the posterior expected domain score of the
+  genus from the player's own answers on it (grid, fixed population prior, format-aware, a drift per answer), 0 to 95%,
+  the exam from 85% to 100%; the moving average `s.pg` retired as the bar (kept for records not rebuilt, rule D4); the
+  learned-mark guard made explicit (`afterBkt`); the shared slope and the per-format offsets as inputs (Q147, Q138).
 
 - 2026-11-04, Pierre (approved after review of every family's ranking): the fish species inside an entry open in
   commonness order, the index of field counts near Dauin (weight 3), the IMR 24 most sighted (2) and iNaturalist distinct

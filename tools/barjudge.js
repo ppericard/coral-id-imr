@@ -69,7 +69,8 @@ function simJudge() {
     const slate = C.slateOf(D),
       F = BAR === 'field' ? C.fieldOf(gen, st.conf || {}, slate) : null;
     if (BAR === 'field' && !C.barOf) throw new Error('--bar field needs a core.js with barOf (PR #611)');
-    const barOf = (P, g) => (BAR === 'field' ? C.barOf(P, g, F) : C.scoreOf(P[g]));
+    // The record and the genus too: the domain-score bar takes off the genus's false-alarm rate (core.js faOf, #646).
+    const barOf = (P, g) => (BAR === 'field' ? C.barOf(P, g, F) : C.scoreOf(P[g], P, g));
     // The replayed state at question q, the run's learned marks put back (the replay does not replay the exam).
     alt = {C, gen, st, barOf, slate};
   }

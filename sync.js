@@ -100,7 +100,7 @@ const syncGet = (a = SYNC, info = {}) =>
 // adoption); a device already signed in keeps its own, so it adopts the replay itself once, with its own unsent answers
 // on top (a pull alone would let those answers keep their older model). Then the announcement card of every version
 // skipped that has one (RVS msg; progress.js rvNotice), at once. The device's own recalculations (core.js memRecalc,
-// pgOf) stay as the fallback for a device that never reaches the sheet. The app never gets ahead of the sheet script
+// pgOf, for a record not rebuilt under the domain-score bar) stay as the fallback for a device that never reaches the sheet. The app never gets ahead of the sheet script
 // (rule D4): v, the script version of the reply; a reply from a script before core.js RV_SHEET (28) is never
 // adopted, whatever it carries, so the app does exactly what it did before (an older script sends no replay, and the
 // rv field the requests carry is ignored there).
@@ -178,6 +178,10 @@ function replayAdopt(rp, pending, v, cut, pre) {
             fmt: Number(v) >= FMT_SHEET ? PFMT : {},
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
             time: Number(v) >= RT_SHEET,
+            // The domain-score bar only from the script that replays it (core.js DOM_SHEET), as the live game (model.js
+            // domRules); the genus offsets for an answer logged without them (an older app's).
+            dom: Number(v) >= DOM_SHEET,
+            gd: typeof PGD === 'object' ? PGD : {},
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
             starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {}
           })[me].P
@@ -190,13 +194,14 @@ function replayAdopt(rp, pending, v, cut, pre) {
     // misses in time order). Not adopted, nor the version marked applied: the save that follows logs them, and its
     // reply brings the replay of the whole log in time order.
     if (rows.some(r => r[1] < last)) return false;
-    // A mark the replay took away: the former model's (a record learned without s.pg), or a rule of the new version.
+    // A mark the replay took away: the former model's (a record learned with neither s.pg nor the domain-score bar,
+    // core.js afterBkt), or a rule of the new version.
     mxRecalc(
       () => {
         Object.keys(P).forEach(g => delete P[g]);
         Object.assign(P, M);
       },
-      n => (typeof (before[n] || {}).pg === 'number' ? 'rules' : 'bkt')
+      n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
     store.set(RVK, rp.rv);
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this
@@ -335,6 +340,7 @@ function mergeSubject(j, d, S, mine) {
       store.set(RVK, 0);
     store.set(sKey('progress'), P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
+    notesSeen(j);
     if (S.replay) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
     return;
@@ -362,6 +368,7 @@ function mergeSubject(j, d, S, mine) {
   // replay of the log, and the merge would add them again as this device's own (Codex review #399: 3 answers, a baseline
   // of 2, a saved replay of the 3: 3 + 3 - 2 = 4, kept for good). The replay of the log, which the load asked for
   // (rvAsk), counts every one once: adopted, it replaces the merge; without it, the merge as usual.
+  notesSeen(j);
   const recovered = !!(S.replay && SYNC.lg && j.replay && replayAdopt(j.replay, SYNC.log, j.v, undefined, pre));
   if (!mine && !recovered) {
     if (rvSaved >= rvApplied()) {
@@ -382,6 +389,7 @@ function mergeSubject(j, d, S, mine) {
   store.set('reefid-account', SYNC);
   store.set(sKey('progress'), P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
+  notesSeen(j);
   if (S.replay) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
@@ -604,6 +612,7 @@ function syncOnce(tries = 0) {
         holdAdopt(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
+        notesSeen(j);
         const adopted = replayAdopt(j.replay, me.log, j.v, cut);
         // A replay adopted from a save's reply leaves the saved copy at the rules version that save carried, the older one:
         // another device would take it for an older app's copy and ask for the replay again, then leave its own copy the
@@ -1092,8 +1101,17 @@ function repsSeen(j) {
   if (j && Number(j.v) >= HELP_SHEET && Array.isArray(j.reps) && typeof achReps === 'function') return achReps(j.reps);
   if (typeof achHelped === 'function') achHelped();
 }
+// Lines the sheet serves for the cards (sheet v87: notes, from its Notes tab, keys card.*; Code.gs notes_): Pierre's text
+// that must never be written in the repo, e.g. the PS of rules version 9's apology, which may name a player (core.js
+// RV_SORRY ps; progress.js rvNotice). Kept on the device; an older script sends none and the card has no PS.
+const NOTES_KEY = 'reefid-sheet-notes';
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
+  notesSeen(j);
+}
+// Kept before a replay is adopted (mergeSavedIn, the save reply): the card it brings shows its PS at once.
+function notesSeen(j) {
+  if (j && j.notes && typeof j.notes === 'object' && !Array.isArray(j.notes)) store.set(NOTES_KEY, j.notes);
 }
 // The script version last seen (0 before any reply): what the app may rely on (rule D4), so a visit offline does
 // what the last one did. Also read by the answer time (model.js rtOn, core.js RT_SHEET); the full replay checks each

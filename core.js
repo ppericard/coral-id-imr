@@ -1040,6 +1040,10 @@
         out = {...r};
       out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
       out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
+      // Typed questions (ty, faOf): added up like the counts.
+      const ty = Math.max(0, (r.ty || 0) + (l.ty || 0) - (b.ty || 0));
+      if (ty) out.ty = ty;
+      else delete out.ty;
       // A record recalculated here for the photo memory (pm, memRecalc) with no answer of its own counts as this device's
       // model only while the other side has not moved since B: answers saved from another device win over a mere
       // recalculation (Codex review #387: an old copy reopened must not undo a passed exam), and the recalculation is
@@ -1053,7 +1057,8 @@
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
         // global level at the genus's last own step (core.js levelMove), which goes with its th.
-        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        // dp, ds: the domain-score bar's posterior and bar (domStep), the model of that device's answers like pg.
+        ['lv', 'run', 'L', 'pg', 'dp', 'ds', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -1068,7 +1073,7 @@
       if (l.du || r.du) out.du = 1;
       // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices, and
       // so do the global level's answer times (rt, rtWeight: how many timed answers took each tenth of a second).
-      ['conf', 'off', 'rt'].forEach(f => {
+      ['conf', 'off', 'rt', 'tyk'].forEach(f => {
         const c = {...(r[f] || {})};
         Object.keys(l[f] || {}).forEach(k => {
           const v = (c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0);
@@ -1155,8 +1160,16 @@
         main = n(x) > n(y) ? x : y,
         o = {...(main === x ? y : x), ...main};
       // The progress comes from the same account as the rest of the model, recomputed if it was saved before s.pg
-      // (Codex review #367: an old main record let the other account's pg through).
-      if (typeof main.pg === 'number' || main.h || typeof main.L === 'number') o.pg = pgOf(main);
+      // (Codex review #367: an old main record let the other account's pg through): its domain-score bar (dp, ds) when it
+      // has one, the other account's never mixed in; else its moving average.
+      if (domOn(main)) {
+        [o.dp, o.ds] = [main.dp.slice(), main.ds];
+        delete o.pg;
+      } else {
+        delete o.dp;
+        delete o.ds;
+        if (typeof main.pg === 'number' || main.h || typeof main.L === 'number') o.pg = pgOf(main);
+      }
       // The photo memory mark goes with that progress (memRecalc): the other account's would leave it uncorrected.
       if (main.pm) o.pm = main.pm;
       else delete o.pm;
@@ -1165,9 +1178,12 @@
       delete o.lt;
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
+      if ((x.ty || 0) + (y.ty || 0))
+        o.ty = (x.ty || 0) + (y.ty || 0); // typed questions on the unit (faOf), the same person's
+      else delete o.ty;
       o.streak = main.streak || 0;
       // Answer times (rt, the global level's) add up like the mix-ups: the same person's.
-      ['conf', 'off', 'rt'].forEach(f => {
+      ['conf', 'off', 'rt', 'tyk'].forEach(f => {
         const c = add(x[f], y[f]);
         if (Object.keys(c).length) o[f] = c;
         else delete o[f];
@@ -1477,7 +1493,7 @@
   function memRecalc(s, mem) {
     if (!s || typeof s !== 'object') return false;
     let old = false;
-    if (s.mx && typeof s.pg !== 'number') {
+    if (s.mx && !afterBkt(s)) {
       delete s.mx;
       delete s.ex;
       old = true;
@@ -2340,22 +2356,170 @@
     const g = [...String(s.h || '')].reduce((x, c) => x + PROG.A * (c === '1' ? PROG.OLD : 1) * ((c === '1' ? 1 : 0) - x), 0);
     return s.mx ? Math.max(g, PROG.M) : g;
   }
-  // The bar of a genus, 0 to 1: s.pg fills 95% on its way to PROG.M, each mastery-exam question passed adds 1%, the
-  // passed exam makes it 100%.
-  function scoreOf(s) {
+  // The bar of a genus, 0 to 1: the dynamic bar (barOf: the domain score corrected by the genus's false alarms, at most
+  // 95%; a record not rebuilt yet, its former moving average s.pg filling 95% on its way to PROG.M), then each
+  // mastery-exam question passed fills a fifth of what is left to 100% (1% a question from 95%), the passed exam makes
+  // it 100%. P, n: the player's progress and the genus's name, for the false-alarm correction (faOf); without them, none.
+  function scoreOf(s, P, n) {
     if (!s) return 0;
     if (s.mx) return 1;
-    const g = pgOf(s);
+    const b = barOf(s, P, n);
     // At most 4 of the 5 exam steps before the exam is passed (Codex review #393): an exam begun before typed questions
     // can have 5 right answers still waiting for its typed ones, and only a passed exam (s.mx) makes 100%.
-    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
+    return b + (examOpen(s, P, n) && s.ex ? ((1 - b) * Math.min(4, s.ex.k || 0)) / 5 : 0);
   }
   // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
   // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
   // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
   function pctOf(P, list) {
-    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n]), 0)) / list.length) : 0;
+    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n], P, n), 0)) / list.length) : 0;
   }
+
+  // The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; docs/LEARNING.md "The domain-score bar"): the bar of a
+  // genus is the share of ALL its possible photos, easy to hard, the player would name right, one photo alone with no
+  // choices to guess from (100% = every photo named), as far as their own answers on that genus have shown (Q128: never
+  // the global level, never another genus). The IRT domain score (Bock, Thissen & Zimowski 1997) over the genus's photo
+  // population (random-item IRT, De Boeck 2008: a photo's difficulty d ~ N(mu_g, DOM.TAU²), mu_g the sheet's genus
+  // offset gd, so adding photos moves no bar), estimated as the POSTERIOR EXPECTED domain score on a grid of abilities
+  // (docs/reviews/2026-11-06-engine-algorithms-review.md §14): a fixed population prior N(DOM.M0, DOM.SD0²) for a genus
+  // never answered, then each own answer's likelihood, format-aware (guess rate 1/k, none typed; a per-format offset and
+  // the shared slope as inputs, Q138, Q147), with the photo's difficulty, memory and mix-ups term as the game scores it.
+  // With a logistic likelihood a miss shifts the posterior down (monotone likelihood ratio), so the bar never rises on a
+  // miss; the caution comes from the prior, not from a lower bound (θ - z SE rose after a miss). Learners change: before
+  // each own answer the posterior drifts by DOM.Q (the process noise of a Kalman filter, Glicko's growing deviation), so
+  // old answers fade and a genus learned late is credited. The grid holds the log posterior (s.dp, relative to its top,
+  // 2 decimals, clipped at -DOM.CLIP), the bar its expectation (s.ds), stored at each own answer: it moves only when the
+  // player answers (or a replay rebuilds it), never when the photo stats change. A genus never answered shows 0: s.ds is
+  // the domain score from twice the prior's own (D0) up, a ramp from 0 at D0 below (domBar): increasing, so monotone too.
+  // The dynamic bar runs 0 to 95% (min(0.95, s.ds)); the mastery exam opens at s.ds >= DOM.EX and only the exam takes
+  // the genus to 100% (Pierre's Q decisions, 2026-11-06). A learned genus keeps its mark while s.ds >= DOM.KEEP.
+  // A record the new rules have not rebuilt (no s.dp: progress from before rules version 9, until the sheet's full
+  // replay under it reaches the device) keeps its former moving average s.pg (pgOf, PROG) as before (rule D4).
+  // Grid: LO + i STEP, N points (-4 to 6, the abilities and photo difficulties the game meets, with room for the prior).
+  // M0, SD0: the population prior of a genus never answered: most players start a genus not knowing it (the game's
+  // ability floor ELO.lo is -1.5; a broad 1.5 lets an expert's first right answers on hard photos lift it within a
+  // handful). TAU: the spread of a photo's own difficulty around its genus (the hierarchical photo Elo study,
+  // docs/LEARNING.md; model.js PDIFF.EASE). SINGLE: one view alone is harder (model.js PICKD.SINGLE). Q: the drift per
+  // own answer, in ability units (sd). EX: the exam's entry; KEEP: the learned mark's keep rule (about one miss below EX).
+  // KNEE: where the zero ramp meets the domain score, in multiples of the prior's own D0 (domBar).
+  const DOM = {LO: -4, STEP: 0.5, N: 21, M0: -2, SD0: 1.5, TAU: 0.5, SINGLE: 0.5, Q: 0.1, EX: 0.85, KEEP: 0.8, CLIP: 30, KNEE: 2};
+  const domTh = i => DOM.LO + i * DOM.STEP;
+  const DOM_PRIOR = Array.from({length: DOM.N}, (_, i) => -0.5 * ((domTh(i) - DOM.M0) / DOM.SD0) ** 2);
+  const domNorm = lp => {
+    const m = Math.max(...lp);
+    return lp.map(x => Math.max(-DOM.CLIP, Math.round((x - m) * 100) / 100));
+  };
+  // The record's log posterior on the grid: its own (s.dp), else the prior (a genus never answered under these rules).
+  const domLp = s => (s && Array.isArray(s.dp) && s.dp.length === DOM.N ? s.dp : DOM_PRIOR);
+  // The chance of a right answer at ability th: g + (1 - g) R sig(S (th - d)), g the guess rate 1/k (0 typed: k
+  // infinite), R the recall after a break, S the shared slope (Q147: 1, the Elo's, until the sheet estimates it).
+  const domP = (th, d, k, R = 1, S = 1) => {
+    const g = isFinite(k) && k > 1 ? 1 / k : 0;
+    return g + (1 - g) * R * sigm(S * (th - d));
+  };
+  // The posterior after one own answer: the drift first (a three-point kernel of variance DOM.Q², on the probabilities;
+  // none before the first answer), then the answer's likelihood. lp: the log posterior before. Returns the new one.
+  function domUpdate(lp, ok, d, k, R = 1, S = 1, drift = true) {
+    let x = lp.slice();
+    if (drift) {
+      const a = Math.min(1 / 3, (DOM.Q * DOM.Q) / (2 * DOM.STEP * DOM.STEP)),
+        p = x.map(v => Math.exp(v));
+      x = p.map((v, i) => Math.log(Math.max(1e-300, (1 - 2 * a) * v + a * (i ? p[i - 1] : v) + a * (i < DOM.N - 1 ? p[i + 1] : v))));
+    }
+    x = x.map((v, i) => {
+      const q = Math.min(1 - 1e-9, Math.max(1e-9, domP(domTh(i), d, k, R, S)));
+      return v + Math.log(ok ? q : 1 - q);
+    });
+    return domNorm(x);
+  }
+  // The domain score of a log posterior: the expected share of the genus's photos named right alone and typed,
+  // E over θ of E over d ~ N(mu', TAU²) of sig(S (θ - d)), the inner one in closed form (sig(x / sqrt(1 + pi v / 8)),
+  // the probit approximation of the logistic-normal integral). mu' = mu (the genus offset gd) + SINGLE + ot (the typed
+  // format's offset, Q138: 0 until the sheet serves it).
+  function domScore(lp, mu = 0, S = 1, ot = 0) {
+    const c = Math.sqrt(1 + (Math.PI / 8) * S * S * DOM.TAU * DOM.TAU),
+      m = (Number(mu) || 0) + DOM.SINGLE + (Number(ot) || 0);
+    let w = 0,
+      t = 0;
+    lp.forEach((v, i) => {
+      const p = Math.exp(v);
+      w += p;
+      t += p * sigm((S * (domTh(i) - m)) / c);
+    });
+    return w > 0 ? t / w : 0;
+  }
+  // The bar's value, 0 to 1: the domain score itself from the knee up; below, a straight ramp from 0 at the prior's own
+  // (D0), so a genus never answered shows 0 and a miss from there leaves it at 0. The knee is twice D0, or halfway from
+  // D0 to 1 for a very easy genus (D0 over 1/3: Codex review #646, mu -3 put 2 D0 above 1 and the exam out of reach), so
+  // the bar always reaches every value up to 1. An increasing map: the bar moves the posterior's way.
+  function domBar(lp, mu = 0, S = 1, ot = 0) {
+    const d0 = domScore(DOM_PRIOR, mu, S, ot),
+      x = domScore(lp, mu, S, ot),
+      knee = Math.min(DOM.KNEE * d0, (1 + d0) / 2);
+    return Math.max(0, Math.min(1, x >= knee ? x : (knee * (x - d0)) / (knee - d0)));
+  }
+  // One own answer on the genus record s (scoreAnswer: the genus shown; the genus wrongly given, Pierre's rule L2, as a
+  // miss on its photo). d: the question's difficulty for the player, k the plausible choices, R the recall, f {mu: the
+  // genus offset, o: this format's offset, t: the typed format's, S: the slope}. The stored bar moves the answer's way
+  // only (a right answer never lowers it, a miss never raises it): the drift alone can move the posterior's expectation
+  // a little either way, and the bar shows evidence, not the passing of answers.
+  function domStep(s, ok, d, k, R = 1, f = {}) {
+    const S = typeof f.S === 'number' && f.S > 0 ? f.S : 1,
+      had = Array.isArray(s.dp) && s.dp.length === DOM.N;
+    s.dp = domUpdate(domLp(s), ok, d + (Number(f.o) || 0), k, R, S, had);
+    const b = Math.round(domBar(s.dp, f.mu, S, f.t) * 1e4) / 1e4,
+      o = typeof s.ds === 'number' ? s.ds : 0;
+    s.ds = ok ? Math.max(o, b) : Math.min(o, b);
+    delete s.pg; // the former moving average: this record is under the domain-score rules now
+  }
+  // Whether a record is under the domain-score rules (s.dp), and the three readings every consumer goes through:
+  // barOf (the dynamic bar, 0 to 0.95), examOpen (the mastery exam may start), keepsMark (a learned genus stays learned).
+  const domOn = s => !!s && Array.isArray(s.dp) && typeof s.ds === 'number';
+  // The false-alarm correction (Pierre, 2026-11-06, Q174; it replaces rule L2's miss on the genus wrongly given in the
+  // bar). Naming genus n for a photo of another genus is a false alarm: it says the player answers n too readily (a
+  // response bias), not that they fail to name n's own photos, so it does not enter n's posterior. Signal detection
+  // theory separates the two (Green & Swets 1966; Macmillan & Creelman 2005): the two-high-threshold corrected
+  // recognition Pr = H - FA (Snodgrass & Corwin 1988, J. Exp. Psychol. Gen. 117(1)), H the hit rate, here the domain
+  // score from n's own photos, FA the false-alarm rate: the times n was given for another genus's photo (the other
+  // records' s.conf[n]) over the questions where n was a possible answer (offered among the choices, the other records'
+  // s.off[n], or any typed question on another unit of its rank: P[LEVEL].tyk[rank] - s.ty, every unit of the rank asked
+  // can be typed). 0 without P or
+  // without a question where n could be given. The rule L2 count of the genus given (its recent results, its run) and
+  // the ability are untouched.
+  // A unit's rank as its id says it (a fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
+  const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
+  function faOf(P, n) {
+    if (!P || !n) return 0;
+    let fa = 0,
+      op = Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+    for (const t in P) {
+      if (t === n || t === LEVEL || !P[t]) continue;
+      fa += (P[t].conf || {})[n] || 0;
+      op += (P[t].off || {})[n] || 0;
+    }
+    return op > 0 ? Math.min(1, fa / op) : 0;
+  }
+  // The domain score as the bar uses it: s.ds less the genus's false-alarm rate (faOf), at least 0.
+  const domVal = (s, P, n) => Math.max(0, s.ds - faOf(P, n));
+  const barOf = (s, P, n) => (!s ? 0 : domOn(s) ? Math.min(0.95, domVal(s, P, n)) : 0.95 * Math.min(1, pgOf(s) / PROG.M));
+  const examOpen = (s, P, n) => !!s && (domOn(s) ? domVal(s, P, n) >= DOM.EX - 1e-9 : pgOf(s) >= PROG.M);
+  const keepsMark = (s, P, n) => !!s && (domOn(s) ? domVal(s, P, n) >= DOM.KEEP - 1e-9 : mxKeeps(pgOf(s)));
+  // Pair coverage, the mastery exam's other entry condition (Pierre, 2026-11-06, Q129; the research note's option (a),
+  // the PALM / Larkwire practice): a genus takes its exam only once it has been compared with each of its look-alikes,
+  // asked with it among the choices (either way: s.off, as the game counts the offers) or mixed up with it (s.conf).
+  // Pierre, 2026-11-02: "a genus can't be confirmed as learned before it has been compared with the genera it gets
+  // confused with". looks: the look-alikes in play (model.js examLooks: the declared ones the player can be asked).
+  // Returns the look-alikes not compared yet ([] when the condition holds).
+  const looksLeft = (P, n, looks) => {
+    const s = (P || {})[n] || {},
+      seen = (x, y) => ((P[x] || {}).off || {})[y] > 0 || ((P[x] || {}).conf || {})[y] > 0;
+    return (looks || []).filter(x => x !== n && !((s.off || {})[x] > 0 || (s.conf || {})[x] > 0 || seen(x, n)));
+  };
+  // The learned-mark protection (docs/reviews/2026-11-06-engine-coherence-review.md F8, F9): a mark passed under the
+  // former model, Bayesian Knowledge Tracing (before 2026-11-02), is dropped (memRecalc, replayedOf); such a record has
+  // neither the moving average s.pg nor the domain-score bar s.ds. Explicit, so a record of the domain-score rules,
+  // which carries no s.pg, keeps its mark: "learned after BKT" is a record with either.
+  const afterBkt = s => !!s && (typeof s.pg === 'number' || typeof s.ds === 'number');
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
@@ -2847,11 +3011,12 @@
   }
   // w (response time, 2026-11-04, rtWeight): the step's size times w; 1 by default. The volatility follows the plain
   // surprise either way.
-  // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered.
-  function eloStep(P, n, s, good, d, k, w = 1, p = 0) {
+  // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered. S: the shared slope of the
+  // answer model (scoreAnswer slopeOf, Q147: 1 until the sheet estimates it).
+  function eloStep(P, n, s, good, d, k, w = 1, p = 0, S = 1) {
     const th = abilityOf(P, n, p),
       g = 1 / k,
-      e = g + (1 - g) * sigm(th - d),
+      e = g + (1 - g) * sigm(S * (th - d)),
       m = (s.ok || 0) + (s.ko || 0);
     s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
     // The global level's step has no floor (ELO.kmin is for a genus, which must ease off quickly when it starts going
@@ -2949,6 +3114,19 @@
   // mix-ups, the expected success (logged e), the progress weight, the look-alike test and the time weight.
   // What only the game knows stays in quiz.js answer (the exam, the days answered, the last observations, the cards and
   // the hold); what only the log knows stays in replayProgress (the last misses lx and lm, duels won from the mode).
+  // The domain-score bar's inputs of a question (scoreAnswer): q.dom false, a game whose sheet does not replay these rules
+  // yet (model.js domOn_, DOM_SHEET; rule D4), keeps the former moving average; a record already under them (s.dp), or one
+  // without a former moving average (a genus first answered under them, every genus of a full replay), takes the domain
+  // score; a record with s.pg keeps it until a full replay under these rules rebuilds it from the log.
+  const domIn = (q, s) => q.dom !== false && (domOn(s) || typeof s.pg !== 'number');
+  // The shared slope of the answer model (Q147, pending Pierre): one input, used in the expectation (the ability step,
+  // the logged e) and in the bar's posterior; 1 (the Elo's own) until the sheet estimates it and the game passes q.S.
+  const slopeOf = q => (q && typeof q.S === 'number' && q.S > 0 ? q.S : 1);
+  // mu: the genus offset gd of the genus the bar is for; df: this question's format offset, dt the typed format's (Q138,
+  // Q146: in logits, a format easier than the app thought has a positive offset, as PR #638's fmtOff and its q.df, so
+  // the question counts as that much easier: a 2-choice right answer, more often right than a 1 in 2 guess explains,
+  // proves less, and a 2-choice miss weighs less; 0 until the game passes the sheet's offsets).
+  const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q)});
   function scoreAnswer(P, q) {
     const t = q.t,
       ok = !!q.ok,
@@ -2978,24 +3156,41 @@
       out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
     if (scored) {
       const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p),
-        look = typeof q.look === 'function' ? !!q.look() : !!q.look,
+        look = typeof q.look === 'function' ? !!q.look() : !!q.look;
+      let w = null;
+      // The bar (Q135): the domain score from the player's own answers on the genus, the question's difficulty as the game
+      // scores it (photo, memory, mix-ups), its format and recall (domStep); a record not rebuilt under these rules yet,
+      // or a game whose sheet does not replay them yet (q.dom false, rule D4), the former moving average as before.
+      if (domIn(q, s)) domStep(s, ok, dm, k, R, domF(q, q.mu));
+      else {
         // The miss weighs against the aim at the player's level before this answer's own step on it.
         w = ok ? pgRightW(k, look) * pgMemW(th0, d0, fam, k, R) : pgMissW(th0, dm, k, R, aimOf((P[LEVEL] || {}).th));
-      s.pg = pgStep(pgOf(s), ok, w);
+        s.pg = pgStep(pgOf(s), ok, w);
+      }
       delete s.L; // BKT's knowledge, before s.pg
       s.u = (s.u || 0) + 1;
       // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
       // step weighed by its time against the player's earlier ones.
       const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
-      eloStep(P, t, s, ok, dm - df, k, rw, p);
-      Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(th0 - dm)});
+      eloStep(P, t, s, ok, dm - df, k, rw, p, slopeOf(q));
+      Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(slopeOf(q) * (th0 - dm))});
     }
     // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
     // each, with the same weight; this answer's seconds recorded after its steps (rtWeight compares with earlier ones).
     if (P[LEVEL]) P[LEVEL][ok ? 'ok' : 'ko']++;
     else P[LEVEL] = levelSeed(P);
+    // Typed questions, every one and those on this genus (ty): any genus could have been typed, so each is a question where
+    // any other genus was a possible answer, the false-alarm rate's denominator (faOf).
+    if (!isFinite(k)) {
+      // Per rank (rankKey: a fish family's f:, a genus's g:; the corals none): a typed answer can only be a unit of the
+      // rank asked (quiz.js typeMatch), so only those are possible answers (Codex review #646).
+      const tk = (P[LEVEL].tyk = P[LEVEL].tyk || {}),
+        rk = rankKey(t);
+      tk[rk] = (tk[rk] || 0) + 1;
+      s.ty = (s.ty || 0) + 1;
+    }
     if (scored) {
-      eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw, p);
+      eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw, p, slopeOf(q));
       // One surprise counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md
       // §2a; docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it stands after this
       // answer's step on it, so its levelMove carries only the level's moves from the other answers. Taken against the
@@ -3022,7 +3217,10 @@
     if (!ok && q.cv && q.c && q.c !== t) {
       const x = rec(q.c);
       if (scored) {
-        x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, typeof q.Rc === 'number' ? q.Rc : 1, aimOf(P[LEVEL].th)));
+        const Rc = typeof q.Rc === 'number' ? q.Rc : 1;
+        // The bar: no miss in its posterior (a false alarm, counted by its record's offers and mix-ups and taken off its
+        // bar by faOf, Q174); a record of the former rules (s.pg): a miss on the photo shown, as before.
+        if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, Rc, aimOf(P[LEVEL].th)));
         delete x.L;
         x.u = (x.u || 0) + 1;
       }
@@ -3037,7 +3235,7 @@
   // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
   // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (Q138:
   // the sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c,
-  // r, g, h and o left out at their default (0, 0, 1, 1, none, 0). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
+  // r, g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
   // exactly what it used. x: the record as an object or its JSON (a sheet cell); null when it has no d (a row logged
   // before the scorer, or broken).
   const SC_MAX = 50;
@@ -3061,7 +3259,14 @@
     if (scNum(o.r) !== null && scNum(o.r) !== 1 && o.r >= 0 && o.r <= 1) out.r = scNum(o.r);
     if (scNum(o.g) !== null && scNum(o.g) !== 1 && o.g >= 0 && o.g <= 1) out.g = scNum(o.g);
     if (typeof o.h === 'string' && /^[A-Za-z0-9_.-]{1,120}$/.test(o.h)) out.h = o.h;
+    // The domain-score bar's inputs (rules version 9): m the genus offset of the genus shown and n that of the genus
+    // given (kept even at 0: absent means a row logged before, whose replay takes the sheet's gd), o (above) the format's offset
+    // df, which the bar takes too, and t the typed format's dt (left out at 0), s the shared slope (left out at 1).
+    if (scNum(o.m) !== null) out.m = scNum(o.m);
+    if (scNum(o.n) !== null) out.n = scNum(o.n);
     if (scNum(o.o)) out.o = scNum(o.o);
+    if (scNum(o.t)) out.t = scNum(o.t);
+    if (scNum(o.s) !== null && o.s > 0 && scNum(o.s) !== 1) out.s = scNum(o.s);
     return out;
   }
   // The game's inputs rounded as they are logged (scoreRec), before it scores with them.
@@ -3072,11 +3277,28 @@
     cf: r3(q.cf || 0),
     R: r3(q.R === undefined ? 1 : q.R),
     Rc: r3(q.Rc === undefined ? 1 : q.Rc),
-    df: r3(q.df || 0)
+    df: r3(q.df || 0),
+    ...(typeof q.mu === 'number' ? {mu: r3(q.mu)} : {}),
+    ...(typeof q.muc === 'number' ? {muc: r3(q.muc)} : {}),
+    ...(typeof q.dt === 'number' ? {dt: r3(q.dt)} : {}),
+    ...(typeof q.S === 'number' ? {S: r3(q.S)} : {})
   });
   // The record of a question scored by scoreAnswer (q after scoreIn, res its result): what quiz.js answer logs as sc.
   const scoreLog = (q, res) =>
-    scoreRec({d: q.d0, f: q.fam, c: q.cf, l: res.look ? 1 : 0, r: q.R, g: q.Rc, h: q.hint || undefined, o: q.df});
+    scoreRec({
+      d: q.d0,
+      f: q.fam,
+      c: q.cf,
+      l: res.look ? 1 : 0,
+      r: q.R,
+      g: q.Rc,
+      h: q.hint || undefined,
+      m: q.mu,
+      n: q.muc,
+      o: q.df,
+      t: q.dt,
+      s: q.S
+    });
 
   // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
   // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
@@ -3097,6 +3319,28 @@
     p: 'Your progress is now computed again from all your answers, with the rules the app uses today. It went from {from}% to {to}%. Every answer you gave is kept.',
     only: 'changed',
     min: 5
+  };
+  // The apology of rules version 9 (Pierre, 2026-11-06: the recalculation approved with the domain-score bar; the card
+  // and its PS from PR #611, Q109: sincere, say it does not mean they know less, turn it into encouragement, our mistake
+  // not theirs, the new bar means more; Pierre 2026-11-06: 2-3 short lines, never "bars" but "progress", encouraging: it
+  // is because they learned so fast that the old count could not keep up; no mechanics on the card; heading "Sorry"; his
+  // text of 14:43). Shown to every player whose % the
+  // adoption took down by a point or more (down: a rise gets the standard card when it is of 5 points or more). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab;
+  // sync.js NOTES_KEY), shown small under the text when it is set: Pierre's PS, which may name a player. A name is never
+  // written in the repo (rule D2).
+  const RV_SORRY = {
+    kind: 'apology',
+    kick: 'Sorry',
+    t: 'Sorry: we recalculated your progress',
+    p: "You've been learning so fast that our old way of counting couldn't keep up. It wasn't you, it was us: your new progress is lower, but you haven't lost anything you know.",
+    // The two %, on a line of their own that never wraps (Pierre, 2026-11-06: "Your progress: 38% → 24%").
+    pct: 'Your progress: {from}% → {to}%',
+    ps: 'card.rv8.ps',
+    only: 'changed',
+    min: 1,
+    // Only to the players whose % went down (Pierre, 2026-11-06: the card says the new progress is lower); a rise of
+    // RV_CARD.min points or more gets the standard card instead (rvMsgs with skip, progress.js rvNoticeAdd).
+    down: true
   };
   const RVS = [
     {
@@ -3151,6 +3395,15 @@
       at: '2026-11-06',
       why: "Per-format offsets (Pierre, 2026-11-06, Q138; sheet v77): the ability steps of the genus and the global level expect each question with its format's offset from the real answers (fmtOffsetsOf: 2 plausible choices among 4, Again, Duel tab, typed...), so a 2-choice question right more often than 1 in 2 explains no longer over-credits the ability; an answer's scoring record logs the offset it was scored with (o), a row logged before the scorer takes today's",
       msg: RV_CARD
+    },
+    {
+      v: 9,
+      at: '2026-11-06',
+      why: "The domain-score bar (Q127-Q129, Q135, sheet v87): a genus's bar is the share of all its possible photos the player would name alone and typed, the posterior expectation on a grid of abilities from a fixed population prior and the player's own answers on that genus only (format-aware, the photo's difficulty, memory and mix-ups as scored, a drift per answer so old answers fade), at most 95% until the mastery exam, which opens at 85% once the genus has been asked beside each of its look-alikes; a genus named by mistake counts as a false alarm, its bar less its false-alarm rate (Pr = H - FA, Snodgrass & Corwin 1988), not as a miss on its photos; it replaces the moving average s.pg, and the learned marks passed since 2026-11-02 are kept unless a miss logged after the exam takes them away",
+      // Pierre, 2026-11-06 (Q172): the apology card (PR #611's, Q109) for every player whose % the replay moved; its PS
+      // from the sheet's Notes tab, key card.rv8.ps (named when this was rules version 8, before PR #638 took that
+      // number; the key is kept so the row Pierre adds stays as written: never in the repo; progress.js rvNotice).
+      msg: RV_SORRY
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -3167,6 +3420,11 @@
   // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
   // Codex review #428); before it, the default player's prior 0, exactly as before.
   const START_SHEET = 36;
+  // The sync script version that replays the domain-score bar (rules version 9, core.js DOM): a genus first answered in
+  // the app takes it only once the script's replies say v >= DOM_SHEET (model.js domRules), and the app's own replay of
+  // its queued answers on top of the sheet's follows the same version (sync.js replayAdopt); before, the moving average
+  // s.pg exactly as before (rule D4).
+  const DOM_SHEET = 87;
   // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
   // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
@@ -3175,9 +3433,15 @@
   const logOk = (a, v) => ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
-  // several versions sees one recalculation card with its progress before and after the whole jump.
-  const rvMsgs = (from, to) =>
-    RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg).filter((x, i, L) => !L.slice(i + 1).some(y => y.msg === x.msg));
+  // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
+  // 'apology', RV_SORRY) in the jump says what the standard card says, and more: the standard card is then left out.
+  // skip: leave the apologies out (a player whose % did not go down: progress.js rvNoticeAdd), the standard card back.
+  const rvMsgs = (from, to, skip = false) => {
+    const L = RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg && !(skip && x.msg.kind === 'apology')).filter(
+      (x, i, A) => !A.slice(i + 1).some(y => y.msg === x.msg)
+    );
+    return L.some(x => x.msg.kind === 'apology') ? L.filter(x => x.msg !== RV_CARD) : L;
+  };
 
   // Full replay (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log? Recalculate
   // from all the results"): every player's progress rebuilt from the sheet's answer log, in time order, with today's rules
@@ -3200,14 +3464,16 @@
   // with one replays the offset it logged, o; none: 0),
   // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
   // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, cf, k, w, look}).
-  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at, rt}},
-  // n, used, rep}}: per genus the moving average pg (what the app keeps as s.pg), right / wrong answers, the last 10
+  // dom (false: the former moving average, rules before version 9), gd (the genus offsets for rows logged without them).
+  // Returns {id: {P: {genus: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at, rt}},
+  // n, used, rep}}: per genus the domain-score bar's log posterior dp and bar ds (domStep; pg, the former moving average,
+  // for a record of the start copy that holds one, or with dom false), right / wrong answers, the last 10
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
-  // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
+  // s.conf), u = answers that moved the bar, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
   // the genus shown only, never on the genus wrongly given),
   // the run of right answers (streak), the last answer (at), a look-alike duel won (du), the last miss on it, shown or
   // given (lx, a time: it ends an exam in course), the last one that took the progress below the learned mark's keep
-  // rule (lm, a time: mxKeeps); the global level LEVEL as the
+  // rule (lm, a time: keepsMark); the global level LEVEL as the
   // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
   // A row logged with its scoring record (2026-11-06, Q132: index LOG_SC) is scored with what the game had then: its photo
@@ -3370,6 +3636,14 @@
       fmt = o.fmt || {},
       memory = o.memory !== false,
       time = o.time !== false,
+      // dom: false, the rules before version 9 (the former moving average; a device whose sheet does not replay version 9
+      // yet, sync.js replayAdopt, rule D4); gd: the genus offsets ({genus: [offset, weighed answers]}, ?stats=1 gd) for
+      // the rows logged without them.
+      dom = o.dom !== false,
+      gdv = g => {
+        const x = (o.gd || {})[g];
+        return Math.round((Array.isArray(x) ? Number(x[0]) || 0 : Number(x) || 0) * 1000) / 1000;
+      },
       out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
     const prior = (t, n) => {
       const a = gen[t] || {},
@@ -3400,9 +3674,10 @@
         if (since[id] && !(r[1] > since[id])) return;
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
-            const x = (pl.P[g] = pl.P[g] || {pg: 0, ok: 0, ko: 0, h: '', ps: {}, u: 0});
+            // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
+            // a record of the copy it goes on from (start) keeps what it has.
+            const x = (pl.P[g] = pl.P[g] || {ok: 0, ko: 0, h: '', ps: {}, u: 0});
             if (!x.ps) x.ps = {};
-            if (typeof x.pg !== 'number') x.pg = 0;
             x.h = x.h || '';
             x.u = x.u || 0;
             return x;
@@ -3426,7 +3701,11 @@
         if (hs.some(h => h && h[0])) pl.rep++;
         const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
-        const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null};
+        const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
+        // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
+        q.mu = sc && typeof sc.m === 'number' ? sc.m : gdv(t);
+        q.muc = sc && typeof sc.n === 'number' ? sc.n : gdv(c);
+        if (sc) Object.assign(q, {df: sc.o || 0, dt: sc.t || 0, S: sc.s || 1});
         if (sc) {
           // Logged by the scorer (Q132): what the game scored with, as it was then; the memory as logged unless the
           // replay leaves it out (memory: false, a what-if).
@@ -3457,12 +3736,12 @@
         // leaves the progress below the keep rule (quiz.js answer, mxKept), on the genus shown as on the genus given: lm,
         // the time of the last such miss, takes away a mark passed before it; lx, the last miss, ends an exam in course.
         if (!ok) s.lx = r[1];
-        if (!ok && !mxKeeps(s.pg)) s.lm = r[1];
+        if (!ok && !keepsMark(s, pl.P, t)) s.lm = r[1];
         if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
         if (wrong) {
           const x = pl.P[c];
           x.lx = r[1];
-          if (!mxKeeps(x.pg)) x.lm = r[1];
+          if (!keepsMark(x, pl.P, c)) x.lm = r[1];
         }
       });
     return out;
@@ -3515,7 +3794,7 @@
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
-  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
+  const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},
@@ -3524,7 +3803,7 @@
       dup = x => JSON.parse(JSON.stringify(x)),
       kept = s => {
         const o = dup(s);
-        if (typeof o.pg !== 'number') {
+        if (!afterBkt(o)) {
           delete o.mx;
           delete o.ex;
         }
@@ -3541,6 +3820,8 @@
           // The answer times (rt) go with the count: the replay's when it has every answer the device has.
           if (!s || n(r) >= n(s)) {
             [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
+            if (isObj(r.tyk)) o.tyk = dup(r.tyk);
+            else delete o.tyk;
             if (isObj(r.rt)) o.rt = dup(r.rt);
             else delete o.rt;
           }
@@ -3552,7 +3833,15 @@
       }
       if (!r || !r.u || (s && n(s) > n(r))) {
         if (s) out[g] = kept(s);
-        else if (r) out[g] = {pg: r.pg || 0, ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
+        else if (r) {
+          // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
+          out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
+          if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
+          else if (typeof r.pg === 'number') out[g].pg = r.pg;
+          // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
+          ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
+          if (r.ty) out[g].ty = r.ty;
+        }
         return;
       }
       const o = {};
@@ -3572,9 +3861,9 @@
       if (rv) o.rv = rv;
       if (s) {
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
-        if (typeof s.pg === 'number' && s.mx) {
+        if (afterBkt(s) && s.mx) {
           if (!(r.lm > s.mx)) o.mx = s.mx;
-        } else if (typeof s.pg === 'number' && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
+        } else if (afterBkt(s) && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
       }
       out[g] = o;
     });
@@ -3606,6 +3895,8 @@
         const o = dup(r);
         if (b && n(b) > n(r)) {
           [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
+          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
+          else delete o.tyk;
           if (isObj(b.rt)) o.rt = dup(b.rt);
           else delete o.rt;
         }
@@ -4172,6 +4463,20 @@
     pgOf,
     scoreOf,
     pctOf,
+    DOM,
+    DOM_PRIOR,
+    domP,
+    domUpdate,
+    domScore,
+    domBar,
+    domStep,
+    domOn,
+    barOf,
+    examOpen,
+    keepsMark,
+    faOf,
+    looksLeft,
+    afterBkt,
     TARGET_P,
     AIM,
     aimOf,
@@ -4203,11 +4508,13 @@
     levelMove,
     eloStep,
     RV_CARD,
+    RV_SORRY,
     RVS,
     RV,
     RV_SHEET,
     RT_SHEET,
     START_SHEET,
+    DOM_SHEET,
     LOG_SHEET,
     logOk,
     RTIME,
