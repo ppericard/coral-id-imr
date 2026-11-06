@@ -123,12 +123,12 @@ const WIDTHS = [390, 1280];
           .map(k => [k.slice(5), 'r'])
       );
     // To do › Share-alike needs share-alike photos on the site, and Pierre may remove the real ones at any Publish (he
-    // removed the last ones on 2026-11-06): two of his own photos (never out of the presence rule) are served as CC BY-NC-SA.
+    // removed the last ones on 2026-11-06): three of his own photos (never out of the presence rule) are served as CC BY-NC-SA.
     const SA = Object.entries(DJ.gen)
       .flatMap(([g, x]) => Object.values(x.views || {}).flatMap(L => L.filter(p => p.own && p.src).slice(0, 1)))
       .filter(p => !named(p.f))
-      .slice(0, 2);
-    if (SA.length < 2) throw new Error('not enough photos of Pierre to stand for share-alike ones');
+      .slice(0, 3);
+    if (SA.length < 3) throw new Error('not enough photos of Pierre to stand for share-alike ones');
     SA.forEach(p => Object.assign(p, {lic: 'cc-by-nc-sa', a: p.a.replace(/\(CC[^)]*\)/, '(CC BY-NC-SA)')}));
     await ctx.route(
       u => u.href.startsWith(base) && u.pathname === '/data.json',
@@ -797,7 +797,7 @@ const WIDTHS = [390, 1280];
         }
       }
       // To do › Share-alike (Pierre, 2026-11-05: no share-alike for corals any more, but the ones on the site are never
-      // removed automatically; two of Pierre's photos stand for share-alike ones, SA above): a "share-alike" tag on the genus page; the
+      // removed automatically; three of Pierre's photos stand for share-alike ones, SA above): a "share-alike" tag on the genus page; the
       // same actions as Out of the presence rule: Remove (the ×, Undo), Keep → Kept (curation seen 'sa:f', tag "kept"),
       // un-keep, Remove all asks first and acts only on the photos still to handle.
       {
