@@ -84,6 +84,7 @@ import fish_commonness
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_source.json"
 SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (add_families)
+FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_families; tools/fish_facts.py)
 OUT = ROOT / "fish.json"
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
@@ -579,6 +580,24 @@ def add_families(o, key, declared=()):
             r["apart"] = ap
         if x.get("src"):
             r["msrc"] = x["src"]
+    # The species' size and depth (tools/fish_facts.json, tools/fish_facts.py: Reef Life Survey, else FishBase; Pierre,
+    # Q6): size {len (cm), lt (the length type when not total length), src}, depth {m [shallow, deep], src}, src
+    # {t, u} naming the page each value comes from.
+    facts = json.loads(FACTS.read_text(encoding="utf-8")) if FACTS.exists() else {}
+    def fsrc(x, k):
+        if x.get(k) == "rls":
+            return {"t": "Reef Life Survey", "u": "https://reeflifesurvey.com/species/" + x["rls"] + "/"}
+        return {"t": "FishBase", "u": f"https://www.fishbase.se/summary/{x['fb']}"}
+    for s in o["species"]:
+        s.pop("size", None)
+        s.pop("depth", None)
+        x = facts.get(s["id"])
+        if not x or "family" not in s:
+            continue
+        if x.get("len") is not None:
+            s["size"] = {"len": x["len"], **({"lt": x["lt"]} if x.get("lt") else {}), "src": fsrc(x, "lsrc")}
+        if x.get("dep"):
+            s["depth"] = {"m": x["dep"], "src": fsrc(x, "dsrc")}
     o["families"] = out
     go = []
     for g, x in gens.items():

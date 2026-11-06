@@ -541,6 +541,14 @@ const server = http.createServer((req, res) => {
       };
     });
     if (!mk.n || !mk.src || !mk.rep) ui.push(`${width}px family marks: ${JSON.stringify(mk)}`);
+    // The family size range counts total lengths only (Codex review #696: the Stingrays mixed a disc width in).
+    const rg = await q.evaluate(() => {
+      const f = ftree().fam['f:Stingrays'],
+        L = famSpecies(f).filter(s => s.size);
+      return {mixed: L.some(s => s.size.lt), line: famSizes(f), tl: L.filter(s => !s.size.lt).map(s => s.size.len)};
+    });
+    if (rg.mixed && rg.tl.length < 2 && /reach/.test(rg.line))
+      ui.push(`${width}px family size range mixes measures: ${JSON.stringify(rg)}`);
     await wide('a family sheet');
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
     await q
