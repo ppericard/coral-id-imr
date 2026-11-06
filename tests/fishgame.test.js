@@ -508,7 +508,7 @@ test('fish-game.json: the layout tools/fish_game.py writes, only photos in play,
     .flat()
     .forEach(p => {
       assert.ok(
-        !p.r && p.src && /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org|www\.fishbase\.de)\//.test(p.src),
+        !p.r && p.src && /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org|www\.fishbase\.(?:de|se))\//.test(p.src),
         p.f
       );
       assert.ok(r2.has(p.f), `${p.f}: not in the R2 list (tools/photos.py DATA)`);
