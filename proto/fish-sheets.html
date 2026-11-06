@@ -223,7 +223,15 @@
       }
       .gblock > h3 {
         margin: 0 0 6px;
-        font-size: var(--fs-l);
+        font-family: var(--display);
+        font-size: var(--fs-xl);
+        color: var(--ink);
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .gblock > h3 small {
+        text-transform: none;
+        letter-spacing: 0;
       }
       .gblock .tipbox {
         padding: 6px 12px 8px;
@@ -443,10 +451,13 @@
               ${wormsNote(x.species)}${tiles(x.species)}</section>`;
             })
             .join('');
-          if (single.length)
-            h += `<p class="ghead">Genera with one species</p>${single
+          if (single.length) {
+            const S1 = single.filter(x => !mine || x.species[0].op),
+              hid = single.length - S1.length;
+            h += `<p class="ghead">Genera with one species</p>${S1
               .map(x => oneRow(x.species[0], `<i>${esc(x.g)}</i>: its only species here${x.species[0].op ? '' : ' · not opened yet'}`))
-              .join('')}`;
+              .join('')}${hid ? `<p class="more note"><button type="button" class="linkish" data-mine="0">${hid} more not opened yet: show them</button></p>` : ''}`;
+          }
         }
         return h + famEnd(F);
       }
@@ -488,11 +499,11 @@
           <div class="names"><p class="sci"><i>${esc(g)}</i></p><p class="com">${x.species.length} species · in <a href="#${key}-b">${esc(F.label)}</a>${imr ? ` <span class="note">· IMR entry: ${esc(imr[0])}</span>` : ''}</p></div>
           ${myprog('one more species, if Scientific names is on')}
           ${imr ? tipbox(imr[1].cues, imr[1].sl) : ''}
-          <p class="ph">What sets <i>${esc(g)}</i> apart from its sibling genera (agent draft, Pierre validates).</p>
+          ${F.genera.length > 1 ? `<p class="ph">What sets <i>${esc(g)}</i> apart from its sibling genera (agent draft, Pierre validates).</p>` : ''}
           ${wormsNote(x.species)}
           <h3>Species <small>${x.species.length}</small></h3>${x.species.length > 1 ? filt(x.species, 'species') : ''}${tiles(x.species, true)}`;
         if (x.species.length === 1)
-          h = h.replace('<h3>Species', '<p class="ph">Only one species: this page repeats the species sheet. The study recommends no genus page here.</p><h3>Species');
+          h = h.replace('<h3>Species', '<p class="mk">Mockup note: the only genus of its family, with one species, so this page repeats the family and species sheets. The study recommends no genus page here.</p><h3>Species');
         if (sib.length)
           h += `<h3>Don't confuse with</h3>${sib
             .map(y => oneRow({...y.species[0], name: y.g, common: imrOf(F, y.g)[1].cues.join(' · ')}, `${y.species.length} species · IMR sub-entry lines`, `#${key}-g-${y.g}`))
