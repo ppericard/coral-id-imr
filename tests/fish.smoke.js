@@ -442,6 +442,44 @@ const server = http.createServer((req, res) => {
     });
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
     await wide('the families page');
+    // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family on the families page opens its
+    // sheet, under the book's English name with its scientific name below; an old entry id links to its family; the only
+    // genus of a family opens the family sheet; the species filter is on by default and one tap shows them all.
+    await q.click('#view .tipg a.tipph');
+    await q.waitForFunction(() => document.querySelector('#view .fsheet'), null, {timeout: 15000});
+    const sh = await q.evaluate(() => ({
+      hash: location.hash,
+      title: (document.querySelector('#view .fn-t') || {}).textContent,
+      sci: (document.querySelector('#view .fn-s') || {}).textContent || '',
+      tips: !!document.querySelector('#view .tipbox .idtips li'),
+      rows: document.querySelectorAll('#view .frow').length,
+      bar: (document.querySelector('#modes .ctx-t') || {}).textContent || '',
+      old: hr('g-t02'),
+      wide: document.documentElement.scrollWidth <= innerWidth
+    }));
+    if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
+      ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
+    if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
+    await wide('a family sheet');
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
+    await q
+      .waitForFunction(
+        () => location.hash === '#fish/learn/family/Spadefishes' && document.querySelector('#view .fsheet [data-mine]'),
+        null,
+        {
+          timeout: 15000
+        }
+      )
+      .catch(() => {});
+    const sp = await q
+      .evaluate(() => {
+        const a = document.querySelectorAll('#view .ftiles:not(.juv) .ftile').length;
+        document.querySelector('#view .seg [data-mine="0"]').click();
+        return {hash: location.hash, mine: a, all: document.querySelectorAll('#view .ftiles:not(.juv) .ftile').length};
+      })
+      .catch(e => ({err: e.message}));
+    if (sp.hash !== '#fish/learn/family/Spadefishes' || sp.all !== 5 || sp.mine !== 0)
+      ui.push(`${width}px Spadefishes sheet: ${JSON.stringify(sp)}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
