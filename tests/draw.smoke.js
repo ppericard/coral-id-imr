@@ -496,6 +496,53 @@ const server = http.createServer((req, res) => {
           `${n} (${files.length} photos, ${cols.length} colonies): the least remembered colony came up ${favour} (all known alike: ${even})`
         );
     }
+    // Photo exposure (Pierre, 2026-11-06, Q188 and Q190; docs/LEARNING.md "Photo exposure"): in a genus with colonies at
+    // several zooms, a colony counts as seen whatever view was shown, so a colony seen only in its colony view is drawn
+    // as often as one seen in every view; and a calibration question (the exploration share) shows a colony the player
+    // has never seen while one remains.
+    {
+      // the colonies of a genus by their set of views: two colonies with the same views (two or more) and other colonies
+      const cols = n => {
+          const o = {};
+          VIEWS.forEach(([v]) =>
+            gamePics(n, v).forEach(x => ((o[key(x)] = o[key(x)] || []).push(x), (o[key(x)].vs = (o[key(x)].vs || '') + v)))
+          );
+          return o;
+        },
+        pair = n => {
+          const C = cols(n),
+            by = {};
+          Object.keys(C).forEach(k => C[k].length >= 2 && (by[C[k].vs] = by[C[k].vs] || []).push(k));
+          return Object.keys(C).length >= 6 ? Object.values(by).find(L => L.length >= 2) : null;
+        },
+        n = slateGenera().find(pair),
+        C = cols(n),
+        ks = Object.keys(C),
+        [ca, cb] = pair(n),
+        // every colony seen in full and right once, but ca and cb: ca seen in one photo only, cb in all of them
+        ps0 = Object.fromEntries(ks.flatMap(k => C[k].map(x => [x.f, [1, 1]]))),
+        ps = {...ps0, ...Object.fromEntries(C[ca].slice(1).map(x => [x.f, undefined]))},
+        rate = CAL.RATE,
+        share = (c, rt) => {
+          CAL.RATE = rt;
+          let hit = 0;
+          for (let i = 0; i < 2000; i++) {
+            P[n] = {ok: 20, ko: 2, h: '1111111111', th: 1.2, pg: 0.6, ps: JSON.parse(JSON.stringify(ps))};
+            if (photoSet(n).shown.some(x => key(x) === c)) hit++;
+          }
+          return hit / 2000;
+        };
+      Object.keys(ps).forEach(f => ps[f] === undefined && delete ps[f]);
+      const a = share(ca, 0),
+        b = share(cb, 0);
+      if (!(a < 1.3 * b && b < 1.3 * a)) fails.push(`${n}: a colony seen in one view came up ${a}, one seen in every view ${b}`);
+      // The exploration share: one colony never seen (its photos left out of ps), every calibration question shows it.
+      const cn = ks.find(k => k !== ca && k !== cb);
+      C[cn].forEach(x => delete ps[x.f]);
+      const e = share(cn, 1);
+      CAL.RATE = rate;
+      if (!(e > 0.99)) fails.push(`${n}: a calibration question showed the colony never seen ${e} of the time`);
+    }
     // Exam photos are never-seen ones while some remain.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ps: {}};
     const v0 = examSet(t).shown[0];
@@ -556,7 +603,7 @@ const server = http.createServer((req, res) => {
         document.querySelectorAll('.unlock').forEach(x => x.remove()); // closed by the player before Next
         quizPhoto();
         // The player reads the cards through (each genus is met when its card shows).
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)')); ) b.click();
         const now = Object.keys(INTROS).filter(n => !before.has(n));
         if (now.length) cardsAt.push([a, now.length]);
         // A starred genus opens only after the genera its card compares it to (core.js starRefs; Pierre, 2026-11-03).
@@ -670,7 +717,7 @@ const server = http.createServer((req, res) => {
         achQ.length = 0;
         achBusy = false;
         quizPhoto();
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)')); ) b.click();
         const o = document.querySelector('.unlock.intro [data-open]');
         if (o) {
           shownAt = answersSoFar();
@@ -1134,7 +1181,8 @@ const server = http.createServer((req, res) => {
           const a = answersSoFar(),
             before = new Set(Object.keys(INTROS));
           quizPhoto();
-          for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
+          for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)')); )
+            b.click();
           if (document.querySelector('.unlock [data-bonus]')) fails.push('bonus offer made again');
           const now = Object.keys(INTROS).filter(n => !before.has(n));
           if (now.length) cards.push([a, now]);
