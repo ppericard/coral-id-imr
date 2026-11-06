@@ -99,7 +99,8 @@ def load_refs(fish=None):
 
 
 def add_refs(photos, J, added=(), fish=None):
-    """The reference photos (tools/fish_refs.json) into their entries' game photos, in place, once judged (J): a photo
+    """The reference photos (tools/fish_refs.json) into their entries' game photos, in place, once judged (J; apply then
+    keeps only those judged at the reference level, ref_level): a photo
     already listed takes the rep tag; one of an observation already listed takes that photo's place (one photo per
     observation, rule P4; a photo the pass added for an entry short of very easy photos stays); the others join at the end (core.js easyRank orders the list). A game photo loses a rep and
     a reference photo that tools/fish_refs.json no longer lists, so a rerun gives the same file."""
@@ -125,6 +126,16 @@ def add_refs(photos, J, added=(), fish=None):
                     L[same] = obj
 
 
+LOOK = re.compile(r"^p1g0s[lm][1s]$")
+
+
+def ref_level(p):
+    """core.js refLevel: a reference source's photo (rep) judged very easy (4-5), or any photo judged 5 with the reference
+    look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school; no j, c or a)."""
+    e, jt = p.get("e") or 0, p.get("jt") or ""
+    return (e >= EARLY and bool(p.get("rep"))) or (e == 5 and bool(LOOK.match(jt[:7])) and not set(jt[7:]) & set("jca"))
+
+
 def apply(photos, fish=None):
     """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
     fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
@@ -147,6 +158,10 @@ def apply(photos, fish=None):
                 if p["f"] in C:
                     p["c"] = C[p["f"]]
                 k += 1
+    # A reference photo plays only at the reference level (Pierre, 2026-11-06: "take every photo that passes the rules
+    # and is judged reference-level"); one judged lower stays listed in tools/fish_refs.json, out of the game.
+    for tid in photos:
+        photos[tid] = [p for p in photos[tid] if not p.get("from") or ref_level(p)]
     return k
 
 

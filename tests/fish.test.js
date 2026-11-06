@@ -761,7 +761,8 @@ test('declared look-alikes: Pierre’s family groups both ways, sourced; an unkn
 // family, taken only when it passes the game photo rules; once judged, in its entry's game photos with rep, and the
 // card's photo (core.js fishGen cover) is a reference photo wherever one is among the entry's easiest.
 test('reference photos: game photo rules, in play once judged, the cover where one is among the easiest', () => {
-  const R = read('tools/fish_refs.json').photos,
+  const C = require('../core.js'),
+    R = read('tools/fish_refs.json').photos,
     codes = Object.fromEntries(Object.values(JUDGE.photos).flatMap(m => Object.entries(m))),
     added = new Set(Object.values(JUDGE.add || {}).flatMap(L => L.map(p => p.f))),
     refs = new Map();
@@ -790,11 +791,15 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       }
     })
   );
-  // In play once judged (one photo per observation: a photo the pass added keeps its place).
+  // One photo per observation (a photo the pass added keeps its place).
   refs.forEach(([tid, p], f) => {
     const L = PH[tid],
       g = L.find(x => x.f === f);
-    if (f in codes && !L.some(x => x.o === p.o && added.has(x.f))) assert.ok(g && g.rep === p.rep, `${tid} ${f}: not in play`);
+    // In play once judged at the reference level (core.js refLevel on the judged ease and tags), never below it.
+    const lvl = f in codes && capOf(codes[f], false, false, p.rep);
+    if (lvl && C.refLevel({...p, ...lvl}) && !L.some(x => x.o === p.o && added.has(x.f)))
+      assert.ok(g && g.rep === p.rep, `${tid} ${f}: not in play`);
+    if (g && g.from) assert.ok(C.refLevel(g), `${tid} ${f}: in play below the reference level`);
     if (!(f in codes) && g) assert.ok(!g.from, `${f}: a reference photo in play without a judgement`);
   });
   Object.entries(PH).forEach(([tid, L]) =>
@@ -802,8 +807,7 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       if (p.rep || p.from) assert.ok(refs.has(p.f) && refs.get(p.f)[0] === tid, `${tid} ${p.f}: not in tools/fish_refs.json`);
     })
   );
-  const C = require('../core.js'),
-    X = C.fishGen(F, PH);
+  const X = C.fishGen(F, PH);
   Object.values(X.gen).forEach(g => {
     const L = g.views.wide,
       top = Math.max(...L.map(p => p.e || 3));

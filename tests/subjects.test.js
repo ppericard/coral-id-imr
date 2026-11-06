@@ -127,7 +127,15 @@ test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per obs
     assert.strictEqual(new Set(obs).size, obs.length, `${id}: one photo per observation`);
     assert.strictEqual(new Set(fs).size, fs.length, `${id}: each photo once`);
     L.forEach(p => {
-      assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./, p.f);
+      // FishBase's own photos (tools/fish_refs.py; Pierre, 2026-11-06: in automatically when the licence allows) come
+      // from its www.fishbase.se mirror.
+      if (p.via === 'fishbase') assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[^/]+$/, p.f);
+      else
+        assert.match(
+          p.src,
+          /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./,
+          p.f
+        );
       assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`); // Pierre's own whatever their licence (rule S2)
       const s = F.species.find(x => x.id === p.sp);
       assert.ok(s && !s.out, `${p.f}: a species in the game`);

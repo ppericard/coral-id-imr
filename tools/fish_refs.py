@@ -9,7 +9,7 @@ photos). Before this file a cover was tagged only when it happened to be among t
 For every game species (fish.json species of a level-1 entry, not `out`), every circle-1 genus (app.js fishGenera: the
 first word of a circle-1 species' name) and every entry's family (fish.json teach fam), in this order:
   1. iNaturalist: the taxon's cover, then the other photos its taxon page shows (taxon_photos, iNaturalist's order),
-     for a species the first INAT_MAX (3), for a genus or a family the first, that pass every game photo rule on the observation that holds it (the rules of tools/fetch_fish.py:
+     for a species all of them, for a genus or a family the first, that pass every game photo rule on the observation that holds it (the rules of tools/fetch_fish.py:
      Research Grade at the species level, licence CC0, CC BY or CC BY-NC, never share-alike or ND, not captive, not
      annotated Dead, hosted on iNaturalist's open-data host, and in the Indo-West Pacific box `IWP`: a species
      confirmed near Dauin takes its photos from anywhere there, ARCHITECTURE "Fish photos"; every game species is
@@ -17,13 +17,14 @@ first word of a circle-1 species' name) and every entry's family (fish.json teac
      that entry (the photo joins that entry's photos with that species). A photo with no observation found among the
      taxon's 200 most faved Research Grade observations in the box is not taken (nothing proves it passes the rules).
   2. FishBase (species only): its photos that pass tools/fetch_fishbase.py's rules (usable: underwater, CC BY-NC as
-     FishBase states it, the box, abroad only for a species confirmed in the Philippines), its main picture first, at
-     most FB_MAX (3) (Pierre, 2026-11-06: FishBase enters automatically when its licence allows; "a maximum of good
-     photos to complement the weaker ones on iNaturalist").
+     FishBase states it, the box, abroad only for a species confirmed in the Philippines), its main picture first, all
+     of them (Pierre, 2026-11-06: FishBase enters automatically when its licence allows; "a maximum of good photos to
+     complement the weaker ones on iNaturalist").
 Each photo object has fish-photos.json's shape plus rep ("inaturalist" for the cover or a taxon-page photo, "fishbase"
 for FishBase's main picture; FishBase's other photos have none), via ("fishbase"), from (cover, taxon, fishbase) and for (the units it represents: species ids, "g:<genus>",
 "fam:<family>"), keyed by species (fish.json species id), so the file outlives a renaming of the teaching entries.
-tools/fish_judge.py apply() adds each one to the game photos of the entry that holds its species once it is judged (tools/fish_judge.json
+tools/fish_judge.py apply() adds each one to the game photos of the entry that holds its species once it is judged at
+the reference level (core.js refLevel) (tools/fish_judge.json
 photos), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r and one ease
 point (judging/FISH.md). One already in the list is tagged in place.
 
@@ -51,9 +52,10 @@ BOX = "&".join(f"{k}={v}" for k, v in ff.IWP.items())
 DAUIN = (9.19, 123.26)
 SPECIES_RANKS = ("species", "subspecies", "variety")
 DEAD = (17, 19)
-# How many photos per species (Pierre, 2026-11-06 14:02: "don't limit ourselves: the goal is a maximum of good photos to
-# complement the weaker ones on iNaturalist"): iNaturalist's cover and taxon-page photos, and FishBase's.
-INAT_MAX, FB_MAX = 3, 3
+# No cap per species (Pierre, 2026-11-06 14:02: "don't limit ourselves: the goal is a maximum of good photos to complement
+# the weaker ones on iNaturalist"): every iNaturalist cover and taxon-page photo and every FishBase photo that passes the
+# rules is listed; the judging decides which play (reference level only, tools/fish_judge.py add_refs).
+INAT_MAX = FB_MAX = None
 # iNaturalist API v2 observation fields the rules read (a v1 reply of 200 observations weighs about 12 MB).
 FIELDS = ("id,quality_grade,location,place_ids,captive,taxon.id,taxon.name,taxon.rank,taxon.min_species_taxon_id,user.login,"
           "photos.id,annotations.controlled_attribute_id,annotations.controlled_value_id,annotations.vote_score")
@@ -152,7 +154,7 @@ def pick(net, T, taxon, want, n=1):
         o = H.get(str(p["id"]))
         if passes(o, want) and all(o["id"] != x[1]["id"] for x in out):
             out.append((p, o, src))
-            if len(out) >= n:
+            if n and len(out) >= n:
                 break
     return out
 
@@ -181,7 +183,7 @@ def fb_objs(s, fb, n=FB_MAX):
     """FishBase's photos of species s that pass its rules (fetch_fishbase.usable), in its order (the main picture first,
     then the nearest), at most n: the main picture carries rep "fishbase"."""
     out = []
-    for row in fbase.ordered((fb or {}).get("photos") or [], s.get("present"))[:n]:
+    for row in fbase.ordered((fb or {}).get("photos") or [], s.get("present"))[:n or None]:
         r = fbase.record(s, fb["code"], row)
         o = {"f": "fb" + row["n"].rsplit(".", 1)[0], "o": r["o"], "src": r["src"], "r": 1, "a": r["a"], "lic": r["lic"], "t": r["t"],
              "sp": s["id"], "loc": r["loc"], "from": "fishbase", "via": "fishbase"}
