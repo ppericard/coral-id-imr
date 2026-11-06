@@ -7,9 +7,10 @@
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 // The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
 // with the ring, at the top of the page, not under the slate tiles): the overall ring with its %, then the name, place and
-// Elo on the leaderboard (filled once it loads; the Elo from this device until then; nothing before the Elo is due and
-// while not on the board: it comes by itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the
-// last three. The rank links to the leaderboard, the achievements to their page.
+// Elo (the rank filled once the leaderboard loads; nothing before the Elo is due and while not on the board: it comes by
+// itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the last three. The rank links to the
+// leaderboard, the achievements to their page. One level everywhere (Pierre, 2026-11-06, Q134): the Elo is always this
+// device's own level (P[LEVEL], eloLine), never the board's copy of it, so it does not change when the board arrives.
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH_L()
@@ -204,12 +205,13 @@ function quizBoard() {
       appToast(`All ${slateGenera().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
-  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
+  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
+  // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
   const rank = B => {
     const a = document.getElementById('pbrank'),
       i = B && B.rows ? boardMe(B.rows) : -1;
     if (!a || i < 0) return;
-    const elo = B.rows[i][2] == null ? eloLine(P[LEVEL]) : `Elo ${eloScore(B.rows[i][2])}`;
+    const elo = eloLine(P[LEVEL]);
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
     a.hidden = false;
   };
@@ -341,7 +343,9 @@ function bindProgFile() {
 }
 
 // Public leaderboard (Pierre, 2026-11-01): every signed-in player by progress %, then Elo (their ability from every
-// answer, so players at 100% keep competing). 🏆 in the header opens it from any page; My progress shows the player's
+// answer, so players at 100% keep competing). The Elo is the app's own level, P[LEVEL].th, the one My progress shows
+// (Pierre, 2026-11-06, Q134): the sheet reads it from each player's saved progress (Code.gs board_, v63; older scripts
+// sent their own chain, stats_ R), and the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it from any page; My progress shows the player's
 // rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
 // sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
 const BOARD = 'reefid-sync-board'; // a reefid-sync key: it travels with the progress, so the choice holds on every device
@@ -413,7 +417,12 @@ function viewBoard() {
 function paintBoard(B) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
-  const me = boardMe(B.rows);
+  const me = boardMe(B.rows),
+    // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
+    // device has none to show (Q134), or when the subject on screen is not the board's (SUBJ.board: P is another
+    // subject's progress). Other rows: the level the sheet read from their saved progress.
+    mine = me >= 0 && SUBJ.board ? eloLine(P[LEVEL]) : '',
+    eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
     ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
@@ -430,7 +439,7 @@ function paintBoard(B) {
       ? `<ol class="blist">${B.rows
           .map(
             (r, i) =>
-              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
           )
           .join('')}</ol>`
       : '<p class="note">Nobody yet: be the first.</p>');

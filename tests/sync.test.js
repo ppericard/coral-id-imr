@@ -1003,17 +1003,50 @@ test('board: a player saved before v14 ranks by learned / total until their next
   assert.strictEqual(ana[1], Math.round((100 * 1) / 39), 'learned 1 of 39');
 });
 
-test('board: the level shows from 200 answers; equal progress ranks by level', () => {
+test("board (v63): the level is the app's own (saved ~level th), from 200 answers of that record; equal progress ranks by level", () => {
   const s = seed();
+  // Pierre, 2026-11-06, Q134: one player level shown everywhere. The answers below would give the sheet's own chain
+  // (stats_ R, from -1) other values: the board ignores it and reads the level the app saved.
   const many = (p, n) => Array.from({length: n}, (_, i) => ans(p + i, {ok: i % 4 ? 1 : 0}));
-  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 50}, answers: many('x', 200)});
-  s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 50}, answers: many('y', 120)});
+  const lv = (n, L) => ({'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}, '~level': L})});
+  s.post({name: 'Ana', pin: '1234', data: lv(3, {ok: 150, ko: 52, th: 0.734}), summary: {pct: 50}, answers: many('x', 200)});
+  s.post({name: 'Ben', pin: '1111', data: lv(3, {ok: 100, ko: 20, th: 2}), summary: {pct: 50}, answers: many('y', 120)});
+  s.post({name: 'Cy', pin: '2222', data: lv(3, {ok: 400, ko: 100, th: 1.2}), summary: {pct: 50}, answers: []});
+  s.post({name: 'Di', pin: '3333', data: prog(3), summary: {pct: 50}, answers: many('z', 220)});
+  const b = s.get({board: '1'}).rows,
+    row = n => b.find(r => r[0] === n);
+  assert.strictEqual(
+    row('Ana')[2],
+    0.734,
+    'Ana: her saved level as it is (eloScore rounds the Elo, 1147 on every device; Codex review #639)'
+  );
+  assert.strictEqual(row('Ben')[2], null, 'Ben: 120 answers in his level record, no level yet (a high th is not enough)');
+  assert.strictEqual(row('Cy')[2], 1.2, 'Cy: no answer rows on the sheet, the level still comes from his saved progress');
+  assert.strictEqual(row('Di')[2], null, 'Di: no ~level saved, no level (never the sheet chain)');
+  const ras = s.post({readStats: 1, token: TOK}).ras;
+  assert.ok(
+    Object.values(ras).some(x => x[1] >= 200 && x[0] !== 0.734),
+    'the sheet chain R still exists inside stats_, with other values'
+  );
+  assert.deepStrictEqual(
+    b.map(r => r[0]),
+    ['Cy', 'Ana', 'Ben', 'Di', 'Ana B'],
+    "equal progress: by level, a level above none; the seed's Ana B (answers, 0%) last"
+  );
+});
+
+test('board (v63): a player with answers stays listed at 0% before the level shows (Codex review #639)', () => {
+  const s = seed();
+  const one = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 0, ko: 1, pg: 0}, '~level': {ok: 0, ko: 1, th: -0.3}})};
+  s.post({name: 'Eve', pin: '4444', data: one, summary: {pct: 0}, answers: [ans('e1', {ok: 0})]});
+  s.post({name: 'Fay', pin: '5555', data: {'reefid-sync-coral-progress': '{}'}, summary: {pct: 0}, answers: []});
   const b = s.get({board: '1'}).rows;
-  const ana = b.find(r => r[0] === 'Ana'),
-    ben = b.find(r => r[0] === 'Ben');
-  assert.strictEqual(typeof ana[2], 'number', 'Ana: 202 answers');
-  assert.strictEqual(ben[2], null, 'Ben: 122 answers, no level yet');
-  assert.strictEqual(b[0][0], 'Ana', 'a level ranks above none at equal progress');
+  assert.deepStrictEqual(
+    b.find(r => r[0] === 'Eve'),
+    ['Eve', 0, null],
+    'one wrong answer: listed, 0%, no level yet'
+  );
+  assert.ok(!b.some(r => r[0] === 'Fay'), 'no answer at all: not listed');
 });
 
 test('achs: how many signed-in players hold each achievement; counts only', () => {
