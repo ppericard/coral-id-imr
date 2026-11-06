@@ -4950,6 +4950,26 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   padding-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
+/* Fish Coverage (admin plan PR 8): To do chips, the table scrolls sideways inside its box on phones. */
+.adm-ftodo {
+  flex-wrap: wrap;
+}
+.adm-fishcovw {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.adm-fishcovt th[scope='row'] {
+  text-align: left;
+  white-space: nowrap;
+}
+.adm-fishcovt td {
+  text-align: center;
+}
+.adm-fishcovt .adm-fph,
+.adm-fishcovt .adm-fneed {
+  text-align: left;
+  font-size: 0.8rem;
+}
 /* A player's Journey, one per subject (admin-journey.js jseg): Corals | Fish at the right of the title, each with the
    player's answers in it; links styled as the segmented buttons. */
 .adm-jsubj {
