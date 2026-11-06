@@ -44,7 +44,8 @@ function session(seed, n) {
   let pdiff = {}, // the device's photo ratings, refreshed now and then
     pmem = [0, -0.4, -1, -1.6],
     pconf = {},
-    pfmt = {}; // the device's per-format offsets (?stats=1 fmt, Q138), refreshed with the rest
+    pfmt = {}, // the device's per-format offsets (?stats=1 fmt, Q138), refreshed with the rest
+    pgd = {};
   const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
   for (let i = 0; i < n; i++) {
     if (i % 25 === 0) {
@@ -53,6 +54,7 @@ function session(seed, n) {
       pmem = [0, -0.2 - r() * 0.5, -0.8 - r() * 0.5, -1.3 - r() * 0.6];
       pconf = {'A|B': [20 + i, 3 + Math.floor(r() * 8)], 'C|D': [10, Math.floor(r() * 5)]};
       pfmt = {k4: [0, 500], again: [Math.round(r() * 1500) / 1000, 200], typed: [-0.4, 60]};
+      pgd = Object.fromEntries(G.map(g => [g, Math.round((r() * 2 - 1) * 1e3) / 1e3]));
     }
     const target = pick(G),
       typed = r() < 0.15,
@@ -107,7 +109,10 @@ function session(seed, n) {
       mq: mode,
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
-      PFMT: pfmt
+      PFMT: pfmt,
+      // The domain-score bar's genus offsets (model.js genusDiff), which the device's ?stats=1 replies move too.
+      domRules: () => true,
+      genusDiff: t => pgd[t] || 0
     };
     vm.createContext(env);
     st(target);

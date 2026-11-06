@@ -119,6 +119,22 @@
   "fish-s199-cand-695741193": {
    "code": "p1g3bsx1",
    "keep": "dup"
+  },
+  "fish-s199-cand-fb-Scgho_m0": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s199-cand-fb-Scgho_u0": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s199-cand-fb-Scgho_u2": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s199-cand-fb-Scgho_u3": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }

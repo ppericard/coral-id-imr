@@ -46,23 +46,15 @@
   },
   "fish-s399-cand-692710710": {
    "code": "d0g1bl11",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Seen through a rippling surface in shallow water; maybe stranded"
+   "keep": "best"
   },
   "fish-s399-cand-692710706": {
    "code": "d0g1bl11",
    "keep": "dup"
   },
   "fish-s399-cand-728832250": {
-   "code": "d1g1smmc2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "A yellow trumpetfish over the porcupinefish: the subject may not be obvious"
+   "code": "d1g1smm2",
+   "keep": "best"
   },
   "fish-s399-cand-728832275": {
    "code": "d1g1smm2",
@@ -134,6 +126,10 @@
   },
   "fish-s399-cand-617789184": {
    "code": "o1d1sm12",
+   "keep": "best"
+  },
+  "fish-s399-cand-fb-Dilit_u0": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }

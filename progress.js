@@ -159,12 +159,12 @@ function quizBoard() {
   $v.innerHTML = `${
     UNITS[SUBJ.id].progHelp
       ? UNITS[SUBJ.id].progHelp()
-      : `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+      : `<p class="lede"><b>To learn a genus</b>, keep getting it right: its % is the share of all its photos, easy to hard, you would name alone and typed, as far as your answers on it have shown. Hard photos and typed answers prove the most; a right pick among 2 easy choices proves little. It fills up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
-  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
+  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
-  <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the ${SUBJ.one}: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
+  <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
   <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list))}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
@@ -201,7 +201,7 @@ function quizBoard() {
       save();
       quizBoard();
       // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
-      appToast(`All ${slateGenera().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
+      appToast(`All ${slateCore().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
@@ -215,8 +215,9 @@ function quizBoard() {
     a.hidden = false;
   };
   if (SUBJ.board) {
-    rank(boardCached());
-    loadBoard().then(rank);
+    const S = SUBJ;
+    rank(boardCached(S));
+    loadBoard(S).then(B => S === SUBJ && rank(B)); // the subject's own board (another chosen meanwhile: nothing)
   }
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => {
@@ -349,7 +350,7 @@ function bindProgFile() {
   };
 }
 
-// Public leaderboard (Pierre, 2026-11-01): every signed-in player by progress %, then Elo (their ability from every
+// Public leaderboard (Pierre, 2026-11-01), one per subject (2026-11-04): every signed-in player by progress %, then Elo (their ability from every
 // answer, so players at 100% keep competing). The Elo is the app's own level, P[LEVEL].th, the one My progress shows
 // (Pierre, 2026-11-06, Q134): the sheet reads it from each player's saved progress (Code.gs board_, v63; older scripts
 // sent their own chain, stats_ R), and the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it from any page; My progress shows the player's
@@ -376,59 +377,72 @@ const eloLine = G => {
 // on this device (BOARD_C, not a reefid-sync key: it never travels with the progress) and shown at once, then replaced
 // when the fresh one arrives (Pierre, 2026-11-01: "the leaderboard takes long to load"). It is also fetched a few seconds
 // after start-up, so the first visit to the page is usually instant too.
-const BOARD_C = 'reefid-board-cache';
-let boardAt = 0,
-  boardP = null;
+// One leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; core.js SUBJECTS board): the
+// page shows the subject on screen's (boardSubj), the first subject's on one without a leaderboard. The first one's is
+// GET ?board=1 as before; another's adds &s=<id>, served from sheet v95 (BOARD_SHEET): an older script answers with the
+// first one's, which is never shown as another subject's (rule D4: "not available yet" until the script has it).
+// Each subject's board is kept apart (BOARD_C, the subject's device key: reefid-board-cache for the corals).
+const BOARD_C = 'board-cache';
+const BOARD_SHEET = 95;
+const board0 = () => SUBJECTS.find(x => x.board);
+// A board reply to show: the first subject's from any script, another's only from BOARD_SHEET (tests/gates.test.js).
+const boardOk = (j, first) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= BOARD_SHEET);
+const boardSubj = () => (SUBJ.board ? SUBJ : board0());
+const boardAt = {},
+  boardP = {};
 const ago = t => {
   const m = Math.round((Date.now() - (t || 0)) / 60000);
   return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
 };
-const boardCached = () => {
-  const c = store.get(BOARD_C, null);
+const boardCached = (S = boardSubj()) => {
+  const c = store.get(subjDev(S.id, BOARD_C), null);
   return c && Array.isArray(c.rows) ? c : null;
 };
-const loadBoard = () => {
-  if (!boardP || Date.now() - boardAt > 60000) {
-    boardAt = Date.now();
-    boardP = fetch(SYNC_URL + '?board=1')
+const loadBoard = (S = boardSubj()) => {
+  const k = S.id,
+    first = S === board0();
+  if (!boardP[k] || Date.now() - (boardAt[k] || 0) > 60000) {
+    boardAt[k] = Date.now();
+    boardP[k] = fetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
       .then(r => r.json())
-      .then(j => (j && j.ok && Array.isArray(j.rows) ? j : {err: j && j.v < 14 ? 'old' : 'na'}))
+      .then(j => (boardOk(j, first) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
-        if (!j.err) store.set(BOARD_C, {rows: j.rows, t: Date.now()});
-        else boardAt = 0; // a failure is not kept for a minute: the next visit tries again
+        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, t: Date.now()});
+        else boardAt[k] = 0; // a failure is not kept for a minute: the next visit tries again
         return j;
       });
   }
-  return boardP;
+  return boardP[k];
 };
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
   $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
-  const C = boardCached();
-  if (C) paintBoard({...C, old: true});
-  loadBoard().then(B => {
+  const S = boardSubj(),
+    C = boardCached(S);
+  if (C) paintBoard({...C, old: true}, S);
+  loadBoard(S).then(B => {
     const box = document.getElementById('board');
-    if (!box || hashNow() !== 'board') return;
+    if (!box || hashNow() !== 'board' || boardSubj() !== S) return; // left, or another subject chosen meanwhile
     if (!B || B.err) {
       // Offline or failing: the last board stays, marked as such.
-      if (C) return paintBoard({...C, old: true, off: true});
+      if (C) return paintBoard({...C, old: true, off: true}, S);
       box.innerHTML = `<p class="note">${B && B.err === 'offline' ? 'The leaderboard needs a connection.' : 'The leaderboard is not available yet.'}</p>`;
       return;
     }
-    paintBoard(B);
+    paintBoard(B, S);
   });
 }
-function paintBoard(B) {
+function paintBoard(B, S = boardSubj()) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
   const me = boardMe(B.rows),
     // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
-    // device has none to show (Q134), or when the subject on screen is not the board's (SUBJ.board: P is another
-    // subject's progress). Other rows: the level the sheet read from their saved progress.
-    mine = me >= 0 && SUBJ.board ? eloLine(P[LEVEL]) : '',
+    // device has none to show (Q134), or when the subject on screen is not the board's (P is another subject's
+    // progress). Other rows: the level the sheet read from their saved progress.
+    mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '',
     eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
@@ -928,7 +942,7 @@ function boardNotice() {
   // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet). Only
   // once the sheet serves the leaderboard (v14): an older script ignores the %, which left everyone at 0% (2026-11-01).
   if (SYNC && !store.get('reefid-board-sent14', 0))
-    loadBoard().then(B => {
+    loadBoard(board0()).then(B => {
       if (B && !B.err && SYNC && !store.get('reefid-board-sent14', 0)) {
         store.set('reefid-board-sent14', 1);
         syncSoon();
@@ -1096,20 +1110,40 @@ function rvNoticeAdd(from, to, pct) {
     told = M.told || [],
     due = (M.due || []).filter(v => !told.includes(v)),
     pc = M.pct || {};
-  rvMsgs(from, to).forEach(x => {
+  // An apology (core.js RV_SORRY down) only when the % went down by its min points or more; otherwise the jump's other
+  // cards, the standard one included (rvMsgs skip).
+  let L = rvMsgs(from, to);
+  const sorry = L.find(x => x.msg.down),
+    std = [];
+  if (sorry && !(pct && pct[0] - pct[1] >= (sorry.msg.min || 0))) {
+    L = rvMsgs(from, to, true);
+    // No earlier version in the jump with the standard card (an upgrade from the version just before): the standard card
+    // under the apology's version (M.std; rvNotice shows RV_CARD for it; Codex review #646).
+    if (!L.some(x => x.msg === RV_CARD)) (L.push({v: sorry.v, msg: RV_CARD}), std.push(sorry.v));
+  }
+  L.forEach(x => {
     if (told.includes(x.v) || due.includes(x.v)) return;
     if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1] && Math.abs(pct[1] - pct[0]) >= (x.msg.min || 0))) return;
     if (pct) pc[x.v] = pct;
     due.push(x.v);
   });
-  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc});
+  const st = [...new Set([...(M.std || []).filter(v => !std.length || v !== std[0]), ...std.filter(v => due.includes(v))])];
+  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc, ...(st.length ? {std: st} : {})});
   if (window.APP_READY) rvNotice();
 }
 let rvT = 0;
+// A card's PS (core.js RV_SORRY ps): a line the sheet serves (sync.js NOTES_KEY, Code.gs notes_), small under the text,
+// when it is set; never written in the repo.
+const rvPs = m => {
+  const t = m && m.ps ? String(((typeof NOTES_KEY === 'string' ? store.get(NOTES_KEY, {}) : {}) || {})[m.ps] || '').trim() : '';
+  return t ? `<p class="cardps"><small>${esc(t)}</small></p>` : '';
+};
 function rvNotice() {
   clearTimeout(rvT);
   const M = store.get(RVN.KEY, {}) || {},
-    x = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v));
+    r0 = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v)),
+    // A version whose standard card replaced its apology (rvNoticeAdd std): the standard card.
+    x = r0 && (M.std || []).includes(r0.v) ? {...r0, msg: RV_CARD} : r0;
   if (!x || document.querySelector('.rvmsg')) return;
   if (document.querySelector('#tour, .unlock')) return void (rvT = setTimeout(rvNotice, 2000));
   // The progress ring in the medallion: the % after the recalculation, the one before faint behind it (app.js cardRing).
@@ -1117,10 +1151,13 @@ function rvNotice() {
   cardShow({
     kind: x.msg.kind || 'update',
     cls: 'rvmsg',
-    kick: 'Update',
+    kick: x.msg.kick || 'Update',
     title: x.msg.t,
     visual: pt != null ? cardRing(pt, pf) : '',
-    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>`,
+    // pct: the two % on a line of their own that never wraps (core.js RV_SORRY); ps: the sheet's line (rvPs).
+    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>${
+      x.msg.pct && pt != null ? `<p class="cardpct">${esc(x.msg.pct.replace('{from}', pf).replace('{to}', pt))}</p>` : ''
+    }${rvPs(x.msg)}`,
     primary: {
       text: 'Got it',
       on: () => {
@@ -1263,7 +1300,7 @@ document.querySelectorAll('#boardset button').forEach(
     (b.onclick = () => {
       store.set(BOARD, {v: b.dataset.board === '1' ? 1 : 0, t: Date.now()});
       showBoardSet();
-      boardP = null;
+      Object.keys(boardP).forEach(k => delete boardP[k]); // every subject's board fetched again (Codex review #693)
       syncSoon();
     })
 );

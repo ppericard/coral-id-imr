@@ -8,7 +8,7 @@
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
 the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
-the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), and the open questions for Pierre from docs/STATUS.md. The hooks run main's reviewed copy
+the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), and the open questions for Pierre from docs/STATUS.md; the full brief adds the fish candidates waiting for the judging pass. The hooks run main's reviewed copy
 (`git show origin/main:tools/brief.py | python3 -I -`), never the copy of the branch checked out (Codex security
 review #561), so the script must also work fed on stdin. Read-only and fast: GitHub through `gh api` (REST
 only), the sheet through the same read-only GET the app makes (?stats=1), all at once with a deadline of about 5 s.
@@ -292,6 +292,20 @@ def questions():
     return n, (int(last.group(1)) if last else None), (checked.group(1).strip() if checked else None)
 
 
+def fish_todo():
+    """(photos, species) of the fish candidates waiting for the judging pass: not decided by Pierre (curation.json fish
+    add, seen, exclude, out) and not judged (suggest.json fish), as tools/judging_fish.py todo counts them; the automatic
+    refill (tools/fetch_fish.py --refill, Q171) brings new ones after each Publish. None when a file is missing."""
+    try:
+        rd = lambda f: json.load(open(os.path.join(ROOT, f), encoding='utf8'))  # noqa: E731
+        cand, cur, sug = rd('fish-cand.json').get('cand') or {}, rd('curation.json').get('fish') or {}, rd('suggest.json').get('fish') or {}
+    except (OSError, ValueError):
+        return None
+    done = set().union(*(cur.get(k) or {} for k in ('add', 'seen', 'exclude', 'out')), sug)
+    n = {sid: sum(1 for p in L if p.get('f') not in done) for sid, L in cand.items()}
+    return sum(n.values()), sum(1 for v in n.values() if v)
+
+
 # --- Output --------------------------------------------------------------------------------------------------------------
 
 
@@ -382,6 +396,9 @@ def brief(short, at):
     else:
         q = 'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
         lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
+    ft = None if short else fish_todo()
+    if ft and ft[0]:
+        lines.append('Fish candidates waiting for the judging pass: %d in %d species (python3 tools/judging_fish.py todo)' % ft)
     pool.shutdown(wait=False, cancel_futures=True)
     return lines[:5] if short else lines
 

@@ -706,10 +706,10 @@ function viewCompare(a, b) {
   bindCards();
   bindGo();
 }
-// Fish families (#learn/genera with the fish subject, app.js UNITS list): the IMR entries by the groups of the identification
-// key in force (fish.json key: for the Indo-Pacific, the index of a reef fish ID book; rule S3), in the key's
-// order, only the groups that hold an entry, each under its number and title as the key prints them; each entry with a
-// photo, its IMR cues and how IMR tells its look-alikes apart; then the opt-in circles the player has on. The key is
+// Fish families (#learn/genera with the fish subject, app.js UNITS list): every family of the slate (all circles: Pierre,
+// 2026-11-06, Q175) by the groups of the identification key in force (fish.json key: for the Indo-Pacific, the index of a
+// reef fish ID book; rule S3), in the key's order, only the groups that hold a family, each under its number and title as
+// the key prints them; each family with a photo, its IMR cues and how IMR tells its look-alikes apart. The key is
 // credited in full under the list (its short form in the help). A region with no key: the entries in one block. The winks
 // stay a surprise. Each entry opens its family's sheet (viewFishSheet, below; an IMR entry by the family it was renamed into).
 function viewFishList() {
@@ -735,21 +735,21 @@ function viewFishList() {
           ...FISH.groups.map(gr =>
             blk(
               head(gr.n, gr.title),
-              FISH.c1.filter(n => GX(n).group === gr.n)
+              slateGenera().filter(n => GX(n).group === gr.n)
             )
           ),
           blk(
             head('?', 'Not in a group yet'),
-            FISH.c1.filter(n => !GX(n).group)
+            slateGenera().filter(n => !GX(n).group)
           )
         ]
-      : [blk('', FISH.c1)];
+      : [blk('', slateGenera())];
   const sets = SETS().map(S =>
     Q[S.k] && S.page !== false
       ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units())
       : ''
   );
-  $v.innerHTML = `<p class="lede">The fish families of the IMR fish presentation${key ? `, by the identification groups of ${esc(key.short)}` : ''}, with the IMR cues. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
+  $v.innerHTML = `<p class="lede">The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues and IMR’s names. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
   $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
 }
@@ -821,8 +821,10 @@ const fishShown = () => {
         .flatMap(S => S.units())
         .flatMap(u => [sheetIdOf(SUBJ, u), ...Object.values(split[u] || {})])
     ),
-    wink = new Set(((FISH && FISH.winks) || []).map(n => sheetIdOf(SUBJ, n)));
-  return T.order.filter(id => !wink.has(id) && (T.fam[id].circle === 1 || on.has(id)));
+    wink = new Set(((FISH && FISH.winks) || []).map(n => sheetIdOf(SUBJ, n))),
+    // Every circle is on the path (Q175, Q177): the families of the slate, an entry split into two families included.
+    path = new Set(UNITS[SUBJ.id].slate().flatMap(u => [sheetIdOf(SUBJ, u), ...Object.values(split[u] || {})]));
+  return T.order.filter(id => !wink.has(id) && (T.fam[id].circle === 1 || path.has(id) || on.has(id)));
 };
 const fishIsWink = id => ((FISH && FISH.winks) || []).some(n => sheetIdOf(SUBJ, n) === id);
 const famSci = f => (f.sci || []).join(', ');

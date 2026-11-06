@@ -48,6 +48,9 @@ const GATES = {
   DEL_SHEET: (v, N) => fn('admin.js', 'const delOn = ', '\n', 'delOn', {USERS: v === undefined ? {} : {v}, DEL_SHEET: N})(),
   // Deleting one's own account (sync.js selfDelOn, #about/delete-account; Code.gs selfDelete_): from v58; before, a note.
   SELFDEL_SHEET: (v, N) => fn('sync.js', 'const selfDelOn = ', '\n', 'selfDelOn', {sheetV: () => v, SELFDEL_SHEET: N})(),
+  // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
+  // before, the columns stay away.
+  EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
@@ -83,6 +86,17 @@ const GATES = {
     assert.strictEqual(logOk({s: 'coral'}, v), true, 'a coral answer is always sent');
     assert.strictEqual(logOk({}, v), true, 'an answer without a subject is a coral one');
     return logOk({s: 'fish'}, v);
+  },
+  // The domain-score bar (core.js DOM, rules version 9) for a genus first answered in the game (model.js domRules): from
+  // v87, which replays it; before, the moving average s.pg. On the corals, the subject the sheet replays (fish: at once).
+  DOM_SHEET: (v, N) => fn('model.js', 'const domRules = ', '\n', 'domRules', {sheetV: () => v, DOM_SHEET: N, SUBJ: {replay: true}})(),
+  // Another subject's leaderboard (progress.js boardOk, Code.gs board_ &s=<id>): from v95; an older script answers with
+  // the first subject's board, never shown as another's. The first subject's board is shown from any script.
+  BOARD_SHEET: (v, N) => {
+    const ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {BOARD_SHEET: N}),
+      j = {ok: true, rows: [], ...(v === undefined ? {} : {v})};
+    assert.strictEqual(ok(j, true), true, "the first subject's board from any script");
+    return ok(j, false);
   },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   // The per-format offsets (core.js fmtsOf, ?stats=1 fmt; Q138): from the version that serves them and replays with them;

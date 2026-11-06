@@ -33,12 +33,8 @@
    "keep": "dup"
   },
   "fish-s465-cand-618248394": {
-   "code": "p1g1ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the jack for sure among the reef fish"
+   "code": "p1g1msx1",
+   "keep": "best"
   },
   "fish-s465-cand-744161783": {
    "code": "p1g2sl12",
@@ -85,28 +81,16 @@
    "keep": "best"
   },
   "fish-s465-cand-659738564": {
-   "code": "p1g1sm1j2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Small yellow-finned fish on sand: maybe a juvenile"
+   "code": "p1g0sm1j2",
+   "keep": "best"
   },
   "fish-s465-cand-659738577": {
-   "code": "p1g2sm1j2",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "Small yellow-finned fish on sand: maybe a juvenile"
+   "code": "o1g1sm1j2",
+   "keep": "alt"
   },
   "fish-s465-cand-621818190": {
-   "code": "p1g2ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Murky; I cannot find the jacks for sure on the photo"
+   "code": "p1g2bsx1",
+   "keep": "best"
   },
   "fish-s465-cand-621818197": {
    "code": "p1g2ssx1",
@@ -130,6 +114,14 @@
   },
   "fish-s465-cand-327030495": {
    "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s465-cand-fb-Casex_uc": {
+   "code": "o1g1sls4",
+   "keep": "best"
+  },
+  "fish-s465-cand-fb-Casex_u0": {
+   "code": "p1n0sls3",
    "keep": "best"
   }
  }

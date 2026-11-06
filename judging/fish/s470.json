@@ -13,12 +13,8 @@
    "keep": "dup"
   },
   "fish-s470-cand-409345768": {
-   "code": "d1g2ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Murky shallow water; I cannot find the juveniles for sure"
+   "code": "o1g1bssj1",
+   "keep": "best"
   },
   "fish-s470-cand-409345767": {
    "code": "d1g2ssx1",
@@ -57,12 +53,8 @@
    "keep": "dup"
   },
   "fish-s470-cand-688426832": {
-   "code": "p1g3ssxj1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "A shark is the obvious fish; the small pilot jack is hard to see"
+   "code": "p1g2msx1",
+   "keep": "best"
   },
   "fish-s470-cand-381123882": {
    "code": "o1g2ss1j1",
@@ -89,12 +81,8 @@
    "keep": "best"
   },
   "fish-s470-cand-465686880": {
-   "code": "p1g2ssxj1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "A large dark animal fills the photo; the small jack is hard to see"
+   "code": "p1g1msxj1",
+   "keep": "best"
   },
   "fish-s470-cand-596531925": {
    "code": "p1g2sm1j2",
@@ -113,24 +101,20 @@
    "keep": "best"
   },
   "fish-s470-cand-612061670": {
-   "code": "p1g1ssxj1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "A shark's body fills the photo; the small jacks are hard to see"
+   "code": "p1g1msmj2",
+   "keep": "best"
   },
   "fish-s470-cand-622376648": {
-   "code": "p1g2ssxj1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "A large animal fills the photo; the small jack is hard to see"
+   "code": "p1g2msmj2",
+   "keep": "best"
   },
   "fish-s470-cand-622376615": {
    "code": "o1g2ssxj1",
    "keep": "dup"
+  },
+  "fish-s470-cand-fb-Gnspe_u1": {
+   "code": "p1g1slsj2",
+   "keep": "best"
   }
  }
 }

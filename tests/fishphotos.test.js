@@ -629,6 +629,175 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
+// The automatic refill (Pierre, 2026-11-06, Q171: "no more candidates is no more candidates"): tools/fetch_fish.py
+// --refill, shortness, easy_obs, pick_short, exhausted, pages; the exhaustion memory (tools/fish_refill.json).
+test('refill (Q171): short = room under the cap or too few easy observations; only room is refilled; searched-to-the-end species skipped until the re-check', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrefill-'));
+  const sp = (id, i, k = {}) => ({id, name: `Fishus ${id}`, inat: 500 + i, circle: 1, present: {ph: true}, ...k});
+  const fish = {
+    species: [sp('s1', 1), sp('s2', 2), sp('s3', 3), sp('s4', 4), sp('s5', 5), sp('s6', 6), sp('s7', 7, {cs: 1})],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2', 's3', 's4', 's5', 's6', 's7']}]
+  };
+  const cand = (sid, n) =>
+    Array.from({length: n}, (_, i) => ({f: `fish-${sid}-cand-${i + 1}`, o: `https://www.inaturalist.org/observations/${sid}${i + 1}`}));
+  const C = {
+    v: 1,
+    cand: {s1: cand('s1', 4), s2: cand('s2', 4), s3: cand('s3', 4), s4: cand('s4', 4), s5: cand('s5', 2), s6: cand('s6', 2)}
+  };
+  const easy = e => ({jt: 'p1g0sm1', e, k: 'best'});
+  // s1: full (cap 4), 3 easy observations sure to come (the pre-sort's sure adds, Pierre's add with his ease): not short.
+  // s2: full, its sure adds are hard: short of easy photos, but at the cap (the cap holds: nothing to refill).
+  // s3: full, 2 of its photos rejected / sent elsewhere by Pierre: room 2. s4: full, one set aside for sure by the pre-sort.
+  // s5, s6: room 2, searched to the end 10 and 40 days ago. s7: nothing yet, a cheatsheet species.
+  const sug = {
+    fish: {
+      'fish-s1-cand-1': easy(5),
+      'fish-s1-cand-2': easy(4),
+      'fish-s1-cand-3': easy(2),
+      'fish-s2-cand-1': easy(2),
+      'fish-s2-cand-2': easy(3),
+      'fish-s4-cand-1': {jt: 'p1g0sm1', e: 4, k: 'dup'}
+    }
+  };
+  const cur = {
+    fish: {add: {'fish-s1-cand-3': 's1'}, ease: {'fish-s1-cand-3': 5}, seen: {'fish-s3-cand-1': 1}, out: {'fish-s3-cand-2': 'x'}}
+  };
+  const mem = {end: {s5: {at: '2026-11-01', parts: ['free']}, s6: {at: '2026-10-01', parts: ['free']}}};
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('fish-cand.json', C);
+  w('sug.json', sug);
+  w('cur.json', cur);
+  w('mem.json', mem);
+  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'sug.json', 'none.json', 'none.json', 'none.json', 'mem.json'];
+  const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
+  const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
+  const plan = (...a) =>
+    JSON.parse(
+      execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--refill', '--plan', '--cap', '4', '--today', '2026-11-06', ...a], {
+        cwd: ROOT,
+        encoding: 'utf8'
+      })
+    );
+  const P = plan();
+  const pick = r => r && [r.room, r.parts, r.easy, r.unjudged];
+  assert.ok(!P.short.s1, 'full, with 3 easy observations sure to come: not short');
+  assert.deepStrictEqual(pick(P.short.s2), [0, {}, 0, 2]);
+  assert.deepStrictEqual(P.at_cap, ['s2'], 'short of easy photos at the cap: the cap holds, nothing is fetched');
+  assert.deepStrictEqual(pick(P.short.s3), [2, {free: 2}, 0, 2], 'what Pierre rejected or sent elsewhere frees room');
+  assert.deepStrictEqual(pick(P.short.s4), [1, {free: 1}, 0, 3], 'what the pre-sort set aside for sure frees room');
+  assert.deepStrictEqual(pick(P.short.s7), [4, {free: 4}, 0, 0]);
+  // s5 was searched to the end 10 days ago: skipped; s6, 40 days ago: searched again (RECHECK_DAYS). The shortest first:
+  // short of easy photos with nothing waiting for the judging pass (s7), then the largest share of the cap missing.
+  assert.deepStrictEqual(P.skip, ['s5']);
+  assert.deepStrictEqual(P.pick, ['s7', 's3', 's6', 's4']);
+  assert.deepStrictEqual(plan('--max', '2').pick, ['s7', 's3'], 'at most --max species a run (rule C7)');
+  assert.deepStrictEqual(plan('--today', '2026-12-01').skip, [], 'a month later every species is searched again');
+  // A part of the room not searched to the end (a juvenile room opened since) is searched, whatever the memory says.
+  w('mem.json', {end: {s5: {at: '2026-11-01', parts: ['juvenile']}}});
+  assert.deepStrictEqual(plan().skip, []);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C, '--plan writes nothing');
+  // python sure_add is exactly autosort.js fishSure's adds.
+  const J0 = [
+    null,
+    easy(5),
+    {jt: 'o1d3bs1', e: 1, k: 'alt'},
+    {jt: 'p1g0sm1', e: 4, k: 'dup'},
+    {jt: 'p1g0smx', e: 1, k: 'best'},
+    {jt: 'p1g0sm1a', e: 3, k: 'best'},
+    {jt: 'p1g0sm1', e: 4, k: 'best', u: ['code']},
+    {jt: 'p1g0sm1', k: 'best'},
+    {jt: 'bad', e: 3, k: 'best'}
+  ];
+  assert.deepStrictEqual(
+    J(`print(json.dumps([sure_add(j) for j in json.loads(sys.argv[1])]))`, JSON.stringify(J0)),
+    J0.map(j => !!fishSure(j) && fishSure(j).keep === 'add')
+  );
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('refill (Q171) offline on a fixture cache: pages on while too few photos, never what Pierre rejected, excluded or sent elsewhere; the end remembered', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrefill2-'));
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
+      {id: 's2', name: 'Fishus vulgaris', inat: 502, circle: 1, present: {ph: true, near: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2']}]
+  };
+  // s1 has 3 candidates: observation 10 rejected (seen), 20 excluded, 40 "Not this" (sent elsewhere); photo 300
+  // (observation 30) excluded by its photo id though no longer a candidate. Cap 5: room 5.
+  const rec = (sid, i) => ({f: `fish-${sid}-cand-${i * 10}`, o: `https://www.inaturalist.org/observations/${i}`});
+  const C = {v: 1, cand: {s1: [rec('s1', 10), rec('s1', 20), rec('s1', 40)]}};
+  const cur = {
+    fish: {
+      seen: {'fish-s1-cand-100': 1},
+      exclude: {'fish-s1-cand-200': 'blurred', 'fish-s1-cand-300': 'excluded'},
+      out: {'fish-s1-cand-400': 'x'}
+    }
+  };
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('fish-cand.json', C);
+  w('cur.json', cur);
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs, total=None): c[API + q + '&fields=' + FIELDS] = {'total': len(obs) if total is None else total, 'results': obs}
+Q = queries(501)
+put(Q['own'], [])
+# Newest first: the first page holds the rejected, excluded and "Not this" observations again, and 60 and 50; 8 in all
+# in the search, so it reads on (id_below) while it has fewer usable photos than the room.
+put(Q['dauin'], [ob(60), ob(50), ob(40), ob(30), ob(20), ob(10)], total=8)
+put(Q['dauin'] + '&id_below=10', [ob(8), ob(7)])
+for k in ('region', 'ph', 'world'):
+    put(Q[k], [])
+Q = queries(502)
+put(Q['own'], [])
+put(Q['dauin'], [ob(i) for i in range(100, 108)], total=300)  # enough on the first page: no more pages asked
+for k in ('region', 'ph', 'world'):
+    put(Q[k], [])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json', 'mem.json'];
+  const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
+  const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
+  const run = (...a) =>
+    execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--refill', '--cap', '5', '--today', '2026-11-06', ...a], {
+      cwd: ROOT,
+      encoding: 'utf8'
+    });
+  run('--offline');
+  const got = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const ids = L => L.map(p => p.o.split('/').pop());
+  assert.deepStrictEqual(ids(got.s1).slice(0, 3), ['10', '20', '40'], 'the decided candidates stay, once each');
+  assert.deepStrictEqual(ids(got.s1).slice(3).sort(), ['50', '60', '7', '8'], 'never what Pierre rejected, excluded or sent elsewhere');
+  assert.strictEqual(got.s2.length, 5, 'filled to its cap from the first page');
+  // s1 is still short (room 1) and its searches were read to the end: searched to the end today; s2 is full.
+  const M = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8'));
+  assert.deepStrictEqual(M.end, {s1: {at: '2026-11-06', parts: ['free']}});
+  assert.ok(M._doc);
+  const P = JSON.parse(run('--plan'));
+  assert.deepStrictEqual([P.pick, P.skip], [[], ['s1']], 'no iNaturalist request for it until the re-check');
+  assert.deepStrictEqual(JSON.parse(run('--plan', '--today', '2026-12-06')).pick, ['s1']);
+  // A rerun asks nothing more: nothing short but s1, which is skipped.
+  run('--offline');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand, got);
+  // Per part of the room: a phase still open whose searches were read to the end, or which got nothing, is searched to
+  // the end; one still filling (its searches had more) is not; a part filled is not either.
+  const ex = (end, padd) =>
+    `exhausted({'free': 0, 'rooms': {'juvenile': 4, 'intermediate': 2}, 'add': {'ph': 2 + ${padd}}, 'phase_add': {'juvenile': ${padd}}, 'end': ${end}})`;
+  assert.deepStrictEqual(
+    J(
+      `print(json.dumps([${ex("{'free': False, 'juvenile': True}", 3)}, ${ex("{'free': False, 'juvenile': False}", 3)}, ${ex("{'free': False, 'juvenile': False}", 0)}, ${ex("{'free': True, 'juvenile': True}", 4)}]))`
+    ),
+    [['juvenile'], [], ['juvenile'], []]
+  );
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
 // Sheet-only photos (tools/fish_photos.py sheet_ok, sheet_pick, sheet_photo; Pierre, 2026-11-05: "if they don't pass
 // the game rules, we don't keep them"): a sheet photo passes every game photo rule (licence CC0 / CC BY / CC BY-NC or
 // Pierre's own; Research Grade or Pierre's own identified to the species; the Indo-West Pacific box; never captive or
