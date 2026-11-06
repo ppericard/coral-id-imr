@@ -2538,8 +2538,9 @@ changes, all data the engine reads generically (the corals have none of these fi
   `cap`, the flag `r` in its tags), the caps applied after it (a juvenile or a night shot stays capped). Why one point:
   it lifts a medium photo (3) into the very easy ones (ease 4-5: the gate of an entry's first questions, `easyFirst`, until 2026-11-06) and makes a
   very easy one more likely the card's cover, without passing over the visual rubric (a hard reference photo stays
-  hard). It reaches the game only through Pierre's curation (candidates), so nothing moves for players until he adds
-  one; no learnsim run (the fish profile does not exist yet, ROADMAP). A draw that prefers `rep` photos inside the very
+  hard). It reached the game only through Pierre's curation (candidates) at first; since 2026-11-06 (Q180, Q199) a candidate
+  judged sure, or a reference photo judged at the reference level, is in play by itself, with that ease, hosted on R2
+  (judging/FISH.md "What a sure judgement does"); no learnsim run (the fish profile does not exist yet, ROADMAP). A draw that prefers `rep` photos inside the very
   easy set is not built (ROADMAP).
 - **The photo prior** (`photoDiff`): a judged photo's prior is its unit's offset + (`PDIFF.MID` 3 − ease) × its
   subject's calibration `ease` (`SUBJECTS` `calib`, `core.js` `calibOf`, default `CALIB.ease` 0.5), so ease 5 starts at −1 and ease 1 at +1. 0.5 logit an ease point is one standard deviation of a

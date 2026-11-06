@@ -61,7 +61,7 @@ test('an excluded photo appears nowhere (views, sheet, games, Coral ID Key)', ()
 // fish-photos.json and curation.json): a photo Pierre rejected, excluded or sent to another species (Not this) never
 // plays for the species he took it from, curated or stopgap; a curated photo only while it is in play (core.js fishOn).
 test('fish: rejected, excluded and Not this photos are never in the game; curated ones only while in play', () => {
-  const {fishGen, fishPhotos, fishPid, fishOn} = require('../core.js'),
+  const {fishGen, fishPhotos, fishPid, fishIn, fishGone} = require('../core.js'),
     F = CUR.fish || {},
     PH = read('fish-photos.json'),
     X = fishGen(read('fish.json'), fishPhotos(PH.photos, read('fish-game.json').photos, CUR, read('fish.json')), PH.sheet),
@@ -70,7 +70,10 @@ test('fish: rejected, excluded and Not this photos are never in the game; curate
   Object.keys(CUR.exclude || {}).forEach(f => no.set(fishPid(f), f));
   Object.values(X.gen).forEach(g =>
     g.views.wide.forEach(p => {
-      if (/-cand-/.test(p.f)) return assert.ok(fishOn(F, p.f, p.sp) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
+      // A curated photo (fish-game.json): Pierre's add, or one in play by itself (auto, Q180 and Q199), while he has not
+      // decided against it (core.js fishIn).
+      if (/-cand-/.test(p.f) && !p.from)
+        return assert.ok(fishIn(F, p, fishGone(CUR)) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
       assert.ok(!no.has(fishPid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(fishPid(p.f))}`);
     })
   );
