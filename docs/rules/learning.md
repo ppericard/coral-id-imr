@@ -22,18 +22,19 @@ plan a comeback, and the seconds of an answer are evidence, not time between ses
 
 ### L2
 
-**A wrong answer counts against both genera, in the progress, not in the ability.** Naming B on a photo of A is a miss
-on A everywhere (ability, progress). For B it is a false alarm, not a failure to recognise a photo of B: it counts
-against **B's progress bar** (and B's recent results and runs, so B cannot be learned on that run), and the A / B
-confusion is kept **on the pair** (the player's own mix-ups bring the pair back as traps, duels and "Again: A or B?";
-the pooled confusions pick the traps, rule L7). It does **not** move **B's ability (Elo)**: standard Elo learner models
-update only the item asked (Pelánek et al. 2017), and on the real answers a false alarm on B did not make the next B
-photo harder (docs/LEARNING.md "The genus wrongly given in the Elo").
-*Why:* keeping the false alarm in B's progress keeps the bar from over-claiming a genus the player keeps naming wrongly;
-keeping it out of B's ability keeps strong players from being under-rated (one wrong pick used to cost about three right
-answers). Whether the new domain-score bar should keep it is open (Pierre, 2026-11-06: only if dropping it does not
-make progress rise too fast; until then it stays).
-*Source:* Pierre, by 2026-11-01; ability, 2026-11-03; wording clarified, 2026-11-06.
+**A wrong answer counts against both units, in the progress, not in the ability.** (A unit is what a question asks:
+a coral genus; a fish family, genus or species.) Naming B on a photo of A is a miss on A everywhere (ability,
+progress). For B it is a false alarm, not a failure to recognise a photo of B: it counts against **B's progress bar**
+(and B's recent results and runs, so B cannot be learned on that run), and the A / B confusion is kept **on the pair**
+(the player's own mix-ups bring the pair back as traps, duels and "Again: A or B?"; the pooled confusions pick the
+traps, rule L7). It does **not** move **B's ability (Elo)**: standard Elo learner models update only the item asked
+(Pelánek et al. 2017), and on the real answers a false alarm on B did not make the next B photo harder
+(docs/LEARNING.md "The genus wrongly given in the Elo").
+*Why:* keeping the false alarm in B's progress keeps the bar from over-claiming a unit the player keeps naming wrongly;
+keeping it out of B's ability keeps strong players from being under-rated (one wrong pick used to cost about three
+right answers). Whether the new domain-score bar should keep it is open (Pierre, 2026-11-06: only if dropping it does
+not make progress rise too fast; until then it stays).
+*Source:* Pierre, by 2026-11-01; ability, 2026-11-03; wording clarified and made subject-neutral, 2026-11-06.
 
 ### L3
 
