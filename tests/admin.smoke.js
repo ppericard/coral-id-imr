@@ -226,7 +226,10 @@ const WIDTHS = [390, 1280];
         wide: document.documentElement.scrollWidth - innerWidth
       }));
     const ROUTES = await p.evaluate(() => {
-      const L = TABS.flatMap(t => t[2].map(([h, v]) => ({h, tab: t[1], view: t[2].length > 1 ? h : null, n: t[2].length, name: v})));
+      // The corals' tabs (a tab for one unit rank only, Families, is checked on the fish side below).
+      const L = TABS.filter(t => !t[4].rank).flatMap(t =>
+        t[2].map(([h, v]) => ({h, tab: t[1], view: t[2].length > 1 ? h : null, n: t[2].length, name: v}))
+      );
       // Deep links under a view: a genus page, Where to look open in full (a filter after '?'), a player's journey.
       return [
         ...L,
@@ -344,9 +347,157 @@ const WIDTHS = [390, 1280];
         !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
         at.note ||
         !at.tabs.includes('To do') ||
-        at.groups.includes('photos')
+        !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
+      // The fish units page (admin plan PR 6 on the book's families): Photos › Families, the fish side's only Photos tab
+      // (never on the corals' side), the book's families by key group with the IMR tag on those in the IMR course, a
+      // family's page with one block per genus and one section per species, deep links by family id.
+      {
+        const fu = () =>
+          p.evaluate(() => ({
+            hash: location.hash,
+            tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent),
+            name: (document.querySelector('.adm-sname') || {}).textContent || '',
+            sel: (document.querySelector('.adm-gsel2') || {}).value || '',
+            fams: document.querySelectorAll('.adm-side .adm-g').length,
+            imr: document.querySelectorAll('.adm-side .adm-g .adm-imrt').length,
+            gens: [...document.querySelectorAll('.adm-fgen')].map(g => g.dataset.gen),
+            rows: document.querySelectorAll('.adm-fgen .adm-row[data-sid]').length,
+            imrGen: document.querySelectorAll('.adm-fgenh .adm-imrt').length,
+            grp: document.querySelectorAll('.adm-side .adm-fgrp').length,
+            want: FISHC && FISHC.units.length,
+            wantImr: FISHC && FISHC.units.filter(u => u.imr || u.imrWith).length,
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        await go(other.hash + 'photos');
+        let u = await fu();
+        if (u.hash !== '#' + other.hash + 'photos/families' || u.tabs.join() !== 'Families' || u.note)
+          fails.push(`${w}px Families: #${other.hash}photos ${JSON.stringify(u)}`);
+        if (w === 1280 && (u.fams !== u.want || u.fams < 28 || u.imr !== u.wantImr || u.imr < 28 || u.grp < 5))
+          fails.push(`${w}px Families: the list ${JSON.stringify(u)}`);
+        if (u.wide > 0) fails.push(`${w}px Families: page ${u.wide} px wider than the window`);
+        await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+        u = await fu();
+        if (
+          u.sel !== 'f:Damselfishes' ||
+          !u.gens.includes('g:Chromis') ||
+          !u.gens.includes('g:Amphiprion') ||
+          u.rows < 20 ||
+          u.imrGen < 4 ||
+          u.wide > 0
+        )
+          fails.push(`${w}px Families: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
+        // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers); an unknown family shows the first.
+        await go(other.hash + 'photos/families/' + encodeURIComponent('f:Soapfishes'));
+        u = await fu();
+        if (u.sel !== 'f:Soapfishes' || u.gens.join() !== 'g:Diploprion' || !/IMR/.test(u.name))
+          fails.push(`${w}px Families: Soapfishes ${JSON.stringify(u)}`);
+        await go(other.hash + 'photos/families/f%3ANone');
+        u = await fu();
+        if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Families: an unknown family ${JSON.stringify(u)}`);
+        // The corals have no Families tab, and its address says so.
+        await go('photos/families');
+        u = await fu();
+        if (!/Not for corals yet/.test(u.note) || u.tabs.includes('Families'))
+          fails.push(`${w}px Families on the corals' side ${JSON.stringify(u)}`);
+        if (once) {
+          // All | IMR: the IMR course's families only, then all again (one click each, remembered).
+          await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+          await p.click('[data-fuimr="imr"]');
+          u = await fu();
+          if (u.fams !== u.imr || u.fams !== u.wantImr) fails.push(`${w}px Families: the IMR filter ${JSON.stringify(u)}`);
+          await p.click('[data-fuimr="all"]');
+          // The actions on a family with photos in play: the order (the easiest, then the most reference-like: core.js
+          // easyRank; nobody's photos moved up),
+          // Feature, Cover, Remove and Undo, Not this → no game species → Put back, ×, Validated refused while something
+          // is missing; the coral part of the draft untouched; everything undone after.
+          // Four candidates of a species nobody decided put in play (one draft step, undone with the rest).
+          const st = await p.evaluate(() => ({coral: JSON.stringify({...DRAFT, fish: null}), h: HIST.length}));
+          const fam = await p.evaluate(() => {
+            const F = DRAFT.fish || {},
+              mine = f => [F.add, F.seen, F.exclude, F.out].some(m => m && f in m),
+              u = FISHC.units.find(
+                x => x.genera.length > 1 && x.species.some(s => (FISHC.cand[s] || []).filter(p => !mine(p.f)).length >= 4)
+              ),
+              sid = u.species.find(s => (FISHC.cand[s] || []).filter(p => !mine(p.f)).length >= 4),
+              L = FISHC.cand[sid].filter(p => !mine(p.f)).slice(0, 4);
+            DRAFT.fish = {...F, add: {...(F.add || {}), ...Object.fromEntries(L.map(p => [p.f, sid]))}};
+            saveDraft();
+            return u.id;
+          });
+          await go(other.hash + 'photos/families/' + encodeURIComponent(fam));
+          const order = await p.evaluate(() => {
+            const sec = [...document.querySelectorAll('.adm-fgen .adm-row[data-sid]')].find(
+                r => r.querySelectorAll('.adm-tile').length >= 4
+              ),
+              F = DRAFT.fish,
+              key = f => {
+                const j = (SUG && SUG.fish && SUG.fish[f]) || {},
+                  jt = (F.tags || {})[f] || j.jt || '';
+                return [(F.ease || {})[f] || j.e || 3, refScore(jt)];
+              };
+            const K = [...sec.querySelectorAll('.adm-tile:not(.is-feat)')].map(t => key(t.dataset.f));
+            return {
+              sid: sec.dataset.sid,
+              ok: K.every((k, i) => !i || K[i - 1][0] > k[0] || (K[i - 1][0] === k[0] && K[i - 1][1] >= k[1])),
+              K
+            };
+          });
+          if (!order.ok) fails.push(`${w}px Families: photo order ${JSON.stringify(order)}`);
+          const sec = `.adm-row[data-sid="${order.sid}"]`,
+            nth = i => p.evaluate(([sec, i]) => document.querySelectorAll(sec + ' .adm-tile')[i].dataset.f, [sec, i]);
+          const f0 = await nth(0);
+          await p.click(`${sec} [data-f="${f0}"] [data-fu="feat"]`);
+          await p.click(`${sec} [data-f="${f0}"] [data-fu="cover"]`);
+          const f1 = await nth(1);
+          await p.click(`${sec} [data-f="${f1}"] [data-fu="remove"]`);
+          let d = await p.evaluate(
+            ([fam, sid, f0, f1]) => ({
+              g: DRAFT.fish.genera[fam],
+              seen: DRAFT.fish.seen[f1],
+              add: DRAFT.fish.add[f1],
+              tile: !!document.querySelector(`[data-f="${f1}"]`),
+              num: (document.querySelector(`[data-f="${f0}"] .adm-num`) || {}).textContent
+            }),
+            [fam, order.sid, f0, f1]
+          );
+          if (!d.g || !d.g.feat || d.g.feat[order.sid][0] !== f0 || d.g.cover !== f0 || d.seen !== 1 || d.add || d.tile || d.num !== '1')
+            fails.push(`${w}px Families: Feature / Cover / Remove ${JSON.stringify(d)}`);
+          await p.evaluate(() => undo());
+          await settle();
+          d = await p.evaluate(f1 => ({seen: (DRAFT.fish.seen || {})[f1], tile: !!document.querySelector(`[data-f="${f1}"]`)}), f1);
+          if (d.seen || !d.tile) fails.push(`${w}px Families: Undo of Remove ${JSON.stringify(d)}`);
+          await p.click(`${sec} [data-f="${f1}"] [data-fu="not"]`);
+          await p.selectOption(`${sec} [data-f="${f1}"] [data-funot]`, 'x');
+          await settle();
+          d = await p.evaluate(f1 => ({out: (DRAFT.fish.out || {})[f1], row: !!document.querySelector(`.adm-out [data-f="${f1}"]`)}), f1);
+          if (d.out !== 'x' || !d.row) fails.push(`${w}px Families: Not this ${JSON.stringify(d)}`);
+          await p.click(`.adm-out [data-f="${f1}"] [data-fu="back"]`);
+          await settle();
+          d = await p.evaluate(f1 => ({out: (DRAFT.fish.out || {})[f1]}), f1);
+          if (d.out) fails.push(`${w}px Families: Put back ${JSON.stringify(d)}`);
+          const f2 = await nth(2);
+          await p.click(`${sec} [data-f="${f2}"] [data-fu="exclude"]`);
+          await settle();
+          if (!(await p.evaluate(f2 => (DRAFT.fish.exclude || {})[f2], f2))) fails.push(`${w}px Families: × did not exclude`);
+          const needs = await p.evaluate(() => (document.querySelector('.adm-needs') || {}).textContent || '');
+          await p.click('[data-ok]');
+          await settle();
+          const ok = await p.evaluate(fam => !!((DRAFT.fish.genera || {})[fam] || {}).ok, fam);
+          if (needs && ok) fails.push(`${w}px Families: Validated while "${needs}" is missing`);
+          const after = await p.evaluate(() => JSON.stringify({...DRAFT, fish: null}));
+          if (after !== st.coral) fails.push(`${w}px Families: the coral part of the draft changed`);
+          if (!/fish family/.test(await p.evaluate(() => pubSummary())))
+            fails.push(`${w}px Families: Publish does not count the fish family`);
+          await p.evaluate(h => {
+            while (HIST.length > h) undo();
+          }, st.h);
+          await settle();
+          if (await p.evaluate(fam => (DRAFT.fish.genera || {})[fam], fam)) fails.push(`${w}px Families: Undo left the family's choices`);
+        }
+      }
       await go(other.hash + 'photos/candidates');
       at = await seg();
       if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
