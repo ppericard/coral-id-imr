@@ -46,7 +46,7 @@ const GATES = {
   // Players › Delete…'s two choices (admin.js delOn, Code.gs deleteAccount_): from v55, which deletes or anonymises the
   // account's reports, page summaries and log mentions; before, they are disabled with a note.
   DEL_SHEET: (v, N) => fn('admin.js', 'const delOn = ', '\n', 'delOn', {USERS: v === undefined ? {} : {v}, DEL_SHEET: N})(),
-  // Deleting one's own account (sync.js selfDelOn, #delete-account; Code.gs selfDelete_): from v58; before, a note.
+  // Deleting one's own account (sync.js selfDelOn, #about/delete-account; Code.gs selfDelete_): from v58; before, a note.
   SELFDEL_SHEET: (v, N) => fn('sync.js', 'const selfDelOn = ', '\n', 'selfDelOn', {sheetV: () => v, SELFDEL_SHEET: N})(),
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),

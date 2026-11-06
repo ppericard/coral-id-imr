@@ -57,6 +57,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     localStorage: storage(ls),
     sessionStorage: storage(),
     location: {hash: '', reload: () => ctx.reloads++},
+    hashNow: () => '', // app.js: the page key on screen (Home)
     reloads: 0,
     IS_ADMIN: false,
     showSubj: () => {},

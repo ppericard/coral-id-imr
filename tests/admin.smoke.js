@@ -320,11 +320,11 @@ const WIDTHS = [390, 1280];
       await c3.close();
     }
     // The subject switch (admin plan PR 2): one segment per subject in the header, the corals' addresses unchanged (the
-    // loop above), a subject's pages under its prefix (core.js SUBJECTS admin.hash), only the tabs of the pages it has, a
+    // loop above), a subject's pages under its prefix (core.js SUBJECTS hash), only the tabs of the pages it has, a
     // page it does not have yet saying so, a link without a prefix keeping the subject when it has that page, and the
     // switch going back to the corals' page used last.
     {
-      const S = await p.evaluate(() => SUBJECTS.map(s => ({id: s.id, name: s.name, hash: s.admin.hash, pages: s.admin.pages})));
+      const S = await p.evaluate(() => SUBJECTS.map(s => ({id: s.id, name: s.name, hash: s.hash, pages: s.admin.pages})));
       const other = S.find(s => s.hash),
         seg = () =>
           p.evaluate(() => ({
@@ -1772,7 +1772,7 @@ const WIDTHS = [390, 1280];
         !/after asked/.test(sa.t) ||
         !/Learn/.test(sa.t) ||
         !/4 visits recorded/.test(sa.t) ||
-        !/quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.quiz) read back with its subject
+        !/practice\.quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.practice.quiz) read back with its subject
       )
         fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
       await go('players/list/journey/' + encodeURIComponent('Dio Demo'));
@@ -2461,7 +2461,7 @@ const WIDTHS = [390, 1280];
           if (!/inaturalist\.org\/observations\//.test(ph.o || '')) return a.length ? 'a link on a photo with no iNat page' : '';
           if (a.length !== 1 || a[0].href !== ph.o) return `no link to ${ph.o}`;
           if (a[0].target !== '_blank' || !/noopener/.test(a[0].rel)) return 'source link not in a new tab with noopener';
-          if (!cap.querySelector(`a[href$="#g-${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
+          if (!cap.querySelector(`a[href$="#learn/genus/${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
           return '';
         }, f);
       await go('inbox/todo/health');

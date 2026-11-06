@@ -211,7 +211,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
     const L = typeof slateGenera === 'function' ? slateGenera() : [];
     if (played && typeof rvNoticeAdd === 'function')
       rvNoticeAdd(from, rp.rv, [typeof pre === 'number' ? pre : pctOf(before, L), pctOf(P, L)]);
-    if (!SUBJ_VISIT && /^#(progress|quiz-board)$/.test(location.hash)) route(); // not while visiting: the page shows another subject
+    if (!SUBJ_VISIT && hashNow() === 'progress') route(); // not while visiting: the page shows another subject
     return true;
   } catch (e) {
     ev('err', {msg: 'replay not adopted: ' + String((e && e.message) || e).slice(0, 120)});
@@ -665,7 +665,7 @@ function syncPull() {
       delete me.err;
       me.last = new Date().toISOString();
       store.set('reefid-account', me);
-      if (JSON.stringify(P) !== before && /^#(progress|quiz-board)$/.test(location.hash)) route();
+      if (JSON.stringify(P) !== before && hashNow() === 'progress') route();
       return j;
     })
     .catch(() => null)
@@ -784,7 +784,7 @@ function reportDialog(c, btn) {
   // teaching id: the fish beta offered "t01"), each once.
   const names = [...new Set([...slateGenera(), ...bonusList()].map(unameT))].sort(),
     kind = c.k || 'game',
-    where = hashNow() || 'home',
+    where = location.hash.slice(1) || 'home', // the address (Reports, Where), its subject's prefix included
     words = t => t.replace('{things}', SUBJ.name.toLowerCase()).replace('{one}', SUBJ.one);
   d.innerHTML = `<form method="dialog">
     <h3>${kind === 'page' ? 'Send feedback' : 'Report a problem'}</h3>
@@ -1068,7 +1068,7 @@ function groupsSeen(j, name, live = true) {
   if (!subjOpen(SUBJ)) return location.reload();
   showSubj();
   // Home draws its subject row in viewHome (showSubj only updates existing buttons): redraw Home too (Codex review #540).
-  if (!SUBJ_VISIT && /^#?(lab|home)?$/.test(location.hash)) route();
+  if (!SUBJ_VISIT && ['lab', ''].includes(hashNow())) route();
 }
 // The ids of this player's own reports (sheet v57: reps in a load reply), for "Your feedback helped" (progress.js
 // achReps, achHelped; Q66). Only from a script that has it (rule D4): an older one sends none, and the app still
@@ -1090,12 +1090,10 @@ function sheetSeen(j) {
 // what the last one did. Also read by the answer time (model.js rtOn, core.js RT_SHEET); the full replay checks each
 // reply's own v (replayAdopt).
 const sheetV = () => Number(store.get(SHEETV, 0)) || 0;
+// The genus of a page key, or of a link's address ('#…', core.js routeIn).
 const pvGenus = h => {
-  const g = String(h || '').replace(/^#/, '');
-  let n = g.slice(2);
-  try {
-    n = decodeURIComponent(n);
-  } catch (e) {}
+  const g = String(h || '').startsWith('#') ? routeIn(h).key || '' : String(h || ''),
+    n = g.slice(2);
   return g.startsWith('g-') && DATA && GX(n) ? n : null;
 };
 // A link to a genus sheet remembers the page it was clicked on: the quiz feedback opens the sheet in a new tab on a
@@ -1103,7 +1101,7 @@ const pvGenus = h => {
 document.addEventListener(
   'click',
   e => {
-    const a = e.target && e.target.closest ? e.target.closest('a[href^="#g-"]') : null;
+    const a = e.target && e.target.closest ? e.target.closest(`a[href^="${hr('g-x').slice(0, -1)}"]`) : null;
     if (a) store.set(PVLINK, {g: pvGenus(a.getAttribute('href')), from: pageFrom(hashNow()), t: Date.now()});
   },
   true
@@ -1536,11 +1534,11 @@ if (navigator.storage && navigator.storage.persist) navigator.storage.persist().
 document.getElementById('sync').hidden = !SYNC_URL;
 
 // Deleting one's own account (Pierre, 2026-11-05: "a player can delete their own account and all their data themselves,
-// from a discreet page"): #delete-account, linked from About › Privacy and the privacy notice, never from a menu. Signed
+// from a discreet page"): #about/delete-account, linked from About › Privacy and the privacy notice, never from a menu. Signed
 // in: what is deleted in plain words, the account's code, then a second step that asks again; the sheet (v58 selfDelete,
 // Code.gs selfDelete_) checks the code and deletes everything ("delete everything": answers, reports, progress, page
 // summaries; the Removed tombstone only), then this device is signed out and cleared (signOutClear with all) and shows
-// #delete-account|done. Signed out: how to delete an account. Before sheet v58 (rule D4): a note, no form.
+// #about/delete-account/done. Signed out: how to delete an account. Before sheet v58 (rule D4): a note, no form.
 const SELFDEL_SHEET = 58;
 const selfDelOn = () => sheetV() >= SELFDEL_SHEET;
 function viewDeleteAccount(h) {
@@ -1554,7 +1552,7 @@ function viewDeleteAccount(h) {
       <p class="note">To keep your answers anonymously for the photo ratings instead, ask Pierre Pericard (<a href="privacy.html">privacy notice</a>).</p></section>`;
   if (h === 'delete-account|done') {
     $v.innerHTML = box(
-      `<section><h3>Account deleted</h3><p>Your account and all its data were permanently deleted, and this device was signed out and cleared.</p><p><a class="next" href="#home">Home</a></p></section>`
+      `<section><h3>Account deleted</h3><p>Your account and all its data were permanently deleted, and this device was signed out and cleared.</p><p><a class="next" href="${hr('home')}">Home</a></p></section>`
     );
     return;
   }
@@ -1608,7 +1606,7 @@ function viewDeleteAccount(h) {
             if (!(j && j.ok && j.deleted)) throw j || {};
             return (typeof need === 'function' ? need(2) : Promise.resolve()).then(() => {
               signOutClear(true);
-              location.replace('#delete-account|done');
+              location.replace(hr('delete-account|done'));
               location.reload();
             });
           })

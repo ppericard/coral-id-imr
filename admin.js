@@ -3,6 +3,7 @@
 // token, draft and Undo history included. Before anything reads them.
 migrateStorage();
 migrateIdKey(); // the renamed Coral ID Key (2026-11-04): its keys moved once (core.js)
+migrateRoutes(); // the URL refonte (2026-11-05): page names and addresses in this device's data moved once (core.js)
 // Edits curation.json: per genus, the cover photo, the featured photos of each view (in order),
 // hidden photos and photos moved to another view. app.js applies it on top of data.json (applyCuration).
 // Saving commits curation.json to the repo through the GitHub API with a fine-grained token. The token is
@@ -1140,15 +1141,15 @@ addEventListener('resize', () => fitModes());
 // opens its group's first view, else the landing page (rule W3: no table of old addresses).
 // [group slug, group name, [[tab slug, tab name, [[view slug, view name], ...]], ...], options]; '' = the tab's one view.
 // The subject on screen (admin plan PR 2; Pierre, 2026-11-04: one Corals | Fish switch for the whole admin, To do
-// included, each side showing its own to-do count). Each subject describes its admin part in core.js SUBJECTS admin:
-// hash, the prefix of its addresses ('' for the corals: #fish/inbox/todo/reports is the fish side's Reports); cur, its
+// included, each side showing its own to-do count). Each subject's addresses carry its core.js SUBJECTS hash ('' for
+// the corals: #fish/inbox/todo/reports is the fish side's Reports); its admin part (SUBJECTS admin) says cur, its
 // part of curation.json ('' = the top level); pages, the admin pages it has (null = all; a page covers the addresses
 // under it). A page a subject does not have yet says so; its tabs are left out of the header.
-const ADM0 = SUBJECTS.find(s => !s.admin.hash);
+const ADM0 = SUBJECTS.find(s => !s.hash);
 let ASUBJ = ADM0;
 const subjOfHash = h => {
-  const S = SUBJECTS.find(s => s.admin.hash && h.startsWith(s.admin.hash)) || ADM0;
-  return [S, h.slice(S.admin.hash.length)];
+  const S = SUBJECTS.find(s => s.hash && h.startsWith(s.hash)) || ADM0;
+  return [S, h.slice(S.hash.length)];
 };
 // p is the page x or an address under it (a player's journey is under players/list).
 const under = (p, x) => p === x || p.startsWith(x + '/');
@@ -1157,7 +1158,7 @@ const hasPage = (S, p) => !S.admin.pages || S.admin.pages.some(x => under(p, x))
 // #554).
 const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'players/list');
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
-const subjK = (k, S = ASUBJ) => (S.admin.hash ? `${k}-${S.id}` : k);
+const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
 // part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine).
 const subjTodo = (S, tn) => {
@@ -1168,7 +1169,7 @@ const subjTodo = (S, tn) => {
 // A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
 const LIVE = 'photos/genera/live';
 const genusHref = g => '#' + LIVE + '/' + encodeURIComponent(g);
-const genusHash = () => '#' + ASUBJ.admin.hash + LIVE + '/' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
+const genusHash = () => '#' + ASUBJ.hash + LIVE + '/' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
     'inbox',
@@ -1334,7 +1335,7 @@ function readHash() {
   let p;
   [ASUBJ, p] = subjOfHash(hashNow());
   cur = admRoute(p);
-  if (cur !== p) history.replaceState(null, '', '#' + ASUBJ.admin.hash + admAddr(cur));
+  if (cur !== p) history.replaceState(null, '', '#' + ASUBJ.hash + admAddr(cur));
 }
 const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'photos/genera');
 const groupKey = () => tabOf()[3];
@@ -1368,7 +1369,7 @@ function navs(tn, xn) {
   }
   if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-nav-last'), cur);
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
-    href = h => (h === LIVE ? genusHash() : '#' + ASUBJ.admin.hash + h),
+    href = h => (h === LIVE ? genusHash() : '#' + ASUBJ.hash + h),
     // The subject's pages only: a view it has, a tab with one, a group with one.
     vOk = ([h]) => hasPage(ASUBJ, h),
     tOk = t => t[2].some(vOk),
@@ -1401,7 +1402,7 @@ function navs(tn, xn) {
       // The subject's page used last (a remembered value is checked against today's addresses).
       const back = store.get(subjK('reefid-admin-nav-last', S), ''),
         to = typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) ? back : homeOf(S);
-      return `<a href="#${esc(S.admin.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+      return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     sw.hidden = false;
   }
@@ -1513,7 +1514,7 @@ function render() {
     k = entry(n);
   SHOWN_COVER = cv && cv.f;
   status();
-  $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
+  $('preview').href = `./?draft#${routeOut('g-' + n)}`;
   const side = names
     .map(m => {
       const c = coverOf(m),
@@ -1586,7 +1587,7 @@ function render() {
   ]
     .map(([v, t]) => `<button type="button" data-gv="${v}" aria-pressed="${gv === v}">${t}</button>`)
     .join('')}</span>`;
-  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
+  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#${routeOut('g-' + n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}${gvSeg}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
@@ -1838,7 +1839,7 @@ function pointerDrag(tiles, hover, drop, cancel) {
 // credit line only.
 const inatObs = p => /^https:\/\/(www\.)?inaturalist\.org\/observations\//.test(p.o || '');
 const lbCap = (n, p, what) =>
-  `${DATA.gen[n] ? `<a href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
+  `${DATA.gen[n] ? `<a href="./?draft#${routeOut('g-' + n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
     p.cf
       ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
       : p.imr
@@ -5393,7 +5394,7 @@ async function start() {
       const [S, page] = subjOfHash(h);
       if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || !hasPage(ASUBJ, page)) return;
       e.preventDefault();
-      location.hash = ASUBJ.admin.hash + admAddr(page);
+      location.hash = ASUBJ.hash + admAddr(page);
     },
     true
   );
@@ -7361,7 +7362,7 @@ function statsPlayers() {
       ${ml
         .map(([k, n]) => {
           const [a, b] = k.split('|');
-          return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
+          return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
         })
         .join('')}</tbody></table>`
         : '<p class="note">None.</p>'
@@ -7844,7 +7845,7 @@ function statsConf() {
   const prior = (a, b) =>
     look(a, b) ? ['Look-alike', CONF.LOOK] : gx(a).fam && gx(a).fam === gx(b).fam ? ['Family', CONF.FAM] : ['Other', CONF.BASE];
   const cmp = (a, b) =>
-    `<a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`;
+    `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`;
   const PR = Object.entries(C.pair)
     .filter(([, c]) => c[0] >= SF.min)
     .map(([k, c]) => {

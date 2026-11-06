@@ -131,7 +131,7 @@ LAB.add({
       }
       const g = DATA.gen[n];
       side.innerHTML = `<img src="${thumbSrc(n, 'macro', 'l')}" alt="${esc(n)} corallites"><h3><a href="${genLink(n)}"><i>${esc(n)}</i></a></h3><p class="note">${esc(tag(n))} · ${esc(altName(g.fam))}</p><p>${whyLine(n)}</p>
-        <p class="note">Compare with:</p><div class="mapthumbs">${[...new Set(near)].map(b => `<a href="#cmp-${encodeURIComponent(n + '|' + b)}"><img src="${thumbSrc(b)}" alt="" loading="lazy"><i>${esc(b)}</i></a>`).join('')}</div>`;
+        <p class="note">Compare with:</p><div class="mapthumbs">${[...new Set(near)].map(b => `<a href="${esc(hr('cmp-' + (n + '|' + b)))}"><img src="${thumbSrc(b)}" alt="" loading="lazy"><i>${esc(b)}</i></a>`).join('')}</div>`;
     };
     const pt = e => {
       const p = svg.createSVGPoint();

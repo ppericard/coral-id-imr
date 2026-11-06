@@ -45,7 +45,7 @@ LAB.add({
         all = (typeof slateGenera === 'function' ? CORALS(slateGenera) : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
         pool = (typeof unlocked === 'function' ? CORALS(() => unlocked(all)) : all).filter(n => any(n).length);
       if (!pool.length) {
-        body.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+        body.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
         return;
       }
       const t = pick(pool),

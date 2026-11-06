@@ -1,5 +1,5 @@
 // Corallite anatomy: one arrangement or one concept at a time, each drawn on its own and ringed on real macro photos.
-// Routes: #lab-anatomy (arrangements), #lab-anatomy|arr|<id>, #lab-anatomy|con|<id>, #lab-anatomy|drill.
+// Routes: #tools/anatomy (arrangements), #tools/anatomy/arr/<id>, #tools/anatomy/con/<id>, #tools/anatomy/drill.
 // Add |edit to any route to print photo coordinates on click (for placing rings).
 (() => {
   // Deterministic jitter so the drawings are the same on every visit.
@@ -556,7 +556,7 @@
       arrOf(n).filter(a => a !== here).length
         ? `<small class="also">also: ${arrOf(n)
             .filter(a => a !== here)
-            .map(a => `<a href="#lab-anatomy|arr|${a.id}">${esc(a.name)}</a>`)
+            .map(a => `<a href="${esc(hr('lab-anatomy|arr|' + a.id))}">${esc(a.name)}</a>`)
             .join(', ')}</small>`
         : ''
     }</figcaption></figure>`;
@@ -578,20 +578,20 @@
         ['con', 'Concepts'],
         ['drill', 'Photo drill']
       ]
-        .map(([k, t]) => `<a href="#lab-anatomy|${k}${sfx}"${mode === k ? ' aria-current="page"' : ''}>${t}</a>`)
+        .map(([k, t]) => `<a href="${esc(hr('lab-anatomy|' + k + sfx))}"${mode === k ? ' aria-current="page"' : ''}>${t}</a>`)
         .join('')}</nav>`;
       const list = [];
       if (mode === 'arr') {
         const cur = ARR.find(x => x.id === a[1]) || ARR[0];
         const kind = cur.id === 'phaceloid' ? 'phaceloid' : PROFKIND[cur.id] || cur.id;
-        root.innerHTML = `${tabs}<div class="a2lay"><nav class="a2side" aria-label="Arrangements">${ARR.map(x => `<a href="#lab-anatomy|arr|${x.id}${sfx}"${x === cur ? ' aria-current="true"' : ''}>${block(x.id === 'phaceloid' ? 'phaceloid' : PROFKIND[x.id] || x.id, x.draw ? x.draw() : '', x.name)}<span><b>${esc(x.name)}</b><small>${esc(x.tech)}</small></span></a>`).join('')}</nav>
+        root.innerHTML = `${tabs}<div class="a2lay"><nav class="a2side" aria-label="Arrangements">${ARR.map(x => `<a href="${esc(hr('lab-anatomy|arr|' + x.id + sfx))}"${x === cur ? ' aria-current="true"' : ''}>${block(x.id === 'phaceloid' ? 'phaceloid' : PROFKIND[x.id] || x.id, x.draw ? x.draw() : '', x.name)}<span><b>${esc(x.name)}</b><small>${esc(x.tech)}</small></span></a>`).join('')}</nav>
           <div class="a2main"><section class="a2detail"><div class="a2big">${block(kind, cur.draw ? cur.draw() : '', cur.name + ', seen at an angle with a cut face')}</div>
           <div><h3>${esc(cur.name)} <small>${esc(cur.tech)}</small></h3><ul>${cur.see.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div></section>
           ${cur.small ? `<h4 class="a2h">Small corallites, under 2 mm</h4><div class="a2gs">${cur.small.map(n => gthumb(n, list, cur.notes[n], cur)).join('')}</div><h4 class="a2h">Large corallites, 2 mm and up</h4>` : ''}
           <div class="a2gs">${cur.genera.map(n => gthumb(n, list, cur.notes[n], cur)).join('')}</div></div></div>`;
       } else if (mode === 'con') {
         const cur = CON.find(x => x.id === a[1]) || CON[0];
-        root.innerHTML = `${tabs}<div class="a2lay"><nav class="a2side a2side-t" aria-label="Concepts">${CON.map(x => `<a href="#lab-anatomy|con|${x.id}${sfx}"${x === cur ? ' aria-current="true"' : ''}><span><b>${esc(x.name)}</b><small>${esc(x.q)}</small></span></a>`).join('')}</nav>
+        root.innerHTML = `${tabs}<div class="a2lay"><nav class="a2side a2side-t" aria-label="Concepts">${CON.map(x => `<a href="${esc(hr('lab-anatomy|con|' + x.id + sfx))}"${x === cur ? ' aria-current="true"' : ''}><span><b>${esc(x.name)}</b><small>${esc(x.q)}</small></span></a>`).join('')}</nav>
           <div class="a2main"><section class="a2con"><div class="a2minis" data-n="${cur.minis.length}" style="--n:${cur.minis.length}">${cur.minis.map(([s, l]) => `<figure>${flat(s, l, cur.box)}<figcaption>${esc(l)}</figcaption></figure>`).join('')}<p class="a2key"><i aria-hidden="true"></i>${esc(cur.name)}${cur.shots.some(x => x[2]) ? ', ringed in the same colour on the photos' : ''}</p></div>
           <div><h3>${esc(cur.name)}</h3><p class="a2q">${esc(cur.q)}</p><p>${esc(cur.def)}</p></div></section>
           <div class="a2shots">${cur.shots
@@ -617,7 +617,7 @@
             // Genera unlocked, but none with a ringed photo yet (Codex review #491): say so, and where to go.
             if (!pool.length) {
               if (labNone(box)) return;
-              box.innerHTML = `<p class="note">None of the genera you have met has a ringed photo here yet. Try "Which arrangement?", or meet more genera in the quiz.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+              box.innerHTML = `<p class="note">None of the genera you have met has a ringed photo here yet. Try "Which arrangement?", or meet more genera in the quiz.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
               return;
             }
             let q;
@@ -638,7 +638,7 @@
                     .querySelectorAll('[data-c]')
                     .forEach(x => x.classList.add(x.dataset.c === q.c.id ? 'right' : x === b ? 'wrong' : 'off'));
                   box.querySelector('.a2fb').innerHTML =
-                    `${ok ? '<b class="ok">Right.</b>' : `<b class="ko">No</b>, it is the <b>${esc(q.c.name)}</b>.`} <a href="${genLink(q.s[1])}"><i>${esc(q.s[1])}</i></a>: ${esc(q.s[3])} <a href="#lab-anatomy|con|${q.c.id}">See the card</a>`;
+                    `${ok ? '<b class="ok">Right.</b>' : `<b class="ko">No</b>, it is the <b>${esc(q.c.name)}</b>.`} <a href="${genLink(q.s[1])}"><i>${esc(q.s[1])}</i></a>: ${esc(q.s[3])} <a href="${esc(hr('lab-anatomy|con|' + q.c.id))}">See the card</a>`;
                   root.querySelector('#a2score').textContent = `${score.ok} / ${score.n}`;
                 })
             );
@@ -667,7 +667,7 @@
                     .querySelectorAll('[data-a]')
                     .forEach(x => x.classList.add(right.some(r => r.id === x.dataset.a) ? 'right' : x === b ? 'wrong' : 'off'));
                   box.querySelector('.a2fb').innerHTML =
-                    `${ok ? '<b class="ok">Right.</b>' : '<b class="ko">No.</b>'} <a href="${genLink(n)}"><i>${esc(n)}</i></a>: ${right.map(x => `<a href="#lab-anatomy|arr|${x.id}">${esc(x.name)}</a>`).join(' or ')}${right.length > 1 ? ' (this genus shows both)' : ''}. ${esc(DATA.gen[n].sum || '')}`;
+                    `${ok ? '<b class="ok">Right.</b>' : '<b class="ko">No.</b>'} <a href="${genLink(n)}"><i>${esc(n)}</i></a>: ${right.map(x => `<a href="${esc(hr('lab-anatomy|arr|' + x.id))}">${esc(x.name)}</a>`).join(' or ')}${right.length > 1 ? ' (this genus shows both)' : ''}. ${esc(DATA.gen[n].sum || '')}`;
                   list[0].genus = n;
                   root.querySelector('#a2score').textContent = `${score.ok} / ${score.n}`;
                 })

@@ -1,7 +1,7 @@
 // Home page: two entry doors, nothing else.
 //  1. Learn & practise: the learning phase (Learn the genera, then Practice on photos).
 //  2. Identify: the tool for naming a coral under a ReefCloud point (the Coral ID Key).
-// The section tabs and the Tools page (#lab) list every other tool.
+// The section tabs and the Tools page (#tools) list every other tool.
 (function () {
   const ph = (n, v) => {
     const g = DATA.gen[n];
@@ -45,45 +45,45 @@
     const idoor = fish
       ? `
         <section class="hdoor identify">
-          <a class="hdart rc" href="#${key}" tabindex="-1" aria-hidden="true">${fishArt}</a>
+          <a class="hdart rc" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${fishArt}</a>
           <div class="hdbody">
             <p class="hdwhen">In EventMeasure<span class="wide"> · or a photo from your dive</span></p>
             <h2>Identify a fish</h2>
             <p class="hddesc">The Fish ID Key is on its way: it will help you name the fish on the IMR survey videos, or in your own photos.</p>
             <div class="hdacts">
-              <a class="hdbtn" href="#${key}"><b>Fish ID Key</b><small>Coming soon</small></a>
+              <a class="hdbtn" href="${esc(hr(key))}"><b>Fish ID Key</b><small>Coming soon</small></a>
             </div>
           </div>
         </section>`
       : `
         <section class="hdoor identify">
-          <a class="hdart rc" href="#${key}" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
+          <a class="hdart rc" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
           <div class="hdbody">
             <p class="hdwhen">On ReefCloud<span class="wide"> · or a photo from your dive</span></p>
             <h2>Identify a coral</h2>
             <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the ReefCloud point, or in your own photo.</p>
             <div class="hdacts">
-              <a class="hdbtn" href="#${key}"><b>Open the Coral ID Key</b><small>Growth form, clues, then a visual comparison</small></a>
+              <a class="hdbtn" href="${esc(hr(key))}"><b>Open the Coral ID Key</b><small>Growth form, clues, then a visual comparison</small></a>
             </div>
           </div>
         </section>`;
     $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? 'a fish on a survey video' : 'a coral on a ReefCloud photo'}, or one you photographed on a dive.</p><div class="home-page">${subj}
       <div class="hdoors">
         <section class="hdoor learn${newb ? ' newb' : ''}">
-          <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
+          <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen">Learning phase<span class="wide"> · before ReefCloud or your next dive</span></p>${newb ? '<a class="hdnewk" href="#basics" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
+            <p class="hdwhen">Learning phase<span class="wide"> · before ReefCloud or your next dive</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
-              <a class="hdbtn" href="#genera"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${fish ? 'The IMR fish families by identification group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
-              <a class="hdbtn main" href="#quiz"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${fish ? 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>
-            </div>${newb ? '<p class="hdnew"><a href="#basics">New to corals? Start with the basics (5 min) ›</a></p>' : ''}
+              <a class="hdbtn" href="${esc(hr('genera'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${fish ? 'The IMR fish families by identification group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
+              <a class="hdbtn main" href="${esc(hr('quiz'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${fish ? 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>
+            </div>${newb ? '<p class="hdnew"><a href="' + esc(hr('basics')) + '">New to corals? Start with the basics (5 min) ›</a></p>' : ''}
           </div>
         </section>
 ${idoor}
       </div>
-      <p class="hcred">By Pierre Pericard · for ${esc(ORG.short)} · <a href="#about">Credits</a></p>
+      <p class="hcred">By Pierre Pericard · for ${esc(ORG.short)} · <a href="${esc(hr('about'))}">Credits</a></p>
     </div>`;
   };
   // The Fish ID Key, coming soon (Pierre, 2026-11-04: Identify shows the current subject's tool only, "Fish ID Key, coming
@@ -94,7 +94,7 @@ ${idoor}
       <h3>Fish ID Key</h3>
       <p class="kswhen">Coming soon</p>
       <p>A key to name the fish on the IMR survey videos and in your own photos, as the Coral ID Key does for corals.</p>
-      <p><a class="next" href="#genera">Learn the fish families</a></p>
+      <p><a class="next" href="${esc(hr('genera'))}">Learn the fish families</a></p>
     </div>`;
   };
   // About and credits (Pierre, 2026-11-03): no credits block on the pages, only the one-line credit at the bottom of Home
@@ -128,7 +128,7 @@ ${idoor}
       <section>
         <h3>Privacy</h3>
         <p>No ads, no cookies, no third-party analytics. The app counts which pages you open, with your answers, to improve the course. Your progress stays in this browser unless you sign in. Your answers in the games help rate how hard each photo is: they are sent without your name unless you sign in.</p>
-        <p><a href="privacy.html">Read the privacy notice</a> · <a href="#delete-account">Delete my account</a></p>
+        <p><a href="privacy.html">Read the privacy notice</a> · <a href="${hr('delete-account')}">Delete my account</a></p>
       </section>
       <section>
         <h3>Feedback</h3>

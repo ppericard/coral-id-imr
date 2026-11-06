@@ -20,9 +20,9 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
+    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
       SUBJ.ach
-        ? `<a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
+        ? `<a href="${esc(hr('ach'))}"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
             .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
             .slice(0, 3)
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
@@ -43,8 +43,8 @@ const shyName = n => {
 function quizBoard() {
   const list = slateGenera(),
     // A unit's page: its genus sheet, or the subject's list when it has no sheets (fish); a pair's comparison likewise.
-    href = n => (SUBJ.pages.includes('sheet') ? `#g-${esc(n)}` : '#genera'),
-    hrefPair = (a, b) => (SUBJ.pages.includes('cmp') ? `#cmp-${esc(a)}|${esc(b)}` : '#genera');
+    href = n => esc(hr(SUBJ.pages.includes('sheet') ? `g-${n}` : 'genera')),
+    hrefPair = (a, b) => esc(hr(SUBJ.pages.includes('cmp') ? `cmp-${a}|${b}` : 'genera'));
   // Bonus genera (off the slate), once on (⚙ or the offer card): tiles after the slate genera (Pierre, 2026-11-01).
   // They stay out of the ring and the counts.
   const BO = bonusList();
@@ -120,12 +120,12 @@ function quizBoard() {
         R = num.filter(n => GX(n).n > 20),
         S = list.filter(n => !GX(n).n);
       const ps = n =>
-        `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
+        `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
       const bx = BO.map(
         n =>
-          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
+          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
       // The left column padded to the row count, so 21 always starts the right column (Codex review #371: with
       // Millepora the right column outgrew the left and 21 slipped to the bottom of the left one).
@@ -142,13 +142,13 @@ function quizBoard() {
               ? ['F', 'IMR benthic slate, not a hard coral']
               : ['★', 'Not covered in the lecture'];
         return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${t}">${mk}</span><span class="pgt">${t}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
       })
       .join('')}
       ${
         BO.length
           ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
-        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
+        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
           : ''
       }</div>`
   };
@@ -624,7 +624,7 @@ const ACHNEW = 'reefid-ach-new',
   achNew = () => achUnseen().length;
 function achDot() {
   const bg = document.getElementById('boardgo'),
-    tab = document.querySelector('.btabs a[href="#ach"]'); // the Achievements tab of the leaderboard page (boardTabs)
+    tab = document.querySelector(`.btabs a[href="${hr('ach')}"]`); // the Achievements tab of the leaderboard page (boardTabs)
   if (bg) bg.classList.toggle('hasnew', achNew() > 0);
   if (tab) tab.classList.toggle('hasnew', achNew() > 0);
 }
@@ -809,7 +809,7 @@ function achNext() {
   el.setAttribute('role', 'status');
   // The cards' look (app.js cardShow, docs/DESIGN.md "Cards"), as a toast: the achievement's own emoji in a small medallion
   // with its tier at the edge, on the pale tint of the kind's hue.
-  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  el.innerHTML = `<a href="${esc(hr('ach'))}" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
   const mo = new MutationObserver(() => {
@@ -843,8 +843,8 @@ function achRecap(ids) {
       .join(' ')
   });
 }
-// #ach: every achievement, earned ones first with their date, the others greyed with what earns them.
-// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#board) and Achievements (#ach).
+// #leaderboard/achievements: every achievement, earned ones first with their date, the others greyed with what earns them.
+// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#leaderboard) and Achievements (#leaderboard/achievements).
 const boardTabs = cur =>
   `<nav class="btabs" aria-label="Leaderboard and achievements">${[
     ['board', '🏆 Leaderboard'],
@@ -854,7 +854,7 @@ const boardTabs = cur =>
     // (Pierre, 2026-11-02: on the leaderboard, nothing said where the new ones were).
     .map(
       ([h, t]) =>
-        `<a href="#${h}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
+        `<a href="${esc(hr(h))}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
     )
     .join('')}</nav>`;
 // How many signed-in players hold each achievement (sheet v15, GET ?achs=1: {n, counts}), 5 minutes in memory.
@@ -930,7 +930,7 @@ function boardNotice() {
   if (!SYNC || store.get('reefid-board-told', 0)) return;
   store.set('reefid-board-told', 1);
   const t = appToast(
-    '🏆 New: a <a href="#board">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+    '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
     15000
   );
   t.querySelector('a').onclick = () => t.remove();
@@ -1000,7 +1000,7 @@ function recalcNotice() {
     esc: 1,
     enter: 1,
     // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
-    // player opening straight at #quiz had it closed by the first route, before ever seeing it).
+    // player opening straight at #practice/quiz had it closed by the first route, before ever seeing it).
     onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
   });
 }
