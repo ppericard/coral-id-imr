@@ -22,8 +22,8 @@ plan a comeback, and the seconds of an answer are evidence, not time between ses
 
 ### L2
 
-**A wrong answer counts against both units, in the progress, not in the ability.** (A unit is what a question asks:
-a coral genus; a fish family, genus or species.) Naming B on a photo of A is a miss on A everywhere (ability,
+**A wrong answer counts against both units, in the progress, not in the ability.** (Unit: see
+[README.md](README.md#words-the-rules-use).) Naming B on a photo of A is a miss on A everywhere (ability,
 progress). For B it is a false alarm, not a failure to recognise a photo of B: it counts against **B's progress bar**
 (and B's recent results and runs, so B cannot be learned on that run), and the A / B confusion is kept **on the pair**
 (the player's own mix-ups bring the pair back as traps, duels and "Again: A or B?"; the pooled confusions pick the

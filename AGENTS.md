@@ -147,7 +147,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 
 **Learning** ([docs/rules/learning.md](docs/rules/learning.md))
 - **L1** Time between sessions never decays progress, mastery or ability.
-- **L2** A wrong answer counts against both genera.
+- **L2** A wrong answer counts against both units.
 - **L3** Adaptive difficulty, no level selector; every account counts, Pierre's included.
 - **L4** One progression path: every game draws from `unlocked()`; only the quiz opens units.
 - **L5** Corals: starred genera follow their look-alikes.
