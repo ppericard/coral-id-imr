@@ -285,6 +285,8 @@ function mergeSubject(j, d, S, mine) {
   // The % shown before this sync, for the recalculation card (replayAdopt).
   const pre = typeof slateGenera === 'function' ? pctOf(P, slateGenera()) : undefined;
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
+  // The surprise cards (winks) shown on another device: once per player, whatever a reset (quiz.js winkMerge).
+  if (typeof winkMerge === 'function') winkMerge(d[sKey('wink')]);
   let R = {};
   try {
     R = JSON.parse(d[sKey('progress')] || '{}') || {};
@@ -1260,7 +1262,10 @@ function signIn(name, pin, j) {
   const ach = store.get(ACHK, null),
     // Each subject's first-launch record made here before signing in joins the account's (core.js startUnion, Codex
     // review #428): the account's earlier answers and this device's newer one both stay in the history.
-    st = SUBJECTS.map(S => [startKey(S.id), store.get(startKey(S.id), null)]);
+    st = SUBJECTS.map(S => [startKey(S.id), store.get(startKey(S.id), null)]),
+    // Each subject's surprise cards met here before signing in join the account's (core.js winkUnion, Codex review #652):
+    // once per player, never shown again because the account's record lacked them.
+    wk = SUBJECTS.map(S => [subjKey(S.id, 'wink'), store.get(subjKey(S.id, 'wink'), null)]);
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
@@ -1278,6 +1283,7 @@ function signIn(name, pin, j) {
     } catch (e) {}
   if (ach) achMerge(JSON.stringify(ach));
   st.forEach(([k, r]) => r && store.set(k, startUnion(store.get(k, null), r)));
+  wk.forEach(([k, r]) => r && store.set(k, winkUnion(store.get(k, null), r)));
   Object.entries(M).forEach(([k, v]) => store.set(k, v));
   if (!anon && !mine) delete SYNC.dirty;
   store.set('reefid-account', SYNC);
@@ -1374,7 +1380,8 @@ function signOutClear(all) {
     // the comeback belong to this player, Codex review #374).
     ...SUBJECTS.flatMap(S => [
       // the first-launch question's answer is the player's too (model.js startSet)
-      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)),
+      // and the surprise cards it has met (quiz.js WINKK; Codex review #652: the next player would inherit them)
+      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'start', 'wink'].map(k => subjKey(S.id, k)),
       ...['hold', 'comeback'].map(k => subjDev(S.id, k))
     ]),
     BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
