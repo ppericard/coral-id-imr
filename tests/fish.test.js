@@ -812,12 +812,15 @@ test('reference photos: game photo rules, in play once judged, the cover where o
   // photos stay even on an entry that plays on its curated photos).
   const CUR = read('curation.json'),
     GM = read('fish-game.json').photos,
-    played = C.fishPhotos(PH, GM, CUR, F);
+    played = C.fishPhotos(PH, GM, CUR, F),
+    // a photo Pierre rejected, excluded or moved as a candidate stays out (core.js fishPhotos)
+    gone = new Set(
+      [CUR.exclude || {}, ...['seen', 'exclude', 'out'].map(k => (CUR.fish || {})[k] || {})].flatMap(m => Object.keys(m).map(C.fishPid))
+    );
   Object.entries(PH).forEach(([tid, L]) =>
     L.filter(p => p.from).forEach(p =>
       assert.ok(
-        (played[tid] || []).some(x => x.f === p.f || (p.o && x.o === p.o) || String(x.f).endsWith(String(p.f).slice(2))) ||
-          CUR.fish.seen?.[p.f],
+        (played[tid] || []).some(x => x.f === p.f || (p.o && x.o === p.o)) || gone.has(C.fishPid(p.f)),
         `${tid} ${p.f}: dropped from play`
       )
     )
