@@ -1563,12 +1563,47 @@ met the 39 slate genera almost at once.
   behind the photo ratings, over `OPEN.DATA` = 300 (weighed), up to 1. Before real answers, the photo sets (removed
   2026-11-03) and declared look-alikes put Acropora and Galaxea among the hardest and Alveopora first, against Pierre's
   experience: the opening order stays random (still a few genera at a time) until the answers can say.
-- **Genus difficulty from the data** (`genusDiff`), never set by hand: the mean difficulty of its game photos
-  (`photoDiff`: the players' answers; from sheet v31 a photo with few or no answers leans on its genus's offset, learned
-  from every answer on the genus, "Hierarchical photo Elo") + `OPEN.CONF` (2) × how much it gets confused (its two
-  highest pooled confusion scores above `CONF.TRAP`). With no answers only the declared look-alikes decide (the Easy /
-  Medium / Hard photo sets did too until 2026-11-03); the answers take over as they come. On the answers of 2026-11-03
-  the genus offsets put Acropora (−0.54) and Galaxea (−0.56) among the easiest, as Pierre expected.
+- **Genus difficulty from the data** (`genusDiff`), never set by hand: since 2026-11-06 (Q133, "One genus difficulty"
+  below) the sheet's genus offset `gd` (the hierarchical photo Elo's genus term, learned from every trusted answer on
+  the genus, "Hierarchical photo Elo"), plus, for a unit with judged photos (the fish), the mean of their judged-ease
+  priors. Until then: the mean difficulty of its game photos + `OPEN.CONF` (2) × its two highest pooled confusion
+  scores above `CONF.TRAP`. With no answers every coral genus is 0 and the opening order is random (and `easyTrust` is
+  0 anyway); the answers take over as they come. On the answers of 2026-11-03 the genus offsets put Acropora (−0.54)
+  and Galaxea (−0.56) among the easiest, as Pierre expected.
+
+### One genus difficulty (2026-11-06, Q133)
+
+Pierre approved (2026-11-06) the coherence review's F3 (`docs/reviews/2026-11-06-engine-coherence-review.md`): the app
+had its own estimate of a genus's difficulty (`model.js` `genusDiff`: the mean `photoDiff` over today's game photos +
+`OPEN.CONF` × the confusion above `CONF.TRAP`), beside the sheet's genus offset `gd` that measures the same quantity.
+The confusion term counted the misses a second time, since the photo ratings already come from them, and the mean
+moved whenever photos were added or curated out (the effect Pierre asked the new bar to avoid).
+
+- **The rule** (`model.js` `genusDiff`): `gd` (`PGD`, `?stats=1` from sheet v31) everywhere the app reads a genus's
+  difficulty: the draw (`drawW`), shaky (Review, the opening's work-in-progress limit), the comeback's `stability` and the
+  opening order (`openPick`). A unit with judged photos (the fish, whose answers are not logged yet) adds the mean of
+  their judged-ease priors, so the fish still open easiest first. `OPEN.CONF` is gone. Adding or removing a photo never
+  moves a coral genus's difficulty now.
+- **Measured with the real stats** (rule L12, read-only: `?stats=1` of 2026-11-05, 1,033 rated photos, 45 genus
+  offsets; the app's own `genusDiff`, `photoDiff` and `pooledConf` in the real page): over the 40 game genera the
+  confusion term was above 0 for 21 (mean 0.09, at most 0.52: *Fungia* 1.01 → 0.48, *Lithophyllon* 0.75 → 0.39,
+  *Favites* 0.50 → 0.15, *Dipsastraea* 0.36 → 0.05, *Lobactis* 0.37 → 0.07, *Goniastrea* 0.52 → 0.27); old against new:
+  mean difference 0.10, Spearman rank 0.97, the 8 easiest genera the same. Under the old rule, 3 new photos added
+  moved a genus by up to 0.02 and the most-answered photo curated out by up to 0.05 (median 0.00 both: the photo
+  ratings already lean on the offset), and now by 0. On the real players (2,047 answers, 10 players, each player's
+  replayed abilities): of the 258 (player, genus met) pairs, 8 stop being shaky and none becomes shaky (the genera the
+  confusion term made look harder), and the draw weight moves by a median 0.00 (90th percentile 0.01).
+- The single-view offset (+0.5, `PICKD.SINGLE` in the app, a literal in `Code.gs` `stats_` and `core.js` `eloReplay`) is
+  left as it is for now (F3's third point: a refactor that changes nothing).
+
+- **Simulated** (rule L11 tier 1: `node tools/learnsim.js --seeds 5 --stats <the same ?stats=1>`, the four profiles ×
+  5 seeds, `main` against this rule on the same seeds; the primary measure declared before the second run: true
+  knowledge over the slate at question 300, pooled, exact sign-flip over the 20 pairs). Primary: 0.810 → 0.808, −0.002
+  (90% bounds −0.004 / 0.000), p 0.24: no change. Guardrails (one-sided 90% bounds of the paired difference): genera
+  met at question 200 −0.3 (−1.0 / +0.4), progress shown at 300 −0.1 points (−0.9 / +0.7), |θ − true| at 300 +0.03
+  (−0.00 / +0.05). Exploratory, uncorrected: right answers over questions 200-300 83.9% → 82.4% (−1.6 points, p 0.04),
+  a little closer to the success aimed at; genera met at 100 −0.5 (p 0.08). No measured reason to keep the confusion
+  term, so it goes (rule L11).
 
 ### One opening rule (2026-11-03)
 
@@ -2332,7 +2367,8 @@ changes, all data the engine reads generically (the corals have none of these fi
   families first): Butterflyfish, Angelfish, Damselfish, Surgeonfish & Unicornfish. `fishGen` marks their records
   `first`; `openPick` opens a `first` unit before any other while one is left, so the `INTRO.START` (4) first cards are
   exactly these four. The rest then opens by the existing rule, easiest and most common first: an entry's difficulty
-  (`genusDiff`) is the mean of its photos' difficulty, which the judged ease now sets.
+  (`genusDiff`) is its genus offset (none yet for the fish) plus the mean of its photos' judged-ease priors (since
+  2026-11-06, "One genus difficulty"; before, the mean of its photos' difficulty, which the judged ease set).
 - **Every circle-1 photo judged** (648 photos, then 37 added, `judging/FISH.md`, `tools/fish_judge.json`): an agent
   looked at each one and gave it tags (view, whole fish, light, colour loss, clarity, size, count, juvenile, camouflage;
   the sex / colour phase flag for the entries the presentation says change, `dimorph`: Parrotfish, Anthias) and an ease
