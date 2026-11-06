@@ -1371,6 +1371,31 @@ const UNITS = {
           `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family of the IMR fish surveys.`
       }
     },
+    // The cards that tell a player about the subject, one per way it opens (core.js SUBJECTS open; progress.js subjHello:
+    // once per device, at a calm moment on Home). group: the invitation to test the fish beta, for the players of its
+    // group only (Pierre, 2026-11-06: "you're invited to test the fish beta"). all: the same invitation to every player
+    // while the subject keeps its beta label (fish since Q158). No number (the families may change), no date.
+    hello: {
+      group: {
+        kick: 'Invitation',
+        title: 'Test the fish beta',
+        body: '<p>You’re invited to try fish: learn the reef fish families with the same game as the corals.</p><p>Switch between Corals and Fish at the top of Home, any time: your coral progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
+      },
+      // all (Pierre, Q158: fish opened to all, the beta label kept): the same card to each player, once, while fish keeps
+      // its beta label (progress.js subjHello), as an invitation to try the beta.
+      all: {
+        kick: 'Invitation',
+        title: 'Test the fish beta',
+        body: '<p>Try fish, now in beta: learn the reef fish families with the same game as the corals.</p><p>Switch between Corals and Fish at the top of Home, any time: your coral progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
+      }
+    },
+    // About and credits (home.js viewAbout), shown only to a player the subject is open to (subjMine): what they learn
+    // (Who made it), where its content comes from (Course content) and the works it cites (References).
+    about: {
+      who: 'reef fish families',
+      course: 'The fish families and their cues come from the IMR fish presentation.',
+      refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
+    },
     slate: () => (FISH ? FISH.c1 : []),
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
@@ -2090,6 +2115,8 @@ function route() {
   upsize();
   // Pages opened in the visit (sync.js pagesRoute, sheet v30 'pages'): the page drawn, not a link that sent on to another.
   if ((hashNow() || 'home') === (h || 'home') && typeof pagesRoute === 'function') pagesRoute(h);
+  // Home drawn: the moment a subject newly open to the player may be told (progress.js subjHello, once progress.js is in).
+  if ((h || 'home') === 'home' && typeof subjHello === 'function') subjHello();
   // The page of address h is drawn: the tests wait for this instead of a fixed time (tests/pages.smoke.js drawn()).
   window.ROUTED = h;
 }
@@ -2385,6 +2412,7 @@ const SETUP = {
     rvNotice(); // the cards of the rules versions skipped (core.js RVS msg, sync.js replayAdopt): after those above
     sorryNotice(); // an apology to the players of the broken opening (2026-11-03/04): once, after any recalculation note
     achHelped(); // a report of this player's marked done in the admin (Q66): told once
+    subjHello(); // a subject newly open to the player (fish): once, at a calm moment on Home
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },
