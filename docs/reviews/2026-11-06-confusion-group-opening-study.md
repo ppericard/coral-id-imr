@@ -22,7 +22,7 @@ Marks: **[repo]** the repository; **[log]** the real answer log; **[sim]** `tool
    for similar visual categories) because it juxtaposes them; spacing that breaks the juxtaposition hurts. A first
    meeting then mixing loses nothing (one at a time is fine); similar sets are harder to start.
 3. **Design**: confusion groups by average-linkage clustering of the pooled score, joined at `CONF.TRAP` (0.2), at most
-   **G_MAX = 3**: corals 11 groups and 13 lone genera, fish entries 6 groups (the IMR look-alike sets) and 13 lone.
+   **G_MAX = 3**: corals 11 groups and 13 lone genera, fish families 6 groups (seeded by Pierre's declared groups, 14:24, and IMR's) and 13 lone.
    **Once a group has a member open, its others are the next openings, one at a time** (Pierre, 07:18); otherwise a
    group or lone taxon is drawn with today's weight on the group's means. Everything else unchanged; one new constant.
 4. **IMR priority** (07:25) decides what is eligible and how soon; the groups order what is eligible. The coral lecture
@@ -58,8 +58,12 @@ Marks: **[repo]** the repository; **[log]** the real answer log; **[sim]** `tool
   treats a pair at `CONF.TRAP` (0.2) or more as a look-alike. **34 of the 59 declared pairs are now under it**
   (Acropora–Anacropora 0.11 after 58 offers); 3 undeclared ones are over it (Echinopora–Turbinaria 0.27, 14 mix-ups in
   45). The graph has **28 edges** among the 40 slate genera (29 with the app's shared-form prior).
-- **Fish**: no answer logged yet, so priors only: 11 IMR entry pairs; every sibling genus declared at genus rank;
-  species pairs designed (fish confusion study), not built.
+- **Fish**: no answer logged yet, so priors only. The seeds are **Pierre's declared family groups** (2026-11-06 14:24,
+  from experience; PR #662 puts them in `fish.json` on the book's families, sourced "Pierre, 2026-11-06"):
+  Butterflyfishes–Angelfishes, Snappers–Coral Breams–Emperors, Parrotfishes–Wrasses (some wrasse species only),
+  Soldierfishes–Squirrelfishes–Cardinalfishes, Triggerfishes–Filefishes; all already IMR look-alikes, beside IMR's
+  Lizardfishes–Sandperches and Moorish Idol–Butterflyfishes. Every sibling genus is declared at genus rank; species
+  pairs are designed (fish confusion study), not built.
 
 ### 1.3 How far apart look-alikes open now
 
@@ -129,9 +133,11 @@ within-session evidence to opening order is our inference.
   Pachyseris–Merulina; Platygyra–Leptoria–Goniastrea; Goniopora–Alveopora; Montipora–Hydnophora;
   Fungia–Lithophyllon–Danafungia; Ctenactis–Lobactis; Herpolitha–Halomitra; Dipsastraea–Favites–Astrea (bonus genera
   join when on). 13 lone, Acropora among them: its declared look-alikes are rarely confused in the data.
-- **Fish entry groups** (priors): Butterflyfish–Angelfish, Parrotfish–Wrasse, Snapper–Emperor–Bream,
-  Triggerfish–Filefish, Soldierfish–Cardinalfish–Squirrelfish, Lizardfish–Sandperch; 13 lone (Moorish Idol's link to
-  Butterflyfish is cut). The IMR presentation puts most of these sets on one slide each (29, 47, 48).
+- **Fish family groups** (seeds, prior 0.3 per declared pair): Pierre's five, Butterflyfishes–Angelfishes,
+  Snappers–Coral Breams–Emperors, Parrotfishes–Wrasses, Soldierfishes–Squirrelfishes–Cardinalfishes,
+  Triggerfishes–Filefishes, plus IMR's Lizardfishes–Sandperches; 13 lone (Moorish Idol's link to Butterflyfishes is cut
+  by the linkage). Pooled fish answers take over pair by pair once logged. Parrotfishes–Wrasses holds at family rank; at
+  species rank only the wrasse species Pierre or the data name will pair with parrotfishes.
 - **Updating**: recomputed when the pooled stats refresh (45 coral units: instant on the phone; 340 fish species: in the
   sheet's snapshot, rule L13). Pooled, the same for everyone. Groups only order what is not open; a regrouping only
   changes who is pending.
@@ -284,9 +290,10 @@ guards a partner held back by the shaky limit. It replaces question k of the fis
 **f.** Declared look-alikes the data no longer confirm (34 of 59, e.g. Acropora–Anacropora): the data decide, as for
 traps (rule L7)? *Recommendation*: yes; a declared pair starts grouped (0.3) and leaves only on the players' evidence.
 
-**g.** Fish: entry groups now from the IMR look-alikes; genus groups only from IMR sub-entries and data; species from
-declared and data look-alikes, a cross-entry partner pending until eligible? *Recommendation*: yes (73% of entry
-look-alikes side by side in the order, 12% today).
+**g.** Fish: family groups seeded by your declared groups (14:24, #662) and IMR's, until pooled answers; genus groups only
+from IMR sub-entries and data; species from declared and data look-alikes (Parrotfishes–Wrasses: only the wrasse
+species named), a cross-family partner pending until eligible? *Recommendation*: yes (73% of family look-alikes side by
+side in the order, 12% today).
 
 **h.** "I'm at IMR" for fish: scientific genera on from the start; an entry's genera before Advanced (Open Water?)?
 *Recommendation*: genera on from the start, yes; keep Advanced as the bar until the fish profile can test a lower one.
