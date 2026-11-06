@@ -45,12 +45,8 @@
    "keep": "best"
   },
   "fish-s095-cand-556862152": {
-   "code": "o1g1ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "The obvious fish is a moray; the damselfish is small"
+   "code": "p1g0ssx1",
+   "keep": "best"
   },
   "fish-s095-cand-581222371": {
    "code": "p1g1sm1j2",
@@ -90,6 +86,10 @@
   },
   "fish-s095-cand-609871835": {
    "code": "p1d0sms3",
+   "keep": "best"
+  },
+  "fish-s095-cand-fb-Chcau_u0": {
+   "code": "p1g1sl14",
    "keep": "best"
   }
  }
