@@ -531,6 +531,16 @@ const server = http.createServer((req, res) => {
     if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
       ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
     if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
+    // The family ID marks and behaviour lines (tools/fish_sheets.json), with their sources and a report link.
+    const mk = await q.evaluate(() => {
+      const m = document.querySelector('#view .fmarks');
+      return {
+        n: m ? m.querySelectorAll('li').length : 0,
+        src: !!(m && m.querySelector('.msrc a[href*="fishbase"]')),
+        rep: !!(m && m.querySelector('.msrc [data-rep]'))
+      };
+    });
+    if (!mk.n || !mk.src || !mk.rep) ui.push(`${width}px family marks: ${JSON.stringify(mk)}`);
     await wide('a family sheet');
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
     await q

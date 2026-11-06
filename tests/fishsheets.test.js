@@ -73,3 +73,22 @@ test('fishTree: option B, every family, genus and species reaches a sheet', () =
   const out = F.species.find(s => s.out);
   if (out) assert.strictEqual(T.go(out.id), null, out.id);
 });
+
+test('the family sheets lines (tools/fish_sheets.json): families of fish.json, each line sourced, built into fish.json', () => {
+  const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_sheets.json'), 'utf8')).families,
+    by = Object.fromEntries(F.families.map(f => [f.id, f]));
+  assert.ok(Object.keys(S).length >= 28, 'every circle-1 family');
+  for (const [id, x] of Object.entries(S)) {
+    assert.ok(by[id], `${id}: not a family of fish.json`);
+    assert.ok((x.marks || []).length + (x.life || []).length, `${id}: no line`);
+    assert.ok((x.src || []).length && x.src.every(s => s.t && /^https:\/\//.test(s.u)), `${id}: every family lists its sources`);
+    Object.keys(x.apart || {}).forEach(o => assert.ok(by[o] && o !== id, `${id}: apart ${o}`));
+    [...(x.marks || []), ...(x.life || []), ...Object.values(x.apart || {})].forEach(t =>
+      assert.ok(typeof t === 'string' && t.length && t.length <= 160 && !/\s$/.test(t), `${id}: ${t}`)
+    );
+    // built into fish.json as they are (python3 tools/build_fish.py --regroup)
+    assert.deepStrictEqual(by[id].marks || [], x.marks || [], `${id} marks in fish.json`);
+    assert.deepStrictEqual(by[id].life || [], x.life || [], `${id} life in fish.json`);
+    assert.deepStrictEqual(by[id].msrc, x.src, `${id} sources in fish.json`);
+  }
+});
