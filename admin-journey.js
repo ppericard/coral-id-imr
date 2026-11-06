@@ -582,7 +582,9 @@ function renderJourney(name, anonId = '') {
       ['Quiz right', pct(sp.q[1], sp.q[0])],
       ['Last 50', pct(sp.q50[1], sp.q50[0])],
       ...(sp.d[0] ? [['Duels', `${sp.d[0]} · ${pct(sp.d[1], sp.d[0])}`]] : []),
-      // The Elo players see, ± its 95% margin (Pierre, 2026-11-05: the signed level read as good or bad); the level in its title.
+      // The sheet's level chain (stats_ ras, the photo Elo's player term) ± its 95% margin (Pierre, 2026-11-05: the signed
+      // level read as good or bad); the level in its title. Not the number players see since v63 (Q134: they see the app's
+      // '~level'): it is the one level every device has, signed in or not, and the one the margin (levelMargin) is for.
       ['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])],
       ['Genera met', `${J.marks.length}/${total}`],
       // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never

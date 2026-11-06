@@ -2104,7 +2104,7 @@ const RECENT = {
 // d = 0 → 50%, +1.44 → 19%, −1 → 73%. A genus (any grouping) reads the same for a typical photo of it (its offset).
 // Five bands on the whole % shown (so the colour never disagrees with the number): REC [floor, class, word], tokens
 // --rec-<class> / --rec-<class>-ink in app.css (light, dark, colour-blind). The raw value stays in the title (a tap
-// on a touch screen shows it: recTap). Players read as their Elo (1000 + 200 × level, as players see it), ± its margin.
+// on a touch screen shows it: recTap). Players read as an Elo (1000 + 200 × level, the scale players see), ± its margin.
 const recognised = d => 1 / (1 + Math.exp(d)),
   recOf = d => Math.round(100 * recognised(d)),
   recPct = d => recOf(d) + '%',
@@ -2140,7 +2140,7 @@ const recognised = d => 1 / (1 + Math.exp(d)),
       return r > l ? `<i class="rec-${k}" style="width:${((100 * (r - l)) / (b - a)).toFixed(2)}%" title="${w}"></i>` : '';
     }).join('')}</span>`;
   },
-  // A player's level lv as the Elo players see (1000 + 200 × lv), with its 95% margin m (on the level scale) when known.
+  // A player's level lv on the players' Elo scale (1000 + 200 × lv), with its 95% margin m (on the level scale) when known.
   eloNum = lv => Math.round(1000 + 200 * lv),
   eloMargin = m => (m != null && isFinite(m) ? Math.round((200 * m) / 10) * 10 : null),
   eloText = (lv, m, o = {}) => {
@@ -6567,13 +6567,14 @@ const withSaved = (v, sv) => (sv == null || sv === v ? v : `${v} <small class="a
 // accounts) have no name: they are counted apart, below. Activity keeps the class-wide charts.
 const UCOLS = [
   ['name', 'Name', u => u.name.toLowerCase(), 1],
-  // One column for the level (Pierre, 2026-11-03: Level and Elo said the same thing): the Elo players see.
+  // One column for the level (Pierre, 2026-11-03: Level and Elo said the same thing): the sheet's level chain (stats_ ras),
+  // the one every device has and the margin is for; players see the app's own level since v63 (Q134), which can differ.
   [
     'elo',
     'Elo',
     u => u.lv ?? -99,
     0,
-    'Overall level as the Elo players see (1000 + 200 × level on the photo-difficulty scale, shown to them from 200 answers), ± its 95% margin'
+    "Overall level from the sheet's answer log (the photo Elo's player term; 1000 + 200 × level on the photo-difficulty scale), ± its 95% margin. Players see the app's own level (leaderboard, My progress), which can differ"
   ],
   ['answers', 'Answers', u => u.answers, 0],
   [
