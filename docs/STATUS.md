@@ -5,7 +5,8 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-06, about 17:00 Manila, by the integrator (Pierre extended the day to ~18:00 for the fish push).
+Written 2026-11-06, about 17:05 Manila, by the integrator (Pierre extended the day to ~18:00; quota nearly spent at 17:03:
+only #656, #669, #652, #678, #674, #646 and the fish recompute kept going; the other agents were stopped).
 
 Last checked: reports and events: 2026-11-06 ~16:20 Manila (no new report since 11-05; no app error today, a few slow saves recovered)
 
@@ -20,15 +21,18 @@ Fish is open to every player (beta). Today's push: fish photos, the book's famil
 - **Fish units** · the book's families #656 (failing check being fixed) → circles #669 (Q175-Q177, Q181-Q183), stacked.
 - **New coral bar** · #638 merged · #646 (Q196 go) fixing 5 Codex findings, then merge (rules v9, apology card) · then
   the fish recompute, silent, no card (Q200).
-- **Fish sheets** · family #675 and genus #677 merged · species #684 next.
+- **Fish sheets** · family #675, genus #677, species #684 merged · key marks and sizes (publish directly, Pierre
+  corrects as he goes): agent stopped for quota, restart.
 - **Fish admin** · Families #655 merged · swiper #599 / #602 (Q194), mini switch #633 (Q195), Coverage #659, Photo
-  review #663, Look-alikes #667 · flag ⚑ for fish #686, then fish.exclude by photo id and the fish To do sections.
+  review #663, Look-alikes #667 (paused for quota) · flag ⚑ for fish #686 merged; next: fish.exclude by photo id and the
+  fish To do sections (stopped, restart).
 - **Admin Players for two subjects** (Pierre 16:28): shared list with Corals / Fish column groups, Activity and Journey
-  per subject; agent building, questions to come. Photos / Spread columns #680 (Q191), hard photos flagged #682 (Q192).
-- **Photo exposure** · study #670 (Q187-Q193 answered) · changes Q187-Q190 for corals and fish, simulating.
-- **Fish leaderboard** (decided 11-04) building; ~14 fish achievements proposed next, Pierre picks the list.
-- **Experts** · first coral expert analysed (52 -> 44% under #646, 93% right); coral expert 2 and the fish expert
-  being analysed (read-only).
+  per subject; agent stopped for quota, restart. Photos / Spread columns #680 merged (Q191); hard photos #682 (Q192).
+- **Photo exposure** · study #670 (answered) · #685 green (Q187-Q190, Q201): merge right after #678.
+- **Fish leaderboard** (decided 11-04) and ~14 fish achievements: agent stopped for quota, restart. Species level
+  (branch A common names, branch B scientific): not started; Pierre may want a design study.
+- **Experts** · coral expert 1: 93% right, 52 -> 44% under #646; coral expert 2: 45/45 (one miss on purpose), too
+  early; fish expert: 91%, 29 -> 23%, her easy misses look like real look-alikes (ease 4 generous there).
 - Others: #666 candidate auto-refill (green), #637 (needs its learnsim before/after), #664 coherence review (to read).
 
 ## Next
@@ -44,7 +48,7 @@ Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes 
 - #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
 - Coming: the fish achievements list; the admin Players columns.
 
-Last question number: Q200
+Last question number: Q201
 
 ## Pierre's hands
 
@@ -88,4 +92,4 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 ## Last stop
 
 2026-11-06 ~17:00 Manila, integrator. Merged today (about 55 PRs), from 15:00: #598, #660, #671, #657, #673, #676,
-#668, #672, #638, #679, #655, #681, #683, #675, #677. Questions Q178-Q200 answered.
+#668, #672, #638, #679, #655, #681, #683, #675, #677, #684, #686, #680. Questions Q178-Q201 answered.
