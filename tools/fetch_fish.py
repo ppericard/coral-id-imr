@@ -50,6 +50,20 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   taxon's default photo, what iNaturalist shows to represent the species) with rep: "inaturalist" (judging/FISH.md
   "Reference photos": its ease gets a bonus), 30 taxa a request, and refills nothing; run it after a refill. FishBase
   candidates (via: "fishbase", tools/fetch_fishbase.py) carry their own tag.
+- Automatic refill (Pierre, 2026-11-06, Q171: "no more candidates is no more candidates"): --refill, run by the
+  "Candidate photos" workflow after each Publish, refills the short species only, with the rules above. Short
+  (`shortness`): below its cap (the room of species_room: the cap net of what Pierre rejected, excluded or sent
+  elsewhere and of what the pre-sort set aside), or fewer than EASY_NEED observations with a very easy photo (ease >=
+  EASY_E) in play or sure to come (Pierre's adds, the pre-sort's sure adds, the game photos). Only a species with room
+  is refilled (the cap holds: Q36); at most REFILL_MAX a run, the shortest first (short of easy photos with nothing
+  waiting for the judging pass, then the largest share of its cap missing), each search paged (id_below, up to
+  GEN_PAGES pages) while it brings too few usable photos. Exhaustion is remembered in tools/fish_refill.json per species
+  and part of its room ("free", or a phase iNaturalist can search on): a part still open after a run whose searches were
+  read to their end, or which got nothing, is "searched to the end" on that day; the species is skipped while every
+  open part of its room was searched to the end less than RECHECK_DAYS ago. Then FishBase fills what iNaturalist left
+  (tools/fetch_fishbase.py, offline) and --rep tags the covers, for the refilled species only. The new candidates wait
+  for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's auto-sort applies.
+  --refill --plan prints, offline, the short species, the pick and the skipped ones; it writes nothing.
 
 Network: iNaturalist API v2 (only the fields used), read only, a pause of PAUSE s between calls, generic User-Agent.
 Every reply is cached, trimmed, in tools/.cache/fish_photos.json (git-ignored): a rerun is offline and gives the same
@@ -59,10 +73,12 @@ and what a run would add per source and phase from the cache (a species not cach
 nothing.
 
     python3 tools/fetch_fish.py [--circle 1] [--cap N] [--only s091,t05] [--refresh | --offline | --plan] [--rep]
+    python3 tools/fetch_fish.py --refill [--circle 1 --circle 2 --circle 3] [--max N] [--today YYYY-MM-DD] [--plan]
 (--cap N: one fixed cap for every species instead of cap_of, for a test or a one-off; the phase rooms still apply.)
 Tests: node --test tests/fishphotos.test.js (offline fixtures).
 """
 import argparse
+import datetime
 import hashlib
 import json
 import math
@@ -122,6 +138,14 @@ LOC = {"dauin": "dauin", "region": "ph", "ph": "ph", "world": "world"}
 # iNaturalist annotations: Life Stage (1) Adult 2, Juvenile 8; Sex (9) Female 10, Male 11; Alive or Dead (17) Dead 19.
 STAGE = {(1, 2): "adult", (1, 8): "juvenile", (9, 10): "female", (9, 11): "male"}
 DEAD = (17, 19)
+# The automatic refill (Pierre, 2026-11-06, Q171; --refill). A species short of easy photos has fewer than EASY_NEED
+# observations with a very easy photo (ease >= EASY_E) in play or sure to come: model.js easyFirst shows a unit's very
+# easy photos (PDIFF.EARLY, 4) until it reaches Open Water, or its PICKD.VARIETY (3) easiest when it has fewer.
+EASY_E, EASY_NEED = 4, 3
+REFILL_MAX = 40  # species refilled per run at most (rule C7: about 6 requests each, the shortest first)
+RECHECK_DAYS = 30  # a part of a species' room searched to the end is searched again after this many days
+GEN_PAGES = 5  # pages of 200 read per general search in a refill at most (id_below), while it brings too few photos
+REFILL = ROOT / "tools" / "fish_refill.json"  # what was searched to the end, per species (in the repo)
 
 
 def lic_class(lic, own):
@@ -229,6 +253,23 @@ class Net:
         tmp = self.path.with_suffix(".tmp")
         tmp.write_text(json.dumps(self.c, sort_keys=True, separators=(",", ":")), encoding="utf-8")
         tmp.replace(self.path)
+
+
+def pages(net, q, enough, n=GEN_PAGES):
+    """The reply to the search q, read on while it has more and enough(results so far) is false, up to n pages of 200
+    (the searches are newest first, order_by=id: the next page is id_below the last one read). The total is what the
+    search holds, so total > len(results) still means more left to read. A reply not cached in a --plan run stops it."""
+    d = net.get(q)
+    if not d:
+        return d
+    res, last = list(d["results"]), d
+    while n > 1 and last["results"] and last["total"] > len(last["results"]) and not enough(res):
+        last = net.get(q + f"&id_below={min(o['id'] for o in last['results'])}")
+        if not last:
+            return {"total": len(res) + 1, "results": res}
+        res += last["results"]
+        n -= 1
+    return {"total": len(res) + max(0, last["total"] - len(last["results"])), "results": res}
 
 
 def queries(tid):
@@ -529,6 +570,17 @@ def sure_out(j):
     return j.get("k") == "dup" or (len(jt) >= 7 and (jt[6] == "x" or "a" in jt[7:]))
 
 
+FISH_TAGS = re.compile(r"^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$")  # autosort.js FISH_TAGS
+
+
+def sure_add(j):
+    """The pre-sort's sure add (autosort.js fishSure's adds): best or alt, a rubric code and an ease, no `u`, not a
+    reject (sure_out)."""
+    if not j or j.get("u") or j.get("k") not in ("best", "alt") or sure_out(j):
+        return False
+    return bool(FISH_TAGS.match(j.get("jt") or "")) and j.get("e") in (1, 2, 3, 4, 5)
+
+
 def state(cur, sug):
     """(gone(f), excluded photo ids): gone = rejected, excluded, sent elsewhere by Pierre, or set aside by the pre-sort."""
     F = (cur or {}).get("fish") or {}
@@ -568,6 +620,17 @@ def record(s, o, p):
     if own and o.get("g") != "research":
         r["ni"] = 1
     return r
+
+
+def ends(c):
+    """{part: its searches were read to their end} for the parts of one species' room (context c from run): "free" (the
+    general searches: Pierre's own, the Philippine tiers and, once asked, abroad) and each phase iNaturalist can search
+    on with room (its phase searches, in the Philippines and, once asked, abroad)."""
+    out = {"free": not c["omore"] and not any(c["more"].get(t) for t in TIERS) and not c["wm"].get("more")}
+    for ph in INAT_PHASE:
+        if c["R"]["rooms"].get(ph):
+            out[ph] = not c["pmore"].get(ph, True) and not c["pwmore"].get(ph)
+    return out
 
 
 def fill(c, used):
@@ -614,6 +677,7 @@ def run(args):
     only = set(filter(None, (args.only or "").split(",")))
     used = {pid(p["f"]) for L in have.values() for p in L} - {None}
     plan, report = {}, {}
+    deep = getattr(args, "deep", False)
     if args.rep:
         # Reference photos (Pierre, 2026-11-05): tag the candidates that are their taxon's iNaturalist cover, no refill.
         S = species_list(fish, set(args.circle), only)
@@ -647,8 +711,13 @@ def run(args):
             # Pierre's own, asked for every species (Codex review #463): fish.json present.own is a count from the last
             # build, so a species he identified since would otherwise never get his photos.
             names = ["own", *TIERS]
+            # A refill reads on (pages) while a search brings fewer usable photos than the room, so a species whose
+            # newest observations are all known still finds the older ones, and the end of a search is known.
+            enough = lambda res, known=known, need=R["room"]: sum(
+                len(it["P"]) for o in res if f"https://www.inaturalist.org/observations/{o['id']}" not in known
+                for it in [usable_obs(o, used, excl)] if it) >= need
             for k in names:
-                got[k] = net.get(Q[k])
+                got[k] = pages(net, Q[k], enough) if deep else net.get(Q[k])
             if args.plan and any(got[k] is None for k in names):
                 plan[sid]["cached"] = False
                 continue
@@ -661,7 +730,7 @@ def run(args):
                     it = usable_obs(o, used, excl)
                     if it and o["id"] not in byid:
                         byid[o["id"]] = it
-            more.pop("own", None)
+            omore = more.pop("own", False)
             for it in byid.values():
                 pools.setdefault(it["tier"], []).append(it)
             # Life stages already in the list, so a refill keeps varying them (observers: logins are not stored).
@@ -670,10 +739,14 @@ def run(args):
                 if not gone(p["f"]):
                     n["s", p.get("st", "")] += 1
 
-            def world(s=s, Q=Q, known=known, byid=byid):
+            wm = {}  # whether the search abroad, once asked, had more than it read
+
+            def world(s=s, Q=Q, known=known, byid=byid, wm=wm, enough=enough):
                 if not (s.get("present") or {}).get("ph"):
                     return []  # abroad only for a species confirmed in the Philippines
-                w = net.get(Q["world"])
+                w = pages(net, Q["world"], enough) if deep else net.get(Q["world"])
+                if w:
+                    wm["more"] = w["total"] > len(w["results"])
                 out = [usable_obs(o, used, excl) for o in (w or {}).get("results", [])
                        if f"https://www.inaturalist.org/observations/{o['id']}" not in known and o["id"] not in byid]
                 return [{**x, "tier": "world"} for x in out if x]
@@ -681,7 +754,8 @@ def run(args):
             # Confirmed near Dauin (present.near: 2+ Research Grade observers within 40 km, or the IMR list): photos from
             # anywhere, by licence (Pierre, 2026-11-03).
             ctx.append({"s": s, "t": t, "R": R, "n": n, "known": known, "byid": byid, "all": dict(byid), "pools": pools,
-                        "more": more, "world": world, "near": bool((s.get("present") or {}).get("near")), "pmore": {}, "pw": {}})
+                        "more": more, "world": world, "near": bool((s.get("present") or {}).get("near")), "pmore": {}, "pw": {},
+                        "omore": omore, "wm": wm, "pwmore": {}})
 
         # 2. The phase searches (Q36), one phase at a time for every species with room in it, batched (rule C7): the
         # Philippines first, then abroad (Indo-West Pacific) for a species confirmed in the Philippines, when it is
@@ -714,8 +788,9 @@ def run(args):
             W = [c for c in C if (c["s"].get("present") or {}).get("ph")
                  and (c["near"] or (not c["pmore"][ph] and have_ph(c) < c["R"]["rooms"][ph]))]
             if W:
-                got, _ = phase_obs(net, ph, [c["s"]["inat"] for c in W], "world")
+                got, wmore = phase_obs(net, ph, [c["s"]["inat"] for c in W], "world")
                 for c in W:
+                    c["pwmore"][ph] = wmore[c["s"]["inat"]]
                     c["pw"][ph] = [it for it in items(c, got[c["s"]["inat"]], "world") if it["tier"] == "world"]
 
         # 3. Per species: each phase's room first, then the free room.
@@ -724,7 +799,8 @@ def run(args):
             sid = s["id"]
             taken = fill(c, used)
             add = Counter(LOC[o["tier"]] for o in taken for _ in o["P"])
-            plan[sid].update({"add": dict(add), "phase_add": dict(Counter(o["phase"] for o in taken for _ in o["P"] if o.get("phase")))})
+            plan[sid].update({"add": dict(add), "phase_add": dict(Counter(o["phase"] for o in taken for _ in o["P"] if o.get("phase"))),
+                              "end": ends(c)})
             if args.plan:
                 continue
             L = have[sid]
@@ -748,6 +824,146 @@ def run(args):
     return plan
 
 
+def easy_obs(sid, L, F, sug, game, gone):
+    """The observations of species sid with a very easy photo (ease >= EASY_E) in play or sure to come: a candidate
+    Pierre added to it (his ease, else the pre-sort's), a candidate the pre-sort adds for sure (sure_add: the auto-sort
+    applies it at the next admin load), a game photo of fish-photos.json. One observation counts once."""
+    add, ease, out = F.get("add") or {}, F.get("ease") or {}, set()
+    for p in L:
+        f, j = p["f"], sug.get(p["f"]) or {}
+        if gone(f):
+            continue
+        if add.get(f) == sid:
+            e = ease.get(f, j.get("e"))
+        elif f not in add and sure_add(j):
+            e = j["e"]
+        else:
+            continue
+        if (e or 0) >= EASY_E:
+            out.add(p.get("o") or f)
+    out |= {p.get("o") or p.get("f") for p in game if (p.get("e") or 0) >= EASY_E}
+    return len(out)
+
+
+def shortness(s, t, L, gone, F, sug, game=(), fb=(), moved=frozenset(), cap=None):
+    """Whether species s (entry t) is short of candidates (Pierre, 2026-11-06, Q171), and how: {"cap", "have", "room"
+    (species_room: the cap of Q36 net of what Pierre rejected, excluded or sent elsewhere and of what the pre-sort set
+    aside), "parts" ({part: room} for the parts with room: "free", the general searches' room, intermediate phase
+    included; each phase iNaturalist can search on), "easy" (easy_obs), "unjudged" (candidates waiting for the judging
+    pass), "short"}. Short = room left, or fewer than EASY_NEED easy observations. Only room can be refilled: the cap holds."""
+    R = species_room(s, t, L, gone, sug, game, fb, moved, cap)
+    add = F.get("add") or {}
+    parts = {"free": R["free"] + sum(r for ph, r in R["rooms"].items() if ph not in INAT_PHASE),
+             **{ph: r for ph, r in R["rooms"].items() if ph in INAT_PHASE}}
+    easy = easy_obs(s["id"], L, F, sug, game, gone)
+    unjudged = sum(1 for p in L if not gone(p["f"]) and p["f"] not in add and p["f"] not in sug)
+    return {"cap": R["cap"], "have": R["have"], "room": R["room"], "parts": {k: v for k, v in parts.items() if v > 0},
+            "easy": easy, "unjudged": unjudged, "short": R["room"] > 0 or easy < EASY_NEED}
+
+
+def fresh(e, today):
+    """An exhaustion record ({"at": day, "parts": [...]}) less than RECHECK_DAYS old."""
+    try:
+        return (today - datetime.date.fromisoformat(e["at"])).days < RECHECK_DAYS
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def pick_short(rows, mem, today, n=REFILL_MAX):
+    """(pick, skip) from {sid: shortness} in teaching order: the species with room, less those whose every open part was
+    searched to the end less than RECHECK_DAYS ago (mem); the shortest first: short of easy photos with nothing waiting
+    for the judging pass (more candidates are their only way to easy photos), then the largest share of the cap
+    missing, then teaching order; at most n."""
+    order = {sid: i for i, sid in enumerate(rows)}
+    want, skip = [], []
+    for sid, r in rows.items():
+        if r["room"] <= 0:
+            continue
+        e = mem.get(sid)
+        if e and fresh(e, today) and set(r["parts"]) <= set(e.get("parts") or []):
+            skip.append(sid)
+            continue
+        want.append(sid)
+    want.sort(key=lambda k: (not (rows[k]["easy"] < EASY_NEED and not rows[k]["unjudged"]), -rows[k]["room"] / rows[k]["cap"], order[k]))
+    return want[:n], skip
+
+
+def exhausted(P):
+    """The parts of a refilled species' room (its plan entry from run) still open after the run and searched to the end:
+    their searches read to the end (P["end"]), or nothing found for them. "No more candidates is no more candidates"."""
+    padd = P.get("phase_add") or {}
+    total = sum((P.get("add") or {}).values())
+    left = {"free": P["free"] + sum(r for ph, r in P["rooms"].items() if ph not in INAT_PHASE) - (total - sum(padd.values()))}
+    got = {"free": total - sum(padd.values())}
+    for ph in INAT_PHASE:
+        if P["rooms"].get(ph):
+            left[ph], got[ph] = P["rooms"][ph] - padd.get(ph, 0), padd.get(ph, 0)
+    end = P.get("end") or {}
+    return sorted(k for k, v in left.items() if v > 0 and (end.get(k) or not got[k]))
+
+
+def load_mem(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8")).get("end") or {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_mem(path, mem):
+    doc = ("tools/fetch_fish.py --refill (Pierre, 2026-11-06, Q171): per fish.json species id, the parts of its candidate "
+           "room searched to the end on iNaturalist (at: the day; parts: free = the general searches, juvenile / male / "
+           "female = the phase searches); skipped while every open part was searched to the end less than "
+           f"{RECHECK_DAYS} days ago. Written by the Candidate photos workflow.")
+    body = ",\n".join(f" {json.dumps(k)}: {json.dumps(mem[k], sort_keys=True)}" for k in sorted(mem))
+    Path(path).write_text("{\"_doc\": " + json.dumps(doc) + ",\n\"end\": {" + ("\n" + body + "\n" if body else "") + "}}\n", encoding="utf-8")
+
+
+def refill(args):
+    """--refill (Pierre, 2026-11-06, Q171): the short species only, at most --max a run, with the rules of run; then the
+    exhaustion memory, FishBase (offline) and the iNaturalist covers (--rep) for the species refilled."""
+    today = datetime.date.fromisoformat(args.today) if args.today else datetime.datetime.now(datetime.timezone.utc).date()
+    rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
+    fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
+    have = rd(args.cand).get("cand", {})
+    fbsrc = rd(args.fbsrc).get("species") or {}
+    gone, _ = state(cur, sug)
+    F, sugf, moved, game = (cur or {}).get("fish") or {}, (sug or {}).get("fish") or {}, moved_of(cur), game_photos(rd(args.photos))
+    S = species_list(fish, set(args.circle))
+    rows = {s["id"]: shortness(s, t, have.get(s["id"], []), gone, F, sugf, game.get(s["id"], ()),
+                               (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap) for s, t in S}
+    mem = {k: v for k, v in load_mem(args.memory).items() if k in rows}
+    pick, skip = pick_short(rows, mem, today, args.max)
+    short = {k: r for k, r in rows.items() if r["short"]}
+    if args.plan:
+        print(json.dumps({"short": short, "pick": pick, "skip": skip, "at_cap": sorted(k for k, r in short.items() if r["room"] <= 0)}))
+        return {"short": short, "pick": pick, "skip": skip}
+    print(f"refill: {len(short)} short species ({sum(1 for r in short.values() if r['easy'] < EASY_NEED)} short of easy photos), "
+          f"{len(skip)} searched to the end, {len(pick)} refilled now", flush=True)
+    if not pick:
+        save_mem(args.memory, mem)
+        return {"short": short, "pick": pick, "skip": skip}
+    a = argparse.Namespace(**{**vars(args), "only": ",".join(pick), "deep": True, "rep": False, "plan": False,
+                              "refresh": not args.offline})
+    plan = run(a)
+    for sid in pick:
+        ended = exhausted(plan[sid]) if sid in plan else []
+        if ended:
+            mem[sid] = {"at": today.isoformat(), "parts": ended}
+        else:
+            mem.pop(sid, None)
+    save_mem(args.memory, mem)
+    import fetch_fishbase  # noqa: E402  offline: what FishBase holds fills the room iNaturalist left
+    fetch_fishbase.main(["--only", ",".join(pick), "--fish", args.fish, "--cand", args.cand, "--cur", args.cur, "--suggest", args.suggest,
+                         "--photos", args.photos, "--src", args.fbsrc, *(["--cap", str(args.cap)] if args.cap else []),
+                         *[x for c in args.circle for x in ("--circle", str(c))]])
+    if not args.offline:
+        run(argparse.Namespace(**{**vars(a), "rep": True, "deep": False}))
+    ends_now = sorted(k for k in pick if k in mem)
+    print(f"refill: searched to the end today: {', '.join(ends_now) or 'none'}; the new candidates wait for the judging pass "
+          "(python3 tools/judging_fish.py todo)")
+    return {"short": short, "pick": pick, "skip": skip, "end": ends_now}
+
+
 def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     a.add_argument("--circle", type=int, action="append", help="circle(s) to fetch (default 1)")
@@ -758,6 +974,10 @@ def main(argv=None):
     m.add_argument("--offline", action="store_true", help="never ask iNaturalist (fail on a reply not cached)")
     m.add_argument("--plan", action="store_true", help="print what a run would add, from the cache only; write nothing")
     a.add_argument("--rep", action="store_true", help="only tag the candidates that are their taxon's iNaturalist cover (rep)")
+    a.add_argument("--refill", action="store_true", help="refill the short species only, at most --max (Q171)")
+    a.add_argument("--max", type=int, default=REFILL_MAX, help=f"--refill: species refilled at most (default {REFILL_MAX})")
+    a.add_argument("--today", help="--refill: the day, YYYY-MM-DD (tests; default today, UTC)")
+    a.add_argument("--memory", default=str(REFILL), help="--refill: what was searched to the end (tools/fish_refill.json)")
     a.add_argument("--fish", default=str(ROOT / "fish.json"))
     a.add_argument("--cand", default=str(ROOT / "fish-cand.json"))
     a.add_argument("--cur", default=str(ROOT / "curation.json"))
@@ -767,7 +987,7 @@ def main(argv=None):
     a.add_argument("--cache", default=str(ROOT / "tools" / ".cache" / "fish_photos.json"))
     args = a.parse_args(argv)
     args.circle = args.circle or [1]
-    return run(args)
+    return refill(args) if args.refill else run(args)
 
 
 if __name__ == "__main__":

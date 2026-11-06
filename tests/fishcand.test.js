@@ -16,6 +16,13 @@ const {
   fishStamp,
   fishIdx,
   fishMine,
+  fishNotThis,
+  fishState,
+  fishOn,
+  fishPhase,
+  fishSet,
+  fishTag,
+  fishUndo,
   autoCheck
 } = require('../autosort.js');
 const {merge3} = require('../core.js');
@@ -172,4 +179,141 @@ test('fish Candidates clicks never touch a coral key, through the Publish merge'
   assert.strictEqual(out.fish.seen[ids[0]], 1);
   assert.strictEqual(out.fish.exclude[ids[2]], 'excluded');
   assert.ok(!out.fish.out);
+});
+
+test("Not this (5b): the photo waits as the other species' candidate, marked from; Add puts it in play there; never proposed again", () => {
+  const cands = {s1: [ph(ids[0]), ph(ids[1])], s2: [ph(ids[2])]},
+    sug = {[ids[0]]: {jt: 'p1g0sm1', e: 4, k: 'best'}};
+  let {F} = fishRun(cands, sug, {s1: {}, s2: {}}, {}, '2026-11-05');
+  assert.strictEqual(F.add[ids[0]], 's1');
+  F = fishNotThis(F, ids[0], 's2', 's1');
+  assert.deepStrictEqual(F.out, {[ids[0]]: 's2'});
+  assert.ok(!(ids[0] in F.add), 'its add on the wrong species goes');
+  assert.deepStrictEqual(fishState(F, ids[0], 's1'), {sid: 's2', st: null});
+  assert.strictEqual(fishMine(F, ids[0]), 'reject', 'against the auto add on its first species: a correction');
+  assert.deepStrictEqual(
+    fishCompare(F).map(c => [c.f, c.how, c.ok]),
+    [[ids[0], 'fix', false]]
+  );
+  let Q = fishQueue(cands, sug, {s1: {}, s2: {}}, F);
+  const m = Q.find(x => x.p.f === ids[0]);
+  assert.strictEqual(m.sid, 's2');
+  assert.strictEqual(m.from, 's1');
+  F = fishAdd(F, ids[0], 's2', sug[ids[0]]);
+  assert.ok(fishOn(F, ids[0], 's2'));
+  assert.strictEqual(fishPlay(cands, F).s2.size, 1);
+  assert.ok(!fishPlay(cands, F).s1, 'nothing in play on its first species');
+  assert.ok(!fishQueue(cands, sug, {s1: {}, s2: {}}, F).some(x => x.p.f === ids[0]));
+  // The auto-sort never proposes it again, an Undo of its first decision leaves the move alone.
+  assert.strictEqual(fishRun(cands, sug, {s1: {}, s2: {}}, F, '2026-11-06').F, F);
+  const U = fishUndo(F, ids[0], 's1');
+  assert.strictEqual(U.out[ids[0]], 's2');
+  assert.strictEqual(U.add[ids[0]], 's2');
+  // Back to its first species: the mark goes, it waits there again; "x": gone from every species.
+  const B = fishNotThis(fishNotThis({}, ids[1], 's2', 's1'), ids[1], 's1', 's1');
+  assert.deepStrictEqual(fishState(B, ids[1], 's1'), {sid: 's1', st: null});
+  assert.deepStrictEqual(B.out, {});
+  const X = fishNotThis({add: {[ids[1]]: 's1'}, seen: {}}, ids[1], 'x', 's1');
+  assert.strictEqual(fishState(X, ids[1], 's1').st, 'gone');
+  assert.ok(!fishQueue(cands, {}, {}, X).some(x => x.p.f === ids[1]));
+  // An add that names another species than the out (a stale add) is not in play.
+  assert.ok(!fishOn({add: {[ids[1]]: 's1'}, out: {[ids[1]]: 's2'}}, ids[1], 's1'));
+});
+
+test("missing phases first (5b): a phase none of the species' photos in play shows comes first in its species", () => {
+  const cands = {s1: [ph(ids[0]), ph(ids[1], ids[1], {st: 'juvenile'}), ph(ids[2]), ph(ids[3])]},
+    sug = {
+      [ids[0]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
+      [ids[2]]: {jt: 'p1g0sm1', e: 4, k: 'best', ph: 'terminal'},
+      [ids[3]]: {jt: 'p1g0sm1', e: 3, k: 'best', ph: 'female'}
+    };
+  // In play: a female (ids[3]).
+  const F = {add: {[ids[3]]: 's1'}};
+  const Q = fishQueue(cands, sug, {s1: {}}, F);
+  assert.deepStrictEqual(
+    Q.map(x => [x.p.f, x.ph, x.nph]),
+    [
+      [ids[2], 'male', true], // terminal phase: the pass's tag, a new phase, the easier of the two
+      [ids[1], 'juvenile', true], // juvenile: the source's life stage, not judged
+      [ids[0], '', false]
+    ]
+  );
+  // Pierre's values win over the pass's and the source's: his tags without j and no phase make it an adult.
+  assert.strictEqual(fishPhase(cands.s1[1], null, {tags: {[ids[1]]: 'p1g0sm1'}}), '');
+  assert.strictEqual(fishPhase(cands.s1[0], sug[ids[0]], {tags: {[ids[0]]: 'p1g0sm1j'}}), 'juvenile');
+  assert.strictEqual(fishPhase(cands.s1[2], sug[ids[2]], {phase: {[ids[2]]: ''}}), '');
+  // Add copies the pass's tags beside the add with the source's phase (fishCopy): a juvenile by its source stays one once
+  // added, so another juvenile of the species is no longer a missing phase; Pierre's toggle of the flag then wins, even
+  // back to the pass's very code (Codex review #602, twice).
+  const j1 = {jt: 'p1g0sm1', e: 4, k: 'best'},
+    sug2 = {...sug, [ids[1]]: j1},
+    cands2 = {s1: [...cands.s1, ph(ids[4], ids[4], {st: 'juvenile'})]},
+    F2 = fishAdd(F, ids[1], 's1', j1, cands.s1[1]);
+  assert.strictEqual(F2.tags[ids[1]], 'p1g0sm1j');
+  assert.strictEqual(fishPhase(cands.s1[1], j1, F2), 'juvenile');
+  const x4 = fishQueue(cands2, sug2, {s1: {}}, F2).find(x => x.p.f === ids[4]);
+  assert.deepStrictEqual([x4.ph, x4.nph], ['juvenile', false]);
+  const F3 = fishSet(F2, ids[1], 'tags', fishTag(F2.tags[ids[1]], 'j'));
+  assert.strictEqual(F3.tags[ids[1]], 'p1g0sm1');
+  assert.strictEqual(fishPhase(cands.s1[1], j1, F3), '');
+  // A source phase other than juvenile goes in as the phase word; the pass's own phase is kept as it is.
+  assert.strictEqual(fishAdd({}, ids[5], 's1', j1, {f: ids[5], st: 'female'}).phase[ids[5]], 'female');
+  assert.strictEqual(fishAdd({}, ids[2], 's1', sug[ids[2]], {f: ids[2], st: 'juvenile'}).tags[ids[2]], 'p1g0sm1');
+  // Juvenile set by Pierre before Add on a photo whose source says male: his flag stands, no male phase copied over it
+  // (Codex review #602).
+  const Fj = {tags: {[ids[5]]: 'p1g0sm1j'}},
+    Fa = fishAdd(Fj, ids[5], 's1', {jt: 'p1g0sm1', e: 4, k: 'best'}, {f: ids[5], st: 'male'});
+  assert.strictEqual((Fa.phase || {})[ids[5]], undefined);
+  assert.strictEqual(fishPhase({f: ids[5], st: 'male'}, null, Fa), 'juvenile');
+  // No phase chosen by Pierre before Add on a juvenile by its source: no juvenile flag copied over his choice.
+  const Fn = fishAdd({phase: {[ids[6]]: ''}}, ids[6], 's1', {jt: 'p1g0sm1', e: 4, k: 'best'}, {f: ids[6], st: 'juvenile'});
+  assert.strictEqual(Fn.tags[ids[6]], 'p1g0sm1');
+  assert.strictEqual(fishPhase({f: ids[6], st: 'juvenile'}, null, Fn), '');
+});
+
+test("fishSet and fishTag (5b): Pierre's tag, ease, phase or crop; a field the auto-sort wrote becomes his", () => {
+  const cands = {s1: [ph(ids[0])]},
+    sug = {[ids[0]]: {jt: 'p1g0sm1r', e: 4, k: 'best'}};
+  let {F} = fishRun(cands, sug, {s1: {}}, {}, '2026-11-05');
+  assert.strictEqual(F.auto['2026-11-05'][ids[0]], 'ate');
+  F = fishSet(F, ids[0], 'tags', fishTag(F.tags[ids[0]], 2, 'n'));
+  assert.strictEqual(F.tags[ids[0]], 'p1n0sm1r');
+  assert.strictEqual(F.auto['2026-11-05'][ids[0]], 'ae', 'its tags are his now: an Undo leaves them');
+  F = fishSet(F, ids[0], 'ease', 2);
+  assert.strictEqual(F.auto['2026-11-05'][ids[0]], 'a');
+  const U = fishUndo(F, ids[0], 's1');
+  assert.strictEqual(U.tags[ids[0]], 'p1n0sm1r');
+  assert.strictEqual(U.ease[ids[0]], 2);
+  assert.ok(!(ids[0] in U.add));
+  // Flags: toggled, kept in the rubric's order with the tool's own; a bad code starts from a plain profile one.
+  assert.strictEqual(fishTag('p1g0sm1r', 'j'), 'p1g0sm1jr');
+  assert.strictEqual(fishTag('p1g0sm1jcr', 'j'), 'p1g0sm1cr');
+  assert.strictEqual(fishTag('', 6, 'x'), 'p1g0smx');
+  assert.strictEqual(fishTag('o1g1ssm', 3, '3'), 'o1g3ssm');
+  // null takes his value off.
+  assert.ok(!(ids[0] in fishSet(F, ids[0], 'phase', null).phase));
+  assert.strictEqual(fishSet({}, ids[0], 'phase', '').phase[ids[0]], '');
+});
+
+test("fishRun counts a photo moved with Not this and added to its new species toward that species' target (Codex review #602)", () => {
+  const cands = {s1: [ph(ids[30], 'm1')], s2: []},
+    sug = {};
+  for (let i = 0; i < 9; i++) {
+    cands.s2.push(ph(ids[i], 'o' + i));
+    sug[ids[i]] = {jt: 'p1g0sm1', e: 4, k: 'best'};
+  }
+  let F = fishAdd(fishNotThis({}, ids[30], 's2', 's1'), ids[30], 's2', null);
+  const {F: G, R} = fishRun(cands, sug, {s1: {}, s2: {}}, F, '2026-11-05');
+  assert.strictEqual(fishPlay(cands, G).s2.size, 8, 'the target, the moved observation included');
+  assert.strictEqual(R.add, 7);
+  assert.strictEqual(R.full, 2);
+});
+
+test("fishRun's copy of the pass's values carries the source's phase, as Add's (fishCopy; Codex review #602)", () => {
+  const cands = {s1: [ph(ids[36], 'q1', {st: 'juvenile'}), ph(ids[37], 'q2', {st: 'male'})]},
+    sug = {[ids[36]]: {jt: 'p1g0sm1', e: 4, k: 'best'}, [ids[37]]: {jt: 'p1g0sm1', e: 4, k: 'best'}};
+  const {F} = fishRun(cands, sug, {s1: {}}, {}, '2026-11-05');
+  assert.deepStrictEqual([F.tags[ids[36]], F.phase && F.phase[ids[36]]], ['p1g0sm1j', undefined]);
+  assert.deepStrictEqual([F.tags[ids[37]], F.phase[ids[37]]], ['p1g0sm1', 'male']);
+  assert.strictEqual(fishPhase(cands.s1[0], sug[ids[36]], F), 'juvenile');
 });

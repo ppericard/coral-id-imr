@@ -3039,7 +3039,7 @@ const HELP = {
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`,
-  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo. Tags, phase, crop and Not this come next (admin plan PR 5b).</p>`
+  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
 const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
@@ -4860,6 +4860,8 @@ async function fishLoad() {
     species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
     // Each species' teaching entry (its IMR entry for circle 1), for the fish Candidates card (admin-fish.js).
     entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
+    // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
+    game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
     byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
   });
 }
@@ -5533,9 +5535,10 @@ function candKeys() {
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
 // The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
 // local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
-function cropEditor(p) {
+// opt (the fish Candidates, admin-fish.js): {start, save(v, full)} in place of the coral crops (curation.json crop).
+function cropEditor(p, opt) {
   const lb = $('lightbox'),
-    c0 = crOf(p.f) || sugCrop(p) || [0, 0, 1, 1];
+    c0 = (opt ? opt.start : crOf(p.f) || sugCrop(p)) || [0, 0, 1, 1];
   let c = c0.slice();
   lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
     <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div></div>`;
@@ -5612,6 +5615,11 @@ function cropEditor(p) {
           c = [0, 0, 1, 1];
           draw();
           return;
+        }
+        if (a === 'save' && opt) {
+          const v = c.map(x => Math.round(x * 1000) / 1000);
+          close();
+          return opt.save(v, v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1);
         }
         if (a === 'save') {
           const v = c.map(x => Math.round(x * 1000) / 1000),
