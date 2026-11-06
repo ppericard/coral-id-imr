@@ -89,12 +89,8 @@
    "keep": "best"
   },
   "fish-s228-cand-605103316": {
-   "code": "p1g1sm1a2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Lying dead on sand? Looks out of water"
+   "code": "o1g0sm1a1",
+   "keep": "best"
   },
   "fish-s228-cand-605103323": {
    "code": "d1g1sm1a2",
@@ -122,6 +118,10 @@
   },
   "fish-s228-cand-450086994": {
    "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s228-cand-fb-Chine_u0": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }

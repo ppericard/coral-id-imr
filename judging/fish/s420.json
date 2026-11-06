@@ -93,24 +93,16 @@
    "keep": "dup"
   },
   "fish-s420-cand-540655114": {
-   "code": "d1g1sm1c1",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a bucket, not in the wild"
+   "code": "d1g0sm1a1",
+   "keep": "best"
   },
   "fish-s420-cand-592717038": {
    "code": "o1g1sl1c2",
    "keep": "best"
   },
   "fish-s420-cand-339449520": {
-   "code": "p1g1sm13",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a container, not in the wild"
+   "code": "d1g0sm1a1",
+   "keep": "best"
   },
   "fish-s420-cand-479673665": {
    "code": "p1g2sl1c1",
@@ -133,12 +125,8 @@
    "keep": "best"
   },
   "fish-s420-cand-541604943": {
-   "code": "p1g1sm13",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a container, not in the wild"
+   "code": "p1g0sm1a1",
+   "keep": "best"
   },
   "fish-s420-cand-541604974": {
    "code": "o1g1sm13",
@@ -161,12 +149,8 @@
    "keep": "dup"
   },
   "fish-s420-cand-3935293": {
-   "code": "o1d1sl12",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a plastic bag or a container, not in the wild"
+   "code": "p1g0sm1a1",
+   "keep": "best"
   },
   "fish-s420-cand-603829977": {
    "code": "o1g1ss1c1",
