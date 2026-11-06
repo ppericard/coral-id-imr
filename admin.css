@@ -1485,7 +1485,9 @@ kbd {
   color: var(--accent);
   border: 1.5px solid var(--accent);
 }
-/* Candidates, one per screen (made for the phone): photo fills what the controls leave; the decision bar sits under the thumb. */
+/* Candidates, one per screen (made for the phone): photo fills what the controls leave; the decision bar sits under the thumb.
+   --sw-top is where the page starts (admin.js start: under the header, the tab row and the demo banner), so the bar
+   stays on screen whatever sits above it (Pierre, 2026-11-06: one phone screen, 390 x 844, nothing below the fold). */
 .adm-modesel {
   display: none;
 }
@@ -1498,8 +1500,8 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: calc(100dvh - var(--hdr-h, 64px) - var(--sub-h, 0px) - 20px);
-  min-height: 480px;
+  height: calc(100dvh - var(--sw-top, 120px) - env(safe-area-inset-bottom, 0px) - 12px);
+  min-height: 360px;
 }
 .adm-swempty {
   height: auto;
@@ -1706,6 +1708,60 @@ kbd {
 .adm-swbar .add.sug {
   border: 2px dashed var(--accent);
 }
+/* Fish Candidates (admin-fish.js): the species' photos in play under the card, small, in one row that swipes sideways
+   when they do not all fit (a photo strip, not a slider: rule U6) */
+.adm-fplay {
+  flex: none;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.adm-fplay::-webkit-scrollbar {
+  display: none;
+}
+.adm-fplayn {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.adm-fplayn b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.adm-fplayn.full b {
+  color: var(--good);
+}
+.adm-fth {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.adm-fth img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.adm-chip.adm-fease {
+  color: var(--ink);
+  font-weight: 600;
+}
+@media (max-width: 599px) {
+  .adm-fth {
+    width: 36px;
+    height: 36px;
+  }
+}
 @media (hover: hover) and (pointer: fine) {
   .adm-swbar .add:hover {
     background: var(--good-bg);
@@ -1808,8 +1864,7 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
     padding: 12px 10px;
   }
   .adm-sw {
-    height: calc(100dvh - var(--hdr-h, 64px) - var(--sub-h, 0px) - 12px);
-    min-height: 440px;
+    height: calc(100dvh - var(--sw-top, 120px) - env(safe-area-inset-bottom, 0px) - 8px);
     gap: 6px;
   }
   .adm-sw .adm-fseg button {
@@ -1840,6 +1895,10 @@ body.admin.adm-cmode {
 }
 body.adm-cmode main {
   margin-bottom: 0;
+}
+/* The swiper sets its own height: the page's minimum height (app.css .wrap) under the demo banner made it scroll. */
+body.adm-cmode .wrap {
+  min-height: 0;
 }
 .adm-sw .adm-swacts {
   padding: 0;
@@ -3284,6 +3343,38 @@ button.adm-chip[aria-pressed='true'] {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--bg);
+}
+/* In the swiper: the toggles on one line (a long one shortens with an ellipsis), the Auto line folded behind its chip
+   (admin.js autoChip; Pierre, 2026-11-06: the photo and the decision buttons on one phone screen). */
+.adm-sw .adm-cflags {
+  flex: none;
+  flex-wrap: nowrap;
+  margin: 0;
+  min-width: 0;
+}
+.adm-sw .adm-cflags .adm-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-sw .adm-cflags .adm-cauto {
+  flex: none;
+  margin-left: auto;
+}
+button.adm-chip.adm-cauto[aria-expanded='true'] {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.adm-chip.adm-cauto.off {
+  border-color: var(--warn);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--warn) 18%, var(--surface));
+}
+.adm-sw .adm-auto {
+  flex: none;
+  margin: 0;
 }
 /* Adding to a full cell: pick the colony it replaces */
 .adm-repl-new {

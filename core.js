@@ -483,8 +483,9 @@
           know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
         }
       },
-      // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
-      // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
+      // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) and the
+      // fish pages the admin plan has built so far (docs/ROADMAP.md "Admin for every subject"): Families, Candidates (PR
+      // 5a, admin-fish.js).
       // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
       admin: {
         cur: 'fish',
@@ -494,6 +495,7 @@
           'inbox/coverage/games',
           'players/list',
           'photos/families',
+          'photos/candidates',
           'photos/review/ease',
           'photos/review/phase-framing'
         ],
