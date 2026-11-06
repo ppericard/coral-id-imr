@@ -317,7 +317,8 @@
   }
   // The extra phase a photo shows (as tools/fetch_fish.py photo_phase: juvenile, intermediate, male, female), or '' (adult
   // or not known): Pierre's phase and tags when he set any (then the source's annotation is not read), else the pass's
-  // phase tag, its juvenile flag, else the source's life stage or sex (st), juvenile first.
+  // phase tag, its juvenile flag, else the source's life stage or sex (st), juvenile first. Tags equal to the pass's are
+  // the copy Add and the auto-sort write beside an add, not his word (Codex review #602).
   const FPHW = {
     juvenile: 'juvenile',
     subadult: 'intermediate',
@@ -332,7 +333,7 @@
   const FPHASES = ['juvenile', 'intermediate', 'male', 'female'];
   function fishPhase(p, j, F) {
     F = F || {};
-    const mine = p.f in (F.phase || {}) || p.f in (F.tags || {}),
+    const mine = p.f in (F.phase || {}) || (p.f in (F.tags || {}) && F.tags[p.f] !== (j || {}).jt),
       ph = p.f in (F.phase || {}) ? F.phase[p.f] : (j || {}).ph,
       jt = (F.tags || {})[p.f] || (j || {}).jt || '';
     if (FPHW[ph]) return FPHW[ph];
