@@ -549,7 +549,7 @@ const server = http.createServer((req, res) => {
     await q.click('#view .ans [data-c]');
     const after = await q.evaluate(() => {
       const fb = document.querySelector('#after .fb'),
-        // The photo's source page: iNaturalist, or FishBase for its reference photos in play (#660).
+        // the photo's page: its iNaturalist observation, or its FishBase photo page (a FishBase reference photo, #660)
         cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"], .credit a[href*="fishbase."]');
       return {fb: !!fb, credit: !!cr, h3: fb ? fb.querySelector('h3').textContent : ''};
     });
