@@ -1097,6 +1097,63 @@ const WIDTHS = [390, 1280];
         if (s.on.join() !== 'all' || s.rows.length !== 3 || !s.cands || s.note || s.saved !== '"all"')
           fails.push(`${w}px View filter: All views ${JSON.stringify(s)}`);
       }
+      // One filter bar (admin plan PR 3, admin.js FB): every photo page's chips come from the subject's descriptor (core.js
+      // SUBJECTS admin origins, csrc, views), and an origin switched off on one page is off on the others (one state, SHOW):
+      // the genus bar (short names with counts), Quality and Growth form (full names; Growth form without the CF book),
+      // their view chips and unit select, the Candidates sources. The origin is switched back on after.
+      {
+        const fb = () =>
+          p.evaluate(() => ({
+            o: [...document.querySelectorAll('#view [data-o]')]
+              .filter(b => b.dataset.o !== 'all')
+              .map(b => b.dataset.o + ':' + b.textContent.trim()),
+            off: [...document.querySelectorAll('#view [data-o][aria-pressed="false"]')].map(b => b.dataset.o),
+            v: [...document.querySelectorAll('#view [data-qv], #view [data-fv]')].map(b => b.dataset.qv || b.dataset.fv),
+            unit: (s => s && [s.getAttribute('aria-label'), s.options[0].textContent])(document.querySelector('#qgen, #fgen')),
+            src: [...document.querySelectorAll('#view [data-src]')].map(b => b.dataset.src),
+            want: {
+              o: ASUBJ.admin.origins.map(o => o[0]),
+              short: ASUBJ.admin.origins.map(o => o[2]),
+              name: ASUBJ.admin.origins.map(o => o[1]),
+              v: ['all', ...ASUBJ.views.map(x => x[0]), 'cand'],
+              src: [...ASUBJ.admin.csrc, 'all']
+            }
+          }));
+        await goGenus(gg.three[0] || 'Acropora');
+        let s = await fb();
+        if (s.o.map(x => x.split(':')[0]).join() !== s.want.o.join() || s.o.some((x, i) => !x.split(':')[1].startsWith(s.want.short[i])))
+          fails.push(`${w}px Filter bar: genus page origins ${JSON.stringify(s)}`);
+        await go('photos/review/quality');
+        s = await fb();
+        if (
+          s.o.join() !== s.want.o.map((o, i) => o + ':' + s.want.name[i]).join() ||
+          s.v.join() !== s.want.v.join() ||
+          JSON.stringify(s.unit) !== '["Genus","All genera"]'
+        )
+          fails.push(`${w}px Filter bar: Quality ${JSON.stringify(s)}`);
+        await p.click('#view [data-o="dauin"]');
+        await settle();
+        await go('photos/review/growth-form');
+        s = await fb();
+        if (
+          s.o.map(x => x.split(':')[0]).join() !== s.want.o.filter(o => o !== 'book').join() ||
+          s.off.join() !== 'dauin' ||
+          s.v.join() !== s.want.v.join() ||
+          JSON.stringify(s.unit) !== '["Genus","All genera"]'
+        )
+          fails.push(`${w}px Filter bar: Growth form (Dauin switched off on Quality) ${JSON.stringify(s)}`);
+        await goGenus(gg.three[0] || 'Acropora');
+        s = await fb();
+        if (s.off.join() !== 'dauin' || !(await p.$('.adm-sticky [data-o="all"]')))
+          fails.push(`${w}px Filter bar: Dauin off on Quality, not on the genus page ${JSON.stringify(s)}`);
+        await p.click('.adm-sticky [data-o="all"]');
+        await settle();
+        s = await fb();
+        if (s.off.length || (await p.$('.adm-sticky [data-o="all"]'))) fails.push(`${w}px Filter bar: All ${JSON.stringify(s)}`);
+        await go('photos/candidates');
+        s = await fb();
+        if (s.src.join() !== s.want.src.join()) fails.push(`${w}px Filter bar: Candidates sources ${JSON.stringify(s)}`);
+      }
     }
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
     // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
