@@ -5,35 +5,28 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-06, about 17:05 Manila, by the integrator (Pierre extended the day to ~18:00; quota nearly spent at 17:03:
-only #656, #669, #652, #678, #674, #646 and the fish recompute kept going; the other agents were stopped).
+Written 2026-11-06, about 18:35 Manila, by the integrator.
 
 Last checked: reports and events: 2026-11-06 ~16:20 Manila (no new report since 11-05; no app error today, a few slow saves recovered)
 
 ## Now
 
-Fish is open to every player (beta). Today's push: fish photos, the book's families, the new progress bar.
+Fish is open to every player (beta). End of the 2026-11-06 push (Pierre extended to ~18:00; quota nearly spent, so the
+other agents were stopped and nothing new was started).
 
-- **Fish photos** · reference photos: all 1,428 judged and in play (#660, #668, #672, #679, #681, #683); every circle-1
-  family has a reference cover · draw calibration #678 (Q186), its L11-L12 learning checks running · then #674: the
-  sure judged candidates enter automatically (Q180) and every fish photo in play goes to R2 (Q199, 8,308 photos, ~2.9
-  GB); after it merges, dispatch "Candidate photos" (twice if it says more wait).
-- **Fish units** · the book's families #656 (failing check being fixed) → circles #669 (Q175-Q177, Q181-Q183), stacked.
-- **New coral bar** · #638 merged · #646 (Q196 go) fixing 5 Codex findings, then merge (rules v9, apology card) · then
-  the fish recompute, silent, no card (Q200).
-- **Fish sheets** · family #675, genus #677, species #684 merged · key marks and sizes (publish directly, Pierre
-  corrects as he goes): agent stopped for quota, restart.
-- **Fish admin** · Families #655 merged · swiper #599 / #602 (Q194), mini switch #633 (Q195), Coverage #659, Photo
-  review #663, Look-alikes #667 (paused for quota) · flag ⚑ for fish #686 merged; next: fish.exclude by photo id and the
-  fish To do sections (stopped, restart).
-- **Admin Players for two subjects** (Pierre 16:28): shared list with Corals / Fish column groups, Activity and Journey
-  per subject; agent stopped for quota, restart. Photos / Spread columns #680 merged (Q191); hard photos #682 (Q192).
-- **Photo exposure** · study #670 (answered) · #685 green (Q187-Q190, Q201): merge right after #678.
-- **Fish leaderboard** (decided 11-04) and ~14 fish achievements: agent stopped for quota, restart. Species level
-  (branch A common names, branch B scientific): not started; Pierre may want a design study.
-- **Experts** · coral expert 1: 93% right, 52 -> 44% under #646; coral expert 2: 45/45 (one miss on purpose), too
-  early; fish expert: 91%, 29 -> 23%, her easy misses look like real look-alikes (ease 4 generous there).
-- Others: #666 candidate auto-refill (green), #637 (needs its learnsim before/after), #664 coherence review (to read).
+- **Merged after 17:00**: #656 the book's families · #669 every circle counts, circles 2-3 open by themselves · #678
+  fish draw calibration (Q186) · #674 judged candidates in play by themselves, every fish photo on R2 (Q180, Q199):
+  the workflow put 4,763 more on R2, 8,582 fish photos in play, 1 failed (next Publish retries) · #646 the new coral
+  bar (rules v9, apology card when the sheet goes live at v87+) · #688 silent fish recompute (Q200) · #690 admin
+  Players shared list, Activity and Journey per subject.
+- **Ready, not merged**: #652 surprises once per player (conflicts: merge main, take main+1) · #685 photo exposure
+  (Q187-Q190, Q201) · #687 fresh look on 417 candidates (249 enter) · #682 hard photos flagged (Q192) · #599 / #602
+  swiper (Q194) and #633 mini switch (Q195), need a rebase · #659 / #663 / #667 fish admin pages, need a rebase.
+- **Stopped for quota, restart later**: fish leaderboard and ~14 achievements; fish sheet texts and sizes (publish
+  directly, Pierre corrects); fish.exclude by photo id and the fish To do sections; per-subject photo stats and Health.
+- **Not started**: the species level and the global fish score (decided 11-04); the exam over two visits; Glicko /
+  Kalman ability uncertainty.
+- **Morning report trigger disabled** (Q202) until the quota is back.
 
 ## Next
 
@@ -48,7 +41,7 @@ Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes 
 - #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
 - Coming: the fish achievements list; the admin Players columns.
 
-Last question number: Q201
+Last question number: Q202
 
 ## Pierre's hands
 
@@ -91,5 +84,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-06 ~17:00 Manila, integrator. Merged today (about 55 PRs), from 15:00: #598, #660, #671, #657, #673, #676,
-#668, #672, #638, #679, #655, #681, #683, #675, #677, #684, #686, #680. Questions Q178-Q201 answered.
+2026-11-06 ~18:35 Manila, integrator. Merged today (about 55 PRs), from 15:00: #598, #660, #671, #657, #673, #676,
+#668, #672, #638, #679, #655, #681, #683, #675, #677, #684, #686, #680, #678, #656, #669, #674, #690, #646, #688. Questions Q178-Q202 answered.
