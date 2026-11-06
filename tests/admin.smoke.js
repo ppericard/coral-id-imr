@@ -2149,7 +2149,7 @@ const WIDTHS = [390, 1280];
             () => {
               const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
               const im = c && c.querySelector('.adm-tile img');
-              return c && im && /Damselfish \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
+              return c && im && /Damselfishes \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
             },
             null,
             {timeout: 10000}

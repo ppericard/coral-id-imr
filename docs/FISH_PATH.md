@@ -32,7 +32,7 @@ is the design's shorthand, and internal identifiers may keep it.
 
 ## Levels
 
-- **Level 1, entry**: the 27 IMR entries (circle 1), as built. Unchanged.
+- **Level 1, family**: since 2026-11-06 the book's families (Pierre, 13:04: "the game's units are not the IMR entries"; 28 in circle 1, `fish.json` `families`), the IMR course a tag on the families and genera it teaches (13:38); docs/reviews/2026-11-06-fish-units-plan.md. Below, "entry" reads "family" for the game.
 - **Level 1b, IMR sub-entry** (optional): the sub-entries IMR names inside an entry (`fish.json` `sub`): Chromis, Dascyllus, Pomacentrus,
   Anemonefish (Damselfish); Bannerfish (Butterflyfish); Surgeonfish, Unicornfish (Surgeonfish & Unicornfish).
   - Opened with the others by the open-all card ("The fish welcome question and the IMR answer", below).

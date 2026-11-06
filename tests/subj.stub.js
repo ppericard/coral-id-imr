@@ -8,6 +8,7 @@ module.exports = () => {
     SUBJECTS: C.SUBJECTS,
     subjKey: C.subjKey,
     subjDev: C.subjDev,
+    renameUnits: C.renameUnits,
     sKey: name => C.subjKey(SUBJ.id, name),
     sDev: name => C.subjDev(SUBJ.id, name),
     // Only the corals here: a visit to another subject does nothing (these tests run the corals' code only).
