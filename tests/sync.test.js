@@ -1849,7 +1849,7 @@ test('v55 delete keeping answers: answers and reports anonymised (Verified 0), f
   assert.strictEqual(del.length, 1, 'the kept answer is flagged 2');
   assert.ok(a.filter(x => x[11] !== 2).every(x => x[11] === 0));
   s.post({anon: 'devanon777', anonAnswers: [ans('z1')], av: '190'});
-  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 20, 'a device never signed in stays 1');
+  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 22, 'a device never signed in stays 1');
   const st = s.post({readStats: 1, token: TOK});
   assert.ok(!(del[0][0] in st.ras), 'no ability for the deleted id');
   assert.ok(Object.keys(st.photos).length > 0, 'its answer still rates the photos');
@@ -2215,7 +2215,7 @@ const fishAns = (id, extra = {}) =>
     sp: 'Pomacentrus moluccensis',
     ...extra
   });
-test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; readAnswers serves them at 17-21, after v59's Typed and Retyped right at 15-16', () => {
+test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; readAnswers serves them at 17-21, after the Typed and Retyped right of v59 at 15-16', () => {
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000';
   s.post({
@@ -2232,7 +2232,10 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
     ]
   });
   const A = s.sheets.Answers;
-  assert.deepStrictEqual([...A.rows[0].slice(15)], ['Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown']);
+  assert.deepStrictEqual(
+    [...A.rows[0].slice(15)],
+    ['Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown']
+  );
   const R = A.rows.slice(1);
   assert.deepStrictEqual(R[0].slice(17), ['coral', 'genus', '', '', '']);
   assert.deepStrictEqual(R[1].slice(15), ['Acropra', 1, 'coral', 'genus', '', '', '']);
@@ -2247,7 +2250,14 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   assert.strictEqual(R[4][21], '');
   const rows = s.post({readAnswers: 1, token: T}).rows;
   assert.ok(rows.every(r => r.length === 22));
-  assert.deepStrictEqual([rows[0].slice(15, 17), rows[1].slice(15, 17)], [['', null], ['Acropra', 1]], 'v59 Typed and Retyped right at 15-16');
+  assert.deepStrictEqual(
+    [rows[0].slice(15, 17), rows[1].slice(15, 17)],
+    [
+      ['', null],
+      ['Acropra', 1]
+    ],
+    'v59 Typed and Retyped right at 15-16'
+  );
   assert.deepStrictEqual(
     rows.map(r => r.slice(17, 20)),
     [

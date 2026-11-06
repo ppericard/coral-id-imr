@@ -254,10 +254,10 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
     'the old log field is gone (renamed replay)'
   );
   assert.strictEqual(C.replaySubject(), 'coral');
-  assert.strictEqual(C.LOG_SUBJ, 15);
+  assert.strictEqual(C.LOG_SUBJ, 17); // after v59's Typed and Retyped right (15-16)
   assert.strictEqual(C.ansSubject({}), 'coral', 'an entry from before the subject field is a coral one');
   assert.strictEqual(C.ansSubject({s: 'fish'}), 'fish');
-  const row = (id, s) => Object.assign(Array(15).fill(''), {0: id}).concat(s === undefined ? [] : [s]);
+  const row = (id, s) => Object.assign(Array(17).fill(''), {0: id}).concat(s === undefined ? [] : [s]);
   const rows = [row('a'), row('b', ''), row('c', 'coral'), row('d', 'fish'), row('e', 'benthos')];
   assert.deepStrictEqual(
     C.subjRows(rows).map(r => r[0]),
@@ -269,7 +269,7 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
   );
   assert.deepStrictEqual(C.subjRows(null), []);
   // A tab export's header row is never a coral row.
-  assert.deepStrictEqual(C.subjRows([Object.assign(Array(15).fill('h'), {0: 'Name'}).concat(['Subject'])]), []);
+  assert.deepStrictEqual(C.subjRows([Object.assign(Array(17).fill('h'), {0: 'Name'}).concat(['Subject'])]), []);
   const log = [{id: 1}, {id: 2, s: 'fish'}, {id: 3, s: 'coral'}];
   assert.deepStrictEqual(
     C.subjEntries(log).map(a => a.id),

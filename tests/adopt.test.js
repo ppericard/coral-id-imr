@@ -1059,7 +1059,7 @@ test('fish answers: kept queued for an older script, sent from v60 under their s
   assert.deepStrictEqual(copy(b.store.get('reefid-anonq', [])), []);
   const A = s.sheets.Answers.rows.slice(1);
   assert.deepStrictEqual(
-    A.map(r => [r[7], r[15], r[16], r[17]]),
+    A.map(r => [r[7], r[17], r[18], r[19]]),
     [
       ['c1', 'coral', 'genus', ''],
       ['c2', 'coral', 'genus', ''],
