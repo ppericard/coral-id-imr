@@ -1,5 +1,5 @@
 // Fish quiz test (the taxon model, core.js SUBJECTS): runs the real app in Chromium on the fish subject and checks:
-// - the draw: fish questions only from the fish slate (circle 1, the IMR entries) until a circle is opted in; every
+// - the draw: fish questions only from the fish slate (circle 1, the book's families) until a circle is opted in; every
 //   choice a fish entry; one photo, from one observation; winks never asked as questions;
 // - circle opt-in: circle 2 offered once every IMR entry has been asked, circle 3 once the progress reaches FISH_C3;
 //   "Not now" kept; once on, their entries join the draw, never counted in the progress;
@@ -78,7 +78,7 @@ const server = http.createServer((req, res) => {
       ok = (c, m) => c || fails.push(m);
     const closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
-    ok(slateGenera().length === 27 && slateGenera().every(n => FISH.c1.includes(n)), 'the fish slate = the 27 IMR entries');
+    ok(slateGenera().length === 28 && slateGenera().every(n => FISH.c1.includes(n)), 'the fish slate = the 28 families of circle 1');
     ok(!pool().some(n => !FISH.c1.includes(n)), 'circle 1 only before any opt-in');
     // No wall (Pierre, 2026-11-06 14:17): on a fresh entry a photo under ease 4 can be drawn, rarely; the prior and the
     // aim favour the easy ones (no easyFirst gate any more).
@@ -177,8 +177,14 @@ const server = http.createServer((req, res) => {
     ok(!localStorage.getItem('reefid-anon-base'), 'no coral anonymous base from fish answers');
     // Typed names.
     const tm = x => typeMatch(x) && typeMatch(x).g;
-    ok(tm('Damselfish') === 't01' && tm('Chromis') === 't01' && tm('Pomacentridae') === 't01', 'typed: names of Damselfish');
-    ok(tm('unicornfish') === 't06' && tm('Moorish idol') === 't05', 'typed: parts and two-word names');
+    ok(
+      tm('Damselfishes') === 'f:Damselfishes' &&
+        tm('Damselfish') === 'f:Damselfishes' &&
+        tm('Chromis') === 'f:Damselfishes' &&
+        tm('Pomacentridae') === 'f:Damselfishes',
+      'typed: names of the Damselfishes'
+    );
+    ok(tm('unicornfish') === 'f:Surgeonfishes' && tm('Moorish idol') === 'f:MoorishIdol', 'typed: parts and two-word names');
     ok(!tm('Acropora'), 'typed: a genus is no fish entry');
     // Winks for a circle-1 player: made due at this count (the first threshold moved here, the counts left as they are),
     // shown, answered, never counted.
@@ -232,7 +238,7 @@ const server = http.createServer((req, res) => {
     // counted in the progress, never a duel pair.
     const sci = SETS().find(S => S.k === 'sci'),
       G = FISH.sci;
-    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the IMR entries');
+    ok(G.length > 50 && G.every(n => GX(n).rank === 'genus' && FISH.c1.includes(GX(n).parent)), 'sci: genera of the circle-1 families');
     ok(
       G.every(n => GX(n).species.every(id => GX(GX(n).parent).views && FISH.gen[GX(n).parent])) &&
         new Set(G.map(n => GX(n).name)).size === G.length,
@@ -244,15 +250,21 @@ const server = http.createServer((req, res) => {
     );
     FISH.c1.forEach(n => (st(n).pg = 0.2));
     ok(!sci.units().length, 'sci: no genus in play before an entry is at Advanced');
-    st('t02').pg = 0.72;
-    ok(sci.units().length && sci.units().every(n => GX(n).parent === 't02'), 'sci: the genera of the entry at Advanced only');
+    st('f:Butterflyfishes').pg = 0.72;
+    ok(
+      sci.units().length && sci.units().every(n => GX(n).parent === 'f:Butterflyfishes'),
+      'sci: the genera of the family at Advanced only'
+    );
     ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once an entry is at Advanced');
     const pc = progPct();
     bonusSet(true, 'sci');
-    ok(pool().some(n => GX(n).rank) && pool().every(n => !GX(n).rank || GX(n).parent === 't02'), 'sci: on, the genera in play');
+    ok(
+      pool().some(n => GX(n).rank) && pool().every(n => !GX(n).rank || GX(n).parent === 'f:Butterflyfishes'),
+      'sci: on, the genera in play'
+    );
     ok(progPct() === pc, 'sci: never counted in the progress');
     const g0 = pool().find(n => GX(n).rank),
-      e0 = 't02';
+      e0 = 'f:Butterflyfishes';
     ok(
       distractors(g0, pool(), 3).every(n => GX(n).rank === 'genus'),
       'sci: a genus question offers genera only'
@@ -262,16 +274,18 @@ const server = http.createServer((req, res) => {
       'sci: an entry question offers entries only'
     );
     ok(!UNITS.fish.pairs().some(pr => pr.some(n => GX(n).rank)), 'sci: no duel pair of genera');
-    ok(typeMatch('Chromis').g === 't01' && typeMatch('Chromis', 'genus').g === 'g:Chromis', 'sci: typed Chromis by rank');
+    ok(typeMatch('Chromis').g === 'f:Damselfishes' && typeMatch('Chromis', 'genus').g === 'g:Chromis', 'sci: typed Chromis by rank');
     // Codex review #526: a genus's WoRMS-accepted name is accepted when typed (Pseudanthias tuka is now Mirolabrichthys).
     ok(typeMatch('Mirolabrichthys', 'genus') && typeMatch('Mirolabrichthys', 'genus').g === 'g:Pseudanthias', 'sci: typed accepted genus');
+    // A common name (IMR's Anemonefish) never answers a genus question (docs/FISH_PATH.md; Codex review #656).
+    ok((typeMatch('Anemonefish', 'genus') || {}).g !== 'g:Amphiprion', 'sci: IMR common name not a genus answer');
     // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
     // wrong choice, as in the quiz); a genus card's photo is its easiest, most reference-like one, whoever took it
     // (Pierre, 2026-11-06: no source tier for fish), and a never-seen photo of Pierre's gets no draw bonus.
-    st('t02').pg = 0.2;
-    st('t04').pg = 0.72;
+    st('f:Butterflyfishes').pg = 0.2;
+    st('f:Spadefishes').pg = 0.72;
     const pl = pool().filter(n => GX(n).rank);
-    ok(pl.length === 1 && GX(pl[0]).parent === 't04', 'sci: Spadefish alone, one genus in play');
+    ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
@@ -302,7 +316,7 @@ const server = http.createServer((req, res) => {
       rb.click();
       const dl = document.querySelector('#repdlg');
       const opts = [...dl.querySelectorAll('#repgen option')].map(o => o.value);
-      ok(opts.length >= 27 && opts.includes('Damselfish'), 'report: the fish names offered ' + opts.slice(0, 3));
+      ok(opts.length >= 28 && opts.includes('Damselfishes'), 'report: the fish names offered ' + opts.slice(0, 3));
       ok(!opts.some(o => /^t\d+$/.test(o)), 'report: no teaching id offered ' + opts.filter(o => /^t\d+$/.test(o)).slice(0, 3));
       const txt = dl.textContent;
       ok(/Right family, if you know/.test(txt) && /Several fish species/.test(txt), 'report: the fish words');
@@ -969,7 +983,7 @@ const server = http.createServer((req, res) => {
     }
     const kept = await q.evaluate(() => ({
       saved: localStorage.getItem('reefid-sync-subject'),
-      fp: JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}').t01
+      fp: JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}')['f:Damselfishes'] // t01 stored before the switch, moved at load
     }));
     if (kept.saved !== '"fish"' || !kept.fp || kept.fp.ok !== 4)
       ui.push(`${width}px ${user}: saved Fish or fish progress lost ${JSON.stringify(kept)}`);
@@ -1222,8 +1236,8 @@ const server = http.createServer((req, res) => {
     await q.evaluate(() => syncPush());
     const r = await q.evaluate(() => ({
       subj: SUBJ.id,
-      saved: JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}').t01,
-      here: P.t01,
+      saved: JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}')['f:Damselfishes'],
+      here: P['f:Damselfishes'],
       fishHold: localStorage.getItem('reefid-fish-hold'),
       coralHold: localStorage.getItem('reefid-hold')
     }));
@@ -1325,8 +1339,8 @@ const server = http.createServer((req, res) => {
     await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH, null, {timeout: 30000});
     await q.evaluate(() => syncPush());
     const o = await q.evaluate(() => ({
-      here: (P.t01 || {}).ok,
-      sent: SAVES.length ? (JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}').t01 || {}).ok : null
+      here: (P['f:Damselfishes'] || {}).ok,
+      sent: SAVES.length ? (JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}')['f:Damselfishes'] || {}).ok : null
     }));
     if (o.here !== 10 || o.sent !== 10) rv.push(`a saved copy without fish keys erased the fish progress: ${JSON.stringify(o)}`);
     // (8) Tools › Type the genus with Fish chosen: the corals' genera (the Tools are the corals'; Codex review #442: it
@@ -1389,7 +1403,7 @@ const server = http.createServer((req, res) => {
         e => ({err: String(e && e.message)})
       )
     );
-    if (a.subj !== 'coral' || a.fish || a.cached || b2.subj !== 'fish' || b2.n !== 27)
+    if (a.subj !== 'coral' || a.fish || a.cached || b2.subj !== 'fish' || b2.n !== 28)
       rv.push(`fish.json failing at start-up: ${JSON.stringify(a)} then ${JSON.stringify(b2)}`);
     await c4.close();
   }
@@ -1436,8 +1450,11 @@ const server = http.createServer((req, res) => {
       };
       const starters = slateGenera().filter(n => GX(n).first),
         ph = (t, f) => GX(t).views.wide.find(y => y.f === f) || {};
-      ok(starters.slice().sort().join() === 't01,t02,t03,t06', `the starter core from fish.json: ${starters}`);
-      // The card: a reference-level photo where the entry has one (core.js refLevel, refFirst), else its easiest.
+      ok(
+        starters.slice().sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes',
+        `the starter core from fish.json: ${starters}`
+      );
+      // The card: a reference-level photo where the family has one (core.js refLevel, refFirst), else its easiest.
       ok(
         starters.every(n => {
           const L = GX(n).views.wide,
@@ -1473,12 +1490,12 @@ const server = http.createServer((req, res) => {
       ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
       ok(under <= gated / 3, `${under} of ${gated} photos under ease 4 before Open Water: the easy ones should dominate`);
       const cards = Object.keys(introMap()).filter(n => introMap()[n][3] === 's');
-      ok(cards.sort().join() === 't01,t02,t03,t06', `the first cards: ${cards}`);
+      ok(cards.sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes', `the first cards: ${cards}`);
       // The draw itself, on every circle-1 entry before and after Open Water.
       FISH.c1.forEach(n => {
         const L = GX(n).views.wide,
           es = L.map(p => p.e || 3).sort((a, b) => b - a),
-          cut = Math.min(4, es[2]),
+          cut = Math.min(4, es[Math.min(3, es.length) - 1]), // as easyFirst: its 3 easiest when it has fewer (the Soapfishes have 2)
           s0 = st(n).pg;
         st(n).pg = 0;
         // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
@@ -1495,7 +1512,7 @@ const server = http.createServer((req, res) => {
         const s1 = {...st(n)};
         Object.assign(st(n), {pg: 0.6, ok: 10, ko: 2, th: 0.5});
         let low = 0;
-        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
+        for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
         Object.keys(st(n)).forEach(k => delete st(n)[k]);
         Object.assign(st(n), s1, {pg: s0});

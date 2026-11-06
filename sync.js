@@ -284,6 +284,10 @@ function mergeSubject(j, d, S, mine) {
   try {
     R = JSON.parse(d[sKey('progress')] || '{}') || {};
   } catch (e) {}
+  // The old unit ids a device on an older app may still save (core.js SUBJECTS renamed: the fish entries became families),
+  // and this device's merge baseline from before the switch, both under the new ids, so nothing counts twice.
+  R = renameUnits(S, R);
+  if (SYNC[BK]) SYNC[BK] = renameUnits(S, SYNC[BK]);
   const rr = JSON.parse(d[sKey('reset')] || '""'),
     lr = store.get(sKey('reset'), '');
   // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
@@ -1215,10 +1219,10 @@ function signIn(name, pin, j) {
   let mine = false;
   SUBJECTS.forEach((S, i) => {
     const pk = subjKey(S.id, 'progress'),
-      here = store.get(pk, {}) || {};
+      here = renameUnits(S, store.get(pk, {}) || {});
     let R = {};
     try {
-      R = JSON.parse(j.data[pk] || '{}') || {};
+      R = renameUnits(S, JSON.parse(j.data[pk] || '{}') || {}); // old unit ids under the new ones (core.js SUBJECTS renamed)
     } catch (e) {}
     // The account's copy is this subject's merge baseline, played here or not (Codex review #442: a subject never played
     // on this device took the account's progress through loadData with no baseline, and the next sync added it again).

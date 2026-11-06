@@ -296,7 +296,18 @@
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', 'learn/genus/' + g2),
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', 'home'),
       // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
-      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', 'fish/practice/quiz'),
+      rp(
+        5,
+        'Eli Demo',
+        'wrong',
+        'f:Damselfishes',
+        'f:MoorishIdol',
+        '',
+        'Demo fish report: not a damselfish.',
+        'quiz',
+        'fi464458713',
+        'fish/practice/quiz'
+      ),
       // Sheet v55: an account deleted with its answers kept: its reports stay without the name, never verified.
       Object.assign(
         rp(
