@@ -85,6 +85,9 @@ const GATES = {
     return logOk({s: 'fish'}, v);
   },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
+  // The per-format offsets (core.js fmtsOf, ?stats=1 fmt; Q138): from the version that serves them and replays with them;
+  // before, every offset is 0 (the app's PFMT, the admin's SFMT, the device's replay on top of the sheet's).
+  FMT_SHEET: v => Object.keys(require('../core.js').fmtsOf({...(v === undefined ? {} : {v}), fmt: {k2: [1, 30]}})).length > 0,
   PGD_SHEET: (v, N) => {
     const gdOf = fn('model.js', 'const gdOf = ', '\n', 'gdOf', {PGD_SHEET: N});
     return Object.keys(gdOf({...(v === undefined ? {} : {v}), gd: {Acropora: [0.2, 30]}})).length > 0;

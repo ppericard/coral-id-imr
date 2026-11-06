@@ -581,7 +581,7 @@
     // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      opt = {gen, mem: st.mem, conf: st.conf};
+      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}};
     const rep = replayProgress(A, opt);
     const savedOf = (u, R) => {
       const old = JSON.parse(u.data['reefid-sync-coral-progress']),
@@ -690,7 +690,16 @@
         p = (right + 1) / (n + 2);
       ras[k] = [Math.round(Math.log(p / (1 - p)) * 100) / 100, n];
     });
-    return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair, ...photoMemOf(A), gd: genusOffsetsOf(A)};
+    // v68: the per-format offsets (core.js fmtOffsetsOf), from a demo script of that version (?v=68).
+    return {
+      ok: true,
+      photos: eloOf(A),
+      ras,
+      conf: confusionOf(A).pair,
+      ...photoMemOf(A),
+      gd: genusOffsetsOf(A),
+      ...(V >= FMT_SHEET ? {fmt: fmtOffsetsOf(A)} : {})
+    };
   }
   function userList() {
     const by = {},
@@ -779,7 +788,7 @@
           start = json('reefid-sync-coral-start'),
           rep = replayProgress(
             A.filter(r => r[0] === id),
-            {gen: S.gen, mem: st.mem, conf: st.conf, starts: start ? {[id]: start} : {}}
+            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, starts: start ? {[id]: start} : {}}
           )[id],
           G = replayedOf(rep, P);
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];

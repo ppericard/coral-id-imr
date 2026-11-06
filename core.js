@@ -468,7 +468,7 @@
       // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
       admin: {
         cur: 'fish',
-        pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list'],
+        pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list', 'photos/families'],
         origins: [
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
@@ -1133,6 +1133,81 @@
       .filter(Boolean).length;
     return n >= 2 && n < 4 ? 1 / n : 0.25;
   };
+  // Question formats (analysis.js FORMATS, whose fmtOf this is: tests/analysis.test.js checks both agree), from the mode
+  // quiz.js logs and the number of choices shown: typed (|t), the Duel tab (quiz-duel…), a look-alike duel in the quiz
+  // (|d), an exam question (|x), "Again: A or B?" (2 choices), 4 shown of which 3 or 2 plausible (|k3, |k2), 4 plausible.
+  function fmtOf(m, nch) {
+    m = String(m || '');
+    if (TYPED_RE.test(m)) return 'typed';
+    if (m.indexOf('quiz-duel') === 0) return 'duel';
+    if (/\|d(\||$)/.test(m)) return 'qduel';
+    if (/\|x(\||$)/.test(m)) return 'exam';
+    if (nch === 2) return 'again';
+    const k = /\|k(\d)/.exec(m);
+    return k && Number(k[1]) < 4 ? (Number(k[1]) >= 3 ? 'k3' : 'k2') : 'k4';
+  }
+  // Per-format offsets (Pierre, 2026-11-06, Q138; docs/LEARNING.md "Per-format offsets"): on the real answers a question's
+  // format moved its success beyond what the app's guess rate 1/k allows for (2 plausible choices among 4 shown: right
+  // 87% where the app expected 74%; typed: 76% where it expected 82%). Each format f gets an offset d_f, in logits, added
+  // to the app's log-odds: P(right) = 1/k + (1 - 1/k) sig(ability - difficulty + d_f) (positive: easier than the app
+  // thought). Fitted by the sheet (Code.gs stats_, ?stats=1 fmt) on the trusted answers with their logged expectation e,
+  // the app's log-odds then x = logit((e - 1/k) / (1 - 1/k)), clamped to 1-99%: Newton's method on d_f with a normal prior
+  // N(0, FMT.SD^2) (a format with few answers stays near the app's own value, 0), for a format with FMT.N answers or more.
+  // The guess rate stays 1/k: fitted with it, the two were not identifiable on the real log (estimates correlated -0.9,
+  // the 2-choice guess running off to 0.87 with its offset to minus infinity). Served {format: [offset, answers]}; a
+  // format absent counts 0 (fmtOff). The logged e stays the app's expectation before the offset, so the fit always reads
+  // the same quantity.
+  const FMT = {N: 20, SD: 1};
+  function fmtOffsetsOf(rows) {
+    const trust = trustOf(rows),
+      by = {},
+      sg = x => 1 / (1 + Math.exp(-x));
+    rows.forEach(r => {
+      const m = String(r[5] || ''),
+        e = r[7];
+      if (!trust[r[0]] || m.indexOf('quiz') !== 0 || !r[2] || typeof e !== 'number' || !isFinite(e)) return;
+      const g = guessOf(m, r[10]),
+        q = Math.min(0.99, Math.max(0.01, g < 1 ? (e - g) / (1 - g) : 0.5)),
+        f = fmtOf(
+          m,
+          String(r[10] || '')
+            .split(/\s+/)
+            .filter(Boolean).length
+        );
+      (by[f] = by[f] || []).push([Math.log(q / (1 - q)), g, r[4] ? 1 : 0]);
+    });
+    const out = {};
+    Object.keys(by).forEach(f => {
+      const L = by[f];
+      if (L.length < FMT.N) return;
+      let d = 0;
+      for (let it = 0; it < 50; it++) {
+        let gr = -d / FMT.SD ** 2,
+          h = 1 / FMT.SD ** 2;
+        L.forEach(([x, g, y]) => {
+          const s = sg(x + d),
+            p = Math.min(1 - 1e-9, Math.max(1e-9, g + (1 - g) * s)),
+            j = (1 - g) * s * (1 - s);
+          gr += ((y - p) / (p * (1 - p))) * j;
+          h += (j * j) / (p * (1 - p));
+        });
+        const st = Math.min(1, Math.max(-1, gr / h));
+        d += st;
+        if (Math.abs(st) < 1e-6) break;
+      }
+      out[f] = [Math.round(d * 100) / 100, L.length];
+    });
+    return out;
+  }
+  // The offset of a question's format, from the sheet's fmt ({} or null with an older sheet: 0); f a format key (fmtOf).
+  const fmtOff = (F, f) => {
+    const o = F && F[f];
+    return Array.isArray(o) && typeof o[0] === 'number' && isFinite(o[0]) ? o[0] : 0;
+  };
+  // The sync script version that serves fmt and replays with it (Code.gs v77): the app reads fmt only from a reply that
+  // says v >= FMT_SHEET (rule D4), so a replay never undoes what the app did live; before it, every offset is 0.
+  const FMT_SHEET = 77;
+  const fmtsOf = j => (j && j.v >= FMT_SHEET && j.fmt && typeof j.fmt === 'object' ? j.fmt : {});
   // How sure a player's level is (Pierre, 2026-11-03: a level from 35 answers at 97% right sat above one from 245):
   // {player id: 95% margin, in level units}, 1.96 / sqrt(Fisher information) gathered on the same replay as the level
   // itself (eloReplay, Code.gs stats_ ras; Codex review #375): an answer that was a near-sure success tells little, so a
@@ -2688,7 +2763,9 @@
   //   sheet v5): d0 the photo difficulty (the mean over its photos, + PICKD.SINGLE for a photo alone), fam the photo
   //   memory (memFam), cf the known mix-ups term (model.js confTerm), look (a genus it is confused with among the
   //   choices: a boolean, or a function called after the offers are counted, as the game always checked it), R the recall
-  //   of a comeback question (1 otherwise), Rc the recall of the genus given (1 otherwise);
+  //   of a comeback question (1 otherwise), Rc the recall of the genus given (1 otherwise), df the offset of the question's
+  //   format (fmtOff, Q138: 0 without the sheet's fmt), which the ability steps' expectation takes (the question that
+  //   much easier) and nothing else does yet: the logged e and the progress weights stay without it;
   // - p the first-launch answer's prior (playerStart), sec the seconds, timed (the time weighs a right answer's steps,
   //   rtWeight), rt (the seconds are recorded, rtAdd; true unless false);
   // - th: the ability the weights use, only for a row logged before the scorer (its logged th; the replay then
@@ -2721,6 +2798,7 @@
       cf = Number(q.cf) || 0,
       R = typeof q.R === 'number' ? q.R : 1,
       p = Number(q.p) || 0,
+      df = Number(q.df) || 0,
       dm = d0 + fam + cf,
       out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
     if (scored) {
@@ -2734,7 +2812,7 @@
       // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
       // step weighed by its time against the player's earlier ones.
       const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
-      eloStep(P, t, s, ok, dm, k, rw, p);
+      eloStep(P, t, s, ok, dm - df, k, rw, p);
       Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(th0 - dm)});
     }
     // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
@@ -2742,7 +2820,7 @@
     if (P[LEVEL]) P[LEVEL][ok ? 'ok' : 'ko']++;
     else P[LEVEL] = levelSeed(P);
     if (scored) {
-      eloStep(P, LEVEL, P[LEVEL], ok, dm, k, out.rw, p);
+      eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw, p);
       // One surprise counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md
       // §2a; docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it stands after this
       // answer's step on it, so its levelMove carries only the level's moves from the other answers. Taken against the
@@ -2782,8 +2860,9 @@
   // Code.gs v61, and the replay rows' index LOG_SC, 22): the inputs scoreAnswer had that the replay cannot rebuild from the log
   // (Pierre, 2026-11-06, Q132: "replayed" means what the game scored, whenever and wherever it is replayed).
   // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
-  // recall R, g the recall Rc of the genus given, h the hint revealed after the answer; f, c, r, g and h left out at their
-  // default (0, 0, 1, 1, none). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
+  // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (Q138:
+  // the sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c,
+  // r, g, h and o left out at their default (0, 0, 1, 1, none, 0). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
   // exactly what it used. x: the record as an object or its JSON (a sheet cell); null when it has no d (a row logged
   // before the scorer, or broken).
   const SC_MAX = 50;
@@ -2807,6 +2886,7 @@
     if (scNum(o.r) !== null && scNum(o.r) !== 1 && o.r >= 0 && o.r <= 1) out.r = scNum(o.r);
     if (scNum(o.g) !== null && scNum(o.g) !== 1 && o.g >= 0 && o.g <= 1) out.g = scNum(o.g);
     if (typeof o.h === 'string' && /^[A-Za-z0-9_.-]{1,120}$/.test(o.h)) out.h = o.h;
+    if (scNum(o.o)) out.o = scNum(o.o);
     return out;
   }
   // The game's inputs rounded as they are logged (scoreRec), before it scores with them.
@@ -2816,10 +2896,12 @@
     fam: r3(q.fam || 0),
     cf: r3(q.cf || 0),
     R: r3(q.R === undefined ? 1 : q.R),
-    Rc: r3(q.Rc === undefined ? 1 : q.Rc)
+    Rc: r3(q.Rc === undefined ? 1 : q.Rc),
+    df: r3(q.df || 0)
   });
   // The record of a question scored by scoreAnswer (q after scoreIn, res its result): what quiz.js answer logs as sc.
-  const scoreLog = (q, res) => scoreRec({d: q.d0, f: q.fam, c: q.cf, l: res.look ? 1 : 0, r: q.R, g: q.Rc, h: q.hint || undefined});
+  const scoreLog = (q, res) =>
+    scoreRec({d: q.d0, f: q.fam, c: q.cf, l: res.look ? 1 : 0, r: q.R, g: q.Rc, h: q.hint || undefined, o: q.df});
 
   // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
   // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
@@ -2888,6 +2970,12 @@
       at: '2026-11-06',
       why: "One surprise counted once (Q137 part 1): the genus shown takes the global level as it stands after this answer's step on it, so levelMove carries only the level's moves from the other answers (a first right answer moved a genus 0.30, then 0.22 more through the level)",
       msg: RV_CARD
+    },
+    {
+      v: 8,
+      at: '2026-11-06',
+      why: "Per-format offsets (Pierre, 2026-11-06, Q138; sheet v77): the ability steps of the genus and the global level expect each question with its format's offset from the real answers (fmtOffsetsOf: 2 plausible choices among 4, Again, Duel tab, typed...), so a 2-choice question right more often than 1 in 2 explains no longer over-credits the ability; an answer's scoring record logs the offset it was scored with (o), a row logged before the scorer takes today's",
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -2933,6 +3021,8 @@
   // ?stats=1 mem; the prior without), conf (the pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}:
   // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js), time
   // (false: no response time, the rule before rules version 4),
+  // fmt (the per-format offsets, ?stats=1 fmt, sheet v77, rules version 8: for a row without a scoring record; a row
+  // with one replays the offset it logged, o; none: 0),
   // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
   // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, cf, k, w, look}).
   // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at, rt}},
@@ -3102,6 +3192,7 @@
       mem = memOf(o.mem),
       conf = o.conf || {},
       since = o.since || {},
+      fmt = o.fmt || {},
       memory = o.memory !== false,
       time = o.time !== false,
       out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
@@ -3165,7 +3256,8 @@
           // Logged by the scorer (Q132): what the game scored with, as it was then; the memory as logged unless the
           // replay leaves it out (memory: false, a what-if).
           Object.assign(q, {d0: sc.d, fam: memory ? sc.f || 0 : 0, cf: sc.c || 0, look: !!sc.l, R: sc.r === undefined ? 1 : sc.r});
-          Object.assign(q, {Rc: sc.g === undefined ? 1 : sc.g, hint: sc.h});
+          // The format's offset as logged (o, Q138): 0 for an answer scored before the offsets or without them.
+          Object.assign(q, {Rc: sc.g === undefined ? 1 : sc.g, hint: sc.h, df: sc.o || 0});
         } else if (replayable) {
           // A row logged before the scorer: its difficulty recovered from the logged e (rounded to 0.01), its memory and
           // mix-ups term rebuilt with today's pooled stats, its look-alike test after the offers, as the game ran it.
@@ -3175,7 +3267,9 @@
             dl = th - Math.log(qq / (1 - qq)), // the difficulty in the logged expectation
             // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
             d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0);
-          Object.assign(q, {d0: d, fam: memory ? fam : 0, cf, th, look: () => chs.some(x => lookOf(pl.P, t, x))});
+          // The format's offset from today's pooled fit (fmt, sheet v77, rules version 8), as its memory and mix-ups.
+          const df = fmtOff(fmt, fmtOf(mode, chs.length));
+          Object.assign(q, {d0: d, fam: memory ? fam : 0, cf, th, df, look: () => chs.some(x => lookOf(pl.P, t, x))});
         }
         const res = scoreAnswer(pl.P, q);
         if (replayable) {
@@ -4023,6 +4117,12 @@
     playSplit,
     trustOf,
     guessOf,
+    fmtOf,
+    FMT,
+    fmtOffsetsOf,
+    fmtOff,
+    FMT_SHEET,
+    fmtsOf,
     TRUST,
     PHOTO_W,
     PLAYER0,

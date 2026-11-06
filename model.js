@@ -38,9 +38,12 @@ const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.
 // docs/LEARNING.md "Beginners and experts".
 // core.js aimOf: the miss weight (core.js pgMissW) and the sheet's full replay take the same aim.
 const aimP = () => aimOf((P[LEVEL] || {}).th || 0);
-const aimOff = (k = 4) => {
+// df: the format's offset (core.js fmtOff, the sheet's PFMT; Pierre, 2026-11-06, Q138): a format the players find easier
+// than its guess rate allows (df > 0, e.g. 2 plausible choices among 4) gets a photo that much harder, so the question is
+// still aimed at aimP in its format; 0 with an older sheet (the aim as before).
+const aimOff = (k = 4, df = 0) => {
   const x = (aimP() - 1 / k) / (1 - 1 / k);
-  return Math.log(x / (1 - x));
+  return Math.log(x / (1 - x)) - df;
 };
 // The schedule of the format (step 1): points [ability, look-alike traps, share of single-view questions], a straight
 // line between them, flat outside. Traps: none on a genus's very first question (ability 0), one from 0.18 (after the
@@ -95,8 +98,9 @@ const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + CAL.U / (1 + nAnswers(p) / CAL.N
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown, K9).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
-// PICKD.P in that format (aimOff).
-function photoSet(n, skip, shift = 0, k = 4) {
+// PICKD.P in that format (aimOff); f: its format (core.js fmtOf: 'k4', 'again', 'duel', 'typed'…), whose offset the aim
+// takes (fmtOff, PFMT).
+function photoSet(n, skip, shift = 0, k = 4, f = '') {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
@@ -124,7 +128,7 @@ function photoSet(n, skip, shift = 0, k = 4) {
     // at the start by the difficulty engine itself): the target sits early logits lower on a unit with few answers,
     // fading as PDIFF.W / (PDIFF.W + answers on it); 0 for the corals (their target as before).
     lean = calibOf(SUBJ).early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
-    tgt = ability(n) + shift - aimOff(k) - (single ? PICKD.SINGLE : 0) - lean;
+    tgt = ability(n) + shift - aimOff(k, fmtOff(PFMT, f)) - (single ? PICKD.SINGLE : 0) - lean;
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
@@ -988,6 +992,11 @@ let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
 // right once, right twice or more, estimated by the sheet from every trusted answer; the prior (the old fixed rule)
 // with an older sheet or offline. famOf: the offset of the photos of a question, as the player knows them now.
 let PMEM = memOf((store.get('reefid-photo-stats', {}) || {}).mem);
+// Per-format offsets (Pierre, 2026-11-06, Q138; core.js fmtOffsetsOf, sheet v77 ?stats=1 fmt): {format: [offset, answers]},
+// how much easier (in logits) the players found each question format than its guess rate 1/k allows, added to the
+// expectation of the ability steps (quiz.js answer) and taken off the photo's aim (aimOff); read only from a sheet that
+// reports v >= FMT_SHEET (rule D4, core.js fmtsOf): {} before, every offset 0.
+let PFMT = fmtsOf(store.get('reefid-photo-stats', {}));
 // Progress saved before the photo memory, recalculated once and silently (Pierre, 2026-11-03: no pop-up, the bars move
 // down 1-3 points; core.js memRecalc): every genus record not marked yet (s.pm), at load and after each pull of the
 // synced progress (sync.js mergeSaved), and in quiz.js answer before a record's first answer. Saved and synced when it

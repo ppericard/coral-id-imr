@@ -1899,7 +1899,7 @@ const v55 = () => {
     "oldApp_('load', 'Ben'); sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ben (3000 per 6 h)'])",
     s.ctx
   );
-  s.cache.board14 = s.cache.achs15 = s.cache.stats15 = '{}';
+  s.cache.board14 = s.cache.achs15 = s.cache.stats17 = '{}';
   return s;
 };
 const rplAdd = (s, ...names) =>
@@ -1920,7 +1920,7 @@ test('v55 delete everything: answers, reports, page summaries, name mentions and
   assert.match(tabText(s, 'Events'), /\(~deleted [^)]+\)/);
   assert.match(tabText(s, 'Alerts'), /n:~deleted \S+ \(3000/);
   assert.ok(/Ben/.test(tabText(s, 'Removed')), 'the tombstone stays');
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined], 'caches cleared');
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined], 'caches cleared');
   assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).error, 'gone');
 });
 
@@ -1948,7 +1948,7 @@ test('v55 merge clears the caches and moves name mentions to the name it joined'
   const s = v55();
   const m = s.post({userMerge: {from: 'Ben', into: 'Ana', data: prog(4)}, token: TOK});
   assert.strictEqual(m.ok, true);
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined]);
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined]);
   assert.match(tabText(s, 'Events'), /\(Ana\)/);
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')));
 });
