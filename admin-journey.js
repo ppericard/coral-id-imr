@@ -19,8 +19,8 @@ let JSORT = 'met';
 // (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03), and the first-launch question
 // reefid-sync-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet; 2026-11-03). name -> null while loading.
 // The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
-function journeyCards(name) {
-  const S = savedOf(name);
+function journeyCards(name, T = ASUBJ) {
+  const S = savedFor(name, T);
   return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start};
 }
 const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
@@ -29,7 +29,7 @@ const JSTART = {tour: 'in the welcome tour', card: 'on the card before the quiz'
   JFB = {lo: 'harder than predicted by', hi: 'easier than predicted by'};
 // "I know corals well" etc.; inferred (an existing player with CHOICE.ASK answers or more, never asked): said so.
 // An answer's words (core.js startText): the corals' question, whose record (reefid-sync-coral-start) the journey reads.
-const jSaid = c => (startText(SUBJECTS[0].id, c) || [c])[0];
+const jSaid = c => (startText(ASUBJ.id, c) || [c])[0];
 // jorder: begin
 // The Cards list in time order (Pierre, 2026-11-05: Nov 4 rows came before Nov 2 ones): items [time or null, html],
 // the timed ones oldest first, the untimed ones after them in their own order.
@@ -79,10 +79,11 @@ const jName = g => (FISHA && FISHA.gen[g] ? FISHA.gen[g].name : g),
   jOne = (S = ASUBJ) => S.one[0].toUpperCase() + S.one.slice(1);
 
 // Everything the page shows, from one player's answers in time order.
-function journeyOf(R, full = true) {
+function journeyOf(R, L = slateOf(DATA)) {
   // The slate as the app counts it (core.js slateOf, as app.js slateGenera): the IMR coral slate and BENTHIC (Millepora).
   // A subject the admin does not replay: the units the player met (no total, no bonus mark).
-  const slate = new Set(full ? slateOf(DATA) : R.map(r => r[2])),
+  // L null (a subject whose units are not read yet): the units the player met (no total, no bonus mark).
+  const slate = new Set(L || R.map(r => r[2])),
     G = {},
     acc = [],
     exp = [],
@@ -190,10 +191,13 @@ function renderJourney(name, anonId = '') {
   status();
   // One journey per subject (Pierre, 2026-11-06: "Journey is per mode, necessarily"), under the subject's prefix: the
   // page's own Corals | Fish shows the player's answers in each and opens the other (the header switch keeps the page
-  // too). A subject the admin does not replay (SUBJECTS replay false) shows what its answers say: no progress, cards,
-  // learned units, Elo or sheets opened, which come from the replayed subject's model and saved copy.
-  const full = !!ASUBJ.replay;
-  if (!full && !FISHA) fishAdmin().then(() => cur === here && FISHA && render());
+  // too). Every subject's progress is replayed here from its answers (admin.js progOf, unitsOf; Pierre, 2026-11-06:
+  // "everything that helps me follow how players' progress goes"), with its saved copy's cards and mastery exams; the
+  // Elo and the genus sheets opened are the replayed subject's (SUBJECTS replay) only, from the sheet.
+  const M = unitsOf(ASUBJ),
+    full = !!M,
+    own = !!ASUBJ.replay;
+  if (!M && !FISHA) fishAdmin().then(() => cur === here && FISHA && render());
   // A subject's rows of this player (u, found below); an archived record's are kept apart from rowsOf (sheet v58 flag 2;
   // Codex review #690).
   const jRows = S => (u.arch ? subjRows(ANS.all || ANS.rows || [], S.id) : rowsOf(S)).filter(r => r[0] === u.id),
@@ -231,10 +235,10 @@ function renderJourney(name, anonId = '') {
     bindJReload();
     return;
   }
-  const J = journeyOf(R, full),
+  const J = journeyOf(R, M && M.slate),
     total = J.slate.size,
-    of = full ? `/${total}` : '', // met out of the slate, for the replayed subject only
-    lv = full && RAS[u.id] ? RAS[u.id][0] : null,
+    of = full ? `/${total}` : '', // met out of the slate, once the subject's units are read
+    lv = own && RAS[u.id] ? RAS[u.id][0] : null,
     // The photo quiz apart from the Duel tab (core.js playSplit; Pierre, 2026-11-03).
     sp = playSplit(R)[R.length ? R[0][0] : ''] || {q: [0, 0], q50: [0, 0], d: [0, 0]},
     sLen = J.S.map(s => s.length).sort((a, b) => a - b),
@@ -249,11 +253,11 @@ function renderJourney(name, anonId = '') {
       .sort((a, b) => a - b);
 
   // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
-  const C = !full ? {none: 1, map: {}, offer: null} : anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name),
+  const C = !full ? {none: 1, map: {}, offer: null} : anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name, ASUBJ),
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
     // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
-    PG = full ? progOf(anonId ? {id: anonId, anon: 1} : u, true) : null,
+    PG = full ? progOf(anonId ? {id: anonId, anon: 1} : u, true, ASUBJ) : null,
     RP = full && replayOn(),
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
@@ -429,13 +433,13 @@ function renderJourney(name, anonId = '') {
             .join('')}</table>`
         : '<p class="note">None</p>'
     }${
-      full && u.review
+      own && u.review
         ? `<h3>To review</h3><p>${u.review
             .split(', ')
             .map(g => `<i>${esc(g)}</i>`)
             .join(', ')}</p>`
         : ''
-    }${full && notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(g)}</i>`).join(', ')}</p>` : ''}</section>`;
+    }${full && notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(jName(g))}</i>`).join(', ')}</p>` : ''}</section>`;
 
   // 3. Every genus asked, in the order they were met (or easiest / hardest first).
   const rows = Object.entries(J.G).sort((a, b) =>
@@ -461,7 +465,7 @@ function renderJourney(name, anonId = '') {
     return `<span title="${esc(jTime(cardT(e)))} · asked ${later === 1 ? 'at the next question' : `${later} questions later`}">#${n} · ${jDate(cardT(e))}</span>`;
   };
   // A genus's bar (core.js scoreOf) replayed, and the saved copy's when it differs.
-  const SP = (!anonId && (PSAVED[name] || {}).P) || null,
+  const SP = (!anonId && (savedFor(name, ASUBJ) || {}).P) || null,
     genProg = g => {
       if (!PG) return '…';
       const v = Math.round(100 * scoreOf(PG.G[g], PG.G, g)),
@@ -610,7 +614,7 @@ function renderJourney(name, anonId = '') {
       // The sheet's level chain (stats_ ras, the photo Elo's player term) ± its 95% margin (Pierre, 2026-11-05: the signed
       // level read as good or bad); the level in its title. Not the number players see since v63 (Q134: they see the app's
       // '~level'): it is the one level every device has, signed in or not, and the one the margin (levelMargin) is for.
-      ...(full ? [['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])]] : []),
+      ...(own ? [['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])]] : []),
       [`${jMany()} met`, `${J.marks.length}${of}`],
       // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never
       // signed in.
@@ -634,8 +638,9 @@ function renderJourney(name, anonId = '') {
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
       ...(ZM.length ? [['Enlarged', pct(ZM.filter(Boolean).length, ZM.length)]] : [])
     ]) +
-    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${full ? sheetsSec : ''}${daysSec}</div>`;
+    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${own ? sheetsSec : ''}${recentSessions(R, {own: 1, user: anonId ? {id: anonId, anon: 1} : u})}${daysSec}</div>`;
   bindJReload();
+  bindSess(); // the sessions unfold under their row (admin.js)
   pagesFresh(here); // read again once stale (admin.js)
   $v.querySelectorAll('[data-jsort]').forEach(
     b =>
@@ -786,17 +791,15 @@ const sessRows = id => {
 // exam: a genus learned now (PG, progOf's full replay) counts as learned from the time it was passed. Memoized.
 const SPROG = new Map();
 function sessProg(id, all, L, S, PG) {
-  const key = id + '|' + L[0][1],
+  const key = ASUBJ.id + '|' + id + '|' + L[0][1],
     m = SPROG.get(key);
   if (m && m.ans === ANS && m.S === S && m.PG === PG && m.mem === SMEM && m.n === L.length) return m.v;
   const ok = S && !S.err,
     reset = ok && S.reset ? Date.parse(S.reset) : 0,
+    M = unitsOf(ASUBJ),
     o = {
-      gen: DATA.gen,
-      mem: SMEM,
-      conf: SCONF,
-      fmt: SFMT,
-      ...domReplay(),
+      gen: M.gen,
+      ...statsFor(ASUBJ),
       since: reset ? {[id]: reset} : {},
       starts: ok && S.start ? {[id]: S.start} : {}
     },
@@ -815,7 +818,7 @@ function sessProg(id, all, L, S, PG) {
     },
     Pa = marked(A.P, t0 - 1),
     Pb = marked(B.P, L[L.length - 1][1] + SESS.EDGE),
-    slate = slateOf(DATA),
+    slate = M.slate,
     prog = {};
   new Set(L.flatMap(r => [r[2], r[3]])).forEach(
     g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g], Pa, g), scoreOf(Pb[g], Pb, g)])
@@ -826,13 +829,15 @@ function sessProg(id, all, L, S, PG) {
 }
 // The summary drawn under a session's row (admin.js recentSessions): id the player's anonymous id, L the session's
 // answers, name the player's name when signed in (their saved copy: cards, offer, achievements, learned genera).
-function sessionSummary(id, L, name) {
-  // A subject the admin does not replay (SUBJECTS replay false): its answers only, no saved copy read, no progress.
-  const full = !!ASUBJ.replay,
-    all = sessRows(id),
+// o (a Journey's sessions): user, the player (an archived record too), all, their rows in time order.
+function sessionSummary(id, L, name, o = {}) {
+  // The subject on screen's answers, saved copy and replay (admin.js unitsOf, savedFor, progOf); before its units are read
+  // (fishAdmin), its answers only.
+  const full = !!unitsOf(ASUBJ),
+    all = o.all || sessRows(id),
     B = all.filter(r => r[1] < L[0][1]),
-    S = name && full ? savedOf(name) : {P: {}},
-    PG = full ? progOf(name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}, true) : null,
+    S = name && full ? savedFor(name, ASUBJ) : {P: {}},
+    PG = full ? progOf(o.user || (name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}), true, ASUBJ) : null,
     RP = full && replayOn(),
     sp = RP && S && PG ? sessProg(id, all, L, S, PG) : null,
     PS = photoStats() || {},
