@@ -68,12 +68,13 @@ def fish_on(F, f, sid):
 
 
 def pid(f):
-    """The photo's identity across lists (core.js fishPid): i<iNaturalist photo id> or b<FishBase file stem>."""
+    """The photo's identity across lists (core.js fishPid): i<iNaturalist photo id> or b<FishBase file stem> (a candidate
+    fish-<species>-cand-fb-<stem> or a reference or sheet photo fb<stem>)."""
     f = str(f)
     m = re.fullmatch(r'fi(\d+)', f) or re.search(r'-cand-(\d+)[cd]?$', f)
     if m:
         return 'i' + m.group(1)
-    m = re.search(r'-cand-fb-(.+)$', f)
+    m = re.search(r'-cand-fb-(.+)$', f) or re.fullmatch(r'fb(.+)', f)  # a FishBase reference or sheet photo: fb<stem>
     return 'b' + m.group(1) if m else f
 
 

@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Source+Sans+3:wght@400;600&display=block">
 <style>
 html,body{margin:0;width:1200px;height:630px;overflow:hidden;background:#0b3f47}
-.g{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:4px;background:#0b3f47}
+.g{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:4px;background:#0b3f47}
 .g img{width:100%;height:100%;object-fit:cover;display:block}
 .c{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:26px;padding:30px 44px 32px 34px;border-radius:22px;background:rgba(9,52,59,.88);box-shadow:0 10px 40px rgba(0,0,0,.45);color:#fff}
 .c img{width:112px;height:112px}
@@ -10,12 +10,30 @@ h1{margin:0;white-space:nowrap;font:700 96px/0.95 'Barlow Condensed',sans-serif;
 p{margin:8px 0 0;white-space:nowrap;font:600 30px/1.2 'Source Sans 3',sans-serif;color:#d6f1f3}
 small{display:block;white-space:nowrap;margin-top:6px;font:400 22px/1.2 'Source Sans 3',sans-serif;color:#a9d3d8}
 </style></head><body>
-<!-- The six photos from R2 (core.js PHOTO_BASE): they have an online original, so they live on R2 only (Photos out of the repo, step 2). -->
-<div class="g"><img src="https://pub-934250f83b884a4f890497f2027ce251.r2.dev/img/acropora-wide-745206089.webp">
-<img src="https://pub-934250f83b884a4f890497f2027ce251.r2.dev/img/fungia-medium-746236381.webp">
-<img src="https://pub-934250f83b884a4f890497f2027ce251.r2.dev/img/lobophyllia-wide-746237102.webp">
-<img src="https://pub-934250f83b884a4f890497f2027ce251.r2.dev/img/montipora-wide-745675047.webp">
-<img src="https://pub-934250f83b884a4f890497f2027ce251.r2.dev/img/platygyra-medium-745205185.webp">
-<img src="https://pub-934250f83b884a4f890497f2027ce251.r2.dev/img/pocillopora-medium-745206581.webp"></div>
-<div class="c"><img src="../../icon.svg"><div><h1>IMR Reef ID</h1><p>Learn the coral genera of the IMR slate</p><small>Photo quiz · look-alike duels · genus sheets · Coral ID Key</small></div></div>
+<!-- Six of Pierre's own photos, corals and reef fish (Pierre, 2026-11-06: the preview should show fish too), read across
+     then down; the card hides the middle of the grid, so the fish sit in the corners. Corals from R2 (core.js PHOTO_BASE:
+     they have an online original, so they live on R2 only), fish from their iNaturalist original (CC BY, his own:
+     fish-photos.json own). Two layouts while Pierre picks: a (the default, og.jpg) 3 corals + 3 fish, b 4 corals + 2
+     fish (og.html#b: node tools/og/make_og.js b <out.jpg>). Each tile: [photo, object-position]. -->
+<div class="g" id="g"></div>
+<script>
+const R2 = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/img/', IN = 'https://inaturalist-open-data.s3.amazonaws.com/photos/';
+const T = {
+  anemonefish: [IN + '497890888/large.jpg', '50% 45%'], // Amphiprion ocellaris
+  butterflyfish: [IN + '756242658/large.jpg', '70% 45%'], // Chaetodon lunulatus
+  angelfish: [IN + '539446527/large.jpg', '50% 70%'], // Centropyge bicolor
+  branching: [R2 + 'acropora-wide-745206089.webp', '50% 50%'],
+  mushroom: [R2 + 'fungia-medium-746236381.webp', '50% 50%'],
+  meandering: [R2 + 'lobophyllia-wide-746237102.webp', '50% 50%'],
+  plating: [R2 + 'montipora-wide-745675047.webp', '50% 50%'],
+  brain: [R2 + 'platygyra-medium-745205185.webp', '50% 50%']
+};
+const V = {
+  a: ['anemonefish', 'branching', 'butterflyfish', 'brain', 'mushroom', 'angelfish'],
+  b: ['anemonefish', 'mushroom', 'meandering', 'plating', 'brain', 'angelfish']
+};
+document.getElementById('g').innerHTML = (V[location.hash.slice(1)] || V.a)
+  .map(k => `<img src="${T[k][0]}" style="object-position:${T[k][1]}" alt="${k}">`).join('');
+</script>
+<div class="c"><img src="../../icon.svg"><div><h1>IMR Reef ID</h1><p>Learn the corals and reef fish of Dauin</p><small>Photo quiz · look-alike duels · ID sheets · Coral ID Key</small></div></div>
 </body></html>

@@ -212,13 +212,29 @@ test('fish_game.py fish_on and pid agree with core.js fishOn and fishPid', () =>
   const got = JSON.parse(
     py(`import fish_game as G
 F = json.loads(${JSON.stringify(JSON.stringify(F))})
-print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.pid(f) for f in ['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'some-photo']]))`)
+print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.pid(f) for f in ['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo']]))`)
   );
   assert.deepStrictEqual(got, [
     ...cases.map(([f, s]) => C.fishOn(F, f, s)),
-    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'some-photo'].map(C.fishPid)
+    ...['fi123', 'fish-s001-cand-123', 'fish-s001-cand-123c', 'fish-s003-cand-fb-Fiwra_u0', 'fbFiwra_u0', 'some-photo'].map(C.fishPid)
   ]);
-  assert.deepStrictEqual(got.slice(-5), ['i123', 'i123', 'i123', 'bFiwra_u0', 'some-photo']);
+  // A FishBase reference or sheet photo (fb<stem>, tools/fish_refs.py) and its candidate are one photo (Codex review #660).
+  assert.deepStrictEqual(got.slice(-6), ['i123', 'i123', 'i123', 'bFiwra_u0', 'bFiwra_u0', 'some-photo']);
+  // So Pierre's rejection of the candidate keeps its reference copy out of the game (core.js fishPhotos).
+  const ref = {
+      f: 'fbFiwra_u0',
+      sp: 's003',
+      src: 'https://www.fishbase.se/images/species/Fiwra_u0.jpg',
+      via: 'fishbase',
+      from: 'fishbase',
+      e: 5
+    },
+    cur = {...CUR, fish: {...CUR.fish, seen: {...CUR.fish.seen, 'fish-s003-cand-fb-Fiwra_u0': 1}}};
+  assert.ok(
+    C.fishPhotos({t01: [ref]}, {}, CUR).t01.some(p => p.f === ref.f),
+    'in play while the candidate is not rejected'
+  );
+  assert.ok(!C.fishPhotos({t01: [ref]}, {}, cur).t01.some(p => p.f === ref.f), 'out once Pierre rejected the candidate');
 });
 
 // core.js fishPhotos: curated photos where an entry has enough very easy ones, the stopgap's joining them otherwise.
