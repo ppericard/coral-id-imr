@@ -56,8 +56,9 @@ must not degrade the look.
 ### U7
 
 **Settings removed on purpose stay removed**: the "Photos from Dauin / Philippines / All" filter (#230; the IMR/own-first
-rule P1 already does that job), the Reef theme, the quiz level selector.
-*Source:* Pierre, by 2026-11-01.
+rule P1 already does that job), the Reef theme, the quiz level selector, the fish "SVS video extras" and "Beyond IMR"
+opt-ins (every fish circle is on the path).
+*Source:* Pierre, by 2026-11-01; the fish opt-ins, 2026-11-06 (Q175).
 
 ### U8
 

@@ -6,7 +6,10 @@ name: Candidate photos
 on:
   push:
     branches: [main]
-    paths: [curation.json]
+    # curation.json: Pierre's Publish; the judgements: a judged batch puts photos in play by themselves (Q180, Q199;
+    # tools/fish_game.py in_play: suggest.json for the candidates, tools/fish_judge.json and tools/fish_refs.json for the
+    # reference photos; Codex review #674).
+    paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json]
   workflow_dispatch:
 permissions:
   contents: write
