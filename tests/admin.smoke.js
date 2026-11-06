@@ -122,9 +122,25 @@ const WIDTHS = [390, 1280];
           .slice(0, 40)
           .map(k => [k.slice(5), 'r'])
       );
+    // To do › Share-alike needs share-alike photos on the site, and Pierre may remove the real ones at any Publish (he
+    // removed the last ones on 2026-11-06): three of his own photos (never out of the presence rule) are served as CC BY-NC-SA.
+    const SA = Object.entries(DJ.gen)
+      .flatMap(([g, x]) => Object.values(x.views || {}).flatMap(L => L.filter(p => p.own && p.src).slice(0, 1)))
+      .filter(p => !named(p.f))
+      .slice(0, 3);
+    if (SA.length < 3) throw new Error('not enough photos of Pierre to stand for share-alike ones');
+    SA.forEach(p => Object.assign(p, {lic: 'cc-by-nc-sa', a: p.a.replace(/\(CC[^)]*\)/, '(CC BY-NC-SA)')}));
+    await ctx.route(
+      u => u.href.startsWith(base) && u.pathname === '/data.json',
+      r => r.fulfill({contentType: 'application/json', body: JSON.stringify(DJ)})
+    );
     await ctx.route(
       u => u.href.startsWith(base) && u.pathname === '/curation.json',
       r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, auto: {[day]: LOG}, fish: {out: {[FF[2][1]]: 'x'}}})})
+    );
+    // A report handled in a PR (reports-handled.json, the integrator's): out of the to-do list, "handled in #577".
+    await ctx.route(base + 'reports-handled.json', r =>
+      r.fulfill({contentType: 'application/json', body: JSON.stringify({demorep1: {pr: 577, at: '2026-11-05'}})})
     );
     await ctx.route(base + 'suggest.json', r =>
       r.fulfill({
@@ -642,10 +658,17 @@ const WIDTHS = [390, 1280];
           line: !!v.querySelector('[data-hline] a[href="#~health"]'),
           rep: /Demo report/.test(t),
           err: !!v.querySelector('.adm-tderr'),
-          first: v.querySelector('section > *')?.matches('[data-hline]')
+          first: v.querySelector('section > *')?.matches('[data-hline]'),
+          open1: !!v.querySelector('.adm-rep[data-rep="demorep1"]'),
+          pr: [...v.querySelectorAll('.adm-repspr a[href*="/pull/"]')].map(a => [a.textContent, a.getAttribute('href')])
         };
       });
       if (!all.line || !all.rep || !all.err || !all.first) fails.push(`${w}px To do › All: ${JSON.stringify(all)}`);
+      if (
+        all.open1 ||
+        JSON.stringify(all.pr) !== JSON.stringify([['handled in #577', 'https://github.com/ppericard/coral-id-imr/pull/577']])
+      )
+        fails.push(`${w}px To do › All, a report handled in a PR: ${JSON.stringify(all)}`);
       // Genera › Hidden: Put back takes a removed photo back.
       const hid = await p.evaluate(() => {
         const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
@@ -785,7 +808,7 @@ const WIDTHS = [390, 1280];
         }
       }
       // To do › Share-alike (Pierre, 2026-11-05: no share-alike for corals any more, but the ones on the site are never
-      // removed automatically; the demo has the real data's share-alike photos): a "share-alike" tag on the genus page; the
+      // removed automatically; three of Pierre's photos stand for share-alike ones, SA above): a "share-alike" tag on the genus page; the
       // same actions as Out of the presence rule: Remove (the ×, Undo), Keep → Kept (curation seen 'sa:f', tag "kept"),
       // un-keep, Remove all asks first and acts only on the photos still to handle.
       {
@@ -952,7 +975,7 @@ const WIDTHS = [390, 1280];
       }
     }
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
-    // points.json, the Astrea question first among the open ones; its page shows the question and its 4 photo slots
+    // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
     // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
     // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
@@ -996,11 +1019,11 @@ const WIDTHS = [390, 1280];
       if (
         g0.hash !== '#~point/astrea-reefcloud' ||
         !/ReefCloud label/.test(g0.q) ||
-        g0.slots !== 4 ||
-        g0.imgs !== 4 ||
-        g0.nums !== '1,2,3,4' ||
+        g0.slots !== 7 ||
+        g0.imgs !== 7 ||
+        g0.nums !== '1,2,3,4,5,6,7' ||
         g0.names ||
-        g0.answers !== 4 ||
+        g0.answers !== 7 ||
         !g0.notes ||
         g0.acts.join() !== 'Resolved,Stand-by,Dismiss' ||
         !/^To do/.test(g0.tab) ||
@@ -1008,7 +1031,7 @@ const WIDTHS = [390, 1280];
       )
         fails.push(`${w}px Points: the Astrea page ${JSON.stringify(g0)}`);
       if (g0.wide > 0) fails.push(`${w}px Points: the Astrea page ${g0.wide} px wider than the window`);
-      // The enlarged photo: blind (number and credit, no taxon), ‹ › through the 4.
+      // The enlarged photo: blind (number and credit, no taxon), ‹ › through the 7.
       await p.click('[data-ptz="1"]');
       const lb = await p.evaluate(() => {
         const c = () => (document.querySelector('#lightbox .lb-cap') || {}).textContent || '';
@@ -1434,21 +1457,24 @@ const WIDTHS = [390, 1280];
           await go('~users'); // the corals' page, Dio's row still open, as the steps below expect
         }
       }
-      // Rename (sheet v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted, above), hidden
-      // from the leaderboard.
+      // Archive (sheet v58, was Rename v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted,
+      // above), out of the players' table, listed read-only under Archived.
       await p.click('[data-uopen="Ben Demo"]');
       await settle();
       await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
-      await p.click('[data-uren="Ben Demo"]');
+      await p.click('[data-uarch="Ben Demo"]');
       await p
-        .waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+        .waitForFunction(() => /Archived \(1\)/.test(document.getElementById('view').innerText), null, {timeout: 10000})
         .catch(() => {});
-      // The rename reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
+      // The archive reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
       // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
       await settle();
-      const ren = await text();
-      if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
-        fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
+      const arc = await p.evaluate(() => ({
+        rows: [...document.querySelectorAll('.adm-urow')].map(r => r.dataset.uopen),
+        fold: [...document.querySelectorAll('details.adm-uremoved')].map(d => d.textContent).join(' ')
+      }));
+      if (arc.rows.some(n => /^Ben Demo/.test(n)) || !/Archived \(1\)/.test(arc.fold) || !/Ben Demo-test/.test(arc.fold))
+        fails.push(`${w}px Players: archive Ben Demo → Ben Demo-test not shown apart (${JSON.stringify(arc)})`);
       // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
       // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
       const nameOf = n =>
@@ -1470,7 +1496,7 @@ const WIDTHS = [390, 1280];
             };
           })
           .catch(() => null);
-      for (const n of ['Ben Demo-test', 'Test Demo']) {
+      for (const n of ['Test Demo']) {
         const h = await nameOf(n);
         if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
         else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
@@ -1492,10 +1518,11 @@ const WIDTHS = [390, 1280];
         });
       const LONG = 'Bartholomew Alexander Montgomery-Fitzgerald Demo LongName-60';
       const before = await size();
-      await p.click('[data-uopen="Ben Demo"]');
-      await settle();
-      await p.evaluate(n => (window.prompt = () => n), LONG);
-      await p.click('[data-uren="Ben Demo"]');
+      // A player with that name (the table only: renaming moved to Archive, which takes the record out of it).
+      await p.evaluate(n => {
+        USERS.users.find(u => u.name === 'Carla Demo').name = n;
+        render();
+      }, LONG);
       await p.waitForFunction(n => document.querySelector(`[data-uopen="${n}"]`), LONG, {timeout: 10000}).catch(() => {});
       const after = await size(),
         cut = await p
@@ -1505,6 +1532,10 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Players: a 60-character name widened the table (${JSON.stringify({before, after})})`);
       if (!cut || !cut.cut || !cut.title.startsWith(LONG))
         fails.push(`${w}px Players: the 60-character name is not cut with its title (${JSON.stringify(cut)})`);
+      await p.evaluate(n => {
+        USERS.users.find(u => u.name === n).name = 'Carla Demo';
+        render();
+      }, LONG);
     }
     if (once) {
       // Once: merge and delete.
@@ -1769,8 +1800,9 @@ const WIDTHS = [390, 1280];
         return {
           answers: Number(k.Answers),
           players: Number(k.Players),
-          all: ANS.rows.length,
-          ids: new Set(ANS.rows.map(r => r[0])).size,
+          // but the answers a deleted account or an archive left (sheet v55/v58 flag 2): no player, photos only
+          all: ANS.rows.filter(r => r[11] !== 2).length,
+          ids: new Set(ANS.rows.filter(r => r[11] !== 2).map(r => r[0])).size,
           sw: !!document.querySelector('[data-sf="who"]')
         };
       });
@@ -2021,6 +2053,45 @@ const WIDTHS = [390, 1280];
       if (r.signed.length || !r[need] || r.off.length || r.noRaw.length || r.wide > 0)
         fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
     }
+    // ...and everywhere else in the admin (ROADMAP "Intuitive difficulty display everywhere", Pierre, 2026-11-05): on every
+    // view of every tab, Coverage's full "Where to look" list and both demo journeys, no signed raw number in the page's
+    // text (seconds and "pts" aside; the one-tap tables' felt difficulty, the players' own −1…+1 survey scale, aside), every
+    // badge in the band of its %, and no "recognised by N%" written as plain text outside a badge. Once, at 1280.
+    if (once)
+      for (const h of new Set([
+        ...ROUTES.map(r => r.h).filter(h => h && !h.startsWith('~journey')),
+        '~stats-needs',
+        '~journey/Ana Demo',
+        '~journey/Carla Demo'
+      ])) {
+        await go(h);
+        const r = await p.evaluate(() => {
+          const v = document.getElementById('view'),
+            band = n => (n >= 75 ? 'veasy' : n >= 60 ? 'easy' : n >= 40 ? 'mid' : n >= 25 ? 'hard' : 'vhard'),
+            felt = [...v.querySelectorAll('.adm-pscale')];
+          felt.forEach(x => (x.style.display = 'none'));
+          const signed = (v.innerText.match(/(^|[^\w.])[+−-]\d+\.\d+(?! ?(s|pts?)\b)/gm) || []).slice(0, 3);
+          felt.forEach(x => (x.style.display = ''));
+          const plain = [],
+            tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
+          for (let n; (n = tw.nextNode());)
+            if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
+              plain.push(n.textContent.trim().slice(0, 80));
+          return {
+            signed,
+            plain: plain.slice(0, 3),
+            off: [...v.querySelectorAll('.adm-rec')]
+              .filter(
+                b =>
+                  !b.classList.contains('rec-' + band(Number((b.textContent.match(/(\d+)%/) || [])[1]))) || !/[+−]?\d+\.\d\d/.test(b.title)
+              )
+              .map(b => b.className + ' ' + b.textContent)
+              .slice(0, 3)
+          };
+        });
+        if (r.signed.length || r.plain.length || r.off.length)
+          fails.push(`${w}px #${h}: difficulty not read in words ${JSON.stringify(r)}`);
+      }
     // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
     // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
     // marks, and a plain median (sort, middle value); nothing wider than the window.

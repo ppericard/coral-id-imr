@@ -46,6 +46,10 @@ const GATES = {
   // Players › Delete…'s two choices (admin.js delOn, Code.gs deleteAccount_): from v55, which deletes or anonymises the
   // account's reports, page summaries and log mentions; before, they are disabled with a note.
   DEL_SHEET: (v, N) => fn('admin.js', 'const delOn = ', '\n', 'delOn', {USERS: v === undefined ? {} : {v}, DEL_SHEET: N})(),
+  // Deleting one's own account (sync.js selfDelOn, #delete-account; Code.gs selfDelete_): from v58; before, a note.
+  SELFDEL_SHEET: (v, N) => fn('sync.js', 'const selfDelOn = ', '\n', 'selfDelOn', {sheetV: () => v, SELFDEL_SHEET: N})(),
+  // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
+  ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
   // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0. On
@@ -57,6 +61,16 @@ const GATES = {
       startV: () => ({p: 0.7}),
       startS: () => ({log: true})
     })() !== 0,
+  // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
+  // helped" (Q66): from v57; before, only the ids the device kept itself.
+  HELP_SHEET: (v, N) => {
+    let got = null;
+    fn('sync.js', 'function repsSeen(', '\nfunction sheetSeen', 'repsSeen', {HELP_SHEET: N, achReps: ids => (got = ids)})({
+      ...(v === undefined ? {} : {v}),
+      reps: ['r1']
+    });
+    return !!got;
+  },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   PGD_SHEET: (v, N) => {
     const gdOf = fn('model.js', 'const gdOf = ', '\n', 'gdOf', {PGD_SHEET: N});

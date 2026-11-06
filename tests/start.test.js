@@ -626,9 +626,11 @@ test('synced: the latest answer wins, the cards shown on either device count; a 
 // Coral basics included (its completion would hide the next beginner's offers and block their achievement).
 test('sign-out clears the first-launch answer and Coral basics with the progress', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
-    i = src.indexOf('const signOff = () => {'),
+    // sync.js signOutClear (2026-11-05: Sign out and deleting one's own account clear the device the same way)
+    i = src.indexOf('function signOutClear('),
     list = src.slice(i, src.indexOf('].forEach', i));
-  assert.ok(i > 0, 'signOff found');
+  assert.ok(i > 0, 'signOutClear found');
+  assert.match(src, /const signOff = \(\) => \{\s*signOutClear\(\);/, 'Sign out clears through it');
   // Every subject's record (reefid-sync-<subject>-start, core.js startKey) goes with that subject's other keys.
   assert.match(list, /\[[^\]]*'start'[^\]]*\]\.map\(k => subjKey\(S\.id, k\)\)/);
   assert.match(list, /\bBASICS_KEY\b/);

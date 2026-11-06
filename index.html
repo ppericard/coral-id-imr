@@ -22,6 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preload" href="fonts/source-sans-3-normal.woff2" as="font" type="font/woff2" crossorigin>
 <!-- Slow first visit (beginner RA review, 2026-11-02): data.json, the biggest start-up file, downloads alongside the
@@ -93,7 +94,7 @@
         <div class="setrow"><span>Theme</span><div id="theme" role="group" aria-label="Theme"><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button></div></div>
         <div class="setrow"><span title="Blue and orange instead of green and red">Colour-blind</span><div id="cvd" role="group" aria-label="Colour-blind mode"><button type="button" data-cvd="1">On</button><button type="button" data-cvd="0">Off</button></div></div>
         <div class="setrow"><span>Colours</span><div id="palette" class="palsw" role="group" aria-label="Colours"><button type="button" data-pal="lagoon" title="Lagoon"><i style="background:linear-gradient(90deg,#d3ebe7,#a2d5cc,#63b6a4,#29836d,#1d5f34)"></i><span>Lagoon</span></button><button type="button" data-pal="ocean" title="Ocean"><i style="background:linear-gradient(90deg,#d1edfe,#a1d1f4,#6aaae6,#3a76c0,#2c4f94)"></i><span>Ocean</span></button><button type="button" data-pal="seagrass" title="Seagrass"><i style="background:linear-gradient(90deg,#e6edc0,#c0d492,#8cb460,#4f813c,#29612d)"></i><span>Seagrass</span></button><button type="button" data-pal="twilight" title="Twilight"><i style="background:linear-gradient(90deg,#ebe3fe,#d0c0f9,#aa95e8,#7e66ca,#543f99)"></i><span>Twilight</span></button><button type="button" data-pal="depth" title="Depth"><i style="background:linear-gradient(90deg,#f4ed8b,#9bdda8,#4ab9b2,#167ca4,#2e4d99)"></i><span>Depth</span></button></div></div>
-        <details class="saveprog"><summary>Backup or reset progress</summary><p class="note">Progress is saved in this browser and, once you sign in, in the IMR sheet. You can also save it to a file as a backup, or to move it to another device.</p>
+        <details class="saveprog"><summary>Backup or reset progress</summary><p class="note">Progress is saved in this browser and, once you sign in, online with your account. You can also save it to a file as a backup, or to move it to another device.</p>
           <button class="chip" type="button" id="pexp">Save to a file</button> <button class="chip" type="button" id="pload">Load a file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span>
           <p><button class="reset" type="button" id="reset">Reset progress</button></p></details>
       </div>

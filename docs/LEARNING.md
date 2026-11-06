@@ -670,6 +670,13 @@ quiz first. Pierre's caution with the approval: felt difficulty is subjective, s
 thresholds, and the answers check the target, they never steer it answer by answer. The prompt every 40 answers was
 approved the same day.
 
+**Never early in a session** (Pierre, 2026-11-05, on his phone: "Getting boring?" came when he had barely started his
+session). Asked in the first minutes, "Getting boring?" or "Frustrating?" make no sense, and the other items measure the
+first questions of a warm-up rather than the difficulty: a prompt shows only once the current session has 15 answers and
+has lasted 5 minutes (a session = answers less than 30 minutes apart, the admin's definition); one due sooner waits for
+that, and the spacing in answers is unchanged (ARCHITECTURE.md "One-tap questions"). Answers from before this change
+include some given at the very start of a session.
+
 ### Logged for the admin's player journey (2026-11-02)
 
 A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
@@ -4045,6 +4052,9 @@ clear difference. A replay cannot judge what a new progress rule would teach (ot
   level-dependent target approved, with the caution that felt difficulty is subjective (no move before the thresholds;
   built later, once data exists); "For me, the challenge is: Too low / Too high" replaced by "Right now I feel: Bored /
   In the zone / Struggling"; the question made a block of its own before Next; the response rate logged.
+- 2026-11-05, Pierre (a bug seen on his phone: the one-tap question came when he had barely started his session): it
+  never shows early in a session; the thresholds, 15 answers and 5 minutes into the current session (answers less than
+  30 minutes apart), the integrator's call ("What the players say about the difficulty").
 
 ## References
 
