@@ -447,6 +447,10 @@ async function overlays(b, base) {
       const r = await p.evaluate(i => {
         // A new genus's card is read and closed before answering, as a player does.
         document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        // This session started PULSE.SESS_MS ago (the smoke answers in seconds): its answers decide (quiz.js pulseSess).
+        (st => st.v && localStorage.setItem('reefid-pulse', JSON.stringify({...st, v: {...st.v, t0: Date.now() - PULSE.SESS_MS}})))(
+          JSON.parse(localStorage.getItem('reefid-pulse') || '{}')
+        );
         // A toast is tapped away (without following its link) before answering.
         document.querySelectorAll('.achpop a').forEach(a => {
           a.addEventListener('click', e => e.preventDefault());
@@ -554,6 +558,10 @@ async function overlays(b, base) {
           document.querySelectorAll('.achpop').forEach(x => x.remove());
           achQ.length = 0;
           achBusy = false;
+          // This session started PULSE.SESS_MS ago (the smoke answers in seconds): its answers decide (quiz.js pulseSess).
+          (st => st.v && localStorage.setItem('reefid-pulse', JSON.stringify({...st, v: {...st.v, t0: Date.now() - PULSE.SESS_MS}})))(
+            JSON.parse(localStorage.getItem('reefid-pulse') || '{}')
+          );
           if (due) {
             const a = answersSoFar() + 1;
             localStorage.setItem('reefid-prompt-at', JSON.stringify(a - PROMPT.GAP));
@@ -2368,12 +2376,15 @@ async function tipsCheck(b, base) {
     }
     // The one-tap question due at the same answer takes the break: no tip there (it waits for a later break). A targeted
     // player whose visit reaches its 10th answer on this page's 8th, when the one-tap question is first due (PULSE.FIRST
-    // answers in all, PULSE.SESSION on the page); the question shows (in the feedback, or as a card at Next), the tip not.
+    // answers in all; its session, begun 6 minutes ago with 7 answers, reaches PULSE.SESS_N there); the question shows (in
+    // the feedback, or as a card at Next), the tip not.
     {
       const [c, p] = await open(w, h, {q: 25, z: 0});
       await p.evaluate(() => {
         const t = Date.now();
         localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
+        // The one-tap question's session: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
+        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
         // The Open all offer (from 50 answers, a prompt too) answered long ago: it would take the prompt spacing.
         localStorage.setItem('reefid-sync-coral-intro-offer', JSON.stringify({at: 1, open: false, t: t - 864e5}));
