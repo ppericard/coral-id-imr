@@ -977,13 +977,14 @@ const spFacts = s => {
 };
 // The range of its species' largest sizes, on the family sheet (study F9): "Its species reach 8 to 35 cm".
 const famSizes = f => {
+  // Total lengths only: a standard length or a disc width is another measure, never in the same range (Codex review #696).
   const L = famSpecies(f)
-    .map(s => s.size && s.size.len)
+    .map(s => s.size && !s.size.lt && s.size.len)
     .filter(x => x > 0);
   if (!L.length) return '';
   const a = Math.min(...L),
     b = Math.max(...L);
-  return `<li>${L.length > 1 && a !== b ? `Its species reach ${a} to ${b} cm` : `Up to ${b} cm`} <small>(the largest size of each species: Reef Life Survey, else FishBase; ${L.length} of ${famSpecies(f).length} species)</small></li>`;
+  return `<li>${L.length > 1 && a !== b ? `Its species reach ${a} to ${b} cm` : `Up to ${b} cm`} <small>(the largest total length of each species: Reef Life Survey, else FishBase; ${L.length} of ${famSpecies(f).length} species)</small></li>`;
 };
 const fishMarks = f =>
   (f.marks || []).length || (f.life || []).length || famSizes(f)
