@@ -439,7 +439,7 @@ function renderJourney(name, anonId = '') {
             .map(g => `<i>${esc(g)}</i>`)
             .join(', ')}</p>`
         : ''
-    }${full && notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(g)}</i>`).join(', ')}</p>` : ''}</section>`;
+    }${full && notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(jName(g))}</i>`).join(', ')}</p>` : ''}</section>`;
 
   // 3. Every genus asked, in the order they were met (or easiest / hardest first).
   const rows = Object.entries(J.G).sort((a, b) =>
