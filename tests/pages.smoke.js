@@ -1376,7 +1376,7 @@ async function signin(base) {
   );
   // The sign-in card is the app's, not a subject's (Pierre, 2026-11-04: "it's the app we want people to sign in to, not
   // the game mode"): a player who plays only fish meets it at their 20th answer, as a coral player does (it counted the
-  // answers queued for the sheet, which takes no fish answers, so it never came). Fish is opened to this player in the
+  // answers queued for the sheet, which took no fish answers then, so it never came). Fish is opened to this player in the
   // page, as the admin's group will (core.js SUBJECTS beta).
   await run(
     () => (
@@ -1431,7 +1431,8 @@ async function signin(base) {
         }
         return {at, n: answersSoFar(), subj: SUBJ.id, used: localStorage.getItem('reefid-nudge'), log0: store.get(LOG0, []).length};
       });
-      if (r.subj !== 'fish' || r.at.length !== 1 || r.at[0] !== 20 || r.used !== '1' || r.log0)
+      // Its fish answers wait on the device for the sheet like coral ones (LOG0; sheet v60 logs every subject's).
+      if (r.subj !== 'fish' || r.at.length !== 1 || r.at[0] !== 20 || r.used !== '1' || r.log0 !== r.n)
         fails.push('sign-in card for a fish-only player: ' + JSON.stringify(r));
     }
   );

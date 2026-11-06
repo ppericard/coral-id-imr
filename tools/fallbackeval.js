@@ -87,7 +87,7 @@ if (LOGF) {
     gen = {};
   [data.gen, data.x.gen].forEach(G => Object.keys(G).forEach(n => gen[n] || (gen[n] = {look: G[n].look || [], fam: String(G[n].fam || '')})));
   const by = {};
-  v.slice(1).forEach(r => (by[r[0]] = by[r[0]] || []).push(r));
+  C.subjRows(v.slice(1)).forEach(r => (by[r[0]] = by[r[0]] || []).push(r)); // the corals' rows (sheet v60 Subject)
   const players = Object.values(by)
     .map(rs => rs.sort((a, b) => String(a[ix.Time]).localeCompare(String(b[ix.Time]))))
     .filter(rs => rs.length >= C.CHOICE.AT[0] && rs.slice(0, END).every(r => r[ix.Expected] !== '' && r[ix.Expected] !== undefined))

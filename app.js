@@ -547,11 +547,22 @@ function fishGenera(X, F) {
       });
     });
   X.sci = sci;
+  // The species' names by id (fish.json species, the PDF name), for the species shown that each answer logs (UNITS species).
+  X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
   return X;
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish entries, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
 const rankOf = n => (GX(n) || {}).rank || '';
+// A unit's name when its id is not its name (a fish entry t01: Damselfish; a scientific genus g:Chromis: Chromis), '' for
+// a coral genus (its id is its name) or no unit (an "I don't know"): what an answer logs beside the unit (quiz.js answer).
+const unitName = n => {
+  const g = n ? GX(n) : null;
+  return g && g.name && g.name !== n ? String(g.name) : '';
+};
+// The species of the photos a question showed (UNITS species), each once, joined by ', ': '' when the subject's photos
+// name none (the corals' genus photos). Logged with each answer (sheet v60 Species shown).
+const speciesShown = L => [...new Set((L || []).map(p => UNITS[SUBJ.id].species(p)).filter(Boolean))].join(', ');
 // Every unit of a rank in the subject's opt-in sets, opened or not: the wrong choices a question of that rank may name
 // (as a quiz's wrong choices may name any genus), so a family with a single genus in play still gets 4 choices.
 const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => rankOf(n) === rk);
@@ -1259,6 +1270,8 @@ const UNITS = {
     icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
     load: () => Promise.resolve(),
     slate: () => slateOf(DATA),
+    // The species a photo shows, for the answer log (app.js speciesShown): none, a coral question is about the genus.
+    species: () => '',
     // Every name a player may type (quiz.js typeNames) and how a typed text is read (core.js typeMatchIn).
     names: () => typeNamesOf([...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})], GX),
     norm: typeNorm,
@@ -1298,6 +1311,8 @@ const UNITS = {
     icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
     slate: () => (FISH ? FISH.c1 : []),
+    // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
+    species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
     names: () => fishTypeNames(FISH ? FISH.gen : {}),
     norm: typeNormAll,
     // The look-alikes the IMR presentation names, each pair once.

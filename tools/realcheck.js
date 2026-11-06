@@ -15,7 +15,8 @@
 //    difficulty those answers imply (ability - logit((e - 1/k) / (1 - 1/k)), as the sheet's photo Elo would rate it).
 // 3. Contrast questions (docs/LEARNING.md "One contrast queue"): the Agains and the duels, expected vs right.
 // The draw and the opening (which question comes) cannot be replayed: the log holds only the questions asked.
-const fs = require('fs');
+const fs = require('fs'),
+  C = require('../core.js');
 const file = process.argv[2];
 if (!file) throw new Error('usage: node tools/realcheck.js answers.json');
 require('../tests/slot.js').guard('tools/realcheck.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
@@ -23,7 +24,7 @@ const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   V = Array.isArray(J) ? J : J.values || J.rows || [];
 const H = Array.isArray(V[0]) && V[0][0] === 'Name' ? V[0] : null,
   col = k => (H ? H.indexOf(k) : ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability'].indexOf(k));
-const rows = (H ? V.slice(1) : V)
+const rows = C.subjRows(H ? V.slice(1) : V) // the corals' rows (sheet v60 Subject, index 15 in both layouts)
   .map(r => ({
     who: r[col('Name')],
     t: r[col('Time')],

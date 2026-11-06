@@ -145,7 +145,17 @@ const server = http.createServer((req, res) => {
     );
     ok(answersSoFar() >= 30, 'answers counted in the fish progress');
     ok(localStorage.getItem('reefid-sync-coral-progress') === coralBefore, 'coral progress untouched by fish answers');
-    ok(!localStorage.getItem('reefid-log0') && !localStorage.getItem('reefid-anonq'), 'fish answers not logged for the sheet');
+    // Fish answers are logged from the first answer (Pierre, 2026-11-06; sheet v60): queued for the sheet (signed out:
+    // LOG0 and the anonymous queue; a local copy sends nothing, rule D1) with their subject, the rank asked, the names
+    // at that rank and the species shown; never the corals' anonymous base (ANONB: the corals' replay only).
+    const L0 = JSON.parse(localStorage.getItem('reefid-log0') || '[]');
+    ok(
+      L0.length >= 30 && L0.every(a => a.s === 'fish' && ['family', 'genus'].includes(a.rk) && a.tn === GX(a.g).name),
+      'fish answers logged with their subject, rank and name: ' + JSON.stringify(L0.slice(0, 2))
+    );
+    ok(JSON.parse(localStorage.getItem('reefid-anonq') || '[]').length === L0.length, 'fish answers queued for the anonymous send');
+    ok(L0.filter(a => a.sp).length >= L0.length / 2, 'the species shown logged: ' + JSON.stringify(L0.map(a => a.sp).slice(0, 5)));
+    ok(!localStorage.getItem('reefid-anon-base'), 'no coral anonymous base from fish answers');
     // Typed names.
     const tm = x => typeMatch(x) && typeMatch(x).g;
     ok(tm('Damselfish') === 't01' && tm('Chromis') === 't01' && tm('Pomacentridae') === 't01', 'typed: names of Damselfish');

@@ -238,3 +238,51 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
   assert.deepStrictEqual(Object.keys(X.sheet).sort(), Object.keys(S).sort());
   Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.use === 'ref' || !!S[p.sp]?.some(q => q.f === p.f)), g.id));
 });
+
+// Every subject's answers logged (Pierre, 2026-11-06; sheet v60): each subject says its rank and whether the sheet replays
+// it; the answer log's readers keep one subject's rows (subjRows, index LOG_SUBJ in readAnswers rows and tab rows alike).
+test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, logOk', () => {
+  assert.deepStrictEqual(
+    C.SUBJECTS.map(S => [S.id, S.rank, S.replay]),
+    [
+      ['coral', 'genus', true],
+      ['fish', 'family', false]
+    ]
+  );
+  assert.ok(
+    C.SUBJECTS.every(S => !('log' in S)),
+    'the old log field is gone (renamed replay)'
+  );
+  assert.strictEqual(C.replaySubject(), 'coral');
+  assert.strictEqual(C.LOG_SUBJ, 15);
+  assert.strictEqual(C.ansSubject({}), 'coral', 'an entry from before the subject field is a coral one');
+  assert.strictEqual(C.ansSubject({s: 'fish'}), 'fish');
+  const row = (id, s) => Object.assign(Array(15).fill(''), {0: id}).concat(s === undefined ? [] : [s]);
+  const rows = [row('a'), row('b', ''), row('c', 'coral'), row('d', 'fish'), row('e', 'benthos')];
+  assert.deepStrictEqual(
+    C.subjRows(rows).map(r => r[0]),
+    ['a', 'b', 'c']
+  );
+  assert.deepStrictEqual(
+    C.subjRows(rows, 'fish').map(r => r[0]),
+    ['d']
+  );
+  assert.deepStrictEqual(C.subjRows(null), []);
+  // A tab export's header row is never a coral row.
+  assert.deepStrictEqual(C.subjRows([Object.assign(Array(15).fill('h'), {0: 'Name'}).concat(['Subject'])]), []);
+  const log = [{id: 1}, {id: 2, s: 'fish'}, {id: 3, s: 'coral'}];
+  assert.deepStrictEqual(
+    C.subjEntries(log).map(a => a.id),
+    [1, 3]
+  );
+  assert.deepStrictEqual(
+    C.subjEntries(log, 'fish').map(a => a.id),
+    [2]
+  );
+  // A fish answer waits for the script that files it under its subject (rule D4); a coral one never waits.
+  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET - 1), false);
+  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET), true);
+  assert.strictEqual(C.logOk({s: 'fish'}, undefined), false);
+  assert.strictEqual(C.logOk({}, 0), true);
+  assert.strictEqual(C.logOk({s: 'coral'}, 0), true);
+});

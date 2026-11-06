@@ -1316,7 +1316,7 @@ test("v59 Answers: a typed answer's raw text and its spelling step at the end, s
     ]
   });
   const A = s.sheets.Answers;
-  assert.deepStrictEqual([...A.rows[0].slice(15)], ['Typed', 'Retyped right']);
+  assert.deepStrictEqual([...A.rows[0].slice(15, 17)], ['Typed', 'Retyped right']);
   assert.deepStrictEqual(
     A.rows.slice(1).map(r => [r[15], r[16]]),
     [
@@ -1849,7 +1849,7 @@ test('v55 delete keeping answers: answers and reports anonymised (Verified 0), f
   assert.strictEqual(del.length, 1, 'the kept answer is flagged 2');
   assert.ok(a.filter(x => x[11] !== 2).every(x => x[11] === 0));
   s.post({anon: 'devanon777', anonAnswers: [ans('z1')], av: '190'});
-  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 15, 'a device never signed in stays 1');
+  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 20, 'a device never signed in stays 1');
   const st = s.post({readStats: 1, token: TOK});
   assert.ok(!(del[0][0] in st.ras), 'no ability for the deleted id');
   assert.ok(Object.keys(st.photos).length > 0, 'its answer still rates the photos');
@@ -2147,7 +2147,7 @@ test('v58 (Codex review #603): a save of another generation is refused under the
     s.post({name: 'Ana', pin: '1234', acct: old, data: prog(9), summary: {}, answers: [ans('g2')], at: 1}).error,
     'archived'
   );
-  const ids = s.sheets.Answers.rows.map(r => r[r.length - 1]).join();
+  const ids = s.sheets.Answers.rows.map(r => r[7]).join(); // the Id column
   assert.ok(!/g1|g2/.test(ids), 'no answer of the old generation logged');
   assert.notDeepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress'], prog(9)['reefid-sync-coral-progress']);
   // Its own generation saves as before.
@@ -2196,4 +2196,126 @@ test('v58 (Codex review #603): a report of another generation has no reporter wh
     ]
   );
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').reports, 0);
+});
+
+// v60 (Pierre, 2026-11-06: fish answers logged from the very first second; the sheet records an answer at any taxonomic
+// level): five columns at the end of Answers, and only the replayed subject's rows (the corals') feed what the script
+// computes, so a fish answer never moves a coral number.
+const fishAns = (id, extra = {}) =>
+  ans(id, {
+    g: 't01',
+    a: 't05',
+    ok: 0,
+    ph: 'fi464458713',
+    ch: 't01 t05 t09 g:Chromis',
+    s: 'fish',
+    rk: 'family',
+    tn: 'Damselfish',
+    ta: 'Moorish Idol',
+    sp: 'Pomacentrus moluccensis',
+    ...extra
+  });
+test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; readAnswers serves them at 17-21, after v59's Typed and Retyped right at 15-16', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000';
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [
+      ans('f1'), // an app from before v60: no subject, a coral genus answer
+      ans('f2', {s: 'coral', rk: 'genus', ty: 'Acropra', tr: 1}),
+      fishAns('f3'),
+      fishAns('f4', {g: 'g:Chromis', a: 'g:Dascyllus', rk: 'genus', tn: 'Chromis', ta: 'Dascyllus', m: 'quiz-duel|g:Chromis|g:Dascyllus'}),
+      fishAns('f5', {s: '=x', rk: 'Bad rank', tn: '=HYPERLINK("x")', sp: '+1'})
+    ]
+  });
+  const A = s.sheets.Answers;
+  assert.deepStrictEqual([...A.rows[0].slice(15)], ['Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown']);
+  const R = A.rows.slice(1);
+  assert.deepStrictEqual(R[0].slice(17), ['coral', 'genus', '', '', '']);
+  assert.deepStrictEqual(R[1].slice(15), ['Acropra', 1, 'coral', 'genus', '', '', '']);
+  assert.deepStrictEqual(R[2].slice(17), ['fish', 'family', 'Damselfish', 'Moorish Idol', 'Pomacentrus moluccensis']);
+  assert.deepStrictEqual([R[2][2], R[2][3], R[2][11]], ['t01', 't05', 't01 t05 t09 g:Chromis'], 'the units as the app asks them');
+  assert.deepStrictEqual(
+    [R[3][2], R[3][3], R[3][5], R[3][18], R[3][19]],
+    ['g:Chromis', 'g:Dascyllus', 'quiz-duel|g:Chromis|g:Dascyllus', 'genus', 'Chromis']
+  );
+  // Nothing that is not a subject id, a rank word or a name is stored (no formula either).
+  assert.deepStrictEqual(R[4].slice(17, 20), ['coral', 'genus', '']);
+  assert.strictEqual(R[4][21], '');
+  const rows = s.post({readAnswers: 1, token: T}).rows;
+  assert.ok(rows.every(r => r.length === 22));
+  assert.deepStrictEqual([rows[0].slice(15, 17), rows[1].slice(15, 17)], [['', null], ['Acropra', 1]], 'v59 Typed and Retyped right at 15-16');
+  assert.deepStrictEqual(
+    rows.map(r => r.slice(17, 20)),
+    [
+      ['coral', 'genus', ''],
+      ['coral', 'genus', ''],
+      ['fish', 'family', 'Damselfish'],
+      ['fish', 'genus', 'Chromis'],
+      ['coral', 'genus', '']
+    ]
+  );
+  assert.strictEqual(rows[2][21], 'Pomacentrus moluccensis');
+});
+
+test('v60: a tab from before v60 (15 columns, no cells beyond) reads the new fields as the default subject', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000';
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1'), ans('o2')]});
+  const A = s.sheets.Answers;
+  A.rows.forEach(x => (x.length = 15));
+  A.getMaxColumns = () => 15; // the real grid: a read past it throws
+  const get = A.getRange;
+  A.getRange = (r, c, nr, nc) => {
+    if (c + (nc || 1) - 1 > A.getMaxColumns()) throw new Error('The coordinates of the range are outside the dimensions of the sheet.');
+    return get(r, c, nr, nc);
+  };
+  A.insertColumnsAfter = (at, n) => (A.getMaxColumns = () => at + n);
+  assert.deepStrictEqual(
+    s.post({readAnswers: 1, token: T}).rows.map(r => r.slice(15)),
+    [
+      ['', null, 'coral', 'genus', '', '', ''],
+      ['', null, 'coral', 'genus', '', '', '']
+    ]
+  );
+  assert.strictEqual(s.get({stats: '1'}).ok, true);
+  // The next answer logged adds the columns and their header.
+  s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [fishAns('o3')], at: 1});
+  assert.strictEqual(A.rows[0][17], 'Subject');
+  assert.strictEqual(A.rows[3][17], 'fish');
+});
+
+test('v60: fish rows move no coral number: photo ratings, offsets, confusions, hold, replay, the admin list', () => {
+  const T = 'ghp_write000000000000000000',
+    coral = [...Array(30)].map((_, i) =>
+      ans('c' + i, {ok: i % 3 ? 1 : 0, a: i % 3 ? 'Acropora' : 'Montipora', ch: 'Acropora Montipora', e: 0.6, th: 0})
+    );
+  const run = withFish => {
+    const s = loadCodeGs(withData());
+    const fish = withFish
+      ? [...Array(40)].map((_, i) => fishAns('x' + i, {ph: 'acropora-1 fi' + i, ok: i % 2, e: 0.9, ch: 'Acropora Montipora t01'}))
+      : [];
+    s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [...coral, ...fish]});
+    s.post({name: 'Bea', pin: '1234', data: prog(1), summary: {}, answers: coral.map(a => ({...a, id: 'b' + a.id}))});
+    const st = s.get({stats: '1'}),
+      u = s.post({users: 1, token: T}).users.find(x => x.name === 'Ana'),
+      g = s.get({name: 'Ana', pin: '1234', rv: 0});
+    return {
+      photos: st.photos,
+      conf: st.conf,
+      mem: st.mem,
+      gd: st.gd,
+      hold: g.hold,
+      n: g.replay && g.replay.n,
+      answers: u.answers,
+      mix: u.mix
+    };
+  };
+  const a = run(false),
+    b = run(true);
+  assert.deepStrictEqual(b, a);
+  assert.strictEqual(a.n, 30, 'the replay counts the coral rows only');
 });

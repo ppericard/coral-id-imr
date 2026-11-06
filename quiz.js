@@ -437,8 +437,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // a comeback question takes its genus's recall as it is now (Codex review #374).
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
-  // was played since, not progress an older sign-out left on the device.
-  if (SUBJ.log && !SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
+  // was played since, not progress an older sign-out left on the device. Only the replayed subject's (SUBJECTS replay) and
+  // its own first answer: a fish answer waiting in LOG0 is not a coral one.
+  if (SUBJ.replay && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
   // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
   // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
   // against it as a wrong pick does (Pierre's rule), and the mix-up is counted.
@@ -579,6 +580,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
+  const spShown = speciesShown(ph.filter(p => p !== unseen));
   const ans = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     t: new Date().toISOString(),
@@ -626,7 +628,19 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // 2026-11-05-name-confusion-study.md). Sheet v59 stores them (Typed, Retyped right); an older script ignores them
     // (Code.gs logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
     ...(tq ? {ty: String(tq.text || '').slice(0, 40)} : {}),
-    ...(tq && tq.sp ? {tr: tq.sp.r ? 1 : 0} : {})
+    ...(tq && tq.sp ? {tr: tq.sp.r ? 1 : 0} : {}),
+    // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60
+    // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's (SUBJECTS
+    // rank). An older script ignores these fields and would file the answer as a coral one: the answers of a subject the
+    // sheet does not replay are sent only from LOG_SHEET (core.js logOk, sync.js), queued until then (rule D4).
+    s: SUBJ.id,
+    rk: rankOf(target) || SUBJ.rank,
+    // The names at that rank, shown and answered, when a unit's id is not its name (a fish entry t01 is Damselfish, a
+    // scientific genus g:Chromis is Chromis; a coral genus is its own name: nothing more), and the species of the photos
+    // shown (UNITS species: a fish photo's species; none for the corals' genus photos), for the sheet's readers.
+    ...(unitName(target) ? {tn: unitName(target)} : {}),
+    ...(unitName(c) ? {ta: unitName(c)} : {}),
+    ...(spShown ? {sp: spShown} : {})
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
@@ -638,10 +652,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
   if (warm) comebackStep(rT, th0, dm, k, good);
   answeredAt(s, good);
-  // A subject whose answers the sheet does not take yet (core.js SUBJECTS log: fish) keeps them on the device only: its
-  // progress still travels with the player's data (sync.js), its answers rate no photo and no confusion.
-  if (!SUBJ.log);
-  else if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
+  // Every subject's answers go to the sheet (Pierre, 2026-11-06: fish answers logged from the first second). A subject the
+  // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
+  // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).
+  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
     // Not signed in: the answer also goes to the sheet anonymously (Pierre, 2026-11-01), see sendAnon.
@@ -1046,8 +1060,8 @@ const pulseSess = (v, now = Date.now()) =>
   v.n >= PULSE.SESS_N &&
   now - v.t0 >= PULSE.SESS_MS;
 const pulseDue = (h = hashNow()) => {
-  // Its answers describe the subject the sheet logs (core.js SUBJECTS log: the corals; the fish beta is not logged yet).
-  if (!SUBJ.log) return false;
+  // Its answers describe the subject the sheet replays (core.js SUBJECTS replay: the corals; the fish beta asks nothing).
+  if (!SUBJ.replay) return false;
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock')) return false;
   const a = answersSoFar(),
     st = pulseSt(),
