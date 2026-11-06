@@ -197,3 +197,16 @@ test('fishOrder follows the game: a reference-level photo before an easier ordin
     ['ref', 'plain']
   );
 });
+
+test('fishCoverOf: his pick in play, else the family’s first photo in the game’s order across its species (Codex review #655)', () => {
+  // The first species' best photo is ordinary; another species has a reference-level one: it is the cover.
+  const L = [
+      {f: 'a1', sid: 's1'},
+      {f: 'b1', sid: 's2', rep: 1}
+    ],
+    F = {ease: {a1: 4, b1: 4}, tags: {a1: 'o1g1bm1', b1: 'p1g0sm1'}};
+  assert.strictEqual(A.fishCoverOf(L, F, 'f:A').f, 'b1');
+  assert.strictEqual(A.fishCoverOf(L, {...F, genera: {'f:A': {cover: 'a1'}}}, 'f:A').f, 'a1', 'his pick wins');
+  assert.strictEqual(A.fishCoverOf(L, {...F, genera: {'f:A': {cover: 'gone'}}}, 'f:A').f, 'b1', 'a pick out of play: the order');
+  assert.strictEqual(A.fishCoverOf([], F, 'f:A'), null);
+});

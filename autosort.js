@@ -452,6 +452,13 @@
       ).map(x => x.p)
     };
   }
+  // A family's cover: his pick while it is in play (L: the family's photos in play), else its first photo in the game's
+  // order across all its species (fishOrder, core.js easyRank, as the game's card cover: reference-level first, whatever
+  // the species; Codex review #655), else null.
+  function fishCoverOf(L, F, tid, j = () => null) {
+    const k = (((F || {}).genera || {})[tid] || {}).cover;
+    return (k && L.find(p => p.f === k)) || fishOrder(L, F, tid, '', j).rest[0] || null;
+  }
   // The IMR phases of a family (fish.json families phase: the phase lines of the IMR entries that cover it; dimorph: its
   // sexes differ), as the phase words of fishPhase: juveniles, intermediate (sub-adult, initial) and terminal phases,
   // males and females.
@@ -726,6 +733,7 @@
     fishOk,
     fishDrop,
     fishOrder,
+    fishCoverOf,
     fishUnitPhases,
     FISHEASY,
     fishNeeds,
