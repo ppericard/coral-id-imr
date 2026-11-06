@@ -518,6 +518,31 @@ const server = http.createServer((req, res) => {
     });
     if (re.on !== 'true' || !re.seahorses || !re.wasp || !re.pipe || !re.off || !re.units)
       ui.push(`${width}px sheet filter and circles: ${JSON.stringify(re)}`);
+    // A genus row opens its short genus page (option B): its species, the filter, its IMR cues, its sibling genera.
+    await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
+    await q.waitForFunction(() => document.querySelector('#view .fsheet a.frow'), null, {timeout: 15000});
+    await q.click('#view .fsheet a.frow[href$="/genus/Chromis"]');
+    await q
+      .waitForFunction(() => location.hash === '#fish/learn/genus/Chromis' && document.querySelector('#view .fsheet .fn-t i'), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const gp = await q
+      .evaluate(() => {
+        document.querySelector('#view .seg [data-mine="0"]').click();
+        return {
+          hash: location.hash,
+          name: (document.querySelector('#view .fn-t') || {}).textContent,
+          tips: document.querySelectorAll('#view .tipbox .idtips li').length,
+          tiles: document.querySelectorAll('#view .ftiles .ftile').length,
+          sib: document.querySelectorAll('#view .hubsec a.lt').length,
+          bar: (document.querySelector('#modes .ctx-t') || {}).textContent || ''
+        };
+      })
+      .catch(e => ({err: e.message}));
+    if (gp.name !== 'Chromis' || gp.tips !== 2 || gp.tiles !== 13 || gp.sib < 2 || !/genus/.test(gp.bar))
+      ui.push(`${width}px genus page: ${JSON.stringify(gp)}`);
+    await wide('a genus page');
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.

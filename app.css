@@ -7217,6 +7217,14 @@ small.beta {
 .lt > span > b:first-child {
   font-size: var(--fs-m);
 }
+a.frow:hover {
+  border-color: var(--accent);
+}
+.fgo {
+  flex: none;
+  font-size: var(--fs-l);
+  color: var(--muted);
+}
 /* The families page: a family's name opens its sheet (its photo enlarges). */
 .tipsheet {
   display: flex;
