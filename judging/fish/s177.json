@@ -1,12 +1,8 @@
 {
  "photos": {
   "fish-s177-cand-664956047": {
-   "code": "o1g3bs1j1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Small banded fish: the juvenile phase or the saddled adult form?"
+   "code": "d1g2bsxj1",
+   "keep": "best"
   },
   "fish-s177-cand-664956038": {
    "code": "p1g3bsxj1",
@@ -29,12 +25,8 @@
    "keep": "best"
   },
   "fish-s177-cand-536993271": {
-   "code": "p1g1sl14",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Banded black and white: the saddled adult form or a juvenile?"
+   "code": "p1g2sl1j2",
+   "keep": "best"
   },
   "fish-s177-cand-603767514": {
    "code": "p1g2sm13",
@@ -45,12 +37,8 @@
    "keep": "best"
   },
   "fish-s177-cand-646410295": {
-   "code": "p1g1sm14",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Banded black and white: the saddled adult form or a juvenile?"
+   "code": "p1g1smmj2",
+   "keep": "best"
   },
   "fish-s177-cand-610964791": {
    "code": "p1g1sl14",
@@ -61,24 +49,16 @@
    "keep": "dup"
   },
   "fish-s177-cand-484828583": {
-   "code": "p1g2ss1j1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Small banded fish: the juvenile phase or the saddled adult form?"
+   "code": "p1g2bsmj1",
+   "keep": "best"
   },
   "fish-s177-cand-484828585": {
    "code": "p1g2ss1j1",
    "keep": "dup"
   },
   "fish-s177-cand-543821798": {
-   "code": "p1g2bm1j1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Banded black and white: the saddled adult form or a juvenile?"
+   "code": "p1g2bmmj1",
+   "keep": "best"
   },
   "fish-s177-cand-536942976": {
    "code": "p1g2sl13",
@@ -109,36 +89,20 @@
    "keep": "best"
   },
   "fish-s177-cand-550755452": {
-   "code": "p1g2bm1j1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Banded black and white: the saddled adult form or a juvenile?"
+   "code": "p1g2ml1j2",
+   "keep": "best"
   },
   "fish-s177-cand-596643162": {
    "code": "p1g2bmmj1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Banded black and white: the saddled adult form or a juvenile?"
+   "keep": "best"
   },
   "fish-s177-cand-723336494": {
    "code": "p1g2sm1j2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Banded black and white: the saddled adult form or a juvenile?"
+   "keep": "best"
   },
   "fish-s177-cand-751631526": {
-   "code": "p1g1sm1j2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Banded black and white: the saddled adult form or a juvenile?"
+   "code": "p1g1sl1j2",
+   "keep": "best"
   },
   "fish-s177-cand-620032947": {
    "code": "p1g1sl1j2",
@@ -151,6 +115,14 @@
   "fish-s177-cand-620032948": {
    "code": "p1g1sm1j2",
    "keep": "alt"
+  },
+  "fish-s177-cand-fb-Pllae_u0": {
+   "code": "p1n0slm3",
+   "keep": "best"
+  },
+  "fish-s177-cand-fb-Pllae_u1": {
+   "code": "p1g1sl14",
+   "keep": "best"
   }
  }
 }

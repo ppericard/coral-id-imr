@@ -33,12 +33,8 @@
    "keep": "best"
   },
   "fish-s365-cand-485793574": {
-   "code": "o0d2ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Murky green sand; I cannot find the garden eels for sure"
+   "code": "p0g2bsx1",
+   "keep": "best"
   },
   "fish-s365-cand-485793586": {
    "code": "o0d2ssx1",
@@ -61,24 +57,16 @@
    "keep": "dup"
   },
   "fish-s365-cand-489112913": {
-   "code": "o0g2ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Bright blurry sand; I cannot find the garden eels for sure"
+   "code": "p0g2bsx1",
+   "keep": "best"
   },
   "fish-s365-cand-688420895": {
    "code": "o0g3ssx1",
    "keep": "best"
   },
   "fish-s365-cand-724608570": {
-   "code": "o0g1ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the garden eels for sure on the photo"
+   "code": "p0g1msx1",
+   "keep": "best"
   },
   "fish-s365-cand-724608576": {
    "code": "o0g2ssx1",
@@ -138,6 +126,10 @@
   },
   "fish-s365-cand-432962477": {
    "code": "o0g2sss2",
+   "keep": "best"
+  },
+  "fish-s365-cand-fb-Hehas_u0": {
+   "code": "p0n0sms3",
    "keep": "best"
   }
  }

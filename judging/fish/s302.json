@@ -127,6 +127,10 @@
   "fish-s302-cand-159959992": {
    "code": "p1g1sm14",
    "keep": "dup"
+  },
+  "fish-s302-cand-fb-Chart_u2": {
+   "code": "p1g1sl14",
+   "keep": "best"
   }
  }
 }

@@ -61,12 +61,8 @@
    "keep": "best"
   },
   "fish-s233-cand-541753254": {
-   "code": "p1g0sl14",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a clear viewing box, not in the wild"
+   "code": "p1g0sm1a1",
+   "keep": "best"
   },
   "fish-s233-cand-541753488": {
    "code": "o1g0sl13",
@@ -110,6 +106,10 @@
   },
   "fish-s233-cand-556393657": {
    "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s233-cand-fb-Hachl_u2": {
+   "code": "p1g0sl14",
    "keep": "best"
   }
  }

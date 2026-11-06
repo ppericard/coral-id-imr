@@ -25,12 +25,8 @@
    "keep": "best"
   },
   "fish-s117-cand-354374633": {
-   "code": "p1d2bmm1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "The obvious fish is another kind; the damselfish is small"
+   "code": "o1d2msx1",
+   "keep": "best"
   },
   "fish-s117-cand-724375522": {
    "code": "p1g1sss2",
@@ -114,6 +110,14 @@
   },
   "fish-s117-cand-425163355": {
    "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-fb-Pobra_u6": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s117-cand-fb-Pobra_u0": {
+   "code": "p1d0sm13",
    "keep": "best"
   }
  }

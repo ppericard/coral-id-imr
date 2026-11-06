@@ -73,12 +73,8 @@
    "keep": "best"
   },
   "fish-s010-cand-611816627": {
-   "code": "o1g1ssm2",
-   "keep": "dup",
-   "unsure": [
-    "keep"
-   ],
-   "note": "A red drawn cross on the photo"
+   "code": "o1g1sm12",
+   "keep": "dup"
   },
   "fish-s010-cand-703615687": {
    "code": "p1g1ss12",
@@ -102,6 +98,10 @@
   },
   "fish-s010-cand-752777650": {
    "code": "p1d1ssx1",
+   "keep": "best"
+  },
+  "fish-s010-cand-fb-Chuni_u4": {
+   "code": "o0n0sl13",
    "keep": "best"
   }
  }
