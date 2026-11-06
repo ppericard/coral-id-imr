@@ -36,6 +36,8 @@
 // times w = clamp(1 - k z, 0.5, 1.5), z its log(seconds) against the player's own median so far; +Sk misses too; +Hh the
 // speed-accuracy score of Math Garden instead of right / wrong; +Uc every right answer's step times c (a control); +G
 // the level's step too; +N no time effect when a photo was enlarged. The prediction never uses the answer's own time.
+// +O (2026-11-06, Q137 part 1): the genus shown takes the level after this answer's step (its levelMove: only the
+// level's moves from the other answers; the app from rules version 7).
 // +A (2026-11-04): the app's own rule (core.js RTIME, rtWeight, rtAdd: +T1.5+G, the times kept as the app keeps them);
 // with --model and a core.js before it, no change, so `e+X+M+A` replays the app as it is on either version.
 // --rtfit: the two measures of PR #431 on the first rule's expectation (a check of tools/learnsim.js's time model on
@@ -304,6 +306,9 @@ function replay(list, variant, pooledOf = null) {
     M.M.abilityStep(C.LEVEL, P[C.LEVEL], good, d, k, wA);
     if (appRT) M.K.rtAdd(P[C.LEVEL], r.sec, k);
     if (flags.includes('G')) timeStep(C.LEVEL, P[C.LEVEL], thL);
+    // +O (2026-11-06, Q137 part 1, rules version 7: core.js scoreAnswer): the genus shown takes the level as it stands
+    // after this answer's step on it, so its levelMove carries only the level's moves from the other answers.
+    if (flags.includes('O') && v !== 'd') s.lt = P[C.LEVEL].th;
     M.M.ELO.kmin = KMIN;
     M.M.ELO.vg = VG;
     const c = r.a;

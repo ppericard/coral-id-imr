@@ -332,7 +332,8 @@ estimate plus the global level's move since its own last step,
 
   θ_g = s.th + (L − s.lt) / (1 + answers_g / `ELO.n`),
 
-`s.lt` the level when the genus was last stepped (saved and merged with `th`, `core.js` `mergeProgress`; dropped when
+`s.lt` the level as it stood after the genus's last answer (since rules version 7, "One surprise, counted once" below;
+before, the level before that answer's own step on it; saved and merged with `th`, `core.js` `mergeProgress`; dropped when
 two accounts are merged, `mergeUsers`). The weight is the genus's own uncertainty, the share its own Elo step gives a
 new answer: a genus with 3 answers takes 83% of the level's move, one with 15 half, one with 45 a quarter. At the
 genus's next own step the move is taken in (`s.th`) and `s.lt` resets. The global level's step loses its `kmin` floor
@@ -426,6 +427,48 @@ logged expectation and the sheet's opening hold stay consistent. The admin's per
 the saved `th`) show each genus's own estimate without the level's move since its last answer: a little behind for a
 player whose level is still rising (ROADMAP). `replayProgress` (PR #399, not merged) replays progress, not the Elo; if
 it comes to replay the abilities, it must replay `s.lt` the same way.
+
+### One surprise, counted once (2026-11-06, Q137 part 1; rules version 7, sheet v62)
+
+Pierre approved (2026-11-06) the algorithms review's §2a (`docs/reviews/2026-11-06-engine-algorithms-review.md`): one
+answer moved its genus twice. `eloStep` stepped the genus, then the global level, and marked the genus with the level
+*before* that level step (`s.lt`). At the genus's next question `levelMove` added the level's move since `s.lt`, which
+contained the level's step on the very same answer. In `core.js`: a first right answer on a new genus (k 4, an average
+photo, a player at level 0) moved it by 0.30 through its own step, then by 0.22 more through the level (the review
+measured 0.27 under other settings), so 0.52 in all.
+
+- **The rule** (`core.js` `scoreAnswer`, so the game and the replay alike): after the level's step, the genus shown takes
+  the level as it now stands (`s.lt` = L after the step). Its `levelMove` then carries only the level's moves from the
+  other answers, which is what the global + concept skill model means: the level's step on an answer reaches the
+  genera that did not see it. The genus answered keeps its own step, and the level keeps its own. Nothing else changes:
+  the level is still made at a player's first answer from their history (`levelSeed`), and every constant is the same.
+  `tests/scorer.test.js`: the genus's ability at its next question is its own step and nothing more; another genus
+  moves with the level; the replay keeps the same `s.lt`.
+- **Measured on the real log** (rule L12, read-only, an extract of 2,047 answers of 10 players to 2026-11-05 20:14,
+  outside the repo; `tools/abilityeval.js` `e+X+M+A` against `e+X+M+A+O`, the new `+O` option being this rule):
+  next-answer log-loss 0.469 → 0.468, Brier 0.149 → 0.148. Paired per player (the primary measure, players as the
+  unit): +0.002 [−0.008, +0.012], sign-flip p 0.91 (10 players): no change in prediction. By level band (exploratory,
+  uncorrected): level 0-0.75 −0.018 [−0.033, −0.003], level ≥ 0.75 +0.010 [−0.007, +0.027]. At the end of the log the
+  players' answer-weighted mean genus ability moves by +0.01 to −0.11 (less inflation of the genera answered once or
+  twice), and their global levels do not move. Calibration is the same within 0.01 in every group. So the fix is about
+  correctness (each answer's surprise counted once), not about a measured gain in prediction.
+- **Simulated** (rule L11 tier 1, `tools/learnsim.js`, the four profiles × 5 seeds, rules version 6 against 7 on the
+  same seeds and stats, 1 worker; declared before the runs: the primary measure |θ − true| at question 300, pooled,
+  exact sign-flip): 0.838 → 0.845, +0.007 (90% bounds −0.034 / +0.048), p 0.82: no change. Guardrails: true knowledge
+  over the slate at 300 +0.000 (−0.003 / +0.004), genera met at 200 +0.5 (−0.4 / +1.4), progress shown at 300 +0.05
+  points (−0.7 / +0.8). Exploratory, uncorrected: the abilities sit a little lower against the truth (θ − true at 300
+  −0.45 → −0.51, p 0.09), and right answers over questions 200-300 fall by 1.5 points (p 0.15). The simulated learners
+  were already under-rated, and the second count was partly hiding that. Part 2 is the planned answer: the faster early
+  convergence of a variance-weighted update.
+- **Part 2, the Kalman / Glicko variance (§2b), comes with the new progress bar** (another track). How it plugs in:
+  everything that steps an ability now sits in one place, `scoreAnswer` (Q132). Part 2 replaces the steps there,
+  `eloStep` on the genus and on `LEVEL` together with `levelMove`, by one update of θ_g = L + δ_g. Each part keeps a mean
+  and a variance (`s.th` and a new `s.tv` for δ_g, `P[LEVEL].th` and `.tv` for L). Each answer adds process noise
+  (learning), and the surprise is split between L and δ_g by their variances (Szczecinski & Tihon 2023), so it is counted
+  once by construction and `levelMove` and `s.lt` go. `ELO.kmax`, `kmin`, `n`, `vr`, `vg` give way to the prior variance
+  and the process noise. The time weight `rtWeight` keeps scaling the step. The variances give the bar its SE. The new
+  fields join `REPLAYED`, `replayedOf`, `replayBase` and `mergeProgress` (from the device that played, as `th`), with a
+  rules version and the replay. The scoring record (`sc`) needs nothing new, since the variance is rebuilt from the log.
 
 ### Beginners and experts (2026-11-03)
 
@@ -3071,7 +3114,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     reads from it needs a rules version too. v4 (2026-11-04): answer time weighs right answers
     ("Response time": a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5); the sheet replays it from
     v32, which reads the Seconds column). v5 (2026-11-04): the first-launch question's prior. v6 (2026-11-06, sheet
-    v61): one scorer, and the rows logged with their scoring record replayed from it ("One scorer"). A device that skips several versions sees the standard card once, at the
+    v61): one scorer, and the rows logged with their scoring record replayed from it ("One scorer"). v7 (2026-11-06,
+    sheet v62): one surprise counted once ("One surprise, counted once"). A device that skips several versions sees the standard card once, at the
     last of them, with its progress before and after the whole jump (`core.js` `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`

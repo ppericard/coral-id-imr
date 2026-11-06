@@ -702,17 +702,10 @@ test('replay: the prior of the first-launch answer in force at each answer, as t
     ],
     plain = C.replayProgress(rows, {gen: GEN}).p.P,
     said = C.replayProgress(rows, {gen: GEN, starts: {p: {c: 'know', t: 1000, h: [['know', 0, 1000, 'tour']]}}}).p.P;
-  // The app's own steps on the same answers (model.js ability / abilityStep = core.js abilityOf / eloStep with p).
+  // The app's own steps on the same answers (quiz.js answer: core.js scoreAnswer with the prior p).
   const app = {},
     p = startVars('know').p,
-    step = (g, ok, d) => {
-      const s = (app[g] = app[g] || {ok: 0, ko: 0});
-      s[ok ? 'ok' : 'ko']++;
-      C.eloStep(app, g, s, ok, d, 4, 1, p);
-      if (app[C.LEVEL]) app[C.LEVEL][ok ? 'ok' : 'ko']++;
-      else app[C.LEVEL] = C.levelSeed(app);
-      C.eloStep(app, C.LEVEL, app[C.LEVEL], ok, d, 4, 1, p);
-    };
+    step = (g, ok, d) => C.scoreAnswer(app, {t: g, c: ok ? g : 'C', ok, k: 4, chs: [], ph: [], d0: d, p, timed: false});
   const dOf = (e, th) => th - Math.log((e - 0.25) / 0.75 / (1 - (e - 0.25) / 0.75));
   step('A', true, dOf(0.8, 0));
   step('B', false, dOf(0.8, 0));

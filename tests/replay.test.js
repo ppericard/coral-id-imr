@@ -284,6 +284,7 @@ test('replayProgress: the ability, the run, the global level and the times, as q
     if (P[C.LEVEL]) P[C.LEVEL][ok ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     C.eloStep(P, C.LEVEL, P[C.LEVEL], ok, d + cf, k);
+    s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7, Q137)
     // The genus given: no Elo step (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo").
   });
   assert.ok(cfs > 0, 'the mix-up of A with B makes the next question on A harder for this player');
@@ -496,6 +497,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     abilityStep(C.LEVEL, P[C.LEVEL], good, dm, k);
+    s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7, Q137)
     ph.forEach(f => {
       const y = ((s.ps = s.ps || {})[f] = s.ps[f] || [0, 0]);
       y[0]++;
@@ -661,6 +663,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
       if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
       else P[C.LEVEL] = C.levelSeed(P);
       abilityStep(C.LEVEL, P[C.LEVEL], good, dm, k, rw);
+      s.lt = P[C.LEVEL].th; // the genus takes the level after this answer's step (rules version 7, Q137)
       C.rtAdd(P[C.LEVEL], rt, k);
       log.push({
         id: 'a' + i,
