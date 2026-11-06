@@ -218,7 +218,7 @@
           r.add(o);
         }
         N.add[f] = sid;
-        const c = fishCopy(p, {jt: s.tags, ph: s.phase});
+        const c = fishCopy({...p, f}, {jt: s.tags, ph: s.phase}, F);
         L[f] = 'a' + put('tags', f, c.tags) + put('ease', f, s.ease) + put('phase', f, c.phase) + put('crop', f, s.crop);
         R.add++;
       } else {
@@ -351,9 +351,12 @@
   // The pass's tags and phase as Add and the auto-sort copy them beside an add (j: the judgment, or the auto-sort's sure
   // values {jt, ph}), with the source's phase (p.st) when the pass gives none: the j flag for a juvenile, else the phase
   // word. Without it the copy would read as the draft's word over the source in fishPhase, and a juvenile by its source
-  // would count as an adult once added (Codex review #602); his own edits then change it like any value.
-  function fishCopy(p, j) {
-    let tags = j && j.jt,
+  // would count as an adult once added (Codex review #602); his own edits then change it like any value. F: the curation
+  // before the add: tags Pierre already gave the photo (a Juvenile set before Add) are the ones read, never the source's
+  // phase over them (Codex review #602).
+  function fishCopy(p, j, F) {
+    const own = F && p && p.f ? ((F.tags || {})[p.f] ?? null) : null;
+    let tags = own != null ? own : j && j.jt,
       phase = (j && j.ph) || null;
     if (FPHW[phase] || !FISH_TAGS.test(tags || '') || tags.slice(7).includes('j')) return {tags, phase};
     const src = fishPhase({f: '', st: (p || {}).st}, null, {});
@@ -500,7 +503,7 @@
     // An unsure judgment too (u: the judge doubted its code or its keep): the best description of the photo there is
     // until Pierre's own tags (admin plan PR 5b).
     if (j) {
-      const c = fishCopy(p, j);
+      const c = fishCopy({...(p || {}), f}, j, F);
       put('tags', c.tags);
       put('ease', j.e);
       put('phase', c.phase);
