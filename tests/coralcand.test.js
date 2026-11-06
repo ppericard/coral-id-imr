@@ -67,9 +67,9 @@ print(json.dumps(out))`);
   all.filter(p => p.lic && p.a).forEach(p => assert.strictEqual(licence({a: p.a}), p.lic, `${p.f}: lic ${p.lic}, credit ${p.a}`));
 });
 
-test('cand.json: no share-alike candidate waits (only those curation.json names may stay, e.g. one Pierre added)', () => {
+test('cand.json: no share-alike candidate waits (only those curation.json names may stay, e.g. one Pierre added, or restored)', () => {
   const C = read('cand.json').cand;
-  Object.entries(C).forEach(([g, L]) => L.forEach(p => assert.ok(!shareAlike(p), `${g}: ${p.f} ${p.lic}`)));
+  Object.entries(C).forEach(([g, L]) => L.forEach(p => assert.ok(p.restored || !shareAlike(p), `${g}: ${p.f} ${p.lic}`)));
 });
 
 test('drop_share_alike: drops waiting share-alike candidates, never one curation.json names; re-runnable', () => {
@@ -80,6 +80,130 @@ g1 = drop_share_alike(d, {'a3'})
 g2 = drop_share_alike(d, {'a3'})
 print(json.dumps({'gone': g1, 'again': g2, 'left': {g: [p['f'] for p in L] for g, L in d['cand'].items()}}))`);
   assert.deepStrictEqual(R, {gone: ['a1', 'b1'], again: [], left: {A: ['a2', 'a3', 'a4']}}, 'a licence it cannot read is not dropped');
+});
+
+// A Publish with exclusions (2026-11-06): Pierre's exclusion takes a photo out of every list, kept in excluded.json with its
+// place; his Restore (admin Genera › Excluded) puts it back by itself; an excluded candidate is not "used" by curation.json.
+const EXCL = `import excluded as X
+X.EX = {'a-wide-1': 'excluded', 'a-cand-2': 'excluded', 'a-cand-3': 'auto', 'a-cand-4': 'excluded', 'imrl-p1_i1': 'excluded'}
+X.IDS = {X.pid(f) for f in X.EX} - {None}
+def unexclude(f):
+    del X.EX[f]; X.IDS.clear(); X.IDS.update({X.pid(f) for f in X.EX} - {None})
+U = 'https://inaturalist-open-data.s3.amazonaws.com/photos/1/original.jpg'
+d = {'gen': {'A': {'views': {'wide': [{'f': 'a-wide-0', 'src': U}, {'f': 'a-wide-1', 'src': U}, {'f': 'a-wide-5', 'src': U}]}}},
+     'course': {'A': [{'f': 'imrl-p1_i1'}]},  # an IMR lecture photo: no online original, its file gone with its exclusion
+     'cand': {'A': [{'f': 'a-cand-2', 'lic': 'cc-by', 'src': U}, {'f': 'a-cand-3', 'src': U}, {'f': 'a-cand-4', 'lic': 'cc-by-sa', 'src': U},
+                    {'f': 'a-cand-6', 'lic': 'cc-by-sa', 'src': U}]}}
+F = lambda: {'wide': [p['f'] for p in d['gen']['A']['views']['wide']], 'cand': [p['f'] for p in d['cand'].get('A', [])]}`;
+
+test('drop_excluded keeps what it removes; restore_unexcluded puts an un-excluded photo back at its place, once', () => {
+  const R = py(`${EXCL}
+gone = {}
+X.drop_excluded(d, gone)
+a = F()
+places = {f: [r['in'], r.get('k'), r.get('v'), r['i']] for f, r in gone.items()}
+none = X.restore_unexcluded(d, gone)
+unexclude('a-wide-1'); unexclude('imrl-p1_i1')
+back = X.restore_unexcluded(d, gone)
+again = X.restore_unexcluded(d, gone)
+print(json.dumps({'after': a, 'places': places, 'none': none, 'back': back, 'again': again, 'restored': F(), 'left': sorted(gone),
+  'course': [p['f'] for p in d['course']['A']]}))`);
+  assert.deepStrictEqual(
+    R.after,
+    {wide: ['a-wide-0', 'a-wide-5'], cand: ['a-cand-3', 'a-cand-6']},
+    "Pierre's exclusions go, the auto one stays"
+  );
+  assert.deepStrictEqual(R.places, {
+    'a-wide-1': ['gen', 'views', 'wide', 1],
+    'a-cand-2': ['cand', null, null, 0],
+    'a-cand-4': ['cand', null, null, 2],
+    'imrl-p1_i1': ['course', null, null, 0]
+  });
+  assert.deepStrictEqual(R.none, [[], []], 'nothing comes back while it is excluded');
+  assert.deepStrictEqual(R.back, [['a-wide-1'], ['imrl-p1_i1']], 'a photo with no online original and no file in img/ is held back');
+  assert.deepStrictEqual(R.again, [[], ['imrl-p1_i1']], 'restored once');
+  assert.deepStrictEqual(R.restored.wide, ['a-wide-0', 'a-wide-1', 'a-wide-5'], 'back at its place');
+  assert.deepStrictEqual(R.left, ['a-cand-2', 'a-cand-4', 'imrl-p1_i1'], 'the held one stays in excluded.json (Codex review #628)');
+  assert.deepStrictEqual(R.course, []);
+});
+
+test('fetch_local tidy: excluded candidates kept in excluded.json (share-alike ones too), waiting share-alike dropped', () => {
+  const R = py(`${EXCL}
+import fetch_local as fl, io, contextlib
+fl.curated = lambda: set()
+gone = {}
+with contextlib.redirect_stdout(io.StringIO()): fl.tidy(d, gone)
+a = F()
+unexclude('a-cand-4')
+with contextlib.redirect_stdout(io.StringIO()): fl.tidy(d, gone)
+mark = [p.get('restored') for p in d['cand']['A'] if p['f'] == 'a-cand-4']
+with contextlib.redirect_stdout(io.StringIO()): fl.tidy(d, gone)
+print(json.dumps({'after': a, 'gone': sorted(gone), 'restored': F()['cand'], 'mark': mark}))`);
+  assert.deepStrictEqual(R.after, {wide: ['a-wide-0', 'a-wide-5'], cand: ['a-cand-3']});
+  assert.deepStrictEqual(
+    R.restored,
+    ['a-cand-3', 'a-cand-4'],
+    'a share-alike candidate Pierre restores comes back as a candidate he can add, and stays (Codex review #628)'
+  );
+  assert.deepStrictEqual(R.mark, [1]);
+  assert.deepStrictEqual(R.gone, ['a-cand-2', 'a-wide-1', 'imrl-p1_i1']);
+});
+
+test('curated(): an id curation.json excludes is not used, even if a genus still names it', () => {
+  const tmp = path.join(require('os').tmpdir(), `cur-${process.pid}.json`);
+  fs.writeFileSync(tmp, JSON.stringify({genera: {A: {add: {'a-cand-1': 'wide', 'a-cand-2': 'wide'}}}, exclude: {'a-cand-2': 'excluded'}}));
+  try {
+    const R = py(
+      `from datajson import curated\nk = curated(${JSON.stringify(tmp)})\nprint(json.dumps(['a-cand-1' in k, 'a-cand-2' in k]))`
+    );
+    assert.deepStrictEqual(R, [true, false]);
+  } finally {
+    fs.unlinkSync(tmp);
+  }
+});
+
+test('the photo lists follow curation.json: nothing Pierre excluded in data.json or cand.json, nothing un-excluded left in excluded.json', () => {
+  const cur = read('curation.json').exclude || {},
+    gone = read('excluded.json').photos,
+    D = read('data.json'),
+    C = read('cand.json'),
+    F = [];
+  const walk = o =>
+    Array.isArray(o) ? o.forEach(walk) : o && typeof o === 'object' ? (o.f && F.push(o.f), Object.values(o).forEach(walk)) : 0;
+  ['gen', 'course', 'cand', 'cmp', 'x'].forEach(k => walk(D[k]));
+  walk(C.cand);
+  const fix = 'run python3 tools/fetch_local.py --tidy';
+  assert.deepStrictEqual(
+    F.filter(f => cur[f] && cur[f] !== 'auto'),
+    [],
+    fix
+  );
+  // Held back on purpose (tools/excluded.py restore_unexcluded): no online original and no file in img/, which the
+  // workflow's tools/apply_excluded_archive.py --files could not take back from git history.
+  const held = ([f, r]) => !r.p.src && !fs.existsSync(path.join(ROOT, 'img', f + '.webp'));
+  assert.deepStrictEqual(
+    Object.entries(gone)
+      .filter(([f]) => !cur[f])
+      .filter(x => !held(x))
+      .map(([f]) => f),
+    [],
+    fix
+  );
+  Object.entries(gone).forEach(([f, r]) => assert.strictEqual(r.p.f, f));
+});
+
+test('the Candidate photos workflow starts from the latest main and tidies the lists before its commit', () => {
+  const y = fs.readFileSync(path.join(ROOT, '.github/workflows/approved-photos.yml'), 'utf8');
+  const job = y.slice(y.indexOf('  photos:'), y.indexOf('  r2:'));
+  assert.match(job, /actions\/checkout@v\d+\n\s+with:\n\s+ref: main\n/, 'a queued run must see the commit of the run before it');
+  const tidy = job.indexOf('python tools/fetch_local.py --tidy'),
+    commit = job.indexOf('name: Commit');
+  assert.ok(tidy > 0 && tidy < commit, 'the tidy step runs before the commit');
+  const files = job.indexOf('python tools/apply_excluded_archive.py --files'),
+    sizes = job.indexOf('python tools/photos.py');
+  assert.ok(files > 0 && files < sizes && sizes < tidy, 'a restored lecture photo: its file from history, its sizes, then back');
+  assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
+  assert.match(job, /git add data\.json cand\.json excluded\.json img/);
 });
 
 // One full refill for genus A, near Dauin only (the other tiers answer nothing), against a stubbed iNaturalist.
@@ -121,7 +245,9 @@ fl.key_only = lambda d: []
 fl.open = lambda *a, **k: io.StringIO('{}')
 fl.excluded = lambda *a, **k: False
 fl.set_aside = lambda f: False
-fl.drop_excluded = lambda d: None
+fl.drop_excluded = lambda d, gone=None: None
+fl.load_gone = lambda: {}
+fl.save_gone = lambda g: None
 fl.curated = lambda: set()
 fl.confirmed_species = lambda *a, **k: []
 fl.dump_all = lambda d: SAVED.update(d)
@@ -178,6 +304,7 @@ fl.key_only = lambda d: []
 fl.open = lambda *a, **k: io.StringIO('{}')
 fl.excluded = lambda *a, **k: False
 fl.set_aside = lambda f: False
+fl.load_gone = lambda: {}
 fl.curated = lambda: {'a3'}
 sys.argv = ['x', '--plan']
 out = io.StringIO()
@@ -229,7 +356,9 @@ fl.key_only = lambda d: []
 fl.open = lambda *a, **k: io.StringIO('{}')
 fl.excluded = lambda *a, **k: False
 fl.set_aside = lambda f: False
-fl.drop_excluded = lambda d: None
+fl.drop_excluded = lambda d, gone=None: None
+fl.load_gone = lambda: {}
+fl.save_gone = lambda g: None
 fl.curated = lambda: set()
 fl.confirmed_species = lambda *a, **k: []
 fl.dump_all = lambda d: None
