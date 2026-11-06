@@ -111,7 +111,7 @@ Pierre's decisions (2026-11-04, on the design study's questions):
 - **Look-alike pairs** from the data, IMR, players' confusions and reference sites; **the cues always sourced** (rule C2).
 - **No IMR photos for fish**: iNaturalist covers every species.
 - **Fish answers are logged to the sheet from the very first second** (Pierre, 2026-11-06, replacing "as soon as curated photos enter the game" and "no fish answer logging for a week"; PR 11).
-- **The coral "Genera" page becomes a subject-neutral units page** (genera for corals, entries for fish).
+- **The coral "Genera" page becomes a subject-neutral units page** (genera for corals; for fish, since the units plan of 2026-11-06, the book's families with their genera and species).
 
 | # | PR | What it changes | Status |
 |---|---|---|---|
@@ -120,7 +120,7 @@ Pierre's decisions (2026-11-04, on the design study's questions):
 | 3 | One filter bar (a: unit page with origin chips and the view filter; b: Photo review and Candidates) | One component everywhere, filled from the descriptor; coral behaviour identical (before / after DOM checks) | In review (`admin.js` `FB`, `bindBar`; `SUBJECTS` `admin` `origins`, `csrc`, sheet v57) |
 | 4 | Curation `fish` namespace | Draft, Undo, Publish summary and merge for fish keys, and the fish auto-sort's run into the draft (`fishRun`: the pass's sure judgments up to each species' target, Checks, keep agreement; Pierre's decisions never touched) (the coral key names under `fish`, `auto` included); tests that fish edits never touch coral keys | Done (#479) |
 | 5 | Fish Candidates | The swiper: thinnest species and missing phases first, stop at target, tag rows (the `judging/FISH.md` rubric's tags, phase), crop, Not this → species (Pierre's only, `fish.out`, never set by an agent; in 5b; PR 7 merged first, on 2026-11-06, the integrator's call: no photo carried an `out` then, and Not this follows at once with 5b, #602), the pre-sort through the auto-sort (`fishSure`, Checks, agreement), the prior chip. Needs a first run of the fish candidate pass (judging/BRIEF.md) | Next |
-| 6 | Fish entry page (the units page) | Species as sections, cover, featured, Remove, Not this, tags, Validated with its list of what is missing; wink preview | Next |
+| 6 | Fish units page (Photos › Families) | On the book's families (units plan, docs/reviews/2026-11-06-fish-units-plan.md §6): family → genus → species, the IMR course as a tag on families and genera (Pierre, 2026-11-06 13:38), cover, featured, Remove, Not this, tags, Validated with its list of what is missing; wink preview; `fish.genera` keyed by family id | In review (#655, supersedes #636; sheet v79) |
 | 7 | Fish photos into the game | The workflow downloads added fish photos (R2, four sizes); the app reads the curated list, the stopgap kept for entries under a minimum | In review (#614, on `main` alone; `fish-game.json`, `tools/fish_game.py`, `core.js` `fishPhotos`) |
 | 8 | Fish Coverage | Entries with their species, easy photos, IMR phases; Where to look; To do items | Next |
 | 9 | Photo review for fish | Quality, Phase & framing with the agreement line, the prior shown in By difficulty | Next |
