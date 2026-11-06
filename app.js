@@ -411,8 +411,9 @@ const coverW = (p, long) => {
 // Thumbnails (home band, progress tiles, look-alike pairs, tips): the 240 or 480 px file, picked by the browser from the
 // width the photo is drawn at (sizes, CSS px; with object-fit: cover a tall box draws it wider than the box) and the
 // screen density. Pierre, 2026-11-01: the home photos need no big files for how they are shown.
+// A remote photo's name rides on its <img> (data-f): its URL is not one flag.js can name it by.
 const thumb = (p, sizes) => {
-  if (p.r && p.src) return `src="${img(p, 's')}"`;
+  if (p.r && p.src) return `src="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''}`;
   if (saver()) return `src="${loc(p, 't')}"`; // Saver: a thumbnail is at most ~240 px (field link: Home's band on a desktop took ~600 KB)
   const w = long => Math.round(long * Math.min(1, p.ar || 4 / 3));
   return `src="${loc(p, 's')}" srcset="${loc(p, 't')} ${w(240)}w, ${loc(p, 's')} ${w(480)}w" sizes="${sizes}"`;
@@ -900,7 +901,7 @@ function zoom(list, i, opts = {}) {
       ? esc(vl || 'Photo') + blindCredit(p)
       : `${p.genus ? `<b>${uname(p.genus)}</b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
     // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? `${SUBJ.what} to identify` : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
+    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? `${SUBJ.what} to identify` : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
       <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}${over ? `<button type="button" data-ov aria-pressed="${overOn}">Labels</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
     const im = lb.querySelector('.lb-in img');
@@ -1331,6 +1332,20 @@ const UNITS = {
     slate: () => slateOf(DATA),
     // The species a photo shows, for the answer log (app.js speciesShown): none, a coral question is about the genus.
     species: () => '',
+    // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (flag),
+    // and what the flag records: its genus and view}, null when no genus shows it (the views, more, approved book photos,
+    // the lecture photos).
+    photo: f => {
+      for (const [n, g] of Object.entries(DATA.gen)) {
+        for (const [v] of VIEWS) {
+          if ([...(g.views[v] || []), ...((g.more || {})[v] || [])].some(p => p.f === f)) return {id: f, genus: n, view: v};
+          if ((g.book || []).some(p => p.f === f && p.view === v)) return {id: f, genus: n, view: v};
+        }
+        const c = (DATA.course[n] || []).find(p => p.f === f);
+        if (c) return {id: f, genus: n, view: c.v};
+      }
+      return null;
+    },
     // Every name a player may type (quiz.js typeNames) and how a typed text is read (core.js typeMatchIn).
     names: () => typeNamesOf([...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})], GX),
     norm: typeNorm,
@@ -1414,6 +1429,19 @@ const UNITS = {
     slate: () => (FISH ? FISH.c1 : []),
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
+    // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
+    // fishPid: one photo under its stopgap, candidate and reference names), and what the flag records: file (its name),
+    // unit (the entry showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
+    photo: f => {
+      const id = fishPid(f),
+        G = Object.values(FISH ? FISH.gen : {}).sort((a, b) => !!a.rank - !!b.rank);
+      for (const g of G)
+        for (const [v, L] of Object.entries(g.views || {})) {
+          const p = (L || []).find(x => x && fishPid(x.f) === id);
+          if (p) return {id, file: p.f, unit: g.id, ...(p.sp ? {sp: p.sp} : {}), view: v};
+        }
+      return null;
+    },
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop),
     norm: typeNormAll,
     // The look-alikes the IMR presentation names, each pair once.
