@@ -45,11 +45,11 @@ updates itself from `main` within about 15 minutes of the merge (`autoUpdate`; P
   player's progress with it): after any change to `core.js`, run `python3 tools/sync_core.py --fix` and bump `VERSION`
   (CI runs `--check`), so the live script always runs the app's engine.
 - If you change the Elo in `stats_`, change its copy `eloOf()` in `core.js` too (with the photo memory estimate `MEM`
-  and the genus offsets of the hierarchical photo Elo, `GENUS_K`, `genusOffsetsOf`), and likewise the pair counts
+  and the per-unit offsets of the hierarchical photo Elo, `GENUS_K`, `genusOffsetsOf`), and likewise the pair counts
   `conf` in `stats_` and `confusionOf()` (`tests/core.test.js` checks both agree).
 - The sheet's `VERSION` is not stamped by the deploy (rule W15): bump it by hand.
 
-*Why:* no more copy and paste by Pierre. *Source:* Pierre, 2026-11-01.
+*Why:* no more copy and paste by Pierre. *Source:* Pierre, 2026-11-01; subject-neutral wording, 2026-11-06.
 
 ### D4
 
