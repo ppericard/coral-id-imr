@@ -738,6 +738,14 @@ body.adm-dragging * {
   font-weight: 600;
   box-shadow: var(--shadow);
 }
+/* Inert on a shared page (admin.js SHARED: the list of players, the same on both sides): it shows the side the other
+   pages are on, and takes no click. */
+.adm-subj.off {
+  opacity: 0.45;
+}
+.adm-subj.off a {
+  pointer-events: none;
+}
 .adm-scnt {
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -4842,4 +4850,44 @@ button.adm-chip[aria-pressed='true'] {
 .adm-fishcovt .adm-fneed {
   text-align: left;
   font-size: 0.8rem;
+}
+/* A player's Journey, one per subject (admin-journey.js jseg): Corals | Fish at the right of the title, each with the
+   player's answers in it; links styled as the segmented buttons. */
+.adm-jsubj {
+  margin-left: auto;
+}
+.adm-jsubj a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  min-height: 30px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--muted);
+  text-decoration: none;
+}
+.adm-jsubj a + a {
+  border-left: 1px solid var(--line);
+}
+.adm-jsubj a[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-jsubj small {
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+}
+/* The list of players (admin.js renderUsers): a group of columns per subject, its name over them, a rule at its left. */
+.adm-utbl .adm-ugrp th {
+  padding-bottom: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.adm-utbl .adm-ug0 {
+  border-left: 1px solid var(--line);
+  padding-left: 10px;
 }

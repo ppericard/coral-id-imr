@@ -23,8 +23,10 @@ const VIEWS = [
 // Cap per genus x view: a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see
 // cellFull). 10 at first (Pierre, 2026-11-01), then 20 the same day (Pierre: "the goal is to learn the genus, not the
 // photos: the fewer photos, the more risk of learning the photos"; a player at 75% sees ~7 colonies of a genus before
-// its 95%, and its mastery exam wants 5 photos never seen). A let only so the admin test can lower it.
-let CELL_MAX = 20;
+// its 95%, and its mastery exam wants 5 photos never seen), then 40 (Pierre, 2026-11-06, Q187: players went round a
+// genus's photos fast, and the cap of 20 bound the Colony view of 17 genera; docs/reviews/2026-11-06-photo-exposure-study.md).
+// Corals only: fish has no cap. A let only so the admin test can lower it.
+let CELL_MAX = 40;
 // Game genera first (Pierre, 2026-11-03: "quiz first"): the genera a game can ask (core.js gameOf: the IMR slate,
 // Millepora, the bonus genera) are the rows of Game coverage and Where to look, and their candidates come before any
 // other in Candidates. The other genera of data.json "x" are Key-only (Identify > Coral ID Key and their sheet): their
@@ -334,17 +336,25 @@ const seenOf = (o, cand) => Object.fromEntries(Object.entries(o.seen || {}).filt
 const sgChanged = () => !same(seenOf(DRAFT, false), seenOf(SAVED, false)) || !same(DRAFT.use || {}, SAVED.use || {});
 // Candidates rejected in the Candidates view: curation.json "seen" {'cand:f': 1}. Only a "reviewed" mark: the photo stays a candidate.
 const cdChanged = () => !same(seenOf(DRAFT, true), seenOf(SAVED, true));
+// Each flag goes to its subject's part of the curation (flag.js s, core.js SUBJECTS admin.cur; a flag without one came
+// from the corals, the only subject flagged before), under its id there (fish: core.js fishPid), never to another's.
+const flagsOf = (C, S = ASUBJ) => (S.admin.cur ? (C[S.admin.cur] || {}).flag : C.flag) || {};
+function flagsSet(C, S, F) {
+  if (!S.admin.cur) return (C.flag = F);
+  C[S.admin.cur] = {...(C[S.admin.cur] || {}), flag: F};
+}
 function importFlags() {
   const L = store.get('reefid-photo-flags', []);
   if (!L || !L.length) return 0;
-  DRAFT.flag = {...(DRAFT.flag || {})};
   let n = 0;
   L.forEach(x => {
-    if (x && x.f && !DRAFT.flag[x.f]) {
-      const {f, ...rest} = x;
-      DRAFT.flag[f] = rest;
-      n++;
-    }
+    if (!x || !x.f) return;
+    const S = subjectOf(x.s),
+      F = flagsOf(DRAFT, S);
+    if (F[x.f]) return;
+    const {f, s, ...rest} = x;
+    flagsSet(DRAFT, S, {...F, [f]: rest});
+    n++;
   });
   store.set('reefid-photo-flags', null);
   if (n) saveDraft();
@@ -1200,7 +1210,7 @@ function statusDraw({parts, sug, over}) {
     bs.setAttribute('aria-pressed', String(bookOn(DRAFT)));
     bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`;
   }
-  const tn = Object.keys(DRAFT.flag || {}).length + sug + repsOpen().length,
+  const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen().length,
     xn = Object.keys(DRAFT.exclude || {}).length;
   OVER = over;
   const t = draftAt ? ` (saved ${dateText(draftAt, 'hm')})` : '';
@@ -1248,19 +1258,28 @@ const subjOfHash = h => {
 };
 // p is the page x or an address under it (a player's journey is under players/list).
 const under = (p, x) => p === x || p.startsWith(x + '/');
+// The Players pages are every subject's (Pierre, 2026-11-06: "the Players section needs rethinking now that we have two
+// game modes"; docs/reviews/2026-11-06-admin-players-two-subjects.md): Activity and a player's Journey follow the switch,
+// each under its subject's prefix; the list of players is one page for both (SHARED): no prefix, the same table on either
+// side (a group of columns per subject), the switch inert there, the subject on screen kept for the other pages.
+const SHARED = ['players/list'];
+const shared = p => SHARED.includes(p);
 const hasPage = (S, p) =>
-  !TABS.some(t => t[4].rank && t[4].rank !== S.rank && under(p, t[0])) && (!S.admin.pages || S.admin.pages.some(x => under(p, x)));
-// A subject's landing page: Players › Activity, or Players › List for a subject without Activity yet (fish; Codex review
-// #554).
+  p.startsWith('players/') ||
+  (!TABS.some(t => t[4].rank && t[4].rank !== S.rank && under(p, t[0])) && (!S.admin.pages || S.admin.pages.some(x => under(p, x))));
+// A subject's landing page: Players › Activity (every subject has it).
 const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'players/list');
+// A player's page (a journey, a device's): the switch keeps it, as the page's own subject toggle does (renderJourney).
+const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('players/list/anon/');
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
-// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine).
+// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine) and its photos flagged
+// on the site (its flag).
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
-  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length;
+  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length + Object.keys(F.flag || {}).length;
 };
 // A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
 const LIVE = 'photos/genera/live';
@@ -1434,11 +1453,20 @@ let ptFlush = () => {}; // a point's page: writes the note being typed to the dr
 const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.length - a.length)[0] || LIVE;
 // The address on screen into ASUBJ and cur (the address after the subject's prefix, without the filter). An address
 // that shows another page (a group, a tab, an old or unknown address: admRoute) is replaced by that page's, in place.
+// A shared page (SHARED) keeps the subject on screen, whatever prefix it was reached with, and its address drops the
+// prefix (#fish/players/list becomes #players/list, the fish side kept); opened first (a reload, a bookmark), the subject
+// on screen last (reefid-admin-nav-subj).
+let subjRead = false;
 function readHash() {
-  let p;
-  [ASUBJ, p] = subjOfHash(hashNow());
-  cur = admRoute(p);
-  if (cur !== p) history.replaceState(null, '', '#' + ASUBJ.hash + admAddr(cur));
+  let [S, p] = subjOfHash(hashNow());
+  const q = admRoute(p, S),
+    pre = S !== ADM0;
+  if (shared(q) && !pre) S = subjRead ? ASUBJ : SUBJECTS.find(x => x.id === store.get('reefid-admin-nav-subj', '')) || ADM0;
+  subjRead = true;
+  ASUBJ = S;
+  cur = q;
+  if (cur !== p || (shared(cur) && pre)) history.replaceState(null, '', '#' + (shared(cur) ? '' : ASUBJ.hash) + admAddr(cur));
+  store.set('reefid-admin-nav-subj', ASUBJ.id);
 }
 const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'photos/genera');
 const groupKey = () => tabOf()[3];
@@ -1474,7 +1502,7 @@ function navs(tn, xn) {
   }
   if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-nav-last'), cur);
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
-    href = h => (h === LIVE ? genusHash() : '#' + ASUBJ.hash + h),
+    href = h => (h === LIVE ? genusHash() : '#' + (shared(h) ? '' : ASUBJ.hash) + h),
     // The subject's pages only: a view it has, a tab with one, a group with one.
     vOk = ([h]) => hasPage(ASUBJ, h),
     tOk = t => t[2].some(vOk),
@@ -1505,10 +1533,18 @@ function navs(tn, xn) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
       // The subject's page used last (a remembered value is checked against today's addresses).
+      // A player's page stays that player's (their journey in the other subject).
       const back = store.get(subjK('reefid-admin-nav-last', S), ''),
-        to = typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) ? back : homeOf(S);
-      return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+        to = playerPage(cur)
+          ? cur
+          : typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) && !shared(back)
+            ? back
+            : homeOf(S);
+      return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
+    // On a shared page (the list of players) the switch is inert: the page is the same on both sides; it still shows the
+    // side the other pages are on.
+    sw.classList.toggle('off', shared(cur));
     sw.hidden = false;
   }
   $('modes').hidden = false;
@@ -2632,7 +2668,7 @@ const REC_HELP = `<p><b>Difficulty in words</b> (Pierre, 2026-11-05). A photo re
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
   get journey() {
-    return `<p>One player's path, from their answers in the sheet (signed in). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
+    return `<p>One player's path, from their answers in the sheet (signed in), <b>in one subject</b>: the Corals | Fish at the top shows how many answers they gave in each and opens the other (the header switch keeps the player too); from the list of players it opens on the subject they played last. A subject whose progress the admin does not replay yet shows what its answers say: no progress, cards, learned units, Elo or sheets opened. <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
@@ -2647,7 +2683,7 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Elo</b> = each player's overall level from every answer (sheet v13 links names to it), as the score players see: 1000 + 200 × level, on the photo-difficulty scale (shown to them from 200 answers), ± its 95% margin (hover it for the level): a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, by anonymous id; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (on the Players page of a subject in beta, e.g. Fish, with the subject switch; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -2676,7 +2712,7 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter. Coral Finder book photos are left out.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; on a fish photo, Remove excludes it from the fish games for good (Undo brings it back) and Done clears the flag.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   fishcov: `<p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates, <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Families). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   units: `<p>The book's families (Allen et al. 2015, the key in force), by key group: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (8, 12 for the PDF's most sighted) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the family's), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only) and <b>×</b> (excluded for good): one click each, Undo steps back. <b>✓ Validated</b> once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. Candidates are added in Candidates. Publish sends it all (curation.json fish).</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
@@ -3631,8 +3667,12 @@ function bindDecide(k) {
 }
 function renderTriage() {
   status();
-  const F = DRAFT.flag || {},
-    flagged = Object.keys(F).map(f => ({...(PHOTOS[f] || {genus: F[f].genus || '?'}), f, fl: F[f]}));
+  // The photos flagged on the site for the subject on screen (flagsOf): a coral one with its genus, a photo of a subject
+  // with its own part of the curation (fish) by its photo (fl.file) and unit, once its data is read (fishAdmin).
+  const F = flagsOf(DRAFT),
+    own = !ASUBJ.admin.cur,
+    flagged = Object.keys(F).map(f => ({...((own && PHOTOS[f]) || {genus: F[f].genus || '?'}), f, fl: F[f]}));
+  if (!own && flagged.length && !FISHA) fishAdmin();
   const when = t => {
     try {
       return dateText(t, 'dmhm');
@@ -3645,6 +3685,7 @@ function renderTriage() {
       <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
   // A flagged photo still on a genus page gets every tool of that page (Pierre: often flagged for its zoom level), plus Done.
   const flagTile = p => {
+    if (!own) return unitFlagTile(p);
     const n = p.genus,
       q = DATA.gen[n] && [...photos(n), ...pending(n)].find(x => x.f === p.f),
       where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`;
@@ -3664,6 +3705,17 @@ function renderTriage() {
       .replace(GRIP, '')
       .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>${where}`);
   };
+  // A flagged photo of a subject with its own part of the curation: the photo, its unit, where it was seen; Remove excludes
+  // it for good from that subject's games (autosort.js fishExclude, the × of Photos › Families, by the photo's name:
+  // core.js fishPhotos and fishOn honour it, its other copies by their photo id). Both clear the flag; Undo takes either back.
+  const unitFlagTile = p => {
+    const fp = FISHA && FISHA.ph[p.fl.file || p.f],
+      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`,
+      ph = fp
+        ? `<a class="adm-ph" href="${esc(fp.o || '')}" target="_blank" rel="noopener"><img src="${img(fp, 1)}" alt="" loading="lazy"></a>`
+        : '<span class="adm-ph none">missing</span>';
+    return `<figure class="adm-tile" data-f="${esc(p.f)}">${ph}<figcaption>${p.fl.unit ? repUnit(p.fl.unit) : ''} <small>${esc((fp && fp.t) || '')}</small>${where}</figcaption><div class="adm-acts"><button type="button" data-act="tdrop">Remove</button><button type="button" data-act="tdone">Done</button></div></figure>`;
+  };
   // A reported photo: every tool of its genus page, like a flagged one; Done is per report.
   const repTile = (f, g0) => {
     // A fish photo (fishAdmin): the photo, its fish entry and its iNaturalist observation.
@@ -3681,7 +3733,9 @@ function renderTriage() {
       .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`);
   };
   const reps = repsOpen();
-  if (!FISHA && reps.some(r => /^fi\d/.test(r[10] || '') || /^t\d/.test(r[5] || ''))) fishAdmin();
+  // A fish report: an old entry id (t01) or a family or genus id (f:, g:; units plan PR 4), or a fish photo (stopgap fi…,
+  // FishBase reference fb…, curated candidate fish-…; Codex review #656).
+  if (!FISHA && reps.some(r => /^(fi\d|fb|fish-)/.test(r[10] || '') || /^(t\d|f:|g:)/.test(r[5] || ''))) fishAdmin();
   const repCard = r => {
     const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
       play = !/^(photo|sheet|page)$/.test(m),
@@ -3741,8 +3795,9 @@ function renderTriage() {
   bindDecide('rule');
   bindDecide('sa');
   const done = f => {
-    DRAFT.flag = {...(DRAFT.flag || {})};
-    delete DRAFT.flag[f];
+    const L = {...flagsOf(DRAFT)};
+    delete L[f];
+    flagsSet(DRAFT, ASUBJ, L);
   };
   $v.querySelectorAll('[data-act="tdone"],[data-tdone]').forEach(
     b =>
@@ -3785,6 +3840,17 @@ function renderTriage() {
         done(f);
         saveDraft();
         render();
+      })
+  );
+  $v.querySelectorAll('[data-act="tdrop"]').forEach(
+    b =>
+      (b.onclick = () => {
+        const f = b.closest('[data-f]').dataset.f;
+        DRAFT[ASUBJ.admin.cur] = fishExclude(DRAFT[ASUBJ.admin.cur], (flagsOf(DRAFT)[f] || {}).file || f);
+        done(f);
+        saveDraft();
+        render();
+        toast('Excluded. Undo (Ctrl+Z) brings it back.');
       })
   );
   $v.querySelectorAll('[data-act="thide"]').forEach(
@@ -5416,6 +5482,7 @@ function pubSummary() {
     [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
     // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera).
     [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish family'],
+    [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
     [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]
@@ -5776,7 +5843,9 @@ async function start() {
   readHash();
   // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs (Codex review
   // #492). A link without a prefix clicked on a subject's page (a player's journey from Players) is given that
-  // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject.
+  // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject, and so
+  // does a link that names its subject itself (data-own: a journey link on the list of players, a journey's own toggle),
+  // and a shared page's link keeps no prefix (SHARED).
   document.addEventListener(
     'click',
     e => {
@@ -5787,7 +5856,7 @@ async function start() {
         h = decodeURIComponent(h);
       } catch (e) {}
       const [S, page] = subjOfHash(h);
-      if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || !hasPage(ASUBJ, page)) return;
+      if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || shared(page) || a.hasAttribute('data-own') || !hasPage(ASUBJ, page)) return;
       e.preventDefault();
       location.hash = ASUBJ.hash + admAddr(page);
     },
@@ -6636,7 +6705,7 @@ function sheetAgain(...kinds) {
 function sheetEarly(h) {
   const need =
     h === 'players/list'
-      ? ['users', 'ans']
+      ? ['users', 'ans', 'pages']
       : /^players\/list\/(journey|anon)\//.test(h)
         ? ['users', 'ans', 'pages']
         : h === 'players/activity'
@@ -6969,6 +7038,9 @@ function savedClear() {
 // players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
 // column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
 const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
+// The domain-score bar (core.js DOM) in the admin's replays only from the script that replays it (core.js DOM_SHEET; rule
+// D4), with the sheet's genus offsets (?stats=1 gd) for the rows logged without them; before, the moving average.
+const domReplay = () => ({dom: Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= DOM_SHEET, gd: GD});
 const PROGM = new Map();
 let ROWSBY = null;
 // From sheet script v42 (RP_SHEET; Pierre, 2026-11-04: Players read every player's saved copy, one sheet call each, 4 at a
@@ -7005,6 +7077,7 @@ function progOf(u, full) {
       mem: SMEM,
       conf: SCONF,
       fmt: SFMT,
+      ...domReplay(),
       since: reset ? {[u.id]: reset} : {},
       starts: S.err ? {} : {[u.id]: S.start} // the first-launch answer (core.js startPriorAt)
     })[u.id],
@@ -7027,44 +7100,147 @@ const withSaved = (v, sv) => (sv == null || sv === v ? v : `${v} <small class="a
 // each player's anonymous id (users_ id, sheet v13). One row per signed-in player, sortable by any column; a row opens
 // their games, mix-ups, genera to review and Merge / Delete. Answers of devices that never signed in (and of deleted
 // accounts) have no name: they are counted apart, below. Activity keeps the class-wide charts.
+// The list of players, one page for every subject (Pierre, 2026-11-06: "the players list must not depend on Corals or
+// Fish: it is independent of the game mode, the same page that doesn't change between the two worlds"; "maybe fish
+// columns and coral columns, but there may be too much: Journey has the details"): the player's own columns (UCOLS),
+// then a group of columns per subject (SCOLS). Elo, the quiz's right shares, Duels, Days, Learned and the units seen are
+// on the player's Journey (its numbers at the top, per subject); Reports on the row's bar.
 const UCOLS = [
   ['name', 'Name', u => u.name.toLowerCase(), 1],
-  // One column for the level (Pierre, 2026-11-03: Level and Elo said the same thing): the sheet's level chain (stats_ ras),
-  // the one every device has and the margin is for; players see the app's own level since v63 (Q134), which can differ.
-  [
-    'elo',
-    'Elo',
-    u => u.lv ?? -99,
-    0,
-    "Overall level from the sheet's answer log (the photo Elo's player term; 1000 + 200 × level on the photo-difficulty scale), ± its 95% margin. Players see the app's own level (leaderboard, My progress), which can differ"
-  ],
-  ['answers', 'Answers', u => u.answers, 0],
+  // Last answer, any subject (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
+  // to the minute, sorted by its exact time; the default sort, most recent first.
+  ['last', 'Last', u => u.at || 0, 0, `Last answer, any subject (now = less than ${RECENT.NOW} minutes ago)`],
+  // The devices they used: the distinct devices of their pages-opened summaries (sheet v30 Pages, loadPages).
+  ['dev', 'Devices', u => devsOf(u) ?? -1, 0, 'Devices they opened the app on (from the pages-opened summaries)'],
+  ['groups', 'Groups', u => (u.groups || []).length, 0, 'The beta groups they are in']
+];
+// A subject's group: [key, title, sort value (u, S), ascending first, tip (S), cell (u, S), shown for S]. sxOf(u, S): the
+// player's answers in S ({n, ok, at, s: sessions, len: their median length in minutes}), from the answer log.
+const SCOLS = [
+  ['n', 'Answers', (u, S) => sxOf(u, S).n, 0, S => `Answers in ${S.name}`, (u, S) => sxOf(u, S).n || '–', () => true],
   [
     'right',
-    'Quiz',
-    u => (u.qz[0] ? u.qz[1] / u.qz[0] : -1),
+    'Right',
+    (u, S) => (x => (x.n ? x.ok / x.n : -1))(sxOf(u, S)),
     0,
-    'Right in the Quiz and the Custom quiz (duels slipped into them included; not the Duels tab)'
+    S => `Right answers in ${S.name}, every game`,
+    (u, S) => (x => (x.n ? pct(x.ok, x.n) : '–'))(sxOf(u, S)),
+    () => true
   ],
-  ['recent', 'Last 50', u => (u.q50[0] ? u.q50[1] / u.q50[0] : -1), 0, 'Right among their last 50 Quiz answers'],
-  ['duels', 'Duels', u => u.du[0], 0, 'Answers in the Duel tab (2 choices), with their right share'],
-  ['days', 'Days', u => u.days, 0, 'Days with answers'],
+  [
+    'at',
+    'Last',
+    (u, S) => sxOf(u, S).at,
+    0,
+    S => `Last answer in ${S.name}`,
+    (u, S) => (x => (x.n ? ago(x.at) : '–'))(sxOf(u, S)),
+    () => true
+  ],
+  [
+    'sess',
+    'Sessions',
+    (u, S) => sxOf(u, S).s,
+    0,
+    () => `Sessions (answers less than ${HEALTH.GAP} minutes apart) · their median length`,
+    (u, S) => (x => (x.s ? `${x.s} <small>· ${x.len < 1 ? '<1' : x.len} min</small>` : '–'))(sxOf(u, S)),
+    () => true
+  ],
+  // The replayed subject's progress (SUBJECTS replay; the Progress column from sheet script v28, replayOn).
   [
     'prog',
     'Progress',
     u => (u.pg ? u.pg.pct : -1),
     0,
-    'Progress %, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)'
+    () => 'Progress %, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)',
+    u => (!u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')),
+    S => !!S.replay && replayOn()
   ],
-  ['learned', 'Learned', u => (u.pg && !u.pg.err ? u.pg.learned : u.learned), 0, 'Genera learned (mastery exam passed)'],
-  ['seen', 'Seen', u => u.seen, 0, 'Genera seen'],
-  ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent']
+  // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191; docs/reviews/2026-11-06-photo-exposure-study.md §5), per subject
+  // (Code.gs exposure_: ex {subject id: [seen, of, hit, asked, units]}). Photos = Seen %; Spread = Spread %, the one to
+  // act on: whether the draw used the room it had.
+  [
+    'photos',
+    'Photos',
+    (u, S) => (x => (x && x[1] ? x[0] / x[1] : -1))(exOf(u, S)),
+    0,
+    () => 'Seen %: the game photos they have been shown, out of the game photos of the units they have met',
+    (u, S) => EXPO_CELL.photos(u, S),
+    () => expoOn()
+  ],
+  [
+    'spread',
+    'Spread',
+    (u, S) => (x => (x && x[3] ? x[2] / x[3] : -1))(exOf(u, S)),
+    0,
+    () =>
+      'Spread %, in time order: of their questions on a unit that still had colonies they had never been shown, the share that showed one (100% = no colony repeated while an unseen one was left)',
+    (u, S) => EXPO_CELL.spread(u, S),
+    () => expoOn()
+  ]
 ];
+// Each player's answers and sessions per subject, from the whole log (rowsOf): {player id: {subject id: {n, ok, at, s,
+// len}}}.
+const sxOf = (u, S) => {
+  const X = ofAns('sx', () => {
+    const o = Object.create(null),
+      at = (id, T) => {
+        const P = (o[id] = o[id] || {});
+        return (P[T.id] = P[T.id] || {n: 0, ok: 0, at: 0, s: 0, len: 0, L: []});
+      };
+    SUBJECTS.forEach(T => {
+      rowsOf(T).forEach(r => {
+        const x = at(r[0], T);
+        x.n++;
+        x.ok += r[4];
+        if (r[1] > x.at) x.at = r[1];
+      });
+      sessionsOf(rowsOf(T)).forEach(z => at(z.id, T).L.push((z.L[z.L.length - 1][1] - z.L[0][1]) / 6e4));
+    });
+    Object.values(o).forEach(P =>
+      Object.values(P).forEach(x => {
+        const L = x.L.sort((a, b) => a - b);
+        x.s = L.length;
+        x.len = L.length ? Math.round(L[Math.floor(L.length / 2)]) : 0;
+      })
+    );
+    return o;
+  });
+  return (u && u.id && X[u.id] && X[u.id][S.id]) || {n: 0, ok: 0, at: 0, s: 0, len: 0};
+};
+// The devices a player used: distinct device ids of their pages-opened summaries; null while those are not read.
+let DEVS = {of: null, by: null};
+const devsOf = u => {
+  if (!PGS) return null;
+  if (PGS.err || !u.id) return 0;
+  if (DEVS.of !== PGS) {
+    const o = Object.create(null);
+    (PGS.rows || []).forEach(x => x.id && x.dev && (o[x.id] = o[x.id] || new Set()).add(x.dev));
+    DEVS = {of: PGS, by: o};
+  }
+  return DEVS.by[u.id] ? DEVS.by[u.id].size : 0;
+};
+// The subject a player answered last in (their Journey opens there; Pierre's list, 2026-11-06), else the first.
+const lastSubj = u => SUBJECTS.reduce((b, S) => (sxOf(u, S).at > sxOf(u, b).at ? S : b), SUBJECTS[0]);
+const journeyHref = u => '#' + lastSubj(u).hash + 'players/list/journey/' + encodeURIComponent(u.name);
+// Sheet v81: each player's photo exposure per subject (ex); an older script sends none, and the two columns stay away.
+const EXPO_SHEET = 81;
+const expoOn = () => ((USERS && USERS.v) || 0) >= EXPO_SHEET;
+const exOf = (u, S = ASUBJ) => (u && u.ex && u.ex[S.id]) || null;
+// A cell: the share, its counts in the title; – when the player has no answer on a unit with game photos.
+const exCell = (k, n, tip) => (n ? `<span title="${esc(tip)}">${pct(k, n)}</span>` : '–');
+// The two cells, beside their column definitions above, so the pair moves as one (S: the subject, the switch's by default).
+const EXPO_CELL = {
+  photos: (u, S = ASUBJ) =>
+    (x => (x ? exCell(x[0], x[1], `${x[0]} of the ${x[1]} game photos of the ${x[4]} ${x[4] === 1 ? S.one : S.many} met`) : '–'))(
+      exOf(u, S)
+    ),
+  spread: (u, S = ASUBJ) => (x => (x ? exCell(x[2], x[3], `${x[2]} of ${x[3]} questions showed a colony new to them`) : '–'))(exOf(u, S))
+};
 // The beta group (sheet v48; Pierre, 2026-11-04: a subject in beta opens to a group he picks here, for now everyone, not
-// by one site-wide switch): on the Players page of a subject that opens to a group (core.js SUBJECTS open: 'group',
-// subjGroup; none once it opens to all, even with its "beta" tag kept; the admin's subject switch), whether each player is
-// in its group (Code.gs groupSet_; the app opens the subject to them, app.js subjOpen). Add / Remove under the row, Add
-// all above the table.
+// by one site-wide switch): for each subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup; none once
+// it opens to all, even with its "beta" tag kept), whether each player is in its group (Code.gs groupSet_; the app opens
+// the subject to them, app.js subjOpen): its Beta column in the subject's group, Add / Remove on the row's bar, Add all
+// above the table.
 const GROUP_SHEET = 48;
 // Sheet v55: a delete cleans up everything of the account (Code.gs deleteAccount_); an older script would keep its reports.
 const DEL_SHEET = 55;
@@ -7072,15 +7248,14 @@ const delOn = () => (USERS.v || 0) >= DEL_SHEET;
 // Sheet v58: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
 const ARCH_SHEET = 58;
 const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
-const groupOn = () => subjGroup(ASUBJ) && (USERS.v || 0) >= GROUP_SHEET;
-const inGroup = u => (u.groups || []).includes(ASUBJ.id);
-UCOLS.push(['group', 'Beta', u => (inGroup(u) ? 1 : 0), 0, 'In the beta group']);
-// Last answer, second column (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
-// to the minute, sorted by its exact time; the default sort, most recent first.
-UCOLS.splice(1, 0, ['last', 'Last', u => u.at || 0, 0, `Last answer (now = less than ${RECENT.NOW} minutes ago)`]);
+const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= GROUP_SHEET;
+const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><h2>Players</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
+  // The pages opened (the Devices column) come after the table, drawn again once in (read again once stale; Codex
+  // review #690).
+  pagesFresh('players/list');
   if (!USERS || !ANS) {
     $v.innerHTML = head + '<p class="note">Loading…</p>';
     Promise.all([loadUsers(), ANS ? null : loadStats()]).then(() => {
@@ -7095,40 +7270,44 @@ function renderUsers() {
     bindUsers();
     return;
   }
-  // The Progress column only from sheet script v28 (replayOn).
-  const COLS = UCOLS.filter(c => (c[0] !== 'prog' || replayOn()) && (c[0] !== 'group' || groupOn())),
-    col = COLS.find(c => c[0] === SF.us) || COLS.find(c => c[0] === 'last'),
-    sk = col[0],
-    sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
-  // Quiz and Duel tab apart (core.js playSplit), on each row before the sort reads them (Codex review #383); a player whose
-  // answers did not load keeps the sheet's all-games counts.
-  const SPLIT = ofAns('split', () => playSplit(ANS.rows || [])),
-    psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]},
-    // Each player's last answer in the log loaded (ms), fresher than the player list's (kept 2 minutes, loadUsers).
-    LAST = ofAns('last', () => {
-      const o = Object.create(null);
-      (ANS.rows || []).forEach(r => r[1] > (o[r[0]] || 0) && (o[r[0]] = r[1]));
-      return o;
-    });
+  // The columns: the player's, then each subject's group (its key prefixed by the subject's id), each shown when it applies
+  // (the Progress column only from sheet script v28, replayOn; a Beta column only for a subject that opens to a group).
+  const GRP = SUBJECTS.map(S => [
+      S,
+      SCOLS.filter(c => c[6](S)).map(([k, t, f, asc, tip, cl]) => ({
+        k: S.id + ':' + k,
+        t,
+        f: u => f(u, S),
+        asc,
+        tip: tip(S),
+        cl: u => cl(u, S)
+      }))
+    ]).filter(([, L]) => L.length),
+    COLS = [
+      ...UCOLS.map(([k, t, f, asc, tip]) => ({k, t, f, asc, tip, cl: u => cell(k, u)})),
+      ...GRP.flatMap(([, L]) => L.map((c, i) => ({...c, g0: !i})))
+    ],
+    col = COLS.find(c => c.k === SF.us) || COLS.find(c => c.k === 'last'),
+    sk = col.k,
+    sd = SF.us === sk && SF.ud ? SF.ud : col.asc ? 'asc' : 'desc';
+  // Each player's last answer in the log loaded (ms), any subject, fresher than the player list's (kept 2 minutes,
+  // loadUsers).
+  const LAST = ofAns('last', () => {
+    const o = Object.create(null);
+    (ANS.all || ANS.rows || []).forEach(r => r[1] > (o[r[0]] || 0) && (o[r[0]] = r[1]));
+    return o;
+  });
   const U = USERS.users
-      .map(u => {
-        const p = psOf(u);
-        return {
-          ...u,
-          lv: u.id && RAS[u.id] ? RAS[u.id][0] : null,
-          qz: p.q,
-          q50: p.q50,
-          du: p.d,
-          at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
-          pg: replayOn() ? progOf(u) : null
-        };
-      })
-      .sort((a, b) => {
-        const x = col[2](a),
-          y = col[2](b);
-        return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || b.at - a.at;
-      }),
-    total = DATA ? Object.keys(DATA.gen).length : 0;
+    .map(u => ({
+      ...u,
+      at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
+      pg: replayOn() ? progOf(u) : null
+    }))
+    .sort((a, b) => {
+      const x = col.f(a),
+        y = col.f(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || b.at - a.at;
+    });
   const date = t => (t ? dateText(t, 'dm') : '–');
   const opts = n =>
     U.filter(u => u.name !== n)
@@ -7141,10 +7320,16 @@ function renderUsers() {
   // One compact bar under the row (Pierre, 2026-11-03: a big card for one Journey link and a tall Manage card wasted the
   // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
   const detail = u => `<tr class="adm-udet"><td colspan="${COLS.length + 1}"><div class="adm-ubar">
-      <a class="next" href="#players/list/journey/${encodeURIComponent(u.name)}">Journey →</a>
-      ${u.pg ? `<span class="adm-uprog">Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
+      <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
+      ${u.pg ? `<span class="adm-uprog">${esc(SUBJECTS.find(S => S.replay).name)}: Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
-      ${groupOn() ? `<span>${inGroup(u) ? 'In' : 'Not in'} the ${esc(ASUBJ.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-on="${inGroup(u) ? 0 : 1}">${inGroup(u) ? 'Remove' : 'Add'}</button></span>` : ''}
+      ${u.reports ? `<span>${u.reports} report${u.reports === 1 ? '' : 's'}</span>` : ''}
+      ${SUBJECTS.filter(S => groupOn(S))
+        .map(
+          S =>
+            `<span>${inGroup(u, S) ? 'In' : 'Not in'} the ${esc(S.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-gid="${esc(S.id)}" data-on="${inGroup(u, S) ? 0 : 1}">${inGroup(u, S) ? 'Remove' : 'Add'}</button></span>`
+        )
+        .join('')}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
       <button type="button" class="adm-fchip" data-uarch="${esc(u.name)}"${archOn() ? '' : ` disabled title="Needs the sheet script v${ARCH_SHEET}"`}>Archive…</button>
       ${
@@ -7152,59 +7337,47 @@ function renderUsers() {
           ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
           : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
       }</div></td></tr>`;
-  // Answers without a name: devices that never signed in (~anon), by anonymous id. The answers a deleted account left
-  // (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
-  const LVM = ofAns('margin', () => levelMargin(ANS.rows || [])), // 95% margin of each player's level (core.js)
-    named = new Set(U.map(u => u.id).filter(Boolean)),
+  // Answers without a name: devices that never signed in (~anon), by anonymous id, every subject's. The answers a deleted
+  // account left (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
+  const named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
   // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
   if ((USERS.v || 0) >= 13)
-    (ANS.rows || []).forEach(r => {
+    (ANS.all || ANS.rows || []).forEach(r => {
       if (named.has(r[0]) || goneRow(r)) return;
-      const a = (A[r[0]] = A[r[0]] || {n: 0, ok: 0, last: 0, first: Infinity});
+      const a = (A[r[0]] = A[r[0]] || {n: 0, by: {}, last: 0, first: Infinity});
       a.n++;
-      a.ok += r[4];
+      a.by[rowSubject(r)] = (a.by[rowSubject(r)] || 0) + 1;
       if (r[1] > a.last) a.last = r[1];
       if (r[1] < a.first) a.first = r[1];
     });
   const anon = Object.entries(A).sort((a, b) => b[1].last - a[1].last);
-  const act = U.filter(u => u.last && Date.now() - u.last < 7 * 864e5).length,
-    ans = U.reduce((t, u) => t + u.answers, 0);
-  const cell = (k, u) =>
-    ({
-      name: `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}`,
-      elo: eloText(u.lv, u.id ? LVM[u.id] : null),
-      answers: u.answers,
-      right: pct(u.qz[1], u.qz[0]),
-      recent: pct(u.q50[1], u.q50[0]),
-      duels: u.du[0] ? `${u.du[0]} <small>${pct(u.du[1], u.du[0])}</small>` : '',
-      days: u.days,
-      prog: !u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%'),
-      learned: !replayOn()
-        ? `${u.learned}/${u.total || total}`
-        : !u.pg
-          ? '…'
-          : u.pg.err
-            ? `${u.learned}/${u.total || total}`
-            : withSaved(`${u.pg.learned}/${u.pg.total}`, u.pg.saved && `${u.pg.saved.learned}/${u.pg.total}`),
-      seen: u.seen,
-      reports: u.reports || '',
-      last: ago(u.at),
-      group: inGroup(u) ? 'In' : '–'
-    })[k];
-  // The beta group's line above the table (groupOn): how many players are in it, and Add all for the others.
-  const gOut = groupOn() ? U.filter(u => !inGroup(u)) : [],
-    gLine = !subjGroup(ASUBJ)
-      ? ''
-      : !groupOn()
-        ? `<p class="note">The ${esc(ASUBJ.name)} beta group needs the sheet script v${GROUP_SHEET} (live: v${USERS.v || '?'}).</p>`
-        : `<p class="adm-ugroup"><span>${esc(ASUBJ.name)} beta: <b>${U.length - gOut.length}</b> of ${U.length} players</span>${gOut.length ? ` <button type="button" class="adm-fchip" data-ugall>Add all ${gOut.length}</button>` : ''}</p>`;
+  const act = U.filter(u => u.at && Date.now() - u.at < 7 * 864e5).length;
+  function cell(k, u) {
+    return k === 'name'
+      ? `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}`
+      : k === 'dev'
+        ? (d => (d == null ? '…' : d || '–'))(devsOf(u))
+        : k === 'groups'
+          ? esc((u.groups || []).map(g => subjectOf(g).name).join(', ')) || '–'
+          : ago(u.at);
+  }
+  // Each beta group's line above the table (groupOn): how many players are in it, and Add all for the others.
+  const gLine = SUBJECTS.filter(S => subjGroup(S))
+    .map(S => {
+      if (!groupOn(S))
+        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${GROUP_SHEET} (live: v${USERS.v || '?'}).</p>`;
+      const out = U.filter(u => !inGroup(u, S)).length;
+      return `<p class="adm-ugroup"><span>${esc(S.name)} beta: <b>${U.length - out}</b> of ${U.length} players</span>${out ? ` <button type="button" class="adm-fchip" data-ugall="${esc(S.id)}">Add all ${out}</button>` : ''}</p>`;
+    })
+    .join('');
   $v.innerHTML =
     head +
     kpis([
       ['Players', U.length],
       ['Active 7 d', act],
-      ['Answers', ans],
+      // Each subject's answers by the players listed.
+      ...SUBJECTS.map(S => [`${S.name} answers`, U.reduce((t, u) => t + sxOf(u, S).n, 0)]),
       ['Not signed in', anon.length]
     ]) +
     (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
@@ -7212,19 +7385,21 @@ function renderUsers() {
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
-    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr>${COLS.map(
-      ([k, t, , , tip]) =>
-        `<th${tip ? ` title="${esc(tip)}"` : ''}><button type="button" class="adm-usort" data-usort="${k}" aria-pressed="${k === sk}">${t}${k === sk ? (sd === 'asc' ? ' ▴' : ' ▾') : ''}</button></th>`
+    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr class="adm-ugrp"><th colspan="${UCOLS.length}"></th>${GRP.map(
+      ([S, L]) => `<th colspan="${L.length}" class="adm-ug0">${esc(S.name)}</th>`
+    ).join('')}<th></th></tr><tr>${COLS.map(
+      ({k, t, tip, asc, g0}) =>
+        `<th${tip ? ` title="${esc(tip)}"` : ''}${g0 ? ' class="adm-ug0"' : ''}><button type="button" class="adm-usort" data-usort="${esc(k)}" data-uasc="${asc ? 1 : 0}" aria-pressed="${k === sk}">${t}${k === sk ? (sd === 'asc' ? ' ▴' : ' ▾') : ''}</button></th>`
     ).join('')}<th></th></tr></thead><tbody>
       ${U.map(
         u =>
-          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
+          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(c => `<td${c.g0 ? ' class="adm-ug0"' : ''}>${c.cl(u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th title="Overall level as the Elo players see (1000 + 200 × level), ± its 95% margin">Elo</th><th>Answers</th><th>Right</th>${replayOn() ? '<th title="Replayed from their answers with the current rules">Progress</th>' : ''}<th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th>${SUBJECTS.map(S => `<th title="Answers in ${esc(S.name)}">${esc(S.name)}</th>`).join('')}<th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#players/list/anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? eloText(RAS[id][0], LVM[id]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#${esc(SUBJECTS.reduce((b, S) => ((a.by[S.id] || 0) > (a.by[b.id] || 0) ? S : b), SUBJECTS[0]).hash)}players/list/anon/${encodeURIComponent(id)}" data-own title="Journey"><code>${esc(id)}</code></a></td>${SUBJECTS.map(S => `<td>${a.by[S.id] || '–'}</td>`).join('')}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
           )
           .join(
             ''
@@ -7254,8 +7429,8 @@ function bindUsers() {
     b =>
       (b.onclick = () => {
         const k = b.dataset.usort,
-          c = UCOLS.find(x => x[0] === k);
-        SF.ud = SF.us === k ? ((SF.ud || (c[3] ? 'asc' : 'desc')) === 'asc' ? 'desc' : 'asc') : c[3] ? 'asc' : 'desc';
+          a0 = b.dataset.uasc === '1' ? 'asc' : 'desc';
+        SF.ud = SF.us === k ? ((SF.ud || a0) === 'asc' ? 'desc' : 'asc') : a0;
         SF.us = k;
         store.set('reefid-admin-stats', SF);
         render();
@@ -7264,7 +7439,7 @@ function bindUsers() {
   const rl = $v.querySelector('[data-uload]');
   if (rl)
     rl.onclick = () => {
-      sheetAgain('users', 'ans', 'stats'); // levels (ras) too, not only the counts
+      sheetAgain('users', 'ans', 'stats', 'pages'); // levels (ras) too; the pages opened (Devices)
       savedClear(); // the players' saved progress (Progress, Learned, the journeys' cards) too
       render();
     };
@@ -7327,23 +7502,26 @@ function bindUsers() {
     b =>
       (b.onclick = () => {
         const name = b.dataset.ugroup,
-          on = b.dataset.on === '1';
-        group(name, on, on ? `"${name}" added to the ${ASUBJ.name} beta.` : `"${name}" removed from the ${ASUBJ.name} beta.`);
+          on = b.dataset.on === '1',
+          S = subjectOf(b.dataset.gid);
+        group(name, on, on ? `"${name}" added to the ${S.name} beta.` : `"${name}" removed from the ${S.name} beta.`, S.id);
       })
   );
-  const ga = $v.querySelector('[data-ugall]');
-  if (ga)
-    ga.onclick = () => {
-      const L = USERS.users.filter(u => !inGroup(u)).map(u => u.name);
-      if (
-        !L.length ||
-        !confirm(
-          `Add all ${L.length} players not in it yet to the ${ASUBJ.name} beta?\n\n${ASUBJ.name} opens in the app for them at their next sync. Players who sign up later are not in it.`
+  $v.querySelectorAll('[data-ugall]').forEach(
+    ga =>
+      (ga.onclick = () => {
+        const S = subjectOf(ga.dataset.ugall),
+          L = USERS.users.filter(u => !inGroup(u, S)).map(u => u.name);
+        if (
+          !L.length ||
+          !confirm(
+            `Add all ${L.length} players not in it yet to the ${S.name} beta?\n\n${S.name} opens in the app for them at their next sync. Players who sign up later are not in it.`
+          )
         )
-      )
-        return;
-      group(L, true, `${L.length} players added to the ${ASUBJ.name} beta.`);
-    };
+          return;
+        group(L, true, `${L.length} players added to the ${S.name} beta.`, S.id);
+      })
+  );
   // Archive (sheet v58, was Rename v20; Pierre 2026-11-02 and 2026-11-05, Q84/Q88): keep a record apart under an archive
   // name ("Pierre-test"), out of normal operation (Board -2: no leaderboard, no achievement share, no beta group, no
   // player row; the Archived fold below). The old name is free again: its devices are told the record was archived and
@@ -7483,6 +7661,10 @@ function renderStats() {
 // readAnswers anonymous 2): they rate the photos only, never count as a player (Pierre, 2026-11-05, Q86).
 const goneRow = r => r[11] === 2;
 const playerRows = () => (ANS.rows || []).filter(r => !goneRow(r));
+// A subject's answer rows (ANS.all holds every subject's, ANS.rows the replayed one's), a deleted account's left out: the
+// Players pages read the subject on screen's (Activity, a Journey, a session's summary; the list of players, each
+// subject's in its own columns).
+const rowsOf = (S = ASUBJ) => (ANS ? ofAns('rows:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id).filter(r => !goneRow(r))) : []);
 const statRows = () => playerRows();
 // Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
@@ -7629,7 +7811,10 @@ function statsPlayers() {
     bindStats();
     return;
   }
-  const R = statRows(),
+  // Activity: the subject on screen's answers (every subject has its Activity); the Answer log: the replayed subject's.
+  // Another subject's units are named from its entries (fishAdmin, read once; Codex review #690).
+  if (!log && !ASUBJ.replay && !FISHA) fishAdmin().then(() => cur === 'players/activity' && FISHA && render());
+  const R = log ? statRows() : rowsOf(),
     P = {};
   R.forEach(r => {
     const p = (P[r[0]] = P[r[0]] || {id: r[0], L: [], d: new Set()});

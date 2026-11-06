@@ -183,11 +183,17 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    passing species into `suggest.json` `"fish"`: `{jt, e, k, ph, c, u, n}`, `jt` and `e` after the caps as in
    `fish-photos.json`. Commit only `judging/fish/*.json` and `suggest.json`.
 
-**What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`, through the admin's auto-sort once the fish
-curation exists, admin plan PR 4): `best` or `alt` → proposed in, with its tags, ease, phase and crop, whatever its ease
-(hard photos stand in for SVS video frames); `dup`, an unclear subject (count `x`) or a fish out of the water (flag `a`)
-→ set aside. About 1 candidate in 20 goes to Pierre as a Check instead, and his answers measure the agreement. So add
-`unsure` at the least doubt: it costs Pierre one swipe, a wrong sure decision costs the players.
+**What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`): `best` or `alt` → **in play at once**, with its
+tags, ease, phase and crop, whatever its ease (hard photos stand in for SVS video frames; the judged ease is the photo's
+prior difficulty, the players' answers refine it); `dup`, an unclear subject (count `x`), other kinds of fish (count `m`:
+rule P3, as for the reference photos) or a fish out of the water (flag `a`) → stays out. Pierre, 2026-11-06 15:16 and
+16:20 (Q180, Q199): a judged candidate enters the game by itself, treated exactly like a photo he adds in the admin and
+hosted on R2 like it (`tools/fish_game.py` `in_play`, the Candidate photos workflow), each judged batch as soon as it
+is ready, without waiting for his swipe; his curation only removes or corrects (a photo he rejects, excludes or moves
+with Not this leaves the game at once, `core.js` `fishIn`). The admin's auto-sort still puts the same sure judgements
+into his draft (admin plan PR 4), and about 1 candidate in 20 goes to him as a Check, his answers measuring the
+agreement. So add `unsure` at the least doubt: an unsure candidate stays out of the game until a fresh look settles it,
+while a wrong sure decision costs the players.
 
 ## Agreement with other sources
 
