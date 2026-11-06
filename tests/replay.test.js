@@ -328,10 +328,38 @@ test("replayProgress goes on from a replay: the sheet's, then this device's answ
     nw: 1,
     ch: 'A B C'
   };
-  assert.deepStrictEqual(C.logRow(a, 'me'), ['me', Date.parse(a.t), 'A', 'B', 0, 'quiz|k3', 'f1 f2', 0.7, 0.4, 1, 'A B C', null, null]);
+  assert.deepStrictEqual(C.logRow(a, 'me'), [
+    'me',
+    Date.parse(a.t),
+    'A',
+    'B',
+    0,
+    'quiz|k3',
+    'f1 f2',
+    0.7,
+    0.4,
+    1,
+    'A B C',
+    null,
+    null,
+    ...Array(9).fill(null), // 13-21: enlarged to species shown, unused by the replay
+    null
+  ]);
+  // The scoring record (core.js scoreRec) at LOG_SC, 22, as in the sheet's readAnswers rows (rules version 6).
+  assert.strictEqual(C.LOG_SC, 22);
+  assert.deepStrictEqual(C.logRow({...a, sc: {d: 0.5, l: 1}}, 'me')[22], {d: 0.5, l: 1});
   // The seconds to answer (rt) at 12, as in the sheet's readAnswers rows (response time, rules version 4).
   assert.strictEqual(C.logRow({...a, rt: 4.5}, 'me')[12], 4.5);
-  assert.deepStrictEqual(C.logRow({id: 'y', t: 'x', g: 'A', a: 'A', ok: 1}, 'me').slice(7), [null, null, null, '', null, null]);
+  assert.deepStrictEqual(C.logRow({id: 'y', t: 'x', g: 'A', a: 'A', ok: 1}, 'me').slice(7), [
+    null,
+    null,
+    null,
+    '',
+    null,
+    null,
+    ...Array(9).fill(null), // 13-21
+    null
+  ]);
 });
 
 test('replayedOf: what the app takes from the replay and what it keeps from its own copy', () => {
@@ -408,12 +436,13 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   vm.runInContext(
     cut('const TYPED = {', '\n};') +
       '\n' +
+      cut('const pgLook = ', ';\n') +
       cut('function pgWeight(t, chs, k) {', '\n}') +
       '\n' +
       cut('const aimP = ', ';\n') +
       cut('const startP = ', ';\n') +
       cut('const ability = ', ';\n') +
-      cut('const abilityStep = ', ';\n') +
+      'const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());\n' +
       cut('const confTerm = ', ';\n') +
       '\nthis.T = {TYPED, pgWeight, aimP, ability, abilityStep, confTerm};',
     M
@@ -590,11 +619,9 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
     cut = (a, b) => block(src, a, b, {through: true});
-  // quiz.js answer steps the genus shown and the level with the same weight, then records the time.
-  assert.ok(quiz.includes('const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;'));
-  assert.ok(quiz.includes('abilityStep(target, s, good, dm, k, rw);'));
-  assert.ok(quiz.includes('abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);'));
-  assert.ok(quiz.includes('rtAdd(P[LEVEL], tm.rt, k);'));
+  // quiz.js answer scores through core.js scoreAnswer with its seconds, the time weighing only once the sheet replays it
+  // (scoreAnswer steps the genus shown and the level with the same weight, then records the time).
+  assert.ok(quiz.includes('sec: tm.rt,') && quiz.includes('timed: rtOn()') && quiz.includes('scoreAnswer(P, q)'));
   const live = sheet => {
     // No first-launch answer: the default prior; the corals on screen (model.js startS).
     const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars(), startS: () => C.subjectOf('coral')};
@@ -602,7 +629,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     vm.runInContext(
       cut('const startP = ', ';\n') +
         cut('const ability = ', ';\n') +
-        cut('const abilityStep = ', ';\n') +
+        'const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());\n' +
         cut('const rtOn = ', ';\n') +
         '\nthis.T = {ability, abilityStep, rtOn};',
       M

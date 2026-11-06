@@ -1546,6 +1546,58 @@ test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names
   assert.ok(vm.runInContext('VERSION', s.ctx) >= C.RV_SHEET);
 });
 
+// v61 (Pierre, 2026-11-06, Q132): each answer carries what the app scored it with (core.js scoreRec), kept in the Answers
+// column Scoring (found by its name), served by readAnswers at index 22 (core.js LOG_SC, its column W) and replayed from it: the sheet's replay is the
+// app's own scoring of those rows, whatever pooled stats the sheet holds.
+test('v61 Answers: the scoring record kept, checked and replayed', () => {
+  const f = withData(),
+    s = loadCodeGs({fetch: f.fetch}),
+    T = 'ghp_write000000000000000000',
+    sc = i => ({
+      d: 0.5 + i / 10,
+      f: i % 2 ? -0.4 : 0,
+      c: i === 3 ? 0.21 : 0,
+      l: i % 3 ? 1 : 0,
+      ...(i === 5 ? {r: 0.6, h: 'acropora-macro-9'} : {})
+    }),
+    L = Array.from({length: 8}, (_, i) => qa('k' + i, i, {sc: sc(i)}));
+  // A broken record (no d, a field out of range) is kept as far as it is sound, or not at all.
+  L.push(qa('k8', 8, {sc: {f: -1}}), qa('k9', 9, {sc: {d: 1, r: 7, h: 'bad name'}}), qa('k10', 10));
+  const r = s.post({name: 'Ana', pin: '1234', data: prog(9), summary: {}, answers: L, rv: 0});
+  const A = s.sheets.Answers,
+    col = A.rows[0].indexOf('Scoring');
+  assert.deepStrictEqual([col, A.rows[0].length], [22, 23], 'Scoring at the end, column W (core.js LOG_SC)');
+  assert.strictEqual(col, C.LOG_SC);
+  assert.deepStrictEqual(
+    A.rows.slice(1).map(x => x[col]),
+    [...L.slice(0, 8).map(a => JSON.stringify(C.scoreRec(a.sc))), '', '{"d":1}', '']
+  );
+  const rows = s.post({readAnswers: 1, token: T}).rows;
+  assert.deepStrictEqual(
+    rows.map(x => x[22]),
+    [...L.slice(0, 8).map(a => C.scoreRec(a.sc)), null, {d: 1}, null]
+  );
+  // The replay: the app's own engine over the same rows, their records included (logRow index 22).
+  const st = s.get({stats: '1'}),
+    want = C.replayProgress(
+      L.map(a => C.logRow(a, 'ana')),
+      {gen: GEN, mem: st.mem, conf: st.conf}
+    ).ana.P;
+  assert.deepStrictEqual(r.replay.rec, want);
+  // Scored from the records, not from the stats: other stats give the same record.
+  assert.deepStrictEqual(
+    C.replayProgress(
+      L.slice(0, 8).map(a => C.logRow(a, 'ana')),
+      {gen: GEN, mem: [0, -2, -3, -4]}
+    ).ana.P.Acropora,
+    C.replayProgress(
+      L.slice(0, 8).map(a => C.logRow(a, 'ana')),
+      {gen: GEN}
+    ).ana.P.Acropora
+  );
+  assert.deepStrictEqual(want.Acropora.ps['acropora-macro-9'], [1, 0], 'the hint revealed after the answer: shown, not recognised');
+});
+
 test('v28: a player whose app applied an older rules version gets the replay of their log, stored once', () => {
   const f = withData(),
     s = loadCodeGs({fetch: f.fetch}),
@@ -1849,7 +1901,7 @@ test('v55 delete keeping answers: answers and reports anonymised (Verified 0), f
   assert.strictEqual(del.length, 1, 'the kept answer is flagged 2');
   assert.ok(a.filter(x => x[11] !== 2).every(x => x[11] === 0));
   s.post({anon: 'devanon777', anonAnswers: [ans('z1')], av: '190'});
-  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 22, 'a device never signed in stays 1');
+  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 23, 'a device never signed in stays 1');
   const st = s.post({readStats: 1, token: TOK});
   assert.ok(!(del[0][0] in st.ras), 'no ability for the deleted id');
   assert.ok(Object.keys(st.photos).length > 0, 'its answer still rates the photos');
@@ -2233,13 +2285,13 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   });
   const A = s.sheets.Answers;
   assert.deepStrictEqual(
-    [...A.rows[0].slice(15)],
+    [...A.rows[0].slice(15, 22)],
     ['Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown']
   );
   const R = A.rows.slice(1);
-  assert.deepStrictEqual(R[0].slice(17), ['coral', 'genus', '', '', '']);
-  assert.deepStrictEqual(R[1].slice(15), ['Acropra', 1, 'coral', 'genus', '', '', '']);
-  assert.deepStrictEqual(R[2].slice(17), ['fish', 'family', 'Damselfish', 'Moorish Idol', 'Pomacentrus moluccensis']);
+  assert.deepStrictEqual(R[0].slice(17, 22), ['coral', 'genus', '', '', '']);
+  assert.deepStrictEqual(R[1].slice(15, 22), ['Acropra', 1, 'coral', 'genus', '', '', '']);
+  assert.deepStrictEqual(R[2].slice(17, 22), ['fish', 'family', 'Damselfish', 'Moorish Idol', 'Pomacentrus moluccensis']);
   assert.deepStrictEqual([R[2][2], R[2][3], R[2][11]], ['t01', 't05', 't01 t05 t09 g:Chromis'], 'the units as the app asks them');
   assert.deepStrictEqual(
     [R[3][2], R[3][3], R[3][5], R[3][18], R[3][19]],
@@ -2249,7 +2301,7 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   assert.deepStrictEqual(R[4].slice(17, 20), ['coral', 'genus', '']);
   assert.strictEqual(R[4][21], '');
   const rows = s.post({readAnswers: 1, token: T}).rows;
-  assert.ok(rows.every(r => r.length === 22));
+  assert.ok(rows.every(r => r.length === 23));
   assert.deepStrictEqual(
     [rows[0].slice(15, 17), rows[1].slice(15, 17)],
     [
@@ -2285,7 +2337,7 @@ test('v60: a tab from before v60 (15 columns, no cells beyond) reads the new fie
   };
   A.insertColumnsAfter = (at, n) => (A.getMaxColumns = () => at + n);
   assert.deepStrictEqual(
-    s.post({readAnswers: 1, token: T}).rows.map(r => r.slice(15)),
+    s.post({readAnswers: 1, token: T}).rows.map(r => r.slice(15, 22)),
     [
       ['', null, 'coral', 'genus', '', '', ''],
       ['', null, 'coral', 'genus', '', '', '']
