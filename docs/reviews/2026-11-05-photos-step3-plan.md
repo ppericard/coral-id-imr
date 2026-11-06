@@ -101,7 +101,10 @@ integrator's scratchpad if this one is gone; it needs only git >= 2.36, python3,
    WORK). Then one `git push --atomic` of **every branch** `refs/heads/B:refs/heads/B`, each with
    `--force-with-lease=refs/heads/B:<old sha>`: all or nothing, and nothing pushed meanwhile can be lost.
    Optional canary if the session's git proxy might refuse force pushes: first push one stale branch alone,
-   `cd $WORK/rewrite.git && git remote add origin https://github.com/ppericard/coral-id-imr.git && git push --force-with-lease=refs/heads/claude/admiring-ramanujan-nw3mxr-cards:<old> origin refs/heads/claude/admiring-ramanujan-nw3mxr-cards`.
+   `GO=yes WORK=$S/run-HHMM $S/rewrite.sh canary claude/admiring-ramanujan-nw3mxr-cards`
+   (`--force-with-lease` on its backup sha). The `push` that follows leaves that branch as it is: a ref
+   already at its rewritten sha counts as done, while any other change on GitHub since the backup (a new
+   commit, a new or deleted branch) still aborts it with nothing pushed (`$WORK/plan.txt` lists each ref).
    If the proxy refuses, Pierre runs `rewrite.sh prepare` then `push` on his own computer (same script,
    same checks).
 6. **Pierre turns "Block force pushes" back on** (same page, or
