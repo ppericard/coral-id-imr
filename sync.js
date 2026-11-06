@@ -54,7 +54,8 @@ function loadStats() {
     .catch(() => {});
 }
 // The slate genera (Millepora included since 2026-11-02): the sheet's "By genus" columns and the leaderboard % follow them.
-// The leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen.
+// The first leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen; the others' units
+// in boards.
 function syncSummary() {
   const B = SUBJECTS.find(x => x.board);
   if (B && B !== SUBJ) return inSubject(B.id, syncSummary);
@@ -67,9 +68,19 @@ function syncSummary() {
     review: n.filter(x => genera[x] === 'weak'),
     genera,
     pct: progPct(n), // the public leaderboard (sheet v14): progress as the header shows it
-    board: boardOn() ? 1 : 0
+    board: boardOn() ? 1 : 0,
+    boards: boardUnits()
   };
 }
+// The units each other subject's leaderboard counts (SUBJECTS board after the first; sheet v95, Code.gs
+// boardUnitsSave_): {id: its slate}, as My progress counts it (UNITS slate), the sheet then ranking that board on each
+// player's saved progress of the subject over it. A subject whose content is not loaded on this device sends none.
+const boardUnits = () =>
+  Object.fromEntries(
+    SUBJECTS.filter((S, i, a) => S.board && S !== a.find(x => x.board))
+      .map(S => [S.id, typeof UNITS === 'object' && UNITS[S.id] ? UNITS[S.id].slate() : []])
+      .filter(([, u]) => u.length)
+  );
 // The saved data comes with the key names of the app that saved it (core.js keysIn: an app from before the rename to
 // IMR Reef ID, 2026-11-03, saves the old ones): read with the new names only.
 // rv: the rules version this device's progress was last replayed with (replayAdopt): the sheet (v28) answers with the
