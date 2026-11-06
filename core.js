@@ -265,7 +265,22 @@
       // The admin's part (admin plan PR 2, Pierre 2026-11-04: one Corals | Fish switch for the whole admin; its address
       // prefix is the subject's hash): cur: its part of curation.json ('' = the top level, as before); pages: the admin
       // pages it has (null = every page; a page covers the addresses under it).
-      admin: {cur: '', pages: null}
+      // For the one filter bar of every photo page (admin plan PR 3, admin.js fbar): origins, where its photos come
+      // from, [key, name, short name] in the order of the chips (admin.js origin(p) gives a photo's key); csrc, the
+      // sources of its Candidates swiper.
+      admin: {
+        cur: '',
+        pages: null,
+        origins: [
+          ['imr', 'IMR lecture', 'IMR'],
+          ['own', 'Pierre', 'Pierre'],
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World'],
+          ['book', 'CF book', 'CF']
+        ],
+        csrc: ['own', 'dauin', 'ph', 'book']
+      }
     },
     {
       id: 'fish',
@@ -312,7 +327,17 @@
       },
       // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
       // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
-      admin: {cur: 'fish', pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list']}
+      // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
+      admin: {
+        cur: 'fish',
+        pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list'],
+        origins: [
+          ['own', 'Pierre', 'Pierre'],
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World']
+        ]
+      }
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.
