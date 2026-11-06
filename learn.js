@@ -713,10 +713,14 @@ function viewCompare(a, b) {
 // credited in full under the list (its short form in the help). A region with no key: the entries in one block. The winks
 // stay a surprise. Each entry opens its family's sheet (viewFishSheet, below; an IMR entry by the family it was renamed into).
 function viewFishList() {
+  // Each photo enlarges in the shared viewer, as the coral photos do (fish beta QA, 2026-11-06: a tap did nothing);
+  // the family and species sheets are a later project (docs/ROADMAP.md).
+  const flat = [];
   const tip = n => {
     const g = GX(n),
       p = g.views.wide[0];
-    return `<article class="tipg"><a class="tipph" href="${esc(hr('g-' + n))}">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<b>${uname(n)}</b><small>${esc(altName(g.fam))}</small></a><div>${tipsList(g)}${
+    if (p) flat.push({...p, genus: n});
+    return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b><small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${tipsList(g)}${
       g.lk.length
         ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>`
         : ''
@@ -747,6 +751,7 @@ function viewFishList() {
   );
   $v.innerHTML = `<p class="lede">The fish families of the IMR fish presentation${key ? `, by the identification groups of ${esc(key.short)}` : ''}, with the IMR cues. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
+  $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
 }
 
 /* ---------- Fish sheets ---------- */
@@ -795,17 +800,19 @@ const spOpen = s => {
   const u = famUnit(s.family);
   return (!!GX(s.genus) && introduced(s.genus)) || (!!u && genScore(u) >= LV_AT[1]);
 };
-// The species filter, on by default each time a sheet opens (Pierre, Q5): one tap shows every species.
+// The species filter, on by default each time a sheet opens (Pierre, Q5; viewFishSheet): one tap shows every species.
 let fishMine = true;
 // The families a player meets on the families page: circle 1, and the opt-in circles once on (their units renamed into
-// families); never a wink, which stays a surprise.
+// families, an entry renamed into two giving both: Seahorses & pipefishes, SUBJECTS renamed split; Codex review #675);
+// never a wink, which stays a surprise.
 const fishShown = () => {
   const T = ftree(),
+    split = (SUBJ.renamed || {}).split || {},
     on = new Set(
       SETS()
         .filter(S => Q[S.k])
         .flatMap(S => S.units())
-        .map(u => sheetIdOf(SUBJ, u))
+        .flatMap(u => [sheetIdOf(SUBJ, u), ...Object.values(split[u] || {})])
     ),
     wink = new Set(((FISH && FISH.winks) || []).map(n => sheetIdOf(SUBJ, n)));
   return T.order.filter(id => !wink.has(id) && (T.fam[id].circle === 1 || on.has(id)));
@@ -864,6 +871,7 @@ const fishFamOf = to => {
 // option B gives it (fishTree go). The species sheets come next (study §8): until then a species' address opens its
 // family's sheet.
 function viewFishSheet(id) {
+  fishMine = true; // each sheet opened starts on "Opened for me"; the filter's own redraw keeps the choice (Codex review #675)
   const T = ftree(),
     to = fishGo(id),
     f = fishFamOf(to);

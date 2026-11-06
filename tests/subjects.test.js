@@ -15,6 +15,9 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.deepStrictEqual(ids, ['coral', 'fish']);
   assert.strictEqual(C.subjectOf('fish').id, 'fish');
   assert.strictEqual(C.subjectOf('nope'), C.SUBJECTS[0]); // an unknown choice falls back on the first subject
+  // the report dialog's "Several …" reason in each subject's words (sync.js REP_WHY)
+  assert.strictEqual(C.subjectOf('coral').several, 'corals');
+  assert.strictEqual(C.subjectOf('fish').several, 'fish species');
   assert.strictEqual(C.subjKey('coral', 'progress'), 'reefid-sync-coral-progress');
   assert.strictEqual(C.subjKey('fish', 'progress'), 'reefid-sync-fish-progress');
   assert.strictEqual(C.subjKey('coral', 'intro-offer'), 'reefid-sync-coral-intro-offer');
@@ -22,7 +25,9 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(C.subjDev('fish', 'comeback'), 'reefid-fish-comeback');
   assert.ok(C.SUBJECT_KEY.startsWith(C.KEYS.SYNC), 'the choice travels with the player');
   C.SUBJECTS.forEach(s => {
-    ['id', 'dev', 'name', 'one', 'many', 'what', 'lecture'].forEach(k => assert.strictEqual(typeof s[k], 'string', `${s.id}.${k}`));
+    ['id', 'dev', 'name', 'one', 'many', 'what', 'several', 'lecture'].forEach(k =>
+      assert.strictEqual(typeof s[k], 'string', `${s.id}.${k}`)
+    );
     assert.ok(Array.isArray(s.views) && s.views.length, s.id);
     assert.ok(Array.isArray(s.optin) && Array.isArray(s.pages) && s.pages.includes('quiz'), s.id);
     assert.ok(Array.isArray(s.progress) && s.progress.length, s.id);
@@ -163,6 +168,54 @@ test('typed fish names: the IMR name, its parts, the family names, the sub-entri
   assert.strictEqual(m('Acropora'), null);
   // The genus reading is unchanged: the first word only, no alt field.
   assert.deepStrictEqual(C.typeMatchIn([{k: 'acropora', g: 'Acropora', old: ''}], 'Acropora sp.'), {g: 'Acropora', old: '', exact: true});
+});
+
+test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous, the curated other names (aka)', () => {
+  const S = C.subjectOf('fish'),
+    X = C.fishGen(F, PH.photos),
+    N = C.fishTypeNames(X.gen, S.typeDrop),
+    m = t => C.typeMatchIn(N, t, C.typeNormAll);
+  assert.strictEqual(S.typeDrop, 'fish');
+  assert.strictEqual(C.subjectOf('coral').typeDrop, undefined);
+  // the fish beta QA's refusals (2026-11-06) and Pierre's examples: all read as the entry, exactly (no spelling step)
+  [
+    ['clownfish', 't01'], // aka of the Anemonefish sub-entry
+    ['clown', 't01'],
+    ['damsel', 't01'],
+    ['damsels', 't01'],
+    ['damsel fish', 't01'],
+    ['trigger', 't19'],
+    ['trigger fish', 't19'],
+    ['triggerfishes', 't19'],
+    ['triggers', 't19'],
+    ['frogfish', 't47'], // the singular of Frogfishes
+    ['butterfly', 't02'],
+    ['unicorn', 't06'],
+    ['tang', 't06'],
+    ['cowfish', 't17'],
+    ['moray eel', 't42']
+  ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact], [t, g, true]));
+  assert.strictEqual(m('Chaetodontidae').g, 't02'); // as before
+  // a name in common use (often): right, and carries the usual name for the gentle correction (Pierre, 2026-11-06, Q164)
+  ['clownfish', 'clown', 'clown fish', 'clowns', 'clownfishes'].forEach(t =>
+    assert.deepStrictEqual([t, m(t).oft], [t, ['Anemonefish', 'Clownfish']])
+  );
+  assert.strictEqual(m('clownfsh').oft[0], 'Anemonefish'); // a typo of it too (the spelling step comes first)
+  ['anemonefish', 'damsel', 'tang', 'Pomacentridae'].forEach(t => assert.strictEqual(m(t).oft, undefined, t));
+  assert.deepStrictEqual(X.gen.t01.oft, [['Anemonefish', 'Clownfish']]);
+  // ambiguous: "fish" alone names nothing; Filefishes is as close to Pipefishes, so the player is asked again
+  assert.strictEqual(m('fish'), null);
+  assert.deepStrictEqual(m('filefishes').near.sort(), ['t21', 't46']);
+  // a short form within the tolerance of another entry's name or short form is left out (no answer, as before)
+  const G = {a: {id: 'a', names: ['Ratfish']}, b: {id: 'b', names: ['Batfish']}, c: {id: 'c', names: ['Goatfish']}},
+    M = C.fishTypeNames(G, 'fish'),
+    g = t => C.typeMatchIn(M, t, C.typeNormAll);
+  assert.strictEqual(g('rat'), null);
+  assert.strictEqual(g('bat'), null);
+  assert.strictEqual(g('goat').g, 'c');
+  assert.strictEqual(g('rat fish').g, 'a');
+  // without the word to drop (the corals, or an older call), only the names themselves
+  assert.strictEqual(C.typeMatchIn(C.fishTypeNames(X.gen), 'trigger', C.typeNormAll), null);
 });
 
 test('mergeUsers: each subject on its own, a subject neither account played stays out, fish opt-ins kept', () => {

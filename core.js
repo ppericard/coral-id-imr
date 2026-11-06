@@ -358,6 +358,8 @@
       one: 'genus',
       many: 'genera',
       what: 'Coral',
+      // several: the report dialog's reason for a photo with more than one of them in frame (sync.js REP_WHY, "Several corals").
+      several: 'corals',
       card: 'genus',
       lecture: 'the IMR coral lecture',
       pv: '',
@@ -414,11 +416,14 @@
       one: 'family',
       many: 'families',
       what: 'Fish',
+      several: 'fish species',
       card: 'fish',
       lecture: 'the IMR fish presentation',
       pv: 'fish.',
       hash: 'fish/',
       zoom: 'the markings and the fins',
+      // A word a typed name may leave out (core.js fishTypeNames): "trigger" for Triggerfish.
+      typeDrop: 'fish',
       remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
@@ -612,7 +617,8 @@
           },
           ...(start.has(t.id) ? {first: 1} : {}),
           ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
-          names: fishNames(t)
+          names: fishNames(t),
+          ...(fishOften(t).length ? {oft: fishOften(t)} : {})
         };
       });
     Object.values(gen).forEach(g => {
@@ -646,11 +652,13 @@
     return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
   };
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
-  // fish-<species>-cand-<id>), b + its FishBase file stem (fish-<species>-cand-fb-<stem>), else its name.
+  // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
+  // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),
+  // else its name.
   function fishPid(f) {
     const s = String(f),
       m = /^fi(\d+)$/.exec(s) || /-cand-(\d+)[cd]?$/.exec(s),
-      b = /-cand-fb-(.+)$/.exec(s);
+      b = /-cand-fb-(.+)$/.exec(s) || /^fb(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
   // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
@@ -697,15 +705,29 @@
   }
   // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, rule S2): its IMR name,
   // the parts of a double one ("Surgeonfish & Unicornfish"), its family as IMR writes it and the WoRMS families, and the
-  // sub-entries IMR names inside it (Chromis, Bannerfish...). The first is the name shown.
+  // sub-entries IMR names inside it (Chromis, Bannerfish...), and the other common names curated for it or a sub-entry
+  // (aka: tools/fish_source.json, Tang; often: a name in common use that the answer's feedback corrects gently, Clownfish
+  // for Anemonefish, fishOften). The first is the name shown.
   function fishNames(t) {
     const parts = String(t.name || '')
       .split(/\s*&\s*|\s+and\s+/)
       .filter(Boolean);
-    return [...new Set([t.name, ...(parts.length > 1 ? parts : []), t.fam, ...(t.wfam || []), ...(t.sub || []).map(s => s.name)])].filter(
-      Boolean
-    );
+    return [
+      ...new Set([
+        t.name,
+        ...(parts.length > 1 ? parts : []),
+        t.fam,
+        ...(t.wfam || []),
+        ...(t.aka || []),
+        ...(t.often || []),
+        ...(t.sub || []).flatMap(s => [s.name, ...(s.aka || []), ...(s.often || [])])
+      ])
+    ].filter(Boolean);
   }
+  // The names in common use that a typed answer may give, accepted as right but corrected gently (Pierre, 2026-11-06,
+  // Q164: "✓ Yes, Anemonefish (often called clownfish)"): [[the usual name, the name often used]], from the node's and
+  // its sub-entries' often (tools/fish_source.json).
+  const fishOften = t => [t, ...(t.sub || [])].flatMap(u => (u.often || []).map(x => [u.name, x]));
   // A whole name, normalised for typing (fish names have several words: "Moorish Idol"): letters only, lower case.
   const typeNormAll = s =>
     String(s || '')
@@ -715,14 +737,41 @@
   // Every name a player may type for the fish entries gen (fishGen): [{k, g, old, alt}], old = the name typed when it is
   // not the entry's own (read as the entry), alt marks those as other names, not old ones. A name two entries share (a
   // family IMR splits: Holocentridae = Soldierfish and Squirrelfish) names both, so it is "which one?" (typeMatchIn near).
-  function fishTypeNames(gen) {
-    const out = [];
+  // drop (SUBJECTS typeDrop: 'fish'): a word a name may be typed without (Pierre, 2026-11-06: "trigger", "clown",
+  // "damsel"), as its suffix, a separate word or a plural ("Triggerfish", "Trigger fish", "Triggerfishes" -> "Trigger"),
+  // its own short form accepted as another name of the entry, unless it is ambiguous in the game: within the spelling
+  // tolerance of a name or short form of another entry (then it is left out: typing it is no answer, as before).
+  // A name in common use (fishOften: oft) carries oft: [usual name, the name often used], its short forms too.
+  function fishTypeNames(gen, drop = '') {
+    const out = [],
+      add = (k, g, x, i, oft) =>
+        k && !out.some(o => o.k === k && o.g === g) && out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, ...(oft ? {oft} : {})}),
+      oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
     Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => {
-        const k = typeNormAll(x);
-        if (k && !out.some(o => o.k === k && o.g === g.id)) out.push({k, g: g.id, old: i ? x : '', alt: i ? 1 : 0});
-      })
+      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x))))
     );
+    const d = typeNormAll(drop);
+    if (!d) return out;
+    const cut = new RegExp("^([A-Za-z][A-Za-z '-]*?)[ -]*" + d + '(?:es)?$', 'i'),
+      short = out
+        .map(o => {
+          const x = typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
+            m = String(x || '').match(cut),
+            k = m ? typeNormAll(m[1]) : '';
+          // the short form and its plural, and the name's own plural or singular ("Triggers", "Triggerfishes",
+          // "Frogfish": plain right answers, not spellings to fix)
+          const one = o.k.endsWith(d + 'es') ? [o.k.slice(0, -2), x.replace(/es$/i, '')] : o.k.endsWith(d) ? [o.k + 'es', x + 'es'] : null;
+          return m && k.length >= 3 && k !== o.k
+            ? [
+                {k, g: o.g, x: m[1].trim(), oft: o.oft},
+                {k: k + 's', g: o.g, x: m[1].trim() + 's', oft: o.oft},
+                ...(one ? [{k: one[0], g: o.g, x: one[1].trim(), own: !o.old, oft: o.oft}] : [])
+              ]
+            : [];
+        })
+        .flat(),
+      near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
+    short.filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k))).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft));
     return out;
   }
 
@@ -2381,7 +2430,13 @@
     const best = all.filter(x => x.d === all[0].d),
       gs = [...new Set(best.map(x => x.g))];
     if (gs.length > 1) return {near: gs};
-    return {g: best[0].g, old: best[0].old, exact: best[0].d === 0, ...(best[0].alt ? {alt: 1} : {})};
+    return {
+      g: best[0].g,
+      old: best[0].old,
+      exact: best[0].d === 0,
+      ...(best[0].alt ? {alt: 1} : {}),
+      ...(best[0].oft ? {oft: best[0].oft} : {})
+    };
   }
   // The spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"): how a typed answer reads against the unit asked
   // t, m being typeMatchIn's reading of it. 'exact': one of its names, spelled right (capitals, accents and spaces aside);
