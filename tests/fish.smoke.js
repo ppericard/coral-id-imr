@@ -1488,11 +1488,17 @@ const server = http.createServer((req, res) => {
         for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => ((tot += 1), (hard += (ph(n, x.f).e || 3) < cut ? 1 : 0)));
         const share = L.filter(p => (p.e || 3) < cut).length / L.length;
         ok(!share || hard / tot < share, `${n}: photos under ease ${cut} drawn ${hard}/${tot}, their share ${share.toFixed(2)}`);
-        st(n).pg = 0.6;
+        // After Open Water: the entry as a player reaches it, its bar at 60% with the answers and the ability that take
+        // it there (12 answers, 10 right, ability 0.5: the low end), not the bar alone, since the draw leans on the
+        // answers and the ability (SUBJECTS calib early fades with the answers, Q186's narrower targeting follows the
+        // ability): the harder photos come in.
+        const s1 = {...st(n)};
+        Object.assign(st(n), {pg: 0.6, ok: 10, ko: 2, th: 0.5});
         let low = 0;
         for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
-        st(n).pg = s0;
+        Object.keys(st(n)).forEach(k => delete st(n)[k]);
+        Object.assign(st(n), s1, {pg: s0});
       });
       return {fails, gated};
     }, 15);

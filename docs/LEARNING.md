@@ -2670,6 +2670,24 @@ floor even more weight), u 0.1 with pool 20 (start worst 13%, close to the chose
 behind `CALIB.ease`). `tests/drawcalib.test.js` checks the corals keep `CAL.U` and the whole floor for every pool size;
 `tests/fish.smoke.js` keeps its bound (at most 1/3 under ease 4 before Open Water).
 
+**Learning outcomes** (rules L11-L12; `tools/learnsim.js --subject fish`, today's pool, 4 profiles × 5 seeds, 600
+questions, 1 worker; before = `--calib '{"u":1,"pool":1e9}'`, the draw of before Q186; `tools/barjudge.js` for E and
+the time to credit). Nothing moves beyond the seeds' noise:
+
+| Profile | True knowledge q600 | Right % q600 | Judge \|E\| q600 | Mean bar 50% (question) |
+|---|---|---|---|---|
+| beginner | 0.90 → 0.90 | 73 → 75 | 0.195 → 0.172 | not reached → not reached |
+| lectureRA | 0.91 → 0.88 ± 0.06 | 76 → 76 | 0.205 → 0.193 | 269 (5/5) → 287 (3/5) |
+| strongRA | 0.93 → 0.92 | 76 → 76 | 0.234 → 0.217 | 281 → 236 |
+| expert | 0.96 → 0.96 | 96 → 95 | 0.224 → 0.216 | 228 → 233 |
+
+The real-log check (L12) cannot judge it: fish answers are not replayed by the sheet and only 27 are logged, so what
+was measured instead is the simulated learner above and the draw's easy share (`tools/fish_draw_sim.js`). The smoke's
+"after Open Water" check now sets the entry as a player reaches Open Water (its bar at 60% with 12 answers, 10 right, and
+the ability 0.5), not the bar alone: with the bar alone and the start's ability, the narrower targeting drew the harder
+photos about 3% of the time (10% before), a state no player reaches; at that Open Water state they come about a third
+of the time.
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night, in review)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
