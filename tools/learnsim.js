@@ -148,6 +148,9 @@
 //   right % on all of them and on those repeats, mean progress bar against true know (prog-know) and Elo against
 //   logit(know) (th-lk) over the genera met, genera learned; and, per genus that entered the exam or was learned, the
 //   true reference success then (ref@exam, ref@learn) and the question it happened.
+// - Per run, in --out only (2026-11-06, photo exposure, Q187-Q190): expo, each question's [genus, colony (observation),
+//   photos shown], and pool (seed 1's runs), each game genus's photos as [file, colony]: repeats, photos never shown,
+//   answers per photo (docs/LEARNING.md "Photo exposure").
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -527,6 +530,16 @@ function play(cfg) {
     memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
   // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
   const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v).map(p => p.f))).size])),
+    // Photo exposure (2026-11-06, Q187-Q190): each question's unit, colony (observation) and photos shown, and the game
+    // photos of each unit with their colony, for the repeat rate, the photos never shown and the answers per photo.
+    okey = p => p.o || p.f,
+    expo = [],
+    POOL = Object.fromEntries(
+      SL.concat(BONUS).map(g => [
+        g,
+        [...new Map(VIEWS.flatMap(([v]) => gamePics(g, v).filter(p => gamePhotoOk(g, p))).map(p => [p.f, okey(p)])).entries()]
+      ])
+    ),
     grpOf = g => (!(g in NPH) ? null : NPH[g] <= L.FEW ? 'few' : NPH[g] >= L.MANY ? 'many' : null),
     GRP = {few: SL.filter(g => grpOf(g) === 'few'), many: SL.filter(g => grpOf(g) === 'many')},
     gq = {few: {n: 0, ok: 0, rep: 0, repOk: 0}, many: {n: 0, ok: 0, rep: 0, repOk: 0}};
@@ -665,6 +678,7 @@ function play(cfg) {
       rep = fs.some(f => LM[f] && LM[f][0]),
       pRec = sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)),
       first = !asked(t);
+    if (shown.length) expo.push([t, okey(shown[0]), ...fs]);
     let pick = t,
       pTrue;
     if (exem) {
@@ -1036,6 +1050,8 @@ function play(cfg) {
     learnedAt,
     metAt,
     nph: NPH,
+    expo,
+    pool: seed === 1 ? POOL : null,
     pairs: PAIRS.length,
     breaks: out,
     millMet: mill.met,

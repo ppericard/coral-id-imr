@@ -23,8 +23,10 @@ const VIEWS = [
 // Cap per genus x view: a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see
 // cellFull). 10 at first (Pierre, 2026-11-01), then 20 the same day (Pierre: "the goal is to learn the genus, not the
 // photos: the fewer photos, the more risk of learning the photos"; a player at 75% sees ~7 colonies of a genus before
-// its 95%, and its mastery exam wants 5 photos never seen). A let only so the admin test can lower it.
-let CELL_MAX = 20;
+// its 95%, and its mastery exam wants 5 photos never seen), then 40 (Pierre, 2026-11-06, Q187: players went round a
+// genus's photos fast, and the cap of 20 bound the Colony view of 17 genera; docs/reviews/2026-11-06-photo-exposure-study.md).
+// Corals only: fish has no cap. A let only so the admin test can lower it.
+let CELL_MAX = 40;
 // Game genera first (Pierre, 2026-11-03: "quiz first"): the genera a game can ask (core.js gameOf: the IMR slate,
 // Millepora, the bonus genera) are the rows of Game coverage and Where to look, and their candidates come before any
 // other in Candidates. The other genera of data.json "x" are Key-only (Identify > Coral ID Key and their sheet): their

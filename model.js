@@ -82,13 +82,17 @@ const singleP = (n, shift = 0) => formatAt(ability(n) + shift)[1];
 // items being pretested: the colony is chosen on the difficulty targeting and the bonus alone, a single view then
 // showing alone. Only on a genus the player already holds (met, not shaky, as the opening of genera reads it): one
 // photo alone, perhaps unusual, would not help on a genus still being learned. docs/LEARNING.md.
+// The exploration share (Pierre, 2026-11-06, Q188; docs/reviews/2026-11-06-photo-exposure-study.md): RATE 0.3 (0.2
+// before), and a calibration question draws among the colonies (observations) the player has never seen (photoSet).
+// Every subject. Simulated (docs/LEARNING.md "Photo exposure"): on any genus met with 5 answers or more instead of a
+// genus held, the repeats fell less and a fish beginner met fewer units, so the genus held stays the condition.
 // CAL.U: how unsure the difficulty of a photo nobody has answered is (variance, in difficulty units; until its answers
 // come it only has its genus's offset, photoDiff): the targeting is that much wider for it, narrowing as answers come
 // (U / (1 + answers / CAL.N)), so a new photo is not kept away by a prior. (Written for the Easy / Medium / Hard sets of
 // before 2026-11-03; the residual around the genus offset is smaller, sd about 0.3-0.6, but U stays 1 until a learnsim
 // check says otherwise: ROADMAP.) Pierre, 2026-11-02: "relax the arbitrary thresholds
 // so new photos come in, and their answers inform the dynamic algorithm".
-const CAL = {B: 2, N: 2, RATE: 0.2, U: 1};
+const CAL = {B: 2, N: 2, RATE: 0.3, U: 1};
 const nAnswers = p => {
   const o = PSTAT[p.f];
   return o ? (o[3] ?? o[1]) : 0;
@@ -103,6 +107,19 @@ const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + calU() / (1 + nAnswers(p) / CAL.
 // subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals: PICKD.FLOOR, as before), so in
 // a big pool the floor's mass does not drown the prior's lean (Pierre, 2026-11-06 15:33, Q186).
 const drawFloor = nObs => PICKD.FLOOR * Math.min(1, calibOf(SUBJ).pool / Math.max(1, nObs));
+// The memory of each colony (observation) of a question's draw (Q190): the record [shown, right] of its most remembered
+// photo (core.js memBucket, then the most shown), whatever its view; none when no photo of it was ever shown.
+const colonyMem = (obs, ps) =>
+  Object.fromEntries(
+    Object.entries(obs).map(([k, o]) => [
+      k,
+      Object.values(o)
+        .flat()
+        .map(p => ps[p.f])
+        .filter(h => h && h[0])
+        .reduce((a, h) => (!a || memBucket(h) > memBucket(a) || (memBucket(h) === memBucket(a) && h[0] > a[0]) ? h : a), undefined)
+    ])
+  );
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown, K9).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
@@ -130,7 +147,6 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
     single = calQ || Math.random() < singleP(n, shift),
     s = P[n] || {},
-    seen = s.ps || {},
     ro = s.ro || [],
     // The start's lean (SUBJECTS calib early, Pierre 2026-11-06 14:17-14:18: no wall, the easy photos strongly favoured
     // at the start by the difficulty engine itself): the target sits early logits lower on a unit with few answers,
@@ -142,7 +158,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p),
-      k = seen[p.f];
+      k = mem[p.o || p.f];
     let r = Math.exp((-x * x) / 2) * calBonus(p);
     // Spread the repeats (photo memory, Pierre 2026-11-03): a photo already shown weighs e^offset of its memory bucket
     // (core.js MEM, the sheet's estimate PMEM): the odds memory adds to a right answer on it, divided out. With the
@@ -165,9 +181,18 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   );
   const keys = Object.keys(obs);
   if (!keys.length && skip) return photoSet(n); // the card's photo was its only one
+  // A colony counts as seen whatever view of it was shown (Pierre, 2026-11-06, Q190): every photo of an observation
+  // takes the memory of its most remembered photo (memBucket, then the most shown), so a close-up never shown of a
+  // colony already met is no new photo, and it loses the never-seen bonus. For fish, an observation's other photos of
+  // the same fish. The question's expectation and the progress still read each photo's own record (famOf, pgMemW).
+  const mem = colonyMem(obs, s.ps || {});
   // All the photos of a question come from ONE observation (Pierre, 2026-11-01: zoom levels of different colonies shown
-  // together read as one coral and teach a wrong picture). Beginners (several views) favour colonies photographed at
-  // several zooms (cov squared); a colony with a single view becomes a single-view question, never topped up from another one.
+  // together read as one coral and teach a wrong picture). Colonies photographed at several zooms are favoured, by cov,
+  // the share of the views they have, in a single-view question and in a beginner's multi-view one (Pierre, 2026-11-06,
+  // Q189: cov squared until then, which turned a beginner's questions round the few colonies with every view; a colony
+  // with two views of three now weighs 0.67 of a complete one, not 0.44). Fish: one view, cov the same for every
+  // observation, so it changes nothing there. A colony with a single view becomes a single-view question, never topped
+  // up from another one.
   const score = k => {
     const o = obs[k],
       vs = (single ? need : shownV).filter(v => o[v]);
@@ -176,10 +201,14 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
       off = !single && nv === 1 ? PICKD.SINGLE : 0,
       cov = nv / need.length;
     const m = vs.reduce((t, v) => t + Math.max(...o[v].map(p => w(p, off))), 0) / vs.length;
-    return m * (calQ ? 1 : single ? cov : cov * cov) * (ro.includes(k) ? 0.15 : 1);
+    return m * (calQ ? 1 : cov) * (ro.includes(k) ? 0.15 : 1);
   };
-  const sc = Object.fromEntries(keys.map(k => [k, score(k)])),
-    top = Math.max(0, ...Object.values(sc));
+  const sc = Object.fromEntries(keys.map(k => [k, score(k)]));
+  // The exploration share (Pierre, 2026-11-06, Q188): a calibration question draws among the colonies this player has
+  // never seen, while the unit has one the draw can show; still on the targeting and the calibration bonus, so at the
+  // difficulty aimed for and the least answered first, never a random hard one.
+  if (calQ && keys.some(k => sc[k] > 0 && !mem[k])) keys.forEach(k => mem[k] && (sc[k] = 0));
+  const top = Math.max(0, ...Object.values(sc));
   keys
     .filter(k => sc[k] > 0)
     .sort((a, b) => sc[b] - sc[a])
