@@ -14,16 +14,16 @@ const AN = Object.assign({m: 'all', src: 'sheet'}, store.get('reefid-admin-an', 
 const anSave = () => store.set('reefid-admin-an', {m: AN.m});
 // Views: [address, analysis key in the report, title]
 const AN_VIEWS = [
-  ['~an', null, 'Overview'],
-  ['~an-rt', 'rt', 'Answer time'],
-  ['~an-zoom', 'zoom', 'Enlarging photos'],
-  ['~an-photo', 'photo', 'What makes a photo hard'],
-  ['~an-fmt', 'fmt', 'Question formats'],
-  ['~an-conf', 'conf', 'Genera mixed up'],
-  ['~an-learn', 'learn', 'Learning with practice'],
-  ['~an-back', 'back', 'After a break'],
-  ['~an-sess', 'sess', 'Sessions'],
-  ['~an-who', 'who', 'Player profiles']
+  ['analyses/overview', null, 'Overview'],
+  ['analyses/speed/answer-time', 'rt', 'Answer time'],
+  ['analyses/speed/enlarging', 'zoom', 'Enlarging photos'],
+  ['analyses/difficulty/photos', 'photo', 'What makes a photo hard'],
+  ['analyses/difficulty/formats', 'fmt', 'Question formats'],
+  ['analyses/difficulty/mix-ups', 'conf', 'Genera mixed up'],
+  ['analyses/learning/practice', 'learn', 'Learning with practice'],
+  ['analyses/learning/after-a-break', 'back', 'After a break'],
+  ['analyses/learning/sessions', 'sess', 'Sessions'],
+  ['analyses/learning/profiles', 'who', 'Player profiles']
 ];
 const anKey = h => (AN_VIEWS.find(v => v[0] === h) || [])[1];
 const anTitle = k => (AN_VIEWS.find(v => v[1] === k) || [])[2] || k;
@@ -517,7 +517,8 @@ const ANF = (() => {
   const v = store.get('reefid-admin-anf', {});
   return v && typeof v === 'object' ? v : {};
 })();
-const anPref = () => (ANF[cur || '~an'] = Object.assign({f: 'all', s: 'neg', open: {}, more: {}}, ANF[cur || '~an'] || {}));
+const anPref = () =>
+  (ANF[cur || 'analyses/overview'] = Object.assign({f: 'all', s: 'neg', open: {}, more: {}}, ANF[cur || 'analyses/overview'] || {}));
 const anPrefSave = () => store.set('reefid-admin-anf', ANF);
 const AN_FILTERS = [
   ['all', 'All'],
@@ -738,7 +739,7 @@ function anAnsLoad() {
   anAnsP = loadStats().then(
     () => {
       anAnsP = null;
-      if (/^~an(-|$)/.test(cur) && ANREP) render();
+      if (anPage(cur) && ANREP) render();
     },
     () => (anAnsP = null)
   );
@@ -1097,7 +1098,7 @@ const anWhoText = (id, i) => {
 };
 const anWhoHref = id => {
   const u = ((typeof USERS !== 'undefined' && USERS && USERS.users) || []).find(x => x.id === String(id).split('#')[0]);
-  return u ? '#~journey/' + encodeURIComponent(u.name) : null;
+  return u ? '#players/list/journey/' + encodeURIComponent(u.name) : null;
 };
 // Why groups are not stable, from each check apart (Codex review #604): runs with one player left out that changed them,
 // and groups the bootstrap finds again under 0.75 on average.
@@ -1377,7 +1378,7 @@ function anOverview(rep, R) {
   const nClear = R2 => Object.values(R2.A).flatMap(a => (a.effects || []).filter(e => e.v === 'clear')).length;
   const ms = rep.M.map((M, i) => {
     const r = rep.R[M];
-    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#~an" data-anm="${anMv(rep, M)}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${nClear(r)}</td></tr>`;
+    return `<tr${M === R.M ? ' class="me"' : ''}><td><a href="#analyses/overview" data-anm="${anMv(rep, M)}">${anInt(M)}</a></td><td>${r.at ? dateText(r.at, 'dm') : '–'}</td><td class="n">${r.players}</td><td class="n">${nClear(r)}</td></tr>`;
   });
   return (
     kpis([
@@ -1866,10 +1867,10 @@ function renderAnalyses() {
   status();
   if (!ANREP) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    anLoad().then(() => /^~an(-|$)/.test(cur) && render());
+    anLoad().then(() => anPage(cur) && render());
     return;
   }
-  if (TOKEN && !USERS) loadUsers().then(() => /^~an(-|$)/.test(cur) && ANREP && render());
+  if (TOKEN && !USERS) loadUsers().then(() => anPage(cur) && ANREP && render());
   // The answer log too: anLive tells the devices never signed in from the removed accounts with it (Codex review #600).
   anAnsLoad();
   const rep = anRep(),
@@ -1917,7 +1918,7 @@ function anBind() {
         e.preventDefault();
         AN.m = b.dataset.anm;
         anSave();
-        if (b.tagName === 'A' && cur !== '~an') location.hash = '#~an';
+        if (b.tagName === 'A' && cur !== 'analyses/overview') location.hash = '#analyses/overview';
         render();
       })
   );
@@ -2011,7 +2012,7 @@ function anRecompute() {
       ANWORK = null;
       ANLOC = d.res ? {rep: d.res} : {prog: 'Failed'};
       if (d.res) AN.src = 'local';
-      if (/^~an(-|$)/.test(cur)) render();
+      if (anPage(cur)) render();
     };
     // 199 draws with normal intervals from their spread (analysis.js boot): the newest milestone and the look at all the
     // answers (live) in a few minutes here, where the Action's 999 percentile draws would take about 5 times as long;
@@ -2024,7 +2025,7 @@ function anRecompute() {
 let anRz = null;
 addEventListener('resize', () => {
   clearTimeout(anRz);
-  anRz = setTimeout(() => /^~an(-|$)/.test(cur) && render(), 200);
+  anRz = setTimeout(() => anPage(cur) && render(), 200);
 });
 
 // Help ("?"), per view: the definitions and the methods stay off the page (rule A2).
@@ -2047,4 +2048,4 @@ Object.assign(HELP, {
   'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. The learning slope joins once the Learning model fits one per player. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in.
-if (typeof DATA !== 'undefined' && DATA && /^~an(-|$)/.test(cur)) render();
+if (typeof DATA !== 'undefined' && DATA && anPage(cur)) render();

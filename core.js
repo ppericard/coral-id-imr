@@ -308,7 +308,7 @@
       },
       // The pages not about one subject (players' reports, the devices' errors, the players and their journeys) for now;
       // the fish pages join as the admin plan builds them (docs/ROADMAP.md "Admin for every subject").
-      admin: {hash: 'fish/', cur: 'fish', pages: ['~triage', '~events', '~users', '~journey/', '~anon/']}
+      admin: {hash: 'fish/', cur: 'fish', pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list']}
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.
