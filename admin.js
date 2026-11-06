@@ -1635,14 +1635,16 @@ function fuData() {
   return {F, play, gone, dirty};
 }
 // A family's game species (fish.json order: most common first) and its photos in play by species, in the page's order;
-// its cover (his pick while in play, else the first photo of its first species with any); what it still needs.
+// its cover (his pick while in play, else the family's first photo in the game's order); what it still needs.
 function fuFam(u, D) {
   const sp = FISHC.species,
     ok = s => sp[s] && !sp[s].out,
     rows = Object.fromEntries(u.species.filter(ok).map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
     k = (D.F.genera || {})[u.id] || {},
     all = u.species.filter(ok).flatMap(s => [...rows[s].feat, ...rows[s].rest]),
-    cover = (k.cover && all.find(p => p.f === k.cover)) || all[0] || null;
+    // his pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
+    // as the game's card cover: reference-level first; Codex review #655)
+    cover = (k.cover && all.find(p => p.f === k.cover)) || fishOrder(all, D.F, u.id, '', fuJ).rest[0] || null;
   return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, D.F, fuJ), n: u.species.filter(ok).length};
 }
 const fuName = sid => (FISHC.species[sid] || {}).name || sid;
