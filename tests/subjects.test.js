@@ -188,8 +188,11 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
     assert.strictEqual(g.cover, L[0].f, `${g.id}: the cover is the list's first`);
     L.slice(1).forEach((p, i) => {
       const a = L[i];
+      // A very easy reference photo (rep) first (core.js refFirst, Pierre 2026-11-06), then the ease, then refScore.
       assert.ok(
-        (a.e || 3) > (p.e || 3) || ((a.e || 3) === (p.e || 3) && C.refScore(a.jt) >= C.refScore(p.jt)),
+        C.refFirst(a) < C.refFirst(p) ||
+          (C.refFirst(a) === C.refFirst(p) &&
+            ((a.e || 3) > (p.e || 3) || ((a.e || 3) === (p.e || 3) && C.refScore(a.jt) >= C.refScore(p.jt)))),
         `${g.id}: ${p.f} out of order`
       );
     });
@@ -210,9 +213,10 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
     });
   assert.deepStrictEqual(
     Y.gen.t99.views.wide.map(p => p.f),
-    ['b5', 'a5', 'own5', 'own3', 'none']
+    // a5 reads the reference look (core.js refLevel: ease 5, profile, whole, good light, true colours, sharp): first.
+    ['a5', 'b5', 'own5', 'own3', 'none']
   );
-  assert.strictEqual(Y.gen.t99.cover, 'b5');
+  assert.strictEqual(Y.gen.t99.cover, 'a5');
   // Equal photos: the list's order (Pierre's first in tools/fish_photos.py) never decides; the same cover either way.
   const eq = [
       {f: 'fiA', src: 'x', own: true, e: 5, jt: 'p1g0sl1'},
@@ -221,6 +225,21 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
     c1 = C.fishGen(T, {t99: eq}).gen.t99.cover,
     c2 = C.fishGen(T, {t99: eq.slice().reverse()}).gen.t99.cover;
   assert.strictEqual(c1, c2, 'the list order decides nothing');
+  // Reference level first (core.js refLevel): a source's reference photo (rep) judged very easy comes before an ease-5
+  // photo without the reference look; one under ease 4 does not; an ease-5 photo with the look is reference level
+  // whoever took it (Pierre's own here).
+  const R = C.fishGen(T, {
+    t99: [
+      {f: 'ownref', src: 'x', own: true, e: 5, jt: 'p1g0sl1'},
+      {f: 'own5', src: 'x', own: true, e: 5, jt: 'o1g1sm1'},
+      {f: 'rep3', src: 'x', e: 3, jt: 'p1g0sl1r', rep: 'inaturalist'},
+      {f: 'rep4', src: 'x', e: 4, jt: 'o1g0sm1r', rep: 'inaturalist'}
+    ]
+  });
+  assert.deepStrictEqual(
+    R.gen.t99.views.wide.map(p => p.f),
+    ['ownref', 'rep4', 'own5', 'rep3']
+  );
   // Pierre's photo comes first when it is itself the easiest.
   const Z = C.fishGen(T, {
     t99: [

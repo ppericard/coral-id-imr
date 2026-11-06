@@ -2536,6 +2536,18 @@ the order the auto-sort fills a species. The draw itself is unchanged: the very 
 questions (`easyFirst`), then the difficulty targeting, now with no source factor. No new threshold (`REF` only breaks
 ties between photos of the same ease).
 
+**Reference photos first** (Pierre, 2026-11-06, the same day: after #635 a fresh player's first 10 photos were still 5
+of his, easy but his; a new entry should start on reference photos; 14:02: every photo of reference quality, not only a
+source's cover, and never an exclusive rule that would show one photo again and again). The units' reference photos
+(`tools/fish_refs.py`, judging/FISH.md "Reference photos": iNaturalist's cover and taxon-page photos passing the game
+photo rules, FishBase's photos) join the game photos once judged. **Reference level** (`core.js` `refLevel`): a source's
+reference photo (`rep`) judged very easy, or any photo judged 5 with the reference look in its tags (profile, whole, good
+light, true colours, sharp, large or medium, one fish or a school; no juvenile, camouflage, out of water), whoever took it.
+It comes before every other photo in `easyRank` (`refFirst`), so it is the card's photo and each list's first, and a
+never-seen one weighs `PICKD.REFW` = 3 times more in the draw (`model.js` `photoSet`, beside the never-seen bonus): first
+in priority, never alone. Why 3: a reference-level photo then wins most first draws on an entry with a few of them among
+twenty-odd very easy photos, while the others still come (a measured first-10 below). Still no source rule.
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night, in review)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a

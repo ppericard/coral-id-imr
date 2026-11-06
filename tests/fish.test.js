@@ -755,3 +755,60 @@ test('declared look-alikes: Pierre’s family groups both ways, sourced; an unkn
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /f:Nofishes is not a family/);
 });
+
+// The units' reference photos (tools/fish_refs.py, judging/FISH.md "Reference photos"; Pierre, 2026-11-06: the covers
+// and first photos are reference photos, whoever took them): what iNaturalist shows to represent a species, genus or
+// family, taken only when it passes the game photo rules; once judged, in its entry's game photos with rep, and the
+// card's photo (core.js fishGen cover) is a reference photo wherever one is among the entry's easiest.
+test('reference photos: game photo rules, in play once judged, the cover where one is among the easiest', () => {
+  const R = read('tools/fish_refs.json').photos,
+    codes = Object.fromEntries(Object.values(JUDGE.photos).flatMap(m => Object.entries(m))),
+    added = new Set(Object.values(JUDGE.add || {}).flatMap(L => L.map(p => p.f))),
+    refs = new Map();
+  // Kept by species; a photo plays in the level-1 entry that holds its species.
+  const home = {};
+  F.teach.filter(t => t.level === 1).forEach(t => t.species.forEach(id => (home[id] = home[id] || t.id)));
+  Object.entries(R).forEach(([sid, L]) =>
+    L.forEach(p => {
+      const tid = home[sid];
+      assert.ok(tid && p.sp === sid && !SP.get(sid).out, `${p.f}: a game species (${sid})`);
+      assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(p.lic), `${p.f}: licence ${p.lic}`);
+      assert.ok(p.for.length, `${p.f}: the units it stands for`);
+      if (p.via) {
+        // FishBase (Pierre, 2026-11-06: in automatically when its licence allows): its main picture carries rep.
+        assert.ok(p.via === 'fishbase' && (!p.rep || p.rep === 'fishbase'), `${p.f}: FishBase's rep`);
+        assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[^/]+$/, p.f);
+        assert.match(p.a, /^\(c\) .+, via FishBase, some rights reserved \(CC BY-NC 4\.0\)$/, p.f);
+        refs.set(p.f, [tid, p]);
+      } else {
+        assert.ok(p.rep === 'inaturalist', `${p.f}: an iNaturalist cover or taxon-page photo`);
+        assert.match(p.src, /^https:\/\/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/original\./, p.f);
+        assert.match(p.o, /^https:\/\/www\.inaturalist\.org\/observations\/\d+$/, p.f);
+        // The credit as the game photos have it, in English (a taxon photo's comes in iNaturalist's locale).
+        assert.match(p.a, /^(\(c\) .+, some rights reserved \(CC [^)]+\)|.*no rights reserved.*)$/, `${p.f}: credit ${p.a}`);
+        refs.set(p.f, [tid, p]);
+      }
+    })
+  );
+  // In play once judged (one photo per observation: a photo the pass added keeps its place).
+  refs.forEach(([tid, p], f) => {
+    const L = PH[tid],
+      g = L.find(x => x.f === f);
+    if (f in codes && !L.some(x => x.o === p.o && added.has(x.f))) assert.ok(g && g.rep === p.rep, `${tid} ${f}: not in play`);
+    if (!(f in codes) && g) assert.ok(!g.from, `${f}: a reference photo in play without a judgement`);
+  });
+  Object.entries(PH).forEach(([tid, L]) =>
+    L.forEach(p => {
+      if (p.rep || p.from) assert.ok(refs.has(p.f) && refs.get(p.f)[0] === tid, `${tid} ${p.f}: not in tools/fish_refs.json`);
+    })
+  );
+  const C = require('../core.js'),
+    X = C.fishGen(F, PH);
+  Object.values(X.gen).forEach(g => {
+    const L = g.views.wide,
+      top = Math.max(...L.map(p => p.e || 3));
+    // Reference level (core.js refLevel): a source's reference photo judged very easy, or ease 5 with the reference look.
+    if (L.some(p => C.refLevel(p))) assert.ok(C.refLevel(L.find(p => p.f === g.cover)), `${g.id}: its cover is not reference level`);
+    else if (L.some(p => p.rep && (p.e || 3) === top)) assert.ok(L.find(p => p.f === g.cover).rep, `${g.id}: its cover`);
+  });
+});

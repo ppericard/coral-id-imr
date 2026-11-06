@@ -112,6 +112,24 @@ at most 2, a head-on one at most 3. So a medium reference photo (3) joins an ent
 easy one is more often the card's cover. `python3 tools/judging_fish.py rep` re-applies the flag to the judged
 candidates after a new tag. Where the source is FishBase, the photo page (`o`) gives the author and the licence.
 
+**The units' reference photos in play** (Pierre, 2026-11-06: the covers and first photos of the families, genera and
+species must be reference photos, whoever took them; 14:02: "reference" means every photo of reference quality, and
+FishBase enters automatically when its licence allows: "a maximum of good photos to complement the weaker ones on
+iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every circle-1 genus and every
+entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: up to
+3 for a species, the first for a genus or a family) that pass the game photo rules on their observation (Research Grade,
+CC0 / CC BY / CC BY-NC, the Indo-West Pacific box, not captive or dead; for a genus or a family, a photo of a game species
+of the entry), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
+`tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
+--todo`, codes under their entry in `tools/fish_judge.json` `photos`. Once judged, each joins its entry's game photos
+(`tools/fish_judge.py` `add_refs`; it takes the place of another photo of the same observation), the iNaturalist ones and
+FishBase's main picture with `rep`.
+
+**Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
+read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it. A
+reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
+never-seen one weighs `PICKD.REFW` (3) times more in the draw (`model.js` `photoSet`), never exclusively.
+
 ## A proposed crop
 
 When the fish is small in the frame, or the margins distract (another fish, a diver, empty water), the pass proposes a

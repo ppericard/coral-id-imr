@@ -532,11 +532,23 @@
   // curation), a photo with none as a middle one (3); app.js passes model.js photoDiff, which blends the ease with the
   // players' answers once they are logged. Then the most reference-like (refScore), then a fixed hash of the photo's
   // file name: the list's order says who took a photo (tools/fish_photos.py lists Pierre's first), so it never decides.
+  // A reference-level photo (refLevel, below) comes before every other photo (Pierre, 2026-11-06: a player starts an
+  // entry on reference photos, never on one prolific observer's easy photos): the cover and each list's first photos;
+  // the draw favours them too (model.js photoSet, PICKD.REFW). The ease ranks within each of the two groups.
   const fHash = f => [...String(f)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+  // Reference level (Pierre, 2026-11-06 14:02: "reference photos" are every photo of reference quality, whoever took
+  // it, not only a source's cover): a reference source's own photo (rep) judged very easy, or any photo judged ease 5
+  // with the reference look in its tags (profile, whole, good light, true colours, sharp, large or medium, one fish or a
+  // school of it; no juvenile, camouflage or out of water).
+  const REF_LOOK = /^p1g0s[lm][1s]$/;
+  const refLevel = p =>
+    !!p &&
+    (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
+  const refFirst = p => (refLevel(p) ? 0 : 1);
   function easyRank(L, d = p => -(p.e || 3)) {
     return (L || [])
-      .map(p => ({p, d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
-      .sort((a, b) => a.d - b.d || b.r - a.r || a.h - b.h)
+      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
+      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.h - b.h)
       .map(x => x.p);
   }
   function fishGen(F, photos, sheet) {
@@ -3922,6 +3934,8 @@
     subjDev,
     fishGen,
     easyRank,
+    refFirst,
+    refLevel,
     refScore,
     fishOn,
     fishPid,

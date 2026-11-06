@@ -17,7 +17,7 @@
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
-const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5, REFW: 3};
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -132,7 +132,10 @@ function photoSet(n, skip, shift = 0, k = 4) {
     // offsets of 2026-11-03, about x 0.64 shown never right, x 0.33 right once, x 0.18 right twice or more (it was x 0.6
     // from right twice only). Soft: a genus whose photos are all known still shows them, the least remembered first.
     // It matters most in a genus with few photos, where repeats come soonest.
-    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1);
+    // A reference-level photo never seen (core.js refLevel: a reference source's own, or judged ease 5 with the
+    // reference look; Pierre, 2026-11-06) weighs PICKD.REFW times more: it comes first among the photos drawn, with no
+    // exclusive rule (one photo again and again), whoever took it.
+    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? PICKD.REFW : 1);
     else r *= Math.exp(PMEM[memBucket(k)]);
     return r;
   };

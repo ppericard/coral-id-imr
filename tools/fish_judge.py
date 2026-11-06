@@ -17,7 +17,9 @@ This script:
     12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after); --only t28,t47
     limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid for the crops.
 tools/fish_photos.py calls apply() whenever it rebuilds the photo list, so a rebuild keeps the judgements.
-Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo]]
+  - adds the units' reference photos (tools/fish_refs.json, tools/fish_refs.py) to their entries once judged; --sheets
+    DIR --refs draws the sheets of those photos (with --todo: the ones not judged yet).
+Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo] [--refs]]
 """
 import argparse
 import json
@@ -28,6 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_judge.json"
+REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/fish_refs.py)
 PHOTOS = ROOT / "fish-photos.json"
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$")
 EARLY = 4  # very easy (judging/FISH.md): the photos of an entry's first questions (model.js easyFirst)
@@ -76,6 +79,52 @@ def load_src():
     return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {}), s.get("add", {})
 
 
+def load_refs(fish=None):
+    """tools/fish_refs.json photos (kept by species) as teaching id -> reference photo objects, each under the level-1
+    entry that holds its species (FishBase's too: Pierre, 2026-11-06, FishBase enters automatically when its licence
+    allows)."""
+    if not REFS.exists():
+        return {}
+    fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
+    home = {}
+    for t in fish["teach"]:
+        if t.get("level") == 1:
+            for sid in t.get("species", []):
+                home.setdefault(sid, t["id"])
+    out = {}
+    for sid, L in json.loads(REFS.read_text(encoding="utf-8")).get("photos", {}).items():
+        if sid in home:
+            out.setdefault(home[sid], []).extend(L)
+    return out
+
+
+def add_refs(photos, J, added=(), fish=None):
+    """The reference photos (tools/fish_refs.json) into their entries' game photos, in place, once judged (J): a photo
+    already listed takes the rep tag; one of an observation already listed takes that photo's place (one photo per
+    observation, rule P4; a photo the pass added for an entry short of very easy photos stays); the others join at the end (core.js easyRank orders the list). A game photo loses a rep and
+    a reference photo that tools/fish_refs.json no longer lists, so a rerun gives the same file."""
+    R = load_refs(fish)
+    want = {r["f"]: r for L in R.values() for r in L}
+    for tid in list(photos):
+        photos[tid] = [p for p in photos[tid] if not p.get("from") or p["f"] in want]
+        for p in photos[tid]:
+            if p["f"] not in want:
+                p.pop("rep", None)
+    for tid, L0 in R.items():
+        L = photos.setdefault(tid, [])
+        for r in L0:
+            obj = {k: v for k, v in r.items() if k != "for"}
+            have = next((p for p in L if p["f"] == r["f"]), None)
+            if have:
+                have.update(obj)
+            elif r["f"] in J:
+                same = next((i for i, p in enumerate(L) if p["o"] == r["o"]), None)
+                if same is None:
+                    L.append(obj)
+                elif L[same]["f"] not in added:
+                    L[same] = obj
+
+
 def apply(photos, fish=None):
     """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
     fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
@@ -87,6 +136,7 @@ def apply(photos, fish=None):
         L = photos.setdefault(tid, [])
         have = {p["o"] for p in L}
         L.extend(dict(p) for p in extra if p["o"] not in have)
+    add_refs(photos, J, {p["f"] for L in A.values() for p in L}, fish)
     k = 0
     for tid, L in photos.items():
         for p in L:
@@ -140,7 +190,7 @@ def summary(doc, fish):
     print("circle-1 entries with fewer than %d very easy photos (better photos needed): %s" % (WANT, ", ".join(short) or "none"))
 
 
-def sheets(out, only=(), todo=False):
+def sheets(out, only=(), todo=False, refs=False):
     """Downloads the game photos (iNaturalist medium size) and draws contact sheets of 12, as judging/FISH.md says: only
     the entries `only` names (all when empty), only the photos not judged yet with `todo`. A 5 x 5 grid over each photo
     reads the crop fractions to a tenth (judging/FISH.md "A proposed crop")."""
@@ -149,6 +199,8 @@ def sheets(out, only=(), todo=False):
     from PIL import Image, ImageDraw, ImageFont
     doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
     J = load_src()[0] if todo else {}
+    if refs:  # the reference photos of tools/fish_refs.json instead of the game photos
+        doc["photos"] = load_refs()
     doc["photos"] = {t: [p for p in L if p["f"] not in J] for t, L in doc["photos"].items() if not only or t in only}
     (out / "img").mkdir(parents=True, exist_ok=True)
     (out / "sheets").mkdir(parents=True, exist_ok=True)
@@ -191,12 +243,13 @@ def main():
     ap.add_argument("--sheets", type=Path, help="download the photos and draw contact sheets into this folder")
     ap.add_argument("--only", default="", help="with --sheets: these entries only (comma-separated teaching ids)")
     ap.add_argument("--todo", action="store_true", help="with --sheets: only the photos not judged yet")
+    ap.add_argument("--refs", action="store_true", help="with --sheets: the reference photos of tools/fish_refs.json")
     a = ap.parse_args()
     if a.sheets:
         import slot
 
         slot.guard("tools/fish_judge.py")  # one heavy run at a time on the machine (rule W24)
-        return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo)
+        return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo, a.refs)
     fish = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
     before = json.dumps(doc, sort_keys=True)
