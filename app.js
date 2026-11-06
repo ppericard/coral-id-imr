@@ -663,6 +663,7 @@ function setSubject(id) {
   if (S === SUBJ) return Promise.resolve();
   return UNITS[S.id].load().then(() => {
     store.set(SUBJECT_KEY, S.id);
+    if (typeof toastsOff === 'function') toastsOff(); // progress.js: a note about the subject left
     subjectLoad(S);
     showSubj();
     showBon();
@@ -1399,7 +1400,7 @@ const UNITS = {
     slate: () => (FISH ? FISH.c1 : []),
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
-    names: () => fishTypeNames(FISH ? FISH.gen : {}),
+    names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop),
     norm: typeNormAll,
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
