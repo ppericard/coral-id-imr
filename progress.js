@@ -660,15 +660,113 @@ function achBasics() {
 // A report sent (sync.js reportDialog): counted for the Contributions (core.js contribAdd: one per photo, Other only
 // with a note), whatever the subject on screen, signed in or not; the tier it reaches pops up at once (achCheck), and the
 // record goes to the sheet with the next sync like the other feats.
+// Its id is kept too, counted or not (core.js repsAdd), for "Your feedback helped" (achHelped).
 function achReport(r) {
   // An account the admin deleted (the sheet answered 'gone': sync.js) counts nothing (Pierre, 2026-11-05).
   if (SYNC && SYNC.err === 'gone') return;
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};
-  if (!contribAdd(A, r)) return;
+  repsAdd(A, [r.id]);
+  const counted = contribAdd(A, r);
   store.set(ACHK, A);
-  achCheck();
+  if (counted) achCheck();
   if (SYNC) syncSoon();
+}
+// "Your feedback helped" (Pierre, 2026-11-05, Q66): a report the admin marked done (To do › Reports ✓ Done, published in
+// curation.json seen 'rep:<id>') is told to the player who sent it, at their next visit: checked at start-up (signed in:
+// once the sheet's load reply is merged, sync.js repsSeen) and when a new curation.json arrives (app.js route). A warm
+// card that stays until closed (Pierre: a toast at the top may go unread), at a calm moment: never over a question
+// (a game on screen: at the break at Next, helpedArm from quiz.js answer), another card, the tour, a toast or the report
+// dialog; it waits for them to go. At the first report handled, then every report handled since the last thanks in one,
+// at most once per 7 days (core.js helpedDue, helpedMark: Pierre, never again and again). Marked thanked when the player
+// closes it (left unseen by leaving the page, it comes back). Only that it was handled: nothing the admin wrote.
+// Whatever the subject on screen, signed in or not (an anonymous device's reports by the ids it kept itself); never for
+// an account the admin deleted (the sheet answered 'gone', sync.js).
+// Handled means Pierre's Done or a PR's (reports-handled.json, the integrator's: core.js handledSeen), read only by a device
+// that sent reports, again at most every 30 minutes (HANDLED).
+let helpedUp = false,
+  helpedMo = null,
+  helpedT = 0;
+const HANDLED = {file: null, at: 0, busy: false, MS: 30 * 60000};
+function handledLoad() {
+  if (HANDLED.busy || Date.now() - HANDLED.at < HANDLED.MS) return;
+  HANDLED.busy = true;
+  fetch('reports-handled.json', {cache: 'no-cache'})
+    .then(r => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then(j => {
+      HANDLED.busy = false;
+      HANDLED.at = Date.now();
+      if (j && typeof j === 'object') HANDLED.file = j;
+      achHelped();
+    });
+}
+const helpedIds = () => {
+  if (SYNC && (!repsPulled || SYNC.err === 'gone')) return []; // signed in: after the load reply; a deleted account: never
+  const A = store.get(ACHK, null);
+  return A ? helpedDue(A, handledSeen((typeof CUR === 'object' && CUR && CUR.seen) || null, HANDLED.file), Date.now()) : [];
+};
+// Never over an enlarged photo either (#lightbox, Codex review #581): its close (hidden set again) wakes the wait below.
+const helpedCalm = () =>
+  !document.querySelector('#tour, .unlock, #repdlg, .achpop, #lightbox:not([hidden])') &&
+  !achBusy &&
+  !(document.getElementById('view') || document.body).querySelector('.q');
+function achHelped() {
+  const A = store.get(ACHK, null);
+  if (A && Array.isArray(A._rep) && A._rep.length) handledLoad(); // its reply calls achHelped again
+  if (helpedUp || !helpedIds().length) return;
+  if (helpedCalm()) return void helpedShow();
+  if (helpedMo) return;
+  helpedMo = new MutationObserver(() => {
+    clearTimeout(helpedT);
+    helpedT = setTimeout(() => {
+      if (!helpedMo || (!helpedCalm() && helpedIds().length && !helpedUp)) return;
+      helpedMo.disconnect();
+      helpedMo = null;
+      achHelped();
+    }, 300);
+  });
+  helpedMo.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden']});
+}
+// After an answer in a game (quiz.js answer): the break at Next, when a thanks is due and no other card took it.
+function helpedArm(nb) {
+  if (helpedUp || !helpedIds().length || document.querySelector('#tour, .unlock, .achpop') || achBusy) return false;
+  return breakArm(nb, () => helpedShow(true));
+}
+function helpedShow(brk) {
+  const ids = helpedIds();
+  if (!ids.length || helpedUp) return false;
+  helpedUp = true;
+  cardShow({
+    kind: 'feedback',
+    emoji: '🙌',
+    cls: 'helped',
+    kick: 'Thank you',
+    title: 'Your feedback helped',
+    body: `<p>${ids.length === 1 ? 'A report you sent was looked at and handled.' : `${ids.length} reports you sent were looked at and handled.`}</p>`,
+    primary: {text: 'OK'},
+    esc: 1,
+    focus: false,
+    bind: cardCalm,
+    onClose: how => {
+      helpedUp = false;
+      if (how === 'route') return void setTimeout(achHelped, 300); // left unseen: back on the next page
+      const A = store.get(ACHK, {}) || {};
+      helpedMark(A, ids, Date.now());
+      store.set(ACHK, A);
+      if (SYNC) syncSoon();
+      if (brk) route(); // at the break: on to the next question
+    }
+  });
+  return true;
+}
+// The ids of the player's own reports, from the sheet's load reply (sync.js repsSeen, Code.gs v57): those sent signed in
+// on any device, before this version too. Then the check above.
+function achReps(ids) {
+  if (!store.get(ACHK, null)) achCheck(true);
+  const A = store.get(ACHK, {}) || {};
+  if (repsAdd(A, ids)) store.set(ACHK, A);
+  achHelped();
 }
 const TIER = ['', '🥉', '🥈', '🥇'];
 let achQ = [],
@@ -787,7 +885,8 @@ function viewAch() {
       left = ACH_L()
         .filter(a => !A[a.id])
         .sort((x, y) => (pc(y) || 0) - (pc(x) || 0)),
-      fb = Array.isArray(A._fb) ? A._fb.length : 0;
+      fb = Array.isArray(A._fb) ? A._fb.length : 0,
+      thx = Array.isArray(A._thx) ? A._thx.length : 0;
     const share = a => {
       const p = pc(a);
       return p == null ? '' : `<span class="achp">${p < 1 && p > 0 ? '<1' : Math.round(p)}% of players</span>`;
@@ -798,7 +897,7 @@ function viewAch() {
     $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback): one per photo, and an "Other" report with a note; they never count in your progress. The share of players counts everyone who signed in.</p>
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH_L().length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul>
-  <h2 class="btitle bsec">Contributions <small>${fb ? `${fb} report${fb > 1 ? 's' : ''} sent` : 'reports and feedback you send'}</small></h2>
+  <h2 class="btitle bsec">Contributions <small>${fb ? `${fb} report${fb > 1 ? 's' : ''} sent` : 'reports and feedback you send'}${thx ? ` · ${thx} handled` : ''}</small></h2>
   <ul class="achl">${ACH_C()
     .map(a => card(a, !!A[a.id]))
     .join('')}</ul></div>`;
