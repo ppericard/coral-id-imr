@@ -1860,6 +1860,10 @@ body.admin.adm-cmode {
 body.adm-cmode main {
   margin-bottom: 0;
 }
+/* The swiper sets its own height: the page's minimum height (app.css .wrap) under the demo banner made it scroll. */
+body.adm-cmode .wrap {
+  min-height: 0;
+}
 .adm-sw .adm-swacts {
   padding: 0;
 }
