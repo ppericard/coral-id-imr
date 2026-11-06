@@ -10,7 +10,8 @@
 // question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
 // the target for this player on this genus and this question's format (aimed so the question is right with the chance
 // PICKD.P whatever its format: the difficulty controller, below). On top:
-// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos the player
+// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first for the corals,
+// SUBJECTS tiers; never for fish, Pierre 2026-11-06), photos the player
 // has already been shown weigh less the better they are remembered (photo memory, PMEM: x e^offset), the colony of the
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.

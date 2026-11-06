@@ -550,13 +550,9 @@ function fishGenera(X, F) {
           // the PDF genus shown; its species' WoRMS-accepted genera accepted when typed (Codex review #526: Mirolabrichthys)
           names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
         };
-        // The card's photo as fishGen picks an entry's: the highest source tier first (Pierre's own, rule P1), then the
-        // easiest judged one (Codex review #526).
-        if (wide.some(p => p.e)) {
-          const tier = Math.min(...wide.map(p => (p.own ? 0 : 1))),
-            T = wide.filter(p => (p.own ? 0 : 1) === tier);
-          X.gen[id].cover = T.reduce((a, p) => ((p.e || 0) > (a.e || 0) ? p : a), T[0]).f;
-        }
+        // The card's photo as fishGen picks an entry's: the first of its easyRank order (the entry's, kept by the filter),
+        // whoever took it (Pierre, 2026-11-06).
+        if (wide.length) X.gen[id].cover = wide[0].f;
         sci.push(id);
       });
     });
@@ -595,12 +591,26 @@ const fishLoad = () =>
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
       if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      return (FISH = fishGenera(fishGen(f, ph.photos, ph.sheet), f));
+      FISH = fishGenera(fishGen(f, ph.photos, ph.sheet), f);
+      rankPhotos();
+      return FISH;
     })
     .catch(e => {
       FISHP = null;
       throw e;
     }));
+// The fish units' photos in easyRank order on their difficulty as the game sees it (model.js photoDiff: the judged ease,
+// then the players' answers once fish answers are logged and rated), so the card's photo and each list's first photo stay
+// the easiest, most reference-like ones as the ratings come (Pierre, 2026-11-06). Run when the fish data or the photo
+// stats arrive (sync.js loadStats). With no rating it keeps fishGen's order. The fish data can come at start-up before
+// model.js (a later script tier): then fishGen's order stands until the stats reply.
+function rankPhotos() {
+  if (!FISH || typeof photoDiff !== 'function') return;
+  Object.entries(FISH.gen).forEach(([n, g]) => {
+    g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p));
+    if (g.views.wide.length) g.cover = g.views.wide[0].f;
+  });
+}
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
 // questions planned ahead), reloaded on a switch: each file registers a function here. keep = true for a short visit
 // to another subject (inSubject): what can be read again from the device, nothing that is in play.
@@ -725,7 +735,10 @@ const subjWords = t =>
     .replace(/\bgenus\b/g, SUBJ.one)
     .replace(/\bGenera\b/g, SUBJ.many[0].toUpperCase() + SUBJ.many.slice(1))
     .replace(/\bgenera\b/g, SUBJ.many);
-const isCore = p => !!(p.imr || p.own);
+// A photo of the core sources (an IMR lecture photo or Pierre's own): never seen yet, it gets the draw's bonus (model.js
+// photoSet), for a subject whose photo sources rank (SUBJECTS tiers, rule P1: the corals). Not for fish (Pierre,
+// 2026-11-06): his photos are never boosted; their ease places them (core.js easyRank).
+const isCore = p => !!(SUBJ.tiers && (p.imr || p.own));
 // A photo the games may teach from: an extra genus's (DATA.x: Millepora, the bonus genera) only if Pierre's own or
 // Research Grade on iNaturalist (no gid), as the extra genera were chosen (tools/build_extra.py). One rule for every
 // game (the quiz, the exam, the mix-up card, the Lab's typed game: Codex review #379).

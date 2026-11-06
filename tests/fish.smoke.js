@@ -254,7 +254,8 @@ const server = http.createServer((req, res) => {
     // Codex review #526: a genus's WoRMS-accepted name is accepted when typed (Pseudanthias tuka is now Mirolabrichthys).
     ok(typeMatch('Mirolabrichthys', 'genus') && typeMatch('Mirolabrichthys', 'genus').g === 'g:Pseudanthias', 'sci: typed accepted genus');
     // Codex review #526: a family with a single genus at Advanced still gets 3 wrong genus names (any genus may be a
-    // wrong choice, as in the quiz); a genus card's photo comes from the highest source tier (Pierre's own first, rule P1).
+    // wrong choice, as in the quiz); a genus card's photo is its easiest, most reference-like one, whoever took it
+    // (Pierre, 2026-11-06: no source tier for fish), and a never-seen photo of Pierre's gets no draw bonus.
     st('t02').pg = 0.2;
     st('t04').pg = 0.72;
     const pl = pool().filter(n => GX(n).rank);
@@ -262,12 +263,12 @@ const server = http.createServer((req, res) => {
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
     ok(
       G.every(n => {
-        const w = GX(n).views.wide,
-          c = w.find(p => p.f === GX(n).cover);
-        return !c || c.own || !w.some(p => p.own && p.e);
+        const w = GX(n).views.wide;
+        return !w.length || (GX(n).cover === w[0].f && w.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
       }),
-      "sci: a genus card's photo is Pierre's own when he has a judged one"
+      "sci: a genus card's photo is its easiest"
     );
+    ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
     bonusSet(false, 'sci');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
     // Report a problem after a fish answer (fish beta sweep, 2026-11-05: the right-answer list offered the teaching ids,

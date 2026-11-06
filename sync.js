@@ -38,6 +38,7 @@ function loadStats() {
         PCONF = j.conf || {};
         PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
         PGD = gdOf(j); // genus offsets of the photo Elo (sheet v31, model.js photoDiff); none from an older sheet
+        if (typeof rankPhotos === 'function') rankPhotos(); // the fish lists' first photos follow the new ratings (app.js)
         store.set('reefid-photo-stats', {
           t: Date.now(),
           v: j.v,

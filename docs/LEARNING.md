@@ -2502,6 +2502,35 @@ judged ease (rubric 3, the 37 added photos included; main had moved to #428 for 
 The 5th to 7th entries opened at answers 17-28 in both, as before (`OPEN.WIN` and `OPEN.MAX` unchanged). The real-log
 replay (rule L12) cannot judge it either: the sheet holds no fish answer.
 
+### Fish: easy, reference-like photos first, whoever took them (2026-11-06)
+
+Pierre, 2026-11-06, after his fish tests: a beginner saw mostly his own photos. They are good identification material
+because their difficulty varies a lot, but few are reference photos (good colours, a clean side profile, the whole fish
+seen). "The first photos a player sees, by whatever mechanism, must be easy, near-reference photos"; his photos stay in
+the database, never forced or boosted, in the games or on the sheets. What had forced them, each removed for fish:
+
+- **The photo list** (`tools/fish_photos.py`, the stopgap the quiz reads): his observations came first, up to the 24 of
+  an entry, so the four starter entries (Damselfish, Butterflyfish, Angelfish, Surgeonfish) showed his photos alone
+  (since 2026-11-03, #442). Now (Pierre, Q148) every compatible photo of his is in the list, beside the other
+  observers' 24 per entry, at its own difficulty (573 of 1,740 photos; ARCHITECTURE.md "Photos, stopgap"); the order
+  below decides which are met first.
+- **The card's photo** (`core.js` `fishGen` `cover`; `app.js` `fishGenera` for a genus card): the easiest judged photo
+  within the highest source tier, his first even at ease 2 against another observer's 5 (#461, 2026-11-04; #526).
+- **The draw's bonus for a photo never seen** (`model.js` `photoSet`): × 1.3 for IMR and Pierre's photos (2026-11-01),
+  which for fish meant his. Now `SUBJECTS` `tiers` (the corals) only.
+- **The fish auto-sort** (`autosort.js` `fishRun`, admin): his candidates filled each species' target first (#479,
+  2026-11-04), whatever their ease.
+
+One order instead (`core.js` `easyRank`): the easiest first by the photo's difficulty, which is its judged ease
+(judging/FISH.md; the curated ease once the game reads Pierre's curation) until fish answers are logged, then
+`photoDiff`'s rating as the answers come (`app.js` `rankPhotos`, run at load and with each photo stats reply); among
+equals the most reference-like (`refScore`: the reference flag `r` first, then a point for each field-guide trait:
+profile, whole fish, good light, no colour loss, sharp, large, one fish; a point off for a juvenile, camouflage or out of
+water); then a fixed hash of the photo's name (the list's order, Pierre's photos first, never decides). It decides the card's photo, the first photo of each list (the families list, Home) and
+the order the auto-sort fills a species. The draw itself is unchanged: the very easy photos of an entry's first
+questions (`easyFirst`), then the difficulty targeting, now with no source factor. No new threshold (`REF` only breaks
+ties between photos of the same ease).
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night, in review)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
@@ -3020,7 +3049,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   (the odds memory adds to a right answer on it, divided out), × 0.64 / 0.33 / 0.18 with the offsets above (before: × 0.6
   from right twice only, nothing before). A soft factor in the existing targeting, never a filter: a genus whose photos
   are all known still shows them, the least remembered first. The photos never shown keep their bonus (× (1 + 1.5 ×
-  recent success), × 1.3 for IMR and Pierre's photos). The targeting distance stays on the photo's difficulty when new:
+  recent success), × 1.3 for IMR and Pierre's photos, corals only: `SUBJECTS` `tiers`; never for fish since 2026-11-06). The targeting distance stays on the photo's difficulty when new:
   aiming at a known photo's lower effective difficulty would hand a struggling player the photos they remember, the
   opposite of the point. Measured in the genera with the fewest photos (2026-11-03; 3 colonies of each tried, 1000
   draws), every photo already shown and right twice but one colony's, shown never right: that colony comes up × 1.45 as often as when all
