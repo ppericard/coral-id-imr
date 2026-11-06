@@ -555,9 +555,10 @@ function fishGenera(X, F) {
           cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {}).dauin || 0), 0))),
           levels: 1,
           views: {wide},
-          // the PDF genus shown; its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) and its IMR name
-          // (Anemonefish) accepted when typed
-          names: [g, ...new Set([...L.map(s => (s.now || '').split(/\s+/)[0]), G.imr || ''].filter(x => x && x !== g))]
+          // the PDF genus shown and its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) accepted when typed;
+          // never its IMR name (Anemonefish): a common name never advances a scientific name (docs/FISH_PATH.md; Codex
+          // review #656), it is the family's
+          names: [g, ...new Set(L.map(s => (s.now || '').split(/\s+/)[0]).filter(x => x && x !== g))]
         };
         // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
         // whoever took it (Pierre, 2026-11-06).
