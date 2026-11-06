@@ -61,10 +61,11 @@ rule P1 already does that job), the Reef theme, the quiz level selector.
 
 ### U8
 
-**Never hardcode the genus count** ("39", "40") in user-facing text: it changes (Millepora joined on 2026-11-02; bonus
-genera): use `slateGenera().length`. Docs may say 39 for the IMR coral slate, 40 with Millepora. A one-time
-announcement of the change itself (`RECALC`) may name the number.
-*Source:* Pierre, 2026-11-02.
+**Never hardcode the number of units** (corals: "39", "40") in user-facing text: it changes (Millepora joined on
+2026-11-02; bonus genera): use `slateGenera().length` (the current subject's slate, `UNITS[id].slate()`). Corals: docs
+may say 39 for the IMR coral slate, 40 with Millepora. A one-time announcement of the change itself (`RECALC`) may name
+the number.
+*Source:* Pierre, 2026-11-02; subject-neutral wording, 2026-11-06.
 
 ### U9
 
@@ -108,10 +109,10 @@ yourself.
 
 ### U14
 
-**Players can report a problem from every game** once the answer is out (wrong answer + the right genus, several
+**Players can report a problem from every game** once the answer is out (wrong answer + the right unit, several
 corals, bad photo, other, note), and, discreetly, from everywhere it makes sense: any enlarged photo, the bottom of a
-genus sheet, "Send feedback" at the end of the ? help of every page and on About and credits (DESIGN.md "Footer and
+unit's sheet, "Send feedback" at the end of the ? help of every page and on About and credits (DESIGN.md "Footer and
 credits"). New pages get feedback through the ? help automatically; use `repBtn()` for anything more specific. Pierre
 sees who sent each report in admin To do (views All and Reports), because he trusts some players more than others.
 Reports never change anything by themselves.
-*Source:* Pierre, 2026-11-01.
+*Source:* Pierre, 2026-11-01; subject-neutral wording, 2026-11-06.
