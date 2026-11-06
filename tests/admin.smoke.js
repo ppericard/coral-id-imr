@@ -1046,6 +1046,7 @@ const WIDTHS = [390, 1280];
       // Every click goes to the draft's fish part only (curation.json fish genera, add, seen, out, exclude), never a coral
       // key; the fish part is put back as it was after.
       {
+        const fh = await p.evaluate(() => SUBJECTS.find(x => x.admin.sections === 'species').admin.hash);
         const fx = await p.evaluate(() => {
           const t = FISHC.teach.find(x => x.species.some(s => (FISHC.cand[s] || []).length >= 5 && !FISHC.species[s].out)),
             sid = t.species.find(s => (FISHC.cand[s] || []).length >= 5 && !FISHC.species[s].out),
@@ -1062,7 +1063,7 @@ const WIDTHS = [390, 1280];
           saveDraft();
           return {t: t.id, sid, L, keep, coral, wink: (FISHC.teach.find(x => x.wink) || {}).id};
         });
-        await go(other.hash + fx.t);
+        await go(fh + fx.t);
         const sec = () =>
           p.evaluate(
             ({sid}) => ({
@@ -1130,7 +1131,7 @@ const WIDTHS = [390, 1280];
         if ((await p.evaluate(() => JSON.stringify({...DRAFT, fish: null}))) !== fx.coral)
           fails.push(`${w}px Units page: a coral key changed`);
         if (fx.wink) {
-          await go(other.hash + fx.wink);
+          await go(fh + fx.wink);
           const wk = await p.evaluate(() => ({
             n: document.querySelectorAll('.adm-wink .adm-winka span').length,
             ok: (document.querySelector('.adm-wink .adm-winka .ok') || {}).textContent || '',
