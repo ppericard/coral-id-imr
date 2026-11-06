@@ -56,26 +56,41 @@ def drop_excluded(d, gone=None):
     return d
 
 
+def files_ok(p, img=None):
+    """The site can show photo record p: it has an online original (src: R2, else iNaturalist), or its file is in img/
+    (an IMR lecture photo: git is its only backup, and its exclusion removed the files; tools/photos.py, run by the
+    workflow, makes the smaller sizes from it)."""
+    if p.get('src'): return True
+    from photos import IMG
+    return os.path.exists(os.path.join(img or IMG, p['f'] + '.webp'))
+
+
 def restore_unexcluded(d, gone):
     """Puts back, at its place, every photo of gone (excluded.json "photos") that curation.json no longer excludes (Pierre's
-    Restore), and forgets it. A genus or view gone since is recreated; a photo already back is only forgotten. Returns
-    the photo ids restored."""
+    Restore), and forgets it. A view gone since is recreated; a photo already back is only forgotten. A candidate comes
+    back marked restored (fetch_local.py drop_share_alike spares it: a share-alike one Pierre restores stays a candidate
+    he can add, Codex review #628). Held back, still in gone: a photo the site could not show (files_ok: no online
+    original and its file gone from img/, until python3 tools/apply_excluded_archive.py --files brings it back from git
+    history: the workflow runs it) and one whose genus left data.json. Returns (restored, held) photo ids."""
     have = {p.get('f') for _, L in _lists(d) for p in L}
-    back = []
+    back, held = [], []
     for f, r in sorted(gone.items(), key=lambda x: x[1].get('i', 0)):
         if excluded(f): continue
-        del gone[f]
-        if f in have: continue
+        if f in have:
+            del gone[f]
+            continue
         w = r['in']
-        if w in ('gen', 'x'):
-            G = d['gen'] if w == 'gen' else d.setdefault('x', {}).setdefault('gen', {})
-            if r['g'] not in G: continue  # the genus left data.json: nothing to put it back into
-            L = G[r['g']].setdefault(r['k'], {}).setdefault(r['v'], [])
+        G = d['gen'] if w == 'gen' else ((d.get('x') or {}).get('gen') or {}) if w == 'x' else None
+        if not files_ok(r['p']) or (G is not None and r['g'] not in G):
+            held.append(f)
+            continue
+        if G is not None: L = G[r['g']].setdefault(r['k'], {}).setdefault(r['v'], [])
         elif w == 'cmp': L = d.setdefault('cmp', [])
         else: L = d.setdefault(w, {}).setdefault(r['g'], [])
-        L.insert(min(r.get('i', len(L)), len(L)), r['p'])
+        L.insert(min(r.get('i', len(L)), len(L)), {**r['p'], 'restored': 1} if w == 'cand' else r['p'])
+        del gone[f]
         back.append(f)
-    return back
+    return back, held
 
 
 def load_gone(path=None):

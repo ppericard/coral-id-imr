@@ -108,10 +108,11 @@ def share_alike(p):
 
 def drop_share_alike(d, keep):
     """Takes the waiting share-alike candidates out of d['cand'], except those curation.json names (keep:
-    datajson.curated(), e.g. a candidate Pierre added). Returns the photo ids dropped."""
+    datajson.curated(), e.g. a candidate Pierre added) and those Pierre restored from Excluded (restored: 1,
+    excluded.py restore_unexcluded). Returns the photo ids dropped."""
     gone = []
     for g, L in list((d.get('cand') or {}).items()):
-        k = [p for p in L if p['f'] in keep or not share_alike(p)]
+        k = [p for p in L if p['f'] in keep or p.get('restored') or not share_alike(p)]
         gone += [p['f'] for p in L if p not in k]
         if k: d['cand'][g] = k
         else: del d['cand'][g]
@@ -243,9 +244,10 @@ def tidy(d, gone=None):
     "photos" (read and written here when not given)."""
     own = gone is None
     if own: gone = load_gone()
-    back = restore_unexcluded(d, gone)
+    back, held = restore_unexcluded(d, gone)
     if back: print('restored (no longer excluded):', ', '.join(back))
-    drop_excluded(d, gone)  # first, so an excluded share-alike candidate is kept too: restored and added, it comes back
+    if held: print('not excluded any more, held in excluded.json (its file is not in img/, or its genus left):', ', '.join(held))
+    drop_excluded(d, gone)  # first, so an excluded share-alike candidate is kept too, for a Restore
     sa = drop_share_alike(d, curated())
     if sa: print('share-alike candidates dropped:', len(sa))
     if own: save_gone(gone)
@@ -306,7 +308,7 @@ def main():
     if PLAN:
         # drop: waiting share-alike candidates a run would take out of cand.json (drop_share_alike), shown only when some.
         keep = curated()
-        drop = Counter(g for g, L in cand.items() for p in L if p['f'] not in keep and share_alike(p))
+        drop = Counter(g for g, L in cand.items() for p in L if p['f'] not in keep and not p.get('restored') and share_alike(p))
         print(json.dumps({g: {'keyonly': g in KEY_ONLY, 'need': need(g), **{k: max(0, r) for k, r in (room_for(g, w) for w in (DAUIN, PHILIPPINES))}, **({'drop': drop[g]} if drop[g] else {})} for g in GEN if not ONLY or g in ONLY}))
         return
     for g in GEN:

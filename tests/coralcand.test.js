@@ -67,9 +67,9 @@ print(json.dumps(out))`);
   all.filter(p => p.lic && p.a).forEach(p => assert.strictEqual(licence({a: p.a}), p.lic, `${p.f}: lic ${p.lic}, credit ${p.a}`));
 });
 
-test('cand.json: no share-alike candidate waits (only those curation.json names may stay, e.g. one Pierre added)', () => {
+test('cand.json: no share-alike candidate waits (only those curation.json names may stay, e.g. one Pierre added, or restored)', () => {
   const C = read('cand.json').cand;
-  Object.entries(C).forEach(([g, L]) => L.forEach(p => assert.ok(!shareAlike(p), `${g}: ${p.f} ${p.lic}`)));
+  Object.entries(C).forEach(([g, L]) => L.forEach(p => assert.ok(p.restored || !shareAlike(p), `${g}: ${p.f} ${p.lic}`)));
 });
 
 test('drop_share_alike: drops waiting share-alike candidates, never one curation.json names; re-runnable', () => {
@@ -85,12 +85,15 @@ print(json.dumps({'gone': g1, 'again': g2, 'left': {g: [p['f'] for p in L] for g
 // A Publish with exclusions (2026-11-06): Pierre's exclusion takes a photo out of every list, kept in excluded.json with its
 // place; his Restore (admin Genera › Excluded) puts it back by itself; an excluded candidate is not "used" by curation.json.
 const EXCL = `import excluded as X
-X.EX = {'a-wide-1': 'excluded', 'a-cand-2': 'excluded', 'a-cand-3': 'auto', 'a-cand-4': 'excluded'}
+X.EX = {'a-wide-1': 'excluded', 'a-cand-2': 'excluded', 'a-cand-3': 'auto', 'a-cand-4': 'excluded', 'imrl-p1_i1': 'excluded'}
 X.IDS = {X.pid(f) for f in X.EX} - {None}
 def unexclude(f):
     del X.EX[f]; X.IDS.clear(); X.IDS.update({X.pid(f) for f in X.EX} - {None})
-d = {'gen': {'A': {'views': {'wide': [{'f': 'a-wide-0'}, {'f': 'a-wide-1'}, {'f': 'a-wide-5'}]}}},
-     'cand': {'A': [{'f': 'a-cand-2', 'lic': 'cc-by'}, {'f': 'a-cand-3'}, {'f': 'a-cand-4', 'lic': 'cc-by-sa'}, {'f': 'a-cand-6', 'lic': 'cc-by-sa'}]}}
+U = 'https://inaturalist-open-data.s3.amazonaws.com/photos/1/original.jpg'
+d = {'gen': {'A': {'views': {'wide': [{'f': 'a-wide-0', 'src': U}, {'f': 'a-wide-1', 'src': U}, {'f': 'a-wide-5', 'src': U}]}}},
+     'course': {'A': [{'f': 'imrl-p1_i1'}]},  # an IMR lecture photo: no online original, its file gone with its exclusion
+     'cand': {'A': [{'f': 'a-cand-2', 'lic': 'cc-by', 'src': U}, {'f': 'a-cand-3', 'src': U}, {'f': 'a-cand-4', 'lic': 'cc-by-sa', 'src': U},
+                    {'f': 'a-cand-6', 'lic': 'cc-by-sa', 'src': U}]}}
 F = lambda: {'wide': [p['f'] for p in d['gen']['A']['views']['wide']], 'cand': [p['f'] for p in d['cand'].get('A', [])]}`;
 
 test('drop_excluded keeps what it removes; restore_unexcluded puts an un-excluded photo back at its place, once', () => {
@@ -100,10 +103,11 @@ X.drop_excluded(d, gone)
 a = F()
 places = {f: [r['in'], r.get('k'), r.get('v'), r['i']] for f, r in gone.items()}
 none = X.restore_unexcluded(d, gone)
-unexclude('a-wide-1')
+unexclude('a-wide-1'); unexclude('imrl-p1_i1')
 back = X.restore_unexcluded(d, gone)
 again = X.restore_unexcluded(d, gone)
-print(json.dumps({'after': a, 'places': places, 'none': none, 'back': back, 'again': again, 'restored': F(), 'left': sorted(gone)}))`);
+print(json.dumps({'after': a, 'places': places, 'none': none, 'back': back, 'again': again, 'restored': F(), 'left': sorted(gone),
+  'course': [p['f'] for p in d['course']['A']]}))`);
   assert.deepStrictEqual(
     R.after,
     {wide: ['a-wide-0', 'a-wide-5'], cand: ['a-cand-3', 'a-cand-6']},
@@ -112,13 +116,15 @@ print(json.dumps({'after': a, 'places': places, 'none': none, 'back': back, 'aga
   assert.deepStrictEqual(R.places, {
     'a-wide-1': ['gen', 'views', 'wide', 1],
     'a-cand-2': ['cand', null, null, 0],
-    'a-cand-4': ['cand', null, null, 2]
+    'a-cand-4': ['cand', null, null, 2],
+    'imrl-p1_i1': ['course', null, null, 0]
   });
-  assert.deepStrictEqual(R.none, [], 'nothing comes back while it is excluded');
-  assert.deepStrictEqual(R.back, ['a-wide-1']);
-  assert.deepStrictEqual(R.again, [], 'restored once');
+  assert.deepStrictEqual(R.none, [[], []], 'nothing comes back while it is excluded');
+  assert.deepStrictEqual(R.back, [['a-wide-1'], ['imrl-p1_i1']], 'a photo with no online original and no file in img/ is held back');
+  assert.deepStrictEqual(R.again, [[], ['imrl-p1_i1']], 'restored once');
   assert.deepStrictEqual(R.restored.wide, ['a-wide-0', 'a-wide-1', 'a-wide-5'], 'back at its place');
-  assert.deepStrictEqual(R.left, ['a-cand-2', 'a-cand-4']);
+  assert.deepStrictEqual(R.left, ['a-cand-2', 'a-cand-4', 'imrl-p1_i1'], 'the held one stays in excluded.json (Codex review #628)');
+  assert.deepStrictEqual(R.course, []);
 });
 
 test('fetch_local tidy: excluded candidates kept in excluded.json (share-alike ones too), waiting share-alike dropped', () => {
@@ -129,12 +135,18 @@ gone = {}
 with contextlib.redirect_stdout(io.StringIO()): fl.tidy(d, gone)
 a = F()
 unexclude('a-cand-4')
-fl.curated = lambda: {'a-cand-4'}  # restored and added again
 with contextlib.redirect_stdout(io.StringIO()): fl.tidy(d, gone)
-print(json.dumps({'after': a, 'gone': sorted(gone), 'readded': F()}))`);
+mark = [p.get('restored') for p in d['cand']['A'] if p['f'] == 'a-cand-4']
+with contextlib.redirect_stdout(io.StringIO()): fl.tidy(d, gone)
+print(json.dumps({'after': a, 'gone': sorted(gone), 'restored': F()['cand'], 'mark': mark}))`);
   assert.deepStrictEqual(R.after, {wide: ['a-wide-0', 'a-wide-5'], cand: ['a-cand-3']});
-  assert.deepStrictEqual(R.gone, ['a-cand-2', 'a-wide-1']);
-  assert.deepStrictEqual(R.readded.cand, ['a-cand-3', 'a-cand-4'], 'an excluded share-alike candidate Pierre restores and adds comes back');
+  assert.deepStrictEqual(
+    R.restored,
+    ['a-cand-3', 'a-cand-4'],
+    'a share-alike candidate Pierre restores comes back as a candidate he can add, and stays (Codex review #628)'
+  );
+  assert.deepStrictEqual(R.mark, [1]);
+  assert.deepStrictEqual(R.gone, ['a-cand-2', 'a-wide-1', 'imrl-p1_i1']);
 });
 
 test('curated(): an id curation.json excludes is not used, even if a genus still names it', () => {
@@ -166,8 +178,14 @@ test('the photo lists follow curation.json: nothing Pierre excluded in data.json
     [],
     fix
   );
+  // Held back on purpose (tools/excluded.py restore_unexcluded): no online original and no file in img/, which the
+  // workflow's tools/apply_excluded_archive.py --files could not take back from git history.
+  const held = ([f, r]) => !r.p.src && !fs.existsSync(path.join(ROOT, 'img', f + '.webp'));
   assert.deepStrictEqual(
-    Object.keys(gone).filter(f => !cur[f]),
+    Object.entries(gone)
+      .filter(([f]) => !cur[f])
+      .filter(x => !held(x))
+      .map(([f]) => f),
     [],
     fix
   );
@@ -181,6 +199,10 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
   const tidy = job.indexOf('python tools/fetch_local.py --tidy'),
     commit = job.indexOf('name: Commit');
   assert.ok(tidy > 0 && tidy < commit, 'the tidy step runs before the commit');
+  const files = job.indexOf('python tools/apply_excluded_archive.py --files'),
+    sizes = job.indexOf('python tools/photos.py');
+  assert.ok(files > 0 && files < sizes && sizes < tidy, 'a restored lecture photo: its file from history, its sizes, then back');
+  assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
   assert.match(job, /git add data\.json cand\.json excluded\.json img/);
 });
 

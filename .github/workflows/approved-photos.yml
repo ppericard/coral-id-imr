@@ -20,9 +20,13 @@ jobs:
       # The latest main, not the commit that started the run: a run queued behind another (two Publishes in a row, the
       # concurrency group above) must start from that run's commit, or its own commit conflicts with it on data.json
       # and is lost (2026-11-06: the second Publish's exclusions never reached data.json and cand.json).
+      # The whole history without file contents (fetched on demand): tools/apply_excluded_archive.py --files takes a
+      # restored lecture photo's file back from it.
       - uses: actions/checkout@v7
         with:
           ref: main
+          fetch-depth: 0
+          filter: blob:none
       # Python pinned, not the image's own python3 (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest stable (rule W9),
       # the same in every workflow. Pillow pinned in tools/requirements.txt.
       - uses: actions/setup-python@v7
@@ -37,6 +41,9 @@ jobs:
       # Photo shapes for the quiz layout (designer re-review 2026-11-01) of the photos in img/; the new photos got theirs
       # from fetch_approved.py (they live on R2 only).
       - run: python tools/apply_ratios.py
+      # A photo Pierre restored with no online original (an IMR lecture photo) gets its file back from git history
+      # (its exclusion removed it from img/); the final tidy below then puts it back (tools/excluded.py files_ok).
+      - run: python tools/apply_excluded_archive.py --files
       # Every photo of img/ in its four sizes (1600, 960, 480, 240 px): fills any smaller file missing.
       - run: python tools/photos.py
       # The new photos to R2 before the commit that marks them downloaded: if the upload fails, the job stops here and
