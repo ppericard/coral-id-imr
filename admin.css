@@ -1728,12 +1728,23 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 }
 /* Phones: header on one line (entry points in a menu; Redo and Help move into ⋯). */
 @media (max-width: 599px) {
+  /* Phones: the logo steps aside while the switch shows (the page menu keeps its room), each side its icon over its
+     count, the name its label only. */
+  body.admin header:has(.adm-subj:not([hidden])) .brand {
+    display: none;
+  }
   body.admin .adm-subj {
-    height: 36px;
+    height: 40px;
   }
   body.admin .adm-subj a {
-    padding: 0 7px;
-    gap: 3px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-width: 34px;
+    padding: 0 6px;
+  }
+  body.admin .adm-scnt {
+    line-height: 1;
   }
   body.admin .adm-sjn {
     position: absolute;
