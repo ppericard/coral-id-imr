@@ -231,8 +231,13 @@
   //           differ per subject), over CALIB (calibOf): ease, the logits one judged ease point moves a photo's prior
   //           difficulty (model.js photoDiff); ref, how many times more a never-seen reference-level photo weighs in the
   //           draw (core.js refLevel, model.js photoSet); early, how many logits lower the draw aims on a unit with no
-  //           answer yet, fading with its answers (model.js photoSet: the easy photos favoured at the start, no wall).
-  //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before)
+  //           answer yet, fading with its answers (model.js photoSet: the easy photos favoured at the start, no wall);
+  //           u, how unsure the difficulty of a photo nobody has answered is (variance, model.js calSd: the targeting is
+  //           that much wider for it, narrowing as answers come); pool, the number of observations a unit's draw floor
+  //           is shared over (model.js photoSet: each observation keeps PICKD.FLOOR of the best one's weight, times
+  //           pool / observations when a unit has more, so a big pool's floor weighs no more than a pool-sized one's).
+  //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before; no u,
+  //           model.js CAL.U, and an unbounded pool: their draw as before)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
@@ -444,8 +449,12 @@
       ach: false,
       board: false,
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
-      // them); the judged ease's prior as measured (CALIB.ease).
-      calib: {ref: 3, early: 1.5},
+      // them); the judged ease's prior as measured (CALIB.ease). Q186 (Pierre, 2026-11-06 15:33: the easy photos strongly
+      // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
+      // CALIB.ease squared: every fish photo carries a judged ease); pool 30, the floor shared over 30 observations (a
+      // species' candidate cap), so a pool of 1,000 photos favours its easy ones as a pool of 30 does
+      // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools").
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
       pages: ['genera', 'quiz'],
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
@@ -479,8 +488,9 @@
   const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
   // The difficulty engine's calibration (SUBJECTS calib): ease 0.5, one standard deviation of a photo's own difficulty
   // around its unit (the hierarchical photo Elo study, docs/LEARNING.md "Fish photos judged"); ref 1, no draw bonus;
-  // early 0, no lean at the start.
-  const CALIB = {ease: 0.5, ref: 1, early: 0};
+  // early 0, no lean at the start; u unset, a photo nobody answered as unsure as model.js CAL.U says; pool unbounded,
+  // every observation keeps the whole floor (model.js PICKD.FLOOR).
+  const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity};
   const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
