@@ -227,6 +227,12 @@
   //   tiers   its photo sources rank its photos (rule P1: IMR lecture photos, then Pierre's own, then other observers):
   //           the draw's bonus for a core photo never seen (app.js isCore, model.js photoSet). Off for fish (Pierre,
   //           2026-11-06: his photos are never forced or boosted; the ease and reference look place them, core.js easyRank)
+  //   calib   the difficulty engine's calibration for its photos (Pierre, 2026-11-06 14:18: one engine, its calibration may
+  //           differ per subject), over CALIB (calibOf): ease, the logits one judged ease point moves a photo's prior
+  //           difficulty (model.js photoDiff); ref, how many times more a never-seen reference-level photo weighs in the
+  //           draw (core.js refLevel, model.js photoSet); early, how many logits lower the draw aims on a unit with no
+  //           answer yet, fading with its answers (model.js photoSet: the easy photos favoured at the start, no wall).
+  //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
@@ -432,6 +438,9 @@
       replay: false,
       ach: false,
       board: false,
+      // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
+      // them); the judged ease's prior as measured (CALIB.ease).
+      calib: {ref: 3, early: 1.5},
       pages: ['genera', 'quiz'],
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
@@ -463,6 +472,11 @@
   // The subject chosen on this device (Home or the header), synced with the player's settings.
   const SUBJECT_KEY = 'reefid-sync-subject';
   const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
+  // The difficulty engine's calibration (SUBJECTS calib): ease 0.5, one standard deviation of a photo's own difficulty
+  // around its unit (the hierarchical photo Elo study, docs/LEARNING.md "Fish photos judged"); ref 1, no draw bonus;
+  // early 0, no lean at the start.
+  const CALIB = {ease: 0.5, ref: 1, early: 0};
+  const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
@@ -532,11 +546,26 @@
   // curation), a photo with none as a middle one (3); app.js passes model.js photoDiff, which blends the ease with the
   // players' answers once they are logged. Then the most reference-like (refScore), then a fixed hash of the photo's
   // file name: the list's order says who took a photo (tools/fish_photos.py lists Pierre's first), so it never decides.
+  // A reference-level photo (refLevel, below) comes before every other photo (Pierre, 2026-11-06: a player starts an
+  // entry on reference photos, never on one prolific observer's easy photos): the cover and each list's first photos;
+  // the draw favours them too (model.js photoSet, SUBJECTS calib ref). The ease ranks within each of the two groups.
   const fHash = f => [...String(f)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+  // Reference level (Pierre, 2026-11-06 14:02: "reference photos" are every photo of reference quality, whoever took
+  // it, not only a source's cover): a reference source's own photo (rep) judged very easy, or any photo judged ease 5
+  // with the reference look in its tags (profile, whole, good light, true colours, sharp, large or medium, one fish or a
+  // school of it; no juvenile, camouflage or out of water).
+  const REF_LOOK = /^p1g0s[lm][1s]$/;
+  // In both cases one kind of fish (count 1 or s): never a photo with other kinds (m) or an unclear subject (x), rule P3
+  // (Codex review #660).
+  const refLevel = p =>
+    !!p &&
+    /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
+    (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
+  const refFirst = p => (refLevel(p) ? 0 : 1);
   function easyRank(L, d = p => -(p.e || 3)) {
     return (L || [])
-      .map(p => ({p, d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
-      .sort((a, b) => a.d - b.d || b.r - a.r || a.h - b.h)
+      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
+      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.h - b.h)
       .map(x => x.p);
   }
   function fishGen(F, photos, sheet) {
@@ -620,8 +649,8 @@
       b = /-cand-fb-(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
-  // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more, model.js PDIFF.EARLY:
-  // the photos of its first questions, easyFirst), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
+  // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
+  // draw favours at the start, judging/FISH.md), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
   // easy photos; tools/fish_judge.py WANT); with fewer, the stopgap's photos join its curated ones.
   const FISHPH = {MIN: 5, EASY: 4};
   // fishPhotos(stop, game, cur): {teaching id: [photo]}, what fishGen takes. stop: fish-photos.json photos; game:
@@ -656,7 +685,9 @@
       );
       if (C.filter(p => (p.e || 0) >= FISHPH.EASY).length < FISHPH.MIN) return (out[t] = [...C, ...S]);
       const have = new Set(C.map(genus));
-      out[t] = [...C, ...S.filter(p => genus(p) && !have.has(genus(p)))];
+      // The units' reference photos (tools/fish_refs.py, judged at the reference level: from) stay too (Pierre, 2026-11-06:
+      // the covers and first photos are reference photos, whoever took them).
+      out[t] = [...C, ...S.filter(p => p.from || (genus(p) && !have.has(genus(p))))];
     });
     return out;
   }
@@ -3910,6 +3941,8 @@
     SUBJECTS,
     SUBJECT_KEY,
     subjectOf,
+    CALIB,
+    calibOf,
     subjGroup,
     replaySubject,
     LOG_SUBJ,
@@ -3922,6 +3955,8 @@
     subjDev,
     fishGen,
     easyRank,
+    refFirst,
+    refLevel,
     refScore,
     fishOn,
     fishPid,
