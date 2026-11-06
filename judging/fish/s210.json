@@ -17,12 +17,8 @@
    "keep": "best"
   },
   "fish-s210-cand-757135492": {
-   "code": "p1g1sm13",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "iNat says juvenile; it looks like the adult"
+   "code": "p1g0sm1j2",
+   "keep": "best"
   },
   "fish-s210-cand-348955486": {
    "code": "o1g1sl13",
@@ -106,6 +102,10 @@
   },
   "fish-s210-cand-625487515": {
    "code": "p1d1smm2",
+   "keep": "best"
+  },
+  "fish-s210-cand-fb-Copic_u0": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }

@@ -95,6 +95,14 @@
   "fish-s362-cand-756307153": {
    "code": "p1g0sm1a2",
    "keep": "dup"
+  },
+  "fish-s362-cand-fb-Caval_u0": {
+   "code": "p1n0sms3",
+   "keep": "best"
+  },
+  "fish-s362-cand-fb-Caval_u1": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }

@@ -5,57 +5,50 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-06, about 05:50 Manila, by the integrator.
+Written 2026-11-06, about 18:35 Manila, by the integrator.
 
-Last checked: reports and events: 2026-11-05 ~13:38 Manila (nothing new since 11:30)
+Last checked: reports and events: 2026-11-06 ~16:20 Manila (no new report since 11-05; no app error today, a few slow saves recovered)
 
 ## Now
 
-Tracks in flight: track · PR or branch · state · next step. Priority (Pierre, 2026-11-05 evening): **public fish by
-Sunday 2026-11-08**; very short term: the photos' step 3, the fish sheets at three levels, the new app icon.
+Fish is open to every player (beta). End of the 2026-11-06 push (Pierre extended to ~18:00; quota nearly spent, so the
+other agents were stopped and nothing new was started).
 
-- **Progress against the field** · #611 draft, needs-pierre · Pierre (2026-11-06 morning) rejected the trade-off:
-  the bar must be right for every profile, experts above all early (q300: expert under-claimed by 25 points today, 30
-  with the W 1 / C 0.6 rule). Diagnosis: each genus and pair is counted from zero, with no prior from the player's
-  level. Being rebuilt as a person-level hierarchical estimate plus a pair-difficulty model; targets pre-declared
-  (|over| <= 0.03 at q300, q600, q1000 for every profile, a spotty profile included; Custom-8 within 0.05). Nothing
-  reaches players before Pierre validates. Field-learner sensitivity sims (`learnsim-field`) running, then a PR.
-- Fish public release · A #595 merged; C #598, admin 5a #599, 5b #602, PR 7 #614 wait for Pierre (Q92-Q100, Q118-Q120)
-  · then the flip within his hours (not after 16:30).
-- Deleted accounts #600 merged (v55 live, cleanup ran); #603 waits for Q116. Feedback cards #579 / #581 · Q117.
-- Typed retry #616 · Q114. One-tap timing #618 · Q115. URL refonte #610 / #612 · after the fish flip + 48 h.
+- **Merged after 17:00**: #656 the book's families · #669 every circle counts, circles 2-3 open by themselves · #678
+  fish draw calibration (Q186) · #674 judged candidates in play by themselves, every fish photo on R2 (Q180, Q199):
+  the workflow put 4,763 more on R2, 8,582 fish photos in play, 1 failed (next Publish retries) · #646 the new coral
+  bar (rules v9, apology card when the sheet goes live at v87+) · #688 silent fish recompute (Q200) · #690 admin
+  Players shared list, Activity and Journey per subject.
+- **Ready, not merged**: #652 surprises once per player (conflicts: merge main, take main+1) · #685 photo exposure
+  (Q187-Q190, Q201) · #687 fresh look on 417 candidates (249 enter) · #682 hard photos flagged (Q192) · #599 / #602
+  swiper (Q194) and #633 mini switch (Q195), need a rebase · #659 / #663 / #667 fish admin pages, need a rebase.
+- **Stopped for quota, restart later**: fish leaderboard and ~14 achievements; fish sheet texts and sizes (publish
+  directly, Pierre corrects); fish.exclude by photo id and the fish To do sections; per-subject photo stats and Health.
+- **Not started**: the species level and the global fish score (decided 11-04); the exam over two visits; Glicko /
+  Kalman ability uncertainty.
+- **Morning report trigger disabled** (Q202) until the quota is back.
 
 ## Next
 
-1. The fish sheets at three levels ([study](reviews/2026-11-05-fish-sheets-study.md)): Q125, then build.
-2. Curated fish photos in the game (#599, #602, #614, then answer logging), then independent reviews, after release.
+1. Exam over two visits on fixed-difficulty photos; ability uncertainty (Glicko / Kalman, #651's remedy).
+2. Per-subject photo stats and Health in the admin (admin plan row 11).
 
 ## Questions for Pierre
 
 Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes into its PR and off this list.
 
-- Q114 #616 typed retry: one retype on a close misspelling, grading unchanged; logs the raw typed text and a retyped
-  flag in 2 new Answers columns (a sheet layout change) plus a privacy-page line. Rec. yes.
-- Q115 #618: the one-tap "Getting boring?" question only after 15 answers and 5 minutes in the session. Rec. yes.
-- Q116 #603: archive message and self-delete page wording. Q117 #579 / #581: the four feedback cards.
-- Q118 #598: fish copy edits 1-7 and the "Fish is here" card (kicker, target, once per device, 10-answer minimum).
-- Q119 #599 / #602 fish admin screens ("Choices I made" in each PR). Q120 #614: keep the per-entry minimum rule (rec.
-  yes); leave the 25 pre-flag-ease photos (rec. yes).
-- Q121 photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
-- Q122 the app icon: D2 (D improved) or a loupe B1-B4.
-- Q123 fish confusion study a-o (gos on i, f, k). Q124 name study a-h. Q125 the 13 fish-sheet questions.
-- Q105 (personalised exam) and Q113 (rule L11 wording) stay open in #611.
-- Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep "beta" (Q93); a
-  "Fish is here" card (Q94); PR C's copy edits (Q95); level 1 on today's photos (Q96); no fish answer logging for a week
-  (Q97); smoke tests and the bug sweep as release checks (Q98); new players start on Corals (Q99); the flip Saturday
-  ~10:00 Manila, Sunday morning as reserve (Q100). Rec. yes to each.
+- **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
+- #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
+- Coming: the fish achievements list; the admin Players columns.
 
-Last question number: Q125
+Last question number: Q202
 
 ## Pierre's hands
 
 Actions only Pierre can do.
 
+- **Covers for the 11 fish entries with no reference-level photo** (Barracuda, Seamoths, Scorpionfishes, Flying
+  gurnards, Stargazers, Snake eels, Garden eels, Rays, Reef sharks, Whale shark, Thresher sharks): pick or shoot one.
 - **Photo hunt for Astrea and Anacropora** at the Dauin sites where IMR trainers know they occur (colony, close-up,
   macro; posted to iNaturalist under CC BY or CC BY-NC): iNaturalist has no Astrea observation with photos in the
   Philippines.
@@ -86,14 +79,10 @@ Actions only Pierre can do.
 
 Ideas Pierre dictated after 17:30, untouched until the morning, then turned into work or a ROADMAP row (Rule 0).
 
-- (20:07) Show the genera unlocked in the Progress badge, e.g. "30/40 genera unlocked".
-- (20:22) Photos seen again and again: raise the per-genus photo caps a lot (Pierre photographs the frequent genera);
-  count photos never shown; an admin stat per player, photos seen / photos available given the genera unlocked; make
-  sure the game tries new photos enough. Proposal: a read-only study on the real log first, then the changes.
 - (integrator, from Pierre's session) the limit of 8 shaky genera fills with the hardest look-alike families: it held an
   expert's openings for 138 answers. Revisit with the progress rebuild.
 
 ## Last stop
 
-2026-11-06 ~05:50 Manila, integrator, morning report. Merged overnight: #572, #591-#597, #600 (sheet v55 live),
-#601, #604-#609, #613, #615, #617, #619, #620. The morning report now comes before 05:00 (Pierre wakes ~05:00).
+2026-11-06 ~18:35 Manila, integrator. Merged today (about 55 PRs), from 15:00: #598, #660, #671, #657, #673, #676,
+#668, #672, #638, #679, #655, #681, #683, #675, #677, #684, #686, #680, #678, #656, #669, #674, #690, #646, #688. Questions Q178-Q202 answered.

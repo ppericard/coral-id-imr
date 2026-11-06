@@ -1,5 +1,5 @@
 # After each photo-curation publish (curation.json pushed from admin.html): download the candidates Pierre added
-# (tools/fetch_approved.py) and upload them to Cloudflare R2, then refill the candidate lists up to their caps
+# (tools/fetch_approved.py; the fish photos too, tools/fish_game.py) and upload them to Cloudflare R2, then refill the candidate lists up to their caps
 # (tools/fetch_local.py), and commit. Photos with an online original live on R2 only (Photos out of the repo, Pierre's
 # rule of 2026-11-05): their files are never committed to img/. Then the fish job refills the short fish species
 # (tools/fetch_fish.py --refill; Pierre, 2026-11-06, Q171).
@@ -7,7 +7,10 @@ name: Candidate photos
 on:
   push:
     branches: [main]
-    paths: [curation.json]
+    # curation.json: Pierre's Publish; the judgements: a judged batch puts photos in play by themselves (Q180, Q199;
+    # tools/fish_game.py in_play: suggest.json for the candidates, tools/fish_judge.json and tools/fish_refs.json for the
+    # reference photos; Codex review #674).
+    paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json]
   workflow_dispatch:
 permissions:
   contents: write
@@ -34,9 +37,11 @@ jobs:
         with:
           python-version: '3.15'
       - run: pip install -r tools/requirements.txt
-      # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). The files
-      # go to r2-upload/ (gitignored), uploaded below before anything is committed.
-      - run: python tools/fetch_approved.py --games --out r2-upload
+      # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). --fish: the
+      # fish photos Pierre put in play (iNaturalist or FishBase, his crop applied) and fish-game.json, the list the fish
+      # game reads (tools/fish_game.py; admin plan PR 7). The files go to r2-upload/ (gitignored), uploaded below before
+      # anything is committed.
+      - run: python tools/fetch_approved.py --games --fish --out r2-upload
       - run: python tools/fetch_local.py
         working-directory: .
       # Photo shapes for the quiz layout (designer re-review 2026-11-01) of the photos in img/; the new photos got theirs
@@ -66,7 +71,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json cand.json excluded.json img
+          git add data.json cand.json excluded.json fish-game.json img
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: download added ones, refill the lists"
           git pull --rebase origin main

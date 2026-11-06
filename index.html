@@ -7,18 +7,18 @@
   <meta name="author" content="Pierre Pericard">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IMR Reef ID</title>
-<meta name="description" content="Learn to identify the coral genera on the IMR Dauin list: genus sheets with colony, close and corallite views, a key, look-alike comparisons and a quiz.">
+<meta name="description" content="Learn to identify the corals and reef fish of Dauin, from the IMR survey lists: a quiz that adapts to you, sheets, a key and look-alike comparisons. Reef fish in beta.">
 <!-- Link preview when the app is shared (WhatsApp, Messenger, Slack...): og.jpg is made by tools/og/make_og.js. Absolute URLs: crawlers need them. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="IMR Reef ID">
 <meta property="og:title" content="IMR Reef ID">
-<meta property="og:description" content="Learn to identify the coral genera on the IMR Dauin list: genus sheets with colony, close and corallite views, a key, look-alike comparisons and a quiz.">
+<meta property="og:description" content="Learn to identify the corals and reef fish of Dauin, from the IMR survey lists: a quiz that adapts to you, sheets, a key and look-alike comparisons. Reef fish in beta.">
 <meta property="og:url" content="https://ppericard.github.io/coral-id-imr/">
 <meta property="og:image" content="https://ppericard.github.io/coral-id-imr/og.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="IMR Reef ID over six coral photos: branching, mushroom, meandering, plating, brain and knobby corals.">
+<meta property="og:image:alt" content="IMR Reef ID over six reef photos: an anemonefish, a butterflyfish and an angelfish, with branching, brain and mushroom corals.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -88,8 +88,6 @@
         <div class="setrow" id="admrow" hidden><span>Admin page</span><a class="setlink" href="admin.html">Open</a></div>
         <div class="setrow"><span title="Show your name, progress and Elo on the public leaderboard (signed-in players)">Leaderboard</span><div id="boardset" role="group" aria-label="Leaderboard"><button type="button" data-board="1">On</button><button type="button" data-board="0">Off</button></div></div>
         <div class="setrow" data-for="coral"><span title="Genera off the IMR list but common at Dauin, in the Quiz and the duels (they don't count in your progress)">Bonus genera</span><div id="bonset" data-optin="bon" role="group" aria-label="Bonus genera"><button type="button" data-on="1">On</button><button type="button" data-on="0">Off</button></div></div>
-        <div class="setrow" data-for="fish" hidden><span title="Fish seen now and then on the IMR SVS videos, not IMR survey families: barracudas (they don't count in your progress)">SVS video extras</span><div data-optin="c2" role="group" aria-label="SVS video extras"><button type="button" data-on="1">On</button><button type="button" data-on="0">Off</button></div></div>
-        <div class="setrow" data-for="fish" hidden><span title="Fish families divers want to recognise at Dauin, muck diving above all (they don't count in your progress)">Beyond IMR</span><div data-optin="c3" role="group" aria-label="Beyond IMR"><button type="button" data-on="1">On</button><button type="button" data-on="0">Off</button></div></div>
         <div class="setrow" data-for="fish" hidden><span title="Scientific genus names for the families you know well, as EventMeasure names them (they don't count in your progress yet)">Scientific names</span><div data-optin="sci" role="group" aria-label="Scientific names"><button type="button" data-on="1">On</button><button type="button" data-on="0">Off</button></div></div>
         <div class="setrow"><span>Theme</span><div id="theme" role="group" aria-label="Theme"><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button></div></div>
         <div class="setrow"><span title="Blue and orange instead of green and red">Colour-blind</span><div id="cvd" role="group" aria-label="Colour-blind mode"><button type="button" data-cvd="1">On</button><button type="button" data-cvd="0">Off</button></div></div>

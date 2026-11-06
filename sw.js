@@ -41,6 +41,7 @@ const SHELL = [
   'data.json?v=38',
   'fish.json?v=6',
   'fish-photos.json?v=6',
+  'fish-game.json?v=1',
   'forms.json?v=7',
   'icon.svg',
   'fonts/source-sans-3-normal.woff2',

@@ -17,6 +17,16 @@ mixes sources on purpose for variety.
   themselves the easiest (`core.js` `easyRank`). **One exception for his own photos:** every photo of his that is
   compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
   included in the fish photo pool. Never left out, never boosted (`tools/fish_photos.py` `his_ok`).
+- **Fish photos in play are hosted on R2, whatever their route in**: the photos Pierre adds in the admin, the candidates
+  judged sure on the rubric and the reference photos judged at the reference level enter the same way (`tools/fish_game.py`,
+  the Candidate photos workflow); his curation only removes or corrects them.
+- **Fish reference photos first.** Every photo of reference quality, whoever took it, comes first: a reference
+  source's own (iNaturalist's taxon cover and taxon-page photos, FishBase's main picture) judged very easy, or any photo
+  judged very easy with the reference look (whole fish, side profile, true colours, sharp). They are the covers and each
+  list's first photos and the draw favours them, never exclusively (`core.js` `refLevel`, `model.js` `photoSet`).
+  **FishBase photos enter the game automatically** when their licence allows (CC BY-NC as FishBase states it), with
+  every other game photo rule; several good photos per species, from iNaturalist and FishBase, to complement the weaker
+  ones (`tools/fish_refs.py`).
 - **Corals only, with a caveat**: IMR lecture photos keep a slight priority for corals (many are hard to find elsewhere
   and they are already curated), but their provenance
   is uncertain: many are not IMR's own (from iNaturalist or the web without a proper source); trace them and credit or
@@ -36,7 +46,8 @@ slight priority; for fish, the IMR slides' photos were taken from elsewhere, whi
 abound; a beginner's first fish photos must be easy, near-reference ones, and source priority had filled them with
 Pierre's own.
 *Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568); no
-source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148); subject-neutral wording, 2026-11-06.
+source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148); subject-neutral wording, 2026-11-06; fish reference photos first and FishBase in automatically,
+2026-11-06; fish photos in play by themselves once judged, hosted on R2 whatever their route in, 2026-11-06 (Q180, Q199).
 
 ### P2
 

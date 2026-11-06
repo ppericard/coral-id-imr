@@ -35,6 +35,9 @@ jobs:
       - name: JS syntax
         run: |
           for f in *.js proto/*.js tests/*.js; do node --check "$f" || exit 1; done
+      # Pillow (tools/requirements.txt): tests/fishgame.test.js runs the fish photo download on a fixture.
+      - name: Python packages
+        run: pip install -r tools/requirements.txt
       - name: Unit tests
         run: |
           node --test tests/*.test.js
