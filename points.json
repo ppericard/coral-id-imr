@@ -356,6 +356,20 @@
       "q": "The Coral ID Key asks \"Shared walls?\" after a separate-walls box; that question comes from the IMR Lecture 6 wall trait, not the Coral Finder book. Keep it?",
       "ctx": ["Beginner RA review (2026-11-02), point (b): the Coral ID Key's question \"Shared walls?\" after a separate-walls box is not in the Coral Finder book (it comes from the IMR Lecture 6 wall trait); proposal sent to Pierre. The other points were answered and built."],
       "src": [{"t": "Beginner RA review, 2026-11-02"}]
+    },
+    {
+      "id": "angelfish-spine",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-06",
+      "title": "Angelfishes: the spine on the gill cover or on the cheek?",
+      "q": "IMR's cue for the angelfishes says \"Spine on the gill cover (opercular spine)\"; FishBase's family summary puts the strong spine at the angle of the preopercle (the cheek). Which wording should the sheet and the cue use?",
+      "ctx": [
+        "IMR fish presentation, slide 11: \"Spine on the gill cover (opercular spine)\" (fish.json, f:Angelfishes cues).",
+        "FishBase, family Pomacanthidae: \"Angle of preopercle with a strong spine\"; the family sheet's ID marks follow it, beside IMR's cue (rule C1: IMR's words unchanged).",
+        "Pierre's own words for Q11 of the fish-sheets study (2026-11-06): \"the small spine sticking out on the cheek (preopercular spine)\"."
+      ],
+      "src": [{"t": "FishBase, family Pomacanthidae", "u": "https://www.fishbase.se/summary/FamilySummary.php?family=Pomacanthidae"}, {"t": "IMR fish presentation, slide 11"}]
     }
   ]
 }

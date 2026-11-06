@@ -956,6 +956,19 @@ function fishGenusRow(g, flat) {
   const P = L.slice(0, 4).map(spPhoto);
   return `<a class="frow" href="${esc(hr('g-' + g.id))}"><span class="fstack">${P.map(p => (p ? `<img ${thumb(p, '60px')} alt="" loading="lazy">` : noFish())).join('')}</span><span class="ftxt"><i>${esc(g.name)}</i><span>${L.length} species · ${L.filter(spOpen).length} opened for me</span>${g.imr ? `<small>IMR entry: ${esc(g.imr)}</small>` : ''}</span><span class="fgo" aria-hidden="true">›</span></a>`;
 }
+// The family ID marks and the behaviour, habitat and size lines (study F4b, F9; Pierre, Q11), written in our words from
+// the sources the family lists (tools/fish_sheets.json, built into fish.json: marks, life, msrc), published at once
+// (Pierre, 2026-11-06 16:54: he corrects them in place), with their sources and a report link right under them.
+const fishMarks = f =>
+  (f.marks || []).length || (f.life || []).length
+    ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${
+        (f.life || []).length
+          ? `<h3>Behaviour, habitat, size</h3><ul class="crit">${f.life.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+          : ''
+      }<p class="note msrc">Sources: ${(f.msrc || [])
+        .map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)))
+        .join('; ')} · ${repBtn({k: 'sheet', g: f.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`
+    : '';
 // The family sheet (study §3.2: F1 names, F2 my progress, F3 hero, F4 IMR tips, F5 look-alikes, F6 genera, F7 species
 // when the family has one genus, F8 juveniles and phases, F10 report).
 function fishFamily(f) {
@@ -974,9 +987,20 @@ function fishFamily(f) {
     const L = famSpecies(T.fam[id]);
     return easyRank(L.flatMap(s => fishSpPhotos()[s.id] || []))[0];
   };
-  // F5: IMR's look-alike lines (fish.json look, lsrc), then the families players mix it up with (model.js dataLooks), said
-  // as such; the mix-up count once the game asks the families.
-  const said = (f.look || []).filter(([o]) => T.fam[o]).map(([o, t]) => [o, t, (f.lsrc || {})[o] || 'IMR fish presentation']),
+  // F5: IMR's look-alike lines (fish.json look, lsrc), our lines for the pairs IMR gives no words for (apart, from the
+  // family's sources: tools/fish_sheets.json), then the families players mix it up with (model.js dataLooks), said as
+  // such; the mix-up count once the game asks the families.
+  const msrc = (f.msrc || []).map(x => x.t).join('; '),
+    ap = f.apart || {},
+    said0 = (f.look || [])
+      .filter(([o]) => T.fam[o])
+      .map(([o, t]) => (t || !ap[o] ? [o, t, (f.lsrc || {})[o] || 'IMR fish presentation'] : [o, ap[o], msrc])),
+    said = [
+      ...said0,
+      ...Object.keys(ap)
+        .filter(o => T.fam[o] && !said0.some(x => x[0] === o))
+        .map(o => [o, ap[o], msrc])
+    ],
     mixed =
       u && typeof dataLooks === 'function'
         ? dataLooks()
@@ -1022,6 +1046,7 @@ function fishFamily(f) {
       ${hero ? `<button type="button" class="zoom hero-ph" data-z="0" aria-label="Enlarge photo: ${esc(f.name)}"><img src="${img(hero, 's')}" srcset="${srcset(hero)}" sizes="(max-width: 599.98px) 100vw, 45vw" alt="${esc(f.name)}">${ZOOMI}</button>` : `<span class="hero-ph">${noFish()}</span>`}
       <div class="idbox">
         ${(f.cues || []).length ? `<div class="tipbox"><h3>ID tips (IMR) <span class="pg">${esc(slideLine(f.sl))}</span></h3><ul class="crit idtips">${f.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
+        ${fishMarks(f)}
         ${f.imrWith ? `<p class="note">The IMR fish presentation shows it with the ${esc(f.imrWith)}; ${key ? esc(key.short) : 'the identification key'} puts it in a family of its own.</p>` : ''}
         <details class="more sheetmore"><summary>More details</summary>
         <p class="note refs"><b>References:</b> ${f.cues ? 'IMR fish presentation' + (f.sl ? ' (' + esc(slideLine(f.sl)) + ')' : '') + ' · ' : ''}${key ? esc(key.cite) + (gr && gr.pages ? `, pp. ${gr.pages.join('-')}` : '') + ' · ' : ''}${(

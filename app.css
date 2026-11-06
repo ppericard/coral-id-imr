@@ -7289,3 +7289,16 @@ a.ftile:hover {
     max-width: 640px;
   }
 }
+/* The family ID marks and behaviour lines under the IMR tips (learn.js fishMarks). */
+.fmarks {
+  margin-top: 12px;
+}
+.fmarks h3 {
+  margin: 12px 0 4px;
+}
+.fmarks .crit {
+  font-size: var(--fs-m);
+}
+.msrc {
+  margin-top: 6px;
+}
