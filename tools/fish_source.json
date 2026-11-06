@@ -6,6 +6,7 @@
   "  id: stable. region: {name, area: what the key covers}. cite: the full citation (the families page credit line); short: the short form used everywhere else (one edit changes both).",
   "  src: what it was transcribed from. groups: the key's groups in its order: n, title (exact), pages [first, last], labels: [label as the key prints it, [WoRMS accepted names it covers], note when the mapping needs one].",
   "  The build gives a node the group of the first label met walking up WoRMS from each of its ref (a subfamily label wins over its family's: Parrotfishes over Wrasses).",
+  "look: look-alike groups of the book's families declared beyond the IMR course, each {src, key (the key whose family labels the ids name: applied only while it is in force), groups [[family ids]], note {\"a|b\": words}}: every pair of a group is a look-alike both ways, its source in the families' lsrc (tools/build_fish.py add_families). Pierre, 2026-11-06, from experience; they seed the traps and the confusion groups until pooled fish answers exist.",
   "deploy: this deployment: its region and the key in force there (keys id). Another deployment changes this and its own keys.",
   "teach: the teaching tree, in game order: the 27 IMR entries (circle 1) in the order of the IMR fish presentation, then circle 2, then circle 3.",
   "  id: stable id, never the name; never reuse or renumber. name: as IMR names it. fam: the family as IMR writes it.",
@@ -47,6 +48,7 @@
  },
 "leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish ID Key.", "Gobiesocidae": "Clingfishes: taken out of circle 3 (Pierre, 2026-11-04): not among the family labels of the identification key in force (rule S3). No PDF species; their two Dauin species were retired with them."},
 "start": ["t02", "t03", "t01", "t06"],
+"look": [{"src": "Pierre, 2026-11-06", "key": "tropical-pacific-2015", "groups": [["f:Butterflyfishes", "f:Angelfishes"], ["f:Snappers", "f:CoralBreams", "f:Emperors"], ["f:Parrotfishes", "f:Wrasses"], ["f:Soldierfishes", "f:Squirrelfishes", "f:Cardinalfishes"], ["f:Triggerfishes", "f:Filefishes"]], "note": {"f:Parrotfishes|f:Wrasses": "some wrasse species only"}}],
 "retired": {"teach": ["t30", "t31", "t32", "t33", "t34", "t35", "t36", "t37", "t38", "t39", "t40", "t41", "t53", "t55", "t56", "t62"], "species": ["s404", "s405", "s406", "s407", "s411", "s412", "s413", "s460", "s461", "s471", "s476", "s477"]},
 "deploy": {"region": "Dauin, Negros Oriental, Philippines", "key": "tropical-pacific-2015"},
 "keys": [

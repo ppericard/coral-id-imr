@@ -97,11 +97,11 @@ needs a written reason next to the pin.
 **Never list Pierre's curation choices item by item** (which photo, which candidate, which pair, content choices): not
 in status messages, not in ROADMAP. **Reminders of what only he can do live where he reads them when he wants**: STATUS
 "Pierre's hands" (later the admin's To do › Points). In the chat, a reminder is given once, when it is useful and
-related to the work at hand (e.g. "these genera are short of photos", "these 31 photos are out of the presence rule"),
+related to the work at hand (e.g. "these units are short of photos", "these 31 photos are out of the presence rule"),
 never repeated or nagged. The points to settle (rule C5: IMR trainer questions, content questions, in `points.json`)
 stay: he asked for that list.
 *Why:* an agent reminded him every few minutes, in the chat, of things unrelated to its own work.
-*Source:* Pierre, 2026-11-01; scope restored, 2026-11-05.
+*Source:* Pierre, 2026-11-01; scope restored, 2026-11-05; subject-neutral wording, 2026-11-06.
 
 ### W11
 
@@ -193,14 +193,14 @@ service worker on http): reload with the cache disabled. The sheet's `VERSION` i
 
 ### W16
 
-**Write `data.json` only with `tools/datajson.py`.** Editing it by hand is normal (the original build script reads a
+**Corals: write `data.json` only with `tools/datajson.py`.** Editing it by hand is normal (the original build script reads a
 scratchpad that no longer exists), but write it with `from datajson import dump` then `dump(d, path)`, never
 `json.dump`: one top-level key per line and one genus per line in `gen`, `course`, `cand`, `x` and `x.gen`, compact
 within a line, so two edits to different genera merge cleanly. Candidates waiting live in `cand.json`, admin only: read
 both with `load_all()`, write with `dump_all()`, which keeps in `data.json` only the candidates `curation.json` names.
 After a hand edit, `python3 tools/datajson.py` puts the file back in that layout; the PR check (`--check`) fails
 otherwise. Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.
-*Source:* repository practice, by 2026-11-01.
+*Source:* repository practice, by 2026-11-01; subject-neutral wording, 2026-11-06.
 
 ### W17
 
@@ -221,7 +221,8 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 **squash merge** whose title ends with ` (#N)` (that is how `git log` reads).
 - Two kinds of commits land on `main` without a PR: Pierre's admin **Publish** ("Photo curation: …", writes
   `curation.json` only) and the GitHub Action that follows it ("Candidate photos: …", writes `data.json` and `img/`). So
-  rebase on `origin/main` right before merging. With one genus per line, edits to different genera merge by themselves;
+  rebase on `origin/main` right before merging. With one coral genus per line in `data.json`, edits to different genera
+  merge by themselves;
   on a real `data.json` conflict, take `main`'s copy and re-run your `tools/apply_*.py` script rather than hand-merging.
 - Never force-push `main` (GitHub blocks it too once Pierre's ruleset is on, HANDOVER.md "Protect main"); never rewrite history without
   Pierre's explicit go-ahead. On a PR branch, after the rebase on `origin/main`, `git push --force-with-lease` to your
@@ -233,7 +234,7 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 - A merge to `main` is live on GitHub Pages within a minute or two; open tabs pick up the new shell on the next visit
   (service worker) and a new `curation.json` within 30 min or when the tab comes back into view.
 
-*Source:* Pierre, by 2026-11-01; merge contract, 2026-11-05.
+*Source:* Pierre, by 2026-11-01; merge contract, 2026-11-05; subject-neutral wording, 2026-11-06.
 
 ### W19
 
@@ -252,14 +253,14 @@ chat history or memory. *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; 
 
 ### W20
 
-**Remind Pierre when a genus runs short of candidates.** The candidate search (`tools/fetch_local.py`) runs on request
+**Corals: remind Pierre when a genus runs short of candidates.** The candidate search (`tools/fetch_local.py`) runs on request
 only. At the start of a working session and in recaps, run `python3 tools/cand_gaps.py`: game genera with fewer than 5
 candidate photos waiting in `cand.json`, listed only when iNaturalist still has something the search would take near
 Dauin or in the Philippines. The search stays in the Philippines, nearest first (within 250 km of Dauin, then the rest
 of the country), and only when the whole country has nothing left, photos taken elsewhere of species confirmed in the
 Philippines (rule C8); never a species not confirmed in the Philippines; no reminder when it cannot find anything
 better. If it lists any, tell Pierre and offer to run the search for them. The choice of photos stays his (rule W10).
-*Source:* Pierre, 2026-11-02; the search area, 2026-11-03.
+*Source:* Pierre, 2026-11-02; the search area, 2026-11-03; subject-neutral wording, 2026-11-06.
 
 ### W21
 
