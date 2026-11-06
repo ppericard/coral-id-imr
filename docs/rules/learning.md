@@ -68,8 +68,8 @@ subject-neutral wording, 2026-11-06.
 
 ### L6
 
-**Corals: Millepora counts as a slate genus; the other common off-slate genera are opt-in bonus genera; no genus-specific case
-in code.** *Millepora* is a slate genus for everything in the games and the progress (`BENTHIC`), with a warning on its
+**No unit-specific code: no special cases for one unit or one subject; the data says it, the engine stays generic.**
+**Corals: Millepora counts as a slate genus; the other common off-slate genera are opt-in bonus genera.** *Millepora* is a slate genus for everything in the games and the progress (`BENTHIC`), with a warning on its
 first card and its sheet that it is not a hard coral nor on the IMR coral list, but on the IMR benthic slate. The bonus
 genera (`BONUS`: Isopora, Leptoseris, Heliopora, Sandalolitha, Pleuractis) are offered once by a card when the player
 has met every slate genus (Add them / Not now; never in the first 10 answers of a visit or during a comeback, rule L1),
@@ -81,7 +81,8 @@ game genera (slate + Millepora + bonus) and the Key-only ones (the other `data.j
 `n === 'Millepora'` or a `!DATA.gen[n].x` filter for "game genus". In the admin the game genera come first (Candidates,
 Game coverage); Key-only genera get no Corallites candidates and a cap of `CAP.sheet` (6) colonies per view.
 *Why:* Millepora is very common at Dauin and in ReefCloud photos. *Source:* Pierre, 2026-11-01, changed 2026-11-02; no
-genus-specific case, 2026-11-03; subject-neutral wording, 2026-11-06.
+genus-specific case, 2026-11-03; subject-neutral wording, and no unit-specific code for every subject, 2026-11-06
+(Q169).
 
 ### L7
 

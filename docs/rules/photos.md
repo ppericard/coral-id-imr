@@ -47,7 +47,7 @@ also labelled "Close-up"); never duplicate a photo to fill a view. Cover = mid-d
 
 ### P3
 
-**Never use photos showing several corals in games** (`p.multi`; Pierre can clear a wrong mark with curation
+**Never use photos showing several organisms to identify in games**: several corals; fish, several species (`p.multi`; Pierre can clear a wrong mark with curation
 `single`). **Corals: Coral Finder book photos** (© R. Kelley / BYOGUIDES, `gen[g].book`) are **never in games**; on a genus sheet
 they appear only when Pierre pins one, or to fill a gap after every field photo; the Coral ID Key adds up to 3 approved
 ones for variety; Pierre can switch them off site-wide (admin, curation `book: false`). **Corals: IMR lecture photos
@@ -55,7 +55,7 @@ are game photos** (since #227) and count in admin Coverage › Games. "Poor" mea
 (ReefCloud-like): Poor photos are in games, last in each view's list, and the players' answers rate how hard each one is
 (the hand-made Easy / Medium / Hard sets went on 2026-11-03); unidentifiable photos are excluded, not rated Poor.
 *Why:* a game question must have one right answer; the book's photos are copyrighted.
-*Source:* Pierre, by 2026-11-01; subject-neutral wording, 2026-11-06.
+*Source:* Pierre, by 2026-11-01; subject-neutral wording, and several fish species, 2026-11-06 (Q167).
 
 ### P4
 

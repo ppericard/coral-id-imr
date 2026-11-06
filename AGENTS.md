@@ -141,7 +141,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
 - **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish: easiest first, never by source.
 - **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
-- **P3** No several-corals or Coral Finder book photo in games.
+- **P3** No photo of several corals or fish species, nor Coral Finder book photo, in games.
 - **P4** All photos of one question come from one observation.
 - **P5** Credits in the lightbox and after the answer, never giving the answer away.
 
@@ -151,7 +151,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **L3** Adaptive difficulty, no level selector; every account counts, Pierre's included.
 - **L4** One progression path: every game draws from `unlocked()`; only the quiz opens units.
 - **L5** Corals: starred genera follow their look-alikes.
-- **L6** Corals: Millepora counts; bonus genera opt-in; no genus-specific code.
+- **L6** No unit-specific code; corals: Millepora counts, bonus genera opt-in.
 - **L7** Answer choices get harder gradually.
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.

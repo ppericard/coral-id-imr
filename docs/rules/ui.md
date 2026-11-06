@@ -110,7 +110,7 @@ yourself.
 ### U14
 
 **Players can report a problem from every game** once the answer is out (wrong answer + the right unit, several
-corals, bad photo, other, note), and, discreetly, from everywhere it makes sense: any enlarged photo, the bottom of a
+corals or fish species, bad photo, other, note), and, discreetly, from everywhere it makes sense: any enlarged photo, the bottom of a
 unit's sheet, "Send feedback" at the end of the ? help of every page and on About and credits (DESIGN.md "Footer and
 credits"). New pages get feedback through the ? help automatically; use `repBtn()` for anything more specific. Pierre
 sees who sent each report in admin To do (views All and Reports), because he trusts some players more than others.
