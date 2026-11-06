@@ -4625,9 +4625,14 @@ const PARTS = [
       const qt = await ct.newPage();
       await qt.goto(base);
       await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
-      await qt.click('#tour [data-start="imr"]'); // the first-launch question, the tour's first step
+      // Fish open to every player (Q158): the tour starts with the subject to pick (tour.js pick), then the question.
+      if (await qt.$('#tour [data-pick="coral"]')) {
+        await qt.click('#tour [data-pick="coral"]');
+        await qt.waitForSelector('#tour [data-start="imr"]', {timeout: 5000}).catch(() => {});
+      }
+      await qt.click('#tour [data-start="imr"]'); // the first-launch question
       await qt.waitForTimeout(400);
-      for (let k = 0; k < 4 && (await qt.evaluate(() => location.hash !== '#practice/quiz')); k++) {
+      for (let k = 0; k < 6 && (await qt.evaluate(() => location.hash !== '#practice/quiz')); k++) {
         await qt.keyboard.press('ArrowRight');
         await qt.waitForTimeout(400);
       }
@@ -4654,7 +4659,7 @@ const PARTS = [
       // Through to the last step and its "Start playing" (already on the quiz): the waiting cards show from the first.
       const first = await qt.evaluate(() => document.querySelector('.unlock.intro h3').textContent);
       const said = [await qt.textContent('#tour')];
-      for (let k = 0; k < 4 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
+      for (let k = 0; k < 6 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
         await qt.click('#tour .tnext');
         await qt.waitForTimeout(400);
         said.push(await qt.textContent('#tour').catch(() => ''));
