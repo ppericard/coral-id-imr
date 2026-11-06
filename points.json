@@ -17,7 +17,7 @@
       "ctx": [
         "Which corals does IMR label \"Astrea\" in ReefCloud: only Astrea curta and A. annuligera (Astrea in WoRMS and iNaturalist), or also the former Phymastrea, now Favites colemani, F. valenciennesii and F. magnistellata in WoRMS and iNaturalist, and maybe Paramontastraea salebrosa?",
         "Slide 62's \"refer to Astrea / Phymastrea\" suggests the second; only a trainer can say.",
-        "Photos: 1 Astrea curta from abroad (one of the app's Astrea photos); 2 Favites colemani from the Philippines (one of the app's 4 F. colemani photos, under Favites); 3 Plesiastrea peroni from Dauin (a look-alike, from the Coral Finder's extra genera); 4 Pierre's Favites colemani near Dauin (iNaturalist observation 406194912).",
+        "Photos: 1 Astrea curta from abroad (one of the app's Astrea photos); 2 Favites colemani from the Philippines (one of the app's 4 F. colemani photos, under Favites); 3 Plesiastrea peroni from Dauin (a look-alike, from the Coral Finder's extra genera); 4 Pierre's Favites colemani near Dauin (iNaturalist observation 406194912); 5 and 6 Astrea curta from abroad (two of the app's Astrea photos, from two other observations), which Pierre doubts are Astrea; 7 Favites valenciennesi near Dauin (one of the app's Favites photos, a candidate Pierre added), which Pierre asks whether it is Astrea.",
         "Until the answer the app changes nothing: its 4 F. colemani photos stay under Favites.",
         "Waiting on this answer (Q47): if IMR calls these corals Astrea, Pierre's F. colemani near Dauin can serve as an Astrea photo (rule S2: his species-level photos stay usable as photos)."
       ],
@@ -50,10 +50,32 @@
           "a": "(c) Pierre Pericard, some rights reserved (CC BY)",
           "o": "https://www.inaturalist.org/observations/406194912",
           "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/746237677/original.jpg"
+        },
+        {
+          "f": "astrea-medium-550371649",
+          "t": "Astrea curta",
+          "a": "(c) Josy Lai, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/305258255",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/550371649/original.jpg"
+        },
+        {
+          "f": "astrea-macro-102598426",
+          "t": "Astrea curta",
+          "a": "(c) Damien Brouste, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/63886028",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/102598426/original.jpg"
+        },
+        {
+          "f": "favites-cand-386693010",
+          "t": "Favites valenciennesi",
+          "a": "(c) deadpetvet, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/218524063",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/386693010/original.jpg"
         }
       ],
       "src": [
         {"t": "Pierre, 2026-11-05, Q45"},
+        {"t": "Pierre's reports of 2026-11-05 (admin To do › Reports): photos 5 and 6 marked \"?\" (not Astrea?), photo 7 \"Astrea?\"; added 2026-11-06"},
         {"t": "Coral taxonomy study, sections 4 and 6 (question 1)", "u": "docs/reviews/2026-11-05-coral-taxonomy-study.md"}
       ]
     },
