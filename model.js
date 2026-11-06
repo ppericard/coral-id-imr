@@ -272,9 +272,9 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 3, WIN: 15};
+const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
-// OPEN.DATA, up to 1. Without them the genus difficulty is only the declared look-alikes (until 2026-11-03 the photo
+// OPEN.DATA, up to 1. Without them every genus offset is 0 (until 2026-11-06 the declared look-alikes, until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
 // easy): the order then stays random until the answers can say (2026-11-02). A judged photo (p.e, the fish: judging/FISH.md,
 // 2026-11-04) counts PDIFF.W answers, the weight its prior has in photoDiff, so the fish entries open easiest first from
@@ -286,23 +286,21 @@ const easyTrust = () =>
       PDIFF.W * slateGenera().reduce((t, n) => t + VIEWS.reduce((u, [v]) => u + gamePics(n, v).filter(p => p.e).length, 0), 0)) /
       OPEN.DATA
   );
-// Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: the
-// players' answers, sheet v17; from sheet v31 a photo with few or no answers leans on its genus's offset, learned from
-// every answer on the genus, so the genus difficulty is data-driven from the first answers on it) plus how much it gets
-// confused (its two highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo
-// stats change.
+// Difficulty of a genus (Pierre, 2026-11-06, Q133; docs/reviews/2026-11-06-engine-coherence-review.md F3; docs/LEARNING.md
+// "One genus difficulty"): the sheet's genus offset (PGD, sheet v31 ?stats=1 gd: the hierarchical photo Elo's estimate
+// of the part of a photo's difficulty its genus shares, learned from every trusted answer on the genus), the one
+// estimate everywhere (drawW, shaky, stability, openPick). Adding or curating out a photo never moves it: the mean of the
+// game photos' ratings did (a new photo, rated at the offset, pulled the mean towards it), and the confusion term counted
+// the misses a second time (the photo ratings already hold them). A unit with judged photos (p.e, the fish while their
+// answers are not logged; Pierre, 2026-11-04) adds the mean of their judged-ease priors (photoDiff's), so the fish
+// entries open easiest first. 0 with an older sheet (before v31) or offline before its first reply. Cleared when the
+// photo stats change.
 let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
-  const ps = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))],
-    pd = ps.length ? ps.reduce((t, p) => t + photoDiff(n, p), 0) / ps.length : 0,
-    cs = slateGenera()
-      .filter(x => x !== n)
-      .map(x => pooledConf(n, x))
-      .sort((a, b) => b - a)
-      .slice(0, 2),
-    cf = cs.length ? cs.reduce((a, x) => a + x, 0) / cs.length : 0;
-  return (GDIFF[n] = Math.round((pd + OPEN.CONF * Math.max(0, cf - CONF.TRAP)) * 100) / 100);
+  const je = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))].filter(p => p.e),
+    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * PDIFF.EASE, 0) / je.length : 0;
+  return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
 };
 // Shaky: met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
 // genusDiff) still under OPEN.P. The genus ability allows for how hard the questions were (a miss on a hard one moves
