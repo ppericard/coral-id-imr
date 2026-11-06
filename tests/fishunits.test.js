@@ -302,3 +302,64 @@ test('fishCov counts a candidate sent with Not this as waiting in its new specie
     by = Object.fromEntries(C.sp.map(r => [r.id, r]));
   assert.deepStrictEqual([by.s1.wait, by.s2.wait, by.s2.waitObs], [1, 1, 1]);
 });
+
+test('Photo review: fishSet through fishOwn, fishTag, fishAgree against the pass', () => {
+  // An auto-sort add that wrote the ease (log code at): Pierre's ease takes the e out of the code, so its Undo keeps it.
+  let F = {add: {a: 's1'}, ease: {a: 4}, auto: {d1: {a: 'ae'}}};
+  F = A.fishSet(F, 'a', 'ease', 2);
+  assert.deepStrictEqual([F.ease.a, F.auto.d1.a], [2, 'a']);
+  assert.ok(!('a' in A.fishSet(F, 'a', 'ease', null).ease), 'null takes his value off');
+  assert.strictEqual(A.fishTag('p1g0sm1r', 0, 'd'), 'd1g0sm1r');
+  assert.strictEqual(A.fishTag('p1g0sm1r', 'j'), 'p1g0sm1jr', 'flags in the rubric order');
+  assert.strictEqual(A.fishTag('p1g0sm1jr', 'j'), 'p1g0sm1r');
+  assert.strictEqual(A.fishTag('bad', 0, 'o'), 'o1g0sm1', 'an unreadable code starts from a plain profile one');
+  const j = f => ({a: {e: 4, jt: 'p1g0sm1', ph: 'male'}, b: {e: 3, jt: 'o1g0sm1j'}, c: {e: 5, jt: 'p1g0sm1'}})[f] || null,
+    G = {ease: {a: 4, b: 5, c: 1}, tags: {a: 'p1g0sm1', b: 'p1g0sm1j'}, phase: {a: 'male'}};
+  assert.deepStrictEqual(A.fishAgree(G, ['a', 'b', 'c', 'x'], 'ease', j), {n: 3, both: 3, same: 1, near: 1});
+  assert.deepStrictEqual(A.fishAgree(G, ['a', 'b', 'c'], 'view', j), {n: 2, both: 2, same: 1, near: 0});
+  assert.deepStrictEqual(
+    A.fishAgree(G, ['a', 'b', 'c'], 'phase', j),
+    {n: 2, both: 2, same: 2, near: 0},
+    'male = male; juvenile (j flag) = juvenile'
+  );
+});
+
+test('Look-alikes: fishPairs from the IMR lines, fishMontPick phase-matched, fishMontSet', () => {
+  const U = [
+    {id: 'f:B', look: [['f:A', 'B: no spine']], lsrc: {'f:A': 'IMR fish presentation, slide 3'}},
+    {
+      id: 'f:A',
+      look: [
+        ['f:B', 'A: a spine'],
+        ['f:Z', 'not a game family'],
+        ['f:B', 'A: a spine']
+      ]
+    },
+    {id: 'f:C', look: []}
+  ];
+  assert.deepStrictEqual(A.fishPairs(U), [
+    {
+      k: 'f:A|f:B',
+      A: 'f:B',
+      B: 'f:A',
+      cues: [
+        ['f:B', 'B: no spine', 'IMR fish presentation, slide 3'],
+        ['f:A', 'A: a spine', 'IMR course']
+      ]
+    }
+  ]);
+  const ph = p => p.ph || '',
+    LA = [{f: 'a1'}, {f: 'a2', ph: 'juvenile'}, {f: 'a3', ph: 'male'}],
+    LB = [{f: 'b1', ph: 'juvenile'}, {f: 'b2'}];
+  let m = A.fishMontPick(null, LA, LB, ph);
+  assert.deepStrictEqual([m.v, m.a.f, m.b.f, m.set, m.LA.map(p => p.f)], ['adult', 'a1', 'b2', false, ['a1', 'a3']], 'a male is an adult');
+  m = A.fishMontPick({v: 'juvenile', a: 'a1', b: 'b1'}, LA, LB, ph);
+  assert.deepStrictEqual([m.v, m.a.f, m.b.f, m.set], ['juvenile', 'a2', 'b1', true], 'his photo out of the phase: the first of it');
+  m = A.fishMontPick({v: 'juvenile'}, LA, [{f: 'b2'}], ph);
+  assert.strictEqual(m.v, 'adult', 'a phase one family lacks: adult');
+  assert.strictEqual(A.fishMontPick({hide: true}, [], LB, ph).v, null);
+  let F = A.fishMontSet({}, 'f:A|f:B', {v: 'adult', a: 'a3', b: null, hide: false});
+  assert.deepStrictEqual(F.mont, {'f:A|f:B': {v: 'adult', a: 'a3'}});
+  F = A.fishMontSet(F, 'f:A|f:B', {hide: false});
+  assert.deepStrictEqual(F.mont, {}, 'Auto with nothing hidden: automatic again');
+});

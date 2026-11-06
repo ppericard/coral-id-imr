@@ -229,9 +229,10 @@ const WIDTHS = [390, 1280];
       }));
     const ROUTES = await p.evaluate(() => {
       // The corals' tabs (a tab for one unit rank only, Families, is checked on the fish side below).
-      const L = TABS.filter(t => !t[4].rank).flatMap(t =>
-        t[2].map(([h, v]) => ({h, tab: t[1], view: t[2].length > 1 ? h : null, n: t[2].length, name: v}))
-      );
+      const L = TABS.filter(t => !t[4].rank).flatMap(t => {
+        const V = t[2].filter(([, , o]) => !o.rank); // a view for one unit rank only (fish Photo review) is checked below
+        return V.map(([h, v]) => ({h, tab: t[1], view: V.length > 1 ? h : null, n: V.length, name: v}));
+      });
       // Deep links under a view: a genus page, Where to look open in full (a filter after '?'), a player's journey.
       return [
         ...L,
@@ -390,7 +391,7 @@ const WIDTHS = [390, 1280];
           }));
         await go(other.hash + 'photos');
         let u = await fu();
-        if (u.hash !== '#' + other.hash + 'photos/families' || u.tabs.join() !== 'Families,Candidates' || u.note)
+        if (u.hash !== '#' + other.hash + 'photos/families' || u.tabs[0] !== 'Families' || u.tabs.includes('Genera') || u.note)
           fails.push(`${w}px Families: #${other.hash}photos ${JSON.stringify(u)}`);
         if (w === 1280 && (u.fams !== u.want || u.fams < 28 || u.imr !== u.wantImr || u.imr < 28 || u.grp < 5))
           fails.push(`${w}px Families: the list ${JSON.stringify(u)}`);
@@ -479,6 +480,136 @@ const WIDTHS = [390, 1280];
           await go(other.hash + 'inbox/coverage/games');
           if ((await cv()).look > 5 || n5 < (await cv()).look) fails.push(`${w}px Fish Coverage, Where to look: ${n5} in full`);
         }
+        // Fish Photo review (admin plan PR 9): Ease and Phase & framing, one family's photos in play by row; one click sets
+        // Pierre's value (one Undo step); the coral views are not on the fish side, nor the fish views on the corals'.
+        // Four undecided candidates each of the first family and of the Angelfishes put in play (one step, undone below).
+        const h0 = await p.evaluate(() => {
+          const h = HIST.length,
+            F = DRAFT.fish || {},
+            mine = f => [F.add, F.seen, F.exclude, F.out].some(m => m && f in m),
+            add = {};
+          [FISHC.units[0], FISHC.units.find(u => u.id === 'f:Angelfishes')].forEach(u => {
+            const sid = u.species.find(s => (FISHC.cand[s] || []).filter(q => !mine(q.f)).length >= 4);
+            FISHC.cand[sid]
+              .filter(q => !mine(q.f))
+              .slice(0, 4)
+              .forEach(q => (add[q.f] = sid));
+          });
+          DRAFT.fish = {...F, add: {...(F.add || {}), ...add}};
+          saveDraft();
+          return h;
+        });
+        await go(other.hash + 'photos/review');
+        const rv = () =>
+          p.evaluate(() => ({
+            hash: location.hash,
+            views: [...document.querySelectorAll('#subnav .adm-views a')].map(a => a.textContent),
+            rows: [...document.querySelectorAll('#view .adm-row h3')].map(h => h.firstChild.textContent.trim()),
+            tiles: document.querySelectorAll('#view .adm-tile').length,
+            agree: (document.querySelector('.adm-agree') || {}).textContent || '',
+            note: (document.querySelector('#view > .note:not(.adm-agree)') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        let r = await rv();
+        if (
+          r.hash !== '#' + other.hash + 'photos/review/ease' ||
+          r.views.join() !== 'Ease,Phase & framing' ||
+          !r.tiles ||
+          !/^Ease: same as/.test(r.agree) ||
+          r.note ||
+          r.wide > 0
+        )
+          fails.push(`${w}px Fish Photo review: ${JSON.stringify(r)}`);
+        if (once) {
+          const f = await p.evaluate(() => document.querySelector('#view .adm-tile[data-f]').dataset.f);
+          const e0 = await p.evaluate(f => (DRAFT.fish.ease || {})[f], f),
+            to = e0 === 1 ? 2 : 1;
+          await p.click(`#view .adm-tile[data-f="${f}"] [data-fre="${to}"]`);
+          await settle();
+          r = await rv();
+          const e1 = await p.evaluate(f => (DRAFT.fish.ease || {})[f], f);
+          if (e1 !== to || !r.rows.includes(`Ease ${to}${to === 1 ? ' (very hard)' : ''}`))
+            fails.push(`${w}px Fish Photo review: ease ${e0} → ${e1}, rows ${r.rows}`);
+          await p.evaluate(() => undo());
+          await settle();
+          if ((await p.evaluate(f => (DRAFT.fish.ease || {})[f], f)) !== e0) fails.push(`${w}px Fish Photo review: Undo of the ease`);
+          await go(other.hash + 'photos/review/phase-framing');
+          await p.selectOption('#frevfam', 'f:Angelfishes');
+          await settle();
+          r = await rv();
+          const g = await p.evaluate(() => {
+            const t = document.querySelector('#view .adm-tile[data-f]');
+            return {
+              f: t.dataset.f,
+              phase: !!t.querySelector('[data-frp]'),
+              view: !!t.querySelector('[data-frv]'),
+              juv: !!t.querySelector('[data-frj]')
+            };
+          });
+          if (!g.phase || !g.view || !g.juv || !r.rows.includes('No phase') || !/^Phase: same as/.test(r.agree))
+            fails.push(`${w}px Fish Photo review, Angelfishes: ${JSON.stringify({...r, ...g})}`);
+          const t0 = await p.evaluate(f => (DRAFT.fish.tags || {})[f] || '', g.f);
+          await p.click(`#view .adm-tile[data-f="${g.f}"] [data-frv="d"]`);
+          await settle();
+          const t1 = await p.evaluate(f => (DRAFT.fish.tags || {})[f] || '', g.f);
+          if (t1[0] !== 'd' || t1.slice(1) !== (t0 || 'p1g0sm1').slice(1)) fails.push(`${w}px Fish Photo review: view ${t0} → ${t1}`);
+          await p.click(`#view .adm-tile[data-f="${g.f}"] [data-frp="male"]`);
+          await settle();
+          if ((await p.evaluate(f => DRAFT.fish.phase[f], g.f)) !== 'male' || !(await rv()).rows.includes('Male'))
+            fails.push(`${w}px Fish Photo review: phase male`);
+          // Juvenile on a male: the phase word goes in the same step, so the photo moves to Juvenile (Codex review #663).
+          await p.click(`#view .adm-tile[data-f="${g.f}"] [data-frj]`);
+          await settle();
+          const jv = await p.evaluate(f => [DRAFT.fish.phase[f], (DRAFT.fish.tags[f] || '').slice(7)], g.f);
+          if (jv[0] !== '' || !jv[1].includes('j') || !(await rv()).rows.includes('Juvenile'))
+            fails.push(`${w}px Fish Photo review: Juvenile on a male ${jv}`);
+          await p.evaluate(() => (undo(), undo(), undo()));
+          await settle();
+          if ((await p.evaluate(f => (DRAFT.fish.tags || {})[f] || '', g.f)) !== t0)
+            fails.push(`${w}px Fish Photo review: Undo of the view`);
+          // Butterflyfishes have no IMR phase lines: no phase row.
+          await p.selectOption('#frevfam', 'f:Butterflyfishes');
+          await settle();
+          if (await p.$('#view [data-frp]')) fails.push(`${w}px Fish Photo review: a phase row on the Butterflyfishes`);
+        }
+        // Fish Look-alikes (admin plan PR 10): one row per IMR pair of families, phase-matched photos, Auto / Manual, Shown /
+        // Hidden; the corals keep their pairs (the photos put in play above are still there).
+        await go(other.hash + 'photos/look-alikes');
+        const lk = () =>
+          p.evaluate(() => ({
+            rows: [...document.querySelectorAll('.adm-fishmont .adm-mrow')].map(r => r.querySelector('.adm-mhead b').textContent),
+            prev: document.querySelectorAll('.adm-fishmont .adm-mprev img').length,
+            want: fishPairs(FISHC.units).length,
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        let l = await lk();
+        if (l.rows.length !== l.want || l.want < 5 || !l.rows.includes('Butterflyfishes / Angelfishes') || l.wide > 0)
+          fails.push(`${w}px Fish Look-alikes: ${JSON.stringify(l)}`);
+        if (once) {
+          const k = 'f:Angelfishes|f:Butterflyfishes',
+            row = `.adm-fishmont .adm-mrow:has([data-k="${k}"])`;
+          if (await p.$(`${row} .adm-mth[data-side="a"]:not(.on)`)) {
+            const f = await p.evaluate(r => document.querySelector(r + ' .adm-mth[data-side="a"]:not(.on)').dataset.f, row);
+            await p.click(`${row} .adm-mth[data-f="${f}"]`);
+            await p.click(`${row} [data-fmhide="1"]`);
+            const e = await p.evaluate(k => (DRAFT.fish.mont || {})[k], k);
+            if (!e || e.a !== f || !e.hide || !e.v || !/fish look-alike pair/.test(await p.evaluate(() => pubSummary())))
+              fails.push(`${w}px Fish Look-alikes: pick and hide ${JSON.stringify(e)}`);
+            await p.click(`${row} [data-fmauto]`);
+            const e2 = await p.evaluate(k => (DRAFT.fish.mont || {})[k], k);
+            if (!e2 || !e2.hide || e2.a || e2.v) fails.push(`${w}px Fish Look-alikes: Auto keeps only Hidden ${JSON.stringify(e2)}`);
+          } else fails.push(`${w}px Fish Look-alikes: no photo to pick in ${k}`);
+        }
+        await go('photos/look-alikes');
+        if (await p.$('.adm-fishmont')) fails.push(`${w}px Look-alikes on the corals' side drew the fish pairs`);
+        await p.evaluate(h => {
+          while (HIST.length > h) undo();
+        }, h0);
+        await settle();
+        await go('photos/review/ease');
+        r = await rv();
+        if (!/Not for corals yet/.test(r.note) || r.views.includes('Ease'))
+          fails.push(`${w}px Fish Photo review on the corals' side: ${JSON.stringify(r)}`);
         await go('inbox/coverage/games');
         c = await cv();
         if (!c.coral || c.rows) fails.push(`${w}px Coverage on the corals' side: ${JSON.stringify(c)}`);
