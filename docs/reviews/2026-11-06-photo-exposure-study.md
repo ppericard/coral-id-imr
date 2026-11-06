@@ -52,12 +52,14 @@ citing text.
    answers per photo further. What exploration *can* deliver soon is 3-5 first answers per photo, enough to flag the
    photos far harder than their genus.
 8. **The admin stat**, computed here (§5): photos seen ÷ the game photos of the genera met is 20-55% for the 5 players
-   with 200+ answers. A second number, *spread*, compares the colonies seen with what an even draw could have shown
-   (100% = nothing repeated while unseen colonies remained): 74-95% for those players, 60-91% below 200 answers.
-9. **Fish:** 27 answers from one player, with one repeat. Nothing can be concluded. By design, the first fish
-   questions repeat. Until a unit reaches 50%, only its very easy photos are shown (`model.js` `easyFirst`): 402 of
-   1,740 fish game photos, a median of 7 per entry, and under 3 for 12 of the 47 entries. ROADMAP planned to remove that
-   gate once fish answers are logged, and they are now.
+   with 200+ answers. A second number, *spread*, is chronological: of the questions asked while the unit still had
+   colonies the player had never seen, the share that showed one of them. It is 68-95% for those players and 66-96% for
+   the others. Since no player has exhausted a genus yet, spread is 100% minus the colony repeat rate.
+9. **Fish:** 27 answers from one player, with one repeat. Nothing can be concluded. These answers came while
+   `easyFirst` was in force: below 50% on a unit, only its very easy photos were shown (402 of 1,740 fish game photos,
+   a median of 7 per entry, under 3 for 12 of the 47 entries). On `main` since today, the gate is gone. The target leans
+   1.5 logits easier on a unit with few answers, and reference-level photos never seen weigh × 3 (`SUBJECTS` `calib`).
+   The fish draw is therefore no longer limited to a small set. It needs re-measuring once there are fish answers.
 
 ## 1. Repeats, per player and per genus
 
@@ -141,19 +143,19 @@ Two numbers, corals (fish the same way once there are answers):
 
 - **Seen**: distinct game photos the player has been shown ÷ game photos of the units they have met (first question
   here; in the app, `unlocked()` from the synced intro map). Colonies give almost the same figure.
-- **Spread**: distinct colonies seen ÷ Σ over units of min(questions on the unit, colonies of the unit). That is the
-  share of their questions that brought a colony new to them, out of the most an even draw could give. 100% = no
-  repeat while unseen colonies remained.
+- **Spread** (chronological): of the questions on a unit asked while it still had colonies the player had never seen,
+  the share that showed one of them. 100% = no colony repeated while an unseen one remained. A count of the colonies
+  seen against the questions would hide repeats (A, A, B scores 100% with two colonies).
 
 | Player | Questions | Units met | Seen photos | Seen % | Spread % |
 |---|---|---|---|---|---|
-| P6 | 537 | 32 | 505 / 923 | 55 | 82 |
-| P7 | 401 | 37 | 468 / 1,155 | 41 | 84 |
-| P4 | 378 | 44 | 394 / 1,318 | 30 | 74 |
-| P8 | 375 | 33 | 330 / 1,040 | 32 | 76 |
+| P6 | 537 | 32 | 505 / 923 | 55 | 74 |
+| P7 | 401 | 37 | 468 / 1,155 | 41 | 86 |
+| P4 | 378 | 44 | 394 / 1,318 | 30 | 76 |
+| P8 | 375 | 33 | 330 / 1,040 | 32 | 68 |
 | P11 | 249 | 45 | 266 / 1,342 | 20 | 95 |
-| P5 | 112 | 17 | 92 / 511 | 18 | 60 |
-| P9, P3, P1 | 85, 67, 49 | 32, 35, 12 | | 10, 10, 14 | 86, 91, 90 |
+| P5 | 112 | 17 | 92 / 511 | 18 | 66 |
+| P9, P3, P1 | 85, 67, 49 | 32, 35, 12 | | 10, 10, 14 | 89, 93, 96 |
 
 Seen % alone mostly grows with the questions answered (a heavy player looks good). Spread says whether the draw used
 the room it had, and that is the one to act on. Computing it in the sheet (rule L13) for the admin's player list
@@ -239,8 +241,8 @@ assume one discrimination for every photo. The scripts live outside the reposito
   Spread.*
 - **E6. Calibration goal.** Accept that per-photo ratings stay mostly prior, aim for 3-5 answers per photo, and flag the
   photos far harder than their genus in the admin? *Recommendation: yes; threshold after a look at the first flags.*
-- **E7. Fish `easyFirst`.** Fish answers are logged now. Plan its removal once there are about 500 fish answers (ROADMAP
-  said: once logged)? *Recommendation: yes, re-measure then.*
+- **E7. Fish.** `easyFirst` is already gone on `main` (the start's lean and the reference-photo weight replaced it).
+  Re-run this study on the fish once there are about 500 fish answers? *Recommendation: yes.*
 
 ## Sources
 
