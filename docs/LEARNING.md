@@ -76,6 +76,14 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   and genus", below). A genus never answered starts from it
   (`core.js playerStart`: 0.8 × global × M / (M + 10), clamped to [−0.5, 1.5]), so a strong player gets traps, single
   views and harder photos on a new genus from its first question.
+- **One player level shown** (Pierre, 2026-11-06, Q134; the engine coherence review's F4): the global level is the only
+  level players see, as an Elo (`progress.js` `eloScore` = 1000 + 200 × th, from `ELO_MIN` = 200 answers of its record):
+  My progress, the leaderboard (`Code.gs` `board_` reads `~level` from each player's saved progress, sheet v63; the
+  player's own row shows the device's level) and the Elo achievements. The header shows progress, not a level. The
+  sheet's own chain `stats_` `R` (start `PLAYER0` −1, K 0.6 / (1 + n/40), no answer time, no mix-up term, no start prior)
+  stays internal: it is the player term of the photo Elo (the expectation that rates the photos, their genus offsets and
+  the photo memory) and the admin's level (`ras`, with `levelMargin`'s 95% margin; also the only level of a device that
+  never signed in). Until v63 the board showed `R`, so My progress changed number when the board loaded.
 - **The genus wrongly given** (rule L2) counts in its progress, its recent results and its runs, not in its Elo ability
   (since 2026-11-03, below).
 

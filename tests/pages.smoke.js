@@ -1285,6 +1285,9 @@ const SHEET = () => {
     if (body && body.selfDelete)
       return body.dname === 'Anna' && body.dpin === '1234' ? {ok: true, deleted: true, v: 58} : {ok: false, error: 'pin', v: 58};
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
+    // test-sheet-board: the leaderboard rows the stub serves (GET ?board=1), for the one-level check below.
+    if (q.get('board') && localStorage.getItem('test-sheet-board'))
+      return {ok: true, rows: JSON.parse(localStorage.getItem('test-sheet-board'))};
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
@@ -1700,6 +1703,57 @@ async function signin(base) {
       if (!/were permanently deleted/.test(s.page) || s.account || s.prog || s.rname || s.reports.join() !== 'q2')
         fails.push('delete account: the device is not signed out and cleared: ' + JSON.stringify(s).slice(0, 240));
       if (s.posts.length !== 1 || s.posts[0].name) fails.push('delete account: the request: ' + JSON.stringify(s.posts));
+    }
+  );
+  // One player level everywhere (Pierre, 2026-11-06, Q134): My progress shows the device's own level (P['~level'], Elo
+  // 1000 + 200 × th) before and after the leaderboard arrives, whatever level the board holds for the player (the kept
+  // copy and the fresh one both disagree here on purpose); the board's own row shows that same level, the others theirs.
+  await run(
+    () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234'}));
+      const t = Date.parse('2026-11-05T01:00:00Z');
+      localStorage.setItem(
+        'reefid-sync-coral-progress',
+        JSON.stringify({'~level': {ok: 250, ko: 50, th: 0.4, at: t}, Acropora: {ok: 30, ko: 5, th: 0.3, at: t}})
+      );
+      localStorage.setItem(
+        'reefid-board-cache',
+        JSON.stringify({
+          rows: [
+            ['Other P', 60, 1.5],
+            ['Anna', 40, -1]
+          ],
+          t: Date.now() - 60000
+        })
+      );
+      localStorage.setItem(
+        'test-sheet-board',
+        JSON.stringify([
+          ['Other P', 60, 1.5],
+          ['Anna', 41, -0.9]
+        ])
+      );
+    },
+    async p => {
+      await p.evaluate(() => go('progress'));
+      await p.waitForSelector('#pbrank:not([hidden])', {timeout: 8000});
+      const before = (await p.textContent('#pbrank')).trim();
+      const after = await p.evaluate(async () => {
+        await loadBoard();
+        await new Promise(r => setTimeout(r, 50));
+        return document.getElementById('pbrank').textContent.trim();
+      });
+      if (before !== '🏆 #2 · Elo 1080' || after !== before)
+        fails.push(`one level: My progress before / after the board: ${before} / ${after}`);
+      await p.evaluate(() => go('board'));
+      await p.waitForFunction(() => document.querySelectorAll('#board .blist li').length === 2, null, {timeout: 8000});
+      const rows = await p.evaluate(() =>
+        [...document.querySelectorAll('#board .blist li')].map(li => li.querySelector('.belo').textContent)
+      );
+      if (rows.join('|') !== 'Elo 1300|Elo 1080') fails.push('one level: the board shows ' + rows.join(' | '));
     }
   );
   // The tour's sign-in step: the same question.
