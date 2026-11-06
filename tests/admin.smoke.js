@@ -436,12 +436,16 @@ const WIDTHS = [390, 1280];
               key = f => {
                 const j = (SUG && SUG.fish && SUG.fish[f]) || {},
                   jt = (F.tags || {})[f] || j.jt || '';
-                return [(F.ease || {})[f] || j.e || 3, refScore(jt)];
+                const e = (F.ease || {})[f] || j.e || 3,
+                  p = FISHC.byF[f] || {};
+                // the game's order (core.js easyRank): reference-level first, then the easiest, then refScore
+                return [refLevel({e, jt, rep: p.rep || jt.slice(7).includes('r')}) ? 1 : 0, e, refScore(jt)];
               };
-            const K = [...sec.querySelectorAll('.adm-tile:not(.is-feat)')].map(t => key(t.dataset.f));
+            const K = [...sec.querySelectorAll('.adm-tile:not(.is-feat)')].map(t => key(t.dataset.f)),
+              ge = (x, y) => x[0] > y[0] || (x[0] === y[0] && (x[1] > y[1] || (x[1] === y[1] && x[2] >= y[2])));
             return {
               sid: sec.dataset.sid,
-              ok: K.every((k, i) => !i || K[i - 1][0] > k[0] || (K[i - 1][0] === k[0] && K[i - 1][1] >= k[1])),
+              ok: K.every((k, i) => !i || ge(K[i - 1], k)),
               K
             };
           });

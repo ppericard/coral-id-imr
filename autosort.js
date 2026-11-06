@@ -434,8 +434,9 @@
       Object.keys(k.feat || {}).forEach(s => (k.feat[s] = k.feat[s].filter(x => x !== f)));
     });
   // The photos of one species in play, in the page's order (L: the photo objects, j(f): the pass's judgment): the featured
-  // ones first, in his order; then the game's order (core.js easyRank, #635): the easiest (his ease, else the pass's),
-  // then the most reference-like (refScore on his tags, else the pass's), then a fixed hash. Never by who took them
+  // ones first, in his order; then the game's order (core.js easyRank, #635, #660): reference-level photos first (his
+  // ease and tags, else the pass's; a reference source, rep or the flag r), the easiest, the most reference-like
+  // (refScore), then a fixed hash. Never by who took them
   // (Pierre, 2026-11-06: his own photos are never boosted; the easy and reference photos come first, whoever took them).
   function fishOrder(L, F, tid, sid, j = () => null) {
     F = F || {};
@@ -446,7 +447,7 @@
     return {
       feat: fe.map(f => L.find(p => p.f === f)),
       rest: easyRank(
-        R.map(p => ({f: p.f, jt: jt(p), p})),
+        R.map(p => ({f: p.f, jt: jt(p), e: ease(p) || undefined, rep: p.rep || jt(p).slice(7).includes('r') || undefined, p})),
         x => -(ease(x.p) || 3)
       ).map(x => x.p)
     };

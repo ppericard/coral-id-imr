@@ -188,3 +188,12 @@ test('fishFeat frees the slot of a featured photo no longer in play; fishPhase r
   assert.strictEqual(A.fishPhase(p, null, {tags: {m: 'p1g0sm1'}, auto: {d1: {m: 'ate'}}}), 'male', 'tags the auto-sort wrote');
   assert.strictEqual(A.fishPhase(p, null, {tags: {m: 'p1g0sm1'}}), '', 'his tags: his "no phase"');
 });
+
+test('fishOrder follows the game: a reference-level photo before an easier ordinary one (core.js easyRank, Codex review #655)', () => {
+  const L = [{f: 'plain'}, {f: 'ref', rep: 1}],
+    F = {ease: {plain: 5, ref: 4}, tags: {plain: 'o1g1bm1', ref: 'p1g0sm1'}};
+  assert.deepStrictEqual(
+    A.fishOrder(L, F, 'f:A', 's1').rest.map(p => p.f),
+    ['ref', 'plain']
+  );
+});
