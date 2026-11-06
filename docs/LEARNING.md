@@ -2887,6 +2887,32 @@ for every unit). The order is data (`fish.json`: each entry's `species` list, sp
 - **Effect now**: the order of the species lists in `fish.json`; species questions (level 2) are not built yet, so no
   player sees a change until they are. No learnsim run: no fish profile exists and nothing the simulation reads moved.
 
+### Fish achievements, simulated (2026-11-06, in review)
+
+Rule L8: each achievement's timing checked with the real game before it is added. `tools/learnsim.js --subject fish --ach` (the real
+fish game in a browser, the answer at which each achievement first enters the record), profiles beginner (choice "new") and lecture RA
+("imr"), 2 seeds x 2,500 answers, plus 1 seed x 1,200 for Open Water: 20 families. Median answer:
+
+| Achievement | beginner | lecture RA |
+|---|---|---|
+| First families (5 met) | 22 | 21 |
+| The IMR line-up (every IMR course family met) | 157 | 156 |
+| Open Water: 5 families | 230 | 107 |
+| A quarter of the reef (25%) | 366 | 275 |
+| Open Water: 20 families | 640 | 469 |
+| Whole reef (every family met) | 739 | 458 |
+| Half the reef (50%) | 970 | 731 |
+| Advanced: 5 families | 1,108 | 1,128 |
+| Advanced: 15 families | 1,836 | 1,618 |
+| Divemaster: 5 families | 1,895 | 1,794 |
+| First fish Instructor, Instructor: 10, IMR fish master | > 2,500 | > 2,500 |
+| Genus names (5 scientific genera at Open Water) | not simulated (an opt-in the simulated player declines) | |
+
+- The first comes within a few dozen answers, then a steady spread to about 1,900 answers; the mastery ones are far goals (no family
+  passed its exam within 2,500 simulated answers: 10-13 families were in their exam by then).
+- **Dropped: a fish Elo achievement.** The simulated fish level is already about 1.5-2.2 (Elo 1,300-1,440) when it first shows at 200
+  answers (`ELO_MIN`), so "Fish Elo 1200" came at exactly the 200th answer for every run: an answer count, not a milestone (rule L8).
+
 ### Fish: the global score, simulated (2026-11-04)
 
 The global fish score's formula (Pierre, 2026-11-04; docs/FISH_PATH.md "My progress (fish)", unchanged here): per species

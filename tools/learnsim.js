@@ -10,7 +10,9 @@
 //                          [--rt off] [--rtapp off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
-//                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}']
+//                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
+// --ach (2026-11-06, the fish achievements, rule L8: each one's timing checked with the real game): the answer at which
+// each achievement of the record first came, median per profile over the runs.
 // --subject fish (2026-11-06, Q186: the fish draw's learning outcomes, rules L11-L12): the player plays the fish subject
 // (its slate of IMR entries, its photos and calibration); the coral-only measures (Millepora, bonus genera) stay empty.
 // --photos FILE serves that file as fish-photos.json (another pool, e.g. a branch's); --calib merges fields over the
@@ -251,6 +253,7 @@ const SEEDS = Number(arg('seeds', 5)),
       return [b, Number(m[1]) * UNIT[m[2]]];
     }),
   OPENALL = arg('openall', ''),
+  ACHT = process.argv.includes('--ach'), // the achievements' timing (below: "Achievements")
   CHOICE = arg('choice', 'new'),
   FALLBACK = arg('fallback', 'keep'),
   VARS = JSON.parse(arg('vars', '{}')),
@@ -339,7 +342,8 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
-  const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg;
+  const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg,
+    ACHT = cfg.ach;
   // The subject's draw calibration overridden (--calib), and the corals' bonus genera only on the corals (--subject).
   if (cfg.calib && Object.keys(cfg.calib).length) SUBJ.calib = {...(SUBJ.calib || {}), ...cfg.calib};
   const BON = SUBJ.id === 'coral' && typeof BONUS !== 'undefined' ? BONUS : [];
@@ -596,6 +600,7 @@ function play(cfg) {
     credit = {},
     entry = {},
     learnedAt = {},
+    achAt = {},
     metAt = {};
   let blk = {n: 0, ok: 0},
     opens = [], // the questions (1-based) that opened a genus on its own card (the path's pace; not the first cards)
@@ -894,6 +899,8 @@ function play(cfg) {
       if (!(g in entry) && inExam(g)) entry[g] = {q: i + 1, ref: ref(g), know: know[g]};
       if (!(g in learnedAt) && (P[g] || {}).mx) learnedAt[g] = {q: i + 1, ref: ref(g), know: know[g]};
     });
+    // --ach: the answer at which each achievement of the record first shows (progress.js ACHK, the real game's check).
+    if (ACHT) Object.keys(store.get(ACHK, {}) || {}).forEach(k => k[0] !== '_' && !(k in achAt) && (achAt[k] = i + 1));
     if (cps.includes(i + 1)) {
       const met = SL.filter(introduced),
         th = met.map(g => ability(g) - logit(know[g])),
@@ -1048,6 +1055,7 @@ function play(cfg) {
     rows,
     entry,
     learnedAt,
+    achAt,
     metAt,
     nph: NPH,
     expo,
@@ -1127,7 +1135,8 @@ async function run(browser, base, name, seed) {
     tau: TAU,
     custom: CUSTOMN,
     drill: DRILL,
-    calib: CALIBX
+    calib: CALIBX,
+    ach: ACHT
   });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
@@ -1480,6 +1489,20 @@ function openTable(runs) {
       };
     console.log(`  ${name}: ${MET.map(cell).join(', ')}`);
   }
+  // --ach (2026-11-06, the fish achievements' timing, rule L8): per achievement of the subject, the median answer at which
+  // it came over every run (a run without it counting as after QN), and in how many runs.
+  if (ACHT)
+    for (const name of NAMES) {
+      const R = runs.filter(r => r.profile === name),
+        ids = [...new Set(R.flatMap(r => Object.keys(r.achAt || {})))].sort(
+          (a, b) => med(R.map(r => (r.achAt || {})[a] ?? Infinity)) - med(R.map(r => (r.achAt || {})[b] ?? Infinity))
+        );
+      console.log(`\nAchievements, ${name} (median answer; >${QN}: not reached in half of the runs or more; runs reaching it):`);
+      ids.forEach(k => {
+        const m = med(R.map(r => (r.achAt || {})[k] ?? Infinity));
+        console.log(`  ${k}: ${m === Infinity ? '>' + QN : m} (${R.filter(r => (r.achAt || {})[k]).length}/${R.length})`);
+      });
+    }
   // An opening only after a right answer (model.js openRight): per run, the genera opened on their own cards, those on
   // the question right after a miss (0 with the rule), the questions where the rule alone held the opening and the
   // openings that held back in expectation (their openChance summed), and the questions from each spell of held

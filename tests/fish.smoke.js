@@ -18,6 +18,7 @@
 // draw.smoke.js. Locally: node tests/fish.smoke.js
 // A page key's address (core.js routeOut), for the corals.
 const C = require('../core.js'),
+  FISHN = C.FISH_ACH.length,
   addr = k => C.routeOut(k) ?? k;
 const http = require('http'),
   fs = require('fs'),
@@ -775,6 +776,31 @@ const server = http.createServer((req, res) => {
     )
       ui.push(`${width}px fish leaderboard: ${JSON.stringify(fb)}`);
     await wide('the fish leaderboard');
+    // The fish achievements (Pierre, 2026-11-04; core.js FISH_ACH): on Fish the page and its count are the fish's own list,
+    // a fish answer keeps none of the corals' feats (the run, achFeats), and the corals keep theirs.
+    const fa = await q.evaluate(async () => {
+      const A0 = store.get(ACHK, null);
+      store.set(ACHK, {_v: ACH_V, _run: 7, _best: 7});
+      achAfter(true, [{f: 'x', view: 'wide'}], 'quiz');
+      const A = store.get(ACHK, {}),
+        fishIds = ACH_L().map(a => a.id);
+      go('ach');
+      await new Promise(ok => setTimeout(ok, 200));
+      const title = (document.querySelector('#view .btitle') || {}).textContent || '';
+      const coralIds = inSubject(SUBJECTS.find(x => !x.achs().some(a => fishIds.includes(a.id))).id, () => ACH_L().map(a => a.id));
+      store.set(ACHK, A0);
+      return {run: A._run, best: A._best, fishIds, title, mixed: coralIds.filter(id => fishIds.includes(id))};
+    });
+    if (
+      fa.run !== 7 ||
+      fa.best !== 7 ||
+      fa.fishIds.length !== FISHN ||
+      !fa.fishIds.every(id => id[0] === 'f') ||
+      !new RegExp(`/${FISHN} earned`).test(fa.title) ||
+      fa.mixed.length
+    )
+      ui.push(`${width}px fish achievements: ${JSON.stringify(fa)}`);
+    await wide('the fish achievements');
     // A wink, made due at this count (the first threshold moved here, none shown yet).
     const wk = await q.evaluate(() => {
       location.hash = '#practice/quiz';

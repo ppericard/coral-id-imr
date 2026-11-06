@@ -499,7 +499,7 @@ function achRecheck() {
   if (!M || !M.ach) return [];
   const A = store.get(ACHK, null),
     was = JSON.stringify(A),
-    out = A ? achRevoke(A, achSnap(A), Date.now()) : [];
+    out = A ? achRevoke(A, achSnap(A), Date.now(), ACH_L()) : [];
   if (A && JSON.stringify(A) !== was) {
     store.set(ACHK, A);
     if (SYNC) syncSoon();
@@ -517,10 +517,15 @@ function achRecheck() {
   return out;
 }
 const achList = () => slateGenera();
+// The subject's core units (UNITS core: the IMR course's fish families) and its opt-in sets (UNITS sets: the scientific
+// genera), for the achievements that read them (core.js FISH_ACH): met and learned in the core, units at Open Water or
+// above in each set.
 function achSnap(A = store.get(ACHK, {}) || {}) {
   const L = achList(),
     st = L.map(lvStep),
-    G = P[LEVEL];
+    G = P[LEVEL],
+    U = UNITS[SUBJ.id],
+    C = U.core ? U.core() : [];
   const groups = {};
   L.forEach(n => (groups[shownGroup(n) || 0] = groups[shownGroup(n) || 0] || []).push(n));
   return {
@@ -537,6 +542,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
     bonus: bonusList().filter(introduced).length,
+    core: {total: C.length, met: C.filter(n => lvStep(n) >= 1).length, learned: C.filter(n => lvStep(n) >= 5).length},
+    sets: Object.fromEntries((U.sets || []).map(S => [S.k, S.all().filter(n => lvStep(n) >= 2).length])),
     basics: !!A._basics,
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
@@ -545,7 +552,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
 // locking again those unlocked when they should not have been"): every achievement is tested again on the current
 // progress with the current rules; those still met keep their date, the others go. Feats (runs, corallites, hard photo)
 // stay. Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows.
-// Achievements count one subject (core.js SUBJECTS ach: corals): checked on its progress whatever the subject on screen.
+// Each subject with achievements (core.js SUBJECTS ach) checks its own list (SUBJECTS achs) on its own progress; a subject
+// without any checks the first one's. All live in the one record (ACHK) under ids of their own.
 const ACHS = () => SUBJECTS.find(x => x.ach).id;
 function achMigrate() {
   if (!SUBJ.ach) return inSubject(ACHS(), achMigrate);
@@ -555,7 +563,10 @@ function achMigrate() {
   if (A) Object.keys(A).forEach(k => k[0] === '_' && k !== '_v' && A[k] && (B[k] = A[k])); // the feats (_run, _best, _cor, _hard, _gone, _basics, _fb)
   const snap = achSnap(B),
     t = Date.now();
-  ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
+  // Another subject's achievements in an old record were never counted there (fish had none before): only this one's.
+  achTests()
+    .filter(a => a.test(snap))
+    .forEach(a => (B[a.id] = (A && A[a.id]) || t));
   store.set(ACHK, B);
   if (SYNC && A) syncSoon();
 }
@@ -563,7 +574,7 @@ function achCheck(silent) {
   if (!SUBJ.ach) return inSubject(ACHS(), () => achCheck(silent));
   const had = store.get(ACHK, null),
     A = had || {},
-    ids = newAch(achSnap(A), A);
+    ids = newAch(achSnap(A), A, achTests());
   if (!ids.length) {
     if (!had) store.set(ACHK, A);
     return achDot();
@@ -571,12 +582,16 @@ function achCheck(silent) {
   // Only the first achievement of each family and the top tier pop up (Pierre, 2026-11-02, after a walkthrough counted
   // 7-9 toasts in 60 answers): a new kind stays a surprise, an intermediate step lands quietly on the achievements page
   // with a "new" dot on 🏅 / 🏆. Several at once make one toast. Every Contributions tier pops up (Pierre, 2026-11-05, Q65).
-  const fams = new Set(ACH.filter(a => A[a.id]).map(achFam)),
+  const fams = new Set(
+      achTests()
+        .filter(a => A[a.id])
+        .map(achFam)
+    ),
     t = Date.now(),
     loud = [],
     quiet = [];
   ids.forEach(id => {
-    const a = ACH.find(x => x.id === id);
+    const a = achFind(id);
     (a.tier === 3 || a.kind === 'contrib' || !fams.has(achFam(a)) ? loud : quiet).push(id);
     fams.add(achFam(a));
     A[id] = t;
@@ -586,8 +601,8 @@ function achCheck(silent) {
   achDot();
   // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (Pierre, 2026-11-05: a toast
   // at the top may go unread); the first stays a toast, like the learning achievements.
-  const card = id => !silent && had && (ACH.find(x => x.id === id) || {}).kind === 'contrib' && ACH.find(x => x.id === id).tier >= 2;
-  (silent || !had ? ids : loud).filter(card).forEach(id => achCard(ACH.find(x => x.id === id)));
+  const card = id => !silent && had && (achFind(id) || {}).kind === 'contrib' && achFind(id).tier >= 2;
+  (silent || !had ? ids : loud).filter(card).forEach(id => achCard(achFind(id)));
   achRecap((silent || !had ? ids : loud).filter(id => !card(id)));
 }
 // One card at a time (docs/DESIGN.md "Cards"): fn runs once no card or tour is open.
@@ -629,10 +644,17 @@ function achCard(a) {
     })
   );
 }
-// The learning achievements (core.js ACH kind 'learn'): the count on the badge and on #ach; the Contributions (kind
-// 'contrib', Pierre 2026-11-05, Q65) are a family apart, never in that count, listed in their own section.
-const ACH_L = () => ACH.filter(a => a.kind !== 'contrib'),
-  ACH_C = () => ACH.filter(a => a.kind === 'contrib');
+// The learning achievements of the subject on screen (core.js SUBJECTS achs, kind 'learn'; a subject without any: the
+// first one's): the count on the badge and on #ach, so a fish achievement never counts in the corals' and back. The
+// Contributions (kind 'contrib', Pierre 2026-11-05, Q65) are one family for every subject (core.js ACH_CONTRIB), never in
+// that count, listed in their own section. achTests: what a check tests, the subject's learning ones and the Contributions.
+const achSubj = () => (SUBJ.ach ? SUBJ : subjectOf(ACHS())),
+  ACH_L = () =>
+    achSubj()
+      .achs()
+      .filter(a => a.kind !== 'contrib'),
+  ACH_C = () => ACH_CONTRIB,
+  achTests = () => [...ACH_L(), ...ACH_C()];
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
 const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
@@ -660,8 +682,11 @@ function achDot() {
 // as before. Nothing already earned is taken back.
 const achRunIn = cur => cur === 'quiz';
 function achAfter(good, ph, cur) {
-  if (!SUBJ.ach) return; // an answer on another subject earns nothing (fish: no achievements yet)
+  if (!SUBJ.ach) return; // an answer on a subject without achievements earns nothing
   if (!store.get(ACHK, null)) achCheck(true); // no record yet on this device: what is already met comes as one recap
+  // The feats (runs, corallites, hard photos) belong to the subject whose achievements read them (SUBJECTS achFeats: the
+  // corals): another subject's answers neither extend nor break the run, as the custom quiz's (fish: none of them yet).
+  if (!SUBJ.achFeats) return achCheck();
   const A = store.get(ACHK, {}) || {},
     solo = ph.length === 1,
     run = achRunIn(cur);
@@ -853,13 +878,13 @@ function achNext() {
 }
 function achRecap(ids) {
   if (!ids.length) return;
-  if (ids.length === 1) return achPop(ACH.find(a => a.id === ids[0]));
+  if (ids.length === 1) return achPop(achFind(ids[0]));
   achPop({
     tier: 2,
     icon: '🏅',
     title: `${ids.length} achievements`,
     desc: ids
-      .map(id => (ACH.find(a => a.id === id) || {}).icon)
+      .map(id => (achFind(id) || {}).icon)
       .slice(0, 8)
       .join(' ')
   });
@@ -924,7 +949,8 @@ function viewAch() {
     const card = (a, on) =>
       `<li class="achc${on ? ' on' : ''}${fresh.has(a.id) ? ' new' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
     // The Contributions apart, below the learning ones, in their order (1st, 5th, 10th report), with the count so far.
-    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback): one per photo, and an "Other" report with a note; they never count in your progress. The share of players counts everyone who signed in.</p>
+    // The ? text: the subject's own (UNITS achHelp), else the corals' words below.
+    $v.innerHTML = `${UNITS[achSubj().id].achHelp ? UNITS[achSubj().id].achHelp() : `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback): one per photo, and an "Other" report with a note; they never count in your progress. The share of players counts everyone who signed in.</p>`}
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH_L().length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul>
   <h2 class="btitle bsec">Contributions <small>${fb ? `${fb} report${fb > 1 ? 's' : ''} sent` : 'reports and feedback you send'}${thx ? ` · ${thx} handled` : ''}</small></h2>
