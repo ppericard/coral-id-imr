@@ -11,8 +11,8 @@ const fs = require('fs'),
 const C = require('../core.js');
 
 const src = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8');
-const WALE = 't51',
-  THRESH = 't60';
+const WALE = 'f:WhaleSharks',
+  THRESH = 'f:Threshersharks';
 // One page of the app on one device: the subject on screen (fish by default), its answer count n, the device's storage
 // (saved, kept across "reloads" when passed again), a card on screen or not.
 function page({subj = 'fish', n = 0, saved = {}} = {}) {

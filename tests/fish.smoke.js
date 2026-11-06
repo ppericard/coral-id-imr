@@ -1247,14 +1247,14 @@ const server = http.createServer((req, res) => {
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
           localStorage.setItem('reefid-sync-subject', '"fish"');
           localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
-          localStorage.setItem('reefid-sync-fish-wink', '{"t60":700}'); // the thresher, met here before signing in
+          localStorage.setItem('reefid-sync-fish-wink', '{"f:Threshersharks":700}'); // the thresher, met here before signing in
         }
       } catch (e) {}
       // The sheet: the account (coral and fish progress), a hold of 5 on every load; saves recorded.
       const data = {
         'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 3, ko: 1}}),
         'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}}),
-        'reefid-sync-fish-wink': JSON.stringify({t51: 300}) // the whale shark, shown on another device of the account
+        'reefid-sync-fish-wink': JSON.stringify({'f:WhaleSharks': 300}) // the whale shark, shown on another device of the account
       };
       window.SAVES = [];
       window.SHEET_STUB = (url, o) => {
@@ -1296,7 +1296,7 @@ const server = http.createServer((req, res) => {
         return w && w.n;
       })()
     }));
-    const both = w => JSON.stringify(JSON.parse(w || '{}')) === '{"t51":300,"t60":700}';
+    const both = w => JSON.stringify(JSON.parse(w || '{}')) === '{"f:WhaleSharks":300,"f:Threshersharks":700}';
     if (!both(r.wink) || !both(r.winkSaved) || r.next !== null)
       rv.push(`sign-in: a surprise met on another device or before signing in could come again ${JSON.stringify(r)}`);
     if (r.subj !== 'fish' || !r.saved || r.saved.ok !== 10 || r.saved.ko !== 2 || r.here.ok !== 10)
