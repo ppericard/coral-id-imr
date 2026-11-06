@@ -99,31 +99,31 @@ def load_refs(fish=None):
 
 
 def add_refs(photos, J, added=(), fish=None):
-    """The reference photos (tools/fish_refs.json) into their entries' game photos, in place, once judged (J; apply then
-    keeps only those judged at the reference level, ref_level): a photo
-    already listed takes the rep tag; one of an observation already listed takes that photo's place (one photo per
-    observation, rule P4; a photo the pass added for an entry short of very easy photos stays); the others join at the end (core.js easyRank orders the list). A game photo loses a rep and
-    a reference photo that tools/fish_refs.json no longer lists, so a rerun gives the same file."""
+    """The reference photos (tools/fish_refs.json) into their entries' game photos, in place. A photo already in the game
+    takes the rep tag only (rtag marks a tag set here), and stays whatever its level (Codex review #660: a game photo is
+    never removed for being a reference photo). A new one joins at the end once judged (J; apply then keeps it only at the
+    reference level, ref_level), unless its observation is already in the game (one photo per observation, rule P4: the
+    game photo stays). core.js easyRank orders the list. A rerun gives the same file: a joined photo tools/fish_refs.json
+    no longer lists leaves, a tag it no longer lists goes."""
     R = load_refs(fish)
     want = {r["f"]: r for L in R.values() for r in L}
     for tid in list(photos):
         photos[tid] = [p for p in photos[tid] if not p.get("from") or p["f"] in want]
         for p in photos[tid]:
-            if p["f"] not in want:
+            if p.get("rtag") and p["f"] not in want:
                 p.pop("rep", None)
+                p.pop("rtag", None)
     for tid, L0 in R.items():
         L = photos.setdefault(tid, [])
         for r in L0:
-            obj = {k: v for k, v in r.items() if k != "for"}
             have = next((p for p in L if p["f"] == r["f"]), None)
             if have:
-                have.update(obj)
-            elif r["f"] in J:
-                same = next((i for i, p in enumerate(L) if p["o"] == r["o"]), None)
-                if same is None:
-                    L.append(obj)
-                elif L[same]["f"] not in added:
-                    L[same] = obj
+                if have.get("from"):
+                    have.update({k: v for k, v in r.items() if k != "for"})
+                elif r.get("rep") and have.get("rep") != r["rep"]:
+                    have.update(rep=r["rep"], rtag=1)
+            elif r["f"] in J and not any(p["o"] == r["o"] for p in L):
+                L.append({k: v for k, v in r.items() if k != "for"})
 
 
 LOOK = re.compile(r"^p1g0s[lm][1s]$")

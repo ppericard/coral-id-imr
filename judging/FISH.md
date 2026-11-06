@@ -122,7 +122,7 @@ CC0 / CC BY / CC BY-NC, the Indo-West Pacific box, not captive or dead; for a ge
 of the entry), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
 `tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
 --todo`, codes under their entry in `tools/fish_judge.json` `photos`. Once judged, each joins its entry's game photos
-(`tools/fish_judge.py` `add_refs`; it takes the place of another photo of the same observation), the iNaturalist ones and
+(`tools/fish_judge.py` `add_refs`; never in place of a game photo: one of an observation already in the game stays out), the iNaturalist ones and
 FishBase's main picture with `rep`.
 
 **Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags

@@ -285,7 +285,10 @@ def main():
         net.save()
     order = [s["id"] for s in F["species"]]
     old = json.loads(OUT.read_text(encoding="utf-8")).get("photos", {}) if OUT.exists() and only else {}
-    photos = {**old, **photos}  # an --only run keeps the other species
+    # An --only run keeps the other species and replaces those of its entries, emptied first, so a species that lost
+    # every reference photo loses its old ones too (Codex review #660).
+    mine = {sid for t in F["teach"] if t.get("level") == 1 and t["id"] in only for sid in t.get("species", [])}
+    photos = {**{k: v for k, v in old.items() if k not in mine}, **photos}
     write({"_doc": ["Reference photos of the fish units (tools/fish_refs.py, judging/FISH.md \"Reference photos\"): fish.json species id -> "
                     "photo objects (fish-photos.json's shape, plus rep, from and for: the units each represents: species ids, "
                     "g:<genus>, fam:<family>). tools/fish_judge.py adds a photo to the game photos of the entry that holds its species "

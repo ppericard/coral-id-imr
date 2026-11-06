@@ -764,7 +764,6 @@ test('reference photos: game photo rules, in play once judged, the cover where o
   const C = require('../core.js'),
     R = read('tools/fish_refs.json').photos,
     codes = Object.fromEntries(Object.values(JUDGE.photos).flatMap(m => Object.entries(m))),
-    added = new Set(Object.values(JUDGE.add || {}).flatMap(L => L.map(p => p.f))),
     refs = new Map();
   // Kept by species; a photo plays in the level-1 entry that holds its species.
   const home = {};
@@ -791,13 +790,14 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       }
     })
   );
-  // One photo per observation (a photo the pass added keeps its place).
+  // One photo per observation: a game photo is never replaced nor removed by a reference photo.
   refs.forEach(([tid, p], f) => {
     const L = PH[tid],
       g = L.find(x => x.f === f);
     // In play once judged at the reference level (core.js refLevel on the judged ease and tags), never below it.
     const lvl = f in codes && capOf(codes[f], false, false, p.rep);
-    if (lvl && C.refLevel({...p, ...lvl}) && !L.some(x => x.o === p.o && added.has(x.f)))
+    // (unless its observation is already in the game with another photo: that one stays, rule P4; Codex review #660)
+    if (lvl && C.refLevel({...p, ...lvl}) && !L.some(x => x.o === p.o && x.f !== f))
       assert.ok(g && g.rep === p.rep, `${tid} ${f}: not in play`);
     if (g && g.from) assert.ok(C.refLevel(g), `${tid} ${f}: in play below the reference level`);
     if (!(f in codes) && g) assert.ok(!g.from, `${f}: a reference photo in play without a judgement`);
