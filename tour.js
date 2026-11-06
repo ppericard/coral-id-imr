@@ -103,6 +103,7 @@
     step = 0,
     token = 0,
     picking = false, // a subject picked is loading (pick): the tour waits, buttons and keys alike
+    saving = Promise.resolve(), // the first-launch answer being saved (ask), for the subject it was asked for
     target = null,
     tick = null;
   const vis = el => {
@@ -230,7 +231,11 @@
               if (x.dataset.pick) x.setAttribute('aria-pressed', String(x === o));
               x.disabled = true;
             });
-            setSubject(id)
+            // An answer still being saved (tier 2 on a slow line) is kept for its own subject before the switch (Codex
+            // review #629: startSet writes to the subject on screen).
+            saving
+              .catch(() => {})
+              .then(() => setSubject(id))
               .then(() => {
                 picking = false;
                 store.set(SUBJECT_KEY, SUBJ.id);
@@ -249,7 +254,7 @@
             const c = o.dataset.start;
             b.querySelectorAll('[data-start]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
             // model.js comes with the quiz tier; the answer is kept as soon as it is in (a first visit on a slow line).
-            if (c !== cur) need(2).then(() => startSet(c, 'tour'));
+            if (c !== cur) saving = need(2).then(() => startSet(c, 'tour'));
             show(step + 1);
           })
       );
