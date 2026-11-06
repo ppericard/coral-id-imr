@@ -67,14 +67,14 @@ test('admin descriptor: origins and Candidates sources for the one filter bar', 
   assert.ok(!C.subjectOf('fish').admin.origins.some(o => o[0] === 'imr' || o[0] === 'book'));
 });
 
-test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to its group for now', () => {
+test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to all, its beta label kept (Q158)', () => {
   const fish = C.subjectOf('fish'),
     coral = C.subjectOf('coral');
   assert.ok(fish.beta && fish.beta.kick && fish.beta.line, 'fish keeps its beta label');
-  assert.strictEqual(fish.open, 'group', 'fish opens to the admin and its group (no change for players)');
-  assert.strictEqual(C.subjGroup(fish), true);
+  assert.strictEqual(fish.open, 'all', 'fish opens to every player (Pierre, 2026-11-06, Q158)');
+  assert.strictEqual(C.subjGroup(fish), false);
+  assert.strictEqual(C.subjGroup({...fish, open: 'group'}), true, "'group': the admin and its group only");
   assert.strictEqual(C.subjGroup(coral), false, 'the corals open to all (no field)');
-  assert.strictEqual(C.subjGroup({...fish, open: 'all'}), false, "'all': no group, the beta label kept");
   assert.strictEqual(C.subjGroup({id: 'x', beta: {kick: 'k', line: 'l'}}), false, 'a beta label alone opens to all');
   assert.strictEqual(C.subjGroup(null), false);
   C.SUBJECTS.forEach(S => assert.ok(S.open === undefined || ['group', 'all'].includes(S.open), `${S.id}.open`));

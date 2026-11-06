@@ -667,7 +667,8 @@ const server = http.createServer((req, res) => {
     }
     await c4.close();
   }
-  // A player who is not the admin (no admin token; or the admin token in ⚙ View: User), with Fish saved on this device
+  // Fish opening to a group (served so here, above): a player who is not the admin (no admin token; or the admin token in
+  // ⚙ View: User), with Fish saved on this device
   // (chosen when the switch was on Home) and fish progress: the corals on screen, fish.json not even loaded, no subject
   // switch on Home, in the header, in ⚙ or in Tools, no fish emoji on the link to Tools; a switch or a link asking for
   // Fish keeps the corals; the saved choice and the fish progress stay as they were. 390 and 1280 px.
@@ -680,6 +681,17 @@ const server = http.createServer((req, res) => {
     await c6.route(
       u => !u.href.startsWith(base),
       r => r.abort()
+    );
+    // Fish opens to all since 2026-11-06 (Q158): closed to a player outside its group, checked on fish served with
+    // open: 'group'.
+    await c6.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) ui.push("core.js: no open: 'all' to set back to 'group'");
+        await r.fulfill({response: res, body: t.replace("open: 'all'", "open: 'group'")});
+      }
     );
     await c6.addInitScript(asUser => {
       try {
@@ -761,6 +773,17 @@ const server = http.createServer((req, res) => {
       u => !u.href.startsWith(base),
       r => r.abort()
     );
+    // Fish opens to all since 2026-11-06 (Q158): the group, kept for a subject that opens to a group, on fish served
+    // with open: 'group'.
+    await c8.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) grp.push("core.js: no open: 'all' to set back to 'group'");
+        await r.fulfill({response: res, body: t.replace("open: 'all'", "open: 'group'")});
+      }
+    );
     await c8.addInitScript(old => {
       try {
         if (!sessionStorage.getItem('fish-grp')) {
@@ -834,8 +857,8 @@ const server = http.createServer((req, res) => {
     if (t2.subj !== 'coral' || t2.saved !== '"fish"') grp.push(`taken out of the group: ${JSON.stringify(t2)}`);
     await c8.close();
   }
-  // (6c) Fish open to all (core.js SUBJECTS open: 'all', the release's one field; forced here by serving core.js with fish's
-  // open: 'all'): a player who is not the admin, signed out, sees the Corals | Fish row on Home (the beta tag kept),
+  // (6c) Fish open to all (core.js SUBJECTS open: 'all', the release's one field, Pierre 2026-11-06, Q158; core.js as it
+  // is): a player who is not the admin, signed out, sees the Corals | Fish row on Home (the beta tag kept),
   // switches to Fish, answers fish questions; a reload keeps Fish; signing in (the sheet's replies put them in no group)
   // keeps Fish open and the fish progress made signed out; Corals switches back.
   const all = [];
@@ -850,8 +873,9 @@ const server = http.createServer((req, res) => {
       async r => {
         const res = await r.fetch(),
           t = await res.text();
-        if (!t.includes("open: 'group'")) all.push("core.js: no open: 'group' to force");
-        await r.fulfill({response: res, body: t.replace("open: 'group'", "open: 'all'")});
+        // Fish opens to all as it is (Pierre, 2026-11-06, Q158), served unchanged.
+        if (!t.includes("open: 'all'")) all.push('core.js: fish does not open to all');
+        await r.fulfill({response: res, body: t});
       }
     );
     await c9.addInitScript(() => {
