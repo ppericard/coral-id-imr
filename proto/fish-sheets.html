@@ -395,9 +395,9 @@
         `<div class="ph sim"><span class="myprog" style="margin:2px 0 0"><span class="mpl s3" style="--lvc:var(--lv3)">Open Water · 62%</span><span>Still needed: ${what}.</span></span></div>`;
       const famTop = (F, key) => {
         const hero = F.hero;
-        return `${bar(esc(F.sci), `${esc(F.label)} · group ${F.group}`, key)}
+        return `${bar(esc(F.label), `${esc(F.sci)} · group ${F.group}`, key)}
         <article class="sheet">
-          <div class="names"><p class="sci">${esc(F.sci)}</p><p class="com">${esc(F.label)} <span class="note">· IMR: ${esc(F.imr)}</span></p>
+          <div class="names"><p class="sci">${esc(F.label)}</p><p class="com">${esc(F.sci)}${F.imr !== F.label ? ` <span class="note">· IMR: ${esc(F.imr)}</span>` : ''}</p>
           <p class="grp">${F.group}. ${esc(F.groupTitle)} · ${esc(F.short)}</p></div>
           ${myprog('two more species right on easy photos')}
           <div class="hero">
@@ -447,7 +447,6 @@
               return `<section class="gblock"><h3><i>${esc(x.g)}</i><small>${x.species.length} species${imr ? ` · IMR entry: ${esc(imr[0])}` : ''}</small></h3>
               ${imr && imr[1].cues.length ? `<div class="tipbox"><span class="lab">ID tips (IMR) · slide ${imr[1].sl.join(', ')}</span><ul>${imr[1].cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
               <p class="ph">What sets <i>${esc(x.g)}</i> apart from the other genera of the family (agent draft, Pierre validates).</p>
-              ${imr && !imr[1].cues.length && imr[0] !== x.g ? `<p class="note">The book's index lists the ${esc(imr[0].toLowerCase())}es as an entry of their own ("Damselfishes/Anemonefishes"): a block here or a family sheet of their own is an open point.</p>` : ''}
               ${wormsNote(x.species)}${tiles(x.species)}</section>`;
             })
             .join('');
@@ -495,7 +494,7 @@
           x = F.genera.find(y => y.g === g),
           imr = imrOf(F, g),
           sib = F.genera.filter(y => y.g !== g && y.species.length > 1 && imrOf(F, y.g) && imrOf(F, y.g)[1].cues.length);
-        let h = `${bar(`<i>${esc(g)}</i>`, `genus · ${esc(F.sci)}`, key + '-b')}<article class="sheet gpage">
+        let h = `${bar(`<i>${esc(g)}</i>`, `genus · ${esc(F.label)}`, key + '-b')}<article class="sheet gpage">
           <div class="names"><p class="sci"><i>${esc(g)}</i></p><p class="com">${x.species.length} species · in <a href="#${key}-b">${esc(F.label)}</a>${imr ? ` <span class="note">· IMR entry: ${esc(imr[0])}</span>` : ''}</p></div>
           ${myprog('one more species, if Scientific names is on')}
           ${imr ? tipbox(imr[1].cues, imr[1].sl) : ''}
