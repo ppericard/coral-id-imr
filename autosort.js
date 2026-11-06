@@ -286,6 +286,103 @@
     return A;
   }
 
+  // ---- Fish Candidates (admin plan PR 5a; Pierre, 2026-11-04) ----
+  // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
+  // one observation), from the adds Pierre's keep still holds (fishMine: a reject, an exclusion or a Not this wins).
+  function fishPlay(cands, F) {
+    F = F || {};
+    const obsOf = {},
+      out = {};
+    Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && p.f && (obsOf[p.f] = p.o || p.f)));
+    Object.entries(F.add || {}).forEach(([f, sid]) => {
+      if (fishMine(F, f) === 'add') (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
+    });
+    return out;
+  }
+  // The swiper's queue (pure): every candidate Pierre has not decided (added, rejected, excluded, Not this), each with
+  // its species (sid), its observations in play (n) and target (fishTarget), and three marks:
+  // - chk: a Check of the fish auto-sort waiting for his answer (shown blind; never full nor set aside: his to answer);
+  // - full: its species is at its target and the photo would add an observation (another photo of an observation in play
+  //   adds none, so it stays); the swiper stops there (Pierre, 2026-11-04: "stop at target"), shown on demand;
+  // - aside: the pass is sure it goes (fishSure reject: a near-duplicate, the subject not obvious, out of the water) and
+  //   the auto-sort did not apply it (its keep is off): shown on demand, as the coral pre-sort's set-aside ones.
+  // Order: the thinnest species first (in play / target, then the fewest in play), its photos together; within a species
+  // the pass's best photo of an observation, another angle, not judged, a near-duplicate, then the easiest (the first
+  // questions need easy photos), then a reference photo (the flag r: a reference source shows it for the species), then
+  // a fixed order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; they came first before).
+  const FISHK = {best: 0, alt: 1, dup: 3};
+  function fishQueue(cands, sug, species, F) {
+    F = F || {};
+    const I = fishIdx(F),
+      play = fishPlay(cands, F),
+      out = [];
+    Object.entries(cands || {}).forEach(([sid, L]) => {
+      const inP = play[sid] || new Set(),
+        target = fishTarget((species || {})[sid]);
+      (L || []).forEach(p => {
+        if (!p || !p.f || fishMine(F, p.f)) return;
+        const x = I[p.f],
+          chk = !!(x && x.d.check),
+          und = !!(x && x.d.undone),
+          j = (sug || {})[p.f] || null,
+          s = fishSure(j);
+        out.push({
+          sid,
+          p,
+          j,
+          n: inP.size,
+          target,
+          chk,
+          full: !chk && inP.size >= target && !inP.has(p.o || p.f),
+          aside: !chk && !und && !!s && s.keep === 'reject'
+        });
+      });
+    });
+    const k = x => (x.j && x.j.k in FISHK ? FISHK[x.j.k] : 2),
+      ref = x =>
+        x.j &&
+        String(x.j.jt || '')
+          .slice(7)
+          .includes('r')
+          ? 1
+          : 0;
+    return out.sort(
+      (a, b) =>
+        a.n / a.target - b.n / b.target ||
+        a.n - b.n ||
+        (a.sid < b.sid ? -1 : a.sid > b.sid ? 1 : 0) ||
+        k(a) - k(b) ||
+        ((b.j && b.j.e) || 0) - ((a.j && a.j.e) || 0) ||
+        ref(b) - ref(a) ||
+        (a.p.f < b.p.f ? -1 : 1)
+    );
+  }
+  // Pierre's Add from the swiper (pure): the photo in play for its species, with the pass's tags, ease, phase and crop
+  // written beside it where he has none yet (the fish auto-sort writes its adds the same way, so every photo in play
+  // carries its tags and ease for the game, admin plan PR 7), and its "seen" mark taken off (a photo he rejected
+  // before and adds now). Not logged as auto: his own decision. A Check he answers this way keeps its log code, which
+  // fishCompare reads against his keep.
+  function fishAdd(F, f, sid, j) {
+    F = F || {};
+    const N = {...F, add: {...(F.add || {}), [f]: sid}},
+      put = (k, v) => {
+        if (v == null || (F[k] || {})[f] != null) return;
+        N[k] = {...(N[k] || {}), [f]: v};
+      };
+    if (N.seen && f in N.seen) {
+      N.seen = {...N.seen};
+      delete N.seen[f];
+    }
+    // An unsure judgment too (u: the judge doubted its code or its keep): the best description of the photo there is
+    // until Pierre's own tags (admin plan PR 5b).
+    if (j) {
+      put('tags', j.jt);
+      put('ease', j.e);
+      put('phase', j.ph);
+      put('crop', j.c);
+    }
+    return N;
+  }
   // ---- Fish photos in play, Not this, Remove (as in the fish Candidates of admin plan PR 5a and 5b) ----
   // Not this: out {f: species id} = the iNaturalist experts got the species wrong, the photo is that species' candidate
   // now; out {f: 'x'} = no game species (or unknown): gone. Only Pierre's click writes it (fishNotThis). A photo is in play
@@ -534,6 +631,95 @@
     return F.sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group) || a.i - b.i).map(({i, ...f}) => f);
   }
 
+  // Fish Coverage (admin plan PR 8; docs/ROADMAP.md "Admin for every subject" row 8): per family, genus and species, the
+  // photos in play, the observations against the target, the easy photos (ease 4-5), the reference photos, the phases shown
+  // and what is missing; and the candidates still waiting. U: fishUnits; play: {species id: [photo]} in play; species:
+  // {id: fish.json species}; cand: fish-cand.json cand {species id: [photo]}; F: the draft's fish part; j(f): the pass's
+  // judgment. Returns {fam: [row], gen: [row], sp: [row]}; a row: {id, name, fam (family id), n (photos), obs, tgt (a
+  // species' target; for a genus or family the species at target, ok, of all, of), easy, ref, ph (phases shown), wait
+  // (candidates waiting; a species also waitObs, the new observations they hold), need (what is missing, as fishNeeds
+  // words), imr}.
+  function fishCov(U, play, species, cand, F, j = () => null) {
+    F = F || {};
+    // The candidates waiting, by the species they wait in now: one Pierre sent elsewhere with Not this waits there
+    // (fishState; Codex review #659).
+    const waiting = {};
+    Object.entries(cand || {}).forEach(([orig, L]) =>
+      L.forEach(p => {
+        const x = fishState(F, p.f, orig);
+        if (x.st === null) (waiting[x.sid] = waiting[x.sid] || []).push(p);
+      })
+    );
+    const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
+      isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
+      spRow = (sid, fam) => {
+        const L = play[sid] || [],
+          s = species[sid] || {},
+          obs = new Set(L.map(p => p.o || p.f)).size,
+          tgt = fishTarget(s),
+          W = waiting[sid] || [],
+          seen = new Set(L.map(p => p.o || p.f)),
+          need = [];
+        if (!L.length) need.push('No photo in play');
+        else if (obs < tgt) need.push(`${tgt - obs} observations under target`);
+        return {
+          id: sid,
+          name: s.common || s.name || sid,
+          sci: s.name || '',
+          fam,
+          circle: s.circle,
+          cs: !!s.cs,
+          n: L.length,
+          obs,
+          tgt,
+          easy: L.filter(p => ease(p) >= 4).length,
+          ref: L.filter(isRef).length,
+          ph: [...new Set(L.map(p => fishPhase(p, j(p.f), F)).filter(Boolean))],
+          wait: W.length,
+          // the observations the waiting candidates would add (one observation counts once; Codex review #659)
+          waitObs: new Set(W.map(p => p.o || p.f).filter(o => !seen.has(o))).size,
+          need
+        };
+      },
+      sum = (rows, base) => ({
+        ...base,
+        n: rows.reduce((a, r) => a + r.n, 0),
+        obs: rows.reduce((a, r) => a + r.obs, 0),
+        ok: rows.filter(r => r.obs >= r.tgt).length,
+        of: rows.length,
+        easy: rows.reduce((a, r) => a + r.easy, 0),
+        ref: rows.reduce((a, r) => a + r.ref, 0),
+        ph: [...new Set(rows.flatMap(r => r.ph))],
+        wait: rows.reduce((a, r) => a + r.wait, 0)
+      }),
+      out = {fam: [], gen: [], sp: []};
+    U.forEach(u => {
+      const S = u.species.filter(s => species[s] && !species[s].out).map(s => spRow(s, u.id)),
+        by = Object.fromEntries(S.map(r => [r.id, r]));
+      out.sp.push(...S);
+      u.genera.forEach(g => {
+        const R = g.species.map(s => by[s]).filter(Boolean);
+        if (!R.length) return;
+        const r = sum(R, {id: g.id, name: g.name, fam: u.id, imr: g.imr});
+        r.need = [...(r.of - r.ok ? [`${r.of - r.ok} species under target`] : []), ...(r.n ? [] : ['No photo in play'])];
+        out.gen.push(r);
+      });
+      const r = sum(S, {id: u.id, name: u.name, fam: u.id, imr: u.imr || (u.imrWith ? 'with ' + u.imrWith : ''), circle: u.circle});
+      r.want = fishUnitPhases(u);
+      r.need = fishNeeds(u, play, species, F, j);
+      out.fam.push(r);
+    });
+    return out;
+  }
+  // Where to look (fish): the species most worth a candidate search, those under target whose waiting candidates cannot
+  // fill the gap; the IMR course's (circle 1) first, then the PDF's most sighted (cs), then the largest gap. [{...species
+  // row, gap}], best first.
+  const fishLook = C =>
+    C.sp
+      .map(r => ({...r, gap: Math.max(0, r.tgt - r.obs - r.waitObs)}))
+      .filter(r => r.gap > 0)
+      .sort((a, b) => (a.circle || 9) - (b.circle || 9) || b.cs - a.cs || b.gap - a.gap || (a.id < b.id ? -1 : 1));
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -721,6 +907,9 @@
     fishOwn,
     fishSigs,
     fishStamp,
+    fishPlay,
+    fishQueue,
+    fishAdd,
     fishState,
     fishPhase,
     fishNotThis,
@@ -738,6 +927,8 @@
     FISHEASY,
     fishNeeds,
     fishUnits,
+    fishCov,
+    fishLook,
     autoCode,
     autoParse,
     autoIdx,
