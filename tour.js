@@ -102,6 +102,7 @@
   let root = null,
     step = 0,
     token = 0,
+    picking = false, // a subject picked is loading (pick): the tour waits, buttons and keys alike
     target = null,
     tick = null;
   const vis = el => {
@@ -221,18 +222,24 @@
         o =>
           (o.onclick = () => {
             const id = o.dataset.pick,
-              all = b.querySelectorAll('[data-pick]'),
+              all = [...b.querySelectorAll('[data-pick], .tnext, .tback')],
               my = token;
+            // Next, Back and the arrow keys wait too, so the question drawn next is the picked subject's (Codex review #629).
+            picking = true;
             all.forEach(x => {
-              x.setAttribute('aria-pressed', String(x === o));
+              if (x.dataset.pick) x.setAttribute('aria-pressed', String(x === o));
               x.disabled = true;
             });
             setSubject(id)
               .then(() => {
+                picking = false;
                 store.set(SUBJECT_KEY, SUBJ.id);
                 if (my === token && root) show(step + 1);
               })
-              .catch(() => all.forEach(x => (x.disabled = false)));
+              .catch(() => {
+                picking = false;
+                all.forEach(x => (x.disabled = false));
+              });
           })
       );
     if (s.ask)
@@ -417,6 +424,7 @@
     if (!root) return;
     const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step + 1).some(s => s.signin);
     token++;
+    picking = false;
     try {
       sessionStorage.removeItem(KEY);
       sessionStorage.removeItem(KEY + '-open');
@@ -440,6 +448,7 @@
   function onKey(e) {
     if (e.key === 'Escape') return close(null, true);
     if (e.target.closest && e.target.closest('input, textarea, select')) return;
+    if (picking && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return e.preventDefault();
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       // The first-launch question is answered before the tour goes on (forced, Pierre 2026-11-03).

@@ -414,9 +414,15 @@ async function overlays(b, base) {
     const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('reefid-nudge', '1'));
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+    // Fish open to every player (Q158): the subject to pick first (tour.js pick), and where to switch after the question.
+    const two = !!(await p.$('#tour [data-pick="coral"]'));
+    if (two) {
+      await p.click('#tour [data-pick="coral"]');
+      await p.waitForSelector('#tour [data-start="imr"]', {timeout: 5000}).catch(() => {});
+    }
     await p.click('#tour [data-start="imr"]'); // the first-launch question first (tour.js ask): it moves on by itself
     await p.waitForTimeout(300);
-    for (let k = 0; k < at; k++) {
+    for (let k = 0; k < at + (two ? 1 : 0); k++) {
       await p.keyboard.press('ArrowRight');
       await p.waitForTimeout(300);
     }
@@ -4050,7 +4056,15 @@ async function subjTour(b, base) {
       () => !!document.querySelector('#tour [data-pick="fish"][aria-pressed="true"]') && !!document.querySelector('#tour .tnext')
     );
     if (!back) fails.push('subject tour, group: Back to the choice does not show Fish picked with Next');
-    await tap(p, '#tour .tnext', 'step');
+    // Picked again: Next, Back and the arrow keys wait while the subject loads, so the question that follows is the picked
+    // subject's (Codex review #629); then the tour goes on by itself, as from Next.
+    const held = await p.evaluate(() => {
+      document.querySelector('#tour [data-pick="fish"]').click();
+      const n = document.querySelector('#tour .tnext'),
+        k = document.querySelector('#tour .tback');
+      return !!n && n.disabled && (!k || k.disabled); // no Back on a first step
+    });
+    if (!held) fails.push('subject tour, group: Next or Back live while the picked subject loads');
     await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
     await tap(p, '#tour [data-start="imr"]', 'step');
     await p.waitForTimeout(400);
