@@ -3587,7 +3587,9 @@ function renderTriage() {
       .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`);
   };
   const reps = repsOpen();
-  if (!FISHA && reps.some(r => /^fi\d/.test(r[10] || '') || /^t\d/.test(r[5] || ''))) fishAdmin();
+  // A fish report: an old entry id (t01) or a family or genus id (f:, g:; units plan PR 4), or a fish photo (stopgap fi…,
+  // FishBase reference fb…, curated candidate fish-…; Codex review #656).
+  if (!FISHA && reps.some(r => /^(fi\d|fb|fish-)/.test(r[10] || '') || /^(t\d|f:|g:)/.test(r[5] || ''))) fishAdmin();
   const repCard = r => {
     const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
       play = !/^(photo|sheet|page)$/.test(m),

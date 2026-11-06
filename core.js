@@ -247,7 +247,7 @@
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
   // to another family (Diploprion: the Soapfishes, not IMR's Groupers); names: each family's name. Read through the
-  // subject (SUBJECTS renamed: renamedId, renameUnits, renameLogEntry), never by name; tests/fishunits.test.js checks it
+  // subject (SUBJECTS renamed: renamedId, renameUnits, renameLogEntry), never by name; tests/fishrename.test.js checks it
   // against fish.json. Kept while old ids may still arrive (an app from before the switch, a saved copy, the log).
   const FISH_RENAMED = {
     ids: {
@@ -438,7 +438,7 @@
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
       beta: {
         kick: 'Something fishy…',
-        line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
+        line: '<b>Fish is in beta</b>: the families of the IMR survey fish, iNaturalist photos for now. Feedback welcome.'
       },
       // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
       // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
@@ -446,7 +446,7 @@
       open: 'all',
       views: [['wide', 'Photo']],
       optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
-      // family: an IMR entry (the game's family level, Damselfish; two entries may share a scientific family).
+      // family: a family of the book (the game's family level, f:Damselfishes: Pierre, 2026-11-06; the IMR course a tag).
       rank: 'family',
       renamed: FISH_RENAMED,
       replay: false,
@@ -527,13 +527,15 @@
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
   const startText = (s, c) => ((subjectOf(s).start || {}).opts || {})[c] || null;
 
-  // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). Level 1 of the game = the teaching
-  // entries of level 1 (the 27 IMR entries of circle 1, then circles 2 and 3), each made into a record the engine reads
-  // like a coral genus's (app.js GX): {id, name, fam, look (teaching ids, sub-entries folded into their entry), lk (how to
-  // tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, fish.json
+  // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). The game's family level = the book's
+  // families (fish.json families, Pierre 2026-11-06: the game's units are the families, genera and species, not the IMR
+  // entries; the IMR course a tag, imr), each made into a record the engine reads like a coral genus's (app.js GX): {id
+  // (f:Damselfishes), name (the book's English name), fam (the line under it: scientific names, IMR's name), imr, look
+  // (family ids), lk (how to tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, fish.json
   // key: the index of a reef fish ID book for the Indo-Pacific; rule S3), forms (that group: the wrong choices
   // start in other groups, as coral growth forms), ig (the same group), cm (how common near Dauin), views {wide:
-  // photos}, levels 1, circle, wink, names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
+  // photos}, levels 1, circle, wink, names (accepted when typed)}. photos: fish-photos.json "photos" (old entry id -> photo
+  // objects, each to its species' family).
   // key: the identification key in force ({id, region, cite (full), short}, null for a region with none) and groups its
   // groups in its order ({n, title, pages}).
   // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
@@ -595,47 +597,78 @@
   function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
-      start = new Set(F.start || []),
-      top = id => String(id).slice(0, 3);
+      start = new Set((F.start || []).map(id => FISH_RENAMED.ids[id] || id)),
+      gens = new Map((F.genera || []).map(g => [g.id, g]));
+    // The game photos by family: a photo goes to its species' family (fish-photos.json lists them by old entry id).
+    const famOf = new Map();
+    (F.families || []).forEach(f => f.species.forEach(id => famOf.set(id, f.id)));
+    // The IMR entries teaching each family's species: their other common names (aka) and names in common use (often,
+    // corrected gently: Clownfish for Anemonefish) stay accepted when typed (fish beta QA, #657).
+    const teachOf = new Map();
     (F.teach || [])
-      .filter(t => t.level === 1)
-      .forEach(t => {
-        const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0);
-        gen[t.id] = {
-          id: t.id,
-          name: t.name,
-          fam: t.fam,
-          wfam: t.wfam || [],
-          fish: 1,
-          circle: t.circle,
-          group: t.group || 0,
-          ig: t.group || 0,
-          forms: t.group ? ['g' + t.group] : [],
-          look: [...new Set((t.look || []).map(([id]) => top(id)).filter(id => id !== t.id))],
-          lk: (t.look || []).map(([id, txt]) => [top(id), txt]),
-          lsrc: Object.fromEntries(
-            (t.look || []).map(([id]) => [top(id), 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])
-          ),
-          qt: t.cues && t.cues.length ? t.cues : null,
-          sum: t.why || t.note || '',
-          phase: t.phase || [],
-          sub: (t.sub || []).map(s => s.name),
-          cm: Math.round(Math.sqrt(dauin)),
-          levels: 1,
-          // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
-          views: {
-            wide: easyRank(
-              ((photos || {})[t.id] || [])
-                .filter(p => p && p.f && p.src && !sheetOnly(p))
-                .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
-            )
-          },
-          ...(start.has(t.id) ? {first: 1} : {}),
-          ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
-          names: fishNames(t),
-          ...(fishOften(t).length ? {oft: fishOften(t)} : {})
-        };
-      });
+      .filter(x => x.level === 1)
+      .forEach(x =>
+        (x.species || []).forEach(id => {
+          const fid = famOf.get(id);
+          if (fid) teachOf.set(fid, new Set([...(teachOf.get(fid) || []), x]));
+        })
+      );
+    const byFam = {};
+    Object.entries(photos || {}).forEach(([tid, L]) =>
+      (L || []).forEach(p => {
+        const fid = famOf.get(p && p.sp) || FISH_RENAMED.ids[tid];
+        if (fid) (byFam[fid] = byFam[fid] || []).push(p);
+      })
+    );
+    (F.families || []).forEach(t => {
+      const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0),
+        imrGen = (t.genera || []).map(id => gens.get(id)).filter(g => g && g.imr);
+      gen[t.id] = {
+        id: t.id,
+        name: t.name,
+        // The line under its name: the scientific name or names (the book's family is not always one taxonomic family),
+        // then IMR's name when it differs (the IMR tag), or the IMR entry that teaches its species.
+        fam: [
+          (t.sci || []).join(', '),
+          t.imr && t.imr !== t.name ? 'IMR: ' + t.imr : '',
+          t.imrWith ? 'IMR course: with the ' + t.imrWith : ''
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        wfam: [],
+        imrName: t.imr || '', // the IMR tag (IMR's name), read by the opening for "I'm at IMR" (model.js openPick)
+        fish: 1,
+        circle: t.circle,
+        group: t.group || 0,
+        ig: t.group || 0,
+        forms: t.group ? ['g' + t.group] : [],
+        look: [...new Set((t.look || []).map(([id]) => id).filter(id => id !== t.id))],
+        lk: (t.look || []).map(([id, txt]) => [id, txt]),
+        // Each look-alike line's source: the family's own (fish.json lsrc, Pierre's declared groups, #662), else the slides.
+        lsrc:
+          t.lsrc ||
+          Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+        qt: t.cues && t.cues.length ? t.cues : null,
+        sum: t.why || t.note || '',
+        phase: t.phase || [],
+        // The names IMR uses inside it (its sub-entries: Chromis, Anemonefish, Bannerfish...), each once.
+        sub: [...new Set(imrGen.map(g => g.imr))],
+        cm: Math.round(Math.sqrt(dauin)),
+        levels: 1,
+        // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
+        views: {
+          wide: easyRank(
+            (byFam[t.id] || [])
+              .filter(p => p && p.f && p.src && !sheetOnly(p))
+              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+          )
+        },
+        ...(start.has(t.id) ? {first: 1} : {}),
+        ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
+        names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
+        ...([...(teachOf.get(t.id) || [])].flatMap(fishOften).length ? {oft: [...(teachOf.get(t.id) || [])].flatMap(fishOften)} : {})
+      };
+    });
     Object.values(gen).forEach(g => {
       if (g.views.wide.length) g.cover = g.views.wide[0].f;
     });
@@ -718,24 +751,27 @@
     });
     return out;
   }
-  // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, rule S2): its IMR name,
-  // the parts of a double one ("Surgeonfish & Unicornfish"), its family as IMR writes it and the WoRMS families, and the
-  // sub-entries IMR names inside it (Chromis, Bannerfish...), and the other common names curated for it or a sub-entry
-  // (aka: tools/fish_source.json, Tang; often: a name in common use that the answer's feedback corrects gently, Clownfish
-  // for Anemonefish, fishOften). The first is the name shown.
-  function fishNames(t) {
-    const parts = String(t.name || '')
+  // The names a family is known by, accepted when typed (rule S2): the book's name, IMR's (the IMR tag) and the parts of a
+  // double one ("Surgeonfish & Unicornfish"), its scientific names, the names IMR uses inside it with their genera
+  // (Chromis, Anemonefish, Amphiprion: a finer name, still right), and the other common names curated for the IMR entries
+  // teaching its species or their sub-entries (T: aka, tools/fish_source.json, Tang; often: a name in common use that the
+  // answer's feedback corrects gently, Clownfish for Anemonefish, fishOften). The first is the name shown.
+  function fishNames(t, imrGen, T) {
+    const parts = String(t.imr || '')
       .split(/\s*&\s*|\s+and\s+/)
       .filter(Boolean);
     return [
       ...new Set([
         t.name,
+        t.imr,
         ...(parts.length > 1 ? parts : []),
-        t.fam,
-        ...(t.wfam || []),
-        ...(t.aka || []),
-        ...(t.often || []),
-        ...(t.sub || []).flatMap(s => [s.name, ...(s.aka || []), ...(s.often || [])])
+        ...(t.sci || []),
+        ...(imrGen || []).flatMap(g => [g.imr, g.name]),
+        ...(T || []).flatMap(x => [
+          ...(x.aka || []),
+          ...(x.often || []),
+          ...(x.sub || []).flatMap(u => [...(u.aka || []), ...(u.often || [])])
+        ])
       ])
     ].filter(Boolean);
   }
@@ -850,7 +886,8 @@
   // the record with more answers stays (a count map adds up). The object itself when nothing is renamed.
   function renameUnits(S, o) {
     const R = S && S.renamed;
-    if (!R || !isObj(o) || !Object.keys(o).some(k => R.ids[k] || isObj(o[k]))) return o;
+    const old = m => isObj(m) && Object.keys(m).some(k => R.ids[k]);
+    if (!R || !isObj(o) || !Object.keys(o).some(k => R.ids[k] || (isObj(o[k]) && (old(o[k].conf) || old(o[k].off))))) return o;
     const n = x => (isObj(x) ? (Number(x.ok) || 0) + (Number(x.ko) || 0) : -1),
       counts = m => {
         if (!isObj(m) || !Object.keys(m).some(k => R.ids[k])) return m;
