@@ -2136,3 +2136,31 @@ test('v58 (Codex review #603): page summaries of another generation are filed un
   assert.strictEqual(who('po1'), '', 'the old generation: no player');
   assert.notStrictEqual(who('po2'), '', 'its own generation: the player');
 });
+
+test("v58 (Codex review #603): a save's reply carries the account generation, so the creating device knows it at once", () => {
+  const s = loadCodeGs();
+  const r = s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('c1')]});
+  assert.strictEqual(typeof r.acct, 'string');
+  assert.strictEqual(r.acct, s.get({name: 'Ana', pin: '1234'}).acct);
+  assert.strictEqual(s.post({name: 'Ana', pin: '1234', acct: r.acct, data: prog(2), summary: {}, answers: []}).acct, r.acct);
+});
+
+test('v58 (Codex review #603): a report of another generation has no reporter whatever its code (another code, throttled)', () => {
+  const s = seed();
+  const old = s.get({name: 'Ana', pin: '1234'}).acct;
+  s.post({userArchive: {from: 'Ana', into: 'Ana-old'}, token: TOK});
+  s.post({name: 'Ana', pin: '5678', data: prog(1), summary: {}, answers: [ans('n1')]});
+  s.post({rname: 'Ana', rpin: '1234', racct: old, reports: [rep('qb1')]});
+  // Throttled: wrong codes for the name, then the old device's report.
+  for (let k = 0; k < 6; k++) s.get({name: 'Ana', pin: '000' + k});
+  s.post({rname: 'Ana', rpin: '1234', racct: old, reports: [rep('qb2')]});
+  const row = id => s.sheets.Reports.rows.find(x => x && x[11] === id);
+  assert.deepStrictEqual(
+    ['qb1', 'qb2'].map(id => [row(id)[1], row(id)[2]]),
+    [
+      ['', 0],
+      ['', 0]
+    ]
+  );
+  assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').reports, 0);
+});

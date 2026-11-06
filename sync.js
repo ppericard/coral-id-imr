@@ -545,6 +545,12 @@ function syncOnce(tries = 0) {
     })
     .then(j => {
       if (!j || SYNC !== me) return j;
+      // The account's generation from the save's reply (sheet v58): the device that created the account knows it at once,
+      // so a record archived and taken again before its next load is still told apart (Codex review #603).
+      if (j.ok && typeof j.acct === 'string' && j.acct && !me.acct) {
+        me.acct = j.acct;
+        store.set('reefid-account', me);
+      }
       // Answers the sheet confirmed are dropped from the queue even when the progress write itself was refused.
       if (j.log && log.length) {
         const done = new Set(log.map(x => x.id));

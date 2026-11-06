@@ -1209,6 +1209,9 @@ async function overlays(b, base) {
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('.ans button, .tyq input', {timeout: 15000}).catch(() => {});
+    // The thanks is due once curation.json is in (Pierre's Done): on a slow runner it can come after the first answer,
+    // and the card then waits for a later break, so the check waits for it (a flake on CI, #603).
+    await p.waitForFunction(() => helpedIds().length > 0, null, {timeout: 10000}).catch(() => {});
     const q1 = await card(2000); // the question waits for its answer: no card
     const typed = await p.$('.tyq input');
     if (typed) (await p.fill('.tyq input', 'Acropora'), await p.keyboard.press('Enter'));
