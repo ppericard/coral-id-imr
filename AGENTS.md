@@ -113,7 +113,7 @@ what stops is everything that involves him.
   with real names, leaving out what he already handled or excluded. Rule 0 decides when it reaches him.
 - **Dependabot PRs** (the GitHub Actions versions) are the integrator's to merge once green, as rule W9 says.
 - **The `needs-pierre` label** marks a PR that waits for Pierre: the integrator's own reminder (Pierre does not browse
-  GitHub), not the source of truth. Before merging, read the PR's open questions themselves; remove the label in the
+  GitHub), not the source of truth. Such a PR is opened ready, never as a draft (rule W6). Before merging, read the PR's open questions themselves; remove the label in the
   same step that records his answer.
 - **If Pierre switches back to claude.ai Projects** (a coordinator chat without the repository, each thread its own
   Claude Code session): each thread is its own integrator and merges its own PRs under this same contract.
