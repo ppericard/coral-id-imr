@@ -4294,6 +4294,7 @@ function renderRetest(f, seg) {
     );
   };
   bindAuto($v);
+  swFit();
 }
 const cseed = () => {
   let s = store.get('reefid-admin-cseed', 0);
@@ -4644,7 +4645,15 @@ function renderCand() {
   candKeys();
 }
 // The swipers' keys (the corals' and the fish's, admin-fish.js): ← Reject, → Skip, 1-3 the Add buttons.
+// Where the swiper starts on the page, under the header, the tab row and the demo banner (admin.css .adm-sw: its
+// height is the screen below it, so the decision bar stays on the first screen; Pierre, 2026-11-06). Read after each
+// swiper render and when something above it changes size.
+function swFit() {
+  const S = $v.querySelector('.adm-sw');
+  if (S) document.documentElement.style.setProperty('--sw-top', Math.round(S.getBoundingClientRect().top + scrollY) + 'px');
+}
 function candKeys() {
+  swFit(); // every swiper's render ends here
   if (!candKey) {
     candKey = e => {
       if (cur !== '~cand' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,textarea,select') || !$('lightbox').hidden)
@@ -5070,12 +5079,12 @@ async function start() {
   const hd = document.querySelector('header');
   if (hd && window.ResizeObserver)
     new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
-  // Where the page starts, under the header, the tab row and the demo banner: the swiper's one screen (admin.css .adm-sw).
-  // Body changes size whenever one of them does.
-  if (window.ResizeObserver)
-    new ResizeObserver(() =>
-      document.documentElement.style.setProperty('--sw-top', Math.round($v.getBoundingClientRect().top + scrollY) + 'px')
-    ).observe(document.body);
+  // The swiper's one screen (swFit): again whenever the header, the tab row or the demo banner change size.
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => swFit());
+    [hd, $('subnav'), document.querySelector('.adm-demo')].forEach(e => e && ro.observe(e));
+  }
+  window.addEventListener('resize', () => swFit());
   const sb = $('subnav');
   if (sb && window.ResizeObserver)
     new ResizeObserver(() =>

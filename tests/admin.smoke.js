@@ -2899,6 +2899,7 @@ const WIDTHS = [390, 1280];
         if (await p.$('[data-ff]')) fails.push(`${w}px Candidates: fish auto decisions on the coral Candidates`);
         await go('fish/~cand');
         await p.evaluate(() => {
+          AOPEN = true; // the Auto line unfolded (its chip), Details open
           ADET = true;
           render();
         });
@@ -2942,6 +2943,7 @@ const WIDTHS = [390, 1280];
         if (fl.n0 !== 30 || !fl.b || fl.n1 < 36) fails.push(`${w}px Fish auto-sort: All for over 30 decisions ${JSON.stringify(fl)}`);
         await p.evaluate(() => {
           ADET = false;
+          AOPEN = false;
         });
         // The fish swiper's clicks (admin plan PR 5a, admin-fish.js; autosort.js fishAdd, fishReject, fishExclude): the
         // Check FC answered + Add (in play for its species with the pass's tags and ease, its log code timed, the
