@@ -253,14 +253,19 @@ chat history or memory. *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; 
 
 ### W20
 
-**Corals: remind Pierre when a genus runs short of candidates.** The candidate search (`tools/fetch_local.py`) runs on request
-only. At the start of a working session and in recaps, run `python3 tools/cand_gaps.py`: game genera with fewer than 5
-candidate photos waiting in `cand.json`, listed only when iNaturalist still has something the search would take near
-Dauin or in the Philippines. The search stays in the Philippines, nearest first (within 250 km of Dauin, then the rest
-of the country), and only when the whole country has nothing left, photos taken elsewhere of species confirmed in the
-Philippines (rule C8); never a species not confirmed in the Philippines; no reminder when it cannot find anything
-better. If it lists any, tell Pierre and offer to run the search for them. The choice of photos stays his (rule W10).
-*Source:* Pierre, 2026-11-02; the search area, 2026-11-03; subject-neutral wording, 2026-11-06.
+**When a unit runs short of candidate photos, the tools fetch more automatically; when none are left, they note it and
+stop.** After each Publish the "Candidate photos" workflow refills the lists: coral genera up to their caps
+(`tools/fetch_local.py`), and the short fish species (`tools/fetch_fish.py --refill`: under the cap of Q36 net of what
+Pierre rejected, excluded or sent elsewhere, or short of easy photos; a few dozen a run, the shortest first). "No more
+candidates is no more candidates": a fish species whose search found nothing more is noted with the day
+(`tools/fish_refill.json`) and searched again only a month later; for corals, `python3 tools/cand_gaps.py` lists the
+game genera with fewer than 5 candidate photos waiting only when iNaturalist still has something the search would take,
+never one with nothing better. Each search keeps its subject's area and rules (ARCHITECTURE "Photos", "Fish
+candidates"): abroad only for species confirmed in the Philippines (rule C8), never what Pierre rejected or excluded.
+The choice of photos stays his (rule W10).
+*Why:* a unit short of photos should not wait for someone to notice, and a search with nothing left should not keep
+asking iNaturalist (rule C7).
+*Source:* Pierre, 2026-11-02; the search area, 2026-11-03; subject-neutral, automatic, 2026-11-06 (Q171).
 
 ### W21
 
