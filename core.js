@@ -203,6 +203,8 @@
   //   base    the sign-in record's fields for the progress last sent or received ([base, pending], sync.js mergeSaved)
   //   name, one, many, what, lecture: words of the interface (Corals; genus, genera; Coral to identify; the IMR coral
   //           lecture). Names of units: app.js uname (a genus in italics, a fish entry by its IMR name)
+  //   icon    its icon in the subject switches, the app's (app.js subjIcon) and the admin's (admin.js): SVG inside a
+  //           24 px viewBox, the one icon set (a branching coral, a fish)
   //   beta    a subject still in beta: {kick, line}, Home's Learn door top line and description once it is chosen (line:
   //           HTML), and a "beta" tag on its buttons. The label only: who sees the subject is open
   //   open    who the subject opens to (subjGroup): 'all' (the default, the corals: every player, signed out included) or
@@ -363,6 +365,7 @@
       dev: '',
       base: ['base', 'pending'],
       name: 'Corals',
+      icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
       one: 'genus',
       many: 'genera',
       what: 'Coral',
@@ -422,6 +425,7 @@
       dev: 'fish-',
       base: ['fbase', 'fpending'],
       name: 'Fish',
+      icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
       one: 'family',
       many: 'families',
       what: 'Fish',

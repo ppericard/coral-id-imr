@@ -49,12 +49,8 @@
    "keep": "best"
   },
   "fish-s400-cand-706286142": {
-   "code": "p1g1ss11",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "Seen from a boat through the surface; the shark is hard to make out"
+   "code": "d0g1ml12",
+   "keep": "dup"
   },
   "fish-s400-cand-706286177": {
    "code": "o0g1sl13",
@@ -85,32 +81,20 @@
    "keep": "best"
   },
   "fish-s400-cand-756792577": {
-   "code": "d0g2ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Seen from a boat through the surface; I cannot find the shark for sure"
+   "code": "d1g2bmx1",
+   "keep": "best"
   },
   "fish-s400-cand-709337243": {
-   "code": "p1g3bsx1",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "Murky blue; I cannot find the shark for sure"
+   "code": "p1g2bsx1",
+   "keep": "dup"
   },
   "fish-s400-cand-709337334": {
    "code": "p1g3bsx1",
    "keep": "dup"
   },
   "fish-s400-cand-709337396": {
-   "code": "p1g3ssx1",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "A small strip of photo between black borders; the shark is tiny"
+   "code": "p1g2bsx1",
+   "keep": "dup"
   },
   "fish-s400-cand-710892035": {
    "code": "d1g2sm12",

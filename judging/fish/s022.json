@@ -29,20 +29,12 @@
    "keep": "dup"
   },
   "fish-s022-cand-282879059": {
-   "code": "p1g2sm12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Dark brown fish: the rare dark colour phase, not the usual yellow"
+   "code": "d1g2mm12",
+   "keep": "dup"
   },
   "fish-s022-cand-282894056": {
-   "code": "p1g1sl13",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "Dark brown fish: the rare dark colour phase, not the usual yellow"
+   "code": "p1g1ml13",
+   "keep": "best"
   },
   "fish-s022-cand-690292550": {
    "code": "o1g1sl14",
@@ -93,12 +85,8 @@
    "keep": "best"
   },
   "fish-s022-cand-407522452": {
-   "code": "p1g2sm12",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "Dark fish beside the yellow ones: maybe the dark colour phase"
+   "code": "p1g2mm12",
+   "keep": "alt"
   },
   "fish-s022-cand-407522449": {
    "code": "p1g2ssm2",
