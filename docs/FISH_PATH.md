@@ -86,6 +86,21 @@ is the design's shorthand, and internal identifiers may keep it.
   in the score simulation (`tools/fishscore.js --names tools/fish_common.json`) a common-names-only player reaches 80% after
   about 2.6 times as many answers as with one name each.
 
+## Typed family names (fish beta QA, 2026-11-06)
+
+- A family (IMR entry) typed is matched against its names (`core.js` `fishNames`) and, as a general rule (Pierre,
+  2026-11-06: "trigger", "clown", "damsel"), each of them without "fish": as a suffix, a separate word or a plural
+  ("Trigger", "Trigger fish", "Triggerfishes", "Triggers"), unless that short form is within the spelling tolerance of
+  another entry's name or short form (then typing it is no answer, as before). Filefishes and Pipefishes are that close,
+  so "filefishes" asks the player to check the spelling.
+- A name in common use, accepted as right and corrected gently (Pierre, 2026-11-06, Q164): `often` in
+  `tools/fish_source.json` (copied to `fish.json`), Clownfish on Anemonefish (in Damselfish). "clown", "clownfish" typed
+  read "✓ Yes, Anemonefish (often called clownfish): it's Damselfish" (`core.js` `fishOften`, `oft`; `quiz.js`
+  `typeStep`, the spelling step's one-line style).
+- Other common names, accepted when typed, never shown (Pierre, 2026-11-06, Q164: all OK): `aka`: Tang (Surgeonfish & Unicornfish), Cowfish and Trunkfish (Boxfish),
+  Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
+  sharks).
+
 ## The very start (fish beta feedback, Pierre, 2026-11-04)
 
 The first fish questions must be easy and readable. Two decisions, each built in its own code PR:

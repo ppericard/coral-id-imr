@@ -927,12 +927,16 @@ function boardNotice() {
         syncSoon();
       }
     });
-  if (!SYNC || store.get('reefid-board-told', 0)) return;
+  // Said on a subject that has the leaderboard (SUBJECTS board) only: on another (Fish), it waits for a later load
+  // (fish beta QA, 2026-11-06: it covered the bottom of fish Home right after Fish was chosen). A switch of subject
+  // while it shows takes it away and it is due again (app.js setSubject, toastsOff).
+  if (!SYNC || store.get('reefid-board-told', 0) || !SUBJ.board) return;
   store.set('reefid-board-told', 1);
   const t = appToast(
     '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
     15000
   );
+  t.dataset.again = 'reefid-board-told';
   t.querySelector('a').onclick = () => t.remove();
 }
 // Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
@@ -1221,6 +1225,14 @@ function subjHello() {
       esc: 2
     });
   }, HELLO.WAIT);
+}
+// The notes on screen go when the subject changes (they speak of the subject that was on screen); one marked
+// data-again (its "told" key) is due again later.
+function toastsOff() {
+  document.querySelectorAll('.apptoast').forEach(t => {
+    if (t.dataset.again) store.set(t.dataset.again, 0);
+    t.remove();
+  });
 }
 // A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by
 // ✕ or after ms.

@@ -142,8 +142,11 @@ const typeRead = (m, text, sp) =>
 // retype was exact (Pierre, 2026-11-06: no mistake left to point out, so the plain "✓ Yes, it's X"). Else {spelled}: the
 // name as it is spelled, the letters the last try got wrong marked (typeSpell, .tysp), in italics as uname (a fish entry
 // upright), and old: the name typed was an old one (alt: another name of a fish entry), so the line names the unit after it.
+// A name in common use typed (m.oft, core.js fishOften: Clownfish), with no spelling left to fix: {oft}, so the line says
+// the usual name gently (Pierre, 2026-11-06, Q164: "✓ Yes, Anemonefish (often called clownfish)").
 const typeStep = (m, text, sp) => {
-  if (!sp || !m || m.exact || sp.r) return null;
+  if (!m) return null;
+  if (!sp || m.exact || sp.r) return m.oft ? {oft: m.oft} : null;
   const name = m.old || unameT(m.g),
     s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
   return {spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
@@ -285,6 +288,9 @@ function question(cur, target, choices, prompt, set, kq) {
 function fitStage() {
   const q = $v.querySelector('.q');
   if (!q) return;
+  // The page's intro (gameHelp) goes behind ? first: its observer (app.js pageHelp) only runs after the question is drawn,
+  // and measured under it the stage got the minimum height (fish beta QA, 2026-11-06: Q1 in a small letterboxed box).
+  pageHelp();
   const tab = tabH();
   q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16 - tab) + 'px');
   const st = q.querySelector('.qstage');
@@ -754,7 +760,9 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
     // the name is what the eye catches (Pierre, 2026-11-06; .fb h3.tystep).
     said = !step
       ? `it's ${name}`
-      : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
+      : step.oft
+        ? `<b>${esc(step.oft[0])}</b> (often called ${esc(step.oft[1].toLowerCase())}): it's ${name}`
+        : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
