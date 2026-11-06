@@ -2131,6 +2131,9 @@
       const L = rows.map(r => V[r][f]).filter(v => v != null);
       mu[f] = mean(L);
       sd[f] = Math.sqrt(mean(L.map(v => (v - mu[f]) ** 2)));
+      // players who all share one value have no spread: what is left is the rounding of the mean (Codex review #604:
+      // seven identical log(40) read ±1 SD each), so a spread under a billionth of the values' size counts as none
+      if (sd[f] <= 1e-9 * Math.max(1, Math.abs(mu[f]))) sd[f] = 0;
     }
     return id => V[id].map((v, f) => (v == null || !sd[f] ? 0 : (v - mu[f]) / sd[f]));
   }

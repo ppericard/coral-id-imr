@@ -2,7 +2,9 @@
 # Photos out of the repo, step 3: the history rewrite (docs/HANDOVER.md). Prepared 2026-11-05 for Pierre's go.
 #
 #   ./rewrite.sh prepare      backup (mirror + bundle) and rewrite in a bare clone, all checks; pushes NOTHING
-#   GO=yes ./rewrite.sh push  force-pushes every rewritten branch at once (--atomic, --force-with-lease on each old sha)
+#   GO=yes ./rewrite.sh canary B  optional: force-pushes branch B alone (can this machine force-push?)
+#   GO=yes ./rewrite.sh push  force-pushes every rewritten branch at once (--atomic, --force-with-lease on each old sha),
+#                             leaving the canary's branch as it is
 #   ./rewrite.sh verify       checks GitHub after the push (no branch holds the old history; fresh clone size)
 #   GO=yes ./rewrite.sh rollback   puts every branch back to the backup's sha (only if something went wrong)
 #
@@ -161,17 +163,61 @@ print('\n'.join(f'img/{f}{x}.webp' for f in sorted(P.online(P.records(sys.argv[1
   say "prepared: nothing pushed. Next, with Pierre's go and Block force pushes off: GO=yes $0 push"
 }
 
+# origin is always $URL (filter-repo removes the clone's own, which pointed at backup.git)
+remote() { git remote set-url origin "$URL" 2>/dev/null || git remote add origin "$URL"; }
+
+# GitHub's refs against the backup (old-heads.txt) and the rewrite (new-heads.txt), one line per ref in WORK/plan.txt:
+#   PUSH <old sha> <ref>   still at its backup sha: pushed, --force-with-lease on that sha
+#   DONE <ref>             already at its rewritten sha (the canary): left as it is
+#   MOVED <ref> <why>      anything else (a new commit, a new or deleted ref): the push aborts
+plan() {
+  git ls-remote --heads --tags "$URL" | grep -v '\^{}$' > "$WORK/live.txt"
+  awk 'FILENAME == ARGV[1] { o[$2] = $1; next } FILENAME == ARGV[2] { n[$2] = $1; next } { l[$2] = $1 }
+    END {
+      for (r in l) if (!(r in o)) print "MOVED " r " new on GitHub"
+      for (r in o) {
+        if ((r in l) && l[r] == o[r]) print "PUSH " o[r] " " r
+        else if ((r in l) && (r in n) && l[r] == n[r]) print "DONE " r
+        else print "MOVED " r " " ((r in l) ? l[r] : "deleted")
+      }
+    }' "$WORK/old-heads.txt" "$WORK/new-heads.txt" "$WORK/live.txt" | sort > "$WORK/plan.txt"
+  if grep -q '^MOVED ' "$WORK/plan.txt"; then
+    grep '^MOVED ' "$WORK/plan.txt" | tee -a "$LOG"
+    die "GitHub moved since the backup: start again with a new WORK"
+  fi
+}
+
 push() {
   [ "${GO:-}" = yes ] || [ -n "${DRY:-}" ] || die "set GO=yes (Pierre's explicit go, Block force pushes off); DRY=1 for git push --dry-run"
   cd "$WORK/rewrite.git"
-  git remote get-url origin >/dev/null 2>&1 || git remote add origin "$URL"
-  # Nothing may have moved on GitHub since the backup: --force-with-lease on each old sha, all or nothing.
-  live=$(git ls-remote --heads --tags "$URL" | grep -v '\^{}$' | awk '{print $1" "$2}' | sort)
-  [ "$live" = "$(sort "$WORK/old-heads.txt")" ] || { diff <(echo "$live") <(sort "$WORK/old-heads.txt") || true; die "GitHub moved since the backup: start again with a new WORK"; }
+  remote
+  # Nothing may have moved on GitHub since the backup but the refs already pushed by the canary: --force-with-lease on
+  # each old sha, all or nothing.
+  plan
   args=(); specs=()
-  while read -r old ref; do args+=("--force-with-lease=$ref:$old"); specs+=("$ref:$ref"); done < "$WORK/old-heads.txt"
+  while read -r _ old ref; do args+=("--force-with-lease=$ref:$old"); specs+=("$ref:$ref"); done < <(grep '^PUSH ' "$WORK/plan.txt")
+  done=$(grep -c '^DONE ' "$WORK/plan.txt" || true)
+  [ "$done" = 0 ] || say "$done ref(s) already rewritten on GitHub (the canary): left as they are"
+  [ ${#specs[@]} -gt 0 ] || { say "nothing left to push"; return; }
   say "push --atomic of ${#specs[@]} refs"
   git -c push.negotiate=false push ${DRY:+--dry-run} --atomic "${args[@]}" origin "${specs[@]}" 2>&1 | tee -a "$LOG"
+}
+
+# One branch alone, to see whether this machine may force-push at all; push then leaves it as it is (DONE).
+canary() {
+  [ "${GO:-}" = yes ] || die "set GO=yes (Pierre's explicit go, Block force pushes off)"
+  ref=refs/heads/${1:?usage: GO=yes $0 canary <branch>}
+  cd "$WORK/rewrite.git"
+  remote
+  plan
+  line=$(grep " $ref\$" "$WORK/plan.txt" || true)
+  case "$line" in
+    "PUSH "*) old=$(echo "$line" | cut -d' ' -f2) ;;
+    "DONE "*) say "$ref is already rewritten on GitHub"; return ;;
+    *) die "$ref is not a branch of the backup" ;;
+  esac
+  say "canary: $ref alone"
+  git -c push.negotiate=false push --force-with-lease="$ref:$old" origin "$ref:$ref" 2>&1 | tee -a "$LOG"
 }
 
 verify() {
@@ -195,6 +241,6 @@ rollback() {
 }
 
 case "${1:-}" in
-  prepare) prepare ;; push) push ;; verify) verify ;; rollback) rollback ;;
-  *) sed -n '2,12p' "$0"; exit 2 ;;
+  prepare) prepare ;; canary) canary "${2:-}" ;; push) push ;; verify) verify ;; rollback) rollback ;;
+  *) sed -n '2,14p' "$0"; exit 2 ;;
 esac
