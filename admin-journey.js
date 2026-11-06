@@ -760,7 +760,7 @@ function sessProg(id, all, L, S, PG) {
   if (m && m.ans === ANS && m.S === S && m.PG === PG && m.mem === SMEM && m.n === L.length) return m.v;
   const ok = S && !S.err,
     reset = ok && S.reset ? Date.parse(S.reset) : 0,
-    o = {gen: DATA.gen, mem: SMEM, conf: SCONF, since: reset ? {[id]: reset} : {}, starts: ok && S.start ? {[id]: S.start} : {}},
+    o = {gen: DATA.gen, mem: SMEM, conf: SCONF, fmt: SFMT, since: reset ? {[id]: reset} : {}, starts: ok && S.start ? {[id]: S.start} : {}},
     t0 = L[0][1],
     A = replayProgress(
       all.filter(r => r[1] < t0),

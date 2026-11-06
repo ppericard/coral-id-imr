@@ -808,3 +808,118 @@ test('the first-launch prior in the live ability only from sheet v36 (Codex revi
   // A subject whose answers are not logged (fish) is never replayed: its welcome answer's prior applies at once.
   assert.strictEqual(at(C.START_SHEET - 1, C.subjectOf('fish')), at(C.START_SHEET), 'fish: the prior with any sheet');
 });
+
+// Per-format offsets (Pierre, 2026-11-06, Q138; core.js fmtOf, fmtOffsetsOf, fmtOff; rules version 6).
+test('fmtOffsetsOf: a format right more often than its guess rate explains gets a positive offset, from trusted answers', () => {
+  const rows = [];
+  // Two trusted players: 4-choice questions as expected (80% right at e 0.8), 2-of-4-plausible ones right 95% of the
+  // time where the app expected 70%, typed ones right 50% at e 0.8.
+  for (const id of ['p1', 'p2'])
+    for (let i = 0; i < 40; i++) {
+      rows.push([id, T0 + i * 3, 'A', i % 5 ? 'A' : 'B', i % 5 ? 1 : 0, 'quiz', 'a-1', 0.8, 1, 0, 'A B C D']);
+      rows.push([id, T0 + i * 3 + 1, 'A', i % 20 ? 'A' : 'B', i % 20 ? 1 : 0, 'quiz|k2', 'a-2', 0.7, 1, 0, 'A B C D']);
+      if (i < 15) rows.push([id, T0 + i * 3 + 2, 'A', i % 2 ? 'A' : '', i % 2, 'quiz|t', 'a-3', 0.8, 1, 0, '']);
+    }
+  // A player at chance (never trusted): their misses on 2-choice questions move nothing.
+  for (let i = 0; i < 40; i++) rows.push(['bot', T0 + 500 + i, 'A', 'B', 0, 'quiz|k2', 'a-2', 0.7, 1, 0, 'A B C D']);
+  const F = C.fmtOffsetsOf(rows);
+  assert.ok(Math.abs(F.k4[0]) < 0.15, JSON.stringify(F));
+  assert.ok(F.k2[0] > 1, 'easier than 1 in 2 explains: ' + JSON.stringify(F));
+  assert.strictEqual(F.k2[1], 80, 'the trusted answers only');
+  assert.ok(F.typed[0] < -0.5, 'typed: harder than the app thought');
+  // The prior N(0, FMT.SD^2) keeps a format near 0 on few answers; under FMT.N answers, no offset served.
+  const few = rows.filter(r => r[5] !== 'quiz|k2' || r[1] % 3 === 1).filter((r, i) => r[5] !== 'quiz|k2' || i % 4 === 0);
+  const Ff = C.fmtOffsetsOf(few);
+  assert.ok(!Ff.k2 || Ff.k2[1] >= C.FMT.N, JSON.stringify(Ff));
+  assert.ok(!C.fmtOffsetsOf(rows.filter(r => r[5] !== 'quiz|t')).typed);
+  assert.strictEqual(C.fmtOff(F, 'k2'), F.k2[0]);
+  assert.strictEqual(C.fmtOff(F, 'exam'), 0);
+  assert.strictEqual(C.fmtOff(null, 'k2'), 0);
+  // Read only from a sheet that serves and replays them (rule D4).
+  assert.deepStrictEqual(C.fmtsOf({v: C.FMT_SHEET - 1, fmt: F}), {});
+  assert.deepStrictEqual(C.fmtsOf({v: C.FMT_SHEET, fmt: F}), F);
+});
+
+test('replayProgress with the format offsets: a right 2-choice answer the format explains raises the ability less', () => {
+  const rows = [];
+  for (let i = 0; i < 12; i++) {
+    const r = row('p', i, 'A', i % 4 ? 'A' : 'C', 'a-' + i, 'A C', eAt(1, 0.5, 2), 1);
+    r[5] = 'quiz|k2';
+    rows.push(r);
+  }
+  const th = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P.A.th,
+    lv = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P[C.LEVEL].th;
+  // No offsets (an older sheet), or none for this format: exactly as before.
+  assert.strictEqual(th({fmt: {}}), th({}));
+  assert.strictEqual(th({fmt: {k4: [0.5, 100]}}), th({}));
+  // An offset of +1 on Again questions (2 choices shown): each right answer was expected more, so it moves less, and
+  // each miss more; the global level the same way.
+  assert.ok(th({fmt: {again: [1, 100]}}) < th({}), [th({fmt: {again: [1, 100]}}), th({})].join(' '));
+  assert.ok(lv({fmt: {again: [1, 100]}}) < lv({}));
+  // The progress weights are not the offsets' (the bar comes later): the moving average replays the same.
+  assert.strictEqual(C.replayProgress(rows, {gen: GEN, fmt: {again: [1, 100]}}).p.P.A.pg !== undefined, true);
+});
+
+test('the format offset is scored by scoreAnswer, logged in the scoring record (o) and replayed as logged, not from fmt', () => {
+  // scoreRec keeps o (3 decimals), drops it at 0; scoreIn rounds df as logged.
+  assert.deepStrictEqual(C.scoreRec({d: 0.5, o: 1.14159}), {d: 0.5, o: 1.142});
+  assert.deepStrictEqual(C.scoreRec({d: 0.5, o: 0}), {d: 0.5});
+  const q0 = {t: 'A', c: 'A', ok: true, k: 2, chs: ['A', 'C'], ph: ['a-1'], d0: 0.5, fam: 0, cf: 0, p: 0, timed: false};
+  const qi = C.scoreIn({...q0, df: 1.14159});
+  assert.strictEqual(qi.df, 1.142);
+  // The offset takes the ability steps' expectation only: the genus and the level move less on a right answer the format
+  // explains, the progress weight and the logged e stay as without it.
+  const P1 = {},
+    P0 = {},
+    r1 = C.scoreAnswer(P1, qi),
+    r0 = C.scoreAnswer(P0, C.scoreIn(q0));
+  assert.ok(P1.A.th < P0.A.th && P1[C.LEVEL].th < P0[C.LEVEL].th, [P1.A.th, P0.A.th].join(' '));
+  assert.deepStrictEqual([r1.e, r1.w, P1.A.pg], [r0.e, r0.w, P0.A.pg]);
+  assert.deepStrictEqual(C.scoreLog(qi, r1).o, 1.142);
+  assert.strictEqual(C.scoreLog(C.scoreIn(q0), r0).o, undefined);
+  // The replay: a row with a scoring record replays its logged o whatever fmt says now (Q132: what the game scored).
+  const rows = [];
+  for (let i = 0; i < 8; i++) {
+    const r = row('p', i, 'A', i % 4 ? 'A' : 'C', 'a-' + i, 'A C', eAt(1, 0.5, 2), 1);
+    r[5] = 'quiz|k2';
+    while (r.length < C.LOG_SC) r.push(null);
+    r[C.LOG_SC] = C.scoreRec({d: 0.5, o: i < 4 ? 1 : 0});
+    rows.push(r);
+  }
+  const th = o => C.replayProgress(rows, {gen: GEN, ...o}).p.P.A.th;
+  assert.strictEqual(th({fmt: {again: [3, 100]}}), th({}), 'fmt is not read for a row with a scoring record');
+  const none = rows.map(r => [...r.slice(0, C.LOG_SC), C.scoreRec({d: 0.5})]);
+  assert.ok(th({}) !== C.replayProgress(none, {gen: GEN}).p.P.A.th, 'the logged offsets move the replay');
+});
+
+test('Code.gs serves the same per-format offsets as core.js fmtOffsetsOf (?stats=1 fmt, v77)', () => {
+  const {loadCodeGs} = require('./gas.js');
+  const s = loadCodeGs();
+  let n = 0;
+  for (const who of ['Ana', 'Ben'])
+    for (let i = 0; i < 40; i++)
+      s.post({
+        name: who,
+        pin: '1234',
+        data: {},
+        summary: {},
+        answers: [
+          {
+            id: 'f' + n++,
+            t: new Date(Date.UTC(2026, 10, 6, 0, 0, n)).toISOString(),
+            g: 'Acropora',
+            a: i % 6 ? 'Acropora' : 'Porites',
+            ok: i % 6 ? 1 : 0,
+            m: ['quiz', 'quiz|k2', 'quiz-duel|Acropora|Porites', 'quiz|t'][i % 4],
+            ch: i % 4 === 3 ? '' : i % 4 === 2 ? 'Acropora Porites' : 'Acropora Porites Favites Montipora',
+            ph: 'acropora-' + (i % 3),
+            e: [0.8, 0.7, 0.75, 0.8][i % 4],
+            th: 1
+          }
+        ]
+      });
+  const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows,
+    st = s.get({stats: '1'});
+  assert.deepStrictEqual(st.fmt, C.fmtOffsetsOf(rows));
+  assert.deepStrictEqual(Object.keys(st.fmt).sort(), ['duel', 'k2', 'k4', 'typed']);
+});
