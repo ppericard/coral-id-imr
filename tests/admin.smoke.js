@@ -472,6 +472,19 @@ const WIDTHS = [390, 1280];
           const ng = await p.evaluate(() => FISHC.units.filter(u => u.imr || u.imrWith).reduce((a, u) => a + u.genera.length, 0));
           if (c.rows !== ng) fails.push(`${w}px Fish Coverage, IMR genera: ${JSON.stringify({...c, ng})}`);
           await p.click('.adm-fishcov [data-fuimr="all"]');
+          // A To do chip shows only its rows; a second click, every row again (Codex review #659).
+          const chip = await p.evaluate(() => {
+            const b = document.querySelector('[data-fishtodo="spnone"]') || document.querySelector('[data-fishtodo]');
+            return b && {k: b.dataset.fishtodo, n: parseInt(b.textContent, 10)};
+          });
+          if (chip) {
+            await p.click(`[data-fishtodo="${chip.k}"]`);
+            c = await cv();
+            if (c.rows !== chip.n) fails.push(`${w}px Fish Coverage, To do ${chip.k}: ${c.rows} rows, not ${chip.n}`);
+            await p.click(`[data-fishtodo="${chip.k}"]`);
+            if ((await cv()).rows === chip.n && chip.n < 20)
+              fails.push(`${w}px Fish Coverage, To do ${chip.k}: the second click kept the filter`);
+          }
           await p.click('[data-fishlv="fam"][aria-pressed]');
           await go(other.hash + 'inbox/coverage/games?look=all');
           const n5 = (await cv()).look;
