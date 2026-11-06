@@ -1161,10 +1161,10 @@ function sorryNotice() {
   });
 }
 // The cards that tell a player about a subject (app.js UNITS hello), one per way the subject opens (core.js SUBJECTS open,
-// subjGroup): hello.group while it opens to a group, hello.all once it opens to everyone (none yet: Pierre will open fish
-// to all himself, and its "Big news" card comes then). Pierre, 2026-11-05: "a proper card the player closes, shown once,
-// at a calm moment", not a toast, which may go unread; 2026-11-06: while fish stays open to a group he picks, the card is
-// an invitation to test the fish beta, for the players of that group only.
+// subjGroup): hello.group while it opens to a group, hello.all once it opens to everyone (fish since Q158: the same
+// invitation to every player, while the subject keeps its beta label). Pierre, 2026-11-05: "a proper card the player
+// closes, shown once, at a calm moment", not a toast, which may go unread; 2026-11-06: while fish stays open to a group
+// he picks, the card is an invitation to test the fish beta, for the players of that group only.
 // Each card is seen once per device, under its own key (subjDev: reefid-fish-hello-group), so a later card is not hidden
 // by an earlier one. hello.group goes only to a player in the subject's group (subjGroups: never the admin's own access,
 // IS_ADMIN, nor anyone while the subject is open to all); hello.all to anyone the subject is open to (subjOpen). Never in
