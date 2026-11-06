@@ -264,6 +264,27 @@
     if (!x || !c || !(x.d.w || []).includes(field)) return F;
     return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[ar][tepc]*?)${c}`), '$1')}}};
   }
+  // When Pierre answers a fish Check or corrects a fish auto decision, the time goes into its log code (@t), so the fish
+  // agreement window follows the order he answered in, as autoStamp does for the corals (Codex review #400). fishSigs:
+  // his keep on each compared photo; fishStamp: the new fish "auto" map with the time t (seconds) on every photo whose keep
+  // changed since `before` (fishSigs of the previous draft's fish part), or null when nothing changed. (The same text as
+  // the fish Candidates' #602: whichever merges second keeps one copy.)
+  function fishSigs(F) {
+    const S = {};
+    fishCompare(F).forEach(c => (S[c.f] = c.p));
+    return S;
+  }
+  function fishStamp(F, before, t) {
+    const I = fishIdx(F);
+    let A = null;
+    Object.entries(fishSigs(F)).forEach(([f, s]) => {
+      if ((before || {})[f] === s || !I[f]) return;
+      const {day, code} = I[f];
+      A = A || {...F.auto};
+      A[day] = {...A[day], [f]: withT(code, t)};
+    });
+    return A;
+  }
 
   // ---- Fish photos in play, Not this, Remove (as in the fish Candidates of admin plan PR 5a and 5b) ----
   // Not this: out {f: species id} = the iNaturalist experts got the species wrong, the photo is that species' candidate
@@ -683,6 +704,8 @@
     fishRun,
     fishUndo,
     fishOwn,
+    fishSigs,
+    fishStamp,
     fishOn,
     fishState,
     fishPhase,

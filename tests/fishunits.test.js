@@ -168,3 +168,12 @@ test('fishNeeds: each species up to its target, 5 easy photos, every IMR phase, 
   const p2 = {s1: [...obs('s1', 7), {f: 's1-dup', o: 's1-o0'}], s2: play.s2};
   assert.deepStrictEqual(A.fishNeeds(t, p2, sp, F), ['1 species under target']);
 });
+
+test('fishStamp: a Remove of a photo the fish auto-sort put in play is timed in its log code (Codex review #655)', () => {
+  const F0 = {add: {a: 's1', b: 's1'}, auto: {d1: {a: 'at', b: 'a'}}},
+    before = A.fishSigs(F0),
+    F1 = A.fishReject(A.fishDrop(F0, 'f:A', 'a'), 'a'),
+    S = A.fishStamp(F1, before, 36 * 36);
+  assert.deepStrictEqual(S, {d1: {a: 'at@100', b: 'a'}});
+  assert.strictEqual(A.fishStamp(F0, before, 1), null, 'nothing changed: nothing timed');
+});

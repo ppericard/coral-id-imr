@@ -301,15 +301,24 @@ function step(from, to, msg) {
 // the agreement window follows the order he answered in (Codex review #400). Found by comparing his answers per photo
 // with those of the draft before this click (snap; recomputed only when undo, redo or another tab changed it).
 let ASIG = null,
+  FSIG = null,
   ASIG_OF = null;
+// The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG): a
+// Remove, × or Not this on a photo the fish auto-sort put in play (Photos › Families) is timed (Codex review #655).
 function autoWhen() {
   if (ASIG_OF !== snap) {
-    ASIG = autoSigs(JSON.parse(snap));
+    const S = JSON.parse(snap);
+    ASIG = autoSigs(S);
+    FSIG = fishSigs((S || {}).fish);
     ASIG_OF = snap;
   }
-  const A = autoStamp(DRAFT, ASIG, Date.now() / 1000);
+  const t = Date.now() / 1000,
+    A = autoStamp(DRAFT, ASIG, t),
+    FA = DRAFT.fish && fishStamp(DRAFT.fish, FSIG, t);
   if (A) DRAFT.auto = A;
+  if (FA) DRAFT.fish = {...DRAFT.fish, auto: FA};
   ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
+  FSIG = fishSigs(DRAFT.fish);
 }
 const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
@@ -1599,6 +1608,9 @@ const fuImr = u =>
     : u.imrWith
       ? `<span class="adm-src adm-imrt" title="IMR course: taught with the ${esc(u.imrWith)}">IMR</span>`
       : '';
+// A fish photo with its crop for the previews (crSrc, through its suggested-crop path): Pierre's (curation.json fish crop,
+// [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655).
+const fuP = p => (p ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null}} : p);
 const fuHref = id => '#' + ASUBJ.hash + FAMS + '/' + encodeURIComponent(id);
 // Everything the page needs from the draft, once per render: each species' photos in play, the photos sent elsewhere
 // with Not this, and the species whose photos changed since the published file (the list's dots).
@@ -1643,7 +1655,7 @@ function fuTile(sid, p, st, cover, picked, F, XI) {
     jt = (F.tags || {})[p.f] || (fuJ(p.f) || {}).jt || '',
     isCover = cover && cover.f === p.f;
   return `<figure class="adm-tile${st.num ? ' is-feat' : ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-sid="${esc(sid)}">
-    <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img src="${esc(img(p, 1))}" alt="" loading="lazy" draggable="false">` : ''}</button><button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>
+    <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button><button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>
     ${st.num ? `<span class="adm-num">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption><span class="adm-src o-${o}">${esc((ASUBJ.admin.origins.find(y => y[0] === o) || [, o])[2])}</span>${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span></figcaption>
@@ -1652,7 +1664,7 @@ function fuTile(sid, p, st, cover, picked, F, XI) {
 // The wink's surprise card as players meet it (quiz.js winkShow): its photo, "Which family?", its name among the three
 // absurd choices (the right one marked), and both feedback lines.
 const fuWink = (u, cover) =>
-  `<section class="adm-row adm-wink"><h3>Wink <small>a surprise card, never counted</small></h3><div class="adm-winkc">${cover && cover.src ? `<img src="${esc(img(cover, 1))}" alt="">` : '<span class="none"></span>'}<div><p class="adm-winkq">Which ${esc(ASUBJ.one)}? <span class="adm-src">Surprise</span></p><div class="adm-winka">${[[u.id, u.name], ...(u.wink.choices || [])].map(([id, l]) => `<span class="${id === u.id ? 'ok' : ''}">${esc(l)}</span>`).join('')}</div>${u.wink.right ? `<p><b>✓</b> ${esc(u.wink.right)}</p>` : ''}${u.wink.wrong ? `<p><b>✗</b> ${esc(u.wink.wrong)}</p>` : ''}</div></div></section>`;
+  `<section class="adm-row adm-wink"><h3>Wink <small>a surprise card, never counted</small></h3><div class="adm-winkc">${cover && cover.src ? `<img ${crSrc(fuP(cover), 1)} alt="">` : '<span class="none"></span>'}<div><p class="adm-winkq">Which ${esc(ASUBJ.one)}? <span class="adm-src">Surprise</span></p><div class="adm-winka">${[[u.id, u.name], ...(u.wink.choices || [])].map(([id, l]) => `<span class="${id === u.id ? 'ok' : ''}">${esc(l)}</span>`).join('')}</div>${u.wink.right ? `<p><b>✓</b> ${esc(u.wink.right)}</p>` : ''}${u.wink.wrong ? `<p><b>✗</b> ${esc(u.wink.wrong)}</p>` : ''}</div></div></section>`;
 function renderFishUnits(id) {
   if (!FISHC) {
     status();
@@ -1687,7 +1699,7 @@ function renderFishUnits(id) {
           ? `<p class="adm-fgrp">${x.group == null ? 'No key group' : `${x.group} · ${esc(FISHC.groups[x.group] || '')}`}</p>`
           : '';
     lastG = x.group;
-    return `${gh}<a href="${esc(fuHref(x.id))}" class="adm-g${x.id === u.id ? ' cur' : ''}"${x.id === u.id ? ' aria-current="true"' : ''}>${c && c.src ? `<img src="${esc(img(c, 1))}" alt="" loading="lazy">` : '<span class="none"></span>'}<span>${esc(x.name)} ${fuImr(x)}
+    return `${gh}<a href="${esc(fuHref(x.id))}" class="adm-g${x.id === u.id ? ' cur' : ''}"${x.id === u.id ? ' aria-current="true"' : ''}>${c && c.src ? `<img ${crSrc(fuP(c), 1)} alt="" loading="lazy">` : '<span class="none"></span>'}<span>${esc(x.name)} ${fuImr(x)}
       <small><i>${esc(x.sci.join(', '))}</i> · ${x.wink ? 'wink' : `circle ${x.circle}`} · ${E[x.id].n} sp.${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${E[x.id].k.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`;
   }).join('');
   const cnt = o => e.all.filter(p => origin(p) === o).length,
@@ -1723,7 +1735,7 @@ function renderFishUnits(id) {
     outRow = G.length
       ? `<section class="adm-row adm-out"><h3>Not this species <small>${G.length} photo${G.length > 1 ? 's' : ''}</small></h3>
     <div class="adm-grid">${G.map(
-      p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img src="${esc(img(p, 1))}" alt="" loading="lazy">` : ''}</button>
+      p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy">` : ''}</button>
       <figcaption><span class="adm-t"><i>${esc(fuName(p.sid))}</i> → ${p.to === 'x' ? 'no game species' : `<i>${esc(fuName(p.to))}</i>`}</span></figcaption>
       <div class="adm-acts"><button type="button" data-fu="back">Put back</button></div></figure>`
     ).join('')}</div></section>`
@@ -1731,7 +1743,7 @@ function renderFishUnits(id) {
   const opts = U.map(
     x => `<option value="${esc(x.id)}"${x.id === u.id ? ' selected' : ''}>${esc(x.name)}${x.imr || x.imrWith ? ' · IMR' : ''}</option>`
   ).join('');
-  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img src="${esc(img(cv, 1))}" alt="${esc(u.name)} cover"></button>` : ''}<b class="adm-sname">${esc(u.name)} ${fuImr(u)}<small><i>${esc(u.sci.join(', '))}</i></small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select><button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}${FB.origins({cnt})}</div>`;
+  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(u.name)} cover"></button>` : ''}<b class="adm-sname">${esc(u.name)} ${fuImr(u)}<small><i>${esc(u.sci.join(', '))}</i></small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select><button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}${FB.origins({cnt})}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="${cap1(ASUBJ.many)}"><select id="gsel" aria-label="${cap1(ASUBJ.one)}">${opts}</select><span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
       ['all', 'All'],
@@ -1762,7 +1774,7 @@ function renderFishUnits(id) {
       fx(F => fishOk(F, u.id));
     };
   // Every photo of the family in the page's order, for the enlarged photo's ‹ ›.
-  const Z = [...e.all, ...G];
+  const Z = [...e.all, ...G].map(fuP);
   $v.querySelectorAll('[data-fu]').forEach(el => {
     const a = el.dataset.fu,
       tl = el.closest('[data-f]'),
