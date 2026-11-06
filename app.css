@@ -6525,6 +6525,12 @@ html.touring .unlock {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The units unlocked, "30/40 genera unlocked" (progress.js unlockText): its own line under the name, in ink, the count bold. */
+.pbtxt > .pbunl {
+  font-style: normal;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
 .pbtxt > span {
   color: var(--muted);
   /* The levels line can be long ("2 Instructor · 3 Advanced diver"): its parts go to a second line instead of out of the
@@ -6537,7 +6543,8 @@ html.touring .unlock {
 .pbtxt > span > * {
   white-space: nowrap;
 }
-.pbtxt > span > :not(:first-child)::before {
+/* A dot between two parts shown (the rank stays hidden until the Elo is due, the levels line is empty at first). */
+.pbtxt > span > :not([hidden]) ~ :not([hidden])::before {
   content: ' · ';
   color: var(--muted);
 }
