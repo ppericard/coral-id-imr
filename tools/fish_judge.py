@@ -33,13 +33,13 @@ SRC = ROOT / "tools" / "fish_judge.json"
 REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/fish_refs.py)
 PHOTOS = ROOT / "fish-photos.json"
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$")
-EARLY = 4  # very easy (judging/FISH.md): the photos of an entry's first questions (model.js easyFirst)
+EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entry's start (model.js photoSet)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
 # A reference photo (`rep`: the photo a reference source uses to represent the species, FishBase's main picture or
 # iNaturalist's taxon photo; Pierre, 2026-11-05: "such photos are easy to identify, so they should come early in the quiz
 # for a beginner") is one ease point easier than its visual code says, the caps applied after (a juvenile or a night shot
-# stays capped). One point lifts a medium photo (3) into the very easy ones of the first questions (model.js easyFirst).
+# stays capped). One point lifts a medium photo (3) into the very easy ones (4-5).
 REP_BONUS = 1
 
 

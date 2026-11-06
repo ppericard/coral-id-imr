@@ -808,12 +808,23 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       if (p.rep || p.from) assert.ok(refs.has(p.f) && refs.get(p.f)[0] === tid, `${tid} ${p.f}: not in tools/fish_refs.json`);
     })
   );
-  const X = C.fishGen(F, PH);
-  Object.values(X.gen).forEach(g => {
-    const L = g.views.wide,
-      top = Math.max(...L.map(p => p.e || 3));
-    // Reference level (core.js refLevel): a source's reference photo judged very easy, or ease 5 with the reference look.
-    if (L.some(p => C.refLevel(p))) assert.ok(C.refLevel(L.find(p => p.f === g.cover)), `${g.id}: its cover is not reference level`);
-    else if (L.some(p => p.rep && (p.e || 3) === top)) assert.ok(L.find(p => p.f === g.cover).rep, `${g.id}: its cover`);
-  });
+  // On the stopgap list, and on the game as it plays (core.js fishPhotos: Pierre's curated photos beside it; the reference
+  // photos stay even on an entry that plays on its curated photos).
+  const CUR = read('curation.json'),
+    GM = read('fish-game.json').photos,
+    played = C.fishPhotos(PH, GM, CUR, F);
+  Object.entries(PH).forEach(([tid, L]) =>
+    L.filter(p => p.from).forEach(p =>
+      assert.ok((played[tid] || []).some(x => x.f === p.f) || CUR.fish.seen?.[p.f], `${tid} ${p.f}: dropped from play`)
+    )
+  );
+  [C.fishGen(F, PH), C.fishGen(F, played)].forEach(X =>
+    Object.values(X.gen).forEach(g => {
+      const L = g.views.wide,
+        top = Math.max(...L.map(p => p.e || 3));
+      // Reference level (core.js refLevel): a source's reference photo judged very easy, or ease 5 with the reference look.
+      if (L.some(p => C.refLevel(p))) assert.ok(C.refLevel(L.find(p => p.f === g.cover)), `${g.id}: its cover is not reference level`);
+      else if (L.some(p => p.rep && (p.e || 3) === top)) assert.ok(L.find(p => p.f === g.cover).rep, `${g.id}: its cover`);
+    })
+  );
 });

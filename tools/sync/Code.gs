@@ -2217,8 +2217,8 @@ const CORE_ = (function () { const module = {exports: {}};
       b = /-cand-fb-(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
-  // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more, model.js PDIFF.EARLY:
-  // the photos of its first questions, easyFirst), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
+  // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
+  // draw favours at the start, judging/FISH.md), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
   // easy photos; tools/fish_judge.py WANT); with fewer, the stopgap's photos join its curated ones.
   const FISHPH = {MIN: 5, EASY: 4};
   // fishPhotos(stop, game, cur): {teaching id: [photo]}, what fishGen takes. stop: fish-photos.json photos; game:
@@ -2253,7 +2253,9 @@ const CORE_ = (function () { const module = {exports: {}};
       );
       if (C.filter(p => (p.e || 0) >= FISHPH.EASY).length < FISHPH.MIN) return (out[t] = [...C, ...S]);
       const have = new Set(C.map(genus));
-      out[t] = [...C, ...S.filter(p => genus(p) && !have.has(genus(p)))];
+      // The units' reference photos (tools/fish_refs.py, judged at the reference level: from) stay too (Pierre, 2026-11-06:
+      // the covers and first photos are reference photos, whoever took them).
+      out[t] = [...C, ...S.filter(p => p.from || (genus(p) && !have.has(genus(p))))];
     });
     return out;
   }
