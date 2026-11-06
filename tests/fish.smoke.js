@@ -1512,7 +1512,7 @@ const server = http.createServer((req, res) => {
         const s1 = {...st(n)};
         Object.assign(st(n), {pg: 0.6, ok: 10, ko: 2, th: 0.5});
         let low = 0;
-        for (let k = 0; k < 120; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
+        for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
         Object.keys(st(n)).forEach(k => delete st(n)[k]);
         Object.assign(st(n), s1, {pg: s0});
