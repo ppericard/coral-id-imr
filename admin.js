@@ -1281,6 +1281,10 @@ const subjTodo = (S, tn) => {
   const F = DRAFT[S.admin.cur] || {};
   return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length + Object.keys(F.flag || {}).length;
 };
+// A subject's icon on the switch (core.js SUBJECTS icon, the app's set: app.js subjIcon), its name beside it on wider
+// screens only (admin.css .adm-sjn; Pierre, 2026-11-06: a mini switch in the top bar, as the app's header).
+const subjSvg = S =>
+  `<svg class="sji" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.icon}</svg>`;
 // A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
 const LIVE = 'photos/genera/live';
 const genusHref = g => '#' + LIVE + '/' + encodeURIComponent(g);
@@ -1538,7 +1542,7 @@ function navs(tn, xn) {
           : typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) && !shared(back)
             ? back
             : homeOf(S);
-      return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+      return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     // On a shared page (the list of players) the switch is inert: the page is the same on both sides; it still shows the
     // side the other pages are on.

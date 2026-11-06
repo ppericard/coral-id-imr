@@ -32,7 +32,10 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
     assert.ok(Array.isArray(s.optin) && Array.isArray(s.pages) && s.pages.includes('quiz'), s.id);
     assert.ok(Array.isArray(s.progress) && s.progress.length, s.id);
     assert.strictEqual(s.base.length, 2, s.id);
+    // Its icon in the switches, the app's and the admin's: SVG elements only, no wrapper (the 24 px viewBox is theirs).
+    assert.match(s.icon, /^<(path|circle) [^<>]*\/>(<(path|circle) [^<>]*\/>)*$/, `${s.id}.icon`);
   });
+  assert.strictEqual(new Set(C.SUBJECTS.map(s => s.icon)).size, C.SUBJECTS.length);
   // Distinct keys and sign-in record fields: no subject can overwrite another's.
   assert.strictEqual(new Set(C.SUBJECTS.flatMap(s => s.base)).size, 2 * C.SUBJECTS.length);
   assert.strictEqual(new Set(C.SUBJECTS.map(s => s.dev)).size, C.SUBJECTS.length);
