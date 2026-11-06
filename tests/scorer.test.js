@@ -205,3 +205,44 @@ test('a row logged before the scorer still replays by its logged e (the inversio
   assert.strictEqual(R.used, plain.filter(a => a.ph).length);
   assert.ok(Object.keys(R.P).every(g => R.P[g].ok + R.P[g].ko >= 0));
 });
+
+// One surprise, counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md §2a;
+// rules version 7): the genus shown moves by its own Elo step only; the level's step on the same answer reaches the other
+// genera (their levelMove), never the genus that was answered.
+test("scoreAnswer: an answer moves its genus once; the level's step on it reaches only the other genera", () => {
+  const P = {B: {ok: 5, ko: 0, th: 0.5, h: '', lt: 0}, [C.LEVEL]: {ok: 5, ko: 0, th: 0}},
+    q = {t: 'A', c: 'A', ok: true, k: 4, chs: [], ph: ['a1'], d0: 0, timed: false},
+    a0 = C.abilityOf(P, 'A'),
+    b0 = C.abilityOf(P, 'B');
+  C.scoreAnswer(P, q);
+  const own = P.A.th - a0;
+  assert.ok(own > 0.25 && P[C.LEVEL].th > 0.15, `a first right answer: its own step ${own}, the level's ${P[C.LEVEL].th}`);
+  assert.strictEqual(P.A.lt, P[C.LEVEL].th, 'the genus took the level after its step');
+  assert.strictEqual(C.abilityOf(P, 'A'), P.A.th, 'at its next question: its own step, nothing more through the level');
+  assert.ok(C.abilityOf(P, 'B') > b0, "another genus moves with the level's step");
+  // A later answer on another genus moves the level again: that move reaches A (the level's moves from other answers).
+  C.scoreAnswer(P, {...q, t: 'B', c: 'B', ph: ['b1']});
+  assert.ok(C.abilityOf(P, 'A') > P.A.th);
+  // The replay scores it the same (scoreAnswer): its record carries the level after the step.
+  const log = [
+      {
+        id: 'x',
+        t: new Date(Date.UTC(2026, 10, 7)).toISOString(),
+        g: 'A',
+        a: 'A',
+        ok: 1,
+        m: 'quiz',
+        ph: 'a1',
+        ch: '',
+        e: 0.63,
+        th: 0,
+        nw: 1,
+        sc: {d: 0}
+      }
+    ],
+    R = C.replayProgress(
+      log.map(a => C.logRow(a, 'me')),
+      {gen: GEN}
+    ).me.P;
+  assert.strictEqual(R.A.lt, R[C.LEVEL].th);
+});
