@@ -350,6 +350,47 @@ const WIDTHS = [390, 1280];
         !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
+      await go(other.hash + 'photos/candidates');
+      at = await seg();
+      if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
+        fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
+      // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
+      await p.evaluate(() => {
+        const a = document.createElement('a');
+        a.href = '#players/list';
+        a.id = 'subjtest';
+        a.textContent = 'test';
+        document.getElementById('view').prepend(a);
+      });
+      await p.click('#subjtest');
+      await settle();
+      at = await seg();
+      if (at.hash !== '#' + other.hash + 'players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: a shared page without prefix left the ${other.id} side ${JSON.stringify(at)}`);
+      // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
+      // (Codex review #492): #players/list, then #fish/inbox/todo/reports, then Back.
+      await go('players/list');
+      at = await seg();
+      const n0 = await p.evaluate(() => history.length);
+      if (at.hash !== '#players/list' || at.subj[0][1] !== 'true')
+        fails.push(`${w}px Subjects: #players/list not on the corals' side ${JSON.stringify(at)}`);
+      await go(other.hash + 'inbox/todo/reports');
+      await p.evaluate(() => history.back());
+      await settle();
+      at = await seg();
+      const n1 = await p.evaluate(() => history.length);
+      if (at.hash !== '#players/list' || at.subj[0][1] !== 'true' || n1 !== n0 + 1)
+        fails.push(`${w}px Subjects: Back to #players/list ${JSON.stringify({...at, n0, n1})}`);
+      await p.evaluate(() => history.forward());
+      await settle();
+      at = await seg();
+      if (at.hash !== '#' + other.hash + 'inbox/todo/reports' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
+        fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
+      if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
+      await p.click(`#subj [data-subj="${S[0].id}"]`);
+      await settle();
+      at = await seg();
+      if (at.subj[0][1] !== 'true' || at.hash !== '#players/list') fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
       // The fish units page (admin plan PR 6 on the book's families): Photos › Families, the fish side's only Photos tab
       // (never on the corals' side), the book's families by key group with the IMR tag on those in the IMR course, a
       // family's page with one block per genus and one section per species, deep links by family id.
@@ -397,6 +438,49 @@ const WIDTHS = [390, 1280];
         await go(other.hash + 'photos/families/f%3ANone');
         u = await fu();
         if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Families: an unknown family ${JSON.stringify(u)}`);
+        // Fish Coverage (admin plan PR 8): Inbox › Coverage › Games on the fish side, per family, genus or species, To do
+        // and Where to look; the corals keep their grid.
+        await go(other.hash + 'inbox/coverage/games');
+        const cv = () =>
+          p.evaluate(() => ({
+            tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent.replace(/ \(\d+\)$/, '')),
+            views: document.querySelectorAll('#subnav .adm-views a').length,
+            rows: document.querySelectorAll('.adm-fishcovt tbody tr').length,
+            head: (document.querySelector('.adm-fishcovt thead th') || {}).textContent || '',
+            look: document.querySelectorAll('.adm-fishcov .cov-lk').length,
+            todo: document.querySelectorAll('.adm-ftodo [data-fishlv]').length,
+            coral: !!document.querySelector('.cov-t:not(.adm-fishcovt)'),
+            fams: FISHC && FISHC.units.length,
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        let c = await cv();
+        if (!c.tabs.includes('Coverage') || c.views || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
+          fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
+        if (once) {
+          await p.click('[data-fishlv="sp"][aria-pressed]');
+          c = await cv();
+          const nsp = await p.evaluate(
+            () => Object.values(FISHC.species).filter(s => !s.out && FISHC.units.some(u => u.species.includes(s.id))).length
+          );
+          if (c.head !== 'Species' || c.rows !== nsp) fails.push(`${w}px Fish Coverage, species: ${JSON.stringify({...c, nsp})}`);
+          await p.click('[data-fishlv="gen"][aria-pressed]');
+          c = await cv();
+          if (c.head !== 'Genus' || c.rows < 100) fails.push(`${w}px Fish Coverage, genera: ${JSON.stringify(c)}`);
+          await p.click('.adm-fishcov [data-fuimr="imr"]');
+          c = await cv();
+          const ng = await p.evaluate(() => FISHC.units.filter(u => u.imr || u.imrWith).reduce((a, u) => a + u.genera.length, 0));
+          if (c.rows !== ng) fails.push(`${w}px Fish Coverage, IMR genera: ${JSON.stringify({...c, ng})}`);
+          await p.click('.adm-fishcov [data-fuimr="all"]');
+          await p.click('[data-fishlv="fam"][aria-pressed]');
+          await go(other.hash + 'inbox/coverage/games?look=all');
+          const n5 = (await cv()).look;
+          await go(other.hash + 'inbox/coverage/games');
+          if ((await cv()).look > 5 || n5 < (await cv()).look) fails.push(`${w}px Fish Coverage, Where to look: ${n5} in full`);
+        }
+        await go('inbox/coverage/games');
+        c = await cv();
+        if (!c.coral || c.rows) fails.push(`${w}px Coverage on the corals' side: ${JSON.stringify(c)}`);
         // The corals have no Families tab, and its address says so.
         await go('photos/families');
         u = await fu();
@@ -502,47 +586,6 @@ const WIDTHS = [390, 1280];
           if (await p.evaluate(fam => (DRAFT.fish.genera || {})[fam], fam)) fails.push(`${w}px Families: Undo left the family's choices`);
         }
       }
-      await go(other.hash + 'photos/candidates');
-      at = await seg();
-      if (!new RegExp(`Not for ${other.name.toLowerCase()} yet`).test(at.note))
-        fails.push(`${w}px Subjects: ${other.id} Candidates ${JSON.stringify(at)}`);
-      // A link without a prefix clicked on a fish page (a player's journey from Players) keeps the fish side, as clicked.
-      await p.evaluate(() => {
-        const a = document.createElement('a');
-        a.href = '#players/list';
-        a.id = 'subjtest';
-        a.textContent = 'test';
-        document.getElementById('view').prepend(a);
-      });
-      await p.click('#subjtest');
-      await settle();
-      at = await seg();
-      if (at.hash !== '#' + other.hash + 'players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
-        fails.push(`${w}px Subjects: a shared page without prefix left the ${other.id} side ${JSON.stringify(at)}`);
-      // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
-      // (Codex review #492): #players/list, then #fish/inbox/todo/reports, then Back.
-      await go('players/list');
-      at = await seg();
-      const n0 = await p.evaluate(() => history.length);
-      if (at.hash !== '#players/list' || at.subj[0][1] !== 'true')
-        fails.push(`${w}px Subjects: #players/list not on the corals' side ${JSON.stringify(at)}`);
-      await go(other.hash + 'inbox/todo/reports');
-      await p.evaluate(() => history.back());
-      await settle();
-      at = await seg();
-      const n1 = await p.evaluate(() => history.length);
-      if (at.hash !== '#players/list' || at.subj[0][1] !== 'true' || n1 !== n0 + 1)
-        fails.push(`${w}px Subjects: Back to #players/list ${JSON.stringify({...at, n0, n1})}`);
-      await p.evaluate(() => history.forward());
-      await settle();
-      at = await seg();
-      if (at.hash !== '#' + other.hash + 'inbox/todo/reports' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
-        fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
-      if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
-      await p.click(`#subj [data-subj="${S[0].id}"]`);
-      await settle();
-      at = await seg();
-      if (at.subj[0][1] !== 'true' || at.hash !== '#players/list') fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
     }
     // A shorter address opens its first view; an old (pre-refonte) or unknown address opens its group's first view, else
     // the landing page, the address replaced in place (rule W3: old addresses are not translated; Q53-Q56). A deep link

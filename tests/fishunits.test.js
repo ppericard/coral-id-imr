@@ -210,3 +210,54 @@ test('fishCoverOf: his pick in play, else the family’s first photo in the game
   assert.strictEqual(A.fishCoverOf(L, {...F, genera: {'f:A': {cover: 'gone'}}}, 'f:A').f, 'b1', 'a pick out of play: the order');
   assert.strictEqual(A.fishCoverOf([], F, 'f:A'), null);
 });
+
+test('fishCov and fishLook: per family, genus and species, the photos in play, targets, easy, reference, phases, waiting', () => {
+  const U = [
+    {
+      id: 'f:A',
+      name: 'As',
+      species: ['s1', 's2'],
+      phase: ['Juveniles differ'],
+      genera: [
+        {id: 'g:X', name: 'X', imr: 'Ex', species: ['s1']},
+        {id: 'g:Y', name: 'Y', species: ['s2']}
+      ],
+      imr: 'A'
+    },
+    {id: 'f:B', name: 'Bs', species: ['s3'], phase: [], genera: [{id: 'g:Z', name: 'Z', species: ['s3']}], imrWith: 'As'}
+  ];
+  const species = {s1: {name: 'X one', common: 'One', circle: 1, cs: 1}, s2: {name: 'Y two', circle: 1}, s3: {name: 'Z three', circle: 3}},
+    play = {
+      s1: Array.from({length: 12}, (_, i) => ({f: `a${i}`, o: `o${i}`})),
+      s2: [
+        {f: 'b0', o: 'p0'},
+        {f: 'b1', o: 'p0'}
+      ]
+    },
+    F = {ease: {a0: 5, a1: 4, b0: 4}, tags: {a2: 'p1g0sm1r', b1: 'p1g0sm1j'}, add: {c0: 's3'}},
+    cand = {s2: [{f: 'b0'}, {f: 'w1'}, {f: 'w2'}], s3: [{f: 'c0'}, {f: 'w3'}]};
+  // play is what the page passes in; wait reads the draft: b0 is not in F.add, so as a candidate it still waits.
+  const C = A.fishCov(U, play, species, cand, F);
+  const sp = Object.fromEntries(C.sp.map(r => [r.id, r]));
+  assert.deepStrictEqual([sp.s1.n, sp.s1.obs, sp.s1.tgt, sp.s1.easy, sp.s1.ref, sp.s1.need], [12, 12, 12, 2, 1, []]);
+  assert.deepStrictEqual([sp.s2.obs, sp.s2.tgt, sp.s2.ph, sp.s2.need], [1, 8, ['juvenile'], ['7 observations under target']]);
+  assert.strictEqual(sp.s2.wait, 3, 'its candidates nobody decided');
+  assert.deepStrictEqual([sp.s3.n, sp.s3.wait, sp.s3.need], [0, 1, ['No photo in play']], 'c0 is decided (F.add), so not waiting');
+  const fam = Object.fromEntries(C.fam.map(r => [r.id, r]));
+  assert.deepStrictEqual([fam['f:A'].ok, fam['f:A'].of, fam['f:A'].easy, fam['f:A'].want, fam['f:A'].imr], [1, 2, 3, ['juvenile'], 'A']);
+  assert.deepStrictEqual(fam['f:A'].need, ['1 species under target', 'Easy 3/5']);
+  assert.strictEqual(fam['f:B'].imr, 'with As');
+  const gen = Object.fromEntries(C.gen.map(r => [r.id, r]));
+  assert.deepStrictEqual(
+    [gen['g:X'].imr, gen['g:X'].need, gen['g:Y'].need, gen['g:Z'].need],
+    ['Ex', [], ['1 species under target'], ['1 species under target', 'No photo in play']]
+  );
+  // Where to look: under target with too few waiting to fill the gap; circle 1 first.
+  assert.deepStrictEqual(
+    A.fishLook(C).map(r => [r.id, r.gap]),
+    [
+      ['s2', 4],
+      ['s3', 7]
+    ]
+  );
+});

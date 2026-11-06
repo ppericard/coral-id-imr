@@ -534,6 +534,82 @@
     return F.sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group) || a.i - b.i).map(({i, ...f}) => f);
   }
 
+  // Fish Coverage (admin plan PR 8; docs/ROADMAP.md "Admin for every subject" row 8): per family, genus and species, the
+  // photos in play, the observations against the target, the easy photos (ease 4-5), the reference photos, the phases shown
+  // and what is missing; and the candidates still waiting. U: fishUnits; play: {species id: [photo]} in play; species:
+  // {id: fish.json species}; cand: fish-cand.json cand {species id: [photo]}; F: the draft's fish part; j(f): the pass's
+  // judgment. Returns {fam: [row], gen: [row], sp: [row]}; a row: {id, name, fam (family id), n (photos), obs, tgt (a
+  // species' target; for a genus or family the species at target, ok, of all, of), easy, ref, ph (phases shown), wait
+  // (candidates waiting), need (what is missing, as fishNeeds words), imr}.
+  function fishCov(U, play, species, cand, F, j = () => null) {
+    F = F || {};
+    const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
+      isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
+      spRow = (sid, fam) => {
+        const L = play[sid] || [],
+          s = species[sid] || {},
+          obs = new Set(L.map(p => p.o || p.f)).size,
+          tgt = fishTarget(s),
+          wait = (cand[sid] || []).filter(p => fishState(F, p.f, sid).st === null && fishState(F, p.f, sid).sid === sid).length,
+          need = [];
+        if (!L.length) need.push('No photo in play');
+        else if (obs < tgt) need.push(`${tgt - obs} observations under target`);
+        return {
+          id: sid,
+          name: s.common || s.name || sid,
+          sci: s.name || '',
+          fam,
+          circle: s.circle,
+          cs: !!s.cs,
+          n: L.length,
+          obs,
+          tgt,
+          easy: L.filter(p => ease(p) >= 4).length,
+          ref: L.filter(isRef).length,
+          ph: [...new Set(L.map(p => fishPhase(p, j(p.f), F)).filter(Boolean))],
+          wait,
+          need
+        };
+      },
+      sum = (rows, base) => ({
+        ...base,
+        n: rows.reduce((a, r) => a + r.n, 0),
+        obs: rows.reduce((a, r) => a + r.obs, 0),
+        ok: rows.filter(r => r.obs >= r.tgt).length,
+        of: rows.length,
+        easy: rows.reduce((a, r) => a + r.easy, 0),
+        ref: rows.reduce((a, r) => a + r.ref, 0),
+        ph: [...new Set(rows.flatMap(r => r.ph))],
+        wait: rows.reduce((a, r) => a + r.wait, 0)
+      }),
+      out = {fam: [], gen: [], sp: []};
+    U.forEach(u => {
+      const S = u.species.filter(s => species[s] && !species[s].out).map(s => spRow(s, u.id)),
+        by = Object.fromEntries(S.map(r => [r.id, r]));
+      out.sp.push(...S);
+      u.genera.forEach(g => {
+        const R = g.species.map(s => by[s]).filter(Boolean);
+        if (!R.length) return;
+        const r = sum(R, {id: g.id, name: g.name, fam: u.id, imr: g.imr});
+        r.need = [...(r.of - r.ok ? [`${r.of - r.ok} species under target`] : []), ...(r.n ? [] : ['No photo in play'])];
+        out.gen.push(r);
+      });
+      const r = sum(S, {id: u.id, name: u.name, fam: u.id, imr: u.imr || (u.imrWith ? 'with ' + u.imrWith : ''), circle: u.circle});
+      r.want = fishUnitPhases(u);
+      r.need = fishNeeds(u, play, species, F, j);
+      out.fam.push(r);
+    });
+    return out;
+  }
+  // Where to look (fish): the species most worth a candidate search, those under target whose waiting candidates cannot
+  // fill the gap; the IMR course's (circle 1) first, then the PDF's most sighted (cs), then the largest gap. [{...species
+  // row, gap}], best first.
+  const fishLook = C =>
+    C.sp
+      .map(r => ({...r, gap: Math.max(0, r.tgt - r.obs - r.wait)}))
+      .filter(r => r.gap > 0)
+      .sort((a, b) => (a.circle || 9) - (b.circle || 9) || b.cs - a.cs || b.gap - a.gap || (a.id < b.id ? -1 : 1));
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -738,6 +814,8 @@
     FISHEASY,
     fishNeeds,
     fishUnits,
+    fishCov,
+    fishLook,
     autoCode,
     autoParse,
     autoIdx,
