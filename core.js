@@ -1126,6 +1126,11 @@
       const pk = subjKey(S.id, 'progress'),
         qk = subjKey(S.id, 'quiz');
       if (!i || pk in A || pk in B) out[pk] = JSON.stringify(mergeUserP(J(A, pk) || {}, J(B, pk) || {}));
+      // The surprise cards met on either account: met once, never shown again (Codex review #652).
+      const wk = subjKey(S.id, 'wink'),
+        wa = J(A, wk),
+        wb = J(B, wk);
+      if (wa || wb) out[wk] = JSON.stringify(winkUnion(wa, wb));
       const qa = J(A, qk),
         qb = J(B, qk);
       if (qa || qb) {
@@ -1140,6 +1145,20 @@
       // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
       // kept pg 0.96 for good).
       delete out[subjKey(S.id, 'rv')];
+    });
+    return out;
+  }
+  // The surprise cards (winks) two records have met (quiz.js winkMerge at a sync, mergeUsers for two accounts): {wink id:
+  // answer count when shown}, the union, the earlier count kept; anything else in either is ignored (Pierre, 2026-11-06:
+  // each surprise once per player).
+  function winkUnion(a, b) {
+    const out = {};
+    [a, b].forEach(r => {
+      if (!r || typeof r !== 'object' || Array.isArray(r)) return;
+      Object.keys(r).forEach(n => {
+        const v = Math.max(0, Number(r[n]) || 0);
+        if (!(n in out) || v < out[n]) out[n] = v;
+      });
     });
     return out;
   }
@@ -4658,6 +4677,7 @@
     dataLook,
     pairConf,
     mergeUsers,
+    winkUnion,
     PULSEQ,
     PULSE0,
     PULSE_SHOWN,

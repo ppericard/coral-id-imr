@@ -586,6 +586,9 @@ entered the exam / true knowledge):
   real ratings of 2026-11-02 as start, counts updated as the sheet does): photos with at least one answer 426-435 →
   465-510, with 3 or more ~200 → 225-234, right rates unchanged (73-87%). The bonus fades by itself as the photos get
   answers.
+- **Since 2026-11-06 (Q188) the calibration questions are the exploration share**: 30% of the questions on a genus the
+  player holds (20% before), each drawing a colony the player has never seen (any view of it), on the targeting and the
+  bonus as before ("Photo exposure" below).
 - **Calibration questions only on a genus the player holds** (met, not shaky): a single, perhaps unusual, photo does
   not help on a genus still being learned (and a simulated beginner opened genera faster than intended with them).
 - **A new photo's prior is only a guess** (`CAL.U` = 1): the targeting's width grows to √(0.7² + U / (1 + answers /
@@ -2634,7 +2637,7 @@ Pierre, 2026-11-03: fish on the same engine as corals (docs/ARCHITECTURE.md "Sub
 - **One photo per question**: fish have no zoom levels (one view), so every question is a single-photo one; the single-view offset (`PICKD.SINGLE`) applies to all of them alike, so it cancels out between entries.
 - **Common first**: `cm` = √(Research Grade observations of its species within 40 km of Dauin), the same scale as the corals' (small integers), read by `commonFactor`.
 - **Circles** (`app.js` `UNITS.fish` `slate`, `gate`: `fishGate`): every circle is on the path and counts in the progress (Pierre, 2026-11-06, Q175: the opt-in sets "SVS video extras" and "Beyond IMR" are gone, so the fish % is further from 100% and dropped once for every fish player; no rules version: no unit's record moves and fish is not replayed). Circles 2 and 3 open after the IMR course's families, at the thresholds their offers had, now automatic (Q177): circle 2 (seen now and then on SVS video) may open once every circle-1 family has been asked; circle 3 (beyond IMR, Pierre: "once the player is good on the IMR ones") once the progress on circle 1 reaches **`FISH_C3` = 0.5** (the average IMR family at Open Water): a learning milestone, never time (rule L1). Until a circle's threshold its families are out of the opening's candidates (`model.js` `mayOpen`, in `quiz.js` `introStart` and `planPhoto`); past it, they join the usual weighted opening (`openPick`). Open all opens circle 1 only (`UNITS.fish` `core`, `introLeft`). `FISH_C3` is a placeholder to watch with real players. **Checks (rules L11-L12, 2026-11-06, #669)**: the thresholds are the opt-in offers' of 2026-11-03, unchanged, and now accepted automatically. For the corals nothing runs differently (no `gate`, `core` = the slate). `tools/learnsim.js`, the four profiles × 5 seeds, before (#656's head, 2cb9a608) and after on the same seeds gives the same summary at question 300 (knowSlate 0.67 / 0.75 / 0.85 / 0.95, prog% 40 / 45 / 53 / 65, met 38.8 / 40 / 40 / 40, right% 77 / 78 / 84 / 94, beginner / lecture RA / strong RA / expert). There is no fish simulator yet: learnsim is coral-only, and fish profiles come with the species level (FISH_PATH). A replay of the real log cannot judge an opening change either, because a different draw asks other questions, and the fish answers are logged only since 2026-11-06 (v60) and not replayed. What was measured instead is the path itself, in `tests/fish.smoke.js`: circle 1 alone opens while a circle-1 family is unasked, circle 2 next, circle 3 only from 50% on circle 1, and every circle moves the %. Watch the fish log once players reach circle 1's end.
-- **Winks** (`quiz.js` `WINK` = {AT [300, 650], WIN 50}, `winkAt`, `winkSlot`, `winkDue`): a surprise card for every fish player, circle 1 included (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), and late (Pierre, 2026-11-06, after his second fish question was the whale shark: the first only after at least 300 fish answers, the next after about 600-700). Surprise k is due at the first photo-quiz question from `WINK.AT[k]` answers of the player's own fish record (`answersSoFar`, so a reload or a sign-in keeps the count; never the visit's count), the later ones each at least the last gap after the one before (300, 650, 1000, 1350...), and shows the k-th wink in turn (the whale shark, then the thresher, then again). It waits up to `WIN` = 50 answers (a card on screen comes first) and is skipped past them, so a sign-in on another device past a threshold brings no catch-up; once shown it never comes again in its window, in the visit (`WINKS`) or on the device (`reefid-fish-wink`, the surprise last shown; a device, not an account, so another account on the same device inside the same window skips it). Never over a card. Never counted: no progress, ability, answer log or photo rating. The corals have none (`UNITS.coral.winks` is empty).
+- **Winks** (`quiz.js` `WINK` = {AT [300, 650]}, `winkAt`, `winkDue`, `winkMerge`): a surprise card for every fish player, circle 1 included (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), late and **once per player** (Pierre, 2026-11-06, after his second fish question was the whale shark: the first only after at least 300 fish answers, the next after about 600-700; 13:31: each surprise once per player, and that's all, across devices). The whale shark is due at the first photo-quiz question from 300 answers of the player's own fish record (`answersSoFar`, so a reload or a sign-in keeps the count; never the visit's count), the thresher sharks from 650 and at least 350 answers after the whale shark (a player already past both meets them apart, never back to back); a wink beyond `WINK.AT` (none yet) would come the same gap later. The winks shown travel with the player (`reefid-sync-fish-wink` {wink id: answer count when shown}, saved with the progress and merged by union at every sync, `sync.js` `mergeSubject` → `winkMerge` → `core.js` `winkUnion`, whatever a reset, and at an account merge, `mergeUsers`; cleared at sign-out with the other account keys, `signOutClear`), so another device of the same account never shows one again. Never over a card. Never counted: no progress, ability, answer log or photo rating. The corals have none (`UNITS.coral.winks` is empty).
 - **Not logged to the sheet yet**: fish answers stay on the device (and in the synced progress): the pooled photo difficulty and confusions start from their priors only for fish (the photo's set prior 0, the IMR look-alikes) until the sheet takes fish answers (ROADMAP).
 - **No timed mode, no size estimation**: video ID and EventMeasure measurement are other tools (ROADMAP).
 
@@ -3348,7 +3351,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   ability drops more; over many answers the extra drops balance the smaller rises after right answers on known photos,
   which is what keeps the ability unbiased. The genus wrongly given (rule L2) gets no memory term: the player's memory of
   a photo is of the genus shown, it says nothing about the other one.
-- **Spread the repeats** (`photoSet`): in ordinary questions a photo already shown weighs × e^offset of its bucket
+- **Spread the repeats** (`photoSet`; per colony since 2026-11-06, Q190: every photo of a colony takes the bucket of
+  its most remembered photo, "Photo exposure" below): in ordinary questions a photo already shown weighs × e^offset of its bucket
   (the odds memory adds to a right answer on it, divided out), × 0.64 / 0.33 / 0.18 with the offsets above (before: × 0.6
   from right twice only, nothing before). A soft factor in the existing targeting, never a filter: a genus whose photos
   are all known still shows them, the least remembered first. The photos never shown keep their bonus (× (1 + 1.5 ×
@@ -3664,6 +3668,73 @@ What it says, on this learner:
   look-alike, every check passing; beginner genera met at question 100 11.5 → 11.3, expert genera half way at 300
   34.7 → 35.3, lecture RA progress at 300 27.8 → 25.5%. The CI seed's beginner went from 16 genera at question 100 (the
   limit) to 17, so the limit is 17 (one draw, not a faster opening: 30 learnsim seeds give 16.5 → 15.7).
+
+### Photo exposure (2026-11-06, Q187-Q190; fish too)
+
+Pierre's answers to the photo exposure study (docs/reviews/2026-11-06-photo-exposure-study.md, PR #670: 19% of the coral
+questions showed a photo the player had already been shown, 38% from a genus's 11th question; the multi-view questions
+turned round the few colonies with every view), 2026-11-06 15:35; and at 15:36, "we must not end up with the same problem
+for the fish": every change works for every subject, the observation being the fish's colony.
+
+- **Q187, the Colony cap** (`admin.js` `CELL_MAX`): 20 → 40 colonies per genus in the Colony view (the Auto pass fills a
+  view up to it). Corals only: fish have no cap.
+- **Q188, the exploration share** (`model.js` `CAL.RATE`, `photoSet`): the calibration questions become 30% of the
+  questions on a unit the player holds (20% before), and each draws among the colonies (fish: observations) the player
+  has never seen, while one remains, on the difficulty targeting and the calibration bonus as before: at the difficulty
+  aimed for, the least answered first, never a random hard one. Pierre asked for it only after simulation, deciding
+  nothing the simulation contradicts. The study had proposed it on any genus met with about 5 answers: simulated, that
+  variant cut the repeats less (colony repeats 15.4% → 17.5% for the beginner, item learner), took 0.005 off the true
+  knowledge at question 300 in the exemplar world (−0.008 / −0.002) and met 3.8 fewer fish units in 300 questions (5 of 5
+  seeds), so the unit held stays the condition.
+- **Q189, beginners' zooms** (`photoSet` `cov`): a colony's weight in a beginner's multi-view question is its share of
+  the views, cov, not cov²: a colony with two views of three weighs 0.67 of a complete one (0.44 before). Corals only by
+  design: a fish question has one view, so cov is the same for every observation and changes nothing.
+- **Q190, a colony counts as seen whatever view was shown** (`model.js` `colonyMem`): in the draw, every photo of a
+  colony takes the memory of its most remembered photo (`memBucket`, then the most shown), so a close-up never shown of a
+  colony already met is no new photo and loses the never-seen bonus. Fish: an observation's other photos of the same fish.
+  The expectation of an answer and the progress still read each photo's own record (`famOf`, `pgMemW`); the mastery
+  exam keeps its own rule (a photo never shown).
+
+**Simulated** (rule L11 tier 1: `tools/learnsim.js` `--stats` (the sheet's ratings of 2026-11-06 15:39) `--truth gen`,
+the four profiles × 5 seeds × 600 questions, 1 worker, `main` against the four changes on the same seeds, item and
+exemplar learners; the run logs each question's colony and photos, `expo`, and each genus's game photos, `pool`).
+Declared before the second run: primary, the colony repeat rate over questions 1-600 (a question showing a colony shown
+before), pooled, down; guardrails, true knowledge over the slate at 300 and 600 (margin 0.02) and genera met at 100
+and 300 (margin 2), the stats study's margins; the judge's E and D\* and the time to credit reported with their bounds.
+
+| Measure (pooled over the profiles) | Item learner | Exemplar learner |
+| --- | --- | --- |
+| **Colony repeats, questions 1-600** (primary) | 20.2% → 14.5% (p < 0.001; 20 of 20 runs down) | 19.7% → 13.5% (p < 0.001; 20 of 20) |
+| Photo repeats, 1-600 | 16.4% → 12.7% | 15.1% → 11.2% |
+| Colony repeats from a genus's 11th question | 37.5% → 28.5% | 38.2% → 28.2% |
+| Photo repeats from a genus's 11th question | 30.3% → 24.0% | 29.6% → 22.6% |
+| Spread (questions showing a colony never seen while one remained) | 80.2% → 86.3% | 81.0% → 87.1% |
+| True knowledge, slate, 300 / 600 | +0.005 (bound +0.002) / +0.000 (−0.001) | −0.002 (−0.005) / −0.000 (−0.002) |
+| Genera met, 100 / 300 | −0.05 (−0.39) / +0.15 (−0.05) | +0.15 (−0.29) / 0 |
+| Judge: D\* over the genera met at 600 | −0.001 (−0.003) | −0.002 (−0.003) |
+| Judge: E = bar − D\* at 600 | −0.142 → −0.139 | −0.162 → −0.159 |
+| Genera with the bar at 80% by 600 | 14.8 → 14.7 (−1.2) | 16.9 → 16.5 (−1.6) |
+| Time to credit, the known genera's mean bar at 50% | +1.9 questions (+9.4) | −2.6 (+4.9) |
+
+(In brackets, the one-sided 90% bound of the paired difference on the side of harm.) Every guardrail held. By profile,
+the colony repeats fell in 5 of 5 seeds for each profile in both worlds (5 seeds cannot give a per-profile p under
+0.06). Exploratory: the median questions from a genus's first answer to its bar at 80% moved +16 (item) and −13
+(exemplar), opposite ways, a median over the genera that got there. Pooled over the 20 runs as one cohort, the photos
+never shown after 115 questions each (about the 2,300 answers of the study): 40% → 42% of the photos, 38% → 39% of the
+colonies (a question shows fewer photos when it picks a two-view colony); after 600 each, 2%. As the study said, the
+photos never shown follow the traffic; what the draw changes is how each player's questions use the room they have.
+
+**Fish** (no learnsim fish mode on `main` yet, #678 adds one; a scratch harness played the real fish quiz with an item
+learner, a beginner learning 0.12 of the gap per answer, 300 questions, the units met by the path). With the judged
+candidates of #674 (8,561 photos) and the draw calibration of #678 (Q186), 20 seeds, before → after: observation repeats
+4.3% → 4.3%, from a unit's 11th question 4.8% → 4.8%; **photos under ease 4 before Open Water 22.8% → 21.1%** (−1.7
+points, sign test p 0.12), in a unit's first 10 questions 22.1% → 19.9%, reference-level photos there 24.7% → 25.8%;
+right 74.0% → 74.4%. The same pool **without** #678: under ease 4 before Open Water 38.0% → 39.6% (+1.5 points, 15 of
+20 seeds up, p 0.04), reference-level photos in the first 10 questions 19.3% → 17.1%: a seen observation's other photos
+lose the never-seen bonus, and in that draw the bonus then goes to unseen observations, mostly harder; #678's narrower
+targeting removes it. So this goes in after #678. Today's pool (1,935 photos, 5 seeds): under ease 4 before Open Water
+37.2% → 35.7%, repeats 8.7% → 8.0%. With pools this big the fish repeats are low already; the re-measure at about 500
+fish answers is in ROADMAP (Q193).
 
 ### Hierarchical photo Elo (sheet v31, 2026-11-03)
 
@@ -4147,6 +4218,9 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   the learner had already been shown, the right % on all and on those repeats, progress minus know and θ − logit(know)
   over the genera met, genera learned; and, pooled over the runs, the genera that entered the exam or were learned, their
   true reference success then and the median question.
+- **Photo exposure** (2026-11-06, in `--out` only): each question's genus, colony and photos (`expo`) and each genus's
+  game photos with their colony (`pool`), for the repeat rates, the photos never shown and the answers per photo
+  ("Photo exposure").
 - **Limits**: the learner is ours, a few round numbers, not fitted to real answers; the photo difficulty it meets is the
   app's own estimate (so photo calibration cannot be judged), unless `--truth` gives it a fixed world (2026-11-03); learning is per genus only (a duel or a montage teaches
   the two genera, not the pair as such; the field learner, below, adds pairs and the size of the set); no forgetting (except across `--breaks`), no fatigue; the RA profiles know a fixed set of genera (every
@@ -4332,6 +4406,10 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-06, Pierre (Q187-Q190, after the photo exposure study; fish too, 15:36): the Colony cap 40 colonies per genus
+  (corals; fish no cap); the calibration questions are an exploration share of 30% drawing colonies (observations)
+  never seen, on a unit held (simulated); a beginner's multi-view question weighs a colony by cov, not cov² (corals); a
+  colony counts as seen whatever view was shown ("Photo exposure").
 - 2026-11-06, Pierre (Q127-Q129, Q135; PR "domain-score bar"): the bar is the posterior expected domain score of the
   genus from the player's own answers on it (grid, fixed population prior, format-aware, a drift per answer), 0 to 95%,
   the exam from 85% to 100%; the moving average `s.pg` retired as the bar (kept for records not rebuilt, rule D4); the

@@ -6,7 +6,7 @@
 //   "I'm at IMR": the IMR-tagged families open first;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
 //   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
-//   (quiz.js WINK.AT: 300), once due shown once, then not again on the device (reefid-fish-wink);
+//   (quiz.js WINK.AT: 300), once due shown once, then not again for the player (reefid-sync-fish-wink, travels);
 // - typed answers: the entry's names (IMR name, family, sub-entries) read as the entry;
 // - progress per subject kept apart: fish answers in reefid-sync-fish-progress only, the corals' untouched; switching
 //   back to corals brings the coral slate and progress back;
@@ -214,7 +214,7 @@ const server = http.createServer((req, res) => {
       wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
-      ok(localStorage.getItem('reefid-fish-wink') === '0', 'wink: kept as shown on this device');
+      ok(n in JSON.parse(localStorage.getItem('reefid-sync-fish-wink') || '{}'), 'wink: kept as shown for the player');
       route();
       closeCards();
       quizPhoto();
@@ -725,13 +725,13 @@ const server = http.createServer((req, res) => {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
           WINK.AT[0] = answersSoFar();
           delete WINKS[SUBJ.id];
-          localStorage.removeItem('reefid-fish-wink');
+          localStorage.removeItem('reefid-sync-fish-wink');
           quizPhoto();
-          ok({wink: !!document.querySelector('#view .q.wink'), seen: WINKS[SUBJ.id]});
+          ok({wink: !!document.querySelector('#view .q.wink'), seen: Object.keys(WINKS[SUBJ.id] || {}).length});
         }, 300)
       );
     });
-    if (!wk.wink || wk.seen !== 0) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
+    if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
     await wide('a wink');
     // Back to the corals through the header chip: its menu holds both subjects; a choice closes it.
     await q.evaluate(() => (location.hash = '#practice/quiz'));
@@ -1255,12 +1255,14 @@ const server = http.createServer((req, res) => {
           localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
           localStorage.setItem('reefid-sync-subject', '"fish"');
           localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
+          localStorage.setItem('reefid-sync-fish-wink', '{"f:Threshersharks":700}'); // the thresher, met here before signing in
         }
       } catch (e) {}
       // The sheet: the account (coral and fish progress), a hold of 5 on every load; saves recorded.
       const data = {
         'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 3, ko: 1}}),
-        'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}})
+        'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}}),
+        'reefid-sync-fish-wink': JSON.stringify({'f:WhaleSharks': 300}) // the whale shark, shown on another device of the account
       };
       window.SAVES = [];
       window.SHEET_STUB = (url, o) => {
@@ -1285,8 +1287,26 @@ const server = http.createServer((req, res) => {
       saved: JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}')['f:Damselfishes'],
       here: P['f:Damselfishes'],
       fishHold: localStorage.getItem('reefid-fish-hold'),
-      coralHold: localStorage.getItem('reefid-hold')
+      coralHold: localStorage.getItem('reefid-hold'),
+      // The surprise shown on the other device and the one met here before signing in (Codex review #652): both kept here
+      // and in the save, so neither comes again for this player.
+      wink: localStorage.getItem('reefid-sync-fish-wink'),
+      winkSaved: SAVES[SAVES.length - 1].data['reefid-sync-fish-wink'],
+      next: (() => {
+        const W0 = WINK.AT.slice();
+        WINK.AT.splice(0, 2, 0, 0);
+        const L0 = P['~level'];
+        P['~level'] = {...(L0 || {}), ok: 1000};
+        const w = winkDue();
+        WINK.AT.splice(0, 2, ...W0);
+        if (L0) P['~level'] = L0;
+        else delete P['~level'];
+        return w && w.n;
+      })()
     }));
+    const both = w => JSON.stringify(JSON.parse(w || '{}')) === '{"f:WhaleSharks":300,"f:Threshersharks":700}';
+    if (!both(r.wink) || !both(r.winkSaved) || r.next !== null)
+      rv.push(`sign-in: a surprise met on another device or before signing in could come again ${JSON.stringify(r)}`);
     if (r.subj !== 'fish' || !r.saved || r.saved.ok !== 10 || r.saved.ko !== 2 || r.here.ok !== 10)
       rv.push(`sign-in on a device that never played fish: fish progress ${JSON.stringify(r)} (want 10/2)`);
     if (Number(r.fishHold || 0) !== 0 || Number(r.coralHold) !== 5)
@@ -1307,7 +1327,7 @@ const server = http.createServer((req, res) => {
             const rm = JSON.stringify(rematch);
             WINK.AT[0] = answersSoFar();
             delete WINKS[SUBJ.id];
-            localStorage.removeItem('reefid-fish-wink');
+            localStorage.removeItem('reefid-sync-fish-wink');
             quizPhoto();
             ok({
               wink: !!document.querySelector('#view .q.wink'),
