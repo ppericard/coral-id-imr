@@ -1751,6 +1751,7 @@ kbd {
 }
 .adm-sw.adm-ftopen .adm-swacts {
   flex: 0 1 auto;
+  flex-wrap: nowrap;
   min-height: 0;
 }
 .adm-ftags {

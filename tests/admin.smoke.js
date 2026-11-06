@@ -367,11 +367,12 @@ const WIDTHS = [390, 1280];
             bar: Math.round(b('.adm-fsw .adm-swbar').bottom),
             card: Math.round(b('.adm-fsw .adm-swcard').height),
             panel: !!T && T.scrollHeight >= T.clientHeight,
+            wide: document.documentElement.scrollWidth - innerWidth,
             vh: innerHeight,
             scroll: document.documentElement.scrollHeight - innerHeight
           };
         });
-        if (t.ease > t.vh || t.bar > t.vh || t.scroll > 0 || t.card < 120 || !t.panel)
+        if (t.ease > t.vh || t.bar > t.vh || t.scroll > 0 || t.wide > 0 || t.card < 120 || !t.panel)
           fails.push(`${w}px Fish Candidates: Tags open ${JSON.stringify(t)}`);
         await open();
       }
