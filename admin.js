@@ -6190,6 +6190,7 @@ let ANS = null,
   GD = {}, // the genus offsets of the hierarchical photo Elo (?stats=1 gd, sheet v31): {genus: [offset, weighed answers]}
   SMEM = memOf(null),
   SCONF = {},
+  SFMT = {},
   MEID = null,
   SF = Object.assign({min: 1, nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('reefid-admin-stats', {}));
 // Numbers replayed over the whole answer log (playSplit, levelMargin, confusionOf): once per log loaded, not at every
@@ -6311,6 +6312,7 @@ function loadStats(ratingsOnly) {
           // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
           SMEM = memOf(s.ok && s.mem);
           SCONF = (s.ok && s.conf) || {};
+          SFMT = s.ok ? fmtsOf(s) : {}; // the per-format offsets (sheet v68, core.js fmtOffsetsOf), as the app's PFMT
         })
       );
   const ga = ratingsOnly
@@ -6607,6 +6609,7 @@ function progOf(u, full) {
       gen: DATA.gen,
       mem: SMEM,
       conf: SCONF,
+      fmt: SFMT,
       since: reset ? {[u.id]: reset} : {},
       starts: S.err ? {} : {[u.id]: S.start} // the first-launch answer (core.js startPriorAt)
     })[u.id],
