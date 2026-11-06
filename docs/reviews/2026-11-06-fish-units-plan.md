@@ -104,8 +104,10 @@ list of families.
   replay runs.
 - **Answers logged** since v60 (today): the logged `family` rank becomes a **book family id**. The rows already logged:
   one sheet migration (`Code.gs` `ONCE_`, logged in the Deploy log) rewrites the fish rows' unit ids (Genus shown,
-  Answered, Choices) and Taxon names from entry ids to family ids, the shown family taken from Species shown (exact:
-  *Diploprion* → Soapfishes), the answered one by the map (t13 → Groupers); the Reports tab's units likewise. Question f.
+  Answered, Choices) and Taxon names from entry ids to family ids, one map per row so the row keeps what happened: t13
+  means the family of the photo shown when the photo was t13's (from Species shown: a *Diploprion* photo makes every
+  t13 of that row Soapfishes, so a right answer stays right and the shown family stays among the choices), else the
+  Groupers; the 26 other entries map one to one. The Reports tab's units likewise. Question f.
 - **Curation**: `curation.json` `fish` photo keys are per species: nothing moves. #636's `fish.genera` was never
   published: it is keyed by family id from the start.
 - **Stopgap photos** (`fish-photos.json`): listed per family by `tools/fish_photos.py`, or left to die with #614.
