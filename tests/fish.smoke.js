@@ -487,7 +487,8 @@ const server = http.createServer((req, res) => {
     await q.click('#view .ans [data-c]');
     const after = await q.evaluate(() => {
       const fb = document.querySelector('#after .fb'),
-        cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"]');
+        // the photo's page: its iNaturalist observation, or its FishBase photo page (a FishBase reference photo, #660)
+        cr = fb && fb.querySelector('.credit a[href*="inaturalist.org"], .credit a[href*="fishbase."]');
       return {fb: !!fb, credit: !!cr, h3: fb ? fb.querySelector('h3').textContent : ''};
     });
     if (!after.fb || !after.credit) ui.push(`${width}px answer: no full credit with its link ${JSON.stringify(after)}`);

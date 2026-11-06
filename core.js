@@ -648,11 +648,13 @@
     return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
   };
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
-  // fish-<species>-cand-<id>), b + its FishBase file stem (fish-<species>-cand-fb-<stem>), else its name.
+  // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
+  // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),
+  // else its name.
   function fishPid(f) {
     const s = String(f),
       m = /^fi(\d+)$/.exec(s) || /-cand-(\d+)[cd]?$/.exec(s),
-      b = /-cand-fb-(.+)$/.exec(s);
+      b = /-cand-fb-(.+)$/.exec(s) || /^fb(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
   // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
