@@ -446,7 +446,11 @@
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
       // them); the judged ease's prior as measured (CALIB.ease).
       calib: {ref: 3, early: 1.5},
-      pages: ['genera', 'quiz'],
+      pages: ['genera', 'sheet', 'quiz'],
+      // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
+      // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
+      // f:Damselfishes, g:Chromis; a species by its name, s:Chromis ternatensis): #fish/learn/genus/Chromis.
+      sheets: {family: 'f:', genus: 'g:', species: 's:'},
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
       // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
@@ -779,6 +783,52 @@
     if (!R || typeof id !== 'string' || !R.ids[id]) return id;
     const g = String(sp || '').split(/[\s,]+/)[0];
     return ((R.split || {})[id] || {})[g] || R.ids[id];
+  }
+  // The id of a sheet of subject S in its one spelling, or null when S has no such sheet. A subject without sheet ranks
+  // (SUBJECTS sheets: the corals) takes any id as its unit's; one with them takes an id with one of their prefixes, an
+  // old unit id renamed since first (renamedId: t01 → f:Damselfishes), so a link from a record written before the rename
+  // still opens its sheet.
+  function sheetIdOf(S, id) {
+    const s = String(id == null ? '' : id);
+    if (!S || !S.sheets) return s;
+    const r = renamedId(S, s);
+    return Object.values(S.sheets).some(p => r.startsWith(p) && r.length > p.length) ? r : null;
+  }
+  // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06) read from fish.json
+  // alone: fam, gen and sp by id (the species of the families only, so none of those left out of the game), spOf (a
+  // species by its id or its sheet id s:<name>) and order, the families in the key's order (its group numbers, then the
+  // file's order; a family with no group last). go(id): the sheet a family, genus or species id opens, by option B:
+  // a genus with one species opens that species' sheet; the only genus of its family has no page of its own (the family
+  // sheet lists its species: the study's recommendation for one genus with several species); any other genus opens its
+  // short page. null for an id it does not know.
+  function fishTree(F) {
+    const fam = {},
+      gen = {},
+      sp = {},
+      byName = {};
+    ((F && F.families) || []).forEach(f => (fam[f.id] = f));
+    ((F && F.genera) || []).forEach(g => (gen[g.id] = g));
+    ((F && F.species) || []).forEach(s => {
+      if (!s.family || !fam[s.family]) return;
+      sp[s.id] = s;
+      byName[s.name] = s;
+    });
+    const order = Object.values(fam)
+      .map((f, i) => [f, i])
+      .sort((a, b) => (a[0].group || 99) - (b[0].group || 99) || a[1] - b[1])
+      .map(x => x[0].id);
+    const spOf = id => sp[id] || (String(id).startsWith('s:') ? byName[String(id).slice(2)] || null : null);
+    const go = id => {
+      if (fam[id]) return id;
+      const s = spOf(id);
+      if (s) return 's:' + s.name;
+      const g = gen[id];
+      if (!g || !fam[g.family]) return null;
+      const L = (g.species || []).filter(x => sp[x]);
+      if (L.length === 1) return 's:' + sp[L[0]].name;
+      return fam[g.family].genera.length === 1 ? g.family : id;
+    };
+    return {fam, gen, sp, order, spOf, go};
   }
   // An object keyed by units (a progress record, the first-meeting cards) with its old ids under the new ones, the
   // mix-up and offer maps inside each record too (conf, off). Both present (an old app saved again after the switch):
@@ -3465,8 +3515,13 @@
     let p, q;
     if (!s || s === 'home') return '';
     if (b === 'genera' && !a.length) p = 'learn/' + S.many;
-    else if (b.startsWith('g-') && b.length > 2 && !a.length) p = 'learn/' + S.one + '/' + routeEnc(b.slice(2));
-    else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
+    else if (b.startsWith('g-') && b.length > 2 && !a.length) {
+      // A subject with sheets at several ranks (SUBJECTS sheets: fish families, genera, species) names the rank of the
+      // sheet from its id's prefix (g-f:Damselfishes: #fish/learn/family/Damselfishes); any other sheet is its unit's.
+      const id = b.slice(2),
+        w = Object.keys(S.sheets || {}).find(x => id.startsWith(S.sheets[x]) && id.length > S.sheets[x].length);
+      p = 'learn/' + (w || S.one) + '/' + routeEnc(w ? id.slice(S.sheets[w].length) : id);
+    } else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
     else if (b.startsWith('lab-') && b.length > 4) p = 'tools/' + [b.slice(4), ...a].map(routeEnc).join('/');
     else if ((b === 'idkey' || b === 'fishkey') && a.length <= 1) {
       p = ROUTE_FIXED[b];
@@ -3522,6 +3577,7 @@
           return ['basics', ...r, ...(e ? ['edit'] : [])].join('|');
         }
         if (s1 === S.many && n === 2) return 'genera';
+        if (S.sheets && S.sheets[s1] && n === 3) return 'g-' + S.sheets[s1] + r[0];
         if (s1 === S.one && n === 3) return 'g-' + r[0];
         if (s1 === 'look-alikes' && (n === 2 || n === 4)) return ['cmp', ...r].join('|');
         if (s1 === 'compare' && n === 4) return 'cmp-' + r[0] + '|' + r[1];
@@ -4121,6 +4177,8 @@
     fishNames,
     fishTypeNames,
     renamedId,
+    sheetIdOf,
+    fishTree,
     renameUnits,
     renameLogEntry,
     typeNormAll,
