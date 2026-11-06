@@ -544,6 +544,15 @@
   // words), imr}.
   function fishCov(U, play, species, cand, F, j = () => null) {
     F = F || {};
+    // The candidates waiting, by the species they wait in now: one Pierre sent elsewhere with Not this waits there
+    // (fishState; Codex review #659).
+    const waiting = {};
+    Object.entries(cand || {}).forEach(([orig, L]) =>
+      L.forEach(p => {
+        const x = fishState(F, p.f, orig);
+        if (x.st === null) (waiting[x.sid] = waiting[x.sid] || []).push(p);
+      })
+    );
     const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
       isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
       spRow = (sid, fam) => {
@@ -551,7 +560,7 @@
           s = species[sid] || {},
           obs = new Set(L.map(p => p.o || p.f)).size,
           tgt = fishTarget(s),
-          W = (cand[sid] || []).filter(p => fishState(F, p.f, sid).st === null && fishState(F, p.f, sid).sid === sid),
+          W = waiting[sid] || [],
           seen = new Set(L.map(p => p.o || p.f)),
           need = [];
         if (!L.length) need.push('No photo in play');

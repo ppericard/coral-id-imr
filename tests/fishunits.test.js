@@ -283,3 +283,22 @@ test('fishCov and fishLook: per family, genus and species, the photos in play, t
     'w4 is another photo of an observation already in play'
   );
 });
+
+test('fishCov counts a candidate sent with Not this as waiting in its new species (Codex review #659)', () => {
+  const U = [{id: 'f:A', name: 'As', species: ['s1', 's2'], phase: [], genera: [{id: 'g:X', name: 'X', species: ['s1', 's2']}]}],
+    species = {s1: {name: 'X one'}, s2: {name: 'X two'}},
+    C = A.fishCov(
+      U,
+      {},
+      species,
+      {
+        s1: [
+          {f: 'a', o: 'o1'},
+          {f: 'b', o: 'o2'}
+        ]
+      },
+      {out: {b: 's2'}}
+    ),
+    by = Object.fromEntries(C.sp.map(r => [r.id, r]));
+  assert.deepStrictEqual([by.s1.wait, by.s2.wait, by.s2.waitObs], [1, 1, 1]);
+});
