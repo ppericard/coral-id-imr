@@ -451,6 +451,73 @@ const server = http.createServer((req, res) => {
     if (!fz.open || !/Damselfish|fish/i.test(fz.cap))
       ui.push(`${width}px families page: a photo tapped did not enlarge ${JSON.stringify(fz)}`);
     await q.click('#lightbox [data-x]');
+    // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family on the families page opens its
+    // sheet, under the book's English name with its scientific name below; an old entry id links to its family; the only
+    // genus of a family opens the family sheet; the species filter is on by default and one tap shows them all.
+    await q.click('#view .tipg a.tipsheet');
+    await q.waitForFunction(() => document.querySelector('#view .fsheet'), null, {timeout: 15000});
+    const sh = await q.evaluate(() => ({
+      hash: location.hash,
+      title: (document.querySelector('#view .fn-t') || {}).textContent,
+      sci: (document.querySelector('#view .fn-s') || {}).textContent || '',
+      tips: !!document.querySelector('#view .tipbox .idtips li'),
+      rows: document.querySelectorAll('#view .frow').length,
+      bar: (document.querySelector('#modes .ctx-t') || {}).textContent || '',
+      old: hr('g-t02'),
+      wide: document.documentElement.scrollWidth <= innerWidth
+    }));
+    if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
+      ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
+    if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
+    await wide('a family sheet');
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
+    await q
+      .waitForFunction(
+        () => location.hash === '#fish/learn/family/Spadefishes' && document.querySelector('#view .fsheet [data-mine]'),
+        null,
+        {
+          timeout: 15000
+        }
+      )
+      .catch(() => {});
+    const sp = await q
+      .evaluate(() => {
+        const a = document.querySelectorAll('#view .ftiles:not(.juv) .ftile').length;
+        document.querySelector('#view .seg [data-mine="0"]').click();
+        return {hash: location.hash, mine: a, all: document.querySelectorAll('#view .ftiles:not(.juv) .ftile').length};
+      })
+      .catch(e => ({err: e.message}));
+    if (sp.hash !== '#fish/learn/family/Spadefishes' || sp.all !== 5 || sp.mine !== 0)
+      ui.push(`${width}px Spadefishes sheet: ${JSON.stringify(sp)}`);
+    // The filter starts on again on the next sheet opened (Codex review #675); an opt-in circle on puts its families in the
+    // sheets' previous / next, both families of an entry renamed into two included (Seahorses, Waspfishes).
+    await q.evaluate(() => (location.hash = '#fish/learn/family/Rabbitfishes'));
+    await q
+      .waitForFunction(() => location.hash.endsWith('/Rabbitfishes') && document.querySelector('#view .fsheet [data-mine]'), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const re = await q.evaluate(() => {
+      const on = (document.querySelector('#view .seg [data-mine="1"]') || {}).getAttribute?.('aria-pressed'),
+        was = Q.c3;
+      Q.c3 = true;
+      const L = fishShown();
+      Q.c3 = was;
+      // The species of a family an entry was split into count with that entry (Codex review #675: t46, the Seahorses).
+      const units = Object.entries(SUBJ.renamed.split || {})
+        .flatMap(([t, m]) => Object.values(m).map(f => [t, f]))
+        .every(([t, f]) => famUnit(f) === (GX(f) ? f : t));
+      return {
+        on,
+        seahorses: L.includes('f:Seahorses'),
+        wasp: L.includes('f:Waspfishes'),
+        pipe: L.includes('f:Pipefishes'),
+        off: !fishShown().includes('f:Seahorses') || !!was,
+        units
+      };
+    });
+    if (re.on !== 'true' || !re.seahorses || !re.wasp || !re.pipe || !re.off || !re.units)
+      ui.push(`${width}px sheet filter and circles: ${JSON.stringify(re)}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.

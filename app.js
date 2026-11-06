@@ -55,12 +55,19 @@ const hashNow = () => {
 // The link of page key k, '#' and its address, for the subject on screen (or S), or for the first subject that has the
 // page when that one does not (a genus sheet linked from the Tools with Fish chosen: the corals'); Home is '#' (the
 // clean URL: hrFull).
+// A sheet is the subject's only when its id names one of its sheets (core.js sheetIdOf: a fish sheet's id carries its
+// rank's prefix, f:Damselfishes; a coral genus sheet any name), so a coral genus sheet linked with Fish chosen stays the
+// corals'. Its link is built from the sheet's id in its one spelling (an old fish unit id, t01, renamed since).
 const subjHas = (S, k) => {
   const t = sectionOf(k),
     m = k.startsWith('g-') ? 'sheet' : modeOf(k);
+  if (m === 'sheet') return S.pages.includes(m) && sheetIdOf(S, k.slice(2)) != null;
   return t === 'identify' ? UNITS[S.id].identify === m : (t !== 'learn' && t !== 'practice') || S.pages.includes(m);
 };
-const hr = (k, S = SUBJ) => '#' + (routeOut(k, subjHas(S, k) ? S : SUBJECTS.find(x => subjHas(x, k)) || S) || '');
+const hr = (k, S = SUBJ) => {
+  const T = subjHas(S, k) ? S : SUBJECTS.find(x => subjHas(x, k)) || S;
+  return '#' + (routeOut(k.startsWith('g-') ? 'g-' + (sheetIdOf(T, k.slice(2)) || k.slice(2)) : k, T) || '');
+};
 // The full URL of page key k: Home is the page's clean URL, with no '#'.
 const hrFull = (k, S = SUBJ) => (routeOut(k, S) ? hr(k, S) : location.pathname + location.search);
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -739,7 +746,13 @@ const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
   if (tab === 'identify') return m === UNITS[SUBJ.id].identify ? h : UNITS[SUBJ.id].identify;
-  if ((tab !== 'learn' && tab !== 'practice') || SUBJ.pages.includes(m) || !(m === 'sheet' || MODES[tab].some(x => x[0] === m))) return h;
+  if (m === 'sheet' && subjHas(SUBJ, h)) return h;
+  if (
+    (tab !== 'learn' && tab !== 'practice') ||
+    (m !== 'sheet' && SUBJ.pages.includes(m)) ||
+    !(m === 'sheet' || MODES[tab].some(x => x[0] === m))
+  )
+    return h;
   return MODES[tab].map(x => x[0]).find(k => SUBJ.pages.includes(k)) || '';
 };
 // A tab's words for the subject ("Photo → genus" for corals, "Photo → family" for fish).
@@ -1334,8 +1347,9 @@ const UNITS = {
         )
     ],
     winks: () => [],
-    // The Learn page (#learn/genera): the Genera page (learn.js).
+    // The Learn page (#learn/genera): the Genera page (learn.js), and a genus's sheet (#learn/genus/Acropora).
     list: () => viewGenera(),
+    sheet: n => viewGenus(n),
     sets: [
       {
         k: 'bon',
@@ -1411,6 +1425,10 @@ const UNITS = {
     // people working on the IMR course), whatever opt-in circles are on.
     winks: () => (FISH ? FISH.winks.filter(n => FISH.gen[n].views.wide.length) : []),
     list: () => viewFishList(),
+    // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
+    // name line for each.
+    sheet: id => viewFishSheet(id),
+    bar: id => fishBar(id),
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from 95%, Instructor once the exam is passed. The IMR families count in your progress; the SVS video extras and the families beyond IMR (⚙ Settings) and the surprise cards don't. The leaderboard and the achievements count the corals only, for now.</p>`,
@@ -1776,6 +1794,9 @@ function ctxBar(h) {
   const back = `<button type="button" class="up" data-back aria-label="Back">‹<span>Back</span></button>`;
   if (h === 'about') return `${back}<h2 class="ctx-t">About and credits</h2>`;
   if (h.startsWith('delete-account')) return `${back}<h2 class="ctx-t">Delete my account</h2>`;
+  // A subject's own sheet bar (UNITS bar: the fish family, genus and species sheets), else the coral genus sheet's.
+  const ub = h.startsWith('g-') && UNITS[SUBJ.id].bar ? UNITS[SUBJ.id].bar(h.slice(2)) : '';
+  if (ub) return back + ub;
   if (h.startsWith('g-') && GX(h.slice(2))) {
     const n = h.slice(2),
       g = GX(n),
@@ -2030,7 +2051,7 @@ function route() {
     // comes on screen (setSubject routes again), never the subject's list or tool instead. A bare Identify address opens
     // the subject's own tool.
     const S =
-      (/^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'))) ||
+      (/^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && subjHas(x, h))) ||
       (sectionOf(h) === 'identify' && h.includes('|') && SUBJECTS.find(x => subjOpen(x) && UNITS[x.id].identify === modeOf(h)));
     if (S && S !== SUBJ) return void setSubject(S.id).catch(() => location.replace(hrFull(sp)));
     return void location.replace(hrFull(sp));
@@ -2076,7 +2097,7 @@ function route() {
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
   showModes(tab, h);
-  if (h.startsWith('g-')) viewGenus(h.slice(2));
+  if (h.startsWith('g-')) UNITS[SUBJ.id].sheet(h.slice(2));
   else if (h === 'cmp' || h.startsWith('cmp|')) {
     const [, a, b] = h.split('|');
     viewLookalikes(a, b);
