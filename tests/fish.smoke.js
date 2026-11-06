@@ -503,15 +503,20 @@ const server = http.createServer((req, res) => {
       Q.c3 = true;
       const L = fishShown();
       Q.c3 = was;
+      // The species of a family an entry was split into count with that entry (Codex review #675: t46, the Seahorses).
+      const units = Object.entries(SUBJ.renamed.split || {})
+        .flatMap(([t, m]) => Object.values(m).map(f => [t, f]))
+        .every(([t, f]) => famUnit(f) === (GX(f) ? f : t));
       return {
         on,
         seahorses: L.includes('f:Seahorses'),
         wasp: L.includes('f:Waspfishes'),
         pipe: L.includes('f:Pipefishes'),
-        off: !fishShown().includes('f:Seahorses') || !!was
+        off: !fishShown().includes('f:Seahorses') || !!was,
+        units
       };
     });
-    if (re.on !== 'true' || !re.seahorses || !re.wasp || !re.pipe || !re.off)
+    if (re.on !== 'true' || !re.seahorses || !re.wasp || !re.pipe || !re.off || !re.units)
       ui.push(`${width}px sheet filter and circles: ${JSON.stringify(re)}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});

@@ -792,7 +792,14 @@ const NOFISH =
 const noFish = () => `<span class="nofish">${NOFISH}<span>No photo yet</span></span>`;
 // The unit the player's progress keeps a family under: the family once the game asks the families, else the IMR entry
 // that was renamed into it (SUBJECTS renamed), '' when none.
-const famUnit = fid => (GX(fid) ? fid : Object.keys((SUBJ.renamed || {}).ids || {}).find(t => SUBJ.renamed.ids[t] === fid && GX(t)) || '');
+// An entry renamed into two families counts for both (SUBJECTS renamed split: t46 is the Pipefishes and the Seahorses;
+// Codex review #675).
+const famUnit = fid => {
+  const R = SUBJ.renamed || {};
+  return GX(fid)
+    ? fid
+    : Object.keys(R.ids || {}).find(t => (R.ids[t] === fid || Object.values((R.split || {})[t] || {}).includes(fid)) && GX(t)) || '';
+};
 // "Opened for me" (Pierre, Q5): until the game asks species, a species counts as opened once its family is at Advanced,
 // the level at which a family's species open (docs/FISH_PATH.md "Unlock rules"), or once its scientific genus is met.
 const spOpen = s => {
