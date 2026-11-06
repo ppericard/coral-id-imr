@@ -222,8 +222,8 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
       assert.ok(!game.has(p.f), `${p.f} is also a game photo`);
       // iNaturalist, or FishBase (tools/fetch_fishbase.py, Pierre 2026-11-05: the same rules; tests/fishbase.test.js).
       if (p.via === 'fishbase') {
-        assert.match(p.o, /^https:\/\/www\.fishbase\.de\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
-        assert.match(p.src, /^https:\/\/www\.fishbase\.de\/images\/species\/[\w-]+\.jpg$/);
+        assert.match(p.o, /^https:\/\/www\.fishbase\.se\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
+        assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[\w-]+\.jpg$/);
         assert.match(p.a, /via FishBase/);
         return;
       }

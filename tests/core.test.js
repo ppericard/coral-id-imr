@@ -992,7 +992,7 @@ test('photo fallback: the online original at a light size for an iNaturalist / F
       }
     },
     course: {Acropora: [{f: 'imr-p15_i4', imr: true, slide: 20}]},
-    fish: [{f: 'fbHachl_m0', src: 'https://www.fishbase.de/images/species/Hachl_m0.jpg'}]
+    fish: [{f: 'fbHachl_m0', src: 'https://www.fishbase.se/images/species/Hachl_m0.jpg'}]
   };
   const idx = photoIndex(D),
     look = f => idx.f.get(f),

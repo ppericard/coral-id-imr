@@ -12,10 +12,13 @@ API), one row per FishBase picture with its file name, species, picture type, au
 life stage, licence field and whether it is the species' main picture. `--fishbase DIR` reads DIR/picturesmain.parquet
 and DIR/species.parquet (needs pyarrow, as tools/fish_common.py) and keeps the underwater photos of every game species
 in tools/fishbase_src.json (in the repo, one species per line); everything else runs offline from that file. The photos
-themselves stay on FishBase (src = www.fishbase.de/images/species/<file>), shown remote like an iNaturalist candidate
+themselves stay on FishBase (src = www.fishbase.se/images/species/<file>), shown remote like an iNaturalist candidate
 (r: 1) and downloaded only when they enter the game (admin plan PR 7). FishBase's robots.txt (2026-11-05) allows every
 user agent but AI-training crawlers (Content-Signal: search=yes, ai-train=no, use=reference); fishbase.org sits behind a
-browser challenge; no terms-of-use page was found; each photo page states its licence.
+browser challenge; no terms-of-use page was found; each photo page states its licence. The host is the www.fishbase.se
+mirror (2026-11-06): www.fishbase.de answers 500 (an HTML page) to Chromium's image request for every photo tried, so
+the admin showed "Photo not loading" and Chrome players lost the FishBase sheet photo, while the same file on .se answers
+200 image/jpeg (a plain GET still gets 200 on .de, which hid it; fishbase.org and .us answer 403).
 
 The rules (Pierre, 2026-11-05: the same as for iNaturalist photos, tools/fetch_fish.py):
 - Live fish only: picture type "underwater photo". Never "photo" (mostly fresh or preserved specimens out of water),
@@ -66,7 +69,7 @@ from datajson import dump  # noqa: E402
 
 SRC = ROOT / "tools" / "fishbase_src.json"
 SNAPSHOT = "rfishbase snapshot v25.04 (huggingface.co/datasets/cboettig/fishbase), tables picturesmain and species, CC BY-NC (FishBase)"
-SITE = "https://www.fishbase.de"
+SITE = "https://www.fishbase.se"  # never www.fishbase.de: it answers a browser's image request 500 (see the top)
 KIND = "underwater photo"  # the only picture type taken: a live fish in the sea
 # FishBase Copyright field -> licence: the stricter of the field and the photo page (see the top). Never anything else.
 LIC = {"noncommercialuse": "cc-by-nc", "freeuse": "cc-by-nc"}
