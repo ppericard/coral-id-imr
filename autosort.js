@@ -620,6 +620,7 @@
           dimorph: !!f.dimorph,
           wink: f.wink || null,
           look: f.look || [],
+          lsrc: f.lsrc || {},
           species: sids,
           genera: gids.map(g => ({
             id: g,
@@ -778,8 +779,9 @@
 
   // ---- Fish Look-alikes (admin plan PR 10; docs/ROADMAP.md "Admin for every subject" row 10) ----
   // The pairs: two families the IMR course compares (fish.json families look: [other family id, IMR's words]), once each,
-  // in the book's order, with every IMR line about them (each sourced "IMR course"). [{k: 'f:A|f:B' (sorted), A, B (ids,
-  // in the book's order), cues: [[family id the line is on, words]]}].
+  // in the book's order, with every IMR line about them, each with its own source (fish.json families lsrc: the slide,
+  // and Pierre's additions; "IMR course" when none is recorded; rule C2, Codex review #667). [{k: 'f:A|f:B' (sorted), A,
+  // B (ids, in the book's order), cues: [[family id the line is on, words, source]]}].
   function fishPairs(U) {
     const at = Object.fromEntries((U || []).map((u, i) => [u.id, i])),
       P = {};
@@ -788,7 +790,7 @@
         if (!(b in at) || b === u.id) return;
         const k = [u.id, b].sort().join('|');
         P[k] = P[k] || {k, A: at[u.id] <= at[b] ? u.id : b, B: at[u.id] <= at[b] ? b : u.id, cues: []};
-        if (w && !P[k].cues.some(c => c[1] === w)) P[k].cues.push([u.id, w]);
+        if (w && !P[k].cues.some(c => c[1] === w)) P[k].cues.push([u.id, w, (u.lsrc || {})[b] || 'IMR course']);
       })
     );
     return Object.values(P).sort((x, y) => at[x.A] - at[y.A] || at[x.B] - at[y.B]);

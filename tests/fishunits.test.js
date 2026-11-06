@@ -326,7 +326,7 @@ test('Photo review: fishSet through fishOwn, fishTag, fishAgree against the pass
 
 test('Look-alikes: fishPairs from the IMR lines, fishMontPick phase-matched, fishMontSet', () => {
   const U = [
-    {id: 'f:B', look: [['f:A', 'B: no spine']]},
+    {id: 'f:B', look: [['f:A', 'B: no spine']], lsrc: {'f:A': 'IMR fish presentation, slide 3'}},
     {
       id: 'f:A',
       look: [
@@ -343,8 +343,8 @@ test('Look-alikes: fishPairs from the IMR lines, fishMontPick phase-matched, fis
       A: 'f:B',
       B: 'f:A',
       cues: [
-        ['f:B', 'B: no spine'],
-        ['f:A', 'A: a spine']
+        ['f:B', 'B: no spine', 'IMR fish presentation, slide 3'],
+        ['f:A', 'A: a spine', 'IMR course']
       ]
     }
   ]);
