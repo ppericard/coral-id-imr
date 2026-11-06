@@ -72,7 +72,7 @@
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen">Learning phase<span class="wide"> · before ReefCloud or your next dive</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
+            <p class="hdwhen">Learning phase<span class="wide"> · before ${fish ? 'EventMeasure' : 'ReefCloud'} or your next dive</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
@@ -102,15 +102,18 @@ ${idoor}
   // The Coral Finder book is cited as a reference (References), never credited as a source of the app's content: its
   // content is not reproduced (Pierre, 2026-11-03, a rights question). The Home credit line does not name it.
   window.viewAbout = function () {
-    const inat = 'https://www.inaturalist.org';
+    const inat = 'https://www.inaturalist.org',
+      ab = subjMine() // the other subjects open to this player add their lines (app.js UNITS about); the corals' are below
+        .map(S => UNITS[S.id].about)
+        .filter(Boolean);
     $v.innerHTML = `<h2 class="vh">About and credits</h2><div class="about">
       <section>
         <h3>Who made it</h3>
-        <p>${esc(ORG.app)} is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the ${esc(ORG.name)} (${esc(ORG.short)}), Dauin, Philippines, to name coral genera on photos and on dives.</p>
+        <p>${esc(ORG.app)} is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the ${esc(ORG.name)} (${esc(ORG.short)}), Dauin, Philippines, to name coral genera${ab.map(a => ' and ' + a.who).join('')} on photos and on dives.</p>
       </section>
       <section>
         <h3>Course content</h3>
-        <p>The list of genera, the ID tips, the lecture notes and the lecture photos come from <b>IMR Lecture 6</b>, the IMR coral identification lecture. Any other source is named where it is used, for example under “Other sources” on a genus sheet.</p>
+        <p>The list of genera, the ID tips, the lecture notes and the lecture photos come from <b>IMR Lecture 6</b>, the IMR coral identification lecture. Any other source is named where it is used, for example under “Other sources” on a genus sheet.${ab.map(a => ' ' + a.course).join('')}</p>
       </section>
       <section>
         <h3>Photos</h3>
@@ -122,6 +125,7 @@ ${idoor}
         <p>Works cited in the app, by page or by link:</p>
         <ul>
           <li>Russell Kelley, <i>Coral Finder 2022</i> (Indo-Pacific), BYOGUIDES: an ID guide, cited by page on genus sheets and look-alike pairs.</li>
+          ${ab.map(a => a.refs).join('')}
           <li><a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species (WoRMS)</a> and <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a>, linked from every genus sheet.</li>
         </ul>
       </section>
