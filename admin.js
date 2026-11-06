@@ -1870,7 +1870,7 @@ function renderFishCov() {
       ['famv', 'fam', 'families validated but incomplete', r => (D.F.genera || {})[r.id] && D.F.genera[r.id].ok && r.need.length],
       ['famnr', 'fam', 'families not ready to validate', r => r.need.length]
     ],
-    todo = TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(fn).length]).filter(x => x[3]),
+    todo = TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(r => (!imrOn || inImr(r)) && fn(r)).length]).filter(x => x[3]), // under All | IMR, as the rows (Codex review #659)
     tdo = TODO.find(x => x[0] === FISHCOV.todo && x[1] === lv);
   let R = C[lv].filter(r => (!imrOn || inImr(r)) && (!tdo || tdo[3](r)));
   R = R.slice().sort(

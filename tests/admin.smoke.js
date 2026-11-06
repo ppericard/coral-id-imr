@@ -473,6 +473,18 @@ const WIDTHS = [390, 1280];
           if (c.rows !== ng) fails.push(`${w}px Fish Coverage, IMR genera: ${JSON.stringify({...c, ng})}`);
           await p.click('.adm-fishcov [data-fuimr="all"]');
           // A To do chip shows only its rows; a second click, every row again (Codex review #659).
+          // ...also under IMR: the chip's count is the rows it shows (Codex review #659).
+          await p.click('.adm-fishcov [data-fuimr="imr"]');
+          const ci = await p.evaluate(() => {
+            const b = document.querySelector('[data-fishtodo]');
+            return b && {k: b.dataset.fishtodo, n: parseInt(b.textContent, 10)};
+          });
+          if (ci) {
+            await p.click(`[data-fishtodo="${ci.k}"]`);
+            if ((await cv()).rows !== ci.n) fails.push(`${w}px Fish Coverage, To do ${ci.k} under IMR: not ${ci.n} rows`);
+            await p.click(`[data-fishtodo="${ci.k}"]`);
+          }
+          await p.click('.adm-fishcov [data-fuimr="all"]');
           const chip = await p.evaluate(() => {
             const b = document.querySelector('[data-fishtodo="spnone"]') || document.querySelector('[data-fishtodo]');
             return b && {k: b.dataset.fishtodo, n: parseInt(b.textContent, 10)};
