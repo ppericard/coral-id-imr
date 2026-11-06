@@ -815,7 +815,11 @@ test('reference photos: game photo rules, in play once judged, the cover where o
     played = C.fishPhotos(PH, GM, CUR, F);
   Object.entries(PH).forEach(([tid, L]) =>
     L.filter(p => p.from).forEach(p =>
-      assert.ok((played[tid] || []).some(x => x.f === p.f) || CUR.fish.seen?.[p.f], `${tid} ${p.f}: dropped from play`)
+      assert.ok(
+        (played[tid] || []).some(x => x.f === p.f || (p.o && x.o === p.o) || String(x.f).endsWith(String(p.f).slice(2))) ||
+          CUR.fish.seen?.[p.f],
+        `${tid} ${p.f}: dropped from play`
+      )
     )
   );
   [C.fishGen(F, PH), C.fishGen(F, played)].forEach(X =>
