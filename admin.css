@@ -1766,9 +1766,9 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
     flex: 1;
     min-width: 0;
     font: inherit;
-    font-size: 0.95rem;
+    font-size: var(--fs-s);
     min-height: 44px;
-    padding: 0 8px;
+    padding: 0 6px;
     border: 1px solid var(--line);
     border-radius: var(--pill);
     background: var(--surface);
@@ -1815,7 +1815,7 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 @media (max-width: 599px) {
   body.admin .chip.adm-save {
     min-width: 0;
-    padding: 0 12px;
+    padding: 0 9px;
   }
   .adm-swbar button {
     font-size: 0.86rem;
