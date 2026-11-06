@@ -169,6 +169,19 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   );
 });
 
+test("v57: a load lists the ids of the player's own verified reports (Q66), never another's or an unverified one", () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
+  s.post({name: 'Bob', pin: '5678', data: prog(1), summary: {}});
+  assert.ok(!('reps' in s.get({name: 'Ana', pin: '1234'})), 'none yet: no field');
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'photo'})]});
+  s.post({rname: 'Ana', rpin: '', reports: [rep('r3')]}); // typed name, not verified
+  s.post({rname: 'Bob', rpin: '5678', reports: [rep('r4')]});
+  assert.deepStrictEqual(s.get({name: 'ana', pin: '1234'}).reps, ['r1', 'r2']);
+  assert.deepStrictEqual(s.get({name: 'Bob', pin: '5678'}).reps, ['r4']);
+  assert.strictEqual(s.get({name: 'Ana', pin: '0000'}).reps, undefined, 'a wrong code gets nothing');
+});
+
 test('v34: a save from an app that does not know a subject keeps that subject in the saved copy (Codex review #442)', () => {
   const s = loadCodeGs(),
     fish = {'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}}), 'reefid-sync-fish-quiz': '{"c2":true}'};
@@ -276,6 +289,21 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
   assert.strictEqual(s.sheets.RAs.getLastRow(), 3, 'no account re-created for Ana B');
   // Someone new may still take the name with another code.
   assert.strictEqual(s.post({name: 'Ana B', pin: '0000', data: prog(1), summary: {}}).ok, true);
+});
+
+test("v57: a name taken again after its account was deleted never gets the old account's reports (Codex review #581)", () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('old1')]});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).reps, ['old1']);
+  assert.strictEqual(s.post({userDelete: 'Ana', token: TOK}).ok, true);
+  // The deleted account's own device: 'gone', and never its reports (Pierre, 2026-11-05).
+  const g = s.get({name: 'Ana', pin: '1234'});
+  assert.deepStrictEqual([g.error, g.reps], ['gone', undefined]);
+  s.post({name: 'Ana', pin: '9999', data: prog(1), summary: {}});
+  assert.ok(!('reps' in s.get({name: 'Ana', pin: '9999'})), "the old account's report is not the new one's");
+  s.post({rname: 'Ana', rpin: '9999', reports: [rep('new1', {t: new Date(Date.now() + 60000).toISOString()})]});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '9999'}).reps, ['new1']);
 });
 
 test('userDelete: rows gone; answers kept anonymously unless asked; the old code is refused', () => {
