@@ -194,8 +194,10 @@ function renderJourney(name, anonId = '') {
   // learned units, Elo or sheets opened, which come from the replayed subject's model and saved copy.
   const full = !!ASUBJ.replay;
   if (!full && !FISHA) fishAdmin().then(() => cur === here && FISHA && render());
-  const jn = S =>
-      ANS ? rowsOf(S).filter(r => r[0] === (anonId || (USERS && ((USERS.users || []).find(x => x.name === name) || {}).id))).length : 0,
+  // A subject's rows of this player (u, found below); an archived record's are kept apart from rowsOf (sheet v58 flag 2;
+  // Codex review #690).
+  const jRows = S => (u.arch ? subjRows(ANS.all || ANS.rows || [], S.id) : rowsOf(S)).filter(r => r[0] === u.id),
+    jn = S => jRows(S).length,
     jseg = () =>
       `<span class="adm-qseg adm-sseg adm-jsubj" role="group" aria-label="Subject">${SUBJECTS.map(
         S => `<a href="#${esc(S.hash + admAddr(here))}" data-own aria-pressed="${S === ASUBJ}">${esc(S.name)} <small>${jn(S)}</small></a>`
@@ -222,9 +224,7 @@ function renderJourney(name, anonId = '') {
     bindJReload();
     return;
   }
-  const R = rowsOf()
-    .filter(r => r[0] === u.id)
-    .sort((a, b) => a[1] - b[1]);
+  const R = jRows(ASUBJ).sort((a, b) => a[1] - b[1]);
   const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}${u.arch ? '<small class="note">archived</small>' : ''}${SUBJECTS.length > 1 ? jseg() : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';

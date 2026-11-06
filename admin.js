@@ -7126,12 +7126,9 @@ const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><h2>Players</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
-  // The pages opened (the Devices column) come after the table, drawn again once in.
-  if (!PGS)
-    loadPages().then(
-      () => cur === 'players/list' && USERS && ANS && render(),
-      () => {}
-    );
+  // The pages opened (the Devices column) come after the table, drawn again once in (read again once stale; Codex
+  // review #690).
+  pagesFresh('players/list');
   if (!USERS || !ANS) {
     $v.innerHTML = head + '<p class="note">Loading…</p>';
     Promise.all([loadUsers(), ANS ? null : loadStats()]).then(() => {
@@ -7315,7 +7312,7 @@ function bindUsers() {
   const rl = $v.querySelector('[data-uload]');
   if (rl)
     rl.onclick = () => {
-      sheetAgain('users', 'ans', 'stats'); // levels (ras) too, not only the counts
+      sheetAgain('users', 'ans', 'stats', 'pages'); // levels (ras) too; the pages opened (Devices)
       savedClear(); // the players' saved progress (Progress, Learned, the journeys' cards) too
       render();
     };
@@ -7688,6 +7685,8 @@ function statsPlayers() {
     return;
   }
   // Activity: the subject on screen's answers (every subject has its Activity); the Answer log: the replayed subject's.
+  // Another subject's units are named from its entries (fishAdmin, read once; Codex review #690).
+  if (!log && !ASUBJ.replay && !FISHA) fishAdmin().then(() => cur === 'players/activity' && FISHA && render());
   const R = log ? statRows() : rowsOf(),
     P = {};
   R.forEach(r => {
