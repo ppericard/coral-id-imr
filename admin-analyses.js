@@ -1395,6 +1395,8 @@ function anOverview(rep, R) {
     )}${anCard('Milestones', anTable(['Answers', 'Last answer', '#Players', '#Clear'], ms), 'wide', false)}</div>`
   );
 }
+// what a compacted milestone (analysis.js compact) shows in place of its tables
+const AN_LEAN = '<p class="note">Only the main results are kept for this milestone.</p>';
 function anView(key, rep, R) {
   const a = R.A[key];
   if (!a) return '<p class="note">Not in this report.</p>';
@@ -1409,6 +1411,19 @@ function anView(key, rep, R) {
     ...(key === 'back' && a.far != null ? [['After a break', anInt(a.far)]] : []),
     ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : [])
   ]);
+  // a compacted milestone (analysis.js compact) keeps only the counts of its profiles, never the players' rows (Codex
+  // review #604: the heatmap read 0 answers, 0 players and drew nothing): its counts and the compacted note
+  if (key === 'who' && a.lean)
+    return (
+      kpis(
+        a.thin
+          ? [['Players', anInt(a.n)]]
+          : [
+              ['Answers used', anInt(a.n)],
+              ['Players', a.players ?? '–']
+            ]
+      ) + AN_LEAN
+    );
   if (key === 'who')
     return (
       kpis([
@@ -1426,7 +1441,7 @@ function anView(key, rep, R) {
       `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} answers this analysis needs.</p>` +
       (key === 'sess' && a.desc ? `<div class="adm-sgrid adm-an-grid">${anSessDesc(a.desc).join('')}</div>` : '')
     );
-  const lean = a.lean ? '<p class="note">Only the main results are kept for this milestone.</p>' : '';
+  const lean = a.lean ? AN_LEAN : '';
   const parts = [anEffects(a, key)];
   if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []), anEnt(a, key));
   parts.push(anConv(rep, key));
