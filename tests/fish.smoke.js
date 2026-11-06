@@ -1666,7 +1666,79 @@ const server = http.createServer((req, res) => {
     }
     await c9.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello];
+  // The admin's ⚑ "Bad photo" flag on a fish quiz photo, as on a coral one (flag.js, one brick for every subject; Pierre,
+  // 2026-11-06: none on the fish quiz): a phone (no hover: the flag goes by itself on the question's photo), the photos
+  // answered by a stand-in (every outside host: iNaturalist, FishBase, R2). A tap records the fish photo by its photo id
+  // (core.js fishPid), its subject, its unit and where it was seen.
+  const flag = [];
+  {
+    const stand = fs.readFileSync(require('./photostub.js')(ROOT).stand['-s']);
+    const cf = await b.newContext({viewport: {width: 390, height: 844}, hasTouch: true, isMobile: true, serviceWorkers: 'block'});
+    await cf.route(
+      u => !u.href.startsWith(base),
+      r => (r.request().resourceType() === 'image' ? r.fulfill({contentType: 'image/webp', body: stand}) : r.abort())
+    );
+    await cf.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-flag')) {
+          sessionStorage.setItem('fish-flag', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}');
+        }
+      } catch (e) {}
+    });
+    const q = await cf.newPage();
+    q.on('pageerror', e => errs.push(`flag: ${e.message}`));
+    await q.goto(base + '#practice/quiz');
+    await q.waitForFunction(() => window.APP_READY && SUBJ.id === 'fish' && document.querySelector('#view .qph img'), null, {
+      timeout: 30000
+    });
+    for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
+    const shown = await q
+      .waitForFunction(
+        () => {
+          const f = document.querySelector('.pflag'),
+            im = document.querySelector('#view .qph img');
+          if (!f || f.hidden || !im) return false;
+          const a = f.getBoundingClientRect(),
+            r = im.getBoundingClientRect();
+          return a.top >= r.top && a.bottom <= r.bottom && a.right <= r.right + 1 && a.left >= r.left;
+        },
+        null,
+        {timeout: 15000}
+      )
+      .then(() => true)
+      .catch(() => false);
+    if (!shown) flag.push('no ⚑ on the fish quiz photo');
+    else {
+      await q.tap('.pflag');
+      const rec = await q.evaluate(() => {
+        const im = document.querySelector('#view .qph img'),
+          L = JSON.parse(localStorage.getItem('reefid-photo-flags') || '[]'),
+          x = L[L.length - 1] || {};
+        return {
+          n: L.length,
+          x,
+          id: fishPid(im.dataset.f),
+          file: im.dataset.f,
+          holds: !!(x.unit && GX(x.unit) && GX(x.unit).views.wide.some(p => p.f === im.dataset.f))
+        };
+      });
+      if (
+        rec.n !== 1 ||
+        rec.x.s !== 'fish' ||
+        rec.x.f !== rec.id ||
+        rec.x.file !== rec.file ||
+        !rec.holds ||
+        !/quiz · level/.test(rec.x.where)
+      )
+        flag.push('the fish flag recorded: ' + JSON.stringify(rec));
+    }
+    await cf.close();
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

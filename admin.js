@@ -334,17 +334,25 @@ const seenOf = (o, cand) => Object.fromEntries(Object.entries(o.seen || {}).filt
 const sgChanged = () => !same(seenOf(DRAFT, false), seenOf(SAVED, false)) || !same(DRAFT.use || {}, SAVED.use || {});
 // Candidates rejected in the Candidates view: curation.json "seen" {'cand:f': 1}. Only a "reviewed" mark: the photo stays a candidate.
 const cdChanged = () => !same(seenOf(DRAFT, true), seenOf(SAVED, true));
+// Each flag goes to its subject's part of the curation (flag.js s, core.js SUBJECTS admin.cur; a flag without one came
+// from the corals, the only subject flagged before), under its id there (fish: core.js fishPid), never to another's.
+const flagsOf = (C, S = ASUBJ) => (S.admin.cur ? (C[S.admin.cur] || {}).flag : C.flag) || {};
+function flagsSet(C, S, F) {
+  if (!S.admin.cur) return (C.flag = F);
+  C[S.admin.cur] = {...(C[S.admin.cur] || {}), flag: F};
+}
 function importFlags() {
   const L = store.get('reefid-photo-flags', []);
   if (!L || !L.length) return 0;
-  DRAFT.flag = {...(DRAFT.flag || {})};
   let n = 0;
   L.forEach(x => {
-    if (x && x.f && !DRAFT.flag[x.f]) {
-      const {f, ...rest} = x;
-      DRAFT.flag[f] = rest;
-      n++;
-    }
+    if (!x || !x.f) return;
+    const S = subjectOf(x.s),
+      F = flagsOf(DRAFT, S);
+    if (F[x.f]) return;
+    const {f, s, ...rest} = x;
+    flagsSet(DRAFT, S, {...F, [f]: rest});
+    n++;
   });
   store.set('reefid-photo-flags', null);
   if (n) saveDraft();
@@ -1200,7 +1208,7 @@ function statusDraw({parts, sug, over}) {
     bs.setAttribute('aria-pressed', String(bookOn(DRAFT)));
     bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`;
   }
-  const tn = Object.keys(DRAFT.flag || {}).length + sug + repsOpen().length,
+  const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen().length,
     xn = Object.keys(DRAFT.exclude || {}).length;
   OVER = over;
   const t = draftAt ? ` (saved ${dateText(draftAt, 'hm')})` : '';
@@ -1256,11 +1264,12 @@ const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'play
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
-// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine).
+// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine) and its photos flagged
+// on the site (its flag).
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
-  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length;
+  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length + Object.keys(F.flag || {}).length;
 };
 // A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
 const LIVE = 'photos/genera/live';
@@ -2558,7 +2567,7 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter. Coral Finder book photos are left out.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; on a fish photo, Remove excludes it from the fish games for good (Undo brings it back) and Done clears the flag.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   units: `<p>The book's families (Allen et al. 2015, the key in force), by key group: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (8, 12 for the PDF's most sighted) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the family's), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only) and <b>×</b> (excluded for good): one click each, Undo steps back. <b>✓ Validated</b> once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. Candidates are added in Candidates. Publish sends it all (curation.json fish).</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
@@ -3512,8 +3521,12 @@ function bindDecide(k) {
 }
 function renderTriage() {
   status();
-  const F = DRAFT.flag || {},
-    flagged = Object.keys(F).map(f => ({...(PHOTOS[f] || {genus: F[f].genus || '?'}), f, fl: F[f]}));
+  // The photos flagged on the site for the subject on screen (flagsOf): a coral one with its genus, a photo of a subject
+  // with its own part of the curation (fish) by its photo (fl.file) and unit, once its data is read (fishAdmin).
+  const F = flagsOf(DRAFT),
+    own = !ASUBJ.admin.cur,
+    flagged = Object.keys(F).map(f => ({...((own && PHOTOS[f]) || {genus: F[f].genus || '?'}), f, fl: F[f]}));
+  if (!own && flagged.length && !FISHA) fishAdmin();
   const when = t => {
     try {
       return dateText(t, 'dmhm');
@@ -3526,6 +3539,7 @@ function renderTriage() {
       <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
   // A flagged photo still on a genus page gets every tool of that page (Pierre: often flagged for its zoom level), plus Done.
   const flagTile = p => {
+    if (!own) return unitFlagTile(p);
     const n = p.genus,
       q = DATA.gen[n] && [...photos(n), ...pending(n)].find(x => x.f === p.f),
       where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`;
@@ -3544,6 +3558,17 @@ function renderTriage() {
       .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`)
       .replace(GRIP, '')
       .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>${where}`);
+  };
+  // A flagged photo of a subject with its own part of the curation: the photo, its unit, where it was seen; Remove excludes
+  // it for good from that subject's games (autosort.js fishExclude, the × of Photos › Families, by the photo's name:
+  // core.js fishPhotos and fishOn honour it, its other copies by their photo id). Both clear the flag; Undo takes either back.
+  const unitFlagTile = p => {
+    const fp = FISHA && FISHA.ph[p.fl.file || p.f],
+      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`,
+      ph = fp
+        ? `<a class="adm-ph" href="${esc(fp.o || '')}" target="_blank" rel="noopener"><img src="${img(fp, 1)}" alt="" loading="lazy"></a>`
+        : '<span class="adm-ph none">missing</span>';
+    return `<figure class="adm-tile" data-f="${esc(p.f)}">${ph}<figcaption>${p.fl.unit ? repUnit(p.fl.unit) : ''} <small>${esc((fp && fp.t) || '')}</small>${where}</figcaption><div class="adm-acts"><button type="button" data-act="tdrop">Remove</button><button type="button" data-act="tdone">Done</button></div></figure>`;
   };
   // A reported photo: every tool of its genus page, like a flagged one; Done is per report.
   const repTile = (f, g0) => {
@@ -3622,8 +3647,9 @@ function renderTriage() {
   bindDecide('rule');
   bindDecide('sa');
   const done = f => {
-    DRAFT.flag = {...(DRAFT.flag || {})};
-    delete DRAFT.flag[f];
+    const L = {...flagsOf(DRAFT)};
+    delete L[f];
+    flagsSet(DRAFT, ASUBJ, L);
   };
   $v.querySelectorAll('[data-act="tdone"],[data-tdone]').forEach(
     b =>
@@ -3666,6 +3692,17 @@ function renderTriage() {
         done(f);
         saveDraft();
         render();
+      })
+  );
+  $v.querySelectorAll('[data-act="tdrop"]').forEach(
+    b =>
+      (b.onclick = () => {
+        const f = b.closest('[data-f]').dataset.f;
+        DRAFT[ASUBJ.admin.cur] = fishExclude(DRAFT[ASUBJ.admin.cur], (flagsOf(DRAFT)[f] || {}).file || f);
+        done(f);
+        saveDraft();
+        render();
+        toast('Excluded. Undo (Ctrl+Z) brings it back.');
       })
   );
   $v.querySelectorAll('[data-act="thide"]').forEach(
@@ -5297,6 +5334,7 @@ function pubSummary() {
     [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
     // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera).
     [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish family'],
+    [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
     [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]
