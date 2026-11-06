@@ -343,6 +343,20 @@ const WIDTHS = [390, 1280];
       await go('photos/review/quality');
       let at = await seg();
       if (at.subj.length !== S.length || at.subj[0][1] !== 'true') fails.push(`${w}px Subjects: switch ${JSON.stringify(at.subj)}`);
+      // A mini switch in the header line at every width (Pierre, 2026-11-06), each side its subject's icon; its name shows
+      // from 600 px, a label only on phones (where the logo steps aside for it); the header's controls inside the window.
+      const mini = await p.evaluate(() => {
+        const mid = e => (r => r.top + r.height / 2)(e.getBoundingClientRect()),
+          sw = document.getElementById('subj');
+        return {
+          line: Math.round(Math.abs(mid(sw) - mid(document.getElementById('tools')))),
+          right: Math.round(document.getElementById('tools').getBoundingClientRect().right - innerWidth),
+          icons: [...sw.querySelectorAll('a')].map(a => !!a.querySelector('svg.sji')),
+          names: [...sw.querySelectorAll('.adm-sjn')].map(n => n.getBoundingClientRect().width > 2)
+        };
+      });
+      if (mini.line > 4 || mini.right > 0 || mini.icons.some(v => !v) || mini.names.some(v => v !== w >= 600))
+        fails.push(`${w}px Subjects: mini switch ${JSON.stringify(mini)}`);
       await go(other.hash + 'inbox/todo/reports');
       at = await seg();
       if (
@@ -2674,6 +2688,60 @@ const WIDTHS = [390, 1280];
     if (ov.never !== ov.wantNever) fails.push(`${w}px Overview: ${ov.never} photos never rated instead of ${ov.wantNever}`);
     if (ov.ends !== 10) fails.push(`${w}px Overview: ${ov.ends} genus links in Fewest and most`);
     if (ov.wide > 0) fails.push(`${w}px Overview: page ${ov.wide} px wider than the window`);
+    // The calibration goal (Pierre, 2026-11-06, Q192): 3+ answers per genus, every game genus once, its photos in play and
+    // those with 3 answers or more as counted here; a photo 2 logits above its genus after 6 answers is far harder than it
+    // (listed on Difficulty, counted on the genus's row), one with 4 answers is not yet; the ratings put back after.
+    {
+      const rated = await p.evaluate(() => {
+        const R = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].map(r => [...r.children].map(c => c.innerText.trim())),
+          F = [...GAME].flatMap(n => covViews(n).flatMap(([v]) => covOf(n, v).L.map(x => x.f)));
+        return {
+          rows: R.length,
+          genera: GAME.size,
+          photos: R.reduce((t, r) => t + Number(r[1]), 0),
+          want: F.length,
+          three: R.reduce((t, r) => t + Number(r[2]), 0),
+          wantThree: F.filter(f => nAns(STATS[f]) >= RATE.MIN).length
+        };
+      });
+      if (rated.rows !== rated.genera || rated.photos !== rated.want || rated.three !== rated.wantThree)
+        fails.push(`${w}px Overview: 3+ answers per genus ${JSON.stringify(rated)}`);
+      const inj = await p.evaluate(() => {
+        const L = poolStats().play.filter(x => GD[x.genus] && !STATS[x.f]),
+          a = L[0],
+          b = L.find(x => x.genus !== a.genus);
+        STATS[a.f] = [GD[a.genus][0] + 2, 5.5, 1, 6];
+        STATS[b.f] = [GD[b.genus][0] + 2, 3.5, 1, 4];
+        return {a: a.f, b: b.f, g: a.genus};
+      });
+      await go('photos/stats/difficulty');
+      const far = await p.evaluate(({a, b}) => {
+        const L = [...document.querySelectorAll('[data-pst="far"] [data-zf]')].map(x => x.dataset.zf);
+        return {a: L.includes(a), b: L.includes(b), n: L.length, all: farHarder(poolStats().play).length};
+      }, inj);
+      if (!far.a || far.b || far.n !== far.all) fails.push(`${w}px Difficulty: far harder than their genus ${JSON.stringify(far)}`);
+      // Its own threshold: shown when the answers filter leaves no photo too (Codex review #682).
+      const empty = await p.evaluate(a => {
+        const m = SF.min;
+        SF.min = 1e6;
+        render();
+        const r = {
+          far: [...document.querySelectorAll('[data-pst="far"] [data-zf]')].some(x => x.dataset.zf === a),
+          note: !!document.querySelector('#view .note')
+        };
+        SF.min = m;
+        render();
+        return r;
+      }, inj.a);
+      if (!empty.far || !empty.note) fails.push(`${w}px Difficulty: far harder with an empty filter ${JSON.stringify(empty)}`);
+      await go('photos/stats/overview');
+      const cnt = await p.evaluate(g => {
+        const r = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].find(x => x.children[0].innerText.trim() === g);
+        return r ? Number(r.children[5].innerText.trim() || 0) : -1;
+      }, inj.g);
+      if (cnt < 1) fails.push(`${w}px Overview: the far harder photo is not counted on ${inj.g}'s row (${cnt})`);
+      await p.evaluate(({a, b}) => (delete STATS[a], delete STATS[b], render()), inj);
+    }
     if (once) {
       // Once: comparison-only and its Undo, the Photo list's move.
       // A photo in play and a candidate sent to Not this genus › Look-alike comparison (curation out 'cmp') leave their genus

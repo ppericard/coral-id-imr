@@ -688,10 +688,10 @@ function setSubject(id) {
 }
 // The subjects this player can switch between (subjOpen): the switches show only when there are two or more.
 const subjMine = () => SUBJECTS.filter(subjOpen);
-// A subject's icon (UNITS icon: the one SVG set, 24 px grid) and its switch buttons ([data-subj], aria-pressed: the
+// A subject's icon (core.js SUBJECTS icon: the one SVG set, 24 px grid) and its switch buttons ([data-subj], aria-pressed: the
 // subject on screen), each with its icon, its name and, for a subject in beta, a small beta tag.
 const subjIcon = (S, px = 18) =>
-  `<svg class="sji" viewBox="0 0 24 24" width="${px}" height="${px}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UNITS[S.id].icon}</svg>`;
+  `<svg class="sji" viewBox="0 0 24 24" width="${px}" height="${px}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.icon}</svg>`;
 const subjBtns = () =>
   subjMine()
     .map(
@@ -1348,8 +1348,6 @@ const UNITS = {
   coral: {
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
-    // The subject's icon in its switches (app.js subjIcon): a branching coral.
-    icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
     load: () => Promise.resolve(),
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
@@ -1407,7 +1405,6 @@ const UNITS = {
   fish: {
     // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
     identify: 'fishkey',
-    icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
     pick: 'The reef fish families, as on the IMR survey videos.',
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a

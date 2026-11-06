@@ -45,12 +45,8 @@
    "keep": "dup"
   },
   "fish-s380-cand-566808974": {
-   "code": "o1d1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the pygmy seahorse for sure in the sea fan"
+   "code": "p1n0smx1",
+   "keep": "best"
   },
   "fish-s380-cand-66156252": {
    "code": "p1g1sm1c1",
@@ -77,12 +73,8 @@
    "keep": "best"
   },
   "fish-s380-cand-711055542": {
-   "code": "o1n0ssxc1",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the pygmy seahorse for sure in the sea fan"
+   "code": "p1n0smx1",
+   "keep": "dup"
   },
   "fish-s380-cand-711055551": {
    "code": "o1n0sm1c1",

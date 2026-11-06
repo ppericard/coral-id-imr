@@ -49,12 +49,8 @@
    "keep": "best"
   },
   "fish-s442-cand-624703581": {
-   "code": "o0d2ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the moray for sure among the rocks"
+   "code": "o0g1bsx1",
+   "keep": "best"
   },
   "fish-s442-cand-469858575": {
    "code": "o0d1sl13",
@@ -85,12 +81,8 @@
    "keep": "best"
   },
   "fish-s442-cand-611612159": {
-   "code": "o0d1sm12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Flat black shape with a yellow rim: I cannot read a moray on the photo"
+   "code": "d0g1msx1",
+   "keep": "best"
   },
   "fish-s442-cand-620518592": {
    "code": "o0d1sm13",
@@ -109,12 +101,8 @@
    "keep": "dup"
   },
   "fish-s442-cand-757127771": {
-   "code": "o0g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Shallow and murky; I cannot find the moray for sure in the hole"
+   "code": "o0g1bsx1",
+   "keep": "best"
   },
   "fish-s442-cand-757130477": {
    "code": "o0g1ssxc1",
@@ -125,6 +113,10 @@
    "keep": "best"
   },
   "fish-s442-cand-568074734": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-fb-Gyfla_u7": {
    "code": "o0g1sl13",
    "keep": "best"
   }

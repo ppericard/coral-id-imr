@@ -93,12 +93,12 @@
    "keep": "best"
   },
   "fish-s386-cand-71778583": {
-   "code": "o0g1sl12",
+   "code": "o0g1sl13",
    "keep": "best",
    "unsure": [
-    "keep"
+    "code"
    ],
-   "note": "The photo file is cut: its lower third is plain grey"
+   "note": "The photo file is damaged: its lower third is plain grey, never a game photo"
   },
   "fish-s386-cand-356362670": {
    "code": "o1g1sl13",
@@ -142,6 +142,10 @@
   },
   "fish-s386-cand-71776112": {
    "code": "h1g1sl13",
+   "keep": "best"
+  },
+  "fish-s386-cand-fb-Anstr_u2": {
+   "code": "p1n0sl13",
    "keep": "best"
   }
  }
