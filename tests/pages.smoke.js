@@ -1221,16 +1221,23 @@ async function overlays(b, base) {
     // and the card then waits for a later break, so the check waits for it (a flake on CI, #603).
     await p.waitForFunction(() => helpedIds().length > 0, null, {timeout: 10000}).catch(() => {});
     const q1 = await card(2000); // the question waits for its answer: no card
+    // A wrong answer, never a right one: a right answer can earn an achievement (Look-alike slayer on a duel, Corallite
+    // reader on corallites alone, Sharp eye), whose toast is up when the answer arms the break, and the thanks then waits
+    // for a later break (never over a toast); which question comes first is drawn at random, so a right answer made this
+    // check fail now and then on CI, never on a re-run (#603, #652). A wrong answer earns none.
+    const target = await p.evaluate(() => SHOWNQ && SHOWNQ[1]);
     const typed = await p.$('.tyq input');
-    if (typed) (await p.fill('.tyq input', 'Acropora'), await p.keyboard.press('Enter'));
-    else await p.click('.ans button');
+    if (typed) (await p.fill('.tyq input', target === 'Acropora' ? 'Porites' : 'Acropora'), await p.keyboard.press('Enter'));
+    else await p.click(`.ans button[data-c]:not([data-c="${target}"])`);
     await p.waitForSelector('#next', {timeout: 5000});
+    const toast = await p.evaluate(() => document.querySelector('.achpop b')?.textContent || null); // none: else no break
     const a1 = await card(1500); // the answer's feedback: still no card
     await p.click('#next');
     const n1 = await card();
     await p.waitForTimeout(800);
     const next = await p.evaluate(() => !!document.querySelector('#view .q') && QOPEN);
-    if (q1 || a1 || !n1 || !next) fails.push(`Your feedback helped, calm moment: ${JSON.stringify({q1, a1, n1, next})}`);
+    if (q1 || a1 || !n1 || !next || toast)
+      fails.push(`Your feedback helped, calm moment: ${JSON.stringify({q1, a1, n1, next, toast, target})}`);
     await c.close();
   }
   // Signed in: nothing before the sheet's load reply, whose saved record may say the report was thanked on another
