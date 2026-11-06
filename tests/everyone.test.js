@@ -78,7 +78,7 @@ test('the Health line reads the player rows, not a deleted account', () => {
 // again by the redraw that follows: the guard is cleared before the redraw, not after it.
 test('Analyses: an answer log dropped during its read is read again', async () => {
   const src = read('admin-analyses.js'),
-    ctx = {TOKEN: 't', ANS: null, ANREP: {}, cur: '~an', calls: 0, Promise};
+    ctx = {TOKEN: 't', ANS: null, ANREP: {}, cur: 'analyses/overview', anPage: p => p.startsWith('analyses/'), calls: 0, Promise};
   ctx.loadStats = () => {
     ctx.calls++;
     return Promise.resolve().then(() => {

@@ -115,9 +115,10 @@ document.addEventListener(
   true
 );
 const clone = o => JSON.parse(JSON.stringify(o));
-// The page hash, decoded; a malformed %-escape no longer throws (code re-review L2).
+// The page's address without its filter (after '?', split off before decoding: hashQuery), decoded; a malformed
+// %-escape no longer throws (code re-review L2). A name in it is the last segment, so a '/' in a player's name stays in it.
 const hashNow = () => {
-  const h = location.hash.slice(1);
+  const h = location.hash.slice(1).split('?')[0];
   try {
     return decodeURIComponent(h);
   } catch (e) {
@@ -1114,7 +1115,7 @@ function statusDraw({parts, sug, over}) {
   $('undo').disabled = !HIST.length;
   $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length;
-  if (cur[0] !== '~') lastGenus = cur;
+  if (cur.startsWith(LIVE + '/') && DATA.gen[cur.slice(LIVE.length + 1)]) lastGenus = cur.slice(LIVE.length + 1);
   navs(tn, xn);
   fitModes();
 }
@@ -1128,28 +1129,34 @@ function fitModes() {
 addEventListener('resize', () => fitModes());
 // Nine tabs in three header groups (Pierre, 2026-11-03, mockup "Admin tabs: 17 -> 9", after "regroup the admin menus"
 // of 2026-11-01): Inbox (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes, Photo stats), Players
-// (Activity, List). No tab holds a view of its own name, and no group a tab of its own name (Pierre, 2026-11-04: the group
-// To do became Inbox, the tab Players List, the views of Activity Recent sessions and Mix-ups; addresses unchanged). Nothing was removed: every former page is a view of a tab, chosen with the segmented switch at
-// the right of the tab row (#subnav, navs()). Each view keeps its old address, so bookmarks and links in the docs still
-// land right; ALIAS maps the two addresses that are not a view of their own. Each header group reopens the tab and view
-// used last in it (reefid-admin-sub), each tab its view used last (reefid-admin-view). Phones: one menu with every tab.
-// [group key, group name, [[tab key, tab name, [[address, view name], ...]], ...]]; '' = a genus page.
+// (Activity, List), plus Analyses (below). No tab holds a view of its own name, and no group a tab of its own name
+// (Pierre, 2026-11-04). The views of a tab are chosen with the segmented switch at the right of the tab row (#subnav,
+// navs()). Each header group reopens the tab and view used last in it (reefid-admin-nav-group), each tab its view used
+// last (reefid-admin-nav-tab). Phones: one menu with every tab.
+// Addresses (URL refonte, Pierre, 2026-11-05, Q53-Q56): #<group>/<tab>/<view>, each segment the word on screen, computed
+// from GROUPS; a tab with one view has no view segment (#players/activity); a thing the page is about follows as a
+// further segment (#photos/genera/live/<Genus>, #players/list/journey/<name>, #inbox/todo/points/<id>), a filter after
+// '?' (#inbox/coverage/games?look=all). A shorter address (a group, a tab) opens its first view; an old or unknown one
+// opens its group's first view, else the landing page (rule W3: no table of old addresses).
+// [group slug, group name, [[tab slug, tab name, [[view slug, view name], ...]], ...], options]; '' = the tab's one view.
 // The subject on screen (admin plan PR 2; Pierre, 2026-11-04: one Corals | Fish switch for the whole admin, To do
 // included, each side showing its own to-do count). Each subject describes its admin part in core.js SUBJECTS admin:
-// hash, the prefix of its addresses ('' for the corals, whose addresses are unchanged: #fish/~triage is the fish side's
-// Reports); cur, its part of curation.json ('' = the top level); pages, the admin pages it has (null = all). A page a
-// subject does not have yet says so; its tabs are left out of the header.
+// hash, the prefix of its addresses ('' for the corals: #fish/inbox/todo/reports is the fish side's Reports); cur, its
+// part of curation.json ('' = the top level); pages, the admin pages it has (null = all; a page covers the addresses
+// under it). A page a subject does not have yet says so; its tabs are left out of the header.
 const ADM0 = SUBJECTS.find(s => !s.admin.hash);
 let ASUBJ = ADM0;
 const subjOfHash = h => {
   const S = SUBJECTS.find(s => s.admin.hash && h.startsWith(s.admin.hash)) || ADM0;
   return [S, h.slice(S.admin.hash.length)];
 };
-const hasPage = (S, p) => !S.admin.pages || S.admin.pages.some(x => (x.endsWith('/') ? p.startsWith(x) : p === x));
+// p is the page x or an address under it (a player's journey is under players/list).
+const under = (p, x) => p === x || p.startsWith(x + '/');
+const hasPage = (S, p) => !S.admin.pages || S.admin.pages.some(x => under(p, x));
 // A subject's landing page: Players › Activity, or Players › List for a subject without Activity yet (fish; Codex review
 // #554).
-const homeOf = S => (hasPage(S, '~stats') ? '~stats' : '~users');
-// The per-subject memories (last tab, view and page): the corals keep their keys.
+const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'players/list');
+// The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.admin.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
 // part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine).
@@ -1158,30 +1165,33 @@ const subjTodo = (S, tn) => {
   const F = DRAFT[S.admin.cur] || {};
   return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length;
 };
-const genusHash = () => '#' + ASUBJ.admin.hash + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
+// A genus page: Photos › Genera › Live, the genus as the last segment (a coral page: no subject prefix).
+const LIVE = 'photos/genera/live';
+const genusHref = g => '#' + LIVE + '/' + encodeURIComponent(g);
+const genusHash = () => '#' + ASUBJ.admin.hash + LIVE + '/' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
-    'todo',
+    'inbox',
     'Inbox',
     [
       [
         'todo',
         'To do',
         [
-          ['~todo', 'All'],
-          ['~triage', 'Reports'],
-          ['~events', 'Errors'],
-          ['~health', 'Health'],
+          ['all', 'All'],
+          ['reports', 'Reports'],
+          ['errors', 'Errors'],
+          ['health', 'Health'],
           // The points to handle (Pierre, 2026-11-05): trainer questions, names, sources, content (renderPoints).
-          ['~points', 'Points']
+          ['points', 'Points']
         ]
       ],
       [
-        'cov',
+        'coverage',
         'Coverage',
         [
-          ['~cov', 'Games'],
-          ['~kcov', 'Sheets & ID Key']
+          ['games', 'Games'],
+          ['sheets-id-key', 'Sheets & ID Key']
         ]
       ]
     ]
@@ -1194,28 +1204,28 @@ const GROUPS = [
         'genera',
         'Genera',
         [
-          ['', 'Live'],
-          ['~hidden', 'Hidden'],
-          ['~excluded', 'Excluded']
+          ['live', 'Live'],
+          ['hidden', 'Hidden'],
+          ['excluded', 'Excluded']
         ]
       ],
-      ['cand', 'Candidates', [['~cand', 'Candidates']]],
+      ['candidates', 'Candidates', [['', 'Candidates']]],
       [
         'review',
         'Photo review',
         [
-          ['~quality', 'Quality'],
-          ['~form', 'Growth form'],
-          ['~diff', 'By difficulty']
+          ['quality', 'Quality'],
+          ['growth-form', 'Growth form'],
+          ['by-difficulty', 'By difficulty']
         ]
       ],
-      ['look', 'Look-alikes', [['~look', 'Look-alikes']]],
+      ['look-alikes', 'Look-alikes', [['', 'Look-alikes']]],
       [
-        'pstats',
+        'stats',
         'Photo stats',
         [
-          ['~pstats', 'Overview'],
-          ['~stats-photos', 'Difficulty']
+          ['overview', 'Overview'],
+          ['difficulty', 'Difficulty']
         ]
       ]
     ]
@@ -1226,101 +1236,139 @@ const GROUPS = [
     [
       // Activity first, so Players opens on it when no tab of the group was used yet (Pierre, 2026-11-05).
       // Activity = who plays and how much (Pierre, 2026-11-04, one role per admin page): its analysis cards and the
-      // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs), their addresses unchanged.
-      ['activity', 'Activity', [['~stats', 'Recent sessions']]],
-      ['players', 'List', [['~users', 'List']]]
+      // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs).
+      ['activity', 'Activity', [['', 'Recent sessions']]],
+      ['list', 'List', [['', 'List']]]
     ],
     // fixed: a click on the group always opens its first tab, never the tab used last (Pierre, 2026-11-05: "Players
     // always opens Activity").
     {fixed: true}
   ],
   // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
-  // every 1000 answers): the one group added after the nine tabs (rule A3); drawn by admin-analyses.js. Analyses
-  // = what we learn (Pierre, 2026-11-04, one role per admin page): the views read live from the answer log (~stats-*,
-  // admin.js renderStats) sit here too: Pairs (formerly Players › Activity › Mix-ups), Answer log (Activity's analysis
-  // cards) and Stops (Health's "where players stop" and genus sheets opened).
+  // every 1000 answers): the one group added after the nine tabs (docs/rules/admin.md A3); drawn by admin-analyses.js.
+  // Analyses = what we learn (Pierre, 2026-11-04, one role per admin page): the views read live from the answer log
+  // (admin.js renderStats, LIVE_STATS) sit here too: Pairs (formerly Players › Activity › Mix-ups), Answer log
+  // (Activity's analysis cards) and Stops (Health's "where players stop" and genus sheets opened).
   [
     'analyses',
     'Analyses',
     [
-      ['an', 'Overview', [['~an', 'Overview']]],
+      ['overview', 'Overview', [['', 'Overview']]],
       [
-        'anspeed',
+        'speed',
         'Speed',
         [
-          ['~an-rt', 'Answer time'],
-          ['~an-zoom', 'Enlarging']
+          ['answer-time', 'Answer time'],
+          ['enlarging', 'Enlarging']
         ]
       ],
       [
-        'andiff',
+        'difficulty',
         'Difficulty',
         [
-          ['~an-photo', 'Photos'],
-          ['~an-fmt', 'Formats'],
-          ['~an-conf', 'Mix-ups'],
-          ['~stats-conf', 'Pairs']
+          ['photos', 'Photos'],
+          ['formats', 'Formats'],
+          ['mix-ups', 'Mix-ups'],
+          ['pairs', 'Pairs']
         ]
       ],
       [
-        'anlearn',
+        'learning',
         'Learning',
         [
-          ['~an-learn', 'Practice'],
-          ['~an-back', 'After a break'],
-          ['~an-sess', 'Sessions'],
-          ['~an-who', 'Profiles'],
-          ['~stats-log', 'Answer log'],
-          ['~stats-stop', 'Stops']
+          ['practice', 'Practice'],
+          ['after-a-break', 'After a break'],
+          ['sessions', 'Sessions'],
+          ['profiles', 'Profiles'],
+          ['answer-log', 'Answer log'],
+          ['stops', 'Stops']
         ]
       ]
     ]
   ]
 ];
-// Every tab as [key, name, views, group key].
-const TABS = GROUPS.flatMap(([g, , L]) => L.map(t => [...t, g]));
-// Old addresses that are not a view of their own: Montages became Look-alikes; Where to look is the banner above the Games
-// grid of Coverage, opened in full.
-const ALIAS = {'~mont': '~look', '~stats-needs': '~cov'};
-// A point's own page (To do › Points; renderPoint): its address in one place, as it will move with the admin's URL
-// refonte. Not a view: it sits under Points.
-const POINT_R = '~point/',
+// Every tab as [address, name, [[view address, view name], ...], group slug]; every page's address.
+const TABS = GROUPS.flatMap(([g, , L]) =>
+  L.map(([t, n, V]) => [g + '/' + t, n, V.map(([v, w]) => [[g, t, v].filter(Boolean).join('/'), w]), g])
+);
+const ADM_PAGES = TABS.flatMap(t => t[2].map(([h]) => h));
+// The pages drawn by renderStats from the live answer log (the other Analyses views read the stored report).
+const LIVE_STATS = [
+  'players/activity',
+  'photos/stats/difficulty',
+  'photos/review/by-difficulty',
+  'analyses/difficulty/pairs',
+  'analyses/learning/answer-log',
+  'analyses/learning/stops'
+];
+const anPage = p => p.startsWith('analyses/') && !LIVE_STATS.includes(p);
+// The addresses that take a thing after their page: a genus, a player, a device, a point.
+const ADM_PARAM = [LIVE + '/', 'players/list/journey/', 'players/list/anon/', 'inbox/todo/points/'];
+// An address for the page cur names (cur is decoded): the thing after its page encoded again, so a '/' or '?' in a
+// player's name stays in it (Codex review #610).
+const admAddr = p => {
+  const x = ADM_PARAM.find(x => p.startsWith(x) && p.length > x.length);
+  return x ? x + encodeURIComponent(p.slice(x.length)) : p;
+};
+// The page an address shows: itself, the page it sits under (a genus under Live, a journey under List, a point under
+// Points), its first view for a group or a tab, else its group's first view, else the subject's landing page.
+function admRoute(p, S = ASUBJ) {
+  if (ADM_PAGES.includes(p) || ADM_PARAM.some(x => p.startsWith(x) && p.length > x.length)) return p;
+  const seg = p.split('/'),
+    T = TABS.find(t => t[0] === seg.slice(0, 2).join('/')) || TABS.find(t => t[3] === seg[0]);
+  return T ? T[2][0][0] : homeOf(S);
+}
+// The filter after '?' of the address on screen (URLSearchParams).
+const hashQuery = () => new URLSearchParams(location.hash.split('?')[1] || '');
+// Coverage › Games with Where to look open in full (the banner above its grid; renderCov).
+const lookAll = () => cur === 'inbox/coverage/games' && hashQuery().get('look') === 'all';
+// A point's own page (To do › Points; renderPoint). Not a view: it sits under Points.
+const POINT_R = 'inbox/todo/points/',
   pointHash = id => '#' + POINT_R + encodeURIComponent(id);
 let ptFlush = () => {}; // a point's page: writes the note being typed to the draft (renderPoint)
-const pageOf = () =>
-  cur.startsWith('~journey/') || cur.startsWith('~anon/')
-    ? '~users'
-    : cur.startsWith(POINT_R)
-      ? '~points'
-      : ALIAS[cur] || (cur[0] === '~' ? cur : ''); // '' = a genus page; a player's journey sits under Players, a point under Points
-const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'genera');
+// The view on screen: the longest page address cur sits under.
+const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.length - a.length)[0] || LIVE;
+// The address on screen into ASUBJ and cur (the address after the subject's prefix, without the filter). An address
+// that shows another page (a group, a tab, an old or unknown address: admRoute) is replaced by that page's, in place.
+function readHash() {
+  let p;
+  [ASUBJ, p] = subjOfHash(hashNow());
+  cur = admRoute(p);
+  if (cur !== p) history.replaceState(null, '', '#' + ASUBJ.admin.hash + admAddr(cur));
+}
+const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'photos/genera');
 const groupKey = () => tabOf()[3];
 // Genus x view cells over their cap (capOf: CELL_MAX colonies for a game genus, CAP.sheet for a Key-only one; after
 // "Add anyway"): a warning on the To do tab and on the page that shows the cell (Pierre, 2026-11-02: "at least a
 // warning"): Game coverage for a game genus, Sheet & ID Key coverage for a Key-only one. n = both.
-let OVER = {'~cov': 0, '~kcov': 0, n: 0};
+let OVER = {'inbox/coverage/games': 0, 'inbox/coverage/sheets-id-key': 0, n: 0};
 const overCap = () => {
-  const o = {'~cov': 0, '~kcov': 0};
-  Object.keys(DATA.gen).forEach(n => (o[isGame(n) ? '~cov' : '~kcov'] += capViews(n).filter(([v]) => covOf(n, v).obs > capOf(n)).length));
-  return {...o, n: o['~cov'] + o['~kcov']};
+  const o = {'inbox/coverage/games': 0, 'inbox/coverage/sheets-id-key': 0};
+  Object.keys(DATA.gen).forEach(
+    n =>
+      (o[isGame(n) ? 'inbox/coverage/games' : 'inbox/coverage/sheets-id-key'] += capViews(n).filter(
+        ([v]) => covOf(n, v).obs > capOf(n)
+      ).length)
+  );
+  return {...o, n: o['inbox/coverage/games'] + o['inbox/coverage/sheets-id-key']};
 };
 function navs(tn, xn) {
   const T = tabOf(),
     g = T[3],
     page = pageOf(),
-    last = store.get(subjK('reefid-admin-sub'), {}) || {},
-    seen = store.get(subjK('reefid-admin-view'), {}) || {};
+    last = store.get(subjK('reefid-admin-nav-group'), {}) || {},
+    seen = store.get(subjK('reefid-admin-nav-tab'), {}) || {};
   if (last[g] !== page) {
     last[g] = page;
-    store.set(subjK('reefid-admin-sub'), last);
+    store.set(subjK('reefid-admin-nav-group'), last);
   }
   if (seen[T[0]] !== page) {
     seen[T[0]] = page;
-    store.set(subjK('reefid-admin-view'), seen);
+    store.set(subjK('reefid-admin-nav-tab'), seen);
   }
-  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-last'), cur);
+  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-nav-last'), cur);
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
-    href = h => (h ? '#' + ASUBJ.admin.hash + h : genusHash()),
+    href = h => (h === LIVE ? genusHash() : '#' + ASUBJ.admin.hash + h),
     // The subject's pages only: a view it has, a tab with one, a group with one.
     vOk = ([h]) => hasPage(ASUBJ, h),
     tOk = t => t[2].some(vOk),
@@ -1334,23 +1382,26 @@ function navs(tn, xn) {
     over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Key-only genus, Coverage › Sheets & ID Key)`,
     // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
     vcnt = h =>
-      (h === '~todo' || h === '~triage') && tn
+      (h === 'inbox/todo/all' || h === 'inbox/todo/reports') && tn
         ? ` ${tn}`
-        : h === '~excluded' && xn
+        : h === 'photos/genera/excluded' && xn
           ? ` ${xn}`
-          : h === '~hidden' && hn
+          : h === 'photos/genera/hidden' && hn
             ? ` ${hn}`
-            : h === '~points' && ptOpen()
+            : h === 'inbox/todo/points' && ptOpen()
               ? ` ${ptOpen()}`
               : OVER[h]
                 ? ` ⚠ ${OVER[h]}`
                 : '',
-    tcnt = t => (t[0] === 'todo' && tn ? ` (${tn})` : t[0] === 'cov' && OVER.n ? ' ⚠' : '');
+    tcnt = t => (t[0] === 'inbox/todo' && tn ? ` (${tn})` : t[0] === 'inbox/coverage' && OVER.n ? ' ⚠' : '');
   const sw = $('subj');
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      return `<a href="#${esc(S.admin.hash + (store.get(subjK('reefid-admin-last', S), '') || homeOf(S)))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
+      // The subject's page used last (a remembered value is checked against today's addresses).
+      const back = store.get(subjK('reefid-admin-nav-last', S), ''),
+        to = typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) ? back : homeOf(S);
+      return `<a href="#${esc(S.admin.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}">${esc(S.name)}${n ? ` <b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     sw.hidden = false;
   }
@@ -1360,8 +1411,8 @@ function navs(tn, xn) {
     a.hidden = !TABS.some(t => t[3] === G[0] && tOk(t));
     if (a.hidden) return;
     a.href = href(groupHash(G));
-    a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : '') + (G[0] === 'todo' && OVER.n ? ' ⚠' : '');
-    if (G[0] === 'todo') a.title = OVER.n ? over : '';
+    a.textContent = G[1] + (G[0] === 'inbox' && tn ? ` (${tn})` : '') + (G[0] === 'inbox' && OVER.n ? ' ⚠' : '');
+    if (G[0] === 'inbox') a.title = OVER.n ? over : '';
     a.setAttribute('aria-current', String(G[0] === g));
   });
   const sub = $('subnav');
@@ -1371,7 +1422,7 @@ function navs(tn, xn) {
       `<span class="adm-subtabs">${TABS.filter(t => t[3] === g && tOk(t))
         .map(
           t =>
-            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'cov' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
+            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'inbox/coverage' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
         )
         .join('')}</span>` +
       (V.length
@@ -1395,69 +1446,68 @@ function navs(tn, xn) {
 }
 // Which kind of page this is (help text, the Stats-style views): not the header tab, see groupKey().
 const modeKey = () =>
-  cur.startsWith('~journey/') || cur.startsWith('~anon/')
+  cur.startsWith('players/list/journey/') || cur.startsWith('players/list/anon/')
     ? 'journey'
     : cur.startsWith(POINT_R)
       ? 'point'
-      : /^~an(-|$)/.test(cur)
-        ? cur.slice(1)
-        : cur.startsWith('~stats') || cur === '~diff'
+      : anPage(cur)
+        ? (k => (k ? 'an-' + k : 'an'))(typeof anKey === 'function' && anKey(cur)) // its help (admin-analyses.js)
+        : LIVE_STATS.includes(cur)
           ? 'stats'
           : {
-              '~users': 'users',
-              '~quality': 'quality',
-              '~form': 'form',
-              '~excluded': 'excluded',
-              '~hidden': 'hidden',
-              '~todo': 'todo',
-              '~triage': 'triage',
-              '~events': 'events',
-              '~health': 'health',
-              '~points': 'points',
-              '~cov': 'cov',
-              '~kcov': 'kcov',
-              '~look': 'mont',
-              '~mont': 'mont',
-              '~cand': 'cand'
+              'players/list': 'users',
+              'photos/review/quality': 'quality',
+              'photos/review/growth-form': 'form',
+              'photos/genera/excluded': 'excluded',
+              'photos/genera/hidden': 'hidden',
+              'inbox/todo/all': 'todo',
+              'inbox/todo/reports': 'triage',
+              'inbox/todo/errors': 'events',
+              'inbox/todo/health': 'health',
+              'inbox/todo/points': 'points',
+              'inbox/coverage/games': 'cov',
+              'inbox/coverage/sheets-id-key': 'kcov',
+              'photos/look-alikes': 'mont',
+              'photos/candidates': 'cand'
             }[cur] || 'genus';
 function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
   memoFresh();
-  document.body.classList.toggle('adm-cmode', cur === '~cand');
+  document.body.classList.toggle('adm-cmode', cur === 'photos/candidates');
   // A page the subject on screen does not have yet (admin plan: its fish version comes in a later PR).
   if (!hasPage(ASUBJ, cur)) {
     status();
     $v.innerHTML = `<p class="note">Not for ${esc(ASUBJ.name.toLowerCase())} yet.</p>`;
     return;
   }
-  if (cur === '~quality') return renderQuality();
-  if (cur === '~form') return renderForm();
-  if (cur === '~excluded') return renderExcluded();
-  if (cur === '~hidden') return renderHidden();
-  if (cur === '~todo' || cur === '~triage') return renderTriage();
-  if (cur === '~events') return renderEvents();
-  if (cur === '~health') return renderStats();
-  if (cur === '~points') return renderPoints();
+  if (cur === 'photos/review/quality') return renderQuality();
+  if (cur === 'photos/review/growth-form') return renderForm();
+  if (cur === 'photos/genera/excluded') return renderExcluded();
+  if (cur === 'photos/genera/hidden') return renderHidden();
+  if (cur === 'inbox/todo/all' || cur === 'inbox/todo/reports') return renderTriage();
+  if (cur === 'inbox/todo/errors') return renderEvents();
+  if (cur === 'inbox/todo/health') return renderStats();
+  if (cur === 'inbox/todo/points') return renderPoints();
   if (cur.startsWith(POINT_R)) return renderPoint(cur.slice(POINT_R.length));
-  // Game coverage with the Where to look banner above it (folded on ~cov, open in full on ~stats-needs).
-  if (cur === '~cov' || cur === '~stats-needs') return renderCov();
-  if (cur === '~kcov') return renderKcov();
-  if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
-  if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
-  if (/^~an(-|$)/.test(cur))
-    return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
+  // Game coverage with the Where to look banner above it (folded, open in full with ?look=all: lookAll).
+  if (cur === 'inbox/coverage/games') return renderCov();
+  if (cur === 'inbox/coverage/sheets-id-key') return renderKcov();
+  if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
+  if (cur.startsWith('players/list/journey/')) return renderJourney(cur.slice('players/list/journey/'.length)); // one player's path (admin-journey.js)
+  if (anPage(cur)) return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
-  if (cur.startsWith('~anon/')) return renderJourney('', cur.slice(6));
-  if (cur === '~diff') return renderDiff();
-  if (cur === '~pstats') return renderPstats();
+  if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
+  if (cur === 'photos/review/by-difficulty') return renderDiff();
+  if (cur === 'photos/stats/overview') return renderPstats();
   if (modeKey() === 'stats') return renderStats();
-  if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
-  if (cur === '~cand') return renderCand();
+  if (cur === 'photos/look-alikes') return renderMont();
+  if (cur === 'photos/candidates') return renderCand();
   const names = Object.keys(DATA.gen);
-  if (!DATA.gen[cur]) cur = names[0];
+  // A genus page (Photos › Genera › Live): the genus is the address's last segment; none or an unknown one, the first.
+  const gn = cur.slice(LIVE.length + 1);
   const ch = changed(),
-    n = cur,
+    n = DATA.gen[gn] ? gn : names[0],
     g = DATA.gen[n],
     cv = coverOf(n),
     k = entry(n);
@@ -1470,7 +1520,7 @@ function render() {
         e = DRAFT.genera[m] || {},
         dirty = ch.includes(m),
         h = (e.hide || []).length;
-      return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
+      return `<a href="${esc(genusHref(m))}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
       <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} waiting` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`;
     })
     .join('');
@@ -1619,12 +1669,12 @@ function render() {
       })
   );
   $('gsel').onchange = e => {
-    location.hash = e.target.value;
+    location.hash = genusHref(e.target.value);
   };
   const g2 = $v.querySelector('.adm-gsel2');
   if (g2)
     g2.onchange = e => {
-      location.hash = e.target.value;
+      location.hash = genusHref(e.target.value);
     };
   const cd = $v.querySelector('.adm-cands');
   if (cd) cd.ontoggle = () => store.set('reefid-admin-cands', cd.open);
@@ -1920,7 +1970,7 @@ function renderQuality() {
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   const sec = ([q, t]) => {
     const L = all.filter(p => qOf(p.f) === q);
@@ -1990,7 +2040,7 @@ function renderQuality() {
     };
   });
   document.onkeydown = e => {
-    if (cur !== '~quality' || !over || e.target.closest('input,select,textarea')) return;
+    if (cur !== 'photos/review/quality' || !over || e.target.closest('input,select,textarea')) return;
     const q = {'1': 1, '2': 2, '3': 3}[e.key];
     if (q) {
       e.preventDefault();
@@ -2160,7 +2210,7 @@ const HELP = {
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Four groups</b>. <b>Inbox</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Activity</b> (opened first) and <b>List</b> (who plays, merge or delete names); Activity (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last (Players always Activity), each tab the view you used last. The address says where you are, in the same words: <code>#group/tab/view</code> (<code>#photos/review/quality</code>), a genus or a player after it.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
@@ -2219,17 +2269,17 @@ function toggleHelp() {
     h.remove();
     return;
   }
-  const m =
-    {
-      '~users': 'users',
-      '~stats-photos': 'statsph',
-      '~pstats': 'pstats',
-      '~stats-conf': 'statsconf',
-      '~stats-log': 'statslog',
-      '~stats-stop': 'statsstop',
-      '~stats-needs': 'statsneeds',
-      '~diff': 'diff'
-    }[cur] || modeKey();
+  const m = lookAll()
+    ? 'statsneeds'
+    : {
+        'players/list': 'users',
+        'photos/stats/difficulty': 'statsph',
+        'photos/stats/overview': 'pstats',
+        'analyses/difficulty/pairs': 'statsconf',
+        'analyses/learning/answer-log': 'statslog',
+        'analyses/learning/stops': 'statsstop',
+        'photos/review/by-difficulty': 'diff'
+      }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
   h.className = 'adm-help';
@@ -2333,13 +2383,13 @@ function formTile(t, v) {
   const p = {f: t.dataset.f};
   t.querySelector('.adm-fseg').outerHTML = fSeg(p, !!t.closest('.adm-blind'));
   pinRefresh(t);
-  if (cur === '~form') t.classList.add('rated');
+  if (cur === 'photos/review/growth-form') t.classList.add('rated');
   bindF(t);
   agreeRefresh();
   status();
 }
 const agreeRefresh = () => {
-  const d = cur === '~form' && $('fagree');
+  const d = cur === 'photos/review/growth-form' && $('fagree');
   if (d) agreeFill(d);
 };
 // One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
@@ -2379,7 +2429,7 @@ function renderForm() {
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
     <div class="adm-acts">${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}</div></figure>`;
   // Still to classify: grouped by the old Coral Finder letter, as a hint.
   const rows = [
@@ -2502,7 +2552,8 @@ function renderForm() {
     };
   });
   document.onkeydown = e => {
-    if (cur !== '~form' || !over || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,select,textarea')) return;
+    if (cur !== 'photos/review/growth-form' || !over || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,select,textarea'))
+      return;
     const k = e.key.toUpperCase();
     if (k === 'P') {
       e.preventDefault();
@@ -2564,7 +2615,7 @@ function renderExcluded() {
             .map(
               p => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${!p.gone ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : p.inat ? `<img src="${io(p.inat)}.jpg" alt="" loading="lazy" data-ext="0">` : '<span class="none">no preview</span>'}</button>
-      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : p.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(p.slide))}</i>` : ''}</figcaption>
+      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : p.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(p.slide))}</i>` : ''}</figcaption>
       <div class="adm-acts"><button type="button" data-act="restore">Restore</button></div></figure>`
             )
             .join('')}</div>`
@@ -2828,7 +2879,7 @@ function evSummary() {
     G = evGroup(R, r => r[3] + '|' + r[4] + (r[3] === 'err' ? ' @ ' + r[5] : '')),
     K = {err: 'App error', photo: 'Photo not loaded', sync: 'Failed save'};
   if (!G.length) return '';
-  return `<div class="adm-qhead adm-tdhead"><h2>Errors <small>${R.length}</small></h2><a class="adm-link" href="#~events">All errors ›</a></div>
+  return `<div class="adm-qhead adm-tdhead"><h2>Errors <small>${R.length}</small></h2><a class="adm-link" href="#inbox/todo/errors">All errors ›</a></div>
     <div class="adm-tscroll"><table class="adm-tbl adm-tderr"><thead><tr><th>What</th><th>Devices</th><th>Times</th><th>Last</th></tr></thead><tbody>${G.slice(
       0,
       8
@@ -2971,7 +3022,7 @@ function renderEvents() {
   status();
   if (!EVS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    loadEvents().then(() => cur === '~events' && renderEvents());
+    loadEvents().then(() => cur === 'inbox/todo/errors' && renderEvents());
     return;
   }
   const head = `<div class="adm-shead"><h2>Errors & feedback</h2><button type="button" class="adm-link" data-evr>Refresh</button></div>`;
@@ -3075,7 +3126,7 @@ function renderEvents() {
 }
 function bindEv() {
   const r = $v.querySelector('[data-evr]');
-  if (r) r.onclick = () => loadEvents(true).then(() => cur === '~events' && renderEvents());
+  if (r) r.onclick = () => loadEvents(true).then(() => cur === 'inbox/todo/errors' && renderEvents());
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
 }
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
@@ -3094,13 +3145,15 @@ function fishAdmin() {
           P = {};
         Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (P[x.f] = {...x, entry: g.id})));
         FISHA = {gen: F.gen, ph: P};
-        if (cur === '~triage') render();
+        if (cur === 'inbox/todo/reports') render();
       })
       .catch(() => {}));
 }
 // A unit's name in a report: a fish entry by its IMR name (plain, no genus page), a genus in italics with its page link.
 const repUnit = x =>
-  FISHA && FISHA.gen[x] ? `${esc(FISHA.gen[x].name)} <small>(fish)</small>` : `<a class="adm-gen" href="#${esc(x)}"><i>${esc(x)}</i></a>`;
+  FISHA && FISHA.gen[x]
+    ? `${esc(FISHA.gen[x].name)} <small>(fish)</small>`
+    : `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
 // To do › Out of the presence rule (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself; a photo that
 // does not meet it "must not be there") and To do › Share-alike (Pierre, 2026-11-05: share-alike photos already on the
 // site are never removed automatically; same actions). Remove = the × of every photo (ACT.exclude: excluded for good,
@@ -3132,7 +3185,7 @@ const decSec = (k, tile) => {
   const L = DECIDE[k].list(),
     K = DECIDE[k].kept(),
     grid = (M, kept) =>
-      `<div class="adm-grid adm-qgrid adm-${k}q">${M.map(p => tile(p, decActs(k, kept) + '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>`;
+      `<div class="adm-grid adm-qgrid adm-${k}q">${M.map(p => tile(p, decActs(k, kept) + '<a class="chip" href="' + esc(genusHref(p.genus)) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>${srcTag(p)}`)).join('')}</div>`;
   if (!L.length && !K.length) return '';
   return `<div class="adm-qhead adm-tdhead" data-${k}sec><h2>${DECIDE[k].title} <small>${L.length}</small></h2>${L.length ? `<button type="button" class="adm-fchip plain" data-${k}all title="Remove all">Remove all</button>` : ''}</div>${L.length ? grid(L, false) : ''}${
     K.length
@@ -3186,7 +3239,7 @@ function renderTriage() {
   };
   const tile = (p, acts, cap) => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${PHOTOS[p.f] ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : '<span class="none">missing</span>'}</button>
-      <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
+      <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
   // A flagged photo still on a genus page gets every tool of that page (Pierre: often flagged for its zoom level), plus Done.
   const flagTile = p => {
     const n = p.genus,
@@ -3206,7 +3259,7 @@ function renderTriage() {
     })
       .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`)
       .replace(GRIP, '')
-      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>${where}`);
+      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>${where}`);
   };
   // A reported photo: every tool of its genus page, like a flagged one; Done is per report.
   const repTile = (f, g0) => {
@@ -3222,7 +3275,7 @@ function renderTriage() {
     return tile0(n, q, viewOf(n, q), {cls: hidden(n, q) ? 'is-hidden' : ''})
       .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`)
       .replace(GRIP, '')
-      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`);
+      .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`);
   };
   const reps = repsOpen();
   if (!FISHA && reps.some(r => /^fi\d/.test(r[10] || '') || /^t\d/.test(r[5] || ''))) fishAdmin();
@@ -3257,9 +3310,9 @@ function renderTriage() {
   // All (To do, Pierre 2026-11-03): by urgency, Health's red line first (only when something is wrong), then the
   // reports and flags, the devices' errors, Featured photos rated Poor, the judging agent's suggestions last. Reports =
   // the same without Health and the errors (the old Triage page). Answers and errors load behind the page.
-  const all = cur === '~todo';
-  if (all && !ANS) loadStats().then(() => cur === '~todo' && render());
-  if (all && !EVS) loadEvents().then(() => cur === '~todo' && render());
+  const all = cur === 'inbox/todo/all';
+  if (all && !ANS) loadStats().then(() => cur === 'inbox/todo/all' && render());
+  if (all && !EVS) loadEvents().then(() => cur === 'inbox/todo/all' && render());
   $v.innerHTML = `<section class="adm-quality">${all ? healthLine() : ''}
     <div class="adm-qhead"><h2>Reports and feedback <small>${REPS && REPS.rows ? reps.length : ''}</small></h2>${REPS && REPS.err ? `<small class="adm-where">${esc(REPS.err)}</small>` : ''}<button type="button" class="adm-fchip plain" data-rload title="Reload">↻</button></div>
     ${reps.length ? reps.map(repCard).join('') : REPS && REPS.rows ? '<p class="note">Nothing reported.</p>' : ''}
@@ -3278,7 +3331,7 @@ function renderTriage() {
     ${all ? evSummary() : ''}
     ${decSec('rule', tile)}
     ${decSec('sa', tile)}
-    ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
+    ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="' + esc(genusHref(p.genus)) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     ${sugHtml(tile)}
   </section>`;
   bindSug();
@@ -3314,12 +3367,12 @@ function renderTriage() {
   if (rl)
     rl.onclick = () =>
       loadReports(true).then(() => {
-        if (cur === '~triage' || cur === '~todo') render();
+        if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
       });
-  if (!HANDLEDF) handledLoad().then(() => (cur === '~triage' || cur === '~todo') && render());
+  if (!HANDLEDF) handledLoad().then(() => (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') && render());
   if (!REPS)
     loadReports().then(() => {
-      if (cur === '~triage' || cur === '~todo') render();
+      if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
     });
   $v.querySelectorAll('[data-act="tpoor"]').forEach(
     b =>
@@ -3413,7 +3466,7 @@ function renderPoint(id) {
   status();
   const p = ptList().find(x => x.id === id);
   if (!p) {
-    $v.innerHTML = `<p class="note">No point ${esc(id)}. <a href="#~points">Points</a></p>`;
+    $v.innerHTML = `<p class="note">No point ${esc(id)}. <a href="#inbox/todo/points">Points</a></p>`;
     return;
   }
   const st = (DRAFT.points || {})[id] || {},
@@ -3438,7 +3491,7 @@ function renderPoint(id) {
       }</figcaption></figure>`;
     };
   $v.innerHTML = `<article class="adm-point" data-point="${esc(id)}">
-    <div class="adm-ptbar"><a class="adm-link" href="#~points">‹ Points</a><span class="adm-src adm-ptk k-${esc(p.kind)}">${esc(ptKind(p))}</span>${ptSubj(p)}<small>${esc(pointAge(p.at))}</small>${
+    <div class="adm-ptbar"><a class="adm-link" href="#inbox/todo/points">‹ Points</a><span class="adm-src adm-ptk k-${esc(p.kind)}">${esc(ptKind(p))}</span>${ptSubj(p)}<small>${esc(pointAge(p.at))}</small>${
       ph.some(x => !x.none)
         ? `<button type="button" class="adm-fchip plain" data-ptnames aria-pressed="${PT_NAMES}" title="Names">Names</button>`
         : ''
@@ -4559,7 +4612,7 @@ function renderCand() {
     $v.innerHTML = `<section class="adm-sw${chk ? ' adm-blind' : ''}" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
       <figure class="adm-swcard">
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(pb)} alt=""></button>
-        <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
+        <a class="adm-swg" href="${esc(genusHref(n))}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>${chk ? '' : jLine(p)}
@@ -4650,7 +4703,14 @@ function renderCand() {
     };
   if (!candKey) {
     candKey = e => {
-      if (cur !== '~cand' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,textarea,select') || !$('lightbox').hidden)
+      if (
+        cur !== 'photos/candidates' ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.target.closest('input,textarea,select') ||
+        !$('lightbox').hidden
+      )
         return;
       const S = $v.querySelector('.adm-sw[data-f]');
       if (!S) return;
@@ -5317,8 +5377,7 @@ async function start() {
   });
   // The page opens on Players › Activity, the recent sessions, phone and desktop (Pierre, 2026-11-05: what he looks at
   // first; Players › List from 2026-11-04, the candidates or the first genus before).
-  [ASUBJ, cur] = subjOfHash(hashNow());
-  cur = cur || homeOf(ASUBJ);
+  readHash();
   // An address says its subject, so Back, Forward and a typed or bookmarked coral address keep theirs (Codex review
   // #492). A link without a prefix clicked on a subject's page (a player's journey from Players) is given that
   // subject's prefix when the subject has the page, as it is clicked; the switch's own links carry their subject.
@@ -5327,18 +5386,20 @@ async function start() {
     e => {
       const a = e.target.closest && e.target.closest('a[href^="#"]');
       if (!a || a.closest('#subj') || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const h = decodeURIComponent(a.getAttribute('href').slice(1)),
-        [S, page] = subjOfHash(h);
+      let h = a.getAttribute('href').slice(1).split('?')[0];
+      try {
+        h = decodeURIComponent(h);
+      } catch (e) {}
+      const [S, page] = subjOfHash(h);
       if (S !== ADM0 || ASUBJ === ADM0 || !ASUBJ.admin.pages || !hasPage(ASUBJ, page)) return;
       e.preventDefault();
-      location.hash = ASUBJ.admin.hash + page;
+      location.hash = ASUBJ.admin.hash + admAddr(page);
     },
     true
   );
   window.onhashchange = () => {
     if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
-    [ASUBJ, cur] = subjOfHash(hashNow());
-    cur = cur || homeOf(ASUBJ);
+    readHash();
     const h = $('admhelp');
     if (h) h.remove();
     render();
@@ -5420,7 +5481,7 @@ function signOut() {
 // The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
 // names exist then). A token refused drops them all, so nothing read with it is kept.
 const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'reports'];
-const early = () => queueMicrotask(() => TOKEN && sheetEarly(hashNow() || '~stats'));
+const early = () => queueMicrotask(() => TOKEN && sheetEarly((([S, p]) => admRoute(p, S))(subjOfHash(hashNow()))));
 (async () => {
   if (DEMO) {
     TOKEN = 'demo';
@@ -5484,7 +5545,7 @@ function renderDiff() {
   if (!STATS || !ANS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
     loadStats().then(() => {
-      if (cur === '~diff') render();
+      if (cur === 'photos/review/by-difficulty') render();
     });
     return;
   }
@@ -5497,7 +5558,7 @@ function renderDiff() {
     const [d, n, r] = S[p.f];
     return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
   $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photos by difficulty</h2>${segBtns('min', [
@@ -5616,7 +5677,7 @@ function renderPstats() {
   if (!STATS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
     loadStats(true).then(() => {
-      if (cur === '~pstats') render();
+      if (cur === 'photos/stats/overview') render();
     });
     return;
   }
@@ -5626,7 +5687,7 @@ function renderPstats() {
     go = distOf(R.map(r => r.obs.size)),
     colonies = R.reduce((t, r) => t + r.obs.size, 0),
     withAny = R.filter(r => r.k).length,
-    gen = n => `<a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`;
+    gen = n => `<a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`;
   // Every photo the admin knows, by state, each counted once (what each row means: the ? help).
   const total = st.play + st.off + st.cmp + st.removed + st.wait + st.rej + st.excl,
     S = [
@@ -5912,7 +5973,7 @@ function renderCov() {
       <dt>Sources</dt><dd>all photos of the genus by origin (hover a segment)</dd></dl></details>
     <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
-      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : DATA.gen[r.n].x ? ' <small class="kcov-x">not IMR</small>' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : DATA.gen[r.n].x ? ' <small class="kcov-x">not IMR</small>' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
         ([k]) => r.cby[k]
       )
@@ -5933,14 +5994,14 @@ function renderCov() {
   $v.querySelectorAll('.cov-t tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
-        if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
+        if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
       })
   );
   lookBanner();
 }
 // Where to look (Pierre, 2026-11-03: a banner above the Games grid, no longer a page of its own): the few genus x view
 // cells most worth a candidate search now, ranked as in the full list (needsOf: most reasons first, then fewest
-// colonies); "All N" opens the full list in the banner (~stats-needs: reason cards, view and genus filters, sort).
+// colonies); "All N" opens the full list in the banner (?look=all: reason cards, view and genus filters, sort).
 // It needs the answer log: the grid shows at once, the banner once the log is loaded.
 const LOOK_N = 5;
 function lookBanner() {
@@ -5948,25 +6009,25 @@ function lookBanner() {
   if (!el) return;
   if (!ANS) {
     el.innerHTML = '<p class="note">Loading…</p>';
-    loadStats().then(() => (cur === '~cov' || cur === '~stats-needs') && lookBanner());
+    loadStats().then(() => cur === 'inbox/coverage/games' && lookBanner());
     return;
   }
-  if (cur === '~stats-needs') {
+  if (lookAll()) {
     el.classList.add('open');
     return statsNeeds(el);
   }
   const VO = {wide: 0, medium: 1, macro: 2, zoom: 3},
     L = (NEEDS = needsOf()).slice().sort((a, b) => b.sc - a.sc || a.c.obs - b.c.obs || a.n.localeCompare(b.n) || VO[a.v] - VO[b.v]);
   el.innerHTML = L.length
-    ? `<div class="cov-lookb"><a class="cov-lookt" href="#~stats-needs" title="Where to look for photos: the full list">Where to look</a>${L.slice(
+    ? `<div class="cov-lookb"><a class="cov-lookt" href="#inbox/coverage/games?look=all" title="Where to look for photos: the full list">Where to look</a>${L.slice(
         0,
         LOOK_N
       )
         .map(
           o =>
-            `<a class="cov-lk" href="#${esc(encodeURIComponent(o.n))}" title="${esc(o.why.map(w => w[1] + (w[2] ? ` (${w[2]})` : '')).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
+            `<a class="cov-lk" href="${esc(genusHref(encodeURIComponent(o.n)))}" title="${esc(o.why.map(w => w[1] + (w[2] ? ` (${w[2]})` : '')).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
         )
-        .join('')}<a class="adm-link" href="#~stats-needs">All ${L.length} ›</a></div>`
+        .join('')}<a class="adm-link" href="#inbox/coverage/games?look=all">All ${L.length} ›</a></div>`
     : '';
 }
 
@@ -6063,7 +6124,7 @@ function renderKcov() {
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
     <table class="cov-t kcov-t"><thead><tr><th></th>${colTh(KCOV)}<th class="kcov-fh">Forms</th><th class="kcov-sh">Species</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
-      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="kcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="kcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="kcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
       <td class="kcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
         ([k]) => r.cby[k]
@@ -6086,7 +6147,7 @@ function renderKcov() {
   $v.querySelectorAll('tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
-        if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
+        if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
       })
   );
 }
@@ -6104,7 +6165,7 @@ function renderHidden() {
         ? `<div class="adm-grid adm-qgrid">${L.map(
             ([n, p]) => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-g="${esc(n)}">
       ${p.gone ? '<span class="adm-ph"><span class="none">no longer in the data</span></span>' : `<button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(n)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>`}
-      <figcaption><a class="adm-gen" href="#${esc(encodeURIComponent(n))}"><i>${esc(n)}</i></a>${p.gone ? `<code class="adm-t">${esc(p.f)}</code>` : `<span class="adm-src view">${esc(label(n, viewOf(n, p)))}</span>${srcTag(p)}`}</figcaption>
+      <figcaption><a class="adm-gen" href="${esc(genusHref(encodeURIComponent(n)))}"><i>${esc(n)}</i></a>${p.gone ? `<code class="adm-t">${esc(p.f)}</code>` : `<span class="adm-src view">${esc(label(n, viewOf(n, p)))}</span>${srcTag(p)}`}</figcaption>
       <div class="adm-acts"><button type="button" data-unhide>Put back</button></div></figure>`
           ).join('')}</div>`
         : '<p class="note">No photo removed.</p>'
@@ -6122,7 +6183,7 @@ function renderHidden() {
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
-// The views of Activity, Photo stats, To do › Health and the live Analyses views (~stats-*); their tab and view switch are in #subnav (navs()).
+// The views of Activity, Photo stats, To do › Health and the live Analyses views (LIVE_STATS); their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
   GD = {}, // the genus offsets of the hierarchical photo Elo (?stats=1 gd, sheet v31): {genus: [offset, weighed answers]}
@@ -6177,23 +6238,23 @@ function sheetAgain(...kinds) {
 // finds them on their way (sheetRead). Called once the script has run (its let names exist).
 function sheetEarly(h) {
   const need =
-    h === '~users'
+    h === 'players/list'
       ? ['users', 'ans']
-      : /^~(journey|anon)\//.test(h)
+      : /^players\/list\/(journey|anon)\//.test(h)
         ? ['users', 'ans', 'pages']
-        : h === '~stats'
+        : h === 'players/activity'
           ? ['users', 'ans']
-          : h === '~stats-stop'
+          : h === 'analyses/learning/stops'
             ? ['ans', 'pages']
-            : h === '~todo'
+            : h === 'inbox/todo/all'
               ? ['ans', 'events', 'reports']
-              : h === '~triage'
+              : h === 'inbox/todo/reports'
                 ? ['reports']
-                : h === '~events'
+                : h === 'inbox/todo/errors'
                   ? ['events']
-                  : /^~(stats-|cov$|diff$|health$)/.test(h)
+                  : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
                     ? ['ans']
-                    : h === '~pstats'
+                    : h === 'photos/stats/overview'
                       ? ['ratings']
                       : [];
   const go = {
@@ -6485,7 +6546,9 @@ function savedPump() {
         savedPump();
         if (
           gen === savedGen &&
-          (cur === '~journey/' + name || (cur === '~users' && !savedRun && !savedQ.length) || (cur === '~stats' && SOPEN.size))
+          (cur === 'players/list/journey/' + name ||
+            (cur === 'players/list' && !savedRun && !savedQ.length) ||
+            (cur === 'players/activity' && SOPEN.size))
         )
           render();
       });
@@ -6622,7 +6685,7 @@ function renderUsers() {
   if (!USERS || !ANS) {
     $v.innerHTML = head + '<p class="note">Loading…</p>';
     Promise.all([loadUsers(), ANS ? null : loadStats()]).then(() => {
-      if (cur === '~users') render();
+      if (cur === 'players/list') render();
     });
     return;
   }
@@ -6679,7 +6742,7 @@ function renderUsers() {
   // One compact bar under the row (Pierre, 2026-11-03: a big card for one Journey link and a tall Manage card wasted the
   // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
   const detail = u => `<tr class="adm-udet"><td colspan="${COLS.length + 1}"><div class="adm-ubar">
-      <a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a>
+      <a class="next" href="#players/list/journey/${encodeURIComponent(u.name)}">Journey →</a>
       ${u.pg ? `<span class="adm-uprog">Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
       ${groupOn() ? `<span>${inGroup(u) ? 'In' : 'Not in'} the ${esc(ASUBJ.name)} beta <button type="button" class="adm-fchip" data-ugroup="${esc(u.name)}" data-on="${inGroup(u) ? 0 : 1}">${inGroup(u) ? 'Remove' : 'Add'}</button></span>` : ''}
@@ -6762,7 +6825,7 @@ function renderUsers() {
       ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th title="Overall level as the Elo players see (1000 + 200 × level), ± its 95% margin">Elo</th><th>Answers</th><th>Right</th>${replayOn() ? '<th title="Replayed from their answers with the current rules">Progress</th>' : ''}<th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? eloText(RAS[id][0], LVM[id]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#players/list/anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? eloText(RAS[id][0], LVM[id]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
           )
           .join(
             ''
@@ -6774,7 +6837,7 @@ function renderUsers() {
       ? `<details class="adm-uremoved"${USERS.archived.some(a => a.name === uDel) ? ' open' : ''}><summary>Archived (${USERS.archived.length})</summary><table class="adm-tbl"><thead><tr><th>Name</th><th>Last saved</th><th>Answers</th><th>Reports</th><th></th></tr></thead><tbody>${USERS.archived
           .map(
             a =>
-              `<tr><td><a href="#~journey/${encodeURIComponent(a.name)}" title="Journey (archived)">${cut(a.name)}</a></td><td>${a.time ? date(a.time) : '–'}</td><td>${a.answers}</td><td>${a.reports || ''}</td><td>${
+              `<tr><td><a href="#players/list/journey/${encodeURIComponent(a.name)}" title="Journey (archived)">${cut(a.name)}</a></td><td>${a.time ? date(a.time) : '–'}</td><td>${a.answers}</td><td>${a.reports || ''}</td><td>${
                 uDel === a.name
                   ? `<span class="adm-udel"><button type="button" class="adm-danger" data-udel-all="${esc(a.name)}">Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(a.name)}">Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button></span>`
                   : `<button type="button" class="adm-danger" data-udel="${esc(a.name)}">Delete…</button>`
@@ -6999,21 +7062,21 @@ function bindUsers() {
 function renderStats() {
   status();
   // Activity's Recent sessions name the signed-in players (USERS); the other views need the answer log only.
-  const named = cur === '~stats' && !USERS;
+  const named = cur === 'players/activity' && !USERS;
   if (!ANS || named) {
     $v.innerHTML = '<p class="note">Loading…</p>';
     Promise.all([ANS ? null : loadStats(), named ? loadUsers() : null]).then(() => {
-      if (cur.startsWith('~stats') || cur === '~health') render();
+      if (LIVE_STATS.includes(cur) || cur === 'inbox/todo/health') render();
     });
     // Stops' pages opened leave with the answer log, not after it.
-    if (cur === '~stats-stop' && pagesStale()) loadPages().catch(() => {});
+    if (cur === 'analyses/learning/stops' && pagesStale()) loadPages().catch(() => {});
     return;
   }
-  return cur === '~stats-photos'
+  return cur === 'photos/stats/difficulty'
     ? statsPhotos()
-    : cur === '~stats-conf'
+    : cur === 'analyses/difficulty/pairs'
       ? statsConf()
-      : cur === '~health' || cur === '~stats-stop'
+      : cur === 'inbox/todo/health' || cur === 'analyses/learning/stops'
         ? statsHealth()
         : statsPlayers();
 }
@@ -7062,8 +7125,8 @@ function recentSessions(R) {
     },
     who = id =>
       NM[id]
-        ? `<a href="#~journey/${encodeURIComponent(NM[id].name)}">${pname(NM[id].name, NM[id].board === -1)}</a>`
-        : `<a href="#~anon/${encodeURIComponent(id)}" title="Not signed in"><code>${esc(id)}</code></a>`;
+        ? `<a href="#players/list/journey/${encodeURIComponent(NM[id].name)}">${pname(NM[id].name, NM[id].board === -1)}</a>`
+        : `<a href="#players/list/anon/${encodeURIComponent(id)}" title="Not signed in"><code>${esc(id)}</code></a>`;
   const live = S.filter(s => isNow(s.L[s.L.length - 1][1])).length;
   return `<section class="adm-scard adm-recent" data-recent><h3>Recent sessions${
     live ? ` <span class="adm-ago now">${live} playing now</span>` : ''
@@ -7155,10 +7218,10 @@ function activityCard(R) {
     (n, h) => `<div title="${h}:00-${h + 1}:00: ${n} answers"><i style="height:${Math.round((100 * n) / hm)}%"></i></div>`
   ).join('')}</div><p class="adm-axis"><span>0 h</span><span>12 h</span><span>23 h</span></p></section>`;
 }
-// Players › Activity (~stats: who plays and how much) and Analyses › Learning › Answer log (~stats-log: what the answers
+// Players › Activity (players/activity: who plays and how much) and Analyses › Learning › Answer log (analyses/learning/answer-log: what the answers
 // say, live; Pierre, 2026-11-04, one role per admin page): one reading of the answer log, each view its own cards.
 function statsPlayers() {
-  const log = cur === '~stats-log',
+  const log = cur === 'analyses/learning/answer-log',
     head = `<div class="adm-shead"><h2>${log ? 'Answer log' : 'Activity'}</h2><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
   if (ANS.old) {
     $v.innerHTML =
@@ -7291,7 +7354,7 @@ function statsPlayers() {
     }</section>
     <section class="adm-scard"><h3>Conditions</h3><table class="adm-tbl">${cond.map(([t, n, r]) => `<tr><td>${t}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('')}</table></section>
     <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th><th title="Median player Elo on the genus (1000 + 200 × their level on it)">Elo</th></tr></thead><tbody>
-      ${gl.map(g => `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? eloText(med(GT[g.n]), null, {what: 'Median player Elo on the genus'}) : ''}</td></tr>`).join('')}</tbody></table></div></section>
+      ${gl.map(g => `<tr><td><a class="adm-gen" href="${esc(genusHref(g.n))}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? eloText(med(GT[g.n]), null, {what: 'Median player Elo on the genus'}) : ''}</td></tr>`).join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Mix-ups</h3>${
       ml.length
         ? `<table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th></th><th>n</th></tr></thead><tbody>
@@ -7406,9 +7469,9 @@ function needsOf() {
   });
   return out;
 }
-// Where to look, in full: into el (the banner above Coverage › Games, open on ~stats-needs).
+// Where to look, in full: into el (the banner above Coverage › Games, open with ?look=all).
 function statsNeeds(el) {
-  const head = `<div class="adm-shead"><h2>Where to look for photos</h2><a class="adm-link" href="#~cov">Fold</a></div>`,
+  const head = `<div class="adm-shead"><h2>Where to look for photos</h2><a class="adm-link" href="#inbox/coverage/games">Fold</a></div>`,
     out = needsOf();
   NEEDS = out;
   NGEN = NGEN || '';
@@ -7464,7 +7527,7 @@ function needsBody() {
     .join('')}</div>
     <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr>${th('n', 'Genus')}${th('v', 'View')}${th('c', 'Colonies')}${th('sc', 'Why')}</tr></thead><tbody>
     ${L.map(
-      o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
+      o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="${esc(genusHref(o.n))}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
       <td>${o.why.map(([k, t, raw, h]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${esc(T[k] + (raw ? ` · ${raw}` : ''))}">${h || esc(t)}</span>`).join(' ')}</td></tr>`
     ).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
   const save = () => {
@@ -7490,7 +7553,7 @@ function needsBody() {
   box.querySelectorAll('.adm-needs tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
-        if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
+        if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
       })
   );
 }
@@ -7588,19 +7651,19 @@ function healthLine0() {
       bad && `${bad} photo${bad === 1 ? '' : 's'} everyone misses`,
       stuck && `${stuck} ${stuck === 1 ? 'genus' : 'genera'} players are stuck on`
     ].filter(Boolean);
-  return L.length ? `<p class="warn adm-hline" data-hline><a href="#~health"><b>Health</b></a>: ${L.join(' · ')}</p>` : '';
+  return L.length ? `<p class="warn adm-hline" data-hline><a href="#inbox/todo/health"><b>Health</b></a>: ${L.join(' · ')}</p>` : '';
 }
 // Health (Pierre, 2026-11-02: "most RAs will not send feedback"): what the answers already logged say about how the
 // app works for players, with no new data. One role per admin page (Pierre, 2026-11-04): Inbox › To do › Health
-// (~health, is something wrong?) keeps what needs action: photos everyone misses (maybe mislabelled or bad: a link to
-// the genus page) and genera that don't take off for players; Analyses › Learning › Stops (~stats-stop, what we learn)
+// (inbox/todo/health, is something wrong?) keeps what needs action: photos everyone misses (maybe mislabelled or bad: a link to
+// the genus page) and genera that don't take off for players; Analyses › Learning › Stops (analyses/learning/stops, what we learn)
 // has where players stop (sessions = answers less than GAP minutes apart; how long they last; what the short ones
 // ended on) and the genus sheets they open. One reading of the answer log, each view its own sections. The answers and
 // players per day went with Players › Activity (activityCard). Anonymous ids only, like the other stats pages; every
 // account counts (Pierre, 2026-11-04).
 function statsHealth() {
   const H = HEALTH,
-    stops = cur === '~stats-stop',
+    stops = cur === 'analyses/learning/stops',
     head = `<div class="adm-shead"><h2>${stops ? 'Stops' : 'Health'}</h2></div>`;
   if (ANS.old) {
     $v.innerHTML =
@@ -7704,7 +7767,7 @@ function statsHealth() {
         ? tbl(
             ['Genus', 'n:Sessions'],
             top(early, r => r[2], 5).map(
-              ([g, n]) => `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a></td><td class="n">${n}</td></tr>`
+              ([g, n]) => `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a></td><td class="n">${n}</td></tr>`
             )
           ) +
           tbl(
@@ -7718,7 +7781,7 @@ function statsHealth() {
   const MAXPH = 24,
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
-      <figcaption><a class="adm-gen" href="#${esc(o.p.genus)}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
+      <figcaption><a class="adm-gen" href="${esc(genusHref(o.p.genus))}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
       <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>${o.d != null ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>` : ''}</figcaption></figure>`;
   const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
     BAD.length
@@ -7737,7 +7800,7 @@ function statsHealth() {
     ],
     GR.map(
       g =>
-        `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
+        `<tr><td><a class="adm-gen" href="${esc(genusHref(g.n))}"><i>${esc(g.n)}</i></a></td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
     )
   )}</div></section>`;
 
@@ -7754,7 +7817,7 @@ function statsHealth() {
   bindStats();
   // The pages summaries (sheet v30) come with their own read: the section fills in when they arrive, and is read again
   // once stale.
-  if (stops) pagesFresh('~stats-stop');
+  if (stops) pagesFresh('analyses/learning/stops');
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
@@ -8035,7 +8098,7 @@ ${recScale(lo / 10, (hi + 1) / 10)}
       <p class="adm-axis"><span>${recPct(lo / 10)}</span><span>easier · recognised by · harder</span><span>${recPct((hi + 1) / 10)}</span></p>${legend}</section>
     <section class="adm-scard"><h3>Views</h3>${table(V, 'View')}</section>
     <section class="adm-scard"><h3>Sources</h3>${table(S, 'Source')}</section>
-    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="#${esc(r.k)}"><i>${esc(r.k)}</i></a><span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
+    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="${esc(genusHref(r.k))}"><i>${esc(r.k)}</i></a><span class="n">${genRec(r, 1)}</span>${strip(r.a)}</div>`).join('')}</div>
       ${recScale(x0, x1, 'strip')}<p class="adm-axis strip"><span>${recPct(x0)}</span><span>easier · recognised by · harder</span><span>${recPct(x1)}</span></p></section>
     </div>`;
   bindStats();
