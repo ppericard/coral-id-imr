@@ -12,7 +12,13 @@ const test = require('node:test'),
 const C = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-const py = code => execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\n${code}`], {cwd: ROOT, encoding: 'utf8'});
+// maxBuffer: fish-game.json passed the 1 MB default once the curated photos grew (ENOBUFS, 2026-11-06).
+const py = code =>
+  execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\n${code}`], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 << 20
+  });
 const pil = (() => {
   try {
     py('import PIL');
@@ -124,11 +130,11 @@ def get(url):
     b = io.BytesIO(); Image.new('RGB', (400, 300), (20, 90, 160)).save(b, 'JPEG'); return b.getvalue()
 `;
 // The tool prints its retries and failures; the result is the last line.
-const run = (dir, out) =>
+const run = (dir, out, limit) =>
   JSON.parse(
     py(`${STUB}
-done, failed, n = G.run(${JSON.stringify(out)}, root=${JSON.stringify(dir)}, get=get, pause=0, workers=2)
-print(json.dumps({'done': done, 'failed': failed, 'n': n, 'calls': calls}))`)
+done, failed, n, wait = G.run(${JSON.stringify(out)}, root=${JSON.stringify(dir)}, get=get, pause=0, workers=2${limit === undefined ? '' : ', limit=' + limit})
+print(json.dumps({'done': done, 'failed': failed, 'n': n, 'wait': wait, 'calls': calls}))`)
       .trim()
       .split('\n')
       .pop()
@@ -235,6 +241,157 @@ print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.
     'in play while the candidate is not rejected'
   );
   assert.ok(!C.fishPhotos({t01: [ref]}, {}, cur).t01.some(p => p.f === ref.f), 'out once Pierre rejected the candidate');
+});
+
+// The photos that enter play by themselves (Pierre, 2026-11-06, Q180 and Q199: a candidate judged sure, a reference photo
+// judged at the reference level; treated exactly like the photos he adds, hosted on R2): the same download, listed with
+// auto, out once he rejects, excludes or moves the photo; never the same photo or (a reference photo) observation twice.
+const AUTO_SUG = {
+  fish: {
+    ...SUG.fish,
+    'fish-s003-cand-301': {jt: 'p1g0sm1', e: 4, k: 'best', c: [0, 0, 0.5, 1]},
+    'fish-s003-cand-302': {jt: 'o1g0sm1', e: 3, k: 'alt'},
+    'fish-s003-cand-303': {jt: 'p1g0sm1', e: 5, k: 'best', u: ['code'], n: 'unsure'},
+    'fish-s003-cand-304': {jt: 'p1g0smm', e: 4, k: 'best'},
+    'fish-s003-cand-305': {jt: 'p1g0sm1', e: 4, k: 'dup'},
+    'fish-s003-cand-306': {jt: 'p1g0sm1', e: 4, k: 'best'},
+    'fish-s003-cand-307': {jt: 'p1g0sma', e: 3, k: 'best'}
+  }
+};
+const REF = (id, o, k = {}) => ({
+  f: 'fi' + id,
+  o: `https://www.inaturalist.org/observations/${o}`,
+  src: INAT(id),
+  r: 1,
+  a: '(c) Someone, some rights reserved (CC BY)',
+  lic: 'cc-by',
+  t: 'Fishus wrassii',
+  sp: 's003',
+  loc: 'world',
+  for: ['s003'],
+  ...k
+});
+function autoWorld() {
+  const dir = world(),
+    w = (f, o) => fs.writeFileSync(path.join(dir, f), JSON.stringify(o)),
+    c = structuredClone(CAND),
+    cur = structuredClone(CUR);
+  c.cand.s003.push(...[302, 303, 304, 305, 306, 307].map(id => cand('s003', id)));
+  cur.fish.seen['fish-s003-cand-306'] = 1; // judged sure, but Pierre rejected it
+  w('fish-cand.json', c);
+  w('curation.json', cur);
+  w('suggest.json', AUTO_SUG);
+  fs.mkdirSync(path.join(dir, 'tools'));
+  // 308: a cover judged 4, one point more for being one (reference level); 309: judged 4, no rep (below it); 310: on
+  // candidate 301's observation (rule P4: out).
+  w('tools/fish_refs.json', {
+    photos: {
+      s003: [
+        REF(308, 9308, {rep: 'inaturalist', from: 'cover'}),
+        REF(309, 9309, {from: 'taxon'}),
+        REF(310, 9301, {rep: 'inaturalist', from: 'taxon'})
+      ]
+    }
+  });
+  w('tools/fish_judge.json', {photos: {t02: {fi308: 'p1g0sl14', fi309: 'p1g0sl14', fi310: 'p1g0sl15'}}, crops: {}});
+  return dir;
+}
+test(
+  'fish_game.py: candidates judged sure and reference-level photos in play by themselves, on R2, until Pierre decides',
+  {skip: !pil && 'Pillow missing'},
+  () => {
+    const dir = autoWorld(),
+      // One download only: the reference photo first (the tier order), the rest wait for the next run.
+      r1 = run(dir, path.join(dir, 'up1'), 1),
+      G1 = JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'));
+    assert.deepStrictEqual([r1.done, r1.wait], [1, 8]); // 107 among them: its host is refused at download
+    assert.deepStrictEqual(
+      Object.values(G1.photos)
+        .flat()
+        .map(p => p.f),
+      ['fi308']
+    );
+    const r = run(dir, path.join(dir, 'up2')),
+      G = JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8')),
+      by = Object.fromEntries(
+        Object.values(G.photos)
+          .flat()
+          .map(p => [p.f, p])
+      );
+    assert.deepStrictEqual([r.done, r.wait, r.n], [7, 0, 8]);
+    // Pierre's 5 as before, the sure best and alt of the candidates, the reference-level photo; never the unsure, other kinds
+    // of fish (P3), dup, a photo he rejected, out of the water, a reference photo below the level or on an observation in play.
+    assert.deepStrictEqual(Object.keys(by).sort(), [
+      'fi308',
+      'fish-s001-cand-101',
+      'fish-s001-cand-102',
+      'fish-s001-cand-105',
+      'fish-s002-cand-201',
+      'fish-s003-cand-301',
+      'fish-s003-cand-302',
+      'fish-s003-cand-fb-Fiwra_u0'
+    ]);
+    assert.deepStrictEqual(
+      [by['fish-s003-cand-301'].auto, by['fish-s003-cand-301'].e, by['fish-s003-cand-301'].jt],
+      ['cand', 4, 'p1g0sm1']
+    );
+    // The pass's proposed crop applied, as the auto-sort writes it into Pierre's draft.
+    assert.deepStrictEqual([by['fish-s003-cand-301'].cr, by['fish-s003-cand-301'].ar], [[0, 0, 0.5, 1], 0.67]);
+    assert.deepStrictEqual(
+      [by.fi308.auto, by.fi308.e, by.fi308.jt, by.fi308.rep, by.fi308.from, !!by.fi308.r],
+      ['ref', 5, 'p1g0sl1r', 'inaturalist', 'cover', false]
+    );
+    assert.ok(!by['fish-s001-cand-101'].auto, "Pierre's own adds carry no auto");
+    // In the game (core.js fishPhotos): in play until Pierre rejects, excludes or moves the photo, by photo id.
+    const cur = JSON.parse(fs.readFileSync(path.join(dir, 'curation.json'), 'utf8')),
+      shown = c => (C.fishPhotos({}, G.photos, c, FISH).t02 || []).map(p => p.f);
+    ['fish-s003-cand-301', 'fish-s003-cand-302', 'fi308'].forEach(f => assert.ok(shown(cur).includes(f), f));
+    const no = (k, f) => ({...cur, fish: {...cur.fish, [k]: {...(cur.fish[k] || {}), [f]: k === 'out' ? 'x' : 1}}});
+    assert.ok(!shown(no('seen', 'fish-s003-cand-301')).includes('fish-s003-cand-301'), 'rejected');
+    assert.ok(!shown(no('exclude', 'fish-s003-cand-302')).includes('fish-s003-cand-302'), 'excluded');
+    assert.ok(!shown(no('out', 'fish-s003-cand-308')).includes('fi308'), 'its candidate moved with Not this');
+    assert.ok(!shown({...cur, exclude: {'fish-s003-cand-301': 'x'}}).includes('fish-s003-cand-301'), 'excluded for good');
+    // fish_game.py's copy of the rule agrees.
+    const recs = Object.values(G.photos).flat(),
+      curs = [cur, no('seen', 'fish-s003-cand-301'), no('out', 'fish-s003-cand-308')],
+      got = JSON.parse(
+        py(`import fish_game as G
+recs, curs = json.loads(${JSON.stringify(JSON.stringify([recs, curs]))})
+print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in recs] for c in curs]))`)
+      );
+    assert.deepStrictEqual(
+      got,
+      curs.map(c => recs.map(p => C.fishIn(c.fish, p, C.fishGone(c))))
+    );
+    // Pierre rejects one: the next run takes it out of the list.
+    fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(no('seen', 'fish-s003-cand-302')));
+    const r3 = run(dir, path.join(dir, 'up3'));
+    assert.deepStrictEqual([r3.done, r3.n], [0, 7]);
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+);
+
+// Pierre's word stands over a photo in play by itself (Codex review #674): an automatic add of the auto-sort he undid
+// (log code '-a...', autosort.js fishUndo) keeps the photo out, and his explicit full-photo crop [0, 0, 1, 1] beats the
+// pass's proposed crop.
+test("fish_game.py: an undone auto add stays out, and Pierre's full-photo crop beats the proposal", () => {
+  const dir = autoWorld(),
+    cur = JSON.parse(fs.readFileSync(path.join(dir, 'curation.json'), 'utf8'));
+  cur.fish.auto = {'2026-11-06': {'fish-s003-cand-302': '-ae', 'fish-s003-cand-305': '-r'}};
+  cur.fish.crop['fish-s003-cand-301'] = [0, 0, 1, 1];
+  fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(cur));
+  const got = JSON.parse(
+    py(`import fish_game as G
+fish, cur, cand, sug, refs, codes, crops = G.inputs(${JSON.stringify(dir)})
+todo, keep, _ = G.plan(fish, cur, cand, sug, {'photos': {}}, refs, codes, crops)
+print(json.dumps({r['f']: c for r, c, _ in todo}))`)
+  );
+  assert.ok(!('fish-s003-cand-302' in got), 'an undone auto add stays out');
+  assert.strictEqual(got['fish-s003-cand-301'], null, 'his full-photo crop, not the proposal');
+  const rec = {f: 'fish-s003-cand-302', sp: 's003', auto: 'cand'};
+  assert.ok(!C.fishIn(cur.fish, rec, C.fishGone(cur)), 'core.js agrees');
+  assert.ok(C.fishIn(cur.fish, {...rec, f: 'fish-s003-cand-301'}, C.fishGone(cur)));
+  fs.rmSync(dir, {recursive: true, force: true});
 });
 
 // core.js fishPhotos: curated photos where an entry has enough very easy ones, the stopgap's joining them otherwise.
@@ -351,7 +508,9 @@ test('fish-game.json: the layout tools/fish_game.py writes, only photos in play,
     .flat()
     .forEach(p => {
       assert.ok(
-        !p.r && p.src && /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org|www\.fishbase\.de)\//.test(p.src),
+        !p.r &&
+          p.src &&
+          /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org|www\.fishbase\.(?:de|se))\//.test(p.src),
         p.f
       );
       assert.ok(r2.has(p.f), `${p.f}: not in the R2 list (tools/photos.py DATA)`);

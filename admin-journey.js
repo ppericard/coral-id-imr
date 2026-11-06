@@ -70,11 +70,19 @@ const jStart = (S, before) => {
 const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
   jTime = t => dateText(t, 'dmhm'),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
+// A unit on a journey or in a session: a genus of the site's data in italics with its page; another subject's unit by
+// its name (its entries read once, admin.js fishAdmin, as a report names one), plain.
+const jName = g => (FISHA && FISHA.gen[g] ? FISHA.gen[g].name : g),
+  jUnit = g => (DATA.gen[g] ? `<a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a>` : `<i>${esc(jName(g))}</i>`),
+  // The subject's word for its units, capitalised (Genera, Families).
+  jMany = (S = ASUBJ) => S.many[0].toUpperCase() + S.many.slice(1),
+  jOne = (S = ASUBJ) => S.one[0].toUpperCase() + S.one.slice(1);
 
 // Everything the page shows, from one player's answers in time order.
-function journeyOf(R) {
+function journeyOf(R, full = true) {
   // The slate as the app counts it (core.js slateOf, as app.js slateGenera): the IMR coral slate and BENTHIC (Millepora).
-  const slate = new Set(slateOf(DATA)),
+  // A subject the admin does not replay: the units the player met (no total, no bonus mark).
+  const slate = new Set(full ? slateOf(DATA) : R.map(r => r[2])),
     G = {},
     acc = [],
     exp = [],
@@ -180,6 +188,20 @@ function journeyChart(series, top, opt = {}) {
 function renderJourney(name, anonId = '') {
   const here = anonId ? 'players/list/anon/' + anonId : 'players/list/journey/' + name;
   status();
+  // One journey per subject (Pierre, 2026-11-06: "Journey is per mode, necessarily"), under the subject's prefix: the
+  // page's own Corals | Fish shows the player's answers in each and opens the other (the header switch keeps the page
+  // too). A subject the admin does not replay (SUBJECTS replay false) shows what its answers say: no progress, cards,
+  // learned units, Elo or sheets opened, which come from the replayed subject's model and saved copy.
+  const full = !!ASUBJ.replay;
+  if (!full && !FISHA) fishAdmin().then(() => cur === here && FISHA && render());
+  // A subject's rows of this player (u, found below); an archived record's are kept apart from rowsOf (sheet v58 flag 2;
+  // Codex review #690).
+  const jRows = S => (u.arch ? subjRows(ANS.all || ANS.rows || [], S.id) : rowsOf(S)).filter(r => r[0] === u.id),
+    jn = S => jRows(S).length,
+    jseg = () =>
+      `<span class="adm-qseg adm-sseg adm-jsubj" role="group" aria-label="Subject">${SUBJECTS.map(
+        S => `<a href="#${esc(S.hash + admAddr(here))}" data-own aria-pressed="${S === ASUBJ}">${esc(S.name)} <small>${jn(S)}</small></a>`
+      ).join('')}</span>`;
   const back = `<a class="adm-fchip plain" href="#players/list">← Players</a><button type="button" class="adm-fchip plain" data-jload title="Reload">↻</button>`;
   if (!USERS || !ANS) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(anonId ? 'Not signed in · ' + anonId : name)}</h2></div><p class="note">Loading…</p>`;
@@ -202,16 +224,17 @@ function renderJourney(name, anonId = '') {
     bindJReload();
     return;
   }
-  const R = (ANS.rows || []).filter(r => r[0] === u.id).sort((a, b) => a[1] - b[1]);
-  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}${u.arch ? '<small class="note">archived</small>' : ''}</div>`;
+  const R = jRows(ASUBJ).sort((a, b) => a[1] - b[1]);
+  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}${u.arch ? '<small class="note">archived</small>' : ''}${SUBJECTS.length > 1 ? jseg() : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindJReload();
     return;
   }
-  const J = journeyOf(R),
+  const J = journeyOf(R, full),
     total = J.slate.size,
-    lv = RAS[u.id] ? RAS[u.id][0] : null,
+    of = full ? `/${total}` : '', // met out of the slate, for the replayed subject only
+    lv = full && RAS[u.id] ? RAS[u.id][0] : null,
     // The photo quiz apart from the Duel tab (core.js playSplit; Pierre, 2026-11-03).
     sp = playSplit(R)[R.length ? R[0][0] : ''] || {q: [0, 0], q50: [0, 0], d: [0, 0]},
     sLen = J.S.map(s => s.length).sort((a, b) => a - b),
@@ -226,12 +249,12 @@ function renderJourney(name, anonId = '') {
       .sort((a, b) => a - b);
 
   // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
-  const C = anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name),
+  const C = !full ? {none: 1, map: {}, offer: null} : anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name),
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
     // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
-    PG = progOf(anonId ? {id: anonId, anon: 1} : u, true),
-    RP = replayOn(),
+    PG = full ? progOf(anonId ? {id: anonId, anon: 1} : u, true) : null,
+    RP = full && replayOn(),
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
@@ -259,53 +282,55 @@ function renderJourney(name, anonId = '') {
     backs = byKind('back');
   const cardsLine = !C
     ? '<p class="note">Cards: loading…</p>'
-    : C.anon
-      ? '<p class="note">Cards: not saved (not signed in).</p>'
-      : C.err
-        ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
-        : `<ul class="adm-jcards">${jOrder([
-            ...jStart(C.start, before),
-            first.length
-              ? [
-                  cardT(CM[first[0]]) || null,
-                  `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
-                ]
-              : [
-                  null,
-                  '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
-                ],
-            [null, `<li><b>Cards one at a time</b> ${singles.length}</li>`],
-            ...(openAt != null
-              ? [
-                  [
-                    offer.t || cardT([openAt]) || null,
-                    `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} genera at once</li>`
+    : C.none
+      ? ''
+      : C.anon
+        ? '<p class="note">Cards: not saved (not signed in).</p>'
+        : C.err
+          ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
+          : `<ul class="adm-jcards">${jOrder([
+              ...jStart(C.start, before),
+              first.length
+                ? [
+                    cardT(CM[first[0]]) || null,
+                    `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
+                  ]
+                : [
+                    null,
+                    '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
                   ],
-                  ...(offer.bk === 'one'
-                    ? [
-                        [
-                          offer.bt || null,
-                          `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)} · ${offer.bn} genera closed, ${backs.length} still closed</li>`
-                        ]
-                      ]
-                    : offer.bk === 'keep'
+              [null, `<li><b>Cards one at a time</b> ${singles.length}</li>`],
+              ...(openAt != null
+                ? [
+                    [
+                      offer.t || cardT([openAt]) || null,
+                      `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} genera at once</li>`
+                    ],
+                    ...(offer.bk === 'one'
                       ? [
                           [
                             offer.bt || null,
-                            `<li><b>Kept all genera</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)}</li>`
+                            `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)} · ${offer.bn} genera closed, ${backs.length} still closed</li>`
                           ]
                         ]
-                      : [])
-                ]
-              : offer
-                ? [
-                    [
-                      offer.t || null,
-                      `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
-                    ]
+                      : offer.bk === 'keep'
+                        ? [
+                            [
+                              offer.bt || null,
+                              `<li><b>Kept all genera</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)}</li>`
+                            ]
+                          ]
+                        : [])
                   ]
-                : [[null, '<li><b>Open all genera</b> not used</li>']])
-          ])}</ul>`;
+                : offer
+                  ? [
+                      [
+                        offer.t || null,
+                        `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
+                      ]
+                    ]
+                  : [[null, '<li><b>Open all genera</b> not used</li>']])
+            ])}</ul>`;
 
   // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus
   // (Pierre, 2026-11-02: "you know which question validated the exam"). Once learned a genus gets no more exam
@@ -358,7 +383,7 @@ function renderJourney(name, anonId = '') {
         label: 'Right answers over time'
       }
     )}
-    <h4>Genera met and learned <span class="adm-jkey"><i class="acc"></i>met ${J.marks.length}/${total} <i class="lrn"></i>★ learned ${Object.keys(LRN).filter(g => J.slate.has(g)).length}${lrnUnknown ? ` (${lrnUnknown} learned before times were kept: not on the curve)` : ''}</span></h4>
+    <h4>${jMany()} met${full ? ' and learned' : ''} <span class="adm-jkey"><i class="acc"></i>met ${J.marks.length}${of}${full ? ` <i class="lrn"></i>★ learned ${Object.keys(LRN).filter(g => J.slate.has(g)).length}${lrnUnknown ? ` (${lrnUnknown} learned before times were kept: not on the curve)` : ''}` : ''}</span></h4>
     ${journeyChart([{v: J.met, cls: 'met'}, ...(PG && !PG.err ? [{v: lrnSeries, cls: 'lrn'}] : [])], total, {
       ticks: [
         [Math.round(total / 2), Math.round(total / 2)],
@@ -368,10 +393,10 @@ function renderJourney(name, anonId = '') {
       dots: J.marks.map(([i, g, t]) => [i, J.met[i], `${g}: answer ${i + 1}, ${jTime(t)}`]),
       marks: openN != null ? [[Math.min(R.length - 1, openN), 'Opened all']] : [],
       stars: lrnPts.map(([g, i]) => [i, lrnSeries[i], `${g} learned: answer ${i + 1}, ${jTime(R[i][1])}`]),
-      label: 'Genera met over time'
+      label: `${jMany()} met over time`
     })}
     <p class="adm-axis"><span>answer 1 · ${jDate(R[0][1])}</span><span>vertical lines: a new day</span><span>answer ${R.length} · ${jDate(R[R.length - 1][1])}</span></p>
-    <h4>Cards</h4>${cardsLine}</section>`;
+    ${cardsLine ? `<h4>Cards</h4>${cardsLine}` : ''}</section>`;
 
   // 2. Easy and hard for them: right answers against the chance the game expected (photo difficulty, their level).
   const scored = Object.entries(J.G).filter(([, s]) => s.n >= JOURNEY.MIN && s.score != null),
@@ -386,8 +411,8 @@ function renderJourney(name, anonId = '') {
       .slice(0, JOURNEY.TOP);
   const gl = L =>
     L.length
-      ? `<table class="adm-tbl">${L.map(([g, s]) => `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a></td><td class="n">${pct(s.ok, s.n)}</td><td class="n">${jPts(s.score)}</td><td class="n">${s.n}</td></tr>`).join('')}</table>`
-      : `<p class="note">Not enough answers yet (${JOURNEY.MIN} per genus).</p>`;
+      ? `<table class="adm-tbl">${L.map(([g, s]) => `<tr><td>${jUnit(g)}</td><td class="n">${pct(s.ok, s.n)}</td><td class="n">${jPts(s.score)}</td><td class="n">${s.n}</td></tr>`).join('')}</table>`
+      : `<p class="note">Not enough answers yet (${JOURNEY.MIN} per ${esc(ASUBJ.one)}).</p>`;
   const mixes = Object.entries(J.mix)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
@@ -399,18 +424,18 @@ function renderJourney(name, anonId = '') {
         ? `<table class="adm-tbl">${mixes
             .map(([k, n]) => {
               const [a, b] = k.split('|');
-              return `<tr><td><i>${esc(a)}</i> → <i>${esc(b)}</i></td><td class="n">${n}×</td></tr>`;
+              return `<tr><td><i>${esc(jName(a))}</i> → <i>${esc(jName(b))}</i></td><td class="n">${n}×</td></tr>`;
             })
             .join('')}</table>`
         : '<p class="note">None</p>'
     }${
-      u.review
+      full && u.review
         ? `<h3>To review</h3><p>${u.review
             .split(', ')
             .map(g => `<i>${esc(g)}</i>`)
             .join(', ')}</p>`
         : ''
-    }${notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(g)}</i>`).join(', ')}</p>` : ''}</section>`;
+    }${full && notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(g)}</i>`).join(', ')}</p>` : ''}</section>`;
 
   // 3. Every genus asked, in the order they were met (or easiest / hardest first).
   const rows = Object.entries(J.G).sort((a, b) =>
@@ -426,7 +451,7 @@ function renderJourney(name, anonId = '') {
   const cardCell = g => {
     const e = CM[g],
       k = kindOf(e);
-    if (!C || C.err) return '';
+    if (!C || C.err || C.none) return '';
     if (!e) return '–';
     if (k === 'start') return `<span title="${esc(jTime(cardT(e)))}">first cards</span>`;
     if (k === 'all') return `<span title="${esc(jTime(cardT(e)))}">opened all</span>`;
@@ -439,21 +464,21 @@ function renderJourney(name, anonId = '') {
   const SP = (!anonId && (PSAVED[name] || {}).P) || null,
     genProg = g => {
       if (!PG) return '…';
-      const v = Math.round(100 * scoreOf(PG.G[g])),
-        o = SP && !PG.err ? Math.round(100 * scoreOf(SP[g])) : v;
+      const v = Math.round(100 * scoreOf(PG.G[g], PG.G, g)),
+        o = SP && !PG.err ? Math.round(100 * scoreOf(SP[g], SP, g)) : v;
       return `${withSaved(v + '%', o + '%')} ${sbar(v, 100)}`;
     };
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
     sortBtn = (k, t) => `<button type="button" data-jsort="${k}" aria-pressed="${JSORT === k}">${t}</button>`;
-  const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>Genera <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
-    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th title="When its card showed: after which answer">Card</th><th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th>${RP ? `<th title="The genus's bar, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)">Progress</th>` : ''}<th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
+  const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>${jMany()} <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
+    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>${jOne()}</th>${full ? '<th title="When its card showed: after which answer">Card</th>' : ''}<th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th>${RP ? `<th title="The genus's bar, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)">Progress</th>` : ''}<th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
       .map(([g, s]) => {
         const inst = Object.entries(s.inst)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 2)
-          .map(([x, n]) => `<i>${esc(x)}</i> ${n}×`)
+          .map(([x, n]) => `<i>${esc(jName(x))}</i> ${n}×`)
           .join(', ');
-        return `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
+        return `<tr><td>${jUnit(g)}${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td>${full ? `<td class="n">${cardCell(g, s)}</td>` : ''}<td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 
@@ -585,12 +610,12 @@ function renderJourney(name, anonId = '') {
       // The sheet's level chain (stats_ ras, the photo Elo's player term) ± its 95% margin (Pierre, 2026-11-05: the signed
       // level read as good or bad); the level in its title. Not the number players see since v63 (Q134: they see the app's
       // '~level'): it is the one level every device has, signed in or not, and the one the margin (levelMargin) is for.
-      ['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])],
-      ['Genera met', `${J.marks.length}/${total}`],
+      ...(full ? [['Elo', eloText(lv, ofAns('margin', () => levelMargin(ANS.rows || []))[u.id])]] : []),
+      [`${jMany()} met`, `${J.marks.length}${of}`],
       // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never
       // signed in.
       ...(RP ? [['Progress', !PG ? '…' : withSaved(PG.pct + '%', PG.saved && PG.saved.pct + '%')]] : []),
-      ...(anonId
+      ...(anonId || !full
         ? []
         : [
             [
@@ -609,7 +634,7 @@ function renderJourney(name, anonId = '') {
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
       ...(ZM.length ? [['Enlarged', pct(ZM.filter(Boolean).length, ZM.length)]] : [])
     ]) +
-    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${sheetsSec}${daysSec}</div>`;
+    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${full ? sheetsSec : ''}${daysSec}</div>`;
   bindJReload();
   pagesFresh(here); // read again once stale (admin.js)
   $v.querySelectorAll('[data-jsort]').forEach(
@@ -747,7 +772,13 @@ function sessionFacts(L, B, o = {}) {
 let SROWS = null;
 const sessRows = id => {
   if (!SROWS || SROWS.ans !== ANS) SROWS = {ans: ANS, by: {}};
-  return SROWS.by[id] || (SROWS.by[id] = (ANS.rows || []).filter(r => r[0] === id).sort((a, b) => a[1] - b[1]));
+  const k = ASUBJ.id + '|' + id; // the subject on screen's (admin.js rowsOf)
+  return (
+    SROWS.by[k] ||
+    (SROWS.by[k] = rowsOf()
+      .filter(r => r[0] === id)
+      .sort((a, b) => a[1] - b[1]))
+  );
 };
 // The bars of the genera the session touched before and after it, and the progress %: the player's answers replayed
 // with today's rules up to the session's first answer, then through it (core.js replayProgress, as admin.js progOf:
@@ -760,7 +791,15 @@ function sessProg(id, all, L, S, PG) {
   if (m && m.ans === ANS && m.S === S && m.PG === PG && m.mem === SMEM && m.n === L.length) return m.v;
   const ok = S && !S.err,
     reset = ok && S.reset ? Date.parse(S.reset) : 0,
-    o = {gen: DATA.gen, mem: SMEM, conf: SCONF, fmt: SFMT, since: reset ? {[id]: reset} : {}, starts: ok && S.start ? {[id]: S.start} : {}},
+    o = {
+      gen: DATA.gen,
+      mem: SMEM,
+      conf: SCONF,
+      fmt: SFMT,
+      ...domReplay(),
+      since: reset ? {[id]: reset} : {},
+      starts: ok && S.start ? {[id]: S.start} : {}
+    },
     t0 = L[0][1],
     A = replayProgress(
       all.filter(r => r[1] < t0),
@@ -778,7 +817,9 @@ function sessProg(id, all, L, S, PG) {
     Pb = marked(B.P, L[L.length - 1][1] + SESS.EDGE),
     slate = slateOf(DATA),
     prog = {};
-  new Set(L.flatMap(r => [r[2], r[3]])).forEach(g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g]), scoreOf(Pb[g])]));
+  new Set(L.flatMap(r => [r[2], r[3]])).forEach(
+    g => g && g !== LEVEL && Pb[g] && (prog[g] = [scoreOf(Pa[g], Pa, g), scoreOf(Pb[g], Pb, g)])
+  );
   const v = {prog, pct: [pctOf(Pa, slate), pctOf(Pb, slate)]};
   SPROG.set(key, {ans: ANS, S, PG, mem: SMEM, n: L.length, v});
   return v;
@@ -786,20 +827,22 @@ function sessProg(id, all, L, S, PG) {
 // The summary drawn under a session's row (admin.js recentSessions): id the player's anonymous id, L the session's
 // answers, name the player's name when signed in (their saved copy: cards, offer, achievements, learned genera).
 function sessionSummary(id, L, name) {
-  const all = sessRows(id),
+  // A subject the admin does not replay (SUBJECTS replay false): its answers only, no saved copy read, no progress.
+  const full = !!ASUBJ.replay,
+    all = sessRows(id),
     B = all.filter(r => r[1] < L[0][1]),
-    S = name ? savedOf(name) : {P: {}},
-    PG = progOf(name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}, true),
-    RP = replayOn(),
+    S = name && full ? savedOf(name) : {P: {}},
+    PG = full ? progOf(name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}, true) : null,
+    RP = full && replayOn(),
     sp = RP && S && PG ? sessProg(id, all, L, S, PG) : null,
     PS = photoStats() || {},
     F = sessionFacts(L, B, {
       diff: f => (PS[f] ? PS[f][0] : null),
       prog: sp && sp.prog,
-      saved: !name ? undefined : S && !S.err ? S : S && {}
+      saved: !name || !full ? undefined : S && !S.err ? S : S && {}
     }),
-    gi = g => `<i>${esc(g)}</i>`,
-    gl = g => `<a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a>`,
+    gi = g => `<i>${esc(jName(g))}</i>`,
+    gl = jUnit,
     names = G =>
       G.map(gi)
         .join(', ')
@@ -821,7 +864,7 @@ function sessionSummary(id, L, name) {
     `${F.n} answer${F.n === 1 ? '' : 's'} in ${sessLen(L)}, ${pct(F.ok, F.n)} right${F.exp != null ? ` where ${Math.round(100 * F.exp)}% was expected` : ''}.`
   ];
   if (F.met.length)
-    said.push(F.met.length <= 3 ? `Met ${names(F.met.map(x => x[1]))} for the first time.` : `Met ${F.met.length} new genera.`);
+    said.push(F.met.length <= 3 ? `Met ${names(F.met.map(x => x[1]))} for the first time.` : `Met ${F.met.length} new ${esc(ASUBJ.many)}.`);
   if (F.offer && F.offer.open && F.inS(F.offer.t)) said.push('Opened all genera.');
   if (learned && learned.length) said.push(`Learned ${names(learned)}.`);
   if (F.improved.length)
@@ -890,7 +933,8 @@ function sessionSummary(id, L, name) {
     // 2026-11-05), beside its difficulty (admin.js recBadge).
     hardAll = ofAns('hardAll', () => new Set(healthBad(ANS.rows || []).map(o => o.p.f))),
     tile = x => {
-      const p = photos(x.g).find(q => q.f === x.f);
+      // A unit of the site's coral data only (another subject's photos are not in its registry).
+      const p = DATA.gen[x.g] && photos(x.g).find(q => q.f === x.f);
       return p
         ? `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(x.g)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption>${gi(x.g)}${x.a && x.a !== x.g ? ` → ${gi(x.a)}` : ''} <span>${VT[viewOf(x.g, p)] || ''}</span>${
             x.d != null || hardAll.has(p.f)
@@ -965,7 +1009,7 @@ function sessionSummary(id, L, name) {
       ...(RP ? [['Progress', sp ? `${sp.pct[0]}% → ${sp.pct[1]}%` : '…']] : [])
     ])}
     <div class="adm-sessbody"><div class="adm-sesschart">${chart}</div>
-    <div class="adm-sessgrid">${block('New genera', newG)}${block('Events', `<ul class="adm-jcards">${jOrder(ev)}</ul>`)}${block(
+    <div class="adm-sessgrid">${block(`New ${esc(ASUBJ.many)}`, newG)}${block('Events', `<ul class="adm-jcards">${jOrder(ev)}</ul>`)}${block(
       'Most improved',
       impr
     )}${block('Difficulties', diff, tiles ? 'adm-swide' : '')}${block('Achievements', achs)}</div>

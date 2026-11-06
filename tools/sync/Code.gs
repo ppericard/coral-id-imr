@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 81 (2026-11-06: v81: the embedded core.js lists the fish admin's Photo review pages (SUBJECTS fish admin pages photos/review/ease and photos/review/phase-framing: admin plan PR 9), unused by the script: nothing it computes changes; v80: the embedded core.js lists the fish admin's Coverage page (SUBJECTS fish admin pages inbox/coverage/games: admin plan PR 8), unused by the script: nothing it computes changes; v79: the embedded core.js lists the fish admin's Families page (SUBJECTS fish admin pages photos/families: admin plan PR 6 on the book's families), unused by the script: nothing it computes changes; v78 is taken by a pending branch; v77: per-format offsets (Pierre, 2026-11-06, Q138): stats_ fits each question format's offset (core.js fmtOffsetsOf: 4 choices, 4 shown with 3 or 2 plausible, Again, a duel in the quiz, the Duel tab, an exam question, typed; an offset in logits on the app's log-odds, the guess rate kept at 1/k, fitted on the trusted answers' logged expectation with a N(0, 1) prior, from 20 answers) and serves it in ?stats=1 as fmt: {format: [offset, answers]}; the app's ability steps take it from this version (core.js FMT_SHEET, 77) and log it in the scoring record (scoreRec o), which the full replay (replay_, replayedAll_) replays as logged, a row logged without a scoring record taking the offset served now (core.js rules version 8); stats cache stats17; v76: the embedded core.js reads a FishBase reference or sheet photo (fb<stem>) and its candidate (fish-<species>-cand-fb-<stem>) as one photo (fishPid; Codex review #660), unused by the script: the fish answers are not logged, so nothing it computes changes; v74: the embedded core.js accepts more typed fish names (fish beta QA: fishNames reads a node's curated other names, fish.json aka, and its names in common use, often, which fishGen lists as oft and the typed match returns for a gentle correction; fishTypeNames, with SUBJECTS typeDrop, the name without "fish", its plural and the name's own plural, when unambiguous in the game), and gains SUBJECTS several (the report dialog's "Several corals" / "Several fish species" reason), unused by the script: nothing it computes changes; v72 and v73 are held by #655 and #599; v71: the embedded core.js puts a fish unit's reference-level photos first (refLevel, refFirst: a reference source's photo judged very easy, or any photo judged 5 with the reference look, one kind of fish; Pierre, 2026-11-06) and gains the subjects' difficulty calibration (SUBJECTS calib, CALIB, calibOf: the corals keep the defaults), unused by the script: the fish answers are not logged, so nothing it computes changes; v70: the embedded core.js gains the fish game photos (fishOn, fishPid, FISHPH, fishPhotos: the photos Pierre put in play, hosted on R2, in place of the stopgap list where an entry has 5 very easy ones; admin plan PR 7), unused by the script: only the replayed subject (the corals) feeds what it computes, so nothing changes; v69: the fish units are the book's families (Pierre, 2026-11-06 13:04; docs/reviews/2026-11-06-fish-units-plan.md): the embedded core.js gains the old-id map (SUBJECTS renamed, renamedId, renameUnits, renameLogEntry); a fish answer naming an old entry (t01, from an app before the switch) is logged under its family (f:Damselfishes; one map per row, the species shown deciding a split entry: Diploprion is the Soapfishes), and so are a report's units (f: ids accepted); a one-shot migration (ONCE_ fishunits, Pierre's yes, Q159) renames the fish rows and reports logged before, in the Deploy log; v68: the embedded core.js orders a fish unit's photos by their ease, then how much they look like a reference photo, never by who took them (easyRank, refScore; Pierre, 2026-11-06), and marks the corals' photo source tiers (SUBJECTS tiers), unused by the script: nothing it computes changes; v67: fish opens to every player (Pierre, 2026-11-06, Q158: "open fish to everyone now", the beta label kept): the embedded core.js has SUBJECTS fish open: 'all', so groupIds_ lists no subject: the load and save replies carry groups: [], userGroup answers error 'group', the admin's player list has no Beta column, and the Groups tab's rows are kept (read again if fish goes back to open: 'group'); v66: the embedded core.js gains the admin's filter bar fields (admin plan PR 3: SUBJECTS admin origins, each subject's photo origins, and csrc, its Candidates sources), unused by the script: nothing it computes changes; v65: the embedded core.js gains the app's addresses (URL refonte: routeOut, routeIn, the page names learn.genus, practice.quiz… of pageName, routeRename, pageRename, migrateRoutes) and the subjects' address prefix (SUBJECTS hash); pagesClean keeps the new names as they come ('.' and '-' were already allowed), so nothing the script stores or serves changes; v64: the embedded core.js names the fish admin pages by their new addresses (URL refonte: SUBJECTS admin pages inbox/todo/reports, inbox/todo/errors, players/list), nothing the script does changes; v63: one player level shown everywhere (Pierre, 2026-11-06, Q134): the leaderboard's level (board_) is the app's own, the th of the '~level' record in each player's saved progress, read with the % from the same copy, from ELO_MIN answers of that record; stats_'s chain R (start -1) no longer reaches the board and stays internal: the photo Elo's player term, and ras for the admin; nothing a player's progress holds changes (no rules version); v57-v65 were taken by pending branches; v62: one surprise counted once (Pierre, 2026-11-06, Q137 part 1): the embedded core.js scoreAnswer has the genus shown take the global level as it stands after the answer's step on it, so the genus's levelMove carries only the level's moves from the other answers; core.js rules version 7 replays every player once; nothing else the script computes changes; v61: one scorer (Pierre, 2026-11-06, Q132): the app and the full replay score an answer through one function, core.js scoreAnswer, and each answer carries what the app scored it with (sc: the photo difficulty, the photo memory, the mix-ups term, the look-alike test, the recalls of a comeback question, the corallites hint revealed after the answer), kept in a new last Answers column, Scoring (core.js scoreRec as JSON, each field checked; blank when the app sent none), read by its name and served by readAnswers at index 15 (an object, null before), and replayed at index 15 of the replay rows (rowOf_), so replay_ and replayedAll_ rebuild exactly the progress the app had for those rows, whatever pooled stats they hold; rows logged before keep the replay by their logged e; core.js rules version 6 replays every player once; the Answers tab is read up to its last column (answerRows_, answers_), so a tab not yet widened reads as before; v60: every subject's answers are logged (Pierre, 2026-11-06: fish answers logged from the very first second; the sheet records an answer at any taxonomic level): the Answers tab gets five columns at the end, Subject (the answer's subject, core.js SUBJECTS id: coral or fish; blank in the rows logged before, all coral; an app that sends none is coral), Rank (the rank asked: coral genus; fish family, an IMR entry, or genus, a scientific genus; later species), Taxon shown and Taxon answered (the names at that rank when a unit's id is not its name: Damselfish for t01, Chromis for g:Chromis; blank for a coral genus) and Species shown (the PDF species of the fish photo shown); Genus shown, Answered, Choices and a duel's mode keep the units as the app asks them (t01, g:Chromis allowed: digits and ':' after a first letter); only the subject the sheet replays (core.js SUBJECTS replay: the corals) feeds what the script computes (answerRows_: photo ratings, genus offsets, confusions, memory, trusted players, the opening hold, the full replay; the admin's player list numbers in users_), so a fish answer moves no coral number; readAnswers serves the five at indexes 17-21, after v59's Typed and Retyped right, now served at 15-16 (the subject filled with coral, the rank with the subject's, in the rows logged before) and every reader of one subject keeps its rows (core.js subjRows); a tab with fewer columns reads them blank (logRows_) until the next answer adds them; the embedded core.js renames SUBJECTS log to replay, adds rank, the answer-log subject helpers and LOG_SHEET 60, the version from which the app sends the answers of a subject the sheet does not replay (rule D4); v59: the Answers tab gains two columns at the end, Typed (a typed answer's raw text as first typed, up to 40 characters) and Retyped right (its spelling step: 1 retyped exactly, 0 not, blank when none was asked; quiz.js typeBind, a player's idea approved by Pierre the same day), logged only, and the embedded core.js gains typeVerdict and typeDiff, unused by the script: nothing it computes changes; v58: archive instead of rename (Pierre, 2026-11-05, Q84/Q88; the deleted-accounts audit, PR 2): admin {userArchive: {from, into}} (was userRename) moves the record to the archive name and marks it Board -2 (no new column); an archive leaves normal operation: liveRows_ keeps it out of the leaderboard, the achievement shares, the player list (sent apart as archived: [{name, id, time, answers, reports}]), the beta groups (dropped at archiving; userGroup adds live players only), readAnswers' players, and repsOf_-style readers; its answers are flagged 2 in readAnswers as a deleted account's (pooled photo statistics only) and left out of stats_ ras; a merge, a rename or a leaderboard toggle refuse an archive (error 'archived'); a delete still takes it, in either mode; a player's own save never undoes Board -1 or -2; each account's saved data keeps its generation _acct (made at its first save, kept by every save and merge, sent apart as acct in the load reply), so a device that knew another generation of the name says the record was archived; the app's device of an archived record sees found: false while it holds a sheet revision and says the record was archived instead of re-creating it (sync.js); a player deletes their own account and all its data (POST selfDelete with dname / dpin, selfDelete_: the code checked, "delete everything" semantics, the Removed tombstone only, capped 3 tries per name (keyed by its anonymous id) and 30 in all per 6 hours; the app's #delete-account page); archiving moves the record's name mentions in Events and Alerts to the archive name (redact_, as a merge), so deleting the archive leaves none; a report carries the account generation it was queued under (racct): from another generation of the name, or under a name that has no account left, it is logged with no reporter, Verified 0, never the new account's (Codex review #603); a save carries the generation the device saved under (acct): checked under the lock before anything is logged or written, a name with no account left or another generation of it answers error 'archived'; page summaries carry it too (eacct) and another generation files them under no player; a save's reply carries the generation (acct), so the device that created the account knows it at once; a report's generation is checked whatever its code or throttle; v57: a player's load reply (GET name, pin) carries reps, the ids of their own verified reports in the Reports tab (Reporter their name, Verified 1, sent after the name's last removal if it was deleted and taken again; the last REPS_MAX = 50; no field when none: repsOf_), so their app can tell them once that a report was handled (Pierre, 2026-11-05, Q66: the app reads the admin's Done from curation.json seen 'rep:<id>' and thanks the player; Pierre's notes are never sent); an older app ignores the field; the embedded core.js gains repsAdd and helpedTake (the app's side), unused by the script; v56: the embedded core.js gains the Contributions achievements (Pierre, 2026-11-05, Q65: core.js ACH kind 'contrib', fb1 / fb5 / fb10 for the 1st, 5th and 10th report sent; contribKey, contribAdd, contribJoin) and mergeAch joins two records' lists (the reports counted, _fb), unused by the script: it stores a player's achievements record as it comes and counts its ids for the shares (achs_) as before, so nothing it computes changes; v55: a deleted account leaves nothing in normal operation (Pierre, 2026-11-05, Q84-Q91): userDelete with answers deletes the account's reports too, without answers relabels them "~deleted <id>" with Verified 0 (open ones stay in the admin's Inbox as from a removed account, never thanked); the page summaries are always deleted (Pages); name mentions in Events ('old' rows) and Alerts (n:<name>) are redacted; a delete or merge clears the board, achievements and stats caches and marks the stored Analyses report stale (analysesGet head stale, ROSTER_AT), so the Action refits it at once; readAnswers flags the "~deleted" rows 2 in the anonymous column (1 stays a device that never signed in), and stats_ leaves them out of the per-player abilities (ras), the photos, genus offsets, confusions and memory keep them; a report sent with the name and code of a removed account is logged under the name it joined (merged) or with no reporter, Verified 0 (deleted); a device's Replayed row is dropped when its answers are claimed at sign-in or deleted (anonDelete); a one-shot cleanup (ONCE_ removedcleanup) deletes the Replayed rows of devices with no answer left and the reports of accounts deleted outright before this version, logged in the Deploy log; v54: comments only: this file and the embedded core.js cite Pierre's rules by their new IDs (docs/rules/), nothing the script does changes; v53: the beta groups (groupIds_) are the subjects that open to a group (core.js SUBJECTS open: 'group', subjGroup), no longer every subject with a beta label, which is now the label only; fish says open: 'group', so the groups, replies and Groups tab are the same as v52, and a subject set to open: 'all' keeps its rows in the Groups tab (read, never deleted) for a return to 'group'; v52: the embedded core.js's achievement descriptions say the runs of right answers and Sharp eye are earned in the Quiz only, not in the custom quiz or the Duel tab (Pierre, 2026-11-05, Q82; the app's progress.js achAfter), unused by the script: nothing it computes changes; v51: the embedded core.js gains the photo fallback helpers (photoOnline, photoFileOf, photoAway, photoFallback, photoIndex, photoCropOf; Pierre, 2026-11-05: when R2 fails, a photo with an online original is read from it, not from img/), unused by the script: nothing it computes changes; v50: every reply is the script's own JSON (Pierre, 2026-11-05: "save failed" too often): an exception thrown out of doGet / doPost (the script lock not had in time, a Sheets service timeout or quota, a script error) made Apps Script answer with its HTML error page, which has no CORS header, so the browser told the app "Failed to fetch" / "Load failed" although the script had answered; it is now caught and answered {ok: false, error: 'lock'} (the script lock waited for LOCK_MS, 20 s, held by another request: lock_, tryLock) or {ok: false, error: 'server', msg} (fail_), which the app retries; a save releases the script lock once its progress is written, its hold, groups and full replay computed after (the replay under its own lock, as a load's), so the lock is held for less time; the photo stats request carries the app's anonymous device id (dev) and the minutes its page has been open (up): the newest build reported is kept (BUILD_TOP), and a device on a replaced version is logged in Events as kind 'old' with its device id and version, when its page stayed open OLD_OPEN minutes on a version replaced OLD_H hours ago or it started a version replaced OLD_STUCK hours ago (behind_), at most once per device every 6 hours; v49 (2026-11-05): the embedded core.js keeps the sheet-only fish photos (use: 'ref', fish-photos.json sheet: a species with no game photo may keep one for its sheet, never in a game) out of a fish entry's game photos and lists them by species (fishGen sheet), unused by the script: the fish answers are not logged, so nothing it computes changes; v48 (2026-11-04): beta groups (Pierre, 2026-11-04: fish opens to a group of players he picks in the admin, not by one site-wide switch): a Groups tab (Group: a subject in beta, core.js SUBJECTS beta; Name; Added), admin POST {userGroup: name or [names], group, on, token} adds or removes players (existing players only, under the script lock), the admin's player list (users_) and each player's load and save replies carry the groups they are in (groups: [subject ids], [] for none: an older script sends no field, so the app keeps the beta subject closed), and a rename, a merge or a delete carries the memberships; v47: the embedded core.js asks the first-launch question per subject (SUBJECTS start, its words; core.js startKey: the fish welcome question's answer in reefid-sync-fish-start beside reefid-sync-coral-start; CHOICE.opts keeps only the ids and variables) and an account merge (mergeUsers) unites each subject's record; the coral record the replay reads (startOf_) and everything the script computes are unchanged; v46: players' reports keep a genus question's units (g:Platax); the embedded core.js lists the fish scientific genera's opt-in set (SUBJECTS fish optin sci), so a player's choice merges like the circles'; nothing else changes here; v45: the embedded core.js gains the admin's part of each subject (SUBJECTS admin: its address prefix, its part of curation.json, its admin pages), unused by the script: nothing it computes changes; v44: each answer's UTC offset on the player's device (tz, minutes east of UTC, Date.getTimezoneOffset at answer time, sign turned) in a new last Answers column, UTC offset, logged only and served by readAnswers at index 14; a one-shot migration (ONCE_ tz) fills +480 into the rows logged before (every player so far was on Philippine time), so the analyses can read the time of day at home of players outside the sheet's time zone; the app sends it with every answer (an older script ignores the field); v43 was left unused (the admin's subject switch became v45); v42: the admin's player list (users) carries each player's full replay, rp: [progress %, learned, the saved copy's %] over the slate (core.js slateOf on data.json, cached with gen_), computed here with the replay record of the Replayed tab (reused while the player's rows, reset and first-launch answer are the same), so the admin's Players page reads no saved copy one player at a time (replayedAll_); the embedded core.js keeps the sorted keys of a player's answer-time record beside it (rtMedian), so a replay no longer sorts them at every right answer, same results; v40: the embedded core.js gives a fish entry the group of the identification key in force (fishGen key, groups: fish.json key, Allen et al. 2015 for the Indo-Pacific, instead of the 10 IMR shape groups), unused by the script: the fish answers are not logged, so nothing it computes changes; v39: the embedded core.js names a page drawn with another subject than the corals on screen <subject>.<page> (pageName with the subject's prefix, SUBJECTS pv: fish.quiz, fish.home) and reads it back (pageSubj), so the Pages tab tells a fish page from a coral one, and gains the subjects' zoom tip wording (SUBJECTS zoom), unused by the script; pagesClean, which keeps these names as they come ('.' was already allowed), is unchanged, so the script stores and serves the same; v38: the Coral Finder tool became the Coral ID Key: a one-shot migration (ONCE_ idkey) renames the tool's old page names to idkey / lab-idkey in the Pages, Events and Reports tabs, logged in the Deploy log; core.js copy with the renamed identifiers and the device migration migrateIdKey. v37: the embedded core.js gains the fish starter core (fishGen marks fish.json start entries first) and the fish card cover chosen within the highest source tier (Pierre's own first), then by the judged ease of fish-photos.json, unused by the script: the fish answers are not logged, so nothing it computes changes; v36: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), the stored replay keyed by that history's fingerprint too (Replayed Since = reset#fingerprint, core.js startFp) and sent with it (fp), so the app adopts it only for the history it holds, as the app does; v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 93 (2026-11-06: v93: the embedded core.js lists the fish admin's Photo review pages (SUBJECTS fish admin pages photos/review/ease and photos/review/phase-framing; admin plan PR 9), unused by the script: nothing it computes changes; v92: the embedded core.js lists the fish admin's Coverage page (SUBJECTS fish admin pages inbox/coverage/games; admin plan PR 8), unused by the script: nothing it computes changes; v90: the embedded core.js gains each subject's icon (SUBJECTS icon, moved from app.js UNITS for the admin's mini subject switch), unused by the script: nothing it computes changes; v89: the embedded core.js gains winkUnion and an account merge (mergeUsers) unites each subject's surprise cards met (each surprise once per player, Pierre 2026-11-06; Codex review #652), stored in the Data column as any other key: nothing the script computes changes; v88: the embedded core.js gains domFromCounts, the app's silent rebuild of a non-replayed subject's units (fish) under the domain-score bar from each record's counts (Pierre, 2026-11-06, Q200), unused by the script: nothing it computes changes; v87: the domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; merge approved 15:41, Q196): the embedded core.js scores a genus's bar as the share of all its possible photos the player would name alone and typed, the posterior expectation on a grid of abilities from a fixed population prior and the player's own answers on that genus only (core.js DOM, domStep: s.dp the log posterior, s.ds the bar), less the genus's false-alarm rate (Pr = H - FA, Snodgrass & Corwin 1988: a genus named by mistake is no miss on its own photos, Q174), in place of the moving average s.pg; the full replay (replay_, replayedAll_) gives it the genus offsets of ?stats=1 gd for the rows logged without them (an answer's Scoring record now carries the offsets the app used, m and n, and the typed format's offset and the slope when the app has them, t, s; o, the format's offset, as since v77), core.js rules version 9 replays every player once; the leaderboard % calls core.js pctOf itself instead of a copy (pctOf_), so the two never drift apart; the app gives a genus first answered the new bar only once this script replies v >= 87 (core.js DOM_SHEET, rule D4); the load and save replies carry notes, the Notes tab's card.* lines (notes_: Pierre's text that is never in the repo, the PS of rules version 9's apology card under the key card.rv8.ps, core.js RV_SORRY); the exam's entry needs pair coverage in the app (core.js looksLeft, Q129), nothing the script computes; v86: the embedded core.js gains the fish photos in play by themselves (fishIn, fishGone: a candidate judged sure or a reference-level photo, hosted on R2, until Pierre rejects, excludes, moves or undoes it; Q180, Q199), unused by the script: nothing it computes changes; v85: the embedded core.js lists only the scientific genera as the fish opt-in set (SUBJECTS fish optin: ['sci']; Pierre, 2026-11-06, Q175: every fish circle is on the path and counts in the progress, the circle 2 and 3 opt-ins gone), so an account merge no longer keeps a stored c2 / c3 choice on; nothing the script computes changes; v84: the embedded core.js builds the fish units from the book's families (fishGen over fish.json families, each family's look-alike sources from its lsrc, its typed names with the IMR entries' aka and often: the switch, units plan PR 4) and moves a stored record's old unit ids (renameUnits, read by the app), unused by the script: nothing it computes changes; v83: the embedded core.js gains the fish draw's calibration for big pools (SUBJECTS calib u and pool, CALIB pool: an unanswered fish photo's narrower targeting and the floor shared over 30 observations; Pierre, 2026-11-06 15:33, Q186; the corals keep their draw), unused by the script: nothing it computes changes; v81: the admin's player list gives each player's photo exposure per subject (Pierre, 2026-11-06, Q191; the photo exposure study §5): ex {subject id: [seen, of, hit, asked, units]}, Seen % and Spread % (exposure_, core.js exposureOf over each subject's rows), against each subject's game photos per unit grouped by colony (pools_: core.js unitPool over the files its SUBJECTS pool names, read from GitHub main, cached 6 hours per subject; the games' Research Grade rule for Millepora and the bonus genera); nothing is stored, nothing the app reads changes; v80: the embedded core.js gains the fish sheets' addresses (SUBJECTS sheets: #fish/learn/family/Damselfishes, genus, species; routeOut, routeIn; sheetIdOf, fishTree), unused by the script: pageName names every fish sheet learn.genus, as before for the corals' words, so nothing it stores or serves changes; v79: the embedded core.js lists the fish admin's Families page (SUBJECTS fish admin pages photos/families: admin plan PR 6 on the book's families), unused by the script: nothing it computes changes; v78 is taken by a pending branch; v77: per-format offsets (Pierre, 2026-11-06, Q138): stats_ fits each question format's offset (core.js fmtOffsetsOf: 4 choices, 4 shown with 3 or 2 plausible, Again, a duel in the quiz, the Duel tab, an exam question, typed; an offset in logits on the app's log-odds, the guess rate kept at 1/k, fitted on the trusted answers' logged expectation with a N(0, 1) prior, from 20 answers) and serves it in ?stats=1 as fmt: {format: [offset, answers]}; the app's ability steps take it from this version (core.js FMT_SHEET, 77) and log it in the scoring record (scoreRec o), which the full replay (replay_, replayedAll_) replays as logged, a row logged without a scoring record taking the offset served now (core.js rules version 8); stats cache stats17; v76: the embedded core.js reads a FishBase reference or sheet photo (fb<stem>) and its candidate (fish-<species>-cand-fb-<stem>) as one photo (fishPid; Codex review #660), unused by the script: the fish answers are not logged, so nothing it computes changes; v74: the embedded core.js accepts more typed fish names (fish beta QA: fishNames reads a node's curated other names, fish.json aka, and its names in common use, often, which fishGen lists as oft and the typed match returns for a gentle correction; fishTypeNames, with SUBJECTS typeDrop, the name without "fish", its plural and the name's own plural, when unambiguous in the game), and gains SUBJECTS several (the report dialog's "Several corals" / "Several fish species" reason), unused by the script: nothing it computes changes; v72 and v73 are held by #655 and #599; v71: the embedded core.js puts a fish unit's reference-level photos first (refLevel, refFirst: a reference source's photo judged very easy, or any photo judged 5 with the reference look, one kind of fish; Pierre, 2026-11-06) and gains the subjects' difficulty calibration (SUBJECTS calib, CALIB, calibOf: the corals keep the defaults), unused by the script: the fish answers are not logged, so nothing it computes changes; v70: the embedded core.js gains the fish game photos (fishOn, fishPid, FISHPH, fishPhotos: the photos Pierre put in play, hosted on R2, in place of the stopgap list where an entry has 5 very easy ones; admin plan PR 7), unused by the script: only the replayed subject (the corals) feeds what it computes, so nothing changes; v69: the fish units are the book's families (Pierre, 2026-11-06 13:04; docs/reviews/2026-11-06-fish-units-plan.md): the embedded core.js gains the old-id map (SUBJECTS renamed, renamedId, renameUnits, renameLogEntry); a fish answer naming an old entry (t01, from an app before the switch) is logged under its family (f:Damselfishes; one map per row, the species shown deciding a split entry: Diploprion is the Soapfishes), and so are a report's units (f: ids accepted); a one-shot migration (ONCE_ fishunits, Pierre's yes, Q159) renames the fish rows and reports logged before, in the Deploy log; v68: the embedded core.js orders a fish unit's photos by their ease, then how much they look like a reference photo, never by who took them (easyRank, refScore; Pierre, 2026-11-06), and marks the corals' photo source tiers (SUBJECTS tiers), unused by the script: nothing it computes changes; v67: fish opens to every player (Pierre, 2026-11-06, Q158: "open fish to everyone now", the beta label kept): the embedded core.js has SUBJECTS fish open: 'all', so groupIds_ lists no subject: the load and save replies carry groups: [], userGroup answers error 'group', the admin's player list has no Beta column, and the Groups tab's rows are kept (read again if fish goes back to open: 'group'); v66: the embedded core.js gains the admin's filter bar fields (admin plan PR 3: SUBJECTS admin origins, each subject's photo origins, and csrc, its Candidates sources), unused by the script: nothing it computes changes; v65: the embedded core.js gains the app's addresses (URL refonte: routeOut, routeIn, the page names learn.genus, practice.quiz… of pageName, routeRename, pageRename, migrateRoutes) and the subjects' address prefix (SUBJECTS hash); pagesClean keeps the new names as they come ('.' and '-' were already allowed), so nothing the script stores or serves changes; v64: the embedded core.js names the fish admin pages by their new addresses (URL refonte: SUBJECTS admin pages inbox/todo/reports, inbox/todo/errors, players/list), nothing the script does changes; v63: one player level shown everywhere (Pierre, 2026-11-06, Q134): the leaderboard's level (board_) is the app's own, the th of the '~level' record in each player's saved progress, read with the % from the same copy, from ELO_MIN answers of that record; stats_'s chain R (start -1) no longer reaches the board and stays internal: the photo Elo's player term, and ras for the admin; nothing a player's progress holds changes (no rules version); v57-v65 were taken by pending branches; v62: one surprise counted once (Pierre, 2026-11-06, Q137 part 1): the embedded core.js scoreAnswer has the genus shown take the global level as it stands after the answer's step on it, so the genus's levelMove carries only the level's moves from the other answers; core.js rules version 7 replays every player once; nothing else the script computes changes; v61: one scorer (Pierre, 2026-11-06, Q132): the app and the full replay score an answer through one function, core.js scoreAnswer, and each answer carries what the app scored it with (sc: the photo difficulty, the photo memory, the mix-ups term, the look-alike test, the recalls of a comeback question, the corallites hint revealed after the answer), kept in a new last Answers column, Scoring (core.js scoreRec as JSON, each field checked; blank when the app sent none), read by its name and served by readAnswers at index 15 (an object, null before), and replayed at index 15 of the replay rows (rowOf_), so replay_ and replayedAll_ rebuild exactly the progress the app had for those rows, whatever pooled stats they hold; rows logged before keep the replay by their logged e; core.js rules version 6 replays every player once; the Answers tab is read up to its last column (answerRows_, answers_), so a tab not yet widened reads as before; v60: every subject's answers are logged (Pierre, 2026-11-06: fish answers logged from the very first second; the sheet records an answer at any taxonomic level): the Answers tab gets five columns at the end, Subject (the answer's subject, core.js SUBJECTS id: coral or fish; blank in the rows logged before, all coral; an app that sends none is coral), Rank (the rank asked: coral genus; fish family, an IMR entry, or genus, a scientific genus; later species), Taxon shown and Taxon answered (the names at that rank when a unit's id is not its name: Damselfish for t01, Chromis for g:Chromis; blank for a coral genus) and Species shown (the PDF species of the fish photo shown); Genus shown, Answered, Choices and a duel's mode keep the units as the app asks them (t01, g:Chromis allowed: digits and ':' after a first letter); only the subject the sheet replays (core.js SUBJECTS replay: the corals) feeds what the script computes (answerRows_: photo ratings, genus offsets, confusions, memory, trusted players, the opening hold, the full replay; the admin's player list numbers in users_), so a fish answer moves no coral number; readAnswers serves the five at indexes 17-21, after v59's Typed and Retyped right, now served at 15-16 (the subject filled with coral, the rank with the subject's, in the rows logged before) and every reader of one subject keeps its rows (core.js subjRows); a tab with fewer columns reads them blank (logRows_) until the next answer adds them; the embedded core.js renames SUBJECTS log to replay, adds rank, the answer-log subject helpers and LOG_SHEET 60, the version from which the app sends the answers of a subject the sheet does not replay (rule D4); v59: the Answers tab gains two columns at the end, Typed (a typed answer's raw text as first typed, up to 40 characters) and Retyped right (its spelling step: 1 retyped exactly, 0 not, blank when none was asked; quiz.js typeBind, a player's idea approved by Pierre the same day), logged only, and the embedded core.js gains typeVerdict and typeDiff, unused by the script: nothing it computes changes; v58: archive instead of rename (Pierre, 2026-11-05, Q84/Q88; the deleted-accounts audit, PR 2): admin {userArchive: {from, into}} (was userRename) moves the record to the archive name and marks it Board -2 (no new column); an archive leaves normal operation: liveRows_ keeps it out of the leaderboard, the achievement shares, the player list (sent apart as archived: [{name, id, time, answers, reports}]), the beta groups (dropped at archiving; userGroup adds live players only), readAnswers' players, and repsOf_-style readers; its answers are flagged 2 in readAnswers as a deleted account's (pooled photo statistics only) and left out of stats_ ras; a merge, a rename or a leaderboard toggle refuse an archive (error 'archived'); a delete still takes it, in either mode; a player's own save never undoes Board -1 or -2; each account's saved data keeps its generation _acct (made at its first save, kept by every save and merge, sent apart as acct in the load reply), so a device that knew another generation of the name says the record was archived; the app's device of an archived record sees found: false while it holds a sheet revision and says the record was archived instead of re-creating it (sync.js); a player deletes their own account and all its data (POST selfDelete with dname / dpin, selfDelete_: the code checked, "delete everything" semantics, the Removed tombstone only, capped 3 tries per name (keyed by its anonymous id) and 30 in all per 6 hours; the app's #delete-account page); archiving moves the record's name mentions in Events and Alerts to the archive name (redact_, as a merge), so deleting the archive leaves none; a report carries the account generation it was queued under (racct): from another generation of the name, or under a name that has no account left, it is logged with no reporter, Verified 0, never the new account's (Codex review #603); a save carries the generation the device saved under (acct): checked under the lock before anything is logged or written, a name with no account left or another generation of it answers error 'archived'; page summaries carry it too (eacct) and another generation files them under no player; a save's reply carries the generation (acct), so the device that created the account knows it at once; a report's generation is checked whatever its code or throttle; v57: a player's load reply (GET name, pin) carries reps, the ids of their own verified reports in the Reports tab (Reporter their name, Verified 1, sent after the name's last removal if it was deleted and taken again; the last REPS_MAX = 50; no field when none: repsOf_), so their app can tell them once that a report was handled (Pierre, 2026-11-05, Q66: the app reads the admin's Done from curation.json seen 'rep:<id>' and thanks the player; Pierre's notes are never sent); an older app ignores the field; the embedded core.js gains repsAdd and helpedTake (the app's side), unused by the script; v56: the embedded core.js gains the Contributions achievements (Pierre, 2026-11-05, Q65: core.js ACH kind 'contrib', fb1 / fb5 / fb10 for the 1st, 5th and 10th report sent; contribKey, contribAdd, contribJoin) and mergeAch joins two records' lists (the reports counted, _fb), unused by the script: it stores a player's achievements record as it comes and counts its ids for the shares (achs_) as before, so nothing it computes changes; v55: a deleted account leaves nothing in normal operation (Pierre, 2026-11-05, Q84-Q91): userDelete with answers deletes the account's reports too, without answers relabels them "~deleted <id>" with Verified 0 (open ones stay in the admin's Inbox as from a removed account, never thanked); the page summaries are always deleted (Pages); name mentions in Events ('old' rows) and Alerts (n:<name>) are redacted; a delete or merge clears the board, achievements and stats caches and marks the stored Analyses report stale (analysesGet head stale, ROSTER_AT), so the Action refits it at once; readAnswers flags the "~deleted" rows 2 in the anonymous column (1 stays a device that never signed in), and stats_ leaves them out of the per-player abilities (ras), the photos, genus offsets, confusions and memory keep them; a report sent with the name and code of a removed account is logged under the name it joined (merged) or with no reporter, Verified 0 (deleted); a device's Replayed row is dropped when its answers are claimed at sign-in or deleted (anonDelete); a one-shot cleanup (ONCE_ removedcleanup) deletes the Replayed rows of devices with no answer left and the reports of accounts deleted outright before this version, logged in the Deploy log; v54: comments only: this file and the embedded core.js cite Pierre's rules by their new IDs (docs/rules/), nothing the script does changes; v53: the beta groups (groupIds_) are the subjects that open to a group (core.js SUBJECTS open: 'group', subjGroup), no longer every subject with a beta label, which is now the label only; fish says open: 'group', so the groups, replies and Groups tab are the same as v52, and a subject set to open: 'all' keeps its rows in the Groups tab (read, never deleted) for a return to 'group'; v52: the embedded core.js's achievement descriptions say the runs of right answers and Sharp eye are earned in the Quiz only, not in the custom quiz or the Duel tab (Pierre, 2026-11-05, Q82; the app's progress.js achAfter), unused by the script: nothing it computes changes; v51: the embedded core.js gains the photo fallback helpers (photoOnline, photoFileOf, photoAway, photoFallback, photoIndex, photoCropOf; Pierre, 2026-11-05: when R2 fails, a photo with an online original is read from it, not from img/), unused by the script: nothing it computes changes; v50: every reply is the script's own JSON (Pierre, 2026-11-05: "save failed" too often): an exception thrown out of doGet / doPost (the script lock not had in time, a Sheets service timeout or quota, a script error) made Apps Script answer with its HTML error page, which has no CORS header, so the browser told the app "Failed to fetch" / "Load failed" although the script had answered; it is now caught and answered {ok: false, error: 'lock'} (the script lock waited for LOCK_MS, 20 s, held by another request: lock_, tryLock) or {ok: false, error: 'server', msg} (fail_), which the app retries; a save releases the script lock once its progress is written, its hold, groups and full replay computed after (the replay under its own lock, as a load's), so the lock is held for less time; the photo stats request carries the app's anonymous device id (dev) and the minutes its page has been open (up): the newest build reported is kept (BUILD_TOP), and a device on a replaced version is logged in Events as kind 'old' with its device id and version, when its page stayed open OLD_OPEN minutes on a version replaced OLD_H hours ago or it started a version replaced OLD_STUCK hours ago (behind_), at most once per device every 6 hours; v49 (2026-11-05): the embedded core.js keeps the sheet-only fish photos (use: 'ref', fish-photos.json sheet: a species with no game photo may keep one for its sheet, never in a game) out of a fish entry's game photos and lists them by species (fishGen sheet), unused by the script: the fish answers are not logged, so nothing it computes changes; v48 (2026-11-04): beta groups (Pierre, 2026-11-04: fish opens to a group of players he picks in the admin, not by one site-wide switch): a Groups tab (Group: a subject in beta, core.js SUBJECTS beta; Name; Added), admin POST {userGroup: name or [names], group, on, token} adds or removes players (existing players only, under the script lock), the admin's player list (users_) and each player's load and save replies carry the groups they are in (groups: [subject ids], [] for none: an older script sends no field, so the app keeps the beta subject closed), and a rename, a merge or a delete carries the memberships; v47: the embedded core.js asks the first-launch question per subject (SUBJECTS start, its words; core.js startKey: the fish welcome question's answer in reefid-sync-fish-start beside reefid-sync-coral-start; CHOICE.opts keeps only the ids and variables) and an account merge (mergeUsers) unites each subject's record; the coral record the replay reads (startOf_) and everything the script computes are unchanged; v46: players' reports keep a genus question's units (g:Platax); the embedded core.js lists the fish scientific genera's opt-in set (SUBJECTS fish optin sci), so a player's choice merges like the circles'; nothing else changes here; v45: the embedded core.js gains the admin's part of each subject (SUBJECTS admin: its address prefix, its part of curation.json, its admin pages), unused by the script: nothing it computes changes; v44: each answer's UTC offset on the player's device (tz, minutes east of UTC, Date.getTimezoneOffset at answer time, sign turned) in a new last Answers column, UTC offset, logged only and served by readAnswers at index 14; a one-shot migration (ONCE_ tz) fills +480 into the rows logged before (every player so far was on Philippine time), so the analyses can read the time of day at home of players outside the sheet's time zone; the app sends it with every answer (an older script ignores the field); v43 was left unused (the admin's subject switch became v45); v42: the admin's player list (users) carries each player's full replay, rp: [progress %, learned, the saved copy's %] over the slate (core.js slateOf on data.json, cached with gen_), computed here with the replay record of the Replayed tab (reused while the player's rows, reset and first-launch answer are the same), so the admin's Players page reads no saved copy one player at a time (replayedAll_); the embedded core.js keeps the sorted keys of a player's answer-time record beside it (rtMedian), so a replay no longer sorts them at every right answer, same results; v40: the embedded core.js gives a fish entry the group of the identification key in force (fishGen key, groups: fish.json key, Allen et al. 2015 for the Indo-Pacific, instead of the 10 IMR shape groups), unused by the script: the fish answers are not logged, so nothing it computes changes; v39: the embedded core.js names a page drawn with another subject than the corals on screen <subject>.<page> (pageName with the subject's prefix, SUBJECTS pv: fish.quiz, fish.home) and reads it back (pageSubj), so the Pages tab tells a fish page from a coral one, and gains the subjects' zoom tip wording (SUBJECTS zoom), unused by the script; pagesClean, which keeps these names as they come ('.' was already allowed), is unchanged, so the script stores and serves the same; v38: the Coral Finder tool became the Coral ID Key: a one-shot migration (ONCE_ idkey) renames the tool's old page names to idkey / lab-idkey in the Pages, Events and Reports tabs, logged in the Deploy log; core.js copy with the renamed identifiers and the device migration migrateIdKey. v37: the embedded core.js gains the fish starter core (fishGen marks fish.json start entries first) and the fish card cover chosen within the highest source tier (Pierre's own first), then by the judged ease of fish-photos.json, unused by the script: the fish answers are not logged, so nothing it computes changes; v36: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), the stored replay keyed by that history's fingerprint too (Replayed Since = reset#fingerprint, core.js startFp) and sent with it (fp), so the app adopts it only for the history it holds, as the app does; v35: the admin's Analyses report (multifactor analyses of the answer log, every 1000 answers), computed by a GitHub Action (tools/analyses.js, .github/workflows/analyses.yml) and kept here: POST analysesPut stores it in an Analyses tab (chunked, 2.5 MB at most), POST analysesGet reads it (head: 1, only the answer count and the stored report's own count), admin token only; v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -55,7 +55,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 81;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 93;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -135,6 +135,7 @@ function doGet_(e){
   if (data && typeof data._acct === 'string') { out.acct = data._acct; delete data._acct; }
   // v48: the beta groups the player is in (groupsOf_), [] for none. A failure leaves it out (the app keeps what it had).
   try { out.groups = groupsOf_(name); } catch (err) {}
+  try { out.notes = notes_(); } catch (err) {}  // v87: the Notes tab's card lines (notes_)
   // v57: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
   try { const reps = repsOf_(name); if (reps.length) out.reps = reps; } catch (err) {}
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
@@ -247,6 +248,7 @@ function doPost_(e){
   // The hold over every answer now logged, in time order (Codex review #370: a device that sent answers older than
   // another device's must not keep the order it replayed them in): the app takes it after a send.
   try { out.groups = groupsOf_(name); } catch (err) {}  // v48, as the load reply
+  try { out.notes = notes_(); } catch (err) {}  // v87, as the load reply
   try { const o = hold_(name, resetOf_(p.data), p.pt); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
@@ -402,6 +404,19 @@ function slate_(){
   const hit = CacheService.getScriptCache().get('slate1');
   return hit ? JSON.parse(hit) : dataJson_().slate;
 }
+// Lines for the app's cards (v87; Pierre, 2026-11-05, Q109: a card may name a player, a name never written in the repo):
+// the Notes tab (Key, Text), rows whose key starts with card., served as notes: {key: text} with every load and save
+// reply (sync.js NOTES_KEY; core.js RV_SORRY ps: card.rv8.ps, the PS of rules version 9's apology). The tab is
+// Pierre's: made by hand, read only here; none, an empty object.
+function notes_(){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notes'), out = {};
+  if (!sh || sh.getLastRow() < 2) return out;
+  sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach(r => {
+    const k = String(r[0] || '').trim();
+    if (/^card\.[\w.-]{1,60}$/.test(k)) out[k] = String(r[1] || '').slice(0, 300);
+  });
+  return out;
+}
 function dataJson_(){
   const c = CacheService.getScriptCache(), none = {gen: null, slate: null};
   let d;
@@ -446,7 +461,7 @@ function replay_(key, since, appRv, pt, start){
   }
   const gen = gen_();
   if (!gen) return null;
-  const st = stats_(), rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, starts: start ? {[who]: start} : {}})[who], rec = rep ? rep.P : {};
+  const st = stats_(), rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}})[who], rec = rep ? rep.P : {};
   const json = JSON.stringify(rec), parts = [];
   for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
   const r = at || sh.getLastRow() + 1, old = at ? sh.getLastColumn() : 0, out = [safe_(key), CORE_.RV, n, fp ? sinceKey : since, new Date()].concat(parts);
@@ -922,19 +937,11 @@ function readEvents_(token, pages){
   return out;
 }
 
-// Progress % of a saved progress over a list of genera: a copy of core.js pctOf (keep the two in step; tests/sync.test.js
-// compares them). Per genus (v22): the moving average s.pg fills 95% on its way to 0.8 (the mastery exam's entry), each
-// mastery-exam question passed adds 1%, a passed exam (mx) makes it 100%; progress saved before s.pg replays its last
-// 10 results (h) from 0, a right answer weighed 0.67, a miss in full (core.js PROG, pgOf).
-function pctOf_(P, list){
-  const A = 0.15, M = 0.8, OLD = 0.67;
-  const pg = s => { if (typeof s.pg === 'number') return s.pg;
-    const g = String(s.h || '').split('').reduce((x, c) => x + A * (c === '1' ? OLD : 1) * ((c === '1' ? 1 : 0) - x), 0);
-    return s.mx ? Math.max(g, M) : g; };
-  const score = s => { if (!s) return 0; if (s.mx) return 1; const g = pg(s);
-    return 0.95 * Math.min(1, g / M) + (g >= M && s.ex ? 0.05 * Math.min(4, s.ex.k || 0) / 5 : 0); }; // never 100% before the exam is passed (core.js scoreOf)
-  return list && list.length ? Math.round(100 * list.reduce((t, n) => t + score((P || {})[n]), 0) / list.length) : 0;
-}
+// Progress % of a saved progress over a list of genera: core.js pctOf itself (v87; a copy until v86: the coherence
+// review's F5, docs/reviews/2026-11-06-engine-coherence-review.md, two formulas drift apart): the domain-score bar of a
+// genus (core.js barOf: its stored s.ds less its false-alarm rate), a record not rebuilt yet its moving average s.pg as
+// before, the exam's steps and a passed exam (mx) 100%.
+function pctOf_(P, list){ return CORE_.pctOf(P, list); }
 const ELO_MIN = 200;
 // Public leaderboard (v14; Pierre, 2026-11-01: "a small leaderboard to keep a little competition going"): GET ?board=1 →
 // {ok, rows: [[name, progress %, level]]}, every signed-in player with answers who did not opt out (Board 0), ranked by
@@ -1296,8 +1303,8 @@ function users_(p){
     out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || '');
   });
   // v60: the replayed subject's answers (the corals'), as before fish answers were logged: its mix-ups name its genera.
-  const an = ss.getSheetByName('Answers'), days = {}, mixes = {}, last50 = {};
-  if (an && an.getLastRow() > 1) logRows_(an, SUBJ_COL + 1).filter(replayed_).forEach(r => {
+  const an = ss.getSheetByName('Answers'), days = {}, mixes = {}, last50 = {}, all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
+  all.filter(replayed_).forEach(r => {
     const u = by[lc_(r[0])]; if (!u) { const a = arch[lc_(r[0])]; if (a) a.answers++; return; }
     const t = new Date(r[1]).getTime() || 0, ok = Number(r[4]) ? 1 : 0, mode = String(r[5]).split('|')[0] || '?', k = lc_(u.name);
     u.answers++; u.right += ok; if (t && (!u.first || t < u.first)) u.first = t; if (t > u.last) u.last = t;
@@ -1310,6 +1317,8 @@ function users_(p){
     u.days = Object.keys(days[k] || {}).length;
     const L = (last50[k] || []).sort((a, b) => a[0] - b[0]).slice(-50); u.recent = [L.length, L.reduce((t, x) => t + x[1], 0)];
     u.mix = Object.keys(mixes[k] || {}).map(x => x.split('|').concat([mixes[k][x]])).sort((a, b) => b[2] - a[2]).slice(0, 5); });
+  // v81: each player's photo exposure in every subject with game photos (exposure_): ex {subject id: [seen, of, hit, asked, units]}.
+  exposure_(all, by);
   const rp = ss.getSheetByName('Reports');
   if (rp && rp.getLastRow() > 1) rp.getRange(2, 2, rp.getLastRow() - 1, 1).getValues().forEach(r => { const u = by[lc_(r[0])] || arch[lc_(r[0])]; if (u) u.reports++; });
   const rm = ss.getSheetByName('Removed');
@@ -1318,6 +1327,46 @@ function users_(p){
   const gm = groupMap_();
   out.users.forEach(u => (u.groups = gm[lc_(u.name)] || []));
   replayedAll_(out.users, dcol);
+  return out;
+}
+// v81 (Pierre, 2026-11-06, Q191; the photo exposure study, docs/reviews/2026-11-06-photo-exposure-study.md §5): the
+// admin's player list gives each player's photo exposure per subject, ex: {subject id: [seen, of, hit, asked, units]}
+// (core.js exposureOf over that subject's rows, core.js subjRows): Seen % = seen / of, the distinct game photos they have
+// been shown out of the game photos of the units they have met; Spread % = hit / asked, in time order, of the questions
+// on a unit asked while it still had game colonies they had never been shown, the share that showed one. The game photos
+// are each subject's units' as its games draw them (pools_). A subject whose files cannot be read gets no ex; a player
+// with no answer in a subject has none for it. Computed at each list from the Answers tab: nothing is stored.
+function exposure_(rows, by){
+  const pools = pools_();
+  CORE_.SUBJECTS.forEach(S => {
+    if (!pools[S.id]) return;
+    const E = CORE_.exposureOf(CORE_.subjRows(rows, S.id).map(r => [lc_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]), pools[S.id]);
+    Object.keys(E).forEach(k => { if (by[k]) (by[k].ex = by[k].ex || {})[S.id] = E[k]; });
+  });
+}
+// Each subject's game photos per unit, grouped by colony (core.js unitPool over the site's files its SUBJECTS pool names,
+// read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool1<id>; about
+// 40 KB each). A subject whose files cannot be read is left out, and not asked again for 10 minutes.
+function pools_(){
+  const c = CacheService.getScriptCache(), out = {}, files = {};
+  const site_ = name => {
+    if (name in files) return files[name];
+    let v = null;
+    try {
+      const r = UrlFetchApp.fetch('https://raw.githubusercontent.com/' + REPO + '/main/' + name, {muteHttpExceptions: true});
+      if (r && r.getResponseCode() === 200) v = JSON.parse(r.getContentText());
+    } catch (e) {}
+    return files[name] = v;
+  };
+  CORE_.SUBJECTS.filter(S => S.pool).forEach(S => {
+    const k = 'pool1' + S.id, hit = c.get(k);
+    if (hit) { try { const v = JSON.parse(hit); if (v) out[S.id] = v; return; } catch (e) {} }
+    let P = null;
+    try { P = CORE_.unitPool(S, S.pool.files.map(site_)); } catch (e) { P = null; }
+    if (!P || !Object.keys(P).length) { try { c.put(k, 'null', 600); } catch (e) {} return; }
+    out[S.id] = P;
+    try { c.put(k, JSON.stringify(P), 21600); } catch (e) {}
+  });
   return out;
 }
 // v42 (Pierre, 2026-11-04: admin pages slow on his phone; Players read every player's saved copy, one call each, to
@@ -1352,7 +1401,7 @@ function replayedAll_(users, dcol){
       try { rec = JSON.parse(c.r.slice(5).map(String).join('') || '{}'); } catch (e) { rec = null; }
     }
     if (!rec) {
-      const rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, starts: start ? {[k]: start} : {}})[k];
+      const rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[k]: start} : {}})[k];
       rec = rep ? rep.P : {};
       const json = JSON.stringify(rec), parts = [];
       for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
@@ -1775,6 +1824,8 @@ const CORE_ = (function () { const module = {exports: {}};
   //   base    the sign-in record's fields for the progress last sent or received ([base, pending], sync.js mergeSaved)
   //   name, one, many, what, lecture: words of the interface (Corals; genus, genera; Coral to identify; the IMR coral
   //           lecture). Names of units: app.js uname (a genus in italics, a fish entry by its IMR name)
+  //   icon    its icon in the subject switches, the app's (app.js subjIcon) and the admin's (admin.js): SVG inside a
+  //           24 px viewBox, the one icon set (a branching coral, a fish)
   //   beta    a subject still in beta: {kick, line}, Home's Learn door top line and description once it is chosen (line:
   //           HTML), and a "beta" tag on its buttons. The label only: who sees the subject is open
   //   open    who the subject opens to (subjGroup): 'all' (the default, the corals: every player, signed out included) or
@@ -1803,15 +1854,23 @@ const CORE_ = (function () { const module = {exports: {}};
   //           differ per subject), over CALIB (calibOf): ease, the logits one judged ease point moves a photo's prior
   //           difficulty (model.js photoDiff); ref, how many times more a never-seen reference-level photo weighs in the
   //           draw (core.js refLevel, model.js photoSet); early, how many logits lower the draw aims on a unit with no
-  //           answer yet, fading with its answers (model.js photoSet: the easy photos favoured at the start, no wall).
-  //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before)
+  //           answer yet, fading with its answers (model.js photoSet: the easy photos favoured at the start, no wall);
+  //           u, how unsure the difficulty of a photo nobody has answered is (variance, model.js calSd: the targeting is
+  //           that much wider for it, narrowing as answers come); pool, the number of observations a unit's draw floor
+  //           is shared over (model.js photoSet: each observation keeps PICKD.FLOOR of the best one's weight, times
+  //           pool / observations when a unit has more, so a big pool's floor weighs no more than a pool-sized one's).
+  //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before; no u,
+  //           model.js CAL.U, and an unbounded pool: their draw as before)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
   //           Identify and the Tools are the corals' for now
+  //   pool    where its game photos come from, for the sheet's photo exposure per player (Code.gs pools_, core.js
+  //           unitPool; Pierre, 2026-11-06, Q191): files, the site's files it reads (fetched from main, in this order),
+  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
   // to another family (Diploprion: the Soapfishes, not IMR's Groupers); names: each family's name. Read through the
-  // subject (SUBJECTS renamed: renamedId, renameUnits, renameLogEntry), never by name; tests/fishunits.test.js checks it
+  // subject (SUBJECTS renamed: renamedId, renameUnits, renameLogEntry), never by name; tests/fishrename.test.js checks it
   // against fish.json. Kept while old ids may still arrive (an app from before the switch, a saved copy, the log).
   const FISH_RENAMED = {
     ids: {
@@ -1927,6 +1986,7 @@ const CORE_ = (function () { const module = {exports: {}};
       dev: '',
       base: ['base', 'pending'],
       name: 'Corals',
+      icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
       one: 'genus',
       many: 'genera',
       what: 'Coral',
@@ -1945,6 +2005,7 @@ const CORE_ = (function () { const module = {exports: {}};
       optin: ['bon'],
       rank: 'genus',
       replay: true,
+      pool: {files: ['data.json', 'curation.json'], of: 'slots'},
       tiers: true,
       ach: true,
       board: true,
@@ -1985,6 +2046,7 @@ const CORE_ = (function () { const module = {exports: {}};
       dev: 'fish-',
       base: ['fbase', 'fpending'],
       name: 'Fish',
+      icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
       one: 'family',
       many: 'families',
       what: 'Fish',
@@ -2001,24 +2063,35 @@ const CORE_ = (function () { const module = {exports: {}};
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
       beta: {
         kick: 'Something fishy…',
-        line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
+        line: '<b>Fish is in beta</b>: the reef fish families, iNaturalist photos for now. Feedback welcome.'
       },
       // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
       // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
       // it to that group again (the sheet keeps the Groups tab's rows).
       open: 'all',
       views: [['wide', 'Photo']],
-      optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
-      // family: an IMR entry (the game's family level, Damselfish; two entries may share a scientific family).
+      // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels"). The circles 2 and 3 were opt-in sets too
+      // (c2, c3) until every circle joined the path (Pierre, 2026-11-06, Q175): a stored c2 / c3 choice is no longer read.
+      optin: ['sci'],
+      // family: a family of the book (the game's family level, f:Damselfishes: Pierre, 2026-11-06; the IMR course a tag).
       rank: 'family',
       renamed: FISH_RENAMED,
       replay: false,
+      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       ach: false,
       board: false,
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
-      // them); the judged ease's prior as measured (CALIB.ease).
-      calib: {ref: 3, early: 1.5},
-      pages: ['genera', 'quiz'],
+      // them); the judged ease's prior as measured (CALIB.ease). Q186 (Pierre, 2026-11-06 15:33: the easy photos strongly
+      // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
+      // CALIB.ease squared: every fish photo carries a judged ease); pool 30, the floor shared over 30 observations (a
+      // species' candidate cap), so a pool of 1,000 photos favours its easy ones as a pool of 30 does
+      // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools").
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
+      pages: ['genera', 'sheet', 'quiz'],
+      // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
+      // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
+      // f:Damselfishes, g:Chromis; a species by its name, s:Chromis ternatensis): #fish/learn/genus/Chromis.
+      sheets: {family: 'f:', genus: 'g:', species: 's:'},
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
       // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
@@ -2059,8 +2132,9 @@ const CORE_ = (function () { const module = {exports: {}};
   const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
   // The difficulty engine's calibration (SUBJECTS calib): ease 0.5, one standard deviation of a photo's own difficulty
   // around its unit (the hierarchical photo Elo study, docs/LEARNING.md "Fish photos judged"); ref 1, no draw bonus;
-  // early 0, no lean at the start.
-  const CALIB = {ease: 0.5, ref: 1, early: 0};
+  // early 0, no lean at the start; u unset, a photo nobody answered as unsure as model.js CAL.U says; pool unbounded,
+  // every observation keeps the whole floor (model.js PICKD.FLOOR).
+  const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity};
   const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
@@ -2088,17 +2162,19 @@ const CORE_ = (function () { const module = {exports: {}};
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
   const startText = (s, c) => ((subjectOf(s).start || {}).opts || {})[c] || null;
 
-  // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). Level 1 of the game = the teaching
-  // entries of level 1 (the 27 IMR entries of circle 1, then circles 2 and 3), each made into a record the engine reads
-  // like a coral genus's (app.js GX): {id, name, fam, look (teaching ids, sub-entries folded into their entry), lk (how to
-  // tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, fish.json
+  // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). The game's family level = the book's
+  // families (fish.json families, Pierre 2026-11-06: the game's units are the families, genera and species, not the IMR
+  // entries; the IMR course a tag, imr), each made into a record the engine reads like a coral genus's (app.js GX): {id
+  // (f:Damselfishes), name (the book's English name), fam (the line under it: scientific names, IMR's name), imr, look
+  // (family ids), lk (how to tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, fish.json
   // key: the index of a reef fish ID book for the Indo-Pacific; rule S3), forms (that group: the wrong choices
   // start in other groups, as coral growth forms), ig (the same group), cm (how common near Dauin), views {wide:
-  // photos}, levels 1, circle, wink, names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
+  // photos}, levels 1, circle, wink, names (accepted when typed)}. photos: fish-photos.json "photos" (old entry id -> photo
+  // objects, each to its species' family).
   // key: the identification key in force ({id, region, cite (full), short}, null for a region with none) and groups its
   // groups in its order ({n, title, pages}).
-  // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
-  // surprise card, never a question of the game).
+  // c1 / c2 / c3 = the families of each circle (all on the path and in the progress since Pierre, 2026-11-06, Q175: app.js
+  // UNITS fish slate, fishGate), winks = the wink entries (a surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
   // views.wide in easyRank order (below): the easiest, most reference-like photo first, whoever took it; cover: the
   // card's photo (app.js cover), the first of that order (Pierre, 2026-11-06: no source tier any more).
@@ -2156,47 +2232,78 @@ const CORE_ = (function () { const module = {exports: {}};
   function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
-      start = new Set(F.start || []),
-      top = id => String(id).slice(0, 3);
+      start = new Set((F.start || []).map(id => FISH_RENAMED.ids[id] || id)),
+      gens = new Map((F.genera || []).map(g => [g.id, g]));
+    // The game photos by family: a photo goes to its species' family (fish-photos.json lists them by old entry id).
+    const famOf = new Map();
+    (F.families || []).forEach(f => f.species.forEach(id => famOf.set(id, f.id)));
+    // The IMR entries teaching each family's species: their other common names (aka) and names in common use (often,
+    // corrected gently: Clownfish for Anemonefish) stay accepted when typed (fish beta QA, #657).
+    const teachOf = new Map();
     (F.teach || [])
-      .filter(t => t.level === 1)
-      .forEach(t => {
-        const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0);
-        gen[t.id] = {
-          id: t.id,
-          name: t.name,
-          fam: t.fam,
-          wfam: t.wfam || [],
-          fish: 1,
-          circle: t.circle,
-          group: t.group || 0,
-          ig: t.group || 0,
-          forms: t.group ? ['g' + t.group] : [],
-          look: [...new Set((t.look || []).map(([id]) => top(id)).filter(id => id !== t.id))],
-          lk: (t.look || []).map(([id, txt]) => [top(id), txt]),
-          lsrc: Object.fromEntries(
-            (t.look || []).map(([id]) => [top(id), 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])
-          ),
-          qt: t.cues && t.cues.length ? t.cues : null,
-          sum: t.why || t.note || '',
-          phase: t.phase || [],
-          sub: (t.sub || []).map(s => s.name),
-          cm: Math.round(Math.sqrt(dauin)),
-          levels: 1,
-          // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
-          views: {
-            wide: easyRank(
-              ((photos || {})[t.id] || [])
-                .filter(p => p && p.f && p.src && !sheetOnly(p))
-                .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
-            )
-          },
-          ...(start.has(t.id) ? {first: 1} : {}),
-          ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
-          names: fishNames(t),
-          ...(fishOften(t).length ? {oft: fishOften(t)} : {})
-        };
-      });
+      .filter(x => x.level === 1)
+      .forEach(x =>
+        (x.species || []).forEach(id => {
+          const fid = famOf.get(id);
+          if (fid) teachOf.set(fid, new Set([...(teachOf.get(fid) || []), x]));
+        })
+      );
+    const byFam = {};
+    Object.entries(photos || {}).forEach(([tid, L]) =>
+      (L || []).forEach(p => {
+        const fid = famOf.get(p && p.sp) || FISH_RENAMED.ids[tid];
+        if (fid) (byFam[fid] = byFam[fid] || []).push(p);
+      })
+    );
+    (F.families || []).forEach(t => {
+      const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0),
+        imrGen = (t.genera || []).map(id => gens.get(id)).filter(g => g && g.imr);
+      gen[t.id] = {
+        id: t.id,
+        name: t.name,
+        // The line under its name: the scientific name or names (the book's family is not always one taxonomic family),
+        // then IMR's name when it differs (the IMR tag), or the IMR entry that teaches its species.
+        fam: [
+          (t.sci || []).join(', '),
+          t.imr && t.imr !== t.name ? 'IMR: ' + t.imr : '',
+          t.imrWith ? 'IMR course: with the ' + t.imrWith : ''
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        wfam: [],
+        imrName: t.imr || '', // the IMR tag (IMR's name), read by the opening for "I'm at IMR" (model.js openPick)
+        fish: 1,
+        circle: t.circle,
+        group: t.group || 0,
+        ig: t.group || 0,
+        forms: t.group ? ['g' + t.group] : [],
+        look: [...new Set((t.look || []).map(([id]) => id).filter(id => id !== t.id))],
+        lk: (t.look || []).map(([id, txt]) => [id, txt]),
+        // Each look-alike line's source: the family's own (fish.json lsrc, Pierre's declared groups, #662), else the slides.
+        lsrc:
+          t.lsrc ||
+          Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+        qt: t.cues && t.cues.length ? t.cues : null,
+        sum: t.why || t.note || '',
+        phase: t.phase || [],
+        // The names IMR uses inside it (its sub-entries: Chromis, Anemonefish, Bannerfish...), each once.
+        sub: [...new Set(imrGen.map(g => g.imr))],
+        cm: Math.round(Math.sqrt(dauin)),
+        levels: 1,
+        // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
+        views: {
+          wide: easyRank(
+            (byFam[t.id] || [])
+              .filter(p => p && p.f && p.src && !sheetOnly(p))
+              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+          )
+        },
+        ...(start.has(t.id) ? {first: 1} : {}),
+        ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
+        names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
+        ...([...(teachOf.get(t.id) || [])].flatMap(fishOften).length ? {oft: [...(teachOf.get(t.id) || [])].flatMap(fishOften)} : {})
+      };
+    });
     Object.values(gen).forEach(g => {
       if (g.views.wide.length) g.cover = g.views.wide[0].f;
     });
@@ -2227,6 +2334,22 @@ const CORE_ = (function () { const module = {exports: {}};
     const o = ((F && F.out) || {})[f];
     return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
   };
+  // fishIn(F, p, gone): game record p (fish-game.json) is in play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in
+  // play", every fish photo in play hosted on R2): his own add (fishOn on its species), or a photo that entered by itself
+  // (p.auto: a candidate judged sure, a reference photo judged at the reference level; tools/fish_game.py in_play) whose
+  // photo id (fishPid) he did not reject, exclude or move with Not this (gone: those ids, fishGone; tools/fish_game.py
+  // fish_in is its copy).
+  // An automatic add of the auto-sort he undid counts as decided against too (its log code '-a...', autosort.js fishUndo:
+  // "the photo waits for his decision"; Codex review #674).
+  const fishGone = (cur, F = (cur && cur.fish) || {}) =>
+    new Set(
+      [
+        ...['seen', 'exclude', 'out'].flatMap(k => Object.keys(F[k] || {})),
+        ...Object.values(F.auto || {}).flatMap(d => Object.keys(d || {}).filter(f => /^-a/.test(String(d[f])))),
+        ...Object.keys((cur && cur.exclude) || {})
+      ].map(f => fishPid(f))
+    );
+  const fishIn = (F, p, gone) => !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f))));
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
   // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
   // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),
@@ -2261,8 +2384,9 @@ const CORE_ = (function () { const module = {exports: {}};
       cu = {},
       cid = new Set();
     if (F) ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => gone.add(fishPid(f))));
+    const autoGone = F ? fishGone(cur) : gone;
     Object.entries(game || {}).forEach(([t, L]) => {
-      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishOn(F, p.f, p.sp)) && !X[p.f] && !xid.has(fishPid(p.f)));
+      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, autoGone)) && !X[p.f] && !xid.has(fishPid(p.f)));
       cu[t].forEach(p => cid.add(fishPid(p.f)));
     });
     new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {
@@ -2279,24 +2403,27 @@ const CORE_ = (function () { const module = {exports: {}};
     });
     return out;
   }
-  // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, rule S2): its IMR name,
-  // the parts of a double one ("Surgeonfish & Unicornfish"), its family as IMR writes it and the WoRMS families, and the
-  // sub-entries IMR names inside it (Chromis, Bannerfish...), and the other common names curated for it or a sub-entry
-  // (aka: tools/fish_source.json, Tang; often: a name in common use that the answer's feedback corrects gently, Clownfish
-  // for Anemonefish, fishOften). The first is the name shown.
-  function fishNames(t) {
-    const parts = String(t.name || '')
+  // The names a family is known by, accepted when typed (rule S2): the book's name, IMR's (the IMR tag) and the parts of a
+  // double one ("Surgeonfish & Unicornfish"), its scientific names, the names IMR uses inside it with their genera
+  // (Chromis, Anemonefish, Amphiprion: a finer name, still right), and the other common names curated for the IMR entries
+  // teaching its species or their sub-entries (T: aka, tools/fish_source.json, Tang; often: a name in common use that the
+  // answer's feedback corrects gently, Clownfish for Anemonefish, fishOften). The first is the name shown.
+  function fishNames(t, imrGen, T) {
+    const parts = String(t.imr || '')
       .split(/\s*&\s*|\s+and\s+/)
       .filter(Boolean);
     return [
       ...new Set([
         t.name,
+        t.imr,
         ...(parts.length > 1 ? parts : []),
-        t.fam,
-        ...(t.wfam || []),
-        ...(t.aka || []),
-        ...(t.often || []),
-        ...(t.sub || []).flatMap(s => [s.name, ...(s.aka || []), ...(s.often || [])])
+        ...(t.sci || []),
+        ...(imrGen || []).flatMap(g => [g.imr, g.name]),
+        ...(T || []).flatMap(x => [
+          ...(x.aka || []),
+          ...(x.often || []),
+          ...(x.sub || []).flatMap(u => [...(u.aka || []), ...(u.often || [])])
+        ])
       ])
     ].filter(Boolean);
   }
@@ -2360,12 +2487,59 @@ const CORE_ = (function () { const module = {exports: {}};
     const g = String(sp || '').split(/[\s,]+/)[0];
     return ((R.split || {})[id] || {})[g] || R.ids[id];
   }
+  // The id of a sheet of subject S in its one spelling, or null when S has no such sheet. A subject without sheet ranks
+  // (SUBJECTS sheets: the corals) takes any id as its unit's; one with them takes an id with one of their prefixes, an
+  // old unit id renamed since first (renamedId: t01 → f:Damselfishes), so a link from a record written before the rename
+  // still opens its sheet.
+  function sheetIdOf(S, id) {
+    const s = String(id == null ? '' : id);
+    if (!S || !S.sheets) return s;
+    const r = renamedId(S, s);
+    return Object.values(S.sheets).some(p => r.startsWith(p) && r.length > p.length) ? r : null;
+  }
+  // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06) read from fish.json
+  // alone: fam, gen and sp by id (the species of the families only, so none of those left out of the game), spOf (a
+  // species by its id or its sheet id s:<name>) and order, the families in the key's order (its group numbers, then the
+  // file's order; a family with no group last). go(id): the sheet a family, genus or species id opens, by option B:
+  // a genus with one species opens that species' sheet; the only genus of its family has no page of its own (the family
+  // sheet lists its species: the study's recommendation for one genus with several species); any other genus opens its
+  // short page. null for an id it does not know.
+  function fishTree(F) {
+    const fam = {},
+      gen = {},
+      sp = {},
+      byName = {};
+    ((F && F.families) || []).forEach(f => (fam[f.id] = f));
+    ((F && F.genera) || []).forEach(g => (gen[g.id] = g));
+    ((F && F.species) || []).forEach(s => {
+      if (!s.family || !fam[s.family]) return;
+      sp[s.id] = s;
+      byName[s.name] = s;
+    });
+    const order = Object.values(fam)
+      .map((f, i) => [f, i])
+      .sort((a, b) => (a[0].group || 99) - (b[0].group || 99) || a[1] - b[1])
+      .map(x => x[0].id);
+    const spOf = id => sp[id] || (String(id).startsWith('s:') ? byName[String(id).slice(2)] || null : null);
+    const go = id => {
+      if (fam[id]) return id;
+      const s = spOf(id);
+      if (s) return 's:' + s.name;
+      const g = gen[id];
+      if (!g || !fam[g.family]) return null;
+      const L = (g.species || []).filter(x => sp[x]);
+      if (L.length === 1) return 's:' + sp[L[0]].name;
+      return fam[g.family].genera.length === 1 ? g.family : id;
+    };
+    return {fam, gen, sp, order, spOf, go};
+  }
   // An object keyed by units (a progress record, the first-meeting cards) with its old ids under the new ones, the
   // mix-up and offer maps inside each record too (conf, off). Both present (an old app saved again after the switch):
   // the record with more answers stays (a count map adds up). The object itself when nothing is renamed.
   function renameUnits(S, o) {
     const R = S && S.renamed;
-    if (!R || !isObj(o) || !Object.keys(o).some(k => R.ids[k] || isObj(o[k]))) return o;
+    const old = m => isObj(m) && Object.keys(m).some(k => R.ids[k]);
+    if (!R || !isObj(o) || !Object.keys(o).some(k => R.ids[k] || (isObj(o[k]) && (old(o[k].conf) || old(o[k].off))))) return o;
     const n = x => (isObj(x) ? (Number(x.ok) || 0) + (Number(x.ko) || 0) : -1),
       counts = m => {
         if (!isObj(m) || !Object.keys(m).some(k => R.ids[k])) return m;
@@ -2499,6 +2673,10 @@ const CORE_ = (function () { const module = {exports: {}};
         out = {...r};
       out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
       out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
+      // Typed questions (ty, faOf): added up like the counts.
+      const ty = Math.max(0, (r.ty || 0) + (l.ty || 0) - (b.ty || 0));
+      if (ty) out.ty = ty;
+      else delete out.ty;
       // A record recalculated here for the photo memory (pm, memRecalc) with no answer of its own counts as this device's
       // model only while the other side has not moved since B: answers saved from another device win over a mere
       // recalculation (Codex review #387: an old copy reopened must not undo a passed exam), and the recalculation is
@@ -2512,7 +2690,8 @@ const CORE_ = (function () { const module = {exports: {}};
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
         // global level at the genus's last own step (core.js levelMove), which goes with its th.
-        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        // dp, ds: the domain-score bar's posterior and bar (domStep), the model of that device's answers like pg.
+        ['lv', 'run', 'L', 'pg', 'dp', 'ds', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -2527,7 +2706,7 @@ const CORE_ = (function () { const module = {exports: {}};
       if (l.du || r.du) out.du = 1;
       // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices, and
       // so do the global level's answer times (rt, rtWeight: how many timed answers took each tenth of a second).
-      ['conf', 'off', 'rt'].forEach(f => {
+      ['conf', 'off', 'rt', 'tyk'].forEach(f => {
         const c = {...(r[f] || {})};
         Object.keys(l[f] || {}).forEach(k => {
           const v = (c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0);
@@ -2580,6 +2759,11 @@ const CORE_ = (function () { const module = {exports: {}};
       const pk = subjKey(S.id, 'progress'),
         qk = subjKey(S.id, 'quiz');
       if (!i || pk in A || pk in B) out[pk] = JSON.stringify(mergeUserP(J(A, pk) || {}, J(B, pk) || {}));
+      // The surprise cards met on either account: met once, never shown again (Codex review #652).
+      const wk = subjKey(S.id, 'wink'),
+        wa = J(A, wk),
+        wb = J(B, wk);
+      if (wa || wb) out[wk] = JSON.stringify(winkUnion(wa, wb));
       const qa = J(A, qk),
         qb = J(B, qk);
       if (qa || qb) {
@@ -2594,6 +2778,20 @@ const CORE_ = (function () { const module = {exports: {}};
       // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
       // kept pg 0.96 for good).
       delete out[subjKey(S.id, 'rv')];
+    });
+    return out;
+  }
+  // The surprise cards (winks) two records have met (quiz.js winkMerge at a sync, mergeUsers for two accounts): {wink id:
+  // answer count when shown}, the union, the earlier count kept; anything else in either is ignored (Pierre, 2026-11-06:
+  // each surprise once per player).
+  function winkUnion(a, b) {
+    const out = {};
+    [a, b].forEach(r => {
+      if (!r || typeof r !== 'object' || Array.isArray(r)) return;
+      Object.keys(r).forEach(n => {
+        const v = Math.max(0, Number(r[n]) || 0);
+        if (!(n in out) || v < out[n]) out[n] = v;
+      });
     });
     return out;
   }
@@ -2614,8 +2812,16 @@ const CORE_ = (function () { const module = {exports: {}};
         main = n(x) > n(y) ? x : y,
         o = {...(main === x ? y : x), ...main};
       // The progress comes from the same account as the rest of the model, recomputed if it was saved before s.pg
-      // (Codex review #367: an old main record let the other account's pg through).
-      if (typeof main.pg === 'number' || main.h || typeof main.L === 'number') o.pg = pgOf(main);
+      // (Codex review #367: an old main record let the other account's pg through): its domain-score bar (dp, ds) when it
+      // has one, the other account's never mixed in; else its moving average.
+      if (domOn(main)) {
+        [o.dp, o.ds] = [main.dp.slice(), main.ds];
+        delete o.pg;
+      } else {
+        delete o.dp;
+        delete o.ds;
+        if (typeof main.pg === 'number' || main.h || typeof main.L === 'number') o.pg = pgOf(main);
+      }
       // The photo memory mark goes with that progress (memRecalc): the other account's would leave it uncorrected.
       if (main.pm) o.pm = main.pm;
       else delete o.pm;
@@ -2624,9 +2830,12 @@ const CORE_ = (function () { const module = {exports: {}};
       delete o.lt;
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
+      if ((x.ty || 0) + (y.ty || 0))
+        o.ty = (x.ty || 0) + (y.ty || 0); // typed questions on the unit (faOf), the same person's
+      else delete o.ty;
       o.streak = main.streak || 0;
       // Answer times (rt, the global level's) add up like the mix-ups: the same person's.
-      ['conf', 'off', 'rt'].forEach(f => {
+      ['conf', 'off', 'rt', 'tyk'].forEach(f => {
         const c = add(x[f], y[f]);
         if (Object.keys(c).length) o[f] = c;
         else delete o[f];
@@ -2936,7 +3145,7 @@ const CORE_ = (function () { const module = {exports: {}};
   function memRecalc(s, mem) {
     if (!s || typeof s !== 'object') return false;
     let old = false;
-    if (s.mx && typeof s.pg !== 'number') {
+    if (s.mx && !afterBkt(s)) {
       delete s.mx;
       delete s.ex;
       old = true;
@@ -3799,22 +4008,206 @@ const CORE_ = (function () { const module = {exports: {}};
     const g = [...String(s.h || '')].reduce((x, c) => x + PROG.A * (c === '1' ? PROG.OLD : 1) * ((c === '1' ? 1 : 0) - x), 0);
     return s.mx ? Math.max(g, PROG.M) : g;
   }
-  // The bar of a genus, 0 to 1: s.pg fills 95% on its way to PROG.M, each mastery-exam question passed adds 1%, the
-  // passed exam makes it 100%.
-  function scoreOf(s) {
+  // The bar of a genus, 0 to 1: the dynamic bar (barOf: the domain score corrected by the genus's false alarms, at most
+  // 95%; a record not rebuilt yet, its former moving average s.pg filling 95% on its way to PROG.M), then each
+  // mastery-exam question passed fills a fifth of what is left to 100% (1% a question from 95%), the passed exam makes
+  // it 100%. P, n: the player's progress and the genus's name, for the false-alarm correction (faOf); without them, none.
+  function scoreOf(s, P, n) {
     if (!s) return 0;
     if (s.mx) return 1;
-    const g = pgOf(s);
+    const b = barOf(s, P, n);
     // At most 4 of the 5 exam steps before the exam is passed (Codex review #393): an exam begun before typed questions
     // can have 5 right answers still waiting for its typed ones, and only a passed exam (s.mx) makes 100%.
-    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
+    return b + (examOpen(s, P, n) && s.ex ? ((1 - b) * Math.min(4, s.ex.k || 0)) / 5 : 0);
   }
   // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
   // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
   // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
   function pctOf(P, list) {
-    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n]), 0)) / list.length) : 0;
+    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n], P, n), 0)) / list.length) : 0;
   }
+
+  // The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; docs/LEARNING.md "The domain-score bar"): the bar of a
+  // genus is the share of ALL its possible photos, easy to hard, the player would name right, one photo alone with no
+  // choices to guess from (100% = every photo named), as far as their own answers on that genus have shown (Q128: never
+  // the global level, never another genus). The IRT domain score (Bock, Thissen & Zimowski 1997) over the genus's photo
+  // population (random-item IRT, De Boeck 2008: a photo's difficulty d ~ N(mu_g, DOM.TAU²), mu_g the sheet's genus
+  // offset gd, so adding photos moves no bar), estimated as the POSTERIOR EXPECTED domain score on a grid of abilities
+  // (docs/reviews/2026-11-06-engine-algorithms-review.md §14): a fixed population prior N(DOM.M0, DOM.SD0²) for a genus
+  // never answered, then each own answer's likelihood, format-aware (guess rate 1/k, none typed; a per-format offset and
+  // the shared slope as inputs, Q138, Q147), with the photo's difficulty, memory and mix-ups term as the game scores it.
+  // With a logistic likelihood a miss shifts the posterior down (monotone likelihood ratio), so the bar never rises on a
+  // miss; the caution comes from the prior, not from a lower bound (θ - z SE rose after a miss). Learners change: before
+  // each own answer the posterior drifts by DOM.Q (the process noise of a Kalman filter, Glicko's growing deviation), so
+  // old answers fade and a genus learned late is credited. The grid holds the log posterior (s.dp, relative to its top,
+  // 2 decimals, clipped at -DOM.CLIP), the bar its expectation (s.ds), stored at each own answer: it moves only when the
+  // player answers (or a replay rebuilds it), never when the photo stats change. A genus never answered shows 0: s.ds is
+  // the domain score from twice the prior's own (D0) up, a ramp from 0 at D0 below (domBar): increasing, so monotone too.
+  // The dynamic bar runs 0 to 95% (min(0.95, s.ds)); the mastery exam opens at s.ds >= DOM.EX and only the exam takes
+  // the genus to 100% (Pierre's Q decisions, 2026-11-06). A learned genus keeps its mark while s.ds >= DOM.KEEP.
+  // A record the new rules have not rebuilt (no s.dp: progress from before rules version 9, until the sheet's full
+  // replay under it reaches the device) keeps its former moving average s.pg (pgOf, PROG) as before (rule D4).
+  // Grid: LO + i STEP, N points (-4 to 6, the abilities and photo difficulties the game meets, with room for the prior).
+  // M0, SD0: the population prior of a genus never answered: most players start a genus not knowing it (the game's
+  // ability floor ELO.lo is -1.5; a broad 1.5 lets an expert's first right answers on hard photos lift it within a
+  // handful). TAU: the spread of a photo's own difficulty around its genus (the hierarchical photo Elo study,
+  // docs/LEARNING.md; model.js PDIFF.EASE). SINGLE: one view alone is harder (model.js PICKD.SINGLE). Q: the drift per
+  // own answer, in ability units (sd). EX: the exam's entry; KEEP: the learned mark's keep rule (about one miss below EX).
+  // KNEE: where the zero ramp meets the domain score, in multiples of the prior's own D0 (domBar).
+  const DOM = {LO: -4, STEP: 0.5, N: 21, M0: -2, SD0: 1.5, TAU: 0.5, SINGLE: 0.5, Q: 0.1, EX: 0.85, KEEP: 0.8, CLIP: 30, KNEE: 2};
+  const domTh = i => DOM.LO + i * DOM.STEP;
+  const DOM_PRIOR = Array.from({length: DOM.N}, (_, i) => -0.5 * ((domTh(i) - DOM.M0) / DOM.SD0) ** 2);
+  const domNorm = lp => {
+    const m = Math.max(...lp);
+    return lp.map(x => Math.max(-DOM.CLIP, Math.round((x - m) * 100) / 100));
+  };
+  // The record's log posterior on the grid: its own (s.dp), else the prior (a genus never answered under these rules).
+  const domLp = s => (s && Array.isArray(s.dp) && s.dp.length === DOM.N ? s.dp : DOM_PRIOR);
+  // The chance of a right answer at ability th: g + (1 - g) R sig(S (th - d)), g the guess rate 1/k (0 typed: k
+  // infinite), R the recall after a break, S the shared slope (Q147: 1, the Elo's, until the sheet estimates it).
+  const domP = (th, d, k, R = 1, S = 1) => {
+    const g = isFinite(k) && k > 1 ? 1 / k : 0;
+    return g + (1 - g) * R * sigm(S * (th - d));
+  };
+  // The posterior after one own answer: the drift first (a three-point kernel of variance DOM.Q², on the probabilities;
+  // none before the first answer), then the answer's likelihood. lp: the log posterior before. Returns the new one.
+  function domUpdate(lp, ok, d, k, R = 1, S = 1, drift = true) {
+    let x = lp.slice();
+    if (drift) {
+      const a = Math.min(1 / 3, (DOM.Q * DOM.Q) / (2 * DOM.STEP * DOM.STEP)),
+        p = x.map(v => Math.exp(v));
+      x = p.map((v, i) => Math.log(Math.max(1e-300, (1 - 2 * a) * v + a * (i ? p[i - 1] : v) + a * (i < DOM.N - 1 ? p[i + 1] : v))));
+    }
+    x = x.map((v, i) => {
+      const q = Math.min(1 - 1e-9, Math.max(1e-9, domP(domTh(i), d, k, R, S)));
+      return v + Math.log(ok ? q : 1 - q);
+    });
+    return domNorm(x);
+  }
+  // The domain score of a log posterior: the expected share of the genus's photos named right alone and typed,
+  // E over θ of E over d ~ N(mu', TAU²) of sig(S (θ - d)), the inner one in closed form (sig(x / sqrt(1 + pi v / 8)),
+  // the probit approximation of the logistic-normal integral). mu' = mu (the genus offset gd) + SINGLE + ot (the typed
+  // format's offset, Q138: 0 until the sheet serves it).
+  function domScore(lp, mu = 0, S = 1, ot = 0) {
+    const c = Math.sqrt(1 + (Math.PI / 8) * S * S * DOM.TAU * DOM.TAU),
+      m = (Number(mu) || 0) + DOM.SINGLE + (Number(ot) || 0);
+    let w = 0,
+      t = 0;
+    lp.forEach((v, i) => {
+      const p = Math.exp(v);
+      w += p;
+      t += p * sigm((S * (domTh(i) - m)) / c);
+    });
+    return w > 0 ? t / w : 0;
+  }
+  // The bar's value, 0 to 1: the domain score itself from the knee up; below, a straight ramp from 0 at the prior's own
+  // (D0), so a genus never answered shows 0 and a miss from there leaves it at 0. The knee is twice D0, or halfway from
+  // D0 to 1 for a very easy genus (D0 over 1/3: Codex review #646, mu -3 put 2 D0 above 1 and the exam out of reach), so
+  // the bar always reaches every value up to 1. An increasing map: the bar moves the posterior's way.
+  function domBar(lp, mu = 0, S = 1, ot = 0) {
+    const d0 = domScore(DOM_PRIOR, mu, S, ot),
+      x = domScore(lp, mu, S, ot),
+      knee = Math.min(DOM.KNEE * d0, (1 + d0) / 2);
+    return Math.max(0, Math.min(1, x >= knee ? x : (knee * (x - d0)) / (knee - d0)));
+  }
+  // One own answer on the genus record s (scoreAnswer: the genus shown; the genus wrongly given, Pierre's rule L2, as a
+  // miss on its photo). d: the question's difficulty for the player, k the plausible choices, R the recall, f {mu: the
+  // genus offset, o: this format's offset, t: the typed format's, S: the slope}. The stored bar moves the answer's way
+  // only (a right answer never lowers it, a miss never raises it): the drift alone can move the posterior's expectation
+  // a little either way, and the bar shows evidence, not the passing of answers.
+  function domStep(s, ok, d, k, R = 1, f = {}) {
+    const S = typeof f.S === 'number' && f.S > 0 ? f.S : 1,
+      had = Array.isArray(s.dp) && s.dp.length === DOM.N;
+    s.dp = domUpdate(domLp(s), ok, d + (Number(f.o) || 0), k, R, S, had);
+    const b = Math.round(domBar(s.dp, f.mu, S, f.t) * 1e4) / 1e4,
+      o = typeof s.ds === 'number' ? s.ds : 0;
+    s.ds = ok ? Math.max(o, b) : Math.min(o, b);
+    delete s.pg; // the former moving average: this record is under the domain-score rules now
+  }
+  // Whether a record is under the domain-score rules (s.dp), and the three readings every consumer goes through:
+  // barOf (the dynamic bar, 0 to 0.95), examOpen (the mastery exam may start), keepsMark (a learned genus stays learned).
+  const domOn = s => !!s && Array.isArray(s.dp) && typeof s.ds === 'number';
+  // A record of a subject the sheet does not replay (SUBJECTS replay false: fish), kept under the former moving average
+  // s.pg, rebuilt on the device under the domain-score rules (Pierre, 2026-11-06, Q200; model.js domRecalcAll), silently.
+  // Signed-in devices keep no log of the answers the sheet has confirmed, and the sheet's answer log is not readable by
+  // players, so the rebuild works from what every copy of the record holds: its right and wrong answers (ok, ko) and the
+  // order of its last 10 (h). The earlier answers are spread evenly, rights among misses, then the last 10 in their
+  // order, each on a photo of the unit's average difficulty d (its genus offset with one view alone) among k choices.
+  // Approximate (the photos, formats and memory of each answer are not kept), deterministic, the same on every device.
+  // A false alarm (this unit named on another unit's photo, scoreAnswer) adds a 0 to h and no ko: it is no miss on the
+  // unit's own photos (Q174, faOf takes it), so h keeps at most ko of its zeros, the latest (Codex review #688: its
+  // earlier zeros could be false alarms, and an own miss invented there would count each false alarm twice).
+  // Returns the record's new dp and ds (domStep from the prior), the record itself unchanged.
+  function domFromCounts(s, d, k = 4, mu = 0) {
+    const ok = Math.max(0, s.ok || 0),
+      ko = Math.max(0, s.ko || 0),
+      h0 = String(s.h || '').replace(/[^01]/g, ''),
+      z0 = [...h0].filter(c => c === '0').length;
+    let drop = Math.max(0, z0 - ko);
+    const h = [...h0]
+        .filter(c => c === '1' || (drop > 0 ? (drop--, false) : true))
+        .join('')
+        .slice(-(ok + ko)),
+      hr = [...h].filter(c => c === '1').length,
+      r0 = Math.max(0, ok - hr),
+      m0 = Math.max(0, ko - (h.length - hr)),
+      seq = [];
+    for (let i = 0, r = 0; i < r0 + m0; i++) {
+      // Bresenham: the i-th earlier answer is right when the rights so far fall behind their share.
+      const right = r0 > 0 && (m0 === 0 || (r + 1) * (r0 + m0) <= (i + 1) * r0 + r0 / 2);
+      seq.push(right);
+      if (right) r++;
+    }
+    [...h].forEach(c => seq.push(c === '1'));
+    const x = {};
+    seq.forEach(ok1 => domStep(x, ok1, d, k, 1, {mu}));
+    return {dp: x.dp, ds: x.ds};
+  }
+  // The false-alarm correction (Pierre, 2026-11-06, Q174; it replaces rule L2's miss on the genus wrongly given in the
+  // bar). Naming genus n for a photo of another genus is a false alarm: it says the player answers n too readily (a
+  // response bias), not that they fail to name n's own photos, so it does not enter n's posterior. Signal detection
+  // theory separates the two (Green & Swets 1966; Macmillan & Creelman 2005): the two-high-threshold corrected
+  // recognition Pr = H - FA (Snodgrass & Corwin 1988, J. Exp. Psychol. Gen. 117(1)), H the hit rate, here the domain
+  // score from n's own photos, FA the false-alarm rate: the times n was given for another genus's photo (the other
+  // records' s.conf[n]) over the questions where n was a possible answer (offered among the choices, the other records'
+  // s.off[n], or any typed question on another unit of its rank: P[LEVEL].tyk[rank] - s.ty, every unit of the rank asked
+  // can be typed). 0 without P or
+  // without a question where n could be given. The rule L2 count of the genus given (its recent results, its run) and
+  // the ability are untouched.
+  // A unit's rank as its id says it (a fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
+  const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
+  function faOf(P, n) {
+    if (!P || !n) return 0;
+    let fa = 0,
+      op = Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+    for (const t in P) {
+      if (t === n || t === LEVEL || !P[t]) continue;
+      fa += (P[t].conf || {})[n] || 0;
+      op += (P[t].off || {})[n] || 0;
+    }
+    return op > 0 ? Math.min(1, fa / op) : 0;
+  }
+  // The domain score as the bar uses it: s.ds less the genus's false-alarm rate (faOf), at least 0.
+  const domVal = (s, P, n) => Math.max(0, s.ds - faOf(P, n));
+  const barOf = (s, P, n) => (!s ? 0 : domOn(s) ? Math.min(0.95, domVal(s, P, n)) : 0.95 * Math.min(1, pgOf(s) / PROG.M));
+  const examOpen = (s, P, n) => !!s && (domOn(s) ? domVal(s, P, n) >= DOM.EX - 1e-9 : pgOf(s) >= PROG.M);
+  const keepsMark = (s, P, n) => !!s && (domOn(s) ? domVal(s, P, n) >= DOM.KEEP - 1e-9 : mxKeeps(pgOf(s)));
+  // Pair coverage, the mastery exam's other entry condition (Pierre, 2026-11-06, Q129; the research note's option (a),
+  // the PALM / Larkwire practice): a genus takes its exam only once it has been compared with each of its look-alikes,
+  // asked with it among the choices (either way: s.off, as the game counts the offers) or mixed up with it (s.conf).
+  // Pierre, 2026-11-02: "a genus can't be confirmed as learned before it has been compared with the genera it gets
+  // confused with". looks: the look-alikes in play (model.js examLooks: the declared ones the player can be asked).
+  // Returns the look-alikes not compared yet ([] when the condition holds).
+  const looksLeft = (P, n, looks) => {
+    const s = (P || {})[n] || {},
+      seen = (x, y) => ((P[x] || {}).off || {})[y] > 0 || ((P[x] || {}).conf || {})[y] > 0;
+    return (looks || []).filter(x => x !== n && !((s.off || {})[x] > 0 || (s.conf || {})[x] > 0 || seen(x, n)));
+  };
+  // The learned-mark protection (docs/reviews/2026-11-06-engine-coherence-review.md F8, F9): a mark passed under the
+  // former model, Bayesian Knowledge Tracing (before 2026-11-02), is dropped (memRecalc, replayedOf); such a record has
+  // neither the moving average s.pg nor the domain-score bar s.ds. Explicit, so a record of the domain-score rules,
+  // which carries no s.pg, keeps its mark: "learned after BKT" is a record with either.
+  const afterBkt = s => !!s && (typeof s.pg === 'number' || typeof s.ds === 'number');
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
@@ -3837,6 +4230,110 @@ const CORE_ = (function () { const module = {exports: {}};
   function gameOf(d) {
     const X = xGen(d);
     return [...slateOf(d), ...BONUS.filter(n => X[n])];
+  }
+  // The game photos of a subject's units, for the sheet's photo exposure per player (Pierre, 2026-11-06, Q191; the photo
+  // exposure study, docs/reviews/2026-11-06-photo-exposure-study.md §5), as its games can draw them: SUBJECTS pool names
+  // the site's files a subject reads and its builder here, which gets them parsed, in that order. slots: data.json with
+  // Pierre's curation and the photos per context applied (as app.js build), the game list of every game genus (gameOf:
+  // the slate, Millepora, the bonus genera) in each view; entries: the photos of each entry played (fishPhotos, fishGen
+  // views.wide). Only which photos are in play matters here, not their order (no picks, no automatic quality). Not
+  // applied: the Colony slot's "form not visible" rule (model.js photoSet: 9 colony photos in 4 genera on 2026-11-06,
+  // most kept by the one-form exception, which needs the Coral Finder key: app.js imrFormsOf).
+  const POOLS = {
+    slots: ([raw, cur]) => {
+      const d = JSON.parse(JSON.stringify(raw)),
+        out = {};
+      applyCuration(d, cur);
+      applySlots(d, cur);
+      if (d.x) {
+        const x = {gen: d.x.gen, course: {}, cand: d.cand};
+        applyCuration(x, cur);
+        applySlots(x, cur);
+      }
+      gameOf(raw).forEach(n => {
+        const g = d.gen[n] || xGen(d)[n];
+        // The games' Research Grade rule for the genera off data.json gen (app.js gamePhotoOk: Millepora, the bonus
+        // genera; Codex review #680).
+        if (g) out[n] = VIEWS.flatMap(([v]) => ((g.sl || {})[v] || {}).game || []).filter(p => !g.x || p.own || !p.gid);
+      });
+      return out;
+    },
+    entries: ([f, ph, gm, cur]) => {
+      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (gm || {}).photos, cur, f), (ph || {}).sheet);
+      return Object.fromEntries(
+        Object.values(F.gen)
+          .filter(g => !g.wink)
+          .map(g => [g.id, g.views.wide])
+      );
+    }
+  };
+  // unitPool(S, files): {unit: [[photo file, …] for each colony]}, subject S's game photos grouped by colony (one
+  // observation, o; a photo without one stands alone), its units under the ids its answer log holds (renamedId, with the
+  // photo's species: a fish entry logs as its family); null when S names no pool or one of its files is missing.
+  function unitPool(S, files) {
+    const P = S && S.pool,
+      make = P && POOLS[P.of];
+    if (!make || !Array.isArray(files) || files.length < P.files.length || files.some(x => !x)) return null;
+    const by = {};
+    Object.entries(make(files) || {}).forEach(([n, L]) =>
+      (L || []).forEach(p => {
+        if (!p || !p.f) return;
+        const O = (by[renamedId(S, n, p.t)] = by[renamedId(S, n, p.t)] || {}),
+          c = (O[String(p.o || p.f)] = O[String(p.o || p.f)] || []);
+        if (!c.includes(p.f)) c.push(p.f);
+      })
+    );
+    return Object.fromEntries(Object.entries(by).map(([u, O]) => [u, Object.values(O)]));
+  }
+  // exposureOf(rows, pool): each player's photo exposure in one subject (Pierre, 2026-11-06, Q191; the exposure study
+  // §5), from that subject's answer-log rows ([player, time ms, unit shown, answered, right, mode, photos], any order)
+  // and its unitPool: {player: [seen, of, hit, asked, units]}.
+  // - Seen % = seen / of: the distinct game photos the player has been shown, out of the game photos of the units they
+  //   have met (a question on it; units: how many, those with no game photo left out).
+  // - Spread % = hit / asked, in time order: of the questions on a unit asked while it still had game colonies the player
+  //   had never been shown, the share that showed one (a colony is one observation; a photo out of play now counts as a
+  //   colony of its own). A count of colonies seen against questions would hide repeats (A, A, B scores 100%).
+  function exposureOf(rows, pool) {
+    const P = pool || {},
+      col = new Map(),
+      by = {};
+    Object.entries(P).forEach(([u, L]) => L.forEach((c, i) => c.forEach(f => col.set(u + '|' + f, i))));
+    (rows || [])
+      .map((r, i) => [r, i])
+      .filter(([r]) => r && r[0] && P[r[2]] && String(r[6] || '').trim())
+      .sort((a, b) => (Number(a[0][1]) || 0) - (Number(b[0][1]) || 0) || a[1] - b[1])
+      .forEach(([r]) => {
+        const u = String(r[2]),
+          b = (by[r[0]] = by[r[0]] || {hit: 0, asked: 0, U: {}}),
+          s = (b.U[u] = b.U[u] || {ph: new Set(), co: new Set(), left: P[u].length}),
+          fs = String(r[6]).split(/\s+/).filter(Boolean),
+          cs = new Set(fs.map(f => (col.has(u + '|' + f) ? col.get(u + '|' + f) : 'out|' + f)));
+        if (s.left > 0) {
+          b.asked++;
+          if ([...cs].some(c => !s.co.has(c))) b.hit++;
+        }
+        cs.forEach(c => {
+          if (s.co.has(c)) return;
+          s.co.add(c);
+          if (typeof c === 'number') s.left--;
+        });
+        fs.forEach(f => col.has(u + '|' + f) && s.ph.add(f));
+      });
+    return Object.fromEntries(
+      Object.entries(by).map(([w, b]) => {
+        const U = Object.entries(b.U);
+        return [
+          w,
+          [
+            U.reduce((t, [, s]) => t + s.ph.size, 0),
+            U.reduce((t, [u]) => t + P[u].reduce((k, c) => k + c.length, 0), 0),
+            b.hit,
+            b.asked,
+            U.length
+          ]
+        ];
+      })
+    );
   }
   // The starred (★) genera: on the slate, not numbered (data.json gen[n].n 0, not surveyed by IMR), there because they
   // look like surveyed genera (rule L5). lectureGroup(d, n): the IMR lecture group a genus is shown in, its own
@@ -4202,11 +4699,12 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   // w (response time, 2026-11-04, rtWeight): the step's size times w; 1 by default. The volatility follows the plain
   // surprise either way.
-  // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered.
-  function eloStep(P, n, s, good, d, k, w = 1, p = 0) {
+  // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered. S: the shared slope of the
+  // answer model (scoreAnswer slopeOf, Q147: 1 until the sheet estimates it).
+  function eloStep(P, n, s, good, d, k, w = 1, p = 0, S = 1) {
     const th = abilityOf(P, n, p),
       g = 1 / k,
-      e = g + (1 - g) * sigm(th - d),
+      e = g + (1 - g) * sigm(S * (th - d)),
       m = (s.ok || 0) + (s.ko || 0);
     s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
     // The global level's step has no floor (ELO.kmin is for a genus, which must ease off quickly when it starts going
@@ -4304,6 +4802,19 @@ const CORE_ = (function () { const module = {exports: {}};
   // mix-ups, the expected success (logged e), the progress weight, the look-alike test and the time weight.
   // What only the game knows stays in quiz.js answer (the exam, the days answered, the last observations, the cards and
   // the hold); what only the log knows stays in replayProgress (the last misses lx and lm, duels won from the mode).
+  // The domain-score bar's inputs of a question (scoreAnswer): q.dom false, a game whose sheet does not replay these rules
+  // yet (model.js domOn_, DOM_SHEET; rule D4), keeps the former moving average; a record already under them (s.dp), or one
+  // without a former moving average (a genus first answered under them, every genus of a full replay), takes the domain
+  // score; a record with s.pg keeps it until a full replay under these rules rebuilds it from the log.
+  const domIn = (q, s) => q.dom !== false && (domOn(s) || typeof s.pg !== 'number');
+  // The shared slope of the answer model (Q147, pending Pierre): one input, used in the expectation (the ability step,
+  // the logged e) and in the bar's posterior; 1 (the Elo's own) until the sheet estimates it and the game passes q.S.
+  const slopeOf = q => (q && typeof q.S === 'number' && q.S > 0 ? q.S : 1);
+  // mu: the genus offset gd of the genus the bar is for; df: this question's format offset, dt the typed format's (Q138,
+  // Q146: in logits, a format easier than the app thought has a positive offset, as PR #638's fmtOff and its q.df, so
+  // the question counts as that much easier: a 2-choice right answer, more often right than a 1 in 2 guess explains,
+  // proves less, and a 2-choice miss weighs less; 0 until the game passes the sheet's offsets).
+  const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q)});
   function scoreAnswer(P, q) {
     const t = q.t,
       ok = !!q.ok,
@@ -4333,24 +4844,41 @@ const CORE_ = (function () { const module = {exports: {}};
       out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
     if (scored) {
       const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p),
-        look = typeof q.look === 'function' ? !!q.look() : !!q.look,
+        look = typeof q.look === 'function' ? !!q.look() : !!q.look;
+      let w = null;
+      // The bar (Q135): the domain score from the player's own answers on the genus, the question's difficulty as the game
+      // scores it (photo, memory, mix-ups), its format and recall (domStep); a record not rebuilt under these rules yet,
+      // or a game whose sheet does not replay them yet (q.dom false, rule D4), the former moving average as before.
+      if (domIn(q, s)) domStep(s, ok, dm, k, R, domF(q, q.mu));
+      else {
         // The miss weighs against the aim at the player's level before this answer's own step on it.
         w = ok ? pgRightW(k, look) * pgMemW(th0, d0, fam, k, R) : pgMissW(th0, dm, k, R, aimOf((P[LEVEL] || {}).th));
-      s.pg = pgStep(pgOf(s), ok, w);
+        s.pg = pgStep(pgOf(s), ok, w);
+      }
       delete s.L; // BKT's knowledge, before s.pg
       s.u = (s.u || 0) + 1;
       // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
       // step weighed by its time against the player's earlier ones.
       const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
-      eloStep(P, t, s, ok, dm - df, k, rw, p);
-      Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(th0 - dm)});
+      eloStep(P, t, s, ok, dm - df, k, rw, p, slopeOf(q));
+      Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(slopeOf(q) * (th0 - dm))});
     }
     // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
     // each, with the same weight; this answer's seconds recorded after its steps (rtWeight compares with earlier ones).
     if (P[LEVEL]) P[LEVEL][ok ? 'ok' : 'ko']++;
     else P[LEVEL] = levelSeed(P);
+    // Typed questions, every one and those on this genus (ty): any genus could have been typed, so each is a question where
+    // any other genus was a possible answer, the false-alarm rate's denominator (faOf).
+    if (!isFinite(k)) {
+      // Per rank (rankKey: a fish family's f:, a genus's g:; the corals none): a typed answer can only be a unit of the
+      // rank asked (quiz.js typeMatch), so only those are possible answers (Codex review #646).
+      const tk = (P[LEVEL].tyk = P[LEVEL].tyk || {}),
+        rk = rankKey(t);
+      tk[rk] = (tk[rk] || 0) + 1;
+      s.ty = (s.ty || 0) + 1;
+    }
     if (scored) {
-      eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw, p);
+      eloStep(P, LEVEL, P[LEVEL], ok, dm - df, k, out.rw, p, slopeOf(q));
       // One surprise counted once (Pierre, 2026-11-06, Q137 part 1; docs/reviews/2026-11-06-engine-algorithms-review.md
       // §2a; docs/LEARNING.md "One surprise, counted once"): the genus shown takes the level as it stands after this
       // answer's step on it, so its levelMove carries only the level's moves from the other answers. Taken against the
@@ -4377,7 +4905,10 @@ const CORE_ = (function () { const module = {exports: {}};
     if (!ok && q.cv && q.c && q.c !== t) {
       const x = rec(q.c);
       if (scored) {
-        x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, typeof q.Rc === 'number' ? q.Rc : 1, aimOf(P[LEVEL].th)));
+        const Rc = typeof q.Rc === 'number' ? q.Rc : 1;
+        // The bar: no miss in its posterior (a false alarm, counted by its record's offers and mix-ups and taken off its
+        // bar by faOf, Q174); a record of the former rules (s.pg): a miss on the photo shown, as before.
+        if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, Rc, aimOf(P[LEVEL].th)));
         delete x.L;
         x.u = (x.u || 0) + 1;
       }
@@ -4392,7 +4923,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
   // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (Q138:
   // the sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c,
-  // r, g, h and o left out at their default (0, 0, 1, 1, none, 0). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
+  // r, g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below). Numbers to 3 decimals: the game rounds them before scoring (scoreIn), so the replay meets
   // exactly what it used. x: the record as an object or its JSON (a sheet cell); null when it has no d (a row logged
   // before the scorer, or broken).
   const SC_MAX = 50;
@@ -4416,7 +4947,14 @@ const CORE_ = (function () { const module = {exports: {}};
     if (scNum(o.r) !== null && scNum(o.r) !== 1 && o.r >= 0 && o.r <= 1) out.r = scNum(o.r);
     if (scNum(o.g) !== null && scNum(o.g) !== 1 && o.g >= 0 && o.g <= 1) out.g = scNum(o.g);
     if (typeof o.h === 'string' && /^[A-Za-z0-9_.-]{1,120}$/.test(o.h)) out.h = o.h;
+    // The domain-score bar's inputs (rules version 9): m the genus offset of the genus shown and n that of the genus
+    // given (kept even at 0: absent means a row logged before, whose replay takes the sheet's gd), o (above) the format's offset
+    // df, which the bar takes too, and t the typed format's dt (left out at 0), s the shared slope (left out at 1).
+    if (scNum(o.m) !== null) out.m = scNum(o.m);
+    if (scNum(o.n) !== null) out.n = scNum(o.n);
     if (scNum(o.o)) out.o = scNum(o.o);
+    if (scNum(o.t)) out.t = scNum(o.t);
+    if (scNum(o.s) !== null && o.s > 0 && scNum(o.s) !== 1) out.s = scNum(o.s);
     return out;
   }
   // The game's inputs rounded as they are logged (scoreRec), before it scores with them.
@@ -4427,11 +4965,28 @@ const CORE_ = (function () { const module = {exports: {}};
     cf: r3(q.cf || 0),
     R: r3(q.R === undefined ? 1 : q.R),
     Rc: r3(q.Rc === undefined ? 1 : q.Rc),
-    df: r3(q.df || 0)
+    df: r3(q.df || 0),
+    ...(typeof q.mu === 'number' ? {mu: r3(q.mu)} : {}),
+    ...(typeof q.muc === 'number' ? {muc: r3(q.muc)} : {}),
+    ...(typeof q.dt === 'number' ? {dt: r3(q.dt)} : {}),
+    ...(typeof q.S === 'number' ? {S: r3(q.S)} : {})
   });
   // The record of a question scored by scoreAnswer (q after scoreIn, res its result): what quiz.js answer logs as sc.
   const scoreLog = (q, res) =>
-    scoreRec({d: q.d0, f: q.fam, c: q.cf, l: res.look ? 1 : 0, r: q.R, g: q.Rc, h: q.hint || undefined, o: q.df});
+    scoreRec({
+      d: q.d0,
+      f: q.fam,
+      c: q.cf,
+      l: res.look ? 1 : 0,
+      r: q.R,
+      g: q.Rc,
+      h: q.hint || undefined,
+      m: q.mu,
+      n: q.muc,
+      o: q.df,
+      t: q.dt,
+      s: q.S
+    });
 
   // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
   // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
@@ -4452,6 +5007,28 @@ const CORE_ = (function () { const module = {exports: {}};
     p: 'Your progress is now computed again from all your answers, with the rules the app uses today. It went from {from}% to {to}%. Every answer you gave is kept.',
     only: 'changed',
     min: 5
+  };
+  // The apology of rules version 9 (Pierre, 2026-11-06: the recalculation approved with the domain-score bar; the card
+  // and its PS from PR #611, Q109: sincere, say it does not mean they know less, turn it into encouragement, our mistake
+  // not theirs, the new bar means more; Pierre 2026-11-06: 2-3 short lines, never "bars" but "progress", encouraging: it
+  // is because they learned so fast that the old count could not keep up; no mechanics on the card; heading "Sorry"; his
+  // text of 14:43). Shown to every player whose % the
+  // adoption took down by a point or more (down: a rise gets the standard card when it is of 5 points or more). ps: the key of a line the sheet serves (Code.gs notes_, the Notes tab;
+  // sync.js NOTES_KEY), shown small under the text when it is set: Pierre's PS, which may name a player. A name is never
+  // written in the repo (rule D2).
+  const RV_SORRY = {
+    kind: 'apology',
+    kick: 'Sorry',
+    t: 'Sorry: we recalculated your progress',
+    p: "You've been learning so fast that our old way of counting couldn't keep up. It wasn't you, it was us: your new progress is lower, but you haven't lost anything you know.",
+    // The two %, on a line of their own that never wraps (Pierre, 2026-11-06: "Your progress: 38% → 24%").
+    pct: 'Your progress: {from}% → {to}%',
+    ps: 'card.rv8.ps',
+    only: 'changed',
+    min: 1,
+    // Only to the players whose % went down (Pierre, 2026-11-06: the card says the new progress is lower); a rise of
+    // RV_CARD.min points or more gets the standard card instead (rvMsgs with skip, progress.js rvNoticeAdd).
+    down: true
   };
   const RVS = [
     {
@@ -4506,6 +5083,15 @@ const CORE_ = (function () { const module = {exports: {}};
       at: '2026-11-06',
       why: "Per-format offsets (Pierre, 2026-11-06, Q138; sheet v77): the ability steps of the genus and the global level expect each question with its format's offset from the real answers (fmtOffsetsOf: 2 plausible choices among 4, Again, Duel tab, typed...), so a 2-choice question right more often than 1 in 2 explains no longer over-credits the ability; an answer's scoring record logs the offset it was scored with (o), a row logged before the scorer takes today's",
       msg: RV_CARD
+    },
+    {
+      v: 9,
+      at: '2026-11-06',
+      why: "The domain-score bar (Q127-Q129, Q135, sheet v87): a genus's bar is the share of all its possible photos the player would name alone and typed, the posterior expectation on a grid of abilities from a fixed population prior and the player's own answers on that genus only (format-aware, the photo's difficulty, memory and mix-ups as scored, a drift per answer so old answers fade), at most 95% until the mastery exam, which opens at 85% once the genus has been asked beside each of its look-alikes; a genus named by mistake counts as a false alarm, its bar less its false-alarm rate (Pr = H - FA, Snodgrass & Corwin 1988), not as a miss on its photos; it replaces the moving average s.pg, and the learned marks passed since 2026-11-02 are kept unless a miss logged after the exam takes them away",
+      // Pierre, 2026-11-06 (Q172): the apology card (PR #611's, Q109) for every player whose % the replay moved; its PS
+      // from the sheet's Notes tab, key card.rv8.ps (named when this was rules version 8, before PR #638 took that
+      // number; the key is kept so the row Pierre adds stays as written: never in the repo; progress.js rvNotice).
+      msg: RV_SORRY
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -4522,6 +5108,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
   // Codex review #428); before it, the default player's prior 0, exactly as before.
   const START_SHEET = 36;
+  // The sync script version that replays the domain-score bar (rules version 9, core.js DOM): a genus first answered in
+  // the app takes it only once the script's replies say v >= DOM_SHEET (model.js domRules), and the app's own replay of
+  // its queued answers on top of the sheet's follows the same version (sync.js replayAdopt); before, the moving average
+  // s.pg exactly as before (rule D4).
+  const DOM_SHEET = 87;
   // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
   // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
@@ -4530,9 +5121,15 @@ const CORE_ = (function () { const module = {exports: {}};
   const logOk = (a, v) => ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
-  // several versions sees one recalculation card with its progress before and after the whole jump.
-  const rvMsgs = (from, to) =>
-    RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg).filter((x, i, L) => !L.slice(i + 1).some(y => y.msg === x.msg));
+  // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
+  // 'apology', RV_SORRY) in the jump says what the standard card says, and more: the standard card is then left out.
+  // skip: leave the apologies out (a player whose % did not go down: progress.js rvNoticeAdd), the standard card back.
+  const rvMsgs = (from, to, skip = false) => {
+    const L = RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg && !(skip && x.msg.kind === 'apology')).filter(
+      (x, i, A) => !A.slice(i + 1).some(y => y.msg === x.msg)
+    );
+    return L.some(x => x.msg.kind === 'apology') ? L.filter(x => x.msg !== RV_CARD) : L;
+  };
 
   // Full replay (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log? Recalculate
   // from all the results"): every player's progress rebuilt from the sheet's answer log, in time order, with today's rules
@@ -4555,14 +5152,16 @@ const CORE_ = (function () { const module = {exports: {}};
   // with one replays the offset it logged, o; none: 0),
   // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
   // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, cf, k, w, look}).
-  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at, rt}},
-  // n, used, rep}}: per genus the moving average pg (what the app keeps as s.pg), right / wrong answers, the last 10
+  // dom (false: the former moving average, rules before version 9), gd (the genus offsets for rows logged without them).
+  // Returns {id: {P: {genus: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at, rt}},
+  // n, used, rep}}: per genus the domain-score bar's log posterior dp and bar ds (domStep; pg, the former moving average,
+  // for a record of the start copy that holds one, or with dom false), right / wrong answers, the last 10
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
-  // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
+  // s.conf), u = answers that moved the bar, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
   // the genus shown only, never on the genus wrongly given),
   // the run of right answers (streak), the last answer (at), a look-alike duel won (du), the last miss on it, shown or
   // given (lx, a time: it ends an exam in course), the last one that took the progress below the learned mark's keep
-  // rule (lm, a time: mxKeeps); the global level LEVEL as the
+  // rule (lm, a time: keepsMark); the global level LEVEL as the
   // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
   // A row logged with its scoring record (2026-11-06, Q132: index LOG_SC) is scored with what the game had then: its photo
@@ -4725,6 +5324,14 @@ const CORE_ = (function () { const module = {exports: {}};
       fmt = o.fmt || {},
       memory = o.memory !== false,
       time = o.time !== false,
+      // dom: false, the rules before version 9 (the former moving average; a device whose sheet does not replay version 9
+      // yet, sync.js replayAdopt, rule D4); gd: the genus offsets ({genus: [offset, weighed answers]}, ?stats=1 gd) for
+      // the rows logged without them.
+      dom = o.dom !== false,
+      gdv = g => {
+        const x = (o.gd || {})[g];
+        return Math.round((Array.isArray(x) ? Number(x[0]) || 0 : Number(x) || 0) * 1000) / 1000;
+      },
       out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
     const prior = (t, n) => {
       const a = gen[t] || {},
@@ -4755,9 +5362,10 @@ const CORE_ = (function () { const module = {exports: {}};
         if (since[id] && !(r[1] > since[id])) return;
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
-            const x = (pl.P[g] = pl.P[g] || {pg: 0, ok: 0, ko: 0, h: '', ps: {}, u: 0});
+            // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
+            // a record of the copy it goes on from (start) keeps what it has.
+            const x = (pl.P[g] = pl.P[g] || {ok: 0, ko: 0, h: '', ps: {}, u: 0});
             if (!x.ps) x.ps = {};
-            if (typeof x.pg !== 'number') x.pg = 0;
             x.h = x.h || '';
             x.u = x.u || 0;
             return x;
@@ -4781,7 +5389,11 @@ const CORE_ = (function () { const module = {exports: {}};
         if (hs.some(h => h && h[0])) pl.rep++;
         const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
-        const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null};
+        const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
+        // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
+        q.mu = sc && typeof sc.m === 'number' ? sc.m : gdv(t);
+        q.muc = sc && typeof sc.n === 'number' ? sc.n : gdv(c);
+        if (sc) Object.assign(q, {df: sc.o || 0, dt: sc.t || 0, S: sc.s || 1});
         if (sc) {
           // Logged by the scorer (Q132): what the game scored with, as it was then; the memory as logged unless the
           // replay leaves it out (memory: false, a what-if).
@@ -4812,12 +5424,12 @@ const CORE_ = (function () { const module = {exports: {}};
         // leaves the progress below the keep rule (quiz.js answer, mxKept), on the genus shown as on the genus given: lm,
         // the time of the last such miss, takes away a mark passed before it; lx, the last miss, ends an exam in course.
         if (!ok) s.lx = r[1];
-        if (!ok && !mxKeeps(s.pg)) s.lm = r[1];
+        if (!ok && !keepsMark(s, pl.P, t)) s.lm = r[1];
         if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
         if (wrong) {
           const x = pl.P[c];
           x.lx = r[1];
-          if (!mxKeeps(x.pg)) x.lm = r[1];
+          if (!keepsMark(x, pl.P, c)) x.lm = r[1];
         }
       });
     return out;
@@ -4870,7 +5482,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
-  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
+  const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},
@@ -4879,7 +5491,7 @@ const CORE_ = (function () { const module = {exports: {}};
       dup = x => JSON.parse(JSON.stringify(x)),
       kept = s => {
         const o = dup(s);
-        if (typeof o.pg !== 'number') {
+        if (!afterBkt(o)) {
           delete o.mx;
           delete o.ex;
         }
@@ -4896,6 +5508,8 @@ const CORE_ = (function () { const module = {exports: {}};
           // The answer times (rt) go with the count: the replay's when it has every answer the device has.
           if (!s || n(r) >= n(s)) {
             [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
+            if (isObj(r.tyk)) o.tyk = dup(r.tyk);
+            else delete o.tyk;
             if (isObj(r.rt)) o.rt = dup(r.rt);
             else delete o.rt;
           }
@@ -4907,7 +5521,15 @@ const CORE_ = (function () { const module = {exports: {}};
       }
       if (!r || !r.u || (s && n(s) > n(r))) {
         if (s) out[g] = kept(s);
-        else if (r) out[g] = {pg: r.pg || 0, ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
+        else if (r) {
+          // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
+          out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
+          if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
+          else if (typeof r.pg === 'number') out[g].pg = r.pg;
+          // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
+          ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
+          if (r.ty) out[g].ty = r.ty;
+        }
         return;
       }
       const o = {};
@@ -4927,9 +5549,9 @@ const CORE_ = (function () { const module = {exports: {}};
       if (rv) o.rv = rv;
       if (s) {
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
-        if (typeof s.pg === 'number' && s.mx) {
+        if (afterBkt(s) && s.mx) {
           if (!(r.lm > s.mx)) o.mx = s.mx;
-        } else if (typeof s.pg === 'number' && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
+        } else if (afterBkt(s) && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
       }
       out[g] = o;
     });
@@ -4961,6 +5583,8 @@ const CORE_ = (function () { const module = {exports: {}};
         const o = dup(r);
         if (b && n(b) > n(r)) {
           [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
+          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
+          else delete o.tyk;
           if (isObj(b.rt)) o.rt = dup(b.rt);
           else delete o.rt;
         }
@@ -5045,8 +5669,13 @@ const CORE_ = (function () { const module = {exports: {}};
     let p, q;
     if (!s || s === 'home') return '';
     if (b === 'genera' && !a.length) p = 'learn/' + S.many;
-    else if (b.startsWith('g-') && b.length > 2 && !a.length) p = 'learn/' + S.one + '/' + routeEnc(b.slice(2));
-    else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
+    else if (b.startsWith('g-') && b.length > 2 && !a.length) {
+      // A subject with sheets at several ranks (SUBJECTS sheets: fish families, genera, species) names the rank of the
+      // sheet from its id's prefix (g-f:Damselfishes: #fish/learn/family/Damselfishes); any other sheet is its unit's.
+      const id = b.slice(2),
+        w = Object.keys(S.sheets || {}).find(x => id.startsWith(S.sheets[x]) && id.length > S.sheets[x].length);
+      p = 'learn/' + (w || S.one) + '/' + routeEnc(w ? id.slice(S.sheets[w].length) : id);
+    } else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
     else if (b.startsWith('lab-') && b.length > 4) p = 'tools/' + [b.slice(4), ...a].map(routeEnc).join('/');
     else if ((b === 'idkey' || b === 'fishkey') && a.length <= 1) {
       p = ROUTE_FIXED[b];
@@ -5102,6 +5731,7 @@ const CORE_ = (function () { const module = {exports: {}};
           return ['basics', ...r, ...(e ? ['edit'] : [])].join('|');
         }
         if (s1 === S.many && n === 2) return 'genera';
+        if (S.sheets && S.sheets[s1] && n === 3) return 'g-' + S.sheets[s1] + r[0];
         if (s1 === S.one && n === 3) return 'g-' + r[0];
         if (s1 === 'look-alikes' && (n === 2 || n === 4)) return ['cmp', ...r].join('|');
         if (s1 === 'compare' && n === 4) return 'cmp-' + r[0] + '|' + r[1];
@@ -5521,6 +6151,21 @@ const CORE_ = (function () { const module = {exports: {}};
     pgOf,
     scoreOf,
     pctOf,
+    DOM,
+    DOM_PRIOR,
+    domP,
+    domUpdate,
+    domScore,
+    domBar,
+    domStep,
+    domOn,
+    barOf,
+    examOpen,
+    keepsMark,
+    domFromCounts,
+    faOf,
+    looksLeft,
+    afterBkt,
     TARGET_P,
     AIM,
     aimOf,
@@ -5552,11 +6197,13 @@ const CORE_ = (function () { const module = {exports: {}};
     levelMove,
     eloStep,
     RV_CARD,
+    RV_SORRY,
     RVS,
     RV,
     RV_SHEET,
     RT_SHEET,
     START_SHEET,
+    DOM_SHEET,
     LOG_SHEET,
     logOk,
     RTIME,
@@ -5663,6 +6310,7 @@ const CORE_ = (function () { const module = {exports: {}};
     dataLook,
     pairConf,
     mergeUsers,
+    winkUnion,
     PULSEQ,
     PULSE0,
     PULSE_SHOWN,
@@ -5694,13 +6342,19 @@ const CORE_ = (function () { const module = {exports: {}};
     refLevel,
     refScore,
     fishOn,
+    fishIn,
+    fishGone,
     fishPid,
     FISHPH,
     fishPhotos,
+    unitPool,
+    exposureOf,
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
     renamedId,
+    sheetIdOf,
+    fishTree,
     renameUnits,
     renameLogEntry,
     typeNormAll,
