@@ -37,6 +37,27 @@ test('formats read from the mode and the choices', () => {
   assert.strictEqual(A.fmtOf('quiz|s|t', 0), 'typed');
 });
 
+test('core.js fmtOf (the per-format offsets of the sheet and the app) reads the formats as analysis.js', () => {
+  const C = require('../core.js');
+  for (const [m, n] of [
+    ['quiz', 4],
+    ['quiz|k3', 4],
+    ['quiz|k2', 4],
+    ['quiz|k2', 2],
+    ['quiz', 2],
+    ['quiz|d|k2', 2],
+    ['quiz|s|d|k2', 2],
+    ['quiz-duel|A|B', 2],
+    ['quiz-duel', 2],
+    ['quiz|x', 4],
+    ['quiz|t|x', 0],
+    ['quiz|s|t', 0],
+    ['quiz|c|k2', 4],
+    ['quiz|s|c', 4]
+  ])
+    assert.strictEqual(C.fmtOf(m, n), A.fmtOf(m, n), m + ' ' + n);
+});
+
 test('prep: sessions, exposures, the previous answer on the genus, an Again after a miss', () => {
   const M = 6e4,
     r = (t, g, a, ok, m = 'quiz', ch = 'A B C D') => ['p1', t, g, a, ok, m, 'f1', 0.7, 0, 0, ch, 0, 5, 0];
