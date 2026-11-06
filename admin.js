@@ -7783,6 +7783,7 @@ const SOPEN = new Set();
 // it; its player's link opens the Journey as before. An unfolded session's panel is as wide as the visible part of the
 // table's scroll box (.adm-sess, --sw), never past it.
 function bindSess() {
+  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf))); // a session's photos
   const rsc = $v.querySelector('.adm-recent .adm-tscroll');
   if (rsc) rsc.style.setProperty('--sw', rsc.clientWidth + 'px');
   // Recent sessions: a tap (or Enter / Space) on a session unfolds its summary, again folds it; its player's link opens
@@ -7805,7 +7806,8 @@ function bindSess() {
     };
   });
 }
-// o.own: one player's sessions on their Journey (R their rows): the last RECENT.OWN, no player column, unfolding the same.
+// o.own: one player's sessions on their Journey (R their rows in time order, o.user the player, an archived record or a
+// device's included): the last RECENT.OWN, no player column, unfolding the same.
 function recentSessions(R, o = {}) {
   const NM = Object.create(null);
   ((USERS && USERS.users) || []).forEach(u => u.id && (NM[u.id] = u));
@@ -7841,7 +7843,7 @@ function recentSessions(R, o = {}) {
               s.L.length
             )}</td><td>${dur(s)}</td><td>${clock(s.L[0][1])}</td><td>${modes(s)}</td><td>${open ? '▾' : '▸'}</td></tr>${
               open
-                ? `<tr class="adm-udet" data-sdet><td colspan="${o.own ? 7 : 8}">${sessionSummary(s.id, s.L, NM[s.id] && NM[s.id].name)}</td></tr>`
+                ? `<tr class="adm-udet" data-sdet><td colspan="${o.own ? 7 : 8}">${o.own ? sessionSummary(s.id, s.L, o.user.anon ? '' : o.user.name, {user: o.user, all: R}) : sessionSummary(s.id, s.L, NM[s.id] && NM[s.id].name)}</td></tr>`
                 : ''
             }`;
           }

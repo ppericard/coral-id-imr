@@ -638,7 +638,7 @@ function renderJourney(name, anonId = '') {
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
       ...(ZM.length ? [['Enlarged', pct(ZM.filter(Boolean).length, ZM.length)]] : [])
     ]) +
-    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${own ? sheetsSec : ''}${recentSessions(R, {own: 1})}${daysSec}</div>`;
+    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${own ? sheetsSec : ''}${recentSessions(R, {own: 1, user: anonId ? {id: anonId, anon: 1} : u})}${daysSec}</div>`;
   bindJReload();
   bindSess(); // the sessions unfold under their row (admin.js)
   pagesFresh(here); // read again once stale (admin.js)
@@ -829,14 +829,15 @@ function sessProg(id, all, L, S, PG) {
 }
 // The summary drawn under a session's row (admin.js recentSessions): id the player's anonymous id, L the session's
 // answers, name the player's name when signed in (their saved copy: cards, offer, achievements, learned genera).
-function sessionSummary(id, L, name) {
+// o (a Journey's sessions): user, the player (an archived record too), all, their rows in time order.
+function sessionSummary(id, L, name, o = {}) {
   // The subject on screen's answers, saved copy and replay (admin.js unitsOf, savedFor, progOf); before its units are read
   // (fishAdmin), its answers only.
   const full = !!unitsOf(ASUBJ),
-    all = sessRows(id),
+    all = o.all || sessRows(id),
     B = all.filter(r => r[1] < L[0][1]),
     S = name && full ? savedFor(name, ASUBJ) : {P: {}},
-    PG = full ? progOf(name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}, true, ASUBJ) : null,
+    PG = full ? progOf(o.user || (name ? (USERS.users || []).find(x => x.name === name) : {id, anon: 1}), true, ASUBJ) : null,
     RP = full && replayOn(),
     sp = RP && S && PG ? sessProg(id, all, L, S, PG) : null,
     PS = photoStats() || {},
