@@ -13,8 +13,8 @@ switch (rule U12: the Corals | Fish row on Home and its twin, the subject chip i
 has two subjects or more (`app.js` `subjMine`), so only to the admin until fish opens; never in ⚙; anyone else opens on
 the corals whatever was saved (`app.js` `subjOpen`, `subjAt`), their saved choice and fish progress kept. **Except the
 players of its group**, whom the admin adds on the subject's Players page (not one site-wide switch; sheet v48, details
-in ARCHITECTURE.md "The beta group"). The leaderboard and achievements stay coral for now; fish answers are not logged
-to the sheet yet. Fish winks (surprise cards, never counted) come for every fish player, circle 1 included.
+in ARCHITECTURE.md "The beta group"). The leaderboard and achievements stay coral for now; fish answers are logged to the
+sheet (v60) but feed no statistic yet. Fish winks (surprise cards, never counted) come for every fish player, circle 1 included.
 *Why:* fish run cleanly on the corals' engine; a subject in beta is not ready for every player.
 *Source:* Pierre, 2026-11-03 (engine, winks), 2026-11-04 (beta, its group).
 

@@ -280,7 +280,7 @@ Gaps before species questions ship:
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
-- Fish answers are not logged to the sheet yet (no subject column): no pooled photo difficulty or confusion scores for fish until they are.
+- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
   Pierre, 2026-11-04: they are logged **from the start**, as soon as curated photos enter the game.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
@@ -306,7 +306,7 @@ Decided from the admin pooling study:
   kept, and **always sourced** (rule C2).
 - **How cues are taught** (Pierre, 2026-11-04): cues about a family itself, and cues taught **by comparison** with another family or
   species (learning by contrast). The cue content comes from public, sourced references.
-- **Fish answers logged to the sheet from the start**, as soon as curated photos enter the game.
+- **Fish answers logged to the sheet from the very first second** (Pierre, 2026-11-06; sheet v60), at whatever rank was asked, with the species shown.
 
 ## Juveniles and colour phases
 

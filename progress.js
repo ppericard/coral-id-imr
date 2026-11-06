@@ -1124,13 +1124,13 @@ function rvNotice() {
 // device); leaving the page closes it unseen and it comes back.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
-  if (!SUBJ.log) return; // the apology is about the corals' opening: it waits until the player is on them
+  if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
   if (!F || typeof F !== 'object') {
     let log = [];
     try {
-      log = [...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])];
+      log = subjEntries([...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])], SUBJ.id); // its own answers only
     } catch (e) {}
     F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
     store.set(SORRYK.FIRST, F);

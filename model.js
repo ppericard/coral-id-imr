@@ -812,14 +812,17 @@ function stability(n) {
     x = s.mx ? 1 : sig(ability(n) - genusDiff(n));
   return FSRS.S0 * (FSRS.S1 / FSRS.S0) ** x * FSRS.G ** Math.max(0, (s.dd || 1) - 1);
 }
-// The player's last answer (P[LEVEL].at, synced); progress saved before it existed: the last answer of the log kept on
-// the device, if any.
+// The player's last answer (P[LEVEL].at, synced); progress saved before it existed: the last answer of this subject in
+// the log kept on the device, if any (core.js subjEntries: every subject's answers are logged).
 const lastAt = () => {
   const a = (P[LEVEL] || {}).at;
   if (a) return a;
   let L = [];
   try {
-    L = (typeof SYNC !== 'undefined' && SYNC && SYNC.log) || (typeof LOG0 !== 'undefined' && store.get(LOG0, [])) || [];
+    L = subjEntries(
+      (typeof SYNC !== 'undefined' && SYNC && SYNC.log) || (typeof LOG0 !== 'undefined' && store.get(LOG0, [])) || [],
+      SUBJ.id
+    );
   } catch (e) {}
   return (L.length && Date.parse(L[L.length - 1].t)) || 0;
 };
@@ -940,9 +943,9 @@ const misses = h => [...h].filter(x => x === '0').length;
 // answered starts from the global level shrunk towards the first-launch answer's level (startV().p, core.js
 // playerStart; each subject's own answer).
 // The prior only once the sync script replays it (core.js START_SHEET; rule D4, Codex review #428): before, 0, the
-// default player's, so an adopted replay never takes back what the game did live. A subject whose answers are not logged
-// (SUBJECTS log: fish) has no replay to wait for: its prior applies at once.
-const startP = () => (!startS().log || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
+// default player's, so an adopted replay never takes back what the game did live. A subject the sheet does not replay
+// (SUBJECTS replay: fish) has no replay to wait for: its prior applies at once.
+const startP = () => (!startS().replay || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
 const ability = n => abilityOf(P, n, startP());
 const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it

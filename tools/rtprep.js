@@ -26,7 +26,7 @@ if (!SRC || !OUT) {
   process.exit(1);
 }
 const raw = JSON.parse(fs.readFileSync(SRC, 'utf8'));
-const vals = (raw.values || raw).filter(r => r && r[0] && r[0] !== 'Name');
+const vals = C.subjRows((raw.values || raw).filter(r => r && r[0] && r[0] !== 'Name')); // the corals' (sheet v60 Subject)
 const ms = s => Date.parse(String(s).trim().replace(' ', 'T') + ':00+08:00');
 // core rows [name, ms, shown, answered, right, mode, photos, expected, ability, new photos, choices] + [seconds, enlarged];
 // the tab's order is not the time order (offline devices upload late): sorted by time, stable.
