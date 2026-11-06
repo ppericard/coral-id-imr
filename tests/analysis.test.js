@@ -126,6 +126,41 @@ test('glmm with a guess rate recovers its effects; fmtFit a real guess rate and 
   near(f.d, -0.5, 0.15, 'difficulty');
 });
 
+// The admin demo's made-up answers (admin-demo.js, analysis.js demoLog) changed from one load to the next in Chromium: a
+// random-comparator sort (sort(() => R() - 0.5)) calls its comparator a number of times that depends on the engine and on
+// whether the code is optimised yet, so every later seeded draw moved, and tests/admin.smoke.js failed now and then on
+// Health's "difficulty in words" (2026-11-06). shuffle draws exactly n - 1 numbers.
+test('shuffle: a permutation from exactly n - 1 draws; no seeded stream feeds a random-comparator sort', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    L = ['a', 'b', 'c', 'd', 'e'];
+  for (const x of [0, 0.37, 0.999]) {
+    let n = 0;
+    const o = A.shuffle(L, () => (n++, x));
+    assert.deepStrictEqual(o.slice().sort(), L, 'the same items');
+    assert.strictEqual(n, L.length - 1, 'n - 1 draws');
+  }
+  assert.deepStrictEqual(L, ['a', 'b', 'c', 'd', 'e'], 'the list itself is left as it was');
+  assert.deepStrictEqual(A.shuffle([], Math.random), []);
+  const a = A.shuffle(
+      L,
+      (
+        s => () =>
+          (s = (s * 16807) % 2147483647) / 2147483647
+      )(7)
+    ),
+    b = A.shuffle(
+      L,
+      (
+        s => () =>
+          (s = (s * 16807) % 2147483647) / 2147483647
+      )(7)
+    );
+  assert.deepStrictEqual(a, b, 'the same seed, the same order');
+  for (const f of ['analysis.js', 'admin-demo.js'])
+    assert.ok(!/\.sort\(\(\)\s*=>/.test(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')), `${f}: a random-comparator sort`);
+});
+
 test('synthetic log: every analysis runs and gives back the generator’s effects', () => {
   const V = ['wide', 'medium', 'macro'],
     S = ['imr', 'own', 'inat'],
@@ -150,7 +185,7 @@ test('synthetic log: every analysis runs and gives back the generator’s effect
     }
   }
   const pl = Array.from({length: 12}, (_, i) => ['P' + i, ((i % 5) - 2) * 0.4, 600, 0.05 + 0.03 * (i % 6)]);
-  const rows = A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 11});
+  const rows = A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 1});
   const r = A.runAll(rows, meta, {B: 0});
   const T = A.TRUTH,
     e = (a, k) => r.A[a].effects.find(x => x.k === k);
@@ -1297,7 +1332,7 @@ const mixLog = (w, seed) => {
         wr = ch.slice(1).map(x => (fam(x) === fam(g) ? w : 1));
       let r = R() * wr.reduce((s, x) => s + x, 0);
       const ans = right ? g : ch.slice(1).find((x, k) => (r -= wr[k]) < 0) || ch[3];
-      rows.push(['p' + p, (t += 60e3), g, ans, right ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, ch.sort(() => R() - 0.5).join(' '), 0, 5, 0]);
+      rows.push(['p' + p, (t += 60e3), g, ans, right ? 1 : 0, 'quiz', 'f' + g, 0.7, 0, 0, A.shuffle(ch, R).join(' '), 0, 5, 0]);
     }
   return rows;
 };

@@ -67,7 +67,7 @@
       users = {},
       // The made-up sessions end 2 hours ago at the latest; then a few recent ones, relative to now, for Players' Last
       // column and Activity's Recent sessions (Pierre, 2026-11-03): Carla playing now (her last answer 1 minute ago,
-      // quiz, duels and typed answers), a device not signed in that stopped 12 minutes ago.
+      // quiz, duels and typed answers), a device not signed in that stopped 12 minutes ago, mara demo2 2 hours ago.
       END = NOW - 2 * 3600e3;
     let k = 0;
     PLAYERS.forEach(([name, skill, n, d0, d1]) => {
@@ -121,12 +121,21 @@
           Math.round(100 * pe) / 100,
           st.th,
           0,
-          ch.sort(() => rnd() - 0.5).join(' '),
+          ANALYSIS.shuffle(ch, rnd).join(' '), // never sort(() => rnd() - 0.5): see analysis.js shuffle
           // Seconds to answer and a photo enlarged (sheet v23), from the answer's number (the random draws stay the same).
           Math.round((3 + ((k * 37) % 120) / 10 + (right ? 0 : 5)) * 10) / 10,
           k % 7 ? 0 : 1
         ]);
       }
+      // A signed-in player besides Carla among Activity's Recent sessions: mara demo2's last 10 answers end 2 hours ago (the
+      // devices not signed in answer every few hours, so a last session left a day back fell out of the 10 newest).
+      if (name === 'mara demo2')
+        live(
+          rows.filter(r => r[0] === name),
+          10,
+          END,
+          0
+        );
       // Carla is playing now: her last 24 answers moved to the last 15 minutes, two of them typed (quiz|t, no choices).
       if (name === 'Carla Demo') {
         live(
@@ -437,19 +446,29 @@
         ),
         pool = {};
       rows.filter(r => /^~anon demo\d$/.test(r[0]) && !live0.has(r)).forEach(r => (pool[r[0]] = pool[r[0]] || []).push(r));
-      const tally = f => photoAnswers(rows.filter(r => r[6].split(' ').includes(f)))[f] || {n: 0, ok: 0, by: {}};
+      const tally = f => photoAnswers(rows.filter(r => r[6].split(' ').includes(f)))[f] || {n: 0, ok: 0, by: {}},
+        // Answers of the signed-in players (the photo ratings' raters): a question whose photo has PH_MIN of them is
+        // planted first, so Health's tile shows its difficulty in words (tests/admin.smoke.js "difficulty in words").
+        signed = new Set(PLAYERS.map(p => p[0])),
+        rated = F => Math.max(...F.map(f => rows.filter(r => signed.has(r[0]) && r[6].split(' ').includes(f)).length)),
+        // the answers already on its photos: the more players answered them, the more donor answers the rule needs
+        cost = F => Math.max(...F.map(f => tally(f).n));
       rows
         .filter(r => r[0] === 'Carla Demo')
         .sort((a, b) => a[1] - b[1])
         .slice(-24)
         .filter(r => !r[4])
-        .forEach(miss => {
-          const F = miss[6].split(' ').filter(Boolean);
+        .map(miss => ({miss, F: miss[6].split(' ').filter(Boolean)}))
+        .map(q => ({...q, ok: rated(q.F) >= HEALTH.PH_MIN, c: cost(q.F)}))
+        .sort((a, b) => b.ok - a.ok || a.c - b.c || a.miss[1] - b.miss[1])
+        .forEach(({miss, F}) => {
           // One donor answer at a time, from the device that helps most on a photo still short of the rule: one that
-          // never answered it (a new player who misses it), then one that does not miss it yet, then any.
+          // never answered it (a new player who misses it), then one that does not miss it yet, then any. A question
+          // the few donors cannot bring under the rule gives its donor answers back, so they go to the next one.
+          const taken = [];
           for (let guard = 0; guard < 12; guard++) {
             const f = F.find(x => !everyoneMisses(tally(x)));
-            if (!f) break;
+            if (!f) return;
             const by = tally(f).by,
               rank = d => (!by[d] ? 0 : by[d][1] / by[d][0] >= HEALTH.PL_LOW ? 1 : 2),
               d = Object.keys(pool)
@@ -457,11 +476,17 @@
                 .sort((a, b) => rank(a) - rank(b) || pool[b].length - pool[a].length)[0];
             if (!d) break;
             const r = pool[d].shift();
+            taken.push([d, r, r.slice()]);
             r[2] = miss[2];
             r[3] = miss[3] && miss[3] !== miss[2] ? miss[3] : G.find(x => x !== miss[2]);
             r[4] = 0;
             r[6] = miss[6];
           }
+          if (F.every(x => everyoneMisses(tally(x)))) return;
+          taken.reverse().forEach(([d, r, was]) => {
+            was.forEach((v, i) => (r[i] = v));
+            pool[d].unshift(r);
+          });
         });
     }
     ANALYSIS.DEMO_PLAYERS.forEach(([name]) => {
@@ -540,19 +565,15 @@
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
     // Dio's is from the former model (BKT: L and the last results, no pg) with a genus learned then, which today's rules
-    // take back (core.js memRecalc, replayedOf); Ben's was saved 20 answers ago. The others match the replay (no ↻ mark).
+    // take back (core.js memRecalc, replayedOf); Ben's was saved 20 answers ago, or more until its progress % reads
+    // otherwise than the replay's (Players' ↻ saved mark; 20 answers can round to the same %). The others match the
+    // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      cut = Object.fromEntries(Object.values(users).map(u => [aid(u.name), Infinity]));
-    const benRows = A.filter(r => r[0] === aid('Ben Demo')).sort((a, b) => a[1] - b[1]);
-    cut[aid('Ben Demo')] = benRows[benRows.length - 21][1];
-    const rep = replayProgress(
-      A.filter(r => !(r[1] > cut[r[0]])),
-      {gen, mem: st.mem, conf: st.conf}
-    );
-    Object.values(users).forEach(u => {
+      opt = {gen, mem: st.mem, conf: st.conf};
+    const rep = replayProgress(A, opt);
+    const savedOf = (u, R) => {
       const old = JSON.parse(u.data['reefid-sync-coral-progress']),
-        R = (rep[aid(u.name)] || {P: {}}).P,
         P = {};
       Object.entries(R).forEach(([g, r]) => {
         if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
@@ -569,6 +590,28 @@
       if (u.name === 'Dio Demo') {
         const best = Object.keys(P).sort((a, b) => P[b].ok - P[a].ok)[0];
         if (best) P[best].mx = 1;
+      }
+      return P;
+    };
+    Object.values(users).forEach(u => {
+      const id = aid(u.name);
+      let P = savedOf(u, (rep[id] || {P: {}}).P);
+      if (u.name === 'Ben Demo') {
+        // as Players reads it (userList rp): the full replay against the saved copy
+        const mine = A.filter(r => r[0] === id).sort((a, b) => a[1] - b[1]),
+          start = JSON.parse(u.data['reefid-sync-coral-start'] || 'null'),
+          full = replayProgress(mine, {...opt, starts: start ? {[id]: start} : {}})[id];
+        for (let back = 20; back < mine.length; back += 10) {
+          const cut = mine[mine.length - 1 - back][1];
+          P = savedOf(
+            u,
+            replayProgress(
+              mine.filter(r => r[1] <= cut),
+              opt
+            )[id].P
+          );
+          if (pctOf(replayedOf(full, P), S.slate) !== pctOf(P, S.slate)) break;
+        }
       }
       u.data['reefid-sync-coral-progress'] = JSON.stringify(P);
       u.learned = list.filter(g => P[g] && P[g].mx).length;
