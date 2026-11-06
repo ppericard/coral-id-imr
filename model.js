@@ -1,7 +1,7 @@
 // IMR Reef ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). Which genus comes next (weighted, the progressive opening OPEN, the easiest first), which photos (photoSet,
 // PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT and genus offsets PGD), the player's ability per genus (Elo,
-// ELO, abilityStep), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
+// ELO, ability; each answer scored by core.js scoreAnswer), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
 // pooledConf). docs/LEARNING.md explains every rule. A classic script like app.js, loaded right after progress.js
 // (index.html, in order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
 // A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
@@ -10,7 +10,8 @@
 // question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
 // the target for this player on this genus and this question's format (aimed so the question is right with the chance
 // PICKD.P whatever its format: the difficulty controller, below). On top:
-// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos the player
+// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first for the corals,
+// SUBJECTS tiers; never for fish, Pierre 2026-11-06), photos the player
 // has already been shown weigh less the better they are remembered (photo memory, PMEM: x e^offset), the colony of the
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.
@@ -272,9 +273,9 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 3, WIN: 15};
+const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
-// OPEN.DATA, up to 1. Without them the genus difficulty is only the declared look-alikes (until 2026-11-03 the photo
+// OPEN.DATA, up to 1. Without them every genus offset is 0 (until 2026-11-06 the declared look-alikes, until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
 // easy): the order then stays random until the answers can say (2026-11-02). A judged photo (p.e, the fish: judging/FISH.md,
 // 2026-11-04) counts PDIFF.W answers, the weight its prior has in photoDiff, so the fish entries open easiest first from
@@ -286,23 +287,21 @@ const easyTrust = () =>
       PDIFF.W * slateGenera().reduce((t, n) => t + VIEWS.reduce((u, [v]) => u + gamePics(n, v).filter(p => p.e).length, 0), 0)) /
       OPEN.DATA
   );
-// Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: the
-// players' answers, sheet v17; from sheet v31 a photo with few or no answers leans on its genus's offset, learned from
-// every answer on the genus, so the genus difficulty is data-driven from the first answers on it) plus how much it gets
-// confused (its two highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo
-// stats change.
+// Difficulty of a genus (Pierre, 2026-11-06, Q133; docs/reviews/2026-11-06-engine-coherence-review.md F3; docs/LEARNING.md
+// "One genus difficulty"): the sheet's genus offset (PGD, sheet v31 ?stats=1 gd: the hierarchical photo Elo's estimate
+// of the part of a photo's difficulty its genus shares, learned from every trusted answer on the genus), the one
+// estimate everywhere (drawW, shaky, stability, openPick). Adding or curating out a photo never moves it: the mean of the
+// game photos' ratings did (a new photo, rated at the offset, pulled the mean towards it), and the confusion term counted
+// the misses a second time (the photo ratings already hold them). A unit with judged photos (p.e, the fish while their
+// answers are not logged; Pierre, 2026-11-04) adds the mean of their judged-ease priors (photoDiff's), so the fish
+// entries open easiest first. 0 with an older sheet (before v31) or offline before its first reply. Cleared when the
+// photo stats change.
 let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
-  const ps = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))],
-    pd = ps.length ? ps.reduce((t, p) => t + photoDiff(n, p), 0) / ps.length : 0,
-    cs = slateGenera()
-      .filter(x => x !== n)
-      .map(x => pooledConf(n, x))
-      .sort((a, b) => b - a)
-      .slice(0, 2),
-    cf = cs.length ? cs.reduce((a, x) => a + x, 0) / cs.length : 0;
-  return (GDIFF[n] = Math.round((pd + OPEN.CONF * Math.max(0, cf - CONF.TRAP)) * 100) / 100);
+  const je = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))].filter(p => p.e),
+    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * PDIFF.EASE, 0) / je.length : 0;
+  return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
 };
 // Shaky: met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
 // genusDiff) still under OPEN.P. The genus ability allows for how hard the questions were (a miss on a hard one moves
@@ -814,14 +813,17 @@ function stability(n) {
     x = s.mx ? 1 : sig(ability(n) - genusDiff(n));
   return FSRS.S0 * (FSRS.S1 / FSRS.S0) ** x * FSRS.G ** Math.max(0, (s.dd || 1) - 1);
 }
-// The player's last answer (P[LEVEL].at, synced); progress saved before it existed: the last answer of the log kept on
-// the device, if any.
+// The player's last answer (P[LEVEL].at, synced); progress saved before it existed: the last answer of this subject in
+// the log kept on the device, if any (core.js subjEntries: every subject's answers are logged).
 const lastAt = () => {
   const a = (P[LEVEL] || {}).at;
   if (a) return a;
   let L = [];
   try {
-    L = (typeof SYNC !== 'undefined' && SYNC && SYNC.log) || (typeof LOG0 !== 'undefined' && store.get(LOG0, [])) || [];
+    L = subjEntries(
+      (typeof SYNC !== 'undefined' && SYNC && SYNC.log) || (typeof LOG0 !== 'undefined' && store.get(LOG0, [])) || [],
+      SUBJ.id
+    );
   } catch (e) {}
   return (L.length && Date.parse(L[L.length - 1].t)) || 0;
 };
@@ -938,15 +940,15 @@ const misses = h => [...h].filter(x => x === '0').length;
 // The ability: core.js ELO, abilityOf (a genus already answered: its own estimate s.th plus the global level's move since
 // its last own step, levelMove; the global + concept skill of Pelánek et al. 2017, as a lazy update; 2026-11-03,
 // docs/LEARNING.md "Global level and genus") and eloStep (the level's step without the kmin floor, kept to 4 decimals;
-// the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay. A genus never
+// the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay: quiz.js answer steps
+// both through core.js scoreAnswer, the replay's own scorer. A genus never
 // answered starts from the global level shrunk towards the first-launch answer's level (startV().p, core.js
 // playerStart; each subject's own answer).
 // The prior only once the sync script replays it (core.js START_SHEET; rule D4, Codex review #428): before, 0, the
-// default player's, so an adopted replay never takes back what the game did live. A subject whose answers are not logged
-// (SUBJECTS log: fish) has no replay to wait for: its prior applies at once.
-const startP = () => (!startS().log || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
+// default player's, so an adopted replay never takes back what the game did live. A subject the sheet does not replay
+// (SUBJECTS replay: fish) has no replay to wait for: its prior applies at once.
+const startP = () => (!startS().replay || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
 const ability = n => abilityOf(P, n, startP());
-const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
 // (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule D4); before, every
 // step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
@@ -1086,17 +1088,12 @@ function easyFirst(n, L) {
 // pgMemW, 2026-11-03) so the full replay of the answer log (core.js replayProgress) runs the same rules as the app.
 // A typed answer (k infinite, TYPED) counts in full: every genus, its look-alikes included, was a possible answer
 // (core.js pgRightW).
+// pgLook: a genus the player gets confused with among the choices (the look-alike test, core.js scoreAnswer's look).
+const pgLook = (t, chs) => chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
 function pgWeight(t, chs, k) {
-  return pgRightW(
-    k,
-    chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)))
-  );
+  return pgRightW(k, pgLook(t, chs));
 }
 const knownP = n => pgOf(P[n]);
-function pgObs(n, s, good, w) {
-  s.pg = pgStep(knownP(n), good, w);
-  delete s.L; // BKT's knowledge, before s.pg
-}
 // Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Its count (2/5) is shown nowhere:
 // the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is at 95% (s.pg at PROG.M),
 // EXAM.n questions on it are slipped into the photo quiz, unannounced (a test on one genus alone would give the answer

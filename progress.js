@@ -7,9 +7,10 @@
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 // The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
 // with the ring, at the top of the page, not under the slate tiles): the overall ring with its %, then the name, place and
-// Elo on the leaderboard (filled once it loads; the Elo from this device until then; nothing before the Elo is due and
-// while not on the board: it comes by itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the
-// last three. The rank links to the leaderboard, the achievements to their page.
+// Elo (the rank filled once the leaderboard loads; nothing before the Elo is due and while not on the board: it comes by
+// itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the last three. The rank links to the
+// leaderboard, the achievements to their page. One level everywhere (Pierre, 2026-11-06, Q134): the Elo is always this
+// device's own level (P[LEVEL], eloLine), never the board's copy of it, so it does not change when the board arrives.
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH_L()
@@ -19,9 +20,9 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
+    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
       SUBJ.ach
-        ? `<a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
+        ? `<a href="${esc(hr('ach'))}"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
             .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
             .slice(0, 3)
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
@@ -42,8 +43,8 @@ const shyName = n => {
 function quizBoard() {
   const list = slateGenera(),
     // A unit's page: its genus sheet, or the subject's list when it has no sheets (fish); a pair's comparison likewise.
-    href = n => (SUBJ.pages.includes('sheet') ? `#g-${esc(n)}` : '#genera'),
-    hrefPair = (a, b) => (SUBJ.pages.includes('cmp') ? `#cmp-${esc(a)}|${esc(b)}` : '#genera');
+    href = n => esc(hr(SUBJ.pages.includes('sheet') ? `g-${n}` : 'genera')),
+    hrefPair = (a, b) => esc(hr(SUBJ.pages.includes('cmp') ? `cmp-${a}|${b}` : 'genera'));
   // Bonus genera (off the slate), once on (⚙ or the offer card): tiles after the slate genera (Pierre, 2026-11-01).
   // They stay out of the ring and the counts.
   const BO = bonusList();
@@ -119,12 +120,12 @@ function quizBoard() {
         R = num.filter(n => GX(n).n > 20),
         S = list.filter(n => !GX(n).n);
       const ps = n =>
-        `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
+        `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
       const bx = BO.map(
         n =>
-          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
+          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
       // The left column padded to the row count, so 21 always starts the right column (Codex review #371: with
       // Millepora the right column outgrew the left and 21 slipped to the bottom of the left one).
@@ -141,13 +142,13 @@ function quizBoard() {
               ? ['F', 'IMR benthic slate, not a hard coral']
               : ['★', 'Not covered in the lecture'];
         return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${t}">${mk}</span><span class="pgt">${t}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
       })
       .join('')}
       ${
         BO.length
           ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
-        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
+        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
           : ''
       }</div>`
   };
@@ -160,7 +161,7 @@ function quizBoard() {
     UNITS[SUBJ.id].progHelp
       ? UNITS[SUBJ.id].progHelp()
       : `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
-  <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
+  <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
@@ -204,12 +205,13 @@ function quizBoard() {
       appToast(`All ${slateGenera().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
-  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
+  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
+  // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
   const rank = B => {
     const a = document.getElementById('pbrank'),
       i = B && B.rows ? boardMe(B.rows) : -1;
     if (!a || i < 0) return;
-    const elo = B.rows[i][2] == null ? eloLine(P[LEVEL]) : `Elo ${eloScore(B.rows[i][2])}`;
+    const elo = eloLine(P[LEVEL]);
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
     a.hidden = false;
   };
@@ -341,7 +343,9 @@ function bindProgFile() {
 }
 
 // Public leaderboard (Pierre, 2026-11-01): every signed-in player by progress %, then Elo (their ability from every
-// answer, so players at 100% keep competing). 🏆 in the header opens it from any page; My progress shows the player's
+// answer, so players at 100% keep competing). The Elo is the app's own level, P[LEVEL].th, the one My progress shows
+// (Pierre, 2026-11-06, Q134): the sheet reads it from each player's saved progress (Code.gs board_, v63; older scripts
+// sent their own chain, stats_ R), and the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it from any page; My progress shows the player's
 // rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
 // sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
 const BOARD = 'reefid-sync-board'; // a reefid-sync key: it travels with the progress, so the choice holds on every device
@@ -413,7 +417,12 @@ function viewBoard() {
 function paintBoard(B) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
-  const me = boardMe(B.rows);
+  const me = boardMe(B.rows),
+    // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
+    // device has none to show (Q134), or when the subject on screen is not the board's (SUBJ.board: P is another
+    // subject's progress). Other rows: the level the sheet read from their saved progress.
+    mine = me >= 0 && SUBJ.board ? eloLine(P[LEVEL]) : '',
+    eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
     ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
@@ -430,7 +439,7 @@ function paintBoard(B) {
       ? `<ol class="blist">${B.rows
           .map(
             (r, i) =>
-              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
           )
           .join('')}</ol>`
       : '<p class="note">Nobody yet: be the first.</p>');
@@ -615,7 +624,7 @@ const ACHNEW = 'reefid-ach-new',
   achNew = () => achUnseen().length;
 function achDot() {
   const bg = document.getElementById('boardgo'),
-    tab = document.querySelector('.btabs a[href="#ach"]'); // the Achievements tab of the leaderboard page (boardTabs)
+    tab = document.querySelector(`.btabs a[href="${hr('ach')}"]`); // the Achievements tab of the leaderboard page (boardTabs)
   if (bg) bg.classList.toggle('hasnew', achNew() > 0);
   if (tab) tab.classList.toggle('hasnew', achNew() > 0);
 }
@@ -800,7 +809,7 @@ function achNext() {
   el.setAttribute('role', 'status');
   // The cards' look (app.js cardShow, docs/DESIGN.md "Cards"), as a toast: the achievement's own emoji in a small medallion
   // with its tier at the edge, on the pale tint of the kind's hue.
-  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  el.innerHTML = `<a href="${esc(hr('ach'))}" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
   const mo = new MutationObserver(() => {
@@ -834,8 +843,8 @@ function achRecap(ids) {
       .join(' ')
   });
 }
-// #ach: every achievement, earned ones first with their date, the others greyed with what earns them.
-// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#board) and Achievements (#ach).
+// #leaderboard/achievements: every achievement, earned ones first with their date, the others greyed with what earns them.
+// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#leaderboard) and Achievements (#leaderboard/achievements).
 const boardTabs = cur =>
   `<nav class="btabs" aria-label="Leaderboard and achievements">${[
     ['board', '🏆 Leaderboard'],
@@ -845,7 +854,7 @@ const boardTabs = cur =>
     // (Pierre, 2026-11-02: on the leaderboard, nothing said where the new ones were).
     .map(
       ([h, t]) =>
-        `<a href="#${h}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
+        `<a href="${esc(hr(h))}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
     )
     .join('')}</nav>`;
 // How many signed-in players hold each achievement (sheet v15, GET ?achs=1: {n, counts}), 5 minutes in memory.
@@ -921,7 +930,7 @@ function boardNotice() {
   if (!SYNC || store.get('reefid-board-told', 0)) return;
   store.set('reefid-board-told', 1);
   const t = appToast(
-    '🏆 New: a <a href="#board">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+    '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
     15000
   );
   t.querySelector('a').onclick = () => t.remove();
@@ -991,7 +1000,7 @@ function recalcNotice() {
     esc: 1,
     enter: 1,
     // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
-    // player opening straight at #quiz had it closed by the first route, before ever seeing it).
+    // player opening straight at #practice/quiz had it closed by the first route, before ever seeing it).
     onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
   });
 }
@@ -1124,13 +1133,13 @@ function rvNotice() {
 // device); leaving the page closes it unseen and it comes back.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
-  if (!SUBJ.log) return; // the apology is about the corals' opening: it waits until the player is on them
+  if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
   if (!F || typeof F !== 'object') {
     let log = [];
     try {
-      log = [...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])];
+      log = subjEntries([...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])], SUBJ.id); // its own answers only
     } catch (e) {}
     F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
     store.set(SORRYK.FIRST, F);

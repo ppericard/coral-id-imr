@@ -174,11 +174,11 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       if (mode === 'stay') await p.waitForTimeout(30000);
       let t = Date.now();
       if (mode === 'progress') {
-        await p.evaluate(() => (location.hash = 'progress'));
+        await p.evaluate(() => (location.hash = routeOut('progress')));
         await p.waitForFunction(() => document.querySelector('#view .pring'), null, {timeout: 300000, polling: 100});
         out.push(`My progress +${S(Date.now() - t)} after the click`);
       } else {
-        await p.evaluate(() => (location.hash = 'quiz'));
+        await p.evaluate(() => (location.hash = routeOut('quiz')));
         const ok = await shown();
         out.push(`${mode === 'stay' ? 'after 30 s on Home, ' : ''}first quiz photo +${ok ? S(Date.now() - t) : 'never'} after the click`);
         if (mode === 'quiz') {
@@ -222,6 +222,7 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
   await b.close();
   h2.close();
 }
+// Page keys, opened by their addresses (core.js routeOut, the URL refonte).
 const PAGES = ['genera', 'g-Acropora', 'quiz', 'progress', 'board', 'ach', 'idkey', 'lab', 'home'];
 const s1 = ms => (ms / 1000).toFixed(1) + ' s';
 const ms = x => Math.round(x) + ' ms';
@@ -300,7 +301,7 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     await ready().catch(() => out.push('  cold start: never ready'));
     const tHome = Date.now() - t;
     t = Date.now();
-    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.evaluate(() => (location.hash = routeOut('quiz')));
     const ok1 = await photoShown();
     out.push(`  cold start: Home ${s1(tHome)}, first quiz photo +${ok1 ? s1(Date.now() - t) : 'never (60 s)'}, ${Math.round(bytes / 1024)} KB`);
     out.push(
@@ -344,7 +345,7 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
           new Promise(ok => {
             const t0 = performance.now();
             addEventListener('hashchange', () => requestAnimationFrame(() => setTimeout(() => ok(performance.now() - t0), 0)), {once: true});
-            location.hash = h;
+            location.hash = routeOut(h); // the page key's address (core.js routeOut: '' for Home)
           }),
         h
       );
@@ -372,7 +373,7 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     await ready().catch(() => {});
     const tW = Date.now() - t;
     t = Date.now();
-    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.evaluate(() => (location.hash = routeOut('quiz')));
     const ok2 = await photoShown();
     out.push(`  warm start: Home ${s1(tW)}, quiz photo +${ok2 ? s1(Date.now() - t) : 'never'}, ${Math.round(bytes / 1024)} KB`);
     out.push(`  main thread blocked (long tasks): ${s1(await p.evaluate(() => window.__lt))}`);

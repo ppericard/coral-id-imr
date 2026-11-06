@@ -30,13 +30,13 @@ const gameHelp = cur =>
   UNITS[SUBJ.id].help
     ? UNITS[SUBJ.id].help(cur)
     : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder book, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
   ${cur === CUSTOM_H ? `<p class="lede"><b>Custom quiz</b>: only the genera you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other genera only when you picked fewer than 4. A genus you have not met yet comes with its card. The rest works as in the Quiz, and every answer counts the same, except the mastery exam: its questions only come in the Quiz, so a genus that reaches 95% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.</p>` : ''}
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="#progress">My progress</a>.</p>${
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="${esc(hr('progress'))}">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
       ? ''
       : `
-  <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Small typos and old names are accepted; <b>I don't know</b> shows the answer (it counts as a miss). A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>`
+  <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer (it counts as a miss). A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>`
   }`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
 // Typed questions (model.js TYPED; Pierre, 2026-11-03): the player types the genus instead of picking one of the
@@ -66,47 +66,88 @@ const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
     <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${S.one}">
     <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="next sec" data-idk>I don't know</button></div>
     <p class="tymsg" aria-live="polite"></p></form>`;
-// Binds a typed form: done(m, text) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
+// Binds a typed form: done(m, text, sp) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
 // word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it.
 // After the answer the field is locked; after "I don't know" it is emptied (a word rejected earlier is no answer).
 // rk, one: the rank of the unit asked and its word ("genus" for a fish scientific genus): see typeMatch.
-function typeBind(form, done, S = SUBJ, rk, one = S.one) {
+// o.t, the unit asked: the spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"; core.js typeVerdict). A
+// name of it typed within the tolerance but not exactly is still a right answer (the genus was recognised: the grading
+// is unchanged), but the player first retypes it once: a warm nudge, "✏️ So close! Right genus: just fix the spelling
+// and try once more" (Pierre, 2026-11-06: the first plain line read like "a mean teacher saying no"), the field keeps
+// the text selected and the focus, and I don't know becomes Show me (skips the retype, never a miss). Then done(m, text, sp)
+// with the first reading and text, sp = {r: 1 when retyped exactly, else 0; text: the retype, '' when skipped}. Another
+// unit's name is never "close": a wrong answer as before. o.close(), when the retype is asked: the quiz stops its clock
+// there (the seconds logged are the recognition's, not the spelling's).
+function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
   const inp = form.querySelector('input'),
-    msg = form.querySelector('.tymsg');
-  let over = false;
-  const end = (m, text) => {
+    msg = form.querySelector('.tymsg'),
+    idk = form.querySelector('[data-idk]');
+  let over = false,
+    first = null; // {m, text}: the close reading, while the player retypes it
+  const end = (m, text, sp) => {
     over = true;
     msg.textContent = '';
+    form.classList.remove('retry');
     if (!m) inp.value = '';
     inp.disabled = true;
     form.querySelectorAll('button').forEach(b => (b.disabled = true));
     inp.blur(); // the phone's keyboard closes, so the feedback is in view
-    done(m, text);
+    done(m, text, sp);
   };
+  const read = text => (S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk)));
   form.onsubmit = e => {
     e.preventDefault();
     if (over) return;
     const text = inp.value.trim();
     if (!text) return inp.focus();
-    const m = S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk));
+    // The retype: one only, whatever it reads as (exact or not, the first reading is the answer).
+    if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t) === 'exact' ? 1 : 0, text});
+    const m = read(text);
     if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
-    else return end(m, text);
+    else if (o.t && typeVerdict(m, o.t) === 'close') {
+      first = {m, text};
+      form.classList.add('retry');
+      msg.innerHTML = `<span class="tymed" aria-hidden="true">✏️</span><span><b>So close!</b> Right ${esc(one)}: just fix the spelling and try once more.</span>`;
+      idk.textContent = 'Show me';
+      if (o.close) o.close(); // after the nudge is in: the quiz refits its stage around it
+      inp.select();
+    } else return end(m, text);
     inp.focus();
   };
-  form.querySelector('[data-idk]').onclick = () => !over && end(null, '');
+  idk.onclick = () => !over && (first ? end(first.m, first.text, {r: 0, text: ''}) : end(null, ''));
   // A hardware keyboard types at once; on a phone the keyboard opens only on a tap (no focus without one).
   if (!matchMedia('(pointer: coarse)').matches) inp.focus({preventScroll: true});
 }
-// How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact).
-const typeRead = (m, text) =>
-  !m || m.exact
+// The spelling of name with the letters text got wrong in bold (core.js typeDiff), escaped.
+const typeSpell = (text, name) => {
+  const at = new Set(typeDiff(text, name, UNITS[SUBJ.id].norm));
+  return [...String(name)]
+    .map((c, i) => (at.has(i) ? `<b>${esc(c)}</b>` : esc(c)))
+    .join('')
+    .replace(/<\/b><b>/g, ''); // neighbouring letters in one bold run
+};
+// How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact, or when
+// the spelling step was asked: typeStep says it in the verdict's own line).
+const typeRead = (m, text, sp) =>
+  !m || m.exact || sp
     ? ''
     : m.old
       ? m.alt
         ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
         : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
       : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
+// The spelling step's outcome (typeBind sp) for the verdict's one line (Pierre, 2026-11-06: one line, "✓ Yes, but not
+// quite: it's spelled Galaxea", in place of "Yes, it's Galaxea" plus a second line), null when none was asked or the
+// retype was exact (Pierre, 2026-11-06: no mistake left to point out, so the plain "✓ Yes, it's X"). Else {spelled}: the
+// name as it is spelled, the letters the last try got wrong marked (typeSpell, .tysp), in italics as uname (a fish entry
+// upright), and old: the name typed was an old one (alt: another name of a fish entry), so the line names the unit after it.
+const typeStep = (m, text, sp) => {
+  if (!sp || !m || m.exact || sp.r) return null;
+  const name = m.old || unameT(m.g),
+    s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
+  return {spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
+};
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
 // steps, core.js rtWeight, the enlarged mark is logged only): the clock starts when the question's first photo is in
@@ -202,9 +243,10 @@ function question(cur, target, choices, prompt, set, kq) {
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k, ph.length + R.length)).join(''));
     fitStage();
   };
+  let tm0 = null; // the clock read when a typed answer's retype was asked (typeBind o.close): the seconds of the recognition
   const go = c => {
     const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'),
-      tm = {rt: qclockRead(), zm: QCLOCK.zm};
+      tm = tm0 || {rt: qclockRead(), zm: QCLOCK.zm};
     showHint();
     reveal();
     answered = true;
@@ -219,13 +261,23 @@ function question(cur, target, choices, prompt, set, kq) {
   if (tf)
     typeBind(
       tf,
-      (m, text) => {
-        Object.assign(TYPEDQ || {}, {m, text});
+      (m, text, sp) => {
+        Object.assign(TYPEDQ || {}, {m, text, sp});
         go(m ? m.g : '');
       },
       SUBJ,
       rankOf(target),
-      GX(target).one || SUBJ.one
+      GX(target).one || SUBJ.one,
+      {
+        t: target,
+        // The spelling step (typeBind): the answer is given, only its spelling waits; the hint stays as it was. The nudge
+        // makes the answer column taller: the stage gives up that room so it stays on one screen (Codex review #616).
+        close: () => {
+          tm0 = {rt: qclockRead(), zm: QCLOCK.zm};
+          if (hb) hb.hidden = true;
+          fitStage();
+        }
+      }
     );
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
@@ -385,8 +437,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // a comeback question takes its genus's recall as it is now (Codex review #374).
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
-  // was played since, not progress an older sign-out left on the device.
-  if (SUBJ.log && !SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
+  // was played since, not progress an older sign-out left on the device. Only the replayed subject's (SUBJECTS replay) and
+  // its own first answer: a fish answer waiting in LOG0 is not a coral one.
+  if (SUBJ.replay && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
   // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
   // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
   // against it as a wrong pick does (Pierre's rule), and the mix-up is counted.
@@ -396,98 +449,63 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     s = st(target),
     chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
   const first = !((s.ok || 0) + (s.ko || 0)); // the genus's first answer (model.js startStep)
-  // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
-  // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
+  // The plausible choices k (what a right answer proves, the guess rate). A typed answer: no guess rate (TYPED.k,
+  // Infinity: the expected success has no 1/k floor).
   const nc = $v.querySelectorAll('[data-c]').length || 4,
     k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
-  // Known mix-ups (model.js confTerm): the question was that much harder for this player, on their record before this
-  // answer (scored before it updates anything, offers included).
-  const cf = confTerm(target, chs, k);
-  // Offers: every wrong choice shown beside the target, so the player's own mix-up rate per pair is known (confOf).
-  chs.forEach(x => {
-    if (x !== target) {
-      s.off = s.off || {};
-      s.off[x] = (s.off[x] || 0) + 1;
-    }
-  });
   // A wrong answer changes what comes next ("Again", traps, the exam): the questions chosen ahead are chosen again.
   if (!good) dropPlans();
   session.n++;
   session.h = [...session.h, good].slice(-10);
   pulseNote();
-  if (good) {
-    session.ok++;
-    s.ok++;
-    s.streak++;
-  } else {
-    s.ko++;
-    s.streak = 0;
-    if (c) {
-      s.conf = s.conf || {};
-      s.conf[c] = (s.conf[c] || 0) + 1;
-    }
-  }
-  const th0 = ability(target),
-    nw = ph.filter(p => !(s.ps || {})[p.f]).length;
-  const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
-  const ps = (s.ps = s.ps || {}),
-    d0 = solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
-  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
-  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
-  // the opening hold is the one the question really had.
-  const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
-    rT = warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
-    rC = warm && !good && GX(c) ? recallAt(c) : 1;
-  // Photo memory (model.js famOf, core.js MEM, sheet v26; Pierre, 2026-11-03): the photos seen when answering (a corallites
-  // hint left closed was not), as the player knew them before this answer, make the question that much easier (fam,
-  // logits, 0 when all are new). One expectation for everything this answer moves: the ability (a right answer on a known
-  // photo raises it less, a miss lowers it more), the global level, the logged e (the sheet's opening hold replays it),
-  // the opening hold and the comeback. Progress: a right answer counts only for what memory does not explain (pgMemW, 1
-  // on new photos); a miss weighs the chance the player really had (pgMissW), so on a known photo it counts in full.
+  if (good) session.ok++;
   // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
   mxRecalc(() => {
     memRecalc(s, PMEM);
     if (!good && GX(c)) memRecalc(st(c), PMEM);
   });
-  const seenPh = ph.filter(p => p !== unseen),
-    fam = famOf(target, seenPh),
-    dm = d0 + fam + cf;
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP()));
-  // The answer time (core.js rtWeight, model.js rtOn): a right answer faster than the player's usual moves the genus and
-  // the global level further, a slow one less; against their earlier timed answers (P[LEVEL].rt), the seconds logged.
-  const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;
-  abilityStep(target, s, good, dm, k, rw);
-  // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
-  // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
-  if (P[LEVEL]) P[LEVEL][good ? 'ok' : 'ko']++;
-  else P[LEVEL] = levelSeed(P);
-  abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);
-  rtAdd(P[LEVEL], tm.rt, k); // this answer's time, for the next ones
-  // Recent results over every game, newest last: an opening only after a right answer (model.js openRight).
-  P[LEVEL].h = ((P[LEVEL].h || '') + (good ? 1 : 0)).slice(-10);
-  // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
-  ph.forEach(p => {
-    const x = (ps[p.f] = ps[p.f] || [0, 0]);
-    x[0]++;
-    if (good && (cor || p.view !== 'macro')) x[1]++;
+  const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
+  const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
+  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
+  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
+  // the opening hold is the one the question really had.
+  const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
+    seenPh = ph.filter(p => p !== unseen);
+  // One scorer (core.js scoreAnswer; Pierre, 2026-11-06, Q132): the question as the game had it, what the full replay of
+  // the log meets again from the answer's scoring record (sc, core.js scoreLog), so the replayed state is this one.
+  // - d0, the photo difficulty (model.js photoDiff: the device's pooled ratings now);
+  // - fam, the photo memory (model.js famOf, core.js MEM; Pierre, 2026-11-03): the photos seen when answering (a
+  //   corallites hint left closed was not), as the player knew them before this answer, make the question that much
+  //   easier: a right answer on a known photo counts only for what memory does not explain (pgMemW), a miss weighs the
+  //   chance the player really had (pgMissW);
+  // - cf, the known mix-ups (model.js confTerm), on the player's record before this answer;
+  // - look, a genus the player gets confused with among the choices (model.js pgWeight), after the offers are counted;
+  // - R, Rc: the recall of the genus shown and of the genus given on a comeback question (model.js recallAt).
+  // A corallites hint revealed after the answer when it was not opened: seen, never recognised (hint).
+  const q = scoreIn({
+    t: target,
+    c,
+    ok: good,
+    k,
+    chs,
+    cv: !!GX(c),
+    ph: seenPh.map(p => p.f),
+    hint: unseen ? unseen.f : undefined,
+    d0: solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length),
+    fam: famOf(target, seenPh),
+    cf: confTerm(target, chs, k),
+    look: () => pgLook(target, chs),
+    R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
+    Rc: warm && !good && GX(c) ? recallAt(c) : 1,
+    p: startP(),
+    sec: tm.rt,
+    // The answer time (core.js rtWeight, model.js rtOn): only once the sheet replays it; recorded either way.
+    timed: rtOn()
   });
+  const res = scoreAnswer(P, q),
+    {th0, dm} = res,
+    rT = q.R;
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
-  s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10); // recent results, newest last
-  // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too. Without
-  // the photo memory: the player's memory of a photo is of its own genus, the one shown; it says nothing of genus c.
-  // In the progress, its recent results and its runs; not in its Elo ability (2026-11-03, docs/LEARNING.md "The genus
-  // wrongly given in the Elo"): as in the Elo learner models of adaptive practice (Pelánek et al. 2017: a learner's
-  // knowledge of an item is not updated when it is a distractor), the ability moves on the questions about the genus
-  // itself. The step it had (a full miss on an average photo, its uncertainty never shrinking) made the app
-  // under-rate strong players: on the real answers, a strong RA's genera averaged 0.11 against 0.73 fitted, and the
-  // next answer is predicted better without it (log-loss 0.481 -> 0.465). The mix-up itself counts on the pair
-  // (s.conf: traps, duels, Again).
-  if (!good && GX(c)) {
-    const w = st(c);
-    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC, aimP())); // as for the genus shown: the photo's difficulty against its level
-    w.h = ((w.h || '') + '0').slice(-10);
-    w.streak = 0;
-  }
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
@@ -527,6 +545,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
+  const spShown = speciesShown(ph.filter(p => p !== unseen));
   const ans = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     t: new Date().toISOString(),
@@ -548,7 +567,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       (warm ? '|c' : '') +
       (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
       // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
-      // answer a is the genus read ('' for "I don't know"), never the raw text; it offered no choices (ch empty).
+      // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
       (tq ? '|t' : '') +
       (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
@@ -558,8 +577,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       .map(p => p.f)
       .join(' '),
     ch: chs.join(' '),
-    e: Math.round(100 * (1 / k + (1 - 1 / k) * rT * sig(th0 - dm))) / 100,
+    e: Math.round(100 * res.e) / 100,
     th: th0,
+    // What the game scored this answer with (core.js scoreLog: photo difficulty, memory, mix-ups, look-alike test,
+    // recalls, the hint revealed after it), so the full replay scores it the same (core.js replayProgress; sheet v61
+    // keeps it in the Answers column Scoring; an older script ignores the field, Code.gs logAnswers_ keeps only the
+    // fields it knows: no *_SHEET gate, rule D4).
+    sc: scoreLog(q, res),
     nw,
     // Seconds to answer (they weighed the steps above: rtWeight; the replay reads them back from the log, Code.gs v32)
     // and a photo enlarged before answering (logged only), QCLOCK in question (sheet v23).
@@ -568,7 +592,25 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // The device's UTC offset now, in minutes east of UTC (Manila +480): the time of day at home for the analyses (Pierre,
     // 2026-11-04; sheet v44 stores it, an older script ignores the field: Code.gs logAnswers_ keeps only the fields it
     // knows, so it needs no *_SHEET gate, rule D4).
-    tz: -new Date().getTimezoneOffset()
+    tz: -new Date().getTimezoneOffset(),
+    // A typed answer's raw text (ty: what was typed first, '' for "I don't know") and its spelling step (tr: 1 retyped
+    // exactly, 0 retyped wrong or skipped; absent when none was asked): the name study's question g (docs/reviews/
+    // 2026-11-05-name-confusion-study.md). Sheet v59 stores them (Typed, Retyped right); an older script ignores them
+    // (Code.gs logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
+    ...(tq ? {ty: String(tq.text || '').slice(0, 40)} : {}),
+    ...(tq && tq.sp ? {tr: tq.sp.r ? 1 : 0} : {}),
+    // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60
+    // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's (SUBJECTS
+    // rank). An older script ignores these fields and would file the answer as a coral one: the answers of a subject the
+    // sheet does not replay are sent only from LOG_SHEET (core.js logOk, sync.js), queued until then (rule D4).
+    s: SUBJ.id,
+    rk: rankOf(target) || SUBJ.rank,
+    // The names at that rank, shown and answered, when a unit's id is not its name (a fish entry t01 is Damselfish, a
+    // scientific genus g:Chromis is Chromis; a coral genus is its own name: nothing more), and the species of the photos
+    // shown (UNITS species: a fish photo's species; none for the corals' genus photos), for the sheet's readers.
+    ...(unitName(target) ? {tn: unitName(target)} : {}),
+    ...(unitName(c) ? {ta: unitName(c)} : {}),
+    ...(spShown ? {sp: spShown} : {})
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
@@ -580,10 +622,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
   if (warm) comebackStep(rT, th0, dm, k, good);
   answeredAt(s, good);
-  // A subject whose answers the sheet does not take yet (core.js SUBJECTS log: fish) keeps them on the device only: its
-  // progress still travels with the player's data (sync.js), its answers rate no photo and no confusion.
-  if (!SUBJ.log);
-  else if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
+  // Every subject's answers go to the sheet (Pierre, 2026-11-06: fish answers logged from the first second). A subject the
+  // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
+  // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).
+  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
     // Not signed in: the answer also goes to the sheet anonymously (Pierre, 2026-11-01), see sendAnon.
@@ -648,13 +690,15 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   });
   // A typed answer: the field takes the right / wrong look of a choice, a quiet one after "I don't know".
   const tyIn = tq && $v.querySelector('#tyin');
-  if (tyIn) tyIn.classList.add(good ? 'ok' : c ? 'ko' : 'idk');
+  // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
+  if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c ? 'ko' : 'idk');
   const idk = !!tq && !c,
-    read = tq ? typeRead(tq.m, tq.text) : '';
+    read = tq ? typeRead(tq.m, tq.text, tq.sp) : '',
+    step = tq && good ? typeStep(tq.m, tq.text, tq.sp) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
   document.getElementById('after').innerHTML =
-    `${fbBody(target, c, good, idk, again, ph, read)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
+    `${fbBody(target, c, good, idk, again, ph, read, step)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q');
@@ -671,7 +715,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const nb = document.getElementById('next');
   nb.focus({preventScroll: true});
   nb.onclick = route;
-  // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#quiz-duel|A|B) is cheap anyway.
+  // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#practice/duels/A/B) is cheap anyway.
   setTimeout(() => hashNow() === cur && planNext(cur), 50);
   // The out-of-game prompts take turns (promptOk), never with a card or an achievement toast, nor with the mastery toast
   // due in a moment.
@@ -688,24 +732,34 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
 // The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
 // another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to
 // its sheet and to the comparison. A fish entry (a record with a name, core.js fishGen): the IMR cues, how IMR tells the
-// look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet.
-function fbBody(target, c, good, idk, again, ph, read) {
+// look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet. step: a
+// typed answer's spelling step (typeStep), said in the verdict's one line.
+function fbBody(target, c, good, idk, again, ph, read, step) {
   const g = GX(target),
     fish = !!g.name,
     C = !good && GX(c) ? GX(c) : null,
     apart = C && fish ? ((g.lk || []).find(([o]) => o === c) || (C.lk || []).find(([o]) => o === target) || [])[1] : '';
   const vs = C
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-      `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
-  const name = fish
-      ? `<b>${uname(target)}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
-      : `<a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+  // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
+  const named = inner =>
+      fish
+        ? `<b>${inner}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
+        : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+    name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
+    // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
+    // letters marked (an old name typed: that name, then the unit); the words in normal weight and the name in bold, so
+    // the name is what the eye catches (Pierre, 2026-11-06; .fb h3.tystep).
+    said = !step
+      ? `it's ${name}`
+      : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   return `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> it's ${name}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     ${more}`;
 }
@@ -714,23 +768,42 @@ function fbBody(target, c, good, idk, again, ph, read) {
 // entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no answer
 // logged, no photo rating). For every player of a subject that has winks (app.js UNITS winks: fish), from circle 1 on
 // (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), whatever opt-in circles are on.
-// Rare: from WINK.FROM answers on, WINK.P of the questions, at least WINK.GAP answers apart, never the same wink twice in
-// a visit (WINKS, this page only). Never over a card (the first-meeting cards, an offer).
-const WINK = {FROM: 15, P: 0.04, GAP: 20};
-const WINKS = {seen: new Set(), at: -Infinity};
-function winkDue() {
-  const L = UNITS[SUBJ.id].winks().filter(n => !WINKS.seen.has(n)),
-    a = answersSoFar();
-  if (!L.length || a < WINK.FROM || a - WINKS.at < WINK.GAP || document.querySelector('.unlock')) return null;
-  return Math.random() < WINK.P ? pick(L) : null;
+// Rare, and late (Pierre, 2026-11-06, after his second fish question was the whale shark: the first only after at least
+// 300 fish answers, the next after about 600-700): surprise k (0, 1, ...) is due at the first photo-quiz
+// question from WINK.AT[k] answers of the player's own record for the subject (answersSoFar: P, so a reload or a sign-in
+// keeps the count), the later ones each at least the last gap after the one before (winkAt: 300, 650, 1000, 1350...).
+// It waits WINK.WIN answers at most (a card on screen, another game): past its window it is skipped, so a sign-in on
+// another device past a threshold brings no catch-up. Surprise k shows the k-th wink in turn (whale shark, thresher,
+// then again). Once shown, never again in its window: this visit (WINKS) or this device (sDev('wink'), the surprise last
+// shown). Never over a card (the first-meeting cards, an offer).
+const WINK = {AT: [300, 650], WIN: 50};
+// The answer count from which surprise k is due.
+const winkAt = k => {
+  const A = WINK.AT,
+    m = A.length - 1;
+  return k <= m ? A[k] : A[m] + (k - m) * (m ? A[m] - A[m - 1] : A[0]);
+};
+// The surprise whose window holds answer count a, or -1.
+function winkSlot(a) {
+  let k = 0;
+  while (winkAt(k + 1) <= a) k++;
+  return a >= winkAt(k) && a < winkAt(k) + WINK.WIN ? k : -1;
 }
-function winkShow(n) {
+const WINKS = {}; // subject id -> the surprise shown in this visit
+const WINKK = () => sDev('wink'); // reefid-fish-wink: the surprise last shown on this device (core.js subjDev)
+function winkDue() {
+  const L = UNITS[SUBJ.id].winks(),
+    k = winkSlot(answersSoFar());
+  if (!L.length || k < 0 || WINKS[SUBJ.id] === k || store.get(WINKK(), -1) === k || document.querySelector('.unlock')) return null;
+  return {n: L[k % L.length], k};
+}
+function winkShow({n, k}) {
   const g = GX(n),
     w = g.wink,
     p = pick(g.views.wide),
     ch = shuffle([[n, g.name], ...w.choices]);
-  WINKS.seen.add(n);
-  WINKS.at = answersSoFar();
+  WINKS[SUBJ.id] = k;
+  store.set(WINKK(), k);
   SHOWNQ = null;
   $v.innerHTML = `${gameHelp('quiz')}<div class="q bleed wink">
     <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify">${ZOOMI}</button></figure></div>
@@ -976,8 +1049,8 @@ const pulseSess = (v, now = Date.now()) =>
   v.n >= PULSE.SESS_N &&
   now - v.t0 >= PULSE.SESS_MS;
 const pulseDue = (h = hashNow()) => {
-  // Its answers describe the subject the sheet logs (core.js SUBJECTS log: the corals; the fish beta is not logged yet).
-  if (!SUBJ.log) return false;
+  // Its answers describe the subject the sheet replays (core.js SUBJECTS replay: the corals; the fish beta asks nothing).
+  if (!SUBJ.replay) return false;
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock')) return false;
   const a = answersSoFar(),
     st = pulseSt(),
@@ -1740,7 +1813,7 @@ function quizDuel(a, b, fresh = true, from = '') {
   const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
   // No look-alike pair unlocked yet (a new player): the duels come once the quiz has opened two look-alikes.
   if (!q) {
-    $v.innerHTML = `<p class="note duelnone">Duels pit two look-alike ${SUBJ.many} against each other. They start once you have met two of them in the quiz.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+    $v.innerHTML = `<p class="note duelnone">Duels pit two look-alike ${SUBJ.many} against each other. They start once you have met two of them in the quiz.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
     return;
   }
   question(...q);
@@ -1767,7 +1840,7 @@ function duelPick(list, keep = () => true) {
 }
 function planDuel(a, b) {
   // Only the genera the player has unlocked (model.js unlocked: one progression path for every game, Pierre 2026-11-04):
-  // the Duel tab opens none. A pair from a link (#quiz-duel|A|B, "Drill this pair") must name two unlocked genera with game
+  // the Duel tab opens none. A pair from a link (#practice/duels/A/B, "Drill this pair") must name two unlocked genera with game
   // photos; anything else gets a normal duel (code re-review L2). Null when no look-alike pair is unlocked yet.
   const list = unlocked();
   if (a && b && !(a !== b && list.includes(a) && list.includes(b) && photoSet(a).shown.length && photoSet(b).shown.length))
@@ -1810,7 +1883,7 @@ function duelBack() {
   const x = DUELBACK;
   if (!x) return;
   if (pageDepth === x.d + 1) history.back();
-  else location.hash = '#' + x.h;
+  else location.hash = hr(x.h);
 }
 const reliefNote = (run, h0, h1) => (h0 < INTRO.HOLD && h1 >= INTRO.HOLD ? {...run, up: 1} : run);
 const reliefDue = (run = DUELRUN) => !!run.up && !run.shown && introHold();
@@ -1828,7 +1901,7 @@ function reliefArm(nb, cur, pair) {
   });
 }
 // The card (cardShow kind 'tip', 💡): "Tough pair today", "Take a step back?", one line; Mix in other genera (the main
-// button, the photo quiz), Compare them (the side-by-side comparison of the duel's two genera, #cmp-A|B, as learn.js links
+// button, the photo quiz), Compare them (the side-by-side comparison of the duel's two genera, #learn/compare/A/B, as learn.js links
 // it, with the way back to this duel: DUELBACK), and a quiet Keep drilling (the next duel; also Escape) (Pierre,
 // 2026-11-04, the order). Anti-reflex as the tips: its buttons take no tap for TIP.WAIT ms, the focus
 // is on the title (Enter presses nothing), a tap outside does nothing. Logged as the tips are (ev 'pulse', src
@@ -1856,17 +1929,17 @@ function reliefShow(cur, pair) {
     },
     onClose: how => {
       log(how === 1 ? 'mix' : how === 2 ? 'cmp' : how === 'route' ? 'none' : 'keep');
-      if (how === 1) location.hash = '#quiz';
+      if (how === 1) location.hash = hr('quiz');
       else if (how === 2) {
         DUELBACK = {h: cur, cmp: `cmp-${pair[0]}|${pair[1]}`, run: DUELRUN, d: pageDepth};
-        location.hash = '#' + DUELBACK.cmp;
+        location.hash = hr(DUELBACK.cmp);
       } else if (how !== 'route') route();
     }
   });
   setTimeout(() => d.querySelectorAll('[data-b], [data-keep]').forEach(b => (b.disabled = false)), TIP.WAIT);
 }
-// Custom quiz (Pierre, 2026-11-03): the photo quiz on the genera the player picks. #quiz-custom is the selection screen,
-// #quiz-custom|play (CUSTOM_H) the quiz itself, every format of the photo quiz in it (typed questions, Again, duels
+// Custom quiz (Pierre, 2026-11-03): the photo quiz on the genera the player picks. #practice/custom is the selection screen,
+// #practice/custom/play (CUSTOM_H) the quiz itself, every format of the photo quiz in it (typed questions, Again, duels
 // slipped in, traps, the photos' level, the comeback; not the mastery exam, left to the photo quiz); the draw is model.js's (CUSTOM, customOf, customDraw,
 // customChoices; docs/LEARNING.md "Custom quiz"). The selection is saved at each change ({g: genera, t: when}, an
 // reefid-sync key: it travels with the progress, the latest wins between devices, sync.js mergeSaved) and preselected
@@ -1883,7 +1956,7 @@ const customSel = () => customOf(customSaved(), unlocked());
 // least 2 of its genera were answered right (model.js comebackOf), else it plays as usual and leaves the comeback alone.
 const cbIn = cur => CB.r > 0 && (cur !== CUSTOM_H || (customSel() || []).filter(n => introReady(n) && (P[n] || {}).ok > 0).length >= 2);
 function quizCustom(h) {
-  if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace('#quiz-custom');
+  if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace(hr('quiz-custom'));
   viewCustom();
 }
 // The selection screen (Pierre, 2026-11-03). Every genus is in view, as a small photo with its name, tapped to pick it
@@ -1985,7 +2058,7 @@ function viewCustom() {
     return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
   };
   $v.innerHTML = `<h2>Custom quiz</h2>
-  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder book); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
+  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder book); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
   <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="View">${[
     ['imr', 'IMR groups'],
     ['mix', 'My mix-ups'],
@@ -2079,7 +2152,8 @@ function viewCustom() {
   draw();
 }
 // A switch of subject (app.js subjectLoad): the typed names are the subject's; on a real switch the questions planned
-// ahead, the "Again" and duel spacing, the winks seen and this visit's trail go too (a short visit, keep, keeps them).
+// ahead, the "Again" and duel spacing and this visit's trail go too (a short visit, keep, keeps them); the surprises shown
+// stay, per subject (WINKS).
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     TYPEN = null;
@@ -2090,8 +2164,6 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     rematch = [];
     twoAt = -Infinity;
     twoPair = '';
-    WINKS.seen.clear();
-    WINKS.at = -Infinity;
     DUELRUN = {up: 0, shown: 0}; // the other subject's hold: a new duel run
     DUELBACK = null;
     session = {ok: 0, n: 0, h: []};

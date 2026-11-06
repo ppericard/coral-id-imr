@@ -418,6 +418,134 @@ def key_groups(key, units, tree):
     return out, waiting
 
 
+def family_id(name):
+    """A book family's id: f: and its English name with only its letters (f:Damselfishes, f:MoorishIdol), so it passes
+    every unit check of the sheet (letters, digits and ':' in Choices) as a genus's g:Chromis does."""
+    return "f:" + "".join(c for c in name if c.isalpha())
+
+
+def add_families(o, key):
+    """The game's units above the species (Pierre, 2026-11-06 13:04: "the game's units are not the IMR entries: they are
+    the families, the genera and the species"; 13:38: the IMR course is a tag on the families and genera it teaches, not
+    a structure of its own; docs/reviews/2026-11-06-fish-units-plan.md).
+    o["families"]: the families of the identification key in force, its labels inside its 20 groups (not always one
+    taxonomic family: Lizardfishes = Synodontidae and Harpadontidae), named by the book's English label, the scientific
+    names they cover as a subtitle (sci: the label's taxa that hold species of the game). Each game species (any circle,
+    winks too) goes to the first label met walking up the WoRMS tree from it, so Amphiprion falls in the Damselfishes and
+    Diploprion in the Soapfishes (the book wins over the IMR course for organisation); a species with no label (or a
+    region with no key) goes to a family named after its teaching node, its WoRMS family as sci.
+    A family: {id (family_id), name, sci, group, circle (its species' best), imr (the IMR course's tag: the IMR entry's
+    name, on the family that holds most species of that entry, the first in order on a tie), imrWith (the IMR entry
+    that teaches its species when another family carries it: the Soapfishes, taught with IMR's Groupers), sl, cues
+    (IMR's, verbatim), look ([[family id, IMR's words]]), phase, dimorph, juv, why, note, wink (the IMR entry's, or the
+    teaching node's for circles 2-3), genera, species (in their teaching nodes' order: commonness)}.
+    o["genera"]: every genus of a game species (the PDF name's first word, rule S2), {id g:<Genus>, name, family,
+    circle, imr (the tag: the IMR sub-entry naming it, Anemonefish for Amphiprion; Surgeonfish names three genera), sl,
+    cues (the sub-entry's), species}, in the families' order. Each game species gains family and genus (their ids).
+"""
+    labels = {}
+    if key:
+        for g in key["groups"]:
+            for lab in g["labels"]:
+                for name in lab[1]:
+                    labels[name] = (g["n"], lab[0])
+    ref = {int(a): n for a, n in o["ref"].items()}
+    sp = {s["id"]: s for s in o["species"]}
+
+    def walk(aid):
+        a, fam = aid, None
+        while a is not None and a in ref:
+            n = ref[a]
+            if n["name"] in labels:
+                return labels[n["name"]], n["name"]
+            if fam is None and n["rank"] == "Family":
+                fam = n["name"]
+            a = n["parent"]
+        return None, fam
+
+    fams, by_node, fam_of = {}, {}, {}
+    for t in o["teach"]:
+        for sid in t["species"]:
+            s = sp[sid]
+            if "circle" not in s:
+                continue
+            lab, taxon = walk(s["ref"])
+            if lab:
+                fid, name, grp = family_id(lab[1]), lab[1], lab[0]
+            else:
+                fid, name, grp = family_id(t["name"]), t["name"], t.get("group")
+            f = fams.setdefault(fid, {"id": fid, "name": name, "sci": [], "group": grp, "circle": s["circle"], "nodes": {}, "species": []})
+            if taxon and taxon not in f["sci"]:
+                f["sci"].append(taxon)
+            f["circle"] = min(f["circle"], s["circle"])
+            f["nodes"][t["id"]] = f["nodes"].get(t["id"], 0) + 1
+            f["species"].append(sid)
+            fam_of[sid] = fid
+            by_node.setdefault(t["id"], [])
+            if fid not in by_node[t["id"]]:
+                by_node[t["id"]].append(fid)
+    carry, carried = {}, {}
+    for nid, fl in by_node.items():
+        best = max(fl, key=lambda fid: (fams[fid]["nodes"][nid], -fl.index(fid)))
+        if best not in carry:
+            carry[best], carried[nid] = nid, best
+    node = {t["id"]: t for t in o["teach"]}
+    subs = {}
+    for t in o["teach"]:
+        for u in t.get("sub", []):
+            for sid in u["species"]:
+                subs.setdefault(sp[sid]["name"].split()[0], u)
+    gens = {}
+    for f in fams.values():
+        for sid in f["species"]:
+            s = sp[sid]
+            g = s["name"].split()[0]
+            x = gens.setdefault(g, {"id": "g:" + g, "name": g, "family": f["id"], "circle": s["circle"], "species": []})
+            x["circle"] = min(x["circle"], s["circle"])
+            x["species"].append(sid)
+            s["family"], s["genus"] = f["id"], x["id"]
+    out = []
+    for f in fams.values():
+        r = {"id": f["id"], "name": f["name"], "sci": f["sci"]}
+        if f["group"] is not None:
+            r["group"] = f["group"]
+        r["circle"] = f["circle"]
+        t = node.get(carry.get(f["id"]))
+        if t and t.get("src") == "imr":
+            r["imr"] = t["name"]
+        elif not t:
+            w = [node[n]["name"] for n in f["nodes"] if node[n].get("src") == "imr"]
+            if w:
+                r["imrWith"] = w[0]
+        if t:
+            for k in ("sl", "cues"):
+                if t.get(k):
+                    r[k] = t[k]
+            look = [[carried[i[:3]], txt] for i, txt in t.get("look", []) if carried.get(i[:3])]
+            if look:
+                r["look"] = look
+            for k in ("phase", "dimorph", "juv", "why", "note", "wink"):
+                if t.get(k):
+                    r[k] = t[k]
+        r["genera"] = list(dict.fromkeys(sp[sid]["genus"] for sid in f["species"]))
+        r["species"] = f["species"]
+        out.append(r)
+    o["families"] = out
+    go = []
+    for g, x in gens.items():
+        r = {"id": x["id"], "name": g, "family": x["family"], "circle": x["circle"]}
+        u = subs.get(g)
+        if u:
+            r["imr"] = u["name"]
+            for k in ("sl", "cues"):
+                if u.get(k):
+                    r[k] = u[k]
+        r["species"] = x["species"]
+        go.append(r)
+    o["genera"] = go
+    return o
+
+
 def regroup(src_path, check):
     """--regroup: the key in force applied again to fish.json as it is, from its own reference tree (no network).
     --check: write nothing, fail when fish.json differs (tests/fish.test.js runs it)."""
@@ -437,6 +565,7 @@ def regroup(src_path, check):
         teach.append(t)
     o["teach"], o["key"] = teach, key_out(key)
     o.pop("groups", None)
+    add_families(o, key)
     if check:
         if render(o) != OUT.read_text(encoding="utf-8"):
             kid = key["id"] if key else "(none)"
@@ -454,6 +583,7 @@ def commonness(check):
     fish.json as it is (offline). --check: write nothing, fail when fish.json differs (tests/fish.test.js runs it)."""
     o = json.loads(OUT.read_text(encoding="utf-8"))
     missing = fish_commonness.apply(o)
+    add_families(o, key_in_force(json.loads(SRC.read_text(encoding="utf-8"))))
     if check:
         if render(o) != OUT.read_text(encoding="utf-8"):
             sys.exit(f"{OUT.relative_to(ROOT)} is not as the commonness index gives it: run python3 tools/build_fish.py --commonness")
@@ -528,6 +658,7 @@ def main():
         for x in left:
             print("  " + x)
         show_missing(fish_commonness.apply(o))
+        add_families(o, key_in_force(json.loads(SRC.read_text(encoding="utf-8"))))
         if not a.dry:
             write(o)
             print(f"wrote {OUT.relative_to(ROOT)}")
@@ -539,6 +670,7 @@ def main():
     finally:
         NET.save()
     show_missing(fish_commonness.apply(out))
+    add_families(out, key_in_force(src))
     show(out, report)
     if not a.dry:
         write(out)
@@ -792,7 +924,9 @@ def render(o):
         lines.append('"key":' + dumps({x: k[x] for x in k if x != "groups"})[:-1] + ',"groups":[')
         lines.append(",\n".join(dumps(g) for g in k["groups"]))
         lines.append("]},")
-    for k in ("teach", "species"):
+    for k in ("teach", "families", "genera", "species"):
+        if k not in o:
+            continue
         lines.append(f'"{k}":[')
         lines.append(",\n".join(dumps(x) for x in o[k]))
         lines.append("],")

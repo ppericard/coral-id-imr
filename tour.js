@@ -68,7 +68,7 @@
     if (!h) {
       history.pushState(null, '', location.pathname + location.search);
       route();
-    } else location.hash = h;
+    } else location.hash = hr(h);
   }
   // Wait for the page to render the step's element (a route can take a frame or two), then spotlight it.
   function show(i) {

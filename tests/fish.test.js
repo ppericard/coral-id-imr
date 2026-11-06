@@ -155,10 +155,11 @@ test('identification groups: the build fails, naming the node, on a node in the 
   r = regroupCheck(b);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /t13 Groupers: two groups 7, 12/);
-  // An explicit choice settles it.
+  // An explicit choice settles the group (the families follow that key's labels, so fish.json differs from it).
   b.teach.find(t => t.id === 't13').keyGroup = {[K.id]: 7};
   r = regroupCheck(b);
-  assert.strictEqual(r.status, 0, r.out);
+  assert.doesNotMatch(r.out, /identification groups \(rule S3/);
+  assert.match(r.out, /is not as key .* gives it/);
   // A label in two groups of a key is refused.
   const c = clone(SRC);
   c.keys.find(k => k.id === c.deploy.key).groups[0].labels.push(['test', ['Labridae']]);
@@ -608,4 +609,65 @@ test('common names proposal: FishBase main name, shared spellings, linked spelli
     ant && [ant.name, ...(ant.alt || [])].map(norm).includes('stripedangler'),
     'Antennarius striatus: one name, its spellings merged'
   );
+});
+
+// The game's units (Pierre, 2026-11-06 13:04 and 13:38; docs/reviews/2026-11-06-fish-units-plan.md): the book's
+// families, then genera and species; the IMR course a tag (imr: IMR's name) on the families and genera it teaches.
+test('families: the book’s, every game species in exactly one, Amphiprion in the Damselfishes, Diploprion in the Soapfishes', () => {
+  const FAM = new Map(F.families.map(f => [f.id, f])),
+    GEN = new Map(F.genera.map(g => [g.id, g])),
+    labels = new Set(SRC.keys.find(k => k.id === SRC.deploy.key).groups.flatMap(g => g.labels.map(l => l[0])));
+  assert.strictEqual(FAM.size, F.families.length, 'family ids unique');
+  F.families.forEach(f => {
+    assert.match(f.id, /^f:[A-Za-z]+$/, f.id + ': letters only after f:');
+    assert.ok(f.sci.length, f.id + ': its scientific names');
+    assert.ok(labels.has(f.name) || f.wink, f.id + ': a label of the key in force (or a wink with none)');
+    f.genera.forEach(g => assert.strictEqual(GEN.get(g).family, f.id, g + ' in ' + f.id));
+  });
+  const seen = new Map();
+  F.families.forEach(f => f.species.forEach(s => (assert.ok(!seen.has(s), s + ' in two families'), seen.set(s, f.id))));
+  GAME.forEach(s => {
+    assert.strictEqual(seen.get(s.id), s.family, s.name + ': in its family');
+    assert.strictEqual(s.genus, 'g:' + s.name.split(' ')[0], s.name + ': its genus, the PDF name’s first word');
+    assert.ok(GEN.get(s.genus).species.includes(s.id), s.name + ' in its genus');
+  });
+  assert.strictEqual(seen.size, GAME.length, 'every game species placed');
+  const fam = n => SP.get(F.species.find(s => s.name === n).id).family;
+  assert.strictEqual(fam('Amphiprion ocellaris'), 'f:Damselfishes');
+  assert.strictEqual(fam('Diploprion bifasciatum'), 'f:Soapfishes');
+  assert.strictEqual(fam('Saurida gracilis'), 'f:Lizardfishes');
+  assert.deepStrictEqual(FAM.get('f:Lizardfishes').sci, ['Synodontidae', 'Harpadontidae']);
+  assert.strictEqual(F.families.filter(f => f.circle === 1).length, 28, '28 families in circle 1');
+});
+
+test('the IMR tag: IMR’s name on the 27 families and the genera IMR names; the Soapfishes taught with the Groupers', () => {
+  const tagged = F.families.filter(f => f.imr);
+  assert.deepStrictEqual(
+    tagged.map(f => f.imr),
+    IMR27,
+    'one family per IMR entry, in IMR order'
+  );
+  tagged.forEach(f => assert.strictEqual(f.circle, 1, f.id));
+  const by = Object.fromEntries(F.families.map(f => [f.id, f]));
+  assert.strictEqual(by['f:Damselfishes'].imr, 'Damselfish');
+  assert.deepStrictEqual(by['f:Damselfishes'].sl, [7, 8, 9]);
+  assert.strictEqual(by['f:Soapfishes'].imr, undefined);
+  assert.strictEqual(by['f:Soapfishes'].imrWith, 'Groupers');
+  assert.deepStrictEqual(
+    by['f:Butterflyfishes'].look.map(l => l[0]),
+    ['f:Angelfishes'],
+    'IMR look-alikes as family ids'
+  );
+  const g = Object.fromEntries(F.genera.filter(x => x.imr).map(x => [x.name, x.imr]));
+  assert.deepStrictEqual(g, {
+    Dascyllus: 'Dascyllus',
+    Pomacentrus: 'Pomacentrus',
+    Chromis: 'Chromis',
+    Amphiprion: 'Anemonefish',
+    Heniochus: 'Bannerfish',
+    Zebrasoma: 'Surgeonfish',
+    Ctenochaetus: 'Surgeonfish',
+    Acanthurus: 'Surgeonfish',
+    Naso: 'Unicornfish'
+  });
 });

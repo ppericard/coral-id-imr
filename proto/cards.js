@@ -2,7 +2,7 @@
 // the mock-up with A Postcard and C Sheet is in the history, commit f46f11c), the first meeting with a genus keeping its
 // photo band: the live cards now come from app.js cardShow (docs/DESIGN.md "Cards"). This page opens each kind through
 // that builder, nothing recorded: the cards the app shows (sign-in, achievement, note) are the real ones; the others
-// carry sample copy and numbers (an offer here never opens a genus). #lab-cards|<kind> opens one. Admin only in the hub.
+// carry sample copy and numbers (an offer here never opens a genus). #tools/cards/<kind> opens one. Admin only in the hub.
 (function () {
   const GENUS = 'Acropora';
   const sample = {
@@ -109,7 +109,7 @@
             sample[b.dataset.open]();
           })
       );
-      // #lab-cards|<kind> (an older #lab-cards|<direction>|<kind> link too) opens it.
+      // #tools/cards/<kind> (an older #tools/cards/<direction>/<kind> link too) opens it.
       const open = args.find(a => sample[a]);
       if (open) setTimeout(() => sample[open](), 60);
       return shut;

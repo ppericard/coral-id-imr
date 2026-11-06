@@ -57,6 +57,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     localStorage: storage(ls),
     sessionStorage: storage(),
     location: {hash: '', reload: () => ctx.reloads++},
+    hashNow: () => '', // app.js: the page key on screen (Home)
     reloads: 0,
     IS_ADMIN: false,
     showSubj: () => {},
@@ -973,10 +974,15 @@ test('a replay made with another first-launch history is not adopted; the next s
 // Sheet v48 (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch): the sheet's replies
 // to a load and a save say which groups the signed-in player is in; the app opens the beta subject to them, for that
 // account only, and closes it again when taken out (a reload on the corals when it was on screen).
-test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async () => {
+test('beta groups (v48): the load and save replies open and close the beta subject for this account only', async t => {
   const s = loadCodeGs(withData()),
     TOK = 'ghp_write000000000000000000',
     fish = C.SUBJECTS.find(S => S.beta);
+  // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
+  // back to 'group' here, in the app (it shares core.js's objects) and in the sheet.
+  fish.open = 'group';
+  require('vm').runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
+  t.after(() => (fish.open = 'all'));
   assert.ok(s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: []}).ok);
   const a = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await a.syncPull();
@@ -1015,4 +1021,59 @@ test('beta groups (v48): the load and save replies open and close the beta subje
   c.signIn('Ana', '1234', {found: true, groups: [fish.id, 'nope'], data: {'reefid-sync-coral-progress': '{}'}});
   assert.deepStrictEqual(copy(c.store.get('reefid-groups', null)), {n: 'Ana', g: [fish.id]}, 'at sign-in, beta subjects only');
   assert.strictEqual(c.subjOpen(fish), true);
+});
+
+// Fish answers logged (Pierre, 2026-11-06; sheet v60): queued with the corals', sent only to a script that files them
+// under their subject (core.js logOk, LOG_SHEET; rule D4), and never replayed into the corals' progress.
+test('fish answers: kept queued for an older script, sent from v60 under their subject, out of the coral replay', async () => {
+  const s = loadCodeGs(withData()),
+    id = 'fishdevice',
+    fa = (k, i) => ({
+      ...qa(k, i),
+      g: 't01',
+      a: 't01',
+      ok: 1,
+      ph: 'fi' + i,
+      ch: 't01 t05',
+      s: 'fish',
+      rk: 'family',
+      tn: 'Damselfish',
+      ta: 'Damselfish',
+      sp: 'Chromis viridis'
+    }),
+    q = [qa('c1', 1), fa('f1', 2), qa('c2', 3), fa('f2', 4)],
+    old = {get: s.get, post: b => ({...s.post(b), v: C.LOG_SHEET - 1})};
+  const a = app({sheet: old, ls: {'reefid-anon-id': JSON.stringify(id), 'reefid-anonq': JSON.stringify(q)}});
+  a.sendAnon();
+  await settle();
+  assert.deepStrictEqual(copy(a.sent[0].anonAnswers.map(x => x.id)), ['c1', 'c2'], 'an older script gets the coral answers only');
+  assert.deepStrictEqual(copy(a.store.get('reefid-anonq', []).map(x => x.id)), ['f1', 'f2'], 'the fish answers wait in the queue');
+  assert.strictEqual(a.count('Acropora'), 2);
+  assert.ok(!a.ctx.P.t01, 'no fish entry in the coral progress');
+  // The script reports v60: the fish answers go, filed as fish; the coral replay still counts the coral rows only.
+  const b = app({
+    sheet: s,
+    ls: {
+      'reefid-anon-id': JSON.stringify(id),
+      'reefid-anonq': JSON.stringify(a.store.get('reefid-anonq', [])),
+      'reefid-sheet-v': String(C.LOG_SHEET)
+    }
+  });
+  b.sendAnon();
+  await settle();
+  assert.deepStrictEqual(copy(b.sent[0].anonAnswers.map(x => x.id)), ['f1', 'f2']);
+  assert.deepStrictEqual(copy(b.store.get('reefid-anonq', [])), []);
+  const A = s.sheets.Answers.rows.slice(1);
+  assert.deepStrictEqual(
+    A.map(r => [r[7], r[17], r[18], r[19]]),
+    [
+      ['c1', 'coral', 'genus', ''],
+      ['c2', 'coral', 'genus', ''],
+      ['f1', 'fish', 'family', 'Damselfishes'],
+      ['f2', 'fish', 'family', 'Damselfishes']
+    ],
+    'v69: an old entry id (t01) filed under its family'
+  );
+  assert.strictEqual(b.got[0].replay.n, 2, "the device's replay counts its 2 coral rows");
+  assert.ok(!b.got[0].replay.rec.t01, 'no fish unit in the replayed coral record');
 });

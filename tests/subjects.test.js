@@ -36,14 +36,45 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(C.SUBJECTS.filter(s => s.ach).length, 1);
 });
 
-test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to its group for now', () => {
+// The admin's one filter bar (admin plan PR 3, admin.js FB) is filled from each subject's admin part: its photo origins
+// ([key, name, short name], keys among those admin.js origin(p) gives) and its Candidates sources (among its origins).
+test('admin descriptor: origins and Candidates sources for the one filter bar', () => {
+  const KEYS = ['imr', 'own', 'dauin', 'ph', 'world', 'book'];
+  C.SUBJECTS.forEach(s => {
+    const O = s.admin.origins;
+    assert.ok(Array.isArray(O) && O.length, s.id);
+    O.forEach(o => {
+      assert.strictEqual(o.length, 3, `${s.id} ${o}`);
+      assert.ok(KEYS.includes(o[0]), `${s.id}: unknown origin ${o[0]}`);
+      o.forEach(x => assert.ok(typeof x === 'string' && x, `${s.id} ${o}`));
+    });
+    assert.strictEqual(new Set(O.map(o => o[0])).size, O.length, s.id);
+    (s.admin.csrc || []).forEach(k =>
+      assert.ok(
+        O.some(o => o[0] === k),
+        `${s.id}: source ${k} is not one of its origins`
+      )
+    );
+  });
+  // The corals' chips and sources, as before the bar (their order is the order on screen).
+  const coral = C.subjectOf('coral').admin;
+  assert.deepStrictEqual(
+    coral.origins.map(o => o[0]),
+    KEYS
+  );
+  assert.deepStrictEqual(coral.csrc, ['own', 'dauin', 'ph', 'book']);
+  // No IMR photos for fish (Pierre, 2026-11-04), and no Coral Finder book.
+  assert.ok(!C.subjectOf('fish').admin.origins.some(o => o[0] === 'imr' || o[0] === 'book'));
+});
+
+test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to all, its beta label kept (Q158)', () => {
   const fish = C.subjectOf('fish'),
     coral = C.subjectOf('coral');
   assert.ok(fish.beta && fish.beta.kick && fish.beta.line, 'fish keeps its beta label');
-  assert.strictEqual(fish.open, 'group', 'fish opens to the admin and its group (no change for players)');
-  assert.strictEqual(C.subjGroup(fish), true);
+  assert.strictEqual(fish.open, 'all', 'fish opens to every player (Pierre, 2026-11-06, Q158)');
+  assert.strictEqual(C.subjGroup(fish), false);
+  assert.strictEqual(C.subjGroup({...fish, open: 'group'}), true, "'group': the admin and its group only");
   assert.strictEqual(C.subjGroup(coral), false, 'the corals open to all (no field)');
-  assert.strictEqual(C.subjGroup({...fish, open: 'all'}), false, "'all': no group, the beta label kept");
   assert.strictEqual(C.subjGroup({id: 'x', beta: {kick: 'k', line: 'l'}}), false, 'a beta label alone opens to all');
   assert.strictEqual(C.subjGroup(null), false);
   C.SUBJECTS.forEach(S => assert.ok(S.open === undefined || ['group', 'all'].includes(S.open), `${S.id}.open`));
@@ -82,7 +113,7 @@ test('fishGen: level-1 entries as engine records, circle 1 = the 27 IMR entries,
   assert.ok(X.gen.t05.look.includes('t02'), 'Moorish Idol vs Bannerfish (inside Butterflyfish)');
 });
 
-test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per observation, accepted licences', () => {
+test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per observation (Pierre’s own: every compatible photo), accepted licences', () => {
   const ok = new Set(['cc0', 'cc-by', 'cc-by-sa', 'cc-by-nc', 'cc-by-nc-sa']);
   assert.ok(PH.stopgap, 'says it is a stopgap');
   Object.entries(PH.photos).forEach(([id, L]) => {
@@ -90,8 +121,11 @@ test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per obs
       F.teach.some(t => t.id === id && t.level === 1),
       id
     );
-    const obs = L.map(p => p.o);
+    // One photo per observation, Pierre's own aside: every compatible photo of his observations is in (Q148, 2026-11-06).
+    const obs = L.filter(p => !p.own).map(p => p.o),
+      fs = L.map(p => p.f);
     assert.strictEqual(new Set(obs).size, obs.length, `${id}: one photo per observation`);
+    assert.strictEqual(new Set(fs).size, fs.length, `${id}: each photo once`);
     L.forEach(p => {
       assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./, p.f);
       assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`); // Pierre's own whatever their licence (rule S2)
@@ -143,33 +177,85 @@ test('mergeUsers: each subject on its own, a subject neither account played stay
   assert.strictEqual(JSON.parse(M['reefid-sync-fish-quiz']).c3, true);
 });
 
-test('fishGen cover: the easiest judged photo within the highest source tier (Pierre’s own first, rule P1)', () => {
+test('fishGen order and cover: the easiest, most reference-like photo first, whoever took it (Pierre, 2026-11-06)', () => {
   const F = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8')),
     PH = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-photos.json'), 'utf8')).photos,
     X = C.fishGen(F, PH);
   let checked = 0;
   Object.values(X.gen).forEach(g => {
     const L = g.views.wide;
-    if (!L.some(p => p.e)) return;
-    const c = L.find(p => p.f === g.cover),
-      own = L.filter(p => p.own);
-    if (own.length) {
-      assert.ok(c.own, `${g.id}: the cover is another observer's while Pierre has ${own.length}`);
-      assert.strictEqual(c.e || 0, Math.max(...own.map(p => p.e || 0)), `${g.id}: not the easiest of Pierre's`);
-      checked++;
-    } else assert.strictEqual(c.e || 0, Math.max(...L.map(p => p.e || 0)), `${g.id}: not the easiest`);
+    if (!L.length) return;
+    assert.strictEqual(g.cover, L[0].f, `${g.id}: the cover is the list's first`);
+    L.slice(1).forEach((p, i) => {
+      const a = L[i];
+      assert.ok(
+        (a.e || 3) > (p.e || 3) || ((a.e || 3) === (p.e || 3) && C.refScore(a.jt) >= C.refScore(p.jt)),
+        `${g.id}: ${p.f} out of order`
+      );
+    });
+    checked++;
   });
-  assert.ok(checked > 10, `${checked} entries with Pierre's photos checked`);
-  // A synthetic case: Pierre's photo at ease 2 beats another observer's at 5.
+  assert.ok(checked > 27, `${checked} entries checked`);
+  // Synthetic: another observer's photo at ease 5 beats Pierre's at 3; among equals, the reference photo, then the one
+  // with more field-guide traits (profile, whole, good light...), then the list's order; the source never counts.
   const T = {teach: [{id: 't99', name: 'X', level: 1, circle: 1, species: []}]},
     Y = C.fishGen(T, {
       t99: [
-        {f: 'a', src: 'x', e: 5},
-        {f: 'b', src: 'x', own: true, e: 2},
-        {f: 'c', src: 'x', own: true, e: 3}
+        {f: 'own3', src: 'x', own: true, e: 3, jt: 'p1g0sl1'},
+        {f: 'own5', src: 'x', own: true, e: 5, jt: 'o1g1sm1'},
+        {f: 'a5', src: 'x', e: 5, jt: 'p1g0sl1'},
+        {f: 'b5', src: 'x', e: 5, jt: 'o1g0sm1r'},
+        {f: 'none', src: 'x'}
       ]
     });
-  assert.strictEqual(Y.gen.t99.cover, 'c');
+  assert.deepStrictEqual(
+    Y.gen.t99.views.wide.map(p => p.f),
+    ['b5', 'a5', 'own5', 'own3', 'none']
+  );
+  assert.strictEqual(Y.gen.t99.cover, 'b5');
+  // Equal photos: the list's order (Pierre's first in tools/fish_photos.py) never decides; the same cover either way.
+  const eq = [
+      {f: 'fiA', src: 'x', own: true, e: 5, jt: 'p1g0sl1'},
+      {f: 'fiB', src: 'x', e: 5, jt: 'p1g0sl1'}
+    ],
+    c1 = C.fishGen(T, {t99: eq}).gen.t99.cover,
+    c2 = C.fishGen(T, {t99: eq.slice().reverse()}).gen.t99.cover;
+  assert.strictEqual(c1, c2, 'the list order decides nothing');
+  // Pierre's photo comes first when it is itself the easiest.
+  const Z = C.fishGen(T, {
+    t99: [
+      {f: 'a', src: 'x', e: 4},
+      {f: 'own', src: 'x', own: true, e: 5}
+    ]
+  });
+  assert.strictEqual(Z.gen.t99.cover, 'own');
+});
+
+test("easyRank: a difficulty function (the players' ratings) ranks first; refScore reads the tags", () => {
+  const L = [
+    {f: 'a', e: 5},
+    {f: 'b', e: 3},
+    {f: 'c', e: 4}
+  ];
+  assert.deepStrictEqual(
+    C.easyRank(L).map(p => p.f),
+    ['a', 'c', 'b']
+  );
+  const rated = {a: 0.8, b: -1, c: 0};
+  assert.deepStrictEqual(
+    C.easyRank(L, p => rated[p.f]).map(p => p.f),
+    ['b', 'c', 'a']
+  );
+  assert.strictEqual(C.refScore('p1g0sl1'), 7);
+  assert.strictEqual(C.refScore('p1g0sl1r'), 15);
+  assert.strictEqual(C.refScore('o1g2mm1j'), 2);
+  assert.strictEqual(C.refScore(''), 0);
+  assert.strictEqual(C.refScore(undefined), 0);
+  // The subjects whose photo sources rank (rule P1): the corals only.
+  assert.deepStrictEqual(
+    C.SUBJECTS.filter(s => s.tiers).map(s => s.id),
+    ['coral']
+  );
 });
 
 // Sheet-only fish photos (Pierre, 2026-11-05: a species with no game photo may keep one for its sheet, never in the
@@ -222,8 +308,8 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
       assert.ok(!game.has(p.f), `${p.f} is also a game photo`);
       // iNaturalist, or FishBase (tools/fetch_fishbase.py, Pierre 2026-11-05: the same rules; tests/fishbase.test.js).
       if (p.via === 'fishbase') {
-        assert.match(p.o, /^https:\/\/www\.fishbase\.de\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
-        assert.match(p.src, /^https:\/\/www\.fishbase\.de\/images\/species\/[\w-]+\.jpg$/);
+        assert.match(p.o, /^https:\/\/www\.fishbase\.se\/photos\/PicturesSummary\.php\?ID=\d+&what=species&pic=[\w-]+\.jpg$/);
+        assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[\w-]+\.jpg$/);
         assert.match(p.a, /via FishBase/);
         return;
       }
@@ -237,4 +323,52 @@ test('fish-photos.json sheet: the game photo rules, credited, never among the ga
   const X = C.fishGen(F, PH.photos, PH.sheet);
   assert.deepStrictEqual(Object.keys(X.sheet).sort(), Object.keys(S).sort());
   Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.use === 'ref' || !!S[p.sp]?.some(q => q.f === p.f)), g.id));
+});
+
+// Every subject's answers logged (Pierre, 2026-11-06; sheet v60): each subject says its rank and whether the sheet replays
+// it; the answer log's readers keep one subject's rows (subjRows, index LOG_SUBJ in readAnswers rows and tab rows alike).
+test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, logOk', () => {
+  assert.deepStrictEqual(
+    C.SUBJECTS.map(S => [S.id, S.rank, S.replay]),
+    [
+      ['coral', 'genus', true],
+      ['fish', 'family', false]
+    ]
+  );
+  assert.ok(
+    C.SUBJECTS.every(S => !('log' in S)),
+    'the old log field is gone (renamed replay)'
+  );
+  assert.strictEqual(C.replaySubject(), 'coral');
+  assert.strictEqual(C.LOG_SUBJ, 17); // after v59's Typed and Retyped right (15-16)
+  assert.strictEqual(C.ansSubject({}), 'coral', 'an entry from before the subject field is a coral one');
+  assert.strictEqual(C.ansSubject({s: 'fish'}), 'fish');
+  const row = (id, s) => Object.assign(Array(17).fill(''), {0: id}).concat(s === undefined ? [] : [s]);
+  const rows = [row('a'), row('b', ''), row('c', 'coral'), row('d', 'fish'), row('e', 'benthos')];
+  assert.deepStrictEqual(
+    C.subjRows(rows).map(r => r[0]),
+    ['a', 'b', 'c']
+  );
+  assert.deepStrictEqual(
+    C.subjRows(rows, 'fish').map(r => r[0]),
+    ['d']
+  );
+  assert.deepStrictEqual(C.subjRows(null), []);
+  // A tab export's header row is never a coral row.
+  assert.deepStrictEqual(C.subjRows([Object.assign(Array(17).fill('h'), {0: 'Name'}).concat(['Subject'])]), []);
+  const log = [{id: 1}, {id: 2, s: 'fish'}, {id: 3, s: 'coral'}];
+  assert.deepStrictEqual(
+    C.subjEntries(log).map(a => a.id),
+    [1, 3]
+  );
+  assert.deepStrictEqual(
+    C.subjEntries(log, 'fish').map(a => a.id),
+    [2]
+  );
+  // A fish answer waits for the script that files it under its subject (rule D4); a coral one never waits.
+  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET - 1), false);
+  assert.strictEqual(C.logOk({s: 'fish'}, C.LOG_SHEET), true);
+  assert.strictEqual(C.logOk({s: 'fish'}, undefined), false);
+  assert.strictEqual(C.logOk({}, 0), true);
+  assert.strictEqual(C.logOk({s: 'coral'}, 0), true);
 });

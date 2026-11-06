@@ -154,14 +154,14 @@ const server = http.createServer((req, res) => {
   // 1 + 2: kept curation, then plan and preload.
   {
     const {ctx, p, errs} = await ctxOf();
-    await p.goto(base + '#quiz');
+    await p.goto(base + '#practice/quiz');
     await ready(p);
     await p.close();
     await ctx.route(base + 'curation.json', () => {});
     const p2 = await ctx.newPage();
     p2.on('pageerror', e => errs.push(e.message));
     const t = Date.now();
-    await p2.goto(base + '#quiz');
+    await p2.goto(base + '#practice/quiz');
     await ready(p2).catch(() => fails.push('Start-up waited for curation.json although a copy was kept'));
     if (Date.now() - t > 10000) fails.push(`Start-up with a kept curation took ${Date.now() - t} ms`);
     for (let i = 0; i < 3; i++) {
@@ -207,7 +207,7 @@ const server = http.createServer((req, res) => {
   // 3a. The bigger file failing: falls back to the 480 px version.
   {
     const {ctx, p, errs} = await ctxOf({failFull: true, dpr: 2}); // 2x: the 960 px file, not the 480 px one
-    await p.goto(base + '#quiz');
+    await p.goto(base + '#practice/quiz');
     await ready(p);
     await p
       .waitForFunction(
@@ -223,7 +223,7 @@ const server = http.createServer((req, res) => {
   // taken, and each photo frame shows the "photo missing" tile (app.js noPhoto; Pierre, 2026-11-05).
   {
     const {ctx, p, errs} = await ctxOf({failAll: true, inat: false});
-    await p.goto(base + '#quiz');
+    await p.goto(base + '#practice/quiz');
     await ready(p);
     const n0 = await p.evaluate(() => answersSoFar());
     await p.waitForSelector('#qfail button', {timeout: 15000}).catch(() => fails.push('No "Another question" when the photos cannot load'));
@@ -291,7 +291,7 @@ const server = http.createServer((req, res) => {
     await p.addInitScript(() =>
       localStorage.setItem('reefid-board-cache', JSON.stringify({rows: [['Kept Player', 40, 1.2]], t: Date.now() - 600000}))
     );
-    await p.goto(base + '#board');
+    await p.goto(base + '#leaderboard');
     await ready(p);
     await p
       .waitForFunction(() => /Kept Player/.test(document.getElementById('view').innerText), null, {timeout: 3000})
@@ -310,7 +310,7 @@ const server = http.createServer((req, res) => {
     await p.goto(base, {waitUntil: 'domcontentloaded'});
     await ready(p);
     const n = await p.evaluate(() => [...document.querySelectorAll('#view img')].filter(i => !i.complete).length);
-    await p.evaluate(() => (location.hash = 'lab'));
+    await p.evaluate(() => (location.hash = 'tools'));
     await p.waitForTimeout(500);
     if (!n || !dropped) fails.push(`Leaving Home did not drop its photos still loading (${n} loading, ${dropped} dropped)`);
     if (errs.length) fails.push('Drop: ' + errs.slice(0, 3).join(' | '));
@@ -338,7 +338,7 @@ const server = http.createServer((req, res) => {
       const p = await ctx.newPage(),
         errs = [];
       p.on('pageerror', e => errs.push(e.message));
-      await p.goto(base + '#quiz');
+      await p.goto(base + '#practice/quiz');
       await ready(p);
       await p.waitForTimeout(300);
       const T = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
@@ -356,7 +356,7 @@ const server = http.createServer((req, res) => {
       // srcset file it already has, at no cost.
       // The quiz's preloads first: a file they bring in later would be taken for one Home asked for.
       await p.evaluate(() => Promise.race([prefetched(), new Promise(ok => setTimeout(ok, 15000))]));
-      const t0 = await p.evaluate(() => ((location.hash = 'home'), performance.now()));
+      const t0 = await p.evaluate(() => ((location.hash = ''), performance.now()));
       await p.waitForTimeout(1500);
       const h = await p.evaluate(
         t0 =>
@@ -409,7 +409,7 @@ const server = http.createServer((req, res) => {
       // with the full replay's code (+45 KB), so the check failed on bytes, not on what it checks. What it needs is the
       // quiz and its photo, timed here on their own.
       const t0 = Date.now();
-      await p.goto(base + '#quiz', {waitUntil: 'commit'});
+      await p.goto(base + '#practice/quiz', {waitUntil: 'commit'});
       const shown = await p
         .waitForFunction(() => window.APP_READY && document.querySelector('#view .qstage img'), null, {timeout: 90000})
         .then(() => true)
@@ -557,9 +557,9 @@ const server = http.createServer((req, res) => {
       .waitForFunction(() => UPDATED, null, {timeout: 30000})
       .catch(() => fails.push('A new version did not take over in the background'));
     if (!(await p.evaluate(() => window.__old))) fails.push('The page reloaded in the middle of a page');
-    await p.evaluate(() => (location.hash = 'genera'));
+    await p.evaluate(() => (location.hash = 'learn/genera'));
     await p
-      .waitForFunction(() => !window.__old && window.APP_READY && location.hash === '#genera', null, {timeout: 20000})
+      .waitForFunction(() => !window.__old && window.APP_READY && location.hash === '#learn/genera', null, {timeout: 20000})
       .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
     // A tab opened before any version was installed, then left open, still gets the next version (Codex review #336).
     const r = await b9.newContext({viewport: {width: 390, height: 800}});
@@ -615,9 +615,9 @@ const server = http.createServer((req, res) => {
     await q
       .waitForFunction(() => UPDATED, null, {timeout: 30000})
       .catch(() => fails.push('Admin: a new version did not take over in the background'));
-    await q.evaluate(() => (location.hash = '~cand'));
+    await q.evaluate(() => (location.hash = 'photos/candidates'));
     await q
-      .waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000})
+      .waitForFunction(() => !window.__old && location.hash === '#photos/candidates', null, {timeout: 20000})
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
     // A version that takes over while the admin is still loading is seen too: the new worker waits for the old one's
     // fetches still in flight, then takes over once the old one is idle (or later, see above), maybe before start() goes
@@ -758,7 +758,7 @@ const server = http.createServer((req, res) => {
     ['lab', '#view .lab a']
   ]) {
     const {ctx, p, errs} = await ctxOf();
-    await p.goto(base + '#' + h);
+    await p.goto(base + '#' + require('../core.js').routeOut(h));
     await p
       .waitForFunction(s => document.querySelector(s) && !/Loading/.test(document.getElementById('view').innerText), sel, {timeout: 20000})
       .catch(() => fails.push(`A first visit straight to #${h} did not open it`));
@@ -829,7 +829,7 @@ const server = http.createServer((req, res) => {
     {
       const {ctx, p, errs} = await ctxOf();
       await fromR2(ctx);
-      await p.goto(base + '#quiz');
+      await p.goto(base + '#practice/quiz');
       await ready(p);
       const s = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u)); // a candidate just added (r: 1) is iNaturalist's
       if (!s.length || !s.every(u => u.startsWith(R2 + 'img/'))) fails.push(`R2: the game photos are not read from R2 (${s})`);
@@ -844,7 +844,7 @@ const server = http.createServer((req, res) => {
       const {ctx, p, errs} = await ctxOf();
       let asked = 0;
       p.on('request', r => r.url().startsWith(R2) && asked++);
-      await p.goto(base + '#quiz');
+      await p.goto(base + '#practice/quiz');
       await ready(p);
       const s = (await shown(p)) || [];
       if (!asked) fails.push('R2 cut off: R2 was never asked for a photo');
@@ -931,7 +931,7 @@ const server = http.createServer((req, res) => {
       const p = await ctx.newPage(),
         errs = [];
       p.on('pageerror', e => errs.push(e.message));
-      await p.goto(base + 'admin.html?demo#' + g);
+      await p.goto(base + 'admin.html?demo#photos/genera/live/' + encodeURIComponent(g));
       const sel = `figure[data-f="${ph.f}"] img`;
       await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
       await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
@@ -967,7 +967,7 @@ const server = http.createServer((req, res) => {
       const p = await ctx.newPage(),
         errs = [];
       p.on('pageerror', e => errs.push(e.message));
-      await p.goto(base + 'admin.html?demo#~todo');
+      await p.goto(base + 'admin.html?demo#inbox/todo/all');
       await p.evaluate(() =>
         Promise.race([
           navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready),
@@ -977,7 +977,7 @@ const server = http.createServer((req, res) => {
       if (!(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
         fails.push('Admin, R2 cut off, service worker: it never took the page over');
       else {
-        await p.goto(base + 'admin.html?demo#Acropora');
+        await p.goto(base + 'admin.html?demo#photos/genera/live/Acropora');
         await p.reload(); // a hash change alone keeps the page from before the worker
         // A photo of the genus page shown from its online original: R2 failed for it.
         const ok = await p
@@ -1013,7 +1013,7 @@ const server = http.createServer((req, res) => {
             : r.fulfill({status: 404});
         }
       );
-      await p.goto(base + '#quiz');
+      await p.goto(base + '#practice/quiz');
       await ready(p);
       const s = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
       if (!s.length || !s.every(u => u.startsWith(R2 + 'img/')) || (await p.$('#qfail')))
@@ -1041,7 +1041,7 @@ const server = http.createServer((req, res) => {
       const p = await ctx.newPage(),
         errs = [];
       p.on('pageerror', e => errs.push(e.message));
-      await p.goto(base + '#quiz');
+      await p.goto(base + '#practice/quiz');
       await ready(p);
       // The app registers its worker on https only (app.js, tier 5): registered here as in check 9; it takes the page over
       // (clients.claim), and the reload is then all its own.
@@ -1106,7 +1106,7 @@ const server = http.createServer((req, res) => {
           if (!st.ok || !st.src.startsWith(R2 + 'img/' + ph.f + '-s.webp'))
             fails.push(`${at}, R2 answering: a photo that lives on R2 only did not show from R2 (${JSON.stringify(st)})`);
         } else {
-          await p.goto(base + 'admin.html?demo#' + g);
+          await p.goto(base + 'admin.html?demo#photos/genera/live/' + encodeURIComponent(g));
           const sel = `figure[data-f="${ph.f}"] img`;
           await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
           await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
@@ -1148,7 +1148,7 @@ const server = http.createServer((req, res) => {
       await ctx.route(/\/core\.js(\?|$)/, r => r.fulfill({contentType: 'text/javascript', body: core}));
       let asked = 0;
       p.on('request', r => r.url().startsWith(R2) && asked++);
-      await p.goto(base + '#quiz');
+      await p.goto(base + '#practice/quiz');
       await ready(p);
       const s = (await shown(p)) || [],
         off = await misplaced(p);

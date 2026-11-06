@@ -1,6 +1,7 @@
 // Lab: a playground of visual, interactive prototypes. Each prototype lives in its own proto/<id>.js
-// and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
-// A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
+// and registers itself with LAB.add(). Routes: #tools (hub), #tools/<id>, #tools/<id>/<arg>.
+// A prototype that graduates moves to a site section (see GRADUATED) and gets its address there (core.js routeOut: its page
+// key is its id, e.g. basics → #learn/basics).
 // Stamped at deploy (tools/stamp_versions.py: one hash of the Lab files), never edited: browsers never mix new and old files.
 const LAB_V = 84;
 // One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
@@ -99,10 +100,10 @@ const labPlay = () => {
 // Nothing unlocked yet (a new player): the game says where genera open instead of asking about one never met.
 const labNone = el => {
   if (labPlay().length) return false;
-  el.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+  el.innerHTML = `<p class="note">This game asks about the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
   return true;
 };
-const genLink = n => `#g-${encodeURIComponent(n)}`;
+const genLink = n => hr('g-' + n);
 const labFams = () => [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
 // Mid-tone hues read on both light and dark backgrounds.
 const famColor = f => `hsl(${Math.round((labFams().indexOf(f) * 360) / labFams().length + 190) % 360} 58% 50%)`;
@@ -143,7 +144,7 @@ function labChoices(t, k = 4) {
   return shuffle(out);
 }
 const labHead = (title, lede) =>
-  `<div class="crumbs"><a href="#lab">Tools</a> › ${esc(title)}</div><h2>${esc(title)}</h2>${lede ? `<p class="lede">${lede}</p>` : ''}`;
+  `<div class="crumbs"><a href="${esc(hr('lab'))}">Tools</a> › ${esc(title)}</div><h2>${esc(title)}</h2>${lede ? `<p class="lede">${lede}</p>` : ''}`;
 // Keep / trim votes, so Pierre can tell which prototypes to keep.
 const labVotes = () => store.get('reefid-lab-votes', {}) || {};
 
@@ -162,9 +163,9 @@ function viewLab(h) {
   }
   const [id, ...args] = h.slice(4).split('|');
   const p = LAB.list.find(x => x.id === id);
-  // Old Lab links to a graduated tool go to its new home.
-  if (p && GRADUATED[id]) {
-    location.replace('#' + [id, ...args].join('|'));
+  // A Tools address of no tool here (a graduated one included: it lives in its section): the Tools page.
+  if (id && (!p || GRADUATED[id])) {
+    location.replace(hr('lab'));
     return;
   }
   if (p) {
@@ -183,7 +184,7 @@ function viewLab(h) {
   <div class="labhub">${order
     .map(
       p => `<article class="labtile">
-    <a class="labopen" href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><span>${esc(p.blurb)}</span></a>
+    <a class="labopen" href="${esc(hr('lab-' + p.id))}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><span>${esc(p.blurb)}</span></a>
     ${
       !IS_ADMIN
         ? ''
@@ -195,7 +196,7 @@ function viewLab(h) {
     )
     .join('')}</div>
   <h3>Now in the main sections</h3>
-  <div class="labgrad">${grad.map(p => `<a href="#${p.id}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
+  <div class="labgrad">${grad.map(p => `<a href="${esc(hr(p.id))}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
   $v.querySelectorAll('[data-vote]').forEach(
     b =>
       (b.onclick = () => {
@@ -210,14 +211,7 @@ function viewLab(h) {
 // A graduated tool, shown as a page of its section: no Lab crumbs, the section's tab bar gives the context.
 function labTool(h) {
   const [id, ...args] = h.split('|');
-  // A tool sent back to the Lab keeps working from its old link.
-  if (!GRADUATED[id]) {
-    if (LAB.files.includes(id)) {
-      location.replace('#lab-' + h);
-      return true;
-    }
-    return false;
-  }
+  if (!GRADUATED[id]) return false;
   document.documentElement.dataset.page = 'lab';
   if (LAB.stop) {
     try {

@@ -7,10 +7,16 @@ Pierre's standing rules on photos: sources, views, what games may show, credits.
 
 ### P1
 
-**Photo priority in every context: IMR lecture photos first, then Pierre's own (iNat user `ppericard`), then other
-iNaturalist observers and Coral Finder book photos only to fill gaps.** Covers and the first 3 ("featured") photos per
-view: IMR before Pierre's. IMR photos are never auto-rated Poor and never auto-excluded. Exception: the Coral ID Key
+**Coral photo priority in every context: IMR lecture photos first, then Pierre's own (iNat user `ppericard`), then
+other iNaturalist observers and Coral Finder book photos only to fill gaps.** Covers and the first 3 ("featured") photos
+per view: IMR before Pierre's. IMR photos are never auto-rated Poor and never auto-excluded. Exception: the Coral ID Key
 mixes sources on purpose for variety.
+- **Fish: no source priority.** A fish photo is never forced or boosted for who took it, Pierre's own included: the
+  first photos a player meets, the cards and the sheets lead with the easiest, most reference-like photos (the judged
+  ease, then the players' ratings), whoever took them; his photos stay in the pool and come first only when they are
+  themselves the easiest (`core.js` `easyRank`). **One exception for his own photos:** every photo of his that is
+  compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
+  included in the fish photo pool. Never left out, never boosted (`tools/fish_photos.py` `his_ok`).
 - **Corals only, with a caveat**: IMR lecture photos keep a slight priority for corals (many are hard to find elsewhere
   and they are already curated), but their provenance
   is uncertain: many are not IMR's own (from iNaturalist or the web without a proper source); trace them and credit or
@@ -27,8 +33,10 @@ mixes sources on purpose for variety.
 
 *Why:* for corals, many IMR lecture photos are hard to find elsewhere and are already curated (good quality), hence a
 slight priority; for fish, the IMR slides' photos were taken from elsewhere, while well-sourced photos with clear rights
-abound.
-*Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568).
+abound; a beginner's first fish photos must be easy, near-reference ones, and source priority had filled them with
+Pierre's own.
+*Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568); no
+source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148).
 
 ### P2
 
