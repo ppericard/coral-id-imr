@@ -421,7 +421,10 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
       VIEWS: [['wide']],
       gamePics: n => views[n] || [],
       PGD: {A: [-0.54, 80], B: [0.9, 12]},
-      PDIFF: {W: 5, EASE: 0.5, MID: 3},
+      PDIFF: {W: 5, MID: 3},
+      // The subject's calibration (core.js calibOf, SUBJECTS calib): the judged ease's logits per point.
+      SUBJ: {},
+      calibOf: () => ({ease: 0.5}),
       // A photo rating far from its genus and a pooled mix-up the old rule counted: neither is read.
       PSTAT: {a1: [3, 50, 10]},
       pooledConf: () => 0.9

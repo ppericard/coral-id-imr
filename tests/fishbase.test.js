@@ -328,7 +328,7 @@ print(json.dumps([REP_BONUS, cap('p1g0sm13', False), cap('p1g0sm13', False, rep=
   );
   assert.strictEqual(out[0], 1);
   assert.deepStrictEqual(out[1], [3, 'p1g0sm1']);
-  assert.deepStrictEqual(out[2], [4, 'p1g0sm1r'], 'a medium reference photo joins the very easy ones (model.js easyFirst)');
+  assert.deepStrictEqual(out[2], [4, 'p1g0sm1r'], 'a medium reference photo joins the very easy ones');
   assert.deepStrictEqual(out[3], [5, 'p1g0sm1r'], 'never above 5');
   assert.deepStrictEqual(out[4], [2, 'p1g0sm1jr'], 'a juvenile stays capped at 2');
   assert.deepStrictEqual(out[5], [3, 'h1g0sm1r'], 'a head-on view stays capped at 3');
@@ -353,24 +353,33 @@ test('suggest.json: every tagged judged candidate carries the flag r, and only t
     });
 });
 
-test('never in a game without Pierre: FishBase photos are candidates or sheet-only, a game photo only once he added it', () => {
+test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under the rules and it was judged reference level', () => {
   const PH = read('fish-photos.json'),
     F = read('fish.json'),
     CUR = read('curation.json'),
-    added = new Set(Object.keys((CUR.fish || {}).add || {}));
-  // A FishBase photo reaches fish-photos.json's game photos only through Pierre's curation (admin plan PR 7).
+    added = new Set(Object.keys((CUR.fish || {}).add || {})),
+    refs = new Set(Object.values(read('tools/fish_refs.json').photos).flatMap(L => L.filter(p => p.via === 'fishbase').map(p => p.f))),
+    isFb = p => p.via === 'fishbase' || /fishbase\./.test(p.src || '');
+  // Pierre, 2026-11-06 14:02: FishBase photos enter automatically when their licence allows (until then only through his
+  // curation): every FishBase game photo is his addition or a reference photo of tools/fish_refs.json judged at the
+  // reference level (tools/fish_judge.py ref_level, core.js refLevel).
   Object.values(PH.photos)
     .flat()
-    .filter(p => p.via === 'fishbase' || /fishbase\./.test(p.src || ''))
-    .forEach(p => assert.ok(added.has(p.f), `${p.f}: a FishBase game photo Pierre did not add`));
+    .filter(isFb)
+    .forEach(p => assert.ok(added.has(p.f) || (refs.has(p.f) && C.refLevel(p)), `${p.f}: a FishBase game photo outside the rules`));
   // The game as it plays (admin plan PR 7: the curated photos of fish-game.json, downloaded to R2, beside the stopgap):
-  // a FishBase photo only while Pierre has it in play for that species (core.js fishOn).
+  // a FishBase photo only while Pierre has it in play for that species (core.js fishOn), or a judged reference photo.
   const GM = read('fish-game.json').photos,
     X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR, F), PH.sheet);
   Object.values(X.gen).forEach(g =>
     g.views.wide
-      .filter(p => p.via === 'fishbase' || /fishbase\./.test(p.src || ''))
-      .forEach(p => assert.ok(added.has(p.f) && C.fishOn(CUR.fish, p.f, p.sp), `${g.id} ${p.f}: a FishBase game photo Pierre did not add`))
+      .filter(isFb)
+      .forEach(p =>
+        assert.ok(
+          (added.has(p.f) && C.fishOn(CUR.fish, p.f, p.sp)) || (refs.has(p.f) && C.refLevel(p)),
+          `${g.id} ${p.f}: a FishBase game photo outside the rules`
+        )
+      )
   );
   // The same with a FishBase photo in fish-game.json that Pierre never added, or took out of play since the last run.
   const fb = {
