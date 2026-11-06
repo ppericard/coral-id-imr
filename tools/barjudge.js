@@ -97,7 +97,7 @@ function simJudge() {
         rep = {rows, st: null, at: 0};
         bars = st2 => {
           const at = st2.at || st2.q;
-          rep.st = alt.C.replayProgress(rows.slice(rep.at, at), {gen: alt.gen, conf: alt.st.conf, mem: alt.st.mem, start: rep.st ? {p: rep.st} : undefined}).p;
+          rep.st = alt.C.replayProgress(rows.slice(rep.at, at), {gen: alt.gen, conf: alt.st.conf, mem: alt.st.mem, gd: alt.st.gd || {}, start: rep.st ? {p: rep.st} : undefined}).p;
           rep.at = at;
           const P = JSON.parse(JSON.stringify(rep.st.P));
           // A mark passed by question `at`, unless a miss logged after it took it away as the game does (the replay's lm:
