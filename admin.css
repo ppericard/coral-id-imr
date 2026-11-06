@@ -1756,6 +1756,46 @@ kbd {
   color: var(--ink);
   font-weight: 600;
 }
+/* Fish rows (5b): Pierre's value pressed; the pass's dashed until he confirms or changes it (as the growth form). */
+.adm-acts .adm-ftag button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-acts .adm-ftag.auto button[aria-pressed='true'] {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+/* Tags unfolded: the swiper keeps its one screen (Pierre, 2026-11-06): the photo gives up room down to about a quarter
+   of the screen, the tag rows scroll inside their own panel, Ease and the decision buttons stay in view. */
+.adm-sw.adm-ftopen .adm-swcard {
+  min-height: min(26dvh, 240px);
+}
+.adm-sw.adm-ftopen .adm-swacts {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  min-height: 0;
+}
+.adm-ftags {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.adm-sw.adm-ftopen .adm-ftags {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.adm-sw .adm-acts .adm-ftags .adm-qseg button {
+  min-height: 32px;
+  font-size: 0.8rem;
+}
+.adm-src.adm-fnew {
+  background: var(--good-bg);
+  color: var(--good);
+}
 @media (max-width: 599px) {
   .adm-fth {
     width: 36px;
