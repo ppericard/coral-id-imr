@@ -1,6 +1,11 @@
 # Fish game units: book families, genera, species (plan, 2026-11-06)
 
-**Status: a plan, no code. Its questions (§8) wait for Pierre.**
+**Status: decided and being built (2026-11-06).** Pierre, 13:36: migrate today, before fish opens to everyone
+(question h: before the flip); the recommendations of a-e, g and i-k taken; 13:38: **the IMR course is not a layer or an
+overlay but a tag** on the families and genera it teaches (`imr`: IMR's name, with its slides for the label), and the
+opening for "I'm at IMR" reads the tag; 13:39 (Q159): yes to f, the rows already logged rewritten once, and any old id the
+sheet still receives mapped. Built as #653 (data), #654 (the old ids in the sheet, v69) and #656 (the switch, v70). Where
+this file says "overlay" below, read "the IMR tag".
 
 Pierre, 2026-11-06 13:04 (translated): "The game's units are NOT the IMR entries. The game's units are the families, the
 genera and the species. How we present, or rather open, certain genera for people working at IMR is something else."
@@ -8,7 +13,7 @@ The families are **the book's families** (the family labels inside the 20 body-s
 S3), not always strict taxonomic families. Their name is the book's English name ("Damselfishes"); the scientific name or
 names come below it, as a subtitle. Genera and species are precise taxa. *Amphiprion* goes into the Damselfishes;
 *Diploprion* goes where the book files it (Soapfishes). For organisation, the book wins over the IMR course. The IMR
-entries become an **overlay**: a way to open, prioritise or label units for IMR players.
+entries become a **tag** on the families and genera (13:38): a way to open, prioritise or label units for IMR players.
 
 The fish sheets study (#631, its §3.1 answered the same day) already uses this model for the sheets. This plan extends it
 to the game, the progress, the log and the admin.
@@ -85,12 +90,12 @@ list of families.
   region with no key) falls back to its WoRMS family.
 - **Genus**: `{id g:<Genus> (unchanged), family, species, names (PDF genus, WoRMS genera accepted when typed)}`.
 - **Species**: as today, plus its `family` and genus.
-- **IMR overlay** (today's `teach`, renamed): each IMR entry and sub-entry keeps its IMR words (name, `fam` as IMR writes
-  it, cues, slides, look, phase lines, juveniles) and says which units it covers: `to: [unit ids]` (t01 → the
-  Damselfishes; t01a → *Chromis*; t06a → *Acanthurus*, *Ctenochaetus*, *Zebrasoma*; t13 → the Groupers and *Diploprion*).
-  It drives: the IMR priority in the opening (§5), the IMR name as a **label** on a unit ("IMR: Bannerfish" on
-  *Heniochus*), the IMR names accepted when typed, and the IMR cues shown on the unit they describe, credited to IMR. On
-  the Soapfishes, a neutral line "IMR course: taught with the Groupers" (rule C1: no correction).
+- **The IMR tag** (Pierre, 13:38): `imr` = IMR's name on the family that carries an IMR entry (with its slides, cues,
+  look-alike lines as family ids, phase lines, juveniles) and on the genera an IMR sub-entry names (Anemonefish =
+  *Amphiprion*; Surgeonfish on three genera); `imrWith: 'Groupers'` on the Soapfishes, whose species IMR teaches under
+  the Groupers, shown as a neutral "IMR course: with the Groupers" (rule C1). It drives the IMR priority in the opening
+  (§5), the IMR name shown beside the book's and accepted when typed, and the IMR cues on the unit they describe. No
+  separate IMR structure; `teach` stays in `fish.json` only for the tools until they move.
 - Circles stay per species (they already are); `fish.json` `start` names families.
 
 ## 4. How existing data maps
