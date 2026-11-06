@@ -646,11 +646,11 @@ test('glossary links to Coral basics: one mapping, the same before the Tools tie
   const ctx = {window: {}};
   vm.createContext(ctx);
   vm.runInContext(src.slice(a, b) + '\nthis.H = basicsHref;', ctx);
-  assert.strictEqual(ctx.H('Septa'), '#basics|septa');
-  assert.strictEqual(ctx.H('Coenosteum'), '#basics|walls|separate');
-  assert.strictEqual(ctx.H('Columella'), '#lab-anatomy|con|columella', 'an anatomy word: its Corallite anatomy card');
-  assert.strictEqual(ctx.H('Paliform lobes'), '#lab-anatomy|con|pali');
-  assert.strictEqual(ctx.H('Verrucae'), '#basics|words', 'a word with no step: the Words list');
+  assert.strictEqual(ctx.H('Septa'), 'basics|septa');
+  assert.strictEqual(ctx.H('Coenosteum'), 'basics|walls|separate');
+  assert.strictEqual(ctx.H('Columella'), 'lab-anatomy|con|columella', 'an anatomy word: its Corallite anatomy card');
+  assert.strictEqual(ctx.H('Paliform lobes'), 'lab-anatomy|con|pali');
+  assert.strictEqual(ctx.H('Verrucae'), 'basics|words', 'a word with no step: the Words list');
   assert.strictEqual(ctx.H('Solitary'), '', 'not a Coral basics word: no link');
 });
 

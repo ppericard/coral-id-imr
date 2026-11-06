@@ -3,6 +3,7 @@
 // migrateKeys): nothing below may read a key before this line. The theme script of index.html reads both names itself.
 migrateStorage();
 migrateIdKey(); // the renamed Coral ID Key (2026-11-04): its keys moved once (core.js)
+migrateRoutes(); // the URL refonte (2026-11-05): page names and addresses in this device's data moved once (core.js)
 let DATA;
 const $v = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
@@ -40,15 +41,28 @@ const softFail = (what, d) => e => {
 const MQ = {phone: '(max-width:599.98px)', stack: '(max-width:1023.98px)', touch: '(hover:none), (pointer:coarse)'};
 const isPhone = () => matchMedia(MQ.phone).matches;
 const isStacked = () => matchMedia(MQ.stack).matches; // phone + tablet: games and side panels go to one column
-// The page hash, decoded; a malformed %-escape in a pasted link no longer crashes the page (code re-review L2).
+// Addresses (URL refonte, Pierre 2026-11-05, Q53-Q56): #<section>/<page>/<thing>?<filters> in the words on screen,
+// the subject's prefix first for a subject other than the corals (#fish/practice/quiz). The code names a page by its
+// page key ('genera', 'g-Acropora', 'quiz-duel|A|B'…); core.js routeIn and routeOut translate, here only (hashNow, hr).
+// The address on screen read (core.js routeIn: split before decoding; a malformed %-escape no longer throws).
+const routeNow = () => routeIn(location.hash, S => UNITS[S.id].identify);
+// The page key of the address on screen; an old or unknown address gives the page route() sends it to (its section's
+// page, else Home: no old address is translated, rule W3).
 const hashNow = () => {
-  const h = location.hash.slice(1);
-  try {
-    return decodeURIComponent(h);
-  } catch (e) {
-    return h;
-  }
+  const r = routeNow();
+  return r.key != null ? r.key : r.fall;
 };
+// The link of page key k, '#' and its address, for the subject on screen (or S), or for the first subject that has the
+// page when that one does not (a genus sheet linked from the Tools with Fish chosen: the corals'); Home is '#' (the
+// clean URL: hrFull).
+const subjHas = (S, k) => {
+  const t = sectionOf(k),
+    m = k.startsWith('g-') ? 'sheet' : modeOf(k);
+  return t === 'identify' ? UNITS[S.id].identify === m : (t !== 'learn' && t !== 'practice') || S.pages.includes(m);
+};
+const hr = (k, S = SUBJ) => '#' + (routeOut(k, subjHas(S, k) ? S : SUBJECTS.find(x => subjHas(x, k)) || S) || '');
+// The full URL of page key k: Home is the page's clean URL, with no '#'.
+const hrFull = (k, S = SUBJ) => (routeOut(k, S) ? hr(k, S) : location.pathname + location.search);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const shuffle = a => {
   a = a.slice();
@@ -634,9 +648,9 @@ function setSubject(id) {
     if (typeof syncSoon === 'function') syncSoon();
     // A page the new subject does not have (Fish chosen on a coral genus sheet): its section's page for the subject, so the
     // route does not hand the player straight back (Codex review #442; the hand-off in route is for links only).
-    const h = hashNow(),
-      sp = subjPage(h);
-    if (sp !== h) history.replaceState(history.state, '', '#' + sp);
+    // The address says the subject (its prefix): rewritten for the new one in place.
+    const sp = subjPage(hashNow());
+    if (hrFull(sp) !== location.pathname + location.search + location.hash) history.replaceState(history.state, '', hrFull(sp));
     route();
   });
 }
@@ -666,6 +680,9 @@ function showSubj() {
     : '';
   document.querySelectorAll('[data-subj]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.subj === SUBJ.id)));
   document.querySelectorAll('[data-for]').forEach(r => (r.hidden = r.dataset.for !== SUBJ.id));
+  // The header's links to the pages that follow the subject carry its prefix (index.html data-key: a page key), each the
+  // subject's own page (subjPage: Identify's key is the Fish ID Key with Fish chosen, #fish/identify/key; Codex review #612).
+  document.querySelectorAll('a[data-key]').forEach(a => a.setAttribute('href', hr(subjPage(a.dataset.key))));
 }
 // The header chip's menu: opened and closed by the chip, closed by a choice, Escape or a tap elsewhere (as ⚙).
 function subjMenu(open) {
@@ -800,7 +817,7 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="${esc(hr('g-' + name))}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
@@ -1058,7 +1075,7 @@ const termDef = ([, d, src, plain]) =>
 // Coral basics' words (proto/basics.js, its Words list), each with the step that shows it ('<step>' or '<step>|<view>'), a
 // card of Corallite anatomy ('@<card>') or none (''), and the plain line used when data.json terms has none. Here, in
 // the first tier, so a glossary popup links the same way before and after the Tools tier is in (Codex review #428:
-// a deferred '#basics|<term>' opened the last step viewed for an anatomy word or a word with no step).
+// a deferred '#learn/basics/<term>' opened the last step viewed for an anatomy word or a word with no step).
 const BASICS_WORDS = [
   ['Colony', 'colony', 'Many polyps living together on one skeleton.'],
   ['Polyp', 'polyp', 'One tiny coral animal: a soft tube, a mouth, a ring of tentacles.'],
@@ -1087,11 +1104,12 @@ const basicsWord = term => BASICS_WORDS.find(x => x[0].toLowerCase() === String(
 const basicsListed = term => !!basicsWord(term);
 const basicsRoute = term => {
   const w = basicsWord(term);
-  return !w || !w[1] ? '' : w[1][0] === '@' ? '#lab-anatomy|' + w[1].slice(1) : '#basics|' + w[1];
+  return !w || !w[1] ? '' : w[1][0] === '@' ? 'lab-anatomy|' + w[1].slice(1) : 'basics|' + w[1];
 };
 // Where a term is shown on a photo (Pierre, 2026-11-03: the technical words of the genus sheets, first-meeting cards and
-// quiz tips link to Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there.
-const basicsHref = term => basicsRoute(term) || (basicsListed(term) ? '#basics|words' : '');
+// quiz tips link to Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there. A page
+// key (app.js hr gives its link).
+const basicsHref = term => basicsRoute(term) || (basicsListed(term) ? 'basics|words' : '');
 // The term whose definition is open, and where it was when the definition was placed next to it (glossMoved).
 let glossAt = null;
 function showGloss(el) {
@@ -1100,12 +1118,12 @@ function showGloss(el) {
   const bh = basicsHref(t[0]),
     to = !bh
       ? ''
-      : bh.startsWith('#lab-anatomy')
+      : bh.startsWith('lab-anatomy')
         ? 'Corallite anatomy'
-        : bh === '#basics|words'
+        : bh === 'basics|words'
           ? 'Coral basics: all the words'
           : 'Coral basics: on a photo';
-  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}${bh ? `<a class="gbx" href="${esc(bh)}">${to} ›</a>` : ''}`;
+  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}${bh ? `<a class="gbx" href="${esc(hr(bh))}">${to} ›</a>` : ''}`;
   $gpop.hidden = false;
   const r = el.getBoundingClientRect(),
     w = Math.min(320, innerWidth - 24);
@@ -1166,22 +1184,20 @@ const altName = s => {
 // The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
 const tipsHead =
   () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
+  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="${esc(hr('lab-anatomy'))}"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
 const tipCard = n => {
   const g = DATA.gen[n],
     p = cover(g);
-  return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${
+  return `<article class="tipg"><a href="${esc(hr('g-' + n))}" class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${
     lookOf(n).length
       ? `<p class="note">Don't confuse with ${lookOf(n)
-          .map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`)
+          .map(b => `<a href="${esc(hr('cmp-' + n + '|' + b))}"><i>${esc(b)}</i></a>`)
           .join(', ')}</p>`
       : ''
   }</div></article>`;
 };
 
 /* ---------- key helpers (Coral Finder book boxes, used by genus sheets and the Coral ID Key) + IMR groups ---------- */
-const groupOf = id => DATA.key.find(g => g.id === id[0]);
-const leafOf = id => groupOf(id)?.leaves.find(l => l.id === id);
 const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
@@ -1288,7 +1304,7 @@ const UNITS = {
         )
     ],
     winks: () => [],
-    // The Learn page (#genera): the Genera page (learn.js).
+    // The Learn page (#learn/genera): the Genera page (learn.js).
     list: () => viewGenera(),
     sets: [
       {
@@ -1405,7 +1421,7 @@ function bonusSet(on, k = SETS()[0].k) {
   saveQ();
   showBon();
   if (typeof syncSoon === 'function') syncSoon();
-  if (RAW && /^(progress|quiz-board)$/.test(hashNow())) route();
+  if (RAW && hashNow() === 'progress') route();
 }
 document
   .querySelectorAll('[data-optin] button')
@@ -1497,19 +1513,21 @@ const startOptsHtml = (cur, only) =>
     .join('')}</div>`;
 
 /* ---------- routing ---------- */
+// Opens the page of key h (or draws it again when it is on screen).
 function go(h) {
-  if (hashNow() === h) route();
-  else location.hash = h;
+  if (hashNow() === h && location.hash === hr(h)) route();
+  else if (!routeOut(h, SUBJ)) {
+    history.pushState({d: ++pageDepth}, '', hrFull(h));
+    route();
+  } else location.hash = hr(h);
 }
 
 // Photo size (small / medium / large), remembered per page in localStorage (key reefid-sync-size).
 // Each page reads :root[data-size] in its own CSS; pages where it means nothing (games that fill the screen,
 // home, progress) hide the S/M/L buttons, keeping their room so the header never changes size.
-const SIZE_PAGES = ['genera', 'tips', 'genus', 'pair', 'idkey', 'lab-gallery', 'lab-elim'];
-function pageKey() {
-  const h = hashNow();
-  return h.startsWith('g-') ? 'genus' : h.startsWith('cmp-') ? 'pair' : h.split('|')[0] || 'home';
-}
+// Keyed by page name (core.js pageName: learn.genera, learn.genus, learn.compare…).
+const SIZE_PAGES = ['learn.genera', 'learn.genus', 'learn.compare', 'identify.key', 'tools.gallery', 'tools.elim'];
+const pageKey = () => pageName(hashNow());
 function sizePrefs() {
   try {
     return JSON.parse(localStorage.getItem('reefid-sync-size')) || {};
@@ -1519,7 +1537,7 @@ function sizePrefs() {
 }
 // Default M, except Genera (S: more genera per screen, groups easier to compare).
 function photoSize() {
-  return sizePrefs()[pageKey()] || (pageKey() === 'genera' ? 's' : 'm');
+  return sizePrefs()[pageKey()] || (pageKey() === 'learn.genera' ? 's' : 'm');
 }
 const SIZES = {
   // Measured 2026-11-01 (390 to 1920 px windows): S 170-194 px, M 356-415, L 356 on phones and 615-631 above.
@@ -1533,7 +1551,7 @@ function applySize() {
   document.documentElement.dataset.size = s;
   const sz = document.getElementById('size');
   document.getElementById('sizerow').hidden = !on;
-  document.getElementById('xrow').hidden = !/^(lab-)?idkey$/.test(pageKey());
+  document.getElementById('xrow').hidden = pageKey() !== 'identify.key';
   document.querySelectorAll('img[data-sz]').forEach(i => (i.sizes = sizesFor(i.dataset.sz)));
   document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s)));
 }
@@ -1646,7 +1664,7 @@ const MODES = {
   ],
   practice: [
     // "Quiz", not "Photo → genus" (Pierre, 2026-11-03: it is a general quiz now, typed answers and duels slipped in); the
-    // ids and routes stay (#quiz, quiz|… in the answer log). Phones: "Duels", so the four tabs fit 360 px without
+    // ids and routes stay (#practice/quiz, quiz|… in the answer log). Phones: "Duels", so the four tabs fit 360 px without
     // scrolling: Quiz, Custom quiz, Duels, Memory take 262 of 328 px there; "Look-alike duels" would leave 2 px.
     ['quiz', 'Quiz', 'Name the genus'],
     ['quiz-custom', 'Custom quiz', 'The quiz on the genera you pick'],
@@ -1663,12 +1681,12 @@ const MODES = {
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
 function modeOf(h) {
-  return /^[kl]-/.test(h) ? 'idkey' : h.startsWith('g-') ? 'genera' : h.startsWith('cmp') ? 'cmp' : h.split('|')[0];
+  return h.startsWith('g-') ? 'genera' : h.startsWith('cmp') ? 'cmp' : h.split('|')[0];
 }
 function sectionOf(h) {
   if (!h || h === 'home') return 'home';
   if (h.startsWith('lab')) return 'lab';
-  if (h === 'progress' || h === 'quiz-board') return 'progress';
+  if (h === 'progress') return 'progress';
   if (h === 'board') return 'board';
   if (h === 'ach') return 'board';
   if (h === 'about' || h.startsWith('delete-account')) return 'about'; // no tab: reached from the Home credit line and the ? help
@@ -1695,11 +1713,11 @@ function ctxBar(h) {
     const prev = L[(i - 1 + L.length) % L.length],
       next = L[(i + 1) % L.length];
     return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(altName(g.fam))}</small></h2>
-      <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
+      <span class="pn"><a href="${esc(hr('g-' + prev))}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="${esc(hr('g-' + next))}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
   if (a && GX(a) && GX(b) && gameGenus(a) && gameGenus(b))
-    return `${back}<h2 class="ctx-t ctx-pair"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
+    return `${back}<h2 class="ctx-t ctx-pair"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="${esc(hr('cmp'))}">Look-alikes</a>`;
   return '';
 }
 function showModes(tab, h) {
@@ -1712,7 +1730,7 @@ function showModes(tab, h) {
     $modes.querySelector('[data-back]').onclick = () =>
       pageDepth > 0
         ? history.back()
-        : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : h.startsWith('delete-account') ? 'about' : 'cmp');
+        : go(h.startsWith('g-') ? 'genera' : h === 'about' ? '' : h.startsWith('delete-account') ? 'about' : 'cmp');
     return;
   }
   // A section with a single tool needs no tab bar. Learn and Practice show the subject's pages only (SUBJECTS pages),
@@ -1732,7 +1750,8 @@ function showModes(tab, h) {
   const cur = modeOf(h);
   $modes.setAttribute('aria-label', MODE_LABEL[tab]);
   $modes.innerHTML = L.map(
-    ([k, t, d]) => `<a href="#${k}" title="${esc(subjWords(d))}"${k === cur ? ' aria-current="page"' : ''}><b>${subjWords(t)}</b></a>`
+    ([k, t, d]) =>
+      `<a href="${esc(hr(k))}" title="${esc(subjWords(d))}"${k === cur ? ' aria-current="page"' : ''}><b>${subjWords(t)}</b></a>`
   ).join('');
   const on = $modes.querySelector('[aria-current]');
   if (on && $modes.scrollWidth > $modes.clientWidth) $modes.scrollLeft = on.offsetLeft - ($modes.clientWidth - on.offsetWidth) / 2;
@@ -1919,25 +1938,42 @@ function route() {
     if (typeof achHelped === 'function') achHelped(); // a report marked done since (Q66, progress.js)
   }
   applySize();
-  const h = hashNow();
+  const r = routeNow();
+  // An old or unknown address: its section's page when its first segment is a section, else Home, the address replaced
+  // (Pierre, 2026-11-05, Q53-Q56: old links are not translated).
+  if (r.key == null) return void location.replace(hrFull(r.fall, subjOpen(r.S) ? r.S : SUBJ));
+  const h = r.key;
+  // A subject's address (#fish/…) on a page that follows the subject: that subject comes on screen (setSubject routes
+  // again), or the corals' page when the player may not open it. An address without a prefix shows the subject chosen.
+  if (!r.bare && r.S !== SUBJ && ROUTE_SUBJ.includes(r.sec)) {
+    // Its data not loaded (fish.json or fish-photos.json failed): the page for the subject on screen, never a page stuck
+    // on Loading (Codex review #612; the start-up load falls back to the corals the same way).
+    if (subjOpen(r.S)) return void setSubject(r.S.id).catch(() => location.replace(hrFull(subjPage(h), SUBJ)));
+    return void location.replace(hrFull(subjPage(h), SUBJ));
+  }
   // A page the subject does not have: its section's first page for the subject.
   const sp = subjPage(h);
   if (sp !== h) {
     // A genus sheet or a comparison of another subject (opened from Identify, the Coral ID Key, with Fish chosen; Codex
-    // review #442), or a link into another subject's Identify tool with its clues (#idkey|form=…): that subject comes on
-    // screen (setSubject routes again), never the subject's list or tool instead. A bare Identify address opens the
-    // subject's own tool.
+    // review #442), or a link into another subject's Identify tool with its clues (#identify/key?form=…): that subject
+    // comes on screen (setSubject routes again), never the subject's list or tool instead. A bare Identify address opens
+    // the subject's own tool.
     const S =
       (/^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'))) ||
       (sectionOf(h) === 'identify' && h.includes('|') && SUBJECTS.find(x => subjOpen(x) && UNITS[x.id].identify === modeOf(h)));
-    if (S && S !== SUBJ) return void setSubject(S.id);
-    return location.replace('#' + sp);
+    if (S && S !== SUBJ) return void setSubject(S.id).catch(() => location.replace(hrFull(sp)));
+    return void location.replace(hrFull(sp));
   }
+  // The address in its one spelling, the subject's prefix included (a link without one, with Fish chosen; a trailing
+  // '/'): replaced in place, nothing to draw again.
+  if (hrFull(h) !== location.pathname + location.search + location.hash) history.replaceState(history.state, '', hrFull(h));
   // Genera list → a genus sheet → back: the list opens where it was left (RA review 2026-11-02: an 8000 px list came back
   // at the top). The genus at the top of the screen is kept when leaving it (not the scroll: the photos above it are not
   // loaded yet on the way back), and brought back to the same place only when coming back from a sheet.
   if (routeFrom === 'genera') {
-    const a = [...$v.querySelectorAll('a[href^="#g-"]')].find(x => x.getBoundingClientRect().top > $hdr.getBoundingClientRect().bottom);
+    const a = [...$v.querySelectorAll(`a[href^="${hr('g-x').slice(0, -1)}"]`)].find(
+      x => x.getBoundingClientRect().top > $hdr.getBoundingClientRect().bottom
+    );
     generaY = a ? [a.getAttribute('href'), a.getBoundingClientRect().top] : null;
   }
   const fromSheet = routeFrom.startsWith('g-');
@@ -1946,17 +1982,17 @@ function route() {
   // card over Home). A redraw of the same page keeps it. First-meeting cards are met when shown: the rest come next time.
   const left = h !== routeFrom;
   if (left) document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
-  // Load times (loadMark): the first page drawn, the quiz opened, the first other page.
+  // Load times (loadMark): the first page drawn, the quiz opened, the first other page, by page name (core.js pageName:
+  // the sheet keeps names, never an address with '/').
+  const pn = pageName(h, SUBJ.pv);
   if (!('p0' in LOADM)) {
-    loadMark('p0', h || 'home');
+    loadMark('p0', pn);
     loadMark('t0');
-  } else if (left && (h || 'home') !== LOADM.p0) loadMark('nx', h || 'home');
+  } else if (left && pn !== LOADM.p0) loadMark('nx', pn);
   const from = routeFrom;
   routeFrom = h;
   // The way back to a duel from the comparison its relief card opened (quiz.js DUELBACK): any other page drops it.
   if (typeof duelBackKeep === 'function') duelBackKeep(h);
-  // Home lives at the clean URL; an old #home link is rewritten to it.
-  if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);
   const tab = sectionOf(h);
   resetHelp();
   $gpop.hidden = true;
@@ -1969,35 +2005,18 @@ function route() {
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
   showModes(tab, h);
-  // The old growth-form key and corallite filters live on in the Coral ID Key: their links open it with the same clues ticked.
-  if (h === 'key' || h === 'key-tr') location.replace('#idkey');
-  else if (h.startsWith('k-') && groupOf(h.slice(2))) location.replace('#idkey|form=' + h.slice(2));
-  else if (h.startsWith('l-') && leafOf(h.slice(2))) {
-    const l = h.slice(2),
-      one = groupOf(l).leaves.length === 1;
-    location.replace('#idkey|form=' + l[0] + (one ? '' : ';box=' + l));
-  } else if (h === 'key-imr') {
-    azOrder = 'lecture';
-    location.replace('#genera');
-  } else if (h.startsWith('g-')) viewGenus(h.slice(2));
-  else if (h === 'tips' || h.startsWith('tips|')) {
-    azView = 'tips';
-    location.replace('#genera');
-  } else if (h === 'cmp' || h.startsWith('cmp|')) {
+  if (h.startsWith('g-')) viewGenus(h.slice(2));
+  else if (h === 'cmp' || h.startsWith('cmp|')) {
     const [, a, b] = h.split('|');
     viewLookalikes(a, b);
   } else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
   else if (h === 'quiz') quizPhoto();
   // The custom quiz (quiz.js): its selection screen, and the quiz on the genera picked.
   else if (h === 'quiz-custom' || h === 'quiz-custom|play') quizCustom(h);
-  // Lecture photos are now a photo set of the Quiz.
-  else if (h === 'quiz-course')
-    location.replace('#quiz'); // the Lecture photo set was removed (Pierre, 2026-10-31)
-  else if (h === 'progress' || h === 'quiz-board') quizBoard();
+  else if (h === 'progress') quizBoard();
   else if (h === 'board') viewBoard();
   else if (h === 'ach') viewAch();
-  // About and credits (home.js); #credits is another name for it.
-  else if (h === 'credits') location.replace('#about');
+  // About and credits (home.js).
   else if (h === 'about' && window.viewAbout) viewAbout();
   // Deleting one's own account (sync.js viewDeleteAccount, sheet v58), linked from About › Privacy and privacy.html.
   else if (h === 'delete-account' || h === 'delete-account|done') viewDeleteAccount(h);
@@ -2039,7 +2058,7 @@ const $help = document.getElementById('help'),
 // The last line of the ? help on every page (Pierre, 2026-11-03: the credits footer left the pages): About and credits,
 // the privacy notice and Send feedback (rule U14), two taps from anywhere. So the ? shows on every page.
 const helpEnd = () =>
-  `<p class="note hend"><a href="#about">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn({k: 'page'}, 'Send feedback') : ''}</p>`;
+  `<p class="note hend"><a href="${esc(hr('about'))}">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn({k: 'page'}, 'Send feedback') : ''}</p>`;
 function pageHelp() {
   const root = $v.querySelector(':scope > .lab') || $v;
   const found = [...root.querySelectorAll(':scope > h2:not(.vh), :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
@@ -2135,7 +2154,7 @@ document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
   e.preventDefault();
   const q = document.getElementById('q');
-  if (q && location.hash.slice(1) === 'genera') {
+  if (q && hashNow() === 'genera') {
     q.focus();
     q.select();
     return;
@@ -2298,11 +2317,7 @@ const STARTED = new Promise(r => (started = r)),
   // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
   // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral ID Key (proto/) 5.
   pageTier = h =>
-    !h || h === 'home' || h === 'about' || h === 'credits' || h.startsWith('delete-account')
-      ? 1
-      : /^(quiz|genera|g-|cmp|tips|key-imr$|progress|quiz-board|board|ach)/.test(h)
-        ? 2
-        : 5,
+    !h || h === 'home' || h === 'about' || h.startsWith('delete-account') ? 1 : /^(quiz|genera|g-|cmp|progress|board|ach)/.test(h) ? 2 : 5,
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;

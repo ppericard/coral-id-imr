@@ -6,20 +6,19 @@ const C = require('../core.js');
 
 const plain = o => JSON.parse(JSON.stringify(o));
 
-test('page names: routes without their parameters, genus sheets, look-alikes, home', () => {
+test('page names: the address without its things, genus sheets, look-alikes, home', () => {
   const N = C.pageName;
   assert.strictEqual(N(''), 'home');
   assert.strictEqual(N('#home'), 'home');
-  assert.strictEqual(N('g-Acropora'), 'genus');
-  assert.strictEqual(N('g-%E0'), 'genus');
-  assert.strictEqual(N('cmp'), 'lookalikes');
-  assert.strictEqual(N('cmp|Pocillopora|Stylophora'), 'lookalikes');
-  assert.strictEqual(N('cmp-Pocillopora|Stylophora'), 'compare');
-  assert.strictEqual(N('quiz-custom|play'), 'quiz-custom');
-  assert.strictEqual(N('quiz-duel|Foo|Bar'), 'quiz-duel');
-  assert.strictEqual(N('quiz-board'), 'progress');
-  assert.strictEqual(N('idkey|form=b;box=b1'), 'idkey');
-  assert.strictEqual(N('lab-basics|walls'), 'lab-basics');
+  assert.strictEqual(N('g-Acropora'), 'learn.genus');
+  assert.strictEqual(N('g-%E0'), 'learn.genus');
+  assert.strictEqual(N('cmp'), 'learn.look-alikes');
+  assert.strictEqual(N('cmp|Pocillopora|Stylophora'), 'learn.look-alikes');
+  assert.strictEqual(N('cmp-Pocillopora|Stylophora'), 'learn.compare');
+  assert.strictEqual(N('quiz-custom|play'), 'practice.custom');
+  assert.strictEqual(N('quiz-duel|Foo|Bar'), 'practice.duels');
+  assert.strictEqual(N('idkey|form=b;box=b1'), 'identify.key');
+  assert.strictEqual(N('lab-anatomy|walls'), 'tools.anatomy');
   assert.strictEqual(N('<script>'), 'other');
   assert.strictEqual(N('__proto__'), 'other');
   assert.strictEqual(N('x'.repeat(60)), 'other');
@@ -32,23 +31,23 @@ test('page names carry the subject on screen: fish.<page>, the corals plain', ()
     F = C.subjectOf('fish').pv;
   assert.strictEqual(C.subjectOf('coral').pv, '');
   assert.strictEqual(F, 'fish.');
-  assert.strictEqual(N('quiz', F), 'fish.quiz');
+  assert.strictEqual(N('quiz', F), 'fish.practice.quiz');
   assert.strictEqual(N('', F), 'fish.home');
-  assert.strictEqual(N('quiz-board', F), 'fish.progress');
-  assert.strictEqual(N('genera', F), 'fish.genera');
+  assert.strictEqual(N('progress', F), 'fish.progress');
+  assert.strictEqual(N('genera', F), 'fish.learn.genera');
   assert.strictEqual(N('x'.repeat(39), F), 'fish.other');
-  assert.strictEqual(N('quiz', ''), 'quiz');
-  assert.strictEqual(N('quiz'), 'quiz');
+  assert.strictEqual(N('quiz', ''), 'practice.quiz');
+  assert.strictEqual(N('quiz'), 'practice.quiz');
   const S = C.pagesNew();
   C.pagesOpen(S, 'quiz', 1e6);
   C.pagesOpen(S, 'quiz', 1e6 + 2000, {pre: F});
   C.pagesOpen(S, 'genera', 1e6 + 5000, {pre: F});
   const sum = C.pagesTake(S, 1e6 + 6000);
-  assert.deepStrictEqual(plain(sum.r), {quiz: [1, 2], 'fish.quiz': [1, 3], 'fish.genera': [1, 1]});
+  assert.deepStrictEqual(plain(sum.r), {'practice.quiz': [1, 2], 'fish.practice.quiz': [1, 3], 'fish.learn.genera': [1, 1]});
   assert.deepStrictEqual(plain(C.pagesClean(sum).r), plain(sum.r));
-  assert.deepStrictEqual(C.pageSubj('fish.quiz'), ['fish', 'quiz']);
-  assert.deepStrictEqual(C.pageSubj('quiz'), ['coral', 'quiz']);
-  assert.deepStrictEqual(C.pageSubj('lab-basics'), ['coral', 'lab-basics']);
+  assert.deepStrictEqual(C.pageSubj('fish.practice.quiz'), ['fish', 'practice.quiz']);
+  assert.deepStrictEqual(C.pageSubj('practice.quiz'), ['coral', 'practice.quiz']);
+  assert.deepStrictEqual(C.pageSubj('tools.anatomy'), ['coral', 'tools.anatomy']);
   assert.deepStrictEqual(C.pageSubj('coral.quiz'), ['coral', 'coral.quiz']);
 });
 
@@ -75,14 +74,14 @@ test('the summary counts openings and seconds in view, keeps how each sheet was 
   C.pagesOpen(S, 'g-Acropora', (t += 7000), {genus: 'Acropora', from: 'learn', asked: true}); // 3.4 s
   const out = C.pagesTake(S, (t += 3400));
   assert.deepStrictEqual(plain(out), {
-    r: {quiz: [2, 90], genus: [3, 30], home: [1, 5], genera: [1, 4]},
+    r: {'practice.quiz': [2, 90], 'learn.genus': [3, 30], home: [1, 5], 'learn.genera': [1, 4]},
     // Acropora: opened twice, from the quiz first (the origin of its first opening is kept), already asked.
     g: {Acropora: [2, 23, 'quiz', 1], Porites: [1, 7, 'learn', 0]}
   });
   // A fresh tally for the rest of the visit: the page in view goes on, with no new opening.
   C.pagesResume(S, t);
   const more = C.pagesTake(S, (t += 2000));
-  assert.deepStrictEqual(plain(more), {r: {genus: [0, 2]}, g: {Acropora: [0, 2, 'quiz', 1]}});
+  assert.deepStrictEqual(plain(more), {r: {'learn.genus': [0, 2]}, g: {Acropora: [0, 2, 'quiz', 1]}});
   assert.strictEqual(C.pagesTake(S, t), null, 'nothing new: no summary');
 });
 
@@ -91,7 +90,7 @@ test('a page opened while the app is hidden counts its opening, not its time; a 
   C.pagesOpen(S, 'g-Acropora', 0, {genus: 'Acropora', hidden: true});
   C.pagesOpen(S, 'g-%E0', 9000, {genus: null});
   C.pagesOpen(S, 'g-acropora', 9000, {genus: 'acropora'});
-  assert.deepStrictEqual(plain(C.pagesTake(S, 12000)), {r: {genus: [3, 3]}, g: {Acropora: [1, 0, 'other', 0]}});
+  assert.deepStrictEqual(plain(C.pagesTake(S, 12000)), {r: {'learn.genus': [3, 3]}, g: {Acropora: [1, 0, 'other', 0]}});
 });
 
 test('capped: at most PAGES.GEN genera and PAGES.ROUTES pages, the most opened first; seconds capped', () => {
@@ -108,8 +107,8 @@ test('capped: at most PAGES.GEN genera and PAGES.ROUTES pages, the most opened f
   assert.ok(out.g[G[39]], 'the genus opened most is kept');
   assert.strictEqual(out.g[G[39]][0], 3);
   assert.strictEqual(Object.keys(out.r).length, C.PAGES.ROUTES);
-  assert.strictEqual(out.r.genus[0], 42);
-  assert.strictEqual(out.r.quiz[1], C.PAGES.MAXS);
+  assert.strictEqual(out.r['learn.genus'][0], 42);
+  assert.strictEqual(out.r['practice.quiz'][1], C.PAGES.MAXS);
   assert.ok(JSON.stringify(out).length < 3000, 'small');
 });
 

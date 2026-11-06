@@ -30,9 +30,9 @@ const gameHelp = cur =>
   UNITS[SUBJ.id].help
     ? UNITS[SUBJ.id].help(cur)
     : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder book, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
   ${cur === CUSTOM_H ? `<p class="lede"><b>Custom quiz</b>: only the genera you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other genera only when you picked fewer than 4. A genus you have not met yet comes with its card. The rest works as in the Quiz, and every answer counts the same, except the mastery exam: its questions only come in the Quiz, so a genus that reaches 95% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.</p>` : ''}
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="#progress">My progress</a>.</p>${
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="${esc(hr('progress'))}">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
       ? ''
       : `
@@ -715,7 +715,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const nb = document.getElementById('next');
   nb.focus({preventScroll: true});
   nb.onclick = route;
-  // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#quiz-duel|A|B) is cheap anyway.
+  // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#practice/duels/A/B) is cheap anyway.
   setTimeout(() => hashNow() === cur && planNext(cur), 50);
   // The out-of-game prompts take turns (promptOk), never with a card or an achievement toast, nor with the mastery toast
   // due in a moment.
@@ -741,13 +741,13 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
     apart = C && fish ? ((g.lk || []).find(([o]) => o === c) || (C.lk || []).find(([o]) => o === target) || [])[1] : '';
   const vs = C
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-      `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
   const named = inner =>
       fish
         ? `<b>${inner}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
-        : `<a href="#g-${esc(target)}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+        : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
     name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
     // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
     // letters marked (an old name typed: that name, then the unit); the words in normal weight and the name in bold, so
@@ -1794,7 +1794,7 @@ function quizDuel(a, b, fresh = true, from = '') {
   const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
   // No look-alike pair unlocked yet (a new player): the duels come once the quiz has opened two look-alikes.
   if (!q) {
-    $v.innerHTML = `<p class="note duelnone">Duels pit two look-alike ${SUBJ.many} against each other. They start once you have met two of them in the quiz.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+    $v.innerHTML = `<p class="note duelnone">Duels pit two look-alike ${SUBJ.many} against each other. They start once you have met two of them in the quiz.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
     return;
   }
   question(...q);
@@ -1821,7 +1821,7 @@ function duelPick(list, keep = () => true) {
 }
 function planDuel(a, b) {
   // Only the genera the player has unlocked (model.js unlocked: one progression path for every game, Pierre 2026-11-04):
-  // the Duel tab opens none. A pair from a link (#quiz-duel|A|B, "Drill this pair") must name two unlocked genera with game
+  // the Duel tab opens none. A pair from a link (#practice/duels/A/B, "Drill this pair") must name two unlocked genera with game
   // photos; anything else gets a normal duel (code re-review L2). Null when no look-alike pair is unlocked yet.
   const list = unlocked();
   if (a && b && !(a !== b && list.includes(a) && list.includes(b) && photoSet(a).shown.length && photoSet(b).shown.length))
@@ -1864,7 +1864,7 @@ function duelBack() {
   const x = DUELBACK;
   if (!x) return;
   if (pageDepth === x.d + 1) history.back();
-  else location.hash = '#' + x.h;
+  else location.hash = hr(x.h);
 }
 const reliefNote = (run, h0, h1) => (h0 < INTRO.HOLD && h1 >= INTRO.HOLD ? {...run, up: 1} : run);
 const reliefDue = (run = DUELRUN) => !!run.up && !run.shown && introHold();
@@ -1882,7 +1882,7 @@ function reliefArm(nb, cur, pair) {
   });
 }
 // The card (cardShow kind 'tip', 💡): "Tough pair today", "Take a step back?", one line; Mix in other genera (the main
-// button, the photo quiz), Compare them (the side-by-side comparison of the duel's two genera, #cmp-A|B, as learn.js links
+// button, the photo quiz), Compare them (the side-by-side comparison of the duel's two genera, #learn/compare/A/B, as learn.js links
 // it, with the way back to this duel: DUELBACK), and a quiet Keep drilling (the next duel; also Escape) (Pierre,
 // 2026-11-04, the order). Anti-reflex as the tips: its buttons take no tap for TIP.WAIT ms, the focus
 // is on the title (Enter presses nothing), a tap outside does nothing. Logged as the tips are (ev 'pulse', src
@@ -1910,17 +1910,17 @@ function reliefShow(cur, pair) {
     },
     onClose: how => {
       log(how === 1 ? 'mix' : how === 2 ? 'cmp' : how === 'route' ? 'none' : 'keep');
-      if (how === 1) location.hash = '#quiz';
+      if (how === 1) location.hash = hr('quiz');
       else if (how === 2) {
         DUELBACK = {h: cur, cmp: `cmp-${pair[0]}|${pair[1]}`, run: DUELRUN, d: pageDepth};
-        location.hash = '#' + DUELBACK.cmp;
+        location.hash = hr(DUELBACK.cmp);
       } else if (how !== 'route') route();
     }
   });
   setTimeout(() => d.querySelectorAll('[data-b], [data-keep]').forEach(b => (b.disabled = false)), TIP.WAIT);
 }
-// Custom quiz (Pierre, 2026-11-03): the photo quiz on the genera the player picks. #quiz-custom is the selection screen,
-// #quiz-custom|play (CUSTOM_H) the quiz itself, every format of the photo quiz in it (typed questions, Again, duels
+// Custom quiz (Pierre, 2026-11-03): the photo quiz on the genera the player picks. #practice/custom is the selection screen,
+// #practice/custom/play (CUSTOM_H) the quiz itself, every format of the photo quiz in it (typed questions, Again, duels
 // slipped in, traps, the photos' level, the comeback; not the mastery exam, left to the photo quiz); the draw is model.js's (CUSTOM, customOf, customDraw,
 // customChoices; docs/LEARNING.md "Custom quiz"). The selection is saved at each change ({g: genera, t: when}, an
 // reefid-sync key: it travels with the progress, the latest wins between devices, sync.js mergeSaved) and preselected
@@ -1937,7 +1937,7 @@ const customSel = () => customOf(customSaved(), unlocked());
 // least 2 of its genera were answered right (model.js comebackOf), else it plays as usual and leaves the comeback alone.
 const cbIn = cur => CB.r > 0 && (cur !== CUSTOM_H || (customSel() || []).filter(n => introReady(n) && (P[n] || {}).ok > 0).length >= 2);
 function quizCustom(h) {
-  if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace('#quiz-custom');
+  if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace(hr('quiz-custom'));
   viewCustom();
 }
 // The selection screen (Pierre, 2026-11-03). Every genus is in view, as a small photo with its name, tapped to pick it
@@ -2039,7 +2039,7 @@ function viewCustom() {
     return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
   };
   $v.innerHTML = `<h2>Custom quiz</h2>
-  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder book); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
+  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder book); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
   <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="View">${[
     ['imr', 'IMR groups'],
     ['mix', 'My mix-ups'],

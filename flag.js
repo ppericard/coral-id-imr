@@ -44,8 +44,8 @@
   const where = () => {
     const h = hashNow() || 'home',
       open = !document.getElementById('lightbox').hidden;
-    const game = /^(quiz|pairs|reveal|lab-reveal|lab-pairs)/.test(h);
-    return `${h}${game && typeof Q !== 'undefined' && !(h === 'quiz' && Q.course) ? ' · level ' + Q.level : ''}${open ? ' · lightbox' : ''}`;
+    const game = /^(quiz|pairs|lab-reveal)/.test(h);
+    return `${location.hash.slice(1) || 'home'}${game && typeof Q !== 'undefined' && !(h === 'quiz' && Q.course) ? ' · level ' + Q.level : ''}${open ? ' · lightbox' : ''}`;
   };
   const btn = document.createElement('button');
   btn.type = 'button';

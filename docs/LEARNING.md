@@ -1017,7 +1017,7 @@ and any future game or mode, no exceptions". The photo quiz is the path: it open
 opening rule, the ★ rule after their reference, Open all). Every other game draws only from the genera the player has
 unlocked, `model.js` `unlocked(list)`, the one source for it (met on the path and ready, `introReady`), and opens none:
 
-- the Duel tab (`quiz.js` `planDuel`): look-alike pairs of unlocked genera; `#quiz-duel|A|B` only when both are
+- the Duel tab (`quiz.js` `planDuel`): look-alike pairs of unlocked genera; `#practice/duels/A/B` only when both are
   unlocked (else a normal duel); "Drill this pair" shown only for an unlocked pair (`learn.js` `drillOk`); before any
   look-alike pair is unlocked, a line sends the player to the quiz;
 - Memory (`proto/pairs.js` `memoryGenera`): only genera unlocked, fewer pairs than the level holds when fewer are
@@ -1885,7 +1885,7 @@ in the 40 answers after the comeback; genera opened on their cards in the first 
 
 ### The Duel tab when the hold sets in (2026-11-04)
 
-The Duel tab (`#quiz-duel`, and `#quiz-duel|A|B` from "Drill this pair" on a comparison) is a 2-choice drill the player
+The Duel tab (`#practice/duels`, and `#practice/duels/A/B` from "Drill this pair" on a comparison) is a 2-choice drill the player
 chooses. Pierre approved two changes on 2026-11-04, from a read-only look at the sheet's answers: a player (P1) drilled
 *Pocillopora* / *Stylophora* from "Drill this pair", 10 right, then missed 6 of the next 13 while the app still expected
 about 80%; the opening hold's sum crossed `INTRO.HOLD` at his 25th duel answer and nothing changed in the duel. Over all
@@ -1909,7 +1909,7 @@ answer takes the hold's sum h from below `INTRO.HOLD` to `INTRO.HOLD` or more, t
 (💡, kind `tip`): kicker "Tough pair today", title "Take a step back?", "These two are hard right now. Mixing in other genera for
 a while, or seeing these two side by side, often helps more than more of the same." (Pierre, 2026-11-04: the line
 first spoke of the comparison only, the second choice since the order changed) and three choices, in Pierre's order: **Mix in other genera** (the main button,
-the photo quiz, `#quiz`), **Compare them** (the side-by-side comparison of the duel's two genera, `#cmp-A|B`, as
+the photo quiz, `#practice/quiz`), **Compare them** (the side-by-side comparison of the duel's two genera, `#learn/compare/A/B`, as
 `learn.js` links it), **Keep drilling** (the next duel; Escape too). No numbers on it (Pierre's rule for these cards).
 Compare them does not end the drill for good (Pierre, 2026-11-04): the comparison it opens shows **Back to the duel**
 (in view however far the page scrolls: a floating button at the bottom centre on phones and tablets, a light "Duel paused" band under the page bar on desktop), which, like the browser's Back, returns to the same pair's duel and continues the same run (no second

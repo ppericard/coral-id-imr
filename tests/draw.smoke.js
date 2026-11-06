@@ -326,7 +326,7 @@ const server = http.createServer((req, res) => {
       f().requestSubmit();
       l = logged();
       const rd = document.querySelector('#after .fb h3'),
-        ln = rd && rd.querySelector(`a[href="#g-${g}"]`);
+        ln = rd && rd.querySelector(`a[href="${hr('g-' + g)}"]`);
       if (answersSoFar() !== a1 + 1 || l.a !== g || !l.ok || l.ty !== typo2 || l.tr !== 0 || P[g].h.slice(-1) !== '1')
         fails.push(`typed answer "${typo2}" retyped wrong logged ${JSON.stringify(l)}, recent ${P[g].h}`);
       if (

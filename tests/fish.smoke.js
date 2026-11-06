@@ -14,6 +14,9 @@
 //   admin token.
 // iNaturalist photos are not fetched (every other host is aborted): the logic only. Needs Playwright, like
 // draw.smoke.js. Locally: node tests/fish.smoke.js
+// A page key's address (core.js routeOut), for the corals.
+const C = require('../core.js'),
+  addr = k => C.routeOut(k) ?? k;
 const http = require('http'),
   fs = require('fs'),
   path = require('path');
@@ -67,7 +70,7 @@ const server = http.createServer((req, res) => {
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));
-  await p.goto(base + '#quiz');
+  await p.goto(base + '#practice/quiz');
   await p.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH, null, {timeout: 30000});
   const out = await p.evaluate(() => {
     const fails = [],
@@ -387,7 +390,7 @@ const server = http.createServer((req, res) => {
       ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the chip is there, on every page.
-    await q.evaluate(() => (location.hash = '#lab'));
+    await q.evaluate(() => (location.hash = '#tools'));
     await q.waitForFunction(() => document.querySelector('#view .labhub'), null, {timeout: 15000});
     const tl = await q.evaluate(() => ({
       tile: !!document.querySelector('#view .labsubj, #view [data-subj]'),
@@ -398,7 +401,7 @@ const server = http.createServer((req, res) => {
     // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
     // rule S3), in the key's order, only those that hold an IMR entry, each under its number and title as the key prints
     // them, every entry under its own group; the key credited in full under the list.
-    await q.evaluate(() => (location.hash = '#genera'));
+    await q.evaluate(() => (location.hash = '#learn/genera'));
     await q.waitForFunction(() => document.querySelector('#view .gdiv'), null, {timeout: 15000});
     const fam = await q.evaluate(() => {
       const K = FISH.key || {},
@@ -422,7 +425,7 @@ const server = http.createServer((req, res) => {
     });
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
     await wide('the families page');
-    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.
     for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
@@ -453,7 +456,7 @@ const server = http.createServer((req, res) => {
     await wide('My progress');
     // A wink, forced due once (WINK.P 1), then never the same again in the visit.
     const wk = await q.evaluate(() => {
-      location.hash = '#quiz';
+      location.hash = '#practice/quiz';
       return new Promise(ok =>
         setTimeout(() => {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
@@ -469,7 +472,7 @@ const server = http.createServer((req, res) => {
     if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
     await wide('a wink');
     // Back to the corals through the header chip: its menu holds both subjects; a choice closes it.
-    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
     await q.click('#subjb');
@@ -563,15 +566,15 @@ const server = http.createServer((req, res) => {
         coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
       };
     });
-    if (door.title !== 'Identify a fish' || door.links !== '#fishkey' || door.coral)
+    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral)
       ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
     await wide('Home, Fish on');
-    await q.evaluate(() => (location.hash = '#idkey'));
+    await q.evaluate(() => (location.hash = '#identify/key'));
     await q.waitForFunction(() => window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
     const f = await page();
     if (
       f.subj !== 'fish' ||
-      f.hash !== '#fishkey' ||
+      f.hash !== '#fish/identify/key' ||
       !f.soon ||
       !/Fish ID Key/.test(f.text) ||
       !/coming soon/i.test(f.text) ||
@@ -579,6 +582,10 @@ const server = http.createServer((req, res) => {
       !f.tab
     )
       ui.push(`${width}px Identify, Fish on: ${JSON.stringify({...f, text: f.text.slice(0, 160)})}`);
+    // The header's Identify tab links to the Fish ID Key's own address, its prefix included (Codex review #612): copied
+    // and opened on a device with the corals on, it opens the fish page.
+    const idh = await q.evaluate(() => [...document.querySelectorAll('a[data-tab="identify"]')].map(a => a.getAttribute('href')).join());
+    if (!idh || idh.split(',').some(x => x !== '#fish/identify/key')) ui.push(`${width}px the header's Identify link, Fish on: ${idh}`);
     await wide('the Fish ID Key');
     // The corals chosen on that page: the Coral ID Key.
     await q.evaluate(() => setSubject('coral'));
@@ -595,25 +602,40 @@ const server = http.createServer((req, res) => {
       )
       .catch(() => {});
     const c = await page();
-    if (c.hash !== '#idkey' || c.soon || !/Coral ID Key|growth form/i.test(c.text))
+    if (c.hash !== '#identify/key' || c.soon || !/Coral ID Key|growth form/i.test(c.text))
       ui.push(`${width}px corals chosen on the Fish ID Key: ${JSON.stringify({...c, text: c.text.slice(0, 160)})}`);
-    // The Fish ID Key's address with the corals on: the Coral ID Key.
-    await q.evaluate(() => (location.hash = '#fishkey'));
-    await q.waitForFunction(() => window.ROUTED === 'idkey', null, {timeout: 15000}).catch(() => {});
+    // The Fish ID Key's address with the corals on: the address says its subject, so Fish comes on screen (URL refonte,
+    // Q53-Q56: a fish page can be linked).
+    await q.evaluate(() => (location.hash = '#fish/identify/key'));
+    await q.waitForFunction(() => SUBJ.id === 'fish' && window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
     const c2b = await page();
-    if (c2b.subj !== 'coral' || c2b.hash !== '#idkey' || c2b.soon)
-      ui.push(`${width}px #fishkey with the corals on: ${JSON.stringify({...c2b, text: ''})}`);
+    if (c2b.subj !== 'fish' || c2b.hash !== '#fish/identify/key' || !c2b.soon)
+      ui.push(`${width}px #fish/identify/key with the corals on: ${JSON.stringify({...c2b, text: ''})}`);
     // Back to fish; then a link into the Coral ID Key with its clues brings the corals.
     await q.evaluate(() => setSubject('fish'));
     await q.waitForFunction(() => SUBJ.id === 'fish' && window.ROUTED === 'fishkey', null, {timeout: 15000}).catch(() => {});
     const f2 = await page();
-    if (f2.hash !== '#fishkey' || !f2.soon) ui.push(`${width}px Fish chosen on the Coral ID Key: ${JSON.stringify({...f2, text: ''})}`);
-    await q.evaluate(() => (location.hash = '#idkey|form=B'));
+    if (f2.hash !== '#fish/identify/key' || !f2.soon)
+      ui.push(`${width}px Fish chosen on the Coral ID Key: ${JSON.stringify({...f2, text: ''})}`);
+    await q.evaluate(() => (location.hash = '#identify/key?form=B'));
     await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
     await q.waitForTimeout(400);
     const d = await page();
-    if (d.subj !== 'coral' || !d.hash.startsWith('#idkey|form=B') || d.soon)
+    if (d.subj !== 'coral' || !d.hash.startsWith('#identify/key?form=B') || d.soon)
       ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    // A fish page linked straight (URL refonte, Q53-Q56: the subject prefix in the app's addresses): a new tab on a fish
+    // address opens that page with Fish on screen; a coral address without a prefix keeps the subject chosen there.
+    for (const [h, key] of [
+      ['fish/practice/quiz', 'quiz'],
+      ['fish/learn/' + C.SUBJECTS.find(x => x.hash).many, 'genera']
+    ]) {
+      const q5 = await c5.newPage();
+      await q5.goto(base + '#' + h);
+      await q5.waitForFunction(k => window.ROUTED === k && SUBJ.id === 'fish', key, {timeout: 20000}).catch(() => {});
+      const at = await q5.evaluate(() => ({subj: SUBJ.id, key: window.ROUTED, hash: location.hash}));
+      if (at.subj !== 'fish' || at.key !== key || at.hash !== '#' + h) ui.push(`${width}px fish deep link #${h}: ${JSON.stringify(at)}`);
+      await q5.close();
+    }
     await c5.close();
   }
   // The admin's header with the subject chip fits one line on the narrowest phones, signed out (the Sign in pill shown)
@@ -701,7 +723,7 @@ const server = http.createServer((req, res) => {
     const h = await look();
     if (h.subj !== 'coral' || h.fish || h.sw || h.words || h.badge) ui.push(`${width}px ${user}, Home: ${JSON.stringify(h)}`);
     await wide('Home');
-    await q.evaluate(() => (location.hash = '#lab'));
+    await q.evaluate(() => (location.hash = '#tools'));
     await q.waitForFunction(() => document.querySelector('#view .labhub'), null, {timeout: 30000});
     const t = await look();
     if (t.subj !== 'coral' || t.sw || t.words || t.badge) ui.push(`${width}px ${user}, Tools: ${JSON.stringify(t)}`);
@@ -709,7 +731,7 @@ const server = http.createServer((req, res) => {
     // Asked for anyway: a switch (an old page's button, the console), then the Learn and Practice pages.
     await q.evaluate(() => setSubject('fish'));
     for (const hash of ['genera', 'quiz']) {
-      await q.evaluate(x => (location.hash = '#' + x), hash);
+      await q.evaluate(x => (location.hash = '#' + x), addr(hash));
       await q.waitForTimeout(600);
       const g = await q.evaluate(() => ({
         subj: SUBJ.id,
@@ -971,7 +993,7 @@ const server = http.createServer((req, res) => {
     if (Number(r.fishHold || 0) !== 0 || Number(r.coralHold) !== 5)
       rv.push(`the sheet's hold went to the wrong subject: ${JSON.stringify(r)}`);
     // (3) A wink with questions planned and a mix-up queued: neither is taken.
-    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForSelector('#view .q');
     const w = await q.evaluate(
       () =>
@@ -1001,20 +1023,29 @@ const server = http.createServer((req, res) => {
     // (4) A coral genus sheet and a comparison with Fish chosen.
     for (const h of ['g-Acropora', 'cmp-Acropora|Montipora']) {
       await q.evaluate(() => setSubject('fish'));
-      await q.evaluate(x => (location.hash = '#' + x), h);
+      await q.evaluate(x => (location.hash = '#' + x), addr(h));
       await q.waitForTimeout(800);
       const g = await q.evaluate(() => ({
         subj: SUBJ.id,
         hash: location.hash,
         view: !!document.querySelector('#view h2, #view .gsheet, #view .cmp, #view [data-g]')
       }));
-      if (g.subj !== 'coral' || g.hash !== '#' + h) rv.push(`#${h} with Fish chosen: ${JSON.stringify(g)}`);
+      if (g.subj !== 'coral' || g.hash !== '#' + addr(h)) rv.push(`#${h} with Fish chosen: ${JSON.stringify(g)}`);
     }
     // (5) Fish chosen by the player on a coral genus sheet: the fish page of the section, not straight back to corals.
     await q.evaluate(() => setSubject('fish'));
     await q.waitForTimeout(800);
     const ex = await q.evaluate(() => ({subj: SUBJ.id, hash: location.hash}));
-    if (ex.subj !== 'fish' || ex.hash !== '#genera') rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
+    if (
+      ex.subj !== 'fish' ||
+      ex.hash !==
+        '#' +
+          C.routeOut(
+            'genera',
+            C.SUBJECTS.find(s => s.hash)
+          )
+    )
+      rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
     await c3.close();
   }
   // (7) A saved copy without fish keys (saved by an app from before fish) is not an empty fish record (Codex review
@@ -1061,7 +1092,7 @@ const server = http.createServer((req, res) => {
     if (o.here !== 10 || o.sent !== 10) rv.push(`a saved copy without fish keys erased the fish progress: ${JSON.stringify(o)}`);
     // (8) Tools › Type the genus with Fish chosen: the corals' genera (the Tools are the corals'; Codex review #442: it
     // drew fish teaching ids, "It was t01").
-    await q.evaluate(() => (location.hash = '#lab-type'));
+    await q.evaluate(() => (location.hash = '#tools/type'));
     await q.waitForSelector('#view .tyform', {timeout: 15000});
     await q.click('#view .tyform [data-idk]');
     const ty = await q.evaluate(() => ({
@@ -1098,9 +1129,20 @@ const server = http.createServer((req, res) => {
       } catch (e) {}
     });
     const q = await c4.newPage();
-    await q.goto(base + '#quiz');
+    await q.goto(base + '#practice/quiz');
     await q.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const a = await q.evaluate(() => ({subj: SUBJ.id, fish: !!FISH, cached: !!FISHP}));
+    // A link to a fish page while fish.json still fails (Codex review #612): the corals' page, never stuck on Loading.
+    await q.evaluate(() => (location.hash = '#fish/practice/quiz'));
+    await q.waitForFunction(() => location.hash === '#practice/quiz' && window.ROUTED === 'quiz', null, {timeout: 15000}).catch(() => {});
+    const dl = await q.evaluate(() => ({
+      hash: location.hash,
+      subj: SUBJ.id,
+      routed: window.ROUTED,
+      loading: /Loading/.test(document.getElementById('view').innerText)
+    }));
+    if (dl.hash !== '#practice/quiz' || dl.subj !== 'coral' || dl.routed !== 'quiz' || dl.loading)
+      rv.push(`a fish link while fish.json fails: ${JSON.stringify(dl)}`);
     fail = false;
     const b2 = await q.evaluate(() =>
       setSubject('fish').then(
@@ -1140,7 +1182,7 @@ const server = http.createServer((req, res) => {
     }, seed);
     const q = await c6.newPage();
     q.on('pageerror', e => errs.push(`new player ${seed}: ${e.message}`));
-    await q.goto(base + '#quiz');
+    await q.goto(base + '#practice/quiz');
     await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('#view .q'), null, {
       timeout: 30000
     });
@@ -1233,7 +1275,7 @@ const server = http.createServer((req, res) => {
     });
     const q = await c7.newPage();
     q.on('pageerror', e => errs.push(`welcome ${pick}: ${e.message}`));
-    await q.goto(base + '#quiz');
+    await q.goto(base + '#practice/quiz');
     await q.waitForFunction(() => window.APP_READY && document.querySelector('.unlock.startq'), null, {timeout: 30000});
     const card = await q.evaluate(() => {
       const d = document.querySelector('.unlock.startq');

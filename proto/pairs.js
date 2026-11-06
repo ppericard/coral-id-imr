@@ -39,7 +39,7 @@ LAB.add({
       );
       // Too few genera unlocked for a game (a new player): the quiz opens them first.
       if (gens.length < 2) {
-        root.innerHTML = `<p class="note">Memory pairs the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="#quiz">Play the quiz</a></p>`;
+        root.innerHTML = `<p class="note">Memory pairs the genera you have met. Meet a few in the quiz first.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
         return;
       }
       const cards = shuffle(

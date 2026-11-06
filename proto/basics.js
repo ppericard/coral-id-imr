@@ -3,13 +3,13 @@
 // only where none shows the point) or a drawing of ours, one plain sentence and an optional one-question check. Nothing
 // is forced: every step can be skipped, the checks are optional, and nothing here is shown to a player who did not
 // open it (IMR RAs stay the main audience, Pierre 2026-11-03).
-// Routes: #basics (resume), #basics|<step id>, #basics|<glossary term> (e.g. |Septa), #basics|words. Graduated from the
+// Routes: #learn/basics (resume), #learn/basics/<step id>, #learn/basics/<glossary term> (e.g. /Septa), #learn/basics/words. Graduated from the
 // Lab into Learn (Pierre, 2026-11-03): the first step of the Learn path ("0 · Coral basics" before the genus sheets, the
-// first Learn tab); the old #lab-basics links land here (proto/lab.js GRADUATED), and the Tools page keeps a link.
+// first Learn tab); the Tools page keeps a link (proto/lab.js GRADUATED).
 // Done (Pierre, 2026-11-03: completion recognised): every step seen (the walls step: its four wall types), the checks
 // stay optional; kept in reefid-basics (fin), and as the achievement "Coral basics" (feat _basics, synced with the
 // achievements record, progress.js), which the Home line and the first-launch offers read (app.js basicsDone).
-// Add |edit to print photo coordinates on a tap and show the tap targets (for placing labels).
+// Add ?edit=1 to print photo coordinates on a tap and show the tap targets (for placing labels).
 (() => {
   /* ---------- photos: coordinates are pixels of the 960 px file (w 960, h given), crops are [x, y, w, h] ---------- */
   const PH = {
@@ -624,14 +624,14 @@
       }
       const steps = `<nav class="bx-steps" aria-label="Steps">${STEPS.map(
         (s, i) =>
-          `<a href="#basics|${s.id}${sfx}"${s.id === id ? ' aria-current="step"' : ''}${done[s.id] ? ' class="done"' : ''} title="${esc(s.t)}"><span>${i + 1}</span></a>`
-      ).join('')}<a href="#basics|words${sfx}" class="bx-wl"${id === 'words' ? ' aria-current="page"' : ''}>Words</a></nav>`;
+          `<a href="${esc(hr('basics|' + s.id + sfx))}"${s.id === id ? ' aria-current="step"' : ''}${done[s.id] ? ' class="done"' : ''} title="${esc(s.t)}"><span>${i + 1}</span></a>`
+      ).join('')}<a href="${esc(hr('basics|words' + sfx))}" class="bx-wl"${id === 'words' ? ' aria-current="page"' : ''}>Words</a></nav>`;
       const list = [];
       if (id === 'words') {
         root.innerHTML = `<div class="bx">${steps}<dl class="bx-words">${WORDS.map(([t, r, plain]) => {
           const o = official(t),
             href = routeOf(t);
-          return `<div><dt>${href ? `<a href="${href}">${esc(t)}</a>` : esc(t)}${r && r[0] === '@' ? ' <small>Corallite anatomy</small>' : ''}</dt><dd>${esc((o && o[3]) || plain)}${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}</dd></div>`;
+          return `<div><dt>${href ? `<a href="${esc(hr(href))}">${esc(t)}</a>` : esc(t)}${r && r[0] === '@' ? ' <small>Corallite anatomy</small>' : ''}</dt><dd>${esc((o && o[3]) || plain)}${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}</dd></div>`;
         }).join('')}</dl></div>`;
         return;
       }
@@ -646,8 +646,8 @@
         .join('');
       const more = (s.more || []).map(([t, d]) => `<p class="bx-more"><b>${esc(t)}</b>: ${esc(d)}</p>`).join('');
       const nextA = next
-        ? `<a class="next" href="#basics|${next.id}${sfx}">Next: ${esc(next.t.split(':')[0])} ›</a>`
-        : `<a class="next" href="#basics|words${sfx}">All the words ›</a> <a class="next sec" href="#quiz">Practise ›</a>`;
+        ? `<a class="next" href="${esc(hr('basics|' + next.id + sfx))}">Next: ${esc(next.t.split(':')[0])} ›</a>`
+        : `<a class="next" href="${esc(hr('basics|words' + sfx))}">All the words ›</a> <a class="next sec" href="${esc(hr('quiz'))}">Practise ›</a>`;
       root.innerHTML = `<div class="bx">${steps}<div class="bx-lay">
         <figure class="bx-fig">${s.walls ? '' : s.forms ? '' : s.fig()}</figure>
         <div class="bx-side"><h3 class="bx-t"><small>Step ${i + 1} of ${STEPS.length}</small>${esc(s.t)}</h3>
@@ -660,7 +660,7 @@
       const markDone = () => {
         const cur = store.get(KEY, {}) || {};
         store.set(KEY, {...cur, done: {...(cur.done || {}), [s.id]: 1}});
-        root.querySelector(`.bx-steps a[href^="#basics|${s.id}"]`).classList.add('done');
+        root.querySelector(`.bx-steps a[href^="${hr('basics|' + s.id)}"]`).classList.add('done');
       };
       // A teaching photo opens the enlarged view when tapped (Enter or Space from the keyboard): the whole photo, with
       // the step's labels on it and a Labels switch to see it bare (app.js zoom opts.over).
