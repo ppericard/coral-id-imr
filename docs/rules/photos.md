@@ -25,7 +25,7 @@ mixes sources on purpose for variety.
 - **Licences of candidates** (corals aligned with the fish): CC0, CC BY or CC BY-NC only, never share-alike (nor ND);
   the share-alike coral photos already on the site are Pierre's to keep or remove (admin To do › Share-alike), never
   removed automatically.
-- **Trusted identifications**: in the Philippines tiers, an observation identified by iNaturalist user `thamnasteroid`
+- **Corals: trusted identifications**: in the Philippines tiers, an observation identified by iNaturalist user `thamnasteroid`
   (by far the top identifier of stony corals there) at the genus or below is accepted, like a genus-level community ID,
   when no other current identification disagrees (a coarser one on the same line, e.g. the observer's "Stony corals",
   does not); abroad stays Research Grade and the presence rule C8 (`tools/fetch_local.py` `LIC`, `EXPERTS`;
@@ -36,26 +36,26 @@ slight priority; for fish, the IMR slides' photos were taken from elsewhere, whi
 abound; a beginner's first fish photos must be easy, near-reference ones, and source priority had filled them with
 Pierre's own.
 *Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568); no
-source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148).
+source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148); subject-neutral wording, 2026-11-06.
 
 ### P2
 
-**Three views per genus: colony, close-up and corallites (macro).** Close-up is a 10-30 cm part of a colony (code
+**Corals: three views per genus: colony, close-up and corallites (macro).** Close-up is a 10-30 cm part of a colony (code
 name `medium`, labelled "Closer" before 2026-11-01). A genus may have 2 levels: colony + close-up (its macro photos,
 also labelled "Close-up"); never duplicate a photo to fill a view. Cover = mid-distance view, never macro.
-*Source:* Pierre, by 2026-11-01 (2 levels, 2026-11-01).
+*Source:* Pierre, by 2026-11-01 (2 levels, 2026-11-01); subject-neutral wording, 2026-11-06.
 
 ### P3
 
-**Never use photos showing several corals in games** (`p.multi`; Pierre can clear a wrong mark with curation
-`single`). **Coral Finder book photos** (© R. Kelley / BYOGUIDES, `gen[g].book`) are **never in games**; on a genus sheet
+**Never use photos showing several organisms to identify in games**: several corals; fish, several species (`p.multi`; Pierre can clear a wrong mark with curation
+`single`). **Corals: Coral Finder book photos** (© R. Kelley / BYOGUIDES, `gen[g].book`) are **never in games**; on a genus sheet
 they appear only when Pierre pins one, or to fill a gap after every field photo; the Coral ID Key adds up to 3 approved
-ones for variety; Pierre can switch them off site-wide (admin, curation `book: false`). **IMR lecture photos are game
-photos** (since #227) and count in admin Coverage › Games. "Poor" means identifiable but low visual quality
+ones for variety; Pierre can switch them off site-wide (admin, curation `book: false`). **Corals: IMR lecture photos
+are game photos** (since #227) and count in admin Coverage › Games. "Poor" means identifiable but low visual quality
 (ReefCloud-like): Poor photos are in games, last in each view's list, and the players' answers rate how hard each one is
 (the hand-made Easy / Medium / Hard sets went on 2026-11-03); unidentifiable photos are excluded, not rated Poor.
 *Why:* a game question must have one right answer; the book's photos are copyrighted.
-*Source:* Pierre, by 2026-11-01.
+*Source:* Pierre, by 2026-11-01; subject-neutral wording, and several fish species, 2026-11-06 (Q167).
 
 ### P4
 
@@ -67,7 +67,7 @@ another colony: a colony with one view becomes a single-view question.
 
 **Provenance tags never on thumbnails; credit in the lightbox.** In games, once the answer is out, every photo shows a
 small clickable source pill (`photoSrc()` in `app.js`: observer + iNat link, or IMR lecture / Coral Finder label), never
-before the answer (it would give the genus away); hidden on phones, where the enlarged view carries the clickable
+before the answer (it would give the answer away); hidden on phones, where the enlarged view carries the clickable
 source. Before the answer the enlarged quiz photo credits its author by name only, no taxon and no link (`blindCredit()`
 in `app.js`).
-*Source:* Pierre, 2026-11-01; the blind credit, 2026-11-03.
+*Source:* Pierre, 2026-11-01; the blind credit, 2026-11-03; subject-neutral wording, 2026-11-06.

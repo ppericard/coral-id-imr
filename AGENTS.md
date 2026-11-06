@@ -124,13 +124,15 @@ Pierre's standing rules: follow them over your own taste; when in doubt, ask him
 *Source* are in its topic file. **Writing a rule down** (Pierre, 2026-11-05): keep his scope and meaning; never generalise beyond the case he
 spoke about nor harden it; unsure of the scope, ask; the wording of a new or changed rule goes to him for his OK. A rule
 is its imperative line, *Why:* one short line in our words, *Source:* Pierre, date (+ #PR); his sentence and its
-context go in the PR description, never in the rule.
+context go in the PR description, never in the rule. A rule holds for every subject unless marked **Corals:**; the
+words it uses (*unit*: what a question asks, a coral genus or a fish family, genus or species; *taxon*) are defined in
+[docs/rules/README.md](docs/rules/README.md).
 
 **Content** ([docs/rules/content.md](docs/rules/content.md))
 - **C1** Never contradict or "correct" the IMR course.
 - **C2** Never invent categories or information; every clue carries its source.
 - **C3** An ID tip is short and simple for anyone; detail goes on the sheet.
-- **C4** Growth form is an entry point only: rank, never filter or group genera by it.
+- **C4** Corals: growth form is an entry point only: rank, never filter or group genera by it.
 - **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
 - **C6** ID cues cite only species present at Dauin or in the Philippines.
 - **C7** iNaturalist API: about one request a second, batched, a User-Agent, paced retries.
@@ -138,18 +140,18 @@ context go in the PR description, never in the rule.
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
 - **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish: easiest first, never by source.
-- **P2** Three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
-- **P3** No several-corals or Coral Finder book photo in games.
+- **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
+- **P3** No photo of several corals or fish species, nor Coral Finder book photo, in games.
 - **P4** All photos of one question come from one observation.
-- **P5** Credits in the lightbox and after the answer, never giving the genus away.
+- **P5** Credits in the lightbox and after the answer, never giving the answer away.
 
 **Learning** ([docs/rules/learning.md](docs/rules/learning.md))
 - **L1** Time between sessions never decays progress, mastery or ability.
-- **L2** A wrong answer counts against both genera.
+- **L2** A wrong answer counts against both units.
 - **L3** Adaptive difficulty, no level selector; every account counts, Pierre's included.
-- **L4** One progression path: every game draws from `unlocked()`; only the quiz opens genera.
-- **L5** Starred genera follow their look-alikes.
-- **L6** Millepora counts; bonus genera opt-in; no genus-specific code.
+- **L4** One progression path: every game draws from `unlocked()`; only the quiz opens units.
+- **L5** Corals: starred genera follow their look-alikes.
+- **L6** No unit-specific code; corals: Millepora counts, bonus genera opt-in.
 - **L7** Answer choices get harder gradually.
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
@@ -168,7 +170,7 @@ context go in the PR description, never in the rule.
 - **U5** No third-party scripts; a new host goes into the CSP.
 - **U6** No range sliders (swipeable photo strips are fine); visual beats text.
 - **U7** Settings removed on purpose stay removed.
-- **U8** Never hardcode the genus count.
+- **U8** Never hardcode the number of units.
 - **U9** Sign-in never on My progress.
 - **U10** Greet by first name only (`firstName()`).
 - **U11** Questions to the player come at a natural break.
