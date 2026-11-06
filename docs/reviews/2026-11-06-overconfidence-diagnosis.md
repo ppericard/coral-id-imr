@@ -58,8 +58,9 @@ re-checked.
       for now.
    2. Give each estimate a variance: Glicko / Kalman for the genus ability and the level (review §2b), and a variance
       for each photo rating. Use the Glicko-damped expectation, so `q.S` per question becomes g(v) = 1 / √(1 + 3v/π²)
-      (#646 already takes it). Add a learning (process-noise) term for the early phase. Estimate the variances on the
-      real log by next-answer likelihood, leaving one player out.
+      (#646 already takes it). Estimate the variances on the real log by next-answer likelihood, leaving one player
+      out. Test separately a learning drift: an expected gain in the mean after each answer with feedback, misses
+      included. Process noise alone does not encode learning (§3).
    3. Then a periodic batch refit of the photo and genus difficulties, with marginal or penalised random-effects
       likelihood (not JML), served by the sheet with their standard errors (review §1 step 2).
    4. Confirm with a pre-declared replay. The primary measure is the calibration slope on genera with fewer than 10
@@ -166,9 +167,13 @@ reliability × true slope **[memory: Carroll et al. 2006]**. The early-miss gap 
 
 ## 3. Method or parameters
 
-**Method.** A forecast built from point estimates is calibrated only if those estimates are posterior means, which are
-shrunk by their own uncertainty. Elo estimates are not: Elo "does not provide standard errors and … results in rating
-variance inflation" (Hofman et al. 2020 **[abstract; full text (tool)]**). The miscalibration here follows the evidence
+**Method.** The app's expectation is a plug-in prediction: the sigmoid applied to point estimates, as if they were
+exact. It is not the posterior predictive probability, which averages the likelihood over the uncertainty of the
+ability and the difficulty. For example, a logit equally likely to be 0 or 2 gives 0.731 plugged in at its mean of 1,
+and 0.690 averaged. Neither shrunk means nor Bayesian estimates make a forecast calibrated by themselves. Calibration
+needs the prediction to integrate the uncertainty, and the model to be right. The current method can do neither,
+because Elo has no variance: it "does not provide standard errors and … results in rating variance inflation" (Hofman
+et al. 2020 **[abstract; full text (tool)]**). The miscalibration here follows the evidence
 behind each estimate, and no constant of the current rule follows it (§2a, §2g: every variant tried leaves the early
 slope at 0.20-0.38). A global slope cannot follow it either. A slope of 0.40 is an average of about 0.3 early and about
 1 later, weighted by today's mix, so it would drift as players progress.
@@ -177,13 +182,20 @@ slope at 0.20-0.38). A global slope cannot follow it either. A slope of 0.40 is 
 
 - the format offsets (#638), which are real levels;
 - once the method carries uncertainty, its few variances (prior variance of a new genus and of the level, a photo's
-  prior variance, process noise for learning). These are estimated from the log, not set by eye. Glickman sets the
+  prior variance, process noise) and, if the replay supports it, a learning drift. These are estimated from the log,
+  not set by eye. Glickman sets the
   first RD the same way: "can be determined through optimizing predictability of game outcomes" **[full text]**.
 
-**Uncertainty alone is not the whole story.** Damping by the variance (Glicko's g) at plausible variances gives a factor
-of 0.88 (SD 1 logit), 0.77 (SD 1.5) or 0.71 (SD 2). Early slopes of about 0.3 would need an SD near 4. The posterior
-means must also move less on early answers: a learning, or process-noise, term that reads an early miss as partly
-"learned from the feedback" rather than "lower ability". That is a hypothesis for the replay to test, not a result
+**Uncertainty alone is not the whole story.** Integrating the variance (the uncertainty-integrated prediction, which
+Glicko's g approximates) at plausible variances flattens the forecast by a factor of 0.88 (SD 1 logit), 0.77 (SD 1.5)
+or 0.71 (SD 2). Early slopes of about 0.3 would need an SD near 4. The means must also behave differently after early
+answers, and process noise does not do that. In Kalman / Glicko, process noise adds variance before an update (Glicko
+adds c² to RD² **[full text]**). It leaves the expected ability unchanged and, with the same observation model,
+*raises* the gain, so the downward step after a miss can grow. "Learned from the feedback" is a different thing: a
+**mean transition**, an expected gain after each answer with feedback, misses included. Examples are the learning
+transition of knowledge tracing (Corbett & Anderson 1994 **[secondary, LEARNING.md]**) and the positive coefficient
+on failures of Performance Factors Analysis (Pavlik, Cen & Koedinger 2009 **[memory]**). Two hypotheses go to the
+replay, kept apart: process variance (uncertainty only) and a learning drift (the mean). Neither is a result yet
 (§5).
 
 ## 4. The established methods, and which fits the engine
@@ -200,8 +212,9 @@ means must also move less on early answers: a learning, or process-noise, term t
 
 1. **Now:** keep #638's offsets (merging). Keep `q.S` = 1 in #646, and no global slope in the expectation or the aim.
 2. **Variance model** (review §2b, `core.js` + its replay, an `RVS` entry, rule D5). For each genus and the level:
-   a mean and a variance, the update scaled by the variance (Kalman / Glicko), and a process noise per answer
-   (learning) in place of `kmax`/`kmin`/`n`/`vr`/`vg`. For each photo rating, a variance from its weighed answers,
+   a mean and a variance, the update scaled by the variance (Kalman / Glicko), and a process noise per answer (an
+   uncertainty term) in place of `kmax`/`kmin`/`n`/`vr`/`vg`. A learning drift in the mean (§3) is a separate
+   candidate, tested as its own variant. For each photo rating, a variance from its weighed answers,
    served by the sheet. The expectation uses g(v_θ + v_d), and the photo aim inverts the same formula. **Measure
    first, on the real log** (rule L12), declared before running:
    - primary: the LOPO next-answer log-loss against today's rules, with the variances chosen by LOPO likelihood;
@@ -233,12 +246,13 @@ means must also move less on early answers: a learning, or process-noise, term t
 1. Do not put a global slope of 0.40 (temperature scaling) in the expectation, the photo aim or the bar, and keep
    #646's `q.S` = 1 until the variance model lands. **Recommended: yes.**
 2. Correct it with the variance model: Glicko / Kalman for the genus ability and the level, a variance for photo
-   ratings, and a learning term. The variances are estimated on the real log, and the result is checked by the
+   ratings, with an uncertainty-integrated expectation. The variances are estimated on the real log, and the result is checked by the
    pre-declared replay above (§5.2) before any rule change. **Recommended: yes**, as the review's §2b.
 3. Then the batch refit (marginal or penalised random effects, not JML) of photo and genus difficulties with standard
    errors, served by the sheet. **Recommended: yes, after 2.**
-4. The early-miss gap (+0.14): test it inside the variance model (process noise), not as a separate miss rule.
-   **Recommended: yes.**
+4. The early-miss gap (+0.14): test a learning drift in the mean (an expected gain after feedback, as in knowledge
+   tracing or PFA) as a variant of the variance model's replay, not as a separate miss rule; process noise alone
+   cannot explain it (§3). **Recommended: yes.**
 5. Re-run this diagnosis when about 20 players have 10+ answers on several genera. **Recommended: yes**, as a
    ROADMAP row.
 
@@ -262,6 +276,8 @@ means must also move less on early answers: a learning, or process-noise, term t
   correction **[secondary]**; Bock, R. D., Aitkin, M. (1981), *Psychometrika* 46 **[memory]**
 - Papoušek, J., Pelánek, R., Stanislav, V. (2014). Adaptive practice of facts in domains with varied prior knowledge.
   EDM (PFAE, γ 2.23 / δ −0.89) **[secondary, LEARNING.md]**
+- Corbett, A. T., Anderson, J. R. (1994), knowledge tracing **[secondary, LEARNING.md]**; Pavlik, P. I., Cen, H.,
+  Koedinger, K. R. (2009), Performance Factors Analysis **[memory]**
 - Birnbaum, A. (1968), the 2PL; Verhelst, N. D., Glas, C. A. W. (1995), OPLM; Barton, M. A., Lord, F. M. (1981), the
   upper asymptote; Carroll, R. J., Ruppert, D., Stefanski, L. A., Crainiceanu, C. (2006), *Measurement Error in
   Nonlinear Models* **[memory]**
