@@ -161,7 +161,7 @@ and reports every failing one. Locally, run what your change can break, once:
   `node tests/fish.smoke.js`. `sw.js`, the loader in `index.html`, photo sizes and fallbacks, R2 →
   `node tests/net.smoke.js`. In `tests/pages.smoke.js`, `SMOKE_ONLY=<part>[,<part>]` runs some of its parts: `tips`
   (`tips.js`), `relief` (the Duel tab's relief card, `quiz.js` `reliefShow`), `start` (the first-launch question, its
-  fallback cards, the open-all offer: `startSmoke`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
+  fallback cards, the open-all offer: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
   adopted), `overlays` (cards, prompts, the one-tap question, the tour), `credits` (Home, credits, header fit), `basics`
   (Coral basics), `visit` (the pages-opened summary), `main` (routes, sheets, lightbox, history: anything else in
   `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|rest` is the half CI runs on one

@@ -1272,6 +1272,8 @@ let session = {ok: 0, n: 0, h: []},
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // What each subject's units are, read from its data (core.js SUBJECTS holds the rest of the taxon model):
 //   load()   its data, before its pages open (corals: data.json, always loaded; fish: fishLoad)
+//   pick     its line where a player with two subjects picks the one to start with (tour.js, the welcome tour's first step)
+//   tour     the welcome tour's words for its steps on this subject, where they differ from the steps' own (tour.js words)
 //   slate()  the units the games teach and the progress counts ("the slate" in the code): for corals the IMR coral slate
 //            (data.json order, starred genera last) and BENTHIC (core.js slateOf); for fish the IMR entries (circle 1)
 //   sets     the opt-in sets (core.js SUBJECTS optin), offered once by a card (quiz.js bonusOfferShow) when due() and
@@ -1298,6 +1300,8 @@ const UNITS = {
     // The subject's icon in its switches (app.js subjIcon): a branching coral.
     icon: '<path d="M12 21v-7M12 14c-3 0-5-2-5-5V6M12 14c3 0 5-2 5-5V4M7 9 4.5 7M17 8l2.5-2M12 14V9M12 9l-2-2.5M12 9l2-3"/>',
     load: () => Promise.resolve(),
+    // Its line under its name where a new player picks the subject to start with (tour.js pick).
+    pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
     // The species a photo shows, for the answer log (app.js speciesShown): none, a coral question is about the genus.
     species: () => '',
@@ -1339,6 +1343,22 @@ const UNITS = {
     identify: 'fishkey',
     icon: '<path d="M3 12c3-5 9-6.5 13-3.5L21 5v14l-5-3.5C12 18.5 6 17 3 12z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>',
     load: () => fishLoad(),
+    pick: 'The reef fish families of the IMR surveys, as on the survey videos.',
+    // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
+    // text or a function of "Tap" / "Click". Fish have one game for now (SUBJECTS pages) and their key is coming soon.
+    tour: {
+      doors: {
+        d: 'Learn & practise while you learn the families. Identify when you need to name a fish on a survey video, or one you photographed on a dive: its key is coming soon.'
+      },
+      games: {
+        t: 'The fish quiz',
+        d: 'Practice in the menu opens the quiz: name the family from photos. Its look-alikes come in as you get a family right.'
+      },
+      progress: {
+        d: tap =>
+          `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family of the IMR fish surveys.`
+      }
+    },
     slate: () => (FISH ? FISH.c1 : []),
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
