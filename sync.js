@@ -700,7 +700,7 @@ document.addEventListener('visibilitychange', () => {
 // Also everywhere else it makes sense (Pierre, 2026-11-01): any enlarged photo (lightbox), the bottom of a genus sheet,
 // and "Send feedback" at the bottom of the ? help of every page (app.js helpEnd) and on About (home.js; no page footer
 // since 2026-11-03). The reasons offered depend on where the report comes from (k); {things} and {one} take the current
-// subject's words (SUBJECTS name and one: "Several corals", "Wrong genus"; "Several fish", "Wrong family").
+// subject's words (SUBJECTS several and one: "Several corals", "Wrong genus"; "Several fish species", "Wrong family").
 const REP_WHY = {
   game: [
     ['wrong', 'Wrong answer'],
@@ -786,7 +786,7 @@ function reportDialog(c, btn) {
   const names = [...new Set([...slateGenera(), ...bonusList()].map(unameT))].sort(),
     kind = c.k || 'game',
     where = location.hash.slice(1) || 'home', // the address (Reports, Where), its subject's prefix included
-    words = t => t.replace('{things}', SUBJ.name.toLowerCase()).replace('{one}', SUBJ.one);
+    words = t => t.replace('{things}', SUBJ.several).replace('{one}', SUBJ.one);
   d.innerHTML = `<form method="dialog">
     <h3>${kind === 'page' ? 'Send feedback' : 'Report a problem'}</h3>
     <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY[kind].map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${esc(words(t))}</span></label>`).join('')}</div>

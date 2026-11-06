@@ -713,10 +713,14 @@ function viewCompare(a, b) {
 // credited in full under the list (its short form in the help). A region with no key: the entries in one block. The winks
 // stay a surprise. No sheet per family yet (ROADMAP "Fish mode").
 function viewFishList() {
+  // Each photo enlarges in the shared viewer, as the coral photos do (fish beta QA, 2026-11-06: a tap did nothing);
+  // the family and species sheets are a later project (docs/ROADMAP.md).
+  const flat = [];
   const tip = n => {
     const g = GX(n),
       p = g.views.wide[0];
-    return `<article class="tipg"><span class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<b>${uname(n)}</b><small>${esc(altName(g.fam))}</small></span><div>${tipsList(g)}${
+    if (p) flat.push({...p, genus: n});
+    return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<b>${uname(n)}</b><small>${esc(altName(g.fam))}</small></span><div>${tipsList(g)}${
       g.lk.length
         ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>`
         : ''
@@ -747,4 +751,5 @@ function viewFishList() {
   );
   $v.innerHTML = `<p class="lede">The fish families of the IMR fish presentation${key ? `, by the identification groups of ${esc(key.short)}` : ''}, with the IMR cues. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
+  $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
 }

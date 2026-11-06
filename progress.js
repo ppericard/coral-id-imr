@@ -20,7 +20,8 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
+    <em class="pbunl">${unlockText(slateGenera(), true)}</em>
+    <span>${sub ? `<span>${sub}</span>` : ''}${SUBJ.board ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
       SUBJ.ach
         ? `<a href="${esc(hr('ach'))}"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
             .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
@@ -49,9 +50,7 @@ function quizBoard() {
   // They stay out of the ring and the counts.
   const BO = bonusList();
   const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
-  const count = k => list.filter(n => lv[n][0] === k).length,
-    // Met: a card or an answer (docs/LEARNING.md), as "N not open yet" below counts the others.
-    met = n => lv[n][0] !== 'new' || introduced(n);
+  const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Mastery level on a 6-step scale (one colour ramp, light to dark; model.js MASTERY: Not seen, Snorkeler, Open Water,
   // Advanced, Divemaster, Instructor). "Review" is a separate marker, so it never hides the level.
@@ -166,7 +165,7 @@ function quizBoard() {
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the ${SUBJ.one}: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
-  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.filter(met).length}/${list.length} met`)}<div class="pgwrap"></div>
+  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list))}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
@@ -242,7 +241,7 @@ function quizBoard() {
   show();
 }
 
-// The two highest levels reached, with their counts, for the card and the header pill (Pierre, 2026-11-03: "0/39
+// The two highest levels reached, with their counts, for the card (Pierre, 2026-11-03: "0/39
 // learned" for weeks was discouraging): "3 Divemaster · 12 Open Water". From Open Water up; '' before any genus reaches Open Water.
 function lvSummary(list = slateGenera(), icons = true) {
   const st = list.map(lvStep);
@@ -253,15 +252,21 @@ function lvSummary(list = slateGenera(), icons = true) {
     .map(([k, c]) => `${icons ? lvIcon(k) : ''}${c} ${MASTERY[k][0]}`)
     .join(' · ');
 }
+// The units unlocked (Pierre, 2026-11-05: "30/40 genera unlocked"): the subject's units opened on the path (a card, an
+// answer, Open all: model.js introduced), out of every unit the progress counts (slateGenera, whatever the subject puts in
+// it); the units "not open yet" on this page (introLeft) are the rest. A unit counts from its card, a couple of answers
+// before the draw asks it (model.js INTRO.GAP). [unlocked, all].
+const unlockN = (list = slateGenera()) => [list.filter(introduced).length, list.length];
+const unlockText = (list = slateGenera(), html = false) => {
+  const [k, n] = unlockN(list);
+  return `${html ? `<b>${k}</b>` : k}/${n} ${SUBJ.many} unlocked`;
+};
 // Header progress pill: always in view; the page itself is #progress.
-const $prog = document.getElementById('prog');
 function showProg() {
   if (!DATA) return;
   const n = slateGenera();
-  const pt = `${progPct(n)}%`,
-    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new' || introduced(x)).length}/${n.length} ${SUBJ.many} met`;
+  const pt = `${progPct(n)}%`;
   document.getElementById('progn').textContent = pt;
-  $prog.title = `Your progress: ${pt} (${lt})`;
   const p2 = document.getElementById('progn2');
   if (p2) p2.textContent = pt;
   // Not signed in: the pill's tooltip says so, so RAs find where to save their progress.
@@ -271,11 +276,13 @@ function showProg() {
   pill.style.setProperty('--pp', progPct(n));
   // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
   // "Not saved" pill beside it already says so in words (design re-review p9).
-  pill.title = SYNC
-    ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
-    : out
-      ? 'Your progress (not saved online yet: Sign in, top right)'
-      : `Your progress per ${SUBJ.one}`;
+  pill.title = `${
+    SYNC
+      ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
+      : out
+        ? 'Your progress (not saved online yet: Sign in, top right)'
+        : `Your progress per ${SUBJ.one}`
+  }. ${pt}, ${unlockText(n)}.`; // the count in words: the header has no room for it (one line at 1024 px, rule U3)
   // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
   // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
   // back as "Not saved", which opens ⚙ where the problem is explained.
@@ -927,12 +934,16 @@ function boardNotice() {
         syncSoon();
       }
     });
-  if (!SYNC || store.get('reefid-board-told', 0)) return;
+  // Said on a subject that has the leaderboard (SUBJECTS board) only: on another (Fish), it waits for a later load
+  // (fish beta QA, 2026-11-06: it covered the bottom of fish Home right after Fish was chosen). A switch of subject
+  // while it shows takes it away and it is due again (app.js setSubject, toastsOff).
+  if (!SYNC || store.get('reefid-board-told', 0) || !SUBJ.board) return;
   store.set('reefid-board-told', 1);
   const t = appToast(
     '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
     15000
   );
+  t.dataset.again = 'reefid-board-told';
   t.querySelector('a').onclick = () => t.remove();
 }
 // Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
@@ -1221,6 +1232,14 @@ function subjHello() {
       esc: 2
     });
   }, HELLO.WAIT);
+}
+// The notes on screen go when the subject changes (they speak of the subject that was on screen); one marked
+// data-again (its "told" key) is due again later.
+function toastsOff() {
+  document.querySelectorAll('.apptoast').forEach(t => {
+    if (t.dataset.again) store.set(t.dataset.again, 0);
+    t.remove();
+  });
 }
 // A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by
 // ✕ or after ms.
