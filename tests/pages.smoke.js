@@ -1383,10 +1383,11 @@ async function signin(base) {
   // the game mode"): a player who plays only fish meets it at their 20th answer, as a coral player does (it counted the
   // answers queued for the sheet, which took no fish answers then, so it never came). Fish is opened to this player in the
   // page, as the admin's group will (core.js SUBJECTS beta).
+  // Fish opens to all since 2026-11-06 (Q158): the page starts on the corals (no saved choice), so Fish is switched on
+  // Tools below.
   await run(
     () => (
       localStorage.setItem('reefid-tour', '"done"'),
-      localStorage.setItem('reefid-sync-subject', '"fish"'),
       localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}') // the fish welcome question answered
     ),
     async p => {
@@ -3996,8 +3997,8 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
     // Old and unknown addresses (URL refonte, Pierre 2026-11-05, Q53-Q56: old links are not translated): the section's
-    // page when the first segment is a section, else Home, the address replaced; a subject the player may not open
-    // (fish, for a player outside its group) gives the corals' page.
+    // page when the first segment is a section, else Home, the address replaced; a fish address opens Fish (open to every
+    // player since 2026-11-06, Q158; a subject a player may not open gives the corals' page: tests/fish.smoke.js).
     for (const [from, to] of [
       ['g-Acropora', ''],
       ['quiz', ''],
@@ -4008,7 +4009,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       ['practice/nothing', '#practice/quiz'],
       ['tools/nothing', '#tools'],
       ['leaderboard/nothing', '#leaderboard'],
-      ['fish/practice/quiz', '#practice/quiz'],
+      ['fish/practice/quiz', '#fish/practice/quiz'],
       ['fish/leaderboard', '#leaderboard']
     ]) {
       await p.evaluate(h => (location.hash = h), from);
@@ -4020,6 +4021,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       }));
       if (at.hash !== to || (!to && !at.url)) fails.push(`${w}px old address #${from}: ${JSON.stringify(at)}, not ${to || 'Home'}`);
     }
+    // Back on the corals for the checks below (the fish address above switched Fish on).
+    await p.evaluate(() => setSubject('coral')).catch(() => {});
+    await p.waitForFunction(() => SUBJ.id === 'coral' && window.APP_READY, null, {timeout: 15000}).catch(() => {});
     // Deep links opened straight (a bookmark, a link from the admin): the page and what it is about.
     for (const [h, sel, key] of [
       ['learn/compare/Pocillopora/Stylophora', '.ctx-pair', 'cmp-Pocillopora|Stylophora'],

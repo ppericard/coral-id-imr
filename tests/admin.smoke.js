@@ -1616,6 +1616,14 @@ const WIDTHS = [390, 1280];
           if (!new RegExp(`beta:\\s+${n - 1}\\s+of\\s+${n}\\s+players`).test((await grp()).line))
             fails.push(`${w}px Players (${beta}): Remove did not take Dio out`);
           const q = await p.context().newPage();
+          // A fresh page reads core.js again: fish served back to open: 'group' there too (open to all since Q158).
+          await q.route(
+            u => u.pathname === '/core.js',
+            async r => {
+              const res = await r.fetch();
+              await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+            }
+          );
           await q.goto(base + `admin.html?demo&v=45#${beta}/players/list`);
           await q
             .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})

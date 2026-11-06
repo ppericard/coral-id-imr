@@ -428,6 +428,12 @@ body:has(.home-page) main {
 .hdoor.learn .hdtiles img:nth-child(n + 5) {
   display: none;
 }
+/* With the subject switch above the doors (every player since fish opened to all, Q158), the band gives up the switch's
+   height on the shortest phones, so Home stays one screen (rule U2; 360 x 640). */
+.home-page:has(.hsubj) .hdoor.learn .hdart {
+  flex-basis: 48px;
+  min-height: 48px;
+}
 /* A second row of tiles once the band is tall enough for square-ish tiles. */
 @container (min-height: 150px) {
   .hdoor.learn .hdtiles {
