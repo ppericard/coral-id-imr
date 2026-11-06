@@ -212,7 +212,11 @@
   //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
   //   views   the views a question may show, [code, label] (one view: one photo per question)
   //   optin   the opt-in sets: Q[k] true = on, Q[k + 'T'] when chosen (app.js UNITS[id].sets: units, card, ⚙ row)
-  //   log     answers go to the sheet's Answers tab (photo ratings, confusions, the admin, the opening hold's replay)
+  //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins: a fish scientific genus): logged
+  //           with every answer (sheet v60 Answers Rank). Every subject's answers go to the sheet's Answers tab under its
+  //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked)
+  //   replay  the sheet computes from its logged answers: photo ratings, confusions, the opening hold, the full replay
+  //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
   //   ach, board  achievements and the leaderboard count this subject
   //   progress    the views of My progress (progress.js quizBoard), the first by default
   //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.quiz)
@@ -239,7 +243,8 @@
         ['macro', 'Corallites']
       ],
       optin: ['bon'],
-      log: true,
+      rank: 'genus',
+      replay: true,
       ach: true,
       board: true,
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
@@ -283,7 +288,9 @@
       open: 'group',
       views: [['wide', 'Photo']],
       optin: ['c2', 'c3', 'sci'], // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels")
-      log: false,
+      // family: an IMR entry (the game's family level, Damselfish; two entries may share a scientific family).
+      rank: 'family',
+      replay: false,
       ach: false,
       board: false,
       pages: ['genera', 'quiz'],
@@ -312,6 +319,19 @@
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
   // keep a group for it (app.js subjOpen, admin.js groupOn, Code.gs groupIds_). Any other value opens it to all.
   const subjGroup = S => !!S && S.open === 'group';
+  // The subject whose answers the sheet computes from (SUBJECTS replay: the corals): its replay, hold and photo ratings.
+  const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
+  // The subject of an answer: the app's log entry (s, from 2026-11-06; an entry without one came from the corals, the
+  // only subject logged before), and of an answer-log row, at index LOG_SUBJ in both the sheet's readAnswers rows and
+  // its Answers tab rows (sheet v60, column Subject; blank in the rows logged before: the default subject's).
+  const LOG_SUBJ = 17;
+  const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
+  const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
+  // The rows (or log entries, entries) of one subject, the replayed one by default: every reader of the answer log that
+  // computes a subject's statistics (the analyses, the evaluation tools, the admin) keeps only that subject's rows, so a
+  // fish answer never counts in a coral result.
+  const subjRows = (rows, id = replaySubject()) => (Array.isArray(rows) ? rows : []).filter(r => r && rowSubject(r) === id);
+  const subjEntries = (log, id = replaySubject()) => (Array.isArray(log) ? log : []).filter(a => a && ansSubject(a) === id);
   // A subject's first-launch answer (CHOICE): reefid-sync-<subject>-start, synced with the player's progress.
   const startKey = s => subjKey(s, 'start');
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
@@ -2290,6 +2310,12 @@
   // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (rule D4,
   // Codex review #428); before it, the default player's prior 0, exactly as before.
   const START_SHEET = 36;
+  // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
+  // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
+  // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
+  // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
+  const LOG_SHEET = 60;
+  const logOk = (a, v) => ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -3109,6 +3135,8 @@
     RV_SHEET,
     RT_SHEET,
     START_SHEET,
+    LOG_SHEET,
+    logOk,
     RTIME,
     rtMedian,
     rtWeight,
@@ -3214,6 +3242,12 @@
     SUBJECT_KEY,
     subjectOf,
     subjGroup,
+    replaySubject,
+    LOG_SUBJ,
+    ansSubject,
+    rowSubject,
+    subjRows,
+    subjEntries,
     subjKey,
     subjDev,
     fishGen,

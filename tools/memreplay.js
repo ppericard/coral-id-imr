@@ -42,7 +42,7 @@ if (!file) {
 }
 require('../tests/slot.js').guard('tools/memreplay.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
 const J = JSON.parse(fs.readFileSync(file, 'utf8')),
-  rows = (Array.isArray(J) ? J : J.rows || []).filter(r => r && r[0]),
+  rows = C.subjRows((Array.isArray(J) ? J : J.rows || []).filter(r => r && r[0])), // the corals' (sheet v60 Subject)
   ONLY = opt('player', null),
   MIN = Number(opt('min', 5));
 const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),

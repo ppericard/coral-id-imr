@@ -6266,6 +6266,10 @@ function loadStats(ratingsOnly) {
           if (!fresh()) return;
           if (a && a.me) MEID = a.me;
           ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+          // Every page reads the replayed subject's answers (the corals'; core.js subjRows, sheet v60 logs every subject's):
+          // a fish answer counts in no coral page, Health, journey or analysis. ANS.all keeps every subject's rows.
+          ANS.all = ANS.rows;
+          ANS.rows = subjRows(ANS.all);
           ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
         })
       );

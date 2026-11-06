@@ -2368,7 +2368,7 @@ Pierre, 2026-11-03: fish on the same engine as corals (docs/ARCHITECTURE.md "Sub
 ### Fish: the starter core and judged photos (2026-11-04)
 
 Pierre tried the fish beta and pulled it back (2026-11-04): the first families opened were not the right ones, and the
-first photos were too hard. Fish answers are not logged to the sheet (`SUBJECTS` `log: false`), so no photo had a
+first photos were too hard. Fish answers were not logged to the sheet then (logged since sheet v60, but `SUBJECTS` `replay: false`), so no photo had a
 rating and no entry a difficulty: every fish photo sat at 0, and the opening order was commonness and chance. Three
 changes, all data the engine reads generically (the corals have none of these fields, so nothing moves for them):
 
