@@ -355,10 +355,13 @@
   // before the add: tags Pierre already gave the photo (a Juvenile set before Add) are the ones read, never the source's
   // phase over them (Codex review #602).
   function fishCopy(p, j, F) {
-    const own = F && p && p.f ? ((F.tags || {})[p.f] ?? null) : null;
+    const own = F && p && p.f ? ((F.tags || {})[p.f] ?? null) : null,
+      // Pierre described the photo already (his tags, or a phase, No phase included): the source's phase never overrides
+      // it (Codex review #602, as fishPhase reads his values).
+      mine = own != null || !!(F && p && p.f && p.f in (F.phase || {}));
     let tags = own != null ? own : j && j.jt,
       phase = (j && j.ph) || null;
-    if (FPHW[phase] || !FISH_TAGS.test(tags || '') || tags.slice(7).includes('j')) return {tags, phase};
+    if (mine || FPHW[phase] || !FISH_TAGS.test(tags || '') || tags.slice(7).includes('j')) return {tags, phase};
     const src = fishPhase({f: '', st: (p || {}).st}, null, {});
     if (src === 'juvenile') tags = fishTag(tags, 'j');
     else if (src) phase = src;

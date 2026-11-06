@@ -265,6 +265,10 @@ test("missing phases first (5b): a phase none of the species' photos in play sho
     Fa = fishAdd(Fj, ids[5], 's1', {jt: 'p1g0sm1', e: 4, k: 'best'}, {f: ids[5], st: 'male'});
   assert.strictEqual((Fa.phase || {})[ids[5]], undefined);
   assert.strictEqual(fishPhase({f: ids[5], st: 'male'}, null, Fa), 'juvenile');
+  // No phase chosen by Pierre before Add on a juvenile by its source: no juvenile flag copied over his choice.
+  const Fn = fishAdd({phase: {[ids[6]]: ''}}, ids[6], 's1', {jt: 'p1g0sm1', e: 4, k: 'best'}, {f: ids[6], st: 'juvenile'});
+  assert.strictEqual(Fn.tags[ids[6]], 'p1g0sm1');
+  assert.strictEqual(fishPhase({f: ids[6], st: 'juvenile'}, null, Fn), '');
 });
 
 test("fishSet and fishTag (5b): Pierre's tag, ease, phase or crop; a field the auto-sort wrote becomes his", () => {
