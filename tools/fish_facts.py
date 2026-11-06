@@ -14,7 +14,7 @@ Sources:
 Facts (a length, a depth) are cited, never copied prose.
 
 Output: tools/fish_facts.json, one species per line, {species id: {len, lt (the length type when not total length),
-lsrc ('rls' or 'fishbase'), dep [shallow, deep] (m), dsrc, rls (the slug), fb (FishBase SpecCode)}}. tools/build_fish.py
+lsrc ('rls' or 'fishbase'), dep [shallow or null when the source gives none, deep] (m), dsrc, rls (the slug), fb (FishBase SpecCode)}}. tools/build_fish.py
 builds it into fish.json species (size: {len, lt, src}, depth: {m, src}); the species sheet shows them.
 
     python3 tools/fish_facts.py --rls                 fetch (or read from the cache) the Reef Life Survey pages
@@ -140,7 +140,7 @@ def run_fishbase(d):
                 r.pop("lt", None)
         sh, dp = row.get("DepthRangeShallow"), row.get("DepthRangeDeep")
         if r.get("dsrc") != "rls" and dp is not None:
-            r.update(dep=[int(sh or 0), int(dp)], dsrc="fishbase")
+            r.update(dep=[None if sh is None else int(sh), int(dp)], dsrc="fishbase")  # no shallow limit given: None, never 0 (Codex review #696)
         o[s["id"]] = r
     dump(o)
     print(f"FishBase: {sum(1 for x in o.values() if x.get('lsrc') == 'fishbase')} sizes, {sum(1 for x in o.values() if x.get('dsrc') == 'fishbase')} depths")

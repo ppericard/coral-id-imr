@@ -972,7 +972,7 @@ const spFacts = s => {
   if (!z && !d) return '';
   const same = z && d && z.src.u === d.src.u;
   return `<p class="ffacts">${z ? `Up to ${z.len} cm${z.lt ? ' ' + esc(LTYPE[z.lt] || z.lt) : ''}${same ? '' : ` <small>(${srcA(z.src)})</small>`}` : ''}${z && d ? ' · ' : ''}${
-    d ? `${d.m[0]}-${d.m[1]} m deep <small>(${srcA(d.src)})</small>` : ''
+    d ? `${d.m[0] == null ? 'Down to ' + d.m[1] + ' m' : d.m[0] + '-' + d.m[1] + ' m deep'} <small>(${srcA(d.src)})</small>` : ''
   }</p>`;
 };
 // The range of its species' largest sizes, on the family sheet (study F9): "Its species reach 8 to 35 cm".

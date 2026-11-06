@@ -106,7 +106,10 @@ test('size and depth facts (tools/fish_facts.json): Reef Life Survey, else FishB
       assert.ok(/^https:\/\/(reeflifesurvey\.com|www\.fishbase\.se)\//.test(sp[id].size.src.u), id);
     }
     if (x.dep) {
-      assert.ok(x.dep.length === 2 && x.dep[0] <= x.dep[1] && ['rls', 'fishbase'].includes(x.dsrc), `${id} depth`);
+      assert.ok(
+        x.dep.length === 2 && x.dep[1] > 0 && (x.dep[0] === null || x.dep[0] <= x.dep[1]) && ['rls', 'fishbase'].includes(x.dsrc),
+        `${id} depth`
+      );
       assert.deepStrictEqual(sp[id].depth.m, x.dep, `${id} depth in fish.json`);
     }
   }
