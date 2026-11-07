@@ -57,8 +57,9 @@ must not degrade the look.
 
 **Settings removed on purpose stay removed**: the "Photos from Dauin / Philippines / All" filter (#230; the IMR/own-first
 rule P1 already does that job), the Reef theme, the quiz level selector, the fish "SVS video extras" and "Beyond IMR"
-opt-ins (every fish circle is on the path).
-*Source:* Pierre, by 2026-11-01; the fish opt-ins, 2026-11-06 (Q175).
+⚙ rows (every fish circle is on the path; circle 3 opens on the player's yes, asked by a card and in My progress, never a
+⚙ row, and counts in the % either way).
+*Source:* Pierre, by 2026-11-01; the fish opt-ins, 2026-11-06 (Q175); circle 3 an option, 2026-11-07 (Q204).
 
 ### U8
 

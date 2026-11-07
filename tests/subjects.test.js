@@ -281,8 +281,9 @@ test('fish circles on the path (Pierre, 2026-11-06, Q175): no circle opt-in set,
   const S = C.SUBJECTS.find(x => x.id === 'fish'),
     html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
     app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  assert.deepStrictEqual(S.optin, ['sci']);
-  assert.ok(!/data-optin="c[23]"/.test(html) && !/SVS video extras|Beyond IMR/.test(html), 'no circle row in ⚙');
+  // beyond: circle 3 opened by choice (Pierre, 2026-11-07), offered by a card and My progress, never a ⚙ row.
+  assert.deepStrictEqual(S.optin, ['sci', 'beyond']);
+  assert.ok(!/data-optin="(c[23]|beyond)"/.test(html) && !/SVS video extras|Beyond IMR/.test(html), 'no circle row in ⚙');
   assert.ok(app.includes('slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : [])'), 'the fish slate holds every circle');
   // A stored c3 choice is no longer an opt-in: a merge does not force it on.
   const M = C.mergeUsers({'reefid-sync-fish-quiz': JSON.stringify({c3: true})}, {'reefid-sync-fish-quiz': JSON.stringify({c3: false})});
@@ -518,4 +519,37 @@ test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.ok(!C.refLevel({f: 'x'}) && !C.refLevel({f: 'x', q: 3}), 'a photo with no judged ease is never reference level');
   assert.ok(!C.refLevel({f: 'x', e: 5, jt: 'p1g0slm', rep: 'inaturalist'}), 'never one with other kinds of fish (rule P3)');
   assert.ok(C.refLevel({f: 'x', e: 4, jt: 'o1g0sms', rep: 'inaturalist'}) && C.refLevel({f: 'x', e: 5, jt: 'p1g0sl1'}));
+});
+
+test('circle 3 by choice (Pierre, 2026-11-07 08:50; Q204): openState, the card once and once more after OPEN_AGAIN answers', () => {
+  const st = (q, o) => C.openState(q, 'beyond', o),
+    due = {due: true, left: true, at: 500};
+  // Under the threshold: nothing, closed.
+  assert.deepStrictEqual(st({}, {due: false, left: true, at: 500}), {on: false, row: false, ask: false});
+  // At the threshold, never asked: the card, and My progress's button.
+  assert.deepStrictEqual(st({}, due), {on: false, row: true, ask: true});
+  // Open them: on, nothing offered.
+  assert.deepStrictEqual(st({beyond: true}, due), {on: true, row: false, ask: false});
+  // Not now: closed, the button stays, the card waits OPEN_AGAIN answers, then once more, then never.
+  assert.strictEqual(C.OPEN_AGAIN, 200);
+  const no1 = {beyond: false, beyondN: 1, beyondA: 500};
+  assert.deepStrictEqual(st(no1, due), {on: false, row: true, ask: false});
+  assert.strictEqual(st(no1, {...due, at: 699}).ask, false);
+  assert.strictEqual(st(no1, {...due, at: 700}).ask, true);
+  assert.deepStrictEqual(st({beyond: false, beyondN: 2, beyondA: 700}, {...due, at: 5000}), {on: false, row: true, ask: false});
+  // A "no" synced without its count counts as one.
+  assert.strictEqual(st({beyond: false}, {...due, at: 5000}).ask, true);
+  // Never asked, a unit already open (circle 3 opened by itself before the choice existed): on, no card.
+  assert.deepStrictEqual(st({}, {...due, met: true}), {on: true, row: false, ask: false});
+  // ...but a "Not now" stays a "Not now".
+  assert.strictEqual(st({beyond: false, beyondN: 1, beyondA: 0}, {...due, met: true}).on, false);
+  // Every unit open already: no card, no button.
+  assert.deepStrictEqual(st({}, {...due, left: false}), {on: false, row: false, ask: false});
+  // Two accounts merged: on if either said yes; the larger "Not now" count.
+  const q = (a, b) =>
+    JSON.parse(
+      C.mergeUsers({'reefid-sync-fish-quiz': JSON.stringify(a)}, {'reefid-sync-fish-quiz': JSON.stringify(b)})['reefid-sync-fish-quiz']
+    );
+  assert.strictEqual(q({beyond: true}, {beyond: false, beyondN: 1}).beyond, true);
+  assert.strictEqual(q({beyond: false, beyondN: 2}, {beyond: false, beyondN: 1}).beyondN, 2);
 });
