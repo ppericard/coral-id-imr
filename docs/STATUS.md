@@ -8,7 +8,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 Written 2026-11-07, about 14:40 Manila, by the integrator, before a quota pause. **A new integrator starts here, then
 reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
-Last checked: reports and events: 2026-11-06 ~16:20 Manila (no new report since 11-05; no app error today, a few slow saves recovered)
+Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11-07; events: "Can't find variable: shownGroup" twice on 11-06 on one device, one "left with a card open" on the Scientific names offer on 11-07, two saves failed and not recovered)
 
 ## Now
 
