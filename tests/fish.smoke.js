@@ -300,13 +300,17 @@ const server = http.createServer((req, res) => {
       'sci: every genus in its set, opened or not'
     );
     FISH.c1.forEach(n => pgAt(n, 0.2));
-    ok(!sci.units().length, 'sci: no genus in play before an entry is at Advanced');
-    pgAt('f:Butterflyfishes', 0.72);
+    ok(!sci.units().length, 'sci: no genus in play before a family is at Open Water');
+    // The boundary (Q205, 2026-11-07): just under Open Water nothing, just over it the family's genera and the offer.
+    pgAt('f:Butterflyfishes', 0.4);
+    ok(!sci.units().length && !(bonusOfferDue() && bonusOfferDue().k === 'sci'), 'sci: nothing just under Open Water');
+    pgAt('f:Butterflyfishes', 0.6);
     ok(
       sci.units().length && sci.units().every(n => GX(n).parent === 'f:Butterflyfishes'),
-      'sci: the genera of the family at Advanced only'
+      'sci: the genera of the family at Open Water only'
     );
-    ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once an entry is at Advanced');
+    ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once a family is at Open Water');
+    pgAt('f:Butterflyfishes', 0.72);
     const pc = progPct();
     bonusSet(true, 'sci');
     ok(

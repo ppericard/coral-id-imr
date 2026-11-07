@@ -50,8 +50,8 @@ is the design's shorthand, and internal identifiers may keep it.
   (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
   invented: rule C2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
 - **Built for review** (2026-11-04 night, its own PR, admin-only beta, waiting on Pierre): the genus step as an opt-in set of the fish,
-  "Scientific names" (offer card once an entry is at Advanced, ⚙ row): a family's genera join the game when the family reaches
-  Advanced and open one at a time; a photo, then 4 genus names (other identification groups first, then the sibling genera of the
+  "Scientific names" (offer card once an entry is at Open Water since 2026-11-07, Q205: Advanced was far too late under the cautious
+  bar of #646; ⚙ row): a family's genera join the game when the family reaches Open Water and open one at a time; a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
   one (Chromis, Dascyllus, Pomacentrus), else its most met species; not counted in the progress yet (the global score is not built).
   Photos: the stopgap entry photos of its species, so 18 of the 94 genera have none and stay out until species photos are curated.
