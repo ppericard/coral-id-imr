@@ -213,7 +213,9 @@
   //   card    the kind of its first-meeting card (app.js CARD_KINDS: its emoji)
   //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
   //   views   the views a question may show, [code, label] (one view: one photo per question)
-  //   optin   the opt-in sets: Q[k] true = on, Q[k + 'T'] when chosen (app.js UNITS[id].sets: units, card, ⚙ row)
+  //   optin   the opt-in choices: Q[k] true = on, Q[k + 'T'] when chosen, and for a part of the slate opened by choice
+  //           Q[k + 'N'] its "Not now" count, Q[k + 'A'] the answer count at the last one (app.js UNITS[id].sets: units
+  //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button)
   //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins: a fish scientific genus): logged
   //           with every answer (sheet v60 Answers Rank). Every subject's answers go to the sheet's Answers tab under its
   //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked)
@@ -455,9 +457,11 @@
       // it to that group again (the sheet keeps the Groups tab's rows).
       open: 'all',
       views: [['wide', 'Photo']],
-      // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels"). The circles 2 and 3 were opt-in sets too
-      // (c2, c3) until every circle joined the path (Pierre, 2026-11-06, Q175): a stored c2 / c3 choice is no longer read.
-      optin: ['sci'],
+      // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels"). beyond: circle 3, the families beyond
+      // the IMR course, on the path and in the % but opened by the player's choice (app.js UNITS fish opens; Pierre,
+      // 2026-11-07 08:50, Q204). The circles 2 and 3 were opt-in sets (c2, c3) until Q175 (2026-11-06): a stored c2 / c3
+      // choice is not read, so a "no" given to the old offer (circle 3 then outside the %) is not taken for this one.
+      optin: ['sci', 'beyond'],
       // family: a family of the book (the game's family level, f:Damselfishes: Pierre, 2026-11-06; the IMR course a tag).
       rank: 'family',
       renamed: FISH_RENAMED,
@@ -1163,6 +1167,9 @@
         const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
         S.optin.forEach(k => {
           if ((qa || {})[k] || (qb || {})[k]) q[k] = true;
+          // An offer declined on either account is not made more often for the merge: the larger "Not now" count.
+          const n = Math.max((qa || {})[k + 'N'] || 0, (qb || {})[k + 'N'] || 0);
+          if (n) q[k + 'N'] = n;
         });
         out[qk] = JSON.stringify(q);
       }
@@ -1187,6 +1194,22 @@
       });
     });
     return out;
+  }
+  // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50: "circle 3 an
+  // option; if the player says no, those families don't open, but the player must be able to unlock them later"), from
+  // the subject's quiz settings q and the part's key k. o: met (one of its units already opened on a card), due (its
+  // threshold reached), left (a unit of it not open yet), at (the player's answer count). on: the player said yes, or was
+  // never asked and has one of its units open (it opened by itself before the choice existed: kept on). row: My progress
+  // offers to open it. ask: its card is due: never answered, or once more OPEN_AGAIN answers after a first "Not now"
+  // (a "no" seen without its count counts as one), then never.
+  const OPEN_AGAIN = 200;
+  function openState(q, k, o = {}) {
+    q = q || {};
+    const v = q[k],
+      on = v === true || (v === undefined && !!o.met),
+      row = !on && !!o.due && !!o.left,
+      ask = row && (v === undefined || (v === false && (q[k + 'N'] || 1) < 2 && (o.at || 0) >= (q[k + 'A'] || 0) + OPEN_AGAIN));
+    return {on, row, ask};
   }
   // One subject's progress of two accounts (mergeUsers).
   function mergeUserP(a, b) {
@@ -4756,6 +4779,8 @@
     pairConf,
     mergeUsers,
     winkUnion,
+    OPEN_AGAIN,
+    openState,
     PULSEQ,
     PULSE0,
     PULSE_SHOWN,

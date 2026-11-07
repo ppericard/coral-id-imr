@@ -1402,6 +1402,7 @@ function quizPhoto(cur = 'quiz') {
   else if (!noOpen() && promptOk() && introOffer())
     (promptMark(), introOfferShow()); // never over another card: next question
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
+  else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
@@ -1591,6 +1592,28 @@ function bonusOfferShow(S = bonusOfferDue() || SETS()[0]) {
     esc: 2,
     note: S.note,
     onClose: topUp // leaving the page closes it unanswered (route): the offer comes back
+  });
+}
+// A part of the slate opened by choice (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50), over the question,
+// when due (app.js openOfferDue). The open-all offer's card ("step": "Not now" the safe default on top, Escape and Enter):
+// "Open them" turns it on, its units then open one at a time at the usual pace; "Not now" keeps them closed, and the
+// card comes back once, OPEN_AGAIN answers later (core.js openState). My progress opens them any time. Leaving the page closes it
+// unanswered (route): the offer comes back.
+function openOfferShow(S = openOfferDue()) {
+  if (!S) return;
+  const L = S.units().filter(n => !introduced(n));
+  cardShow({
+    kind: 'step',
+    cls: 'intro',
+    kick: S.kick,
+    title: S.title(L.length),
+    body: `<p>${S.body}</p>${bonusThumbs(L)}`,
+    primary: {text: 'Not now', attr: 'data-notnow', on: () => openNo(S.k)},
+    secondary: {text: S.yes, attr: 'data-opens', on: () => bonusSet(true, S.k)},
+    esc: 1,
+    enter: 1,
+    note: S.note,
+    onClose: topUp
   });
 }
 const bonusThumbs = L =>

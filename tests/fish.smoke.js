@@ -2,7 +2,9 @@
 // - the draw: the fish slate is every family of every circle (Pierre, 2026-11-06, Q175); every choice a fish family; one
 //   photo, from one observation; winks never asked as questions; no circle setting row or offer card;
 // - the circles on the path (Q177): circle 2 may open once every circle-1 family has been asked, circle 3 once the
-//   progress on circle 1 reaches FISH_C3, never before (the opening draws circle 1 first); every circle in the progress;
+//   progress on circle 1 reaches FISH_C3, never before (the opening draws circle 1 first), and only once the player says
+//   yes (Pierre, 2026-11-07: its card at FISH_C3, Not now keeps it closed, My progress opens it); every circle in the
+//   progress (Q204);
 //   "I'm at IMR": the IMR-tagged families open first;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
 //   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
@@ -250,13 +252,55 @@ const server = http.createServer((req, res) => {
     ok(progPct(FISH.c1) < 100 * FISH_C3, 'circle 1 under FISH_C3');
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
+    ok(!openOfferDue(), 'no circle-3 card under FISH_C3');
     FISH.c1.forEach(n => pgAt(n, 0.7));
-    ok(progPct(FISH.c1) >= 100 * FISH_C3 && FISH.c3.every(mayOpen), 'circle 3 opens once circle 1 reaches FISH_C3');
+    // Circle 3 an option (Pierre, 2026-11-07 08:50): at FISH_C3 a card asks instead of opening; "Not now" keeps it closed
+    // and the card comes back once, OPEN_AGAIN answers later, then never; My progress opens it any time; open, its
+    // families open one at a time. It counts in the % either way (Q204, below).
+    ok(progPct(FISH.c1) >= 100 * FISH_C3 && !FISH.c3.some(mayOpen), 'circle 3 waits for the choice at FISH_C3');
+    ok(openOfferDue() && openOfferDue().k === 'beyond' && !Q.beyond, 'the circle-3 card is due at FISH_C3');
+    // A player whose circle 3 already opened by itself (before the choice existed) keeps it, and gets no card.
+    const im = introMap(),
+      c3a = FISH.c3[0];
+    im[c3a] = [answersSoFar(), 0, Date.now(), 'c'];
+    ok(FISH.c3.every(mayOpen) && !openOfferDue(), 'circle 3 already open: kept on, no card');
+    delete im[c3a];
+    closeCards();
+    openOfferShow();
+    const c3card = document.querySelector('.unlock.intro');
+    ok(
+      c3card &&
+        /beyond the IMR course/.test(c3card.textContent) &&
+        c3card.querySelector('.ulbtns .next:first-child[data-notnow]') &&
+        /Open them/.test((c3card.querySelector('[data-opens]') || {}).textContent || ''),
+      'the circle-3 card: Not now on top, Open them under it'
+    );
+    if (c3card) c3card.querySelector('[data-notnow]').click();
+    closeCards();
+    ok(Q.beyond === false && Q.beyondN === 1 && !FISH.c3.some(mayOpen), 'Not now keeps circle 3 closed');
+    ok(!picks().some(n => FISH.c3.includes(n)), 'the opening never draws circle 3 after Not now');
+    ok(!openOfferDue(), 'not asked again at once');
+    Q.beyondA = answersSoFar() - OPEN_AGAIN;
+    ok(openOfferDue() && openOfferDue().k === 'beyond', 'asked once more OPEN_AGAIN answers later');
+    openNo('beyond');
+    Q.beyondA = answersSoFar() - 10 * OPEN_AGAIN;
+    ok(Q.beyondN === 2 && !openOfferDue(), 'then never');
+    // My progress: the button opens it, as "Open them".
+    quizBoard();
+    const ob = document.querySelector('#view [data-opens="beyond"]');
+    ok(
+      ob && new RegExp(`\\(${FISH.c3.filter(n => !introduced(n)).length} families\\)`).test(ob.textContent),
+      'My progress: Open the families beyond IMR (N families)'
+    );
+    if (ob) ob.click();
+    ok(Q.beyond === true && FISH.c3.every(mayOpen), 'My progress opens circle 3');
+    ok(!document.querySelector('#view [data-opens]'), 'the button goes once open');
     ok(
       picks().some(n => FISH.c3.includes(n)),
       'the opening draws circle 3 then'
     );
-    ok(!bonusOfferDue() || bonusOfferDue().k === 'sci', 'still no circle offer card');
+    ok(!openOfferDue() && (!bonusOfferDue() || bonusOfferDue().k === 'sci'), 'no circle card once open');
+    route();
     // Every circle in the progress: a circle-3 family learned moves the %, over all the families.
     const c3n = FISH.c3[0],
       pct = progPct();
