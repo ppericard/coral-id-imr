@@ -329,3 +329,12 @@ Many agents share one 4-core machine with a small disk: a load near 16 brought i
 
 *Why:* an agent that forgets the rule must not be able to overload the machine. *Source:* Pierre, 2026-11-05 ("the
 automatic lock of the unit tests"; the load budget of twice the cores and the disk rule the same day).
+
+### W25
+
+**Use the quota with care, never at the cost of the result.** Precise briefs, query instead of reading, no subagent for a
+small task, stop agents when done, one wake-up per wait, local checks before each push. A lighter model only for
+mechanical work a test verifies; never for a judgment (photo judging included).
+
+*Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
+2026-11-08.

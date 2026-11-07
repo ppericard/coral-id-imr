@@ -214,6 +214,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W9** Latest stable version of tools.
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked; a guess is labelled.
+- **W25** Use the quota with care, never at the cost of the result.
 
 ## Read on demand
 
