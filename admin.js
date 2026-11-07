@@ -3583,14 +3583,17 @@ function renderTriage() {
           : ''
       }</article>`;
   };
+  // The sections the subject on screen has (core.js SUBJECTS admin.todo); the reports and the flags are every subject's.
+  const has = k => (ASUBJ.admin.todo || []).includes(k);
   const poor = [];
-  Object.entries(DRAFT.genera).forEach(([n, k]) =>
-    Object.entries(k.feat || {}).forEach(([v, L]) =>
-      L.forEach(f => {
-        if (PHOTOS[f] && !offSlot(PHOTOS[f]) && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v});
-      })
-    )
-  );
+  if (has('poor'))
+    Object.entries(DRAFT.genera).forEach(([n, k]) =>
+      Object.entries(k.feat || {}).forEach(([v, L]) =>
+        L.forEach(f => {
+          if (PHOTOS[f] && !offSlot(PHOTOS[f]) && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v});
+        })
+      )
+    );
   // All (To do, Pierre 2026-11-03): by urgency, Health's red line first (only when something is wrong), then the
   // reports and flags, the devices' errors, Featured photos rated Poor, the judging agent's suggestions last. Reports =
   // the same without Health and the errors (the old Triage page). Answers and errors load behind the page.
@@ -3613,10 +3616,10 @@ function renderTriage() {
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
     ${all ? evSummary() : ''}
-    ${decSec('rule', tile)}
-    ${decSec('sa', tile)}
+    ${has('rule') ? decSec('rule', tile) : ''}
+    ${has('sa') ? decSec('sa', tile) : ''}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="' + esc(genusHref(p.genus)) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
-    ${sugHtml(tile)}
+    ${has('sug') ? sugHtml(tile) : ''}
   </section>`;
   bindSug();
   bindDecide('rule');

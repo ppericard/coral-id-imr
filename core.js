@@ -393,10 +393,13 @@
       // pages it has (null = every page; a page covers the addresses under it).
       // For the one filter bar of every photo page (admin plan PR 3, admin.js fbar): origins, where its photos come
       // from, [key, name, short name] in the order of the chips (admin.js origin(p) gives a photo's key); csrc, the
-      // sources of its Candidates swiper.
+      // sources of its Candidates swiper. todo: the sections of To do › Reports it has besides the reports and the photos
+      // flagged on the site (admin.js renderTriage: rule, out of the presence rule; sa, share-alike; poor, Featured but
+      // rated Poor; sug, the judging agent's suggestions).
       admin: {
         cur: '',
         pages: null,
+        todo: ['rule', 'sa', 'poor', 'sug'],
         origins: [
           ['imr', 'IMR lecture', 'IMR'],
           ['own', 'Pierre', 'Pierre'],
@@ -469,6 +472,8 @@
       admin: {
         cur: 'fish',
         pages: ['inbox/todo/reports', 'inbox/todo/errors', 'players/list', 'photos/families'],
+        // none of the coral sections: they read the coral photos (presence, licences, Featured, suggest.json)
+        todo: [],
         origins: [
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
@@ -680,13 +685,18 @@
       genus = p => (p && p.sp && gname.get(p.sp)) || '',
       X = (cur && cur.exclude) || {},
       xid = new Set(Object.keys(X).map(fishPid)),
+      // fish exclude by photo id too: an exclusion written under one name (the stopgap fi<id>, flagged in the game) also
+      // drops a curated copy of the same photo added later (fish-<species>-cand-<id>), which fishOn checks by name only.
+      fxid = new Set(Object.keys((F && F.exclude) || {}).map(fishPid)),
       gone = new Set(xid),
       out = {},
       cu = {},
       cid = new Set();
     if (F) ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => gone.add(fishPid(f))));
     Object.entries(game || {}).forEach(([t, L]) => {
-      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishOn(F, p.f, p.sp)) && !X[p.f] && !xid.has(fishPid(p.f)));
+      cu[t] = (L || []).filter(
+        p => p && p.f && p.sp && (!F || fishOn(F, p.f, p.sp)) && !X[p.f] && !xid.has(fishPid(p.f)) && !fxid.has(fishPid(p.f))
+      );
       cu[t].forEach(p => cid.add(fishPid(p.f)));
     });
     new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {

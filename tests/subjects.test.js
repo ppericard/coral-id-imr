@@ -465,3 +465,15 @@ test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.ok(!C.refLevel({f: 'x', e: 5, jt: 'p1g0slm', rep: 'inaturalist'}), 'never one with other kinds of fish (rule P3)');
   assert.ok(C.refLevel({f: 'x', e: 4, jt: 'o1g0sms', rep: 'inaturalist'}) && C.refLevel({f: 'x', e: 5, jt: 'p1g0sl1'}));
 });
+
+test('admin todo: each subject names its To do sections; the fish have none of the coral photos ones', () => {
+  const KNOWN = ['rule', 'sa', 'poor', 'sug'],
+    admin = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8');
+  C.SUBJECTS.forEach(S => {
+    assert.ok(Array.isArray(S.admin.todo) && S.admin.todo.every(k => KNOWN.includes(k)), `${S.id}: ${JSON.stringify(S.admin.todo)}`);
+  });
+  assert.deepStrictEqual(C.subjectOf('coral').admin.todo, KNOWN);
+  assert.deepStrictEqual(C.subjectOf('fish').admin.todo, []);
+  // admin.js renderTriage draws each section only for a subject that has it
+  KNOWN.forEach(k => assert.ok(admin.includes(`has('${k}')`), `renderTriage gates ${k}`));
+});

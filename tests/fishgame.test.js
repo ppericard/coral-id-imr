@@ -363,3 +363,28 @@ test('fish-game.json: the layout tools/fish_game.py writes, only photos in play,
       assert.ok(r2.has(p.f), `${p.f}: not in the R2 list (tools/photos.py DATA)`);
     });
 });
+
+test('fish exclude by photo id: an exclusion under the stopgap name also drops a curated copy added later', () => {
+  const cp = {f: 'fish-s001-cand-123', sp: 's001', src: 'https://x/123/original.jpg', e: 5},
+    other = {f: 'fish-s001-cand-456', sp: 's001', src: 'https://x/456/original.jpg', e: 5},
+    stop = {
+      t01: [
+        {f: 'fi123', sp: 's001'},
+        {f: 'fi789', sp: 's001'}
+      ]
+    },
+    cur = ex => ({fish: {add: {[cp.f]: 's001', [other.f]: 's001'}, ...(ex ? {exclude: ex} : {})}}),
+    shown = c => C.fishPhotos(stop, {t01: [cp, other]}, c).t01.map(p => p.f);
+  assert.deepStrictEqual(shown(cur()), [cp.f, other.f, 'fi789'], 'both curated in play, the stopgap copy of 123 left out');
+  // flagged and removed in the game under its stopgap name: its curated copy goes too, the others stay
+  assert.deepStrictEqual(shown(cur({fi123: 'excluded'})), [other.f, 'fi789']);
+  // under the candidate's own name, as before
+  assert.deepStrictEqual(shown(cur({[cp.f]: 'excluded'})), [other.f, 'fi789']);
+  // tools/fish_game.py, its twin: never downloaded either
+  const got = JSON.parse(
+    py(`import fish_game as G
+cand = {'cand': {'s001': [${JSON.stringify(cp)}, ${JSON.stringify(other)}]}}
+print(json.dumps([[p['f'] for _, p, _ in G.in_play(c, cand)] for c in (${JSON.stringify(cur())}, ${JSON.stringify(cur({fi123: 'excluded'}))})]))`)
+  );
+  assert.deepStrictEqual(got, [[cp.f, other.f], [other.f]]);
+});

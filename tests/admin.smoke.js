@@ -350,6 +350,12 @@ const WIDTHS = [390, 1280];
         !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
+      // Its To do shows only the sections it has (core.js SUBJECTS admin todo): the reports and its flags, never the coral
+      // photos' sections (presence rule, share-alike, Featured rated Poor, the judging agent's suggestions).
+      const secs = () => p.evaluate(() => [...document.querySelectorAll('#view .adm-qhead h2')].map(h => h.firstChild.textContent.trim()));
+      const fsec = await secs();
+      if (fsec.some(t => /presence rule|Share-alike|rated Poor|^Suggested/i.test(t)) || !fsec.includes('Flagged on the site'))
+        fails.push(`${w}px Subjects: ${other.id} To do sections ${JSON.stringify(fsec)}`);
       // The fish units page (admin plan PR 6 on the book's families): Photos › Families, the fish side's only Photos tab
       // (never on the corals' side), the book's families by key group with the IMR tag on those in the IMR course, a
       // family's page with one block per genus and one section per species, deep links by family id.
