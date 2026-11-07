@@ -10,7 +10,7 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
   first names misspelled, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
   commits) in English.
-- **Questions** go to him numbered, never reset: **the last number used is Q205**. Each with its context in one or two
+- **Questions** go to him numbered, never reset: **the last number used is Q207**. Each with its context in one or two
   sentences, the options, and a recommendation. He answers "Question N, ok" or picks an option. Record the answer in the
   PR's Decisions ("Pierre, date time (QN)"), empty "Choices I made", remove `needs-pierre`, merge.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
