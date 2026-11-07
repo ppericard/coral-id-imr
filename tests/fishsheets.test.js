@@ -93,6 +93,22 @@ test('the family sheets lines (tools/fish_sheets.json): families of fish.json, e
   }
 });
 
+test('genus common names (tools/fish_genus_names.json): genera of fish.json, each with its source, built into fish.json', () => {
+  const X = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_genus_names.json'), 'utf8')).genera,
+    by = Object.fromEntries(F.genera.map(g => [g.id, g]));
+  assert.ok(Object.keys(X).length >= 15, 'the genera named so far');
+  for (const [id, x] of Object.entries(X)) {
+    assert.ok(by[id], `${id}: not a genus of fish.json`);
+    assert.ok(['imr', 'species'].includes(x.from) && x.common && x.common !== by[id].name, `${id}: ${x.common}`);
+    assert.ok(x.from !== 'imr' || (by[id].imr && x.common.toLowerCase().startsWith(by[id].imr.toLowerCase())), `${id}: IMR's name`);
+    assert.strictEqual(by[id].common, x.common, `${id} common in fish.json`);
+    assert.ok(by[id].csrc && (x.from === 'imr' ? /^IMR fish presentation/ : /^Inferred from its species/).test(by[id].csrc), `${id} csrc`);
+  }
+  // A name IMR gives to several genera is no genus's own (Surgeonfish: Zebrasoma, Ctenochaetus, Acanthurus).
+  assert.ok(!by['g:Acanthurus'].common && !by['g:Zebrasoma'].common, 'Surgeonfish names no genus');
+  F.genera.filter(g => g.common).forEach(g => assert.ok(X[g.id], `${g.id}: a common name not from the table`));
+});
+
 test('size and depth facts (tools/fish_facts.json): Reef Life Survey, else FishBase, each with its source, built into fish.json', () => {
   const X = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_facts.json'), 'utf8')),
     sp = Object.fromEntries(F.species.map(s => [s.id, s]));
