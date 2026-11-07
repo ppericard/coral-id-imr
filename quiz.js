@@ -1625,11 +1625,16 @@ function openOfferShow(S = openOfferDue()) {
     onClose: topUp
   });
 }
+// At most BONUS_THUMBS of them, then "+N" (Pierre, 2026-11-07: 40 scientific genera in one row pushed the whole card off
+// the screen, the game stuck behind its backdrop).
+const BONUS_THUMBS = 6;
 const bonusThumbs = L =>
-  `<div class="ulthumbs">${L.map(n => {
-    const p = cover(GX(n));
-    return p ? `<img src="${img(p, 's')}" alt="">` : '<span></span>';
-  }).join('')}</div>`;
+  `<div class="ulthumbs">${L.slice(0, BONUS_THUMBS)
+    .map(n => {
+      const p = cover(GX(n));
+      return p ? `<img src="${img(p, 's')}" alt="">` : '<span></span>';
+    })
+    .join('')}${L.length > BONUS_THUMBS ? `<span class="ulmore">+${L.length - BONUS_THUMBS}</span>` : ''}</div>`;
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
