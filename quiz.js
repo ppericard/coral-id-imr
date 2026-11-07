@@ -832,10 +832,19 @@ function winkDue() {
   if (i < 0 || a < winkAt(i) || a < last + winkGap() || document.querySelector('.unlock')) return null;
   return {n: L[i]};
 }
+// The wink's photo (Pierre, 2026-11-07: a surprise card never shows a bad photo, each draws from 2 or 3 really beautiful
+// ones): one of the photos chosen for it (wink.photos: tools/fish_wink_photos.json) that are still among the unit's game
+// photos, matched by photo id (fishPid: a candidate and its stopgap copy are one photo), so one Pierre's curation takes
+// out is never drawn; none left, the unit's best by ease and reference look (easyRank's first).
+function winkPhoto(g) {
+  const want = new Set((g.wink.photos || []).map(fishPid)),
+    L = g.views.wide.filter(p => want.has(fishPid(p.f)));
+  return L.length ? pick(L) : easyRank(g.views.wide)[0];
+}
 function winkShow({n}) {
   const g = GX(n),
     w = g.wink,
-    p = pick(g.views.wide),
+    p = winkPhoto(g),
     ch = shuffle([[n, g.name], ...w.choices]);
   const a = answersSoFar();
   WINKS[SUBJ.id] = {...(WINKS[SUBJ.id] || {}), [n]: a};
