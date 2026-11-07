@@ -8,14 +8,14 @@ Pierre's standing rules on the subjects (corals, fish) and on fish content. The 
 
 **A subject differs only by a field of `core.js` `SUBJECTS` or a function of `app.js` `UNITS`; the engine works on the
 current subject (`SUBJ`, `P`, `Q`) and never names or tests which one it is** (`tests/subject-neutral.test.js` holds it,
-each exception with its ROADMAP row). A subject that opens to a group (`SUBJECTS` `open: 'group'`) is **the admin's only**: the subject
-switch (rule U12: the Corals | Fish row on Home and its twin, the subject chip in the header) shows only while a player
-has two subjects or more (`app.js` `subjMine`), so only to the admin while it is so; never in ⚙; anyone else opens on
-the corals whatever was saved (`app.js` `subjOpen`, `subjAt`), their saved choice and fish progress kept. **Except the
-players of its group**, whom the admin adds on the subject's Players page (not one site-wide switch; sheet v48, details
-in ARCHITECTURE.md "The beta group"). Each subject has its own leaderboard (sheet v95) and its own achievements; fish answers are logged to the sheet (v60) but feed no statistic yet. Fish winks (surprise cards, never counted) come for every fish player, circle 1 included. Fish opened to every player on 2026-11-06 (`open: 'all'`, Q158), its beta label kept (`SUBJECTS` `beta`).
-*Why:* fish run cleanly on the corals' engine; a subject not ready for every player opens to a group first.
-*Source:* Pierre, 2026-11-03 (engine, winks), 2026-11-04 (beta, its group), 2026-11-06 (fish open to every player, Q158).
+each exception with its ROADMAP row). **Anything in beta, a subject or a feature, may open to a group first.** While its
+access is "group" (a subject: `SUBJECTS` `open: 'group'`), only the admin and the members of its group see it; everyone
+else keeps the default, their saved choice and progress kept (a subject: the subject switch, rule U12, shows only while a
+player has two subjects or more, never in ⚙, and anyone else opens on the default subject; `app.js` `subjMine`,
+`subjOpen`, `subjAt`). Once it opens to everyone (`open: 'all'`), its beta label may stay (`SUBJECTS` `beta`). The group
+is managed in the admin (a subject's on its Players page; ARCHITECTURE.md "The beta group").
+*Why:* one engine serves every subject cleanly; what is not ready for every player opens to a group first.
+*Source:* Pierre, 2026-11-03 (one engine), 2026-11-04 (beta, its group), 2026-11-07 (a general rule for anything in beta).
 
 ### S2
 

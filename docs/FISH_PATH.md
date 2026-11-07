@@ -328,7 +328,7 @@ Decided from the admin pooling study:
   before Open Water (`model.js` `easyFirst`); since then (Pierre: "NO WALL", #660) the judged ease is only the photo's prior and the
   draw strongly favours the easy, reference-like photos at the start (docs/LEARNING.md "Fish: the starter core and judged
   photos"). A juvenile is one only where its entry or genus shows its juveniles early (the juvenile classes, below); elsewhere its judged
-  ease is capped. From Open Water every juvenile is in the pool.
+  ease is capped. No level gates them any more: a juvenile is in the pool from the start, its capped ease keeping it rare early in the draw; the staged path for juveniles, colour phases and dimorphism is a ROADMAP row (Pierre, 2026-11-07).
 - **Juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `fish.json` `juv`, from
   `tools/fish_source.json`, per entry and per genus or species for mixed entries; judging/FISH.md):
   - **Class A** (juveniles distinctive and recognisable: they help learn the family early): Spadefish (very tall fins:
