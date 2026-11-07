@@ -782,9 +782,11 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
+  // No tips box at all for a unit with no cue, summary or mnemonic (a fish family of circles 2-3 with no IMR cue: an
+  // empty box drew a bare rounded bar, Pierre 2026-11-07, Barracudas).
   return `<div class="fb">
     <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
-    <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
+    ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}${vs}
     ${more}`;
 }
 // Winks (fish.json wink, Pierre 2026-11-03): an unmistakable fish, fun to meet (the whale shark, the pelagic thresher),
