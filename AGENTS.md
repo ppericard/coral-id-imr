@@ -58,6 +58,9 @@ what stops is everything that involves him.
 
 **The only place that says who merges and when.** Every other mention points here; change it here only.
 
+**The integrator also reads [docs/INTEGRATOR.md](docs/INTEGRATOR.md)** at the start of a session: how the work is run day
+to day with Pierre, what bites in the merge mechanics, and the open work (working knowledge, not rules).
+
 - **One integrator.** The main agent of a Claude Code session is the integrator: it starts as many subagents as useful,
   each on its own branch, worktree and PR (rule W22), checks their work and merges it. Subagents build, test, run the
   review loop (rule W23) and report to the integrator; **subagents never merge**.
