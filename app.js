@@ -1977,6 +1977,8 @@ function cardShow(o) {
     from = document.activeElement,
     id = 'ulh' + ++cardN;
   d.className = ('unlock ' + (o.cls || '')).trim();
+  d.dataset.t = String(Date.now());
+  d.dataset.info = [o.kind || '', o.kick || '', o.title ? String(o.title).slice(0, 60) : ''].join(' | '); // the event log's name for it
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
   let shut = false;
@@ -2065,8 +2067,37 @@ function cardShow(o) {
   d.set = c => (Object.assign(o, c), draw());
   draw();
   document.body.appendChild(d);
+  // A safety net (Pierre, 2026-11-07: mid-session the screen dimmed with no card on it and the game was stuck): a card
+  // still invisible after a moment (no panel drawn, no height, off screen or never faded in) closes by itself, so the
+  // player is never locked behind an empty backdrop, and the event log names it so the cause can be found. Not while the
+  // tour hides cards on purpose (html.touring).
+  const check = () => {
+    if (shut || !d.isConnected || document.documentElement.classList.contains('touring')) return;
+    if (document.visibilityState !== 'visible') return setTimeout(check, 2500); // a hidden page runs no fade-in: wait
+    const c = d.querySelector('.ulcard'),
+      r = c && c.getBoundingClientRect(),
+      op = c ? Number(getComputedStyle(c).opacity) : 0;
+    if (c && r && r.height >= 40 && r.bottom > 0 && r.top < innerHeight && op > 0.05) return;
+    if (typeof ev === 'function')
+      ev('err', {msg: 'empty card closed: ' + [o.kind || '', o.kick || '', o.title ? String(o.title).slice(0, 60) : ''].join(' | ')});
+    close('empty');
+  };
+  setTimeout(check, 2500);
   return d;
 }
+// Leaving the app (or the tab) while a card is open (Pierre, 2026-11-07: to tell a player who was stuck behind a card from
+// one who just left): the event log notes which card it was and how long it had been up, once per card.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'hidden' || typeof ev !== 'function') return;
+  document.querySelectorAll('.unlock').forEach(d => {
+    if (d.dataset.left) return;
+    d.dataset.left = '1';
+    const up = Math.round((Date.now() - Number(d.dataset.t || Date.now())) / 1000),
+      c = d.querySelector('.ulcard'),
+      seen = !!(c && c.getBoundingClientRect().height >= 40);
+    ev('err', {msg: `left with a card open (${seen ? 'drawn' : 'NOT drawn'}, ${up} s): ${d.dataset.info || ''}`});
+  });
+});
 // A progress ring for a card's medallion: pct strong, was (a former value) faint behind it.
 function cardRing(pct, was) {
   const C = 2 * Math.PI * 26,
