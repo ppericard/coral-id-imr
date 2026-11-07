@@ -219,7 +219,8 @@
   //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked)
   //   replay  the sheet computes from its logged answers: photo ratings, confusions, the opening hold, the full replay
   //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
-  //   ach     achievements count this subject
+  //   ach     it has achievements: achs() its list (core.js ACH, FISH_ACH), all in the one synced record (progress.js
+  //           ACHK) under ids of their own; achFeats: its answers keep the record's feats (runs, corallites, hard photos)
   //   board   it has its own leaderboard (sheet v95: Code.gs board_ &s=<id>), by its % then its Elo
   //   progress    the views of My progress (progress.js quizBoard), the first by default
   //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish: fish.practice.quiz)
@@ -388,6 +389,10 @@
       pool: {files: ['data.json', 'curation.json'], of: 'slots'},
       tiers: true,
       ach: true,
+      // Its achievements (core.js ACH; a function: the list is defined below) and whether its answers keep the feats of the
+      // shared record (runs, corallites, hard photos: progress.js achAfter).
+      achs: () => ACH,
+      achFeats: true,
       board: true,
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
@@ -458,7 +463,10 @@
       renamed: FISH_RENAMED,
       replay: false,
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
-      ach: false,
+      // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
+      // record under ids of their own, never counted in the corals'.
+      ach: true,
+      achs: () => FISH_ACH,
       // Its own leaderboard (Pierre, 2026-11-04: separate per subject, no merged ranking): by its %, then its Elo (sheet
       // v95, Code.gs board_ &s=fish; progress.js loadBoard).
       board: true,
@@ -2239,6 +2247,54 @@
     ['fb5', 'Helping hand', '5 reports sent: you are making the app better', 2, '💬', s => s.fb >= 5, 'contrib'],
     ['fb10', 'Co-author', '10 reports sent: the app owes you a lot', 3, '💬', s => s.fb >= 10, 'contrib']
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
+  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start: families met, levels,
+  // mastery, scientific names; species named and Fish basics wait for those features; harder "hunt" ones later, apart;
+  // "do not multiply achievements"). Learning milestones only (rule L8), tested on the fish snapshot (progress.js
+  // achSnap: the same fields over the fish slate, core = the IMR course's families, sets.sci = scientific genera at Open
+  // Water or above), in the shared record under ids starting with f, so a fish achievement never counts in the corals'
+  // (each subject's page and badge count its own list; SUBJECTS achs). Timing simulated with the real fish game
+  // (tools/learnsim.js --subject fish --ach): docs/LEARNING.md "Fish achievements, simulated".
+  const FISH_ACH = [
+    ['fmet5', 'First families', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
+    ['fmetcore', 'The IMR line-up', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetall', 'Whole reef', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
+    ['fq50a', 'Open Water: 5 families', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
+    ['fq50b', 'Open Water: 20 families', '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
+    ['fq80a', 'Advanced: 5 families', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
+    ['fq80b', 'Advanced: 15 families', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
+    [
+      'fq95a',
+      'Divemaster: 5 families',
+      '5 families at Divemaster level or above (95%: their mastery exam is on)',
+      2,
+      '🐠',
+      s => s.q[2] >= 5
+    ],
+    ['flearn1', 'First fish Instructor', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
+    ['flearn10', 'Instructor: 10 families', 'Mastery exam passed on 10 families', 3, '🎓', s => s.learned >= 10],
+    [
+      'flearncore',
+      'IMR fish master',
+      'You know every family of the IMR course for sure',
+      3,
+      '👑',
+      s => s.core.total && s.core.learned >= s.core.total
+    ],
+    ['fpct25', 'A quarter of the reef', '25% fish progress', 2, '📈', s => s.pct >= 25],
+    ['fpct50', 'Half the reef', '50% fish progress', 3, '📈', s => s.pct >= 50],
+    [
+      'fsci5',
+      'Genus names',
+      '5 scientific genera at Open Water level or above: you can name them as EventMeasure does',
+      2,
+      '🏷️',
+      s => (s.sets.sci || 0) >= 5
+    ]
+  ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
+  // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
+  // subject's page; achFind: an achievement of any list by its id.
+  const ACH_CONTRIB = ACH.filter(a => a.kind === 'contrib');
+  const achFind = id => ACH.find(a => a.id === id) || FISH_ACH.find(a => a.id === id) || null;
   // Reports that count for the Contributions (Pierre, 2026-11-05, Q65): every report sent (game, enlarged photo, genus
   // sheet, Send feedback), signed in or not; one per photo: a report on photos already in a counted report does not count
   // again (several reports on one photo count once); an "Other" report counts only with a note. A counted report goes into
@@ -2275,17 +2331,18 @@
     return true;
   }
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
-  const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
+  const newAch = (snap, have, list = ACH) => list.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
   // Achievements taken back (Pierre, 2026-11-03): only those that rest on genera learned, and only when a recalculation
   // takes a learned mark away (model.js mxRecalc, progress.js achRecheck); anywhere else achievements are only added.
   // achRevoke removes from A ({id: time}) those of ACH_LEARN that the snapshot no longer meets, and dates in A._gone
   // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
   // (the sheet's, another device's not merged yet) from coming back through a merge (mergeAch); earned again later, the
   // achievement carries a newer time and stays. Returns the ids removed.
-  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group'];
-  function achRevoke(A, snap, t) {
+  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearncore'];
+  // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
+  function achRevoke(A, snap, t, list = ACH) {
     if (!A || typeof A !== 'object') return [];
-    const off = ACH.filter(a => ACH_LEARN.includes(a.id) && !a.test(snap)).map(a => a.id),
+    const off = list.filter(a => ACH_LEARN.includes(a.id) && !a.test(snap)).map(a => a.id),
       out = off.filter(id => A[id]);
     if (off.length) A._gone = {...(A._gone || {})};
     off.forEach(id => {
@@ -4619,6 +4676,9 @@
     pagesBatch,
     pagesOwn,
     ACH,
+    FISH_ACH,
+    ACH_CONTRIB,
+    achFind,
     newAch,
     ACH_LEARN,
     achRevoke,

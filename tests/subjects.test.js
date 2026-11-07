@@ -39,13 +39,17 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   // Distinct keys and sign-in record fields: no subject can overwrite another's.
   assert.strictEqual(new Set(C.SUBJECTS.flatMap(s => s.base)).size, 2 * C.SUBJECTS.length);
   assert.strictEqual(new Set(C.SUBJECTS.map(s => s.dev)).size, C.SUBJECTS.length);
-  // A leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; sheet v95); the achievements
-  // count one subject.
+  // A leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; sheet v95); achievements
+  // per subject too (Pierre, 2026-11-04), each its own list in the one record.
   assert.ok(
     C.SUBJECTS.every(s => s.board === true),
     'every subject has its leaderboard'
   );
-  assert.strictEqual(C.SUBJECTS.filter(s => s.ach).length, 1);
+  assert.ok(
+    C.SUBJECTS.every(s => s.ach === true && typeof s.achs === 'function'),
+    'every subject has its achievements'
+  );
+  assert.strictEqual(C.SUBJECTS.filter(s => s.achFeats).length, 1, "one subject's answers keep the record's feats");
 });
 
 // The admin's one filter bar (admin plan PR 3, admin.js FB) is filled from each subject's admin part: its photo origins

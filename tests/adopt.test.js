@@ -871,6 +871,7 @@ function ach(A) {
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.syncSoon = () => ctx.synced++;
+  ctx.ACH_L = () => C.ACH.filter(a => a.kind !== 'contrib'); // the subject on screen's list (progress.js): the corals'
   ctx.achSnap = () => ({total: 40, met: 40, q: [30, 20, 10], learned: 0, pct: 60, streak: 0, elo: 0, group: false, bonus: 0});
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.M = {achRecheck, achMerge, ACHK};', ctx);
