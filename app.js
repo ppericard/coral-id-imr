@@ -1491,20 +1491,20 @@ const UNITS = {
     help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
-      // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once an IMR family is at
-      // Advanced, the level at which its species open (FISH_PATH "Unlock rules"); on, a family's genera join the game
-      // when the family reaches Advanced, then open one at a time like any unit (a genus met stays in). all: every genus,
+      // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at Open
+      // Water (Pierre, 2026-11-07, Q205; it was Advanced, far too late under the cautious bar of #646); on, a family's
+      // genera join the game when the family reaches Open Water, then open one at a time like any unit (a genus met stays in). all: every genus,
       // for setOf. Not in the progress yet (the global fish score, FISH_PATH "My progress (fish)", is not built).
       {
         k: 'sci',
         all: () => (FISH ? FISH.sci || [] : []),
         units: () =>
-          (FISH ? FISH.sci || [] : []).filter(n => typeof genScore === 'function' && (introduced(n) || genScore(GX(n).parent) >= LV_AT[1])),
-        due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
+          (FISH ? FISH.sci || [] : []).filter(n => typeof genScore === 'function' && (introduced(n) || genScore(GX(n).parent) >= LV_AT[0])),
+        due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[0]),
         page: false, // not on the families page
         kick: 'Scientific names',
         title: () => 'Scientific genus names?',
-        body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.',
+        body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Open Water on it.',
         note: "⚙ Settings, Scientific names, any time. They don't count in your progress yet.",
         tag: 'Scientific genus',
         name: 'Scientific names',
