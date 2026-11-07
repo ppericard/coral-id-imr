@@ -2887,7 +2887,7 @@ for every unit). The order is data (`fish.json`: each entry's `species` list, sp
 - **Effect now**: the order of the species lists in `fish.json`; species questions (level 2) are not built yet, so no
   player sees a change until they are. No learnsim run: no fish profile exists and nothing the simulation reads moved.
 
-### Fish achievements, simulated (2026-11-06, in review)
+### Fish achievements, simulated (2026-11-06; the list approved by Pierre, Q203, 2026-11-07)
 
 Rule L8: each achievement's timing checked with the real game before it is added. `tools/learnsim.js --subject fish --ach` (the real
 fish game in a browser, the answer at which each achievement first enters the record), profiles beginner (choice "new") and lecture RA

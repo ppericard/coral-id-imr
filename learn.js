@@ -958,6 +958,46 @@ function fishGenusRow(g, flat) {
   const P = L.slice(0, 4).map(spPhoto);
   return `<a class="frow" href="${esc(hr('g-' + g.id))}"><span class="fstack">${P.map(p => (p ? `<img ${thumb(p, '60px')} alt="" loading="lazy">` : noFish())).join('')}</span><span class="ftxt"><i>${esc(g.name)}</i><span>${L.length} species · ${L.filter(spOpen).length} opened for me</span>${g.imr ? `<small>IMR entry: ${esc(g.imr)}</small>` : ''}</span><span class="fgo" aria-hidden="true">›</span></a>`;
 }
+// The family ID marks and the behaviour, habitat and size lines (study F4b, F9; Pierre, Q11), written in our words from
+// the sources the family lists (tools/fish_sheets.json, built into fish.json: marks, life, msrc), published at once
+// (Pierre, 2026-11-06 16:54: he corrects them in place), with their sources and a report link right under them.
+// The size and depth of a species (fish.json species size, depth: Reef Life Survey, else FishBase; Pierre, Q6), each
+// with its source: "Up to 10 cm · 1-36 m deep". '' when neither was fetched (never a value of our own).
+// FishBase's length types other than total length (species LTypeMaxM), in words.
+const LTYPE = {SL: 'standard length', FL: 'fork length', WD: 'disc width', OT: '(another measure)'};
+const srcA = x => `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`;
+const spFacts = s => {
+  const z = s.size,
+    d = s.depth;
+  if (!z && !d) return '';
+  const same = z && d && z.src.u === d.src.u;
+  return `<p class="ffacts">${z ? `Up to ${z.len} cm${z.lt ? ' ' + esc(LTYPE[z.lt] || z.lt) : ''}${same ? '' : ` <small>(${srcA(z.src)})</small>`}` : ''}${z && d ? ' · ' : ''}${
+    d ? `${d.m[0] == null ? 'Down to ' + d.m[1] + ' m' : d.m[0] + '-' + d.m[1] + ' m deep'} <small>(${srcA(d.src)})</small>` : ''
+  }</p>`;
+};
+// The range of its species' largest sizes, on the family sheet (study F9): "Its species reach 8 to 35 cm".
+const famSizes = f => {
+  // Total lengths only: a standard length or a disc width is another measure, never in the same range (Codex review #696).
+  const L = famSpecies(f)
+    .map(s => s.size && !s.size.lt && s.size.len)
+    .filter(x => x > 0);
+  if (!L.length) return '';
+  const a = Math.min(...L),
+    b = Math.max(...L);
+  return `<li>${L.length > 1 && a !== b ? `Its species reach ${a} to ${b} cm` : `Up to ${b} cm`} <small>(the largest total length of each species: Reef Life Survey, else FishBase; ${L.length} of ${famSpecies(f).length} species)</small></li>`;
+};
+const fishMarks = f =>
+  (f.marks || []).length || (f.life || []).length || famSizes(f)
+    ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${
+        (f.life || []).length || famSizes(f)
+          ? `<h3>Behaviour, habitat, size</h3><ul class="crit">${(f.life || []).map(x => `<li>${esc(x)}</li>`).join('')}${famSizes(f)}</ul>`
+          : ''
+      }<p class="note msrc">${(f.msrc || []).length ? 'Sources: ' : ''}${(f.msrc || [])
+        .map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)))
+        .join(
+          '; '
+        )}${(f.msrc || []).length ? ' · ' : ''}${repBtn({k: 'sheet', g: f.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`
+    : '';
 // The family sheet (study §3.2: F1 names, F2 my progress, F3 hero, F4 IMR tips, F5 look-alikes, F6 genera, F7 species
 // when the family has one genus, F8 juveniles and phases, F10 report).
 function fishFamily(f) {
@@ -976,9 +1016,20 @@ function fishFamily(f) {
     const L = famSpecies(T.fam[id]);
     return easyRank(L.flatMap(s => fishSpPhotos()[s.id] || []))[0];
   };
-  // F5: IMR's look-alike lines (fish.json look, lsrc), then the families players mix it up with (model.js dataLooks), said
-  // as such; the mix-up count once the game asks the families.
-  const said = (f.look || []).filter(([o]) => T.fam[o]).map(([o, t]) => [o, t, (f.lsrc || {})[o] || 'IMR fish presentation']),
+  // F5: IMR's look-alike lines (fish.json look, lsrc), our lines for the pairs IMR gives no words for (apart, from the
+  // family's sources: tools/fish_sheets.json), then the families players mix it up with (model.js dataLooks), said as
+  // such; the mix-up count once the game asks the families.
+  const msrc = (f.msrc || []).map(x => x.t).join('; '),
+    ap = f.apart || {},
+    said0 = (f.look || [])
+      .filter(([o]) => T.fam[o])
+      .map(([o, t]) => (t || !ap[o] ? [o, t, (f.lsrc || {})[o] || 'IMR fish presentation'] : [o, ap[o], msrc])),
+    said = [
+      ...said0,
+      ...Object.keys(ap)
+        .filter(o => T.fam[o] && !said0.some(x => x[0] === o))
+        .map(o => [o, ap[o], msrc])
+    ],
     mixed =
       u && typeof dataLooks === 'function'
         ? dataLooks()
@@ -1024,6 +1075,7 @@ function fishFamily(f) {
       ${hero ? `<button type="button" class="zoom hero-ph" data-z="0" aria-label="Enlarge photo: ${esc(f.name)}"><img src="${img(hero, 's')}" srcset="${srcset(hero)}" sizes="(max-width: 599.98px) 100vw, 45vw" alt="${esc(f.name)}">${ZOOMI}</button>` : `<span class="hero-ph">${noFish()}</span>`}
       <div class="idbox">
         ${(f.cues || []).length ? `<div class="tipbox"><h3>ID tips (IMR) <span class="pg">${esc(slideLine(f.sl))}</span></h3><ul class="crit idtips">${f.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
+        ${fishMarks(f)}
         ${f.imrWith ? `<p class="note">The IMR fish presentation shows it with the ${esc(f.imrWith)}; ${key ? esc(key.short) : 'the identification key'} puts it in a family of its own.</p>` : ''}
         <details class="more sheetmore"><summary>More details</summary>
         <p class="note refs"><b>References:</b> ${f.cues ? 'IMR fish presentation' + (f.sl ? ' (' + esc(slideLine(f.sl)) + ')' : '') + ' · ' : ''}${key ? esc(key.cite) + (gr && gr.pages ? `, pp. ${gr.pages.join('-')}` : '') + ' · ' : ''}${(
@@ -1103,6 +1155,7 @@ function fishSpecies(s) {
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${s.common ? `<p class="fn-s">${esc(s.common)}</p>` : ''}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i></a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
+    ${spFacts(s)}
     ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} around Dauin, by how often it is met.</p>` : ''}
     ${
       shown.length

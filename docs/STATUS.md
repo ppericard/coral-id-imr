@@ -5,27 +5,24 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-06, about 18:35 Manila, by the integrator.
+Written 2026-11-06, about 22:50 Manila, by the integrator.
 
 Last checked: reports and events: 2026-11-06 ~16:20 Manila (no new report since 11-05; no app error today, a few slow saves recovered)
 
 ## Now
 
-Fish is open to every player (beta). End of the 2026-11-06 push (Pierre extended to ~18:00; quota nearly spent, so the
-other agents were stopped and nothing new was started).
+Night of 2026-11-06 (Pierre confirmed at 19:48, after the 17:30 reminder, three overnight jobs; quota nearly spent).
 
-- **Merged after 17:00**: #656 the book's families · #669 every circle counts, circles 2-3 open by themselves · #678
-  fish draw calibration (Q186) · #674 judged candidates in play by themselves, every fish photo on R2 (Q180, Q199):
-  the workflow put 4,763 more on R2, 8,582 fish photos in play, 1 failed (next Publish retries) · #646 the new coral
-  bar (rules v9, apology card when the sheet goes live at v87+) · #688 silent fish recompute (Q200) · #690 admin
-  Players shared list, Activity and Journey per subject.
-- **Ready, not merged**: #652 surprises once per player (conflicts: merge main, take main+1) · #685 photo exposure
-  (Q187-Q190, Q201) · #687 fresh look on 417 candidates (249 enter) · #682 hard photos flagged (Q192) · #599 / #602
-  swiper (Q194) and #633 mini switch (Q195), need a rebase · #659 / #663 / #667 fish admin pages, need a rebase.
-- **Stopped for quota, restart later**: fish leaderboard and ~14 achievements; fish sheet texts and sizes (publish
-  directly, Pierre corrects); fish.exclude by photo id and the fish To do sections; per-subject photo stats and Health.
-- **Not started**: the species level and the global fish score (decided 11-04); the exam over two visits; Glicko /
-  Kalman ability uncertainty.
+- **Merged in the evening**: #652, #685, #691, #687, #682, #633, #599, #602, #659, #670, #666, #663 (with #667),
+  #692 admin fish sessions and fish Journey progress, #693 fish leaderboard (shows once the sheet is live at v95), #695
+  fish family ID marks and "don't confuse with" (FishBase family summaries; angelfish-spine and wrasse-teeth sent to
+  points.json), #696 size and depth on the fish sheets (Reef Life Survey, else FishBase).
+- **Waiting on Pierre**: #694, the 14 fish achievements (needs-pierre; recommendation: approve as is, add species named
+  and Fish basics later). Side effect: a fish player's sign-in card can come a few answers after the 20th when the first
+  achievement pops up, as on corals.
+- **Open, no rush**: #637 (needs its learnsim before/after), #664 coherence review (to read).
+- **Not started**: the species level and the global fish score; the exam over two visits; Glicko / Kalman ability
+  uncertainty; per-subject photo stats and Health; fish.exclude by photo id; genus and species ID marks.
 - **Morning report trigger disabled** (Q202) until the quota is back.
 
 ## Next
@@ -39,9 +36,9 @@ Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes 
 
 - **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
 - #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
-- Coming: the fish achievements list; the admin Players columns.
+- **Q203** #694: approve the 14 fish achievements and their names (rec. yes, as is).
 
-Last question number: Q202
+Last question number: Q203
 
 ## Pierre's hands
 

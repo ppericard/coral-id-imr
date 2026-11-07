@@ -73,3 +73,46 @@ test('fishTree: option B, every family, genus and species reaches a sheet', () =
   const out = F.species.find(s => s.out);
   if (out) assert.strictEqual(T.go(out.id), null, out.id);
 });
+
+test('the family sheets lines (tools/fish_sheets.json): families of fish.json, each line sourced, built into fish.json', () => {
+  const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_sheets.json'), 'utf8')).families,
+    by = Object.fromEntries(F.families.map(f => [f.id, f]));
+  assert.ok(Object.keys(S).length >= 28, 'every circle-1 family');
+  for (const [id, x] of Object.entries(S)) {
+    assert.ok(by[id], `${id}: not a family of fish.json`);
+    assert.ok((x.marks || []).length + (x.life || []).length, `${id}: no line`);
+    assert.ok((x.src || []).length && x.src.every(s => s.t && /^https:\/\//.test(s.u)), `${id}: every family lists its sources`);
+    Object.keys(x.apart || {}).forEach(o => assert.ok(by[o] && o !== id, `${id}: apart ${o}`));
+    [...(x.marks || []), ...(x.life || []), ...Object.values(x.apart || {})].forEach(t =>
+      assert.ok(typeof t === 'string' && t.length && t.length <= 160 && !/\s$/.test(t), `${id}: ${t}`)
+    );
+    // built into fish.json as they are (python3 tools/build_fish.py --regroup)
+    assert.deepStrictEqual(by[id].marks || [], x.marks || [], `${id} marks in fish.json`);
+    assert.deepStrictEqual(by[id].life || [], x.life || [], `${id} life in fish.json`);
+    assert.deepStrictEqual(by[id].msrc, x.src, `${id} sources in fish.json`);
+  }
+});
+
+test('size and depth facts (tools/fish_facts.json): Reef Life Survey, else FishBase, each with its source, built into fish.json', () => {
+  const X = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_facts.json'), 'utf8')),
+    sp = Object.fromEntries(F.species.map(s => [s.id, s]));
+  for (const [id, x] of Object.entries(X)) {
+    assert.ok(sp[id], id);
+    if (x.len != null) {
+      assert.ok(x.len > 0 && x.len < 2000 && ['rls', 'fishbase'].includes(x.lsrc), `${id} size`);
+      assert.ok(x.lsrc !== 'rls' || x.rls, `${id}: its Reef Life Survey page`);
+      assert.ok(x.lsrc !== 'fishbase' || x.fb, `${id}: its FishBase page`);
+      assert.strictEqual(sp[id].size.len, x.len, `${id} size in fish.json`);
+      assert.ok(/^https:\/\/(reeflifesurvey\.com|www\.fishbase\.se)\//.test(sp[id].size.src.u), id);
+    }
+    if (x.dep) {
+      assert.ok(
+        x.dep.length === 2 && x.dep[1] > 0 && (x.dep[0] === null || x.dep[0] <= x.dep[1]) && ['rls', 'fishbase'].includes(x.dsrc),
+        `${id} depth`
+      );
+      assert.deepStrictEqual(sp[id].depth.m, x.dep, `${id} depth in fish.json`);
+    }
+  }
+  // Reef Life Survey first: FishBase only where it gives nothing.
+  assert.ok(Object.values(X).some(x => x.lsrc === 'rls'));
+});

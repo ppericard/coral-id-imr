@@ -7300,3 +7300,31 @@ a.ftile:hover {
     max-width: 640px;
   }
 }
+/* The family ID marks and behaviour lines under the IMR tips (learn.js fishMarks). */
+.fmarks {
+  margin-top: 12px;
+}
+.fmarks h3 {
+  margin: 12px 0 4px;
+}
+.fmarks .crit {
+  font-size: var(--fs-m);
+}
+.msrc {
+  margin-top: 6px;
+}
+/* Species sheet: its size and depth with their sources (learn.js spFacts). */
+.ffacts {
+  margin: 8px 0 4px;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.ffacts small,
+.fmarks li small {
+  font-weight: 400;
+  color: var(--muted);
+}
+.ffacts small a,
+.fmarks li small a {
+  color: var(--muted);
+}

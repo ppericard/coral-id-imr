@@ -468,7 +468,7 @@ on families only to an IMR RA with every species open:
 - **Achievements** (rule L8: learning milestones, never time or days played; designed later, each one's timing checked with the real
   game before it is added):
   - about **14 general fish achievements** to start (families met, levels, mastery, species named, scientific names, Fish basics: the
-    study's proposal). **Built for review** (2026-11-06, waiting on Pierre for the list): 14 on today's game (`core.js` `FISH_ACH`:
+    study's proposal). **Built** (2026-11-06; the list approved by Pierre, Q203, 2026-11-07): 14 on today's game (`core.js` `FISH_ACH`:
     families met, the IMR course's families met and mastered, families at Open Water / Advanced / Divemaster, Instructor, fish progress,
     scientific genera), their timing simulated (docs/LEARNING.md "Fish achievements, simulated"); species named and Fish basics
     come with those features;
