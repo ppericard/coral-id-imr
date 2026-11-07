@@ -10,9 +10,12 @@ whether a photo shows the right species. Its sure decisions (autosort.js fishSur
 the fish curation exists (admin plan PR 4); nothing here writes curation.json.
 
     python3 tools/judging_fish.py sheets [id ...]   download the photos (judging/fish/img/, not in git) and build contact
-                                                   sheets per species (judging/fish/sheets/<species id>/), 12 tiles each,
-                                                   observation by observation; prints tile number -> photo, observation,
-                                                   iNat annotation; ids = species (s091) or teaching entries (t01)
+                                                   sheets per species (judging/fish/sheets/<species id>/), 12 tiles at
+                                                   most, observation by observation, an observation never split over two
+                                                   sheets (one of more than 12 photos fills sheets of its own), so its
+                                                   near-duplicates are side by side; prints tile number -> photo,
+                                                   observation, iNat annotation; ids = species (s091) or teaching entries
+                                                   (t01)
     python3 tools/judging_fish.py big <photo>      the 1024 px version, for a closer look
     python3 tools/judging_fish.py todo             species with candidates not judged yet
     python3 tools/judging_fish.py rep              re-apply the reference flag (fish-cand.json rep) to suggest.json "fish"
@@ -91,8 +94,25 @@ def fetch(p, size="medium"):
     return out
 
 
-def sheet(sid, k, L):
-    """One contact sheet of up to 12 photos (4 per row), each 360 px high, numbered from 1."""
+TILES = 12  # photos per contact sheet at most
+
+
+def pack(groups, size=TILES):
+    """The contact sheets of a species: its observations' photos (groups, one list per observation, in order) in sheets of
+    at most `size`, an observation never split over two sheets: one that does not fit in what is left of a sheet starts the
+    next; one of more than `size` photos (every photo of an observation is a candidate since Pierre, 2026-11-08) fills
+    sheets of its own. Its photos side by side are what lets the judge mark the near-duplicates (keep dup)."""
+    out = []
+    for g in groups:
+        if out and len(out[-1]) + len(g) <= size:
+            out[-1] += g
+            continue
+        out += [list(g[i:i + size]) for i in range(0, len(g), size)]
+    return out
+
+
+def sheet(sid, k, L, start=0):
+    """One contact sheet of up to 12 photos (4 per row), each 360 px high, numbered from start + 1."""
     from PIL import Image, ImageDraw, ImageFont
     H, GAP = 360, 8
     ims = []
@@ -111,7 +131,7 @@ def sheet(sid, k, L):
         font = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
     except OSError:
         font = ImageFont.load_default()
-    n = 12 * k
+    n = start
     for y, r in enumerate(rows):
         x = 0
         for im in r:
@@ -137,8 +157,10 @@ def cmd_sheets(names):
             G.setdefault(p["o"], []).append(p)
         L = [p for g in G.values() for p in g]  # observation by observation
         print(f"## {sid} {s.get('name')} ({s.get('common', '')}): {len(L)} photos in {len(G)} observations")
-        for k in range(0, len(L), 12):
-            print(sheet(sid, k // 12, L[k:k + 12]))
+        n = 0
+        for k, S in enumerate(pack(list(G.values()))):
+            print(sheet(sid, k, S, n))
+            n += len(S)
         for i, p in enumerate(L, 1):
             extra = [p.get("loc", ""), p.get("lic", "")] + (["own"] if p.get("own") else []) + ([f"iNat: {p['st']}"] if p.get("st") else [])
             print(f"  {i} {p['f']}  obs {p['o'].rsplit('/', 1)[-1]}  ({', '.join(x for x in extra if x)})")

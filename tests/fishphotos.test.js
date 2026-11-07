@@ -82,7 +82,7 @@ print(json.dumps([
   u(ob(6, lic='cc-by-nd')),                      # no derivatives: never
   u(ob(7, an=[(17, 19)])),                       # annotated Dead (fish market): never
   u(ob(8, an=[(1, 8), (9, 11)])),                # life stage and sex kept as a hint
-  u(ob(9, n=7)),                                 # at most PER_OBS photos
+  u(ob(9, n=7)),                                 # every photo of an observation (Pierre, 2026-11-08; 4 at most before)
   u(ob(10, n=2), used={'100'}),                  # a photo already a candidate
   u(ob(11, n=1), ex={'110'}),                    # an excluded photo
   u(ob(12, rk='genus')),
@@ -99,7 +99,7 @@ print(json.dumps([
     null,
     null,
     [1, 'dauin', false, 1, 'juvenile/male'],
-    [1, 'dauin', false, 4, ''],
+    [1, 'dauin', false, 7, ''],
     [1, 'dauin', false, 1, ''],
     null,
     null,
@@ -324,6 +324,125 @@ print(json.dumps([[o['id'] for o in T], [[p[0] for p in o['P']] for o in T], sor
   assert.deepStrictEqual(out[2], ['10', '11', '30', '999']);
 });
 
+// Every photo of an observation is a candidate (Pierre, 2026-11-08: "the limit of 4 photos per observation must be lifted
+// for every observation [...] weight the choice so as not to bring too many photos of one observation, but never
+// blocking"): one observation holds at most OBS_ROOM photos of a species' room, its other photos come without taking room.
+test('every photo of an observation (Pierre, 2026-11-08): at most OBS_ROOM of them count against the cap; never cut but for a room shorter than that', () => {
+  const out = J(`${OBS}
+from collections import Counter
+it = lambda *a, used=set(), **k: usable_obs(ob(*a, **k), used, set())
+u = lambda i: f'https://www.inaturalist.org/observations/{i}'
+row = lambda T: [[o['id'], len(o['P']), o['cost']] for o in T]
+costs = [obs_cost(0, 1), obs_cost(0, 4), obs_cost(0, 10), obs_cost(2, 10), obs_cost(4, 6), obs_cost(1, 1)]
+# Room 6: the observation of 10 photos comes whole and takes 4, the room left goes to two other observations.
+a = row(sorted(select({'dauin': [it(1, n=10, u='a'), it(2, u='b'), it(3, u='c'), it(4, u='d')]}, 6, {}, photos=True), key=lambda o: o['id']))
+# A room shorter than OBS_ROOM: the observation cut to it, as before.
+b = row(select({'dauin': [it(1, n=10)]}, 2, {}, photos=True))
+# 1 already holds 4 photos (the old limit): its 6 others take no room and its observer is not counted again.
+n, held = Counter({('u', 'b'): 1}), {u(1): 4}
+T = select({'dauin': [it(1, n=10, u='a', used={'10', '11', '12', '13'}), it(2, u='b')]}, 1, {}, n, held=held, photos=True)
+c = [row(T), held, n[('u', 'a')], n[('u', 'b')]]
+# species_room: 1 keeps 9 of its 10 (a near-duplicate set aside), 2 one, 3 rejected: 4 + 1 held of a cap of 10.
+L = [{'f': f'fish-s1-cand-{i}', 'o': u(1)} for i in range(10, 20)] + [{'f': 'fish-s1-cand-20', 'o': u(2)}, {'f': 'fish-s1-cand-30', 'o': u(3)}]
+R = species_room({'id': 's1'}, {'id': 't1'}, L, lambda f: f in ('fish-s1-cand-10', 'fish-s1-cand-30'), cap=10)
+# The exhaustion memory reads the room taken, not the photos: 7 photos of one observation took 4 of a free room of 6.
+e = exhausted({'free': 6, 'rooms': {}, 'add': {'ph': 7}, 'phase_add': {}, 'spent': {'free': 4}, 'end': {'free': True}})
+print(json.dumps([costs, a, b, c, [R['have'], R['room'], R['obs']], e]))`);
+  assert.deepStrictEqual(out[0], [1, 4, 4, 2, 0, 1]);
+  // In the fixed hash order (4, 1, 3, 2): 4, then 1 whole (10 photos, 4 of room), then 3.
+  assert.deepStrictEqual(out[1], [
+    [1, 10, 4],
+    [3, 1, 1],
+    [4, 1, 1]
+  ]);
+  assert.deepStrictEqual(out[2], [[1, 2, 2]]);
+  assert.deepStrictEqual(out[3], [
+    [
+      [1, 6, 0],
+      [2, 1, 1]
+    ],
+    {'https://www.inaturalist.org/observations/1': 10, 'https://www.inaturalist.org/observations/2': 1},
+    0,
+    2
+  ]);
+  assert.deepStrictEqual(out[5], ['free'], 'searched to the end with room left: remembered');
+  assert.deepStrictEqual(out[4], [
+    5,
+    5,
+    {'https://www.inaturalist.org/observations/1': 9, 'https://www.inaturalist.org/observations/2': 1}
+  ]);
+});
+
+test('fetch_fish.py offline: every photo of an observation, also of one already a candidate; none more of one Pierre sent elsewhere', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishobs-'));
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}},
+      {id: 's2', name: 'Fishus rarus', inat: 502, circle: 1, present: {ph: true}},
+      {id: 's3', name: 'Fishus dubius', inat: 503, circle: 1, present: {ph: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2', 's3']}]
+  };
+  const o = i => `https://www.inaturalist.org/observations/${i}`,
+    rec = (sid, i, k) => ({
+      f: `fish-${sid}-cand-${i * 10 + k}`,
+      a: '(c) u',
+      lic: 'cc-by',
+      o: o(i),
+      t: 'Fishus fishii',
+      own: false,
+      loc: 'dauin',
+      src: 'x',
+      r: 1
+    });
+  // s2 keeps the 4 first photos of observation 5 (the old limit); s3 one photo of 7, which Pierre sent out of the fish.
+  const cand = {v: 1, cand: {s2: [0, 1, 2, 3].map(k => rec('s2', 5, k)), s3: [rec('s3', 7, 0)]}};
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify(cand));
+  fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {out: {'fish-s3-cand-70': 'x'}}}));
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+for tid, obs in ((501, [ob(1, n=7), ob(2), ob(3), ob(4)]), (502, [ob(5, n=7), ob(6)]), (503, [ob(7, n=3), ob(8)])):
+    Q = queries(tid)
+    for k in ('own', 'region', 'ph', 'world'):
+        put(Q[k], [])
+    put(Q['dauin'], obs)
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const at = x => path.join(dir, x),
+    args = ['--fish', at('fish.json'), '--cand', at('fish-cand.json'), '--cur', at('cur.json'), '--suggest', at('none.json')];
+  args.push('--cache', at('cache.json'), '--cap', '6');
+  const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...args, ...a], {cwd: ROOT, encoding: 'utf8'});
+  run('--offline');
+  const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand,
+    obs = L => L.reduce((m, p) => ((m[p.o.split('/').pop()] = (m[p.o.split('/').pop()] || 0) + 1), m), {});
+  // s1, room 6, in the fixed hash order (4, 1, 3, 2): 4, the 7 photos of 1 (4 of room), then 3.
+  assert.deepStrictEqual(obs(C.s1), {1: 7, 3: 1, 4: 1});
+  // s2 holds 4 (5's first four): its 3 other photos come without taking room, then 6.
+  assert.deepStrictEqual(obs(C.s2), {5: 7, 6: 1});
+  // s3: nothing more of 7 (Pierre sent its photo elsewhere), 8 comes.
+  assert.deepStrictEqual(obs(C.s3), {7: 1, 8: 1});
+  // A rerun adds nothing: every photo the search sees is taken or left out on purpose.
+  run('--offline');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand, C);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('judging_fish.py sheets: an observation never split over two sheets, so its near-duplicates are side by side', () => {
+  const out = J(`import judging_fish as JF
+g = lambda o, k: [f'{o}.{i}' for i in range(k)]
+P = JF.pack([g('a', 3), g('b', 4), g('c', 6), g('d', 14), g('e', 2), g('f', 12)])
+print(json.dumps([[sorted({x.split('.')[0] for x in S}) for S in P], [len(S) for S in P]]))`);
+  assert.deepStrictEqual(out, [
+    [['a', 'b'], ['c'], ['d'], ['d', 'e'], ['f']],
+    [7, 6, 12, 4, 12]
+  ]);
+});
+
 test('fish-cand.json: every candidate photo once (one photo can belong to several iNaturalist observations)', () => {
   const C = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-cand.json'), 'utf8')).cand,
     ids = Object.values(C).flatMap(L => L.map(p => p.f.split('-').pop())),
@@ -332,7 +451,7 @@ test('fish-cand.json: every candidate photo once (one photo can belong to severa
 });
 
 test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, record shape; --plan writes nothing', () => {
-  // The cap counts photos (Pierre, 2026-11-05, Q36); --cap 3 here: one fixed cap for every species. Up to 4 photos per observation.
+  // The cap counts photos (Pierre, 2026-11-05, Q36); --cap 3 here: one fixed cap for every species. Every photo of an observation, at most OBS_ROOM of them counted.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphotos-'));
   const fish = {
     species: [
@@ -451,13 +570,13 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
 // search fills each phase. tools/fetch_fish.py cap_of, species_phases, phase_room, species_room, phase_obs, fill.
 test('cap per species (Q36): stable 30, +10 per extra phase, at most 60', () => {
   const out = J(
-    `print(json.dumps([BASE_CAP, PER_PHASE, MAX_CAP, PER_OBS, list(PHASES), cap_of([]), cap_of(['juvenile']), cap_of({'juvenile': ['imr'], 'male': ['inat:2']}), cap_of(['juvenile', 'intermediate', 'male']), cap_of(PHASES), cap_of(['adult', 'juvenile', 'juvenile'])]))`
+    `print(json.dumps([BASE_CAP, PER_PHASE, MAX_CAP, OBS_ROOM, list(PHASES), cap_of([]), cap_of(['juvenile']), cap_of({'juvenile': ['imr'], 'male': ['inat:2']}), cap_of(['juvenile', 'intermediate', 'male']), cap_of(PHASES), cap_of(['adult', 'juvenile', 'juvenile'])]))`
   );
   assert.deepStrictEqual(out, [
     30,
     10,
     60,
-    4,
+    4, // OBS_ROOM: photos of one observation counted against the cap at most
     ['juvenile', 'intermediate', 'male', 'female'],
     30, // stable
     40, // one extra phase
