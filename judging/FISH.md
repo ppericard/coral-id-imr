@@ -169,7 +169,9 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    (`judging/fish/sheets/<species>/`, 12 tiles each); it prints tile number → photo, observation, source, licence and
    the observer's iNaturalist annotation (`iNat: juvenile`...: a hint for the `j` flag, checked on the photo).
    `python3 tools/judging_fish.py big <f>` gives the 1024 px photo, for a tag the tile does not settle and for a crop.
-2. Write `judging/fish/<species id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed:
+2. Write `judging/fish/<species id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed (a candidate Pierre
+   has decided on since its judgement stays in the file as judged: not checked again, imported unchanged, its `best`
+   still the best of its observation, so a new candidate there is an `alt` or a `dup`):
    - `code`: the code of "Tags" above, ease included (`p1g0sm14`). The tool adds the phase flag `p` and applies the caps.
    - `keep`: `best` (exactly one per observation: its most useful photo), `alt` (the same fish, adding something:
      another side, another phase or pose, other light), `dup` (adds nothing over the best: a burst, the same framing).

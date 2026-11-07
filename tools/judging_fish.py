@@ -154,11 +154,18 @@ def check(sid):
     if set(j) - {"photos"}:
         E.append(f"{sid}: unknown top-level keys {sorted(set(j) - {'photos'})}")
     mine = {p["f"]: p for p in cands(sid)}
+    # A candidate Pierre has decided on since its judgement (added, rejected, excluded, moved) stays in the file as
+    # judged: not checked again, imported unchanged, and its best still counts for its observation.
+    decided = {p["f"]: p for p in CAND.get(sid, []) if p["f"] not in mine}
     best = defaultdict(list)
     for f, x in j["photos"].items():
         at = f"{sid}/{f}"
+        if f in decided:
+            if isinstance(x, dict) and x.get("keep") == "best":
+                best[decided[f]["o"]].append(f)
+            continue
         if f not in mine:
-            E.append(f"{at}: not a candidate waiting for {sid}")
+            E.append(f"{at}: not a candidate of {sid}")
             continue
         if not isinstance(x, dict):
             E.append(f"{at}: must be an object")
