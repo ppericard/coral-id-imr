@@ -165,7 +165,7 @@
   // easiest first (the first questions need easy photos), then the most reference-like (core.js refScore), then a fixed
   // order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; before, they came first); the
   // rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
-  const {refScore, easyRank, fishOn} = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
+  const {refScore, easyRank, fishOn, fishIn, fishGone} = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
     const I = fishIdx(F),
@@ -291,7 +291,8 @@
   // ---- Fish Candidates (admin plan PR 5a and 5b; Pierre, 2026-11-04) ----
   // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
   // one observation).
-  function fishPlay(cands, F) {
+  // game: fishGameIn's records (the photos the game plays whatever their route), counted beside the adds.
+  function fishPlay(cands, F, game) {
     F = F || {};
     const obsOf = {},
       out = {};
@@ -299,7 +300,17 @@
     Object.entries(F.add || {}).forEach(([f, sid]) => {
       if (fishOn(F, f, sid)) (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
     });
+    (game || []).forEach(p => p && p.sp && (out[p.sp] = out[p.sp] || new Set()).add(p.o || p.f));
     return out;
+  }
+  // The photos the game plays (fish-game.json records, the published state) that are in play in the draft cur
+  // (curation.json): Pierre's adds and the photos that entered by themselves (auto "cand" and "ref", Q180 and Q199) that he
+  // has not rejected, excluded or moved (core.js fishIn, as tools/fish_game.py in_play). The admin counts these, not the
+  // adds alone; the auto-sort's own target (fishRun) is unchanged.
+  function fishGameIn(game, cur) {
+    const F = (cur && cur.fish) || {},
+      gone = fishGone(cur || {}, F);
+    return (game || []).filter(p => p && p.f && p.sp && fishIn(F, p, gone));
   }
   // The pass's tags and phase as Add and the auto-sort copy them beside an add (j: the judgment, or the auto-sort's sure
   // values {jt, ph}), with the source's phase (p.st) when the pass gives none: the j flag for a juvenile, else the phase
@@ -335,11 +346,11 @@
   // it for the species), then a fixed order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced;
   // they came first before).
   const FISHK = {best: 0, alt: 1, dup: 3};
-  function fishQueue(cands, sug, species, F) {
+  function fishQueue(cands, sug, species, F, game) {
     F = F || {};
     sug = sug || {};
     const I = fishIdx(F),
-      play = fishPlay(cands, F),
+      play = fishPlay(cands, F, game),
       byF = {},
       out = [];
     Object.entries(cands || {}).forEach(([sid, L]) => (L || []).forEach(p => p && p.f && (byF[p.f] = p)));
@@ -1068,6 +1079,7 @@
     fishOn,
     fishState,
     fishPlay,
+    fishGameIn,
     fishPhase,
     fishQueue,
     fishNotThis,

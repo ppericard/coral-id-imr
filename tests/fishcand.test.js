@@ -7,6 +7,7 @@ const test = require('node:test'),
 const {
   fishQueue,
   fishPlay,
+  fishGameIn,
   fishAdd,
   fishReject,
   fishExclude,
@@ -316,4 +317,31 @@ test("fishRun's copy of the pass's values carries the source's phase, as Add's (
   assert.deepStrictEqual([F.tags[ids[36]], F.phase && F.phase[ids[36]]], ['p1g0sm1j', undefined]);
   assert.deepStrictEqual([F.tags[ids[37]], F.phase[ids[37]]], ['p1g0sm1', 'male']);
   assert.strictEqual(fishPhase(cands.s1[0], sug[ids[36]], F), 'juvenile');
+});
+
+test("fishGameIn: the photos the game plays count whatever their route; Pierre's rejects and moves leave", () => {
+  const G = [
+    {f: 'fish-s1-cand-111', o: 'o1', sp: 's1', auto: 'cand'},
+    {f: 'fish-s1-cand-222', o: 'o2', sp: 's1', auto: 'cand'},
+    {f: 'fi333', o: 'o3', sp: 's1', auto: 'ref'},
+    {f: 'fish-s1-cand-444', o: 'o4', sp: 's1'},
+    {f: 'fish-s1-cand-555', o: 'o5', sp: 's1', auto: 'cand'}
+  ];
+  const cur = {fish: {add: {'fish-s1-cand-444': 's1'}, seen: {'fish-s1-cand-222': 1}, out: {'fish-s1-cand-555': 's2'}}};
+  // 111 and 333 enter by themselves; 444 is his add; 222 rejected and 555 moved leave.
+  assert.deepStrictEqual(
+    fishGameIn(G, cur).map(p => p.f),
+    ['fish-s1-cand-111', 'fi333', 'fish-s1-cand-444']
+  );
+  assert.strictEqual(fishGameIn(G, {fish: {}, exclude: {'fi111': 1}}).length, 3, 'a top-level exclude by photo id');
+  assert.strictEqual(fishGameIn(G, null).length, 4, 'no curation: the automatic ones');
+  // Counted by observation beside the adds; the auto-sort\'s own room (fishRun) does not read them.
+  const cands = {s1: [{f: 'fish-s1-cand-444', o: 'o4'}]};
+  assert.strictEqual(fishPlay(cands, cur.fish).s1.size, 1);
+  assert.strictEqual(fishPlay(cands, cur.fish, fishGameIn(G, cur)).s1.size, 3);
+  // The swiper's "at target": 8 observations from the game stop a species taking candidates.
+  const many = Array.from({length: 8}, (_, i) => ({f: 'fish-s1-cand-9' + i, o: 'ob' + i, sp: 's1', auto: 'cand'})),
+    c2 = {s1: [{f: 'fish-s1-cand-700', o: 'new'}]};
+  assert.strictEqual(fishQueue(c2, {}, {s1: {}}, {}).find(x => x.p.f === 'fish-s1-cand-700').full, false);
+  assert.strictEqual(fishQueue(c2, {}, {s1: {}}, {}, fishGameIn(many, {})).find(x => x.p.f === 'fish-s1-cand-700').full, true);
 });

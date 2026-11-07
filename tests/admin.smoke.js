@@ -415,6 +415,31 @@ const WIDTHS = [390, 1280];
         await go(other.hash + 'photos/families/f%3ANone');
         u = await fu();
         if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Families: an unknown family ${JSON.stringify(u)}`);
+        // What the game plays is what the admin counts (fish-game.json, whatever the route: the sure candidates and the
+        // reference photos too, not curation.json's adds alone): each species' obs/target is at least the game's observations.
+        await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+        const gp = await p.evaluate(() => {
+          const rows = [...document.querySelectorAll('.adm-fgen .adm-row[data-sid]')].map(r => {
+            const sid = r.dataset.sid,
+              F = DRAFT.fish || {},
+              obs = new Set(
+                FISHC.plays
+                  .filter(q => q.sp === sid && q.auto && !(F.seen || {})[q.f] && !(F.exclude || {})[q.f] && !(F.out || {})[q.f])
+                  .map(q => q.o || q.f)
+              ).size,
+              m = /(\d+)\/(\d+)/.exec((r.querySelector('h3 b') || {}).textContent || '');
+            return {sid, obs, shown: m ? +m[1] : -1, auto: FISHC.plays.filter(q => q.sp === sid && q.auto).length};
+          });
+          return {
+            rows: rows.length,
+            bad: rows.filter(r => r.shown < r.obs).slice(0, 3),
+            auto: rows.reduce((a, r) => a + r.auto, 0),
+            over8: rows.filter(r => r.shown > 8).length,
+            loaded: !!FISHC.plays
+          };
+        });
+        if (!gp.loaded || !gp.rows || gp.bad.length || !gp.auto || !gp.over8)
+          fails.push(`${w}px Families: the game's photos are not counted ${JSON.stringify(gp)}`);
         // Fish Coverage (admin plan PR 8): Inbox › Coverage › Games on the fish side, per family, genus or species, To do
         // and Where to look; the corals keep their grid.
         await go(other.hash + 'inbox/coverage/games');
@@ -548,11 +573,13 @@ const WIDTHS = [390, 1280];
           });
           if (!g.phase || !g.view || !g.juv || !r.rows.includes('No phase') || !/^Phase: same as/.test(r.agree))
             fails.push(`${w}px Fish Photo review, Angelfishes: ${JSON.stringify({...r, ...g})}`);
-          const t0 = await p.evaluate(f => (DRAFT.fish.tags || {})[f] || '', g.f);
+          const t0 = await p.evaluate(f => (DRAFT.fish.tags || {})[f] || '', g.f),
+            // a photo the game plays on its own keeps the pass's other tags when he sets its view
+            tj = await p.evaluate(f => (fuJ(f) || {}).jt || '', g.f);
           await p.click(`#view .adm-tile[data-f="${g.f}"] [data-frv="d"]`);
           await settle();
           const t1 = await p.evaluate(f => (DRAFT.fish.tags || {})[f] || '', g.f);
-          if (t1[0] !== 'd' || t1.slice(1) !== (t0 || 'p1g0sm1').slice(1)) fails.push(`${w}px Fish Photo review: view ${t0} → ${t1}`);
+          if (t1[0] !== 'd' || t1.slice(1) !== (t0 || tj || 'p1g0sm1').slice(1)) fails.push(`${w}px Fish Photo review: view ${t0} → ${t1}`);
           await p.click(`#view .adm-tile[data-f="${g.f}"] [data-frp="male"]`);
           await settle();
           if ((await p.evaluate(f => DRAFT.fish.phase[f], g.f)) !== 'male' || !(await rv()).rows.includes('Male'))
