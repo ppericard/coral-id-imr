@@ -5,30 +5,34 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-06, about 22:50 Manila, by the integrator.
+Written 2026-11-07, about 14:40 Manila, by the integrator, before a quota pause. **A new integrator starts here, then
+reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
 Last checked: reports and events: 2026-11-06 ~16:20 Manila (no new report since 11-05; no app error today, a few slow saves recovered)
 
 ## Now
 
-Night of 2026-11-06 (Pierre confirmed at 19:48, after the 17:30 reminder, three overnight jobs; quota nearly spent).
+Fish is open to every player (beta). Main: sheet script v97, rules version 9. No agent running. Quota nearly spent:
+nothing new is started until it is back.
 
-- **Merged in the evening**: #652, #685, #691, #687, #682, #633, #599, #602, #659, #670, #666, #663 (with #667),
-  #692 admin fish sessions and fish Journey progress, #693 fish leaderboard (shows once the sheet is live at v95), #695
-  fish family ID marks and "don't confuse with" (FishBase family summaries; angelfish-spine and wrasse-teeth sent to
-  points.json), #696 size and depth on the fish sheets (Reef Life Survey, else FishBase).
-- **Waiting on Pierre**: #694, the 14 fish achievements (needs-pierre; recommendation: approve as is, add species named
-  and Fish basics later). Side effect: a fish player's sign-in card can come a few answers after the 20th when the first
-  achievement pops up, as on corals.
-- **Open, no rush**: #637 (needs its learnsim before/after), #664 coherence review (to read).
-- **Not started**: the species level and the global fish score; the exam over two visits; Glicko / Kalman ability
-  uncertainty; per-subject photo stats and Health; fish.exclude by photo id; genus and species ID marks.
+- **Merged on 11-07**: #694 the 14 fish achievements (Q203) · #698 "Open the game" in the admin's ⋯ menu · #700 genus
+  common names (21, sourced) · #701 no empty tips box (Barracudas) · #702 scientific genera at Open Water (Q205) · #703
+  circle 3 as an opt-in card, still counted in the % (Q204) · #704 the winks draw from 3 chosen photos each · #699
+  ROADMAP notes. The docs audit PR (statuses vs main) is the last one open of this round.
+- **Merged 11-06 (about 80 PRs)**: the book's families (#656), every circle on the path (#669), all fish photos on R2
+  (#674, 8,582 in play), reference photos first (#660-#683), the domain-score bar with its apology card (#646) and the
+  silent fish recompute (#688), fish sheets with texts, sizes and depths (#675-#696), fish leaderboard (#693), admin fish
+  pages and Players for two subjects (#655-#692).
+- **Open**: #637 (needs its learnsim before/after) · #664 (coherence review, to read) · branch `claude/fish-todo-wip`
+  (unfinished: fish.exclude by photo id, fish To do sections).
+- **Expert anchors** (names only in chat): two IMR coral experts; one IMR fish expert (families and genera); Pierre for
+  fish families only.
 - **Morning report trigger disabled** (Q202) until the quota is back.
 
 ## Next
 
-1. Exam over two visits on fixed-difficulty photos; ability uncertainty (Glicko / Kalman, #651's remedy).
-2. Per-subject photo stats and Health in the admin (admin plan row 11).
+The backlog in Pierre's order of interest is in [INTEGRATOR.md](INTEGRATOR.md) "Open work": the species level and the
+global fish score first, then ID marks for the 23 uncued fish families.
 
 ## Questions for Pierre
 
@@ -36,14 +40,17 @@ Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes 
 
 - **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
 - #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
-- **Q203** #694: approve the 14 fish achievements and their names (rec. yes, as is).
 
-Last question number: Q203
+Last question number: Q205
 
 ## Pierre's hands
 
 Actions only Pierre can do.
 
+- **The 8 unsure fish candidates** left in the admin (a drawing, tank shots, a damaged file, a screenshot, a possibly
+  wrong species) and the photos the expert analyses flagged (sent in the chat on 11-06).
+- **Genus common names without a source in the repo**, to add in place if he wants them: Cephalopholis (hinds),
+  Centropyge (pygmy angelfishes), Dendrochirus (dwarf lionfishes), Dascyllus (humbugs).
 - **Covers for the 11 fish entries with no reference-level photo** (Barracuda, Seamoths, Scorpionfishes, Flying
   gurnards, Stargazers, Snake eels, Garden eels, Rays, Reef sharks, Whale shark, Thresher sharks): pick or shoot one.
 - **Photo hunt for Astrea and Anacropora** at the Dauin sites where IMR trainers know they occur (colony, close-up,
@@ -81,5 +88,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-06 ~18:35 Manila, integrator. Merged today (about 55 PRs), from 15:00: #598, #660, #671, #657, #673, #676,
-#668, #672, #638, #679, #655, #681, #683, #675, #677, #684, #686, #680, #678, #656, #669, #674, #690, #646, #688. Questions Q178-Q202 answered.
+2026-11-07 ~14:40 Manila, integrator, handover before a quota pause. Questions Q178-Q205 answered (Q204: circle 3 an
+opt-in but counted; Q205: genera at Open Water).
