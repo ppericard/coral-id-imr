@@ -21,7 +21,7 @@ function badge(ring, pct, sub) {
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
     <em class="pbunl">${unlockText(slateGenera(), true)}</em>
-    <span>${sub ? `<span>${sub}</span>` : ''}${SUBJ.board ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
+    <span>${sub ? `<span>${sub}</span>` : ''}${boardLive(SUBJ) ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
       SUBJ.ach
         ? `<a href="${esc(hr('ach'))}"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
             .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
@@ -214,7 +214,7 @@ function quizBoard() {
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
     a.hidden = false;
   };
-  if (SUBJ.board) {
+  if (boardLive(SUBJ)) {
     const S = SUBJ;
     rank(boardCached(S));
     loadBoard(S).then(B => S === SUBJ && rank(B)); // the subject's own board (another chosen meanwhile: nothing)
@@ -387,7 +387,11 @@ const BOARD_SHEET = 95;
 const board0 = () => SUBJECTS.find(x => x.board);
 // A board reply to show: the first subject's from any script, another's only from BOARD_SHEET (tests/gates.test.js).
 const boardOk = (j, first) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= BOARD_SHEET);
-const boardSubj = () => (SUBJ.board ? SUBJ : board0());
+// A subject's board is live once the sheet serves it (rule D4; Codex review #694): the first one's always, another's from
+// BOARD_SHEET (sync.js sheetV, the version of the last reply). Before, that subject behaves as before it had one: the
+// page shows the first subject's board, no rank on My progress, no announcement.
+const boardLive = S => !!S && !!S.board && (S === board0() || (typeof sheetV === 'function' && sheetV() >= BOARD_SHEET));
+const boardSubj = () => (boardLive(SUBJ) ? SUBJ : board0());
 const boardAt = {},
   boardP = {};
 const ago = t => {
@@ -662,9 +666,15 @@ const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '👑': '🎓',
 // player's card. Kept on this
 // device only (its own key, outside the synced record: a sign-in or another device's sync never brings or drops them;
 // Codex review #360); sign-out clears it with the progress.
+// Each subject's page shows and clears only its own (achShown: its list and the Contributions; Codex review #694): another
+// subject's unseen ones keep their mark until that subject's page shows them.
 const ACHNEW = 'reefid-ach-new',
   achUnseen = () => store.get(ACHNEW, []) || [],
-  achNew = () => achUnseen().length;
+  achShown = () => {
+    const ids = new Set(achTests().map(a => a.id));
+    return achUnseen().filter(id => ids.has(id));
+  },
+  achNew = () => achShown().length;
 function achDot() {
   const bg = document.getElementById('boardgo'),
     tab = document.querySelector(`.btabs a[href="${hr('ach')}"]`); // the Achievements tab of the leaderboard page (boardTabs)
@@ -926,10 +936,13 @@ const loadAchs = () => {
 // of players holding it, as on Steam.
 function viewAch() {
   const A = store.get(ACHK, {}) || {},
-    fresh = new Set(achUnseen());
-  // Seen now: the quiet ones lose their dot, and keep a "New" tag on this visit.
+    fresh = new Set(achShown());
+  // Seen now: the quiet ones shown here lose their dot, and keep a "New" tag on this visit.
   if (fresh.size) {
-    store.set(ACHNEW, []);
+    store.set(
+      ACHNEW,
+      achUnseen().filter(id => !fresh.has(id))
+    );
     achDot();
   }
   const draw = S => {
@@ -977,7 +990,7 @@ function boardNotice() {
   // Said on a subject that has the leaderboard (SUBJECTS board) only: on another (Fish), it waits for a later load
   // (fish beta QA, 2026-11-06: it covered the bottom of fish Home right after Fish was chosen). A switch of subject
   // while it shows takes it away and it is due again (app.js setSubject, toastsOff).
-  if (!SYNC || store.get('reefid-board-told', 0) || !SUBJ.board) return;
+  if (!SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ)) return;
   store.set('reefid-board-told', 1);
   const t = appToast(
     '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
