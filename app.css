@@ -5800,6 +5800,8 @@ html.touring .unlock {
   inset: 0;
   z-index: 60;
   display: grid;
+  /* One column never wider than the screen: a wide child (a long row of thumbnails) must not push the card off it. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   padding: 16px;
   background: color-mix(in srgb, var(--photo-bg) 50%, transparent);
@@ -6106,6 +6108,7 @@ html.touring .unlock {
 /* The bonus genera offer: their own photos as a row of round crops. */
 .ulthumbs {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   margin: 4px 0 8px;
 }
@@ -6121,6 +6124,13 @@ html.touring .unlock {
 }
 .ulthumbs > * + * {
   margin-left: -8px;
+}
+.ulthumbs .ulmore {
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-s);
+  font-weight: 700;
+  color: var(--muted);
 }
 /* "Open all genera" (model.js introAll): a tinted band at the foot of the first cards and a box in My progress, with a
    real button (Pierre, 2026-11-02: a white chip on white was easy to miss). */

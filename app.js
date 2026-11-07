@@ -1978,7 +1978,14 @@ function cardSeen(d) {
   const c = d && d.querySelector('.ulcard');
   if (!c) return false;
   const r = c.getBoundingClientRect();
-  return r.height >= 40 && r.bottom > 0 && r.top < innerHeight && Number(getComputedStyle(c).opacity) > 0.05;
+  return (
+    r.height >= 40 &&
+    r.bottom > 0 &&
+    r.top < innerHeight &&
+    r.right > 0 &&
+    r.left < innerWidth &&
+    Number(getComputedStyle(c).opacity) > 0.05
+  );
 }
 function cardShow(o) {
   const d = document.createElement('div'),

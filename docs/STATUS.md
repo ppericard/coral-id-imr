@@ -23,8 +23,8 @@ nothing new is started until it is back.
   (#674, 8,582 in play), reference photos first (#660-#683), the domain-score bar with its apology card (#646) and the
   silent fish recompute (#688), fish sheets with texts, sizes and depths (#675-#696), fish leaderboard (#693), admin fish
   pages and Players for two subjects (#655-#692).
-- **Stuck behind an invisible card** (Pierre, 11-07, fish quiz): cause unknown; #709 closes such a card by itself and
-  logs it (Events: "empty card closed", "left with a card open"). Find the card and fix the cause first.
+- **Fixed: the stuck dimmed screen** (#710): the Scientific names offer pushed itself off screen (40 thumbnails in
+  one row). #709's safety net and its Events lines ("empty card closed", "left with a card open") stay as a guard.
 - **Open**: #637 (needs its learnsim before/after) · #664 (coherence review, to read) · branch `claude/fish-todo-wip`
   (unfinished: fish.exclude by photo id, fish To do sections).
 - **Expert anchors** (names only in chat): two IMR coral experts; one IMR fish expert (families and genera); Pierre for
