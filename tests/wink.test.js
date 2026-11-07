@@ -22,6 +22,9 @@ function page({subj = 'fish', n = 0, saved = {}} = {}) {
     n,
     card: false,
     winkUnion: C.winkUnion,
+    fishPid: C.fishPid,
+    easyRank: C.easyRank,
+    pick: L => L[Math.floor(Math.random() * L.length)],
     store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
   };
   ctx.sKey = name => C.subjKey(ctx.SUBJ.id, name);
@@ -31,7 +34,7 @@ function page({subj = 'fish', n = 0, saved = {}} = {}) {
   vm.runInContext(
     cut(src, 'const WINK = {', 'function winkShow(', {file: 'quiz.js'}) +
       // winkShow's bookkeeping, without its screen (the lines that mark a wink shown)
-      '\nthis.M = {WINK, winkAt, winkDue, winkMerge, shown: ({n}) => { const a = answersSoFar(); WINKS[SUBJ.id] = {...(WINKS[SUBJ.id] || {}), [n]: a}; store.set(WINKK(), {...(store.get(WINKK(), null) || {}), [n]: a}); }};',
+      '\nthis.M = {WINK, winkAt, winkDue, winkMerge, winkPhoto, shown: ({n}) => { const a = answersSoFar(); WINKS[SUBJ.id] = {...(WINKS[SUBJ.id] || {}), [n]: a}; store.set(WINKK(), {...(store.get(WINKK(), null) || {}), [n]: a}); }};',
     ctx
   );
   return Object.assign(ctx.M, {ctx, saved});
@@ -125,4 +128,38 @@ test("an account merge keeps both accounts' surprises met; sign-out clears the k
   const sync = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
     so = cut(sync, 'function signOutClear(', '\n}\n', {file: 'sync.js'});
   assert.match(so, /'start', 'wink'\]\.map\(k => subjKey\(S\.id, k\)\)/, 'signOutClear removes reefid-sync-<subject>-wink');
+});
+
+// The wink's photo (Pierre, 2026-11-07: a surprise card never shows a bad photo, only its 2-3 really beautiful ones).
+test("winkPhoto: only the wink's chosen photos, those still in the game; none left, the unit's best", () => {
+  const M = page(),
+    ph = (f, e = 2, jt = 'o1g2sl1') => ({f, e, jt}),
+    wide = [ph('fi1', 1), ph('fish-s400-cand-2', 5, 'p1g0sl1'), ph('fi3'), ph('fish-s400-cand-4', 3), ph('fi5')],
+    g = {wink: {photos: ['fish-s400-cand-3', 'fish-s400-cand-4', 'fish-s400-cand-9']}, views: {wide}};
+  const got = new Set();
+  for (let i = 0; i < 200; i++) got.add(M.winkPhoto(g).f);
+  // fi3 is candidate 3's stopgap copy (one photo); candidate 9 is out of the game (Pierre's curation took it out).
+  assert.deepStrictEqual([...got].sort(), ['fi3', 'fish-s400-cand-4'], 'drawn from the chosen photos in the game only');
+  g.views.wide = wide.filter(p => p.f !== 'fi3');
+  for (let i = 0; i < 50; i++) assert.strictEqual(M.winkPhoto(g).f, 'fish-s400-cand-4', 'one left: that one');
+  g.views.wide = wide.filter(p => !['fi3', 'fish-s400-cand-4'].includes(p.f));
+  assert.strictEqual(M.winkPhoto(g).f, 'fish-s400-cand-2', 'none left: the easiest, most reference-like');
+  assert.strictEqual(M.winkPhoto({wink: {}, views: {wide}}).f, 'fish-s400-cand-2', 'no list: the same');
+});
+
+test("fish.json: each wink's photos, 2 or 3 candidates of its own species with a game licence", () => {
+  const root = path.join(__dirname, '..'),
+    F = JSON.parse(fs.readFileSync(path.join(root, 'fish.json'), 'utf8')),
+    cand = JSON.parse(fs.readFileSync(path.join(root, 'fish-cand.json'), 'utf8')).cand,
+    winks = [...F.teach, ...F.families].filter(t => t.wink);
+  assert.ok(winks.length >= 4, 'the winks and their families');
+  for (const t of winks) {
+    const L = t.wink.photos || [];
+    assert.ok(L.length >= 2 && L.length <= 3, `${t.id}: ${L.length} photos`);
+    for (const f of L) {
+      const c = t.species.flatMap(s => cand[s] || []).find(p => p.f === f);
+      assert.ok(c && c.src, `${t.id}: ${f} is a candidate of its species`);
+      assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(c.lic), `${t.id}: ${f} licence ${c.lic}`);
+    }
+  }
 });

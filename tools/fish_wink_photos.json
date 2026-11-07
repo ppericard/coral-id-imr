@@ -1,0 +1,7 @@
+{
+  "_doc": "The surprise cards' photos (Pierre, 2026-11-07: a wink never shows a bad photo; each draws from 2 or 3 really beautiful ones). Teaching entry id -> photos (fish-cand.json names, the most beautiful first): the whole animal, sharp, good light, true colour, an iconic view (the whale shark's spots and size, the thresher's tail), each passing the game photo rules (licence, the IWP box, never captive) and in play (tools/fish_game.py, hosted on R2). tools/build_fish.py writes them into fish.json as wink.photos; quiz.js winkPhoto draws only from them, those Pierre's curation left in the game, else the unit's best by ease and reference look. Pierre may swap any of them here.",
+  "photos": {
+    "t51": ["fish-s400-cand-452166632", "fish-s400-cand-679551348", "fish-s400-cand-614678957"],
+    "t60": ["fish-s417-cand-513267433", "fish-s417-cand-593018125", "fish-s417-cand-551066204"]
+  }
+}

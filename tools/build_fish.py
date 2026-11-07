@@ -86,6 +86,7 @@ SRC = ROOT / "tools" / "fish_source.json"
 SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (add_families)
 FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_families; tools/fish_facts.py)
 GNAMES = ROOT / "tools" / "fish_genus_names.json"  # the genus common names and their sources (add_families)
+WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
 OUT = ROOT / "fish.json"
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
@@ -427,6 +428,23 @@ def family_id(name):
     return "f:" + "".join(c for c in name if c.isalpha())
 
 
+def wink_photos(o):
+    """The surprise cards' photos (Pierre, 2026-11-07: a wink never shows a bad photo, only 2 or 3 really beautiful ones):
+    wink.photos on each teaching node with a wink, from tools/fish_wink_photos.json (the most beautiful first), so its
+    family carries them too (add_families). A node the table names that has no wink stops the build."""
+    tab = json.loads(WINKP.read_text(encoding="utf-8")).get("photos", {}) if WINKP.exists() else {}
+    by = {t["id"]: t for t in o["teach"]}
+    for tid in tab:
+        if not (by.get(tid) or {}).get("wink"):
+            sys.exit(f"tools/fish_wink_photos.json: {tid} is no wink of fish.json")
+    for t in o["teach"]:
+        if t.get("wink"):
+            w = {k: v for k, v in t["wink"].items() if k != "photos"}
+            if tab.get(t["id"]):
+                w["photos"] = list(tab[t["id"]])
+            t["wink"] = w
+
+
 def add_families(o, key, declared=()):
     """The game's units above the species (Pierre, 2026-11-06 13:04: "the game's units are not the IMR entries: they are
     the families, the genera and the species"; 13:38: the IMR course is a tag on the families and genera it teaches, not
@@ -452,6 +470,7 @@ def add_families(o, key, declared=()):
     circle, imr (the tag: the IMR sub-entry naming it, Anemonefish for Amphiprion; Surgeonfish names three genera), sl,
     cues (the sub-entry's), species}, in the families' order. Each game species gains family and genus (their ids).
 """
+    wink_photos(o)
     labels = {}
     if key:
         for g in key["groups"]:
