@@ -212,6 +212,12 @@ const server = http.createServer((req, res) => {
         w = GX(n).wink,
         labels = [...wk.querySelectorAll('[data-w]')].map(b => b.textContent.slice(1));
       ok(w.choices.every(([, l]) => labels.includes(l)) && labels.includes(GX(n).name), 'wink: its name and the absurd choices');
+      // Its photo: one of the wink's chosen photos (Pierre, 2026-11-07), by its iNaturalist photo id (fishPid i<id>).
+      const src = wk.querySelector('.qph img').getAttribute('src');
+      ok(
+        (w.photos || []).some(f => src.includes(fishPid(f).slice(1))),
+        `wink: one of its chosen photos (${src})`
+      );
       wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
