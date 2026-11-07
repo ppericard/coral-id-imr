@@ -75,6 +75,14 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 
 ## Open work and where it sits
 
+- **First thing to check: the stuck-card bug** (Pierre, 2026-11-07 17:08, twice in the fish quiz): mid-session the
+  screen dims (a card's `.unlock` backdrop) with no card visible, and the game is stuck. Cause not found; no error in the
+  event log. #709 adds a safety net (a card still invisible after 2.5 s closes by itself) and two events: `empty card
+  closed: kind | kicker | title` and `left with a card open (drawn / NOT drawn, N s): kind | kicker | title`. Read the
+  Events tab for them, find the card, fix the cause. Suspects: the offer cards that came on 11-07 (Scientific genus
+  names at Open Water, #702; circle 3, #703) and the fish achievement pop-ups (#694).
+- **Idea, not on the ROADMAP yet**: the Answers rows carry no device id, and Events have the device but only the date,
+  so a session cannot be traced to a device (Pierre asked on 11-07). Log the device id with each answer.
 - **Open PRs**: #637 (photos rated against the genus ability, Q136: needs its learnsim before/after; the local worktree
   `.claude/worktrees/photo-genus-ability` has 2 commits not on the remote head, check before pushing anything) and #664
   (engine coherence review, a doc for Pierre to read).
