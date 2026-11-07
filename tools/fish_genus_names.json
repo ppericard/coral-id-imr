@@ -1,0 +1,26 @@
+{
+  "about": "Genus common names (Pierre, 2026-11-07 08:33: \"On the genus sheets: some genera have common names. They should be present somewhere.\"). Only where a widely used one exists, never invented (rule C2); Pierre corrects them in place. from: imr = the IMR fish presentation's sub-entry naming this genus alone (its tag, fish.json genera imr); species = inferred from the common names of the genus's species in the game (IMR reference list, FishBase): every one of them (2 or more) ends in word, and no species of another genus of its family does. Left out: genera whose species share only their family's name (Chaetodon, Acanthurus, Lutjanus, Pterois...), or a name that is the genus name itself (Chromis, Dascyllus, Coris), or a genus with one species here, or its family's general name when it covers the other genera too (Arothron: the tobies are puffers as well). tools/build_fish.py adds common and csrc (the source, in words) to the genus in fish.json and checks each one against its species.",
+  "genera": {
+    "g:Amphiprion": {"common": "Anemonefishes", "from": "imr"},
+    "g:Heniochus": {"common": "Bannerfishes", "from": "imr"},
+    "g:Naso": {"common": "Unicornfishes", "from": "imr"},
+    "g:Forcipiger": {"common": "Longnose butterflyfishes", "from": "species", "word": "longnose butterflyfish"},
+    "g:Ctenochaetus": {"common": "Bristletooths", "from": "species", "word": "bristletooth"},
+    "g:Siganus": {"common": "Rabbitfishes", "from": "species", "word": "rabbitfish"},
+    "g:Labroides": {"common": "Cleaner wrasses", "from": "species", "word": "cleaner wrasse"},
+    "g:Bodianus": {"common": "Hogfishes", "from": "species", "word": "hogfish"},
+    "g:Hemigymnus": {"common": "Thicklips", "from": "species", "word": "thicklip"},
+    "g:Hologymnosus": {"common": "Ring wrasses", "from": "species", "word": "ring wrasse"},
+    "g:Lethrinus": {"common": "Emperors", "from": "species", "word": "emperor"},
+    "g:Scolopsis": {"common": "Monocle breams", "from": "species", "word": "monocle bream"},
+    "g:Plectorhinchus": {"common": "Sweetlips", "from": "species", "word": "sweetlips"},
+    "g:Pseudanthias": {"common": "Anthias", "from": "species", "word": "anthias"},
+    "g:Ostracion": {"common": "Boxfishes", "from": "species", "word": "boxfish"},
+    "g:Lactoria": {"common": "Cowfishes", "from": "species", "word": "cowfish"},
+    "g:Canthigaster": {"common": "Tobies", "from": "species", "word": "toby"},
+    "g:Myripristis": {"common": "Soldierfishes", "from": "species", "word": "soldierfish"},
+    "g:Parapercis": {"common": "Sandperches", "from": "species", "word": "sandperch"},
+    "g:Solenostomus": {"common": "Ghost pipefishes", "from": "species", "word": "ghost pipefish"},
+    "g:Hippocampus": {"common": "Seahorses", "from": "species", "word": "seahorse"}
+  }
+}

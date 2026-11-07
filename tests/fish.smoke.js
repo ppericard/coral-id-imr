@@ -654,6 +654,33 @@ const server = http.createServer((req, res) => {
     await q.waitForFunction(() => location.hash === '#fish/learn/species/Zanclus%20cornutus', null, {timeout: 15000}).catch(() => {});
     const zh = await q.evaluate(() => location.hash);
     if (zh !== '#fish/learn/species/Zanclus%20cornutus') ui.push(`${width}px a one-species genus: ${zh}`);
+    // A genus common name (fish.json genera common): under the genus page's scientific name, on its family sheet's row and
+    // on its species' genus chip.
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Amphiprion'));
+    await q
+      .waitForFunction(() => /Amphiprion/.test((document.querySelector('#view .fsheet .fn-t') || {}).textContent || ''), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const gc = await q.evaluate(() => ({
+      sub: (document.querySelector('#view .fsheet .fn-s') || {}).textContent || '',
+      src: (document.querySelector('#view .fsheet .sheetmore .refs') || {}).textContent || ''
+    }));
+    await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
+    await q
+      .waitForFunction(() => document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]'), null, {timeout: 15000})
+      .catch(() => {});
+    gc.row = await q.evaluate(() => (document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]') || {}).textContent || '');
+    await q.evaluate(() => (location.hash = '#fish/learn/species/Amphiprion%20clarkii'));
+    await q.waitForFunction(() => document.querySelector('#view .fbadges'), null, {timeout: 15000}).catch(() => {});
+    gc.chip = await q.evaluate(() => (document.querySelector('#view .fbadges a[href$="/genus/Amphiprion"]') || {}).textContent || '');
+    if (
+      gc.sub !== 'Anemonefishes' ||
+      !/IMR fish presentation/.test(gc.src) ||
+      !/Anemonefishes/.test(gc.row) ||
+      !/Anemonefishes/.test(gc.chip)
+    )
+      ui.push(`${width}px genus common name: ${JSON.stringify(gc)}`);
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     // The first-meeting cards over the first question: closed one by one with their own button.

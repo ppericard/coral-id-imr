@@ -85,6 +85,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_source.json"
 SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (add_families)
 FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_families; tools/fish_facts.py)
+GNAMES = ROOT / "tools" / "fish_genus_names.json"  # the genus common names and their sources (add_families)
 OUT = ROOT / "fish.json"
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
@@ -599,6 +600,9 @@ def add_families(o, key, declared=()):
         if x.get("dep"):
             s["depth"] = {"m": x["dep"], "src": fsrc(x, "dsrc")}
     o["families"] = out
+    # The genus common names (tools/fish_genus_names.json; Pierre, 2026-11-07: "some genera have common names. They
+    # should be present somewhere"): common (the name) and csrc (its source, in words), checked against the data.
+    gnames = dict(json.loads(GNAMES.read_text(encoding="utf-8")).get("genera", {})) if GNAMES.exists() else {}
     go = []
     for g, x in gens.items():
         r = {"id": x["id"], "name": g, "family": x["family"], "circle": x["circle"]}
@@ -608,10 +612,41 @@ def add_families(o, key, declared=()):
             for k in ("sl", "cues"):
                 if u.get(k):
                     r[k] = u[k]
+        gn = gnames.pop(x["id"], None)
+        if gn:
+            r["common"], r["csrc"] = gn["common"], genus_csrc(x["id"], gn, r, u, [sp[i] for i in x["species"]], sp, fams[x["family"]])
         r["species"] = x["species"]
         go.append(r)
+    if gnames:
+        sys.exit(f"tools/fish_genus_names.json: not genera of fish.json: {', '.join(gnames)}")
     o["genera"] = go
     return o
+
+
+def genus_csrc(gid, gn, r, u, mine, sp, fam):
+    """The source of a genus common name (tools/fish_genus_names.json), in words, once checked: from imr, the IMR
+    sub-entry naming this genus alone (Anemonefish for Amphiprion; not Surgeonfish, which names three genera); from
+    species, every species of the genus here (2 or more) has a common name ending in word, and no species of another genus
+    of its family has one. The build stops otherwise: the name is never kept on a guess (rule C2)."""
+    def norm(t):
+        return "".join(c for c in (t or "").lower() if c.isalpha())
+
+    def ends(name, word):  # whole words; "ghostpipefish" ends in "ghost pipefish", "disappearing wrasse" not in "ring wrasse"
+        n = " " + " ".join("".join(c if c.isalpha() else " " for c in (name or "").lower()).split())
+        return n.endswith(" " + word) or n.endswith(" " + word.replace(" ", ""))
+    if gn["from"] == "imr":
+        if not u or not norm(gn["common"]).startswith(norm(u["name"])) or any(sp[i]["genus"] != gid for i in u["species"]):
+            sys.exit(f"tools/fish_genus_names.json {gid}: no IMR sub-entry {gn['common']} for it")
+        sl = u.get("sl") or []
+        return "IMR fish presentation" + (f", slide{'s' if len(sl) > 1 else ''} " + ", ".join(map(str, sl)) if sl else "") + f" ({u['name']})"
+    if gn["from"] == "species":
+        w = gn["word"]
+        bad = [s["name"] for s in mine if not ends(s.get("common"), w)]
+        oth = [sp[i]["name"] for i in fam["species"] if sp[i]["genus"] != gid and ends(sp[i].get("common"), w)]
+        if len(mine) < 2 or bad or oth:
+            sys.exit(f"tools/fish_genus_names.json {gid}: '{gn['word']}' is not its species' own ({bad or oth or 'one species'})")
+        return f"Inferred from its species' common names (IMR reference list, FishBase): {'both' if len(mine) == 2 else f'all {len(mine)}'} here end in “{gn['word']}”"
+    sys.exit(f"tools/fish_genus_names.json {gid}: from {gn['from']}?")
 
 
 def regroup(src_path, check):
