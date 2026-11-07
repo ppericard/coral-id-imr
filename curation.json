@@ -23601,6 +23601,30 @@
       "fish-s480-cand-70495526": 4
     },
     "flag": {
+      "i537385099": {
+        "file": "fish-s117-cand-537385099",
+        "unit": "f:Damselfishes",
+        "sp": "s117",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T00:54:28.758Z"
+      },
+      "i580253880": {
+        "file": "fish-s276-cand-580253880",
+        "unit": "f:Soldierfishes",
+        "sp": "s276",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T00:46:13.124Z"
+      },
+      "i587723539": {
+        "file": "fish-s430-cand-587723539",
+        "unit": "f:Lionfishes",
+        "sp": "s430",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T00:35:40.126Z"
+      },
       "i617818832": {
         "file": "fish-s351-cand-617818832",
         "unit": "f:Filefishes",
@@ -23608,6 +23632,38 @@
         "view": "wide",
         "where": "fish/practice/quiz · level auto",
         "at": "2026-11-06T10:58:16.776Z"
+      },
+      "i625984460": {
+        "file": "fish-s164-cand-625984460",
+        "unit": "f:Anthias",
+        "sp": "s164",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T00:45:51.629Z"
+      },
+      "i680457203": {
+        "file": "fish-s008-cand-680457203",
+        "unit": "f:Butterflyfishes",
+        "sp": "s008",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T00:32:25.010Z"
+      },
+      "i680856498": {
+        "file": "fish-s479-cand-680856498",
+        "unit": "f:Spadefishes",
+        "sp": "s479",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T00:35:09.640Z"
+      },
+      "i688399674": {
+        "file": "fish-s344-cand-688399674",
+        "unit": "f:Triggerfishes",
+        "sp": "s344",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto · lightbox",
+        "at": "2026-11-07T00:32:13.919Z"
       },
       "i697077919": {
         "file": "fish-s113-cand-697077919",
