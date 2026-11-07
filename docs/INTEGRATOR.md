@@ -7,8 +7,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 
 ## Working with Pierre
 
-- **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, "Gemma" =
-  Jemma, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
+- **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
+  first names misspelled, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
   commits) in English.
 - **Questions** go to him numbered, never reset: **the last number used is Q205**. Each with its context in one or two
   sentences, the options, and a recommendation. He answers "Question N, ok" or picks an option. Record the answer in the
@@ -30,8 +30,9 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 
 - Real names never go to GitHub (commits, PRs, docs). Named tables stay local (scratchpad) and are lost with the session.
 - **Expert anchors** (Pierre, 2026-11-06/07): two IMR **coral** experts and one IMR **fish** expert (families and
-  genera); Pierre himself counts as a fish expert **for families only**. Ask Pierre who they are when an analysis needs
-  them; never write their names or results to the repo.
+  genera); Pierre himself counts as a fish expert **for families only**. Who they are is in the sheet's Notes tab, keys
+  `agent.expert.*` (private: the app only serves `card.*` keys), once Pierre has added those rows (Q206); else ask him.
+  Never write their names or results to the repo.
 - Their logs serve to check the bar's calibration and to find mislabelled photos (an expert missing an "easy" photo).
 
 ## Sheet, photos, data: the hard limits
@@ -40,8 +41,10 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   integrator's only, and only with Pierre's explicit one-off permission (used once: the Notes tab, key `card.rv8.ps`,
   the PS of the apology card). Tests never touch it.
 - **curation.json** is written only by the admin's draft and Publish, never by an agent.
-- **Never force-push** (the classifier refuses it anyway); keep branches current with merge commits. Never force-push
-  main. Photos step 3 (history rewrite, Q121) only with Pierre's explicit go, a time and a backup.
+- **Never force-push** (the classifier refuses it anyway). The merge contract still wants a PR up to date with
+  origin/main right before it merges: since a rebase would need a force-push, bring the branch up to date with a merge
+  commit (`gh api -X PUT …/pulls/N/update-branch`, or merge origin/main locally), wait for green, then merge. Never
+  force-push main. Photos step 3 (history rewrite, Q121) only with Pierre's explicit go, a time and a backup.
 - **Every fish photo in play is hosted on R2** (Q199): Pierre's adds, the sure judged candidates (Q180) and the
   reference-level photos, all through `tools/fish_game.py` / `fish-game.json`; iNaturalist / FishBase are only the
   fallback (R2 asked twice, then the online original). The "Candidate photos" workflow uploads them after each Publish,
@@ -52,8 +55,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **GitHub**: GraphQL is blocked; use REST (`gh api repos/ppericard/coral-id-imr/...`). Review threads, ready-for-review,
   auto-merge go through the CCR routes: `GET …/pulls/N/ccr/review_threads`, `POST …/pulls/N/ccr/comments/ID/resolve`,
   `POST …/pulls/N/ccr/ready_for_review`. Subagents are refused thread resolution: the integrator resolves.
-- **Merge**: `gh api -X PUT …/pulls/N/merge -f merge_method=squash -f sha=<head>` once all 9 checks are green, the
-  mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings
+- **Merge**: `gh api -X PUT …/pulls/N/merge -f merge_method=squash -f sha=<head>` once the branch is up to date with
+  origin/main (above), all 9 checks are green on that head, the mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings
   (`…/pulls/N/comments`, commit_id = head) even when the thread count is 0: a finding on the head may not be a thread yet.
 - **Code.gs VERSION**: every PR that changes core.js bumps it to **main+1 at push time** (header line + constant +
   `python3 tools/sync_core.py --fix`). Parallel PRs collide; the one merged second renumbers. Rules versions (RVS) run with
