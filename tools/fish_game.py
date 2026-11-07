@@ -115,7 +115,8 @@ def in_play(cur, cand):
     describes."""
     F = (cur or {}).get('fish') or {}
     top = set((cur or {}).get('exclude') or {})
-    top_ids = {pid(f) for f in top}
+    # fish exclude by photo id too (core.js fishPhotos): an exclusion under the stopgap name drops a curated copy
+    top_ids = {pid(f) for f in top} | {pid(f) for f in (F.get('exclude') or {})}
     rec = {p['f']: (p, s) for s, L in (cand.get('cand') or {}).items() for p in L if p.get('f')}
     out = []
     for f, sid in sorted((F.get('add') or {}).items()):
