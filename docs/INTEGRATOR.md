@@ -80,7 +80,10 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   event log. #709 adds a safety net (a card still invisible after 2.5 s closes by itself) and two events: `empty card
   closed: kind | kicker | title` and `left with a card open (drawn / NOT drawn, N s): kind | kicker | title`. Read the
   Events tab for them, find the card, fix the cause. Suspects: the offer cards that came on 11-07 (Scientific genus
-  names at Open Water, #702; circle 3, #703) and the fish achievement pop-ups (#694).
+  names at Open Water, #702; circle 3, #703) and the fish achievement pop-ups (#694). **Strongest lead** (Pierre, both
+  times): it happens after about 10 questions, around a fish look-alike duel slipped in after a mix-up (his 14:29 session:
+  miss Emperors→Coral Breams, 2-choice duel, miss Morays→Snake Eels, 2-choice duel, then stuck; the 17:08 screenshot shows
+  the duel "Coral Breams or Emperors?" round 3 of 10). Look at the cards shown around a fish duel first.
 - **Idea, not on the ROADMAP yet**: the Answers rows carry no device id, and Events have the device but only the date,
   so a session cannot be traced to a device (Pierre asked on 11-07). Log the device id with each answer.
 - **Open PRs**: #637 (photos rated against the genus ability, Q136: needs its learnsim before/after; the local worktree
