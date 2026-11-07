@@ -23705,8 +23705,29 @@
       "f:Butterflyfishes": {
         "cover": "fish-s009-cand-756242658"
       },
+      "f:CoralBreams": {
+        "cover": "fish-s138-cand-46795702"
+      },
+      "f:Emperors": {
+        "cover": "fish-s148-cand-334907616"
+      },
+      "f:Groupers": {
+        "cover": "fish-s176-cand-692710159"
+      },
+      "f:Jacks": {
+        "cover": "fish-s150-cand-486666171"
+      },
+      "f:Rabbitfishes": {
+        "cover": "fish-s064-cand-65535896"
+      },
+      "f:Snappers": {
+        "cover": "fish-s129-cand-756242509"
+      },
       "f:Stargazers": {
         "cover": "fish-s436-cand-332126558"
+      },
+      "f:Sweetlips": {
+        "cover": "fish-s183-cand-467757305"
       }
     },
     "seen": {
