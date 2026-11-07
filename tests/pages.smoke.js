@@ -1421,6 +1421,9 @@ async function signin(base) {
       await p.evaluate(() => go('quiz'));
       await p.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000});
       const r = await p.evaluate(async () => {
+        // The fish achievements already held: their pop-ups (First families at about 20 answers) would hold the card a few
+        // answers (quiz.js promptOk: no prompt with an achievement toast), which is not what this checks.
+        store.set(ACHK, {_v: ACH_V, ...Object.fromEntries(FISH_ACH.map(a => [a.id, 1]))});
         // Waits on what the app draws, never a fixed sleep (a loaded machine runs it slower).
         const at = [],
           until = async f => {

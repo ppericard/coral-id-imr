@@ -18,6 +18,7 @@
 // draw.smoke.js. Locally: node tests/fish.smoke.js
 // A page key's address (core.js routeOut), for the corals.
 const C = require('../core.js'),
+  FISHN = C.FISH_ACH.length,
   addr = k => C.routeOut(k) ?? k;
 const http = require('http'),
   fs = require('fs'),
@@ -757,10 +758,21 @@ const server = http.createServer((req, res) => {
         return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v})));
       };
       const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 150));
+      const sv0 = store.get(SHEETV, 0);
       try {
         localStorage.removeItem('reefid-fish-board-cache');
+        // The sheet's last reply before BOARD_SHEET (rule D4; Codex review #694): Fish behaves as before it had a board, the
+        // page shows the corals' board, and nothing announces one.
+        store.set(SHEETV, BOARD_SHEET - 1);
         go('board');
-        const old = await shown(); // a script before BOARD_SHEET answers with the corals' board: never shown as the fish one
+        const before = await shown(),
+          live0 = boardLive(SUBJ),
+          asked0 = asked.splice(0);
+        // The sheet at BOARD_SHEET, a reply still from an older script (the update under way): the corals' rows are never
+        // shown as the fish board.
+        store.set(SHEETV, BOARD_SHEET);
+        viewBoard();
+        const old = await shown();
         v = BOARD_SHEET;
         boardAt.fish = 0;
         viewBoard();
@@ -769,6 +781,9 @@ const server = http.createServer((req, res) => {
         document.querySelector('#boardset button[data-board="1"]').click();
         const dropped = !Object.keys(boardP).length;
         return {
+          before,
+          live0,
+          asked0,
           dropped,
           asked,
           old,
@@ -778,9 +793,13 @@ const server = http.createServer((req, res) => {
         };
       } finally {
         window.fetch = f0;
+        store.set(SHEETV, sv0);
       }
     });
     if (
+      fb.live0 ||
+      !/Coral P/.test(fb.before) ||
+      !fb.asked0.every(a => a === 'board=1') ||
       !fb.dropped ||
       !fb.asked.length ||
       !fb.asked.every(a => a === 'board=1&s=fish') ||
@@ -793,6 +812,38 @@ const server = http.createServer((req, res) => {
     )
       ui.push(`${width}px fish leaderboard: ${JSON.stringify(fb)}`);
     await wide('the fish leaderboard');
+    // The fish achievements (Pierre, 2026-11-04; core.js FISH_ACH): on Fish the page and its count are the fish's own list,
+    // a fish answer keeps none of the corals' feats (the run, achFeats), and the corals keep theirs.
+    const fa = await q.evaluate(async () => {
+      const A0 = store.get(ACHK, null);
+      store.set(ACHK, {_v: ACH_V, _run: 7, _best: 7});
+      achAfter(true, [{f: 'x', view: 'wide'}], 'quiz');
+      const A = store.get(ACHK, {}),
+        fishIds = ACH_L().map(a => a.id);
+      // One unseen of each subject: the fish page shows and clears only the fish one (Codex review #694).
+      store.set(ACHNEW, ['met10', 'fmet5']);
+      const dotOn = achNew();
+      go('ach');
+      await new Promise(ok => setTimeout(ok, 200));
+      const title = (document.querySelector('#view .btitle') || {}).textContent || '',
+        unseen = store.get(ACHNEW, []);
+      store.set(ACHNEW, []);
+      const coralIds = inSubject(SUBJECTS.find(x => !x.achs().some(a => fishIds.includes(a.id))).id, () => ACH_L().map(a => a.id));
+      store.set(ACHK, A0);
+      return {run: A._run, best: A._best, fishIds, title, mixed: coralIds.filter(id => fishIds.includes(id)), dotOn, unseen};
+    });
+    if (
+      fa.run !== 7 ||
+      fa.dotOn !== 1 ||
+      JSON.stringify(fa.unseen) !== '["met10"]' ||
+      fa.best !== 7 ||
+      fa.fishIds.length !== FISHN ||
+      !fa.fishIds.every(id => id[0] === 'f') ||
+      !new RegExp(`/${FISHN} earned`).test(fa.title) ||
+      fa.mixed.length
+    )
+      ui.push(`${width}px fish achievements: ${JSON.stringify(fa)}`);
+    await wide('the fish achievements');
     // A wink, made due at this count (the first threshold moved here, none shown yet).
     const wk = await q.evaluate(() => {
       location.hash = '#practice/quiz';

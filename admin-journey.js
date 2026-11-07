@@ -882,9 +882,7 @@ function sessionSummary(id, L, name, o = {}) {
   if (F.end >= SESS.END) said.push(`Ended on ${F.end} misses in a row.`);
   if (F.ach && F.ach.length)
     said.push(
-      F.ach.length === 1
-        ? `Unlocked “${esc((ACH.find(a => a.id === F.ach[0]) || {}).title || F.ach[0])}”.`
-        : `Unlocked ${F.ach.length} achievements.`
+      F.ach.length === 1 ? `Unlocked “${esc((achFind(F.ach[0]) || {}).title || F.ach[0])}”.` : `Unlocked ${F.ach.length} achievements.`
     );
 
   // The chart: right answers over the session's last SESS.WIN against the expected, a dot at each new genus's first
@@ -962,7 +960,7 @@ function sessionSummary(id, L, name, o = {}) {
         ? wait
         : F.ach && F.ach.length
           ? `<ul class="adm-jcards">${F.ach
-              .map(k => ACH.find(a => a.id === k))
+              .map(k => achFind(k))
               .filter(Boolean)
               .map(a => `<li title="${esc(a.desc)}">${a.icon} ${esc(a.title)}</li>`)
               .join('')}</ul>`

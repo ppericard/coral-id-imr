@@ -458,6 +458,57 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
   assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
 });
 
+// The fish achievements (Pierre, 2026-11-04: about 14 general ones; rule L8): ids of their own in the shared record, so a
+// fish achievement never counts in the corals' list and back; every one reachable on the fish snapshot; none reachable on
+// an empty one (nothing for time or for opening the app).
+test('fish achievements: about 14, ids apart from the corals, each reachable, none for nothing', () => {
+  const {ACH, FISH_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
+  assert.ok(FISH_ACH.length >= 12 && FISH_ACH.length <= 16, String(FISH_ACH.length));
+  const ids = [...ACH, ...FISH_ACH].map(a => a.id);
+  assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
+  assert.ok(FISH_ACH.every(a => a.kind === 'learn' && [1, 2, 3].includes(a.tier) && a.icon && a.title && a.desc));
+  assert.ok(
+    ACH_LEARN.every(id => achFind(id)),
+    'every learned-based id exists'
+  );
+  assert.deepStrictEqual(
+    SUBJECTS.map(S => S.achs()),
+    [ACH, FISH_ACH]
+  );
+  assert.ok(ACH_CONTRIB.length && ACH_CONTRIB.every(a => a.kind === 'contrib'));
+  const none = {
+    total: 40,
+    met: 0,
+    q: [0, 0, 0],
+    learned: 0,
+    pct: 0,
+    streak: 0,
+    elo: 0,
+    core: {total: 20, met: 0, learned: 0},
+    sets: {},
+    fb: 0
+  };
+  assert.deepStrictEqual(newAch(none, {}, FISH_ACH), [], 'nothing on an empty snapshot');
+  const all = {
+    total: 40,
+    met: 40,
+    q: [40, 40, 40],
+    learned: 40,
+    pct: 100,
+    streak: 0,
+    elo: 1500,
+    core: {total: 20, met: 20, learned: 20},
+    sets: {sci: 30},
+    fb: 0
+  };
+  assert.strictEqual(newAch(all, {}, FISH_ACH).length, FISH_ACH.length, 'every fish achievement is reachable');
+  assert.ok(!newAch(all, {}).some(id => FISH_ACH.some(a => a.id === id)), "a fish snapshot never earns from the corals' list by default");
+  // A learned mark taken away takes back the fish learned-based ones only from the fish list.
+  const A = {flearn1: 5, fmet5: 5, learn1: 5};
+  assert.deepStrictEqual(achRevoke(A, none, 9, FISH_ACH), ['flearn1']);
+  assert.ok(A.learn1 && A.fmet5 && !A.flearn1);
+});
+
 test('Contributions (Q65): a family apart, three tiers; one per photo, Other only with a note; two devices joined', () => {
   const {ACH, newAch, contribAdd, contribKey, mergeAch, CONTRIB_MAX} = require('../core.js');
   const C = ACH.filter(a => a.kind === 'contrib');
@@ -586,7 +637,7 @@ test('Your feedback helped (Q66): the reports sent, those the admin marked done 
 
 test('achRevoke and mergeAch: learned-based achievements taken back stay so through merges, until earned again', () => {
   const {ACH_LEARN, achRevoke, mergeAch} = require('../core.js');
-  assert.deepStrictEqual(ACH_LEARN, ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group']);
+  assert.deepStrictEqual(ACH_LEARN, ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearncore']);
   const snap = (learned, group = false) => ({
     total: 40,
     met: 40,

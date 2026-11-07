@@ -20,7 +20,7 @@ function progress(saved = {}) {
     block = cut(src, '// After each answer (quiz.js answer; cur,', '\n}\n', {through: 1, file: 'progress.js'});
   const ctx = {
     CUSTOM_H,
-    SUBJ: {ach: true},
+    SUBJ: {ach: true, achFeats: true},
     PSTAT: {'hard.webp': [0, 10, 3], 'easy.webp': [0, 10, 9]},
     ACHK: 'reefid-sync-ach',
     checks: 0,
@@ -85,4 +85,16 @@ test('achRunIn: the photo quiz only; quiz.js passes the game to achAfter, a slip
   assert.match(quiz, /achAfter\(\s*good,\s*ph\.filter\(p => p !== unseen\),\s*cur\s*\)/, 'answer() passes cur');
   // planPhoto's duel slipped into the photo quiz is asked under the quiz's own cur (so it counts as a Quiz answer).
   assert.match(quiz, /\[cur, t, shuffle\(pair\.slice\(\)\), `Look-alikes: /, 'a slipped-in duel keeps cur');
+});
+
+// A subject whose achievements read no feats (SUBJECTS achFeats unset: the fish): its answers neither extend nor break
+// the run and set no feat, but the check still runs (its own achievements).
+test('a subject without the feats: the run, corallites and Sharp eye untouched, the check still runs', () => {
+  const T = progress({'reefid-sync-ach': JSON.stringify({_run: 4, _best: 4})});
+  T.ctx.SUBJ = {ach: true};
+  T.achAfter(true, [HARD], 'quiz');
+  T.achAfter(false, [EASY], 'quiz');
+  T.achAfter(true, [MACRO], 'quiz');
+  assert.deepStrictEqual(T.rec(), {_run: 4, _best: 4});
+  assert.strictEqual(T.ctx.checks, 3);
 });
