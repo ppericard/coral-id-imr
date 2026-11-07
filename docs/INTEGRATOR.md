@@ -13,6 +13,10 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **Questions** go to him numbered, never reset: **the last number used is Q207**. Each with its context in one or two
   sentences, the options, and a recommendation. He answers "Question N, ok" or picks an option. Record the answer in the
   PR's Decisions ("Pierre, date time (QN)"), empty "Choices I made", remove `needs-pierre`, merge.
+- **Keep the integrator's context for integrating** (Pierre, 2026-11-08: "a good idea"). Delegate to a subagent any task
+  that would pour raw material into it (sheet dumps, large data files, many files read or many API calls, long logs):
+  give the subagent a precise brief and ask for the conclusion, the numbers and the evidence, not the material. Keep in
+  your own context what you need to decide, check and merge; small lookups whose target you know stay with you.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.
 - **Visual changes**: send screenshots as files in the chat (SendUserFile, 390 px phone first), then the question.
