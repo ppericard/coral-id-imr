@@ -325,11 +325,12 @@ function mergeSubject(j, d, S, mine) {
       if (typeof rq[k] === 'boolean' && (Q[k] === undefined || (rq[k + 'T'] || 0) > (Q[k + 'T'] || 0))) {
         Q[k] = rq[k];
         Q[k + 'T'] = rq[k + 'T'] || 0;
+        // With the choice, its "Not now" count and when (UNITS opens: the offer comes back at most once).
+        ['N', 'A'].forEach(x => (rq[k + x] === undefined ? delete Q[k + x] : (Q[k + x] = rq[k + x])));
         saveQ();
       } else if (rr > lr && typeof rq[k] !== 'boolean' && Q[k] !== undefined) {
         // A progress reset made on another device: the offer comes again here too.
-        delete Q[k];
-        delete Q[k + 'T'];
+        ['', 'T', 'N', 'A'].forEach(x => delete Q[k + x]);
         saveQ();
       }
     });

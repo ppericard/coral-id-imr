@@ -174,6 +174,12 @@ function quizBoard() {
         ? `<div class="popen"><p><b>Had ${SUBJ.lecture}?</b> ${introLeft().length} ${SUBJ.many} are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all ${SUBJ.many}</button></div>`
         : ''
     }
+    ${opensOff()
+      .map(
+        S =>
+          `<div class="popen"><p>${S.body}</p><button type="button" class="next" data-opens="${esc(S.k)}">${esc(S.row(S.units().filter(n => !introduced(n)).length))}</button></div>`
+      )
+      .join('')}
     ${
       weak.length
         ? `<div><h3 class="label">Review first</h3><p class="chips">${weak
@@ -203,6 +209,18 @@ function quizBoard() {
       // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
       appToast(`All ${slateCore().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
+  // A part of the slate opened by choice, off (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50: "the player
+  // must be able to unlock them later, notably from My progress"): as "Open them" on its card, the units then open one at
+  // a time as the player plays.
+  document.querySelectorAll('[data-opens]').forEach(
+    b =>
+      (b.onclick = () => {
+        bonusSet(true, b.dataset.opens);
+        NEXTQ = null;
+        quizBoard();
+        appToast('They open one at a time as you play.', 6000);
+      })
+  );
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
   // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.

@@ -1320,6 +1320,10 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //   gate(n)  whether slate unit n may open now (the opening, model.js mayOpen); always if absent
 //   sets     the opt-in sets (core.js SUBJECTS optin), offered once by a card (quiz.js bonusOfferShow) when due() and
 //            switched in ⚙ ([data-optin] rows): units() once on, the card's words, tag (cards, My progress)
+//   opens    the parts of the slate that open only once the player says yes (core.js SUBJECTS optin; no ⚙ row): their
+//            units count in the progress all the same, whether open or not. Offered by a card (quiz.js openOfferShow) when
+//            due(), again once OPEN_AGAIN answers after a "Not now" (core.js openState), then never; My progress opens them any time
+//            once due (progress.js). k, units(), due(), the card's words (kick, title, body, yes, note), row (My progress)
 // Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
 // easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
 // tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
@@ -1334,9 +1338,12 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // list of survey fish); circle 2: seen now and then on the SVS videos (barracudas); circle 3: the families divers look for
 // around Dauin, muck diving above all. Every circle is on the path and counts in the progress (Pierre, 2026-11-06, Q175:
 // the two opt-in settings, "SVS video extras" and "Beyond IMR", are gone). Circles 2 and 3 open after the IMR course's
-// families, as its continuation, at the thresholds the opt-in offers had (2026-11-03), now automatic (fishGate): circle 2
-// once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3 (50%, "Open Water" on
-// average; Pierre, 2026-11-06, Q177). Within what may open, the usual weighted opening (model.js openPick).
+// families, as its continuation, at the thresholds the opt-in offers had (2026-11-03) (fishGate): circle 2 by itself once
+// every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3 (50%, "Open Water" on
+// average; Pierre, 2026-11-06, Q177) and the player said yes (Pierre, 2026-11-07 08:50: circle 3 an option; UNITS fish
+// opens, the card at the threshold, My progress any time after). Its families count in the fish % open or not (Q204: 100%
+// is everything known, circle 3 included; a player who says no has room left). Within what may open, the usual weighted
+// opening (model.js openPick).
 const FISH_C3 = 0.5;
 const fishGate = n => {
   const c = (GX(n) || {}).circle || 1;
@@ -1451,6 +1458,21 @@ const UNITS = {
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
     core: () => (FISH ? FISH.c1 : []),
     gate: fishGate,
+    // Circle 3, the families beyond the IMR course (Pierre, 2026-11-07 08:50): offered at the Q177 threshold instead of
+    // opening by itself; once on, its families open one at a time like any other. They count in the % either way (Q204).
+    opens: [
+      {
+        k: 'beyond',
+        units: () => (FISH ? FISH.c3 : []),
+        due: () => !!FISH && progPct(FISH.c1) >= 100 * FISH_C3,
+        kick: 'Beyond the IMR course',
+        title: () => 'More fish families, beyond the IMR course?',
+        body: 'The families divers look for around Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',
+        yes: 'Open them',
+        note: 'Also in My progress, any time.',
+        row: n => `Open the families beyond IMR (${n} ${n > 1 ? 'families' : 'family'})`
+      }
+    ],
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
@@ -1527,6 +1549,32 @@ if (Q.bon === undefined && Q.bu > 1) {
 }
 // The units of the opt-in sets the player has on.
 const bonusList = () => SETS().flatMap(S => (Q[S.k] ? S.units() : []));
+// The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
+// its units already opened on a card (players whose circle 3 opened by itself, 2026-11-06 to 2026-11-07, keep it: Pierre,
+// 2026-11-07). A unit of a part that is off never opens (model.js mayOpen); one already open stays open.
+// (core.js openState: on, row, ask; the card again once, OPEN_AGAIN answers after a first "Not now", then never).
+const opensNow = () => UNITS[SUBJ.id].opens || [];
+const openOf = (S, full) => {
+  const L = S.units(),
+    m = introMap();
+  return openState(Q, S.k, {
+    met: L.some(n => n in m),
+    due: full && S.due(),
+    left: full && L.some(n => !introduced(n)),
+    at: full ? answersSoFar() : 0
+  });
+};
+const openShut = n => opensNow().some(S => S.units().includes(n) && !openOf(S).on);
+// What My progress offers to open (progress.js): the parts off, due, with a unit not open yet.
+const opensOff = () => opensNow().filter(S => openOf(S, 1).row);
+// The card, the first due (quiz.js openOfferShow; Pierre, 2026-11-07: "don't ask again for a while", at most once more).
+const openOfferDue = () => opensNow().find(S => openOf(S, 1).ask) || null;
+// "Not now" on the card: off, counted, with the answer count it was said at.
+function openNo(k) {
+  Q[k + 'N'] = (Q[k + 'N'] || 0) + 1;
+  Q[k + 'A'] = answersSoFar();
+  bonusSet(false, k);
+}
 // ⚙ Bonus genera On / Off (fish: Scientific names), and the offer card (quiz.js bonusOfferShow): saved in the
 // quiz settings, synced with them. Off takes them out of the photo quiz and the duels; their progress is kept. Questions
 // planned ahead with the old units are dropped by themselves (planKey names the units in play).
@@ -2240,11 +2288,8 @@ document.getElementById('signb').onclick = e => {
         P = {};
         delete Q.bu;
         delete Q.ba;
-        // the bonus genera (fish: the scientific genera) are offered again once due
-        SUBJ.optin.forEach(k => {
-          delete Q[k];
-          delete Q[k + 'T'];
-        });
+        // the bonus genera (fish: the scientific genera, circle 3) are offered again once due
+        SUBJ.optin.forEach(k => ['', 'T', 'N', 'A'].forEach(x => delete Q[k + x]));
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();
