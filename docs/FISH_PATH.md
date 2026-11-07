@@ -1,6 +1,6 @@
 # Fish naming path: design spec
 
-Status: design agreed with Pierre on 2026-11-03, not built. Level 1 (the 27 IMR entries) is built on this branch (docs/ARCHITECTURE.md
+Status: design agreed with Pierre on 2026-11-03; the species level not built. Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
 "Subjects", docs/LEARNING.md "Fish on the same model"). This file says what comes next: species names, common then Latin, and the IMR
 shortcut (since 2026-11-04 the fish welcome question and the open-all card). It reuses the engine as it is (Elo per unit, progress, mastery levels and exam, opening, typed share); nothing here is a coded
 track: every unlock is a performance threshold or a share that rises with progress (docs/LEARNING.md "Considered and not adopted").
@@ -49,12 +49,12 @@ is the design's shorthand, and internal identifiers may keep it.
   level" of 2026-11-03): an intermediate step before knowing every species's scientific name, e.g. a photo, then 4 genus names
   (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
   invented: rule C2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
-- **Built for review** (2026-11-04 night, its own PR, admin-only beta, waiting on Pierre): the genus step as an opt-in set of the fish,
+- **Built** (2026-11-04 night, #526, merged with Pierre's yes on 2026-11-05): the genus step as an opt-in set of the fish,
   "Scientific names" (offer card once an entry is at Open Water since 2026-11-07, Q205: Advanced was far too late under the cautious
   bar of #646; ⚙ row): a family's genera join the game when the family reaches Open Water and open one at a time; a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
   one (Chromis, Dascyllus, Pomacentrus), else its most met species; not counted in the progress yet (the global score is not built).
-  Photos: the stopgap entry photos of its species, so 18 of the 94 genera have none and stay out until species photos are curated.
+  Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).
   Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
 - **A right genus is partial credit** (Pierre, 2026-11-04; replaces "Right genus, still a miss on the species"): when a species'
   scientific name is asked and the player types the right genus only, it is genuine partial learning (unlike a common name typed
@@ -287,7 +287,7 @@ Supported now:
 
 Gaps before species questions ship:
 
-- **Curated photos per species.** Level 1 runs on a stopgap of remote photos per entry. Species need their own curated set, enough to avoid
+- **Curated photos per species.** Since #614 and #674 the game reads the curated and judged photos per species on R2 (the stopgap only for a unit short of them). Species need their own curated set, enough to avoid
   photo memory; the fish pre-sort's automatic decisions (`FISHCHK`) make this workable. Targets: "Fish photos and the admin".
 - **Species-level look-alikes**, with the cue that tells each side apart. Only entries have `look` today. Sources: "Fish photos and the
   admin"; how the cues are taught: "How cues are taught" there.
@@ -296,7 +296,6 @@ Gaps before species questions ship:
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
 - Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
-  Pierre, 2026-11-04: they are logged **from the start**, as soon as curated photos enter the game.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
 
@@ -325,10 +324,11 @@ Decided from the admin pooling study:
 
 ## Juveniles and colour phases
 
-- Early, never a late stage (Pierre's ReefRecall rule). Until an entry reaches Open Water its questions show only its very easy photos
-  (`model.js` `easyFirst`, a temporary bootstrap until fish answers are logged; docs/LEARNING.md "Fish: the starter core and judged
+- Early, never a late stage (Pierre's ReefRecall rule). The easy photos come first: until 2026-11-06 an entry's questions showed only its very easy photos
+  before Open Water (`model.js` `easyFirst`); since then (Pierre: "NO WALL", #660) the judged ease is only the photo's prior and the
+  draw strongly favours the easy, reference-like photos at the start (docs/LEARNING.md "Fish: the starter core and judged
   photos"). A juvenile is one only where its entry or genus shows its juveniles early (the juvenile classes, below); elsewhere its judged
-  ease is capped. From Open Water every juvenile is in the pool.
+  ease is capped. No level gates them any more: a juvenile is in the pool from the start, its capped ease keeping it rare early in the draw; the staged path for juveniles, colour phases and dimorphism is a ROADMAP row (Pierre, 2026-11-07).
 - **Juvenile classes** (2026-11-04, a research note with sources, classes and rules approved by Pierre; `fish.json` `juv`, from
   `tools/fish_source.json`, per entry and per genus or species for mixed entries; judging/FISH.md):
   - **Class A** (juveniles distinctive and recognisable: they help learn the family early): Spadefish (very tall fins:
