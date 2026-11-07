@@ -42,13 +42,8 @@ Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes 
 
 - **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
 - #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
-- **Q208** (set aside by Pierre, 2026-11-08: he wants more information): should families not yet met open before the
-  scientific genera, or the genera get a pace of their own? (ROADMAP "Scientific genera: the step feels too early".)
-- **Q210** keep the automatic entry of sure-judged fish candidates (Q180/Q199) or stop it? Recommendation: keep.
-- **Q212** let the 460 reference-source photos judged clean but below reference level enter play like candidates?
-  Recommendation: yes.
-- **Q213** order of the 1,549 fish candidates to judge: the 6 circle-1 species with no reference and no easy photo
-  first, then small batches. Recommendation: yes.
+- **Q208** (set aside 11-08, Pierre wants more information): families not yet met before the scientific genera, or genera on their own pace?
+- **Q210** keep the automatic entry of sure-judged fish candidates (Q180/Q199)? Recommended: keep. **Q212** let the 460 reference-source photos below reference level enter like candidates? Recommended: yes. **Q213** judge the 6 weakest circle-1 species' candidates first, then small batches? Recommended: yes.
 
 Last question number: Q213
 
