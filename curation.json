@@ -23601,6 +23601,22 @@
       "fish-s480-cand-70495526": 4
     },
     "flag": {
+      "i283973888": {
+        "file": "fish-s371-cand-283973888",
+        "unit": "f:Scorpionfishes",
+        "sp": "s371",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto · lightbox",
+        "at": "2026-11-07T10:06:06.110Z"
+      },
+      "i333030518": {
+        "file": "fish-s204-cand-333030518",
+        "unit": "f:Parrotfishes",
+        "sp": "s204",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T09:46:49.393Z"
+      },
       "i537385099": {
         "file": "fish-s117-cand-537385099",
         "unit": "f:Damselfishes",
@@ -23672,6 +23688,25 @@
         "view": "wide",
         "where": "fish/practice/quiz · level auto · lightbox",
         "at": "2026-11-06T10:57:53.657Z"
+      },
+      "i728743801": {
+        "file": "fish-s357-cand-728743801",
+        "unit": "f:Puffers",
+        "sp": "s357",
+        "view": "wide",
+        "where": "fish/practice/quiz · level auto",
+        "at": "2026-11-07T09:03:34.972Z"
+      }
+    },
+    "genera": {
+      "f:Angelfishes": {
+        "cover": "fish-s029-cand-527402776"
+      },
+      "f:Butterflyfishes": {
+        "cover": "fish-s009-cand-756242658"
+      },
+      "f:Stargazers": {
+        "cover": "fish-s436-cand-332126558"
       }
     },
     "seen": {
