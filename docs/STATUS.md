@@ -41,7 +41,7 @@ Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes 
 - **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
 - #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
 
-Last question number: Q205
+Last question number: Q207
 
 ## Pierre's hands
 
@@ -88,5 +88,6 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-07 ~14:40 Manila, integrator, handover before a quota pause. Questions Q178-Q205 answered (Q204: circle 3 an
-opt-in but counted; Q205: genera at Open Water).
+2026-11-07 ~14:40 Manila, integrator, handover before a quota pause. Questions Q178-Q207 answered (Q204: circle 3 an
+opt-in but counted; Q205: genera at Open Water; Q206: the experts in the sheet's Notes tab; Q207:
+rule S1 general for anything in beta). The docs audit (#706) closed the shipped ROADMAP rows.
