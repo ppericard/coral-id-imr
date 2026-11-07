@@ -1972,6 +1972,14 @@ const CARD_KINDS = {
   feedback: '💬'
 };
 let cardN = 0;
+// Whether a card's panel is really on screen: drawn, of some height, inside the viewport and faded in (cardShow's safety
+// net and the leaving-with-a-card event).
+function cardSeen(d) {
+  const c = d && d.querySelector('.ulcard');
+  if (!c) return false;
+  const r = c.getBoundingClientRect();
+  return r.height >= 40 && r.bottom > 0 && r.top < innerHeight && Number(getComputedStyle(c).opacity) > 0.05;
+}
 function cardShow(o) {
   const d = document.createElement('div'),
     from = document.activeElement,
@@ -2069,15 +2077,12 @@ function cardShow(o) {
   document.body.appendChild(d);
   // A safety net (Pierre, 2026-11-07: mid-session the screen dimmed with no card on it and the game was stuck): a card
   // still invisible after a moment (no panel drawn, no height, off screen or never faded in) closes by itself, so the
-  // player is never locked behind an empty backdrop, and the event log names it so the cause can be found. Not while the
-  // tour hides cards on purpose (html.touring).
+  // player is never locked behind an empty backdrop, and the event log names it so the cause can be found.
   const check = () => {
-    if (shut || !d.isConnected || document.documentElement.classList.contains('touring')) return;
-    if (document.visibilityState !== 'visible') return setTimeout(check, 2500); // a hidden page runs no fade-in: wait
-    const c = d.querySelector('.ulcard'),
-      r = c && c.getBoundingClientRect(),
-      op = c ? Number(getComputedStyle(c).opacity) : 0;
-    if (c && r && r.height >= 40 && r.bottom > 0 && r.top < innerHeight && op > 0.05) return;
+    if (shut || !d.isConnected) return;
+    // A hidden page runs no fade-in, and the tour hides cards on purpose until it closes: check again later.
+    if (document.visibilityState !== 'visible' || document.documentElement.classList.contains('touring')) return setTimeout(check, 2500);
+    if (cardSeen(d)) return;
     if (typeof ev === 'function')
       ev('err', {msg: 'empty card closed: ' + [o.kind || '', o.kick || '', o.title ? String(o.title).slice(0, 60) : ''].join(' | ')});
     close('empty');
@@ -2093,8 +2098,7 @@ document.addEventListener('visibilitychange', () => {
     if (d.dataset.left) return;
     d.dataset.left = '1';
     const up = Math.round((Date.now() - Number(d.dataset.t || Date.now())) / 1000),
-      c = d.querySelector('.ulcard'),
-      seen = !!(c && c.getBoundingClientRect().height >= 40);
+      seen = cardSeen(d);
     ev('err', {msg: `left with a card open (${seen ? 'drawn' : 'NOT drawn'}, ${up} s): ${d.dataset.info || ''}`});
   });
 });
