@@ -1014,6 +1014,7 @@ const server = http.createServer((req, res) => {
       store.set('reefid-board-told', 0);
       SYNC = {name: 'Test', code: 'x'};
       SUBJ.board = false;
+      noticesGo(); // as after the visit's first sync (sync.js noticeLater): this made-up account never syncs
       boardNotice();
       const r = {toast: !!document.querySelector('.apptoast'), told: store.get('reefid-board-told', 0)};
       SYNC = s0;
@@ -1175,6 +1176,7 @@ const server = http.createServer((req, res) => {
     const bt2 = await q.evaluate(async () => {
       const s0 = SYNC;
       SYNC = {name: 'Test', code: 'x'};
+      noticesGo(); // as after the visit's first sync (sync.js noticeLater): this made-up account never syncs
       boardNotice();
       SYNC = s0;
       const shown = !!document.querySelector('.apptoast');

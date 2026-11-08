@@ -14,22 +14,15 @@ Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11
 
 Fish is open to every player (beta). Main: sheet script v97; 664 fish species in 67 families since #727.
 
-- **Merged on 11-08**: #711-#723 and #727, #732: reference photos in play like candidates (Q212), admin counts every
-  photo in play, fish judging batches (Q213), every photo of an observation weighted 1 + 0.5 (Q226), IMR genera and
-  scientific genera at Advanced (Q219-Q240), surprises at 200/400 answers, a species in its family's circle and 18 new
-  families (Q214-Q217, Q232, Q246-Q249), the load-order crash on deep links (#732), STATUS and rule D2 (#721).
-- **Merge queue, in this order** (sheet versions in brackets): #725 wink answers logged (v98; conflict being fixed) →
-  #726 admin "change starting answer" (→ v99) → #728 refused typed texts logged + neutral nudge (→ v100) → #730 global
-  fish score A + √ (v101) → #734 fish achievements (v102, needs Pierre's OK on the names). Also: #729 hard photos capped
-  before Open Water, families only (Q252 0.1, Q271) · #724 judging batch 4 · #731 every taxon-page photo (Q229/Q231;
-  Q230 out-of-zone photos open) · #735 rule L11 in levels (approved) · #733 docs fixes · #736 notices after the first
-  sync · #737 LICENSE + README (needs Pierre's OK on the About text) · open since 11-06: #637, #664.
-- **Being built**: Coral Finder crops out (Pierre switches "CF book" off in the admin; key-box drawings, then removal;
-  book-derived texts checked against the PDF) · curated fish covers ignored by the app (bug) · prefer CC0/CC BY photos
-  at equal quality (Q270) · fish Home mosaic in landscape tiles · repo tidy-up PRs (docs, config, CI on main, Pages trim).
+- **Merged on 11-08**: #711-#735, #737, #738, #740, #741, #743, #745, #746, #750 (`git log`): IMR genera and
+  scientific genera at Advanced, 18 new families, the global fish score A + √ and its achievements, refused typed texts
+  logged, Coral Finder crops judged out, rule L11 in levels, LICENSE + README, the repo tidy-up. **Open**: the sheet chain
+  #742 (v103) → #736 (v104) → #749 (v105); #739, #744, #747, #748: Pierre answered Q288-Q294 on 11-08 (to paste into each PR); #664 open.
+- **Being built**: the 11-08 midday items are all open PRs now (above); the batch-5 fish judging.
 - **Pierre's hands**: "CF book: off" + Publish; Q121 history rewrite (now also the Coral Finder crops), then a GitHub
   purge request; set one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the morning report
-  scheduled task from claude.ai (not visible from this session).
+  scheduled task from claude.ai (not visible from this session); later, stop the link-sharing of the Coral Finder PDF
+  on his Drive.
 - **Expert anchors**: the sheet's Notes tab, keys `agent.expert.*` (names only in chat).
 
 ## Next
@@ -41,11 +34,19 @@ global fish score first, then ID marks for the 23 uncued fish families.
 
 Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes into its PR and off this list.
 
-- **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
-- #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
-- **Q208** (set aside 11-08, Pierre wants more information): families not yet met before the scientific genera, or genera on their own pace?
+- **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone, now with the Coral Finder crops): your go and a time.
+- **Q295, Q296** (privacy page, activity study): `privacy.html` says the reports' device id is "not linked to your
+  answers", yet Pages rows hold it beside the player's id and the admin joins them; the once-a-visit `load` event is
+  described nowhere. Reword each? Rec. yes.
+- **Q297** game modes (ROADMAP "Game modes", ReefRecall's and 7 new): which next? Rec. Find the X as agreed, then Odd one
+  out and Same or different. **Q298** fish replay: device bar as a floor before sheet v60, or accept the loss? Rec.
+  measure the gap in the admin first. **Q299** the names of the 9 fish achievements not built yet (ROADMAP row).
+- **Q208** (set aside, wants more information): families not met before the scientific genera, or genera on their own
+  pace? **Q230** out-of-zone taxon-page photos: open, waits for real arguments (ROADMAP row).
+- Not numbered: #641 a-j, #651's 5 choices, #664's 8 decisions (ROADMAP rows). Q123 (fish confusion a-o) and Q124
+  (name study a-h): no answer found after the 11-06 morning list; check before asking.
 
-Last question number: Q280
+Last question number: Q299
 
 ## Pierre's hands
 
@@ -94,3 +95,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 2026-11-08 ~12:10 Manila, integrator, mid-session. Questions Q229-Q280 answered except Q230 (out-of-zone taxon photos,
 waits for numbers); Q237 kept as is (common names on genus questions).
+Then Q288-Q294 (Pierre, 11-08): Q288 OK, reworded Key labels kept; Q289 his covers are the cards' photo; Q290 his cover
+on the thresher card; Q291 covers on Home when landscape and they fit; Q292 the book's 3-8 cm; Q293, Q294 OK.
