@@ -15,7 +15,7 @@ const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8');
 
 // The draw of model.js (PICKD to the end of photoSet, photoDiff, wpick) with the game around it stubbed: one unit, n,
 // its photos L (one per observation, the fish's single view), the player's ability th and progress score sc on it.
-function engine(subject, L, {th = 1.2, score = 0.3, ok = 2} = {}) {
+function engine(subject, L, {th = 1.2, score = 0.3, ok = 2, lv = 'new', ps = {}} = {}) {
   let s = 12345;
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647,
     M = Object.create(Math);
@@ -31,7 +31,7 @@ function engine(subject, L, {th = 1.2, score = 0.3, ok = 2} = {}) {
     TARGET_P: C.TARGET_P,
     AIM: C.AIM,
     LEVEL: '_level',
-    P: {u: {ok, ko: 0, th}},
+    P: {u: {ok, ko: 0, th, ps}},
     PSTAT: {},
     PGD: {},
     PMEM: [0, -0.45, -1.1, -1.7],
@@ -42,7 +42,7 @@ function engine(subject, L, {th = 1.2, score = 0.3, ok = 2} = {}) {
     gamePics: (n, v) => (v === 'wide' ? L : []),
     gamePhotoOk: () => true,
     isCore: () => false,
-    level: () => ['new'],
+    level: () => [lv],
     shaky: () => false,
     recent: () => [],
     ability: () => th,
@@ -103,6 +103,17 @@ test('observations mixing easy and hard photos: their hard photos count too (Cod
   const M = pool().map((p, i) => (i < 12 ? {...p, o: `oh${i}`} : p)),
     F = engine('fish', M);
   assert.ok(share(F, M) <= F.RARE.SHARE + 0.03);
+});
+
+test('exploration questions with every easy observation seen: still within the cap (Codex review #729)', () => {
+  // A unit held (calibration questions, CAL.RATE, draw among the observations never seen) whose 12 easy ones were all
+  // seen and answered right twice: the exploration alone drew 36% under ease 4.
+  const L = pool(),
+    ps = Object.fromEntries(L.filter(p => p.e >= 4).map(p => [p.f, [2, 2]])),
+    E = engine('fish', L, {lv: 'mid', ps}),
+    r = share(E, L);
+  assert.ok(r <= E.RARE.SHARE + 0.03, `under ease 4: ${(100 * r).toFixed(1)}%`);
+  assert.ok(r > 0.02, `no wall (${(100 * r).toFixed(1)}%)`);
 });
 
 test('past Open Water the hard photos come back at the targeting', () => {

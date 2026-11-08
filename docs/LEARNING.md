@@ -2870,7 +2870,10 @@ one easy photo among twenty hard ones counts as mostly hard (Codex review #729: 
 Exact for a question showing one photo, as the fish do. Applied last (after the variety and the floor, so neither lifts
 them back). When they already weigh less (a new unit, whose lean keeps them near 2-9%), nothing changes; past Open
 Water nothing changes. No wall: they still come, about one in ten at most, and among them the least answered still come
-first (the factor is the same for all of them, so `calBonus`'s lean towards unrated photos is kept). A photo with no
+first (the factor is the same for all of them, so `calBonus`'s lean towards unrated photos is kept). An exploration
+question (`CAL.RATE`, among the observations never seen) stays within the cap: before Open Water, once every easy
+observation of the unit has been seen, only the seen hard ones are left out, the seen easy ones stay (Codex review #729:
+otherwise the exploration drew only hard photos, 36% under ease 4 over all questions in the unit test). A photo with no
 judged ease (every coral photo) is never one of them, so the corals' draw is unchanged. `tests/rareease.test.js` runs
 `photoSet` in Node on hard-dominated and mixed pools; `tests/fish.smoke.js` keeps its bound (a third over 15 photos: with
 the share at most a tenth, a seed fails about once in a thousand).

@@ -228,10 +228,31 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     return m * (calQ ? 1 : cov) * (ro.includes(k) ? 0.15 : 1);
   };
   const sc = Object.fromEntries(keys.map(k => [k, score(k)]));
+  // Rarely under ease 4 before Open Water (RARE): each observation's hard part, the share of its photos' weight under
+  // the bar (its photo is drawn on those weights); the cap itself comes last, below.
+  const ph = k => Object.values(obs[k]).flat(),
+    es = keys
+      .flatMap(ph)
+      .map(p => p.e || 0)
+      .filter(Boolean)
+      .sort((a, b) => b - a),
+    rare = es.length > 0 && genScore(n) + 1e-9 < LV_AT[0],
+    hs = {};
+  if (rare) {
+    const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),
+      sum = L => L.reduce((t, p) => t + w(p), 0);
+    hard = p => p.e > 0 && p.e < bar;
+    keys.forEach(k => (hs[k] = sum(ph(k)) ? sum(ph(k).filter(hard)) / sum(ph(k)) : 0));
+  }
   // The exploration share (Pierre, 2026-11-06, Q188): a calibration question draws among the colonies this player has
   // never seen, while the unit has one the draw can show; still on the targeting and the calibration bonus, so at the
-  // difficulty aimed for and the least answered first, never a random hard one.
-  if (calQ && keys.some(k => sc[k] > 0 && !mem[k])) keys.forEach(k => mem[k] && (sc[k] = 0));
+  // difficulty aimed for and the least answered first, never a random hard one. Before Open Water with every easy
+  // colony seen, the seen easy ones stay (only the seen hard ones go): the exploration then reaches the unseen hard
+  // ones within the cap, never past it (Codex review #729).
+  if (calQ && keys.some(k => sc[k] > 0 && !mem[k])) {
+    const keep = rare && !keys.some(k => sc[k] > 0 && !mem[k] && hs[k] < 1);
+    keys.forEach(k => mem[k] && !(keep && hs[k] < 1) && (sc[k] = 0));
+  }
   const top = Math.max(0, ...Object.values(sc));
   keys
     .filter(k => sc[k] > 0)
@@ -245,18 +266,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top);
   });
   // Rarely under ease 4 before Open Water (RARE): last, so neither the variety nor the floor lifts the hard ones back.
-  const ph = k => Object.values(obs[k]).flat(),
-    es = keys
-      .flatMap(ph)
-      .map(p => p.e || 0)
-      .filter(Boolean)
-      .sort((a, b) => b - a);
-  if (es.length && genScore(n) + 1e-9 < LV_AT[0]) {
-    const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),
-      sum = L => L.reduce((t, p) => t + w(p), 0);
-    hard = p => p.e > 0 && p.e < bar;
-    // Each observation's hard part: the share of its photos' weight under the bar (its photo is drawn on those weights).
-    const hs = Object.fromEntries(keys.map(k => [k, sum(ph(k)) ? sum(ph(k).filter(hard)) / sum(ph(k)) : 0]));
+  if (rare) {
     hardF = rareCap(keys, sc, k => hs[k]);
     if (hardF < 1) keys.forEach(k => (sc[k] *= 1 - hs[k] + hardF * hs[k]));
   }
