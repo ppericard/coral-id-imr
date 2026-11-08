@@ -1179,7 +1179,23 @@
       // kept pg 0.96 for good).
       delete out[subjKey(S.id, 'rv')];
     });
+    // The one-time notices told on either account (TOLD): told once, never shown again for the merge.
+    const ta = J(A, TOLD.KEY),
+      tb = J(B, TOLD.KEY);
+    if (ta || tb) out[TOLD.KEY] = JSON.stringify(toldUnion(ta, tb));
     return out;
+  }
+  // The one-time notices a player has seen, on any device of the account (Pierre, 2026-11-08: a device holding an old
+  // copy of his account showed again the cards and toasts he had seen on another device): a list of tokens, one per
+  // notice seen (progress.js: 'recalc:<note id>' an update note, 'rv:<version>' a rules version's card, 'mx:<unit>@<time>'
+  // a learned mark taken away, 'sorry' the apology, 'hello:<subject>-<mode>' a subject's card, 'board' the leaderboard
+  // note). It travels with the progress (KEYS.SYNC) and merges as the union (sync.js mergeSaved, signIn; mergeUsers), so
+  // a notice told on one device is never told again on another. Anything but a short string is dropped; sorted.
+  const TOLD = {KEY: KEYS.SYNC + 'told', MAX: 120};
+  function toldUnion(a, b) {
+    const out = new Set();
+    [a, b].forEach(L => Array.isArray(L) && L.forEach(t => typeof t === 'string' && t && t.length <= TOLD.MAX && out.add(t)));
+    return [...out].sort();
   }
   // The surprise cards (winks) two records have met (quiz.js winkMerge at a sync, mergeUsers for two accounts): {wink id:
   // answer count when shown}, the union, the earlier count kept; anything else in either is ignored (Pierre, 2026-11-06:
@@ -4779,6 +4795,8 @@
     pairConf,
     mergeUsers,
     winkUnion,
+    TOLD,
+    toldUnion,
     OPEN_AGAIN,
     openState,
     PULSEQ,

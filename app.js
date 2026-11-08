@@ -2591,6 +2591,9 @@ const SETUP = {
     // progress.js comes with the quiz (Codex review #361: answers given before it lost their achievement bookkeeping):
     // the achievement record is migrated and counted here, before any answer.
     achMigrate();
+    // Signed in, the one-time notices and the achievements check below wait for the visit's first sync and are decided
+    // on the merged state (sync.js noticeLater, noticesGo); the notices this device saw before go to the account first.
+    toldSeed();
     achRecheck(); // a learned mark taken away at load (model.js mxRecalc): its achievements first
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up

@@ -805,6 +805,7 @@ test('the recalculation card is due only when the progress % moved by 5 points o
     ctx = {
       ...C,
       window: {},
+      toldHas: () => false, // sync.js: no card told on another device
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   vm.createContext(ctx);
@@ -868,6 +869,7 @@ function ach(A) {
       ACHNEW: 'reefid-ach-new',
       achUnseen: () => [],
       achDot: () => {},
+      noticeLater: () => false, // sync.js: the visit's first sync is over
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.syncSoon = () => ctx.synced++;

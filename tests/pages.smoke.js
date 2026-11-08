@@ -2080,6 +2080,177 @@ async function replayAdoptCheck(base) {
   return fails;
 }
 
+// The one-time notices wait for the visit's first sync (Pierre, 2026-11-08: a device still holding an old copy of his
+// account showed him again the cards and toasts he had seen on another; sync.js noticeLater, noticesGo, core.js TOLD). A
+// signed-in device whose copy is older than the account's (the last update note not seen here, a learned mark taken
+// away not told here, a run of 12 right answers without its achievement): the sheet's copy says the note and the mark
+// were told on another device and holds the achievement, so nothing shows, before or after the sync. The same device
+// with nothing told elsewhere: nothing before the sheet's reply, then the note once, the mark's card, the achievement's
+// toast, and the save sends what was told; the next load shows none of them. Offline (the request fails): the note
+// shows from this device's state at once. Nothing reaches the sheet (rule D1): every request is answered in the page,
+// a route answers any that escapes, and the script's hosts are mapped to this computer.
+async function noticesAfterSync(base) {
+  const fails = [],
+    bs = await chromium.launch({
+      args: ['--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
+    });
+  const last = 'typed-questions-2026-11',
+    t0 = Date.parse('2026-11-03T05:00:00Z'),
+    prog = {Acropora: {ok: 1, ko: 0, streak: 1, h: '1', at: t0}, '~level': {ok: 1, ko: 0, th: 0.1, at: t0}},
+    mine = {_v: 2, _best: 12}, // the run's feat here, its achievement (run10) not counted yet
+    acct = {...mine, run10: t0},
+    // The sheet's copy: what the device has, plus what another device told and earned (told: core.js TOLD tokens).
+    data = told => ({
+      'reefid-sync-coral-progress': JSON.stringify(prog),
+      'reefid-sync-coral-quiz': '{"bon":false}',
+      'reefid-sync-coral-start': '{"c":"new","t":1}',
+      'reefid-sync-coral-rv': String(C.RV),
+      'reefid-sync-ach': JSON.stringify(told ? acct : mine),
+      ...(told ? {'reefid-sync-told': JSON.stringify(['mx:Acropora@111', 'recalc:' + last])} : {})
+    });
+  // mode: 'slow' (the reply after 2.5 s), 'offline' (every request fails as fetch does without a line).
+  const STUB = mode => {
+    const f = window.fetch,
+      reply = (u, o) => {
+        const q = new URL(String(u)).searchParams,
+          body = o && o.body ? JSON.parse(o.body) : null,
+          log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
+        if (body ? !body.name : q.get('name') !== 'Ana') return {ok: false};
+        log.push(body ? {post: 1, told: body.data['reefid-sync-told'] || null} : {get: 1});
+        localStorage.setItem('test-sheet-log', JSON.stringify(log));
+        const rev = Number(localStorage.getItem('test-rev') || 4);
+        if (body) {
+          localStorage.setItem('test-data', JSON.stringify(body.data));
+          localStorage.setItem('test-rev', String(rev + 1));
+          return {ok: true, log: true, rev: rev + 1, v: 97};
+        }
+        return {ok: true, found: true, rev, data: JSON.parse(localStorage.getItem('test-data')), v: 97};
+      },
+      answer = (u, o) =>
+        mode === 'offline'
+          ? Promise.reject(new TypeError('Failed to fetch'))
+          : new Promise(ok => setTimeout(ok, 2500)).then(
+              () => new Response(JSON.stringify(reply(String((u && u.url) || u), o)), {headers: {'Content-Type': 'application/json'}})
+            );
+    window.SHEET_STUB = answer;
+    window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
+    // Every overlay that ever shows, with the time since the page started (cards, achievement toasts).
+    window.__shown = [];
+    new MutationObserver(R =>
+      R.forEach(r =>
+        r.addedNodes.forEach(
+          n => n.classList && /\b(unlock|achpop)\b/.test(n.className) && window.__shown.push([n.className, Math.round(performance.now())])
+        )
+      )
+    ).observe(document.documentElement, {childList: true, subtree: true});
+  };
+  const init = ([prog, mine, sheet]) => {
+    if (localStorage.getItem('test-init')) return;
+    localStorage.setItem('test-init', '1');
+    localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-nudge', '1');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+    localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
+    localStorage.setItem('reefid-sync-coral-rv', sheet['reefid-sync-coral-rv']);
+    localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"'); // the note before the last: the last is due here
+    localStorage.setItem('reefid-mx-lost', JSON.stringify({due: {Acropora: 111}, why: {Acropora: 'bkt'}}));
+    localStorage.setItem('reefid-sync-ach', JSON.stringify(mine));
+    localStorage.setItem('reefid-sync-coral-progress', JSON.stringify(prog));
+    localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', srv: 4, base: prog, log: []}));
+    localStorage.setItem('test-data', JSON.stringify(sheet));
+  };
+  const open = async (mode, told) => {
+    const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+    await c.addInitScript(STUB, mode);
+    await c.addInitScript(init, [prog, mine, data(told)]);
+    await c.route(
+      u => !u.href.startsWith(base),
+      async r => {
+        const u = r.request().url();
+        if (!/script\.google/.test(u)) return r.abort();
+        fails.push('notices: a sync request escaped the wrapped fetch: ' + u.slice(0, 80));
+        r.fulfill({contentType: 'application/json', body: '{"ok":false,"error":"input"}'});
+      }
+    );
+    const p = await c.newPage();
+    p.on('pageerror', e => fails.push('notices page error: ' + e.message));
+    p.setDefaultTimeout(8000);
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p];
+  };
+  const shown = p =>
+    p.evaluate(() => window.__shown.map(x => x[0].split(' ').find(k => /^(recalc|mxlost|rvmsg|sorry|achpop)$/.test(k)) || x[0]));
+  const loaded = p =>
+    p
+      .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.get), null, {timeout: 15000})
+      .catch(() => fails.push('notices: the device never loaded the account'));
+  // Told on another device: nothing, before or after the sync.
+  {
+    const [c, p] = await open('slow', true);
+    await loaded(p);
+    await p.waitForTimeout(3000);
+    const s = await shown(p);
+    if (s.length) fails.push(`notices: told on another device, shown again here: ${JSON.stringify(s)}`);
+    const r = await p.evaluate(() => ({
+      mx: JSON.parse(localStorage.getItem('reefid-mx-lost') || '{}'),
+      ach: JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}')
+    }));
+    if (Object.keys(r.mx.due || {}).length || (r.mx.told || {}).Acropora !== 111 || !r.ach.run10)
+      fails.push(`notices: the merged state not taken: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // Nothing told elsewhere: nothing before the reply, then each once, and the save tells the account.
+  {
+    const [c, p] = await open('slow', false);
+    const early = await shown(p);
+    if (early.length) fails.push(`notices: shown before the sync: ${JSON.stringify(early)}`);
+    await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => fails.push('notices: the new update note never showed'));
+    await p.click('.unlock.recalc .next').catch(() => {});
+    await p.waitForSelector('.unlock.mxlost', {timeout: 8000}).catch(() => fails.push("notices: the learned mark's card never showed"));
+    await p.click('.unlock.mxlost .next').catch(() => {});
+    await p.waitForSelector('.achpop', {timeout: 8000}).catch(() => fails.push("notices: the run's achievement never popped up"));
+    await p
+      .waitForFunction(
+        last => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post && x.told && x.told.includes('recalc:' + last)),
+        last,
+        {timeout: 15000}
+      )
+      .catch(() => {});
+    const sent = await p.evaluate(() =>
+      JSON.parse(localStorage.getItem('test-sheet-log'))
+        .filter(x => x.post && x.told)
+        .pop()
+    );
+    if (!sent || !sent.told.includes('recalc:' + last) || !sent.told.includes('mx:Acropora@111'))
+      fails.push(`notices: the save did not tell the account: ${JSON.stringify(sent)}`);
+    const s = await shown(p);
+    if (s.filter(x => x === 'recalc').length !== 1 || s.filter(x => x === 'mxlost').length !== 1)
+      fails.push(`notices: not shown once each: ${JSON.stringify(s)}`);
+    // The next load: the sheet's copy (as this device saved it) has them all told.
+    await p.evaluate(() => {
+      localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"');
+      localStorage.setItem('reefid-sync-told', '[]');
+      localStorage.setItem('test-sheet-log', '[]');
+    });
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await loaded(p);
+    await p.waitForTimeout(3000);
+    const again = await shown(p);
+    if (again.length) fails.push(`notices: shown again at the next load: ${JSON.stringify(again)}`);
+    await c.close();
+  }
+  // Offline: the note from this device's state, at once.
+  {
+    const [c, p] = await open('offline', false);
+    await p.waitForSelector('.unlock.recalc', {timeout: 5000}).catch(() => fails.push('notices: offline, the update note never showed'));
+    await c.close();
+  }
+  await bs.close();
+  return fails;
+}
+
 // The first-launch question (Pierre, 2026-11-03; core.js CHOICE, tour.js ask, quiz.js startAskShow / startFbShow) and
 // Coral basics in Learn: forced in the tour (no Skip, no Next, no arrow key until answered), stored with how it was
 // given; a skipped tour asks it on a card before the quiz (Escape goes Home, the quiz asks again); "new" offers Coral
@@ -4189,14 +4360,15 @@ const PARTS = [
     'newplayer',
     'onepath',
     'signin',
-    'replay'
+    'replay',
+    'notices'
   ],
   WIDTHS = [390, 1280];
 
 (async () => {
   const run = slot.parts(PARTS, {
       main: ['main', 'overlays'],
-      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'subjtour', 'newplayer', 'onepath', 'signin', 'replay']
+      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'subjtour', 'newplayer', 'onepath', 'signin', 'replay', 'notices']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -4974,6 +5146,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);
+  if (run.has('notices')) for (const f of await noticesAfterSync(base)) fails.push(f);
   server.close();
   if (fails.length) {
     console.error('Page errors:\n' + fails.join('\n'));
