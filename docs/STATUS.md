@@ -34,9 +34,8 @@ This morning: Q314, then the waiting PRs land; the Reports and Events tabs read 
 Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
 mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes into its PR and off this list.
 
-- **Q314** Codex's usage limit (since 15:35 UTC, 11-08; `chatgpt.com/settings/code-review`) stops every merge: (a) add
-  Codex credits, (b) wait for the reset, or (c) a temporary substitute reviewer (an independent Claude review agent on
-  each head, its findings handled like Codex's) until the reset. Recommendation: (c) until the reset, then Codex again.
+- **Q314** Codex's usage limit (since 15:35 UTC 11-08) stops every merge: (a) add Codex credits, (b) wait for the
+  reset, (c) an independent Claude review agent on each head meanwhile, findings handled like Codex's. Recommended: (c).
 - **Q315** Time in the photo rating (reopened 11-08 ~17:00; ROADMAP row): (1) the genus offset's step too, (2) a
   time-intensity term in `photoDiff` served by the sheet, (3) enlarged as a small extra, or none. Recommendation: (2),
   the one the measure supports (others' speed predicts success beyond the rating, Holm 0.003), at L11 level 2.
