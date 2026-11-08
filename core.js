@@ -3015,6 +3015,38 @@
       ...(best[0].oft ? {oft: best[0].oft} : {})
     };
   }
+  // What a typed text that is no unit of the rank asked names instead (Pierre, 2026-11-08, Q237: on a genus question a
+  // common name or a family name was told "not a genus in the game: check the spelling", which misleads), for a nudge
+  // that gives nothing away (the same whether it is the photo's or another one, never a scientific name: quiz.js
+  // typeBind). other: the names of the units of the other ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the
+  // scientific names at the rank asked, in the game or not (one of them, or another name of a unit that is one, is no
+  // common name: the spelling message as before); x.common: the common names at the rank asked (Anemonefishes); x.rank(g):
+  // the rank word of unit g; x.own(g): IMR's name for it (Damselfish; "Surgeonfish & Unicornfish", each part too), its own
+  // name as much as its first. Returns x.rank(g)
+  // for a unit's own name or a scientific name of it (-idae, -inae: Damselfishes, Damselfish, Pomacentridae; Scarinae
+  // for the book's Parrotfishes), 'common' for any
+  // other name it goes by (Anemonefish, Clownfish) or a common name at the rank asked, '' otherwise.
+  function typeElse(text, other, x = {}, norm = typeNorm) {
+    const sci = new Set((x.sci || []).map(norm)),
+      t = norm(text);
+    if (!t || sci.has(t)) return '';
+    const m = typeMatchIn(
+      (other || []).filter(o => !sci.has(norm(o.old))),
+      text,
+      norm
+    );
+    if (m && !m.near) {
+      const imr = String((x.own && x.own(m.g)) || ''),
+        own = !m.old || /i[dn]ae$/i.test(m.old) || [imr, ...imr.split(/\s*&\s*|\s+and\s+/)].some(n => n && norm(n) === norm(m.old));
+      return own ? (x.rank ? x.rank(m.g) : '') || '' : 'common';
+    }
+    const c = typeMatchIn(
+      (x.common || []).filter(n => !sci.has(norm(n))).map(n => ({k: norm(n), g: 'common', old: ''})),
+      text,
+      norm
+    );
+    return c && !c.near ? 'common' : '';
+  }
   // The spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"): how a typed answer reads against the unit asked
   // t, m being typeMatchIn's reading of it. 'exact': one of its names, spelled right (capitals, accents and spaces aside);
   // 'close': one of its names within the spelling tolerance: still a right answer (the genus was recognised; grading
@@ -3793,6 +3825,48 @@
             ? B
             : A;
     return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
+  }
+  // Pierre's change of a player's first-launch answer for one subject (the admin's Players, Change; Code.gs users_
+  // userStart, sheet v99; Pierre 2026-11-08, Q228: a fallback card had moved a player to the wrong answer). data: the
+  // player's saved copy (keysIn names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms.
+  // The change is a choice event appended to the history, via 'admin', never an event taken away: a device's copy would
+  // bring it back at its next merge (startUnion), whereas the appended event, the latest, wins it. Its time is now, or
+  // just after the latest event when a device's clock ran ahead, so it is always the answer in force; its answers count
+  // the player's in that subject (its LEVEL record). Every earlier event stays, so the replay keeps each answer's prior
+  // (startPriorAt). The fallback window starts again from this event, as an answer given in the app does (model.js
+  // startSet; Pierre, 2026-11-08, Q228: "if the player then turns out much better than I thought, the level card must
+  // still be offered"): its answers (w), the opening hold seen in it (hd), its epoch (wt) and a verdict waiting for its
+  // card (v) were about the former answer and go, so no card comes from the answers given under it; the checkpoints
+  // count the answers after the change. The cards shown (fb) stay: once per answer and direction, as in the app. The
+  // copy under the key's name from before the rename (keyLegacy, which an app
+  // of before it still reads) gets the same record when the copy holds it. null when nothing is to change: an unknown
+  // subject or answer, a subject without the question, or no answer saved for it (the player is asked on their device).
+  // Returns {data, start: the new record}.
+  function startAdminSet(data, s, c, now) {
+    if (!isObj(data) || !startOpt(c) || !SUBJECTS.some(S => S.id === s && S.start)) return null;
+    const k = startKey(s),
+      old = keyLegacy(k),
+      parse = x => {
+        try {
+          return JSON.parse(x || 'null');
+        } catch (e) {
+          return null;
+        }
+      },
+      rec = startNorm(parse(typeof data[k] === 'string' ? data[k] : old && data[old]));
+    if (!rec) return null;
+    const P = parse(data[subjKey(s, 'progress')]),
+      L = isObj(P) && isObj(P[LEVEL]) ? P[LEVEL] : {},
+      num = x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0),
+      a = num(L.ok) + num(L.ko),
+      ev = startEvents(rec),
+      t = Math.max(Math.round(Number(now) || 0), ...ev.map(x => stTime(x) + 1).filter(isFinite)),
+      {w, hd, v, wt, ...rest} = rec,
+      start = startNorm({...rest, w: [], h: startEventsOf({h: [...ev, [c, a, t, 'admin']]})}),
+      json = JSON.stringify(start),
+      out = {...data, [k]: json};
+    if (old && old in data) out[old] = json;
+    return {data: out, start};
   }
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
@@ -4621,6 +4695,7 @@
     typeNorm,
     typeNamesOf,
     typeMatchIn,
+    typeElse,
     typeVerdict,
     typeDiff,
     typedShare,
@@ -4666,6 +4741,7 @@
     startStateAt,
     startNorm,
     startUnion,
+    startAdminSet,
     startWt,
     START_CAP,
     replayedOf,
