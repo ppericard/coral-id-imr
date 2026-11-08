@@ -142,7 +142,15 @@ Registered by `app.js` once every tier is in (https only); it serves the app off
   Each open app page (`index.html` only) is asked its version (`reefid-ver?`): a page that answers reloads by itself at
   its next calm moment (`app.js` `UPDATED`: the next page change, or back into view unless a question waits for its
   answer, `QOPEN`); one that does not answer within 3 s runs a version from before 2026-11-03 and is reloaded now.
-  `app.js` `swCheck` asks for a new version when the page comes back into view and every 30 min.
+  `app.js` `swCheck` asks for a new version when the page comes back into view (at most every 5 min) and every 30 min.
+- **A page no service worker controls** (a browser without one, such as a chat app's built-in browser or some private
+  windows, or one that blocks it; 2026-11-08): `swCheck` also reads, at those same moments, the deployed page itself
+  (`buildCheck`: the page's own address, `cache: 'no-store'`) and compares its `<meta name="build">` (the deploy's run
+  number, `tools/stamp_versions.py`) with the running page's; a higher one counts as a takeover (`UPDATED`, the same
+  calm reload, never while a question waits for its answer). Higher, not different (`newBuild`): a host's cache still
+  serving the older page would otherwise reload it in a loop. A copy never deployed has no build number and reads
+  nothing. Tests: `tests/update.test.js`, `tests/net.smoke.js` check 13 (service workers blocked, the build stamped by
+  the test server).
 - **Fetch**: photos (`/img/` on the site or on R2) cache first, looked up under both addresses (`twinOf`); from R2 in
   CORS mode, two tries `PHOTO_RETRY` ms apart, a 404 not retried, then the failure goes to the page, which picks the
   next source (`app.js` `photoFail`), and R2 is not asked for `R2_PAUSE` (60 s). Versioned files and fonts: cache first,
