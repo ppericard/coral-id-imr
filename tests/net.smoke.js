@@ -897,6 +897,46 @@ const server = http.createServer((req, res) => {
         fails.push(`R2 cut off: a cropped photo from its online original lacks its crop (${JSON.stringify([cr.want, c1, c2])})`);
       if (![i1, i2].every(x => x.ok && x.src.startsWith('img/') && !x.vb))
         fails.push(`R2 cut off: an IMR lecture photo did not come from the site's img/ (${JSON.stringify([i1, i2])})`);
+      // A turned photo (Pierre's rotation baked into its file, ro: 90; Codex review #793) shown from its online original:
+      // cut and turned in a canvas (app.js turnSet), on an element that fell back and on one made afterwards, its
+      // figure's backdrop and its 480 px step too; never the original the wrong way up.
+      const tu = await p.evaluate(async () => {
+        const c = [...photoIdx().f.values()].find(x => x.cr && !x.r && /inaturalist/.test(x.src || ''));
+        c.ro = 90;
+        const box = document.createElement('figure'),
+          u = photoOnline(c.src, 's');
+        box.className = 'qph';
+        box.setAttribute('style', `--qbg:url('${u}')`);
+        box.innerHTML = `<img src="${PHOTO_BASE}img/${c.f}-s.webp${ver(c)}" alt=""><img src="${loc(c, 's')}" data-lo="${u}" alt="">`;
+        document.getElementById('view').append(box);
+        const I = [...box.querySelectorAll('img')],
+          o = new Image();
+        o.src = u;
+        const ready = i =>
+          new Promise(ok => (i.complete && i.naturalWidth && /^blob:/.test(i.src) ? ok() : i.addEventListener('load', ok)));
+        for (let k = 0; k < 50 && !I.every(i => /^blob:/.test(i.getAttribute('src') || '')); k++)
+          await new Promise(ok => setTimeout(ok, 100));
+        await Promise.race([Promise.all([...I, o].map(ready)), new Promise(ok => setTimeout(ok, 5000))]);
+        const out = {
+          want: [Math.round((c.cr[3] - c.cr[1]) * o.naturalHeight), Math.round((c.cr[2] - c.cr[0]) * o.naturalWidth)],
+          im: I.map(i => ({
+            src: (i.getAttribute('src') || '').slice(0, 5),
+            size: [i.naturalWidth, i.naturalHeight],
+            vb: i.style.getPropertyValue('object-view-box')
+          })),
+          lo: (I[1].dataset.lo || '').slice(0, 5),
+          bg: box.style.getPropertyValue('--qbg').slice(0, 10)
+        };
+        box.remove();
+        delete c.ro;
+        return out;
+      });
+      if (
+        !tu.im.every(x => x.src === 'blob:' && Math.abs(x.size[0] - tu.want[0]) <= 1 && Math.abs(x.size[1] - tu.want[1]) <= 1 && !x.vb) ||
+        tu.lo !== 'blob:' ||
+        !/^url\(['"]?blob:/.test(tu.bg)
+      )
+        fails.push(`R2 cut off: a turned photo from its online original is not cut and turned (${JSON.stringify(tu)})`);
       const n = asked;
       // A question none of whose photos showed takes no answer (#490: its answers are closed): said as a failure of this
       // check, never a click that waits 30 s and stops every check after it (2026-11-04, a local run).

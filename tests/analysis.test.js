@@ -386,6 +386,122 @@ test("tools/analyses.js: the head of an older script (every subject's rows) is j
   assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
 });
 
+// Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"), refitted every 1000 answers of that
+// subject. The made-up fish answers of the tests and the admin demo: synth on the fish units' photos (core.js fishGen),
+// tagged with their subject as the sheet serves them.
+const fishLog = (n, o = {}) => {
+  const fs = require('fs'),
+    path = require('path'),
+    C = require('../core.js'),
+    rd = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')),
+    G = C.fishGen(rd('fish.json'), rd('fish-photos.json').photos).gen,
+    ids = Object.keys(G)
+      .filter(id => G[id].views.wide.length >= 3)
+      .slice(0, 24),
+    k = n / A.DEMO_PLAYERS.reduce((t, p) => t + p[2], 0);
+  return A.synth({
+    players: A.DEMO_PLAYERS.map(p => ['f' + p[0].length + p[1], p[1], Math.ceil(p[2] * k), p[3]]),
+    photos: Object.fromEntries(ids.map(id => [id, G[id].views.wide.slice(0, 8).map(p => ({f: p.f, v: 'wide'}))])),
+    look: Object.fromEntries(ids.map(id => [id, G[id].look || []])),
+    start: Date.UTC(2026, 9, 1),
+    end: Date.UTC(2026, 10, 1),
+    seed: o.seed || 3,
+    subject: 'fish'
+  });
+};
+
+test('tools/analyses.js: one report per subject, each from its own answers (the subject split)', async () => {
+  const {sheetRunAll, subjects, metaOf} = require('../tools/analyses.js'),
+    C = require('../core.js'),
+    fs = require('fs'),
+    data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json')));
+  assert.deepStrictEqual(subjects(), ['coral', 'fish'], 'the replayed subject first, then every subject with analyses');
+  assert.deepStrictEqual(metaOf('fish'), {ph: {}}, 'no coral photo features for the fish');
+  assert.ok(Object.keys(metaOf('coral').ph).length > 100, "the corals' photo features from data.json");
+  const coral = A.demoLog(data, Date.UTC(2026, 10, 1), {
+      days: 300,
+      players: A.DEMO_PLAYERS.slice(0, 3).map(p => [p[0], p[1], 400, p[3]])
+    }).map(r => ['id' + r[0].length, ...r.slice(1)]),
+    fish = fishLog(1150),
+    rows = [...coral, ...fish].sort((a, b) => a[1] - b[1]),
+    counts = C.subjCounts(rows);
+  assert.ok(counts.coral >= 1000 && counts.fish >= 1000, JSON.stringify(counts));
+  const stored = {},
+    puts = [],
+    logs = [];
+  let v = A.AN_SUBJ_SHEET;
+  const io = {
+    post: async b => {
+      if (b.analysesGet) {
+        const sj = b.subject || 'coral',
+          t = stored[sj],
+          meta = t && {answers: JSON.parse(t).answers, av: JSON.parse(t).AV, subject: sj};
+        // an older script knows one report: the corals', whatever the subject asked
+        const st = v >= A.AN_SUBJ_SHEET ? meta : stored.coral && {answers: JSON.parse(stored.coral).answers, av: A.AV, subject: 'coral'};
+        return {
+          ok: true,
+          v,
+          subject: v >= A.AN_SUBJ_SHEET ? sj : 'coral',
+          answers: counts[sj],
+          counts,
+          stored: st,
+          ...(b.head ? {} : {report: v >= A.AN_SUBJ_SHEET ? t : stored.coral})
+        };
+      }
+      if (b.readAnswers) return {ok: true, rows: rows.map(r => r.slice())};
+      if (b.analysesPut) {
+        const r = JSON.parse(b.report);
+        puts.push(r.subject);
+        stored[v >= A.AN_SUBJ_SHEET ? r.subject : 'coral'] = b.report;
+        return {ok: true, stored: {}};
+      }
+      return {ok: false, error: 'input'};
+    },
+    log: t => logs.push(t)
+  };
+  // an older script: the corals' report only, the fish one neither stored nor read in its place
+  v = A.AN_SUBJ_SHEET - 1;
+  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'stored', fish: 'old'});
+  assert.deepStrictEqual(puts, ['coral']);
+  assert.ok(/^Fish: the sync script answers as v\d+: one report per subject needs v\d+\. Nothing done\.$/.test(logs.pop()));
+  v = A.AN_SUBJ_SHEET;
+  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'wait', fish: 'stored'});
+  assert.deepStrictEqual(puts, ['coral', 'fish']);
+  const rc = JSON.parse(stored.coral),
+    rf = JSON.parse(stored.fish);
+  assert.strictEqual(rc.subject, 'coral');
+  assert.strictEqual(rf.subject, 'fish');
+  assert.strictEqual(rc.answers, counts.coral, "the corals' report counts the coral answers only");
+  assert.strictEqual(rf.answers, counts.fish, 'the fish report counts the fish answers only');
+  assert.deepStrictEqual(rf.M, [1000]);
+  // the fish report's units are the fish units, never a coral genus; the coral one's never a fish unit
+  const units = rep => {
+    const R = rep.R[rep.M[rep.M.length - 1]];
+    return [...(R.A.learn.genus || []).map(g => g.k), ...((R.A.conf.map && R.A.conf.map.g) || [])];
+  };
+  assert.ok(units(rf).length && units(rf).every(g => /^[fgs]:/.test(g)), units(rf).join(' '));
+  assert.ok(units(rc).length && units(rc).every(g => !/^[fgs]:/.test(g)), units(rc).join(' '));
+  // the fish photos have one view: no view effect in its mix-ups, no photo feature in What makes a photo hard
+  const F = rf.R[1000].A;
+  assert.deepStrictEqual(
+    F.conf.effects.map(e => e.k),
+    ['sd_player', 'sd_pair'],
+    'no view never shown read as "no clear effect"'
+  );
+  assert.deepStrictEqual(F.photo.effects, []);
+  assert.ok(
+    ['medium', 'macro'].every(k => rc.R[1000].A.conf.effects.some(e => e.k === k)),
+    "the corals' views kept"
+  );
+  // nothing new: both wait
+  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'wait', fish: 'wait'});
+  assert.strictEqual(logs.pop(), `Fish: ${counts.fish} answers, newest milestone 1000: the next one at 2000.`);
+  // the token refused: the corals stop the run, the fish are not asked
+  assert.deepStrictEqual(await sheetRunAll({post: async () => ({ok: false, error: 'token'}), log: () => {}}, 'tok', {B: 0}), {
+    coral: 'refused'
+  });
+});
+
 // The admin's status line beside the milestone switch (admin-analyses.js anStatus): the subject and its own numbers.
 test('admin Analyses status line: the subject, the milestone fitted, its answers since, the next one', () => {
   const fs = require('fs'),

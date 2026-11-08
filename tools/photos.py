@@ -41,6 +41,60 @@ def save(im, f, folder=IMG):
         t.save(os.path.join(folder, f'{f}{suf}.webp'), 'WEBP', quality=q, method=5)
 
 
+# Pierre's rotation (curation.json rot {f: 90 | 180 | 270}, fish.rot for the fish: degrees clockwise; Pierre, 2026-11-08)
+# and his crop (crop {f: [l, t, r, b]}, fractions of the ORIGINAL photo) compose one way: the crop is cut from the
+# original first, then the cut is turned. So a crop never changes when the photo is turned (the crop box turns with the
+# photo), the judging pass's proposed crops stay valid, and the admin draws the same thing: object-view-box (the crop,
+# on the original) then a CSS rotate (autosort.js photoAt is the same map, tests/rotate.test.js checks both agree).
+ROTS = (90, 180, 270)
+
+
+def rot_of(v):
+    """A rotation as stored (90, 180 or 270 degrees clockwise), 0 for none or anything else."""
+    try:
+        v = int(v) % 360
+    except (TypeError, ValueError):
+        return 0
+    return v if v in ROTS else 0
+
+
+def turn(im, crop=None, rot=0):
+    """Photo im (a PIL image, the original) with Pierre's crop then his rotation applied."""
+    if crop:
+        W, H = im.size
+        im = im.crop((round(crop[0] * W), round(crop[1] * H), round(crop[2] * W), round(crop[3] * H)))
+    r = rot_of(rot)
+    if r:
+        from PIL import Image
+        # PIL's ROTATE_90 turns counter-clockwise: 90 degrees clockwise is its ROTATE_270 (exact, no resampling).
+        im = im.transpose({90: Image.Transpose.ROTATE_270, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_90}[r])
+    return im
+
+
+def stale(p, crop=None, rot=0):
+    """Whether photo record p's files lack Pierre's crop or rotation (data.json / fish-game.json cr, ro: what its files
+    were made with), so they must be made again from the original."""
+    return p.get('cr') != crop or rot_of(p.get('ro')) != rot_of(rot)
+
+
+def mark(p, crop=None, rot=0):
+    """Records on p what its files were just made with: cr (the crop) and ro (the rotation), absent when none."""
+    if crop: p['cr'] = crop
+    else: p.pop('cr', None)
+    if rot_of(rot): p['ro'] = rot_of(rot)
+    else: p.pop('ro', None)
+    return p
+
+
+def write(im, f, folder, crop=None, rot=0):
+    """The four sizes of photo f from its original im, Pierre's crop and rotation applied (turn); returns its shape (ar,
+    width / height of the 480 px file, as tools/apply_ratios.py measures it)."""
+    save(turn(im, crop, rot), f, folder)
+    from PIL import Image
+    w, h = Image.open(os.path.join(folder, f + '-s.webp')).size
+    return round(w / h, 2)
+
+
 def remove(f, folder=IMG):
     for suf in SUFFIXES:
         p = os.path.join(folder, f'{f}{suf}.webp')
