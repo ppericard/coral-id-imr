@@ -1,5 +1,5 @@
 // Change the starting answer (Pierre, 2026-11-08, Q228): the admin's change of a player's first-launch answer for one
-// subject (core.js startAdminSet; Code.gs users_ userStart, sheet v98; admin.js startBlock), merged into the player's
+// subject (core.js startAdminSet; Code.gs users_ userStart, sheet v99; admin.js startBlock), merged into the player's
 // devices by the normal sync (core.js startUnion); the fallback window starts again from it (model.js startStep,
 // startDue: the level card is still offered, on the answers given after the change only).
 const test = require('node:test'),

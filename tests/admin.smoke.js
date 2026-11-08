@@ -1840,10 +1840,10 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
     };
     await checkLast('default sort');
-    // Change the starting answer (sheet v98, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
+    // Change the starting answer (sheet v99, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
     // answer and its history, Change… lists the answers, one picked asks Change / Cancel in the page (no browser dialog),
     // Change sends it and says so; the new answer and its history line show, and nothing is wider than the screen while
-    // the answers are listed. Before v98, Change… is greyed (rule D4).
+    // the answers are listed. Before v99, Change… is greyed (rule D4).
     {
       const q = await p.context().newPage();
       q.on('pageerror', e => fails.push(`${w}px Starting answer page error: ${e.message}`));
@@ -1857,9 +1857,9 @@ const WIDTHS = [390, 1280];
       const bar = () => q.$eval('.adm-ustart', x => x.innerText.replace(/\s+/g, ' ')),
         wide = () => q.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       try {
-        await open(97);
-        if (!(await q.$('[data-ustart][disabled]'))) fails.push(`${w}px Starting answer (v97): Change… not greyed`);
         await open(98);
+        if (!(await q.$('[data-ustart][disabled]'))) fails.push(`${w}px Starting answer (v98): Change… not greyed`);
+        await open(99);
         const b0 = await bar();
         if (!/Corals starting answer: I know corals well/.test(b0) || !/I had the IMR coral course · in the welcome tour/.test(b0))
           fails.push(`${w}px Starting answer: bar ${JSON.stringify(b0)}`);

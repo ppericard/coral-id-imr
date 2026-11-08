@@ -938,7 +938,7 @@
       u.board = p.hide ? -1 : 1;
       return {ok: true, board: u.board};
     }
-    // Sheet v98: Change the starting answer (Code.gs users_ userStart, the same core.js startAdminSet), with ?demo&v=98.
+    // Sheet v99: Change the starting answer (Code.gs users_ userStart, the same core.js startAdminSet), with ?demo&v=99.
     if (p.userStart) {
       const u = S.users[lc(p.userStart)];
       if (!u) return {ok: false, error: 'user'};
@@ -1068,7 +1068,7 @@
         p.anonDelete ||
         p.userBoard ||
         (p.userArchive && V >= 58) ||
-        (p.userStart && V >= 98) ||
+        (p.userStart && V >= 99) ||
         (p.userGroup && V >= 48)
       )
         return ok(users(p));

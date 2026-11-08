@@ -1557,7 +1557,7 @@ It changes little for them: at 50+ answers the prior weighs a sixth or less, the
 fallback card comes for an inferred answer; it is shown as "inferred" in the admin's player journey.
 
 **Changed by Pierre** (2026-11-08, Q228: a fallback card had moved a player who is no expert from "IMR course" to "know
-well"): the admin's Players changes a player's answer for one subject (`core.js` `startAdminSet`, sheet v98
+well"): the admin's Players changes a player's answer for one subject (`core.js` `startAdminSet`, sheet v99
 `userStart`). It is a choice event appended to the record's history, via `admin`, at the time of the change: the answers
 before it keep the prior they had (`startPriorAt`), the next ones take the new one, and every device merges it at its
 next sync (`startUnion`: the latest answer wins). The fallback window restarts from the change, as after an answer given

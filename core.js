@@ -3781,7 +3781,7 @@
     return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
   }
   // Pierre's change of a player's first-launch answer for one subject (the admin's Players, Change; Code.gs users_
-  // userStart, sheet v98; Pierre 2026-11-08, Q228: a fallback card had moved a player to the wrong answer). data: the
+  // userStart, sheet v99; Pierre 2026-11-08, Q228: a fallback card had moved a player to the wrong answer). data: the
   // player's saved copy (keysIn names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms.
   // The change is a choice event appended to the history, via 'admin', never an event taken away: a device's copy would
   // bring it back at its next merge (startUnion), whereas the appended event, the latest, wins it. Its time is now, or
