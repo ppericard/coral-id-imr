@@ -11,6 +11,22 @@
 // itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the last three. The rank links to the
 // leaderboard, the achievements to their page. One level everywhere (Pierre, 2026-11-06, Q134): the Elo is always this
 // device's own level (P[LEVEL], eloLine), never the board's copy of it, so it does not change when the board arrives.
+// A subject with a global score (core.js SUBJECTS score: the fish) shows its components under the name, from the same
+// computation as the ring's % (model.js headScore, core.js treeScore; FISH_PATH "My progress (fish)": three bars under the
+// headline): the families, the species by common name and the species by scientific name (the genus credit included).
+const scoreBars = H =>
+  H
+    ? `<div class="pbars" role="list" aria-label="Your progress in parts">${[
+        ['Families', H.entries],
+        ['Common names', H.common],
+        ['Scientific names', H.S]
+      ]
+        .map(([t, x]) => {
+          const v = Math.round(100 * x);
+          return `<span role="listitem" title="${t}: ${v}%"><small>${t}</small><span class="bar"><span style="width:${v}%"></span></span><b>${v}%</b></span>`;
+        })
+        .join('')}</div>`
+    : '';
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH_L()
@@ -29,7 +45,7 @@ function badge(ring, pct, sub) {
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
             .join('')}</a>`
         : ''
-    }</span></div></div>`;
+    }</span>${scoreBars(headScore())}</div></div>`;
 }
 // A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
 // tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
@@ -165,7 +181,7 @@ function quizBoard() {
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
-  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list))}<div class="pgwrap"></div>
+  <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
@@ -284,7 +300,7 @@ const unlockText = (list = slateGenera(), html = false) => {
 function showProg() {
   if (!DATA) return;
   const n = slateGenera();
-  const pt = `${progPct(n)}%`;
+  const pt = `${headPct(n)}%`;
   document.getElementById('progn').textContent = pt;
   const p2 = document.getElementById('progn2');
   if (p2) p2.textContent = pt;
@@ -292,7 +308,7 @@ function showProg() {
   const pill = document.getElementById('prog'),
     out = !!SYNC_URL && !SYNC;
   pill.querySelector('.pl').textContent = 'Progress';
-  pill.style.setProperty('--pp', progPct(n));
+  pill.style.setProperty('--pp', headPct(n));
   // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
   // "Not saved" pill beside it already says so in words (design re-review p9).
   pill.title = `${
@@ -555,7 +571,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     met: st.filter(x => x >= 1).length,
     q: [2, 3, 4].map(k => st.filter(x => x >= k).length),
     learned: st.filter(x => x >= 5).length,
-    pct: progPct(L),
+    pct: headPct(L),
     streak: A._best || 0,
     duel: L.some(n => (P[n] || {}).du),
     cor: !!A._cor,
@@ -1074,7 +1090,7 @@ function recalcNotice() {
   cardShow({
     kind: k,
     cls: 'recalc',
-    visual: k === 'update' ? cardRing(progPct()) : '',
+    visual: k === 'update' ? cardRing(headPct()) : '',
     kick: due[0].k || 'Update',
     title: due[0].t,
     body: due.map((x, i) => `${i ? `<h3>${x.t}</h3>` : ''}<p>${x.p}</p>`).join(''),

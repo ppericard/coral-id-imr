@@ -930,6 +930,56 @@ test('board (v95): each subject its own board, by its % over the units its apps 
   assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, []);
 });
 
+test('board (v100): a subject with a global score ranks by core.js treeScore over the tree its apps sent', () => {
+  const s = seed();
+  const fish = P => ({...prog(3), 'reefid-sync-fish-progress': JSON.stringify(P)});
+  // Two families (the common one weighs 3, the rare one 1), one genus unit under the common one.
+  const tree = {
+    f: [
+      ['f:Pomacentridae', 3, 1],
+      ['f:Gobiidae', 1, 3]
+    ],
+    s: [
+      [3, 'g:Chromis', '', [], 1],
+      [1, '', '', [], 3]
+    ]
+  };
+  const lvl = th => ({ok: 220, ko: 30, th});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({'f:Gobiidae': {ok: 9, ko: 0, mx: 1}, '~level': lvl(1)}),
+    summary: {board: 1, boards: {fish: tree}},
+    answers: []
+  });
+  s.post({
+    name: 'Ben',
+    pin: '1111',
+    data: fish({'f:Pomacentridae': {ok: 9, ko: 0, mx: 1}, 'g:Chromis': {ok: 9, ko: 0, mx: 1}, '~level': lvl(0.5)}),
+    summary: {board: 1},
+    answers: []
+  });
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'the tree kept as sent');
+  // Ana: the rare family only, √(0.25 × 1/4) = 25%. Ben: the common family and its genus, √(0.25 × 3/4 + 0.75 × 0.8 ×
+  // 0.5 × 3/4) = √0.4125 = 64%.
+  assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, [
+    ['Ben', 64, 0.5],
+    ['Ana', 25, 1]
+  ]);
+  // A tree that fails the checks keeps the one stored; a list (an older app) replaces it, read as before.
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: {f: [['=SUM(A1)', 1, 1]], s: []}}}, answers: []});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({}),
+    summary: {board: 1, boards: {fish: {f: [['f:Gobiidae', 1, 1]], s: [[1, 'g:X', '', ['n:1', 'n:2', 'n:3', 'n:4'], 1]]}}},
+    answers: []
+  });
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'a formula-like unit or 4 common names: refused');
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae', 'f:Gobiidae']}}, answers: []});
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(['f:Pomacentridae', 'f:Gobiidae']));
+});
+
 test('board (v20): an admin hides a player from the leaderboard; their own syncs never bring them back', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('a3')]});

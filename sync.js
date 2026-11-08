@@ -75,11 +75,17 @@ function syncSummary() {
 // The units each other subject's leaderboard counts (SUBJECTS board after the first; sheet v95, Code.gs
 // boardUnitsSave_): {id: its slate}, as My progress counts it (UNITS slate), the sheet then ranking that board on each
 // player's saved progress of the subject over it. A subject whose content is not loaded on this device sends none.
+// A subject with a global score (core.js SUBJECTS score: the fish) sends its tree instead (app.js UNITS tree; sheet v100:
+// the board ranks it by core.js treeScore, the % My progress shows); an older script ignores what is not a list.
 const boardUnits = () =>
   Object.fromEntries(
     SUBJECTS.filter((S, i, a) => S.board && S !== a.find(x => x.board))
-      .map(S => [S.id, typeof UNITS === 'object' && UNITS[S.id] ? UNITS[S.id].slate() : []])
-      .filter(([, u]) => u.length)
+      .map(S => {
+        const U = typeof UNITS === 'object' ? UNITS[S.id] : null,
+          T = U && S.score && U.tree ? U.tree() : null;
+        return [S.id, T || (U ? U.slate() : [])];
+      })
+      .filter(([, u]) => u && (Array.isArray(u) ? u.length : (u.f || []).length))
   );
 // The saved data comes with the key names of the app that saved it (core.js keysIn: an app from before the rename to
 // IMR Reef ID, 2026-11-03, saves the old ones): read with the new names only.

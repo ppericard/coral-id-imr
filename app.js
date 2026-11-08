@@ -569,6 +569,7 @@ function fishGenera(X, F) {
   X.sci = sci;
   // The species' names by id (fish.json species, the PDF name), for the species shown that each answer logs (UNITS species).
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
+  X.tree = fishScoreTree(X, F); // core.js: the tree of the fish global score
   return X;
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
@@ -1344,12 +1345,21 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // opens, the card at the threshold, My progress any time after). Its families count in the fish % open or not (Q204: 100%
 // is everything known, circle 3 included; a player who says no has room left). Within what may open, the usual weighted
 // opening (model.js openPick).
-const FISH_C3 = 0.5;
+// The circle-3 threshold reads the fish score's circle-1 Entries component (Pierre, 2026-11-08: the path follows the new
+// scores; every score from the one computation, core.js treeScore by[1].entries, the circle-1 families weighted by how
+// common their species are): 55%, the value at which the simulated players reach it at the same answer as the plain mean's
+// 50% did (docs/LEARNING.md "Fish: the global score, built"). Without the subject's score (core.js SUBJECTS fish score,
+// the one switch), the plain mean of the circle-1 families at 50%, as before.
+const FISH_C3 = {entries: 0.55, mean: 0.5};
+const fishC3 = () => {
+  const h = headScore();
+  return h ? ((h.by[1] || {}).entries || 0) >= FISH_C3.entries : progPct(FISH.c1) >= 100 * FISH_C3.mean;
+};
 const fishGate = n => {
   const c = (GX(n) || {}).circle || 1;
   if (c < 2) return true;
   const c1 = FISH ? FISH.c1 : [];
-  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : progPct(c1) >= 100 * FISH_C3;
+  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!FISH && fishC3();
 };
 const UNITS = {
   coral: {
@@ -1456,6 +1466,8 @@ const UNITS = {
       refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
     },
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
+    // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
+    tree: () => (FISH ? FISH.tree : null),
     core: () => (FISH ? FISH.c1 : []),
     gate: fishGate,
     // Circle 3, the families beyond the IMR course (Pierre, 2026-11-07 08:50): offered at the Q177 threshold instead of
@@ -1464,7 +1476,7 @@ const UNITS = {
       {
         k: 'beyond',
         units: () => (FISH ? FISH.c3 : []),
-        due: () => !!FISH && progPct(FISH.c1) >= 100 * FISH_C3,
+        due: () => !!FISH && fishC3(),
         kick: 'Beyond the IMR course',
         title: () => 'More fish families, beyond the IMR course?',
         body: 'The families divers look for around Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',
@@ -1508,7 +1520,7 @@ const UNITS = {
       `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), your fish progress, and scientific genus names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
-      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
     help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,

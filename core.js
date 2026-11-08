@@ -474,6 +474,12 @@
       // Its own leaderboard (Pierre, 2026-11-04: separate per subject, no merged ranking): by its %, then its Elo (sheet
       // v95, Code.gs board_ &s=fish; progress.js loadBoard).
       board: true,
+      // Its global score (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the commonness weights and the square-root
+      // display; docs/FISH_PATH.md "My progress (fish)"): core.js treeScore over its tree (app.js UNITS fish tree), shown
+      // as its headline % (model.js headPct: the header, My progress, the leaderboard, the fish % achievements) with its
+      // components (My progress's bars). The one switch: without it the headline is the families' mean again (progPct),
+      // and the rules that read it go back with it (app.js fishGate).
+      score: {entries: 0.25, a: 11 / 15, b: 0.8, half: 0.5, pow: 0.5},
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
       // them); the judged ease's prior as measured (CALIB.ease). Q186 (Pierre, 2026-11-06 15:33: the easy photos strongly
       // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
@@ -2490,6 +2496,127 @@
   // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
   function pctOf(P, list) {
     return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n], P, n), 0)) / list.length) : 0;
+  }
+  // Weights by commonness (Pierre, 2026-11-08, Q242: the fish global score's alternative A): each item weighs 1/√ of its
+  // rank by its count, the largest count first (rank 1 weighs 1, rank 4 weighs 0.5, rank 100 weighs 0.1). Tied counts
+  // share the mean of the ranks they span (fractional ranking), so the order of the list never matters, and the items
+  // nobody counted (0) share the last ranks' mean: they weigh the least, never nothing. counts: numbers (anything else
+  // counts 0). Returns the weights in the list's order.
+  function rankWeights(counts) {
+    const c = (counts || []).map(x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0)),
+      ord = c.map((x, i) => i).sort((i, j) => c[j] - c[i]),
+      w = new Array(c.length);
+    for (let a = 0; a < ord.length;) {
+      let b = a;
+      while (b + 1 < ord.length && c[ord[b + 1]] === c[ord[a]]) b++;
+      const r = (a + 1 + b + 1) / 2; // the mean of ranks a+1 .. b+1
+      for (let k = a; k <= b; k++) w[ord[k]] = 1 / Math.sqrt(r);
+      a = b + 1;
+    }
+    return w;
+  }
+  // The tree of the fish global score (treeScore, SUBJECTS fish score; Pierre, 2026-11-08, Q242; docs/FISH_PATH.md
+  // "My progress (fish)"): the families of the slate on the trunk, each weighted by the sum of its species' weights; on the
+  // branches every species of those families, weighted by how common it is near Dauin (rankWeights over fish.json
+  // present.dauin, the observers within 40 km), with its units: its genus when the game has it as a unit (the scientific
+  // genera of circle 1, app.js fishGenera), its scientific and common names none until the species level exists. The species with
+  // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
+  // The circle is the family's (treeScore by: the components per circle).
+  function fishScoreTree(X, F) {
+    const sp = new Map((F.species || []).map(s => [s.id, s])),
+      fam = new Map((F.families || []).map(f => [f.id, f])),
+      fams = [...X.c1, ...X.c2, ...X.c3].filter(id => fam.has(id)),
+      L = fams.flatMap(id => (fam.get(id).species || []).filter(x => sp.has(x)).map(x => [sp.get(x), id])),
+      w = rankWeights(L.map(([s]) => (s.present || {}).dauin || 0)),
+      fw = {},
+      pack = new Map(),
+      r4 = x => Math.round(x * 1e4) / 1e4,
+      circ = id => X.gen[id].circle || 1;
+    L.forEach(([s, id], i) => {
+      fw[id] = (fw[id] || 0) + w[i];
+      const g = s.genus && X.gen[s.genus] ? s.genus : '',
+        named = !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
+        key = g + '|' + circ(id) + '|' + named,
+        e = pack.get(key) || [0, g, '', named ? [] : null, circ(id)];
+      e[0] += w[i];
+      pack.set(key, e);
+    });
+    return {f: fams.map(id => [id, r4(fw[id] || 0), circ(id)]), s: [...pack.values()].map(e => [r4(e[0]), ...e.slice(1)])};
+  }
+  // A subject's global score and its components, from one computation (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the
+  // weights and the √ display; docs/FISH_PATH.md "My progress (fish)"). Every unit keeps its own bar (scoreOf: the bar as
+  // the app shows it, 1 once its exam is passed, 0 never answered), which drives its levels and its exam, unchanged; this
+  // only adds them up.
+  // T, the subject's tree (app.js UNITS tree): f [[family unit, weight, circle]], the trunk; s [[weight, genus unit,
+  // species unit, [common-name units], circle]], the branches, one per species ('' and [] for units that do not exist
+  // yet). An entry of s may stand for several species of one genus with no unit of their own (their weights summed: the
+  // same score, a shorter tree for the sheet). A family's weight is the sum of its species' (rankWeights over the
+  // observers near Dauin), a genus's the sum of its species' too.
+  // K, the subject's constants (core.js SUBJECTS score): entries (the trunk's share, 0.25), a and b (a species' credit
+  // with its common names only, its scientific name only), half (a genus's share of its species' scientific credit), pow
+  // (the display: 100 raw^pow, 0.5 the square root).
+  // Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, half × its genus's bar),
+  // credit = a C + b S + (1 − a − b) C S. raw = entries × Entries + (1 − entries) × the weighted mean credit.
+  // Returns {pct (the % shown, 0-100, rounded), raw, and the components, each a weighted mean from 0 to 1: entries (the
+  // families), genera (the genera, each weighted by its species), common (C over the species), scientific (the species'
+  // own scientific names, no genus credit), S (S over the species, the genus credit included), credit; by: the same per
+  // circle, {1: {...}, 2: {...}}; units: every unit of the tree with its own bar}. A rule that reads a score reads one of
+  // these (app.js fishGate: by[1].entries). A species entry whose common names are null has none at all (Q247, below).
+  function treeScore(P, T, K) {
+    const F = (T && T.f) || [],
+      S = (T && T.s) || [],
+      k = K || {},
+      a = k.a,
+      b = k.b,
+      half = k.half,
+      we = k.entries,
+      units = {},
+      m = k => (k ? (k in units ? units[k] : (units[k] = scoreOf((P || {})[k], P, k))) : 0),
+      acc = () => ({fw: 0, f: 0, sw: 0, cw: 0, c: 0, sc: 0, S: 0, cr: 0, gw: 0, g: 0}),
+      all = acc(),
+      by = {},
+      at = c => (by[c] = by[c] || acc()),
+      genW = {};
+    F.forEach(([u, w, c]) => {
+      const x = m(u) * w;
+      [all, at(c || 1)].forEach(o => ((o.fw += w), (o.f += x)));
+    });
+    S.forEach(([w, g, sp, names, c]) => {
+      // names null: a species with no common name at all (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la
+      // branche nom commun"): out of the Common names component, and its credit is its scientific value alone (S), so it
+      // still reaches 1 once its scientific name is mastered (100% stays reachable). [] : its common names have no unit
+      // yet (0 until the species level).
+      const none = names === null,
+        N = Array.isArray(names) ? names : [],
+        C = N.length ? N.reduce((t, n) => t + m(n), 0) / N.length : 0,
+        own = m(sp),
+        G = m(g),
+        Sv = Math.max(own, half * G),
+        cr = none ? Sv : a * C + b * Sv + (1 - a - b) * C * Sv;
+      [all, at(c || 1)].forEach(
+        o => ((o.sw += w), none || ((o.cw += w), (o.c += w * C)), (o.sc += w * own), (o.S += w * Sv), (o.cr += w * cr))
+      );
+      if (g) (genW[g] = genW[g] || {w: 0, c: c || 1, m: G}).w += w;
+    });
+    Object.values(genW).forEach(o => [all, at(o.c)].forEach(x => ((x.gw += o.w), (x.g += o.w * o.m))));
+    const out = o => {
+      const d = (x, y) => (y > 0 ? x / y : 0),
+        r = {
+          entries: d(o.f, o.fw),
+          genera: d(o.g, o.gw),
+          common: d(o.c, o.cw),
+          scientific: d(o.sc, o.sw),
+          S: d(o.S, o.sw),
+          credit: d(o.cr, o.sw)
+        };
+      r.raw = we * r.entries + (1 - we) * r.credit;
+      r.pct = Math.round(100 * Math.pow(Math.max(0, Math.min(1, r.raw)), k.pow));
+      return r;
+    };
+    const R = out(all);
+    R.by = Object.fromEntries(Object.entries(by).map(([c, o]) => [c, out(o)]));
+    R.units = units; // every unit of the tree with its own bar (scoreOf), the per-unit level of each part
+    return R;
   }
 
   // The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; docs/LEARNING.md "The domain-score bar"): the bar of a
@@ -4616,6 +4743,9 @@
     pgOf,
     scoreOf,
     pctOf,
+    rankWeights,
+    fishScoreTree,
+    treeScore,
     DOM,
     DOM_PRIOR,
     domP,
