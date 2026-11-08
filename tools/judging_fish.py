@@ -31,7 +31,7 @@ import json
 import os
 import sys
 import urllib.request
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fish_judge import CODE, cap, juv_early  # noqa: E402  the rubric's code and caps, one for game photos and candidates
@@ -201,7 +201,7 @@ def check(sid):
     # A candidate Pierre has decided on since its judgement (added, rejected, excluded, moved) stays in the file as
     # judged: not checked again, imported unchanged, and its best still counts for its observation.
     decided = {p["f"]: p for p in CAND.get(sid, []) if p["f"] not in mine}
-    best = defaultdict(list)
+    best, new = defaultdict(list), Counter()  # new: the bests among the photos still waiting
     for f, x in j["photos"].items():
         at = f"{sid}/{f}"
         if f in decided:
@@ -222,6 +222,7 @@ def check(sid):
             E.append(f"{at}: keep must be one of {KEEP}")
         elif x["keep"] == "best":
             best[mine[f]["o"]].append(f)
+            new[mine[f]["o"]] += 1
         if "phase" in x and x["phase"] not in PHASES:
             E.append(f"{at}: phase is one of {PHASES}, or omitted")
         u = x.get("unsure", [])
@@ -242,7 +243,7 @@ def check(sid):
     obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict)}
     A = added(sid)
     for o in sorted(obs):
-        nb = len(best.get(o, []))
+        nb = new[o] if o in A else len(best.get(o, []))  # Pierre's add is its best so far: a new one may beat it
         if o in A and nb > 1:
             E.append(f"{sid}: observation {o}: {nb} photos marked best; at most one (Pierre added one of its photos)")
         elif o not in A and nb != 1:

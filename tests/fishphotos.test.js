@@ -479,6 +479,8 @@ files = {
   'dup': {'photos': {'fish-s1-cand-11': J('dup'), 'fish-s1-cand-12': J('alt'), 'fish-s1-cand-20': J('best')}},
   'better': {'photos': {'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('dup'), 'fish-s1-cand-20': J('best')}},
   'two': {'photos': {'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('best'), 'fish-s1-cand-20': J('dup')}},
+  # His add still in the file as judged best (#717 keeps decided candidates): a new photo may still beat it.
+  'kept': {'photos': {'fish-s1-cand-10': J('best'), 'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('dup'), 'fish-s1-cand-20': J('best')}},
 }
 JF.load = lambda p, d=None: files[mode] if p.startswith('judging/fish/') else d
 R = []
@@ -486,7 +488,8 @@ for mode in files:
     R.append(JF.check('s1')[0])
 G = [[[p['f'] for p in c], [p['f'] for p in w]] for c, w in JF.groups('s1')]
 print(json.dumps([R, G]))`);
-  const [[dup, better, two], G] = out;
+  const [[dup, better, two, kept], G] = out;
+  assert.deepStrictEqual(kept, []);
   assert.deepStrictEqual(dup, [], 'its new photos may all be dup or alt of the photo Pierre added');
   assert.deepStrictEqual(better, [], 'or one of them better (best)');
   assert.strictEqual(two.length, 2);
