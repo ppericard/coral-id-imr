@@ -36,21 +36,30 @@ lost when the container goes. *Source:* Pierre, standing rule, restated 2026-11-
 
 ### D3
 
-**Changing `tools/sync/Code.gs`: bump `VERSION` (header comment and constant); the script updates itself.** From v11 it
-updates itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md
+**Changing `tools/sync/Code.gs`: one changes file in the PR, `VERSION` assigned by the integrator at merge; the script
+updates itself.** A PR never edits `const VERSION` nor the header's history line (line 1): it adds one file,
+`tools/sync/changes/<branch>.md` (its branch name, `/` as `-`), holding its history entry as the header reads (what the
+script now does and why, Pierre and the date; no version number). Where its comments or docs name the new version it
+writes `vNEXT`; a new gate on the script's version (rule D4) takes `main`'s `VERSION` + 1. Right before the merge the
+integrator brings the branch up to date with `main` and runs `python3 tools/sheet_version.py --assign`: `VERSION` + 1,
+the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds or changes and
+every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any other, then merged (docs/INTEGRATOR.md).
+`python3 tools/check_versions.py` checks both states; `main` never holds a changes file. From v11 the script updates
+itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md
 "Code.gs"); check the live `v` about 15 minutes after merging, and the sheet's "Deploy log" tab says what happened.
 - Never remove `autoUpdate` (the updater refuses such a version, so the script would stay behind) and keep
   `tools/sync/appsscript.json` in step (a new Google service = a new scope there = Pierre must accept it once: tell him).
 - The app keeps working with an older script, so a change stays backward compatible (rule D4).
 - `Code.gs` embeds `core.js` between `// BEGIN core.js` and `// END core.js` (reached as `CORE_`; the sheet replays each
-  player's progress with it): after any change to `core.js`, run `python3 tools/sync_core.py --fix` and bump `VERSION`
-  (CI runs `--check`), so the live script always runs the app's engine.
+  player's progress with it): after any change to `core.js`, run `python3 tools/sync_core.py --fix` and add the changes
+  file (CI runs `--check`), so the live script always runs the app's engine.
 - If you change the Elo in `stats_`, change its copy `eloOf()` in `core.js` too (with the photo memory estimate `MEM`
   and the per-unit offsets of the hierarchical photo Elo, `GENUS_K`, `genusOffsetsOf`), and likewise the pair counts
   `conf` in `stats_` and `confusionOf()` (`tests/core.test.js` checks both agree).
-- The sheet's `VERSION` is not stamped by the deploy (rule W15): bump it by hand.
+- The sheet's `VERSION` is not stamped by the deploy (rule W15): `--assign` sets it at merge, never a PR.
 
-*Why:* no more copy and paste by Pierre. *Source:* Pierre, 2026-11-01; subject-neutral wording, 2026-11-06.
+*Why:* no more copy and paste by Pierre; two open PRs never collide on the number. *Source:* Pierre, 2026-11-01;
+subject-neutral wording, 2026-11-06; assigned at merge, 2026-11-08 (Q305).
 
 ### D4
 
@@ -71,7 +80,7 @@ an answer weighs, the moving average, the ability step, the photo memory, what t
 `core.js` `replayProgress`, `replayedOf` and what they call) adds an entry at the end of `core.js` `RVS` (`v` the next
 number, `at`, `why`, `msg`). The sync sheet then replays every player's log with the new rules at their next sign-in,
 load or save, and each device adopts it once (`Code.gs` `replay_`, `sync.js` `replayAdopt`; LEARNING.md "Full
-replay"). Run `python3 tools/sync_core.py --fix` and bump `Code.gs` `VERSION` (rule D3).
+replay"). Run `python3 tools/sync_core.py --fix` and add the sheet changes file (rule D3).
 - **Every rules version takes the standard recalculation card, `msg: RV_CARD`** (don't ask Pierre per version): an
   announcement card in plain words (`core.js`), shown once at app open on every device that skipped the version, never
   held (rule D6; `only: 'changed'`, `min: 5`), **only to the players whose progress % the replay moved by 5 points or
@@ -80,7 +89,7 @@ replay"). Run `python3 tools/sync_core.py --fix` and bump `Code.gs` `VERSION` (r
   once (`core.js` `rvMsgs`).
 
 *Why:* progress is recalculated from the whole answer log, automatically, never by a human click, now and whenever the
-progress engine changes. *Source:* Pierre, 2026-11-03.
+progress engine changes. *Source:* Pierre, 2026-11-03; the changes file, 2026-11-08 (Q305).
 
 ### D6
 

@@ -1,6 +1,6 @@
 # Workflow and shipping rules
 
-How agents work with Pierre (W1-W11) and how a change ships (W12-W24). Who merges, and when: only AGENTS.md "Working
+How agents work with Pierre (W1-W11) and how a change ships and merges (W12-W26). Who merges, and when: only AGENTS.md "Working
 mode" (the merge contract). The index of every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
 
 ## Working with Pierre
@@ -85,7 +85,7 @@ needs a written reason next to the pin.
   week at most per ecosystem. The integrator merges them once every check is green, rebased and squash-merged, with no
   Codex loop for a pure version bump, after reading the release notes of any new major (renamed inputs, permissions,
   the Pages artifact) and adapting the workflows in the same PR; for pip it bumps `stack.json` too. The PR runs only
-  `checks.yml`: after the merge, watch the next run of each workflow that runs on `main` only (Deploy Pages at once;
+  `checks.yml` and `smokes.yml`: after the merge, watch the next run of each workflow that runs on `main` only (Deploy Pages at once;
   Candidate photos, Photos to R2, Analyses report at their next run) and fix forward.
 - Patch and minor bumps, and runtime or action majors, with green checks and identical outputs are the integrator's
   call; a bump that changes what players see, how photos are produced, or what Pierre does goes to Pierre.
@@ -124,14 +124,19 @@ machine slot: rule W24; Node only, no npm) and the Playwright
 smokes (`tests/*.smoke.js`; CI installs Playwright in a temporary folder: never add a `package.json`); add a case when
 you change logic they cover (a photo rule: `tests/photos.test.js`; the question draw: `tests/draw.smoke.js`). Pure logic
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
-`.github/workflows/checks.yml`: JS syntax, tests, JSON, `data.json` layout, Python, versions, and each Playwright smoke
-in its own parallel job `smoke (<name>)` (pages and admin in two halves each, `SMOKE_PART` / `SMOKE_W`),
-`fail-fast: false` so every failing smoke reports; a new push cancels the run still going on the PR. **Session hooks**
+`.github/workflows/checks.yml` (JS syntax, tests, JSON, `data.json` layout, Python, versions) and
+`.github/workflows/smokes.yml`, each Playwright smoke in its own parallel job `smoke (<name>)` (pages in four groups and
+fish in two, `SMOKE_PART`, each group in a job of its own or `tests/smokeparts.test.js` fails; admin whole at 390 px and
+in two groups at 1280, `SMOKE_W` / `SMOKE_PART`), `fail-fast: false` so every failing smoke reports. **A PR that changes
+only docs skips the smokes** (every file under `docs/`, a `*.md` at the root, the PR template or `LICENSE`); `checks`
+still runs on it, `tests/docs.test.js` included. A merge train's push runs both workflows in full (rule W26). A new push
+cancels the run still going on the PR. **Session hooks**
 (`.claude/settings.json`) print the Manila time and the Rule 0 window at each session start and prompt
 (`tools/brief.py --short`, `--time`), running main's reviewed copy of the script
 (`git show origin/main:tools/brief.py | python3 -I -`), never the checked-out branch's (a branch could put any code
 there): a change to `tools/brief.py` reaches the hooks once merged.
-*Source:* repository practice, by 2026-11-01; hooks, 2026-11-05.
+*Source:* repository practice, by 2026-11-01; hooks, 2026-11-05; docs-only PRs skip the smokes, Pierre, 2026-11-08
+(Q305).
 
 ### W13
 
@@ -149,10 +154,12 @@ reformatting commits (`git config blame.ignoreRevsFile .git-blame-ignore-revs` o
 smoke on every push loaded it until fixed timeouts failed; CI runs everything on each PR, each smoke on its own runner,
 and reports every failing one. Locally, run what your change can break, once:
 - **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.9.10 --check` on the changed `.js`/`.css`;
-  `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency only: never bump a number, rule W15);
+  `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency, and the sheet's changes file: never
+  bump a number, rules W15 and D3);
   `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24); then **the
   one smoke part your change touches** (below). Docs-only changes: no smoke.
-- **Full tier**: CI on the PR. Run every smoke locally only when CI is down. After a big interface change, the
+- **Full tier**: CI on the PR (no smoke for a docs-only PR, rule W12) and on the merge train (rule W26). Run every smoke
+  locally only when CI is down. After a big interface change, the
   brand-new-player replay of rule W17 stays a separate manual step.
 - **Which smoke part**: `admin*.js`, `admin.css`, `admin.html`, `autosort.js`, `analysis.js` →
   `SMOKE_W=1280 node tests/admin.smoke.js` (`SMOKE_W=390` for a layout change). The question draw (`model.js`, the draw
@@ -164,8 +171,8 @@ and reports every failing one. Locally, run what your change can break, once:
   fallback cards, the open-all offer: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
   adopted), `overlays` (cards, prompts, the one-tap question, the tour), `credits` (Home, credits, header fit), `basics`
   (Coral basics), `visit` (the pages-opened summary), `main` (routes, sheets, lightbox, history: anything else in
-  `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|rest` is the half CI runs on one
-  runner. Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
+  `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|overlays|rest|more` is the group CI runs
+  on one runner (`fish.smoke.js`: `main|fresh`, `fresh` the brand-new fish players). Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
 - **One Playwright run at a time per 2 cores**: every smoke and every Playwright tool (`tools/learnsim.js`,
   `tools/perf.js`, `tools/rtprep.js`, `tools/og/make_og.js`) takes a slot from `tests/slot.js` before it starts
   Chromium, waits while the machine's load is above twice its core count (rule W24), and gives the slot back when it ends
@@ -174,7 +181,7 @@ and reports every failing one. Locally, run what your change can break, once:
   entrance animation to wait for) unless the context asks otherwise (a check about motion, the brand-new player). Never
   run two smokes at once from one session; `SMOKE_SLOTS=n` changes the cap, CI ignores it.
 
-*Source:* test-suite review, 2026-11-04, approved by Pierre.
+*Source:* test-suite review, 2026-11-04, approved by Pierre; the docs-only and train runs, Pierre, 2026-11-08 (Q305).
 
 ### W15
 
@@ -184,10 +191,12 @@ Lab files, the `sw.js` cache name `V` a hash of everything its `SHELL` keeps, an
 (`<meta name="build">`, `sync.js` `appVer` reports `<build>-<hash>`). So a PR **never edits `?v=N`, `LAB_V` or `sw.js`
 `V`**, even after changing a file, and a merge never conflicts on them. The numbers in the source are frozen; a **new**
 versioned reference takes any number (`?v=1`), the same at every place it appears (`index.html` or `admin.html`, `sw.js`
-`SHELL` when the app loads it, `app.js` for a fetch). `python3 tools/check_versions.py` checks only that consistency
+`SHELL` when the app loads it, `app.js` for a fetch). `python3 tools/check_versions.py` checks that consistency
 (one value per file everywhere, `SHELL` lists what `index.html` and `app.js` load, the Lab list matches `LAB.files` and
-`LAB_V`); it has no `--fix` and no `--base` any more. Locally the browser may keep an old copy of a file you changed (no
-service worker on http): reload with the cache disabled. The sheet's `VERSION` is not stamped (rule D3).
+`LAB_V`) and, in the source, the sheet's `VERSION` rules (rule D3: `--sheet-base REF` on a PR, `--main` on `main` or a
+merge train); it has no `--fix`. Locally the browser may keep an old copy of a file you changed (no
+service worker on http): reload with the cache disabled. The sheet's `VERSION` is not stamped: the integrator assigns
+it at merge (rule D3).
 *Why:* five open PRs carried the same `sw.js` V, so each merge forced the others to bump again. *Source:* Pierre,
 2026-11-04.
 
@@ -221,7 +230,7 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 **squash merge** whose title ends with ` (#N)` (that is how `git log` reads).
 - Two kinds of commits land on `main` without a PR: Pierre's admin **Publish** ("Photo curation: …", writes
   `curation.json` only) and the GitHub Action that follows it ("Candidate photos: …", writes `data.json` and `img/`). So
-  rebase on `origin/main` right before merging. With one coral genus per line in `data.json`, edits to different genera
+  rebase on `origin/main` right before merging, or merge through a green merge train (rule W26). With one coral genus per line in `data.json`, edits to different genera
   merge by themselves;
   on a real `data.json` conflict, take `main`'s copy and re-run your `tools/apply_*.py` script rather than hand-merging.
 - Never force-push `main` (GitHub blocks it too once Pierre's ruleset is on, HANDOVER.md "Protect main"); never rewrite history without
@@ -234,7 +243,8 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 - A merge to `main` is live on GitHub Pages within a minute or two; open tabs pick up the new shell on the next visit
   (service worker) and a new `curation.json` within 30 min or when the tab comes back into view.
 
-*Source:* Pierre, by 2026-11-01; merge contract, 2026-11-05; subject-neutral wording, 2026-11-06.
+*Source:* Pierre, by 2026-11-01; merge contract, 2026-11-05; subject-neutral wording, 2026-11-06; merge train,
+2026-11-08 (Q305).
 
 ### W19
 
@@ -339,3 +349,18 @@ mechanical work a test verifies; never for a judgment (photo judging included).
 
 *Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
 2026-11-08.
+
+### W26
+
+**Several ready PRs merge through one green merge train.** When two or more PRs each meet the merge contract on their
+own head, the integrator runs `python3 tools/train.py N1 N2 …` (`--dry-run` first): a new branch `train/<time>` holds
+`main` plus their heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
+order at the head the train tested, with no update-branch (no new head, so no new Codex wait); then `main`'s tree must
+equal the train's, and the train stops if a Publish, an Action or another merge lands in between. A red train merges
+nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
+`Code.gs` rides a train only once its `VERSION` is assigned on its branch (rule D3), one such PR per train (two would
+conflict on the header line). Any other new head (a fix, a catch-up merge of `main`, the `VERSION` assign) waits for
+Codex as always. A train branch gets no PR (rule W6 skips it); `tools/train.py` sends only GET and PUT to GitHub and
+never force-pushes.
+*Why:* each merge left the other ready PRs behind, and each catch-up cost a CI run and a Codex wait, about 4 min per PR
+in a burst. *Source:* Pierre, 2026-11-08 (Q305).

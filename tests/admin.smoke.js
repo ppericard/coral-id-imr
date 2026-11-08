@@ -48,10 +48,16 @@ const server = http.createServer((req, res) => {
 // blind Check, the agreement block, undo, the auto tag, a retest), Publish.
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
-// SMOKE_W=390 or 1280: one width only (tests/slot.js; default: both).
+// SMOKE_W=390 or 1280: one width only (tests/slot.js; default: both); SMOKE_PART / SMOKE_ONLY: some parts (below).
+// The parts of this smoke (tests/slot.js parts): players, Players › List (a long name, merge and delete), the journeys,
+// To do's errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours
+// (once, at 1280); main, everything else. SMOKE_PART=main|more is the group CI runs on one runner at 1280 (more: players
+// and photos; the 390 px job runs them all); SMOKE_ONLY=players runs one part.
+const PARTS = ['main', 'players', 'photos'];
 const WIDTHS = [390, 1280];
 (async () => {
-  const ws = slot.widths(WIDTHS);
+  const run = slot.parts(PARTS, {main: ['main'], more: ['players', 'photos']}),
+    ws = slot.widths(WIDTHS);
   await slot('admin.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
@@ -208,6 +214,21 @@ const WIDTHS = [390, 1280];
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     if (!(await p.$('.adm-demo'))) fails.push(`${w}px: no demo banner`);
     if (await p.$('.adm-lock')) fails.push(`${w}px: lock screen shown in demo mode`);
+    // The end of a width's pass: its page errors, the real admin keys never written, the context closed.
+    const finish = async () => {
+      if (errs.length) fails.push(`${w}px actions: ${errs.slice(0, 3).join(' | ')}`);
+      const keys = await p.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]);
+      const real = keys.filter(k => /^reefid-(curation|admin)/.test(k));
+      if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
+      await ctx.close();
+    };
+    // A run of the players' and photos' parts only (SMOKE_PART=more: tests/slot.js parts) skips the rest of the pass.
+    if (!run.has('main')) {
+      if (run.has('players')) await playersPart();
+      if (once && run.has('photos')) await photosPart();
+      await finish();
+      continue;
+    }
     // Opened with no address, the page shows Players › Activity, the recent sessions (Pierre, 2026-11-05; it was Players ›
     // List from 2026-11-04), on a phone as on a desktop.
     {
@@ -1843,847 +1864,861 @@ const WIDTHS = [390, 1280];
         if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);
       }
     }
-    // Users: the made-up players, one opened, a merge and a delete.
-    await go('players/list');
-    let t = await text();
-    if (!/Ana Demo/.test(t) || !/mara demo2/.test(t)) fails.push(`${w}px Users: demo players missing`);
-    if (once) {
-      // Once: an anonymous id's Journey.
-      // Each anonymous id opens its own Journey (#players/list/anon/<id>, so a name starting with @ keeps its own; Codex review #375).
-      const anon = await p.$eval('a[href^="#players/list/anon/"]', a => a.getAttribute('href')).catch(() => null);
-      if (!anon) fails.push(`${w}px Users: no Journey link on the anonymous ids`);
-      else {
-        await go(anon.slice(1));
-        if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text()))
-          fails.push(`${w}px ${anon}: anonymous Journey missing`);
-        await go('players/list');
+    // The players' part (SMOKE_ONLY=players; CI runs it with the photos' part in the admin 1280 "more" job): Players ›
+    // List, a long name, merge and delete, the journeys, To do's errors and reports. A function, run here in a whole run,
+    // or alone right after the page opens (above).
+    async function playersPart() {
+      // Users: the made-up players, one opened, a merge and a delete.
+      await go('players/list');
+      let t = await text();
+      if (!/Ana Demo/.test(t) || !/mara demo2/.test(t)) fails.push(`${w}px Users: demo players missing`);
+      if (once) {
+        // Once: an anonymous id's Journey.
+        // Each anonymous id opens its own Journey (#players/list/anon/<id>, so a name starting with @ keeps its own; Codex review #375).
+        const anon = await p.$eval('a[href^="#players/list/anon/"]', a => a.getAttribute('href')).catch(() => null);
+        if (!anon) fails.push(`${w}px Users: no Journey link on the anonymous ids`);
+        else {
+          await go(anon.slice(1));
+          if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text()))
+            fails.push(`${w}px ${anon}: anonymous Journey missing`);
+          await go('players/list');
+        }
       }
-    }
-    // Who played last (Pierre, 2026-11-03): Last is the second column, to the minute, and the default sort, most recent
-    // first by the exact time of the last answer; Carla (the demo's player now) first, with the "now" pill.
-    const lastCol = () =>
-      p.$$eval('.adm-urow', L =>
-        L.map(tr => ({
-          name: tr.querySelector('td b').textContent,
-          t: Number((tr.querySelector('td:nth-child(2) [data-t]') || {dataset: {t: 0}}).dataset.t),
-          now: !!tr.querySelector('td:nth-child(2) .adm-ago.now'),
-          txt: tr.querySelector('td:nth-child(2)').textContent.trim()
-        }))
-      );
-    const checkLast = async how => {
-      const L = await lastCol();
-      if (!L.length || L[0].name !== 'Carla Demo' || !L[0].now || L[0].txt !== 'now')
-        fails.push(`${w}px Players (${how}): Carla not first and "now" (${JSON.stringify(L[0])})`);
-      if (L.some((x, i) => i && x.t > L[i - 1].t))
-        fails.push(`${w}px Players (${how}): not most recent first ${L.map(x => x.txt).join(', ')}`);
-      if (L.filter(x => x.now).length !== 1)
-        fails.push(`${w}px Players (${how}): ${L.filter(x => x.now).length} players "now", expected 1`);
-      // 24 h times, "yest." on phones (Pierre, 2026-11-03: a narrower Last column).
-      const yest = w < 600 ? /^yest\. \d\d:\d\d$/ : /^yesterday \d\d:\d\d$/;
-      if (!L.slice(1).every(x => /min ago|h ago|^\d+ \w+$|^\w+ \d+$/.test(x.txt) || yest.test(x.txt)) || L.some(x => /AM|PM/.test(x.txt)))
-        fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
-    };
-    await checkLast('default sort');
-    // Change the starting answer (sheet v99, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
-    // answer and its history, Change… lists the answers, one picked asks Change / Cancel in the page (no browser dialog),
-    // Change sends it and says so; the new answer and its history line show, and nothing is wider than the screen while
-    // the answers are listed. Before v99, Change… is greyed (rule D4).
-    {
-      const q = await p.context().newPage();
-      q.on('pageerror', e => fails.push(`${w}px Starting answer page error: ${e.message}`));
-      q.on('dialog', d => (fails.push(`${w}px Starting answer: a browser dialog (${d.message()})`), d.dismiss()));
-      const open = async v => {
-        await q.goto(base + `admin.html?demo&v=${v}#players/list`);
-        await q.waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000});
-        await q.click('[data-uopen="Carla Demo"]');
-        await q.waitForSelector('.adm-ustart-s', {timeout: 10000});
-      };
-      const bar = () => q.$eval('.adm-ustart', x => x.innerText.replace(/\s+/g, ' ')),
-        wide = () => q.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-      try {
-        await open(98);
-        if (!(await q.$('[data-ustart][disabled]'))) fails.push(`${w}px Starting answer (v98): Change… not greyed`);
-        await open(99);
-        const b0 = await bar();
-        if (!/Corals starting answer: I know corals well/.test(b0) || !/I had the IMR coral course · in the welcome tour/.test(b0))
-          fails.push(`${w}px Starting answer: bar ${JSON.stringify(b0)}`);
-        await q.click('[data-ustart]');
-        const opts = await q.$$eval('[data-ustart-c]', L => L.map(b => [b.dataset.ustartC, b.disabled]));
-        if (
-          JSON.stringify(opts) !==
-          JSON.stringify([
-            ['new', false],
-            ['imr', false],
-            ['know', true]
-          ])
-        )
-          fails.push(`${w}px Starting answer: the answers listed ${JSON.stringify(opts)}`);
-        if (await wide()) fails.push(`${w}px Starting answer: wider than the screen with the answers listed`);
-        await q.click('[data-ustart-c="imr"]');
-        if (!/Change to “I had the IMR coral course”\?/.test(await bar())) fails.push(`${w}px Starting answer: no confirm step`);
-        await q.click('[data-ustart-ok]');
-        await q.waitForFunction(() => /Changed to/.test(document.querySelector('.adm-ustart').innerText), null, {timeout: 10000});
-        const b1 = await bar();
-        if (
-          !/Corals starting answer: I had the IMR coral course/.test(b1) ||
-          !/I had the IMR coral course · changed by you on Players/.test(b1) ||
-          !/their app takes it at its next sync/.test(b1)
-        )
-          fails.push(`${w}px Starting answer: after Change ${JSON.stringify(b1)}`);
-        const saved = await q.evaluate(() => (PSAVED['Carla Demo'].by.coral.start || {}).via);
-        if (saved !== 'admin') fails.push(`${w}px Starting answer: the saved copy here not updated (${saved})`);
-        if (await wide()) fails.push(`${w}px Starting answer: wider than the screen after Change`);
-      } catch (e) {
-        fails.push(`${w}px Starting answer: ${e.message.split('\n')[0]}`);
-      }
-      await q.close();
-    }
-    if (once) {
-      // Once: sorts, the replayed progress, scripts before v42 and v28, sheet reads, the leaderboard, rename, greyed names.
-      if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
-      // Names joined with the answer log by anonymous id: every demo player has answers in the corals' group (the fifth
-      // column); sorting by name puts Ana first, reversed last.
-      const lv = await p.$$eval('.adm-urow td:nth-child(5)', L => L.map(td => td.textContent.trim()));
-      if (!lv.length || lv.some(x => !/^\d+$/.test(x))) fails.push(`${w}px Players: answers missing (${lv.join(' ')})`);
-      if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
-      const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
-      await p.click('[data-usort="name"]');
-      await settle();
-      if ((await firstName()) !== 'Ana Demo') fails.push(`${w}px Players: sort by name, first is ${await firstName()}`);
-      await p.click('[data-usort="name"]');
-      await settle();
-      if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
-      // Each subject's columns sort too (Codex review #383: they were filled after the sort, which threw).
-      for (const k of await p.$$eval('[data-usort*=":"]', L => L.map(b => b.dataset.usort))) {
-        await p.click(`[data-usort="${k}"]`);
-        await settle();
-        if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
-      }
-      // One tap on Last brings back most recent first.
-      await p.click('[data-usort="last"]');
-      await settle();
-      await checkLast('Last tapped');
-      await p.click('[data-usort="name"]');
-      await settle();
-      // Full replay (core.js replayProgress; docs/LEARNING.md "Full replay"): Progress and Learned replayed from the log, and
-      // "↻ saved …" where the saved copy differs: Dio's is from the former model (a genus learned under BKT, taken back),
-      // Ben's is 20 answers behind; Ana's matches the replay (no mark). Her journey says the same, Dio's too.
-      await p
-        .waitForFunction(() => !/…/.test(document.querySelector('.adm-utbl').innerText), null, {timeout: 10000})
-        .catch(() => fails.push(`${w}px Players: Progress still reading the saved copies`));
-      const rp = await p.evaluate(() => {
-        const col = k =>
-            [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === SUBJECTS[0].id + ':' + k),
-          row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n),
-          cell = (n, k) => row(n).querySelectorAll('td')[col(k)];
-        return Object.fromEntries(
-          ['Ana Demo', 'Ben Demo', 'Dio Demo'].map(n => [
-            n,
-            {
-              prog: cell(n, 'prog').innerText.trim(),
-              marks: row(n).querySelectorAll('.adm-saved').length
-            }
-          ])
+      // Who played last (Pierre, 2026-11-03): Last is the second column, to the minute, and the default sort, most recent
+      // first by the exact time of the last answer; Carla (the demo's player now) first, with the "now" pill.
+      const lastCol = () =>
+        p.$$eval('.adm-urow', L =>
+          L.map(tr => ({
+            name: tr.querySelector('td b').textContent,
+            t: Number((tr.querySelector('td:nth-child(2) [data-t]') || {dataset: {t: 0}}).dataset.t),
+            now: !!tr.querySelector('td:nth-child(2) .adm-ago.now'),
+            txt: tr.querySelector('td:nth-child(2)').textContent.trim()
+          }))
         );
-      });
-      if (
-        rp['Ana Demo'].marks ||
-        !/^\d+%$/.test(rp['Ana Demo'].prog) ||
-        !/^\d+%\s*↻ saved \d+%$/.test(rp['Dio Demo'].prog) ||
-        !/↻ saved/.test(rp['Ben Demo'].prog)
-      )
-        fails.push(`${w}px Players: replayed progress ${JSON.stringify(rp)}`);
-      await p.click('[data-uopen="Dio Demo"]');
-      await settle();
-      if (!/Progress \d+%\s*↻ saved \d+% · Learned 0\s*↻ saved 1/.test(await p.$eval('.adm-ubar', x => x.innerText)))
-        fails.push(`${w}px Players: Dio's bar without the replayed progress`);
-      for (const [n, mark] of [
-        ['Dio Demo', true],
-        ['Ana Demo', false]
-      ]) {
-        await go('players/list/journey/' + encodeURIComponent(n));
-        await p.waitForFunction(() => !/…/.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000}).catch(() => {});
-        const k = await p.evaluate(() => ({
-          kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
-          genus: document.querySelectorAll('.adm-jtbl .adm-saved').length,
-          col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress')
-        }));
-        if (!/\d+% (↻ saved \d+% )?Progress/i.test(k.kpis) || /↻ saved/.test(k.kpis) !== mark || !!k.genus !== mark || !k.col)
-          fails.push(`${w}px journey (${n}) replayed progress: ${JSON.stringify(k)}`);
-      }
-      // Players reads no saved copy one player at a time (sheet v42, Pierre 2026-11-04: about 15 s on a phone for 40
-      // players): the player list carries each player's replay (rp), the same numbers the admin gets when it replays them
-      // itself from their saved copies, which it still does with a script before v42 (one userData call each, rule D4).
+      const checkLast = async how => {
+        const L = await lastCol();
+        if (!L.length || L[0].name !== 'Carla Demo' || !L[0].now || L[0].txt !== 'now')
+          fails.push(`${w}px Players (${how}): Carla not first and "now" (${JSON.stringify(L[0])})`);
+        if (L.some((x, i) => i && x.t > L[i - 1].t))
+          fails.push(`${w}px Players (${how}): not most recent first ${L.map(x => x.txt).join(', ')}`);
+        if (L.filter(x => x.now).length !== 1)
+          fails.push(`${w}px Players (${how}): ${L.filter(x => x.now).length} players "now", expected 1`);
+        // 24 h times, "yest." on phones (Pierre, 2026-11-03: a narrower Last column).
+        const yest = w < 600 ? /^yest\. \d\d:\d\d$/ : /^yesterday \d\d:\d\d$/;
+        if (!L.slice(1).every(x => /min ago|h ago|^\d+ \w+$|^\w+ \d+$/.test(x.txt) || yest.test(x.txt)) || L.some(x => /AM|PM/.test(x.txt)))
+          fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
+      };
+      await checkLast('default sort');
+      // Change the starting answer (sheet v99, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
+      // answer and its history, Change… lists the answers, one picked asks Change / Cancel in the page (no browser dialog),
+      // Change sends it and says so; the new answer and its history line show, and nothing is wider than the screen while
+      // the answers are listed. Before v99, Change… is greyed (rule D4).
       {
+        const q = await p.context().newPage();
+        q.on('pageerror', e => fails.push(`${w}px Starting answer page error: ${e.message}`));
+        q.on('dialog', d => (fails.push(`${w}px Starting answer: a browser dialog (${d.message()})`), d.dismiss()));
         const open = async v => {
-          const q = await p.context().newPage();
-          q.on('pageerror', e => fails.push(`${w}px Players v${v} page error: ${e.message}`));
           await q.goto(base + `admin.html?demo&v=${v}#players/list`);
-          await q
-            .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
-            .then(() => q.waitForTimeout(1000))
-            .catch(() => fails.push(`${w}px Players v${v}: never drawn`));
-          return q;
+          await q.waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000});
+          await q.click('[data-uopen="Carla Demo"]');
+          await q.waitForSelector('.adm-ustart-s', {timeout: 10000});
         };
-        const reads = q => q.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'userData').length);
-        const q = await open(42);
-        if (await reads(q)) fails.push(`${w}px Players (v42): ${await reads(q)} saved copies read one by one`);
-        // The admin's own replay of every player (their saved copies read now), against the sheet's rp.
-        const diff = await q.evaluate(async () => {
-          USERS.users.forEach(u => savedOf(u.name));
-          for (let i = 0; i < 100 && USERS.users.some(u => !PSAVED[u.name]); i++) await new Promise(r => setTimeout(r, 100));
-          return USERS.users
-            .map(u => {
-              const f = progOf(u, true);
-              return [u.name, JSON.stringify(u.rp), JSON.stringify(f && [f.pct, f.learned, f.saved && f.saved.pct])];
-            })
-            .filter(([, a, b]) => a !== b);
-        });
-        if (diff.length) fails.push(`${w}px Players (v42): rp differs from the admin's own replay: ${JSON.stringify(diff.slice(0, 3))}`);
+        const bar = () => q.$eval('.adm-ustart', x => x.innerText.replace(/\s+/g, ' ')),
+          wide = () => q.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+        try {
+          await open(98);
+          if (!(await q.$('[data-ustart][disabled]'))) fails.push(`${w}px Starting answer (v98): Change… not greyed`);
+          await open(99);
+          const b0 = await bar();
+          if (!/Corals starting answer: I know corals well/.test(b0) || !/I had the IMR coral course · in the welcome tour/.test(b0))
+            fails.push(`${w}px Starting answer: bar ${JSON.stringify(b0)}`);
+          await q.click('[data-ustart]');
+          const opts = await q.$$eval('[data-ustart-c]', L => L.map(b => [b.dataset.ustartC, b.disabled]));
+          if (
+            JSON.stringify(opts) !==
+            JSON.stringify([
+              ['new', false],
+              ['imr', false],
+              ['know', true]
+            ])
+          )
+            fails.push(`${w}px Starting answer: the answers listed ${JSON.stringify(opts)}`);
+          if (await wide()) fails.push(`${w}px Starting answer: wider than the screen with the answers listed`);
+          await q.click('[data-ustart-c="imr"]');
+          if (!/Change to “I had the IMR coral course”\?/.test(await bar())) fails.push(`${w}px Starting answer: no confirm step`);
+          await q.click('[data-ustart-ok]');
+          await q.waitForFunction(() => /Changed to/.test(document.querySelector('.adm-ustart').innerText), null, {timeout: 10000});
+          const b1 = await bar();
+          if (
+            !/Corals starting answer: I had the IMR coral course/.test(b1) ||
+            !/I had the IMR coral course · changed by you on Players/.test(b1) ||
+            !/their app takes it at its next sync/.test(b1)
+          )
+            fails.push(`${w}px Starting answer: after Change ${JSON.stringify(b1)}`);
+          const saved = await q.evaluate(() => (PSAVED['Carla Demo'].by.coral.start || {}).via);
+          if (saved !== 'admin') fails.push(`${w}px Starting answer: the saved copy here not updated (${saved})`);
+          if (await wide()) fails.push(`${w}px Starting answer: wider than the screen after Change`);
+        } catch (e) {
+          fails.push(`${w}px Starting answer: ${e.message.split('\n')[0]}`);
+        }
         await q.close();
-        const q41 = await open(41);
-        if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
-        await q41.close();
-        // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191): Photos (Seen %) and Spread columns from the list's ex, in the
-        // subject of the switch, each cell a share (its counts in the title) or –; none before v81 (rule D4).
-        const cols = q =>
-          q.evaluate(() => {
-            const H = [...document.querySelectorAll('.adm-utbl thead button')].map(b => b.dataset.usort),
-              at = k => H.indexOf(SUBJECTS[0].id + ':' + k); // the corals' group (one pair per subject)
+      }
+      if (once) {
+        // Once: sorts, the replayed progress, scripts before v42 and v28, sheet reads, the leaderboard, rename, greyed names.
+        if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
+        // Names joined with the answer log by anonymous id: every demo player has answers in the corals' group (the fifth
+        // column); sorting by name puts Ana first, reversed last.
+        const lv = await p.$$eval('.adm-urow td:nth-child(5)', L => L.map(td => td.textContent.trim()));
+        if (!lv.length || lv.some(x => !/^\d+$/.test(x))) fails.push(`${w}px Players: answers missing (${lv.join(' ')})`);
+        if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
+        const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
+        await p.click('[data-usort="name"]');
+        await settle();
+        if ((await firstName()) !== 'Ana Demo') fails.push(`${w}px Players: sort by name, first is ${await firstName()}`);
+        await p.click('[data-usort="name"]');
+        await settle();
+        if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
+        // Each subject's columns sort too (Codex review #383: they were filled after the sort, which threw).
+        for (const k of await p.$$eval('[data-usort*=":"]', L => L.map(b => b.dataset.usort))) {
+          await p.click(`[data-usort="${k}"]`);
+          await settle();
+          if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
+        }
+        // One tap on Last brings back most recent first.
+        await p.click('[data-usort="last"]');
+        await settle();
+        await checkLast('Last tapped');
+        await p.click('[data-usort="name"]');
+        await settle();
+        // Full replay (core.js replayProgress; docs/LEARNING.md "Full replay"): Progress and Learned replayed from the log, and
+        // "↻ saved …" where the saved copy differs: Dio's is from the former model (a genus learned under BKT, taken back),
+        // Ben's is 20 answers behind; Ana's matches the replay (no mark). Her journey says the same, Dio's too.
+        await p
+          .waitForFunction(() => !/…/.test(document.querySelector('.adm-utbl').innerText), null, {timeout: 10000})
+          .catch(() => fails.push(`${w}px Players: Progress still reading the saved copies`));
+        const rp = await p.evaluate(() => {
+          const col = k =>
+              [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === SUBJECTS[0].id + ':' + k),
+            row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n),
+            cell = (n, k) => row(n).querySelectorAll('td')[col(k)];
+          return Object.fromEntries(
+            ['Ana Demo', 'Ben Demo', 'Dio Demo'].map(n => [
+              n,
+              {
+                prog: cell(n, 'prog').innerText.trim(),
+                marks: row(n).querySelectorAll('.adm-saved').length
+              }
+            ])
+          );
+        });
+        if (
+          rp['Ana Demo'].marks ||
+          !/^\d+%$/.test(rp['Ana Demo'].prog) ||
+          !/^\d+%\s*↻ saved \d+%$/.test(rp['Dio Demo'].prog) ||
+          !/↻ saved/.test(rp['Ben Demo'].prog)
+        )
+          fails.push(`${w}px Players: replayed progress ${JSON.stringify(rp)}`);
+        await p.click('[data-uopen="Dio Demo"]');
+        await settle();
+        if (!/Progress \d+%\s*↻ saved \d+% · Learned 0\s*↻ saved 1/.test(await p.$eval('.adm-ubar', x => x.innerText)))
+          fails.push(`${w}px Players: Dio's bar without the replayed progress`);
+        for (const [n, mark] of [
+          ['Dio Demo', true],
+          ['Ana Demo', false]
+        ]) {
+          await go('players/list/journey/' + encodeURIComponent(n));
+          await p.waitForFunction(() => !/…/.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000}).catch(() => {});
+          const k = await p.evaluate(() => ({
+            kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+            genus: document.querySelectorAll('.adm-jtbl .adm-saved').length,
+            col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress')
+          }));
+          if (!/\d+% (↻ saved \d+% )?Progress/i.test(k.kpis) || /↻ saved/.test(k.kpis) !== mark || !!k.genus !== mark || !k.col)
+            fails.push(`${w}px journey (${n}) replayed progress: ${JSON.stringify(k)}`);
+        }
+        // Players reads no saved copy one player at a time (sheet v42, Pierre 2026-11-04: about 15 s on a phone for 40
+        // players): the player list carries each player's replay (rp), the same numbers the admin gets when it replays them
+        // itself from their saved copies, which it still does with a script before v42 (one userData call each, rule D4).
+        {
+          const open = async v => {
+            const q = await p.context().newPage();
+            q.on('pageerror', e => fails.push(`${w}px Players v${v} page error: ${e.message}`));
+            await q.goto(base + `admin.html?demo&v=${v}#players/list`);
+            await q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
+              .then(() => q.waitForTimeout(1000))
+              .catch(() => fails.push(`${w}px Players v${v}: never drawn`));
+            return q;
+          };
+          const reads = q => q.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'userData').length);
+          const q = await open(42);
+          if (await reads(q)) fails.push(`${w}px Players (v42): ${await reads(q)} saved copies read one by one`);
+          // The admin's own replay of every player (their saved copies read now), against the sheet's rp.
+          const diff = await q.evaluate(async () => {
+            USERS.users.forEach(u => savedOf(u.name));
+            for (let i = 0; i < 100 && USERS.users.some(u => !PSAVED[u.name]); i++) await new Promise(r => setTimeout(r, 100));
+            return USERS.users
+              .map(u => {
+                const f = progOf(u, true);
+                return [u.name, JSON.stringify(u.rp), JSON.stringify(f && [f.pct, f.learned, f.saved && f.saved.pct])];
+              })
+              .filter(([, a, b]) => a !== b);
+          });
+          if (diff.length) fails.push(`${w}px Players (v42): rp differs from the admin's own replay: ${JSON.stringify(diff.slice(0, 3))}`);
+          await q.close();
+          const q41 = await open(41);
+          if (!(await reads(q41))) fails.push(`${w}px Players (v41): no saved copy read (the replay needs them before v42)`);
+          await q41.close();
+          // Photo exposure (sheet v81; Pierre, 2026-11-06, Q191): Photos (Seen %) and Spread columns from the list's ex, in the
+          // subject of the switch, each cell a share (its counts in the title) or –; none before v81 (rule D4).
+          const cols = q =>
+            q.evaluate(() => {
+              const H = [...document.querySelectorAll('.adm-utbl thead button')].map(b => b.dataset.usort),
+                at = k => H.indexOf(SUBJECTS[0].id + ':' + k); // the corals' group (one pair per subject)
+              return {
+                at: [at('photos'), at('spread')],
+                cells: [...document.querySelectorAll('.adm-urow')].map(r =>
+                  ['photos', 'spread'].map(k => (at(k) < 0 ? null : r.querySelectorAll('td')[at(k)].innerText.trim()))
+                ),
+                tips: [...document.querySelectorAll('.adm-urow td span[title]')].filter(x => / of /.test(x.title)).length
+              };
+            });
+          const qx = await open(81),
+            ox = await cols(qx);
+          const ok = ox.at.every(i => i >= 0) && ox.cells.length && ox.cells.every(c => c.every(x => /^(\d{1,3}%|–)$/.test(x)));
+          if (!ok || !ox.cells.some(c => /%$/.test(c[0]) && /%$/.test(c[1])) || !ox.tips)
+            fails.push(`${w}px Players (v81): Photos and Spread ${JSON.stringify({...ox, cells: ox.cells.slice(0, 3)})}`);
+          await qx.close();
+          const q80 = await open(80),
+            o80 = await cols(q80);
+          if (o80.at.some(i => i >= 0)) fails.push(`${w}px Players (v80): exposure columns before the script serves them`);
+          await q80.close();
+        }
+        // The admin never gets ahead of the sheet script (rule D4): answering as v27, the demo's Players and Journey
+        // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
+        // Journey's learned genera from the saved copy).
+        {
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px v27 page error: ${e.message}`));
+          await q.goto(base + 'admin.html?demo&v=27#players/list');
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await q.waitForTimeout(1500);
+          const o = await q.evaluate(() => {
+            const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort.endsWith(':' + k));
             return {
-              at: [at('photos'), at('spread')],
-              cells: [...document.querySelectorAll('.adm-urow')].map(r =>
-                ['photos', 'spread'].map(k => (at(k) < 0 ? null : r.querySelectorAll('td')[at(k)].innerText.trim()))
-              ),
-              tips: [...document.querySelectorAll('.adm-urow td span[title]')].filter(x => / of /.test(x.title)).length
+              prog: col('prog'),
+              marks: document.querySelectorAll('.adm-saved').length,
+              anonProg: [...document.querySelectorAll('.adm-uremoved th')].some(t => t.textContent === 'Progress')
             };
           });
-        const qx = await open(81),
-          ox = await cols(qx);
-        const ok = ox.at.every(i => i >= 0) && ox.cells.length && ox.cells.every(c => c.every(x => /^(\d{1,3}%|–)$/.test(x)));
-        if (!ok || !ox.cells.some(c => /%$/.test(c[0]) && /%$/.test(c[1])) || !ox.tips)
-          fails.push(`${w}px Players (v81): Photos and Spread ${JSON.stringify({...ox, cells: ox.cells.slice(0, 3)})}`);
-        await qx.close();
-        const q80 = await open(80),
-          o80 = await cols(q80);
-        if (o80.at.some(i => i >= 0)) fails.push(`${w}px Players (v80): exposure columns before the script serves them`);
-        await q80.close();
-      }
-      // The admin never gets ahead of the sheet script (rule D4): answering as v27, the demo's Players and Journey
-      // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
-      // Journey's learned genera from the saved copy).
-      {
-        const q = await p.context().newPage();
-        q.on('pageerror', e => fails.push(`${w}px v27 page error: ${e.message}`));
-        await q.goto(base + 'admin.html?demo&v=27#players/list');
-        await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
-        await q.waitForTimeout(1500);
-        const o = await q.evaluate(() => {
-          const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort.endsWith(':' + k));
-          return {
-            prog: col('prog'),
-            marks: document.querySelectorAll('.adm-saved').length,
-            anonProg: [...document.querySelectorAll('.adm-uremoved th')].some(t => t.textContent === 'Progress')
-          };
-        });
-        if (o.prog !== -1 || o.marks || o.anonProg) fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
-        await q.goto(base + 'admin.html?demo&v=27#players/list/journey/' + encodeURIComponent('Dio Demo'));
-        await q.waitForSelector('.adm-kpis', {timeout: 20000}).catch(() => {});
-        // The learned genus (under BKT) comes with the saved copy, read after the page is drawn.
-        await q.waitForSelector('.adm-jlearn', {timeout: 10000}).catch(() => {});
-        const j = await q.evaluate(() => ({
-          kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
-          col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
-          learned: document.querySelectorAll('.adm-jlearn').length
-        }));
-        if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
-          fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
-        // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
-        await q
-          .waitForFunction(() => /v30 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
-            timeout: 10000
-          })
-          .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
-        await q.close();
-      }
-      // Two subjects on the Players pages (Pierre, 2026-11-06): with every subject's answers logged (sheet v60; the demo's
-      // other subject played by Ben last, Ana and Mara), the list shows a group of columns per subject, each player's
-      // answers in it; a row's Journey opens on the subject they played last; that Journey is the subject's own (its
-      // answers only, its units' word, its progress replayed in the admin from them with the saved copy beside it, no Elo
-      // for a subject the sheet does not replay, its sessions unfolding as on Activity) with its Corals | Fish at the top;
-      // the other subject's Activity shows its sessions.
-      {
-        const q = await p.context().newPage();
-        q.on('pageerror', e => fails.push(`${w}px two subjects page error: ${e.message}`));
-        const calm = () =>
-          q
-            .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-              timeout: 20000
-            })
-            .then(() => q.waitForTimeout(800))
-            .catch(() => fails.push(`${w}px two subjects: never settled`));
-        await q.goto(base + 'admin.html?demo&v=81#players/list');
-        await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
-        await calm();
-        const L = await q.evaluate(() => {
-          const F = SUBJECTS.find(S => !S.replay),
-            col = [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === F.id + ':n'),
-            row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n);
-          return {
-            F: F.id,
-            groups: [...document.querySelectorAll('.adm-ugrp th.adm-ug0')].map(th => th.textContent),
-            ben: col >= 0 && row('Ben Demo').querySelectorAll('td')[col].innerText.trim(),
-            dio: col >= 0 && row('Dio Demo').querySelectorAll('td')[col].innerText.trim()
-          };
-        });
-        if (L.groups.length !== 2 || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
-        await q.click('[data-uopen="Ben Demo"]');
-        const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
-        if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
-        await q.click('.adm-ubar a.next');
-        await calm();
-        // The fish units are read once (fishAdmin), then the page draws its progress.
-        await q
-          .waitForFunction(() => /Progress/i.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000})
-          .catch(() => {});
-        const j = await q.evaluate(() => ({
-          hash: location.hash,
-          kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
-          col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
-          sess: document.querySelectorAll('.adm-journey [data-recent] [data-sopen]').length,
-          seg: [...document.querySelectorAll('.adm-jsubj a')].map(a => [a.getAttribute('aria-pressed'), a.innerText.replace(/\s+/g, ' ')])
-        }));
-        if (
-          j.hash !== jh ||
-          !/^48 Answers/i.test(j.kpis) ||
-          /Elo/i.test(j.kpis) ||
-          !/\d+%( ↻ saved \d+%)? Progress/i.test(j.kpis) ||
-          !/Learned/i.test(j.kpis) ||
-          !j.col ||
-          !j.sess ||
-          !/Families met/i.test(j.kpis) ||
-          j.seg.length !== 2 ||
-          j.seg[1][0] !== 'true' ||
-          !/ 48$/.test(j.seg[1][1])
-        )
-          fails.push(`${w}px two subjects: Ben's ${L.F} Journey ${JSON.stringify(j)}`);
-        // A session of the Journey unfolds, with the progress it brought.
-        await q.click('.adm-journey [data-recent] [data-sopen]');
-        await calm();
-        if (!(await q.$('.adm-journey [data-sdet]'))) fails.push(`${w}px two subjects: a session of Ben's ${L.F} Journey does not unfold`);
-        await q.click('.adm-jsubj a[aria-pressed="false"]');
-        await calm();
-        const c = await q.evaluate(() => ({hash: location.hash, kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' ')}));
-        const cs = await q.$$eval('.adm-journey [data-recent] [data-sopen]', L => L.length);
-        if (c.hash !== '#players/list/journey/Ben%20Demo' || !/Elo/i.test(c.kpis) || !/Genera met/i.test(c.kpis) || !cs)
-          fails.push(`${w}px two subjects: Ben's corals Journey from the toggle ${JSON.stringify(c)}`);
-        await q.evaluate(F => (location.hash = F + '/players/activity'), L.F);
-        await calm();
-        const a = await q.evaluate(() => ({
-          rows: [...document.querySelectorAll('[data-recent] .adm-urow')].map(r => r.querySelector('td').innerText.trim()),
-          off: document.getElementById('subj').classList.contains('off')
-        }));
-        if (!a.rows.length || a.rows.some(n => !['Ben Demo', 'Ana Demo', 'Mara Demo'].includes(n.replace(/ you$/, ''))) || a.off)
-          fails.push(`${w}px two subjects: the ${L.F} Activity ${JSON.stringify(a)}`);
-        // Ben's last session is still open from his Journey (one set of open sessions): unfolded already, else a tap.
-        if (!(await q.$('[data-sdet]'))) {
-          await q.click('[data-recent] .adm-urow');
-          await calm();
-        }
-        if (!(await q.$('[data-sdet]'))) fails.push(`${w}px two subjects: a ${L.F} session does not unfold`);
-        await q.close();
-      }
-      // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
-      // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
-      // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
-      // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
-      // pages opened (Analyses › Stops) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
-      {
-        const q = await p.context().newPage();
-        q.on('pageerror', e => fails.push(`${w}px sheet reads page error: ${e.message}`));
-        const calls = () => q.evaluate(() => window.DEMO_CALLS.map(c => ({...c})));
-        const count = L => L.reduce((o, c) => ((o[c.k] = (o[c.k] || 0) + 1), o), {});
-        const quiet = () =>
-          q
-            .waitForFunction(
-              () =>
-                window.DEMO_PENDING === 0 &&
-                typeof DRAFT !== 'undefined' &&
-                DRAFT &&
-                DRAFT.genera &&
-                !/^\s*Loading/.test(document.getElementById('view').innerText),
-              null,
-              {timeout: 20000}
-            )
-            .then(() => q.waitForTimeout(1500))
-            .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
-        await q.goto(base + 'admin.html?demo#inbox/todo/all');
-        await quiet();
-        const n = count(await calls());
-        if (n.answers !== 1 || n.stats !== 1 || n.events !== 1 || n.reports !== 1)
-          fails.push(`sheet reads: To do asked ${JSON.stringify(n)}, once each expected`);
-        await q.route(/\/cand\.json$/, r => setTimeout(() => r.continue().catch(() => {}), 2000));
-        await q.goto(base + 'admin.html?demo&load=2#players/list');
-        await quiet();
-        const [a] = (await calls()).filter(c => c.k === 'answers'),
-          cj = await q.evaluate(
-            () => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart
-          );
-        if (!a || !(cj > 0) || !(a.t0 < cj))
-          fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
-        await q.unroute(/\/cand\.json$/);
-        await q.goto(base + 'admin.html?demo&load=3#photos/candidates');
-        await quiet();
-        const before = (await calls()).length;
-        await q.evaluate(() => (location.hash = 'analyses/learning/stops'));
-        await quiet();
-        const L = (await calls()).slice(before),
-          ans = L.find(c => c.k === 'answers'),
-          pg = L.find(c => c.k === 'pages');
-        if (!ans || !pg || !(pg.t0 < ans.t1))
-          fails.push(
-            `sheet reads: Stops asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
-          );
-        // (4) The answer log is never published before the photo ratings (Codex review #488): Health and To do's Health line
-        // read both once the log is there. The ratings answer a second late here (admin-demo.js slow=stats).
-        await q.addInitScript(() => {
-          window.__early = 0;
-          const t = setInterval(() => {
-            try {
-              if (ANS && !STATS) window.__early++;
-              if (ANS && STATS) clearInterval(t);
-            } catch (e) {} // before admin.js has run
-          }, 10);
-        });
-        await q.goto(base + 'admin.html?demo&slow=stats&load=4#inbox/todo/health');
-        await quiet();
-        if (await q.evaluate(() => window.__early)) fails.push('sheet reads: the answer log was published before the photo ratings');
-        await q.close();
-      }
-      await go('players/list');
-      await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
-      await settle();
-      // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
-      await p.click('[data-uopen="Dio Demo"]');
-      await settle();
-      await p.click('[data-uboard="Dio Demo"]');
-      await settle();
-      if (!/Hidden from the leaderboard/.test(await text())) fails.push(`${w}px Players: Hide did not hide Dio from the leaderboard`);
-      await p.click('[data-uboard="Dio Demo"]');
-      await settle();
-      if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
-      // The beta group (sheet v48; Pierre, 2026-11-04: fish opens to a group he picks here, not one site-wide switch): on
-      // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
-      // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
-      {
-        // Fish opens to all since 2026-11-06 (Q158): the group page, kept for a subject that opens to a group, checked on
-        // fish set back to 'group' at runtime, then opened to all again.
-        const grp = () =>
-          p.evaluate(() => ({
-            line: (document.querySelector('.adm-ugroup') || {}).innerText || '',
-            // Dio's Groups cell names a group (the common Groups column).
-            col: (r => !!r && r.querySelectorAll('td')[3].innerText.trim() !== '–')(
-              [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Dio Demo')
-            ),
-            all: !!document.querySelector('[data-ugall]'),
-            bar: (document.querySelector('.adm-ubar') || {}).innerText || ''
+          if (o.prog !== -1 || o.marks || o.anonProg) fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
+          await q.goto(base + 'admin.html?demo&v=27#players/list/journey/' + encodeURIComponent('Dio Demo'));
+          await q.waitForSelector('.adm-kpis', {timeout: 20000}).catch(() => {});
+          // The learned genus (under BKT) comes with the saved copy, read after the page is drawn.
+          await q.waitForSelector('.adm-jlearn', {timeout: 10000}).catch(() => {});
+          const j = await q.evaluate(() => ({
+            kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+            col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
+            learned: document.querySelectorAll('.adm-jlearn').length
           }));
-        // No subject opens to a group: no line, no Beta column on the list.
-        const coral = await grp();
-        if (coral.line || coral.col) fails.push(`${w}px Players: a beta group line or column ${JSON.stringify(coral)}`);
-        await p.evaluate(() => (SUBJECTS.find(S => S.id === 'fish').open = 'group'));
-        const beta = await p.evaluate(() => (SUBJECTS.find(S => subjGroup(S)) || {}).id);
-        if (!beta) fails.push(`${w}px Players: no subject set to open to a group`);
-        else {
-          await go(beta + '/players/list');
-          const g0 = await grp(),
-            n = await p.evaluate(() => USERS.users.length);
-          if (
-            !new RegExp(`beta:\\s+0\\s+of\\s+${n}\\s+players`).test(g0.line) ||
-            g0.col ||
-            !g0.all ||
-            !/Not in the \S+ beta\s*Add/.test(g0.bar)
-          )
-            fails.push(`${w}px Players (${beta}): the beta group before ${JSON.stringify(g0)}`);
-          await p.click('[data-ugroup="Dio Demo"]');
-          await settle();
-          const g1 = await grp();
-          if (!new RegExp(`beta:\\s+1\\s+of\\s+${n}\\s+players`).test(g1.line) || !/In the \S+ beta\s*Remove/.test(g1.bar) || !g1.col)
-            fails.push(`${w}px Players (${beta}): Add did not put Dio in the group ${JSON.stringify(g1)}`);
-          await p.click('[data-ugall]');
-          await settle();
-          const g2 = await grp();
-          if (!new RegExp(`beta:\\s+${n}\\s+of\\s+${n}\\s+players`).test(g2.line) || g2.all)
-            fails.push(`${w}px Players (${beta}): Add all ${JSON.stringify(g2)}`);
-          await p.click('[data-ugroup="Dio Demo"]');
-          await settle();
-          if (!new RegExp(`beta:\\s+${n - 1}\\s+of\\s+${n}\\s+players`).test((await grp()).line))
-            fails.push(`${w}px Players (${beta}): Remove did not take Dio out`);
-          const q = await p.context().newPage();
-          // A fresh page reads core.js again: fish served back to open: 'group' there too (open to all since Q158).
-          await q.route(
-            u => u.pathname === '/core.js',
-            async r => {
-              const res = await r.fetch();
-              await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
-            }
-          );
-          await q.goto(base + `admin.html?demo&v=45#${beta}/players/list`);
+          if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
+            fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
+          // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
           await q
-            .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
-            .catch(() => {});
-          const old = await q.evaluate(() => ({
-            note: /needs the sheet script v48/.test(document.getElementById('view').innerText),
-            btn: !!document.querySelector('[data-ugall], [data-ugroup]')
-          }));
-          if (!old.note || old.btn) fails.push(`${w}px Players (${beta}) with sheet v45: ${JSON.stringify(old)}`);
-          await q.close();
-          // Opened to all (core.js SUBJECTS open: 'all', the release's one field, forced here at runtime): no group line, no
-          // Beta column, no Add / Remove, though the subject keeps its beta label; back to 'group', they return.
-          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta);
-          await go('players/list');
-          await go(beta + '/players/list');
-          const ga = await grp(),
-            gb = await p.evaluate(() => ({btn: !!document.querySelector('[data-ugall], [data-ugroup]'), label: !!ASUBJ.beta}));
-          if (ga.line || ga.col || ga.all || gb.btn || !gb.label)
-            fails.push(`${w}px Players (${beta}) open to all: ${JSON.stringify({...ga, ...gb})}`);
-          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'group'), beta);
-          await go('players/list');
-          await go(beta + '/players/list');
-          if (!(await grp()).line) fails.push(`${w}px Players (${beta}) back to the group: no group line`);
-          await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta); // as it is now
-          await go('players/list'); // the corals' page, Dio's row still open, as the steps below expect
-        }
-      }
-      // Archive (sheet v58, was Rename v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted,
-      // above), out of the players' table, listed read-only under Archived.
-      await p.click('[data-uopen="Ben Demo"]');
-      await settle();
-      await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
-      await p.click('[data-uarch="Ben Demo"]');
-      await p
-        .waitForFunction(() => /Archived \(1\)/.test(document.getElementById('view').innerText), null, {timeout: 10000})
-        .catch(() => {});
-      // The archive reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
-      // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
-      await settle();
-      const arc = await p.evaluate(() => ({
-        rows: [...document.querySelectorAll('.adm-urow')].map(r => r.dataset.uopen),
-        fold: [...document.querySelectorAll('details.adm-uremoved')].map(d => d.textContent).join(' ')
-      }));
-      if (arc.rows.some(n => /^Ben Demo/.test(n)) || !/Archived \(1\)/.test(arc.fold) || !/Ben Demo-test/.test(arc.fold))
-        fails.push(`${w}px Players: archive Ben Demo → Ben Demo-test not shown apart (${JSON.stringify(arc)})`);
-      // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
-      // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
-      const nameOf = n =>
-        p
-          .$eval(`.adm-urow[data-uopen="${n}"]`, tr => {
-            const b = tr.querySelector('td:first-child .adm-cut'),
-              cs = b && getComputedStyle(b),
-              probe = document.createElement('span');
-            probe.style.color = 'var(--muted)';
-            tr.appendChild(probe);
-            const muted = getComputedStyle(probe).color;
-            probe.remove();
-            return {
-              tag: /\bhidden\b/.test(tr.cells[0].innerText),
-              color: cs && cs.color,
-              muted,
-              italic: cs && cs.fontStyle,
-              title: b && b.title
-            };
-          })
-          .catch(() => null);
-      for (const n of ['Test Demo']) {
-        const h = await nameOf(n);
-        if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
-        else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
-          fails.push(`${w}px Players: hidden player ${n} not greyed without a tag (${JSON.stringify(h)})`);
-      }
-      const shown = await nameOf('Carla Demo');
-      if (!shown) fails.push(`${w}px Players: Carla's row not found`);
-      else if (shown.color === shown.muted || shown.italic === 'italic')
-        fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
-    }
-    // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
-    // (admin.css --cut), the name ends in "…" and its title holds it whole.
-    if (w === 390) {
-      const size = () =>
-        p.evaluate(() => {
-          const t = document.querySelector('.adm-utbl'),
-            th = t.querySelector('thead tr:last-child th'); // the Name column (the row above names the column groups)
-          return {table: t.offsetWidth, name: th.offsetWidth, cap: 9 * parseFloat(getComputedStyle(t).fontSize) + 12 + 1};
-        });
-      const LONG = 'Bartholomew Alexander Montgomery-Fitzgerald Demo LongName-60';
-      const before = await size();
-      // A player with that name (the table only: renaming moved to Archive, which takes the record out of it).
-      await p.evaluate(n => {
-        USERS.users.find(u => u.name === 'Carla Demo').name = n;
-        render();
-      }, LONG);
-      await p.waitForFunction(n => document.querySelector(`[data-uopen="${n}"]`), LONG, {timeout: 10000}).catch(() => {});
-      const after = await size(),
-        cut = await p
-          .$eval(`.adm-urow[data-uopen="${LONG}"] .adm-cut`, b => ({title: b.title, cut: b.scrollWidth > b.clientWidth}))
-          .catch(() => null);
-      if (LONG.length !== 60 || after.name > after.cap || after.table - before.table > after.name - before.name + 1)
-        fails.push(`${w}px Players: a 60-character name widened the table (${JSON.stringify({before, after})})`);
-      if (!cut || !cut.cut || !cut.title.startsWith(LONG))
-        fails.push(`${w}px Players: the 60-character name is not cut with its title (${JSON.stringify(cut)})`);
-      await p.evaluate(n => {
-        USERS.users.find(u => u.name === n).name = 'Carla Demo';
-        render();
-      }, LONG);
-    }
-    if (once) {
-      // Once: merge and delete.
-      await p.click('[data-uopen="mara demo2"]');
-      await settle();
-      await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');
-      await p.waitForFunction(() => !/mara demo2/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
-      if (/mara demo2/.test(await text())) fails.push(`${w}px Users: merge did not remove "mara demo2"`);
-      await p.click('[data-uopen="Test Demo"]');
-      await settle();
-      await p.click('[data-udel="Test Demo"]');
-      await settle();
-      // Sheet v55 (Pierre, 2026-11-05, Q89): two named choices, no default.
-      const two = await p.evaluate(() => ({
-        all: !!document.querySelector('[data-udel-all="Test Demo"]:not([disabled])'),
-        keep: !!document.querySelector('[data-udel-keep="Test Demo"]:not([disabled])'),
-        focus: !!(document.activeElement && document.activeElement.matches('[data-udel-all], [data-udel-keep]'))
-      }));
-      if (!two.all || !two.keep || two.focus)
-        fails.push(`${w}px Users: delete does not offer its two named choices (${JSON.stringify(two)})`);
-      await p.click('[data-udel-all="Test Demo"]');
-      await p.waitForFunction(() => !/Test Demo/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
-      if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
-    }
-    // A player's journey (admin-journey.js), opened from their row: numbers, both curves, the genera in the order met.
-    await p.click('[data-uopen="Ana Demo"]');
-    await settle();
-    await p.click('.adm-udet a[href^="#players/list/journey/"]');
-    await settle();
-    const jo = await p.evaluate(() => {
-      const v = document.getElementById('view'),
-        met = [...v.querySelectorAll('.adm-jtbl tbody tr td:nth-child(3)')].map(td => Number((td.textContent.match(/#(\d+)/) || [])[1]));
-      return {
-        h: (v.querySelector('h2') || {}).textContent,
-        charts: v.querySelectorAll('svg.adm-jl path').length,
-        rows: met.length,
-        ordered: met.every((x, i) => !i || x > met[i - 1]),
-        lists: /Easiest for them/i.test(v.innerText) && /Hardest for them/i.test(v.innerText),
-        tab: (document.querySelector('#subnav [aria-pressed="true"]') || {}).textContent,
-        // Chart labels at 12 px at least as rendered (--fs-xs, never scaled down by the viewBox; Codex review #351).
-        small: [...v.querySelectorAll('svg.adm-jl')].some(
-          s => (s.clientWidth / s.viewBox.baseVal.width) * parseFloat(getComputedStyle(s.querySelector('text')).fontSize) < 11.9
-        )
-      };
-    });
-    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'List' || jo.small)
-      fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
-    if (once) {
-      // Once: the journey's cards, learned genera, Carla's, sorts, sheets opened; Errors & feedback; To do › Reports.
-      // The first-meeting cards from the player's saved progress (userData): Ana's first cards and single cards; Carla
-      // opened all from the offer card (an orange line on the genera chart).
-      await p.waitForFunction(() => /First cards/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
-      const cards = await p.evaluate(() => ({
-        t: (document.querySelector('.adm-jcards') || {}).innerText || '',
-        col: [...document.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => td.textContent.trim())
-      }));
-      // Learned genera (from the saved progress): a tag in the list, a ★ on the genera chart; the games with their modes.
-      const lrn = await p.evaluate(() => ({
-        tags: document.querySelectorAll('.adm-jtbl .adm-jlearn').length,
-        stars: document.querySelectorAll('svg.adm-jl text.s').length,
-        games:
-          [...document.querySelectorAll('#view td')].some(td => td.textContent === 'Quiz') &&
-          /Look-alike duels/.test(document.getElementById('view').innerText)
-      }));
-      if (!lrn.tags || !lrn.stars || !lrn.games) fails.push(`${w}px journey learned / games: ${JSON.stringify(lrn)}`);
-      if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
-        fails.push(`${w}px journey cards (Ana): ${JSON.stringify(cards).slice(0, 300)}`);
-      await go('players/list/journey/' + encodeURIComponent('Carla Demo'));
-      await p
-        .waitForFunction(() => /Opened all genera/.test(document.getElementById('view').innerText), null, {timeout: 10000})
-        .catch(() => {});
-      const carla = await p.evaluate(() => ({
-        t: (document.querySelector('.adm-jcards') || {}).innerText || '',
-        line: !!document.querySelector('svg.adm-jl line.o')
-      }));
-      if (
-        !/Opened all genera after answer 40.*offer card/.test(carla.t) ||
-        !/Kept all genera when asked after answer 70/.test(carla.t) ||
-        !carla.line
-      )
-        fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
-      await go('players/list/journey/' + encodeURIComponent('Ana Demo'));
-      await p.click('[data-jsort="hard"]');
-      await settle();
-      const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
-      if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
-      // Genus sheets opened (sheet v30 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
-      // first opened before it was asked, from Learn; Dio opened none; one device not signed in opened one.
-      const jsheets = () =>
-        p
-          .waitForFunction(
-            () => /visits? recorded|None opened|No visit/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''),
-            null,
-            {
+            .waitForFunction(() => /v30 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
               timeout: 10000
-            }
-          )
-          .catch(() => {})
-          .then(() =>
-            p.evaluate(() => {
-              const s = document.querySelector('[data-jsheets]');
-              return s ? {rows: s.querySelectorAll('tbody tr').length, t: s.innerText.replace(/\s+/g, ' ')} : null;
             })
-          );
-      const sa = await jsheets();
-      if (
-        !sa ||
-        sa.rows !== 9 ||
-        !/before asked/.test(sa.t) ||
-        !/after asked/.test(sa.t) ||
-        !/Learn/.test(sa.t) ||
-        !/4 visits recorded/.test(sa.t) ||
-        !/practice\.quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.practice.quiz) read back with its subject
-      )
-        fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
-      await go('players/list/journey/' + encodeURIComponent('Dio Demo'));
-      const sd = await jsheets();
-      if (!sd || sd.rows || !/None opened/.test(sd.t)) fails.push(`${w}px journey sheets (Dio): ${JSON.stringify(sd)}`);
-      await go('players/list');
-      const anonIds = await p.$$eval('a[href^="#players/list/anon/"]', L => [
-        ...new Set(L.map(a => a.getAttribute('href').slice('#players/list/anon/'.length)))
-      ]);
-      const anonSheets = [];
-      for (const id of anonIds) {
-        await go('players/list/anon/' + id);
-        const x = await jsheets();
-        anonSheets.push(x ? x.rows : -1);
-      }
-      if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
-        fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
-
-      // To do › Reports lists the demo reports; Activity shows the demo players' answers.
-      // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
-      await go('inbox/todo/errors');
-      await p
-        .waitForFunction(() => /Saves that failed/i.test(document.getElementById('view').innerText), null, {timeout: 10000})
-        .catch(() => {});
-      const evt = await text();
-      if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
-        fails.push(`${w}px Errors & feedback: demo events missing`);
-      // One-tap questions (core.js PULSEQ): every item of the bank under its wording, its answers counted by level band
-      // and by mode as the demo's rows say (rows with no item id are the first item's), and the common scales table.
-      const pq = await p.evaluate(() => {
-        const since = Date.now() - 30 * 864e5,
-          R = EVS.rows.filter(r => r[3] === 'pulse' && r[1] >= since),
-          tb = document.querySelector('.adm-pitems'),
-          heads = [...tb.querySelectorAll('thead th')].map(th => th.textContent),
-          col = t => heads.indexOf(t),
-          cell = (q, label, c) => {
-            const body = [...tb.tBodies].find(b => b.querySelector('.adm-pq th').firstChild.textContent.trim() === q);
-            const row = body && [...body.rows].find(tr => tr.cells[0].textContent === label);
-            return row ? parseInt(row.cells[c].textContent, 10) || 0 : -1;
-          },
-          bandOf = lv => (lv < -0.5 ? 'Beginner' : lv < 0.5 ? 'Middle' : 'Strong'),
-          bad = [];
-        for (const it of PULSEQ)
-          for (const [k, t] of it.a) {
-            const L = R.filter(r => (r[5] || PULSE0) === it.id && r[4] === k),
-              want = {
-                All: L.length,
-                Beginner: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Beginner').length,
-                Strong: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Strong').length,
-                Quiz: L.filter(r => JSON.parse(r[7]).m === 'quiz').length,
-                Duel: L.filter(r => JSON.parse(r[7]).m === 'quiz-duel').length
-              };
-            for (const [h, n] of Object.entries(want))
-              if (cell(it.q, t, col(h)) !== n) bad.push(`${it.q} ${t} ${h}: ${cell(it.q, t, col(h))} ≠ ${n}`);
-          }
-        // The response under each item (2026-11-03): shown, Not now, and no answer = shown − answered − Not now, counted
-        // over the rows with an item id, by band and mode as above.
-        const codes = new Set(PULSEQ.flatMap(it => it.a.map(a => a[0])));
-        let ign = 0;
-        for (const it of PULSEQ) {
-          const L = R.filter(r => r[5] === it.id),
-            per = f => {
-              const C = L.filter(r => f(JSON.parse(r[7]))),
-                sh = C.filter(r => r[4] === PULSE_SHOWN).length,
-                an = C.filter(r => codes.has(r[4])).length,
-                sk = C.filter(r => r[4] === PULSE_SKIP).length;
-              return {Shown: sh, 'Not now': sk, 'No answer': Math.max(0, sh - an - sk)};
-            },
-            cols = {All: () => true, Beginner: d => bandOf(d.lv) === 'Beginner', Duel: d => d.m === 'quiz-duel'};
-          for (const [h, f] of Object.entries(cols))
-            for (const [label, n] of Object.entries(per(f))) {
-              if (h === 'All' && label === 'No answer') ign += n;
-              if (cell(it.q, label, col(h)) !== n) bad.push(`${it.q} ${label} ${h}: ${cell(it.q, label, col(h))} ≠ ${n}`);
-            }
+            .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
+          await q.close();
         }
-        const sc = document.querySelector('.adm-pscale');
+        // Two subjects on the Players pages (Pierre, 2026-11-06): with every subject's answers logged (sheet v60; the demo's
+        // other subject played by Ben last, Ana and Mara), the list shows a group of columns per subject, each player's
+        // answers in it; a row's Journey opens on the subject they played last; that Journey is the subject's own (its
+        // answers only, its units' word, its progress replayed in the admin from them with the saved copy beside it, no Elo
+        // for a subject the sheet does not replay, its sessions unfolding as on Activity) with its Corals | Fish at the top;
+        // the other subject's Activity shows its sessions.
+        {
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px two subjects page error: ${e.message}`));
+          const calm = () =>
+            q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+                timeout: 20000
+              })
+              .then(() => q.waitForTimeout(800))
+              .catch(() => fails.push(`${w}px two subjects: never settled`));
+          await q.goto(base + 'admin.html?demo&v=81#players/list');
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          const L = await q.evaluate(() => {
+            const F = SUBJECTS.find(S => !S.replay),
+              col = [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === F.id + ':n'),
+              row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n);
+            return {
+              F: F.id,
+              groups: [...document.querySelectorAll('.adm-ugrp th.adm-ug0')].map(th => th.textContent),
+              ben: col >= 0 && row('Ben Demo').querySelectorAll('td')[col].innerText.trim(),
+              dio: col >= 0 && row('Dio Demo').querySelectorAll('td')[col].innerText.trim()
+            };
+          });
+          if (L.groups.length !== 2 || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
+          await q.click('[data-uopen="Ben Demo"]');
+          const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
+          if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
+          await q.click('.adm-ubar a.next');
+          await calm();
+          // The fish units are read once (fishAdmin), then the page draws its progress.
+          await q
+            .waitForFunction(() => /Progress/i.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000})
+            .catch(() => {});
+          const j = await q.evaluate(() => ({
+            hash: location.hash,
+            kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+            col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
+            sess: document.querySelectorAll('.adm-journey [data-recent] [data-sopen]').length,
+            seg: [...document.querySelectorAll('.adm-jsubj a')].map(a => [a.getAttribute('aria-pressed'), a.innerText.replace(/\s+/g, ' ')])
+          }));
+          if (
+            j.hash !== jh ||
+            !/^48 Answers/i.test(j.kpis) ||
+            /Elo/i.test(j.kpis) ||
+            !/\d+%( ↻ saved \d+%)? Progress/i.test(j.kpis) ||
+            !/Learned/i.test(j.kpis) ||
+            !j.col ||
+            !j.sess ||
+            !/Families met/i.test(j.kpis) ||
+            j.seg.length !== 2 ||
+            j.seg[1][0] !== 'true' ||
+            !/ 48$/.test(j.seg[1][1])
+          )
+            fails.push(`${w}px two subjects: Ben's ${L.F} Journey ${JSON.stringify(j)}`);
+          // A session of the Journey unfolds, with the progress it brought.
+          await q.click('.adm-journey [data-recent] [data-sopen]');
+          await calm();
+          if (!(await q.$('.adm-journey [data-sdet]')))
+            fails.push(`${w}px two subjects: a session of Ben's ${L.F} Journey does not unfold`);
+          await q.click('.adm-jsubj a[aria-pressed="false"]');
+          await calm();
+          const c = await q.evaluate(() => ({
+            hash: location.hash,
+            kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' ')
+          }));
+          const cs = await q.$$eval('.adm-journey [data-recent] [data-sopen]', L => L.length);
+          if (c.hash !== '#players/list/journey/Ben%20Demo' || !/Elo/i.test(c.kpis) || !/Genera met/i.test(c.kpis) || !cs)
+            fails.push(`${w}px two subjects: Ben's corals Journey from the toggle ${JSON.stringify(c)}`);
+          await q.evaluate(F => (location.hash = F + '/players/activity'), L.F);
+          await calm();
+          const a = await q.evaluate(() => ({
+            rows: [...document.querySelectorAll('[data-recent] .adm-urow')].map(r => r.querySelector('td').innerText.trim()),
+            off: document.getElementById('subj').classList.contains('off')
+          }));
+          if (!a.rows.length || a.rows.some(n => !['Ben Demo', 'Ana Demo', 'Mara Demo'].includes(n.replace(/ you$/, ''))) || a.off)
+            fails.push(`${w}px two subjects: the ${L.F} Activity ${JSON.stringify(a)}`);
+          // Ben's last session is still open from his Journey (one set of open sessions): unfolded already, else a tap.
+          if (!(await q.$('[data-sdet]'))) {
+            await q.click('[data-recent] .adm-urow');
+            await calm();
+          }
+          if (!(await q.$('[data-sdet]'))) fails.push(`${w}px two subjects: a ${L.F} session does not unfold`);
+          await q.close();
+        }
+        // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
+        // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
+        // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
+        // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
+        // pages opened (Analyses › Stops) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
+        {
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px sheet reads page error: ${e.message}`));
+          const calls = () => q.evaluate(() => window.DEMO_CALLS.map(c => ({...c})));
+          const count = L => L.reduce((o, c) => ((o[c.k] = (o[c.k] || 0) + 1), o), {});
+          const quiet = () =>
+            q
+              .waitForFunction(
+                () =>
+                  window.DEMO_PENDING === 0 &&
+                  typeof DRAFT !== 'undefined' &&
+                  DRAFT &&
+                  DRAFT.genera &&
+                  !/^\s*Loading/.test(document.getElementById('view').innerText),
+                null,
+                {timeout: 20000}
+              )
+              .then(() => q.waitForTimeout(1500))
+              .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
+          await q.goto(base + 'admin.html?demo#inbox/todo/all');
+          await quiet();
+          const n = count(await calls());
+          if (n.answers !== 1 || n.stats !== 1 || n.events !== 1 || n.reports !== 1)
+            fails.push(`sheet reads: To do asked ${JSON.stringify(n)}, once each expected`);
+          await q.route(/\/cand\.json$/, r => setTimeout(() => r.continue().catch(() => {}), 2000));
+          await q.goto(base + 'admin.html?demo&load=2#players/list');
+          await quiet();
+          const [a] = (await calls()).filter(c => c.k === 'answers'),
+            cj = await q.evaluate(
+              () => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart
+            );
+          if (!a || !(cj > 0) || !(a.t0 < cj))
+            fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
+          await q.unroute(/\/cand\.json$/);
+          await q.goto(base + 'admin.html?demo&load=3#photos/candidates');
+          await quiet();
+          const before = (await calls()).length;
+          await q.evaluate(() => (location.hash = 'analyses/learning/stops'));
+          await quiet();
+          const L = (await calls()).slice(before),
+            ans = L.find(c => c.k === 'answers'),
+            pg = L.find(c => c.k === 'pages');
+          if (!ans || !pg || !(pg.t0 < ans.t1))
+            fails.push(
+              `sheet reads: Stops asked the pages opened at ${pg && Math.round(pg.t0)} ms, the answer log in at ${ans && Math.round(ans.t1)} ms`
+            );
+          // (4) The answer log is never published before the photo ratings (Codex review #488): Health and To do's Health line
+          // read both once the log is there. The ratings answer a second late here (admin-demo.js slow=stats).
+          await q.addInitScript(() => {
+            window.__early = 0;
+            const t = setInterval(() => {
+              try {
+                if (ANS && !STATS) window.__early++;
+                if (ANS && STATS) clearInterval(t);
+              } catch (e) {} // before admin.js has run
+            }, 10);
+          });
+          await q.goto(base + 'admin.html?demo&slow=stats&load=4#inbox/todo/health');
+          await quiet();
+          if (await q.evaluate(() => window.__early)) fails.push('sheet reads: the answer log was published before the photo ratings');
+          await q.close();
+        }
+        await go('players/list');
+        await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
+        await settle();
+        // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
+        await p.click('[data-uopen="Dio Demo"]');
+        await settle();
+        await p.click('[data-uboard="Dio Demo"]');
+        await settle();
+        if (!/Hidden from the leaderboard/.test(await text())) fails.push(`${w}px Players: Hide did not hide Dio from the leaderboard`);
+        await p.click('[data-uboard="Dio Demo"]');
+        await settle();
+        if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
+        // The beta group (sheet v48; Pierre, 2026-11-04: fish opens to a group he picks here, not one site-wide switch): on
+        // the Players page of the subject in beta only; Add / Remove one player (no confirmation), Add all the others (the
+        // confirm is accepted, above); the corals' Players page has none, and a script before v48 says what it needs.
+        {
+          // Fish opens to all since 2026-11-06 (Q158): the group page, kept for a subject that opens to a group, checked on
+          // fish set back to 'group' at runtime, then opened to all again.
+          const grp = () =>
+            p.evaluate(() => ({
+              line: (document.querySelector('.adm-ugroup') || {}).innerText || '',
+              // Dio's Groups cell names a group (the common Groups column).
+              col: (r => !!r && r.querySelectorAll('td')[3].innerText.trim() !== '–')(
+                [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Dio Demo')
+              ),
+              all: !!document.querySelector('[data-ugall]'),
+              bar: (document.querySelector('.adm-ubar') || {}).innerText || ''
+            }));
+          // No subject opens to a group: no line, no Beta column on the list.
+          const coral = await grp();
+          if (coral.line || coral.col) fails.push(`${w}px Players: a beta group line or column ${JSON.stringify(coral)}`);
+          await p.evaluate(() => (SUBJECTS.find(S => S.id === 'fish').open = 'group'));
+          const beta = await p.evaluate(() => (SUBJECTS.find(S => subjGroup(S)) || {}).id);
+          if (!beta) fails.push(`${w}px Players: no subject set to open to a group`);
+          else {
+            await go(beta + '/players/list');
+            const g0 = await grp(),
+              n = await p.evaluate(() => USERS.users.length);
+            if (
+              !new RegExp(`beta:\\s+0\\s+of\\s+${n}\\s+players`).test(g0.line) ||
+              g0.col ||
+              !g0.all ||
+              !/Not in the \S+ beta\s*Add/.test(g0.bar)
+            )
+              fails.push(`${w}px Players (${beta}): the beta group before ${JSON.stringify(g0)}`);
+            await p.click('[data-ugroup="Dio Demo"]');
+            await settle();
+            const g1 = await grp();
+            if (!new RegExp(`beta:\\s+1\\s+of\\s+${n}\\s+players`).test(g1.line) || !/In the \S+ beta\s*Remove/.test(g1.bar) || !g1.col)
+              fails.push(`${w}px Players (${beta}): Add did not put Dio in the group ${JSON.stringify(g1)}`);
+            await p.click('[data-ugall]');
+            await settle();
+            const g2 = await grp();
+            if (!new RegExp(`beta:\\s+${n}\\s+of\\s+${n}\\s+players`).test(g2.line) || g2.all)
+              fails.push(`${w}px Players (${beta}): Add all ${JSON.stringify(g2)}`);
+            await p.click('[data-ugroup="Dio Demo"]');
+            await settle();
+            if (!new RegExp(`beta:\\s+${n - 1}\\s+of\\s+${n}\\s+players`).test((await grp()).line))
+              fails.push(`${w}px Players (${beta}): Remove did not take Dio out`);
+            const q = await p.context().newPage();
+            // A fresh page reads core.js again: fish served back to open: 'group' there too (open to all since Q158).
+            await q.route(
+              u => u.pathname === '/core.js',
+              async r => {
+                const res = await r.fetch();
+                await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+              }
+            );
+            await q.goto(base + `admin.html?demo&v=45#${beta}/players/list`);
+            await q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000})
+              .catch(() => {});
+            const old = await q.evaluate(() => ({
+              note: /needs the sheet script v48/.test(document.getElementById('view').innerText),
+              btn: !!document.querySelector('[data-ugall], [data-ugroup]')
+            }));
+            if (!old.note || old.btn) fails.push(`${w}px Players (${beta}) with sheet v45: ${JSON.stringify(old)}`);
+            await q.close();
+            // Opened to all (core.js SUBJECTS open: 'all', the release's one field, forced here at runtime): no group line, no
+            // Beta column, no Add / Remove, though the subject keeps its beta label; back to 'group', they return.
+            await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta);
+            await go('players/list');
+            await go(beta + '/players/list');
+            const ga = await grp(),
+              gb = await p.evaluate(() => ({btn: !!document.querySelector('[data-ugall], [data-ugroup]'), label: !!ASUBJ.beta}));
+            if (ga.line || ga.col || ga.all || gb.btn || !gb.label)
+              fails.push(`${w}px Players (${beta}) open to all: ${JSON.stringify({...ga, ...gb})}`);
+            await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'group'), beta);
+            await go('players/list');
+            await go(beta + '/players/list');
+            if (!(await grp()).line) fails.push(`${w}px Players (${beta}) back to the group: no group line`);
+            await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'all'), beta); // as it is now
+            await go('players/list'); // the corals' page, Dio's row still open, as the steps below expect
+          }
+        }
+        // Archive (sheet v58, was Rename v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted,
+        // above), out of the players' table, listed read-only under Archived.
+        await p.click('[data-uopen="Ben Demo"]');
+        await settle();
+        await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
+        await p.click('[data-uarch="Ben Demo"]');
+        await p
+          .waitForFunction(() => /Archived \(1\)/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+          .catch(() => {});
+        // The archive reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
+        // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
+        await settle();
+        const arc = await p.evaluate(() => ({
+          rows: [...document.querySelectorAll('.adm-urow')].map(r => r.dataset.uopen),
+          fold: [...document.querySelectorAll('details.adm-uremoved')].map(d => d.textContent).join(' ')
+        }));
+        if (arc.rows.some(n => /^Ben Demo/.test(n)) || !/Archived \(1\)/.test(arc.fold) || !/Ben Demo-test/.test(arc.fold))
+          fails.push(`${w}px Players: archive Ben Demo → Ben Demo-test not shown apart (${JSON.stringify(arc)})`);
+        // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
+        // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
+        const nameOf = n =>
+          p
+            .$eval(`.adm-urow[data-uopen="${n}"]`, tr => {
+              const b = tr.querySelector('td:first-child .adm-cut'),
+                cs = b && getComputedStyle(b),
+                probe = document.createElement('span');
+              probe.style.color = 'var(--muted)';
+              tr.appendChild(probe);
+              const muted = getComputedStyle(probe).color;
+              probe.remove();
+              return {
+                tag: /\bhidden\b/.test(tr.cells[0].innerText),
+                color: cs && cs.color,
+                muted,
+                italic: cs && cs.fontStyle,
+                title: b && b.title
+              };
+            })
+            .catch(() => null);
+        for (const n of ['Test Demo']) {
+          const h = await nameOf(n);
+          if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
+          else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
+            fails.push(`${w}px Players: hidden player ${n} not greyed without a tag (${JSON.stringify(h)})`);
+        }
+        const shown = await nameOf('Carla Demo');
+        if (!shown) fails.push(`${w}px Players: Carla's row not found`);
+        else if (shown.color === shown.muted || shown.italic === 'italic')
+          fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
+      }
+      // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
+      // (admin.css --cut), the name ends in "…" and its title holds it whole.
+      if (w === 390) {
+        const size = () =>
+          p.evaluate(() => {
+            const t = document.querySelector('.adm-utbl'),
+              th = t.querySelector('thead tr:last-child th'); // the Name column (the row above names the column groups)
+            return {table: t.offsetWidth, name: th.offsetWidth, cap: 9 * parseFloat(getComputedStyle(t).fontSize) + 12 + 1};
+          });
+        const LONG = 'Bartholomew Alexander Montgomery-Fitzgerald Demo LongName-60';
+        const before = await size();
+        // A player with that name (the table only: renaming moved to Archive, which takes the record out of it).
+        await p.evaluate(n => {
+          USERS.users.find(u => u.name === 'Carla Demo').name = n;
+          render();
+        }, LONG);
+        await p.waitForFunction(n => document.querySelector(`[data-uopen="${n}"]`), LONG, {timeout: 10000}).catch(() => {});
+        const after = await size(),
+          cut = await p
+            .$eval(`.adm-urow[data-uopen="${LONG}"] .adm-cut`, b => ({title: b.title, cut: b.scrollWidth > b.clientWidth}))
+            .catch(() => null);
+        if (LONG.length !== 60 || after.name > after.cap || after.table - before.table > after.name - before.name + 1)
+          fails.push(`${w}px Players: a 60-character name widened the table (${JSON.stringify({before, after})})`);
+        if (!cut || !cut.cut || !cut.title.startsWith(LONG))
+          fails.push(`${w}px Players: the 60-character name is not cut with its title (${JSON.stringify(cut)})`);
+        await p.evaluate(n => {
+          USERS.users.find(u => u.name === n).name = 'Carla Demo';
+          render();
+        }, LONG);
+      }
+      if (once) {
+        // Once: merge and delete.
+        await p.click('[data-uopen="mara demo2"]');
+        await settle();
+        await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');
+        await p
+          .waitForFunction(() => !/mara demo2/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+          .catch(() => {});
+        if (/mara demo2/.test(await text())) fails.push(`${w}px Users: merge did not remove "mara demo2"`);
+        await p.click('[data-uopen="Test Demo"]');
+        await settle();
+        await p.click('[data-udel="Test Demo"]');
+        await settle();
+        // Sheet v55 (Pierre, 2026-11-05, Q89): two named choices, no default.
+        const two = await p.evaluate(() => ({
+          all: !!document.querySelector('[data-udel-all="Test Demo"]:not([disabled])'),
+          keep: !!document.querySelector('[data-udel-keep="Test Demo"]:not([disabled])'),
+          focus: !!(document.activeElement && document.activeElement.matches('[data-udel-all], [data-udel-keep]'))
+        }));
+        if (!two.all || !two.keep || two.focus)
+          fails.push(`${w}px Users: delete does not offer its two named choices (${JSON.stringify(two)})`);
+        await p.click('[data-udel-all="Test Demo"]');
+        await p.waitForFunction(() => !/Test Demo/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+        if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
+      }
+      // A player's journey (admin-journey.js), opened from their row: numbers, both curves, the genera in the order met.
+      await p.click('[data-uopen="Ana Demo"]');
+      await settle();
+      await p.click('.adm-udet a[href^="#players/list/journey/"]');
+      await settle();
+      const jo = await p.evaluate(() => {
+        const v = document.getElementById('view'),
+          met = [...v.querySelectorAll('.adm-jtbl tbody tr td:nth-child(3)')].map(td => Number((td.textContent.match(/#(\d+)/) || [])[1]));
         return {
-          heads,
-          bad,
-          ign,
-          scale:
-            !!sc &&
-            /Difficulty/.test(sc.textContent) &&
-            /Feel/.test(sc.textContent) &&
-            /Beginner/.test(sc.textContent) &&
-            /Shown/.test(sc.textContent) &&
-            /Answered/.test(sc.textContent),
-          title: document.querySelector('.adm-pulse h3')?.textContent || ''
+          h: (v.querySelector('h2') || {}).textContent,
+          charts: v.querySelectorAll('svg.adm-jl path').length,
+          rows: met.length,
+          ordered: met.every((x, i) => !i || x > met[i - 1]),
+          lists: /Easiest for them/i.test(v.innerText) && /Hardest for them/i.test(v.innerText),
+          tab: (document.querySelector('#subnav [aria-pressed="true"]') || {}).textContent,
+          // Chart labels at 12 px at least as rendered (--fs-xs, never scaled down by the viewBox; Codex review #351).
+          small: [...v.querySelectorAll('svg.adm-jl')].some(
+            s => (s.clientWidth / s.viewBox.baseVal.width) * parseFloat(getComputedStyle(s.querySelector('text')).fontSize) < 11.9
+          )
         };
       });
-      if (
-        !pq.scale ||
-        !/One-tap questions/i.test(pq.title) ||
-        ['All', 'Beginner', 'Middle', 'Strong', 'Quiz', 'Duel'].some(h => !pq.heads.includes(h)) ||
-        pq.bad.length ||
-        !pq.ign
-      )
-        fails.push(`${w}px Errors & feedback, one-tap questions: ${JSON.stringify(pq)}`);
-      // Load times (sheet v21): the demo's three visits, their median line and the CDN server.
-      if (!/Load times/i.test(evt) || !/640 kbit\/s/.test(evt) || !/MNL/.test(evt))
-        fails.push(`${w}px Errors & feedback: load times missing`);
-      // Keys come from anyone's device: "__proto__" as a photo or a message must not break the page (Codex review #343).
-      const proto = await p.evaluate(() => {
-        EVS.rows.unshift(
-          ['protox', Date.now(), 'devx', 'photo', '__proto__', '', 'quiz', '', '1', 'x'],
-          ['protoy', Date.now(), 'devx', 'err', '__proto__', '', 'quiz', '', '1', 'x']
-        );
-        try {
-          renderEvents();
-          return /__proto__/.test(document.getElementById('view').innerText);
-        } catch (e) {
-          return e.message;
+      if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'List' || jo.small)
+        fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
+      if (once) {
+        // Once: the journey's cards, learned genera, Carla's, sorts, sheets opened; Errors & feedback; To do › Reports.
+        // The first-meeting cards from the player's saved progress (userData): Ana's first cards and single cards; Carla
+        // opened all from the offer card (an orange line on the genera chart).
+        await p
+          .waitForFunction(() => /First cards/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+          .catch(() => {});
+        const cards = await p.evaluate(() => ({
+          t: (document.querySelector('.adm-jcards') || {}).innerText || '',
+          col: [...document.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => td.textContent.trim())
+        }));
+        // Learned genera (from the saved progress): a tag in the list, a ★ on the genera chart; the games with their modes.
+        const lrn = await p.evaluate(() => ({
+          tags: document.querySelectorAll('.adm-jtbl .adm-jlearn').length,
+          stars: document.querySelectorAll('svg.adm-jl text.s').length,
+          games:
+            [...document.querySelectorAll('#view td')].some(td => td.textContent === 'Quiz') &&
+            /Look-alike duels/.test(document.getElementById('view').innerText)
+        }));
+        if (!lrn.tags || !lrn.stars || !lrn.games) fails.push(`${w}px journey learned / games: ${JSON.stringify(lrn)}`);
+        if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
+          fails.push(`${w}px journey cards (Ana): ${JSON.stringify(cards).slice(0, 300)}`);
+        await go('players/list/journey/' + encodeURIComponent('Carla Demo'));
+        await p
+          .waitForFunction(() => /Opened all genera/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+          .catch(() => {});
+        const carla = await p.evaluate(() => ({
+          t: (document.querySelector('.adm-jcards') || {}).innerText || '',
+          line: !!document.querySelector('svg.adm-jl line.o')
+        }));
+        if (
+          !/Opened all genera after answer 40.*offer card/.test(carla.t) ||
+          !/Kept all genera when asked after answer 70/.test(carla.t) ||
+          !carla.line
+        )
+          fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
+        await go('players/list/journey/' + encodeURIComponent('Ana Demo'));
+        await p.click('[data-jsort="hard"]');
+        await settle();
+        const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
+        if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
+        // Genus sheets opened (sheet v30 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
+        // first opened before it was asked, from Learn; Dio opened none; one device not signed in opened one.
+        const jsheets = () =>
+          p
+            .waitForFunction(
+              () => /visits? recorded|None opened|No visit/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''),
+              null,
+              {
+                timeout: 10000
+              }
+            )
+            .catch(() => {})
+            .then(() =>
+              p.evaluate(() => {
+                const s = document.querySelector('[data-jsheets]');
+                return s ? {rows: s.querySelectorAll('tbody tr').length, t: s.innerText.replace(/\s+/g, ' ')} : null;
+              })
+            );
+        const sa = await jsheets();
+        if (
+          !sa ||
+          sa.rows !== 9 ||
+          !/before asked/.test(sa.t) ||
+          !/after asked/.test(sa.t) ||
+          !/Learn/.test(sa.t) ||
+          !/4 visits recorded/.test(sa.t) ||
+          !/practice\.quiz \(Fish\) 7 min \(2×\)/.test(sa.t) // a fish page (fish.practice.quiz) read back with its subject
+        )
+          fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
+        await go('players/list/journey/' + encodeURIComponent('Dio Demo'));
+        const sd = await jsheets();
+        if (!sd || sd.rows || !/None opened/.test(sd.t)) fails.push(`${w}px journey sheets (Dio): ${JSON.stringify(sd)}`);
+        await go('players/list');
+        const anonIds = await p.$$eval('a[href^="#players/list/anon/"]', L => [
+          ...new Set(L.map(a => a.getAttribute('href').slice('#players/list/anon/'.length)))
+        ]);
+        const anonSheets = [];
+        for (const id of anonIds) {
+          await go('players/list/anon/' + id);
+          const x = await jsheets();
+          anonSheets.push(x ? x.rows : -1);
         }
-      });
-      if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
-      await go('inbox/todo/reports');
-      if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
-      // Sheet v55: a report an account deleted with its answers kept left behind reads "From a removed account", no id.
-      if (!/From a removed account/.test(await text()) || /~deleted/.test(await text()))
-        fails.push(`${w}px To do › Reports: a removed account's report is not shown as such`);
-      // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
-      {
-        const fr = await p
-          .waitForFunction(
-            () => {
-              const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
-              const im = c && c.querySelector('.adm-tile img');
-              return c && im && /Damselfishes \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
+        if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
+          fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
+
+        // To do › Reports lists the demo reports; Activity shows the demo players' answers.
+        // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
+        await go('inbox/todo/errors');
+        await p
+          .waitForFunction(() => /Saves that failed/i.test(document.getElementById('view').innerText), null, {timeout: 10000})
+          .catch(() => {});
+        const evt = await text();
+        if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
+          fails.push(`${w}px Errors & feedback: demo events missing`);
+        // One-tap questions (core.js PULSEQ): every item of the bank under its wording, its answers counted by level band
+        // and by mode as the demo's rows say (rows with no item id are the first item's), and the common scales table.
+        const pq = await p.evaluate(() => {
+          const since = Date.now() - 30 * 864e5,
+            R = EVS.rows.filter(r => r[3] === 'pulse' && r[1] >= since),
+            tb = document.querySelector('.adm-pitems'),
+            heads = [...tb.querySelectorAll('thead th')].map(th => th.textContent),
+            col = t => heads.indexOf(t),
+            cell = (q, label, c) => {
+              const body = [...tb.tBodies].find(b => b.querySelector('.adm-pq th').firstChild.textContent.trim() === q);
+              const row = body && [...body.rows].find(tr => tr.cells[0].textContent === label);
+              return row ? parseInt(row.cells[c].textContent, 10) || 0 : -1;
             },
-            null,
-            {timeout: 10000}
-          )
-          .then(h => h.jsonValue())
-          .catch(() => null);
-        if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
+            bandOf = lv => (lv < -0.5 ? 'Beginner' : lv < 0.5 ? 'Middle' : 'Strong'),
+            bad = [];
+          for (const it of PULSEQ)
+            for (const [k, t] of it.a) {
+              const L = R.filter(r => (r[5] || PULSE0) === it.id && r[4] === k),
+                want = {
+                  All: L.length,
+                  Beginner: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Beginner').length,
+                  Strong: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Strong').length,
+                  Quiz: L.filter(r => JSON.parse(r[7]).m === 'quiz').length,
+                  Duel: L.filter(r => JSON.parse(r[7]).m === 'quiz-duel').length
+                };
+              for (const [h, n] of Object.entries(want))
+                if (cell(it.q, t, col(h)) !== n) bad.push(`${it.q} ${t} ${h}: ${cell(it.q, t, col(h))} ≠ ${n}`);
+            }
+          // The response under each item (2026-11-03): shown, Not now, and no answer = shown − answered − Not now, counted
+          // over the rows with an item id, by band and mode as above.
+          const codes = new Set(PULSEQ.flatMap(it => it.a.map(a => a[0])));
+          let ign = 0;
+          for (const it of PULSEQ) {
+            const L = R.filter(r => r[5] === it.id),
+              per = f => {
+                const C = L.filter(r => f(JSON.parse(r[7]))),
+                  sh = C.filter(r => r[4] === PULSE_SHOWN).length,
+                  an = C.filter(r => codes.has(r[4])).length,
+                  sk = C.filter(r => r[4] === PULSE_SKIP).length;
+                return {Shown: sh, 'Not now': sk, 'No answer': Math.max(0, sh - an - sk)};
+              },
+              cols = {All: () => true, Beginner: d => bandOf(d.lv) === 'Beginner', Duel: d => d.m === 'quiz-duel'};
+            for (const [h, f] of Object.entries(cols))
+              for (const [label, n] of Object.entries(per(f))) {
+                if (h === 'All' && label === 'No answer') ign += n;
+                if (cell(it.q, label, col(h)) !== n) bad.push(`${it.q} ${label} ${h}: ${cell(it.q, label, col(h))} ≠ ${n}`);
+              }
+          }
+          const sc = document.querySelector('.adm-pscale');
+          return {
+            heads,
+            bad,
+            ign,
+            scale:
+              !!sc &&
+              /Difficulty/.test(sc.textContent) &&
+              /Feel/.test(sc.textContent) &&
+              /Beginner/.test(sc.textContent) &&
+              /Shown/.test(sc.textContent) &&
+              /Answered/.test(sc.textContent),
+            title: document.querySelector('.adm-pulse h3')?.textContent || ''
+          };
+        });
+        if (
+          !pq.scale ||
+          !/One-tap questions/i.test(pq.title) ||
+          ['All', 'Beginner', 'Middle', 'Strong', 'Quiz', 'Duel'].some(h => !pq.heads.includes(h)) ||
+          pq.bad.length ||
+          !pq.ign
+        )
+          fails.push(`${w}px Errors & feedback, one-tap questions: ${JSON.stringify(pq)}`);
+        // Load times (sheet v21): the demo's three visits, their median line and the CDN server.
+        if (!/Load times/i.test(evt) || !/640 kbit\/s/.test(evt) || !/MNL/.test(evt))
+          fails.push(`${w}px Errors & feedback: load times missing`);
+        // Keys come from anyone's device: "__proto__" as a photo or a message must not break the page (Codex review #343).
+        const proto = await p.evaluate(() => {
+          EVS.rows.unshift(
+            ['protox', Date.now(), 'devx', 'photo', '__proto__', '', 'quiz', '', '1', 'x'],
+            ['protoy', Date.now(), 'devx', 'err', '__proto__', '', 'quiz', '', '1', 'x']
+          );
+          try {
+            renderEvents();
+            return /__proto__/.test(document.getElementById('view').innerText);
+          } catch (e) {
+            return e.message;
+          }
+        });
+        if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
+        await go('inbox/todo/reports');
+        if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
+        // Sheet v55: a report an account deleted with its answers kept left behind reads "From a removed account", no id.
+        if (!/From a removed account/.test(await text()) || /~deleted/.test(await text()))
+          fails.push(`${w}px To do › Reports: a removed account's report is not shown as such`);
+        // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
+        {
+          const fr = await p
+            .waitForFunction(
+              () => {
+                const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
+                const im = c && c.querySelector('.adm-tile img');
+                return c && im && /Damselfishes \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
+              },
+              null,
+              {timeout: 10000}
+            )
+            .then(h => h.jsonValue())
+            .catch(() => null);
+          if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
+        }
       }
     }
+    if (run.has('players')) await playersPart();
     await go('players/activity');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     if (once) {
@@ -3399,7 +3434,9 @@ const WIDTHS = [390, 1280];
     }
     if (errs.length) fails.push(`${w}px Health: ${errs.slice(0, 3).join(' | ')}`);
 
-    if (once) {
+    // The photos' part (SMOKE_ONLY=photos), once, at 1280: a function, run here in a whole run, or alone right after the page
+    // opens (above).
+    async function photosPart() {
       // Once: Growth form, game genera, Candidates, the cap, judgments, the pre-sort, the auto-sort, retests, the fish auto-sort, Publish.
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
       // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
@@ -4135,17 +4172,13 @@ const WIDTHS = [390, 1280];
           fails.push(`${w}px Publish: the fish curation is not published`);
       } else fails.push(`${w}px Publish: button still disabled after a change`);
     }
-    if (errs.length) fails.push(`${w}px actions: ${errs.slice(0, 3).join(' | ')}`);
-
-    const keys = await p.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]);
-    const real = keys.filter(k => /^reefid-(curation|admin)/.test(k));
-    if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
-    await ctx.close();
+    if (once && run.has('photos')) await photosPart();
+    await finish();
   }
   // The difficulty bands' colours (tokens --rec-* in app.css): five distinct fills, text readable on each (≥ 4.5:1), in
   // light and dark, colour-blind off and on (the admin follows the app's ⚙ Colour-blind, reefid-sync-cvd): green to red,
   // or dark blue to dark orange. Once, at 1280.
-  if (ws.includes(1280))
+  if (ws.includes(1280) && run.has('photos'))
     for (const [theme, cvd, veasy] of [
       ['light', '0', 'rgb(27, 107, 51)'],
       ['dark', '0', 'rgb(31, 115, 55)'],
@@ -4207,7 +4240,7 @@ const WIDTHS = [390, 1280];
     console.error(`Admin demo: ${fails.length} problem(s)\n` + fails.join('\n'));
     process.exit(1);
   }
-  const part = slot.partial([], null, WIDTHS, ws);
+  const part = slot.partial(PARTS, run, WIDTHS, ws);
   console.log(
     part
       ? 'Admin demo OK' + part + '; nothing sent.'
