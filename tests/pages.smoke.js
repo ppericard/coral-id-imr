@@ -2142,7 +2142,7 @@ async function noticesAfterSync(base) {
           n => n.classList && /\b(unlock|achpop)\b/.test(n.className) && window.__shown.push([n.className, Math.round(performance.now())])
         )
       )
-    ).observe(document.documentElement, {childList: true, subtree: true});
+    ).observe(document, {childList: true, subtree: true}); // the init script runs before <html> exists
   };
   const init = ([prog, mine, sheet]) => {
     if (localStorage.getItem('test-init')) return;
