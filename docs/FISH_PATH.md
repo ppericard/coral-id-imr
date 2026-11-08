@@ -81,6 +81,7 @@ is the design's shorthand, and internal identifiers may keep it.
 ## Common names: a short curated list per species (Pierre, 2026-11-04)
 
 - Per species, a curated list of **1 to 3 well-used common names, never more**, never a full reference list.
+- **A species no reference names has none** (Pierre, 2026-11-08, Q247: "some species have no common name ... they will not take part in the common-name branch"; nudibranchs will be the same): the build and the proposal accept it with no name, none is invented (rule C2), and it simply has no common-name unit (3 near-Dauin species on 2026-11-08: *Priacanthus starnesi*, *Hazeus profusus*, *H. maculipinna*).
 - **Common-name mastery of a species needs all its listed names**: a multiple-choice question shows one listed name at a time, rotating;
   free text accepts only the listed names.
 - **Selection** (a proposal, validated by Pierre in the admin): the names that recur across public sources (the iNaturalist default
@@ -290,7 +291,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 
 Supported now:
 
-- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 340 circle-1 species in circle-1 entries, plus 11 Dauin species of circle 3 (since #496).
+- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 469 circle-1 species in circle-1 entries (2026-11-08: every species takes its family's circle, Q214; until then the 11 Dauin species of circle-1 entries were circle 3).
 - PDF Latin name (`name`), WoRMS name (`now`, 28 species) and synonyms, iNaturalist id.
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
@@ -306,7 +307,7 @@ Gaps before species questions ship:
 - **Duplicate common name**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question).
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
-- The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
+- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
 - Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)

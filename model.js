@@ -1095,8 +1095,11 @@ function memRecalcAll() {
 // Only a unit whose data is in (GX: fish.json and the judged photos, lazy-loaded by app.js fishLoad; Codex review #688):
 // a pull read on another subject (sync.js inSubject) finds FISH null and leaves the record as it is, rebuilt once the fish
 // data comes (app.js fishLoad, the subject's switch), never on the fallback difficulty, since the rebuild is for good.
+// Nothing before data.json is in (DATA, which GX reads first): a link straight to a quiz page brings this file before it
+// (app.js need at start-up), so the call at the end of this file and fishLoad's find no data, and app.js start-up runs
+// it once the data is built (2026-11-08: "reading 'gen'", and fishLoad failing brought the corals back).
 function domRecalcAll() {
-  if (SUBJ.replay || !domRules()) return false;
+  if (SUBJ.replay || !domRules() || !DATA) return false;
   const L = Object.keys(P).filter(
     n => n !== LEVEL && P[n] && typeof P[n].pg === 'number' && !domOn(P[n]) && (P[n].ok || 0) + (P[n].ko || 0) > 0 && !!GX(n)
   );

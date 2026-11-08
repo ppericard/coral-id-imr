@@ -12,15 +12,22 @@ const S = C.SUBJECTS.find(x => x.renamed),
 
 test('the old-id map is fish.json’s: every entry’s species land in their family through it, names included', () => {
   assert.ok(S, 'a subject carries the map');
+  // Every entry of the switch is mapped; an entry added since (t64 on, 2026-11-08) never was a unit id, so has no old id.
+  const atSwitch = Math.max(...Object.keys(S.renamed.ids).map(id => +id.slice(1)));
   F.teach.forEach(t => {
+    if (+t.id.slice(1) > atSwitch) return;
     assert.ok(S.renamed.ids[t.id], t.id + ' mapped');
+    // A species that came in after the switch (s481 on, 2026-11-08) was never logged under an old entry id.
     t.species
       .map(id => SP.get(id))
-      .filter(s => s.family)
+      .filter(s => s.family && +s.id.slice(1) <= 480)
       .forEach(s => assert.strictEqual(C.renamedId(S, t.id, s.name), s.family, `${t.id} ${s.name}`));
   });
   Object.entries(S.renamed.names).forEach(([id, n]) => assert.strictEqual((FAM.get(id) || {}).name, n, id));
-  F.families.forEach(f => assert.ok(S.renamed.names[f.id], f.id + ' named'));
+  // Names serve the renamed log entries: every family an old id or a split leads to has one.
+  [...Object.values(S.renamed.ids), ...Object.values(S.renamed.split).flatMap(Object.values)].forEach(id =>
+    assert.ok(S.renamed.names[id], id + ' named')
+  );
   assert.strictEqual(C.renamedId(S, 't13', 'Diploprion bifasciatum'), 'f:Soapfishes');
   assert.strictEqual(C.renamedId(S, 't13', 'Epinephelus merra, Diploprion bifasciatum'), 'f:Groupers', 'the first species shown decides');
   assert.strictEqual(C.renamedId(S, 'g:Chromis'), 'g:Chromis');
