@@ -1,4 +1,4 @@
-// Every smoke runs on CI (.github/workflows/checks.yml, the smoke matrix): a smoke split into groups (tests/slot.js parts,
+// Every smoke runs on CI (.github/workflows/smokes.yml, the smoke matrix): a smoke split into groups (tests/slot.js parts,
 // SMOKE_PART) runs each of its groups at each width its jobs run (SMOKE_W; none: every width): a job without a group
 // runs them all, otherwise a job per group. No job names a group the smoke does not have. tests/slot.js parts
 // already fails when a part is in no group; this is the other half: a group in no job would run on no runner, and the
@@ -9,12 +9,12 @@ const test = require('node:test'),
   path = require('path');
 
 const ROOT = path.join(__dirname, '..'),
-  yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'checks.yml'), 'utf8');
+  yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'smokes.yml'), 'utf8');
 
 // The matrix entries: [{name, smoke, part}], from the include list of the smoke job.
 function jobs(src) {
   const inc = (src.slice(src.indexOf('\n  smoke:\n')).split(/\n\s+include:\n/)[1] || '').split(/\n {4}steps:/)[0];
-  assert.ok(inc, 'checks.yml: no smoke matrix include list');
+  assert.ok(inc, 'smokes.yml: no smoke matrix include list');
   return ('\n' + inc)
     .split(/\n\s+- name: /)
     .slice(1)
@@ -37,19 +37,19 @@ const J = jobs(yml),
     .filter(f => f.endsWith('.smoke.js'))
     .map(f => f.replace('.smoke.js', ''));
 
-test('checks.yml: every smoke has a job, every group of a split smoke a job at each width', () => {
+test('smokes.yml: every smoke has a job, every group of a split smoke a job at each width', () => {
   assert.ok(J.length >= SMOKES.length, JSON.stringify(J));
   for (const s of SMOKES) {
     const G = groups(fs.readFileSync(path.join(__dirname, s + '.smoke.js'), 'utf8')),
       mine = J.filter(j => j.smoke === s);
-    assert.ok(mine.length, `${s}.smoke.js runs in no job of checks.yml`);
+    assert.ok(mine.length, `${s}.smoke.js runs in no job of smokes.yml`);
     for (const j of mine)
       assert.ok(!j.part || G.includes(j.part), `${s}.smoke.js: job "${j.name}" names no group of the smoke (${G.join(', ') || 'none'})`);
     for (const w of new Set(mine.map(j => j.w)))
       for (const g of G)
         assert.ok(
           mine.some(j => j.w === w && (!j.part || j.part === g)),
-          `${s}.smoke.js: group ${g} is in no job of checks.yml${w ? ` at SMOKE_W=${w}` : ''}`
+          `${s}.smoke.js: group ${g} is in no job of smokes.yml${w ? ` at SMOKE_W=${w}` : ''}`
         );
   }
   for (const j of J) assert.ok(SMOKES.includes(j.smoke), `job "${j.name}": no tests/${j.smoke}.smoke.js`);
@@ -62,4 +62,22 @@ test('the guard reads what it guards: groups and jobs as written', () => {
     {name: 'a b', smoke: 'a', part: 'b', w: ''},
     {name: 'c', smoke: 'c', part: '', w: '390'}
   ]);
+});
+
+// Q305 d (Pierre, 2026-11-08): the smokes are their own workflow, which a docs-only PR skips, so none may slip back into
+// checks.yml (it would run them on docs PRs again), and the skip lists docs only (never tools/, tests/ or data).
+test('the smokes live in smokes.yml only, skipped for docs-only PRs, always run on a merge train', () => {
+  const checks = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'checks.yml'), 'utf8');
+  assert.ok(!/\n  smoke:\n/.test(checks) && !/\.smoke\.js/.test(checks), 'checks.yml runs a smoke');
+  const ignore = /\n  pull_request:\n    paths-ignore:\n((?: {6}- .+\n)+)/.exec(yml);
+  assert.ok(ignore, 'smokes.yml: pull_request paths-ignore');
+  assert.deepStrictEqual(
+    ignore[1]
+      .trim()
+      .split('\n')
+      .map(l => l.replace(/^\s*- '?|'?$/g, '')),
+    ['docs/**', '*.md', '.github/pull_request_template.md', 'LICENSE']
+  );
+  assert.match(yml, /\n  push:\n    branches: \['train\/\*'\]\n/, 'smokes.yml: every smoke on a train push');
+  assert.match(checks, /\n  push:\n    branches: \['train\/\*'\]\n/, 'checks.yml: the checks on a train push');
 });

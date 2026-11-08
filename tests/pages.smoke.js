@@ -4412,7 +4412,7 @@ async function subjTour(b, base) {
 }
 
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|overlays|
-// rest|more one of the four groups CI runs on separate runners (each in a job of checks.yml: tests/smokeparts.test.js),
+// rest|more one of the four groups CI runs on separate runners (each in a job of smokes.yml: tests/smokeparts.test.js),
 // SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (inside main's 390 pass when both run, else on

@@ -50,9 +50,9 @@ def main():
         return
     if a.fix:
         open(GS, 'w', encoding='utf-8').write(new)
-        print('core.js copied into tools/sync/Code.gs (bump VERSION there if the script changed)')
+        print('core.js copied into tools/sync/Code.gs: add its entry in tools/sync/changes/<branch>.md, never VERSION (rule D3)')
         return
-    sys.exit('✗ tools/sync/Code.gs does not hold the current core.js: run python3 tools/sync_core.py --fix, then bump VERSION')
+    sys.exit('✗ tools/sync/Code.gs does not hold the current core.js: run python3 tools/sync_core.py --fix and add tools/sync/changes/<branch>.md (rule D3)')
 
 
 if __name__ == '__main__':
