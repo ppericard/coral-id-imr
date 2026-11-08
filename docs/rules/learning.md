@@ -173,7 +173,8 @@ photos, a heavy-tailed variant beside), the engine running on them.
 
 **Progressive**: a large expected effect needs no high sensitivity; start with the level's fewest seeds and add seeds
 only when a result lands near a margin (unclear), by the rule declared before running (at level 2, the rated world 10,
-then 20 seeds; then level 3). Before running, declare one primary measure, its world, its checkpoint and its direction,
+then 20 seeds; then level 3). The error is split over the looks declared, k of them: each look reads the one-sided
+bound at 1 − 0.10/k (two looks: 95%) and the primary at 0.05/k (Bonferroni), so stopping on a result keeps the 90%. Before running, declare one primary measure, its world, its checkpoint and its direction,
 and any cost the change is expected to bring (a guardrail it will move, with the bound accepted). Test the primary
 pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact up to 20 pairs, else
 100,000 draws from a fixed seed); only if that passes, per-profile tests under Holm. Guardrails (LEARNING.md's table,

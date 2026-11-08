@@ -4098,9 +4098,12 @@ code or the docs unless marked *inferred*):
 - **Profiles built for the corals.** The four profiles know every 5th unit in data order (`i % 5 < m`); `--subject fish`
   plays the same four on the fish units. No casual diver (common names only), no IMR RA who knows the IMR families, no
   lecture RA for fish, no names choice.
-- **Learners that learn by exposure.** The item learner gains `rate × (1 − know)` per answer whatever the photo; the
-  scratch rated world of 2026-11-08 ("Fish: the global score, built") learns by the number of answers. A change to the
-  photo diet (the cap under ease 4, #729) can then change what is learned only through which units are asked.
+- **Learners whose teaching ignores the photo.** The item learner gains `rate × (1 − know)` after a right answer and
+  1.5 times that after a miss (`MISS`; the genus wrongly picked 0.5 times, `PICKED`), whatever the photo: a photo
+  diet changes what it learns only through which units are asked and how often it misses, so easier photos, fewer
+  misses, teach it a little less, never because the photo itself was clearer. The scratch rated world of 2026-11-08
+  ("Fish: the global score, built") learns by the number of answers alone, so there only which units are asked
+  counts.
 - **Measures of the old yardsticks.** `knowSlate` (success on an average photo among choices), `progGap` (bar − that
   know: the judge's D\* replaced it for the bar), `prog` (the fish % as the families' mean, not the global score of
   Q242), units met. Nothing on the per-unit levels (Open Water, Advanced), the global score and its components, plateaus,
@@ -4122,7 +4125,7 @@ code or the docs unless marked *inferred*):
 | Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ the spread of the sheet's `gd` (to measure) |
 | Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
 | The app's estimates | its own | told the truth ("fully rated"), or its own Elo |
-| Learner | item (default), field, exemplar | by exposure, and one whose gain depends on the answer and its feedback (as the item learner's) |
+| Learner | item (default), field, exemplar | by the number of answers, and one whose gain depends on the answer and its feedback (as the item learner's) |
 | Horizon | 300 questions (600 when the change acts later) | 3,000 answers at level 2 (10,000 when it touches genera, species or the score's shape), 30,000 at level 3 |
 | Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | 4 profiles × 20 seeds × 2 arms × 3,000 answers in under a minute |
 
@@ -4212,7 +4215,7 @@ could not see: in the tree, every unit opened later (a genus, a species, a name)
 a player's first 10,000 answers are on such units (rated world, 10 seeds, the IMR RA and the casual diver), and the cap
 cuts the answers on photos under ease 4 by about 30% over those 10,000 (IMR RA 5,582 → 3,904), not only in the first 300
 questions: the rating of the hard photos (Q252) slows for as long as the tree keeps opening units. In the rated world
-the learner learns by exposure, so its unchanged knowledge says nothing about whether easier photos teach less.
+the learner learns by the number of answers, so its unchanged knowledge says nothing about whether easier photos teach less.
 
 ## Simulation (`tests/profiles.smoke.js`, CI)
 
