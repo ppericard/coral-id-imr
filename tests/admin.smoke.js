@@ -4858,7 +4858,19 @@ const WIDTHS = [390, 1280];
       }, mode);
       const q = await c.newPage(),
         F = `Sign out, real-size draft (${mode})`,
-        ready = () => q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000}),
+        // Loaded, and its auto-sorts written (the fish one is async: its draft write must not land in the middle of a step).
+        idle = pg =>
+          pg.waitForFunction(
+            () =>
+              typeof DRAFT !== 'undefined' &&
+              DRAFT &&
+              DRAFT.genera &&
+              (FISHC || !Object.keys((SUG && SUG.fish) || {}).length) &&
+              !signingOut,
+            null,
+            {timeout: 60000}
+          ),
+        ready = () => idle(q),
         signOut = async () => {
           await q.click('.adm-more summary');
           await q.click('#signout');
@@ -4868,7 +4880,16 @@ const WIDTHS = [390, 1280];
       await ready();
       // Two photos rated otherwise than published, in one draft.
       const st = await q.evaluate(() => {
-        const L = Object.keys(PHOTOS).slice(0, 5),
+        // Photos Pierre's curation and the judging pass leave untouched, so his next publish cannot change the test.
+        const C = JSON.stringify(SAVED) + JSON.stringify(SUG),
+          cand = new Set(
+            Object.values(DATA.cand || {})
+              .flat()
+              .map(p => p.f)
+          ),
+          L = Object.keys(PHOTOS)
+            .filter(f => !cand.has(f) && !C.includes(JSON.stringify(f)))
+            .slice(0, 6),
           s = L.map(f => (SAVED.quality || {})[f] || 0),
           v = s.map(x => (x === 1 ? 3 : 1));
         DRAFT.quality = {...(DRAFT.quality || {}), [L[0]]: v[0], [L[1]]: v[1]};
@@ -4909,7 +4930,15 @@ const WIDTHS = [390, 1280];
         });
       if (mode === 'full') {
         const on = await twice();
-        await q.waitForTimeout(2000);
+        await q
+          .waitForFunction(
+            () => /could not be sealed/.test((document.querySelector('.adm-toast') || {}).textContent || '') && !signingOut,
+            null,
+            {
+              timeout: 15000
+            }
+          )
+          .catch(() => {}); // a reload (the bug) is caught below
         const w = await q.evaluate(() => ({
           stay: typeof smokeStay !== 'undefined',
           button: [document.getElementById('signout').disabled, document.getElementById('signout').textContent],
@@ -4935,8 +4964,7 @@ const WIDTHS = [390, 1280];
         // token comes back at every load, so both load again); one of another token stays, and writes the base back.
         const q2 = await c.newPage();
         await q2.goto(base + 'admin.html?demo#photos/review/quality');
-        await q2.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
-        await q2.waitForTimeout(1500); // its auto-sort written
+        await idle(q2);
         await q.evaluate(() => {
           DRAFT.quality = {...DRAFT.quality};
           saveDraft();
@@ -4951,7 +4979,7 @@ const WIDTHS = [390, 1280];
         await signOut();
         const both = await loads;
         await ready();
-        await q2.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
+        await idle(q2);
         const u2 = await q2.evaluate(() => JSON.parse(sessionStorage.getItem('smoke-seal') || '{}'));
         if (!both || u2.token !== null)
           fails.push(`${F}: the other tab of the same token did not lock at the sign out ${JSON.stringify({both, token: u2.token})}`);
@@ -4987,21 +5015,48 @@ const WIDTHS = [390, 1280];
           await signOut();
           const ok = await ld;
           await ready();
-          await q2.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
-          await q.waitForTimeout(2000);
+          await idle(q2);
           await q.reload();
           await ready();
           const g = await quality(st.L),
             left = await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed'));
           const want = [...st.v.slice(0, 3), v5[0], how === 'lost' ? v5[1] : st.s[4]];
-          if (!ok || g.slice(0, 2).join() !== want.slice(0, 2).join() || g.slice(3).join() !== want.slice(3).join() || left)
+          if (!ok || g.slice(0, 2).join() !== want.slice(0, 2).join() || g.slice(3, 5).join() !== want.slice(3, 5).join() || left)
             fails.push(
               `${F}: the other tab's ${how === 'note' ? 'note being typed' : 'unwritten click'} was not sealed before it locked ${JSON.stringify({ok, g, want, left: !!left})}`
             );
-          await q2.waitForTimeout(500);
+          await idle(q2);
         }
         {
-          // Its seal cannot be written: it stays unlocked, its edit in its draft and back in plain, with a warning.
+          // The other tab writes a click while this one seals (its encryption held 1.5 s): the click is in the seal, or
+          // the other tab sees its last write is not the one sealed and seals it (sealDraft's last takeOther, SEAL_REV).
+          await q.evaluate(() => {
+            const enc = crypto.subtle.encrypt.bind(crypto.subtle);
+            crypto.subtle.encrypt = (...a) => new Promise(r => setTimeout(r, 1500)).then(() => enc(...a));
+          });
+          const ld = bothLoad();
+          await signOut();
+          await q.waitForFunction(() => signingOut, null, {timeout: 10000});
+          await q2.evaluate(
+            ([f, v]) => {
+              DRAFT.quality = {...DRAFT.quality, [f]: v};
+              saveDraft();
+            },
+            [st.L[2], st.v[2]]
+          );
+          const ok = await ld;
+          await ready();
+          await idle(q2);
+          await q.reload();
+          await ready();
+          const g = await quality(st.L);
+          if (!ok || g[2] !== st.v[2])
+            fails.push(`${F}: a click the other tab wrote while this one sealed was lost ${JSON.stringify({ok, g, want: st.v[2]})}`);
+        }
+        {
+          // Its seal cannot be written: it stays unlocked, its edit in its draft and back in plain, with a warning. A photo
+          // no other step rated. This tab's reload is held off meanwhile: in the demo it would come back unlocked at once and
+          // write its own draft over the plain one (a signed-out tab writes nothing; its draft key goes on its reload).
           await q2.evaluate(
             ([f, v]) => {
               window.smokeStay = 1;
@@ -5014,36 +5069,57 @@ const WIDTHS = [390, 1280];
               DRAFT.quality = {...DRAFT.quality, [f]: v};
               draftLost = true;
             },
-            [L5[1], st.s[4] === 2 ? 3 : 2]
+            [st.L[5], st.s[5] === 2 ? 3 : 2]
           );
-          await Promise.all([q.waitForEvent('load'), signOut()]);
-          await ready();
-          await q2.waitForTimeout(2000);
+          const hold = u => u.pathname.endsWith('/admin.html');
+          await c.route(hold, r => r.abort());
+          await signOut();
+          await q2
+            .waitForFunction(
+              () => /could not be sealed/.test((document.querySelector('.adm-toast') || {}).textContent || '') && !signingOut,
+              null,
+              {
+                timeout: 15000
+              }
+            )
+            .catch(() => {}); // a reload (the bug) is caught below
           const r = await q2.evaluate(f => {
             if (window.smokeSet) Storage.prototype.setItem = window.smokeSet; // gone if it reloaded
-            const pl = JSON.parse(localStorage.getItem('demo:reefid-curation-draft') || '{}');
+            let pl = {};
+            try {
+              pl = JSON.parse(localStorage.getItem('demo:reefid-curation-draft') || '{}');
+            } catch (e) {}
             return {
               stay: typeof smokeStay !== 'undefined',
-              token: TOKEN,
-              mine: (DRAFT.quality || {})[f],
+              token: typeof TOKEN === 'undefined' ? 'none' : TOKEN, // none: it reloaded (held off: an error page)
+              mine: typeof DRAFT === 'undefined' ? null : (DRAFT.quality || {})[f],
               plain: (pl.quality || {})[f],
               toast: (document.querySelector('.adm-toast:not([hidden])') || {}).textContent || ''
             };
-          }, L5[1]);
-          const v = st.s[4] === 2 ? 3 : 2;
+          }, st.L[5]);
+          const v = st.s[5] === 2 ? 3 : 2;
           if (!r.stay || r.token !== 'demo' || r.mine !== v || r.plain !== v || !/could not be sealed/.test(r.toast))
             fails.push(
               `${F}: the other tab, unable to seal its edit, did not stay unlocked with it in plain and a warning ${JSON.stringify(r)}`
             );
+          await c.unroute(hold);
+          await q.goto(base + 'admin.html?demo#photos/review/quality');
+          await ready();
+          await idle(q2);
         }
         // The other tab now holds another token: a Sign out here leaves it unlocked.
         await q2.evaluate(() => {
           TOKEN = 'another-token';
           window.smokeStay = 1;
+          window.smokeSO = localStorage.getItem('demo:reefid-admin-signout');
         });
         await Promise.all([q.waitForEvent('load'), signOut()]);
         await ready();
-        await q.waitForTimeout(1500);
+        // The broadcast reached that tab (it had its chance to lock) before it is checked.
+        await q2
+          .waitForFunction(() => localStorage.getItem('demo:reefid-admin-signout') !== smokeSO, null, {timeout: 10000})
+          .catch(() => {});
+        await q2.waitForTimeout(300); // the token's mark compared (a hash, a few ms)
         if (!(await q2.evaluate(() => typeof smokeStay !== 'undefined' && TOKEN === 'another-token')))
           fails.push(`${F}: a Sign out locked a tab of another token`);
         // As at another tab's sign out, the draft and its base come off; that tab's next click puts both back.
@@ -5174,7 +5250,6 @@ const WIDTHS = [390, 1280];
         );
         await q.goto(base + 'admin.html?demo#photos/review/quality');
         await ready();
-        await q.waitForTimeout(1500);
         const t3 = await q.evaluate(() => (document.querySelector('.adm-toast') || {}).textContent || ''),
           g3 = await quality(st.L.slice(0, 2));
         if (g3.join() !== st.v.slice(0, 2).join() || /sealed at your last sign out/.test(t3))

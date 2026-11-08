@@ -6772,7 +6772,11 @@ async function sealDraft(over) {
       {iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0},
       ...(Array.isArray(L) ? L : []).filter(x => !over || x.ct !== over)
     ].slice(0, 3);
-  if (snap !== at) return sealDraft(over); // a click came in while it was being sealed
+  // A click here, or a draft another tab wrote meanwhile (read from storage now: its storage event may not have come yet),
+  // goes round again. SEAL_REV: the draft revision sealed, for the other tabs to tell whether their last write is in it.
+  takeOther();
+  if (snap !== at) return sealDraft(over);
+  SEAL_REV = SEEN;
   plainOff();
   if (store.set(SEALED, S)) return true;
   putDraft(); // it did not fit: the draft goes back as it was
@@ -6807,7 +6811,8 @@ async function unsealDraft() {
 // A draft that cannot be sealed (storage full, no Web Crypto) stays in plain only if Sign out is clicked again after
 // the warning. A click while it seals does nothing (the button reads Sealing…; second review of #798).
 let soWarned = 0,
-  signingOut = false;
+  signingOut = false,
+  SEAL_REV = null;
 // Sign out signs out every admin tab of this token in this browser (each keeps the token in its own sessionStorage): the
 // tab that seals says so in reefid-admin-signout with a mark of the token (not the token), and the others lock at once,
 // so none puts the draft back in plain (second review of #798, integrator's decision, 2026-11-09).
@@ -6849,31 +6854,34 @@ async function signOut() {
   }
   TOKEN = null; // from here no click writes the draft again
   const k = await mark;
-  if (k) store.set(SIGNOUT, {k, t: Date.now()});
+  if (k) store.set(SIGNOUT, {k, t: Date.now(), rev: SEAL_REV});
   lockNow();
 }
 addEventListener('storage', e => {
   if (e.key === SK('reefid-curation-base')) BASE_GONE = e.newValue === null;
   if (e.key !== SK(SIGNOUT) || !e.newValue || !TOKEN) return;
-  let k = null;
+  let k = null,
+    rev = null;
   try {
-    k = JSON.parse(e.newValue).k;
+    ({k, rev} = JSON.parse(e.newValue));
   } catch (x) {}
   if (k)
     tokMark(TOKEN)
-      .then(m => m === k && TOKEN && !signingOut && lockOther())
+      .then(m => m === k && TOKEN && !signingOut && lockOther(rev))
       .catch(() => {});
 });
 // Another tab of this token signed out, with its seal of the shared draft. What this tab holds that never reached that
 // draft (a note typed in the last 0.8 s, clicks whose write failed: draftLost) is sealed here, the other seal under it,
 // in its place; if that cannot be sealed either, this tab stays unlocked with its draft in plain and says so (Codex
-// review #798). With nothing of its own left, it just locks.
-async function lockOther() {
+// review #798). With nothing of its own left, it just locks. rev: the revision the other tab sealed; this tab's own last
+// write is not in that seal when it is another one (written as the other tab sealed, or not seen by it yet).
+async function lockOther(rev) {
   signingOut = true;
   const at = snap,
-    lost = draftLost;
+    lost = draftLost,
+    unseen = !!SEEN && SEEN.startsWith(TAB + '.') && SEEN !== rev;
   ptFlush();
-  let ok = snap === at && !lost;
+  let ok = snap === at && !lost && !unseen;
   if (!ok)
     try {
       const S = await unsealDraft().catch(() => null);
