@@ -6914,6 +6914,12 @@ html.touring .unlock {
 .subjc[hidden] {
   display: none;
 }
+/* Home has its own Corals | Fish row (Pierre, 2026-11-08: the two looked doubled): the header's control steps aside there
+   (app.js route), at every width, keeping its room so the header and every item in it stay where they are from page to
+   page (the logotype too: it steps aside on phones beside the control, above). Out of reach of clicks and of the keyboard. */
+.subjc[data-home] {
+  visibility: hidden;
+}
 .subjb {
   display: inline-flex;
   align-items: center;

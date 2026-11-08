@@ -101,7 +101,51 @@
    "keep": "best"
   },
   "fish-s010-cand-fb-Chuni_u4": {
-   "code": "o0n0sl13",
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s010-cand-605927810": {
+   "code": "p1g2ms11",
+   "keep": "best"
+  },
+  "fish-s010-cand-760873702": {
+   "code": "p1g0ss12",
+   "keep": "best"
+  },
+  "fish-s010-cand-701369997": {
+   "code": "o1g1bl12",
+   "keep": "best"
+  },
+  "fish-s010-cand-332214366": {
+   "code": "o1g0sms2",
+   "keep": "best"
+  },
+  "fish-s010-cand-714264888": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s010-cand-610162372": {
+   "code": "o1g0ssm2",
+   "keep": "best"
+  },
+  "fish-s010-cand-610162371": {
+   "code": "o1g0ssm2",
+   "keep": "dup"
+  },
+  "fish-s010-cand-610162391": {
+   "code": "o1g0ssm2",
+   "keep": "dup"
+  },
+  "fish-s010-cand-755349133": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s010-cand-755349127": {
+   "code": "d1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s010-cand-697801206": {
+   "code": "o1g2sl12",
    "keep": "best"
   }
  }
