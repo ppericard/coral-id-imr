@@ -190,7 +190,7 @@ function doPost_(e){
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
     return json_(p.readLive ? live_() : p.readStats ? stats_() : answers_({name: p.aname, pin: p.apin}));
   }
-  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart)
+  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; vNEXT statsExclude)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
@@ -315,6 +315,7 @@ function logAnswers_(name, answers, seen0, dev){
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
   sh.getRange(at, 1, rows.length, LOG.length).setValues(rows);
   dropHold_(name);
+  try { photoAlert_(name, rows); } catch (e) {}  // vNEXT: flagged, never refused
 }
 const num_ = x => typeof x === 'number' && isFinite(x) ? x : '';
 // v109: a device id as the app makes it (sync.js devId: a string of 10 lower-case letters and digits; 8 to 16 accepted,
@@ -628,6 +629,7 @@ function answers_(q){
   // v55: the roster read before the answers (Codex review #600): a removal while they are read leaves the report stale.
   const ss = SpreadsheetApp.getActiveSpreadsheet(), out = {ok: true, rows: [], players: {}, roster: rosterAt_()}, sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs');
   const salt = anonSalt_(), ids = {}, id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();
+  out.excluded = [...sxSet_()];  // vNEXT: the ids left out of the statistics (sxSet_), for the Analyses report and the admin
   // me: the caller's own id, only with its name and right code (the admin page marks "you").
   const {name, pin} = clean_(q || {});
   if (name && /^\d{4}$/.test(pin) && ra && !blocked_(name)) { const r = find_(ra, name); if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) out.me = id(name); else if (r) failed_(name); }
@@ -765,11 +767,20 @@ function stats_(){
   const mem = MEM.PRIOR.slice(), I = [0, 0, 0, 0], N = [0, 0, 0, 0], tau = MEM.N * infoAt_(1, 4);
   // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
   const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0, String(r[11] || '')]));
+  // vNEXT: the players and devices the admin left out of the statistics (sxSet_) count as untrusted: they rate nothing.
+  const salt = anonSalt_(), sx = sxSet_(), EX = {}, isEx = w => sx.size > 0 && (w in EX ? EX[w] : (EX[w] = sx.has(aid_(w, salt))));
+  Object.keys(trust).forEach(w => { if (trust[w] && isEx(w)) trust[w] = false; });
+  // vNEXT: an answer whose photos are of another unit (photoCheck_ 'other') rates no photo and no photo memory.
+  const idx = (() => { try { return photoIdx_(CORE_.replaySubject()); } catch (e) { return null; } })();  // the corals' read, the others' cached
+  out.skip = {excluded: 0, photos: 0};
   rows.forEach(r => {
     const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
     const sg = String(r[2]), sa = String(r[3]);
     if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
+    if (isEx(who)) out.skip.excluded++;
     if (!fs.length) return;
+    const pk = !trust[who] || photoCheck_(idx, CORE_.rowSubject(r), sg, fs) !== 'other';
+    if (!pk) out.skip.photos++;
     const g = guess_(mode, r[11]), ra = R[who] = R[who] || [PLAYER0, 0];
     const gs = String(r[2] || ''), go = G[gs] = G[gs] || [0, 0];  // v31: the genus offset, shared by the photos of the genus
     const ph = fs.map(f => (PG[f] = gs, P[f] = P[f] || [0, 0, 0, 0])), b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
@@ -777,7 +788,7 @@ function stats_(){
     const hs = fs.map(f => H[who + '|' + f] = H[who + '|' + f] || [0, 0]);
     const s = sig(ra[0] - b - memFam_(hs, mem)), e = g + (1 - g) * s, d = ok - e, n = ra[1];
     // The photos and the memory offsets move on trusted players' answers, weighed by their experience.
-    if (trust[who]) {
+    if (trust[who] && pk) {
       const w = n / (n + PHOTO_W.N), D = (1 - g) * s * (1 - s), v = Math.max(1e-6, e * (1 - e)), A = [0, 0, 0, 0];
       // Counts are weighed too: they damp later steps and tell the app how sure the rating is (photoDiff).
       ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d * w; p[2] += w; p[1] += ok * w; p[3]++; });
@@ -794,7 +805,6 @@ function stats_(){
   // v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
   Object.keys(P).forEach(f => out.photos[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
   Object.keys(G).forEach(n => out.gd[n] = [Math.round(G[n][0] * 100) / 100, Math.round(G[n][1] * 10) / 10]);
-  const salt = anonSalt_();
   // v55: the answers a deleted account left ("~deleted <id>") rate the photos, never a player: no ability for them.
   const arch = archivedSet_();  // v58: an archive's answers rate the photos, never a player either
   Object.keys(R).forEach(n => { if (n.indexOf('~deleted ') !== 0 && !arch.has(n)) out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]; });
@@ -803,7 +813,7 @@ function stats_(){
   // v77 (Pierre, 2026-11-06, Q138): each question format's offset, fitted on the trusted answers' logged expectation
   // (core.js fmtOffsetsOf, the app's PFMT: its ability steps and its photo aim, logged in each answer's scoring record;
   // the full replay below takes it for the rows logged without one, rules version 8).
-  out.fmt = CORE_.fmtOffsetsOf(rows.map(r => rowOf_(lc_(r[0]), r)));
+  out.fmt = CORE_.fmtOffsetsOf(rows.filter(r => !isEx(lc_(r[0]))).map(r => rowOf_(lc_(r[0]), r)));  // vNEXT: without the excluded
   try { cache.put('stats17', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
@@ -1326,6 +1336,29 @@ function groupSet_(ra, names, g, on){
   for (let i = rows.length - 1; i >= 0; i--) if (String(rows[i][0]) === g && out[lc_(rows[i][1])]) { sh.deleteRow(i + 2); n++; }
   return n;
 }
+// vNEXT (Pierre, 2026-11-08, ROADMAP "Security follow-ups": "je suis ok avec tout ce que tu as listé"): the players
+// and devices the admin leaves out of the statistics, by the admin's anonymous id (aid_: a signed-in player's or a device
+// not signed in, "~anon <id>"), one row each in the tab "Stats excluded" (Id, Added). Their answers rate no photo, no
+// confusion, no photo memory and no format offset (stats_), and the Analyses report leaves them out (readAnswers serves
+// the list as excluded, tools/analyses.js drops their rows); their own progress, level, leaderboard place and answers
+// stay as they are, and Players still shows them. Reversible: POST {statsExclude: id, on: true|false, token} (users_).
+const SX = {TAB: 'Stats excluded', HEAD: ['Id', 'Added']}, SX_ID = /^[A-Za-z0-9+/]{8}$/;
+function sxSet_(){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SX.TAB);
+  return new Set(sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])).filter(x => SX_ID.test(x)) : []);
+}
+// Puts one id in (on) or out of the list, each once; under the script lock (the caller holds it). Returns whether it changed.
+function sxPut_(id, on){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SX.TAB), v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
+  const at = v.map(r => String(r[0])).indexOf(id);
+  if (on) { if (at >= 0) return false; const t = sheet_(SX.TAB, SX.HEAD); t.getRange(t.getLastRow() + 1, 1, 1, 2).setValues([[safe_(id), new Date()]]); return true; }  // an id may start with +
+  if (at < 0) return false;
+  for (let i = v.length - 1; i >= 0; i--) if (String(v[i][0]) === id) sh.deleteRow(i + 2);
+  return true;
+}
+// An account removed (rule D7): its row goes, or follows its answers to the id they keep (into: a delete that keeps the
+// answers as "~deleted <id>", an archive's new name), so what was left out stays out and nothing points to the name.
+function sxMove_(from, into){ if (sxPut_(aid_(from), false) && into) sxPut_(aid_(into), true); }
 // v55 (Pierre, 2026-11-05, Q84-Q91: "when an account is deleted, the information tied to it is cleaned up; archived
 // means not used in normal operation"). Deletes everything of an account but its Removed tombstone (the caller writes
 // it): RAs, Progress data, By genus, Replayed, Groups, its page summaries (Pages, Q88: per-player behaviour, no photo
@@ -1342,6 +1375,7 @@ function deleteAccount_(name, all){
   pagesDrop_(new Set([aid_(name)]));
   ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // every subject's replay
   dropRows_(GROUPS.TAB, name, 2);  // v48: out of every beta group
+  sxMove_(name, all ? '' : del);  // vNEXT: out of the statistics stays out, under the id the answers keep
   // Names merged into it before point nowhere now (Codex review #600): their devices are told the account was removed,
   // and their answers and reports never go under the deleted name (nor to someone who takes it later).
   relabel_('Removed', 3, name, '');
@@ -1461,6 +1495,18 @@ function users_(p){
       return {ok: true, rev: cur.rev + 1, start: out.start};
     } finally { lock.releaseLock(); }
   }
+  // vNEXT: {statsExclude: admin id, on: true|false, token} leaves a player or a device not signed in out of the
+  // statistics, or counts them again (sxPut_); the photo stats are recomputed and the Analyses report refitted
+  // (rosterChanged_). Answers {ok, excluded: every id left out}.
+  if (p.statsExclude) {
+    const id = String(p.statsExclude);
+    if (!SX_ID.test(id)) return {ok: false, error: 'input'};
+    const lock = lock_();
+    try {
+      if (sxPut_(id, !!p.on)) rosterChanged_();
+      return {ok: true, excluded: [...sxSet_()]};
+    } finally { lock.releaseLock(); }
+  }
   if (p.userData) {
     const u = row_(String(p.userData)); if (!u) return {ok: false, error: 'user'};
     const d = readData_(String(u.v[0]), String(u.v[7] || '')), data = JSON.parse(d.json);
@@ -1487,6 +1533,7 @@ function users_(p){
       // v30: their sheets opened too (ids are the admin's, as the Pages tab keeps them); never a named player's.
       const named = new Set(ss.getSheetByName('RAs') && ra.getLastRow() > 1 ? ra.getRange(2, 1, ra.getLastRow() - 1, 1).getValues().map(r => aid_(String(r[0]), salt)) : []);
       pagesDrop_(new Set([...ids].filter(x => !named.has(x))));
+      [...ids].filter(x => SX_ID.test(x) && !named.has(x)).forEach(x => sxPut_(x, false));  // vNEXT: no row left for ids with no answer
       try { CacheService.getScriptCache().remove('stats17'); } catch (e) {}
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
@@ -1517,6 +1564,7 @@ function users_(p){
         relabel_('Removed', 3, from, into);
         redact_(from, into);  // its name in the log tabs follows it, so deleting the archive leaves none (Codex review #603)
         dropRows_(GROUPS.TAB, from, 2);  // v58: an archive is in no beta group
+        sxMove_(from, into);  // vNEXT: its answers stay out of the statistics if they were
         rplDrop_(from);  // the replay (v28; every subject's) is made again under the new name when asked
         rosterChanged_();  // v55: the three caches (achs15 too) and the Analyses report
         return {ok: true, answers: answers, reports: reports};
@@ -1548,6 +1596,7 @@ function users_(p){
       // v48: the merged name's beta groups join the kept name's (each once).
       groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
       dropRows_(GROUPS.TAB, from, 2);
+      sxMove_(from, '');  // vNEXT: the kept name's choice holds for the answers it takes
       ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, from));  // every subject's replay
       redact_(from, into);  // v55: its name in the log tabs becomes the name it joined
       relabel_('Removed', 3, from, into);  // names merged into from earlier now point to into (Codex review #600)
@@ -1591,6 +1640,7 @@ function users_(p){
   const gm = groupMap_();
   out.users.forEach(u => (u.groups = gm[lc_(u.name)] || []));
   replayedAll_(out.users, dcol);
+  out.excluded = [...sxSet_()];  // vNEXT: the ids left out of the statistics
   return out;
 }
 // v81 (Pierre, 2026-11-06, Q191; the photo exposure study, docs/reviews/2026-11-06-photo-exposure-study.md §5): the
@@ -1611,7 +1661,9 @@ function exposure_(rows, by){
 // Each subject's game photos per unit, grouped by colony (core.js unitPool over the site's files its SUBJECTS pool names,
 // read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool1<id>; about
 // 40 KB each). A subject whose files cannot be read is left out, and not asked again for 10 minutes.
-function pools_(){
+// only (vNEXT): true, the cached pools alone, nothing fetched (an answer's write: photoAlert_); a subject id, that
+// subject's pool fetched when not cached, the others from the cache only (stats_).
+function pools_(only){
   const c = CacheService.getScriptCache(), out = {}, files = {};
   const site_ = name => {
     if (name in files) return files[name];
@@ -1625,6 +1677,7 @@ function pools_(){
   CORE_.SUBJECTS.filter(S => S.pool).forEach(S => {
     const k = 'pool1' + S.id, hit = c.get(k);
     if (hit) { try { const v = JSON.parse(hit); if (v) out[S.id] = v; return; } catch (e) {} }
+    if (only === true || (only && only !== S.id)) return;
     let P = null;
     try { P = CORE_.unitPool(S, S.pool.files.map(site_)); } catch (e) { P = null; }
     if (!P || !Object.keys(P).length) { try { c.put(k, 'null', 600); } catch (e) {} return; }
@@ -1632,6 +1685,44 @@ function pools_(){
     try { c.put(k, JSON.stringify(P), 21600); } catch (e) {}
   });
   return out;
+}
+// vNEXT (Pierre, 2026-11-08, ROADMAP "Security follow-ups": check server-side that an answer's photos belong to the unit
+// shown): every subject's game photos (pools_, the compact list the games draw from) as {photo: ['subject|unit', …]}; null
+// when no pool could be read (then no answer is checked).
+function photoIdx_(only){
+  const pools = pools_(only), idx = {};
+  Object.keys(pools).forEach(sid => Object.keys(pools[sid]).forEach(u => pools[sid][u].forEach(c => c.forEach(f => (idx[f] = idx[f] || []).push(sid + '|' + u)))));
+  return Object.keys(idx).length ? idx : null;
+}
+// An answer's photos against the unit it shows: 'ok' when one of them is a game photo of that unit in that subject, or is
+// named after it (a coral photo's file starts with its genus: an older app, a photo given to another genus since), or the
+// answer has no photo; 'other' when none is and one at least is a game photo of another unit or subject (a fish photo
+// under a coral genus); 'unknown' when no photo is in any pool (out of play now, renamed, made up). Only 'other' is
+// flagged: such an answer is logged and counts for the player as any other, and only rates no photo (stats_).
+function photoCheck_(idx, sid, unit, fs){
+  if (!idx || !fs.length) return 'ok';
+  const key = sid + '|' + unit, own = lc_(unit);
+  let other = 0;
+  for (let i = 0; i < fs.length; i++) {
+    const at = idx[fs[i]];
+    if ((at && at.indexOf(key) >= 0) || lc_(fs[i].split('-')[0]) === own) return 'ok';
+    if (at) other++;
+  }
+  return other ? 'other' : 'unknown';
+}
+// On write: a send whose answers show photos of another unit (photoCheck_ 'other', against the pools already cached:
+// nothing is fetched under the script lock) is logged as it is, never refused (an old app or a photo moved since must
+// lose nothing), and the first such send of each 6-hour window per sender is written to the Alerts tab under the
+// sender's admin id (aid_), never a name.
+function photoAlert_(name, rows){
+  const idx = photoIdx_(true);
+  if (!idx) return;
+  const n = rows.filter(r => photoCheck_(idx, String(r[17] || CORE_.SUBJECTS[0].id), String(r[2]), String(r[6]).split(/\s+/).filter(Boolean)) === 'other').length;
+  if (!n) return;
+  const id = aid_(name), c = CacheService.getScriptCache(), k = 'photochk:' + id + ':' + Math.floor(Date.now() / 216e5);
+  if (c.get(k)) return;
+  c.put(k, '1', 21600);
+  sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('photos not of the unit shown: ' + id + ' (' + n + ' of ' + rows.length + ' answers)')]);
 }
 // v42 (Pierre, 2026-11-04: admin pages slow on his phone; Players read every player's saved copy, one call each, to
 // replay their progress itself): each player of the list gets rp: [progress %, learned, the saved copy's progress %],

@@ -48,6 +48,25 @@ rule, not the name, is what tells a real player from a bot: random clicking, bot
 never count, signed in or not. A bot that reads the right answers from the app's data could still pull photos towards "easy" (repeats on a photo
 it got right twice weigh less, as remembered).
 
+## Left out of the statistics, and photos of another unit (vNEXT)
+
+Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
+- **Leave out**: in admin Players (a player's bar under their row, or a device in Not signed in), **Leave out** puts the
+  id in the sheet's **Stats excluded** tab (`statsExclude`, admin token). Its answers then rate no photo, confusion,
+  photo memory or format offset (`stats_`), and the Analyses report leaves them out (`readAnswers` serves the ids as
+  `excluded`, `tools/analyses.js` drops their rows; the change makes the report stale, so it is refitted). The player's
+  own progress, level and leaderboard place stay as they are, and their answers stay in the log. **Count again** undoes
+  it. A delete, merge or archive moves or drops the row (rule D7): answers kept as "~deleted <id>" stay left out. This is
+  for a player or device that is clearly not playing for real but still passes the trust rule, which is a bot that reads
+  the right answers.
+- **Photos of another unit**: an answer whose photos are game photos of another unit or subject, and none of its own
+  (`photoCheck_` against every subject's game photos, `pools_`: a coral photo whose file starts with the genus counts as
+  that genus's, for an older app or a photo moved since; a photo in no pool is unsure), is **logged as every answer and
+  never refused**: an old app, a renamed unit or a photo moved since must not lose a real answer. It rates no photo and
+  no photo memory (`stats_`; `readStats` `skip` counts them). On write, the first send of each 6-hour window with such
+  answers adds one line to the **Alerts** tab under the sender's admin id ("photos not of the unit shown: <id> (n of m
+  answers)"), never a name. On write only the pools already cached are used, so nothing is fetched under the script lock.
+
 ## Removed accounts (v55)
 
 Pierre, 2026-11-05 (rule D7): deleting, merging or archiving an account cleans up every trace tied to it.
@@ -60,18 +79,18 @@ player anywhere: `readAnswers` flags them 2 and the admin and the analyses keep 
 ## If it happens
 
 1. Look at the **Alerts** tab and admin **Players** (Activity, Users): a burst of `~anon` ids or new names.
-2. Delete the junk: admin Players > Users > Delete… > Delete everything for fake names (sheet v55: answers, reports,
+2. A player or device that is not junk enough to delete but should not rate the photos: Players, **Leave out**
+   (above). Answers with photos of another unit are already kept out of the photo ratings; the Alerts tab names their
+   sender's admin id.
+3. Delete the junk: admin Players > Users > Delete… > Delete everything for fake names (sheet v55: answers, reports,
    page summaries and log mentions go; only the Removed line stays); for answers without a name, tick
    their ids under Players > Not signed in, then "Delete the answers of the selected ids" (sheet v17 `anonDelete`, admin
    token, never a named player's answers). Photo ratings and confusions are recomputed from the
    Answers tab every time, so they recover on their own.
-3. Tighten a cap in `over_` calls (`tools/sync/Code.gs` with its changes file, the integrator assigning `VERSION` at merge: it deploys itself) or, in an emergency, stop
+4. Tighten a cap in `over_` calls (`tools/sync/Code.gs` with its changes file, the integrator assigning `VERSION` at merge: it deploys itself) or, in an emergency, stop
    anonymous answers by having `anon_` return `busy`.
 
 ## Not done yet (ROADMAP)
 
-- An admin switch to exclude a signed-in player from the statistics (v17 already leaves out anonymous ids and players
-  at chance).
-- Check server-side that the photos of an answer belong to the genus shown (needs a compact photo list in the script).
 - Archive old answers to a second tab or Sheet before the 10-million-cell limit.
 - Show the Alerts tab in the admin (To do).

@@ -3317,6 +3317,10 @@ td.cov-c .cov-off {
 .adm-utbl .adm-urow.me td {
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
+/* Out of the statistics (admin.js isExcl): a small muted mark beside the name or the id. */
+.adm-uex {
+  color: var(--muted);
+}
 .adm-urow {
   cursor: pointer;
 }
