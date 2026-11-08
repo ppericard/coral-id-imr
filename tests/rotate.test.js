@@ -261,7 +261,7 @@ test('the fish Candidates: a photo in play with no judgment shows its published 
   assert.strictEqual(T.fishSrc(c, 1, true), `src="${c.src.replace('/original.', '/medium.')}"`);
   // R2 failed (AWAY): the original, its published crop drawn.
   T.set({AWAY: true});
-  assert.match(T.fishSrc(p, 1), new RegExp(`style="${vb.replace(/[()%.]/g, '\\$&')}"$`));
+  assert.ok(T.fishSrc(p, 1).endsWith(` style="${vb}"`), T.fishSrc(p, 1));
 });
 
 test('R2 failed: the published rotation is drawn on the original with its crop (admin.js photoRoOf, its error handler)', () => {
