@@ -50,7 +50,6 @@ test('licence(): the recorded lic, else the credit line; Python and the admin re
   [...Object.values(D.gen), ...Object.values(D.x.gen)].forEach(g => {
     Object.values(g.views || {}).forEach(add);
     Object.values(g.more || {}).forEach(add);
-    add(g.book);
   });
   Object.values(D.course).forEach(add);
   Object.values(D.cand || {}).forEach(add);
@@ -59,7 +58,6 @@ def add(L): out.extend(licence(p) for p in (L or []))
 for g in [*D['gen'].values(), *D['x']['gen'].values()]:
     for L in (g.get('views') or {}).values(): add(L)
     for L in (g.get('more') or {}).values(): add(L)
-    add(g.get('book'))
 for L in D['course'].values(): add(L)
 for L in (D.get('cand') or {}).values(): add(L)
 print(json.dumps(out))`);

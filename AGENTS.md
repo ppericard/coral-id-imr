@@ -144,7 +144,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
 - **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish: reference-quality photos first, then easiest, never by source.
 - **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
-- **P3** No photo of several corals or fish species, nor Coral Finder book photo, in games.
+- **P3** No photo of several corals or fish species in games; no Coral Finder book photo anywhere.
 - **P4** All photos of one question come from one observation.
 - **P5** Credits in the lightbox and after the answer, never giving the answer away.
 

@@ -55,7 +55,7 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
 // The admin's one filter bar (admin plan PR 3, admin.js FB) is filled from each subject's admin part: its photo origins
 // ([key, name, short name], keys among those admin.js origin(p) gives) and its Candidates sources (among its origins).
 test('admin descriptor: origins and Candidates sources for the one filter bar', () => {
-  const KEYS = ['imr', 'own', 'dauin', 'ph', 'world', 'book'];
+  const KEYS = ['imr', 'own', 'dauin', 'ph', 'world'];
   C.SUBJECTS.forEach(s => {
     const O = s.admin.origins;
     assert.ok(Array.isArray(O) && O.length, s.id);
@@ -78,9 +78,9 @@ test('admin descriptor: origins and Candidates sources for the one filter bar', 
     coral.origins.map(o => o[0]),
     KEYS
   );
-  assert.deepStrictEqual(coral.csrc, ['own', 'dauin', 'ph', 'book']);
-  // No IMR photos for fish (Pierre, 2026-11-04), and no Coral Finder book.
-  assert.ok(!C.subjectOf('fish').admin.origins.some(o => o[0] === 'imr' || o[0] === 'book'));
+  assert.deepStrictEqual(coral.csrc, ['own', 'dauin', 'ph']);
+  // No IMR photos for fish (Pierre, 2026-11-04).
+  assert.ok(!C.subjectOf('fish').admin.origins.some(o => o[0] === 'imr'));
 });
 
 test('opening (subjGroup): the beta label and who sees a subject are two fields; fish opens to all, its beta label kept (Q158)', () => {

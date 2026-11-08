@@ -1136,7 +1136,7 @@ test('photos from R2: the R2 address made local again, an element pointed at the
 
 // Photos out of the repo, step 1 of Pierre's rule of 2026-11-05: when R2 fails, a photo with an online original
 // (iNaturalist, Pierre's own iNaturalist photos, FishBase) falls back to that original at a light size, never to img/;
-// a photo with none (IMR lecture photos, Coral Finder book scans, drawings) to the site's img/.
+// a photo with none (IMR lecture photos, drawings) to the site's img/.
 test('photo fallback: the online original at a light size for an iNaturalist / FishBase photo, img/ for an IMR one', () => {
   const D = {
     gen: {

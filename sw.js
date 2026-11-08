@@ -122,6 +122,9 @@ self.addEventListener('activate', e =>
           }
         await caches.delete(k);
       }
+      // The Coral Finder book's crops (img/<genus>-cf-<page>-<tag>…) left the app on 2026-11-08 (Pierre: copyrighted):
+      // the copies a device kept leave its photo cache too.
+      for (const req of await ph.keys()) if (/\/img\/[a-z]+-cf-\d/.test(new URL(req.url).pathname)) await ph.delete(req);
       await self.clients.claim();
       // Pages too old to know about updates (Pierre, 2026-11-03: RAs who opened one of the very first versions kept it
       // open for days, so their answers never reached the sheet): each open page is asked its version; a page that

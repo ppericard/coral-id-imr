@@ -93,7 +93,9 @@ licence is granted. Much of the code was written with AI coding assistants under
 - **IMR Lecture 6 photos** (corals only): used for IMR's internal training. Their rights are uncertain, as many were
   not taken by IMR; they are being traced to their original sources and will be credited or replaced. Not for reuse.
   The fish side uses no IMR lecture photos.
-- **Coral Finder 2022** (© Russell Kelley / BYOGUIDES): the use of its crops is under review.
+- **Coral Finder 2022** (© Russell Kelley / BYOGUIDES): no photo of the book is used; its crops were removed on
+  2026-11-08. The book stays a cited source (its pages, criteria and look-alikes); the Coral ID Key's boxes are our own
+  drawings.
 
 **Text and data.** The coral genus list, ID tips and lecture notes come from IMR Lecture 6; the fish cues, look-alikes
 and IMR names from IMR's fish presentation and reference list (© IMR, used in the app for IMR's training, not for
