@@ -111,7 +111,7 @@ grids of small photos work for corals only with colony views of distinctive gene
   (FISH_PATH "Gaps"). **Changed on 2026-11-04** (Pierre): each species gets a curated list of **1 to 3 well-used common names**, never
   more and never a full reference list. Common-name mastery of a species needs all of them: a multiple-choice question shows one listed
   name at a time, rotating, and a typed answer is accepted only if it is a listed name. The proposed selection is the names that recur
-  across public sources, at most 3, validated by Pierre in the admin (FISH_PATH "Common names"). The reference name stays the scientific
+  across public sources, at most 3, the most shared first, published as selected and corrected by Pierre in use (2026-11-08, Q313; FISH_PATH "Common names"). The reference name stays the scientific
   name shown (rule S2).
 - **No two choices with the same name**: the duplicate "Twospot wrasse" is settled before species questions ship (FISH_PATH).
 - **The held-out photo set** and the **starter families** (section 1).
