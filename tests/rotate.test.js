@@ -370,6 +370,134 @@ test('rotFit: a tile turned a quarter gets its box swapped, a half-turn is turne
   assert.strictEqual(w2.style.transform, 'rotate(180deg)');
 });
 
+// The app's fallback (app.js turnPlan, turnSet; Codex review #793): a turned photo shown from its online original is cut
+// and turned in a canvas as the workflow does, and every use of its original on the element swapped for that picture.
+const appTurn = () => {
+  const A = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    ctx = vm.createContext({...CORE});
+  vm.runInContext(
+    'let IDX = photoIndex();\nconst photoIdx = () => IDX;\n' +
+      block(A, '// A turned photo shown from its online original', '\nfunction cropWatch()', {file: 'app.js'}) +
+      '\nthis.T = {turnPlan, turnSet, turnRec, TURN_FAIL, idx: x => (IDX = x)};',
+    ctx
+  );
+  return ctx.T;
+};
+
+test('the app fallback: the canvas cuts and turns the original as the workflow does (turnPlan, photoAt)', () => {
+  const {turnPlan} = appTurn(),
+    W = 800,
+    H = 600;
+  // A point of the original into the canvas: centred on the cut, turned clockwise by the canvas's rotate, then on the canvas.
+  const at = (x, y, c, r) => {
+    const k = turnPlan(W, H, c, r),
+      lx = x * W - k.sx - k.sw / 2,
+      ly = y * H - k.sy - k.sh / 2,
+      a = (r * Math.PI) / 180,
+      px = lx * Math.cos(a) - ly * Math.sin(a) + k.w / 2,
+      py = lx * Math.sin(a) + ly * Math.cos(a) + k.h / 2;
+    return [px / k.w, py / k.h].map(v => Math.round(v * 1e6) / 1e6 + 0);
+  };
+  for (const c of [null, [0.25, 0, 0.75, 0.5], [0.1, 0.2, 0.9, 0.6]])
+    for (const r of [90, 180, 270])
+      for (const [x, y] of [
+        [0, 0],
+        [1, 0],
+        [0.3, 0.7]
+      ]) {
+        const k = c || [0, 0, 1, 1],
+          px = k[0] + x * (k[2] - k[0]),
+          py = k[1] + y * (k[3] - k[1]);
+        assert.deepStrictEqual(
+          at(px, py, c, r),
+          photoAt(px, py, c, r).map(v => Math.round(v * 1e6) / 1e6 + 0),
+          `${c} ${r} ${x},${y}`
+        );
+      }
+  // The canvas: the cut's size, swapped for a quarter turn (as turnedSize).
+  assert.deepStrictEqual([turnPlan(W, H, [0, 0, 0.5, 1], 90).w, turnPlan(W, H, [0, 0, 0.5, 1], 90).h], [600, 400]);
+  assert.deepStrictEqual([turnPlan(W, H, null, 180).w, turnPlan(W, H, null, 180).h], [800, 600]);
+});
+
+test('the app fallback: every use of a turned original on an element swapped for its picture, none shown meanwhile (turnSet)', async () => {
+  const T = appTurn(),
+    iN = (n, s) => `https://inaturalist-open-data.s3.amazonaws.com/photos/${n}/${s}.jpg`;
+  T.idx(
+    CORE.photoIndex({
+      p: [
+        {f: 'a', src: iN(1, 'original'), cr: [0, 0, 0.5, 1], ro: 90},
+        {f: 'b', src: iN(2, 'original'), cr: [0, 0, 0.5, 1]},
+        {f: 'c', r: 1, src: iN(3, 'original'), ro: 90}
+      ]
+    })
+  );
+  const el = (a, inGame) => {
+    const A = {...a};
+    return {
+      A,
+      dataset: {},
+      style: {},
+      getAttribute: k => (k in A ? A[k] : null),
+      setAttribute: (k, v) => (A[k] = String(v)),
+      removeAttribute: k => delete A[k],
+      hasAttribute: k => k in A,
+      closest: () => inGame
+    };
+  };
+  assert.strictEqual(T.turnRec(iN(1, 'large') + '#r1').f, 'a');
+  assert.deepStrictEqual([iN(2, 'large'), iN(3, 'large'), 'img/a-m.webp', ''].map(T.turnRec), [null, null, null, null]);
+  // A game photo and its figure: src, srcset and data-lo out, the backdrop none, until the pictures are made.
+  let go;
+  const asked = [],
+    job = (u, p) => (asked.push([u, p.f]), new Promise(ok => (go = ok))),
+    i = el({src: iN(1, 'large'), srcset: `${iN(1, 'medium')} 480w, ${iN(1, 'large')} 960w`, 'data-lo': iN(1, 'medium'), alt: 'x'}, {}),
+    w = T.turnSet(i, u => (u.includes('/large.') ? job(u, {f: 'a'}) : Promise.resolve('blob:lo')));
+  assert.deepStrictEqual(i.A, {alt: 'x'}, 'nothing of the original shown');
+  go('blob:big');
+  await w;
+  assert.deepStrictEqual(i.A, {alt: 'x', src: 'blob:big', 'data-lo': 'blob:lo'});
+  assert.deepStrictEqual(asked, [[iN(1, 'large'), 'a']]);
+  const fig = el({class: 'qph', style: `--qbg:url('${iN(1, 'medium')}')`});
+  const wf = T.turnSet(fig, () => Promise.resolve('blob:s'));
+  assert.strictEqual(fig.A.style, '--qbg:none');
+  await wf;
+  assert.strictEqual(fig.A.style, "--qbg:url('blob:s')");
+  // The lightbox: its placeholder background and its src.
+  const lb = el({src: iN(1, 'large'), style: `background:center / contain no-repeat url('${iN(1, 'medium')}')`});
+  await T.turnSet(lb, u => Promise.resolve(u.includes('large') ? 'blob:L' : 'blob:M'));
+  assert.deepStrictEqual(lb.A, {src: 'blob:L', style: "background:center / contain no-repeat url('blob:M')"});
+  // Not turned (no ro, still remote, a site file, the picture itself): left alone.
+  for (const a of [
+    {src: iN(2, 'large')},
+    {src: iN(3, 'large')},
+    {src: 'img/a-m.webp'},
+    {src: 'blob:big'},
+    {style: '--qbg:url(img/x.webp)'}
+  ]) {
+    const e = el(a);
+    assert.strictEqual(
+      T.turnSet(e, () => assert.fail('asked')),
+      null
+    );
+    assert.deepStrictEqual(e.A, a);
+  }
+  // A new src set meanwhile (the next question) is never overwritten.
+  let go2;
+  const n = el({src: iN(1, 'large')}),
+    wn = T.turnSet(n, () => new Promise(ok => (go2 = ok)));
+  n.setAttribute('src', 'img/next-m.webp');
+  go2('blob:late');
+  await wn;
+  assert.strictEqual(n.A.src, 'img/next-m.webp');
+  // A picture that cannot be made (FishBase: no CORS): given up at once, never the original. A game photo goes to the
+  // error listeners' "photo missing" tile; another photo is left out of sight.
+  const g = el({src: iN(1, 'large'), 'data-lo': iN(1, 'medium')}, {}),
+    o = el({src: iN(1, 'large')}, null);
+  await Promise.all([T.turnSet(g, () => Promise.resolve('')), T.turnSet(o, () => Promise.resolve(''))]);
+  assert.deepStrictEqual([g.A, {...g.dataset}, g.style.visibility], [{src: T.TURN_FAIL}, {retry: '2', low: '1'}, undefined]);
+  assert.deepStrictEqual([o.A.src, o.style.visibility], [T.TURN_FAIL, 'hidden']);
+});
+
 test('the photo workflows apply the crop and the rotation through tools/photos.py only', () => {
   const fa = fs.readFileSync(path.join(ROOT, 'tools/fetch_approved.py'), 'utf8'),
     fg = fs.readFileSync(path.join(ROOT, 'tools/fish_game.py'), 'utf8');
