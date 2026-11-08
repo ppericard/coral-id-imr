@@ -819,7 +819,8 @@ test('the recalculation card is due only when the progress % moved by 5 points o
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
   // The standard card, on the versions before the apology (rules version 9 has its own, below).
-  const due = (pct, to = C.RV - 1) => {
+  const SORRY = 9;
+  const due = (pct, to = SORRY - 1) => {
     delete saved['reefid-rv-msg'];
     ctx.add(0, to, pct);
     return ctx.store.get('reefid-rv-msg', {}).due.includes(to);
@@ -844,24 +845,35 @@ test('the recalculation card is due only when the progress % moved by 5 points o
       [60, 61],
       [60, 59],
       [83, 33]
-    ].map(p => due(p, C.RV)),
+    ].map(p => due(p, SORRY)),
     [false, false, true, true],
     'the apology from 1 point down, never on a rise'
   );
   delete saved['reefid-rv-msg'];
-  ctx.add(0, C.RV, [60, 50]);
-  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [C.RV]);
+  ctx.add(0, SORRY, [60, 50]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [SORRY]);
   // A rise of 5 points or more: the standard card of the last version that has it, not the apology.
   delete saved['reefid-rv-msg'];
-  ctx.add(0, C.RV, [50, 60]);
-  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [C.RV - 1]);
+  ctx.add(0, SORRY, [50, 60]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [SORRY - 1]);
   // From the version just before (no standard card in the jump): the standard card under the apology's version.
   delete saved['reefid-rv-msg'];
-  ctx.add(C.RV - 1, C.RV, [50, 60]);
-  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[C.RV], [C.RV]]);
+  ctx.add(SORRY - 1, SORRY, [50, 60]);
+  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[SORRY], [SORRY]]);
   delete saved['reefid-rv-msg'];
-  ctx.add(C.RV - 1, C.RV, [60, 50]);
-  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[C.RV], undefined]);
+  ctx.add(SORRY - 1, SORRY, [60, 50]);
+  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[SORRY], undefined]);
+  // Rules version 10 (Q315), the standard card after the apology: from 9, a move of 5 points or more either way; a jump
+  // from before 9 through it, the apology when the % went down.
+  delete saved['reefid-rv-msg'];
+  ctx.add(SORRY, 10, [60, 50]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [10]);
+  delete saved['reefid-rv-msg'];
+  ctx.add(SORRY, 10, [60, 62]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due || [], []);
+  delete saved['reefid-rv-msg'];
+  ctx.add(0, 10, [60, 50]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [SORRY]);
 });
 
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
