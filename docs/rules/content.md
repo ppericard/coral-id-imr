@@ -69,7 +69,7 @@ which test each species passes. Example: the Favites notes (`tools/apply_favites
 batch many ids or taxa into one request instead of many small ones (`id=1,2,3`, `taxon_id=a,b`,
 `observations/species_counts` on a family rather than one call per species); always send a User-Agent naming the app.
 Retry a 429 or a 5xx after a pause, never in a tight loop: `tools/fetch_local.py` paces and retries (#481); a new tool
-does the same. A review of every iNaturalist tool for batching is in ROADMAP.
+does the same. Every tool goes through `tools/inat.py`, one paced, retried client (#784).
 *Why:* the app depends on iNaturalist's goodwill and open data. *Source:* Pierre, 2026-11-04.
 
 ### C8
