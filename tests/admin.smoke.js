@@ -1135,6 +1135,37 @@ const WIDTHS = [390, 1280];
     });
     if (!anre || !anre.shown || anre.left < 0 || anre.right > anre.vw)
       fails.push(`${w}px Analyses: Recompute here ${JSON.stringify(anre)}`);
+    // Recompute here leaves out the players and devices left out of the statistics, as the stored report does (analysis.js
+    // leftOut; Codex review #801): a left-out sender's rows never reach the worker. The worker is stubbed, then put back.
+    const anx = await p.evaluate(async () => {
+      const subj = subjRows(ANS.all, ASUBJ.id),
+        id = subj[0] && subj[0][0],
+        W0 = window.Worker,
+        E = USERS || ANS, // the player list's ids when loaded, else the log's (anRecompute reads them in that order)
+        U0 = E.excluded;
+      let got = null;
+      window.Worker = function () {
+        this.postMessage = m => (got = m.rows);
+        this.terminate = () => {};
+      };
+      E.excluded = [id];
+      anRecompute();
+      for (let i = 0; i < 50 && !got; i++) await new Promise(r => setTimeout(r, 100));
+      window.Worker = W0;
+      E.excluded = U0;
+      ANWORK = null;
+      ANLOCS[ASUBJ.id] = null;
+      ANLOC = null;
+      render();
+      return {
+        all: subj.length,
+        mine: subj.filter(r => r[0] === id).length,
+        sent: got && got.length,
+        left: got && got.filter(r => r[0] === id).length
+      };
+    });
+    if (!anx.mine || anx.left !== 0 || anx.sent !== anx.all - anx.mine)
+      fails.push(`${w}px Analyses: Recompute here with a sender left out ${JSON.stringify(anx)}`);
     for (const h of [
       'analyses/speed/answer-time',
       'analyses/speed/enlarging',

@@ -2133,7 +2133,10 @@ function anRecompute() {
   loc({prog: 'Reading the answers…'});
   render();
   const go = () => {
-    const rows = subjRows((ANS && (ANS.all || ANS.rows)) || [], S.id);
+    // without the players and devices left out of the statistics (analysis.js leftOut, as the stored report; the player
+    // list's ids when loaded, the freshest after a Leave out, else the log's; Codex review #801)
+    const ex = (typeof USERS !== 'undefined' && USERS && Array.isArray(USERS.excluded) && USERS.excluded) || (ANS && ANS.excluded) || [],
+      rows = ANALYSIS.leftOut(subjRows((ANS && (ANS.all || ANS.rows)) || [], S.id), ex);
     const meta = (S.analyses || {}).photos ? {ph: ANALYSIS.photoMeta(DATA, DRAFT, {q: AUTOQ}, {m: METRICS})} : {ph: {}};
     const src = (document.querySelector('script[src^="analysis.js"]') || {}).getAttribute?.('src') || 'analysis.js';
     try {
