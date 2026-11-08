@@ -5298,3 +5298,53 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-agree {
   margin: 6px 0;
 }
+/* The rights class of a photo (admin.js rightsTag; docs/ROADMAP.md "Rights tagged for a later split"): a small outlined
+   badge on every photo tile, the commercial-ready ones (own, open) in the good colour, the rest muted, IMR and the book
+   in the warning colour. The same colours name the classes on Coverage › Rights and its summary line. */
+.adm-src.adm-rt {
+  box-shadow: inset 0 0 0 1px currentColor;
+  font-weight: 600;
+}
+.rt-own,
+.rt-open {
+  color: var(--good);
+}
+.rt-nc {
+  color: var(--muted);
+}
+.rt-imr,
+.rt-book {
+  color: var(--bad);
+}
+/* Coverage › Rights: the table scrolls sideways inside its box on phones, as the fish Coverage's; the summary line on
+   Coverage › Games. */
+.adm-rightsw {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.adm-rightst th[scope='row'] {
+  text-align: left;
+}
+.adm-rightst td {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.adm-rightst td.adm-rready small {
+  color: var(--muted);
+}
+.adm-rights .cov-head {
+  flex-wrap: wrap;
+}
+.adm-rbits,
+.adm-rline small {
+  font-size: var(--fs-xs);
+}
+.adm-rline {
+  margin: 0 0 8px;
+  font-size: var(--fs-s);
+}
+.adm-rline a {
+  color: var(--accent);
+  font-weight: 600;
+  margin-right: 4px;
+}

@@ -183,10 +183,10 @@ const fishSrc = (p, s, blind) => {
     : `src="${esc(img(p, s))}"`;
 };
 // Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
-// Indo-West Pacific (the coral origins' colours, admin.js ORIGINS).
+// Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag).
 const fishSrcTag = p => {
   const o = origin(p);
-  return `<span class="adm-src o-${o}">${p.via === 'fishbase' && !p.own ? 'FishBase' : ORIGINS.find(x => x[0] === o)[1]}</span>`;
+  return `<span class="adm-src o-${o}">${p.via === 'fishbase' && !p.own ? 'FishBase' : ORIGINS.find(x => x[0] === o)[1]}</span>${rightsTag(p)}`;
 };
 const fishName = sid => {
   const s = FISHC.species[sid] || {},
