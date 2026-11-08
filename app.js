@@ -566,7 +566,7 @@ function fishGenera(X, F) {
         };
         // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
         // whoever took it (Pierre, 2026-11-06).
-        if (wide.length) X.gen[id].cover = wide[0].f;
+        if (wide.length) X.gen[id].cover = easyCover(wide).f;
         sci.push(id);
       });
     });
@@ -677,8 +677,9 @@ const fishLoad = () =>
 function rankPhotos() {
   if (!FISH || typeof photoDiff !== 'function') return;
   Object.entries(FISH.gen).forEach(([n, g]) => {
-    g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p));
-    if (g.views.wide.length) g.cover = (g.coverP || g.views.wide[0]).f;
+    // The list the draw reads keeps no licence; the card photo breaks ties on it (core.js easyCover, Q270).
+    g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p), false);
+    if (g.views.wide.length) g.cover = (g.coverP || easyCover(g.views.wide, p => photoDiff(n, p))).f;
   });
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the

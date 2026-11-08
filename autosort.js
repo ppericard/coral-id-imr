@@ -162,10 +162,11 @@
   // decisions written as Pierre's clicks would write them, and the counts. A photo Pierre or the auto-sort decided
   // (added, rejected, excluded, Not this, logged) is never touched; a tag, ease, phase or crop he gave stays his. Adds
   // fill each species up to its target, one observation counting once (an alt joins its observation for free): the
-  // easiest first (the first questions need easy photos), then the most reference-like (core.js refScore), then a fixed
+  // easiest first (the first questions need easy photos), then the most reference-like (core.js refScore), then an open
+  // licence or Pierre's own before CC BY-NC (core.js rightsRank, a tie-break only: Pierre, 2026-11-08, Q270), then a fixed
   // order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; before, they came first); the
   // rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
-  const {refScore, easyRank, fishOn, fishIn, fishGone, fishPid} =
+  const {refScore, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid} =
     typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
@@ -186,6 +187,7 @@
         (b.s.keep === 'add') - (a.s.keep === 'add') ||
         (b.s.ease || 0) - (a.s.ease || 0) ||
         refScore(b.s.tags) - refScore(a.s.tags) ||
+        rightsRank(a.p) - rightsRank(b.p) ||
         (a.p.f < b.p.f ? -1 : 1)
     );
     const obsOf = {};
@@ -344,8 +346,9 @@
   // Order: the thinnest species first (in play / target, then the fewest in play), its photos together; within a species
   // the missing phases first, then the pass's best photo of an observation, another angle, not judged, a near-duplicate,
   // then the easiest (the first questions need easy photos), then a reference photo (the flag r: a reference source shows
-  // it for the species), then a fixed order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced;
-  // they came first before).
+  // it for the species), then an open licence or his own before CC BY-NC (core.js rightsRank, a tie-break only, Q270),
+  // then a fixed order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; they came first
+  // before).
   const FISHK = {best: 0, alt: 1, dup: 3};
   function fishQueue(cands, sug, species, F, game) {
     F = F || {};
@@ -410,6 +413,7 @@
         k(a) - k(b) ||
         ((b.j && b.j.e) || 0) - ((a.j && a.j.e) || 0) ||
         ref(b) - ref(a) ||
+        rightsRank(a.p) - rightsRank(b.p) ||
         (a.p.f < b.p.f ? -1 : 1)
     );
   }
@@ -612,7 +616,7 @@
   // The photos of one species in play, in the page's order (L: the photo objects, j(f): the pass's judgment): the featured
   // ones first, in his order; then the game's order (core.js easyRank, #635, #660): reference-level photos first (his
   // ease and tags, else the pass's; a reference source, rep or the flag r), the easiest, the most reference-like
-  // (refScore), then a fixed hash. Never by who took them
+  // (refScore), an open licence or his own before CC BY-NC (rightsRank, Q270), then a fixed hash. Never by who took them
   // (Pierre, 2026-11-06: his own photos are never boosted; the easy and reference photos come first, whoever took them).
   function fishOrder(L, F, tid, sid, j = () => null) {
     F = F || {};
@@ -623,7 +627,16 @@
     return {
       feat: fe.map(f => L.find(p => p.f === f)),
       rest: easyRank(
-        R.map(p => ({f: p.f, jt: jt(p), e: ease(p) || undefined, rep: p.rep || jt(p).slice(7).includes('r') || undefined, p})),
+        R.map(p => ({
+          f: p.f,
+          jt: jt(p),
+          e: ease(p) || undefined,
+          rep: p.rep || jt(p).slice(7).includes('r') || undefined,
+          lic: p.lic,
+          own: p.own,
+          a: p.a,
+          p
+        })),
         x => -(ease(x.p) || 3)
       ).map(x => x.p)
     };

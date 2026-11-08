@@ -718,7 +718,7 @@ function viewFishList() {
   const flat = [];
   const tip = n => {
     const g = GX(n),
-      p = cover(g); // Pierre's ★ Cover while in play (app.js fishCurate), else the first of the game's order
+      p = cover(g); // Pierre's ★ Cover while in play (app.js fishCurate), else the card photo as before (core.js easyCover)
     if (p) flat.push({...p, genus: n});
     return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b><small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${tipsList(g)}${
       g.lk.length

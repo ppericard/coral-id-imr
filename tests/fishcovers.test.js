@@ -23,6 +23,7 @@ function app(photoDiff) {
     fishGen: C.fishGen,
     fishPhotos: C.fishPhotos,
     easyRank: C.easyRank,
+    easyCover: C.easyCover,
     fishPid: C.fishPid,
     fishScoreTree: C.fishScoreTree,
     ...(photoDiff ? {photoDiff} : {})

@@ -503,9 +503,12 @@ const server = http.createServer((req, res) => {
     ok(
       G.every(n => {
         const w = GX(n).views.wide;
-        // the first of its reference-level photos when it has any (core.js refFirst), else its easiest
-        const top = w.filter(p => refFirst(p) === refFirst(w[0]));
-        return !w.length || (GX(n).cover === w[0].f && top.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
+        // the first of its reference-level photos when it has any (core.js refFirst), else its easiest; an open licence
+        // breaking ties among equals (core.js easyCover, Q270), so the cover may be another of the order's equal leaders
+        if (!w.length) return true;
+        const top = w.filter(p => refFirst(p) === refFirst(w[0])),
+          c = w.find(p => p.f === GX(n).cover);
+        return !!c && c.f === easyCover(w).f && refFirst(c) === refFirst(w[0]) && top.every(p => photoDiff(n, p) >= photoDiff(n, c));
       }),
       "sci: a genus card's photo is its easiest (reference level first)"
     );
@@ -727,7 +730,7 @@ const server = http.createServer((req, res) => {
     });
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
     // Each family's photo there is Pierre's ★ Cover (curation.json fish genera, app.js fishCurate) while it is in play,
-    // else the first of the game's order (2026-11-08: his covers, published, never showed).
+    // else the card photo as before (cover(): the easiest, ties on the licence, Q270; 2026-11-08: his covers never showed).
     const fcv = await q.evaluate(() => {
       const srcOf = a => (/src="([^"]*)"/.exec(a) || [])[1],
         cards = [...document.querySelectorAll('#view .tipg')].map(a => ({
@@ -740,7 +743,7 @@ const server = http.createServer((req, res) => {
         shown: cards.filter(c => c.n && FISH.gen[c.n].coverP).length,
         bad: cards
           .filter(c => c.n && FISH.gen[c.n].views.wide.length)
-          .filter(c => c.src !== srcOf(thumb(FISH.gen[c.n].coverP || FISH.gen[c.n].views.wide[0], '130px')))
+          .filter(c => c.src !== srcOf(thumb(cover(FISH.gen[c.n]), '130px')))
           .map(c => c.n)
       };
     });
