@@ -923,6 +923,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
       ACHNEW: 'reefid-ach-new',
       LEVEL: '~level',
       ELO_MIN: 200,
+      DATA: {gen: {}},
       P: {},
       achUnseen: () => [],
       achDot: () => {},
@@ -1022,6 +1023,16 @@ test('achievement recount: a subject whose data is not in waits on this device, 
   e.achPending();
   assert.ok(e.rec().fmet5 && e.rec().fpct40 && e.old() === null);
   assert.strictEqual(e.ctx.rebuilt, 'fish', 'the bars rebuilt in the fish subject before the test (Codex review #734)');
+  // The fish data in before the shared data (a direct Fish link, Codex review #734): it waits, then is recounted.
+  const d = migr({_v: 2, fmet5: 20}, {fish: false});
+  d.achMigrate();
+  d.ctx.fishIn = true;
+  d.ctx.DATA = undefined;
+  d.achPending();
+  assert.deepStrictEqual(d.old(), {fish: {fmet5: 20}}, 'waits for data.json');
+  d.ctx.DATA = {gen: {}};
+  d.achPending();
+  assert.ok(d.old() === null && d.rec().fmet5 === 20);
   m.achPending('coral'); // a check on the corals never visits the fish
   assert.ok(m.old());
   m.achPending(); // the fish data in, still missing: it waits again

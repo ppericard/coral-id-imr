@@ -633,7 +633,12 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
 // obsolete bars.
 const ACHS = () => SUBJECTS.find(x => x.ach).id,
   ACHOLD = 'reefid-ach-old',
-  achReady = () => achList().length > 0 && (typeof domRecalcAll !== 'function' || (domRecalcAll(), true)),
+  // The shared data first (app.js DATA, set by build: the levels read it through GX; Codex review #734: a direct Fish link
+  // can bring the fish files before data.json), then the subject's own (its slate).
+  achReady = () =>
+    !!(typeof DATA === 'object' && DATA && DATA.gen) &&
+    achList().length > 0 &&
+    (typeof domRecalcAll !== 'function' || (domRecalcAll(), true)),
   achOwn = S => S.achs().filter(a => a.kind !== 'contrib');
 function achMigrate() {
   const A = store.get(ACHK, null);

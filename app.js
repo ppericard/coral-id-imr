@@ -631,7 +631,10 @@ const fishLoad = () =>
       FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
       const F = fishBuild();
       if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
-      if (typeof achPending === 'function') achPending(); // progress.js: an achievement recount waiting for this data
+      // progress.js: an achievement recount waiting for this data; never a reason for the fish data to fail (Codex review #734)
+      try {
+        if (typeof achPending === 'function') achPending();
+      } catch (e) {}
       return F;
     })
     .catch(e => {
@@ -2625,6 +2628,7 @@ const SETUP = {
     // progress.js comes with the quiz (Codex review #361: answers given before it lost their achievement bookkeeping):
     // the achievement record is migrated and counted here, before any answer.
     achMigrate();
+    achPending(); // a recount that waited for a subject's data, once the shared data is built (Codex review #734)
     achRecheck(); // a learned mark taken away at load (model.js mxRecalc): its achievements first
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up
