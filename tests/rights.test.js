@@ -242,7 +242,7 @@ print(json.dumps([
   assert.deepStrictEqual(R, [true, true, true, true]);
 });
 
-test('fetch_fish lic_class: unchanged, his own first, then CC0 / CC BY, then NC (the fetch order of 2026-11-03)', () => {
+test('fetch_fish lic_class: his own, CC0 / CC BY, NC (select reads it as the last tie-break, Q284)', () => {
   const R = py(`from fetch_fish import lic_class
 print(json.dumps([lic_class(l, o) for l, o in [('cc-by-nc', True), ('cc-by', True), (None, True), ('cc0', False), ('cc-by', False), ('cc-by-nc', False), (None, False)]]))`);
   assert.deepStrictEqual(R, [0, 0, 0, 1, 1, 2, 2]);
