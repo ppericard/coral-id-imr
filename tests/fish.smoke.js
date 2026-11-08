@@ -668,7 +668,7 @@ const server = http.createServer((req, res) => {
     if (saved !== '"fish"' || !/fish\*/.test(h1.row) || !/Fish/.test(h1.chip) || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
       ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
     // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
-    // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile one of those.
+    // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile, and the Identify door's art, one of those.
     const ht = await q.evaluate(() => {
       const srcOf = p => (/src="([^"]*)"/.exec(thumb(p, '1px')) || [])[1],
         suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1',
@@ -687,7 +687,9 @@ const server = http.createServer((req, res) => {
             .filter(n => suits(GX(n).coverP))
             .map(n => srcOf(GX(n).coverP))
         ),
-        T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img')].map(i => i.getAttribute('src'));
+        T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img, #view .hdoor.identify .hdart img')].map(i =>
+          i.getAttribute('src')
+        );
       return {n: T.length, covers: T.filter(x => C.has(x)).length, fits: C.size, bad: T.filter(x => !W.has(x))};
     });
     if (!ht.n || ht.bad.length || (ht.fits && !ht.covers))

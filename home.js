@@ -62,7 +62,8 @@
     // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
     // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
     const key = UNITS[SUBJ.id].identify,
-      fp = fish && ((n => n && cover(GX(n)))(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || null),
+      // Its fish art, a landscape band too: the same photo a tile would show (tilePhoto, Q291).
+      fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || null),
       fishArt = fp ? `<img ${thumb(fp, '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">` : '';
     const idoor = fish
       ? `
