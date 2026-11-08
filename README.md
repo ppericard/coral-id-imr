@@ -37,7 +37,7 @@ python3 -m http.server 8000
 
 ## Test
 
-As CI runs them ([checks.yml](.github/workflows/checks.yml): Node 26, Python 3.15, Playwright 1.64.1; no `package.json`):
+As CI runs them ([checks.yml](.github/workflows/checks.yml) and [smokes.yml](.github/workflows/smokes.yml), which a docs-only PR skips: Node 26, Python 3.15, Playwright 1.64.1; no `package.json`):
 
 ```sh
 npx --yes prettier@3.9.10 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"

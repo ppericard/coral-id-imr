@@ -3,6 +3,8 @@
 
     python3 tools/check_versions.py              # the source, as committed
     python3 tools/check_versions.py --dir DIR    # a stamped copy (the deploy, CI: tools/stamp_versions.py)
+    python3 tools/check_versions.py --sheet-base REF   # CI on a PR: the sheet's VERSION against that base
+    python3 tools/check_versions.py --main             # CI on main or a merge train: no sheet changes file left
 
 Since 2026-11-04 (Pierre's go: "version numbers stamped at deploy") nobody edits a version number: the deploy stamps
 every ?v=, LAB_V and the sw.js cache name V from content hashes (tools/stamp_versions.py). The source keeps the numbers
@@ -11,8 +13,15 @@ checked, in the source and in the stamped copy alike:
 1. One file has one ?v everywhere: index.html, admin.html, sw.js SHELL and the fetches in app.js.
 2. sw.js SHELL lists every versioned file index.html loads and every versioned fetch of app.js.
 3. The Lab files in sw.js use LAB_V (proto/lab.js) and the same list as LAB.files.
+In the source (not with --dir), also the sheet script's VERSION, which is not stamped but assigned at merge (Pierre,
+2026-11-08, Q305 a; rule D3): a PR that changes tools/sync/Code.gs carries one tools/sync/changes/<branch>.md and
+leaves VERSION and the header line alone; main has no changes file left (tools/sheet_version.py says the rules). The
+base is the merge-base of HEAD and --sheet-base (default origin/main; skipped when git cannot find it).
 """
 import argparse, os, re, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sheet_version  # noqa: E402
 
 PAGES = ['index.html', 'admin.html']
 VAL = r'(\d+|[0-9a-f]{10})'  # a frozen number in the source, a content hash once stamped
@@ -46,6 +55,8 @@ def state(root='.'):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dir', default='.', help='the copy to check (default: the source here)')
+    ap.add_argument('--sheet-base', default='origin/main', help="the sheet's VERSION: compare with the merge-base of HEAD and this ref")
+    ap.add_argument('--main', action='store_true', help='this tree is main or a merge train: no sheet changes file may be left')
     a = ap.parse_args()
     refs, labv, files, (swfiles, swlabv) = state(a.dir)
     errs = []
@@ -64,6 +75,13 @@ def main():
         print('✗', e)
     if errs:
         print('\nNever edit a version number to fix this (the deploy stamps them): make the references agree.')
+    sheet = []
+    if a.dir == '.':
+        sheet, sheet_state = sheet_version.problems(base=sheet_version.base_of(a.sheet_base), main=a.main)
+        for e in sheet:
+            print('✗', e)
+        print('Sheet script:', sheet_state if not sheet else 'see above (rule D3: python3 tools/sheet_version.py --help)')
+    if errs or sheet:
         return 1
     print('Versions OK')
     return 0

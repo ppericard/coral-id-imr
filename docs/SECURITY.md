@@ -65,7 +65,7 @@ player anywhere: `readAnswers` flags them 2 and the admin and the analyses keep 
    their ids under Players > Not signed in, then "Delete the answers of the selected ids" (sheet v17 `anonDelete`, admin
    token, never a named player's answers). Photo ratings and confusions are recomputed from the
    Answers tab every time, so they recover on their own.
-3. Tighten a cap in `over_` calls (`tools/sync/Code.gs`, bump `VERSION`: it deploys itself) or, in an emergency, stop
+3. Tighten a cap in `over_` calls (`tools/sync/Code.gs` with its changes file, the integrator assigning `VERSION` at merge: it deploys itself) or, in an emergency, stop
    anonymous answers by having `anon_` return `busy`.
 
 ## Not done yet (ROADMAP)
