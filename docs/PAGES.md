@@ -7,8 +7,9 @@ workflow (`dynamic/pages/pages-build-deployment`), not a deploy workflow in git.
 `docs/HANDOVER.md` recorded the source as **Deploy from a branch: main / (root)**.
 The settings API was unavailable through the investigation's GitHub connector,
 and the browser was signed out: the live source and environment protection rules
-could not be independently read or changed. Complete and verify the migration
-below; adding a YAML file alone does not change the Pages source.
+could not be independently read or changed. The move to a deploy workflow in git
+(`pages.yml`, with Settings > Pages > Source **GitHub Actions**) was done and verified
+the same day (below; docs/ROADMAP.md "Pages deployment migration").
 
 Evidence from the Actions API and deploy job logs:
 
@@ -63,15 +64,24 @@ backend cause remains unknown.
 
 ## Workflow inventory and triggers
 
+Every workflow in `.github/workflows/`. Bot commits use
+`GITHUB_TOKEN`, so they start no `push` workflow: Deploy Pages picks them up through `workflow_run`.
+
 | Workflow | Trigger / commits | Publishes Pages? |
 |---|---|---|
-| `checks.yml` — Checks | Pull requests and manual dispatch. Its jobs named `smoke (<name>)` run the Playwright smoke tests in parallel, one per file, pages and admin in two halves each. | No |
-| `approved-photos.yml` — Candidate photos | Push to `main` changing `curation.json`, including admin Publish or a PR merge touching it; also manual dispatch. Commits `Candidate photos: …` changes to `data.json` and `img/` using `GITHUB_TOKEN`. | No |
-| GitHub-generated pages build and deployment (old source) | Branch publication after eligible pushes to `main`: PR merges, direct pushes, admin PAT commits `Photo curation: …`. Bot `GITHUB_TOKEN` pushes do not trigger branch Pages builds. | Yes, until source is switched |
-| `pages.yml` — Deploy Pages (new source) | Every eligible push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. | **The only deployer after migration** |
+| `checks.yml` — Checks | Pull requests and manual dispatch (not pushes to `main`). Its jobs named `smoke (<name>)` run the Playwright smoke tests in parallel, one per file, pages and admin in two halves each. Commits nothing. | No |
+| `approved-photos.yml` — Candidate photos | Push to `main` changing `curation.json` (admin Publish or a PR merge touching it), `suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json` or `tools/fish_game.py`; also manual dispatch. Its `photos` job commits `Candidate photos: download added ones, refill the lists` (`data.json`, `cand.json`, `excluded.json`, `fish-game.json`, `img/`), its `fish` job `Candidate photos: refill the short fish species` (`fish-cand.json`, `tools/fish_refill.json`), its `r2` job copies `img/` to R2. | No (its completion starts Deploy Pages) |
+| `pages.yml` — Deploy Pages | Every push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. Commits nothing. | **Yes, the only deployer** |
+| `photos-r2.yml` — Photos to R2 | Push to `main` changing `img/**`, and manual dispatch. Copies `img/` to the Cloudflare R2 bucket and checks it (`tools/r2_sync.sh`); commits nothing. | No |
+| `analyses.yml` — Analyses report | Hourly schedule and manual dispatch (`force`). Reads the answer log and stores the report in the sync sheet (`tools/analyses.js`); skipped without `ANALYSES_ADMIN_TOKEN`; commits nothing. | No |
+| `prune-branches.yml` — Prune merged branches | Manual dispatch only (`dry_run` by default). Deletes branches whose PR was merged and that got nothing after (docs/HANDOVER.md "Clean merged branches"). | No |
+| `pages-cancel.yml` — Cancel stuck Pages deployment | Manual dispatch only, with the SHA named in the error. Cancels that Pages deployment ("Manual recovery" below). | No |
+
+The GitHub-generated **pages build and deployment** workflow (the old branch source) is retired since the switch to
+the Actions source on 2026-11-01; a new run of it would mean the Pages source was changed back.
 
 Admin `save()` in `admin.js` merges and writes `curation.json` through GitHub's
-Contents API to `main`, using Pierre's token. No admin code changes are needed.
+Contents API to `main`, using Pierre's token.
 The `workflow_run` trigger covers bot commits without granting the photo workflow
 additional permissions or adding another deployment implementation. It also
 publishes committed curation if photo processing fails. It checks out current
@@ -89,34 +99,6 @@ The action's 10-minute timeout leaves room inside the 15-minute job timeout for
 cleanup. `deploy-pages` also handles cancellation signals. This prevents ordinary
 Actions queue blockage; **it cannot guarantee that GitHub's Pages backend will
 release an orphan lock**. That is a different state, with its own cancellation API.
-
-## One-time migration (required to activate this PR)
-
-Use a GitHub account with permission to manage this repository's Pages settings.
-Do not unpublish/delete the site or change the custom domain/HTTPS settings.
-
-1. Merge the PR containing `pages.yml` when Checks passes. Its source guard will
-   refuse to deploy while branch publishing is still selected.
-2. In **Settings > Pages > Build and deployment > Source**, select **GitHub Actions**.
-   Equivalent CLI (authenticated `gh`; Pages write permission required):
-
-   ```sh
-   REPO=ppericard/coral-id-imr
-   gh api --method PUT "repos/$REPO/pages" -f build_type=workflow
-   gh api "repos/$REPO/pages" --jq '{build_type, source, html_url}'
-   ```
-
-   Verify `build_type` is `workflow`. A retained `source.branch` field alone does
-   not mean branch publishing is still active.
-3. Cancel any remaining legacy Actions run and the stale Pages deployment using
-   the recovery steps below. The new `pages` group does not own old dynamic runs.
-4. Check **Settings > Environments > github-pages** permits `main`. If it requires
-   approval, approve the pending deployment; concurrency cannot bypass protection
-   rules. Do not remove protections as a troubleshooting shortcut.
-5. Start `gh workflow run pages.yml --repo "$REPO" --ref main`, watch it succeed,
-   and verify the site. A later admin Publish and PR merge should each produce
-   Deploy Pages runs, with a second deployment after Candidate photos completes.
-   No new dynamic/legacy Pages run should appear.
 
 ## Manual recovery
 
