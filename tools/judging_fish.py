@@ -241,7 +241,7 @@ def check(sid):
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")
     obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict)}
     A = added(sid)
-    for o in obs:
+    for o in sorted(obs):
         nb = len(best.get(o, []))
         if o in A and nb > 1:
             E.append(f"{sid}: observation {o}: {nb} photos marked best; at most one (Pierre added one of its photos)")

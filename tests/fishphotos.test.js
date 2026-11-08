@@ -499,6 +499,76 @@ print(json.dumps([R, G]))`);
   ]);
 });
 
+test('zero-cost photos (Codex review #715): an observation holding OBS_ROOM photos gets its others when the room runs out, and --topup brings them to a full species, asking by id', () => {
+  const out = J(`${OBS}
+from collections import Counter
+it = lambda *a, used=set(), **k: usable_obs(ob(*a, **k), used, set())
+u = lambda i: f'https://www.inaturalist.org/observations/{i}'
+# Room 1: 2 (an observer not represented yet) takes it; 1, holding 4, still gets its 3 others.
+T = select({'dauin': [it(1, n=7, u='a', used={'10', '11', '12', '13'}), it(2, u='b')]}, 1, {}, Counter({('u', 'a'): 1}), held={u(1): 4}, photos=True)
+print(json.dumps([[o['id'], len(o['P']), o['cost']] for o in T]))`);
+  assert.deepStrictEqual(out, [
+    [2, 1, 1],
+    [1, 3, 0]
+  ]);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishtopup-'));
+  const fish = {
+    species: [{id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}}],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1']}]
+  };
+  const o = i => `https://www.inaturalist.org/observations/${i}`,
+    rec = (i, k) => ({
+      f: `fish-s1-cand-${i * 10 + k}`,
+      a: '(c) u',
+      lic: 'cc-by',
+      o: o(i),
+      t: 'Fishus fishii',
+      own: false,
+      loc: 'dauin',
+      src: 'x',
+      r: 1
+    });
+  // s1 is full (cap 4): 5 holds the 4 photos of the old limit; 6 too, one of them rejected (it still gets its others);
+  // 7 five (fetched whole already); 8 four, one of which Pierre sent out of the fish (nothing more of it).
+  const L0 = [0, 1, 2, 3]
+    .map(k => rec(5, k))
+    .concat(
+      [0, 1, 2, 3].map(k => rec(6, k)),
+      [0, 1, 2, 3, 4].map(k => rec(7, k)),
+      [0, 1, 2, 3].map(k => rec(8, k))
+    );
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify({v: 1, cand: {s1: L0}}));
+  fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {seen: {'fish-s1-cand-60': 1}, out: {'fish-s1-cand-80': 'x'}}}));
+  // Only 5 and 6, in one request, are in the cache: asking for 7 or 8 would stop the --offline run.
+  py(
+    `${OBS}
+c = {API + 'id=5,6&per_page=200&fields=' + FIELDS: {'total': 2, 'results': [ob(5, n=7), ob(6, n=5)]}}
+json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
+    dir
+  );
+  const argv = [
+    ['--fish', 'fish.json'],
+    ['--cand', 'fish-cand.json'],
+    ['--cur', 'cur.json'],
+    ['--suggest', 'none.json'],
+    ['--cache', 'cache.json']
+  ].flatMap(([f, x]) => [f, path.join(dir, x)]);
+  const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--cap', '4', ...a], {cwd: ROOT, encoding: 'utf8'});
+  run('--topup', '--offline');
+  const L = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1;
+  assert.deepStrictEqual(
+    L.slice(L0.length).map(p => p.f),
+    ['fish-s1-cand-54', 'fish-s1-cand-55', 'fish-s1-cand-56', 'fish-s1-cand-64']
+  );
+  assert.deepStrictEqual(L.slice(0, L0.length), L0);
+  // Once whole, 5 and 6 are not asked again (the cache is gone: a request would stop the run).
+  fs.rmSync(path.join(dir, 'cache.json'));
+  run('--topup', '--offline');
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1.length, L0.length + 4);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
 test('judging_fish.py sheets: an observation never split over two sheets, so its near-duplicates are side by side', () => {
   const out = J(`import judging_fish as JF
 g = lambda o, k: [f'{o}.{i}' for i in range(k)]

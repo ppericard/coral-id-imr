@@ -66,7 +66,9 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   open part of its room was searched to the end less than RECHECK_DAYS ago. Then FishBase fills what iNaturalist left
   (tools/fetch_fishbase.py, offline) and --rep tags the covers, for the refilled species only. The new candidates wait
   for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's auto-sort applies.
-  --refill --plan prints, offline, the short species, the pick and the skipped ones; it writes nothing.
+  --refill --plan prints, offline, the short species, the pick and the skipped ones; it writes nothing. A refill first
+  runs --topup over every species of its circles: the other photos of the observations fetched under the old limit of 4
+  per observation (topup; one request per 200 such observations).
 
 Network: iNaturalist API v2 (only the fields used), read only, a pause of PAUSE s between calls, generic User-Agent.
 Every reply is cached, trimmed, in tools/.cache/fish_photos.json (git-ignored): a rerun is offline and gives the same
@@ -77,6 +79,7 @@ nothing.
 
     python3 tools/fetch_fish.py [--circle 1] [--cap N] [--only s091,t05] [--refresh | --offline | --plan] [--rep]
     python3 tools/fetch_fish.py --refill [--circle 1 --circle 2 --circle 3] [--max N] [--today YYYY-MM-DD] [--plan]
+    python3 tools/fetch_fish.py --topup [--circle 1 ...] [--only s091] [--offline | --plan]
 (--cap N: one fixed cap for every species instead of cap_of, for a test or a one-off; the phase rooms still apply.)
 Tests: node --test tests/fishphotos.test.js (offline fixtures).
 """
@@ -343,7 +346,11 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
     def take(L):
         nonlocal room
         L = [o for o in L if o["id"] not in seen]
-        while L and room > 0:
+        while L:
+            if room <= 0:  # photos past an observation's first OBS_ROOM take no room: still taken (Codex review #715)
+                L = [o for o in L if photos and held.get(obs_url(o["id"]), 0) >= OBS_ROOM]
+                if not L:
+                    break
             o = min(L, key=lambda o: (n["u", o["u"]], n["s", o["st"]], o["h"]))
             L.remove(o)
             seen.add(o["id"])
@@ -378,6 +385,57 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
         for cls in (1, 2):
             take([o for o in W if o["cls"] == cls])
     return taken
+
+
+def topup(args):
+    """--topup (Codex review #715 on Pierre's 2026-11-08 decision): the other photos of the observations fetched under the
+    old limit of 4 photos per observation, whatever the species' room: an observation holding exactly OBS_ROOM candidate
+    records (whatever their state: a near-duplicate set aside or a photo rejected does not stop it) is asked again by id
+    (200 a request, rule C7) and every photo of it not taken yet comes. It was counted for up to OBS_ROOM photos already,
+    so this never blocks; a species it puts over its cap only waits longer for new observations (nothing is removed). One
+    that holds more was fetched whole (since 2026-11-08 an observation is cut only below OBS_ROOM photos); one with a photo
+    Pierre sent elsewhere brings nothing more. The --refill runs it for every species of its circles first. Returns
+    {species id: photos added}."""
+    rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
+    fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
+    have = rd(args.cand).get("cand", {})
+    _, excl = state(cur, sug)
+    moved = moved_of(cur)
+    only = set(filter(None, (args.only or "").split(",")))
+    used = {pid(p["f"]) for L in have.values() for p in L} - {None}
+    want = {}
+    for s, _ in species_list(fish, set(args.circle), only):
+        L = have.get(s["id"], [])
+        recs = Counter(p["o"] for p in L)
+        bad = {p["o"] for p in L if p["f"] in moved}
+        for o, k in recs.items():
+            tail = o.rsplit("/", 1)[-1]
+            if k == OBS_ROOM and o not in bad and o.startswith(obs_url("")) and tail.isdigit():
+                want[int(tail)] = s
+    net = Net(args.cache, offline=args.offline, refresh=args.refresh, plan=args.plan)
+    added = Counter()
+    ids = sorted(want)
+    try:
+        for i in range(0, len(ids), 200):
+            d = net.get(f"id={','.join(map(str, ids[i:i + 200]))}&per_page=200")
+            for o in (d or {}).get("results", []):
+                s = want.get(o["id"])
+                it = usable_obs(o, used, excl) if s else None
+                if not it:
+                    continue
+                for p in it["P"]:
+                    used.add(str(p[0]))
+                    have[s["id"]].append(record(s, it, p))
+                    added[s["id"]] += 1
+    finally:
+        net.save()
+    print(f"topup: {len(ids)} observations holding {OBS_ROOM} photos asked again, +{sum(added.values())} photos for "
+          f"{len(added)} species", flush=True)
+    if added and not args.plan:
+        order = [s["id"] for s in fish["species"]]
+        dump({"v": 1, "cand": {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}},
+             str(args.cand))
+    return dict(added)
 
 
 def cap_of(phases):
@@ -960,6 +1018,8 @@ def refill(args):
     """--refill (Pierre, 2026-11-06, Q171): the short species only, at most --max a run, with the rules of run; then the
     exhaustion memory, FishBase (offline) and the iNaturalist covers (--rep) for the species refilled."""
     today = datetime.date.fromisoformat(args.today) if args.today else datetime.datetime.now(datetime.timezone.utc).date()
+    if not args.plan:
+        topup(argparse.Namespace(**{**vars(args), "only": "", "refresh": not args.offline}))
     rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
     fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
     have = rd(args.cand).get("cand", {})
@@ -1012,7 +1072,8 @@ def main(argv=None):
     m.add_argument("--offline", action="store_true", help="never ask iNaturalist (fail on a reply not cached)")
     m.add_argument("--plan", action="store_true", help="print what a run would add, from the cache only; write nothing")
     a.add_argument("--rep", action="store_true", help="only tag the candidates that are their taxon's iNaturalist cover (rep)")
-    a.add_argument("--refill", action="store_true", help="refill the short species only, at most --max (Q171)")
+    a.add_argument("--refill", action="store_true", help="refill the short species only, at most --max (Q171); runs --topup first")
+    a.add_argument("--topup", action="store_true", help="the other photos of observations holding OBS_ROOM (4) photos, asked by id")
     a.add_argument("--max", type=int, default=REFILL_MAX, help=f"--refill: species refilled at most (default {REFILL_MAX})")
     a.add_argument("--today", help="--refill: the day, YYYY-MM-DD (tests; default today, UTC)")
     a.add_argument("--memory", default=str(REFILL), help="--refill: what was searched to the end (tools/fish_refill.json)")
@@ -1025,7 +1086,7 @@ def main(argv=None):
     a.add_argument("--cache", default=str(ROOT / "tools" / ".cache" / "fish_photos.json"))
     args = a.parse_args(argv)
     args.circle = args.circle or [1]
-    return refill(args) if args.refill else run(args)
+    return refill(args) if args.refill else topup(args) if args.topup else run(args)
 
 
 if __name__ == "__main__":
