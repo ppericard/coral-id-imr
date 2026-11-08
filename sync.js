@@ -1101,7 +1101,8 @@ function sendAnon() {
 // events_): app errors, photos that still fail after their retries, saves that fail while online, and the answers to the
 // occasional one-tap question (pulse). Anonymous: a random device id of its own (EVID, never a name or the answers' id),
 // the app version and a short browser name; only the pages summaries (pagesSend, sheet v30) are tied to the player's
-// answers, under the admin's id of the player. Queued here (EVQ, at most 50) and sent in small batches; never from a local
+// answers, under the admin's id of the player, and their rows carry this device id too, so the admin can join a device's
+// events to a player (privacy.html "Technical reports" says so). Queued here (EVQ, at most 50) and sent in small batches; never from a local
 // copy (LOCAL) nor without the sync URL. At most EV_MAX reports a visit, the same message once.
 const EVID = 'reefid-dev-id',
   EVQ = 'reefid-evq',

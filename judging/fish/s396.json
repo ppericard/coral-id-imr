@@ -1,7 +1,7 @@
 {
  "photos": {
   "fish-s396-cand-50685755": {
-   "code": "o0n0sl13",
+   "code": "o0g0sl13",
    "keep": "best"
   },
   "fish-s396-cand-87952987": {
@@ -9,7 +9,7 @@
    "keep": "best"
   },
   "fish-s396-cand-65810882": {
-   "code": "h0n0sl1c2",
+   "code": "h0g0sl1c2",
    "keep": "best"
   },
   "fish-s396-cand-311382009": {
@@ -89,7 +89,7 @@
    "keep": "dup"
   },
   "fish-s396-cand-257875605": {
-   "code": "o0n0sl13",
+   "code": "o0g0sl13",
    "keep": "best"
   },
   "fish-s396-cand-41624555": {
@@ -101,11 +101,11 @@
    "keep": "best"
   },
   "fish-s396-cand-309076722": {
-   "code": "p0n0sl13",
+   "code": "p0g0sl13",
    "keep": "dup"
   },
   "fish-s396-cand-309076725": {
-   "code": "p0n0sl13",
+   "code": "p0g0sl13",
    "keep": "dup"
   },
   "fish-s396-cand-309077327": {
@@ -145,7 +145,7 @@
    "keep": "best"
   },
   "fish-s396-cand-fb-Brcro_u0": {
-   "code": "p0n0sl13",
+   "code": "p0g0sl13",
    "keep": "best"
   }
  }

@@ -37,7 +37,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | --- | --- | --- |
 | 1 | **view** | `p` profile (side view: the fish roughly parallel to the picture, its outline readable); `o` oblique (turned 20-60 degrees, or diagonal across the frame, the shape still readable); `h` head-on; `t` tail or rear view; `d` from above (dorsal) |
 | 2 | **whole** | `1` the whole fish is in the frame and visible; `0` partial: cut by the frame (a heavy crop, a head close-up) or hidden by reef, coral or another fish so its shape cannot be read whole |
-| 3 | **light** | `g` good (the fish well lit); `d` dim or dark (low light, the fish in shade); `n` night or flash on black (dark background, night colours) |
+| 3 | **light** | `g` good: the fish well lit, its true colours visible, **whatever the background** (a fish lit by a flash or a lamp on a dark or black background is good light); `d` dim: the fish itself poorly lit (in shade, under-exposed, dull), the background does not count; `n` night livery: the fish shows a night or resting colour pattern that differs from its day pattern (rare; below) |
 | 4 | **colour loss** | how much of the fish's colours the water took (Pierre, 2026-11-04: not a "cast", whose blue or green only follows the water and the light): `0` none; `1` slight (reds and yellows still visible); `2` strong (the warm colours mostly gone); `3` monochrome (only blue or green: deep water, low light) |
 | 5 | **clarity** | `s` sharp; `m` soft (some blur, haze, noise, the fish still clear); `b` blurred or murky (backscatter, milky water, motion blur that hides the pattern) |
 | 6 | **size** | `l` large (the fish spans a third of the frame width or more); `m` medium (a sixth to a third); `s` small (under a sixth) |
@@ -49,26 +49,37 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
 | last | **ease** | 1 to 5, below |
 
+**Light: the fish, not the background** (rubric 6, Pierre, 2026-11-08, Q308). The light tag reads how the fish itself is
+lit. A fish lit by a flash or a lamp on a dark or black background shows its true colours: it is good light (`g`), and
+such photos are among the best references (Pierre: "c'est probablement même les plus belles références qu'on ait").
+Until then `n` read "night or flash on black" and capped them at 3. `d` is a fish in shade, under-exposed or dull, whatever
+lies behind it. `n` is now only the **night livery**: the fish wears a night or resting colour pattern that differs from
+its day pattern, so it does not look like the photos a beginner learns from. It is rare. Sourced example: goatfishes,
+e.g. *Parupeneus barberinus*, which turns pink-mottled at night while its dark stripe fades (Marshall et al., "Colours
+and colour vision in reef fishes: past, present and future research directions", *Journal of Fish Biology* 95, 2019,
+doi:10.1111/jfb.13849: its day and night pairs). A fish photographed at night in its day colours is `g` (or `d` when
+the fish itself is poorly lit).
+
 ## Ease: how easy for a beginner who has just seen the family's card
 
 Pierre's criteria (2026-11-04). Very easy first: good light, colourful, the fish clearly visible, in profile, the whole
 fish in the frame, one fish (or the subject obvious), an easy species (that last one is the entry's order, not the
 photo's: `fish.json` `start` and the opening rule). Avoid at the very start: juveniles; species whose sexes or colour
-phases differ (Parrotfish); night shots, partial fish, head-on or tail views, heavy crops, murky water, camouflage,
+phases differ (Parrotfish); the fish in its night livery, partial fish, head-on or tail views, heavy crops, murky water, camouflage,
 several species in the frame.
 
-- **5 very easy**: profile, whole, good light, sharp, large or medium, one fish (or a school of it); colourful or with
+- **5 very easy**: profile, whole, good light (a flash on a dark background included), sharp, large or medium, one fish (or a school of it); colourful or with
   its family's shape and pattern plain to see. A field-guide photo.
 - **4 easy**: as 5 with one mild shortfall: a slight oblique, dim light, a slight colour loss,
   a busy background, the fish medium-small, another kind of fish in the frame far from the subject.
 - **3 medium**: two mild shortfalls, or one strong one: a marked oblique, a head-on, tail or top view, part of the fish
-  cut or hidden, a night or flash shot, a strong colour loss, the fish small, camouflage the eye still sees through.
+  cut or hidden, the fish in its night livery, a strong colour loss, the fish small, camouflage the eye still sees through.
 - **2 hard**: the shape or the colours are hard to read: several strong shortfalls, murky water, camouflage, a tiny
   fish, a juvenile, a school in the blue.
 - **1 very hard**: the fish is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
 **Caps** (the tool applies them, so a typed ease can never break them): a juvenile (`j`), an unclear subject (`x`) or a
-monochrome photo (colour loss `3`) is at most 2 (a juvenile: unless its entry or genus shows its juveniles early, below); camouflage (`c`), out of water (`a`), a night shot (`n`), a strong
+monochrome photo (colour loss `3`) is at most 2 (a juvenile: unless its entry or genus shows its juveniles early, below); camouflage (`c`), out of water (`a`), the night livery (`n`), a strong
 colour loss (`2`), a head-on, tail or top view (`h`, `t`, `d`) or a partial fish (`0`) is at most 3. So a photo at 4 or
 5 ("very easy", the first questions' photos) is never one Pierre wants kept from the start.
 
@@ -238,6 +249,16 @@ most 3), the frogfishes, scorpionfishes, stonefishes and seamoths are camouflage
 from above, the sharks in blue water; seven entries have no photo at 4 or 5 (they took their 3 easiest at the start
 under the `easyFirst` gate, gone since 2026-11-06). The rubric was applied as written (no family exception): a question for Pierre, put to
 him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md).
+
+## The light re-judge (rubric 6, 2026-11-08)
+
+After Pierre's Q308 (above, "Light: the fish, not the background"), every photo coded `n` (727 distinct photos: game,
+reference and candidate photos) and every `d` photo with a dark background (495, picked by a dark border and then looked
+at one by one) were looked at again on sheets of 12 at 400 x 300 px: 1,062 codes changed (`n` to `g` 716, `d` to `g` 313,
+`n` to `d` 30, with the ease the light changed), 4 stopgap game photos keep `n` (two goatfish and two fusilier photos in a reddish night livery), and 37 judged candidates keep it too. The log,
+with each photo's old and new code, is `judging/fish-light-q308.json`; its `curation` list holds Pierre's adds whose
+tags and ease `curation.json` still holds from the earlier judgement (`tools/fish_game.py` reads them first): a
+proposal for him, never written by a script (rule A1).
 
 ## A temporary use
 
