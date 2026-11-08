@@ -430,12 +430,22 @@ const server = http.createServer((req, res) => {
     delete Q.sciV;
     ok(bonusBackDue() && bonusBackDue().k === 'sci', 'sci: the back card for a choice made before');
     closeCards();
+    // Over a question on a genus about to close (Codex review #720): the question is replaced once they are closed.
+    const gq = pool().find(n => GX(n).rank && photoSet(n).shown.length);
+    if (gq) {
+      dropPlans();
+      SHOWNQ = null;
+      question('quiz', gq, distractors(gq, pool(), 3), '', photoSet(gq));
+      SHOWNQ = ['quiz', gq];
+    }
     bonusBackShow();
     const bk = document.querySelector('.unlock [data-sciback]');
     ok(bk && /Close them for now/.test(bk.textContent), 'sci: the back card, Close them for now');
     if (bk) bk.click();
     closeCards();
     ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
+    // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
+    ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
     // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
     quizBoard();

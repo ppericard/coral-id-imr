@@ -1620,7 +1620,16 @@ function bonusBackShow(S = bonusBackDue()) {
     kick: S.kick,
     title: B.title,
     body: `<p>${B.body}</p>${keep.length && B.imr ? `<p class="ulnote">${B.imr} ${keep.map(uname).join(', ')}</p>` : ''}`,
-    primary: {text: B.no, attr: 'data-sciback', on: () => bonusSet(false, S.k)},
+    // Closed, a question on screen about a unit no longer in play (a genus just closed) is replaced at once, unanswered
+    // (Codex review #720). The card is gone before its button's on runs (app.js cardShow act).
+    primary: {
+      text: B.no,
+      attr: 'data-sciback',
+      on: () => {
+        bonusSet(false, S.k);
+        if (QOPEN && SHOWNQ && !pool().includes(SHOWNQ[1])) (dropPlans(), route());
+      }
+    },
     secondary: {text: B.yes, on: () => bonusSet(true, S.k)},
     esc: 2,
     note: S.note,
