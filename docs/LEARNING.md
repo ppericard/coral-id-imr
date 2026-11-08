@@ -3818,6 +3818,15 @@ recalculation run with a `PMEM` that throws on any read; the corals' read `PMEM`
   answer), not on the log. The fish answers logged before it keep their coral `f` in their scoring record, which the
   sheet's fish replay (#776) reads as logged.
 
+**Decided by Pierre, 2026-11-09 (Q317)**, on #805's breached guardrail and a literature review
+([reference/lit-photo-memory.md](reference/lit-photo-memory.md): every validated memory model has a lag term, Pelánek
+2015's item effect about +1.5 logits a minute after a show and near 0 after a month): **keep #790's conservative prior
+for fish**. Later, a memory model with two parts: a lasting value per outcome (today's buckets) plus a boost that
+decays with the time since the photo was last shown, its decay shape fixed from the literature and one fitted weight.
+Rule L1 gained the matching exception the same day (rule L1, "Second exception, photo memory"). Validation (rules L11,
+L12) in the review's order, the read-only table first (lag band × bucket, observed against expected, players the unit);
+ROADMAP "Photo memory that fades with time".
+
 **In the app** (`quiz.js` `answer`, `model.js` `famOf`, `pgMemW`):
 
 - **The expectation** of a question includes the offset of its photos as the player knew them before answering: the
@@ -4330,6 +4339,18 @@ the spread, so beginner and strong RA were run again on 15 seeds: learned 1.5 ±
 The simulated world is built on the same genus offsets the v31 app is given, so it says the rule is safe, not how
 much it gains; the real-log replay above is the measure of that.
 
+**Next: one difficulty in components** (decided by Pierre, 2026-11-09, Q316; the coherence review's F8, C1), after a
+literature review ([reference/lit-componential-difficulty.md](reference/lit-componential-difficulty.md): the linear
+logistic test model with random items, nested item families, TrueSkill's split of one result among additive parts). An
+evolution of this Elo engine: one difficulty per question = a rank offset + the family, genus, species and photo
+components, each shrunk toward its parent while it has few answers; the online update splits the surprise among the
+components by their uncertainty (TrueSkill / the simplified Kalman rule); with only genus + photo it must reproduce
+today's v31 ratings within rounding; the genus and species parts count at family rank too. Order: the offline fit
+first (read-only), then the sheet, then the app; rule L11. **Q136** (photos rated against the genus ability) is
+reopened for rework on today's multi-level engine and folded into this work: check whether the per-genus player
+ability can be taken as centred on zero across players on our data (the literature's condition, review §6), with more
+literature if needed. ROADMAP "Engine coherence review".
+
 ### Response time: genus and photo (measured 2026-11-04, no change made)
 
 Pierre, 2026-11-04: "response time informs on several things at once: the player's knowledge of this genus, the
@@ -4511,6 +4532,16 @@ one surprise (Pelánek 2016), but the two must be tuned together, not stacked. V
 every photo's rating, so the draw), both worlds, the real-log replay as the primary. The view below measures it at
 every milestone: Analyses › Difficulty › Time.
 
+**Decided by Pierre, 2026-11-09 (Q315)**, after a literature review
+([reference/lit-response-time.md](reference/lit-response-time.md): time intensity as its own item parameter, the
+response times as collateral information on difficulty, van der Linden 2007; van der Linden, Klein Entink & Fox 2010):
+option (2), each photo's time intensity in the **prior** part of `photoDiff`, so it fades as the photo's own answers
+come in; option (1) only as the declared comparison, never stacked with (2); two variants of (2) tested, the time
+intensity from all answers or from right answers only (both with rapid-guess cut-offs), the one that predicts better
+kept, declared before the test; option (3), enlarging, waits for data; the seconds stay logged. Validation: rule L11
+level 2, the real-log replay the primary (players the unit; corals primary, fish exploratory). Next steps: ROADMAP
+"Time in the photo rating".
+
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
 Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
@@ -4553,7 +4584,9 @@ Two views show how effects and genera relate (the multifactor visualisation stud
 - **Coded tracks or tiers** (beginner / RA / expert modes, a fixed genus order, fixed difficulty per genus): ruled out by
   Pierre. Every threshold above is continuous or performance-driven.
 - **Time between sessions** for progress, mastery or ability (spaced-repetition days, decay, a "refresh"): ruled out
-  (rule L1). The one exception, time to plan the questions after a break, is the comeback above. The seconds
+  (rule L1). Two exceptions: time to plan the questions after a break (the comeback above), and photo memory (Pierre,
+  2026-11-09, Q317: the time since a photo was last shown may set how much a new answer on it is expected to owe to
+  memory of that photo, never a decay of progress, mastery or ability, never a delay or gate; "Photo memory"). The seconds
   taken to answer are not time between sessions (Pierre, 2026-11-04, rewording rule L1): they are evidence about that
   answer, and since rules version 4 they weigh how much a right answer moves the ability ("Response time"); never a
   decay, never a penalty for being slow on its own.
@@ -5457,6 +5490,10 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## References
 
+- Literature reviews with their own reference lists, each reference marked with how it was checked (2026-11-09):
+  [response time and difficulty](reference/lit-response-time.md) (Q315), [componential
+  difficulty](reference/lit-componential-difficulty.md) (Q316, Q136), [photo memory](reference/lit-photo-memory.md)
+  (Q317).
 - Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*
   98. <https://www.fi.muni.cz/~xpelanek/publications/CAE-elo.pdf>
 - Papoušek, J., Pelánek, R., Stanislav, V. (2014). Adaptive practice of facts in domains with varied prior knowledge.

@@ -12,8 +12,9 @@ Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11
 
 ## Now
 
-Fish is open to every player (beta). Main: sheet script **v112**. **Merges stopped since 23:35 Manila**: Codex's usage
-limit (Q314). Overnight Claude reviews (two rounds) of #793, #795, #798-#801: every finding fixed with a test, green.
+Fish is open to every player (beta). Main: sheet script **v112**. Codex's usage limit (merges stopped at 23:35) lifted
+by Pierre with credits on the 11-09 morning (Q314). Overnight Claude reviews (two rounds) of #793, #795, #798-#801: every
+finding fixed with a test, green.
 
 - **Waiting, all green** (17/17 checks, 2026-11-09 00:10), no Codex review of their heads: #793 rotate a photo, #794 fish
   Analyses, #795 rights badges, #796 #797 #802 #803 fish judging (Blennies, Gobies), #798 admin low items, #799 lighter
@@ -27,29 +28,23 @@ limit (Q314). Overnight Claude reviews (two rounds) of #793, #795, #798-#801: ev
 
 ## Next
 
-This morning: Q314, then the waiting PRs land; the Reports and Events tabs read since 11-08 07:20; then ROADMAP "Backlog in priority order".
+This morning: the waiting PRs land (Q314 lifted); the Reports and Events tabs read since 11-08 07:20; then ROADMAP "Backlog in priority order".
 
 ## Questions for Pierre
 
 Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
 mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes into its PR and off this list.
 
-- **Q314** Codex's usage limit (15:35 UTC 11-08) blocks merges: (a) credits, (b) wait, (c, recommended) a Claude reviewer.
-- **Q315** Time in the photo rating (ROADMAP row): (1) the genus offset's step too, (2) a time term in `photoDiff`,
-  (3) enlarged as a small extra, or none. Recommended: (2), the measure supports it (Holm 0.003), at L11 level 2.
-- **Q317** L11 breach (#790 live, #805): without the corals' memory offsets the fish beginner's flat stretch is +11
-  (50 → 61). Keep (recommended: the log backs it, 92% right on seen photos) or fit fish offsets? `PFMT` leaks too.
 - **Q208** (set aside 11-08): families not met before the scientific genera, or genera on their own pace? **Q230**
   out-of-zone taxon-page photos: waits for real arguments.
-- **Q316** (C1, #664's F8) fish photo ratings per rank: (A) one per (photo, rank), or (B, recommended) one per photo
-  plus a fitted rank offset (Q136 with it). Not numbered: **Show the species after a family or genus answer**
-  (species, common and scientific name, right or wrong; Pierre ~20:10): before the species level? **#641 a-j** (F7 =
-  j) and #651's 5 choices; **Q123, Q124** asked again. Apply the **152 curated tag and ease proposals**
-  (`judging/fish-light-q308.json` "curation", 105 flash n -> g) in the admin? A **stopgap `fish-photos.json`** so
-  unjudged species show remote photos meanwhile (~10,100 candidates in 468 species unjudged)? The **R2 crop
-  workflow**: done? **Rule D5**, a one-line change for his OK: "adds an entry at the end of the subject's rules
-  versions (`core.js` `RVS` for the corals, `FISH_RVS` for the fish)". **Eel-tailed catfishes** (parked below): what
-  he wants from it. Re-read the **Q305 rule texts** (#757 Decisions) and #758's W12/W14 wording.
+- **Not numbered**: **Show the species after a family or genus answer** (species, common and scientific name, right or
+  wrong; Pierre ~20:10): before the species level? **#641 a-j** (F7 = j) and #651's 5 choices; **Q123, Q124** asked
+  again. Apply the **152 curated tag and ease proposals** (`judging/fish-light-q308.json` "curation", 105 flash n -> g)
+  in the admin? A **stopgap `fish-photos.json`** so unjudged species show remote photos meanwhile (~10,100 candidates
+  in 468 species unjudged)? The **R2 crop workflow**: done? **Rule D5**, a one-line change for his OK: "adds an entry
+  at the end of the subject's rules versions (`core.js` `RVS` for the corals, `FISH_RVS` for the fish)". **Eel-tailed
+  catfishes** (parked below): what he wants from it. Re-read the **Q305 rule texts** (#757 Decisions) and #758's
+  W12/W14 wording. `PFMT` (per-format offsets) also leaks the corals' values to fish (#805): not in Q317's answer.
 - FYI. Delegated tonight, to check in use: Visits (#777: device rows with installed / browser and "not known", a
   two-subject visit on each side, one row per Lab page), the reports bar, Home's header switch, the privacy text, the
   install nudge (#768: 10 answers = a session, a visit = a 30-min gap, every touch screen, Home only, a ⚙ Settings row,
@@ -59,6 +54,11 @@ mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes in
 - Answered 11-08: Q121 / Q300 the rewrite; Q301-Q304 Visits (#777); Q305 a, b, d, not c (#757); Q306, Q307 (#753);
   Q308 fish light g / d / n (#759); Q309 reports bar (#785); Q310 fish replay, today's bar a floor (#776, #779); Q311
   fish batches (#766, #780, #781); Q312 device id on answers (#774); Q313 fish common names, corrected in use (#778).
+- Answered 11-09 (rule L1, LEARNING.md, ROADMAP): Q314 Codex limit lifted (credits); Q315 a time intensity per photo in
+  `photoDiff`'s prior, (1) only as the declared comparison, all vs right answers two declared variants, (3) waits, L11
+  level 2; Q316 componential difficulty (rank + family + genus + species + photo, shrunk, a Kalman split, v31 parity;
+  offline fit, then sheet, then app); Q136 reopened into Q316 (per-genus ability centred on zero?); Q317 fish prior
+  kept, later a memory boost decaying with time since last shown (read-only table first), rule L1 exception.
 
 Last question number: Q317
 
