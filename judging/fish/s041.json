@@ -99,6 +99,50 @@
   "fish-s041-cand-fb-Acleu_u0": {
    "code": "p1g0sl14",
    "keep": "best"
+  },
+  "fish-s041-cand-712361826": {
+   "code": "p1g2mmm2",
+   "keep": "best"
+  },
+  "fish-s041-cand-66055809": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s041-cand-447124040": {
+   "code": "p1g1ms13",
+   "keep": "best"
+  },
+  "fish-s041-cand-727062310": {
+   "code": "o1d2ml12",
+   "keep": "best"
+  },
+  "fish-s041-cand-655285066": {
+   "code": "p1d2sm12",
+   "keep": "best"
+  },
+  "fish-s041-cand-533664589": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s041-cand-602238199": {
+   "code": "o1g2bl12",
+   "keep": "best"
+  },
+  "fish-s041-cand-602238247": {
+   "code": "d1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s041-cand-260021216": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s041-cand-744626490": {
+   "code": "p1d2mm12",
+   "keep": "best"
+  },
+  "fish-s041-cand-251425819": {
+   "code": "o1g2sl13",
+   "keep": "best"
   }
  }
 }

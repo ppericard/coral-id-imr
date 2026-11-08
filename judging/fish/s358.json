@@ -37,7 +37,7 @@
    "keep": "best"
   },
   "fish-s358-cand-624473573": {
-   "code": "p1d1sl13",
+   "code": "p1g1sl14",
    "keep": "best"
   },
   "fish-s358-cand-690836799": {
@@ -45,11 +45,11 @@
    "keep": "best"
   },
   "fish-s358-cand-43772505": {
-   "code": "h1n0sl13",
+   "code": "h1g0sl13",
    "keep": "best"
   },
   "fish-s358-cand-43772569": {
-   "code": "p1n0sl13",
+   "code": "p1g0sl15",
    "keep": "dup"
   },
   "fish-s358-cand-615721002": {
@@ -69,7 +69,7 @@
    "keep": "dup"
   },
   "fish-s358-cand-65914607": {
-   "code": "h0d1sl12",
+   "code": "h0g1sl12",
    "keep": "best"
   },
   "fish-s358-cand-724341666": {
@@ -109,7 +109,7 @@
    "keep": "best"
   },
   "fish-s358-cand-fb-Armap_u0": {
-   "code": "p1n0sl13",
+   "code": "p1g0sl14",
    "keep": "best"
   }
  }

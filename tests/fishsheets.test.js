@@ -94,6 +94,41 @@ test('the family sheets lines (tools/fish_sheets.json): families of fish.json, e
   }
 });
 
+// The families IMR gives no cue for (circles 2-3, the Soapfishes; Pierre, 2026-11-08: "court terme, assez urgent"): each
+// has its own ID marks, checked against two sources at least, and the app shows them where it shows IMR's cues (app.js
+// fishGenera: qt, under a label naming the sources; quiz.js fbBody and introCard, learn.js viewFishList read qt and tl).
+test('every family of the game has ID cues to show: IMR’s, or its own ID marks with two sources at least', () => {
+  const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_sheets.json'), 'utf8')).families;
+  const bare = F.families.filter(f => !(f.cues || []).length);
+  assert.ok(bare.length >= 40, `the families with no IMR cue: ${bare.length}`);
+  for (const f of F.families) assert.ok((f.cues || []).length || (f.marks || []).length, `${f.id}: no cue and no mark`);
+  for (const f of bare) {
+    const x = S[f.id] || {};
+    assert.ok((x.marks || []).length >= 1 && x.marks.length <= 3, `${f.id}: 1 to 3 ID marks`);
+    assert.ok(new Set((x.src || []).map(s => new URL(s.u).host)).size >= 2, `${f.id}: two sources at least`);
+  }
+  const vm = require('vm'),
+    block = require('./block.js'),
+    APP = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+    PH = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-photos.json'), 'utf8')),
+    ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    ctx
+  );
+  const X = ctx.fishGenera(C.fishGen(F, PH.photos), F);
+  for (const f of bare) {
+    const g = X.gen[f.id];
+    assert.deepStrictEqual([...g.qt], f.marks, `${f.id}: its marks are its tips`);
+    assert.ok(/^ID marks \([^<>&"]+\)$/.test(g.tl) && !/IMR/.test(g.tl), `${f.id}: ${g.tl}`);
+  }
+  assert.strictEqual(X.gen['f:Barracudas'].tl, 'ID marks (FishBase, Fishes of Australia, Reef Life Survey)');
+  // a family with IMR cues keeps them, under IMR's label
+  assert.deepStrictEqual([...X.gen['f:Groupers'].qt], F.families.find(f => f.id === 'f:Groupers').cues);
+  assert.ok(!X.gen['f:Groupers'].tl);
+});
+
 test('genus common names (tools/fish_genus_names.json): genera of fish.json, each with its source, built into fish.json', () => {
   const X = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_genus_names.json'), 'utf8')).genera,
     by = Object.fromEntries(F.genera.map(g => [g.id, g]));
