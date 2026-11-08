@@ -209,6 +209,7 @@ def region(o):
 # one (a photo added long after its observation was made). Measured on the 1,140 pairs of tools/fish_refs.json before
 # this change: half within 2,000 ids of the estimate, about 90% within 300,000.
 WIN = (30_000, 500_000)
+WIN_PAGES = 5  # pages of 200 read per window at most (id_above the last one read; Codex review #731)
 NEAR = 4  # known pairs taken on each side of a photo id
 
 
@@ -239,9 +240,15 @@ def obs_of(net, taxon, pid, A):
         sys.exit(f"--offline: not cached: {key}")
     e, o = est(A, pid), None
     for m in WIN if e is not None else ():
-        url = (ff.API + f"taxon_id={taxon}&photos=true&id_above={max(0, e - m)}&id_below={e + m}"
-               f"&order_by=id&order=asc&per_page=200&fields={FIELDS}")
-        o = ((net.fetch(url, keep_win) or {}).get("p") or {}).get(str(pid))
+        above = max(0, e - m)
+        for _ in range(WIN_PAGES):  # a window of more than 200 observations is read on (Codex review #731)
+            url = (ff.API + f"taxon_id={taxon}&photos=true&id_above={above}&id_below={e + m}"
+                   f"&order_by=id&order=asc&per_page=200&fields={FIELDS}")
+            r = net.fetch(url, keep_win) or {}
+            o = (r.get("p") or {}).get(str(pid))
+            if o or (r.get("n") or 0) <= 200 or not r.get("p"):
+                break
+            above = max(x["id"] for x in r["p"].values())
         if o:
             break
     net.c[key] = o

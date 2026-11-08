@@ -86,6 +86,14 @@ other = Net([("id_above=", {"results": [obs(160000, [200000], taxon=999)]})])
 T = {123: {"photos": [ph(200000, "cc-by")]}}
 print(json.dumps({"o": o["id"], "urls": len(net.urls), "other": FR.pick(other, T, 123, {123}, None, [(100000, 160000)])}))`);
   assert.deepStrictEqual(two, {o: 40000, urls: 2, other: []});
+  // A window of more than 200 observations is read on from the last one read (Codex review #731).
+  const paged = py(`${NET}
+page1 = {"total_results": 250, "results": [obs(130000 + i, [1000 + i]) for i in range(200)]}
+page2 = {"total_results": 50, "results": [obs(130200 + i, [2000 + i]) for i in range(49)] + [obs(130250, [200000])]}
+net = Net([("id_above=130199&", page2), ("id_above=130000&", page1)])
+o = FR.obs_of(net, 123, 200000, [(100000, 160000)])
+print(json.dumps({"o": o["id"], "urls": len(net.urls)}))`);
+  assert.deepStrictEqual(paged, {o: 130250, urls: 2});
 });
 
 test('the regions of the photos left out pending Q230', () => {
