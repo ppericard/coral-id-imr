@@ -12,8 +12,8 @@ Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11
 
 ## Now
 
-Fish is open to every player (beta). Main: sheet script **v112**. **Merges stopped since 23:35 Manila (15:35 UTC)**:
-Codex reached its usage limit (code review and security review); the merge contract wants Codex on every head (Q314).
+Fish is open to every player (beta). Main: sheet script **v112**. **Merges stopped since 23:35 Manila**: Codex's usage
+limit (Q314). Overnight Claude reviews (two rounds) of #793, #795, #798-#801: every finding fixed with a test, green.
 
 - **Waiting, all green** (17/17 checks, 2026-11-09 00:10), no Codex review of their heads: #793 rotate a photo, #794 fish
   Analyses, #795 rights badges, #796 #797 #802 #803 fish judging (Blennies, Gobies), #798 admin low items, #799 lighter
