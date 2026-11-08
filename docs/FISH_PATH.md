@@ -55,7 +55,7 @@ is the design's shorthand, and internal identifiers may keep it.
   turned on by hand before any family is at Advanced, a family's genera come from its Open Water, Q240): a family's genera join the game when the family reaches Advanced and open one at a time
   (an IMR player meets the IMR course's genera without the offer from their family's Open Water: below); a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
-  one (Chromis, Dascyllus, Pomacentrus), else its most met species; not counted in the progress yet (the global score is not built).
+  one (Chromis, Dascyllus, Pomacentrus), else its most met species; counted in the fish global score since 2026-11-08 (half a genus's bar is the scientific credit of each of its species: "My progress (fish)").
   Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).
   Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
 - **The IMR genera for an IMR player** (Pierre, 2026-11-08: "pour des gens qui sont à IMR, dans la première phase de jeu, la phase
@@ -449,6 +449,41 @@ on families only to an IMR RA with every species open:
       learning both names scores below one learning a single kind for most of the path (at 30,000 simulated answers: 62% against
       80% common only). Rerun with `tools/learnsim.js` fish profiles once the species level exists.
     - **My progress** can show three bars under the headline %: Entries, Common names, Scientific names.
+  - **Decided (Pierre, 2026-11-08, Q242) and built**: the formula above with two changes, picked from the re-simulation on
+    today's bar and world (docs/LEARNING.md "Fish: the global score, built"), to honour "the score moves fast at the start
+    and slowly after":
+    - **Weights by commonness (A)**: each species weighs 1/√ of its rank by observers near Dauin (fish.json
+      `present.dauinU`, its distinct Research Grade observers in the 40 km zone); tied counts share the mean of their ranks, so the species no one observed there
+      (0) share the last ranks' mean and still count, the least (`core.js` `rankWeights`). Each family weighs the sum of
+      its species' weights. The Entries part and the species credit are these weighted means.
+    - **Square-root display (B)**: the % shown is 100 × √raw. Anchors: families only **50%**, families and every genus
+      **74%**, every common name **89%**, every scientific name **92%**, every common name and every genus **95%**,
+      everything **100%**. Today the genera exist for circle 1 only, so families and every genus of the game reach 67% (after #727).
+    - Not C (circle weights).
+    - **A species with no common name at all** (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la branche nom
+      commun"; 5 since #727, more with the nudibranchs): no common-name unit, out of the
+      Common names component, and its credit is its scientific value alone (S), so it reaches 1 with its scientific name
+      and 100% stays reachable.
+    - **One computation, its components** (Pierre, 2026-11-08: "il faut qu'il y ait des scores par famille, par genre,
+      par espèce ... qu'on arrive à découper les scores sur des composantes"): `core.js` `treeScore` returns the % shown,
+      the raw score, the components (Entries, Genera, Common names, Scientific names own and with the genus credit, the
+      species credit), the same per circle, and every unit's own bar (each family, genus, species × common / scientific:
+      the bar that drives its levels and exam, unchanged). Every rule that reads a score reads one of these.
+    - **Shown**: the header pill, My progress's ring and, under the name, three bars (Families, Common names, Scientific
+      names: the components, the last one with the genus credit), the fish % achievements (25%, 50%), the leaderboard
+      (sheet v101), the update card. The species terms stay 0 until the species level exists; the genus credit is live
+      for the genera a player has (the IMR genera, the opted-in ones).
+    - **The path on the new scores** (Pierre, 2026-11-08: "il faut qu'on trouve une manière de caler le parcours sur nos
+      nouvelles manières de calculer les progrès et les scores"): circle 3's offer reads the circle-1 Entries component
+      at 55% (it was the plain mean of the circle-1 families at 50%; 55% is where the simulated players reach it at the
+      same answer). The rest of the path reads per-unit levels and counts, unchanged.
+    - **Pierre's answers** (2026-11-08, Q253-Q258): the switch is silent for current players, the ? text explains it
+      (Q253: "pour l'instant on le passe en silencieux"); circle 3 at the circle-1 Entries component's 55% (Q254); the
+      fish % achievements stay at 25% and 50% of the global score for now, the whole fish set to be redesigned around
+      the global score (Q255, a proposal of its own); the bar labels (Q256); the weighted bars with the genus credit in
+      Scientific names (Q257), on one condition the formula guarantees and a test proves: a player who plays the genera
+      and never a species cannot pass a set level (Scientific names at most 50%, the global % at most the "families and
+      every genus" anchor, 74%); credit = S for a species with no common name (Q258).
   - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the families of every
     circle (since the units migration, the book's families: 28 of circle 1, 1 of circle 2, 19 of circle 3) and their species; unopened
     units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families (Q177: circle 2 by itself once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `fishGate`); the two opt-in settings are gone. **Circle 3 is an option** (Pierre, 2026-11-07 08:50): at that threshold a card asks "More fish families, beyond the IMR course?" (Open them / Not now, "Not now" on top); "Open them" lets its families open one at a time as usual, "Not now" keeps them closed, the card comes back once 200 answers later, then never, and My progress offers "Open the families beyond IMR (N families)" while it is off (`UNITS.fish` `opens`, `core.js` `openState`; the choice `beyond` in the quiz settings, synced). Circle-3 families **still count** in the fish % (Pierre, Q204: 100% is everything unlocked and known, circle 3 included; a player who declines has room left, and the global score with genera and species will add more). Circle-3 families already open stay open, and a player whose circle 3 already opened by itself is not asked.
@@ -478,7 +513,7 @@ on families only to an IMR RA with every species open:
 - **Opening fish to players**: **open to every player since 2026-11-06** (Pierre, Q158: "open fish to everyone now", during IMR's fish course), signed out included, the *beta* label kept (`core.js` `SUBJECTS` fish `open: 'all'`, sheet v67). Before, from 2026-11-04 (PR #540), to a group Pierre picked in the admin; the group mechanics stay for a subject set back to `open: 'group'` (docs/ARCHITECTURE.md "Opening", "The beta group").
 - **Leaderboards separate per subject**, no merged ranking: corals as today (coral %, then Elo); fish by the global fish score ("My
   progress (fish)"), then the fish Elo. **Built** (sheet v95): the 🏆 page follows the subject switch; the fish board ranks by the fish %
-  as My progress shows it (its ring, over the fish slate; the global score once built), then the fish Elo (docs/ARCHITECTURE.md
+  as My progress shows it (its ring: the fish global score since sheet v101, 2026-11-08), then the fish Elo (docs/ARCHITECTURE.md
   "Leaderboard").
 - **Achievements** (rule L8: learning milestones, never time or days played; designed later, each one's timing checked with the real
   game before it is added):
