@@ -474,6 +474,12 @@
       // Its own leaderboard (Pierre, 2026-11-04: separate per subject, no merged ranking): by its %, then its Elo (sheet
       // v95, Code.gs board_ &s=fish; progress.js loadBoard).
       board: true,
+      // Its global score (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the commonness weights and the square-root
+      // display; docs/FISH_PATH.md "My progress (fish)"): core.js treeScore over its tree (app.js UNITS fish tree), shown
+      // as its headline % (model.js headPct: the header, My progress, the leaderboard, the fish % achievements) with its
+      // components (My progress's bars). The one switch: without it the headline is the families' mean again (progPct),
+      // and the rules that read it go back with it (app.js fishGate).
+      score: {entries: 0.25, a: 11 / 15, b: 0.8, half: 0.5, pow: 0.5},
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
       // them); the judged ease's prior as measured (CALIB.ease). Q186 (Pierre, 2026-11-06 15:33: the easy photos strongly
       // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
@@ -591,8 +597,9 @@
   // c1 / c2 / c3 = the families of each circle (all on the path and in the progress since Pierre, 2026-11-06, Q175: app.js
   // UNITS fish slate, fishGate), winks = the wink entries (a surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
-  // views.wide in easyRank order (below): the easiest, most reference-like photo first, whoever took it; cover: the
-  // card's photo (app.js cover), the first of that order (Pierre, 2026-11-06: no source tier any more).
+  // views.wide in easyRank order (below; no licence in it: the draw reads it): the easiest, most reference-like photo
+  // first, whoever took it; cover: the card's photo (app.js cover), the first of that order, an open licence breaking
+  // ties (easyCover; Pierre, 2026-11-06: no source tier any more; 2026-11-08, Q270).
   // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos (Pierre, 2026-11-05: a species with no
   // game photo may keep one for its sheet, never in the quiz or any game, passing the game photo rules all the same;
   // tools/fish_photos.py SHEET).
@@ -600,6 +607,30 @@
   // every game draw reads views.wide (model.js photoSet, app.js fishGenera), so none can show it. The result's sheet
   // holds them by species ({species id: [photo]}), for a species sheet to show (none yet: docs/ARCHITECTURE.md "Fish content").
   const sheetOnly = p => !!p && p.use === 'ref';
+  // The rights a photo comes with (Pierre, 2026-11-08, Q270: "à qualité égale", CC0 / CC BY and his own photos before
+  // CC BY-NC, so the stock a later commercial app could use grows; the CC BY-NC photos stay fully usable): 'imr' an IMR
+  // lecture photo, 'book' a Coral Finder book photo, 'own' Pierre's own (whatever its licence), 'open' CC0 or CC BY,
+  // 'nc' the rest (CC BY-NC, or no licence read). licOf: the photo's licence code, its lic, else read from its credit a
+  // ("(CC BY-NC-SA)" -> cc-by-nc-sa, "no rights reserved" -> cc0), null when neither says (IMR lecture, Coral Finder
+  // book); the admin's presence.js licence. tools/rights.py is the Python copy of all three (tests/rights.test.js).
+  // rightsRank is the tie-break key, last of an order between otherwise-equal photos and never above quality, ease or
+  // variety (docs/rules/photos.md P1): 0 own or open, 1 the rest. Own and open rank alike, so his photos are never
+  // boosted over another open one (P1, fish).
+  function licOf(p) {
+    if (!p) return null;
+    if (p.lic) return String(p.lic).toLowerCase();
+    const m = /\((CC0|CC[ -][A-Z -]+?)\)/.exec(p.a || '');
+    if (!m) return /no rights reserved/i.test(p.a || '') ? 'cc0' : null; // iNaturalist's CC0 credit
+    return m[1] === 'CC0' ? 'cc0' : 'cc-' + m[1].slice(3).toLowerCase().trim().split(/\s+/).join('-');
+  }
+  function rightsClass(p) {
+    if (!p) return 'nc';
+    if (p.imr) return 'imr';
+    if (p.cf) return 'book';
+    if (p.own) return 'own';
+    return /^(cc0|cc-by)$/.test(licOf(p) || '') ? 'open' : 'nc';
+  }
+  const rightsRank = p => (/^(own|open)$/.test(rightsClass(p)) ? 0 : 1);
   // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
   // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
   // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
@@ -638,12 +669,18 @@
     /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
     (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
   const refFirst = p => (refLevel(p) ? 0 : 1);
-  function easyRank(L, d = p => -(p.e || 3)) {
+  // Last before the hash, the rights (rightsRank, below): between otherwise-equal photos, an open licence or Pierre's own
+  // first (Pierre, 2026-11-08, Q270). lic false leaves them out: the order the game's draw reads (views.wide), whose ties
+  // decide model.js photoSet's variety cut, so the draw never reads a licence (Codex review #742); the card photo, the
+  // first of the order with them (easyCover).
+  function easyRank(L, d = p => -(p.e || 3), lic = true) {
     return (L || [])
-      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
-      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.h - b.h)
+      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), l: lic ? rightsRank(p) : 0, h: fHash(p.f)}))
+      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.l - b.l || a.h - b.h)
       .map(x => x.p);
   }
+  // A unit's card photo: the first of its photos in easyRank order, the rights breaking ties (Q270); null with none.
+  const easyCover = (L, d) => easyRank(L, d)[0] || null;
   function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
@@ -710,7 +747,9 @@
           wide: easyRank(
             (byFam[t.id] || [])
               .filter(p => p && p.f && p.src && !sheetOnly(p))
-              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p)),
+            undefined,
+            false
           )
         },
         ...(start.has(t.id) ? {first: 1} : {}),
@@ -720,7 +759,7 @@
       };
     });
     Object.values(gen).forEach(g => {
-      if (g.views.wide.length) g.cover = g.views.wide[0].f;
+      if (g.views.wide.length) g.cover = easyCover(g.views.wide).f;
     });
     const ids = Object.keys(gen),
       play = n => !gen[n].wink,
@@ -1197,7 +1236,23 @@
       // kept pg 0.96 for good).
       delete out[subjKey(S.id, 'rv')];
     });
+    // The one-time notices told on either account (TOLD): told once, never shown again for the merge.
+    const ta = J(A, TOLD.KEY),
+      tb = J(B, TOLD.KEY);
+    if (ta || tb) out[TOLD.KEY] = JSON.stringify(toldUnion(ta, tb));
     return out;
+  }
+  // The one-time notices a player has seen, on any device of the account (Pierre, 2026-11-08: a device holding an old
+  // copy of his account showed again the cards and toasts he had seen on another device): a list of tokens, one per
+  // notice seen (progress.js: 'recalc:<note id>' an update note, 'rv:<version>' a rules version's card, 'mx:<unit>@<time>'
+  // a learned mark taken away, 'sorry' the apology, 'hello:<subject>-<mode>' a subject's card, 'board' the leaderboard
+  // note). It travels with the progress (KEYS.SYNC) and merges as the union (sync.js mergeSaved, signIn; mergeUsers), so
+  // a notice told on one device is never told again on another. Anything but a short string is dropped; sorted.
+  const TOLD = {KEY: KEYS.SYNC + 'told', MAX: 120};
+  function toldUnion(a, b) {
+    const out = new Set();
+    [a, b].forEach(L => Array.isArray(L) && L.forEach(t => typeof t === 'string' && t && t.length <= TOLD.MAX && out.add(t)));
+    return [...out].sort();
   }
   // The surprise cards (winks) two records have met (quiz.js winkMerge at a sync, mergeUsers for two accounts): {wink id:
   // answer count when shown}, the union, the earlier count kept; anything else in either is ignored (Pierre, 2026-11-06:
@@ -1976,45 +2031,55 @@
       VIEWS.forEach(([v]) => {
         const field = (g.views[v] || []).filter(p => !p.multi),
           q = p => qualOf(c, p.f),
-          byQ = L => L.slice().sort((a, b) => q(b) - q(a));
+          // Equal quality: an open licence or his own first (rightsRank, Q270), else the list's order: the sheet, the
+          // featured photos and the Coral ID Key. The game list keeps the quality order alone (byQ0), its featured lead
+          // included, so the draw's ties (model.js photoSet's variety cut, which follows the list) never read a licence
+          // (Codex review #742).
+          byQ0 = L => L.slice().sort((a, b) => q(b) - q(a)),
+          byQr = L => L.slice().sort((a, b) => q(b) - q(a) || rightsRank(a) - rightsRank(b));
         const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
         // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
-        const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
-        const others = byQ(all.filter(p => !isCore(p)));
-        const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
         // Coral Finder book photos (Pierre 2026-11-01): on the sheet when pinned, or to fill a gap after every field photo; never in games.
-        const bk = byQ((g.book || []).filter(p => p.view === v)),
-          find = f => all.find(p => p.f === f) || bk.find(p => p.f === f);
-        const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean),
-          hint = ((sug[n] || {})[v] || []).map(find).filter(p => p && !p.cf);
         // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
         // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
-        const pool = [...hint, ...ranked].filter(p => !pin.includes(p)),
-          k = CAP.feat - Math.min(pin.length, CAP.feat);
-        const feat = [
-          ...pin.slice(0, CAP.feat),
-          ...fill(
-            fill(
-              take(
-                pool.filter(p => p.imr || q(p) !== 1),
+        const slot = byQ => {
+          const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
+          const others = byQ(all.filter(p => !isCore(p)));
+          const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
+          const bk = byQ((g.book || []).filter(p => p.view === v)),
+            find = f => all.find(p => p.f === f) || bk.find(p => p.f === f);
+          const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean),
+            hint = ((sug[n] || {})[v] || []).map(find).filter(p => p && !p.cf);
+          const pool = [...hint, ...ranked].filter(p => !pin.includes(p)),
+            k = CAP.feat - Math.min(pin.length, CAP.feat);
+          const feat = [
+            ...pin.slice(0, CAP.feat),
+            ...fill(
+              fill(
+                take(
+                  pool.filter(p => p.imr || q(p) !== 1),
+                  k
+                ),
+                pool,
                 k
               ),
-              pool,
+              bk.filter(p => !pin.includes(p)),
               k
-            ),
-            bk.filter(p => !pin.includes(p)),
-            k
-          )
-        ];
+            )
+          ];
+          return {others, ranked, bk, feat};
+        };
+        const {others, ranked, bk, feat} = slot(byQr),
+          feat0 = slot(byQ0).feat;
         // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
         const more = [...ranked, ...bk].filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
         // Games: field photos and IMR lecture photos (Pierre 2026-11-01), never multi-coral or book photos.
-        const gm = byQ([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
+        const gm = byQ0([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
           core = gm.filter(isCore),
           rest = gm.filter(p => !isCore(p));
         // One list per view (Pierre, 2026-11-03: the Easy / Medium / Hard sets went, docs/LEARNING.md "Hierarchical
         // photo Elo"): the featured game photos first, then IMR / own before other observers, each by quality, Poor last.
-        const lead = feat.filter(p => gm.includes(p)),
+        const lead = feat0.filter(p => gm.includes(p)),
           after = [...core, ...rest].filter(p => !lead.includes(p));
         const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
         g.sl[v] = {
@@ -2288,49 +2353,80 @@
     ['fb5', 'Helping hand', '5 reports sent: you are making the app better', 2, '💬', s => s.fb >= 5, 'contrib'],
     ['fb10', 'Co-author', '10 reports sent: the app owes you a lot', 3, '💬', s => s.fb >= 10, 'contrib']
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
-  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start: families met, levels,
-  // mastery, scientific names; species named and Fish basics wait for those features; harder "hunt" ones later, apart;
-  // "do not multiply achievements"). Learning milestones only (rule L8), tested on the fish snapshot (progress.js
-  // achSnap: the same fields over the fish slate, core = the IMR course's families, sets.sci = scientific genera at Open
-  // Water or above), in the shared record under ids starting with f, so a fish achievement never counts in the corals'
-  // (each subject's page and badge count its own list; SUBJECTS achs). Timing simulated with the real fish game
-  // (tools/learnsim.js --subject fish --ach): docs/LEARNING.md "Fish achievements, simulated".
+  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start; redesigned around the global
+  // score, 2026-11-08, Q259-Q263: docs/LEARNING.md "Fish achievements, around the global score"). Learning milestones only
+  // (rule L8), tested on the fish snapshot (progress.js achSnap: the same fields over the fish slate; core = the IMR
+  // course's families; circ = each circle's families, Advanced or above counted; sets.sci = scientific genera at Open
+  // Water or above, setsAdv.sci at Advanced or above; pct = the global fish score, treeScore's %), in the shared record
+  // under ids starting with f, so a fish achievement never counts in the corals' (each subject's page and badge count its
+  // own list; SUBJECTS achs). Names short, fun and varied, diver-flavoured (Pierre, 2026-11-08: "des noms sympas,
+  // rigolos, pour varier"); descriptions plain and exact. Retired (Q259, 2026-11-08): fpct25, removed from every record by
+  // the recount (progress.js ACH_V 3, achMigrate), as every % one met on the former families' mean and not on the score.
+  // Wait for the species level, documented, not built: fpct70, fpct100, species named, Fish basics (LEARNING).
+  // Timing simulated with the real fish game (tools/learnsim.js --subject fish --ach).
   const FISH_ACH = [
-    ['fmet5', 'First families', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
-    ['fmetcore', 'The IMR line-up', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
-    ['fmetall', 'Whole reef', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
-    ['fq50a', 'Open Water: 5 families', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
-    ['fq50b', 'Open Water: 20 families', '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
-    ['fq80a', 'Advanced: 5 families', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
-    ['fq80b', 'Advanced: 15 families', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
+    ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
+    ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
+    ['fq50a', 'Certified', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
+    ['fq50b', "School's in", '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
+    ['fq80a', 'Night diver', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
+    ['fq80b', 'Deep diver', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
+    ['fq95a', 'Dive guide', '5 families at Divemaster level or above (95%: their mastery exam is on)', 2, '🐠', s => s.q[2] >= 5],
+    ['flearn1', 'First briefing', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
+    ['flearn10', 'Course director', 'Mastery exam passed on 10 families', 3, '🎓', s => s.learned >= 10],
+    ['flearn30', 'Fish whisperer', 'Mastery exam passed on 30 families', 3, '🎓', s => s.learned >= 30],
+    // The circles (the IMR course's families, those that open right after them, those beyond the course).
     [
-      'fq95a',
-      'Divemaster: 5 families',
-      '5 families at Divemaster level or above (95%: their mastery exam is on)',
+      'fcoreadv',
+      'House reef',
+      'Every family of the IMR course at Advanced level or above (80%+)',
       2,
-      '🐠',
-      s => s.q[2] >= 5
+      '🗺️',
+      s => s.core.total && s.core.adv >= s.core.total
     ],
-    ['flearn1', 'First fish Instructor', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
-    ['flearn10', 'Instructor: 10 families', 'Mastery exam passed on 10 families', 3, '🎓', s => s.learned >= 10],
+    [
+      'fc2',
+      'Supporting cast',
+      'Every family that opens right after the IMR course’s at Advanced level or above',
+      2,
+      '🗺️',
+      s => !!(s.circ && s.circ[1] && s.circ[1].total && s.circ[1].adv >= s.circ[1].total)
+    ],
+    [
+      'fc3adv',
+      'Muck diver',
+      '20 families beyond the IMR course at Advanced level or above',
+      3,
+      '🗺️',
+      s => !!(s.circ && s.circ[2] && s.circ[2].adv >= 20)
+    ],
     [
       'flearncore',
-      'IMR fish master',
+      'Transect master',
       'You know every family of the IMR course for sure',
       3,
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
     ],
-    ['fpct25', 'A quarter of the reef', '25% fish progress', 2, '📈', s => s.pct >= 25],
-    ['fpct50', 'Half the reef', '50% fish progress', 3, '📈', s => s.pct >= 50],
+    // The global fish score (core.js treeScore, Q242), every 10 points (Q259); 50% is the families' anchor.
+    ['fpct10', 'Giant stride', '10% fish progress', 1, '📈', s => s.pct >= 10],
+    ['fpct20', 'Bubble trail', '20% fish progress', 1, '📈', s => s.pct >= 20],
+    ['fpct30', 'Reef crest', '30% fish progress', 2, '📈', s => s.pct >= 30],
+    ['fpct40', 'Down the wall', '40% fish progress', 2, '📈', s => s.pct >= 40],
+    ['fpct50', 'Family reunion', '50% fish progress: what knowing every family for sure is worth', 3, '📈', s => s.pct >= 50],
+    ['fpct60', 'Blue water', '60% fish progress', 3, '📈', s => s.pct >= 60],
+    // The scientific genera (an opt-in set, SUBJECTS optin sci).
     [
       'fsci5',
-      'Genus names',
+      'Latin lessons',
       '5 scientific genera at Open Water level or above: you can name them as EventMeasure does',
       2,
       '🏷️',
       s => (s.sets.sci || 0) >= 5
-    ]
+    ],
+    ['fgen20', 'Name dropper', '20 scientific genera at Advanced level or above (80%+)', 2, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 20],
+    ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id.
@@ -2373,13 +2469,28 @@
   }
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have, list = ACH) => list.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
+  // The full recount (progress.js achMigrate, achPending; Pierre, 2026-11-01 and 2026-11-08: "recalculer ... leur succès
+  // actuel" from their current progress): into B, every achievement of list that the snapshot meets, dated by the
+  // earliest of B's own (a copy already recounted, merged in) and old's (the record before the recount), else t. What the
+  // snapshot does not meet is left out (an achievement of an older record never comes back through a merge: mergeAch
+  // takes no achievement from a record of another version). Changes B; returns the ids it holds from list.
+  function achRecount(B, old, list, snap, t) {
+    const ok = x => typeof x === 'number' && x > 0;
+    return (list || [])
+      .filter(a => a.test(snap))
+      .map(a => {
+        const d = [B[a.id], old && old[a.id]].filter(ok);
+        B[a.id] = d.length ? Math.min(...d) : t;
+        return a.id;
+      });
+  }
   // Achievements taken back (Pierre, 2026-11-03): only those that rest on genera learned, and only when a recalculation
   // takes a learned mark away (model.js mxRecalc, progress.js achRecheck); anywhere else achievements are only added.
   // achRevoke removes from A ({id: time}) those of ACH_LEARN that the snapshot no longer meets, and dates in A._gone
   // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
   // (the sheet's, another device's not merged yet) from coming back through a merge (mergeAch); earned again later, the
   // achievement carries a newer time and stays. Returns the ids removed.
-  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearncore'];
+  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearn30', 'flearncore'];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
     if (!A || typeof A !== 'object') return [];
@@ -2508,6 +2619,128 @@
   // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
   function pctOf(P, list) {
     return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n], P, n), 0)) / list.length) : 0;
+  }
+  // Weights by commonness (Pierre, 2026-11-08, Q242: the fish global score's alternative A): each item weighs 1/√ of its
+  // rank by its count, the largest count first (rank 1 weighs 1, rank 4 weighs 0.5, rank 100 weighs 0.1). Tied counts
+  // share the mean of the ranks they span (fractional ranking), so the order of the list never matters, and the items
+  // nobody counted (0) share the last ranks' mean: they weigh the least, never nothing. counts: numbers (anything else
+  // counts 0). Returns the weights in the list's order.
+  function rankWeights(counts) {
+    const c = (counts || []).map(x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0)),
+      ord = c.map((x, i) => i).sort((i, j) => c[j] - c[i]),
+      w = new Array(c.length);
+    for (let a = 0; a < ord.length;) {
+      let b = a;
+      while (b + 1 < ord.length && c[ord[b + 1]] === c[ord[a]]) b++;
+      const r = (a + 1 + b + 1) / 2; // the mean of ranks a+1 .. b+1
+      for (let k = a; k <= b; k++) w[ord[k]] = 1 / Math.sqrt(r);
+      a = b + 1;
+    }
+    return w;
+  }
+  // The tree of the fish global score (treeScore, SUBJECTS fish score; Pierre, 2026-11-08, Q242; docs/FISH_PATH.md
+  // "My progress (fish)"): the families of the slate on the trunk, each weighted by the sum of its species' weights; on the
+  // branches every species of those families, weighted by how common it is near Dauin (rankWeights over fish.json
+  // present.dauinU, its distinct Research Grade observers within 40 km: observers, not observations, so a few keen
+  // photographers of one species do not weigh; Codex review #730), with its units: its genus when the game has it as a unit (the scientific
+  // genera of circle 1, app.js fishGenera), its scientific and common names none until the species level exists. The species with
+  // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
+  // The circle is the family's (treeScore by: the components per circle).
+  function fishScoreTree(X, F) {
+    const sp = new Map((F.species || []).map(s => [s.id, s])),
+      fam = new Map((F.families || []).map(f => [f.id, f])),
+      fams = [...X.c1, ...X.c2, ...X.c3].filter(id => fam.has(id)),
+      L = fams.flatMap(id => (fam.get(id).species || []).filter(x => sp.has(x)).map(x => [sp.get(x), id])),
+      w = rankWeights(L.map(([s]) => (s.present || {}).dauinU || 0)),
+      fw = {},
+      pack = new Map(),
+      r4 = x => Math.round(x * 1e4) / 1e4,
+      circ = id => X.gen[id].circle || 1;
+    L.forEach(([s, id], i) => {
+      fw[id] = (fw[id] || 0) + w[i];
+      const g = s.genus && X.gen[s.genus] ? s.genus : '',
+        named = !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
+        key = g + '|' + circ(id) + '|' + named,
+        e = pack.get(key) || [0, g, '', named ? [] : null, circ(id)];
+      e[0] += w[i];
+      pack.set(key, e);
+    });
+    return {f: fams.map(id => [id, r4(fw[id] || 0), circ(id)]), s: [...pack.values()].map(e => [r4(e[0]), ...e.slice(1)])};
+  }
+  // A subject's global score and its components, from one computation (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the
+  // weights and the √ display; docs/FISH_PATH.md "My progress (fish)"). Every unit keeps its own bar (scoreOf: the bar as
+  // the app shows it, 1 once its exam is passed, 0 never answered), which drives its levels and its exam, unchanged; this
+  // only adds them up.
+  // T, the subject's tree (app.js UNITS tree): f [[family unit, weight, circle]], the trunk; s [[weight, genus unit,
+  // species unit, [common-name units], circle]], the branches, one per species ('' and [] for units that do not exist
+  // yet). An entry of s may stand for several species of one genus with no unit of their own (their weights summed: the
+  // same score, a shorter tree for the sheet). A family's weight is the sum of its species' (rankWeights over the
+  // observers near Dauin), a genus's the sum of its species' too.
+  // K, the subject's constants (core.js SUBJECTS score): entries (the trunk's share, 0.25), a and b (a species' credit
+  // with its common names only, its scientific name only), half (a genus's share of its species' scientific credit), pow
+  // (the display: 100 raw^pow, 0.5 the square root).
+  // Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, half × its genus's bar),
+  // credit = a C + b S + (1 − a − b) C S. raw = entries × Entries + (1 − entries) × the weighted mean credit.
+  // Returns {pct (the % shown, 0-100, rounded), raw, and the components, each a weighted mean from 0 to 1: entries (the
+  // families), genera (the genera, each weighted by its species), common (C over the species), scientific (the species'
+  // own scientific names, no genus credit), S (S over the species, the genus credit included), credit; by: the same per
+  // circle, {1: {...}, 2: {...}}; units: every unit of the tree with its own bar}. A rule that reads a score reads one of
+  // these (app.js fishGate: by[1].entries). A species entry whose common names are null has none at all (Q247, below).
+  function treeScore(P, T, K) {
+    const F = (T && T.f) || [],
+      S = (T && T.s) || [],
+      k = K || {},
+      a = k.a,
+      b = k.b,
+      half = k.half,
+      we = k.entries,
+      units = {},
+      m = k => (k ? (k in units ? units[k] : (units[k] = scoreOf((P || {})[k], P, k))) : 0),
+      acc = () => ({fw: 0, f: 0, sw: 0, cw: 0, c: 0, sc: 0, S: 0, cr: 0, gw: 0, g: 0}),
+      all = acc(),
+      by = {},
+      at = c => (by[c] = by[c] || acc()),
+      genW = {};
+    F.forEach(([u, w, c]) => {
+      const x = m(u) * w;
+      [all, at(c || 1)].forEach(o => ((o.fw += w), (o.f += x)));
+    });
+    S.forEach(([w, g, sp, names, c]) => {
+      // names null: a species with no common name at all (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la
+      // branche nom commun"): out of the Common names component, and its credit is its scientific value alone (S), so it
+      // still reaches 1 once its scientific name is mastered (100% stays reachable). [] : its common names have no unit
+      // yet (0 until the species level).
+      const none = names === null,
+        N = Array.isArray(names) ? names : [],
+        C = N.length ? N.reduce((t, n) => t + m(n), 0) / N.length : 0,
+        own = m(sp),
+        G = m(g),
+        Sv = Math.max(own, half * G),
+        cr = none ? Sv : a * C + b * Sv + (1 - a - b) * C * Sv;
+      [all, at(c || 1)].forEach(
+        o => ((o.sw += w), none || ((o.cw += w), (o.c += w * C)), (o.sc += w * own), (o.S += w * Sv), (o.cr += w * cr))
+      );
+      if (g) (genW[g] = genW[g] || {w: 0, c: c || 1, m: G}).w += w;
+    });
+    Object.values(genW).forEach(o => [all, at(o.c)].forEach(x => ((x.gw += o.w), (x.g += o.w * o.m))));
+    const out = o => {
+      const d = (x, y) => (y > 0 ? x / y : 0),
+        r = {
+          entries: d(o.f, o.fw),
+          genera: d(o.g, o.gw),
+          common: d(o.c, o.cw),
+          scientific: d(o.sc, o.sw),
+          S: d(o.S, o.sw),
+          credit: d(o.cr, o.sw)
+        };
+      r.raw = we * r.entries + (1 - we) * r.credit;
+      r.pct = Math.round(100 * Math.pow(Math.max(0, Math.min(1, r.raw)), k.pow));
+      return r;
+    };
+    const R = out(all);
+    R.by = Object.fromEntries(Object.entries(by).map(([c, o]) => [c, out(o)]));
+    R.units = units; // every unit of the tree with its own bar (scoreOf), the per-unit level of each part
+    return R;
   }
 
   // The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; docs/LEARNING.md "The domain-score bar"): the bar of a
@@ -3628,6 +3861,10 @@
   // its queued answers on top of the sheet's follows the same version (sync.js replayAdopt); before, the moving average
   // s.pg exactly as before (rule D4).
   const DOM_SHEET = 87;
+  // The sheet script that ranks a subject with a global score by it (Code.gs v101 board_, core.js treeScore): the app shows
+  // the score, and sends its tree, only from a reply with v >= SCORE_SHEET (model.js headScore, sync.js boardUnits; rule
+  // D4: the leaderboard and My progress on one scale; Codex review #730), before that the families' mean as before.
+  const SCORE_SHEET = 101;
   // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
   // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
@@ -4713,6 +4950,9 @@
     pgOf,
     scoreOf,
     pctOf,
+    rankWeights,
+    fishScoreTree,
+    treeScore,
     DOM,
     DOM_PRIOR,
     domP,
@@ -4767,6 +5007,7 @@
     RT_SHEET,
     START_SHEET,
     DOM_SHEET,
+    SCORE_SHEET,
     LOG_SHEET,
     WINK_SHEET,
     logOk,
@@ -4802,6 +5043,7 @@
     ACH_CONTRIB,
     achFind,
     newAch,
+    achRecount,
     ACH_LEARN,
     achRevoke,
     mergeAch,
@@ -4878,6 +5120,8 @@
     pairConf,
     mergeUsers,
     winkUnion,
+    TOLD,
+    toldUnion,
     OPEN_AGAIN,
     openState,
     PULSEQ,
@@ -4912,9 +5156,13 @@
     subjDev,
     fishGen,
     easyRank,
+    easyCover,
     refFirst,
     refLevel,
     refScore,
+    licOf,
+    rightsClass,
+    rightsRank,
     fishOn,
     fishIn,
     fishGone,

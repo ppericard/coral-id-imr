@@ -94,12 +94,15 @@ exception so far: the photo memory recalculation of 2026-11-03 is silent (the ba
   learned-based achievements they no longer meet (LEARNING.md "Learned under the former model").
 - **Announcement cards are never held**: a card that announces a rule change, a learned mark taken away or a big new app
   version shows as soon as the player opens or reconnects to the app (once the first page is drawn and the progress is
-  in, and right after a pull that brings the change), on whatever page they land on, once per device, marked seen by its
+  in, and right after a pull that brings the change), on whatever page they land on, once per account, marked seen by its
   button; no visit floor (`noOpen`) and no prompt spacing (`promptOk`). It only waits for another card or the tour
-  already on screen, then follows it (`progress.js` `recalcNotice`, `mxLostNotice`, `rvNotice`). The other prompts
+  already on screen, then follows it (`progress.js` `recalcNotice`, `mxLostNotice`, `rvNotice`), and, signed in, for
+  the visit's first sync, so a card seen on another device of the account is not shown again (`sync.js`
+  `noticeLater`, `core.js` `TOLD`; Pierre, 2026-11-08). The other prompts
   (sign-in nudge, one-tap question, open-all and bonus genera offers) keep `promptOk`.
 
-*Source:* Pierre, 2026-11-02; learned marks and cards never held, 2026-11-03.
+*Source:* Pierre, 2026-11-02; learned marks and cards never held, 2026-11-03; after the first sync, once per account,
+2026-11-08.
 
 ### D7
 

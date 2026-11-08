@@ -461,9 +461,9 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
 // The fish achievements (Pierre, 2026-11-04: about 14 general ones; rule L8): ids of their own in the shared record, so a
 // fish achievement never counts in the corals' list and back; every one reachable on the fish snapshot; none reachable on
 // an empty one (nothing for time or for opening the app).
-test('fish achievements: about 14, ids apart from the corals, each reachable, none for nothing', () => {
+test('fish achievements: ids apart from the corals, each reachable, none for nothing', () => {
   const {ACH, FISH_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
-  assert.ok(FISH_ACH.length >= 12 && FISH_ACH.length <= 16, String(FISH_ACH.length));
+  assert.strictEqual(FISH_ACH.length, 24, String(FISH_ACH.length)); // the 33 of 2026-11-08 less the 9 that wait for the species level
   const ids = [...ACH, ...FISH_ACH].map(a => a.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
   assert.ok(FISH_ACH.every(a => a.kind === 'learn' && [1, 2, 3].includes(a.tier) && a.icon && a.title && a.desc));
@@ -484,8 +484,14 @@ test('fish achievements: about 14, ids apart from the corals, each reachable, no
     pct: 0,
     streak: 0,
     elo: 0,
-    core: {total: 20, met: 0, learned: 0},
+    core: {total: 20, met: 0, adv: 0, learned: 0},
+    circ: [
+      {total: 20, adv: 0},
+      {total: 4, adv: 0},
+      {total: 35, adv: 0}
+    ],
     sets: {},
+    setsAdv: {},
     fb: 0
   };
   assert.deepStrictEqual(newAch(none, {}, FISH_ACH), [], 'nothing on an empty snapshot');
@@ -497,8 +503,14 @@ test('fish achievements: about 14, ids apart from the corals, each reachable, no
     pct: 100,
     streak: 0,
     elo: 1500,
-    core: {total: 20, met: 20, learned: 20},
-    sets: {sci: 30},
+    core: {total: 20, met: 20, adv: 20, learned: 20},
+    circ: [
+      {total: 20, adv: 20},
+      {total: 4, adv: 4},
+      {total: 35, adv: 35}
+    ],
+    sets: {sci: 130},
+    setsAdv: {sci: 130},
     fb: 0
   };
   assert.strictEqual(newAch(all, {}, FISH_ACH).length, FISH_ACH.length, 'every fish achievement is reachable');
@@ -507,6 +519,90 @@ test('fish achievements: about 14, ids apart from the corals, each reachable, no
   const A = {flearn1: 5, fmet5: 5, learn1: 5};
   assert.deepStrictEqual(achRevoke(A, none, 9, FISH_ACH), ['flearn1']);
   assert.ok(A.learn1 && A.fmet5 && !A.flearn1);
+});
+
+// The fish set around the global score (Pierre, 2026-11-08, Q259-Q263): each new condition at its threshold and not one
+// below; fpct25 retired; the % ones read the snapshot's pct (the global score, progress.js achSnap).
+test('fish achievements around the global score: the 10-point ladder, fpct25 retired, the new conditions', () => {
+  const {FISH_ACH, ACH_LEARN, achFind, newAch} = require('../core.js');
+  const snap = (o = {}) => ({
+    total: 67,
+    met: 0,
+    q: [0, 0, 0],
+    learned: 0,
+    pct: 0,
+    core: {total: 28, met: 0, adv: 0, learned: 0},
+    circ: [
+      {total: 28, adv: 0},
+      {total: 4, adv: 0},
+      {total: 35, adv: 0}
+    ],
+    sets: {},
+    setsAdv: {},
+    fb: 0,
+    ...o
+  });
+  const got = o => newAch(snap(o), {}, FISH_ACH);
+  assert.strictEqual(achFind('fpct25'), null, 'fpct25 retired (Q259)');
+  assert.deepStrictEqual(
+    FISH_ACH.filter(a => a.id.startsWith('fpct')).map(a => a.id),
+    ['fpct10', 'fpct20', 'fpct30', 'fpct40', 'fpct50', 'fpct60']
+  );
+  [10, 20, 30, 40, 50, 60].forEach(p => {
+    assert.ok(got({pct: p}).includes('fpct' + p), p + '%');
+    assert.ok(!got({pct: p - 1}).includes('fpct' + p), 'not at ' + (p - 1) + '%');
+  });
+  assert.deepStrictEqual(got({pct: 59}), ['fpct10', 'fpct20', 'fpct30', 'fpct40', 'fpct50'], 'the ladder only');
+  // fpct70 and fpct100 wait for the species level (today's score tops out at 67%: families and every genus).
+  assert.ok(!achFind('fpct70') && !achFind('fpct100'));
+  // Families: flearn30 (and it is taken back with a learned mark, ACH_LEARN).
+  assert.ok(got({learned: 30}).includes('flearn30') && !got({learned: 29}).includes('flearn30'));
+  assert.ok(ACH_LEARN.includes('flearn30'));
+  // Scientific genera at Advanced: fgen20, fgen60; Open Water alone earns neither.
+  assert.deepStrictEqual(got({setsAdv: {sci: 20}}), ['fgen20']);
+  assert.deepStrictEqual(got({setsAdv: {sci: 19}, sets: {sci: 100}}), ['fsci5']);
+  assert.deepStrictEqual(got({setsAdv: {sci: 60}}), ['fgen20', 'fgen60']);
+  // Circles: every circle-1 family at Advanced; every circle-2 one; 20 of circle 3.
+  const c = (a, b, d) => [
+    {total: 28, adv: a},
+    {total: 4, adv: b},
+    {total: 35, adv: d}
+  ];
+  assert.deepStrictEqual(got({core: {total: 28, met: 28, adv: 28, learned: 0}}), ['fmetcore', 'fcoreadv']);
+  assert.ok(!got({core: {total: 28, met: 28, adv: 27, learned: 0}}).includes('fcoreadv'));
+  assert.deepStrictEqual(got({circ: c(0, 4, 0)}), ['fc2']);
+  assert.deepStrictEqual(got({circ: c(0, 3, 0)}), []);
+  assert.deepStrictEqual(got({circ: c(0, 0, 20)}), ['fc3adv']);
+  assert.deepStrictEqual(got({circ: c(0, 0, 19)}), []);
+  // A subject without circles (no circ) or a slate with no circle 2 (total 0) never earns them.
+  assert.deepStrictEqual(got({circ: undefined}), []);
+  assert.deepStrictEqual(
+    got({
+      circ: [
+        {total: 28, adv: 28},
+        {total: 0, adv: 0}
+      ]
+    }),
+    []
+  );
+  // Names: short, each its own (Pierre, 2026-11-08: "des noms sympas, rigolos, pour varier").
+  const T = FISH_ACH.map(a => a.title);
+  assert.strictEqual(new Set(T).size, T.length);
+  assert.ok(
+    T.every(t => t.length <= 20),
+    T.join(', ')
+  );
+});
+
+// The full recount (progress.js achMigrate, achPending): what the snapshot meets stays with its earliest date, the rest goes.
+test('achRecount: met ones keep the earliest date, others and retired ids are left out', () => {
+  const {FISH_ACH, achRecount} = require('../core.js');
+  const B = {_v: 3, fmet5: 50},
+    old = {fmet5: 40, fpct25: 10, fpct50: 10, fq50a: 30},
+    snap = {total: 67, met: 10, q: [6, 0, 0], learned: 0, pct: 45, core: {total: 28, met: 10, adv: 0, learned: 0}, sets: {}, setsAdv: {}};
+  assert.deepStrictEqual(achRecount(B, old, FISH_ACH, snap, 100).sort(), ['fmet5', 'fpct10', 'fpct20', 'fpct30', 'fpct40', 'fq50a']);
+  assert.deepStrictEqual(B, {_v: 3, fmet5: 40, fq50a: 30, fpct10: 100, fpct20: 100, fpct30: 100, fpct40: 100});
+  assert.deepStrictEqual(achRecount({}, null, FISH_ACH, {...snap, met: 0, q: [0, 0, 0], pct: 0}, 1), []);
 });
 
 test('Contributions (Q65): a family apart, three tiers; one per photo, Other only with a note; two devices joined', () => {
@@ -637,7 +733,18 @@ test('Your feedback helped (Q66): the reports sent, those the admin marked done 
 
 test('achRevoke and mergeAch: learned-based achievements taken back stay so through merges, until earned again', () => {
   const {ACH_LEARN, achRevoke, mergeAch} = require('../core.js');
-  assert.deepStrictEqual(ACH_LEARN, ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearncore']);
+  assert.deepStrictEqual(ACH_LEARN, [
+    'learn1',
+    'learn5',
+    'learn10',
+    'learn20',
+    'learnall',
+    'group',
+    'flearn1',
+    'flearn10',
+    'flearn30',
+    'flearncore'
+  ]);
   const snap = (learned, group = false) => ({
     total: 40,
     met: 40,

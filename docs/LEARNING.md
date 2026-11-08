@@ -2963,7 +2963,7 @@ which names three genera, Q220) join the units in play without the offer once th
 photo of a genus not opened (Abudefduf, Acanthurus) or of one opened, asked at family level, is right as its family (Q221;
 a Naso photo is right as Surgeonfishes). It applies to every player with that answer, existing ones included (Pierre,
 2026-11-08): it reads the current scores, so the IMR genera of a family already past Open Water become candidates at once,
-one card at a time at the opening's pace. Not counted in the progress, as the other genera. A player who turned the set on
+one card at a time at the opening's pace. Counted in the fish global score through the genus credit (#730), as the other genera. A player who turned the set on
 before 2026-11-08 gets a one-time card offering to close it (`quiz.js` `bonusBackShow`, the set's `rv` recorded with the
 choice as `Q.sciV`). Turned on by hand (⚙, My progress) while no family is at Advanced, a family's genera join from its Open
 Water (Pierre, 2026-11-08, Q240: `Q.sciH`, synced with the choice); by the offer, from its Advanced. The IMR-families-first
@@ -3033,6 +3033,111 @@ fish game in a browser, the answer at which each achievement first enters the re
   passed its exam within 2,500 simulated answers: 10-13 families were in their exam by then).
 - **Dropped: a fish Elo achievement.** The simulated fish level is already about 1.5-2.2 (Elo 1,300-1,440) when it first shows at 200
   answers (`ELO_MIN`), so "Fish Elo 1200" came at exactly the 200th answer for every run: an answer count, not a milestone (rule L8).
+
+### Fish achievements, around the global score (2026-11-08, Q259-Q264; record version 3)
+
+**Decided** (Pierre, 2026-11-08), on the proposal of the same day (33 learning achievements), once the global score was built
+(Q255: "the fish achievements to be redesigned around the global score"):
+- **Q259**: the score's ladder every 10 points; fpct25 retired.
+- **Retired or no longer valid, removed from everyone**: "Pour les succès retirés, on le retire au jeu, à tout le monde ... on
+  est en mode bêta, les gens le savent"; **Q260**, no silent keep: "Si les succès sont plus bons, on les retire et on les
+  remplace". Then the principle: "il faut recalculer tous les progrès pour tous les joueurs à partir de leurs réponses, et
+  ensuite recalculer leurs succès aussi".
+- **Q261**: "Dauin's top 20" = circle-1 species only for now (another top with circle 3 later); and frequency-based ones ("je
+  sais reconnaître les X poissons les plus fréquents", and for fun "les X poissons les moins fréquents à Dauin").
+- **Q262**: a species is "named in Latin" once its scientific name's bar reaches Advanced (the My progress counter too).
+- **Q263**: 33 is fine. **Q264**: the removal is silent ("le retrait il est fait en silence").
+- Names: "n'hésite pas à réfléchir au nom des succès aussi, pour mettre des noms sympas, rigolos, pour varier": every fish
+  achievement has a short diver-flavoured name, its description stays plain and exact. The list below approved (Pierre, 2026-11-08): "pour
+  les succès, oui, je valide l'esprit, ça me va".
+
+**The list** (`core.js` `FISH_ACH`; tier 1 bronze, 2 silver, 3 gold). Built, 24:
+
+| Id | Name | Condition | Tier |
+|---|---|---|---|
+| fpct10, fpct20 | Giant stride, Bubble trail | the global fish score (`treeScore`'s %) at 10%, 20% | 1 |
+| fpct30, fpct40 | Reef crest, Down the wall | 30%, 40% | 2 |
+| fpct50 | Family reunion | 50%: what knowing every family for sure is worth (the families' anchor) | 3 |
+| fpct60 | Blue water | 60% | 3 |
+| fmet5 | Meet the neighbours | 5 families met | 1 |
+| fmetall | Full logbook | every family in the game met | 2 |
+| fq50a, fq50b | Certified, School's in | 5, 20 families at Open Water or above | 1, 2 |
+| fq80a, fq80b | Night diver, Deep diver | 5, 15 families at Advanced or above | 1, 2 |
+| fq95a | Dive guide | 5 families at Divemaster or above | 2 |
+| flearn1, flearn10, flearn30 | First briefing, Course director, Fish whisperer | 1, 10, 30 families' mastery exams passed | 2, 3, 3 |
+| fsci5 | Latin lessons | 5 scientific genera at Open Water or above | 2 |
+| fgen20, fgen60 | Name dropper, Walking field guide | 20, 60 scientific genera at Advanced or above | 2, 3 |
+| fmetcore | Roll call | every family of the IMR course met | 2 |
+| fcoreadv | House reef | every family of the IMR course at Advanced or above | 2 |
+| fc2 | Supporting cast | every circle-2 family (those that open right after the IMR course's) at Advanced or above | 2 |
+| fc3adv | Muck diver | 20 families beyond the IMR course (circle 3) at Advanced or above | 3 |
+| flearncore | Transect master | every family of the IMR course learned (its exam passed) | 3 |
+
+flearn30 joins `ACH_LEARN` (taken back with a learned mark, as the other Instructor ones). The circles read `UNITS` fish
+`circles` (`progress.js` `achSnap` `circ`), the genera at Advanced `achSnap` `setsAdv`; the % reads the global score from the
+device's progress (`treeScore` over `UNITS` tree), whatever the sheet's version (the achievements need nothing from it).
+
+**Waiting, 9** (documented, not built: no "dormant" achievement exists in the app, and one shown but out of reach would only
+confuse; names proposed for when they are built):
+- fpct70 "Twilight zone" and fpct100 "Fish god" (every name of every species): today's score tops out at 67% (families and
+  every genus), the species level brings the rest.
+- At the species level: fsp1 "First name terms", fsp10 "Name tags", fsp50 "Fish ID nerd" (species named by a common name at
+  Advanced); fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with both names at
+  Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
+- Fish basics: fbasics, with the module.
+- Also for the species level (Q261, counted beyond the 33): "Usual suspects", the X fish most often seen (circle 1, then
+  every circle), and "Rare finds", the X least often seen at Dauin, by the rank of observers near Dauin (`present.dauinU`,
+  the score's own weights); X chosen with the species level.
+- The contributions are unchanged.
+
+**The recount** (`progress.js` `ACH_V` 3, `achMigrate`): every device, at its first start-up on this version, tests every
+achievement of every subject again on that subject's current progress (`inSubject`, `core.js` `achRecount`): those met keep
+their date (the earliest held), the others go, fpct25 with them since no list holds it; every fish % achievement is thus
+re-evaluated on the global score (an fpct50 earned on the families' mean leaves a player under 50%), and the new ones the
+progress already meets come in. Silent (Q264), no card, no toast. The fish data is loaded only when the fish are needed
+(`app.js` `fishLoad`): until then the fish achievements wait on the device (`reefid-ach-old`, outside the synced record),
+then are recounted the same way (`achPending`, from `fishLoad` and before each check). A device not updated yet: its record
+keeps version 2, and `core.js` `mergeAch` takes no achievement from a record of another version (only its feats), so it never
+brings back what the recount removed, and an updated device's record never reaches it either (the same rule on its side).
+The progress itself is not recounted here: the corals' is replayed from the answer log by the sheet (`Code.gs` `replay_`,
+rule D5); the fish's is not replayed (`SUBJECTS` fish `replay: false`), its bars rebuilt once on the device from their counts
+(`core.js` `domFromCounts`, Q200). Checked by `tests/core.test.js` (each condition at its threshold, fpct25 retired,
+`achRecount`) and `tests/adopt.test.js` (the recount on a corals + fish record of version 2, the fish waiting for their data,
+a merge with a stale device).
+
+**Timing** (rule L8; `tools/learnsim.js --subject fish --ach`, the real fish game in a browser; `--beyond yes` answers circle
+3's offer with yes): profiles beginner (choice "new") and lecture RA ("imr"), 2 seeds x 2,500 answers each, one process per run; the answer at
+which each achievement first enters the record (seed 1 / seed 2). The simulated player accepts the scientific genera's
+offer (at answer 31-199), and from then on about 60% of its questions are genera: the families' levels come later than
+in the run of 2026-11-06 (fq80a about 2,000 against 1,100; fq80b and fq95a past 2,500 against 1,600-1,900).
+
+| Achievement | beginner | lecture RA |
+|---|---|---|
+| fpct10 Giant stride | 82 / 21 | 10 / 11 |
+| fmet5 Meet the neighbours | 20 / 22 | 21 / 21 |
+| fpct20 Bubble trail | 228 / 122 | 34 / 91 |
+| fq50a Certified | 258 / 310 | 91 / 157 |
+| fmetcore Roll call | 155 / 171 | 250 / 293 |
+| fpct30 Reef crest | 598 / 513 | 284 / 538 |
+| fq50b School's in | 761 / 1,279 | 725 / 1,084 |
+| fsci5 Latin lessons | 793 / 943 | 1,308 / 977 |
+| fpct40 Down the wall | 1,437 / 1,349 | 1,235 / 1,255 |
+| fq80a Night diver | 1,978 / 2,264 | 2,075 / 2,025 |
+| fpct50 Family reunion | > 2,500 / > 2,500 | 2,421 / > 2,500 |
+| fq80b, fq95a, flearn1-30, fpct60, fgen20, fgen60, fcoreadv, fc2, fc3adv, fmetall, flearncore | > 2,500 | > 2,500 |
+
+Longer runs to time the far ones did not finish: the page of the tool crashed ("Target crashed", the browser's renderer)
+in every run of 4,500 and 8,000 answers on this machine (and once at 2,500 with two runs side by side), so the far goals
+(Advanced on 15 families and on every IMR course family, the circles, the genera at Advanced, the exams, 50-60%) stay
+"> 2,500": far goals, as the Instructor ones were in the run of 2026-11-06.
+
+- The first comes within a dozen answers for a lecture RA: fpct10 rides on the √ display (one or two of the most common
+  families at Open Water read about 10%), together with fmet5 at about 20: the first within a few dozen answers, as rule
+  L8 asks, then a steady spread (a new one every 100-700 answers to about 2,000).
+- `tools/learnsim.js` taught nothing on the units of an opt-in set before this change (the scientific genera were not in the
+  learner's knowledge, so their questions stayed at chance, the genera stayed shaky and held the families' openings: in a
+  first run the player was stuck at 27 families met from answer 200 on). Fixed here: they are learned like any unit from
+  the profile's low start.
 
 ### Fish: the global score, simulated (2026-11-04)
 
@@ -3119,6 +3224,141 @@ Not changed: the formula, a and b, the 25% share (nothing here argues against th
 him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md): whether the slow second branch and the leaderboard order at equal effort
 are what he wants. Rerun when a constant of the formula changes, when the curated common names are chosen (`--names`),
 and with the real app (`tools/learnsim.js` fish profiles) once the species level exists.
+
+### Fish: the global score, built (2026-11-08, Q242; sheet v101)
+
+**Decided** (Pierre, 2026-11-08). It started with "il faut qu'on attaque la question du score global ... Le score global, il
+faut commencer à l'intégrer. Donc à le calculer", because the scientific genera counted nowhere in the fish %. Re-simulated on
+today's bar and world (below), he chose **Q242: the formula of 2026-11-04 with each species weighted by how common it is near
+Dauin (A), and the % shown as the square root of the raw score (B); not the circle weights (C)**, to honour "le score avance
+vite au début et lentement après". Then: every score from one computation, decomposed ("il y a un score global ... et après
+il faut qu'il y ait des scores par famille, par genre, par espèce ... par espèce à la fois sur le nom scientifique et sur le
+nom commun ... qu'on arrive à découper les scores sur des composantes"; "il nous faut un progrès par composante ... essentiel
+de savoir à combien de pourcentage il est d'apprentissage pour tel genre ou telle espèce ou telle famille"); thresholds may
+read a component ("c'est pas déconnant de calculer des seuils sur des scores qui touchent que les familles ou que les genres
+ou que les espèces"); the path follows the new scores ("il faut qu'on trouve une manière de caler le parcours sur nos
+nouvelles manières de calculer les progrès et les scores"); a species with no common name stays out of that branch (Q247:
+"elles ne participeront pas à la branche nom commun").
+
+**The rule** (`core.js` `treeScore`, `rankWeights`, `fishScoreTree`; `SUBJECTS` fish `score`; docs/FISH_PATH.md "My
+progress (fish)"):
+
+- Every unit keeps its own bar (`scoreOf`: the domain-score bar, 1 once its exam is passed), which drives its levels and
+  exam as before. The app shows the score, and sends its tree to the sheet, from a sheet reply with v ≥ `SCORE_SHEET`
+  (101; rule D4: the leaderboard and My progress on one scale), the families' mean before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
+- Species weight w = 1/√(rank by observers near Dauin, `present.dauinU`: distinct Research Grade observers within 40 km,
+  not observations, so a few keen photographers of one species do not weigh; Codex review #730), ties sharing their mean rank; a family weighs the
+  sum of its species' weights, a genus too.
+- Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, ½ × its genus's bar); credit =
+  a·C + b·S + (1 − a − b)·C·S, a = 11/15, b = 0.8; a species with no common name: credit = S, out of the Common names
+  component (Q247).
+- raw = 0.25 × Entries + 0.75 × the weighted mean credit; shown = 100 √raw.
+- Components, from the same call: Entries, Genera, Common names, Scientific names (own, and S with the genus credit),
+  species credit, each a weighted mean from 0 to 1; the same per circle; every unit's bar.
+- Today the species units do not exist: C = 0 and a species' own scientific bar is 0, so the species terms come from the
+  genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 67%).
+
+**Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool keeps the formula of 2026-11-04,
+unweighted and linear, on circle 1 and the old moving-average bar). The size of the job (fish.json after #727): 67 families,
+130 genus units, 664 species, 951 common names, about 1,800 units. Under today's bar a unit already known perfectly needs
+about 24 answers to reach Advanced and 43 to pass its exam (`core.js` `domStep` with the app's adaptive photos, 200 runs), a
+unit being learned 46-95 and 69-124. Before #727 (1,238 units), a player who already knew every fish scored about 69-72%
+(old formula) at 30,000 answers.
+
+**Re-simulation of today** (scratch scripts, not committed; fish.json after #727). The world is fully rated and synthetic, on
+the Elo scale:
+- photo difficulty Normal around its taxon, sd 0.46 (the coral photo spread of the Analyses tab);
+- taxa around their parent: family sd 0.37, +0.5 for the declared look-alike groups; genus and species sd 0.3, +0.3 with
+  siblings;
+- a player offset, sd 0.5, 6 players;
+- the app's mechanics mimicked from `model.js` (`aimOff`, the early lean, the Gaussian photo choice, `TYPED`, `drawW`,
+  `shaky` with `OPEN.K` 8, at most 3 openings per 15 answers) and the real `core.js` `domStep`;
+- species as FISH_PATH designs them; species weights by observers near Dauin; the learning curves assumed.
+
+Checked against the real app (`tools/learnsim.js --subject fish`, 1,000 answers, family phase, before #727): the fish %
+41% (lecture RA) and 37% (beginner), against 40% and 28% here. Right rate: 75-81% there, 77-86% here, 78-87% in the real
+log. Heavier photo tails (15% of photos 1.5 harder, or a t distribution with 3 degrees of freedom) move the score by −2 to
++1 points; photos shaped by the judged ease change it by about 2 points.
+
+IMR RA (both names, the IMR families taught, the IMR genera at Open Water). Columns:
+- Fam OW, Fam Adv: families at Open Water and at Advanced, of 67;
+- Genera: genera at Advanced, of 130;
+- Sp. common, Sp. sci: species at Advanced by common and by scientific name, of 664;
+- Current: the % under the formula of 2026-11-04;
+- A (commonness weights), B (√), C (the IMR circle × 3), and A+B (decided).
+
+| Answers | Fam OW | Fam Adv | Genera | Sp. common | Sp. sci | Current | A | B | C | A+B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 100 | 2 | 0 | 0 | 0 | 0 | 1.6% | 3.7% | 13% | 2.6% | 19% |
+| 300 | 9 | 0 | 0 | 0 | 0 | 4.2% | 7.3% | 21% | 6.7% | 27% |
+| 1,000 | 22 | 5 | 0 | 0 | 0 | 8.7% | 12% | 30% | 12% | 35% |
+| 3,000 | 57 | 19 | 0 | 1 | 0 | 19% | 19% | 43% | 20% | 44% |
+| 10,000 | 67 | 50 | 11 | 2 | 0 | 31% | 31% | 56% | 33% | 55% |
+| 30,000 | 67 | 63 | 70 | 9 | 0 | 42% | 42% | 65% | 47% | 65% |
+| 100,000 | 67 | 64 | 99 | 105 | 49 | 56% | 55% | 75% | 63% | 74% |
+
+Casual diver (common names only):
+
+| Answers | Fam OW | Fam Adv | Sp. common | Current | A | B | C | A+B |
+|---|---|---|---|---|---|---|---|---|
+| 100 | 1 | 0 | 0 | 0.6% | 1.5% | 7.9% | 1.0% | 12% |
+| 300 | 5 | 0 | 0 | 1.9% | 4.2% | 14% | 3.1% | 21% |
+| 1,000 | 15 | 4 | 0 | 5.9% | 9.4% | 24% | 9.1% | 31% |
+| 3,000 | 47 | 13 | 1 | 16% | 17% | 40% | 17% | 41% |
+| 10,000 | 67 | 51 | 8 | 25% | 24% | 50% | 25% | 49% |
+| 30,000 | 67 | 62 | 34 | 31% | 31% | 56% | 33% | 56% |
+| 100,000 | 67 | 64 | 172 | 48% | 47% | 69% | 54% | 68% |
+
+The fish % shown until now (the families' mean) at 100 / 300 / 1,000 / 3,000 / 10,000 / 30,000 answers:
+- IMR RA: 6 / 17 / 34 / 69 / 90 / 97%;
+- casual diver: 3 / 8 / 23 / 61 / 90 / 97%.
+
+**The curves compared**:
+- The formula of 2026-11-04 rises about 1 point per 100 answers at the start, and 0.3-0.6 per 1,000 past 10,000.
+- A adds 1-4 points early (the common families open first and weigh more) and nothing late.
+- C adds 1-7 points.
+- B and A+B read fast at the start (19-27% after 100-300 answers, 35% after 1,000 for the RA) and slower and slower after:
+  the shape asked for, at the cost of the 80% / 85% anchors (now 89% / 92%).
+
+**The path on the new scores.** This covers every rule that reads a global fish %. Unchanged:
+- the per-unit levels: a family's own Open Water or Advanced, which opens its genera and its species;
+- the counts: every circle-1 family asked, for circle 2.
+
+Answer at which each rule fires, median over the 6 simulated players [range], before and after:
+
+| Rule | Reads, before | Reads, after | IMR RA, before / after | Casual, before / after |
+|---|---|---|---|---|
+| Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [400-800] / 600 [400-850] | 1,000 [800-1,100] / 1,100 [1,000-1,250] |
+| fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`; retired since, Q259) | the families' mean ≥ 25% | the global % ≥ 25% | 700 / 300 | 1,150 / 550 |
+| fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,800 / 5,900 | 2,500 / 12,300 |
+| The fish leaderboard (Code.gs `board_`, v101) | the families' mean | the global % | | |
+| The header pill, My progress's ring, the update card | the families' mean | the global % | | |
+
+**Other thresholds weighed for circle 3:**
+- The global % ≥ 33%, where the families' 50% falls. It fires at about 750 / 1,350 answers (between the 32% and 34% runs),
+  and genera and later species would bring circle 3 sooner.
+- 15 circle-1 families at Open Water: about 550 / 1,050 answers (between the 14 and 16 runs).
+
+The circle-1 Entries component keeps the order "the IMR course's families first", whatever else the player learns.
+
+**Pierre's answers** (2026-11-08, Q253-Q258): no card, the switch is silent and the ? text explains it (Q253); circle 3 at
+55% of the circle-1 Entries component (Q254); fpct25 and fpct50 kept as built for now, the fish achievements to be
+redesigned around the global score in a proposal of their own (Q255; since done: "Fish achievements, around the global
+score"); the bar labels (Q256); the weighted bars with the
+genus credit in Scientific names (Q257), provided genera alone never pass a set level: S = max(the species' own bar, ½ ×
+its genus's), so genera alone keep Scientific names at 50% at most and the global % at the "families and every genus"
+anchor (74%) at most (`tests/treescore.test.js`); credit = S for a species with no common name (Q258).
+
+**What a player sees change** (the families' bars as they are):
+
+| The player's families | Fish % until now | Global score |
+|---|---|---|
+| Every circle-1 family at 50% | 21% | 29% |
+| Every circle-1 family at 80% | 33% | 37% |
+| Every circle-1 family at 80%, their genera at 50% | 33% | 49% |
+| Every family of every circle at 80% | 80% | 45% |
+| Every family learned | 100% | 50% |
+| Every family and every genus learned | 100% | 67% |
 
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
@@ -4748,6 +4988,12 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
+  with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
+  species' weights, shown as 100 √raw (anchors 50 / 74 / 89 / 92 / 95 / 100%), not the circle weights; one computation
+  with its components (per family, genus, species × common / scientific name, per circle); a species with no common name
+  has no common branch (credit = S); the rules that read a global fish % read the new scores (circle 3: the circle-1
+  Entries component at 55%).
 - 2026-11-06, Pierre (Q187-Q190, after the photo exposure study; fish too, 15:36): the Colony cap 40 colonies per genus
   (corals; fish no cap); the calibration questions are an exploration share of 30% drawing colonies (observations)
   never seen, on a unit held (simulated); a beginner's multi-view question weighs a colony by cov, not cov² (corals); a
