@@ -127,6 +127,118 @@
   "fish-s151-cand-396278655": {
    "code": "p1n0sls3",
    "keep": "best"
+  },
+  "fish-s151-cand-59271845": {
+   "code": "o1g2mm1j1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Faint dark bars like a juvenile's while iNaturalist says adult; low-resolution original."
+  },
+  "fish-s151-cand-59271847": {
+   "code": "o1g2mm1j1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Faint dark bars like a juvenile's while iNaturalist says adult; low-resolution original."
+  },
+  "fish-s151-cand-293187325": {
+   "code": "p1g2sls3",
+   "keep": "best"
+  },
+  "fish-s151-cand-43045807": {
+   "code": "p1g2sls3",
+   "keep": "best"
+  },
+  "fish-s151-cand-548066411": {
+   "code": "p1g1mms3",
+   "keep": "best"
+  },
+  "fish-s151-cand-687075577": {
+   "code": "p1g3bm12",
+   "keep": "best"
+  },
+  "fish-s151-cand-587017268": {
+   "code": "p1g0smma1",
+   "keep": "best"
+  },
+  "fish-s151-cand-587017300": {
+   "code": "p1g0smma1",
+   "keep": "dup"
+  },
+  "fish-s151-cand-57110507": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s151-cand-10939794": {
+   "code": "p1g2mss2",
+   "keep": "best"
+  },
+  "fish-s151-cand-14183036": {
+   "code": "o1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s151-cand-627587356": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s151-cand-627587573": {
+   "code": "p0g0sl1a1",
+   "keep": "dup"
+  },
+  "fish-s151-cand-359457867": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s151-cand-672256337": {
+   "code": "p0g2mls1",
+   "keep": "best"
+  },
+  "fish-s151-cand-265414012": {
+   "code": "p1g3mss1",
+   "keep": "best"
+  },
+  "fish-s151-cand-125168458": {
+   "code": "p1g0sm1a1",
+   "keep": "best"
+  },
+  "fish-s151-cand-58208388": {
+   "code": "o1g2ml1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Faint dark bars like a juvenile's while iNaturalist says adult; low-resolution original."
+  },
+  "fish-s151-cand-58208435": {
+   "code": "o1g2ml1j2",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Faint dark bars like a juvenile's while iNaturalist says adult; low-resolution original."
+  },
+  "fish-s151-cand-58208436": {
+   "code": "o1g2mm1j2",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Faint dark bars like a juvenile's while iNaturalist says adult; low-resolution original."
+  },
+  "fish-s151-cand-58208437": {
+   "code": "o0g2ml1j1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Faint dark bars like a juvenile's while iNaturalist says adult; low-resolution original."
+  },
+  "fish-s151-cand-548064954": {
+   "code": "p1g1mms2",
+   "keep": "best"
   }
  }
 }
