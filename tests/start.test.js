@@ -237,6 +237,12 @@ test('fallback: consistent answers, no card; inconsistent, one card per answer a
   assert.strictEqual(H.startDue(), null, 'not at 20');
   H.play(N - 20, 0.5, true, i => i % 2 === 0, 2.5);
   assert.strictEqual(H.startDue(), 'hi');
+  // No level-change card for a subject whose units say startFb false (app.js UNITS fish: Pierre, 2026-11-08); others unchanged.
+  H.ctx.UNITS = {[H.ctx.SUBJ.id]: {startFb: false}};
+  assert.strictEqual(H.startDue(), null, 'startFb false: no level-change card');
+  H.ctx.UNITS = {[H.ctx.SUBJ.id]: {}};
+  assert.strictEqual(H.startDue(), 'hi', 'the others as before');
+  delete H.ctx.UNITS;
   // After a move up on a fallback card, never a card back down (and the other way round); further up is still possible.
   const U = model({slate: Array.from({length: 12}, (_, i) => 'G' + i)});
   U.introAdd(U.ctx.slateGenera(), true, 's');
