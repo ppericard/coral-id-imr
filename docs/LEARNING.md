@@ -2705,7 +2705,8 @@ changes, all data the engine reads generically (the corals have none of these fi
   bootstrap gate). Now every photo can be drawn from the first question: its judged ease sets its prior difficulty
   (above), the draw aims at the player's level with the success target as for any unit, and the players' ratings
   replace the prior as they come. At the start the easy photos are strongly favoured through the prior and the aim, a
-  harder one comes rarely. **One engine, a calibration per subject** (Pierre, 14:18): the constants that differ live
+  harder one comes rarely; until Open Water a cap keeps it rare whatever the pool (`RARE`, "Rarely under ease 4 before
+  Open Water", below). **One engine, a calibration per subject** (Pierre, 14:18): the constants that differ live
   in `SUBJECTS` `calib`, read through `core.js` `calibOf` (defaults `CALIB`): `ease` (the prior's logits per ease point,
   0.5 for both), `ref` (the draw weight of a never-seen reference-level photo: fish 3, corals 1) and `early` (the start's
   lean: the draw aims `early` logits lower on a unit with no answer, fading as `PDIFF.W` / (`PDIFF.W` + its answers):
@@ -2836,6 +2837,53 @@ was measured instead is the simulated learner above and the draw's easy share (`
 the ability 0.5), not the bar alone: with the bar alone and the start's ability, the narrower targeting drew the harder
 photos about 3% of the time (10% before), a state no player reaches; at that Open Water state they come about a third
 of the time.
+
+### Rarely under ease 4 before Open Water (2026-11-08)
+
+Pierre's rule of 2026-11-06 14:17 ("No wall: before Open Water a photo under ease 4 may come, but rarely") was left to
+the prior and the aim, and they do not hold it. The fish smoke failed on one seed of five (6 of 15 photos under ease 4,
+its bound a third) on a PR that changed nothing in the draw. What was measured (the real app in Chromium, a brand-new
+fish player answering right, 15 questions on the starter families, every photo shown before its family reaches Open
+Water scored on its judged ease; 20 seeds):
+
+| | under ease 4 before Open Water | seeds over the smoke's bound |
+|---|---|---|
+| `main` before the judging batches of 2026-11-08 (8ff76f9) | 64 / 300 = 21.3% | 2 of 20 |
+| `main` after them (77cecab) | 66 / 300 = 22.0% | 2 of 20 |
+| with `RARE` | 26 / 300 = 8.7% (at most 3 of 15) | 0 of 20 |
+
+So the batches did not cause it (the starter families already held about two thirds of their photos under ease 4 before
+them: Damselfishes 65% of 1,029 photos then, 67% of 1,100 now); they only moved the seeded sequence onto a failing seed. The cause is in the
+draw: a family's ability passes 1 after two or three right answers while its progress is still under Open Water, the
+start's lean fades with those answers (`calib.early`, `PDIFF.W`), so the target sits between ease 4 and ease 3, where
+the Gaussian targeting tells them apart little; and a photo's chance is its weight times the number of photos like it,
+so the share under ease 4 follows the pool's counts. In a pool dominated by hard photos (12 easy against 240, the unit
+test) the draw gave 68% under ease 4 before Open Water.
+
+**`model.js` `RARE`, `rareCap`**: until a unit reaches Open Water (`LV_AT[0]`), the observations whose judged photos are
+all under ease `RARE.E` (4; for a unit with fewer than `RARE.FEW` (3) photos at 4 or more, under its third easiest, as
+the smoke's per-entry check reads it) weigh together at most `RARE.SHARE` (0.1) of the observation draw, whatever their
+number: their weights take one factor, `share / (1 − share)` × the others' total / theirs, applied last (after the
+variety and the floor, so neither lifts them back). In an observation that also has an easy photo, its harder photos
+take the same factor. When they already weigh less (a new unit, whose lean keeps them near 2-9%), nothing changes; past
+Open Water nothing changes. No wall: they still come, about one in ten at most. A photo with no judged ease (every coral
+photo) is never one of them, so the corals' draw is unchanged. `tests/rareease.test.js` runs `photoSet` in Node on the
+hard-dominated pool; `tests/fish.smoke.js` keeps its bound (a third over 15 photos: with the share at most a tenth, a
+seed fails about once in a thousand).
+
+Every circle-1 family (`photoSet` drawn 600 times per stage on a fresh fish player, 4 plausible choices; the stages a
+new family, 3 right answers with the ability 1.2, 6 answers with 1.5, all under Open Water), share under ease 4, worst
+and mean over the 28 families: before 22% / 10%, 38% / 21%, 54% / 32% (Lizardfishes, Spadefishes, Fusiliers: 79-86%
+of their pools under ease 4); with `RARE` 12% / 7%, 14% / 10%, 12% / 10%. The start barely moves: the lean already
+holds it there, except on the families with few easy photos (Moorish Idol 22% → 12%, Triggerfishes 21% → 9%).
+
+**Learning outcomes** (`tools/learnsim.js --subject fish`, 3 profiles × 5 seeds × 300 questions, `main` 77cecab before →
+after; ± one sd over the seeds): true knowledge of the slate at 300 beginner 0.41 → 0.40, lectureRA 0.53 → 0.54,
+strongRA 0.69 → 0.66 (±0.02-0.05); units met 15 → 14, 17 → 18, 19 → 19; right 74 → 72%, 77 → 76%, 77 → 79%; the
+progress shown 25.6 → 24.6%, 23.6 → 23.4%, 20.4 → 17.8% (±2.5-4.5); look-alike accuracy unchanged (0.88, 0.91, 0.94 →
+0.92). Within the seeds' noise; the strong player's progress may come a little later (fewer hard photos before Open
+Water, whose right answers move the ability most). The real-log check (L12) cannot judge it: the sheet replays no fish
+answer.
 
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, at Open Water since Q205)
 

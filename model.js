@@ -18,6 +18,24 @@
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
 const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
+// Before Open Water a photo under ease 4 comes rarely (Pierre, 2026-11-06 14:17: "No wall: before Open Water a photo
+// under ease 4 may come, but rarely"). The prior and the aim alone made it a share of the draws that followed the photo
+// counts: a starter family holds about two thirds of its photos under ease 4, and its ability passes 1 after two or
+// three right answers while its progress is still under Open Water, so about one photo in five shown there was under
+// ease 4 (the fish smoke's bound broke on one seed in ten). So until a unit reaches Open Water (LV_AT[0]) the observations whose
+// judged photos are all under RARE.E (or under the unit's RARE.FEW easiest when it has fewer: the Soapfishes have 2)
+// weigh together at most RARE.SHARE of the draw, whatever their number (rareCap); within an observation that also has
+// an easy photo, its harder ones take the same factor. No wall: they still come. A photo with no judged ease (every
+// coral photo) is never one of them, so the corals' draw is unchanged. docs/LEARNING.md "Rarely under ease 4".
+const RARE = {E: 4, FEW: 3, SHARE: 0.1};
+// The factor the hard observations' weights take so they make at most `share` of the draw (1 when they already do, or
+// when nothing else can be drawn). sc: each observation's weight; isHard(k): whether observation k is a hard one.
+function rareCap(keys, sc, isHard, share = RARE.SHARE) {
+  let mh = 0,
+    me = 0;
+  keys.forEach(k => (isHard(k) ? (mh += sc[k]) : (me += sc[k])));
+  return me > 0 && mh > (share / (1 - share)) * me ? ((share / (1 - share)) * me) / mh : 1;
+}
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -155,6 +173,9 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     tgt = ability(n) + shift - aimOff(k, fmtOff(PFMT, f)) - (single ? PICKD.SINGLE : 0) - lean;
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
+  // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise).
+  let hardF = 1,
+    hard = () => false;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p),
@@ -170,7 +191,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? calibOf(SUBJ).ref : 1);
     else r *= Math.exp(PMEM[memBucket(k)]);
-    return r;
+    return hardF < 1 && hard(p) ? r * hardF : r;
   };
   const obs = {};
   need.forEach(v =>
@@ -220,6 +241,20 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   keys.forEach(k => {
     if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top);
   });
+  // Rarely under ease 4 before Open Water (RARE): last, so neither the variety nor the floor lifts the hard ones back.
+  const ph = k => Object.values(obs[k]).flat(),
+    es = keys
+      .flatMap(ph)
+      .map(p => p.e || 0)
+      .filter(Boolean)
+      .sort((a, b) => b - a);
+  if (es.length && genScore(n) + 1e-9 < LV_AT[0]) {
+    const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),
+      hardK = k => ph(k).every(hard);
+    hard = p => p.e > 0 && p.e < bar;
+    hardF = rareCap(keys, sc, hardK);
+    if (hardF < 1) keys.forEach(k => hardK(k) && (sc[k] *= hardF));
+  }
   const o = top ? obs[wpick(keys, k => sc[k])] : keys.length ? obs[pick(keys)] : {};
   const one = v => {
     const L = o[v] || [];
