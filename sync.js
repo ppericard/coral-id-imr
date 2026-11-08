@@ -93,16 +93,83 @@ const boardUnits = () =>
 // full replay of the player's log when it is older than its own. pt: the time of the oldest answer still queued here
 // (pendingFrom), so the replay's ids cover every queued answer the sheet already logged.
 // info: what the request did, for a failed save's report (sheetCall).
-const syncGet = (a = SYNC, info = {}) =>
-  sheetCall(
-    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${rvsParam()}${ptParam(a.log)}`,
+// From LIGHT_SHEET (lighter saves, below): have, the revision of the saved copy this device holds (sdOf); the sheet then
+// answers same: 1 without the copy when it is still that one, and the reply gets this device's own (taken when the
+// request went, so the reply always reads the copy it was asked against). light: the hold's ids from pt only (Code.gs hold_).
+const syncGet = (a = SYNC, info = {}) => {
+  const sd = lightOn() ? sdOf(a) : null;
+  return sheetCall(
+    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${rvsParam()}${ptParam(a.log)}${lightOn() ? '&light=1' : ''}${sd ? '&have=' + a.srv : ''}`,
     undefined,
     info,
     'load'
   ).then(j => {
     if (j && j.data) j.data = keysIn(j.data);
+    if (j && j.ok && j.found && j.same && !j.data) j.data = sd ? {...sd} : null;
     return j;
   });
+};
+// Lighter saves on slow lines (Pierre, 2026-11-08, ROADMAP "Lighter saves on slow lines": field use at IMR on weak
+// connections, "save failed" seen there). Each sync used to load the whole saved copy, then send the whole progress (its
+// old key names a second time), 3 s after each answer; at 86 kbit/s a fluent RA's saves were in flight most of the time.
+// From the script that serves it (LIGHT_SHEET, rule D4; before, everything as it was), with the same merge:
+// - the device keeps the saved copy at the revision it merged against (SYNC.sd: {rev, d}, the copy as a load serves it:
+//   the new key names, no _acct): what the sheet held after this device's last load or save (sdSeen, sdSaved);
+// - a save sends only what changed since that copy (core.js dataDelta) with the checksum of its whole data (dataSum); the
+//   sheet rebuilds the copy and keeps it only if it is the same, else answers 'delta' and the device sends it all again;
+// - no load before a save when the device holds the copy at its revision (skipPull): the save's at says which, and if
+//   another device wrote since, the sheet answers 'stale' with the load itself (Code.gs load_), before it logs anything
+//   (the answers stay queued here and go with the save that follows), merged here as a load's reply is, then saved again:
+//   the same three-way merge on the same copy, as a load then a save; a load whose copy did not move comes back without
+//   it (same, syncGet);
+// - the body goes gzipped (zipOk; the sheet answers 'zip' when it cannot read it, and it goes again unpacked);
+// - the old key names are added by the sheet (Code.gs lightData_), the hold's ids come from pt only (hold_);
+// - on a slow line the wait before a save grows (SAVE_WAIT, syncSoon).
+// The first sync of each page still loads (repsPulled: the player's reports, the visit's first-sync notices). A device
+// holding answers logged from a refused save (lg) or sending its anonymous ones (anon), or with no account generation
+// (acct), loads first as before.
+const LIGHT_SHEET = 113;
+const lightOn = () => sheetV() >= LIGHT_SHEET;
+const sdOf = me =>
+  me && me.sd && typeof me.srv === 'number' && me.sd.rev === me.srv && me.sd.d && typeof me.sd.d === 'object' ? me.sd.d : null;
+// Nor with a send whose reply never came (SUBJECTS base[1], the pending copy): only a load tells whether it was saved
+// (mergeSubject).
+const skipPull = me => lightOn() && repsPulled && !!sdOf(me) && !!me.acct && !me.lg && !me.anon && !SUBJECTS.some(S => me[S.base[1]]);
+// The saved copy a load's reply holds (the copy, or this device's own when same).
+function sdSeen(me, j) {
+  if (!lightOn() || !j || !j.ok) return;
+  if (j.found && j.data && typeof j.rev === 'number') me.sd = {rev: j.rev, d: {...j.data}};
+  else delete me.sd;
+}
+// The copy a light save left on the sheet (its checksum in the reply, sum): this device's data X, with the keys of a
+// subject this app did not send kept from the copy it saved over (core.js keepSubjectKeys, as Code.gs keeps them).
+// Another checksum (or none): the copy is not known here, and the next sync loads it.
+function sdSaved(me, X, sumX, base, j) {
+  const K = keepSubjectKeys(base || {}, X),
+    d = j && typeof j.sum === 'string' && typeof j.rev === 'number' ? (j.sum === sumX ? X : dataSum(K) === j.sum ? K : null) : null;
+  if (d) me.sd = {rev: j.rev, d};
+  else delete me.sd;
+}
+// The body in gzip, as base64 (CompressionStream: Chrome 80, Safari 16.4, Firefox 113), null when it cannot be made here;
+// not after the sheet said it could not read one, until its script changes (nz: the version it said it).
+const zipOk = me => typeof CompressionStream === 'function' && typeof Response === 'function' && !(Number(me.nz) >= sheetV());
+async function gzip64(t) {
+  try {
+    const b = new Uint8Array(await new Response(new Response(t).body.pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+    let s = '';
+    for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+    return btoa(s);
+  } catch (e) {
+    return null;
+  }
+}
+// A light save's body: gzipped when that makes it shorter, else as it is, wrapped either way (Code.gs doPost_: a script
+// before LIGHT_SHEET finds no name in it and writes nothing).
+async function lightBody(me, o) {
+  const t = JSON.stringify(o),
+    z = t.length > 1024 && zipOk(me) ? await gzip64(t) : null;
+  return z && z.length + 8 < t.length ? JSON.stringify({z}) : JSON.stringify({lt: o});
+}
 // The full replay of the answer log by the sheet (Pierre, 2026-11-03: progress recalculated from the whole log,
 // automatically, never by a human click, now and whenever the progress engine changes; docs/LEARNING.md "Full replay").
 // The sheet (Code.gs replay_, v28) replays the player's rows with this app's own engine (core.js replayProgress, embedded
@@ -135,9 +202,13 @@ const rvApplied = S => Number(store.get(rvKey(S), 0)) || 0;
 // The rules version a request says: the one applied here, or 0 while this device holds answers the sheet logged from a
 // refused save (SYNC.lg, syncOnce): its merge baseline lacks them, so a saved copy another device built from the log
 // (a replay) may already count them, and only the replay of the log tells (mergeSaved; Codex review #399).
-// Per subject the sheet replays: the flag holds for a subject until its own replay of the log is adopted (lgOk), so the
-// corals' adoption does not clear it for the fish progress, whose baseline lacks the fish answers still.
-const lgFor = S => !!(SYNC && SYNC.lg && !(SYNC.lgOk || []).includes((S || SUBJECTS[0]).id));
+// The flag holds, for every subject the sheet replays, until a save carries those answers (syncOnce): a replay adopted
+// before that is the baseline here, while the saved copy still lacks them, and another device saving over that copy in
+// between would have them dropped at the next merge; so each load and save asks for the replay again until then, and
+// adopts it again (replayAdoptS), the answers queued here on top. It went for a subject once its replay was adopted
+// (lgOk) until the lighter saves (LIGHT_SHEET), which meet a refused save far more often (a 'stale' with answers, each
+// time another device saved first) and found the gap.
+const lgFor = () => !!(SYNC && SYNC.lg);
 const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
 // Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen: fish.json's, loaded with the
 // subject), null before they are in.
@@ -313,12 +384,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     if (SYNC) {
       SYNC[S.base[0]] = replayBase(rp.rec, M, rp.rv, SYNC[S.base[0]]);
       tykUp((SYNC[S.base[0]] || {})[LEVEL], rp.rec);
-      // The replay counts every logged answer of this subject; the flag goes once every subject replayed has its own.
-      if (SYNC.lg) {
-        SYNC.lgOk = [...new Set([...(SYNC.lgOk || []), S.id])];
-        if ([SUBJECTS.find(x => x.replay), ...rpSubjects().filter(x => rpOn(x, v))].every(x => !x || SYNC.lgOk.includes(x.id)))
-          (delete SYNC.lg, delete SYNC.lgOk);
-      }
+      // The replay counts every logged answer of this subject; the flag (lg) goes with the save that carries them (syncOnce).
       store.set('reefid-account', SYNC);
     }
     save();
@@ -410,7 +476,8 @@ function mergeSubject(j, d, S, mine) {
   const rr = JSON.parse(d[sKey('reset')] || '""'),
     lr = store.get(sKey('reset'), '');
   // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
-  if (SYNC[PK] && d[sKey('progress')] === SYNC[PK]) SYNC[BK] = R;
+  // (Said the same: the sheet may spell a copy rebuilt from a light save's delta in another key order, core.js sameText.)
+  if (SYNC[PK] && sameText(d[sKey('progress')], SYNC[PK])) SYNC[BK] = R;
   delete SYNC[PK];
   // A reset made here that the sheet's copy does not have yet: this device's progress stays (the sheet's hold too counts
   // from its older reset), and, for a subject the sheet replays (SUBJECTS replay), the replay since the
@@ -603,6 +670,9 @@ let syncing = null,
   syncAgain = false;
 function syncPush() {
   if (!SYNC_URL || !SYNC || !DATA) return Promise.resolve(null);
+  // A save planned after a longer wait (syncSoon, a slow line) goes with this one.
+  if (saveDue > Date.now() && saveWait() > SAVE_WAIT.MS) clearTimeout(syncTimer);
+  saveDue = 0;
   if (syncing) {
     syncAgain = true;
     return syncing;
@@ -638,20 +708,25 @@ const acctChanged = (j, me) => {
 const archivedOf = (j, me) => !!(j && j.ok && ((!j.found && typeof me.srv === 'number' && me.srv > 0) || acctChanged(j, me)));
 // at = the sheet revision merged against (script v6): if another device wrote in between, the sheet answers 'stale'
 // (answers logged all the same) and the whole pull-merge-send runs again, at most twice (code review M1).
-function syncOnce(tries = 0) {
+// pulled: the load a light save's 'stale' reply carried (LIGHT_SHEET), merged as the load's reply instead of a load.
+// Without a load (skipPull), the copy this device holds at its revision is merged as the load would have brought it:
+// unchanged since this device saved or loaded it, so the merge keeps everything as it is (mergeSaved: mine).
+function syncOnce(tries = 0, pulled = null) {
   const me = SYNC,
     info = {}; // what this try's requests did (sheetCall), for a failed save's report
-  let rev, sent, log, cut, cuts, rvs;
+  let rev, sent, log, cut, cuts, rvs, light, X, sumX, base;
+  const mine = !pulled && skipPull(me) ? {ok: true, found: true, rev: me.srv, data: {...sdOf(me)}, acct: me.acct, v: sheetV()} : null;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
   // Script v11: a name the admin removed or merged answers 'gone' (with the name it joined): recorded below, no send.
-  return syncGet(me, info)
+  return (pulled || mine ? Promise.resolve(pulled || mine) : syncGet(me, info))
     .then(j => {
       if (SYNC !== me) return null;
       if (!j.ok) return j;
       if (archivedOf(j, me)) return {ok: false, error: 'archived'}; // nothing pushed: the record is not re-created
       groupsSeen(j, me.name); // the beta groups first (v48): they never depend on the merge
       if (j.found) mergeSaved(j);
-      repsSeen(j); // the player's reports (v57), after the merge: their thanks on another device came with it
+      sdSeen(me, j);
+      if (!mine) repsSeen(j); // the player's reports (v57), after the merge: their thanks on another device came with it
       rev = me.rev;
       // Each subject's progress as sent: its baseline once the sheet confirms (SUBJECTS base).
       const pd0 = progData();
@@ -665,35 +740,55 @@ function syncOnce(tries = 0) {
       store.set('reefid-account', me);
       const pd = (progData()['reefid-sync-coral-progress'] || '').length;
       if (pd > 40000) console.warn(`Progress is ${pd} characters (sheet script v6 stores any size; v5 stops at 50,000).`);
-      return sheetCall(
-        SYNC_URL,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            name: me.name,
-            pin: me.pin,
-            data: withLegacy(progData()), // + the old names, for a device still on an app from before the rename (core.js)
-            summary: syncSummary(),
-            answers: log,
-            av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
-            rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
-            ...(Object.keys(rvs).length ? {rvs} : {}), // the other subjects' (Code.gs replays_)
-            ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
-            // First send after signing in: the answers this device sent anonymously move to this name (script v12).
-            ...(me.anon ? {anon: me.anon} : {}),
-            ...(typeof me.srv === 'number' ? {at: me.srv} : {}),
-            // The account generation this device saved under (sheet v58): checked under the sheet's lock, so a record
-            // archived between this load and this save is never overwritten (Codex review #603).
-            ...(me.acct ? {acct: me.acct} : {}),
-            ...(log.length ? devField() : {}) // the device of its answers (sheet DEV_SHEET)
-          })
-        },
-        info,
-        'save'
+      // A light save (LIGHT_SHEET): what changed since the copy held at at (dz), else the whole data, the old names left
+      // to the sheet; before, the whole data with its old names, as ever.
+      light = lightOn();
+      X = progData();
+      base = light && !(Number(me.nd) >= sheetV()) ? sdOf(me) : null; // nd: a delta refused, whole data until the script changes
+      sumX = light ? dataSum(X) : '';
+      const what = !light
+          ? {data: withLegacy(X)} // + the old names, for a device still on an app from before the rename (core.js)
+          : base
+            ? {dz: dataDelta(base, X), sum: sumX}
+            : {data: X},
+        o = {
+          name: me.name,
+          pin: me.pin,
+          ...what,
+          summary: syncSummary(),
+          answers: log,
+          av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
+          rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
+          ...(Object.keys(rvs).length ? {rvs} : {}), // the other subjects' (Code.gs replays_)
+          ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
+          // First send after signing in: the answers this device sent anonymously move to this name (script v12).
+          ...(me.anon ? {anon: me.anon} : {}),
+          ...(typeof me.srv === 'number' ? {at: me.srv} : {}),
+          // The account generation this device saved under (sheet v58): checked under the sheet's lock, so a record
+          // archived between this load and this save is never overwritten (Codex review #603).
+          ...(me.acct ? {acct: me.acct} : {}),
+          ...(log.length ? devField() : {}), // the device of its answers (sheet DEV_SHEET)
+          ...(light ? {light: 1} : {})
+        };
+      return (light ? lightBody(me, o) : Promise.resolve(JSON.stringify(o))).then(body =>
+        sheetCall(SYNC_URL, {method: 'POST', body}, info, 'save')
       );
     })
     .then(j => {
       if (!j || SYNC !== me) return j;
+      if (j.v) sheetSeen(j); // the script that answered: an older one turns the light saves off (rule D4)
+      // A light save the sheet could not read (zip: sent again unpacked) or whose delta did not rebuild the copy it holds
+      // (delta: the copy loaded again, the data sent whole): nothing was logged or written, the same sync goes again.
+      if ((j.error === 'zip' || j.error === 'delta') && tries < 3) {
+        if (j.error === 'zip') me.nz = sheetV();
+        // Never a loop of refused deltas: the copy loaded again, the whole data sent until the script version changes.
+        else ((me.nd = sheetV()), delete me.sd);
+        SUBJECTS.forEach(S => delete me[S.base[1]]);
+        store.set('reefid-account', me);
+        return syncOnce(tries + 1).then(r => {
+          throw {retried: r};
+        });
+      }
       // The account's generation from the save's reply (sheet v58): the device that created the account knows it at once,
       // so a record archived and taken again before its next load is still told apart (Codex review #603).
       if (j.ok && typeof j.acct === 'string' && j.acct && !me.acct) {
@@ -705,13 +800,16 @@ function syncOnce(tries = 0) {
         const done = new Set(log.map(x => x.id));
         me.log = (me.log || []).filter(x => !done.has(x.id));
         // Logged, but the progress carrying them not saved: the merge baseline lacks answers the log has (rvAsk).
-        if (!j.ok) ((me.lg = 1), delete me.lgOk);
+        if (!j.ok) me.lg = 1;
         store.set('reefid-account', me);
       }
       // The retry is a whole sync of its own: its result skips the steps below (they would apply this round's sent copy).
       if (j.error === 'stale' && tries < 2) {
         SUBJECTS.forEach(S => delete me[S.base[1]]);
-        return syncOnce(tries + 1).then(r => {
+        // A light save's stale reply holds the load (Code.gs load_): merged as the load's reply, no load of its own.
+        const ld = light && Number(j.v) >= LIGHT_SHEET && typeof j.found === 'boolean' ? {...j, ok: true} : null;
+        if (ld) (delete ld.error, delete ld.log, ld.data && (ld.data = keysIn(ld.data)));
+        return syncOnce(tries + 1, ld).then(r => {
           throw {retried: r};
         });
       }
@@ -724,9 +822,10 @@ function syncOnce(tries = 0) {
           me[S.base[0]] = sent[S.id];
           delete me[S.base[1]];
         });
-        delete me.lg; // the saved copy now holds the answers it lacked
-        delete me.lgOk;
         if (typeof j.rev === 'number') me.srv = j.rev;
+        if (light) sdSaved(me, X, sumX, base, j);
+        else delete me.sd;
+        saveMs = Date.now() - (info.start || Date.now()); // how long this sync took, for the wait before the next (syncSoon)
         delete me.err;
         if (!j.log && log.length) me.err = 'net';
         if (me.anon) delete me.anon;
@@ -742,7 +841,12 @@ function syncOnce(tries = 0) {
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
         notesSeen(j);
+        // A save sent with answers logged from a refused one (lg: it asked from version 0) gets the replay of the whole log,
+        // those answers in it: adopted as the recovery its load could not adopt (an answer queued here older than the
+        // log's last one), before the flag goes.
         const adopted = replayAdopt(j.replay, me.log, j.v, cut) | replaysAdopt(j, me.log, cuts);
+        delete me.lg; // the saved copy now holds the answers it lacked
+        delete me.lgOk; // (a flag per subject until LIGHT_SHEET, lgFor)
         // A replay adopted from a save's reply leaves the saved copy at the rules version that save carried, the older one:
         // another device would take it for an older app's copy and ask for the replay again, then leave its own copy the
         // same way, each in turn (mergeSaved; Codex review #399). So the device saves again at once, with the adopted
@@ -773,13 +877,26 @@ function syncOnce(tries = 0) {
       if (SYNC === me) bindSync();
     });
 }
+// A change to send: the save goes SAVE_WAIT.MS after the last change. On a slow line (LIGHT_SHEET: the last sync took
+// more than SAVE_WAIT.SLOW), it waits twice that sync's time instead, at most SAVE_WAIT.MAX, counted from the first
+// change not sent yet, so a fluent player's answers go a few at a time rather than each its own save sharing the line
+// with the photos; leaving the app sends it at once (visibilitychange), and nothing waits on the device any longer than
+// that. A fast line: as before, 3 s after each change.
+const SAVE_WAIT = {MS: 3000, SLOW: 8000, MAX: 20000};
+let saveMs = 0,
+  saveDue = 0;
+const saveWait = () => (lightOn() && saveMs > SAVE_WAIT.SLOW ? Math.min(SAVE_WAIT.MAX, 2 * saveMs) : SAVE_WAIT.MS);
 const syncSoon = () => {
   if (!SYNC_URL || !SYNC) return;
   SYNC.dirty = true;
   SYNC.rev = (SYNC.rev || 0) + 1;
   store.set('reefid-account', SYNC);
+  const w = saveWait(),
+    now = Date.now();
+  if (w > SAVE_WAIT.MS && saveDue > now) return; // a save is already planned, within the wait of the first change
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(syncPush, 3000);
+  saveDue = now + w;
+  syncTimer = setTimeout(syncPush, w);
 };
 // The one-time notices wait for the visit's first sync (Pierre, 2026-11-08: a device still holding an old copy of his
 // account showed him again, two or three times over three devices, the cards and toasts he had seen on another: "as long
@@ -865,6 +982,7 @@ function syncPull() {
         rv0 = rvNow();
       groupsSeen(j, me.name); // the beta groups first (v48), as syncOnce
       if (j.found) mergeSaved(j);
+      sdSeen(me, j); // the copy merged, for the lighter saves (LIGHT_SHEET)
       repsSeen(j); // the player's reports (v57), as syncOnce
       if (rvNow().some((v, i) => v < rv0[i])) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
       delete me.err;
@@ -893,6 +1011,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && (Date.now() - pulledAt > 30000 || (SYNC && SYNC.fail))) syncPull();
   else if (document.visibilityState === 'hidden' && SYNC && SYNC.dirty && !syncing) {
     clearTimeout(syncTimer);
+    saveDue = 0;
     syncPush();
   }
 });

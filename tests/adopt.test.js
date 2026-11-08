@@ -9,7 +9,7 @@ const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const C = require('../core.js');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, bodyOf} = require('./gas.js');
 
 const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
@@ -44,7 +44,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     got = [];
   const answer = (u, o) => {
     const url = new URL(String(u)),
-      body = o && o.body ? JSON.parse(o.body) : null;
+      body = o && o.body ? bodyOf(o.body) : null; // a light save unwrapped (LIGHT_SHEET)
     sent.push(body || Object.fromEntries(url.searchParams));
     const j = sheet ? (body ? sheet.post(body) : sheet.get(Object.fromEntries(url.searchParams))) : {ok: false};
     got.push(j);
@@ -251,7 +251,7 @@ test('two devices adopt the replay of a log ahead of the saved copy: no answer c
   // A saves its adoption first; its own load before the save still finds the empty copy of the older rules.
   await A.syncPush();
   assert.strictEqual(A.count('Acropora'), 2, 'the older saved copy does not undo the replay');
-  assert.strictEqual(JSON.parse(A.sent[2].data['reefid-sync-coral-progress']).Acropora.ok, 2);
+  assert.strictEqual(JSON.parse(C.keysIn(s.get({name: 'Ana', pin: '1234'}).data)['reefid-sync-coral-progress']).Acropora.ok, 2);
   // B loads A's save: the same two answers, not four.
   await B.syncPull();
   assert.strictEqual(B.count('Acropora'), 2, 'was 4');
@@ -325,9 +325,11 @@ test('after a recovery from an older client, the saved copy reaches the rules ve
   }
   const savedRv = () => JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-rv'] || '0');
   assert.strictEqual(savedRv(), C.RV, 'the saved copy stayed at rules version 0');
+  // Each sync a load then a save, or from LIGHT_SHEET the save alone (sync.js skipPull).
+  assert.ok(A.got.length - from >= 4, 'four syncs');
   assert.deepStrictEqual(
-    A.got.slice(from).map(j => !!j.replay),
-    Array(8).fill(false),
+    A.got.slice(from).filter(j => j.replay),
+    [],
     'a replay sent again at every sync'
   );
   assert.deepStrictEqual([A.count('Acropora'), A.rvApplied()], [3, C.RV]);
@@ -628,7 +630,9 @@ test("an answer logged by a refused save, then saved in another device's replay,
   // A plays and saves two answers (rules version applied), then a third whose save is refused (logged, not saved).
   const s = loadCodeGs(withData());
   let refuse = false;
-  const sheetA = {get: q => s.get(q), post: b => s.post(refuse && b.name ? {...b, at: -1} : b)},
+  // Refused: the sheet logs the answers, then the progress write fails (a light save's stale logs nothing: LIGHT_SHEET).
+  const refused = b => ({...s.post({name: b.name, pin: b.pin, summary: {}, answers: b.answers, at: -1}), error: 'save'}),
+    sheetA = {get: q => s.get(q), post: b => (refuse && b.name ? refused(b) : s.post(b))},
     A = app({sheet: sheetA, SYNC: {name: 'Ana', pin: '1234', log: [qa('a0', 0), qa('a1', 1)], base: {}, dirty: true}});
   await A.syncPush();
   await A.syncPush();

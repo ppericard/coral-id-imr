@@ -145,6 +145,18 @@ function doGet_(e){
   const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
   if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
   if (!e.parameter.av) oldApp_('load', name);  // only for a real account with its code (Codex review #373)
+  // The other subjects' replays (replays_), each asked by its own rules version (rv_fish).
+  const rvs = {};
+  CORE_.replayedSubjects().forEach(id => { if (e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]); });
+  const have = e.parameter.have !== undefined && e.parameter.have !== '' ? Number(e.parameter.have) : NaN;
+  return json_(load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, have: have, light: !!e.parameter.light}));
+}
+// The load of a player's saved copy (row: their RAs row, the code checked), as GET ?name=&pin= answers it, and from vNEXT
+// as a light save answers 'stale' (doPost_). q: pt, rv (undefined: no replay asked), rvs, and from vNEXT have (the
+// revision of the copy the device holds: the same revision answers same: 1 and leaves the copy out, the device reading
+// its own; sync.js syncGet) and light (the hold's ids from pt only: hold_; the copy under the new key names only, the
+// old ones, which the app reads as the new when it has no new one, under the new: core.js keysIn).
+function load_(name, row, q){
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
   // v58: the account's generation, apart from the progress (sync.js acctChanged); the app never stores it as a key.
   if (data && typeof data._acct === 'string') { out.acct = data._acct; delete data._acct; }
@@ -155,18 +167,17 @@ function doGet_(e){
   try { const reps = repsOf_(name); if (reps.length) out.reps = reps; } catch (err) {}
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
   // (the app keeps its own).
-  try { const o = hold_(name, resetOf_(data), Number(e.parameter.pt)); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
+  try { const o = hold_(name, resetOf_(data), q.pt, q.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   // v28: the full replay of the player's log, when their app applied an older rules version (replay_). A failure leaves
   // it out (the app keeps its own progress and asks again next time).
-  if (e.parameter.rv !== undefined) {
+  if (q.rv !== undefined) {
     const lock = LockService.getScriptLock();
-    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv), Number(e.parameter.pt), startOf_(data)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
+    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), q.rv, q.pt, startOf_(data)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
-  // The other subjects' replays (replays_), each asked by its own rules version (rv_fish).
-  const rvs = {};
-  CORE_.replayedSubjects().forEach(id => { if (e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]); });
-  const rps = replays_(name, data, rvs, Number(e.parameter.pt)); if (rps) out.replays = rps;
-  return json_(out);
+  const rps = replays_(name, data, q.rvs || {}, q.pt); if (rps) out.replays = rps;
+  if (q.have === d.rev) { delete out.data; out.same = 1; }  // vNEXT: the device holds this very copy (sync.js sdOf)
+  else if (q.light) out.data = CORE_.keysIn(data);  // vNEXT: under the new key names only, as the app reads it (sync.js syncGet)
+  return out;
 }
 
 // POST {name, pin, data, summary: {learned, seen, total, review: [], genera: {Genus: 'ok'|'mid'|'weak'|'new'}},
@@ -177,7 +188,13 @@ function doGet_(e){
 // never name/pin, so an older script answers 'input' and never mistakes a report for an empty progress write.
 function doPost_(e){
   ROWS_ = null;
-  const p = JSON.parse(e.postData.contents);
+  let p = JSON.parse(e.postData.contents);
+  // vNEXT (lighter saves, sync.js syncOnce): a light save comes wrapped, its gzip in base64 (z) or as it is (lt), so a
+  // script before vNEXT, which finds no name in it, answers 'input' and never takes a delta for an empty progress write.
+  // A z this script cannot read answers 'zip': the app sends it again unpacked.
+  if (p && typeof p.z === 'string') { try { p = JSON.parse(unzip_(p.z)); } catch (err) { return json_({ok: false, error: 'zip'}); } }
+  else if (p && p.lt && typeof p.lt === 'object') p = p.lt;
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return json_({ok: false, error: 'input'});
   if (Array.isArray(p.anonAnswers) && !p.av) oldApp_('anonymous answers', '~anon ' + String(p.anon || '').slice(0, 16));
   if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // v12: players not signed in (see anon_)
   if (Array.isArray(p.reports)) return json_(logReports_(p));
@@ -194,7 +211,7 @@ function doPost_(e){
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
-  let out;
+  let out, held = true;
   try {
     const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
     let r = find_(sh, name);
@@ -213,6 +230,17 @@ function doPost_(e){
       let d = {}; try { d = JSON.parse(readData_(String(sh.getRange(r, 1).getValue()), String(sh.getRange(r, 8).getValue() || '')).json || '{}') || {}; } catch (e) {}
       if (d._acct && d._acct !== p.acct) return json_({ok: false, error: 'archived'});
     }
+    const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
+    // vNEXT: a light save against another revision than the saved one (another device wrote since) is answered 'stale'
+    // before anything is counted or logged, with the load of the copy there (load_), read once the lock is released, as a
+    // load is: the app merges it and saves again at once, its answers still queued with it (as an app before vNEXT loads,
+    // merges, then saves). A name not found (no row) answers found: false, which the app reads as archived.
+    if (p.light && typeof p.at === 'number' && p.at !== rev) {
+      if (!r) return json_({ok: false, error: 'stale', rev: rev, found: false});
+      lock.releaseLock(); held = false;
+      const ld = load_(name, sh.getRange(r, 1, 1, HEAD.length).getValues()[0], {pt: p.pt, rv: typeof p.rv === 'number' ? p.rv : undefined, rvs: p.rvs && typeof p.rvs === 'object' ? p.rvs : {}, light: true});
+      return json_(Object.assign(ld, {ok: false, error: 'stale', rev: ld.rev}));
+    }
     // Caps (v12): at most 40 new accounts and 3000 answers per name every 6 hours; over that, nothing is written and the
     // app keeps its answers to send later. A real class of RAs stays far below both.
     if (!r && over_('newacct', 40)) return json_({ok: false, error: 'busy'});
@@ -226,13 +254,20 @@ function doPost_(e){
       pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
       rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; every subject's)
     }
+    let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
+    // vNEXT: a light save's data (lightData_): the copy rebuilt from a delta, or the whole data under the new key names, the
+    // old ones added here. A delta that does not rebuild the copy the app holds is refused before anything is logged
+    // ('delta': the app sends the whole data again, its answers with it).
+    if (p.light) {
+      const ld = lightData_(p, old, rev);
+      if (!ld) return json_({ok: false, error: 'delta', rev: rev});
+      p.data = ld;
+    }
     logAnswers_(name, f.fresh, f.seen, p.dev);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
-    const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
     if (typeof p.at === 'number' && p.at !== rev) return json_({ok: false, error: 'stale', log: true, rev: rev});
     // v34: the keys of a subject the saving app does not know (an app from before fish) are kept from the saved copy
     // (core.js keepSubjectKeys): replacing the record would erase that progress.
-    let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
     // v58: the account's generation (_acct), made with the account and kept by every save (sent apart as acct): a device that knew another
     // generation of this name (a record archived, then the name taken again) learns it was replaced (sync.js acctChanged;
     // Codex review #603). An account saved before v58 gets one at its next save.
@@ -261,7 +296,10 @@ function doPost_(e){
     }
     try { boardUnitsSave_(s.boards); } catch (err) {}  // v95: the units of each other subject's leaderboard
     out = {ok: true, log: true, rev: rev + 1, acct: kept._acct};  // v58: the generation, known to the creating device at once (Codex review #603)
-  } finally { lock.releaseLock(); }
+    // vNEXT: the checksum of the copy now saved, under the new key names (core.js dataSum), so a light app knows it holds
+    // that very copy (sync.js sdSaved) and sends only what changes next time.
+    if (p.light) { const k2 = CORE_.keysIn(kept); delete k2._acct; out.sum = CORE_.dataSum(k2); }
+  } finally { if (held) lock.releaseLock(); }
   // v50: what the reply adds is read once the progress is written and the script lock released (it was computed under
   // it, so every other save, anonymous send and event batch waited for this player's replay; some waited past the lock's
   // timeout, and those failed). The answers this save logged are in the tab by now.
@@ -269,7 +307,7 @@ function doPost_(e){
   // another device's must not keep the order it replayed them in): the app takes it after a send.
   try { out.groups = groupsOf_(name); } catch (err) {}  // v48, as the load reply
   try { out.notes = notes_(); } catch (err) {}  // v87, as the load reply
-  try { const o = hold_(name, resetOf_(p.data), p.pt); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
+  try { const o = hold_(name, resetOf_(p.data), p.pt, !!p.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
@@ -277,6 +315,22 @@ function doPost_(e){
   const rps = replays_(name, p.data, p.rvs, p.pt); if (rps) out.replays = rps;  // the other subjects' (replays_)
   return json_(out);
 }
+
+// vNEXT (lighter saves): the data of a light save p (sync.js syncOnce), against the saved copy old at revision rev. A
+// delta (dz, core.js dataDelta) against the copy the app holds at its revision at: that copy is the saved one under the
+// new key names (core.js keysIn, the generation _acct left out, as a load serves it), the delta applied (dataPatch), and
+// the result taken only when its checksum is the app's (sum: the whole data the app holds, dataSum); null otherwise.
+// Without a delta, the app's data as it is. Either way under the new names only: the old names are added here
+// (core.js withLegacy, for a device still on an app from before the rename), as the app added them before.
+function lightData_(p, old, rev){
+  if (p.dz === undefined) return CORE_.withLegacy(p.data && typeof p.data === 'object' ? p.data : {});
+  if (typeof p.at !== 'number' || p.at !== rev) return null;  // (a delta against another revision is answered 'stale' first)
+  const base = CORE_.keysIn(old); delete base._acct;
+  const d = CORE_.dataPatch(base, p.dz);
+  return d && CORE_.dataSum(d) === p.sum ? CORE_.withLegacy(d) : null;
+}
+// A light save's gzip, in base64 (sync.js gzip64), read back as text.
+function unzip_(z){ return Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(z), 'application/x-gzip')).getDataAsString('UTF-8'); }
 
 // Appends new answers to the Answers tab, skipping ids already anywhere in it (a resend after a lost reply).
 // The answers of a send the Answers tab does not have yet (by id): what the flood caps count (v24, Codex review #372: a
@@ -364,13 +418,17 @@ const resetAt_ = t => typeof t === 'string' && t ? new Date(t).getTime() || 0 : 
 // of the oldest answer the device still queues, as replay_ reads it: a lost reply can leave up to 2,000 answers already
 // logged in the queue; Codex review #399). The cache keeps the last HOLD.IDS and the time of the first of them (t): a
 // pt before it reads the rows again.
-function hold_(name, since, pt){
+// light (vNEXT, a request of the lighter saves, sync.js): only the ids from pt on, the only ones such an app reads (every
+// answer it still queues is at pt or later; holdSync adds the queued answers not among them), not the last HOLD.IDS:
+// up to 500 ids, several KB, in every reply. The cache keeps their times (tt) for it; a cache without them is read again.
+function hold_(name, since, pt, light){
   const c = CacheService.getScriptCache(), k = holdKey_(name), hit = c.get(k),
-    from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity;
+    from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity,
+    mine = (ids, tt) => (light ? ids.filter((x, i) => tt[i] >= from) : ids);
   // v50 (Codex review #565): the cached hold is used only while the Answers tab has as many rows as when it was read
   // (n): a request that read the tab before another logged answers must not keep its older hold in the cache.
   const tab = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), nAll = tab ? tab.getLastRow() : 0;
-  if (hit) { const o = JSON.parse(hit); if (o.s === since && o.ids && typeof o.t === 'number' && from > o.t && o.n === nAll) return {h: o.h, ids: o.ids}; }
+  if (hit) { const o = JSON.parse(hit); if (o.s === since && o.ids && typeof o.t === 'number' && from > o.t && o.n === nAll && (!light || Array.isArray(o.tt))) return {h: o.h, ids: mine(o.ids, o.tt || [])}; }
   const who = lc_(name), all = answerRows_(), nRead = ROWS_LAST_ || nAll;  // v60: the tab's rows as read, every subject's
   let h = 0;
   const rows = all
@@ -379,8 +437,8 @@ function hold_(name, since, pt){
     .filter(r => r[0] > since)
     .sort((a, b) => a[0] - b[0]);  // stable: answers logged with the same time keep the sheet's order
   rows.forEach(([, ok, e]) => { h = Math.max(0, Math.round((h + e - ok - HOLD.SLACK) * 1000) / 1000); });
-  const last = rows.slice(-HOLD.IDS), ids = rows.filter((r, i) => i >= rows.length - HOLD.IDS || r[0] >= from).map(r => r[3]);
-  try { c.put(k, JSON.stringify({s: since, h: h, ids: last.map(r => r[3]), t: last.length ? last[0][0] : 0, n: nRead}), 21600); } catch (e) {}
+  const last = rows.slice(-HOLD.IDS), ids = rows.filter((r, i) => (!light && i >= rows.length - HOLD.IDS) || r[0] >= from).map(r => r[3]);
+  try { c.put(k, JSON.stringify({s: since, h: h, ids: last.map(r => r[3]), tt: last.map(r => r[0]), t: last.length ? last[0][0] : 0, n: nRead}), 21600); } catch (e) {}
   return {h: h, ids: ids};
 }
 
@@ -2079,6 +2137,85 @@ const CORE_ = (function () { const module = {exports: {}};
         const o = keyLegacy(k);
         if (o) out[o] = d[k];
       });
+    return out;
+  }
+  // Lighter saves (sheet vNEXT, docs/ROADMAP.md "Lighter saves on slow lines"; sync.js syncOnce, Code.gs doPost_): a
+  // device that knows the saved copy at the revision it saves against sends only what changed since (dataDelta), and the
+  // sheet rebuilds the whole copy from its own (dataPatch), keeping it only if it is exactly the copy the device holds
+  // (dataSum, checked by both sides on the same spelling). A player's data is {key: the JSON text of its value}.
+  const plain = o => !!o && typeof o === 'object' && !Array.isArray(o);
+  const jsonOf = s => {
+    if (typeof s !== 'string') return undefined;
+    try {
+      return JSON.parse(s);
+    } catch (e) {
+      return undefined;
+    }
+  };
+  // A key's value in one spelling whatever the order of its keys: its JSON read and spelled with every object's keys sorted
+  // (canon, below), a text that is not JSON as it is.
+  const valCanon = s => {
+    const v = jsonOf(s);
+    return v === undefined ? 's' + String(s) : 'j' + canon(v);
+  };
+  // Two texts of one key that say the same (a copy the sheet rebuilt from a delta spells its keys in its own order).
+  const sameText = (a, b) => a === b || (typeof a === 'string' && typeof b === 'string' && valCanon(a) === valCanon(b));
+  // The checksum of a player's data: a 53-bit hash of every key and its value's canon (cyrb53), with its length.
+  function dataSum(d) {
+    const t = Object.keys(d || {})
+      .sort()
+      .map(k => JSON.stringify(k) + '=' + valCanon(d[k]))
+      .join('\u0000');
+    let h1 = 0xdeadbeef,
+      h2 = 0x41c6ce57;
+    for (let i = 0; i < t.length; i++) {
+      const c = t.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 2654435761);
+      h2 = Math.imul(h2 ^ c, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36) + '.' + t.length.toString(36);
+  }
+  // What changed from base to now, key by key: null for a key gone, the new text for a key replaced, and for a key whose
+  // value is an object on both sides (a subject's progress: one record per unit), {p: the entries changed, d: the ones
+  // gone} when that is shorter than the text itself.
+  function dataDelta(base, now) {
+    const out = {};
+    base = base || {};
+    now = now || {};
+    Object.keys(base).forEach(k => !(k in now) && (out[k] = null));
+    Object.keys(now).forEach(k => {
+      if (base[k] === now[k]) return;
+      const a = jsonOf(base[k]),
+        b = jsonOf(now[k]);
+      if (plain(a) && plain(b)) {
+        const p = {},
+          d = Object.keys(a).filter(u => !(u in b));
+        Object.keys(b).forEach(u => JSON.stringify(a[u]) !== JSON.stringify(b[u]) && (p[u] = b[u]));
+        const o = d.length ? {p, d} : {p};
+        if (JSON.stringify(o).length < String(now[k]).length) return void (out[k] = o);
+      }
+      out[k] = now[k];
+    });
+    return out;
+  }
+  // base with delta applied (dataDelta); null when the delta does not fit it (a patch on a key that is not an object).
+  function dataPatch(base, delta) {
+    const out = {...(base || {})};
+    if (!plain(delta)) return null;
+    for (const k of Object.keys(delta)) {
+      const x = delta[k];
+      if (x === null) delete out[k];
+      else if (typeof x === 'string') out[k] = x;
+      else if (plain(x) && plain(x.p) && (x.d === undefined || Array.isArray(x.d))) {
+        const v = jsonOf(out[k]);
+        if (!plain(v) || Object.keys(x.p).includes('__proto__')) return null;
+        (x.d || []).forEach(u => delete v[String(u)]);
+        Object.keys(x.p).forEach(u => (v[u] = x.p[u]));
+        out[k] = JSON.stringify(v);
+      } else return null;
+    }
     return out;
   }
 
@@ -7173,7 +7310,11 @@ const CORE_ = (function () { const module = {exports: {}};
     migrateIdKey,
     keysIn,
     LEGACY_SEND,
-    withLegacy
+    withLegacy,
+    dataSum,
+    sameText,
+    dataDelta,
+    dataPatch
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CORE;
   else Object.assign(root, CORE);

@@ -98,6 +98,14 @@ function loadCodeGs(opts = {}) {
       Charset: {UTF_8: 'utf8'},
       computeDigest: (alg, s) => [...crypto.createHash('sha256').update(String(s), 'utf8').digest()],
       base64Encode: bytes => Buffer.from(bytes.map(b => b & 255)).toString('base64'),
+      // Byte[] as Apps Script gives them (signed); a blob of them, and its gunzip (Utilities.ungzip: a blob not in gzip
+      // throws, as there).
+      base64Decode: t => [...Buffer.from(String(t), 'base64')].map(b => (b > 127 ? b - 256 : b)),
+      newBlob: (bytes, type) => ({bytes, type, getBytes: () => bytes}),
+      ungzip: blob => {
+        const out = require('zlib').gunzipSync(Buffer.from(blob.bytes.map(b => b & 255)));
+        return {getBytes: () => [...out], getDataAsString: () => out.toString('utf8')};
+      },
       getUuid: () => crypto.randomUUID()
     },
     CacheService: {
@@ -171,4 +179,11 @@ function loadCodeGs(opts = {}) {
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
   return {ctx, sheets, cache, props, fetched, lock, get, post};
 }
-module.exports = {loadCodeGs, makeSheet};
+// A request body as the sync script reads it (Code.gs doPost_): a light save (sync.js lightBody, sheet vNEXT) unwrapped,
+// its gzip read (z) or as it came (lt); anything else as it is. Tests that look at what the app sent read it this way.
+function bodyOf(t) {
+  const o = typeof t === 'string' ? JSON.parse(t) : t;
+  if (o && typeof o.z === 'string') return JSON.parse(require('zlib').gunzipSync(Buffer.from(o.z, 'base64')).toString('utf8'));
+  return o && o.lt && typeof o.lt === 'object' ? o.lt : o;
+}
+module.exports = {loadCodeGs, makeSheet, bodyOf};

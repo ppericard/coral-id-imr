@@ -62,6 +62,10 @@ const GATES = {
     assert.strictEqual(JSON.stringify(f()), JSON.stringify(on ? {dev: 'abcdefghij'} : {}));
     return on;
   },
+  // The lighter saves (sync.js lightOn: a save without a load before it when the device holds the saved copy, its delta,
+  // gzip and the stale reply's load; Code.gs doPost_ light, load_ have): from the version that serves them; before, a
+  // load then the whole data, as ever (tests/lightsave.test.js runs both).
+  LIGHT_SHEET: (v, N) => fn('sync.js', 'const lightOn = ', '\n', 'lightOn', {sheetV: () => v, LIGHT_SHEET: N})(),
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
