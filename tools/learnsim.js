@@ -174,25 +174,11 @@ const http = require('http'),
 const {chromium} = require('playwright');
 const ROOT = path.join(__dirname, '..');
 
-// Profiles: the three players of profiles.smoke.js (same definitions: beginner, RA = "lectureRA", expert) and a strong
-// RA who knows 60% of the genera well (docs/LEARNING.md, the open-all offer and the opening hold). know of slate genus i
-// (slateGenera() order: data.json, then Millepora) = hi when i % 5 < m, else lo; bonus genera = lo. rate: RATE of the learner below.
-const PROFILES = {
-  beginner: {m: 0, hi: 0.02, lo: 0.02, rate: 0.12},
-  lectureRA: {m: 2, hi: 0.55, lo: 0.1, rate: 0.12},
-  strongRA: {m: 3, hi: 0.85, lo: 0.1, rate: 0.12},
-  expert: {m: 5, hi: 0.93, lo: 0.93, rate: 0.05},
-  // A strong player who knows 80% of the genera well and the rest hardly: few genera stay shaky, so the opening runs at
-  // full speed, and a genus never answered starts from their high global level (2026-11-04, the run of 2026-11-03 that
-  // fell from 83% to 50% right after 7 genera opened in 16 answers). Not in the default list: run it with --profiles
-  // strongBack --questions 60 --breaks 8h --after 40 (that player came back from an 8-hour break).
-  strongBack: {m: 4, hi: 0.9, lo: 0.1, rate: 0.12},
-  // A spotty player (2026-11-06, Pierre on #611: "a trainer who knows the Acroporidae but not the Merulinidae"): knows the
-  // genera of some IMR lecture groups as an expert does (hi) and the others hardly (lo), by family rather than by slate
-  // position, so a rule that borrows from the global level is checked on the genera it does not know. grp: the lecture
-  // groups known (app learn.js shownGroup: a starred genus in the group of its look-alikes).
-  spotty: {grp: [1, 2, 3, 4, 5], hi: 0.93, lo: 0.05, rate: 0.08}
-};
+// Profiles (2026-11-08, rule L11): tools/learnprof.js, the same list for both subjects and both worlds, by lecture group,
+// family, circle or commonness rather than data order; loaded in the page too (an init script), where its knownUnits
+// reads the app's own units. The default list: every profile with a part for the subject (the corals: beginner, lecture
+// RA, strong RA, expert; the fish: and the casual diver).
+const {PROFILES, defaults: DEFAULT_PROFILES, profOf} = require('./learnprof.js');
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
 // half as tempting. MISS 1.5, PICKED 0.5: feedback after a miss teaches more, and a little about the genus picked.
@@ -251,7 +237,7 @@ const SEEDS = Number(arg('seeds', 5)),
   // (core.js COVER_SHEET 56) is off: today's rules on the same code, for paired comparisons.
   SHEETV = Number(arg('sheetv', 1000)),
   QN = Number(arg('questions', 300)),
-  NAMES = arg('profiles', 'beginner,lectureRA,strongRA,expert').split(','),
+  NAMES = arg('profiles', DEFAULT_PROFILES(arg('subject', 'coral')).join(',')).split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
   OUT = arg('out', null),
   STATS = arg('stats', null),
@@ -272,7 +258,7 @@ const SEEDS = Number(arg('seeds', 5)),
   CHOICE = arg('choice', 'new'),
   FALLBACK = arg('fallback', 'keep'),
   VARS = JSON.parse(arg('vars', '{}')),
-  AUTO = {beginner: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
+  AUTO = {beginner: 'new', casualDiver: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
   BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean),
   RTON = arg('rt', 'on') !== 'off',
@@ -297,7 +283,10 @@ if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or mor
     LEARNER.MEM = v.length === 1 ? [v[0], v[0], v[0], v[0]] : v;
   }
 }
-for (const n of NAMES) if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
+for (const n of NAMES) {
+  if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
+  if (!PROFILES[n][SUBJECT]) throw new Error(`profile ${n} has no ${SUBJECT} part (${DEFAULT_PROFILES(SUBJECT).join(', ')})`);
+}
 const CPS = [
   ...new Set(
     [50, 100, 200, 300]
@@ -452,7 +441,16 @@ function play(cfg) {
   const SL = slateGenera(),
     TRACE = 80,
     know = {};
-  SL.forEach((g, i) => (know[g] = (prof.grp ? prof.grp.includes(shownGroup(g)) : i % 5 < prof.m) ? prof.hi : prof.lo));
+  // The slate units the profile knows (tools/learnprof.js: by lecture group, family, circle or commonness).
+  const UN = typeof UNITS === 'object' ? UNITS[SUBJ.id] : {},
+    knows = LEARNPROF.knownUnits(prof, {
+      SL,
+      group: shownGroup,
+      numbered: g => ((DATA.gen || {})[g] || {}).n > 0,
+      core: UN.core ? UN.core() : [],
+      tree: UN.tree && UN.tree() ? UN.tree().f : []
+    });
+  SL.forEach(g => (know[g] = knows.has(g) ? prof.hi : prof.lo));
   BON.forEach(g => (know[g] = prof.lo));
   // The units of the subject's opt-in sets (app.js UNITS sets: the fish scientific genera), learned like any unit from the
   // profile's low start (2026-11-08, the fish achievements on genera): before, they were never taught (not in know), so
@@ -460,7 +458,11 @@ function play(cfg) {
   if (typeof SETS === 'function')
     SETS()
       .flatMap(S => (S.all ? S.all() : S.units()))
-      .forEach(g => g in know || (know[g] = prof.lo));
+      .forEach(g => {
+        if (g in know) return;
+        // A set's unit (a fish scientific genus) by its family (GX parent): gen (tools/learnprof.js).
+        know[g] = LEARNPROF.genKnown(prof, knows, (GX(g) || {}).parent, (GX(g) || {}).imrg) ? prof.hi : prof.lo;
+      });
   const kn = g => know[g] ?? prof.lo;
   const teach = (g, x) => {
     if (g in know) know[g] += x * (1 - know[g]);
@@ -697,7 +699,9 @@ function play(cfg) {
     const bo = document.querySelector('.unlock [data-bonus]');
     if (bo) {
       if (bon.offer === null && i >= 0) bon.offer = i + 1;
-      bo.click();
+      // A player who wants the common names only (PROFILES names) declines the scientific names: Not now.
+      const no = prof.names === 'common' && bo.closest('.unlock').querySelector('.next.sec');
+      (no || bo).click();
     }
     for (let b, k = 0; k < 50 && (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not([data-back]):not(.sec)')); k++) {
       b.click();
@@ -1148,6 +1152,7 @@ function play(cfg) {
   }
   return {
     known: SL.filter(g => k0[g] >= 0.5), // the genera the profile knows from the start (the spotty profile's groups)
+    knows: [...knows], // the slate units at the profile's hi (tools/learnprof.js)
     credit,
     rows,
     entry,
@@ -1189,6 +1194,7 @@ async function run(browser, base, name, seed) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
+  await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
   await ctx.addInitScript(([st, rtapp, sv, subj]) => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
@@ -1218,7 +1224,7 @@ async function run(browser, base, name, seed) {
   await p.evaluate(() => window.loadTier && window.loadTier(5));
   await p.waitForLoadState('networkidle');
   const r = await p.evaluate(play, {
-    prof: PROFILES[name],
+    prof: profOf(name, SUBJECT),
     seed,
     N: QN,
     cps: CPS,
@@ -1718,7 +1724,7 @@ function openTable(runs) {
           sheetv: SHEETV,
           questions: QN,
           checkpoints: CPS,
-          profiles: Object.fromEntries(NAMES.map(n => [n, PROFILES[n]])),
+          profiles: Object.fromEntries(NAMES.map(n => [n, profOf(n, SUBJECT)])),
           learner: LEARNER,
           learnerKind: LEARN,
           tau: LEARN === 'field' ? TAU : null,
