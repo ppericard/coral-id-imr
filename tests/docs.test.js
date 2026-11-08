@@ -280,10 +280,11 @@ const anchorsOf = (() => {
     const src = prose(read(f)),
       seen = new Map(),
       out = new Set();
-    for (const m of src.matchAll(/^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$/gm)) {
+    for (const m of src.matchAll(/^#{1,6}[ \t]+(.*)$/gm)) {
+      // Punctuation (HTML marks included) goes below; a link keeps its text.
       const s = m[1]
+        .replace(/[ \t#]+$/, '')
         .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-        .replace(/<[^>]+>/g, '')
         .trim()
         .toLowerCase()
         .replace(/[^\p{L}\p{N}\s_-]/gu, '')
@@ -330,7 +331,8 @@ test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in o
   };
   const bad = [];
   // The quoted names after the file's name, on its line or the next one (a comment or a wrapped paragraph).
-  const cite = /ARCHITECTURE(?:\.md)?(?:[ \t]|\n[ \t]*(?:\/\/|#|\*)?[ \t]*)*((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
+  const cite =
+    /ARCHITECTURE(?:\.md)?[ \t]*(?:\n[ \t]*(?:(?:\/\/|#|\*)[ \t]*)?)?((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
   for (const f of TEXT_FILES) {
     if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue; // history; this file's own examples
     for (const m of read(f).matchAll(cite))
