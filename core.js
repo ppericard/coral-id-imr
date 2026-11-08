@@ -570,6 +570,14 @@
   const subjRows = (rows, id = replaySubject()) => (Array.isArray(rows) ? rows : []).filter(r => r && rowSubject(r) === id && !winkRow(r));
   const subjEntries = (log, id = replaySubject()) =>
     (Array.isArray(log) ? log : []).filter(a => a && ansSubject(a) === id && !winkEntry(a));
+  // How many answers each subject has in the answer log, {subject id: count}: its rows with a player (index 0, the name in
+  // the Answers tab, the anonymous id in readAnswers) that subjRows keeps for it. The one count of a subject's answers
+  // behind its Analyses refit, every 1000 answers of that subject (Pierre, 2026-11-08: the corals' count must not take
+  // the fish answers): the sheet's head (Code.gs analyses_), the Action (tools/analyses.js) and the admin's status line.
+  const subjCounts = rows => {
+    const R = (Array.isArray(rows) ? rows : []).filter(r => r && r[0]);
+    return Object.fromEntries(SUBJECTS.map(S => [S.id, subjRows(R, S.id).length]));
+  };
   // A subject's first-launch answer (CHOICE): reefid-sync-<subject>-start, synced with the player's progress.
   const startKey = s => subjKey(s, 'start');
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
@@ -5143,6 +5151,7 @@
     winkRow,
     subjRows,
     subjEntries,
+    subjCounts,
     subjKey,
     subjDev,
     fishGen,
