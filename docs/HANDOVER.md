@@ -195,6 +195,8 @@ GitHub does not enforce the merge rules by itself (governance review, 2026-11-05
 1. The repository > **Settings > General > Pull Requests**: keep only **Allow squash merging** (untick merge commits and rebase merging), so every merge is a squash titled `… (#N)`.
 2. **Settings > Rules > Rulesets > New ruleset > New branch ruleset**: name `main`, Enforcement status **Active**, Target branches > Add target > **Include default branch**; under Rules tick only **Restrict deletions** and **Block force pushes**; Create.
 
+GitHub push protection for secrets is already on (Pierre, 2026-11-08).
+
 Required checks are deliberately not set: they would block the admin's Publish and the Candidate photos Action, which push straight to `main`. The planned history rewrite (ROADMAP "Photos out of the repo") will need "Block force pushes" switched off for its one push, with Pierre's go.
 
 ## Photos out of the repo, step 3: the history rewrite (only with Pierre's go)
