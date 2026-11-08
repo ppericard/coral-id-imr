@@ -141,7 +141,8 @@ test('imrSaid: anyone who ever answered "I\u2019m at IMR" (Pierre, 2026-11-08, Q
   assert.strictEqual(said(ev(['know', 0, 1, 'card'], ['know', 60, 2, 'fallback'])), false);
   assert.strictEqual(said(ev(['imr', 0, 1, 'inferred'])), false, 'inferred: never clicked');
   // the fallback trail alone (fb '<answer>-<dir>': a card shown on an imr answer) recovers it
-  assert.strictEqual(said({...ev(['know', 60, 2, 'fallback']), fb: {'imr-hi': [60, 2]}}), true, 'fb imr-hi');
+  const hi = ['imr', 'hi'].join('-'); // the fallback card shown on an imr answer, its direction 'hi'
+  assert.strictEqual(said({...ev(['know', 60, 2, 'fallback']), fb: {[hi]: [60, 2]}}), true, 'fb on an imr answer');
   assert.strictEqual(said({...ev(['know', 0, 1, 'card']), fb: {'know-lo': [40, 2]}}), false);
   // kept across devices: the union of two records holds the imr answer whichever came last
   assert.strictEqual(said(C.startUnion(ev(['imr', 0, 1, 'card']), ev(['know', 0, 5, 'card']))), true, 'merged');

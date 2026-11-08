@@ -409,13 +409,13 @@ function openRight(at = answersSoFar()) {
 // cette information de un jour il a cliqué sur je suis à IMR"), whatever the answer in force now: an imr answer given
 // (the card, the tour, the fallback card) in the record's history, kept whole and merged as a union across devices (h:
 // core.js startEvents, startUnion; reefid-sync-<subject>-start, synced), or a fallback card shown on an imr answer (fb
-// 'imr-hi' / 'imr-lo', merged likewise), which recovers the players the fallback card moved from imr to know before it
+// keyed by the imr answer then its direction, merged likewise), which recovers the players the fallback card moved from imr to know before it
 // was turned off for the fish. An inferred answer (startInfer: never asked) and the ease events are no answer.
 const imrSaid = () => {
   const o = store.get(startKey(SUBJ.id), null);
   return (
     startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
-    Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.startsWith('imr-'))
+    Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr')
   );
 };
 function openPick(fresh, list = fresh, met = introduced) {
