@@ -22,7 +22,9 @@ None
 
 ## Sheet script
 
-<!-- Needs Code.gs version N (rule D4), or "none". -->
+<!-- "none", or: Code.gs changes, its entry in tools/sync/changes/<branch>.md, VERSION and the header line left alone
+(assigned at merge, rule D3); the app's gates waiting for it (X_SHEET, written as main's VERSION + 1, set at merge;
+rule D4). -->
 
 ## Docs
 
