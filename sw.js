@@ -83,7 +83,7 @@ const SHELL = [
 const fixed = u => /[?&]v=/.test(u) || u.startsWith('fonts/');
 const get = async (c, u, n = 3) => {
   if (fixed(u)) {
-    const hit = await soon(caches.match(u));
+    const hit = await caches.match(u);
     if (hit && hit.ok) return c.put(u, hit);
   }
   for (let i = 1; ; i++) {
@@ -162,32 +162,6 @@ self.addEventListener('activate', e =>
   )
 );
 const SLOW = 2000;
-// A safety net in case Cache Storage stops answering (2026-11-04, #531). It was added for the net.smoke step-9 hang,
-// read then as a stalled Cache Storage; that hang was traced on 2026-11-05 to the old worker stopped in the middle of a
-// navigation during a version swap (docs/ARCHITECTURE.md "Service worker"), so no stall has been seen yet; the net stays
-// (docs/ROADMAP.md). A reply never waits on it more than CACHE_WAIT ms: then it is served as if nothing were cached, from the
-// network, and the copies kept for offline wait in the background; and for CACHE_PAUSE ms the next replies do not ask it
-// at all (a page's parser-blocking scripts would each wait CACHE_WAIT in turn). soon(p): what p gives, or undefined
-// once CACHE_WAIT ms have passed without it (Cache Storage then paused), or at once while it is paused.
-const CACHE_WAIT = 3000,
-  CACHE_PAUSE = 60e3;
-let cacheOff = 0;
-const soon = p => {
-  if (Date.now() - cacheOff < CACHE_PAUSE) return Promise.resolve();
-  let done = false;
-  return Promise.race([
-    p.finally(() => (done = true)),
-    new Promise(ok =>
-      setTimeout(() => {
-        if (!done) cacheOff = Date.now();
-        ok();
-      }, CACHE_WAIT)
-    )
-  ]);
-};
-// Offline, the network fails at once: the cache is then asked with no time limit (it is the only copy left), even while
-// paused.
-const late = req => caches.match(req).then(h => h || Response.error());
 let trimAt = 0;
 const trim = async c => {
   if (Date.now() - trimAt < 60000) return;
@@ -211,13 +185,13 @@ const twinOf = u => {
 };
 const photoHit = (c, req, twin) => c.match(req, {ignoreVary: true}).then(h => h || (twin && c.match(twin, {ignoreVary: true})));
 const photo = async (req, u) => {
-  const c = await soon(caches.open(PH)),
+  const c = await caches.open(PH),
     r2 = u.origin === R2,
     twin = twinOf(u),
-    hit = c && (await soon(photoHit(c, req, twin)));
+    hit = await photoHit(c, req, twin);
   if (hit) return hit;
   const keep = res => {
-    if (res.ok && c) {
+    if (res.ok) {
       const cl = res.clone();
       c.put(req.url, cl).then(() => trim(c));
     }
@@ -225,9 +199,8 @@ const photo = async (req, u) => {
   };
   if (!r2) return fetch(req).then(keep);
   // R2 failed twice in a row a moment ago: the page's fallback at once, for R2_PAUSE ms (no request held open on a dead
-  // host: a new worker takes over only once this one has no fetch in flight). A failure rejects, so the fetch handler
-  // still asks the offline cache with no time limit first (Codex review #569: a paused Cache Storage, sw.js soon,
-  // skipped the photo kept offline).
+  // host: a new worker takes over only once this one has no fetch in flight). The photo cache was asked first, so a
+  // failure rejects: the request fails and the page picks the next source.
   if (Date.now() - r2Off < R2_PAUSE) throw new Error('R2 out');
   // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the page's
   // fallback.
@@ -249,38 +222,27 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
   if (u.origin === R2 ? u.pathname.startsWith('/img/') : u.origin === location.origin && u.pathname.includes('/img/'))
-    // Offline (the network failed), the photo cache is asked with no time limit, under both addresses (late() for photos).
-    e.respondWith(
-      photo(e.request, u).catch(() =>
-        caches
-          .open(PH)
-          .then(c => photoHit(c, e.request, twinOf(u)))
-          .then(h => h || Response.error())
-      )
-    );
+    e.respondWith(photo(e.request, u).catch(() => Response.error()));
   else if (u.origin !== location.origin) return;
   // Versioned files (?v= in the URL: a new version is a new URL) and the fonts never change: cache first, no network at
   // all once cached (Pierre, 2026-11-01: fluid on poor connections; each launch used to revalidate every file).
   else if (u.searchParams.has('v') || u.pathname.includes('/fonts/'))
     e.respondWith(
-      soon(caches.match(e.request)).then(
+      caches.match(e.request).then(
         hit =>
           hit ||
-          fetch(e.request).then(
-            res => {
-              if (res.ok) {
-                const c = res.clone();
-                if (!ADM_FILE.test(u.pathname)) caches.open(V).then(x => x.put(e.request, c));
-                else
-                  caches.open(ADM).then(async x => {
-                    for (const k of await x.keys()) if (new URL(k.url).pathname === u.pathname) await x.delete(k);
-                    await x.put(e.request, c);
-                  });
-              }
-              return res;
-            },
-            () => late(e.request)
-          )
+          fetch(e.request).then(res => {
+            if (res.ok) {
+              const c = res.clone();
+              if (!ADM_FILE.test(u.pathname)) caches.open(V).then(x => x.put(e.request, c));
+              else
+                caches.open(ADM).then(async x => {
+                  for (const k of await x.keys()) if (new URL(k.url).pathname === u.pathname) await x.delete(k);
+                  await x.put(e.request, c);
+                });
+            }
+            return res;
+          })
       )
     );
   // The other app files (the page itself, curation.json, the manifest): revalidated with the server. On a slow link
@@ -304,9 +266,9 @@ self.addEventListener('fetch', e => {
       ]).catch(() => {})
     );
     e.respondWith(
-      soon(caches.match(e.request)).then(hit =>
+      caches.match(e.request).then(hit =>
         !hit
-          ? net.catch(() => late(e.request))
+          ? net
           : Promise.race([
               net.then(
                 r => (r.ok ? r : hit),
