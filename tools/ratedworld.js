@@ -645,8 +645,9 @@ function recoverK(log, TW, W, seed) {
 // seconds, pk the photo k of the sheet's replay (0: the rule before Q315), every the rounds between two refreshes of
 // the ratings served, recover the cases whose k is recovered on the log (the log's own case always may; another only
 // when pk is 0, the answers then not depending on the seconds). Returns {runs: one per player (runOne's), pop: {seed,
-// times, pk, rho (beta against d, per case), at: [{q, err, errW, corr, gdErr, photos}], rec: {case: recoverK}}}.
-function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', pk = C.RTIME.PK, every = 25, recover = []}) {
+// times, pk, rho (beta against d, per case), at: [{q, err, errW, corr, gdErr, photos}], rec: {case: recoverK}}}; keep:
+// also the log, the world W and its seconds TW (the app world's stats and truth from a population, Q315).
+function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', pk = C.RTIME.PK, every = 25, recover = [], keep = false}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
@@ -685,7 +686,7 @@ function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject,
     rho[c] = T.rho;
     rec[c] = recoverK(log, T, W, seed);
   });
-  return {runs: pls.map(pl => pl.result()), pop: {seed, times, pk, rho, at, rec, answers: log.length}};
+  return {runs: pls.map(pl => pl.result()), pop: {seed, times, pk, rho, at, rec, answers: log.length}, ...(keep ? {log, W, TW} : {})};
 }
 
 module.exports = {RATED, ITEM, RT, TIMES, KGRID, world, piOf, engine, runOne, runPop, playerOf, timeWorld, secOf, sheetStats, rateErr, recoverK, fishUnits, coralUnits, unitsOf, question, noteRecent, judgePhotos, typedOthers};
