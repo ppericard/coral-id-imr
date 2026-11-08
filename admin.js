@@ -97,23 +97,92 @@ const img = (p, s) =>
     : AWAY && p.src
       ? photoOnline(p.src, s ? 's' : '')
       : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+// The rotation baked into the file of the photo whose online original is shown at address u (data.json / fish-game.json
+// ro, after its crop: tools/photos.py turn), found as core.js photoCropOf finds its crop: 90, 180 or 270, else 0 (none, a
+// photo still remote, any other address). Here, not in core.js: the sheet script holds a copy of core.js (rule D3).
+const photoRoOf = u => {
+  const p = typeof u === 'string' && photoIdx().src.get(u.replace(/#.*$/, '').replace(/\/(?:small|medium|large)\.(\w+)$/, '/original.$1'));
+  return p && !p.r ? rotNorm(p.ro) : 0;
+};
 document.addEventListener(
   'error',
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
-    // The published crop, baked into the site's files, drawn on the original (core.js photoCropOf; Codex review #569);
-    // crSrc draws it on the next renders (AWAY). Under a service worker, as app.js away: only this photo moves, and the
-    // tab keeps asking R2, where the worker keeps its offline copies (and has retried R2 already).
+    // The published crop and rotation, baked into the site's files, drawn on the original (core.js photoCropOf, Codex
+    // review #569; photoRoOf, turned by rotFit once it loads, review #793); crSrc draws them on the next renders (AWAY).
+    // Under a service worker, as app.js away: only this photo moves, and the tab keeps asking R2, where the worker keeps
+    // its offline copies (and has retried R2 already).
     const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
     const away = i => {
       if (!photoFallback(i, photoLook)) return false;
       if (!sw) ((R2 = false), (AWAY = true));
-      const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
+      const u = i.getAttribute('src') || '',
+        c = photoCropOf(u, photoIdx()),
+        ro = photoRoOf(u);
       if (c && !i.style.getPropertyValue('object-view-box')) i.style.setProperty('object-view-box', c);
+      if (ro && !i.dataset.rot) i.dataset.rot = ro;
       return true;
     };
     // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
     if ((!sw && photoRetry(e.target, away)) || away(e.target)) e.stopImmediatePropagation();
+  },
+  true
+);
+// A draft rotation drawn on a preview (crSrc's data-rot): turned by CSS once the photo has loaded, and again when its
+// box changes size. A tile's photo (object-fit cover) gets its box swapped before it is turned, so it covers the tile as
+// the turned file will (autosort.js rotCover; the tile clips it, its shape kept in data-ra); a whole photo (the lightbox,
+// the swiper) is scaled to stay whole (rotScale). The files themselves are turned at Publish (tools/photos.py turn).
+const ROTRO =
+  typeof ResizeObserver === 'undefined'
+    ? null
+    : new ResizeObserver(E =>
+        E.forEach(e => (e.target.dataset.rot ? [e.target] : e.target.querySelectorAll(':scope > img[data-rot]')).forEach(rotFit))
+      );
+function rotFit(i) {
+  const P = i.parentElement;
+  if (!i.isConnected || !P) return ROTRO && (ROTRO.unobserve(i), P && ROTRO.unobserve(P));
+  const r = rotNorm(i.dataset.rot);
+  if (getComputedStyle(i).objectFit === 'cover') {
+    // The image's slot, measured once before its box is swapped: a tile's photo fills its box and then follows the
+    // tile's width; a fixed-size thumbnail that shares its parent (a family's in the sidebar grid, 44 x 33, beside its
+    // text) keeps its own width (sw; Codex review #793: the parent's width blew it up over the text).
+    if (!+i.dataset.ra && i.clientWidth && i.clientHeight) {
+      i.dataset.ra = i.clientWidth / i.clientHeight;
+      if (Math.abs(i.clientWidth - P.clientWidth) > 1) i.dataset.sw = i.clientWidth;
+    }
+    const bw = +i.dataset.sw || P.clientWidth,
+      v = +i.dataset.ra && rotCover(bw, bw / +i.dataset.ra, r);
+    // Upright or half a turn: the box stays as it is (rotCover null), the photo is turned in it, the same cover cut
+    // (Codex review #793: a 180° draft showed upright on the tiles).
+    if (!(r % 180)) {
+      Object.assign(i.style, {width: '', height: '', maxWidth: '', margin: '', transform: r ? `rotate(${r}deg)` : ''});
+      return;
+    }
+    if (!v) return;
+    Object.assign(i.style, {
+      width: v.w + 'px',
+      height: v.h + 'px',
+      maxWidth: 'none',
+      margin: `${v.mv}px ${v.mh}px`,
+      transform: `rotate(${r}deg)`
+    });
+    if (!+i.dataset.sw) P.style.overflow = 'hidden';
+    return;
+  }
+  // The photo's shape as shown: its crop (object-view-box inset) taken off its natural size.
+  const m = (i.style.getPropertyValue('object-view-box') || '').match(/inset\(([\d.]+)% ([\d.]+)% ([\d.]+)% ([\d.]+)%\)/),
+    [t, rr, b, l] = m ? m.slice(1).map(x => x / 100) : [0, 0, 0, 0],
+    ia = i.naturalWidth && i.naturalHeight ? (i.naturalWidth * (1 - l - rr)) / (i.naturalHeight * (1 - t - b)) : 0,
+    k = rotScale(i.clientWidth, i.clientHeight, r, ia);
+  i.style.transform = r ? `rotate(${r}deg)${k !== 1 ? ` scale(${+k.toFixed(4)})` : ''}` : '';
+}
+document.addEventListener(
+  'load',
+  e => {
+    const i = e.target;
+    if (!(i instanceof HTMLImageElement) || !i.dataset.rot) return;
+    rotFit(i);
+    if (ROTRO) [i, i.parentElement].forEach(x => x && ROTRO.observe(x));
   },
   true
 );
@@ -405,6 +474,12 @@ function togglePin(f, c) {
 // tools/fetch_approved.py applies them when it downloads the photo (and redoes it if the crop changes).
 const crOf = f => (DRAFT.crop || {})[f],
   crChanged = () => !same(DRAFT.crop || {}, SAVED.crop || {});
+// Rotations (curation.json "rot" {f: 90 | 180 | 270} degrees clockwise; Pierre, 2026-11-08): set in the crop editor,
+// applied to the files at Publish after the crop (tools/photos.py turn; autosort.js rotNorm, rotSet).
+const roOf = f => rotNorm((DRAFT.rot || {})[f]),
+  roChanged = () => !same(DRAFT.rot || {}, SAVED.rot || {});
+// The Crop button is on for a photo cropped or turned.
+const crOn = f => !!(crOf(f) || roOf(f));
 const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 // A photo's src and its draft crop as a preview (object-view-box). A downloaded photo's local file already has the
 // published crop in it (data.json "cr", tools/fetch_approved.py): shown as is while the draft keeps that crop, and the
@@ -414,15 +489,19 @@ const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 // le faire de manière automatique"): shown on it until he adds it, then written to his crops when he adds it (ACT.addc),
 // where he can change it as any crop. His own crop, or Full photo ([0, 0, 1, 1]), always wins.
 const sugCrop = p => (p && p.j && p.j.c && !crOf(p.f) ? p.j.c : null);
+// A crop [l, t, r, b] as object-view-box's inset(top right bottom left).
+const vbox = c =>
+  `inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)`;
+// The rotation goes the same way: the files have the published one baked in (data.json / fish-game.json "ro"); a draft
+// rotation is drawn on the original, after its crop, by a CSS rotate (data-rot, rotFit). p.j.ro: a fish photo's (fuP).
 const crSrc = (p, s) => {
   const c = crOf(p.f) || sugCrop(p),
+    ro = p.j && p.j.ro != null ? rotNorm(p.j.ro) : roOf(p.f),
     // Once R2 failed, a downloaded photo comes from its online original, uncropped (img(), AWAY): its crop is drawn.
-    baked = !p.r && p.cr && !(AWAY && p.src);
-  if (baked && same(c, p.cr)) return `src="${img(p, s)}"`;
+    baked = !p.r && (p.cr || p.ro) && !(AWAY && p.src);
+  if (baked && same(c, p.cr) && ro === rotNorm(p.ro)) return `src="${img(p, s)}"`;
   const src = baked && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : img(p, s);
-  return c
-    ? `src="${src}" style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"`
-    : `src="${src}"`;
+  return `src="${src}"${c ? ` style="object-view-box:${vbox(c)}"` : ''}${ro ? ` data-rot="${ro}"` : ''}`;
 };
 const qTag = p => {
   const q = qOf(p.f);
@@ -1182,7 +1261,7 @@ function tile(n, p, v, st) {
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
       <button type="button" data-act="hide" title="Remove">Remove</button>
-      ${p.src ? `<button type="button" data-act="crop" class="${crOf(p.f) ? 'on' : ''}" aria-pressed="${!!crOf(p.f)}">Crop</button>` : ''}
+      ${p.src ? `<button type="button" data-act="crop" class="${crOn(p.f) ? 'on' : ''}" aria-pressed="${crOn(p.f)}">Crop</button>` : ''}
       ${p.from ? '' : notThis(n)}`
       }${st.extra || ''}
     </div></figure>`;
@@ -1211,6 +1290,7 @@ function status0() {
       cdChanged() ? 'candidate reviews' : '',
       mtChanged() ? 'look-alike montages' : '',
       crChanged() ? 'crops' : '',
+      roChanged() ? 'rotations' : '',
       snChanged() ? 'several corals' : '',
       tlChanged() ? 'tile photos' : '',
       auChanged() ? 'auto-sort' : '',
@@ -1698,8 +1778,11 @@ const fuImr = u =>
       ? `<span class="adm-src adm-imrt" title="IMR course: taught with the ${esc(u.imrWith)}">IMR</span>`
       : '';
 // A fish photo with its crop for the previews (crSrc, through its suggested-crop path): Pierre's (curation.json fish crop,
-// [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655).
-const fuP = p => (p ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null}} : p);
+// [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655); and his rotation (fish rot).
+const fuP = p =>
+  p
+    ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT.fish || {}).rot || {})[p.f])}}
+    : p;
 const fuHref = id => '#' + ASUBJ.hash + FAMS + '/' + encodeURIComponent(id);
 // Everything the page needs from the draft, once per render: each species' photos in play, the photos sent elsewhere
 // with Not this, and the species whose photos changed since the published file (the list's dots).
@@ -3206,7 +3289,7 @@ const HELP = {
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
-  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; rule C8): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
+  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. <b>Crop</b> (a photo with an online original): drag the frame or its corners; ⟲ and ⟳ turn the photo a quarter left or right, 0° puts it back upright; Save keeps both, one Undo step. The site's files are cut, then turned, after Publish (the Candidates' Crop is the same). An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; rule C8): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>
@@ -3232,7 +3315,7 @@ const HELP = {
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`,
-  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
+  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals, with ⟲ ⟳ to turn the photo. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
 const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
@@ -5804,7 +5887,7 @@ function renderCand() {
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>${chk ? '' : jLine(p)}
-      <div class="adm-acts adm-swacts">${qSeg(p, chk)}${fSeg(p, chk)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-acts adm-swacts">${qSeg(p, chk)}${fSeg(p, chk)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOn(p.f) ? ' on' : ''}" data-crop aria-pressed="${crOn(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${sug(w) ? ' sug' : ''}" data-add="${w}" title="${sug(w) ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
     </section>${autoBlock(true)}`;
     if (nx) new Image().src = img(nx.p);
@@ -5926,13 +6009,18 @@ function candKeys() {
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
 // The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
 // local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
-// opt (the fish Candidates, admin-fish.js): {start, save(v, full)} in place of the coral crops (curation.json crop).
+// ⟲ / ⟳ turn the photo a quarter left or right, 0° puts it back (Pierre, 2026-11-08: curation.json rot): the photo and
+// its frame turn together (a CSS rotate of the box), the frame staying in fractions of the original, as the workflow
+// cuts the crop first and then turns it (tools/photos.py turn). Save writes the crop and the rotation as one Undo step.
+// opt (the fish Candidates, admin-fish.js): {start, rot, save(v, full, rot)} in place of the coral crops and rotations.
 function cropEditor(p, opt) {
   const lb = $('lightbox'),
     c0 = (opt ? opt.start : crOf(p.f) || sugCrop(p)) || [0, 0, 1, 1];
-  let c = c0.slice();
+  let c = c0.slice(),
+    ro = rotNorm(opt ? opt.rot : roOf(p.f));
   lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
-    <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div></div>`;
+    <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div>
+    <div class="adm-cropbar adm-rotbar" role="group" aria-label="Rotation"><button type="button" data-r="-90" title="Rotate left" aria-label="Rotate left">⟲</button><button type="button" data-r="0" title="No rotation" aria-label="No rotation"${ro ? '' : ' disabled'}>0°</button><button type="button" data-r="90" title="Rotate right" aria-label="Rotate right">⟳</button></div></div>`;
   lb.hidden = false;
   const box = lb.querySelector('.adm-cropbox'),
     im = box.querySelector('img'),
@@ -5949,13 +6037,20 @@ function cropEditor(p, opt) {
   // On a touch screen the photo keeps EDGE px from each side (Pierre, 2026-11-02: a crop dragged to the screen's edge
   // set off the phone's back / forward swipe, and the page changed).
   const EDGE = matchMedia('(pointer: coarse)').matches ? 40 : 12;
+  // Turned a quarter, the box (the photo's own frame) shows h x w: it is sized so that fits, and its margins give the
+  // page the room it takes turned.
   const fit = () => {
     const W = innerWidth - 2 * EDGE,
-      H = innerHeight - 110,
+      H = innerHeight - 170,
       r = im.naturalWidth / im.naturalHeight || 1.33,
-      w = Math.min(W, H * r);
+      q = ro % 180,
+      w = q ? Math.min(H, W * r) : Math.min(W, H * r),
+      h = w / r;
     box.style.width = w + 'px';
-    box.style.height = w / r + 'px';
+    box.style.height = h + 'px';
+    box.style.transform = ro ? `rotate(${ro}deg)` : '';
+    box.style.margin = q ? `${(w - h) / 2}px ${(h - w) / 2}px` : '';
+    lb.querySelector('[data-r="0"]').disabled = !ro;
     draw();
   };
   im.complete ? fit() : (im.onload = fit);
@@ -5966,13 +6061,14 @@ function cropEditor(p, opt) {
     const h = e.target.dataset.h || (e.target === fr ? 'move' : null);
     if (!h) return;
     box.setPointerCapture(e.pointerId);
-    const r = box.getBoundingClientRect();
-    drag = {h, x: e.clientX, y: e.clientY, c: c.slice(), w: r.width, hh: r.height};
+    // The box's own size (offsetWidth: before its rotation), the drag turned back into its axes (rotDelta).
+    drag = {h, x: e.clientX, y: e.clientY, c: c.slice(), w: box.offsetWidth, hh: box.offsetHeight};
   };
   box.onpointermove = e => {
     if (!drag) return;
-    const dx = (e.clientX - drag.x) / drag.w,
-      dy = (e.clientY - drag.y) / drag.hh,
+    const [mx, my] = rotDelta(e.clientX - drag.x, e.clientY - drag.y, ro),
+      dx = mx / drag.w,
+      dy = my / drag.hh,
       o = drag.c,
       cl = (v, a, b) => Math.min(b, Math.max(a, v));
     if (drag.h === 'move') {
@@ -5998,6 +6094,13 @@ function cropEditor(p, opt) {
     lb.innerHTML = '';
     removeEventListener('resize', fit);
   };
+  lb.querySelectorAll('[data-r]').forEach(
+    b =>
+      (b.onclick = () => {
+        ro = +b.dataset.r ? rotStep(ro, +b.dataset.r) : 0;
+        fit();
+      })
+  );
   lb.querySelectorAll('[data-c]').forEach(
     b =>
       (b.onclick = () => {
@@ -6010,7 +6113,7 @@ function cropEditor(p, opt) {
         if (a === 'save' && opt) {
           const v = c.map(x => Math.round(x * 1000) / 1000);
           close();
-          return opt.save(v, v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1);
+          return opt.save(v, v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1, ro);
         }
         if (a === 'save') {
           const v = c.map(x => Math.round(x * 1000) / 1000),
@@ -6021,6 +6124,9 @@ function cropEditor(p, opt) {
           if (full && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
+          // An empty map stays (output() leaves it out of the file): with the key gone, the next merge (merge3) would drop
+          // the rotations another device published meanwhile, as a reset crop leaves DRAFT.crop {} (review #793).
+          DRAFT.rot = rotSet(DRAFT.rot, p.f, ro);
           saveDraft();
         }
         close();
@@ -6091,6 +6197,13 @@ const output = () => {
     .forEach(k => {
       crop[k] = DRAFT.crop[k];
     });
+  // Rotations: only a real one (90, 180, 270) is published.
+  const rot = {};
+  Object.keys(DRAFT.rot || {})
+    .sort()
+    .forEach(k => {
+      if (rotNorm(DRAFT.rot[k])) rot[k] = rotNorm(DRAFT.rot[k]);
+    });
   const single = {};
   Object.keys(DRAFT.single || {})
     .sort()
@@ -6139,6 +6252,7 @@ const output = () => {
     ...(Object.keys(seen).length ? {seen} : {}),
     ...(Object.keys(mont).length ? {mont} : {}),
     ...(Object.keys(crop).length ? {crop} : {}),
+    ...(Object.keys(rot).length ? {rot} : {}),
     ...(Object.keys(tile).length ? {tile} : {}),
     ...(Object.keys(auto).length ? {auto} : {}),
     ...(Object.keys(retest).length ? {retest} : {}),
@@ -6210,6 +6324,7 @@ function pubSummary() {
     [repsChangedN(), 'report status', 'report statuses'],
     [nDiff(DRAFT.flag, SAVED.flag), 'triage flag'],
     [nDiff(DRAFT.crop, SAVED.crop), 'crop'],
+    [nDiff(DRAFT.rot, SAVED.rot), 'rotation'],
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
     [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'],
     [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
@@ -6226,6 +6341,7 @@ function pubSummary() {
     // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera).
     [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish family'],
     [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
+    [nDiff((DRAFT.fish || {}).rot, (SAVED.fish || {}).rot), 'fish photo rotation'],
     // A fish look-alike pair's picks (Photos › Look-alikes: phase, photos, hidden; curation.json fish mont).
     [nDiff((DRAFT.fish || {}).mont, (SAVED.fish || {}).mont), 'fish look-alike pair'],
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
@@ -6262,13 +6378,14 @@ async function save() {
     cd = cdChanged(),
     mt = mtChanged(),
     cr = crChanged(),
+    ro = roChanged(),
     sn = snChanged(),
     tl = tlChanged(),
     au = auChanged(),
     fi = fiChanged(),
     pt = ptChanged(),
     rp = rpChanged();
-  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || sn || tl || au || fi || pt || rp) || !TOKEN) return;
+  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi || pt || rp) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -6284,7 +6401,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.

@@ -18,15 +18,15 @@ In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish 
 For each photo in play, from its fish-cand.json record (the original: iNaturalist, or FishBase):
   - downloaded from its original (src: iNaturalist's photo hosts or www.fishbase.de only; FishBase answers 500 at times,
     so its photos are asked up to FB_TRIES times with a pause), Pierre's crop applied (fish.crop [l, t, r, b]; [0, 0, 1, 1]
-    = the whole photo), written in the four sizes by tools/photos.py save() into --out DIR (default r2-upload/,
+    = the whole photo), then his rotation (fish.rot {f: 90 | 180 | 270} degrees clockwise: tools/photos.py turn), written in the four sizes by tools/photos.py save() into --out DIR (default r2-upload/,
     gitignored), never into img/: the photos with an online original live on R2 only (Pierre's rule of 2026-11-05). The
     workflow uploads DIR (tools/r2_sync.sh DIR) before it commits fish-game.json, so the list never names a photo R2
-    lacks. A photo already downloaded is kept; it is downloaded again when its crop changes (cr), its rewrite count iv
-    bumped (the app puts both in the photo's address, app.js ver);
+    lacks. A photo already downloaded is kept; it is downloaded again when its crop (cr) or rotation (ro) changes, its
+    rewrite count iv bumped (the app puts it in the photo's address, app.js ver);
   - listed under its teaching entry (fish.json teach: the level-1 entry whose species list holds the species) as
     {f, o (its observation, or the FishBase photo page), src, a, lic, t, sp (the species it is in play for), loc, own,
     ar, e (fish.ease, else the pass's suggest.json fish e), jt (fish.tags, else the pass's jt), ph (its phase, as the
-    admin's autosort.js fishPhase: Pierre's phase and tags first), cr, iv, via, rep}: no r, so the app reads it from R2
+    admin's autosort.js fishPhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
     (app.js img) and falls back on src when R2 fails (core.js photoAway).
 A photo that fails to download is left out until the next run (printed); one no longer in play leaves the list (its
 files stay on R2, unused: nothing is deleted from the bucket). Entries in fish.json order, an entry's photos by its
@@ -53,6 +53,7 @@ from datetime import date
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from fetch_fish import PHASE_WORD, PHASES  # noqa: E402  (the phase words, as autosort.js FPHW)
+import photos  # noqa: E402  (the four sizes; Pierre's crop and rotation: turn, stale, mark)
 
 OUT_FILE = 'fish-game.json'
 V = 1
@@ -296,7 +297,9 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
         if not mine and route == 'ref':
             c = (crops or {}).get(p['f'])
         c = list(c) if c and list(c) != [0, 0, 1, 1] else None
-        if o and o.get('src') == r.get('src') and o.get('cr') == c and o.get('ar'):
+        # Pierre's rotation only (the pass proposes none), on the record: download() turns the photo by it.
+        photos.mark(r, None, (F.get('rot') or {}).get(p['f']))
+        if o and o.get('src') == r.get('src') and not photos.stale(o, c, r.get('ro')) and o.get('ar'):
             r['ar'] = o['ar']
             if c:
                 r['cr'] = c
@@ -355,16 +358,10 @@ def fetch(src, get=opener, pause=FB_PAUSE, tries=FB_TRIES):
 
 
 def download(r, c, out, get=opener, pause=FB_PAUSE):
-    """Writes photo r's four files into out (Pierre's crop c applied) and sets its shape ar."""
+    """Writes photo r's four files into out (Pierre's crop c, then his rotation r['ro'], applied) and sets its shape ar."""
     from PIL import Image
-    import photos
     im = Image.open(io.BytesIO(fetch(r['src'], get, pause))).convert('RGB')
-    if c:
-        W, H = im.size
-        im = im.crop((round(c[0] * W), round(c[1] * H), round(c[2] * W), round(c[3] * H)))
-    photos.save(im, r['f'], out)
-    w, h = Image.open(os.path.join(out, r['f'] + '-s.webp')).size  # the shape, as tools/apply_ratios.py measures it
-    r['ar'] = round(w / h, 2)
+    r['ar'] = photos.write(im, r['f'], out, c, r.get('ro'))  # the shape, as tools/apply_ratios.py measures it
     return r
 
 
