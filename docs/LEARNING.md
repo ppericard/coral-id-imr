@@ -2687,7 +2687,7 @@ changes, all data the engine reads generically (the corals have none of these fi
   it lifts a medium photo (3) into the very easy ones (ease 4-5: the gate of an entry's first questions, `easyFirst`, until 2026-11-06) and makes a
   very easy one more likely the card's cover, without passing over the visual rubric (a hard reference photo stays
   hard). It reached the game only through Pierre's curation (candidates) at first; since 2026-11-06 (Q180, Q199) a candidate
-  judged sure, or a reference photo judged at the reference level, is in play by itself, with that ease, hosted on R2
+  judged sure, or a reference photo judged at the reference level (since 2026-11-08, Q212: any reference photo judged sure like a candidate), is in play by itself, with that ease, hosted on R2
   (judging/FISH.md "What a sure judgement does"); no learnsim run (the fish profile does not exist yet, ROADMAP). A draw that prefers `rep` photos inside the very
   easy set is not built (ROADMAP).
 - **The photo prior** (`photoDiff`): a judged photo's prior is its unit's offset + (`PDIFF.MID` 3 − ease) × its

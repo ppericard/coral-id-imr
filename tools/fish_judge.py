@@ -163,8 +163,10 @@ def apply(photos, fish=None):
                 if p["f"] in C:
                     p["c"] = C[p["f"]]
                 k += 1
-    # A reference photo plays only at the reference level (Pierre, 2026-11-06: "take every photo that passes the rules
-    # and is judged reference-level"); one judged lower stays listed in tools/fish_refs.json, out of the game.
+    # In this stopgap list a reference photo plays only at the reference level (Pierre, 2026-11-06: "take every photo that
+    # passes the rules and is judged reference-level"); one judged lower stays out of it. On R2 (fish-game.json) every
+    # reference photo judged sure like a candidate is in play, whatever its level (Pierre, 2026-11-08, Q212; tools/
+    # fish_game.py ref_play).
     for tid in photos:
         photos[tid] = [p for p in photos[tid] if not p.get("from") or ref_level(p)]
     return k
