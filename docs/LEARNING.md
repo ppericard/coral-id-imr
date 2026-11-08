@@ -1704,7 +1704,7 @@ met the 39 slate genera almost at once.
 
 ### One genus difficulty (2026-11-06, Q133)
 
-Pierre approved (2026-11-06) the coherence review's F3 (`docs/reviews/2026-11-06-engine-coherence-review.md`): the app
+Pierre approved (2026-11-06) the coherence review's F3 (PR #664): the app
 had its own estimate of a genus's difficulty (`model.js` `genusDiff`: the mean `photoDiff` over today's game photos +
 `OPEN.CONF` × the confusion above `CONF.TRAP`), beside the sheet's genus offset `gd` that measures the same quantity.
 The confusion term counted the misses a second time, since the photo ratings already come from them, and the mean
@@ -3257,7 +3257,7 @@ from a main checkout, its app ignoring the seconds), `node tools/abilityeval.js 
 
 ### One scorer (2026-11-06, Q132; rules version 6, sheet v61)
 
-Pierre approved (2026-11-06) the coherence review's F1 and F6 (`docs/reviews/2026-11-06-engine-coherence-review.md`):
+Pierre approved (2026-11-06) the coherence review's F1 and F6 (PR #664):
 the same answer was scored twice, live in `quiz.js` `answer` and again in `core.js` `replayProgress`, and the replay
 worked the photo difficulty back out of the rounded `e` the app logged.
 
