@@ -4571,10 +4571,10 @@ node tools/learncmp.js before.json after.json --primary score@3000:up
 ```
 
 First numbers (2026-11-08, told the truth, normal photos, 5 seeds, π −1.26 to 0.25), at 1,000 answers: the beginner
-28.0% shown (12.2 families at Open Water, 84% right over answers 301-1,000), the lecture RA 31.8% (19.6 families, 85%
+31.6% shown (17.8 families at Open Water, 77% right over answers 301-1,000), the lecture RA 36.6% (24.6 families, 77%
 right). The app world's of 2026-11-08 above (before #727, the earlier profiles): 37% and 41%, 75-81% right. So the rated
-world reads 5-9 points lower and a few points more right; the same check on today's app world with these profiles is in
-the PR that built it (#787).
+world reads about 5 points lower, the right rate within the range; the same check on today's app world with these
+profiles is in the PR that built it (#787).
 
 **Profiles** (the same list for both subjects where it applies; in the rated world each run also draws π). The two IMR
 levels are those used so far (learnsim's `lectureRA` and `strongRA`, the first-launch answer "IMR course", the
