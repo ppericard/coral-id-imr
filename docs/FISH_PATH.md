@@ -185,8 +185,9 @@ writes it into `fish.json` (the full build, `--near`, and `--commonness`, which 
   species); the census favours reef-slope, visible, daytime species and records presence, not abundance; the Dauin counts cover the
   fisheries species only. Pierre's review also: the blue-and-yellow fusilier may be a bit more common than shown (perhaps his own
   spotting bias); the red-tooth triggerfish rare at Dauin (very common at Puerto Galera), so its low local rank is right.
-- **Rerun**: `python3 tools/fish_commonness.py --fetch` (iNaturalist, about 1 request a second: per entry and ring one
-  `species_counts` call for all its species, then an observers count only for a species with 2+ observations there; cached in
+- **Rerun**: `python3 tools/fish_commonness.py --fetch` (iNaturalist, about 1 request a second: per ring `species_counts`
+  calls over every entry's species, 100 taxa a call, then an observers count only for a species with 2+ observations there,
+  counted together for the species with few; cached in
   `tools/.cache/`), then `python3 tools/build_fish.py --commonness`. `python3 tools/fish_commonness.py t01` prints an entry's species
   with every source's raw value. A new field source (Reef Life Survey Siquijor 2025 once published, ROADMAP) is one more record in
   `tools/fish_commonness.json`.
