@@ -97,19 +97,30 @@ const img = (p, s) =>
     : AWAY && p.src
       ? photoOnline(p.src, s ? 's' : '')
       : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+// The rotation baked into the file of the photo whose online original is shown at address u (data.json / fish-game.json
+// ro, after its crop: tools/photos.py turn), found as core.js photoCropOf finds its crop: 90, 180 or 270, else 0 (none, a
+// photo still remote, any other address). Here, not in core.js: the sheet script holds a copy of core.js (rule D3).
+const photoRoOf = u => {
+  const p = typeof u === 'string' && photoIdx().src.get(u.replace(/#.*$/, '').replace(/\/(?:small|medium|large)\.(\w+)$/, '/original.$1'));
+  return p && !p.r ? rotNorm(p.ro) : 0;
+};
 document.addEventListener(
   'error',
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
-    // The published crop, baked into the site's files, drawn on the original (core.js photoCropOf; Codex review #569);
-    // crSrc draws it on the next renders (AWAY). Under a service worker, as app.js away: only this photo moves, and the
-    // tab keeps asking R2, where the worker keeps its offline copies (and has retried R2 already).
+    // The published crop and rotation, baked into the site's files, drawn on the original (core.js photoCropOf, Codex
+    // review #569; photoRoOf, turned by rotFit once it loads, review #793); crSrc draws them on the next renders (AWAY).
+    // Under a service worker, as app.js away: only this photo moves, and the tab keeps asking R2, where the worker keeps
+    // its offline copies (and has retried R2 already).
     const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
     const away = i => {
       if (!photoFallback(i, photoLook)) return false;
       if (!sw) ((R2 = false), (AWAY = true));
-      const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
+      const u = i.getAttribute('src') || '',
+        c = photoCropOf(u, photoIdx()),
+        ro = photoRoOf(u);
       if (c && !i.style.getPropertyValue('object-view-box')) i.style.setProperty('object-view-box', c);
+      if (ro && !i.dataset.rot) i.dataset.rot = ro;
       return true;
     };
     // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
@@ -5943,8 +5954,9 @@ function cropEditor(p, opt) {
           if (full && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
+          // An empty map stays (output() leaves it out of the file): with the key gone, the next merge (merge3) would drop
+          // the rotations another device published meanwhile, as a reset crop leaves DRAFT.crop {} (review #793).
           DRAFT.rot = rotSet(DRAFT.rot, p.f, ro);
-          if (!Object.keys(DRAFT.rot).length) delete DRAFT.rot;
           saveDraft();
         }
         close();

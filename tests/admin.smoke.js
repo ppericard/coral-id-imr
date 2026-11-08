@@ -4555,14 +4555,19 @@ const WIDTHS = [390, 1280];
           const r3 = await state();
           if (r2.rot !== undefined || r2.tile !== null || r3.rot !== 90 || r3.tile !== '90')
             fails.push(`${w}px Rotate: Undo / Redo ${JSON.stringify({r2, r3})}`);
-          // 0° in the editor, opened on the photo turned: back upright, the key gone; Undo brings the turn back.
+          // 0° in the editor, opened on the photo turned: back upright, the photo's key gone but the map kept (an empty
+          // rot, as a reset crop leaves crop {}: the next merge keeps another device's rotations; review #793), nothing
+          // published for it; Undo brings the turn back.
           await p.click(`${tile} [data-act="crop"]`);
           await p.waitForSelector('#lightbox [data-r="0"]:not([disabled])');
           await p.click('#lightbox [data-r="0"]');
           await p.click('#lightbox [data-c="save"]');
           await settle();
-          const r4 = await state();
-          if (r4.rot !== undefined || r4.tile !== null || /rotation/.test(await p.evaluate(() => pubSummary())))
+          const r4 = {
+            ...(await state()),
+            map: await p.evaluate(f => !!DRAFT.rot && typeof DRAFT.rot === 'object' && !(f in DRAFT.rot) && !(f in (output().rot || {})), f)
+          };
+          if (r4.rot !== undefined || r4.tile !== null || !r4.map || /rotation/.test(await p.evaluate(() => pubSummary())))
             fails.push(`${w}px Rotate: 0° ${JSON.stringify(r4)}`);
           await p.click('#undo');
           await settle();

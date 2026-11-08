@@ -47,14 +47,16 @@ test('merge: a rotation goes through the draft and Publish like a crop (merge3)'
     conf = [];
   assert.deepStrictEqual(merge3(base, mine, theirs, conf).rot, {a: 90, b: 270, c: 180});
   assert.deepStrictEqual(conf, []);
-  // His reset of the last turned photo takes the key out; the crop is untouched.
-  const out = merge3(
-    {genera: {}, rot: {a: 90}, crop: {a: [0, 0, 0.5, 1]}},
-    {genera: {}, crop: {a: [0, 0, 0.5, 1]}},
-    {genera: {}, rot: {a: 90}, crop: {a: [0, 0, 0.5, 1]}}
-  );
-  assert.ok(!('rot' in out));
+  // His reset of the last turned photo leaves an empty map (admin.js cropEditor, as a reset crop leaves DRAFT.crop {}):
+  // merged key by key, the photo another device turned meanwhile is kept (review #793); the crop is untouched.
+  const B = {genera: {}, rot: {a: 90}, crop: {a: [0, 0, 0.5, 1]}},
+    T = {genera: {}, rot: {a: 90, c: 180}, crop: {a: [0, 0, 0.5, 1]}},
+    out = merge3(B, {genera: {}, rot: {}, crop: {a: [0, 0, 0.5, 1]}}, T);
+  assert.deepStrictEqual(out.rot, {c: 180});
   assert.deepStrictEqual(out.crop, {a: [0, 0, 0.5, 1]});
+  assert.deepStrictEqual(merge3(B, {genera: {}, rot: {}}, {genera: {}, rot: {a: 90}}).rot || {}, {}, 'nothing left');
+  // With the key taken out instead, the other device's turn of c would be lost: why the admin keeps the map.
+  assert.ok(!('rot' in merge3(B, {genera: {}, crop: {a: [0, 0, 0.5, 1]}}, T)));
   // The same photo turned two ways: his draft wins, and the conflict is reported (the Publish toast).
   const c2 = [];
   assert.deepStrictEqual(merge3({genera: {}}, {genera: {}, rot: {a: 90}}, {genera: {}, rot: {a: 270}}, c2).rot, {a: 90});
@@ -211,6 +213,106 @@ print(json.dumps(r))`)
     fs.rmSync(dir, {recursive: true, force: true});
   }
 );
+
+// The admin's previews (admin.js crSrc, admin-fish.js fishSrc) and its R2 fallback, run in a vm on a stub page.
+const vm = require('vm'),
+  block = require('./block.js'),
+  CORE = require('../core.js');
+const adminVm = (extra = '') => {
+  const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
+    AF = fs.readFileSync(path.join(ROOT, 'admin-fish.js'), 'utf8'),
+    H = {},
+    ctx = vm.createContext({...CORE, rotNorm, document: {addEventListener: (t, fn) => (H[t] = fn)}, navigator: {}});
+  vm.runInContext(
+    'let R2 = true, AWAY = false, DRAFT = {fish: {}}, SAVED = {}, IDX = photoIndex();\n' +
+      'const photoIdx = () => IDX, photoLook = f => IDX.f.get(f), photoRetry = () => false;\n' +
+      'class HTMLImageElement {}\n' +
+      block(A, 'const same = (a, b) => ', '\n', {file: 'admin.js', through: true}) +
+      block(A, 'const ver = p => ', '\n', {file: 'admin.js', through: true}) +
+      block(A, 'const img = (p, s) =>', '\n// A draft rotation drawn on a preview', {file: 'admin.js'}) +
+      block(A, '// Crops (curation.json "crop"', '\nconst qTag = p =>', {file: 'admin.js'}) +
+      block(AF, 'const fishRot = f =>', '\n// Where a fish photo comes from', {file: 'admin-fish.js'}) +
+      extra +
+      '\nthis.T = {HTMLImageElement, fishSrc, crSrc, img, set: o => ({R2, AWAY, DRAFT, IDX} = {R2, AWAY, DRAFT, IDX, ...o}), state: () => ({R2, AWAY})};',
+    ctx
+  );
+  return {...ctx.T, H, ctx};
+};
+
+test('the fish Candidates: a photo in play with no judgment shows its published crop (review #793)', () => {
+  const T = adminVm(),
+    o = 'https://inaturalist-open-data.s3.amazonaws.com/photos/7/original.jpg',
+    // A sure candidate fishGameIn put in play from fish-game.json: no j, the pass's crop baked into its R2 file.
+    p = {f: 'fish-s016-cand-7', sp: 't01', src: o, cr: [0.1, 0.2, 0.9, 0.8], ar: 1.33},
+    vb = 'object-view-box:inset(20% 10% 20% 10%)';
+  // Pierre has no crop of his own: its R2 file, as the game shows it (it showed the original uncropped).
+  assert.strictEqual(T.fishSrc(p, 1), `src="${T.img(p, 1)}"`);
+  assert.match(T.img(p, 1), /r2\.dev\/img\/fish-s016-cand-7-s\.webp\?c=0\.1_0\.2_0\.9_0\.8$/);
+  // His own crop wins: the original with his crop drawn.
+  T.set({DRAFT: {fish: {crop: {[p.f]: [0, 0, 0.5, 1]}}}});
+  assert.strictEqual(T.fishSrc(p, 1), `src="${o.replace('/original.', '/medium.')}" style="object-view-box:inset(0% 50% 0% 0%)"`);
+  // His rotation over the published crop: the original with that crop drawn, then turned.
+  T.set({DRAFT: {fish: {rot: {[p.f]: 90}}}});
+  assert.strictEqual(T.fishSrc(p, 1), `src="${o.replace('/original.', '/medium.')}" style="${vb}" data-rot="90"`);
+  // A judged record keeps the pass's crop; a Check (blind) neither.
+  T.set({DRAFT: {fish: {}}});
+  const c = {f: 'fish-s001-cand-9', r: 1, src: o.replace('/7/', '/9/'), j: {c: [0.1, 0.2, 0.9, 0.8]}};
+  assert.strictEqual(T.fishSrc(c, 1), `src="${c.src.replace('/original.', '/medium.')}" style="${vb}"`);
+  assert.strictEqual(T.fishSrc(c, 1, true), `src="${c.src.replace('/original.', '/medium.')}"`);
+  // R2 failed (AWAY): the original, its published crop drawn.
+  T.set({AWAY: true});
+  assert.match(T.fishSrc(p, 1), new RegExp(`style="${vb.replace(/[()%.]/g, '\\$&')}"$`));
+});
+
+test('R2 failed: the published rotation is drawn on the original with its crop (admin.js photoRoOf, its error handler)', () => {
+  const {photoIndex, photoCropOf, PHOTO_BASE} = CORE,
+    iN = (n, s) => `https://inaturalist-open-data.s3.amazonaws.com/photos/${n}/${s}.jpg`,
+    idx = photoIndex({
+      p: [
+        {f: 'a', src: iN(1, 'original'), cr: [0, 0, 0.5, 1], ro: 90},
+        {f: 'b', src: iN(2, 'original'), ro: 270},
+        {f: 'c', src: iN(3, 'original'), cr: [0, 0, 0.5, 1]},
+        {f: 'd', r: 1, src: iN(4, 'original'), ro: 90},
+        {f: 'e', src: iN(5, 'original'), ro: 45}
+      ]
+    });
+  const R = adminVm('\nthis.photoRoOf = photoRoOf;');
+  R.set({IDX: idx});
+  assert.deepStrictEqual(
+    [iN(1, 'large'), iN(2, 'medium') + '#r1', iN(3, 'large'), iN(4, 'large'), iN(5, 'large'), 'img/a-m.webp', null].map(u =>
+      R.ctx.photoRoOf(u)
+    ),
+    [90, 270, 0, 0, 0, 0, 0]
+  );
+  assert.strictEqual(photoCropOf(iN(1, 'large'), idx), 'inset(0% 50% 0% 0%)', 'its crop, found the same way');
+  // The admin's error handler: an R2 photo that fails comes from its original, its crop and rotation drawn (rotFit turns
+  // it once it loads); a rotation already drawn (a draft one, crSrc) is left alone.
+  const T = adminVm(),
+    el = (src, rot) => {
+      const A = {src},
+        st = {};
+      return Object.assign(Object.create(T.HTMLImageElement.prototype), {
+        getAttribute: k => (k in A ? A[k] : null),
+        setAttribute: (k, v) => (A[k] = v),
+        style: {getPropertyValue: k => st[k] || '', setProperty: (k, v) => (st[k] = v)},
+        dataset: rot ? {rot} : {},
+        A,
+        st
+      });
+    };
+  T.set({IDX: idx});
+  const i = el(`${PHOTO_BASE}img/a-m.webp?c=0_0_0.5_1`),
+    ev = t => ({target: t, stopImmediatePropagation: () => (ev.stopped = (ev.stopped || 0) + 1)});
+  T.H.error(ev(i));
+  assert.deepStrictEqual([i.A.src, i.st['object-view-box'], i.dataset.rot], [iN(1, 'large'), 'inset(0% 50% 0% 0%)', 90]);
+  assert.deepStrictEqual({...T.state()}, {R2: false, AWAY: true});
+  const j = el(`${PHOTO_BASE}img/b-m.webp`, '180');
+  T.H.error(ev(j));
+  assert.deepStrictEqual([j.A.src, j.st['object-view-box'], j.dataset.rot], [iN(2, 'large'), undefined, '180']);
+  const k = el(`${PHOTO_BASE}img/c-m.webp`);
+  T.H.error(ev(k));
+  assert.deepStrictEqual([k.st['object-view-box'], k.dataset.rot], ['inset(0% 50% 0% 0%)', undefined]);
+});
 
 // The coral workflow (tools/fetch_approved.py) and the fish one (tools/fish_game.py) both make their files with
 // photos.write, and redo a photo by photos.stale: no other crop or turn of their own.
