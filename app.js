@@ -731,7 +731,8 @@ function inSubject(id, fn) {
   }
 }
 // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): two places, one state, the Corals | Fish row
-// at the top of Home (home.js) and the subject switch next to the logo in the header (#subjc, showSubj), shown only while
+// at the top of Home (home.js) and the subject switch next to the logo in the header on every other page (#subjc,
+// showSubj; hidden on Home, route), shown only while
 // the player has more than one subject (subjMine: the admin's only while a subject is in beta). The subject's data
 // first, then everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A
 // subject the player may not have (subjAt) brings the corals.
@@ -2369,6 +2370,16 @@ function route() {
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
   showModes(tab, h);
+  // Home has its own Corals | Fish row (home.js): the header's subject control steps aside there, every width (Pierre,
+  // 2026-11-08: "on the home page on desktop we have the Corals | Fish switch twice"; docs/DESIGN.md "Subject switch").
+  // Hidden but keeping its room (app.css .subjc[data-home]), so the header keeps its size and every item its place from
+  // page to page; its menu closes. A subject switch with the focus (the header's, or Home's row, drawn again on a switch)
+  // gives it to the same subject's button in Home's row once drawn.
+  const home = !h || h === 'home',
+    fa = document.activeElement,
+    fsj = home && fa && fa.closest && fa.closest('#view .hsubj, #subjc') ? fa.dataset.subj || SUBJ.id : '';
+  if (home) subjMenu(false);
+  $subjc.toggleAttribute('data-home', home);
   if (h.startsWith('g-')) UNITS[SUBJ.id].sheet(h.slice(2));
   else if (h === 'cmp' || h.startsWith('cmp|')) {
     const [, a, b] = h.split('|');
@@ -2394,6 +2405,10 @@ function route() {
   } else if ((!h || h === 'home') && window.viewHome) viewHome();
   else UNITS[SUBJ.id].list();
   window.scrollTo(0, 0);
+  if (fsj) {
+    const b = $v.querySelector(`.hsubj [data-subj="${fsj}"]`);
+    if (b) b.focus({preventScroll: true});
+  }
   if (h === 'genera' && fromSheet && generaY) {
     const a = $v.querySelector(`a[href="${CSS.escape(generaY[0])}"]`);
     if (a) window.scrollTo(0, a.getBoundingClientRect().top - generaY[1]);

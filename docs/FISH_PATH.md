@@ -506,7 +506,7 @@ on families only to an IMR RA with every species open:
 ## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
 
 - **Subject switch: two places, one state.** A Corals | Fish switch on Home **and** a subject chip in the header next to the logo on
-  every page; both read and set the same subject (`SUBJECT_KEY`). Shown **only to Pierre (the admin) until fish opens** to players.
+  every page (on every page but Home since 2026-11-08: docs/DESIGN.md "Subject switch"); both read and set the same subject (`SUBJECT_KEY`). Shown **only to Pierre (the admin) until fish opens** to players.
   This relaxes rule U12 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
