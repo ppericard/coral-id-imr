@@ -132,7 +132,7 @@ test('fishGen: the book’s families as engine records, circle 1 = 28 families, 
   // The line under the name: the scientific names, then IMR's name (the IMR tag).
   assert.strictEqual(X.gen['f:Damselfishes'].fam, 'Pomacentridae · IMR: Damselfish');
   assert.strictEqual(X.gen['f:Lizardfishes'].fam, 'Synodontidae, Harpadontidae · IMR: Lizardfish');
-  assert.strictEqual(X.gen['f:Soapfishes'].fam, 'Diploprioninae · IMR course: with the Groupers');
+  assert.strictEqual(X.gen['f:Soapfishes'].fam, 'Grammistidae, Diploprioninae · IMR course: with the Groupers'); // the book's one family (Q248)
   assert.strictEqual(X.gen['f:Soapfishes'].imrName, '');
   assert.strictEqual(X.gen['f:Groupers'].imrName, 'Groupers');
   assert.deepStrictEqual(X.gen['f:Damselfishes'].sub, ['Dascyllus', 'Pomacentrus', 'Chromis', 'Anemonefish']);
