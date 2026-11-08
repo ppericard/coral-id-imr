@@ -3034,6 +3034,67 @@ button.ikname[aria-expanded='true']::after {
 .iksch .w {
   fill: #5a6d74;
 }
+/* Close-ups (proto/idkey.js BOXART): the coral's surface (.f0), the surface between separate walls (.g), calices and
+   valley floors (.c), wall bands (.wo under .wi), the water behind a branch or a plate's edge (.bg), and the part the box
+   names in the drawings' one highlight colour (.h, .hf: lab.css --hl, light value, as the drawings stay light). */
+.iksch .f0 {
+  fill: #fff;
+}
+.iksch .bg {
+  fill: #e9eff1;
+}
+.iksch .g {
+  fill: #d5dfe2;
+}
+.iksch .c {
+  fill: #b9c8cd;
+  stroke: #14262d;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.iksch .wo {
+  fill: none;
+  stroke: #14262d;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iksch .wi {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iksch .h {
+  fill: none;
+  stroke: #d1006b;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iksch .h.thin {
+  stroke-width: 1.1;
+}
+.iksch .hf {
+  fill: #d1006b;
+  stroke: #14262d;
+  stroke-width: 1.2;
+}
+.iksch .sb rect {
+  fill: #fff;
+  opacity: 0.92;
+}
+.iksch .sb path {
+  fill: none;
+  stroke: #14262d;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.iksch .sb text {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #14262d;
+  text-anchor: middle;
+}
 .iktq.n3 img:first-child {
   grid-row: span 2;
 }

@@ -1912,10 +1912,11 @@
   // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
   // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
   // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
-  // Coral ID Key (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
+  // Coral ID Key (needs variety) = featured + 5 photos from other iNat observers (Pierre, 2026-11-08: 2 before; field
+  // photos fill the variety the book crops gave) + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
   // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
   // or in games only. Nothing is written back: photos left out simply stay unused.
-  const CAP = {feat: 3, sheet: 6, inat: 2, book: 3};
+  const CAP = {feat: 3, sheet: 6, inat: 5, book: 3};
   // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can (autoQ).
   const isCore = p => !!(p.imr || p.own);
   // o.picks = picks.json (Claude's suggested featured photos), o.autoq = quality.json q (automatic rating).
