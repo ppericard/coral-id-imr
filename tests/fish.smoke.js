@@ -2075,8 +2075,11 @@ const server = http.createServer((req, res) => {
         pe = [];
       q.on('pageerror', e => pe.push(e.message));
       // Held until the page shows model.js has run (and, for fish.json first, until the fish data is built): the order of
-      // a slow line, without a fixed wait.
-      const after = what => q.waitForFunction(what, null, {timeout: 30000, polling: 50}).catch(() => {});
+      // a slow line, without a fixed wait. A wait that fails is a failure, never a file released early (Codex review #732).
+      const after = (what, arg) =>
+        q
+          .waitForFunction(what, arg, {timeout: 30000, polling: 50})
+          .catch(e => early.push(`${hash}: a held file released early (${String(e.message).split('\n')[0]})`));
       if (hold.fish)
         await c.route(/\/fish\.json/, async r => {
           await after(() => typeof domRecalcAll === 'function');
@@ -2084,7 +2087,7 @@ const server = http.createServer((req, res) => {
         });
       if (hold.data)
         await c.route(/\/data\.json/, async r => {
-          await after(() => typeof domRecalcAll === 'function' && (!hold.fish || FISH));
+          await after(fish => typeof domRecalcAll === 'function' && (!fish || !!FISH), !!hold.fish);
           await r.continue();
         });
       await q.goto(base + hash);
