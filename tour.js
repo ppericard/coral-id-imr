@@ -24,7 +24,8 @@
   const TAP = matchMedia('(hover: hover) and (pointer: fine)').matches ? 'Click' : 'Tap';
   const DEF = {
     pick: {k: 'pick', h: '', pick: true},
-    // Where to switch: the Corals | Fish row on Home (the header's switch, or its chip, where the row is not shown).
+    // Where to switch: the Corals | Fish row on Home (the header's switch, or its chip, where the row is not shown: the
+    // header's control steps aside on Home, app.js route, so the row is the one shown there).
     swap: {
       k: 'swap',
       h: '',
@@ -34,7 +35,7 @@
         `${subjMine()
           .map(S => S.name)
           .join(' or ')}, any time`,
-      d: 'Switch here, or with the button next to the logo, on any page. Each subject keeps its own progress.'
+      d: 'Switch here, or with the button next to the logo on every other page. Each subject keeps its own progress.'
     },
     ask: {k: 'ask', h: '', ask: true},
     doors: {
@@ -106,10 +107,11 @@
     saving = Promise.resolve(), // the first-launch answer being saved (ask), for the subject it was asked for
     target = null,
     tick = null;
+  // Shown: a box on screen, not hidden but keeping its room (visibility: the header's subject control on Home, app.css).
   const vis = el => {
     if (!el) return false;
     const r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0;
+    return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
   };
   const find = s =>
     !s.sel ? null : [...document.querySelectorAll(s.sel)].find(vis) || (s.alt && [...document.querySelectorAll(s.alt)].find(vis)) || null;

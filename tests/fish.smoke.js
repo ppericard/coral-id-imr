@@ -747,8 +747,8 @@ async function freshPlayers(b, base, errs) {
     return {subj: SUBJ.id, slate: slateGenera().length, ac: (P.Acropora || {}).ok, fish: localStorage.getItem('reefid-sync-subject')};
   });
   // The screens the admin sees in the fish beta, at 390 and 1280 px (light theme): the subject switch in its two places,
-  // one state (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): a Corals | Fish row at the top of Home and a chip
-  // next to the logo in the header, on every page, its small menu with both subjects; the header keeps its size and Home
+  // one state (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): a Corals | Fish row at the top of Home and a switch
+  // next to the logo in the header, on every page but Home (Pierre, 2026-11-08), the chip and its menu with three subjects; the header keeps its size and Home
   // still fits one screen; no Tools tile and no emoji on the links to Tools any more (the chip is the way back). Then a
   // fish question (4 upright names); the enlarged photo before the answer credits its author by name only (blindCredit:
   // no taxon, no link); after the answer the full credit with its iNaturalist link; My progress; a wink once; back to the
@@ -778,7 +778,9 @@ async function freshPlayers(b, base, errs) {
     };
     // The two switches and the header: which subject each one shows, the header switch's place (next to the logo, inside
     // the header's one line, clear of the controls), the header's height with and without it (rule U3), Home's height.
-    // Two subjects: the header holds a one-click switch, a button a subject (Pierre, 2026-11-08), not the chip's menu.
+    // Two subjects: the header holds a one-click switch, a button a subject (Pierre, 2026-11-08), not the chip's menu. On
+    // Home the header's switch steps aside (Pierre, 2026-11-08: it doubled Home's row), keeping its room: shown says
+    // whether it can be seen and reached (a click at its middle lands on it); at, where the header's items are.
     const look = () =>
       q.evaluate(() => {
         const row = document.querySelector('#view .hsubj'),
@@ -816,18 +818,37 @@ async function freshPlayers(b, base, errs) {
           clear: !!cb && tools.every(t => cb.right <= t.left || cb.left >= t.right),
           inLine: !!cb && cb.top >= hdr.getBoundingClientRect().top && cb.bottom <= hdr.getBoundingClientRect().top + h0,
           hdr: [h0, h1],
+          shown:
+            !!cb &&
+            getComputedStyle(chip).visibility === 'visible' &&
+            chip.contains(document.elementFromPoint((cb.left + cb.right) / 2, (cb.top + cb.bottom) / 2)),
+          at: JSON.stringify([home, ...tools].map(r => [r.left, r.top, r.width, r.height].map(Math.round))),
           fits: document.documentElement.scrollHeight <= innerHeight + 1
         };
       });
-    // Home, corals on: the row (Corals pressed), the header switch (Corals pressed), Home one screen, the header's size unchanged.
+    // Home, corals on: the row (Corals pressed), the header switch hidden there (its state still followed), Home one
+    // screen, the header's size unchanged.
     await q.goto(base + '#home');
     await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
     const h0 = await look();
     if (h0.subj !== 'coral' || !/coral\*/.test(h0.row) || !/fish(?!\*)/.test(h0.row) || !h0.rowFull || !h0.rowFirst)
       ui.push(`${width}px Home, Corals on: no Corals | Fish row at the top ${JSON.stringify(h0)}`);
-    if (h0.chip !== 'coral*,fish' || !h0.named || !h0.nextToLogo || !h0.clear || !h0.inLine || h0.hdr[0] !== h0.hdr[1])
-      ui.push(`${width}px header switch, Corals on: ${JSON.stringify(h0)}`);
+    if (h0.chip !== 'coral*,fish' || h0.shown || h0.hdr[0] !== h0.hdr[1])
+      ui.push(`${width}px header switch on Home, Corals on (hidden, its room kept): ${JSON.stringify(h0)}`);
     if (!h0.fits) ui.push(`${width}px Home with the subject row: more than one screen ${JSON.stringify(h0)}`);
+    // Learn: the header switch shows there, in its place (next to the logo, one line, clear of the controls), and the
+    // header and its items do not move between Home and Learn.
+    await q.evaluate(() => (location.hash = '#learn/genera'));
+    await q.waitForFunction(() => window.ROUTED === 'genera' && document.querySelector('#view .gdiv'), null, {timeout: 15000});
+    const l0 = await look();
+    if (l0.chip !== 'coral*,fish' || !l0.shown || !l0.named || !l0.nextToLogo || !l0.clear || !l0.inLine || l0.hdr[0] !== l0.hdr[1])
+      ui.push(`${width}px header switch on Learn, Corals on: ${JSON.stringify(l0)}`);
+    if (l0.hdr[1] !== h0.hdr[1] || l0.at !== h0.at)
+      ui.push(`${width}px the header moves between Home and Learn: Home ${JSON.stringify(h0.at)} ${h0.hdr}, Learn ${l0.at} ${l0.hdr}`);
+    await q.evaluate(() => document.querySelector('.brand .home').click()); // Home without a reload
+    await q.waitForFunction(() => (window.ROUTED || 'home') === 'home' && document.querySelector('#view .home-page'), null, {
+      timeout: 15000
+    });
     await wide('Home');
     // Fish chosen on Home: saved, everything follows (the row, the chip, the Learn door's photos are fish).
     if (!(await q.$('#view .hsubj [data-subj="fish"]'))) {
@@ -840,8 +861,26 @@ async function freshPlayers(b, base, errs) {
     });
     const h1 = await look();
     const saved = await q.evaluate(() => localStorage.getItem('reefid-sync-subject'));
-    if (saved !== '"fish"' || !/fish\*/.test(h1.row) || h1.chip !== 'coral,fish*' || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
+    if (saved !== '"fish"' || !/fish\*/.test(h1.row) || h1.chip !== 'coral,fish*' || h1.shown || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
       ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
+    // From the keyboard on Home: Tab never stops on the hidden header switch; Enter on the row's Corals switches, and the
+    // focus stays on Home's row, on the side chosen, once Home is drawn again.
+    await q.focus('.brand .home');
+    await q.keyboard.press('Tab');
+    const t1 = await q.evaluate(() => ({inHdr: !!document.activeElement.closest('#subjc'), tag: document.activeElement.tagName}));
+    await q.focus('#view .hsubj [data-subj="coral"]');
+    await q.keyboard.press('Enter');
+    await q.waitForFunction(() => SUBJ.id === 'coral' && document.querySelector('#view .hsubj'), null, {timeout: 30000}).catch(() => {});
+    await q.waitForTimeout(100);
+    const k1 = await q.evaluate(() => ({
+      row: !!document.activeElement.closest('#view .hsubj'),
+      subj: document.activeElement.dataset.subj,
+      pressed: document.activeElement.getAttribute('aria-pressed')
+    }));
+    if (t1.inHdr || !k1.row || k1.subj !== 'coral' || k1.pressed !== 'true')
+      ui.push(`${width}px Home's row from the keyboard: Tab from the logo ${JSON.stringify(t1)}, after Enter ${JSON.stringify(k1)}`);
+    await q.click('#view .hsubj [data-subj="fish"]');
+    await q.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .hsubj'), null, {timeout: 30000});
     // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
     // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile, and the Identify door's art, one of those.
     const ht = await q.evaluate(() => {
@@ -870,17 +909,26 @@ async function freshPlayers(b, base, errs) {
     if (!ht.n || ht.bad.length || (ht.fits && !ht.covers))
       ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
-    // Tools: no subject tile and no emoji on the links to Tools any more; the header switch is there, on every page.
+    // Tools: no subject tile and no emoji on the links to Tools any more; the header switch is there, on every page but
+    // Home, in its place, the header as on Home.
     await q.evaluate(() => (location.hash = '#tools'));
     await q.waitForFunction(() => document.querySelector('#view .labhub'), null, {timeout: 15000});
     const tl = await q.evaluate(() => ({
       tile: !!document.querySelector('#view .labsubj, #view [data-subj]'),
-      badge: [...document.querySelectorAll('.labgo, .sections a[data-tab="lab"]')].some(a => a.dataset.badge),
-      chip: (document.querySelector('#subjc [data-subj="fish"]') || {}).offsetParent
-        ? document.querySelector('#subjc [data-subj="fish"]').getAttribute('aria-pressed')
-        : ''
+      badge: [...document.querySelectorAll('.labgo, .sections a[data-tab="lab"]')].some(a => a.dataset.badge)
     }));
-    if (tl.tile || tl.badge || tl.chip !== 'true') ui.push(`${width}px Tools with Fish on: ${JSON.stringify(tl)}`);
+    const t0 = await look();
+    if (
+      tl.tile ||
+      tl.badge ||
+      t0.chip !== 'coral,fish*' ||
+      !t0.shown ||
+      !t0.nextToLogo ||
+      !t0.inLine ||
+      t0.at !== h1.at ||
+      t0.hdr[1] !== h1.hdr[1]
+    )
+      ui.push(`${width}px Tools with Fish on: ${JSON.stringify({...tl, ...t0, home: [h1.at, h1.hdr]})}`);
     // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
     // rule S3), in the key's order, only those that hold a family of the slate (every circle: Pierre, 2026-11-06, Q175),
     // each under its number and title as the key prints them, every family under its own group; the key credited in full
@@ -1392,6 +1440,19 @@ async function freshPlayers(b, base, errs) {
     }));
     if (tab1 !== 'fish' || kb.focus !== 'fish' || kb.pressed !== 'true')
       ui.push(`${width}px header switch from the keyboard: Tab ${tab1}, after Enter ${JSON.stringify(kb)}`);
+    // Home reached with the focus on the header switch (Back, a key): the focus goes to Home's row, never left on the
+    // hidden switch.
+    await q.evaluate(() => document.querySelector('.brand .home').click()); // Home without a reload
+    await q.waitForFunction(() => (window.ROUTED || 'home') === 'home' && document.querySelector('#view .hsubj'), null, {timeout: 15000});
+    const kh = await q.evaluate(() => ({
+      row: !!document.activeElement.closest('#view .hsubj'),
+      subj: document.activeElement.dataset.subj,
+      hidden: getComputedStyle(document.getElementById('subjc')).visibility
+    }));
+    if (!kh.row || kh.subj !== 'fish' || kh.hidden !== 'hidden')
+      ui.push(`${width}px Home reached from the header switch, the focus: ${JSON.stringify(kh)}`);
+    await q.evaluate(() => (location.hash = '#about'));
+    await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});
     await q.click('#subjc [data-subj="coral"]');
     await q.waitForFunction(() => SUBJ.id === 'coral' && document.querySelector('#view .about p'), null, {timeout: 15000});
     // A third subject (made up here, for the header only: app.js subjCtl): the header falls back to the chip and its menu,
@@ -1409,6 +1470,28 @@ async function freshPlayers(b, base, errs) {
     }));
     if (three.sw || !/Corals/.test(three.chip) || three.over > 0)
       ui.push(`${width}px three subjects, the header chip: ${JSON.stringify(three)}`);
+    // On Home the chip steps aside too: its menu, left open, closes; the focus goes to Home's row; back on another page the
+    // chip is there again.
+    await q.click('#subjb');
+    await q.evaluate(() => document.querySelector('.brand .home').click()); // Home without a reload
+    await q.waitForFunction(() => (window.ROUTED || 'home') === 'home' && document.querySelector('#view .hsubj'), null, {timeout: 15000});
+    const th = await q.evaluate(() => {
+      const b = document.getElementById('subjb'),
+        r = b.getBoundingClientRect();
+      return {
+        hidden: getComputedStyle(b).visibility,
+        hit: b.contains(document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2)),
+        menu: document.getElementById('subjmenu').hidden,
+        expanded: b.getAttribute('aria-expanded'),
+        row: !!document.activeElement.closest('#view .hsubj')
+      };
+    });
+    if (th.hidden !== 'hidden' || th.hit || !th.menu || th.expanded !== 'false' || !th.row)
+      ui.push(`${width}px three subjects on Home, the header chip: ${JSON.stringify(th)}`);
+    await q.evaluate(() => (location.hash = '#about'));
+    await q.waitForFunction(() => window.ROUTED === 'about' && document.querySelector('#view .about p'), null, {timeout: 15000});
+    if ((await q.evaluate(() => getComputedStyle(document.getElementById('subjb')).visibility)) !== 'visible')
+      ui.push(`${width}px three subjects, back on About: the header chip hidden`);
     await q.click('#subjb');
     const menu = await q.evaluate(() => {
       const m = document.getElementById('subjmenu');
@@ -1590,8 +1673,18 @@ async function freshPlayers(b, base, errs) {
     });
     const q = await c4.newPage();
     q.on('pageerror', e => errs.push(`${width}px narrow header: ${e.message}`));
+    // Home: the header's control steps aside (Home's row is there), nothing wider than the screen.
     await q.goto(base + '#home');
     await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    const nh = await q.evaluate(() => ({
+      hidden: getComputedStyle(document.getElementById('subjc')).visibility,
+      row: !!document.querySelector('#view .hsubj [data-subj="fish"]'),
+      over: document.documentElement.scrollWidth - innerWidth
+    }));
+    if (nh.hidden !== 'hidden' || !nh.row || nh.over > 0) ui.push(`${width}px admin header on Home: ${JSON.stringify(nh)}`);
+    // Another page (Learn): the header's control.
+    await q.evaluate(() => (location.hash = '#learn/genera'));
+    await q.waitForFunction(() => window.ROUTED === 'genera' && document.querySelector('#view .gdiv'), null, {timeout: 15000});
     // Signed out, the two sides do not fit beside the Sign in pill: one chip with the subject on screen, one click to the
     // other ([data-flip]); signed in, the two sides.
     for (const signed of [false, true]) {
