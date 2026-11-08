@@ -22,7 +22,7 @@ const rec = () => ({
   w: [[0.5, 0.25, 1, 1]],
   hd: 0,
   v: 'lo',
-  fb: {'imr-hi': [40, T0 + 40]},
+  fb: {'imr-hi': [40, T0 + 40]}, // rename-app: keep (a fallback card key: the imr answer, then its direction)
   h: [
     ['imr', 0, T0, 'tour'],
     ['know', 40, T0 + 40, 'fallback']
@@ -77,7 +77,7 @@ test("a device's clock ahead: the change still comes last", () => {
 test('the copy under the name from before the rename gets the same record when it holds one', () => {
   const k = startKey('fish'),
     old = keyLegacy(k);
-  assert.strictEqual(old, 'imr-coral-fish-start');
+  assert.strictEqual(old, 'imr-coral-fish-start'); // rename-app: keep (the name before the rename, on purpose)
   const fr = {c: 'know', t: T0, at: 0, via: 'tour', h: [['know', 0, T0, 'tour']]},
     d = {[k]: JSON.stringify(fr), [old]: JSON.stringify(fr)},
     out = startAdminSet(d, 'fish', 'imr', NOW);
