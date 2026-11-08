@@ -234,10 +234,10 @@ function quizBoard() {
     b =>
       (b.onclick = () => {
         const S = SETS().find(x => x.k === b.dataset.seton);
-        bonusSet(true, b.dataset.seton);
+        bonusSet(true, b.dataset.seton, true);
         NEXTQ = null;
         quizBoard();
-        if (S && S.onToast) appToast(S.onToast, 6000);
+        if (S && S.onToast) appToast(S.onToast(), 6000);
       })
   );
   bindSync();

@@ -326,12 +326,12 @@ function mergeSubject(j, d, S, mine) {
         Q[k] = rq[k];
         Q[k + 'T'] = rq[k + 'T'] || 0;
         // With the choice, its "Not now" count and when (UNITS opens: the offer comes back at most once), and the rules it
-        // was made under (V: the back card, quiz.js bonusBackDue).
-        ['N', 'A', 'V'].forEach(x => (rq[k + x] === undefined ? delete Q[k + x] : (Q[k + x] = rq[k + x])));
+        // was made under (V: the back card, quiz.js bonusBackDue) and by (H: by hand before Advanced, app.js bonusSet).
+        ['N', 'A', 'V', 'H'].forEach(x => (rq[k + x] === undefined ? delete Q[k + x] : (Q[k + x] = rq[k + x])));
         saveQ();
       } else if (rr > lr && typeof rq[k] !== 'boolean' && Q[k] !== undefined) {
         // A progress reset made on another device: the offer comes again here too.
-        ['', 'T', 'N', 'A', 'V'].forEach(x => delete Q[k + x]);
+        ['', 'T', 'N', 'A', 'V', 'H'].forEach(x => delete Q[k + x]);
         saveQ();
       }
     });

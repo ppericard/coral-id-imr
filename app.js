@@ -581,10 +581,12 @@ function fishGenera(X, F) {
 // Advanced; auto, for a player at IMR (imr: model.js imrSaid), the IMR genera (imrg) without the offer, each once its family
 // is at Open Water (LV_AT[0]; Pierre, 2026-11-08, Q219), its card then, at the opening's usual pace (model.js openPick,
 // openPace). An IMR player's IMR genera are never in units: they come by themselves, whatever the offer's answer.
-function sciOpen(L, score, met, imr) {
+// hand: the set turned on by hand before any family was at Advanced (Q.sciH, bonusSet; Pierre, 2026-11-08, Q240): the
+// units from their family's Open Water, as Q205 had them.
+function sciOpen(L, score, met, imr, hand) {
   const at = (n, x) => met(n) || score(GX(n).parent) >= x,
     auto = imr ? L.filter(n => GX(n).imrg && at(n, LV_AT[0])) : [];
-  return {auto, units: L.filter(n => !(imr && GX(n).imrg) && at(n, LV_AT[1]))};
+  return {auto, units: L.filter(n => !(imr && GX(n).imrg) && at(n, hand ? LV_AT[0] : LV_AT[1]))};
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
@@ -1541,7 +1543,8 @@ const UNITS = {
       {
         k: 'sci',
         all: () => (FISH ? FISH.sci || [] : []),
-        units: () => (FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid()).units : []),
+        units: () =>
+          FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid(), !!Q.sciH).units : [],
         auto: () => (FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid()).auto : []),
         due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
         // rv: the rules a choice is made under (Q.sciV, synced with the choice): 1 since the offer moved back to Advanced
@@ -1566,7 +1569,7 @@ const UNITS = {
         // My progress's switch while off (progress.js; Pierre, 2026-11-08: the offer at Advanced never locks the setting),
         // and what it says once on.
         row: 'Turn on scientific names',
-        onToast: 'Scientific names on: a family’s genera come as you reach Advanced on it.',
+        onToast: () => `Scientific names on: a family’s genera come as you reach ${Q.sciH ? 'Open Water' : 'Advanced'} on it.`,
         card: ''
       }
     ]
@@ -1621,12 +1624,14 @@ const showBon = () =>
     .querySelectorAll('[data-optin] button')
     .forEach(b => b.setAttribute('aria-pressed', String((b.dataset.on === '1') === !!Q[b.closest('[data-optin]').dataset.optin])));
 // Q[k + 'T']: when the choice was made, so the latest choice wins across devices (sync.js mergeSaved; Codex review #371).
-// Q[k + 'V']: the set's rules version (rv) the choice was made under (the back card, quiz.js bonusBackDue).
-function bonusSet(on, k = SETS()[0].k) {
+// Q[k + 'V']: the set's rules version (rv) the choice was made under (the back card, quiz.js bonusBackDue). hand: turned
+// on or off by the player's own switch (⚙, My progress), not a card; Q[k + 'H']: on by hand while not due yet (no family
+// at Advanced: the fish genera then come by their family's Open Water, app.js sciOpen; Pierre, 2026-11-08, Q240).
+function bonusSet(on, k = SETS()[0].k, hand) {
   const S = SETS().find(x => x.k === k);
   Q[k] = !!on;
   Q[k + 'T'] = Date.now();
-  if (S && S.rv) Q[k + 'V'] = S.rv;
+  if (S && S.rv) ((Q[k + 'V'] = S.rv), (Q[k + 'H'] = !!(on && hand && !S.due())));
   saveQ();
   showBon();
   if (typeof syncSoon === 'function') syncSoon();
@@ -1634,7 +1639,7 @@ function bonusSet(on, k = SETS()[0].k) {
 }
 document
   .querySelectorAll('[data-optin] button')
-  .forEach(b => (b.onclick = () => bonusSet(b.dataset.on === '1', b.closest('[data-optin]').dataset.optin)));
+  .forEach(b => (b.onclick = () => bonusSet(b.dataset.on === '1', b.closest('[data-optin]').dataset.optin, true)));
 showBon();
 // The warning on Millepora's first-meeting card and genus sheet (Pierre, 2026-11-02).
 const BENTHIC_NOTE =
@@ -2372,7 +2377,7 @@ document.getElementById('signb').onclick = e => {
         delete Q.bu;
         delete Q.ba;
         // the bonus genera (fish: the scientific genera, circle 3) are offered again once due
-        SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V'].forEach(x => delete Q[k + x]));
+        SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H'].forEach(x => delete Q[k + x]));
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();

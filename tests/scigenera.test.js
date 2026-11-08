@@ -23,7 +23,7 @@ vm.runInContext(
   [
     block(src('model.js'), 'const LV_AT = ', '\n', {through: 1, file: 'model.js'}),
     block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
-    block(APP, 'function sciOpen(L, score, met, imr) {', '\n}\n', {through: 1, file: 'app.js'}),
+    block(APP, 'function sciOpen(L, score, met, imr, hand) {', '\n}\n', {through: 1, file: 'app.js'}),
     'this.fishGenera = fishGenera; this.sciOpen = sciOpen; this.LV_AT = LV_AT;'
   ].join('\n'),
   ctx
@@ -114,8 +114,8 @@ test('the back card: once, to a player who turned the set on under its earlier r
   assert.strictEqual(due({}), null, 'never turned on: not asked');
   assert.strictEqual(due({bon: true}), null, 'a set with no back card');
   // either answer records the rules it was made under, and the merge carries it with the choice
-  assert.ok(/if \(S && S\.rv\) Q\[k \+ 'V'\] = S\.rv;/.test(block(APP, 'function bonusSet(', '\n}\n', {file: 'app.js'})));
-  assert.ok(src('sync.js').includes("['N', 'A', 'V'].forEach("), 'synced with the choice');
+  assert.ok(block(APP, 'function bonusSet(', '\n}\n', {file: 'app.js'}).includes("(Q[k + 'V'] = S.rv)"));
+  assert.ok(src('sync.js').includes("['N', 'A', 'V', 'H'].forEach("), 'synced with the choice');
 });
 
 test('imrSaid: anyone who ever answered "I\u2019m at IMR" (Pierre, 2026-11-08, Q227), the history or the fallback trail', () => {
@@ -152,4 +152,44 @@ test('the fish make no level-change proposal (Pierre, 2026-11-08); the corals ke
   const units = block(APP, 'const UNITS = {', '\n};\n', {file: 'app.js'});
   assert.strictEqual((units.match(/startFb: false/g) || []).length, 1);
   assert.ok(units.indexOf('startFb: false') > units.indexOf('  fish: {'), 'on the fish');
+});
+
+test('Q240: turned on by hand before Advanced, a family’s genera from its Open Water (Pierre, 2026-11-08)', () => {
+  const hand = (scores, imr) =>
+    plain(
+      ctx.sciOpen(
+        X.sci,
+        n => scores[n] || 0,
+        () => false,
+        imr,
+        true
+      )
+    );
+  assert.ok(hand({'f:Damselfishes': 0.6}, false).units.includes('g:Abudefduf'), 'on by hand: from Open Water');
+  assert.deepStrictEqual(hand({'f:Damselfishes': 0.4}, false).units, [], 'not under Open Water');
+  assert.deepStrictEqual(open({'f:Damselfishes': 0.6}, false).units, [], 'by the offer: still Advanced');
+  // the flag: on by hand while no family is at Advanced (S.due false), synced with the choice; the offer never sets it
+  const set = (on, hand, due) => {
+    const c = {
+      Q: {},
+      SETS: () => [{k: 'sci', rv: 1, due: () => due}],
+      saveQ: () => {},
+      showBon: () => {},
+      RAW: null,
+      Date
+    };
+    vm.createContext(c);
+    vm.runInContext(block(APP, 'function bonusSet(', '\n}\n', {through: 1, file: 'app.js'}) + `\nbonusSet(${on}, 'sci', ${hand});`, c);
+    return c.Q.sciH;
+  };
+  assert.strictEqual(set(true, true, false), true, '⚙ or My progress before Advanced');
+  assert.strictEqual(set(true, true, true), false, 'by hand once a family is at Advanced: the offer’s rule');
+  assert.strictEqual(set(true, undefined, false), false, 'the offer card or the back card');
+  assert.strictEqual(set(false, true, false), false, 'off');
+  assert.ok(src('sync.js').includes("['N', 'A', 'V', 'H'].forEach("), 'synced with the choice');
+});
+
+test('Q238: the IMR families first for anyone who ever answered imr (openPick reads imrSaid)', () => {
+  const pick = block(src('model.js'), 'function openPick(', '\n}\n', {file: 'model.js'});
+  assert.ok(pick.includes('if (imrSaid()) {') && !pick.includes("c === 'imr'"));
 });

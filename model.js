@@ -426,7 +426,8 @@ function openPick(fresh, list = fresh, met = introduced) {
   if (first.length) fresh = first;
   // "I'm at IMR" (the first-launch answer imr): the units the IMR course teaches, their IMR tag (imrName: fish.json imr on
   // families and genera), open before the others (Pierre, 2026-11-06 13:38). Data, not code: the corals have none.
-  if ((store.get(startKey(SUBJ.id), null) || {}).c === 'imr') {
+  // Anyone who ever answered it (imrSaid; Pierre, 2026-11-08, Q238).
+  if (imrSaid()) {
     const tagged = fresh.filter(n => (GX(n) || {}).imrName);
     if (tagged.length) fresh = tagged;
   }

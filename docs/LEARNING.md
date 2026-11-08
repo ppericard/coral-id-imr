@@ -2860,7 +2860,9 @@ a Naso photo is right as Surgeonfishes). It applies to every player with that an
 2026-11-08): it reads the current scores, so the IMR genera of a family already past Open Water become candidates at once,
 one card at a time at the opening's pace. Not counted in the progress, as the other genera. A player who turned the set on
 before 2026-11-08 gets a one-time card offering to close it (`quiz.js` `bonusBackShow`, the set's `rv` recorded with the
-choice as `Q.sciV`).
+choice as `Q.sciV`). Turned on by hand (⚙, My progress) while no family is at Advanced, a family's genera join from its Open
+Water (Pierre, 2026-11-08, Q240: `Q.sciH`, synced with the choice); by the offer, from its Advanced. The IMR-families-first
+opening order (`openPick`) reads the same "ever answered" rule (Q238).
 
 Measured (rule L11: no learnsim fish profile exists; the real app in Chromium instead, a scratch run, one seed): an admin
 player with the four starter entries at Advanced, answering right, 300 more answers: 130-144 genus questions and 154-168
