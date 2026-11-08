@@ -26,7 +26,8 @@ Pearl-scaled / Pearlscale angelfish, Neon damsel / damselfish, Indo-Pacific serg
 that links two groups merges them): the form shown
 is the PDF's, else FishBase's main, else its most recorded; the others are kept in `alt` (to accept when typed). A main
 name of either reference that is not proposed is listed in `left`.
-A species with no name of its own and none found in both references gets the main name of one (`single`). A name
+A species with no name of its own and none found in both references gets the main name of one (`single`); a species no
+reference names keeps none (Pierre, 2026-11-08, Q247: it has no common-name unit; a name is never invented). A name
 proposed for two game species, any of its spellings counted, is dropped from each species where it is neither the
 PDF's nor the only name (`dropped`); a name still shared then is flagged `shared` (e.g. "Twospot wrasse", FISH_PATH
 open question 1). Spelling and capitals: FishBase's
