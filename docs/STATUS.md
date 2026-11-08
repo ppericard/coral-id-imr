@@ -42,15 +42,15 @@ mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes in
   the one the measure supports (others' speed predicts success beyond the rating, Holm 0.003), at L11 level 2.
 - **Q208** (set aside on 11-08: "on verra plus tard"): families not met before the scientific genera, or genera on
   their own pace? **Q230** out-of-zone taxon-page photos: waits for real arguments (ROADMAP row).
-- Not numbered, in this order: **C1** (#664's F8) fish photo ratings per rank: (A) one rating per (photo, rank), or (B,
-  recommended) one rating per photo plus a fitted rank offset (Q136 comes with it). **Show the species after a family
-  or genus answer** (species, common and scientific name, right or wrong; Pierre ~20:10): before the species level?
-  **#641 a-j** (F7 = j) and #651's 5 choices; **Q123, Q124** asked again. Apply the **152 curated tag and ease
-  proposals** (`judging/fish-light-q308.json` "curation", 105 flash n -> g) in the admin? A **stopgap
-  `fish-photos.json`** so unjudged species show remote photos meanwhile (~10,100 candidates in 468 species unjudged)?
-  The **R2 crop workflow**: done? **Rule D5**, a one-line change for his OK: "adds an entry at the end of the subject's
-  rules versions (`core.js` `RVS` for the corals, `FISH_RVS` for the fish)". **Eel-tailed catfishes** (parked below):
-  what he wants from it. Re-read the **Q305 rule texts** (#757 Decisions) and #758's W12/W14 wording.
+- **Q316** (C1, #664's F8) fish photo ratings per rank: (A) one per (photo, rank), or (B, recommended) one per photo
+  plus a fitted rank offset (Q136 with it). Not numbered: **Show the species after a family or genus answer**
+  (species, common and scientific name, right or wrong; Pierre ~20:10): before the species level? **#641 a-j** (F7 =
+  j) and #651's 5 choices; **Q123, Q124** asked again. Apply the **152 curated tag and ease proposals**
+  (`judging/fish-light-q308.json` "curation", 105 flash n -> g) in the admin? A **stopgap `fish-photos.json`** so
+  unjudged species show remote photos meanwhile (~10,100 candidates in 468 species unjudged)? The **R2 crop
+  workflow**: done? **Rule D5**, a one-line change for his OK: "adds an entry at the end of the subject's rules
+  versions (`core.js` `RVS` for the corals, `FISH_RVS` for the fish)". **Eel-tailed catfishes** (parked below): what
+  he wants from it. Re-read the **Q305 rule texts** (#757 Decisions) and #758's W12/W14 wording.
 - FYI. Delegated tonight, to check in use: Visits (#777: device rows with installed / browser and "not known", a
   two-subject visit on each side, one row per Lab page), the reports bar, Home's header switch, the privacy text, the
   install nudge (#768: 10 answers = a session, a visit = a 30-min gap, every touch screen, Home only, a ⚙ Settings row,
@@ -61,7 +61,7 @@ mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes in
   Q308 fish light g / d / n (#759); Q309 reports bar (#785); Q310 fish replay, today's bar a floor (#776, #779); Q311
   fish batches (#766, #780, #781); Q312 device id on answers (#774); Q313 fish common names, corrected in use (#778).
 
-Last question number: Q315
+Last question number: Q316
 
 ## Pierre's hands
 
@@ -97,3 +97,4 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 2026-11-09 ~00:15 Manila, integrator, night: the acceleration (#756-#758), then trains of the decided work (Q308-Q313,
 the 11-08 delegation); stopped at 23:35 by Codex's limit. Mid-flight: the 11 green PRs of "Now"; #769 (Pierre's click).
+
