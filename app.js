@@ -2481,8 +2481,22 @@ const $help = document.getElementById('help'),
 // top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
 // The last line of the ? help on every page (Pierre, 2026-11-03: the credits footer left the pages): About and credits,
 // the privacy notice and Send feedback (rule U14), two taps from anywhere. So the ? shows on every page.
+// Send feedback with a game question on screen carries that question's unit and photos (quiz.js qNow; Pierre, 2026-11-08,
+// Q309), read when it is sent.
+const fbCtx = () => {
+  const q = () => (typeof qNow === 'function' && qNow()) || {};
+  return {
+    k: 'page',
+    get g() {
+      return q().g || '';
+    },
+    get ph() {
+      return q().ph || [];
+    }
+  };
+};
 const helpEnd = () =>
-  `<p class="note hend"><a href="${esc(hr('about'))}">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn({k: 'page'}, 'Send feedback') : ''}</p>`;
+  `<p class="note hend"><a href="${esc(hr('about'))}">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn(fbCtx(), 'Send feedback') : ''}</p>`;
 function pageHelp() {
   const root = $v.querySelector(':scope > .lab') || $v;
   const found = [...root.querySelectorAll(':scope > h2:not(.vh), :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];

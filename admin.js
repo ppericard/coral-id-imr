@@ -132,11 +132,13 @@ const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 // merge3 (three-way merge of a draft onto the latest published curation) and mergeOld live in core.js.
 // Re-base the draft (and every Undo/Redo step) onto a newer published curation.
 // Returns the paths where the draft replaced a choice published from elsewhere (see merge3).
+// merge3, then each report's status kept whole (reports.js repsReconcile: Done and Stand-by / Dismissed live in two maps).
+const mergeCur = (base, mine, theirs, conf) => repsReconcile(base, mine, merge3(base, mine, theirs, conf));
 function rebase(next) {
   const base = SAVED,
-    f = d => merge3(base, d, next),
+    f = d => mergeCur(base, d, next),
     conf = [];
-  DRAFT = merge3(base, DRAFT, next, conf);
+  DRAFT = mergeCur(base, DRAFT, next, conf);
   DRAFT.genera = DRAFT.genera || {};
   HIST = HIST.map(x => JSON.stringify(f(JSON.parse(x))));
   FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
@@ -266,11 +268,12 @@ let REV = 0,
 function takeOther() {
   const v = store.get('reefid-curation-draft', null);
   if (!v || !v.genera) return null;
-  const m = takeTab(REVS, DRAFT, SAVED, v);
+  const shared = (v._tab && REVS[v._tab.seen]) || SAVED, // the draft both tabs last agreed on (core.js takeTab)
+    m = takeTab(REVS, DRAFT, SAVED, v);
   if (!m) return null;
   if (v._tab) SEEN = v._tab.rev;
   if (!m.changed) return null;
-  DRAFT = m.draft;
+  DRAFT = repsReconcile(shared, DRAFT, m.draft);
   snap = JSON.stringify(DRAFT);
   memoReset();
   return m;
@@ -333,10 +336,20 @@ const flChanged = () => !same(DRAFT.flag || {}, SAVED.flag || {});
 // Suggestions from the outside judging agent (suggest.json, tools/judging_import.py): Triage lists them one at a time.
 // Accept runs the normal action (move, Not this genus, exclude, hide, add); "Several corals" keeps the photo off games
 // (curation.json "use" {f: 'ref'}); Dismiss is remembered in curation.json "seen" {kind:f: 1} so it never comes back.
-const seenOf = (o, cand) => Object.fromEntries(Object.entries(o.seen || {}).filter(([k]) => k.startsWith('cand:') === cand));
-const sgChanged = () => !same(seenOf(DRAFT, false), seenOf(SAVED, false)) || !same(DRAFT.use || {}, SAVED.use || {});
+// seen holds three kinds: 'cand:f' (Candidates), 'rep:<id>' (a player's report Done) and the rest (Triage).
+const seenKind = k => (k.startsWith('cand:') ? 'cand' : k.startsWith('rep:') ? 'rep' : '');
+const seenOf = (o, kind) => Object.fromEntries(Object.entries(o.seen || {}).filter(([k]) => seenKind(k) === kind));
+const sgChanged = () => !same(seenOf(DRAFT, ''), seenOf(SAVED, '')) || !same(DRAFT.use || {}, SAVED.use || {});
 // Candidates rejected in the Candidates view: curation.json "seen" {'cand:f': 1}. Only a "reviewed" mark: the photo stays a candidate.
-const cdChanged = () => !same(seenOf(DRAFT, true), seenOf(SAVED, true));
+const cdChanged = () => !same(seenOf(DRAFT, 'cand'), seenOf(SAVED, 'cand'));
+// The players' reports' statuses (To do › Reports, Q309; reports.js): Done is seen 'rep:<id>' (the player is thanked),
+// Stand-by and Dismissed curation.json "reps" {id: 'wait'|'drop'} (never thanked).
+const rpChanged = () => !same(seenOf(DRAFT, 'rep'), seenOf(SAVED, 'rep')) || !same(DRAFT.reps || {}, SAVED.reps || {});
+// The reports whose status the draft changed (Publish's summary).
+const repsChangedN = () =>
+  [...new Set([DRAFT, SAVED].flatMap(c => [...Object.keys(c.reps || {}), ...Object.keys(seenOf(c, 'rep')).map(k => k.slice(4))]))].filter(
+    id => repStatus(DRAFT, id) !== repStatus(SAVED, id)
+  ).length;
 // Each flag goes to its subject's part of the curation (flag.js s, core.js SUBJECTS admin.cur; a flag without one came
 // from the corals, the only subject flagged before), under its id there (fish: core.js fishPid), never to another's.
 const flagsOf = (C, S = ASUBJ) => (S.admin.cur ? (C[S.admin.cur] || {}).flag : C.flag) || {};
@@ -1193,12 +1206,13 @@ function status0() {
       tlChanged() ? 'tile photos' : '',
       auChanged() ? 'auto-sort' : '',
       fiChanged() ? 'fish curation' : '',
-      ptChanged() ? 'points to handle' : ''
+      ptChanged() ? 'points to handle' : '',
+      rpChanged() ? 'report statuses' : ''
     ].filter(Boolean);
   return {parts, sug: sugCount(), over: overCap()};
 }
 function statusDraw({parts, sug, over}) {
-  const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen().length,
+  const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen(ADM0).length,
     xn = Object.keys(DRAFT.exclude || {}).length;
   OVER = over;
   const t = draftAt ? ` (saved ${dateText(draftAt, 'hm')})` : '';
@@ -1265,13 +1279,20 @@ const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('p
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
-// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine) and its photos flagged
-// on the site (its flag).
+// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine), its photos flagged on
+// the site (its flag) and its open reports (Q309: the reports follow the switch).
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
-  return Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length + Object.keys(F.flag || {}).length;
+  return (
+    Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length +
+    Object.keys(F.flag || {}).length +
+    repsOpen(S).length
+  );
 };
+// The To do count of the subject on screen (its tab, its views, the Inbox): the corals' tn; for a subject with its own part
+// of curation.json, its flags and its open reports (what its To do › Reports lists).
+const todoHere = tn => (ASUBJ.admin.cur ? Object.keys(flagsOf(DRAFT)).length + repsOpen().length : tn);
 // A subject's icon on the switch (core.js SUBJECTS icon, the app's set: app.js subjIcon), its name beside it on wider
 // screens only (admin.css .adm-sjn; Pierre, 2026-11-06: a mini switch in the top bar, as the app's header).
 const subjSvg = S =>
@@ -1488,7 +1509,8 @@ const overCap = () => {
 };
 function navs(tn, xn) {
   // The corals' cells over the cap (OVER) on the corals' side only.
-  const OV = ASUBJ.admin.cur ? {n: 0} : OVER;
+  const OV = ASUBJ.admin.cur ? {n: 0} : OVER,
+    th = todoHere(tn);
   const T = tabOf(),
     g = T[3],
     page = pageOf(),
@@ -1518,8 +1540,8 @@ function navs(tn, xn) {
     over = `${OV.n} genus × view cell${OV.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Key-only genus, Coverage › Sheets & ID Key)`,
     // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
     vcnt = h =>
-      (h === 'inbox/todo/all' || h === 'inbox/todo/reports') && tn
-        ? ` ${tn}`
+      (h === 'inbox/todo/all' || h === 'inbox/todo/reports') && th
+        ? ` ${th}`
         : h === 'photos/genera/excluded' && xn
           ? ` ${xn}`
           : h === 'photos/genera/hidden' && hn
@@ -1529,7 +1551,7 @@ function navs(tn, xn) {
               : OV[h]
                 ? ` ⚠ ${OV[h]}`
                 : '',
-    tcnt = t => (t[0] === 'inbox/todo' && tn ? ` (${tn})` : t[0] === 'inbox/coverage' && OV.n ? ' ⚠' : '');
+    tcnt = t => (t[0] === 'inbox/todo' && th ? ` (${th})` : t[0] === 'inbox/coverage' && OV.n ? ' ⚠' : '');
   const sw = $('subj');
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
@@ -1555,7 +1577,7 @@ function navs(tn, xn) {
     a.hidden = !TABS.some(t => t[3] === G[0] && tOk(t));
     if (a.hidden) return;
     a.href = href(groupHash(G));
-    a.textContent = G[1] + (G[0] === 'inbox' && tn ? ` (${tn})` : '') + (G[0] === 'inbox' && OV.n ? ' ⚠' : '');
+    a.textContent = G[1] + (G[0] === 'inbox' && th ? ` (${th})` : '') + (G[0] === 'inbox' && OV.n ? ' ⚠' : '');
     if (G[0] === 'inbox') a.title = OV.n ? over : '';
     a.setAttribute('aria-current', String(G[0] === g));
   });
@@ -3037,7 +3059,7 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; on a fish photo, Remove excludes it from the fish games for good (Undo brings it back) and Done clears the flag.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. The list follows Corals | Fish: each side shows its own reports and those about no subject (sent from Home, About, the leaderboard). Feedback sent from a game carries the question's photos. Each report has one bar: its status, then the tools it can use. <b>Done</b> clears it, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). <b>Stand-by</b> sets it aside below the open ones; <b>Dismiss</b> clears it without thanks; Done and Dismissed fold at the bottom with their counts, where <b>Reopen</b> takes one back. <b>Journey</b> opens the reporter's journey (a player on the list), <b>Open genus</b> or <b>Open family</b> the page of what it is about, <b>Open page</b> the app page it was sent from; a report with no photo can <b>Attach a photo</b> of its genus or family (pick one first when it names none), with its tools, for this visit only (not saved). Each photo has the tools of its page: a coral photo those of its genus page, a fish photo × (exclude), Remove, Not this (a candidate photo) and Open in Families. A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; a fish photo has the tools of its family page (× excludes it from the fish games for good, Remove takes it out of play, Not this), each clearing the flag (Undo brings it back), and Done.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   fishcov: `<p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates, <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Families). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
   fishmont: `<p>The pairs of families the IMR course compares (its lines, from fish.json), one row each. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in the Families page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p>`,
@@ -3461,8 +3483,13 @@ const handledLoad = () =>
         .catch(() => ({}))
         .then(j => (HANDLEDF = j && typeof j === 'object' && !Array.isArray(j) ? j : {}));
 const repPR = id => (HANDLEDF && HANDLEDF[id] && Number(HANDLEDF[id].pr)) || 0;
-const repsOpen = () => (REPS && REPS.rows ? REPS.rows.filter(r => !(DRAFT.seen || {})['rep:' + r[0]] && !repPR(r[0])) : []);
-const repsPR = () => (REPS && REPS.rows ? REPS.rows.filter(r => !(DRAFT.seen || {})['rep:' + r[0]] && repPR(r[0])) : []);
+// The reports on subject S's side (Q309, rule A4: the list follows the Corals | Fish switch; a report about no subject is
+// on every side), by what each is about (reports.js repCtx; a photo's subject from the photo registries). Open: no status
+// and not handled in a PR; handled in a PR: listed apart, unless Done.
+const repPhotoSubj = f => (PHOTOS[f] ? ADM0.id : FISHA && FISHS && FISHA.ph[f] ? FISHS.id : '');
+const repsOf = (S = ASUBJ) => (REPS && REPS.rows ? REPS.rows.filter(r => repOn(repCtx(r, repPhotoSubj), S)) : []);
+const repsOpen = (S = ASUBJ) => repsOf(S).filter(r => repStatus(DRAFT, r[0]) === 'open' && !repPR(r[0]));
+const repsPR = (S = ASUBJ) => repsOf(S).filter(r => repStatus(DRAFT, r[0]) !== 'done' && repPR(r[0]));
 // Errors & feedback (sheet v19, Pierre 2026-11-02: most RAs will not report problems): what the players' devices report
 // by themselves (app.js ev): app errors, photos that did not load, saves that failed, and the one-tap question's answers.
 // Rows [id, time ms, device, kind, message, where, page, detail, app version, browser], newest first. Admin token only.
@@ -3915,16 +3942,159 @@ function fishAdmin() {
         const F = fishGen(f, all),
           P = {};
         Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (P[x.f] = {...x, entry: g.id})));
-        FISHA = {gen: F.gen, ph: P, slate: [...F.c1, ...F.c2, ...F.c3]}; // the slate: the app's (app.js UNITS slate)
-        if (cur === 'inbox/todo/reports') render();
+        // Each family, genus and species sheet id (s:<name>) to its family, each species sheet id to its species, each
+        // species to its genus: a report's unit links to its family's page, its photos for Attach (Q309).
+        const fam = Object.create(null),
+          spid = Object.create(null),
+          spg = Object.create(null);
+        (f.families || []).forEach(x => {
+          fam[x.id] = x.id;
+          (x.genera || []).forEach(g => (fam[g] = fam[g] || x.id));
+        });
+        (f.species || []).forEach(x => {
+          spid['s:' + x.name] = x.id;
+          if (x.genus) spg[x.id] = x.genus;
+          if (!x.family) return;
+          fam['s:' + x.name] = x.family;
+          if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
+        });
+        FISHA = {gen: F.gen, ph: P, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg}; // the slate: the app's (app.js UNITS slate)
+        if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
       })
       .catch(() => {}));
 }
-// A unit's name in a report: a fish entry by its IMR name (plain, no genus page), a genus in italics with its page link.
-const repUnit = x =>
-  FISHA && FISHA.gen[x]
-    ? `${esc(FISHA.gen[x].name)} <small>(fish)</small>`
-    : `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
+// The subject whose photos and units fishAdmin reads (its own part of curation.json, sheets at several ranks), and a
+// family's page (Photos › Families) under its prefix.
+const FISHS = SUBJECTS.find(S => S.admin.cur && S.sheets) || null;
+const famHref = id => '#' + (FISHS ? FISHS.hash : ASUBJ.hash) + FAMS + '/' + encodeURIComponent(id);
+// A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus or
+// species in italics (its id's prefix off), each with its family's page once the fish data are read (fishAdmin).
+const repUnit = x => {
+  const S = unitSubj(x);
+  if (!S || !S.sheets) return `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
+  const fam = FISHA && FISHA.fam[x],
+    nm = FISHA && FISHA.gen[x] ? esc(FISHA.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
+  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam))}">${nm}</a>` : nm} <small>(${esc(S.name.toLowerCase())})</small>`;
+};
+// A fish photo's tile in To do (a report's or a flag's): the photo (its observation), its family, and the tools of the
+// family's page (renderFishUnits; Q309): × Exclude (fishExclude), Remove (fishReject), Not this (a candidate photo only:
+// fishNotThis, another species of its family or none), Open in Families; a photo already out of play says how instead.
+// o.flag: the flag's key (each tool also clears the flag), o.cap: more caption, o.extra: more actions.
+function fishRepTile(fp, o = {}) {
+  const F = DRAFT.fish || {},
+    f = fp.f,
+    out = (F.exclude || {})[f] ? 'excluded' : (F.out || {})[f] ? 'not this' : (F.seen || {})[f] ? 'removed' : '',
+    acts = out
+      ? `<span class="adm-src view">${out}</span>`
+      : `<button type="button" data-fr="remove" title="Remove">Remove</button>${FISHC && FISHC.byF[f] ? '<button type="button" data-fr="not" title="Not this species">Not this</button>' : ''}`;
+  return `<figure class="adm-tile adm-frep" data-f="${esc(o.flag || f)}" data-ff="${esc(f)}" data-fam="${esc(fp.entry || '')}" data-sid="${esc(fp.sp || '')}"${o.flag ? ' data-fflag' : ''}><a class="adm-ph" href="${esc(fp.o || '')}" target="_blank" rel="noopener"><img src="${img(fp, 1)}" alt="" loading="lazy"></a>${out ? '' : '<button type="button" class="adm-x" data-fr="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}<figcaption>${repUnit(fp.entry)} <small>${esc(fp.t || '')}</small>${o.cap || ''}</figcaption><div class="adm-acts">${acts}${fp.entry ? `<a class="chip" data-fr-open href="${esc(famHref(fp.entry))}">Open in Families</a>` : ''}${o.extra || ''}</div></figure>`;
+}
+function bindFishRep() {
+  const fx = (t, fn, msg) => {
+    DRAFT.fish = fn(DRAFT.fish || {});
+    if (t.hasAttribute('data-fflag')) {
+      const L = {...flagsOf(DRAFT)};
+      delete L[t.dataset.f];
+      flagsSet(DRAFT, ASUBJ, L);
+    }
+    saveDraft();
+    render();
+    toast(msg);
+  };
+  $v.querySelectorAll('.adm-frep [data-fr]').forEach(
+    b =>
+      (b.onclick = e => {
+        e.stopPropagation();
+        const t = b.closest('.adm-frep'),
+          f = t.dataset.ff,
+          fam = t.dataset.fam,
+          sid = t.dataset.sid,
+          a = b.dataset.fr;
+        if (a === 'exclude') return fx(t, F => fishExclude(fishDrop(F, fam, f), f), 'Excluded. Undo (Ctrl+Z) brings it back.');
+        if (a === 'remove') return fx(t, F => fishReject(fishDrop(F, fam, f), f), 'Removed from play. Undo (Ctrl+Z) brings it back.');
+        if (a !== 'not' || !FISHC) return;
+        // The species to send it to: the others of its family, or none (renderFishUnits' Not this).
+        const u = (FISHC.units || []).find(x => x.id === fam),
+          sp = FISHC.species,
+          others = ((u && u.species) || []).filter(x => x !== sid && sp[x] && !sp[x].out),
+          nm = x => (sp[x] || {}).name || x;
+        b.outerHTML = `<select data-frnot aria-label="Not this species"><option value="">Not this</option><option value="x">No game species</option>${others.length ? `<optgroup label="${esc((u && u.name) || '')}">${others.map(x => `<option value="${esc(x)}">${esc(nm(x))}</option>`).join('')}</optgroup>` : ''}</select>`;
+        const sel = t.querySelector('[data-frnot]');
+        sel.focus();
+        sel.onchange = () => {
+          const to = sel.value;
+          if (!to) return;
+          fx(
+            t,
+            F => fishNotThis(fishDrop(F, fam, f), f, to, sid),
+            to === 'x' ? 'Not this: no game species. Undo (Ctrl+Z) brings it back.' : `Not this: sent to ${nm(to)} as its candidate.`
+          );
+        };
+      })
+  );
+}
+// "Attach a photo" (Q309) on a report that carries none: the photos of its unit (a unit picker first when it names none)
+// to pick from; the photo picked shows on the report with its tools. Kept in this tab only (REP_ATT, by report id), never
+// saved (the integrator's call, 2026-11-08). REP_PICK: the reports whose picker is open, with the unit picked there.
+const REP_ATT = {},
+  REP_PICK = {},
+  REP_OPEN = {}; // Done or Dismissed unfolded, kept across redraws
+// The photos of a unit for the picker: a coral genus's live photos; a fish unit's photos of its family (fishAdmin),
+// those of its species or genus when it names one.
+function repUnitPhotos(u) {
+  if (DATA.gen[u]) return photos(u);
+  const fam = FISHA && FISHA.fam[u],
+    L = (fam && FISHA.gen[fam] && FISHA.gen[fam].views.wide) || [],
+    sid = FISHA && FISHA.spid[u],
+    M = sid ? L.filter(p => p.sp === sid) : /^g:/.test(u) ? L.filter(p => FISHA.spg[p.sp] === u) : L;
+  return M.length ? M : L;
+}
+function repPicker(c, S) {
+  const P = REP_PICK[c.id],
+    u = c.unit || (typeof P === 'object' && P.unit) || '',
+    units = S.admin.cur
+      ? FISHA
+        ? Object.values(FISHA.gen)
+            .map(g => [g.id, g.name])
+            .sort((a, b) => a[1].localeCompare(b[1]))
+        : []
+      : Object.keys(DATA.gen)
+          .sort()
+          .map(n => [n, n]);
+  if (S.admin.cur && !FISHA) fishAdmin();
+  const sel = c.unit
+    ? ''
+    : `<select data-rpunit aria-label="${esc(cap1(S.one))}"><option value="">${esc(cap1(S.one))}</option>${units.map(([id, nm]) => `<option value="${esc(id)}"${id === u ? ' selected' : ''}>${esc(nm)}</option>`).join('')}</select>`;
+  const L = u ? repUnitPhotos(u) : [];
+  return `<div class="adm-reppick">${sel}${L.length ? `<div class="adm-reppgrid">${L.map(p => `<button type="button" class="adm-ph" data-rpf="${esc(p.f)}" title="${esc(p.t || '')}"><img src="${img(p, 1)}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}</div>`;
+}
+function bindRepAttach() {
+  $v.querySelectorAll('[data-ratt]').forEach(
+    b =>
+      (b.onclick = () => {
+        const id = b.closest('[data-rep]').dataset.rep;
+        if (REP_PICK[id]) delete REP_PICK[id];
+        else REP_PICK[id] = true;
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-rpunit]').forEach(
+    s =>
+      (s.onchange = () => {
+        REP_PICK[s.closest('[data-rep]').dataset.rep] = s.value ? {unit: s.value} : true;
+        render();
+      })
+  );
+  $v.querySelectorAll('[data-rpf]').forEach(
+    b =>
+      (b.onclick = () => {
+        const id = b.closest('[data-rep]').dataset.rep;
+        REP_ATT[id] = b.dataset.rpf;
+        delete REP_PICK[id];
+        render();
+      })
+  );
+}
 // To do › Out of the presence rule (Pierre, 2026-11-05: the rule stays strict, he sorts these photos himself; a photo that
 // does not meet it "must not be there") and To do › Share-alike (Pierre, 2026-11-05: share-alike photos already on the
 // site are never removed automatically; same actions). Remove = the × of every photo (ACT.exclude: excluded for good,
@@ -4037,23 +4207,19 @@ function renderTriage() {
       .replace(GRIP, '')
       .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>${where}`);
   };
-  // A flagged photo of a subject with its own part of the curation: the photo, its unit, where it was seen; Remove excludes
-  // it for good from that subject's games (autosort.js fishExclude, the × of Photos › Families, by the photo's name:
-  // core.js fishPhotos and fishOn honour it, its other copies by their photo id). Both clear the flag; Undo takes either back.
+  // A flagged photo of a subject with its own part of the curation: the photo, its unit, where it was seen, and the tools of
+  // its family's page (fishRepTile: × Exclude, Remove, Not this, Open in Families), each of which clears the flag, plus
+  // Done; Undo takes any back. A photo whose data are missing: Done only.
   const unitFlagTile = p => {
     const fp = FISHA && FISHA.ph[p.fl.file || p.f],
-      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`,
-      ph = fp
-        ? `<a class="adm-ph" href="${esc(fp.o || '')}" target="_blank" rel="noopener"><img src="${img(fp, 1)}" alt="" loading="lazy"></a>`
-        : '<span class="adm-ph none">missing</span>';
-    return `<figure class="adm-tile" data-f="${esc(p.f)}">${ph}<figcaption>${p.fl.unit ? repUnit(p.fl.unit) : ''} <small>${esc((fp && fp.t) || '')}</small>${where}</figcaption><div class="adm-acts"><button type="button" data-act="tdrop">Remove</button><button type="button" data-act="tdone">Done</button></div></figure>`;
+      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`;
+    if (fp) return fishRepTile(fp, {flag: p.f, cap: where, extra: '<button type="button" data-act="tdone">Done</button>'});
+    return `<figure class="adm-tile" data-f="${esc(p.f)}"><span class="adm-ph none">missing</span><figcaption>${p.fl.unit ? repUnit(p.fl.unit) : ''}${where}</figcaption><div class="adm-acts"><button type="button" data-act="tdone">Done</button></div></figure>`;
   };
-  // A reported photo: every tool of its genus page, like a flagged one; Done is per report.
+  // A reported photo: every tool of its genus page, like a flagged one; a fish photo the tools of its family's page.
   const repTile = (f, g0) => {
-    // A fish photo (fishAdmin): the photo, its fish entry and its iNaturalist observation.
     const fp = FISHA && FISHA.ph[f];
-    if (fp)
-      return `<figure class="adm-tile" data-f="${esc(f)}"><a class="adm-ph" href="${esc(fp.o)}" target="_blank" rel="noopener"><img src="${img(fp, 1)}" alt="" loading="lazy"></a><figcaption>${repUnit(fp.entry)} <small>${esc(fp.t || '')}</small></figcaption></figure>`;
+    if (fp) return fishRepTile(fp);
     const n = (PHOTOS[f] || {}).genus || g0,
       q = DATA.gen[n] && [...photos(n), ...pending(n)].find(x => x.f === f);
     if (!q) return tile({...(PHOTOS[f] || {}), f, genus: n}, '', '');
@@ -4064,29 +4230,56 @@ function renderTriage() {
       .replace(GRIP, '')
       .replace('<figcaption>', `<figcaption><a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`);
   };
-  const reps = repsOpen();
-  // A fish report: an old entry id (t01) or a family or genus id (f:, g:; units plan PR 4), or a fish photo (stopgap fi…,
-  // FishBase reference fb…, curated candidate fish-…; Codex review #656).
-  if (!FISHA && reps.some(r => /^(fi\d|fb|fish-)/.test(r[10] || '') || /^(t\d|f:|g:)/.test(r[5] || ''))) fishAdmin();
-  const repCard = r => {
-    const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
-      play = !/^(photo|sheet|page)$/.test(m),
+  // The reports of the subject on screen (rule A4; one about no subject on every side), by status (reports.js repsOrder):
+  // a report handled in a PR (reports-handled.json) is listed apart unless Pierre marked it Done.
+  const repAll = repsOf(),
+    RG = repsOrder(
+      repAll.filter(r => !repPR(r[0]) || repStatus(DRAFT, r[0]) === 'done'),
+      DRAFT
+    ),
+    reps = RG.open,
+    prs = repsPR();
+  // A fish report (Codex review #656) or one a fish unit, photo or page names: the fish data (fishAdmin), for its names,
+  // photos and links; its photo tools need the family pages' data too (fishLoad: Not this).
+  const fishy = r => {
+    const c = repCtx(r);
+    return (FISHS && c.subj === FISHS.id) || /^(fi\d|fb|fish-)/.test(r[10] || '');
+  };
+  if (!FISHA && (REPS && REPS.rows ? REPS.rows : []).some(fishy)) fishAdmin();
+  if (FISHA && !FISHC && repAll.some(r => repCtx(r, repPhotoSubj).photos.some(f => FISHA.ph[f]))) fishLoad().then(() => render());
+  // The players' list, for the Journey link of a report from a player.
+  if (!USERS && (REPS && REPS.rows ? REPS.rows : []).length && TOKEN)
+    loadUsers().then(() => (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') && render());
+  const repCard = (r, st) => {
+    const c = repCtx(r, repPhotoSubj),
+      S = SUBJECTS.find(x => x.id === c.subj) || ASUBJ,
       // sheet v55: the reports of an account deleted with its answers kept are "~deleted <id>", never verified (Q85)
-      gone = /^~deleted /.test(who || ''),
+      gone = /^~deleted /.test(c.who),
       // sheet v58: a report of an archived record (Players › Archived), its open items kept as such
-      arch = ok === 2 || !!(USERS && (USERS.archived || []).some(x => x.name === who));
-    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : arch ? `<b class="adm-repwho unv" title="${esc(who)}">From an archived record</b>` : `<b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>`}
-      <span class="adm-repwhy">${esc(why === 'wrong' && !play ? 'Wrong genus' : REP_WHY[why] || why)}</span>${g ? `<span>${repUnit(g)}${a && a !== g ? ` · answered ${repUnit(a)}` : ''}</span>` : ''}${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
-      <small class="adm-where">${esc(play ? 'game ' + m : m)}${w ? ` · <a href="index.html#${esc(w)}" target="_blank" rel="noopener">${esc(w)}</a>` : ''} · ${esc(when(t))}</small><button type="button" class="adm-tdone" data-rdone="${esc(id)}">✓ Done</button></div>
-      ${note ? `<p class="adm-repnote">${esc(note)}</p>` : ''}${
-        ph
-          ? `<div class="adm-grid adm-qgrid adm-flagged">${ph
-              .split(/\s+/)
-              .filter(Boolean)
-              .map(f => repTile(f, g))
-              .join('')}</div>`
-          : ''
-      }</article>`;
+      arch = c.ok === 2 || !!(USERS && (USERS.archived || []).some(x => x.name === c.who)),
+      // Its tools, each shown when the report carries what it needs (Q309): the reporter's Journey, the unit's admin page,
+      // the page it was sent from, a photo to attach when it has none.
+      u = !gone && !arch && c.who && USERS && (USERS.users || []).find(x => x.name.toLowerCase() === c.who.toLowerCase()),
+      fam = FISHA && FISHA.fam[c.unit],
+      unitHref = fam ? famHref(fam) : c.unit && DATA.gen[c.unit] ? genusHref(c.unit) : '',
+      att = !c.photos.length && REP_ATT[c.id],
+      shown = c.photos.length ? c.photos : att ? [att] : [],
+      acts = ['done', 'wait', 'drop', ...(st === 'open' ? [] : ['open'])].map(k => REP_STATUS.find(x => x[0] === k)),
+      bar = `<div class="adm-repbar"><span class="adm-qseg adm-lvseg adm-repst" role="group" aria-label="Status">${acts
+        .map(([k, , a]) => `<button type="button" data-rst="${k}" aria-pressed="${k === st}">${a}</button>`)
+        .join(
+          ''
+        )}</span>${u ? `<a class="chip" data-rj href="${esc('#' + (c.subj ? S.hash : lastSubj(u).hash) + 'players/list/journey/' + encodeURIComponent(u.name))}">Journey</a>` : ''}${
+        unitHref ? `<a class="chip" data-ru href="${esc(unitHref)}">Open ${esc(S.one)}</a>` : ''
+      }${c.page ? `<a class="chip" data-rp href="${esc('index.html' + (c.page === 'home' ? '' : '#' + c.page))}" target="_blank" rel="noopener">Open page</a>` : ''}${
+        c.photos.length ? '' : `<button type="button" class="chip" data-ratt aria-expanded="${!!REP_PICK[c.id]}">Attach a photo</button>`
+      }</div>`;
+    return `<article class="adm-rep" data-rep="${esc(c.id)}" data-rs="${st}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : arch ? `<b class="adm-repwho unv" title="${esc(c.who)}">From an archived record</b>` : `<b class="adm-repwho${c.ok ? '' : ' unv'}" title="${c.ok ? 'Verified' : 'Not verified'}">${esc(c.who || 'Anonymous')}${c.ok ? '' : ' ?'}</b>`}
+      <span class="adm-repwhy">${esc(c.why === 'wrong' && !c.game ? 'Wrong ' + S.one : REP_WHY[c.why] || c.why)}</span>${c.unit ? `<span>${repUnit(c.unit)}${c.ans && c.ans !== c.unit ? ` · answered ${repUnit(c.ans)}` : ''}</span>` : ''}${c.fix ? `<span class="adm-repfix">→ <i>${esc(c.fix)}</i></span>` : ''}
+      <small class="adm-where">${esc(c.game ? 'game ' + c.mode : c.mode)}${c.page ? ` · ${esc(c.page)}` : ''} · ${esc(when(c.t))}</small></div>
+      ${c.note ? `<p class="adm-repnote">${esc(c.note)}</p>` : ''}${bar}${
+        shown.length ? `<div class="adm-grid adm-qgrid adm-flagged">${shown.map(f => repTile(f, c.unit)).join('')}</div>` : ''
+      }${REP_PICK[c.id] && !c.photos.length ? repPicker(c, S) : ''}</article>`;
   };
   const poor = [];
   Object.entries(DRAFT.genera).forEach(([n, k]) =>
@@ -4104,14 +4297,22 @@ function renderTriage() {
   if (all && !EVS) loadEvents().then(() => cur === 'inbox/todo/all' && render());
   $v.innerHTML = `<section class="adm-quality">${all ? healthLine() : ''}
     <div class="adm-qhead"><h2>Reports and feedback <small>${REPS && REPS.rows ? reps.length : ''}</small></h2>${REPS && REPS.err ? `<small class="adm-where">${esc(REPS.err)}</small>` : ''}<button type="button" class="adm-fchip plain" data-rload title="Reload">↻</button></div>
-    ${reps.length ? reps.map(repCard).join('') : REPS && REPS.rows ? '<p class="note">Nothing reported.</p>' : ''}
+    ${reps.length ? reps.map(r => repCard(r, 'open')).join('') : REPS && REPS.rows ? '<p class="note">Nothing reported.</p>' : ''}
+    ${RG.wait.length ? `<div class="adm-qhead adm-tdhead adm-ptwait" data-repsec="wait"><h2>Stand-by <small>${RG.wait.length}</small></h2></div>${RG.wait.map(r => repCard(r, 'wait')).join('')}` : ''}
+    ${['done', 'drop']
+      .map(k =>
+        RG[k].length
+          ? `<details class="adm-rulekept adm-repfold" data-repfold="${k}"${REP_OPEN[k] ? ' open' : ''}><summary>${REP_STATUS.find(x => x[0] === k)[1]} <small>${RG[k].length}</small></summary>${RG[k].map(r => repCard(r, k)).join('')}</details>`
+          : ''
+      )
+      .join('')}
     ${
-      repsPR().length
-        ? `<details class="adm-repspr"><summary>Handled in a PR <small>${repsPR().length}</small></summary>${repsPR()
-            .map(
-              r =>
-                `<p class="adm-repline"><b>${esc(r[2] || 'Anonymous')}</b> ${esc(REP_WHY[r[4]] || r[4])}${r[5] ? ` · ${repUnit(r[5])}` : ''}${r[8] ? ` · <span class="adm-where">${esc(r[8].slice(0, 80))}</span>` : ''} · <a href="https://github.com/${REPO}/pull/${repPR(r[0])}" target="_blank" rel="noopener">handled in #${repPR(r[0])}</a></p>`
-            )
+      prs.length
+        ? `<details class="adm-repspr"><summary>Handled in a PR <small>${prs.length}</small></summary>${prs
+            .map(r => {
+              const c = repCtx(r, repPhotoSubj);
+              return `<p class="adm-repline"><b>${esc(c.who || 'Anonymous')}</b> ${esc(REP_WHY[c.why] || c.why)}${c.unit ? ` · ${repUnit(c.unit)}` : ''}${c.note ? ` · <span class="adm-where">${esc(c.note.slice(0, 80))}</span>` : ''} · <a href="https://github.com/${REPO}/pull/${repPR(c.id)}" target="_blank" rel="noopener">handled in #${repPR(c.id)}</a></p>`;
+            })
             .join('')}</details>`
         : ''
     }
@@ -4145,14 +4346,26 @@ function renderTriage() {
     bindF(x);
   });
   if (FL.length) bindQ();
-  $v.querySelectorAll('[data-rdone]').forEach(
+  // A report's status (Q309): one click, one Undo step; Done thanks the player (seen 'rep:<id>'), Stand-by and Dismiss never.
+  $v.querySelectorAll('[data-rst]').forEach(
     b =>
       (b.onclick = () => {
-        DRAFT.seen = {...(DRAFT.seen || {}), ['rep:' + b.dataset.rdone]: 1};
+        const id = b.closest('[data-rep]').dataset.rep,
+          k = b.dataset.rst;
+        if (k === repStatus(DRAFT, id)) return;
+        const {seen, reps} = repStatusSet(DRAFT, id, k);
+        if (seen) DRAFT.seen = seen;
+        else delete DRAFT.seen;
+        if (reps) DRAFT.reps = reps;
+        else delete DRAFT.reps;
         saveDraft();
         render();
+        toast(`${REP_STATUS.find(x => x[0] === k)[1]}. Undo (Ctrl+Z) brings it back.`);
       })
   );
+  $v.querySelectorAll('[data-repfold]').forEach(d => (d.ontoggle = () => (REP_OPEN[d.dataset.repfold] = d.open)));
+  bindRepAttach();
+  bindFishRep();
   const rl = $v.querySelector('[data-rload]');
   if (rl)
     rl.onclick = () =>
@@ -4172,17 +4385,6 @@ function renderTriage() {
         done(f);
         saveDraft();
         render();
-      })
-  );
-  $v.querySelectorAll('[data-act="tdrop"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const f = b.closest('[data-f]').dataset.f;
-        DRAFT[ASUBJ.admin.cur] = fishExclude(DRAFT[ASUBJ.admin.cur], (flagsOf(DRAFT)[f] || {}).file || f);
-        done(f);
-        saveDraft();
-        render();
-        toast('Excluded. Undo (Ctrl+Z) brings it back.');
       })
   );
   $v.querySelectorAll('[data-act="thide"]').forEach(
@@ -5763,6 +5965,8 @@ const output = () => {
       const o = DRAFT.points[k] || {};
       if (Object.keys(o).length) points[k] = {...sorted(o), ...(o.a ? {a: sorted(o.a)} : {})};
     });
+  // The players' reports set aside (Stand-by) or dismissed (To do › Reports; reports.js): by report id.
+  const reps = sorted(DRAFT.reps);
   return {
     v: 1,
     genera,
@@ -5780,7 +5984,8 @@ const output = () => {
     ...(Object.keys(auto).length ? {auto} : {}),
     ...(Object.keys(retest).length ? {retest} : {}),
     ...(Object.keys(fish).length ? {fish} : {}),
-    ...(Object.keys(points).length ? {points} : {})
+    ...(Object.keys(points).length ? {points} : {}),
+    ...(Object.keys(reps).length ? {reps} : {})
   };
 };
 // curation.json "fish" as published (autosort.js "Fish curation"): each map sorted by key, empty maps left out, the
@@ -5840,8 +6045,10 @@ function pubSummary() {
     [nDiff(DRAFT.quality, SAVED.quality), 'quality rating'],
     [nDiff(DRAFT.gf, SAVED.gf), 'growth form'],
     [nDiff(DRAFT.exclude, SAVED.exclude), 'exclusion'],
-    [nDiff(seenOf(DRAFT, true), seenOf(SAVED, true)), 'candidate review'],
-    [nDiff(seenOf(DRAFT, false), seenOf(SAVED, false)) + nDiff(DRAFT.use, SAVED.use), 'triage suggestion'],
+    [nDiff(seenOf(DRAFT, 'cand'), seenOf(SAVED, 'cand')), 'candidate review'],
+    [nDiff(seenOf(DRAFT, ''), seenOf(SAVED, '')) + nDiff(DRAFT.use, SAVED.use), 'triage suggestion'],
+    // A report's status (Done, Stand-by, Dismissed, Reopen): one per report whose status changed.
+    [repsChangedN(), 'report status', 'report statuses'],
     [nDiff(DRAFT.flag, SAVED.flag), 'triage flag'],
     [nDiff(DRAFT.crop, SAVED.crop), 'crop'],
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
@@ -5866,7 +6073,7 @@ function pubSummary() {
     [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]
     .filter(([c]) => c)
-    .map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
+    .map(([c, t, ts]) => `${c} ${c > 1 ? ts || t + 's' : t}`);
   const G = changed().map(n => {
     const a = DRAFT.genera[n] || {},
       b = SAVED.genera[n] || {};
@@ -5900,8 +6107,9 @@ async function save() {
     tl = tlChanged(),
     au = auChanged(),
     fi = fiChanged(),
-    pt = ptChanged();
-  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || sn || tl || au || fi || pt) || !TOKEN) return;
+    pt = ptChanged(),
+    rp = rpChanged();
+  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || sn || tl || au || fi || pt || rp) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -5917,7 +6125,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -6106,7 +6314,7 @@ async function start() {
     delete old._tab;
     REVS[SEEN] = clone(old);
   } // the draft another open tab started from
-  DRAFT = old && old.genera ? (base ? merge3(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
+  DRAFT = old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
   DRAFT.genera = DRAFT.genera || {};
   // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
   const kept = (() => {
@@ -6117,7 +6325,7 @@ async function start() {
     }
   })();
   if (TOKEN && kept && old && kept.snap === JSON.stringify(old) && Array.isArray(kept.hist) && Array.isArray(kept.fut)) {
-    const f = x => JSON.stringify(base ? merge3(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED));
+    const f = x => JSON.stringify(base ? mergeCur(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED));
     HIST = kept.hist.map(f);
     FUT = kept.fut.map(f);
   }
