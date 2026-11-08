@@ -141,6 +141,22 @@ test('Coral Finder book switch off: no book photo anywhere', () => {
   });
 });
 
+// The Coral ID Key cards need variety (Pierre, 2026-11-08: the book's crops left, field photos fill the variety): after
+// the featured photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
+test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
+  const {CAP} = require('../core.js');
+  assert.strictEqual(CAP.inat, 5);
+  const P = [...Array(9)].map((_, i) => ({f: 'p' + i, o: 'https://www.inaturalist.org/observations/' + i, a: 'X'}));
+  const d = {gen: {G: {views: {wide: P.map(p => ({...p}))}}}, course: {}};
+  applySlots(d, {}, {});
+  const s = d.gen.G.sl.wide;
+  assert.strictEqual(s.feat.length, 3);
+  assert.deepStrictEqual(
+    s.idkey.map(p => p.f),
+    ['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']
+  );
+});
+
 test('every slate genus has game photos in at least one view', () => {
   Object.entries(D.gen).forEach(([n, g]) =>
     assert.ok(
