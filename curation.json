@@ -24373,14 +24373,23 @@
       "f:Angelfishes": {
         "cover": "fi255709733"
       },
+      "f:Boxfishes": {
+        "cover": "fish-s325-cand-538923024"
+      },
       "f:Butterflyfishes": {
         "cover": "fi255705462"
+      },
+      "f:Cardinalfishes": {
+        "cover": "fi14678839"
       },
       "f:CoralBreams": {
         "cover": "fish-s138-cand-46795702"
       },
       "f:Damselfishes": {
         "cover": "fi489211132"
+      },
+      "f:Dragonets": {
+        "cover": "fi27046125"
       },
       "f:Emperors": {
         "cover": "fish-s148-cand-334907616"
@@ -24394,8 +24403,17 @@
       "f:Jacks": {
         "cover": "fi82125527"
       },
+      "f:Puffers": {
+        "cover": "fish-s358-cand-45635326"
+      },
       "f:Rabbitfishes": {
         "cover": "fish-s065-cand-589738973"
+      },
+      "f:Sandperches": {
+        "cover": "fi89515760"
+      },
+      "f:Scorpionfishes": {
+        "cover": "fish-s372-cand-57834053"
       },
       "f:Snappers": {
         "cover": "fish-s129-cand-756242509"
@@ -24404,13 +24422,16 @@
         "cover": "fish-s034-cand-556434290"
       },
       "f:Stargazers": {
-        "cover": "fish-s436-cand-332126558"
+        "cover": "fish-s436-cand-109649516"
       },
       "f:Surgeonfishes": {
         "cover": "fi105493002"
       },
       "f:Sweetlips": {
         "cover": "fish-s183-cand-467757305"
+      },
+      "f:Wrasses": {
+        "cover": "fish-s216-cand-379915292"
       }
     },
     "seen": {
