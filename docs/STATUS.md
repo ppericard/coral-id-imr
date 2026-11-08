@@ -5,51 +5,55 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-08, about 12:10 Manila, by the integrator, during a working session. **A new integrator starts here, then
+Written 2026-11-08, about 16:45 Manila, by the integrator, during a working session. **A new integrator starts here, then
 reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
 Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11-07; events: "Can't find variable: shownGroup" twice on 11-06 on one device, one "left with a card open" on the Scientific names offer on 11-07, two saves failed and not recovered)
 
 ## Now
 
-Fish is open to every player (beta). Main: sheet script v97; 664 fish species in 67 families since #727.
+Fish is open to every player (beta). Main: sheet script v107. **No open PR; merge queue empty.**
 
-- **Merged on 11-08**: #711-#735, #737, #738, #740, #741, #743, #745, #746, #750 (`git log`): IMR genera and
-  scientific genera at Advanced, 18 new families, the global fish score A + √ and its achievements, refused typed texts
-  logged, Coral Finder crops judged out, rule L11 in levels, LICENSE + README, the repo tidy-up. **Open**: the sheet chain
-  #742 (v103) → #736 (v104) → #749 (v105); #739, #744, #747, #748: Pierre answered Q288-Q294 on 11-08 (to paste into each PR); #664 open.
-- **Being built**: the 11-08 midday items are all open PRs now (above); the batch-5 fish judging.
-- **Pierre's hands**: "CF book: off" + Publish; Q121 history rewrite (now also the Coral Finder crops), then a GitHub
-  purge request; set one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the morning report
-  scheduled task from claude.ai (not visible from this session); later, stop the link-sharing of the Coral Finder PDF
-  on his Drive.
-- **Expert anchors**: the sheet's Notes tab, keys `agent.expert.*` (names only in chat).
+- **History rewritten, 2026-11-08 ~16:20 Manila** (photos step 3, Q121, Q300): 8,240 paths out of every commit of the 18
+  branches (the 2,216 Coral Finder crop files among them), pack 702 -> 63 MiB, a fresh clone ~75 MB, today's tree
+  unchanged, `.git-blame-ignore-revs` remapped (14fdb4b), Pages green and the live site checked. **Every clone or worktree
+  made before then must never push: re-clone** (HANDOVER "Photos out of the repo, step 3"). No GitHub Support purge
+  (Pierre's choice): the old objects stay reachable only through old PR refs and commit URLs, never in clones.
+- **Merged on 11-08**: #711-#753 (`git log`); #637 closed unmerged. **Being built**: nothing.
 
 ## Next
 
-The backlog in Pierre's order of interest is in [INTEGRATOR.md](INTEGRATOR.md) "Open work": the species level and the
-global fish score first, then ID marks for the 23 uncued fish families.
+ROADMAP "Backlog in priority order" (Pierre, 2026-11-08): (1) everything that speeds up development: Q305 a, b, d
+(decided, **their rule wording goes to Pierre tomorrow**) and the CI speed study's first changes (merge train, docs-only
+skip of the smokes, unit-test hot spots, smoke rebalance with a start-up signal); (2) then the Visits page (Q301-Q304),
+the fish judging flash or lamp bias, the install nudge, the admin reports action bar, the #664 decisions re-check.
 
 ## Questions for Pierre
 
-Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes into its PR and off this list.
+Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
+mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes into its PR and off this list.
 
-- **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone, now with the Coral Finder crops): not yet a go
-  (11-08); he wants to know whether it needs him (yes: the ruleset switch off and on, the backup kept off GitHub, and the
-  force-push needs his approval in the session) and how long the app is down (it is not: Pages keeps serving).
-- **Q208** (set aside again on 11-08: "on verra plus tard"): families not met before the scientific genera, or genera on their own
-  pace? **Q230** out-of-zone taxon-page photos: open, waits for real arguments (ROADMAP row).
-- Not numbered: #641 a-j, #651's 5 choices, #664's 8 decisions (ROADMAP rows). Q123 (fish confusion a-o) and Q124
-  (name study a-h): Pierre may have answered them elsewhere; ask them again (11-08).
-- Answered 11-08: Q295, Q296 reword the privacy page (yes); Q297 withdrawn (not a development choice: INTEGRATOR
-  "Questions"); Q298 measure the gap in the admin on real players first; Q299 the 9 names OK.
+- **Q208** (set aside on 11-08: "on verra plus tard"): families not met before the scientific genera, or genera on
+  their own pace? **Q230** out-of-zone taxon-page photos: waits for real arguments (ROADMAP row).
+- **Tomorrow, the admin reports action bar** (ROADMAP row). Numbered when asked (both tests): (a) the status names, the
+  new curation key `reps`, does Dismiss thank the player; (b) feedback sent from a game carries its game and photo
+  (`g` / `ph`). Unnumbered: (c) remember the attached photo (admin detail); (d) the list follows the subject switch (A4).
+- Not numbered: **tomorrow, the Q305 rule wording** (a, b, d; his OK goes in the rules' *Source* line); #641 a-j,
+  #651's 5 choices, #664's 8 decisions (re-check first). Q123, Q124: maybe answered elsewhere; ask them again (11-08).
+- Answered 11-08: Q121 / Q300 the rewrite, all at once (done); Q301-Q304 the Visits page; Q305 a, b, d adopted, c not;
+  Q306 #753's look OK; Q307 the one-tap flip chip under 380 px OK.
 
-Last question number: Q299
+Last question number: Q307
 
 ## Pierre's hands
 
 Actions only Pierre can do.
 
+- **Drop the Coral Finder crops from R2**: Actions > "Drop the book crops from R2" (it runs for him only), dry run first,
+  then for real (HANDOVER "Coral Finder book crops on R2"). **Delete his rewrite backup** (mirror clone and bundle) when
+  he says so. Restrict the link-sharing of the Coral Finder PDF on his Drive.
+- From before: "CF book: off" + Publish; one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the
+  morning report scheduled task from claude.ai (not visible from this session).
 - **The 8 unsure fish candidates** left in the admin (a drawing, tank shots, a damaged file, a screenshot, a possibly
   wrong species) and the photos the expert analyses flagged (sent in the chat on 11-06).
 - **Genus common names without a source in the repo**, to add in place if he wants them: Cephalopholis (hinds),
@@ -91,7 +95,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-08 ~12:10 Manila, integrator, mid-session. Questions Q229-Q280 answered except Q230 (out-of-zone taxon photos,
-waits for numbers); Q237 kept as is (common names on genus questions).
-Then Q288-Q294 (Pierre, 11-08): Q288 OK, reworded Key labels kept; Q289 his covers are the cards' photo; Q290 his cover
-on the thresher card; Q291 covers on Home when landscape and they fit; Q292 the book's 3-8 cm; Q293, Q294 OK.
+2026-11-08 ~16:45 Manila, integrator, mid-session: the drain done (#748, #753, #664), then the history rewrite (Q121,
+Q300); Q301-Q307 recorded; the numbered-question definition replaced (AGENTS.md, INTEGRATOR). Nothing mid-flight.
