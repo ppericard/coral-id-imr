@@ -566,7 +566,7 @@ function fishGenera(X, F) {
         };
         // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
         // whoever took it (Pierre, 2026-11-06).
-        if (wide.length) X.gen[id].cover = wide[0].f;
+        if (wide.length) X.gen[id].cover = easyCover(wide).f;
         sci.push(id);
       });
     });
@@ -649,8 +649,9 @@ const fishLoad = () =>
 function rankPhotos() {
   if (!FISH || typeof photoDiff !== 'function') return;
   Object.entries(FISH.gen).forEach(([n, g]) => {
-    g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p));
-    if (g.views.wide.length) g.cover = g.views.wide[0].f;
+    // The list the draw reads keeps no licence; the card photo breaks ties on it (core.js easyCover, Q270).
+    g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p), false);
+    if (g.views.wide.length) g.cover = easyCover(g.views.wide, p => photoDiff(n, p)).f;
   });
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
@@ -2629,6 +2630,9 @@ const SETUP = {
     // the achievement record is migrated and counted here, before any answer.
     achMigrate();
     achPending(); // a recount that waited for a subject's data, once the shared data is built (Codex review #734)
+    // Signed in, the one-time notices and the achievements check below wait for the visit's first sync and are decided
+    // on the merged state (sync.js noticeLater, noticesGo); the notices this device saw before go to the account first.
+    toldSeed();
     achRecheck(); // a learned mark taken away at load (model.js mxRecalc): its achievements first
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up

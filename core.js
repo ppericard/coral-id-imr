@@ -589,8 +589,9 @@
   // c1 / c2 / c3 = the families of each circle (all on the path and in the progress since Pierre, 2026-11-06, Q175: app.js
   // UNITS fish slate, fishGate), winks = the wink entries (a surprise card, never a question of the game).
   // first: one of the starter core (fish.json start, Pierre 2026-11-04), opened before the others (model.js openPick).
-  // views.wide in easyRank order (below): the easiest, most reference-like photo first, whoever took it; cover: the
-  // card's photo (app.js cover), the first of that order (Pierre, 2026-11-06: no source tier any more).
+  // views.wide in easyRank order (below; no licence in it: the draw reads it): the easiest, most reference-like photo
+  // first, whoever took it; cover: the card's photo (app.js cover), the first of that order, an open licence breaking
+  // ties (easyCover; Pierre, 2026-11-06: no source tier any more; 2026-11-08, Q270).
   // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos (Pierre, 2026-11-05: a species with no
   // game photo may keep one for its sheet, never in the quiz or any game, passing the game photo rules all the same;
   // tools/fish_photos.py SHEET).
@@ -598,6 +599,30 @@
   // every game draw reads views.wide (model.js photoSet, app.js fishGenera), so none can show it. The result's sheet
   // holds them by species ({species id: [photo]}), for a species sheet to show (none yet: docs/ARCHITECTURE.md "Fish content").
   const sheetOnly = p => !!p && p.use === 'ref';
+  // The rights a photo comes with (Pierre, 2026-11-08, Q270: "à qualité égale", CC0 / CC BY and his own photos before
+  // CC BY-NC, so the stock a later commercial app could use grows; the CC BY-NC photos stay fully usable): 'imr' an IMR
+  // lecture photo, 'book' a Coral Finder book photo, 'own' Pierre's own (whatever its licence), 'open' CC0 or CC BY,
+  // 'nc' the rest (CC BY-NC, or no licence read). licOf: the photo's licence code, its lic, else read from its credit a
+  // ("(CC BY-NC-SA)" -> cc-by-nc-sa, "no rights reserved" -> cc0), null when neither says (IMR lecture, Coral Finder
+  // book); the admin's presence.js licence. tools/rights.py is the Python copy of all three (tests/rights.test.js).
+  // rightsRank is the tie-break key, last of an order between otherwise-equal photos and never above quality, ease or
+  // variety (docs/rules/photos.md P1): 0 own or open, 1 the rest. Own and open rank alike, so his photos are never
+  // boosted over another open one (P1, fish).
+  function licOf(p) {
+    if (!p) return null;
+    if (p.lic) return String(p.lic).toLowerCase();
+    const m = /\((CC0|CC[ -][A-Z -]+?)\)/.exec(p.a || '');
+    if (!m) return /no rights reserved/i.test(p.a || '') ? 'cc0' : null; // iNaturalist's CC0 credit
+    return m[1] === 'CC0' ? 'cc0' : 'cc-' + m[1].slice(3).toLowerCase().trim().split(/\s+/).join('-');
+  }
+  function rightsClass(p) {
+    if (!p) return 'nc';
+    if (p.imr) return 'imr';
+    if (p.cf) return 'book';
+    if (p.own) return 'own';
+    return /^(cc0|cc-by)$/.test(licOf(p) || '') ? 'open' : 'nc';
+  }
+  const rightsRank = p => (/^(own|open)$/.test(rightsClass(p)) ? 0 : 1);
   // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
   // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
   // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
@@ -636,12 +661,18 @@
     /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
     (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
   const refFirst = p => (refLevel(p) ? 0 : 1);
-  function easyRank(L, d = p => -(p.e || 3)) {
+  // Last before the hash, the rights (rightsRank, below): between otherwise-equal photos, an open licence or Pierre's own
+  // first (Pierre, 2026-11-08, Q270). lic false leaves them out: the order the game's draw reads (views.wide), whose ties
+  // decide model.js photoSet's variety cut, so the draw never reads a licence (Codex review #742); the card photo, the
+  // first of the order with them (easyCover).
+  function easyRank(L, d = p => -(p.e || 3), lic = true) {
     return (L || [])
-      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
-      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.h - b.h)
+      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), l: lic ? rightsRank(p) : 0, h: fHash(p.f)}))
+      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.l - b.l || a.h - b.h)
       .map(x => x.p);
   }
+  // A unit's card photo: the first of its photos in easyRank order, the rights breaking ties (Q270); null with none.
+  const easyCover = (L, d) => easyRank(L, d)[0] || null;
   function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
@@ -708,7 +739,9 @@
           wide: easyRank(
             (byFam[t.id] || [])
               .filter(p => p && p.f && p.src && !sheetOnly(p))
-              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p)),
+            undefined,
+            false
           )
         },
         ...(start.has(t.id) ? {first: 1} : {}),
@@ -718,7 +751,7 @@
       };
     });
     Object.values(gen).forEach(g => {
-      if (g.views.wide.length) g.cover = g.views.wide[0].f;
+      if (g.views.wide.length) g.cover = easyCover(g.views.wide).f;
     });
     const ids = Object.keys(gen),
       play = n => !gen[n].wink,
@@ -1195,7 +1228,23 @@
       // kept pg 0.96 for good).
       delete out[subjKey(S.id, 'rv')];
     });
+    // The one-time notices told on either account (TOLD): told once, never shown again for the merge.
+    const ta = J(A, TOLD.KEY),
+      tb = J(B, TOLD.KEY);
+    if (ta || tb) out[TOLD.KEY] = JSON.stringify(toldUnion(ta, tb));
     return out;
+  }
+  // The one-time notices a player has seen, on any device of the account (Pierre, 2026-11-08: a device holding an old
+  // copy of his account showed again the cards and toasts he had seen on another device): a list of tokens, one per
+  // notice seen (progress.js: 'recalc:<note id>' an update note, 'rv:<version>' a rules version's card, 'mx:<unit>@<time>'
+  // a learned mark taken away, 'sorry' the apology, 'hello:<subject>-<mode>' a subject's card, 'board' the leaderboard
+  // note). It travels with the progress (KEYS.SYNC) and merges as the union (sync.js mergeSaved, signIn; mergeUsers), so
+  // a notice told on one device is never told again on another. Anything but a short string is dropped; sorted.
+  const TOLD = {KEY: KEYS.SYNC + 'told', MAX: 120};
+  function toldUnion(a, b) {
+    const out = new Set();
+    [a, b].forEach(L => Array.isArray(L) && L.forEach(t => typeof t === 'string' && t && t.length <= TOLD.MAX && out.add(t)));
+    return [...out].sort();
   }
   // The surprise cards (winks) two records have met (quiz.js winkMerge at a sync, mergeUsers for two accounts): {wink id:
   // answer count when shown}, the union, the earlier count kept; anything else in either is ignored (Pierre, 2026-11-06:
@@ -1974,45 +2023,55 @@
       VIEWS.forEach(([v]) => {
         const field = (g.views[v] || []).filter(p => !p.multi),
           q = p => qualOf(c, p.f),
-          byQ = L => L.slice().sort((a, b) => q(b) - q(a));
+          // Equal quality: an open licence or his own first (rightsRank, Q270), else the list's order: the sheet, the
+          // featured photos and the Coral ID Key. The game list keeps the quality order alone (byQ0), its featured lead
+          // included, so the draw's ties (model.js photoSet's variety cut, which follows the list) never read a licence
+          // (Codex review #742).
+          byQ0 = L => L.slice().sort((a, b) => q(b) - q(a)),
+          byQr = L => L.slice().sort((a, b) => q(b) - q(a) || rightsRank(a) - rightsRank(b));
         const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
         // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
-        const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
-        const others = byQ(all.filter(p => !isCore(p)));
-        const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
         // Coral Finder book photos (Pierre 2026-11-01): on the sheet when pinned, or to fill a gap after every field photo; never in games.
-        const bk = byQ((g.book || []).filter(p => p.view === v)),
-          find = f => all.find(p => p.f === f) || bk.find(p => p.f === f);
-        const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean),
-          hint = ((sug[n] || {})[v] || []).map(find).filter(p => p && !p.cf);
         // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
         // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
-        const pool = [...hint, ...ranked].filter(p => !pin.includes(p)),
-          k = CAP.feat - Math.min(pin.length, CAP.feat);
-        const feat = [
-          ...pin.slice(0, CAP.feat),
-          ...fill(
-            fill(
-              take(
-                pool.filter(p => p.imr || q(p) !== 1),
+        const slot = byQ => {
+          const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
+          const others = byQ(all.filter(p => !isCore(p)));
+          const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
+          const bk = byQ((g.book || []).filter(p => p.view === v)),
+            find = f => all.find(p => p.f === f) || bk.find(p => p.f === f);
+          const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean),
+            hint = ((sug[n] || {})[v] || []).map(find).filter(p => p && !p.cf);
+          const pool = [...hint, ...ranked].filter(p => !pin.includes(p)),
+            k = CAP.feat - Math.min(pin.length, CAP.feat);
+          const feat = [
+            ...pin.slice(0, CAP.feat),
+            ...fill(
+              fill(
+                take(
+                  pool.filter(p => p.imr || q(p) !== 1),
+                  k
+                ),
+                pool,
                 k
               ),
-              pool,
+              bk.filter(p => !pin.includes(p)),
               k
-            ),
-            bk.filter(p => !pin.includes(p)),
-            k
-          )
-        ];
+            )
+          ];
+          return {others, ranked, bk, feat};
+        };
+        const {others, ranked, bk, feat} = slot(byQr),
+          feat0 = slot(byQ0).feat;
         // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
         const more = [...ranked, ...bk].filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
         // Games: field photos and IMR lecture photos (Pierre 2026-11-01), never multi-coral or book photos.
-        const gm = byQ([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
+        const gm = byQ0([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
           core = gm.filter(isCore),
           rest = gm.filter(p => !isCore(p));
         // One list per view (Pierre, 2026-11-03: the Easy / Medium / Hard sets went, docs/LEARNING.md "Hierarchical
         // photo Elo"): the featured game photos first, then IMR / own before other observers, each by quality, Poor last.
-        const lead = feat.filter(p => gm.includes(p)),
+        const lead = feat0.filter(p => gm.includes(p)),
           after = [...core, ...rest].filter(p => !lead.includes(p));
         const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
         g.sl[v] = {
@@ -5053,6 +5112,8 @@
     pairConf,
     mergeUsers,
     winkUnion,
+    TOLD,
+    toldUnion,
     OPEN_AGAIN,
     openState,
     PULSEQ,
@@ -5086,9 +5147,13 @@
     subjDev,
     fishGen,
     easyRank,
+    easyCover,
     refFirst,
     refLevel,
     refScore,
+    licOf,
+    rightsClass,
+    rightsRank,
     fishOn,
     fishIn,
     fishGone,
