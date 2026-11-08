@@ -883,28 +883,36 @@ async function freshPlayers(b, base, errs) {
     await q.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .hsubj'), null, {timeout: 30000});
     // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
     // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile, and the Identify door's art, one of those.
+    // By photo, not by address (as the family sheet's hero below): every R2 photo fails in this smoke, so R2 goes off
+    // mid-run (app.js photoFail, r2Out) and a photo shown under its R2 address may be read under its online original
+    // (core.js photoAway), or the reverse, depending on when the failure lands (the train of #778 caught it on CI).
     const ht = await q.evaluate(() => {
       const srcOf = p => (/src="([^"]*)"/.exec(thumb(p, '1px')) || [])[1],
+        shows = (u, p) =>
+          !!u &&
+          !!p &&
+          (u === srcOf(p) || (photoFileOf(u) || {}).f === p.f || (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
         suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1',
         want = n => {
           const g = GX(n),
             L = g.views.wide;
           return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suits) || L[0];
         },
-        W = new Set(
-          slateGenera()
-            .filter(n => GX(n).views.wide.length)
-            .map(n => srcOf(want(n)))
-        ),
-        C = new Set(
-          slateGenera()
-            .filter(n => suits(GX(n).coverP))
-            .map(n => srcOf(GX(n).coverP))
-        ),
+        W = slateGenera()
+          .filter(n => GX(n).views.wide.length)
+          .map(n => want(n)),
+        C = slateGenera()
+          .filter(n => suits(GX(n).coverP))
+          .map(n => GX(n).coverP),
         T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img, #view .hdoor.identify .hdart img')].map(i =>
           i.getAttribute('src')
         );
-      return {n: T.length, covers: T.filter(x => C.has(x)).length, fits: C.size, bad: T.filter(x => !W.has(x))};
+      return {
+        n: T.length,
+        covers: T.filter(x => C.some(p => shows(x, p))).length,
+        fits: C.length,
+        bad: T.filter(x => !W.some(p => shows(x, p)))
+      };
     });
     if (!ht.n || ht.bad.length || (ht.fits && !ht.covers))
       ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
@@ -958,8 +966,15 @@ async function freshPlayers(b, base, errs) {
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
     // Each family's photo there is Pierre's ★ Cover (curation.json fish genera, app.js fishCurate) while it is in play,
     // else the card photo as before (cover(): the easiest, ties on the licence, Q270; 2026-11-08: his covers never showed).
+    // By photo, not by address (R2 goes off mid-run here: the Home check above).
     const fcv = await q.evaluate(() => {
       const srcOf = a => (/src="([^"]*)"/.exec(a) || [])[1],
+        shows = (u, p) =>
+          !!u &&
+          !!p &&
+          (u === srcOf(thumb(p, '130px')) ||
+            (photoFileOf(u) || {}).f === p.f ||
+            (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
         cards = [...document.querySelectorAll('#view .tipg')].map(a => ({
           n: slateGenera().find(n => unameT(n) === (a.querySelector('.tipph b') || {}).textContent),
           src: (a.querySelector('.tipph img') || {getAttribute: () => ''}).getAttribute('src')
@@ -970,7 +985,7 @@ async function freshPlayers(b, base, errs) {
         shown: cards.filter(c => c.n && FISH.gen[c.n].coverP).length,
         bad: cards
           .filter(c => c.n && FISH.gen[c.n].views.wide.length)
-          .filter(c => c.src !== srcOf(thumb(cover(FISH.gen[c.n]), '130px')))
+          .filter(c => !shows(c.src, cover(FISH.gen[c.n])))
           .map(c => c.n)
       };
     });
