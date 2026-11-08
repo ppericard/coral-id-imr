@@ -8,8 +8,9 @@ In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish 
     species, the photo is neither rejected (seen) nor excluded, and its Not this (out), if set, names that same species;
   - the candidates judged sure (suggest.json "fish", cand_sure: autosort.js fishSure's add, one kind of fish) he has not
     decided on, listed with auto: "cand", the pass's proposed crop applied as the auto-sort would write it;
-  - the units' reference photos (tools/fish_refs.json) judged at the reference level (tools/fish_judge.json; tools/
-    fish_judge.py ref_level), auto: "ref", unless their observation is already in play (rule P4).
+  - the units' reference photos (tools/fish_refs.json) judged sure on the same rubric as a candidate, whatever their
+    reference level (tools/fish_judge.json codes after the caps; judged_sure: one kind of fish, in the water; Pierre,
+    2026-11-08, Q212: "we bring them in like candidates"), auto: "ref", unless their observation is already in play (rule P4).
   A photo in play by itself leaves play once Pierre rejects, excludes or moves it (by photo id: core.js fishIn, fish_in).
   The top-level "exclude" (photos excluded for good everywhere) is honoured too, by name and by photo id. At most MAX
   downloads a run (--max), the reference photos and the starter entries first; the rest at the next runs.
@@ -91,8 +92,8 @@ def gone_ids(cur):
 
 def fish_in(F, p, gone):
     """core.js fishIn: game record p is in play. Pierre's own add (fish_on), or a photo that entered automatically (auto:
-    a candidate judged sure, a reference photo judged at the reference level; Pierre, 2026-11-06, Q180 and Q199) that he
-    did not reject, exclude or move (gone: gone_ids)."""
+    a candidate judged sure, a reference photo judged sure like one; Pierre, 2026-11-06, Q180 and Q199; 2026-11-08,
+    Q212) that he did not reject, exclude or move (gone: gone_ids)."""
     return fish_on(F, p['f'], p.get('sp')) or (bool(p.get('auto')) and pid(p['f']) not in gone)
 
 
@@ -139,14 +140,20 @@ def entries(fish):
     return of, order
 
 
+def judged_sure(jt, e):
+    """The rubric's part of a sure judgement, the same for a candidate and a reference photo: valid tags and ease (any
+    ease 1-5: the judged ease is the photo's prior difficulty), never an unclear subject (count x) nor a fish out of the
+    water (flag a; autosort.js fishSure), and one kind of fish (count 1 or s, never m: rule P3)."""
+    jt = jt or ''
+    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in '1s' and 'a' not in jt[7:]
+
+
 def cand_sure(j):
     """A judged candidate that enters play by itself (suggest.json "fish" {jt, e, k, ph, c, u}; Pierre, 2026-11-06, Q180):
-    autosort.js fishSure's add (no unsure field, keep best or alt, valid tags and ease, never an unclear subject, count x,
-    nor a fish out of the water, flag a) and one kind of fish (count 1 or s, never m: rule P3, as the reference level)."""
+    autosort.js fishSure's add (no unsure field, keep best or alt, never dup) on a sure judgement (judged_sure)."""
     if not j or j.get('u') or j.get('k') not in ('best', 'alt'):
         return False
-    jt, e = j.get('jt') or '', j.get('e')
-    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in '1s' and 'a' not in jt[7:]
+    return judged_sure(j.get('jt'), j.get('e'))
 
 
 TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$')  # autosort.js FISH_TAGS
@@ -154,8 +161,11 @@ TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$')  # autosor
 
 def ref_play(fish, refs, codes):
     """[(species id, reference photo with e and jt)] of the units' reference photos (tools/fish_refs.json, by species)
-    judged at the reference level (tools/fish_judge.json codes, the rubric's caps and reference flag: tools/fish_judge.py
-    cap, ref_level), in tools/fish_refs.json order."""
+    judged sure on the candidates' rubric (tools/fish_judge.json codes, the rubric's caps and reference flag: tools/
+    fish_judge.py cap; judged_sure), whatever their reference level (Pierre, 2026-11-08, Q212: "we bring them in like
+    candidates"; before, only the reference level entered, Q199), in tools/fish_refs.json order. A reference photo has no
+    keep or unsure field (tools/fish_judge.json holds codes only); one of a photo or an observation already in play stays
+    out (in_play, rule P4)."""
     import fish_judge as J
     dim = {t['id'] for t in fish.get('teach') or [] if t.get('dimorph')}
     juv = {t['id']: t.get('juv') for t in fish.get('teach') or []}
@@ -170,7 +180,7 @@ def ref_play(fish, refs, codes):
             e, jt = J.cap(codes[r['f']], t in dim, J.juv_early(juv.get(t), names.get(sid, ())), r.get('rep'))
             q = {k: v for k, v in r.items() if k != 'for'}
             q.update(e=e, jt=jt)
-            if J.ref_level(q):
+            if judged_sure(jt, e):
                 out.append((sid, q))
     return out
 
@@ -179,7 +189,7 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None):
     """[(species id, record, its fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
     Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that fish-cand.json still
     describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved);
-    "ref", the reference photos judged at the reference level (ref_play), unless he decided against the same photo. Never
+    "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the same photo. Never
     the same photo twice (pid), and a reference photo only on an observation not already in play (rule P4); a candidate's
     sure best and alt both enter, as fishSure proposes them."""
     F = (cur or {}).get('fish') or {}
