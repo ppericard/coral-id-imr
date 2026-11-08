@@ -7266,7 +7266,7 @@ function bindStats() {
 // When the light read cannot complete the log held (liveMerge full), the whole log is read again in the background, as
 // ↻ does but with the page kept on screen; a player new to the player list reads it again too. Before LIVE_SHEET (an
 // older script answers readLive 'input'), and without the token, nothing: ↻ by hand as before (rule D4).
-const LIVE_SHEET = 109;
+const LIVE_SHEET = 110;
 const LIVE_READ = {MS: 60000};
 const liveOn = () => !!ANS && !ANS.old && Number(ANS.v) >= LIVE_SHEET;
 let liveT = 0,
