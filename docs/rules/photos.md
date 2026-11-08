@@ -18,7 +18,8 @@ mixes sources on purpose for variety.
   compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
   included in the fish photo pool. Never left out, never boosted (`tools/fish_photos.py` `his_ok`).
 - **Fish photos in play are hosted on R2, whatever their route in**: the photos Pierre adds in the admin, the candidates
-  judged sure on the rubric and the reference photos judged at the reference level enter the same way (`tools/fish_game.py`,
+  judged sure on the rubric and the reference photos judged sure on the same rubric, whatever their reference level, enter
+  the same way (`tools/fish_game.py`,
   the Candidate photos workflow); his curation only removes or corrects them.
 - **Fish reference photos first.** Every photo of reference quality, whoever took it, comes first: a reference
   source's own (iNaturalist's taxon cover and taxon-page photos, FishBase's main picture) judged very easy, or any photo
@@ -47,7 +48,8 @@ abound; a beginner's first fish photos must be easy, near-reference ones, and so
 Pierre's own.
 *Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568); no
 source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148); subject-neutral wording, 2026-11-06; fish reference photos first and FishBase in automatically,
-2026-11-06; fish photos in play by themselves once judged, hosted on R2 whatever their route in, 2026-11-06 (Q180, Q199).
+2026-11-06; fish photos in play by themselves once judged, hosted on R2 whatever their route in, 2026-11-06 (Q180, Q199); reference photos in like candidates, whatever their
+level, 2026-11-08 (Q212).
 
 ### P2
 
