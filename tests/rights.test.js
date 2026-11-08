@@ -262,3 +262,81 @@ test('fetch_fish lic_class: his own, CC0 / CC BY, NC (select reads it as the las
 print(json.dumps([lic_class(l, o) for l, o in [('cc-by-nc', True), ('cc-by', True), (None, True), ('cc0', False), ('cc-by', False), ('cc-by-nc', False), (None, False)]]))`);
   assert.deepStrictEqual(R, [0, 0, 0, 1, 1, 2, 2]);
 });
+
+// The rights facet (docs/ROADMAP.md "Rights tagged for a later split", licence study 2026-11-08): presence.js rightsTally,
+// rightsBy and speciesOf, which admin.js renderRights (Inbox › Coverage › Rights) and Coverage › Games' summary line read.
+// Read-only counts: commercial-ready = own + open.
+test('rightsTally: the photos by rights class, each photo once, commercial-ready = own + open', () => {
+  const P = require('../presence.js');
+  const L = [
+    {f: 'a', own: true, lic: 'cc-by-nc'},
+    {f: 'b', lic: 'cc0'},
+    {f: 'c', a: '(c) X, some rights reserved (CC BY)'},
+    {f: 'd', lic: 'cc-by-nc'},
+    {f: 'e', a: '(c) X, some rights reserved (CC BY-NC-SA)'},
+    {f: 'g', imr: true},
+    {f: 'h', cf: 1},
+    {f: 'b', lic: 'cc0'}, // the same photo twice counts once
+    null
+  ];
+  assert.deepStrictEqual(P.rightsTally(L), {n: 7, ready: 3, own: 1, open: 2, nc: 2, imr: 1, book: 1});
+  assert.deepStrictEqual(P.rightsTally([]), {n: 0, ready: 0, own: 0, open: 0, nc: 0, imr: 0, book: 0});
+  assert.deepStrictEqual(P.rightsTally(undefined).n, 0);
+  assert.deepStrictEqual(P.RIGHTS, ['own', 'open', 'nc', 'imr', 'book']);
+  // Every class rightsClass gives has its count.
+  L.filter(Boolean).forEach(p => assert.ok(P.RIGHTS.includes(C.rightsClass(p))));
+});
+
+test('rightsBy, speciesOf: per species in the order they first appear, genus-only and unnamed photos left out', () => {
+  const P = require('../presence.js');
+  assert.strictEqual(P.speciesOf({t: 'Acropora florida'}), 'Acropora florida');
+  assert.strictEqual(P.speciesOf({t: 'Porites lobata lobata'}), 'Porites lobata');
+  assert.strictEqual(P.speciesOf({t: 'Acropora'}), null);
+  assert.strictEqual(P.speciesOf({t: 'Acropora Group A'}), null);
+  assert.strictEqual(P.speciesOf({imr: true}), null);
+  assert.strictEqual(P.speciesOf(null), null);
+  const L = [
+    {f: '1', t: 'Acropora florida', lic: 'cc-by-nc'},
+    {f: '2', t: 'Acropora', lic: 'cc-by'},
+    {f: '3', t: 'Acropora cerealis', own: true},
+    {f: '4', t: 'Acropora florida', lic: 'cc-by'},
+    {f: '5', imr: true}
+  ];
+  assert.deepStrictEqual(
+    P.rightsBy(L, P.speciesOf).map(([k, T]) => [k, T.n, T.ready, T.nc]),
+    [
+      ['Acropora florida', 2, 1, 1],
+      ['Acropora cerealis', 1, 1, 0]
+    ]
+  );
+});
+
+test("the facet on today's photos: every coral genus and fish species tallied, the classes adding up to the photos", () => {
+  const P = require('../presence.js');
+  const D = read('data.json');
+  // A genus page's photos (admin.js own): its views, the extra photos and the IMR lecture photos (data.json course).
+  const coral = [
+    ...Object.values(D.gen).flatMap(g => [...Object.values(g.views || {}).flat(), ...Object.values(g.more || {}).flat()]),
+    ...Object.values(D.course || {}).flat()
+  ];
+  const T = P.rightsTally(coral);
+  assert.ok(T.n > 200, 'coral photos ' + T.n);
+  assert.strictEqual(
+    P.RIGHTS.reduce((s, c) => s + T[c], 0),
+    T.n
+  );
+  assert.strictEqual(T.ready, T.own + T.open);
+  assert.strictEqual(T.book, 0, 'no Coral Finder book photo since #748 (tests/nobook.test.js)');
+  assert.ok(T.own > 0 && T.open > 0 && T.nc > 0 && T.imr > 0, JSON.stringify(T));
+  const fish = Object.values(read('fish-game.json').photos).flat();
+  const F = P.rightsTally(fish);
+  assert.ok(F.n > 500, 'fish photos ' + F.n);
+  assert.strictEqual(F.imr + F.book, 0, 'no IMR slide photo for fish (rule P1)');
+  assert.strictEqual(F.own + F.open + F.nc, F.n);
+  // Per species, the tallies add up to the whole.
+  const S = P.rightsBy(fish, p => p.sp);
+  assert.strictEqual(
+    S.reduce((s, [, t]) => s + t.n, 0),
+    F.n
+  );
+});
