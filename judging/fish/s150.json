@@ -99,6 +99,102 @@
   "fish-s150-cand-fb-Camel_u0": {
    "code": "p1n0sl13",
    "keep": "best"
+  },
+  "fish-s150-cand-243644180": {
+   "code": "o1g1mmsj2",
+   "keep": "best"
+  },
+  "fish-s150-cand-243644193": {
+   "code": "o1g1mmsj2",
+   "keep": "dup"
+  },
+  "fish-s150-cand-144308749": {
+   "code": "d1g1ssxj1",
+   "keep": "best"
+  },
+  "fish-s150-cand-239643793": {
+   "code": "o1g2bm1j1",
+   "keep": "best"
+  },
+  "fish-s150-cand-239643790": {
+   "code": "o1g2bm1j1",
+   "keep": "dup"
+  },
+  "fish-s150-cand-239643784": {
+   "code": "o1g2bs1j1",
+   "keep": "dup"
+  },
+  "fish-s150-cand-208718428": {
+   "code": "p1g1ml1j2",
+   "keep": "best"
+  },
+  "fish-s150-cand-208718446": {
+   "code": "o1d1mm1j1",
+   "keep": "dup"
+  },
+  "fish-s150-cand-639512187": {
+   "code": "p1n0sl1ja2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Studio shot on black: a photarium or a specimen out of water, cannot tell which."
+  },
+  "fish-s150-cand-256883546": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s150-cand-759565874": {
+   "code": "o1d2bm11",
+   "keep": "best"
+  },
+  "fish-s150-cand-756670997": {
+   "code": "o1g1smm3",
+   "keep": "best"
+  },
+  "fish-s150-cand-756671015": {
+   "code": "o1g1smm3",
+   "keep": "dup"
+  },
+  "fish-s150-cand-648022822": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s150-cand-327738997": {
+   "code": "p1d2bss1",
+   "keep": "best"
+  },
+  "fish-s150-cand-381125898": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s150-cand-381125896": {
+   "code": "o1g1bm12",
+   "keep": "dup"
+  },
+  "fish-s150-cand-616285604": {
+   "code": "d1g2bs11",
+   "keep": "best"
+  },
+  "fish-s150-cand-627852340": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s150-cand-758256805": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s150-cand-758256814": {
+   "code": "p1g1smm3",
+   "keep": "dup"
+  },
+  "fish-s150-cand-758256832": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  },
+  "fish-s150-cand-758256760": {
+   "code": "o1d2sm12",
+   "keep": "dup"
   }
  }
 }
