@@ -509,7 +509,7 @@
   }
   // rows: the sheet's readAnswers rows [id, time ms, shown, answered, right, mode, photos, expected, ability, new
   // photos, choices, anonymous, seconds, enlarged] (Code.gs answers_), oldest first or not. meta.ph: {file: [view,
-  // quality 1-3, sharpness or null, source 'imr' | 'own' | 'inat' | 'book']} from the admin's data and curation.
+  // quality 1-3, sharpness or null, source 'imr' | 'own' | 'inat']} from the admin's data and curation.
   function prep(rows, meta = {}) {
     const PH = meta.ph || {},
       R = (rows || []).filter(r => String(r[5] || '').indexOf('quiz') === 0 && r[2]).sort((a, b) => a[1] - b[1]);
@@ -889,7 +889,7 @@
         share(x => x[1] === 1),
         sh.length ? (mean(sh.map(Math.log)) - mu) / sd : 0,
         share(x => x[3] === 'own'),
-        share(x => x[3] === 'inat' || x[3] === 'book'),
+        share(x => x[3] === 'inat'),
         P.length === 1 ? 1 : 0,
         a.typed
       ];
@@ -977,7 +977,7 @@
         k => ({wide: 'Colony', medium: 'Close-up', macro: 'Corallites'})[k] || k
       ),
       sources: tab(
-        x => (x[3] === 'book' ? 'inat' : x[3]),
+        x => x[3],
         k => ({imr: 'IMR lecture', own: 'Pierre’s', inat: 'Other iNaturalist'})[k] || k
       ),
       quality: tab(
@@ -3054,14 +3054,14 @@
   /* ---------- Photo features, from the public files (the same for the workflow and the admin) ---------- */
   // {file: [view, quality 1-3, sharpness or null, source]}: the view after Pierre's moves and adds (curation.json), his
   // quality rating else the automatic one (quality.json; an IMR lecture photo is never rated Poor automatically, as the
-  // app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, Pierre's, other iNaturalist, CF book).
+  // app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, Pierre's, other iNaturalist).
   function photoMeta(data, cur, qual, met, core) {
     const out = {},
       C = (cur && cur.genera) || {},
       CQ = (cur && cur.quality) || {},
       AQ = (qual && qual.q) || {},
       MT = (met && met.m) || {},
-      src = p => (p.cf ? 'book' : p.imr || /^imrl?-/.test(p.f) ? 'imr' : p.own ? 'own' : 'inat');
+      src = p => (p.imr || /^imrl?-/.test(p.f) ? 'imr' : p.own ? 'own' : 'inat');
     let put = (p, v) => {
       const a = AQ[p.f] || 2;
       out[p.f] = [v, CQ[p.f] || (a === 1 && src(p) === 'imr' ? 2 : a), MT[p.f] ? MT[p.f][0] : null, src(p)];

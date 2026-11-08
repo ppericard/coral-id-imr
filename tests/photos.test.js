@@ -35,12 +35,11 @@ const each = (d, fn) =>
     })
   );
 
-test('game photos: never a Coral Finder book photo, a several-corals photo or a sheet-only photo (rule P3, use)', () => {
+test('game photos: never a several-corals photo or a sheet-only photo (rule P3, use)', () => {
   const use = CUR.use || {};
   each(D, (n, g, v, s) =>
     GAME.forEach(k =>
       s[k].forEach(p => {
-        assert.ok(!p.cf, `${n} ${v} ${k}: book photo ${p.f}`);
         assert.ok(!p.multi, `${n} ${v} ${k}: several corals ${p.f}`);
         assert.notStrictEqual(use[p.f], 'ref', `${n} ${v} ${k}: sheet-only ${p.f}`);
       })
@@ -119,25 +118,10 @@ test("featured = Pierre's pins first, in his order; at most 3", () => {
 test("sheet order: IMR and Pierre's own photos come before other observers (rule P1), Poor last", () => {
   const q = f => (CUR.quality || {})[f] || (AUTOQ[f] === 1 && !/^imrl?-/.test(f) ? 1 : 2);
   each(D, (n, g, v, s) => {
-    const L = s.more.filter(p => !p.cf && q(p.f) !== 1);
+    const L = s.more.filter(p => q(p.f) !== 1);
     const firstOther = L.findIndex(p => !(p.imr || p.own)),
       lastCore = L.map(p => !!(p.imr || p.own)).lastIndexOf(true);
     assert.ok(firstOther < 0 || lastCore < firstOther, `${n} ${v}: ${L.map(p => p.f).join(' ')}`);
-  });
-});
-
-test('a book photo is on a sheet only once pinned or approved (never as a game photo)', () => {
-  genera(D).forEach(([n, g]) => (g.book || []).forEach(p => assert.ok(p.view, `${n}: book photo ${p.f} without an approved view`)));
-});
-
-test('Coral Finder book switch off: no book photo anywhere', () => {
-  const d = build({...CUR, book: false});
-  genera(d).forEach(([n, g]) => {
-    assert.ok(!g.book || !g.book.length, n);
-    VIEWS.forEach(v => {
-      const s = (g.sl || {})[v];
-      if (s) [...s.feat, ...s.more, ...s.idkey].forEach(p => assert.ok(!p.cf, `${n} ${v}: ${p.f}`));
-    });
   });
 });
 
@@ -285,7 +269,7 @@ test('every img/ photo file named in the pages and tools is in img/ (the others 
 });
 
 // tools/photos.py --check (CI) on made-up folders: the four sizes of every photo in img/; a downloaded photo with no
-// online original (IMR lecture photo, Coral Finder book scan) never missing from img/, git being its only backup; a
+// online original (IMR lecture photo, page art) never missing from img/, git being its only backup; a
 // downloaded photo with an online original may be on R2 only (Photos out of the repo, Pierre's rule of 2026-11-05).
 test('tools/photos.py check: the four sizes in img/, the photos with no online original kept there, the others on R2', () => {
   const py = code =>

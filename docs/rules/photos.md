@@ -8,7 +8,7 @@ Pierre's standing rules on photos: sources, views, what games may show, credits.
 ### P1
 
 **Coral photo priority in every context: IMR lecture photos first, then Pierre's own (iNat user `ppericard`), then
-other iNaturalist observers and Coral Finder book photos only to fill gaps.** Covers and the first 3 ("featured") photos
+other iNaturalist observers only to fill gaps.** Covers and the first 3 ("featured") photos
 per view: IMR before Pierre's. IMR photos are never auto-rated Poor and never auto-excluded. Exception: the Coral ID Key
 mixes sources on purpose for variety.
 - **Fish: no source priority.** A fish photo is never forced or boosted for who took it, Pierre's own included: the
@@ -61,14 +61,15 @@ also labelled "Close-up"); never duplicate a photo to fill a view. Cover = mid-d
 ### P3
 
 **Never use photos showing several organisms to identify in games**: several corals; fish, several species (`p.multi`; Pierre can clear a wrong mark with curation
-`single`). **Corals: Coral Finder book photos** (© R. Kelley / BYOGUIDES, `gen[g].book`) are **never in games**; on a genus sheet
-they appear only when Pierre pins one, or to fill a gap after every field photo; the Coral ID Key adds up to 3 approved
-ones for variety; Pierre can switch them off site-wide (admin, curation `book: false`). **Corals: IMR lecture photos
+`single`). **Corals: no Coral Finder book photo anywhere** (© R. Kelley / BYOGUIDES): its crops left the app and the
+repository on 2026-11-08 (`tests/nobook.test.js`); the book stays a cited source (pages, criteria, look-alikes) and the
+Coral ID Key's boxes are drawings of their criterion. **Corals: IMR lecture photos
 are game photos** (since #227) and count in admin Coverage › Games. "Poor" means identifiable but low visual quality
 (ReefCloud-like): Poor photos are in games, last in each view's list, and the players' answers rate how hard each one is
 (the hand-made Easy / Medium / Hard sets went on 2026-11-03); unidentifiable photos are excluded, not rated Poor.
 *Why:* a game question must have one right answer; the book's photos are copyrighted.
-*Source:* Pierre, by 2026-11-01; subject-neutral wording, and several fish species, 2026-11-06 (Q167).
+*Source:* Pierre, by 2026-11-01; subject-neutral wording, and several fish species, 2026-11-06 (Q167); no book photo
+anywhere, 2026-11-08.
 
 ### P4
 
@@ -79,7 +80,7 @@ another colony: a colony with one view becomes a single-view question.
 ### P5
 
 **Provenance tags never on thumbnails; credit in the lightbox.** In games, once the answer is out, every photo shows a
-small clickable source pill (`photoSrc()` in `app.js`: observer + iNat link, or IMR lecture / Coral Finder label), never
+small clickable source pill (`photoSrc()` in `app.js`: observer + iNat link, or IMR lecture label), never
 before the answer (it would give the answer away); hidden on phones, where the enlarged view carries the clickable
 source. Before the answer the enlarged quiz photo credits its author by name only, no taxon and no link (`blindCredit()`
 in `app.js`).

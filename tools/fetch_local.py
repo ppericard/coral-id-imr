@@ -93,7 +93,7 @@ def get(u):
 
 def licence(p):
     """A photo record's licence code: its lic, else read from its attribution text ("(CC BY-NC-SA)" -> cc-by-nc-sa, "no
-    rights reserved" -> cc0); None when neither says (IMR lecture or Coral Finder book photos)."""
+    rights reserved" -> cc0); None when neither says (IMR lecture photos)."""
     if p.get('lic'): return p['lic'].lower()
     m = re.search(r'\((?:CC0|CC[ -][A-Z -]+?)\)', p.get('a') or '')
     if not m: return 'cc0' if 'no rights reserved' in (p.get('a') or '').lower() else None  # iNaturalist's CC0 credit
@@ -180,7 +180,7 @@ def colonies(g, G, cand, cur, excl=lambda f: False):
     """{view: distinct colonies (observations)} of genus g's photos as the admin's gamePool counts them (Codex review
     #390: one rule, mirrored here): data.json views, moved (curation move) and the candidates Pierre added (curation
     add, whichever genus list holds them), with "Not this genus" (curation out) applied both ways; without hidden,
-    excluded, sheet-only (curation use 'ref'), extra, several-corals or Coral Finder book photos. Views as admin.js
+    excluded, sheet-only (curation use 'ref'), extra or several-corals photos. Views as admin.js
     viewOf: a genus switched to 2 levels by curation (lv) has its medium photos join wide, a genus with 2 levels in
     data.json keeps them apart. Colony leaves out a photo whose growth form is not visible ('x', curation gf, else
     the judging pass's or forms.json's guess, as admin.js fOf) unless the genus has a single growth form."""
@@ -215,7 +215,7 @@ def colonies(g, G, cand, cur, excl=lambda f: False):
     one_form = len({form(p['f']) for _, p in got if not p.get('multi') and p['f'] not in hide} - {'', 'x'}) == 1
     by = {}
     for v, p in got:
-        if p.get('multi') or p.get('cf') or p.get('extra') or p['f'] in hide or p['f'] in ref or excl(p['f']): continue
+        if p.get('multi') or p.get('extra') or p['f'] in hide or p['f'] in ref or excl(p['f']): continue
         if v == 'wide' and form(p['f']) == 'x' and not one_form: continue
         by.setdefault(v, set()).add(p.get('o') or p['f'])
     return {v: len(s) for v, s in by.items()}

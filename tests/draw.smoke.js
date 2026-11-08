@@ -1,7 +1,7 @@
 // Question draw test (code re-review 2026-11-01, ROADMAP "Test the question draw"): runs the real photoSet() and
 // distractors() of app.js in Chromium, for every genus and several player levels, and checks Pierre's rules:
 // - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; rule P4);
-// - never a several-corals or Coral Finder book photo in a game (rule P3); genera off the IMR list (Millepora, bonus):
+// - never a several-corals photo in a game (rule P3); genera off the IMR list (Millepora, bonus):
 //   Research Grade or Pierre's only (rule L6);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (rule L7);
@@ -106,8 +106,7 @@ const server = http.createServer((req, res) => {
     for (const th of [null, 0, 1, 2.5]) {
       P = th === null ? {} : Object.fromEntries(genera.map(n => [n, {ok: 5, ko: 2, h: '1101101', th, pg: 0.4}]));
       for (const n of genera) {
-        const g = GX(n),
-          book = new Set((g.book || []).map(x => x.f));
+        const g = GX(n);
         for (let i = 0; i < RUNS; i++) {
           const s = photoSet(n),
             all = [...s.shown, ...(s.hint ? [s.hint] : []), ...(s.reveal || [])];
@@ -122,7 +121,6 @@ const server = http.createServer((req, res) => {
           if (new Set(all.map(x => x.f)).size < all.length) fails.push(`${n} (th ${th}): the same photo twice in one question`);
           all.forEach(x => {
             if (x.multi) fails.push(`${n}: several-corals photo ${x.f} in a game`);
-            if (book.has(x.f)) fails.push(`${n}: Coral Finder book photo ${x.f} in a game`);
             if (g.x && !x.own && x.gid) fails.push(`${n}: photo ${x.f} of a genus off the IMR list is not Research Grade`);
           });
         }

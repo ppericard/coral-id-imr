@@ -91,7 +91,7 @@ const WIDTHS = [390, 1280];
       FREE = Object.entries(CJ)
         .filter(([g]) => GAME.has(g))
         .flatMap(([, L]) => L)
-        .filter(x => !x.cf && !named(x.f)),
+        .filter(x => !named(x.f)),
       SH = [...new Map([...Object.values(DJ.cand || {}), ...Object.values(CJ)].flat().map(x => [x.f, x])).values()]
         .filter(x => x.r && MET[x.f])
         .map(x => MET[x.f][0])
@@ -1594,7 +1594,7 @@ const WIDTHS = [390, 1280];
       }
       // One filter bar (admin plan PR 3, admin.js FB): every photo page's chips come from the subject's descriptor (core.js
       // SUBJECTS admin origins, csrc, views), and an origin switched off on one page is off on the others (one state, SHOW):
-      // the genus bar (short names with counts), Quality and Growth form (full names; Growth form without the CF book),
+      // the genus bar (short names with counts), Quality and Growth form (full names),
       // their view chips and unit select, the Candidates sources. The origin is switched back on after.
       {
         const fb = () =>
@@ -1631,7 +1631,7 @@ const WIDTHS = [390, 1280];
         await go('photos/review/growth-form');
         s = await fb();
         if (
-          s.o.map(x => x.split(':')[0]).join() !== s.want.o.filter(o => o !== 'book').join() ||
+          s.o.map(x => x.split(':')[0]).join() !== s.want.o.join() ||
           s.off.join() !== 'dauin' ||
           s.v.join() !== s.want.v.join() ||
           JSON.stringify(s.unit) !== '["Genus","All genera"]'
@@ -3174,7 +3174,7 @@ const WIDTHS = [390, 1280];
       }
       // The enlarged photo's caption links to the photo's source, as in the games (rule P5; Pierre, 2026-11-03:
       // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
-      // photo's observation (new tab, noopener) and the genus sheet; a Coral Finder book photo keeps its © line, no link.
+      // photo's observation (new tab, noopener) and the genus sheet.
       const lbSrc = f =>
         p.evaluate(f => {
           const ph = PHOTOS[f],
@@ -3182,12 +3182,6 @@ const WIDTHS = [390, 1280];
           if (!cap) return 'no lightbox';
           if (!cap.querySelector(`code`) || cap.querySelector('code').textContent !== f) return 'caption names another photo';
           const a = [...cap.querySelectorAll('a.lb-src')];
-          if (ph.cf)
-            return a.length
-              ? 'a book photo has a source link'
-              : /Coral Finder/.test(cap.textContent)
-                ? ''
-                : 'book photo without its © line';
           if (!/inaturalist\.org\/observations\//.test(ph.o || '')) return a.length ? 'a link on a photo with no iNat page' : '';
           if (a.length !== 1 || a[0].href !== ph.o) return `no link to ${ph.o}`;
           if (a[0].target !== '_blank' || !/noopener/.test(a[0].rel)) return 'source link not in a new tab with noopener';
@@ -3205,17 +3199,13 @@ const WIDTHS = [390, 1280];
         await p.keyboard.press('Escape');
       }
       // Both admin lightboxes (zoom: a genus's photos; zoomOne: Excluded, Flags, Candidates, auto-sort), on Pierre's photo
-      // of the report, a candidate and a Coral Finder book photo.
+      // of the report and a candidate.
       for (const [how, f] of await p.evaluate(() => {
         const own = 'lobactis-medium-746236519',
-          cand = Object.values(DATA.cand)
-            .flat()
-            .find(x => !x.cf),
-          book = Object.values(PHOTOS).find(x => x.cf);
+          cand = Object.values(DATA.cand).flat()[0];
         return [
           ['zoom', PHOTOS[own] ? own : Object.values(PHOTOS).find(x => x.own).f],
-          ['zoomOne', cand.f],
-          ['zoomOne', book.f]
+          ['zoomOne', cand.f]
         ];
       })) {
         await p.evaluate(([how, f]) => (how === 'zoom' ? zoom(PHOTOS[f].genus, f) : zoomOne(PHOTOS[f])), [how, f]);
@@ -3357,7 +3347,6 @@ const WIDTHS = [390, 1280];
           Q = candQueue(CSRC),
           x = candQueue('all').find(y => y.full && isGame(y.n));
         if (!x) return {none: true};
-        if (candQueue('all').some(y => y.p.cf && y.full)) return {bookFull: true};
         const shownFull = cur && (Q.find(y => y.p.f === cur.dataset.f) || {}).full;
         CREPL = {n: x.n, f: x.p.f, w: cellView(x.n, x.p)};
         render();
@@ -3376,8 +3365,7 @@ const WIDTHS = [390, 1280];
           warn: /⚠/.test(document.querySelector('#modes [data-mode="inbox"]').textContent)
         };
       });
-      if (cap.bookFull) fails.push(`${w}px Cap: a Coral Finder book candidate (never in games) counted as full`);
-      else if (cap.none) fails.push(`${w}px Cap: no candidate waits in a full cell (expected with the real data)`);
+      if (cap.none) fails.push(`${w}px Cap: no candidate waits in a full cell (expected with the real data)`);
       else {
         if (cap.shownFull) fails.push(`${w}px Cap: the swiper shows a candidate of a full cell`);
         if (cap.tiles < 10) fails.push(`${w}px Cap: replace screen shows ${cap.tiles} colonies`);
@@ -3401,7 +3389,7 @@ const WIDTHS = [390, 1280];
         const P = Object.values(DATA.cand).flat(),
           a = P.find(x => x.f === F[0]),
           b = P.find(x => x.f === F[1]);
-        return {v: a.vg, q: AUTOQ[a.f], wa: jw(a), wb: jw(b), line: jLine(b), left: candQueue('all').filter(x => !x.p.cf && !x.p.j).length};
+        return {v: a.vg, q: AUTOQ[a.f], wa: jw(a), wb: jw(b), line: jLine(b), left: candQueue('all').filter(x => !x.p.j).length};
       }, CF);
       if (jd.v !== 'macro' || jd.q !== 3) fails.push(`${w}px Judged: view or quality guess not applied (${jd.v}, ${jd.q})`);
       if (!(jd.wb < jd.wa / 10)) fails.push(`${w}px Judged: a Poor near-duplicate is not pushed back (${jd.wa} vs ${jd.wb})`);
@@ -3497,8 +3485,7 @@ const WIDTHS = [390, 1280];
       // Source priority in a cell with fewer free slots than sure adds (rule P1, Codex review #400): Pierre's own
       // Fair photo takes the last slot ahead of another observer's Good one; quality and sharpness only break ties.
       const pri = await p.evaluate(() => {
-        const free = m =>
-            cands(m).filter(x => !x.cf && !x.from && !aOf(x.f) && !autoCheck(x.f) && !rejected(x.f) && !(entry(m).add || {})[x.f]),
+        const free = m => cands(m).filter(x => !x.from && !aOf(x.f) && !autoCheck(x.f) && !rejected(x.f) && !(entry(m).add || {})[x.f]),
           n = [...GAME].find(m => free(m).length >= 2),
           [a, b] = free(n),
           keep = Object.values(DATA.cand)

@@ -422,10 +422,9 @@
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
-          ['world', 'iNat elsewhere', 'World'],
-          ['book', 'CF book', 'CF']
+          ['world', 'iNat elsewhere', 'World']
         ],
-        csrc: ['own', 'dauin', 'ph', 'book']
+        csrc: ['own', 'dauin', 'ph']
       }
     },
     {
@@ -1755,22 +1754,9 @@
   // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
   // Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
   function applyCuration(d, c) {
-    // Coral Finder book photos (data: gen[].book, cropped from the 2022 book) can be switched off site-wide from the
-    // admin (curation.json "book": false). Kept apart from the views so games and quizzes never use them (captions).
-    if (c && c.book === false)
-      Object.values(d.gen).forEach(g => {
-        delete g.book;
-      });
-    // Book photos are candidates: only those Pierre approved in the admin (genera[n].add {f: view}) show, in that view.
-    const X0 = (c && c.exclude) || {};
-    // Book photos sent to another genus ("Not this", out) are kept here until the out step moves them, then filtered there.
-    const G0 = (c && c.genera) || {};
-    Object.entries(d.gen).forEach(([n, g]) => {
-      if (!g.book) return;
-      const A = (G0[n] || {}).add || {},
-        O = (G0[n] || {}).out || {};
-      g.book = g.book.filter(p => !X0[p.f] && (A[p.f] || O[p.f])).map(p => (A[p.f] && !O[p.f] ? {...p, view: A[p.f]} : p));
-    });
+    // The Coral Finder book's crops left the app on 2026-11-08 (Pierre: copyrighted, R. Kelley / BYOGUIDES). curation.json
+    // still names some (add, feat, quality, crop, seen: rule A1, never rewritten): those ids match no photo, so every step
+    // below drops them (tests/nobook.test.js).
     // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
     const X = (c && c.exclude) || {},
       keep = L => (L || []).filter(p => !X[p.f]);
@@ -1826,11 +1812,6 @@
           p = d.course[n].splice(ci, 1)[0];
           at = ['course'];
         }
-        const bi = (g.book || []).findIndex(x => x.f === f);
-        if (bi >= 0) {
-          p = g.book.splice(bi, 1)[0];
-          at = ['book'];
-        }
         // A candidate sent to another genus becomes a candidate there (shown once added in that genus).
         const ki = ((d.cand || {})[n] || []).findIndex(x => x.f === f);
         if (ki >= 0) {
@@ -1839,7 +1820,6 @@
         }
         if (!p) return;
         if (to === 'cmp') (d.cmp = d.cmp || []).push({...p, g: [n]});
-        else if (d.gen[to] && at[0] === 'book') (d.gen[to].book = d.gen[to].book || []).push({...p, t: to});
         else if (d.gen[to] && at[0] === 'course') (d.course[to] = d.course[to] || []).push(p);
         else if (d.gen[to] && at[0] === 'cand') ((d.cand = d.cand || {})[to] = d.cand[to] || []).push(p);
         else if (d.gen[to]) {
@@ -1848,12 +1828,6 @@
           (S[at[1]] = S[at[1]] || []).push(p);
         }
       });
-    });
-    // Book photos moved in from another genus show only once added here (add {f: view}).
-    Object.entries(d.gen).forEach(([n, g]) => {
-      if (!g.book) return;
-      const A = (G0[n] || {}).add || {};
-      g.book = g.book.filter(p => p.view || A[p.f]).map(p => (p.view ? p : {...p, view: A[p.f]}));
     });
     Object.entries((c && c.genera) || {}).forEach(([n, k]) => {
       const g = d.gen[n];
@@ -1876,9 +1850,7 @@
         );
         return out;
       };
-      const all = [...allPhotos(g), ...VIEWS.flatMap(([v]) => (g.more || {})[v] || []), ...(d.course[n] || []), ...(g.book || [])];
-      // Book photos follow Hide and view moves too (they stay out of g.views, so out of games).
-      if (g.book) g.book = g.book.filter(p => !hide.has(p.f)).map(p => (mv[p.f] ? {...p, view: mv[p.f]} : p));
+      const all = [...allPhotos(g), ...VIEWS.flatMap(([v]) => (g.more || {})[v] || []), ...(d.course[n] || [])];
       g.views = regroup(g.views);
       g.more = regroup(g.more);
       // Featured photos lead their view, so quick picks (comparisons, first photo of a view) use them too.
@@ -1901,22 +1873,24 @@
           delete S.medium;
         });
         if (d.course[n]) d.course[n] = d.course[n].map(p => (p.v === 'medium' ? {...p, v: 'wide'} : p));
-        if (g.book) g.book = g.book.map(p => (p.view === 'medium' ? {...p, view: 'wide'} : p));
       }
     });
   }
   // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
-  // photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
+  // photos from other iNat observers only fill a set that is short. Per genus
   // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = one list, every photo kept
   // (game: the featured first, then IMR/own, each by quality, Poor last; until 2026-11-03 it was split into Easy / Medium
   // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
   // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
   // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
   // Coral ID Key (needs variety) = featured + 5 photos from other iNat observers (Pierre, 2026-11-08: 2 before; field
-  // photos fill the variety the book crops gave) + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
-  // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
-  // or in games only. Nothing is written back: photos left out simply stay unused.
-  const CAP = {feat: 3, sheet: 6, inat: 5, book: 3};
+  // photos fill the variety the Coral Finder book's crops gave, removed that day). Pierre's picks (feat, hide, quality,
+  // use) always win; Claude's suggestions (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'}
+  // keeps a photo on the sheet only or in games only. Nothing is written back: photos left out simply stay unused.
+  const CAP = {feat: 3, sheet: 6, inat: 5};
+  // A Coral Finder book crop's id (<genus>-cf-<page>-<tag>). The crops left the app and the repository on 2026-11-08
+  // (Pierre); curation.json still names some (rule A1: never rewritten), ids that match no photo any more.
+  const cfCrop = f => /^[a-z]+-cf-\d/.test(f || '');
   // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can (autoQ).
   const isCore = p => !!(p.imr || p.own);
   // o.picks = picks.json (Claude's suggested featured photos), o.autoq = quality.json q (automatic rating).
@@ -1965,11 +1939,10 @@
         const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
         const others = byQ(all.filter(p => !isCore(p)));
         const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
-        // Coral Finder book photos (Pierre 2026-11-01): on the sheet when pinned, or to fill a gap after every field photo; never in games.
-        const bk = byQ((g.book || []).filter(p => p.view === v)),
-          find = f => all.find(p => p.f === f) || bk.find(p => p.f === f);
+        // A pin or a suggestion naming no photo (a removed one: a Coral Finder book crop, 2026-11-08) is dropped.
+        const find = f => all.find(p => p.f === f);
         const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean),
-          hint = ((sug[n] || {})[v] || []).map(find).filter(p => p && !p.cf);
+          hint = ((sug[n] || {})[v] || []).map(find).filter(Boolean);
         // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
         // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
         const pool = [...hint, ...ranked].filter(p => !pin.includes(p)),
@@ -1977,21 +1950,17 @@
         const feat = [
           ...pin.slice(0, CAP.feat),
           ...fill(
-            fill(
-              take(
-                pool.filter(p => p.imr || q(p) !== 1),
-                k
-              ),
-              pool,
+            take(
+              pool.filter(p => p.imr || q(p) !== 1),
               k
             ),
-            bk.filter(p => !pin.includes(p)),
+            pool,
             k
           )
         ];
         // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
-        const more = [...ranked, ...bk].filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
-        // Games: field photos and IMR lecture photos (Pierre 2026-11-01), never multi-coral or book photos.
+        const more = ranked.filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
+        // Games: field photos and IMR lecture photos (Pierre 2026-11-01), never multi-coral photos.
         const gm = byQ([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
           core = gm.filter(isCore),
           rest = gm.filter(p => !isCore(p));
@@ -1999,7 +1968,6 @@
         // photo Elo"): the featured game photos first, then IMR / own before other observers, each by quality, Poor last.
         const lead = feat.filter(p => gm.includes(p)),
           after = [...core, ...rest].filter(p => !lead.includes(p));
-        const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
         g.sl[v] = {
           feat,
           more,
@@ -2009,8 +1977,7 @@
             ...take(
               others.filter(p => !feat.includes(p) && !p.imr),
               CAP.inat
-            ),
-            ...book
+            )
           ]
         };
         // Featured photos lead their view, so every "first photo of the view" (Look-alikes, Compare, Lab, home) uses them.
@@ -2839,7 +2806,7 @@
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
 
   // Photos out of the repo, step 1 of Pierre's rule (2026-11-05; docs/ROADMAP.md): git will keep only the photos with no
-  // other backup (IMR lecture photos, Coral Finder book scans, our own drawings); the photos with an online original
+  // other backup (IMR lecture photos, our own drawings); the photos with an online original
   // (data.json / cand.json / fish-photos.json src: iNaturalist, Pierre's own iNaturalist photos, FishBase) leave img/
   // later. So once R2 fails, a photo with an online original is read from that original, at a light size, and only the
   // others from the site's img/ (app.js photoFail, quiz.js pump, admin.js).
@@ -4742,6 +4709,7 @@
     applyCuration,
     applySlots,
     CAP,
+    cfCrop,
     isObj,
     eq,
     canon,

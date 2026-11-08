@@ -35,7 +35,7 @@
   };
   const shareAlike = p => /-sa$/.test(licence(p) || '');
   // The share-alike photos on the site still needing Pierre's decision (To do › Share-alike): every photo a genus page
-  // lists now (several-corals and book photos included: the site may show them), not removed, not kept (kept(f): his
+  // lists now (several-corals photos included: the site may show them), not removed, not kept (kept(f): his
   // Keep). Never removed automatically.
   const saQueue = (genera, photosOf, isHidden, kept = () => false) =>
     genera.flatMap(n =>

@@ -18,7 +18,6 @@ GF, GUN = FJ.get('gf', {}), set(FJ.get('gunsure', []))
 G = c.get('genera', {})
 
 def source(p):
-    if p.get('cf'): return 'book'
     if p.get('imr'): return 'imr'
     if p.get('own'): return 'pierre'
     return {'dauin': 'inat-dauin', 'ph': 'inat-philippines'}.get(p.get('loc'), 'inat-elsewhere')
@@ -53,8 +52,8 @@ def put(n, p, view, status, extra=False):
     if p.get('cap'): e['caption'] = p['cap']
     if mine: e['pierre'] = mine
     # Growth form still to (re)guess: no IMR form guess yet, or a guess flagged for a second look (forms.json gunsure).
-    if p.get('cf') is None and 'form' not in mine and (not GF.get(f, '').replace('p', '') or f in GUN): e['form_todo'] = True
-    if not os.path.exists(os.path.join(ROOT, e['image'])): e['missing_image'] = True
+    if 'form' not in mine and (not GF.get(f, '').replace('p', '') or f in GUN): e['form_todo'] = True
+    if not e['image'].startswith('https://') and not os.path.exists(os.path.join(ROOT, e['image'])): e['missing_image'] = True  # a URL: R2 or iNaturalist
     photos[f] = e
 
 for n, g in d['gen'].items():
@@ -67,8 +66,6 @@ for n, g in d['gen'].items():
     add = G.get(n, {}).get('add') or {}
     for p in d.get('cand', {}).get(n, []):
         put(n, p, add.get(p['f']), 'live' if p['f'] in add else 'candidate')
-    for p in g.get('book') or []:
-        put(n, p, add.get(p['f'], p.get('view')), 'live' if p['f'] in add else 'candidate')
 
 genera = {}
 for n, g in d['gen'].items():

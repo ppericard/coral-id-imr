@@ -9,6 +9,8 @@
 #   python3 tools/photo_metrics.py --live      live photos only (no iNaturalist download)
 #   python3 tools/photo_metrics.py --cand      candidates only
 #   python3 tools/photo_metrics.py --calib     how each metric ranks the photos Pierre rated (curation.json quality)
+#   python3 tools/photo_metrics.py --prune     measures nothing: rewrites metrics.json without the photos gone for good
+#                                              (GONE: the Coral Finder book crops, removed on 2026-11-08)
 #
 # Writes metrics.json {"m": {f: [sharp, peak, px, cast]}} (admin only: players never download it); an existing entry is
 # kept unless the photo is measured again, so a partial run adds to the file.
@@ -20,7 +22,7 @@
 #          under 1000 means the original is that small (judging/BRIEF.md: "under 1000 px ... Poor")
 #   cast   colour cast in %: (max - min) of the mean R, G, B over their mean (0 = neutral grey world; underwater
 #          photos lose red first)
-import json, os, sys, io, urllib.request
+import json, os, re, sys, io, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +35,9 @@ import photos
 OUT = os.path.join(ROOT, 'metrics.json')
 CACHE = os.path.join(os.path.expanduser('~'), '.cache', 'coral-id-imr', 'metrics')
 W = 960
+# Photos that never come back, dropped at every write: the Coral Finder book crops (<genus>-cf-<page>-<tag>; Pierre,
+# 2026-11-08: they left the app and the repository, tools/apply_no_book.py).
+GONE = re.compile(r'^[a-z]+-cf-\d')
 
 
 def measure(im, px):
@@ -97,19 +102,21 @@ def calib():
 
 if __name__ == '__main__':
     a = sys.argv[1:]
-    import slot; slot.guard('tools/photo_metrics.py')  # one heavy run at a time on the machine (rule W24)
+    if '--prune' not in a:
+        import slot; slot.guard('tools/photo_metrics.py')  # one heavy run at a time on the machine (rule W24)
     if '--calib' in a: calib(); sys.exit(0)
     S = load()
     M = S.get('m', {})
-    if '--cand' not in a:
+    if '--prune' in a: pass
+    elif '--cand' not in a:
         fs = photos.every()  # in img/ or on R2 only
         for i, f in enumerate(fs):
             try: M[f] = live(f)
             except Exception as e: print(f'{f}: {e}')
         print(f'{len(fs)} live photos measured')
-    if '--live' not in a:
+    if '--live' not in a and '--prune' not in a:
         D = load_all()
-        L = [p for g in (D.get('cand') or {}).values() for p in g if p.get('r') and p.get('src') and not p.get('cf')]
+        L = [p for g in (D.get('cand') or {}).values() for p in g if p.get('r') and p.get('src')]
         def one(p):
             try: return p['f'], cand(p)
             except Exception as e: return p['f'], str(e)
@@ -120,9 +127,10 @@ if __name__ == '__main__':
                 else: M[f] = m; n += 1
         print(f'{n} of {len(L)} candidates measured')
     S = {'v': 1, 'note': 'Objective photo metrics (tools/photo_metrics.py): [sharp, peak, px, cast]. Tie-breakers and sanity '
-                         'flags for the auto-sort only, never a decision alone. Admin only.', 'm': dict(sorted(M.items()))}
+                         'flags for the auto-sort only, never a decision alone. Admin only.',
+         'm': dict(sorted((f, m) for f, m in M.items() if not GONE.match(f)))}
     with open(OUT, 'w') as fh:  # one photo per line: two runs on different photos merge cleanly
         fh.write('{"v":1,"note":' + json.dumps(S['note']) + ',"m":{\n')
         fh.write(',\n'.join(json.dumps(f) + ':' + json.dumps(m, separators=(',', ':')) for f, m in S['m'].items()))
         fh.write('\n}}\n')
-    print(f'metrics.json: {len(M)} photos')
+    print(f'metrics.json: {len(S["m"])} photos')

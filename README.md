@@ -28,13 +28,13 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus data; photos are WebP in four sizes (1600, 960, 480 and 240 px) on Cloudflare R2, which the app reads first (`core.js` `PHOTO_BASE`); `img/` keeps only the photos with no other backup (IMR lecture photos, Coral Finder book scans), the others fall back to their online original (iNaturalist, FishBase). Version numbers (`?v=`) are stamped at deploy: never edit them (AGENTS.md).
+The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus data; photos are WebP in four sizes (1600, 960, 480 and 240 px) on Cloudflare R2, which the app reads first (`core.js` `PHOTO_BASE`); `img/` keeps only the photos with no other backup (IMR lecture photos, page art), the others fall back to their online original (iNaturalist, FishBase). Version numbers (`?v=`) are stamped at deploy: never edit them (AGENTS.md).
 
 ## Photos
 
 - IMR Lecture 6 photos, used with IMR permission for internal training. Do not reuse outside IMR. They come first everywhere and are used in games.
 - Pierre's own iNaturalist photos (user `ppericard`), then other iNaturalist observers (CC licences), credited in the enlarged view and, in games, after the answer.
-- Coral Finder 2022 book crops (© R. Kelley / BYOGUIDES): never in games; on a genus sheet only when pinned or to fill a gap after the field photos; a few in the Coral ID Key. Switchable off site-wide from the admin.
+- No photo from the Coral Finder 2022 book (© R. Kelley / BYOGUIDES): its crops were removed on 2026-11-08. The book stays a cited source (its pages, criteria and look-alikes); the Coral ID Key's boxes are our own drawings.
 
 `tools/` holds the build and import scripts; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for which ones are still re-runnable.
 

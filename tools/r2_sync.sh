@@ -3,15 +3,19 @@
 # docs/ARCHITECTURE.md "Photos"): the app reads every photo from the bucket, same img/ paths. Credentials come from the
 # repo's GitHub secrets, set by Pierre; agents never see them.
 #
-#   tools/r2_sync.sh        copy img/ (the photos git keeps: IMR lecture photos, Coral Finder book scans, page art) to
+#   tools/r2_sync.sh        copy img/ (the photos git keeps: IMR lecture photos, page art) to
 #                           the bucket, then check the bucket holds the four files of every photo that lives on R2 only
 #                           (tools/photos.py --r2-list). Run by .github/workflows/photos-r2.yml (a push that changes img/,
 #                           or by hand) and by the r2 job of .github/workflows/approved-photos.yml. Without credentials
 #                           it does nothing.
 #   tools/r2_sync.sh DIR    upload the photo files in DIR (tools/fetch_approved.py's new photos, never committed) to the
 #                           bucket's img/. Fails without credentials: the photos would be marked downloaded but be nowhere.
+#   tools/r2_sync.sh --drop-crops   the one deletion: the Coral Finder book's crops (img/*-cf-*.webp; Pierre, 2026-11-08:
+#                           they left the app and the repository) leave the bucket, then none must be left (rclone lsf).
+#                           DRY_RUN=false deletes; anything else only counts and lists them. Run by hand only, through
+#                           .github/workflows/r2-drop-crops.yml (Actions > Drop the book crops from R2 > Run workflow).
 #
-# Never deletes anything from the bucket (rclone copy, not sync): since step 2 the bucket is where the photos with an
+# Never deletes anything else from the bucket (rclone copy, not sync): since step 2 the bucket is where the photos with an
 # online original live (they left img/), so a sync from img/ would wipe them; a file that leaves img/ for good (an
 # excluded photo) just stays there, unused.
 set -euo pipefail
@@ -53,6 +57,21 @@ copy() {
   rclone copy "$1" "r2:${R2_BUCKET}/img" --checksum --fast-list --transfers 32 --checkers 32 --include '*.webp' \
     --header-upload "Cache-Control: public, max-age=604800" --stats 30s --stats-one-line --stats-log-level NOTICE
 }
+if [ "$DIR" = --drop-crops ]; then
+  crops() { rclone lsf "r2:${R2_BUCKET}/img" --files-only --fast-list --include '*-cf-*.webp'; }
+  n=$(crops | wc -l)
+  echo "$n Coral Finder book crop file(s) on R2"
+  if [ "${DRY_RUN:-true}" != false ]; then
+    crops | head -20
+    echo "dry run: nothing deleted (run again with dry_run unticked to delete them)"
+    exit 0
+  fi
+  [ "$n" -eq 0 ] || rclone delete "r2:${R2_BUCKET}/img" --fast-list --include '*-cf-*.webp' --stats-one-line --stats-log-level NOTICE
+  left=$(crops | wc -l)
+  [ "$left" -eq 0 ] || { echo "$left crop file(s) still on R2" >&2; exit 1; }
+  echo "$n crop file(s) deleted from R2; none left"
+  exit 0
+fi
 if [ -n "$DIR" ]; then
   n=$(find "$DIR" -maxdepth 1 -name '*.webp' | wc -l)
   [ "$n" -eq 0 ] && { echo "nothing to upload in $DIR"; exit 0; }

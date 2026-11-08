@@ -328,9 +328,6 @@ body.admin .hdr-tools[hidden] {
 .o-world {
   --o: var(--solo);
 }
-.o-book {
-  --o: var(--massive);
-}
 .adm-src[class*='o-'] {
   background: var(--o);
   color: var(--band-ink);

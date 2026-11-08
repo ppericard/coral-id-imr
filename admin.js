@@ -366,7 +366,6 @@ function importFlags() {
 // and import scripts skip it so it never comes back. The Excluded view lists them, to restore one.
 const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
-// Coral Finder book photos on the site (curation.json "book": false switches every one of them off at once).
 const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
 // The points to handle (curation.json "points", To do › Points).
 const ptChanged = () => !same(DRAFT.points || {}, SAVED.points || {});
@@ -412,8 +411,6 @@ const crSrc = (p, s) => {
     ? `src="${src}" style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"`
     : `src="${src}"`;
 };
-const bookOn = o => o.book !== false,
-  bChanged = () => bookOn(DRAFT) !== bookOn(SAVED);
 const qTag = p => {
   const q = qOf(p.f);
   return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`;
@@ -684,11 +681,10 @@ const sentTo = (k, list) => {
 const photos = memo('photos', n => [...own(n).filter(p => !outs(n)[p.f]), ...(sentTo('own', own)[n] || [])]);
 const outOf = n => [...own(n).filter(p => outs(n)[p.f]), ...rawCands(n).filter(p => outs(n)[p.f] && !(entry(n).add || {})[p.f])];
 // New candidate photos from data.json cand, not used by the site until approved here.
-// Coral Finder book photos (data: gen[].book) are candidates too; once added they show on the site but never in games.
-const rawCands = memo('raw', n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f)));
+const rawCands = memo('raw', n => ((DATA.cand || {})[n] || []).filter(p => !excl(p.f)));
 // A candidate sent to another genus ("Not this") becomes a candidate there, tagged with where it came from.
 const cands = memo('cands', n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...(sentTo('cand', rawCands)[n] || [])]);
-// Same order as the Show source chips (ORIGINS), CF book last.
+// Same order as the Show source chips (ORIGINS).
 const oIdx = p => ORIGINS.findIndex(o => o[0] === origin(p));
 const pending = n => {
   const add = entry(n).add || {};
@@ -712,11 +708,10 @@ const viewOf = (n, p) => {
   return v === 'medium' && lv(n) === 2 && DATA.gen[n].levels !== 2 ? 'wide' : v;
 };
 const hidden = (n, p) => (entry(n).hide || []).includes(p.f);
-// Photos kept out of the featured / genus-sheet slots: extra photos and Coral Finder book photos (the site keeps
-// added book photos apart from the views: Coral ID Key only, never the sheet, cover or games; app.js applySlots).
-const offSlot = p => !!(p.extra || p.cf);
-// Same order as applySlots in app.js: IMR photos, then Pierre's, then other observers, each by quality,
-// Poor photos and multi-coral photos last, then book photos.
+// Photos kept out of the featured / genus-sheet slots: the extra photos.
+const offSlot = p => !!p.extra;
+// Same order as applySlots in core.js: IMR photos, then Pierre's, then other observers, each by quality,
+// Poor photos and multi-coral photos last, then the extra photos.
 function autoOrder(L) {
   const byQ = x => x.slice().sort((a, b) => qOf(b.f) - qOf(a.f));
   const main = L.filter(p => !offSlot(p)),
@@ -746,7 +741,6 @@ function rowOf(n, v) {
   const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !offSlot(p))).filter(Boolean);
   // Featured = always the first FEAT photos (Pierre): his pinned ones in his order, the rest filled automatically,
   // never with a Poor photo while better ones exist, except IMR lecture photos (as on the site).
-  // Coral Finder book photos (Pierre 2026-11-01): on the sheet when pinned, or to fill a gap after every field photo; never in games.
   const pinned = (pin || [])
     .map(f => live.find(p => p.f === f))
     .filter(Boolean)
@@ -764,7 +758,7 @@ function rowOf(n, v) {
         k - good.length
       )
     ];
-  const feat = [...pinned, ...field, ...order.filter(p => p.cf && !pinned.includes(p)).slice(0, k - field.length)];
+  const feat = [...pinned, ...field];
   return {
     feat,
     pinned: pinned.map(p => p.f),
@@ -816,7 +810,7 @@ const label = (n, v) => (lv(n) === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(
 // in core.js SUBJECTS admin origins, [key, name, short name] (the short one on the genus bar's chips, the name in the
 // tooltip, so the whole bar fits on one line); ORIGINS are the corals', every origin a photo can have.
 const ORIGINS = (SUBJECTS.find(s => !s.hash) || SUBJECTS[0]).admin.origins;
-const origin = p => (p.cf ? 'book' : p.imr ? 'imr' : p.own ? 'own' : {dauin: 'dauin', ph: 'ph'}[p.loc] || 'world');
+const origin = p => (p.imr ? 'imr' : p.own ? 'own' : {dauin: 'dauin', ph: 'ph'}[p.loc] || 'world');
 let SHOW = new Set(
   store.get(
     'reefid-admin-origins',
@@ -836,8 +830,7 @@ let GVIEW = store.get('reefid-admin-gview', 'all');
 const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
 const FB = {
   // The origin chips. With counts (cnt(o)): the genus bar's, short names, the full one in the tooltip, and All once one is
-  // off; else a "Show" row of full names. skip: origins a page never shows (Growth form: CF book photos never go on its
-  // tiles).
+  // off; else a "Show" row of full names. skip: origins a page never shows.
   origins({cnt, skip = []} = {}) {
     const O = ASUBJ.admin.origins.filter(([o]) => !skip.includes(o));
     return cnt
@@ -1191,7 +1184,6 @@ function status0() {
       q ? 'quality ratings' : '',
       fChanged() ? 'growth forms' : '',
       x ? 'exclusions' : '',
-      bChanged() ? 'book photos switch' : '',
       flChanged() ? 'triage flags' : '',
       sgChanged() ? 'triage suggestions' : '',
       cdChanged() ? 'candidate reviews' : '',
@@ -1206,11 +1198,6 @@ function status0() {
   return {parts, sug: sugCount(), over: overCap()};
 }
 function statusDraw({parts, sug, over}) {
-  const bs = $('booksw');
-  if (bs) {
-    bs.setAttribute('aria-pressed', String(bookOn(DRAFT)));
-    bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`;
-  }
   const tn = Object.keys(flagsOf(DRAFT, ADM0)).length + sug + repsOpen().length,
     xn = Object.keys(DRAFT.exclude || {}).length;
   OVER = over;
@@ -2648,16 +2635,11 @@ function pointerDrag(tiles, hover, drop, cancel) {
 // The enlarged photo's caption (zoom, zoomOne: every admin view): genus (opens its sheet, draft applied), what the photo
 // is, the iNat taxon, its credit and its source, as in the games (app.js photoSrc / credit, rule P5). An iNat
 // photo links to its observation (Pierre, 2026-11-03: he opened his own photo that everyone misses, to check on iNaturalist
-// who identified it, and the caption had no link); IMR lecture and Coral Finder book photos have no public page: their
-// credit line only.
+// who identified it, and the caption had no link); IMR lecture photos have no public page: their credit line only.
 const inatObs = p => /^https:\/\/(www\.)?inaturalist\.org\/observations\//.test(p.o || '');
 const lbCap = (n, p, what) =>
   `${DATA.gen[n] ? `<a href="./?draft#${routeOut('g-' + n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
-    p.cf
-      ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
-      : p.imr
-        ? `IMR Lecture 6, slide ${esc(p.slide)}`
-        : `${inatObs(p) && p.t ? `<i>${esc(p.t)}</i> · ` : ''}${esc(p.a || '')}`
+    p.imr ? `IMR Lecture 6, slide ${esc(p.slide)}` : `${inatObs(p) && p.t ? `<i>${esc(p.t)}</i> · ` : ''}${esc(p.a || '')}`
   }${inatObs(p) ? ` · <a class="lb-src" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat observation ↗</a>` : ''} · <code>${esc(p.f)}</code>`;
 function zoom(n, f) {
   const L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'})), ...outOf(n).map(p => ({...p, base: 'out'}))];
@@ -2738,8 +2720,9 @@ function missing(n) {
     ...Object.keys(k.add || {}),
     ...Object.keys(k.out || {})
   ].filter(Boolean);
-  // An excluded photo is gone on purpose: a choice still naming it is not broken (admin review, 2026-11-01).
-  return [...new Set(refs.filter(f => !KNOWN.has(f) && !(DRAFT.exclude || {})[f]))];
+  // An excluded photo is gone on purpose: a choice still naming it is not broken (admin review, 2026-11-01); so is a
+  // Coral Finder book crop (core.js cfCrop: removed on 2026-11-08).
+  return [...new Set(refs.filter(f => !KNOWN.has(f) && !(DRAFT.exclude || {})[f] && !cfCrop(f)))];
 }
 
 /* ---------- Quality ---------- */
@@ -3008,15 +2991,15 @@ const HELP = {
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four groups</b>. <b>Inbox</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Activity</b> (opened first) and <b>List</b> (who plays, merge or delete names); Activity (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last (Players always Activity), each tab the view you used last. The address says where you are, in the same words: <code>#group/tab/view</code> (<code>#photos/review/quality</code>), a genus or a player after it.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
-    <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
+    <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality and forms all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); <b>Fish</b> marks a fish point. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
-  kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
-  cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
+  kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} from other iNat observers): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
+  cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
@@ -3027,9 +3010,9 @@ const HELP = {
   statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Elo = the median player's Elo on the genus (1000 + 200 × their level on it).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
-  pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no Coral Finder book, several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
-    <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected (Coral Finder book pages included; hover the row for how many). <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
-    <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from (Coral Finder book photos are never in games, so they have no row); <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per genus</b> (Pierre, 2026-11-06, Q192): the goal is 3 to 5 answers per photo, enough to flag the photos far harder than their genus (their count in the last column, the list on Difficulty); the least covered genera first. Nothing here changes anything.</p>`,
+  pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
+    <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected. <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
+    <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from; <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per genus</b> (Pierre, 2026-11-06, Q192): the goal is 3 to 5 answers per photo, enough to flag the photos far harder than their genus (their count in the last column, the list on Difficulty); the least covered genera first. Nothing here changes anything.</p>`,
   statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience, read as <b>recognised by N%</b> (below). The coloured line under the distribution and the genera shows the bands along the axis, easier on the left. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each genus reads for a typical photo of it, its genus offset (sheet v31; the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo. <b>Far harder than their genus</b> (Pierre, 2026-11-06, Q192; the photo exposure study): the photos in play whose own part of the difficulty (the photo's difficulty minus its genus's offset) is ${FAR.D} logits or more after ${FAR.N} answers or more, the farthest first: where a typical photo of the genus is recognised 4 times in 5, such a photo is about 1 time in 2. Look at each: unclear, mislabelled, or the wrong view (Photo review). Per-photo ratings stay rough at this traffic (the study: about 50 answers rate one photo to ±0.5), so the goal is the first 3 to 5 answers per photo, enough for this flag; a photo shown with other views shares each answer with them, so it needs more answers to stand out.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
@@ -3043,7 +3026,7 @@ const HELP = {
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral ID Key "Large daytime polyps" tile).</p>
     <p>The Coral ID Key growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p><b>📌</b> makes a photo a lead photo of its form's tile on the site's Coral ID Key start (up to 3 per form, number = place; a 4th drops the oldest); the tile's other places stay automatic. Br leads Branching, En Thin plates and crusts, Ma Massive, Sm Columns, Mu Solitary.</p>
-    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter. Coral Finder book photos are left out.</p>
+    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; on a fish photo, Remove excludes it from the fish games for good (Undo brings it back) and Done clears the flag.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
@@ -3169,9 +3152,9 @@ function agreeFill(d) {
 }
 // Guesses first: in each row the photos still on a guess, the unsure ones first; the photos you set last.
 const fRank = f => (fSet(f) ? 2 : fL(AUTOF[f]) && FUNSURE.has(f) ? 0 : 1);
-// 📌 (Growth form view): only on photos the Coral ID Key tiles can show (colony or close-up view, one coral, not a
-// book photo), so a pin always counts; the number is its place on the tile.
-const pinOK = p => (p.view === 'wide' || p.view === 'medium') && !p.multi && !p.cf;
+// 📌 (Growth form view): only on photos the Coral ID Key tiles can show (colony or close-up view, one coral), so a pin
+// always counts; the number is its place on the tile.
+const pinOK = p => (p.view === 'wide' || p.view === 'medium') && !p.multi;
 const pinBtn = f => {
   const c = fOf(f);
   if (!c || c === 'x') return '';
@@ -3228,8 +3211,7 @@ function renderForm() {
   status();
   const names = Object.keys(DATA.gen),
     vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]);
-  // Coral Finder book photos are left out: they never go on the growth-form tiles.
-  FSCOPE = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus));
+  FSCOPE = allPhotos().filter(p => shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus));
   const all = FSCOPE.filter(p => (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
@@ -3257,7 +3239,7 @@ function renderForm() {
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Growth form</h2></div>
     <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
-    ${FB.origins({skip: ['book']})}
+    ${FB.origins()}
     <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'fv', cur: FF.view, items: FB.viewItems()})}
       ${FB.unit({id: 'fgen', cur: FF.genus, names})}
       ${FB.check('ftodo', FF.todo, 'Not checked yet')}${FB.check('fpol', FF.pol, '✿ Polyps out')}${FB.check('fgfirst', FF.gfirst, 'Guesses first')}</div>
@@ -4681,7 +4663,7 @@ function zoomOne(p) {
 // Every new candidate of every genus, one at a time: set its quality and growth form, then add it to a view,
 // reject it, send it to another genus ("Not this") or skip it. Reject is only a "reviewed" mark (curation.json
 // "seen" {'cand:f': 1}): the photo stays a candidate on its genus page, nothing is deleted. Genera take turns,
-// in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines, CF book.
+// in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines.
 const CK = f => 'cand:' + f,
   rejected = f => !!(DRAFT.seen || {})[CK(f)];
 // Sources of the swiper: the subject's (core.js SUBJECTS admin csrc, FB.srcs), then All.
@@ -4698,8 +4680,8 @@ const cellView = (n, p) => {
   const v = p.vg || p.view;
   return v === 'medium' && lv(n) === 2 ? 'wide' : v;
 };
-// Only photos that can enter the games count against the cap: a Coral Finder book photo or a several-corals one never does.
-const gameable = p => !p.cf && !p.multi;
+// Only photos that can enter the games count against the cap: a several-corals one never does.
+const gameable = p => !p.multi;
 const cellFull = (n, w, o) => {
   const c = covOf(n, w);
   return c.obs >= capOf(n) && !(o && c.L.some(q => q.o === o));
@@ -4787,8 +4769,8 @@ function autoRun() {
     const add = entry(n).add || {},
       vs = capViews(n).map(x => x[0]);
     cands(n).forEach(p => {
-      // Not a book crop, not a photo Pierre sent here from another genus, judged, not stopped by the metrics, not decided.
-      if (p.cf || p.from || !p.j || p.mf || add[p.f] || rejected(p.f) || idx[p.f]) return;
+      // Not a photo Pierre sent here from another genus, judged, not stopped by the metrics, not decided.
+      if (p.from || !p.j || p.mf || add[p.f] || rejected(p.f) || idx[p.f]) return;
       const s = autoSure(p.j);
       if (!s) return;
       if (s.keep === 'add') {
@@ -5402,7 +5384,7 @@ function renderCand() {
   const Q0 = candQueue(CSRC),
     nFull = Q0.filter(x => x.full).length,
     nAside = Q0.filter(x => x.aside).length,
-    nJ = candQueue('all').filter(x => !x.p.cf && !x.p.j).length,
+    nJ = candQueue('all').filter(x => !x.p.j).length,
     Q = CFULL ? Q0 : Q0.filter(x => !x.full),
     live = Q0.filter(shown),
     c = live[0],
@@ -5774,7 +5756,6 @@ const output = () => {
     });
   return {
     v: 1,
-    ...(bookOn(DRAFT) ? {} : {book: false}),
     genera,
     ...(Object.keys(quality).length ? {quality} : {}),
     ...(Object.keys(gf).length ? {gf} : {}),
@@ -5877,7 +5858,6 @@ function pubSummary() {
   ]
     .filter(([c]) => c)
     .map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
-  if (bChanged()) L.push(`Coral Finder book photos ${bookOn(DRAFT) ? 'ON' : 'OFF'} on the whole site`);
   const G = changed().map(n => {
     const a = DRAFT.genera[n] || {},
       b = SAVED.genera[n] || {};
@@ -5901,7 +5881,6 @@ async function save() {
   const ch = changed(),
     q = qChanged(),
     x = xChanged(),
-    bk = bChanged(),
     fm = fChanged(),
     fl = flChanged(),
     sg = sgChanged(),
@@ -5929,7 +5908,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -6093,13 +6072,7 @@ async function start() {
   // Every photo of data.json by name, with its genus, for the Excluded view.
   PHOTOS = {};
   Object.entries(DATA.gen).forEach(([n, g]) =>
-    [
-      ...Object.values(g.views || {}),
-      ...Object.values(g.more || {}),
-      (DATA.course || {})[n] || [],
-      (DATA.cand || {})[n] || [],
-      g.book || []
-    ]
+    [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || []]
       .flat()
       .forEach(p => {
         PHOTOS[p.f] = {...p, genus: n};
@@ -6108,7 +6081,7 @@ async function start() {
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
   KNOWN = new Set(
     [
-      ...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {}), g.book || []].flat()),
+      ...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()),
       ...Object.values(DATA.course || {}).flat(),
       ...Object.values(DATA.cand || {}).flat(),
       ...(DATA.cmp || [])
@@ -6208,14 +6181,6 @@ async function start() {
   }
   $('undo').onclick = undo;
   $('help').onclick = toggleHelp;
-  // Site-wide switch: asks first (admin review, 2026-11-01).
-  $('booksw').onclick = () => {
-    if (!confirm(`Turn Coral Finder book photos ${bookOn(DRAFT) ? 'OFF' : 'ON'} on the whole site (after Publish)?`)) return;
-    if (bookOn(DRAFT)) DRAFT.book = false;
-    else delete DRAFT.book;
-    saveDraft();
-    render();
-  };
   $('redo').onclick = redo;
   $('redo2').onclick = redo;
   $('help2').onclick = toggleHelp;
@@ -6459,7 +6424,6 @@ function renderDiff() {
 // games never ask and the Research Grade rule of the extra genera.
 const POOL_OFF = [
   ['keyonly', 'Key-only genus'],
-  ['cf', 'CF book'],
   ['multi', 'several corals'],
   ['ref', 'sheet only'],
   ['x', 'form not visible'],
@@ -6496,7 +6460,6 @@ function poolStats() {
       cmp,
       removed: 0,
       wait: 0,
-      waitBook: 0,
       rej: 0,
       excl: Object.keys(DRAFT.exclude || {}).length
     },
@@ -6508,23 +6471,21 @@ function poolStats() {
       st.off++;
       const why = !isGame(n)
         ? 'keyonly'
-        : p.cf
-          ? 'cf'
-          : p.multi
-            ? 'multi'
-            : use[p.f] === 'ref'
-              ? 'ref'
-              : viewOf(n, p) === 'wide' && fOf(p.f) === 'x'
-                ? 'x'
-                : DATA.gen[n].x && !p.own && p.gid
-                  ? 'rg'
-                  : 'other';
+        : p.multi
+          ? 'multi'
+          : use[p.f] === 'ref'
+            ? 'ref'
+            : viewOf(n, p) === 'wide' && fOf(p.f) === 'x'
+              ? 'x'
+              : DATA.gen[n].x && !p.own && p.gid
+                ? 'rg'
+                : 'other';
       off[why] = (off[why] || 0) + 1;
     });
     const add = entry(n).add || {};
     cands(n)
       .filter(p => !add[p.f])
-      .forEach(p => (rejected(p.f) ? st.rej++ : (st.wait++, p.cf && st.waitBook++)));
+      .forEach(p => (rejected(p.f) ? st.rej++ : st.wait++));
   });
   return {G, per, play, st, off};
 }
@@ -6555,7 +6516,7 @@ function renderPstats() {
       ['Not in games', st.off],
       ['Comparison only', st.cmp],
       ['Removed', st.removed],
-      ['Candidates', st.wait, st.waitBook ? `${st.waitBook} Coral Finder book photos` : ''],
+      ['Candidates', st.wait],
       ['Rejected', st.rej],
       ['Excluded', st.excl]
     ],
@@ -6585,7 +6546,7 @@ function renderPstats() {
         of: has.length
       };
     }),
-    O = ORIGINS.filter(([o]) => o !== 'book').map(([o, t]) => ({
+    O = ORIGINS.map(([o, t]) => ({
       t,
       k: play.filter(p => origin(p) === o).length,
       d: distOf(R.map(r => r.s[o] || 0)),
@@ -6659,8 +6620,8 @@ function renderPstats() {
 }
 
 /* ---------- Photo coverage ---------- */
-// Game photos of genus n in view v, as the games can draw them (applySlots in app.js): field and IMR lecture photos, but no
-// Coral Finder book photo, no multi-coral, hidden or "sheet only" photo. Poor photos count (Pierre: realistic like ReefCloud
+// Game photos of genus n in view v, as the games can draw them (applySlots in core.js): field and IMR lecture photos, but no
+// multi-coral, hidden or "sheet only" photo. Poor photos count (Pierre: realistic like ReefCloud
 // images; the players' answers rate how hard they are). The Colony slot never takes a photo whose growth form is not visible (photoSet in app.js). Diversity = distinct colonies
 // (iNat observations), so 5 shots of one colony count once. Shared by the Coverage page and the Candidates queue.
 const COV = [1, 3, 5, 8]; // colonies per genus x view from which a cell reaches level 1, 2, 3, 4
@@ -6681,7 +6642,6 @@ function gamePool(n, v) {
       !hidden(n, p) &&
       !p.multi &&
       !p.extra &&
-      !p.cf &&
       use[p.f] !== 'ref' &&
       !(v === 'wide' && fOf(p.f) === 'x' && !oneForm) &&
       // The games' Research Grade rule for the extra genera that are played (app.js gamePhotoOk; Codex review #390). A
@@ -6699,7 +6659,6 @@ const OFF = [
   ['multi', 'multi', 'with several corals'],
   ['x', 'no form', 'form not visible'],
   ['ref', 'sheet only', 'sheet only'],
-  ['cf', 'CF', 'Coral Finder book'],
   ['hid', 'removed', 'removed']
 ];
 function covOff(n, v, long) {
@@ -6709,17 +6668,7 @@ function covOff(n, v, long) {
   photos(n)
     .filter(p => viewOf(n, p) === v && !pool.has(p.f))
     .forEach(p => {
-      const why = hidden(n, p)
-        ? 'hid'
-        : p.cf
-          ? 'cf'
-          : p.multi
-            ? 'multi'
-            : use[p.f] === 'ref'
-              ? 'ref'
-              : v === 'wide' && fOf(p.f) === 'x'
-                ? 'x'
-                : null;
+      const why = hidden(n, p) ? 'hid' : p.multi ? 'multi' : use[p.f] === 'ref' ? 'ref' : v === 'wide' && fOf(p.f) === 'x' ? 'x' : null;
       if (why) out[why] = (out[why] || 0) + 1;
     });
   const L = OFF.filter(([k]) => out[k]);
@@ -6789,11 +6738,9 @@ function renderCov() {
       min: Math.min(...live.map(c => c.obs)),
       max: Math.max(...live.map(c => c.obs)),
       all: live.flatMap(c => c.L),
-      // Candidates by source (Pierre, 2026-11-02: Dauin, Philippines and his own at least; the book never).
-      cand: pending(n).filter(p => !p.cf).length,
-      cby: pending(n)
-        .filter(p => !p.cf)
-        .reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {})
+      // Candidates by source (Pierre, 2026-11-02: Dauin, Philippines and his own at least).
+      cand: pending(n).length,
+      cby: pending(n).reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {})
     };
   });
   // Lecture order = the app's Genera list: IMR lecture group (★ genera in the group of their look-alikes, as shownGroup
@@ -6822,12 +6769,10 @@ function renderCov() {
       ? `<td class="cov-c cov-${covLvl(c)}${c.obs > CELL_MAX ? ' cov-over' : c.obs === CELL_MAX ? ' cov-full' : ''}" title="${c.obs > CELL_MAX ? `Over the cap of ${CELL_MAX} colonies · ` : c.obs === CELL_MAX ? `Full (${CELL_MAX} colonies) · ` : ''}${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}${(o => (o ? ` · not counted: ${esc(o)}` : ''))(covOff(r.n, v, true))}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}${(o => (o ? `<span class="cov-off">${o}</span>` : ''))(covOff(r.n, v))}</td>`
       : '<td class="cov-c cov-na">–</td>';
   const bar = r =>
-    ORIGINS.filter(o => o[0] !== 'book')
-      .map(([o, t]) => {
-        const k = r.all.filter(p => origin(p) === o).length;
-        return k ? `<i class="o-${o}" style="width:${((100 * k) / max).toFixed(1)}%" title="${t}: ${k}"></i>` : '';
-      })
-      .join('');
+    ORIGINS.map(([o, t]) => {
+      const k = r.all.filter(p => origin(p) === o).length;
+      return k ? `<i class="o-${o}" style="width:${((100 * k) / max).toFixed(1)}%" title="${t}: ${k}"></i>` : '';
+    }).join('');
   const seg = [
     ['thin', 'Thinnest', 'Least covered first'],
     ['thick', 'Thickest', 'Most photos first'],
@@ -6841,12 +6786,12 @@ function renderCov() {
       <dt><b>9</b></dt><dd>photos of the genus in the games, for this view</dd>
       <dt><small>6</small></dt><dd>colonies they come from, when fewer than photos (several photos of one colony count once)</dd>
       <dt>colour</dt><dd>colonies: <span class="cov-c cov-0">0</span> none · <span class="cov-c cov-1">1–2</span> thin · <span class="cov-c cov-2">3–4</span> · <span class="cov-c cov-3">5–7</span> · <span class="cov-c cov-4">8+</span></dd>
-      <dt>excl.</dt><dd>photos of this view left out of the games, and why: <b>multi</b> several corals in the photo · <b>no form</b> growth form not visible (Colony view) · <b>sheet</b> shown on the genus sheet only · <b>CF</b> Coral Finder book (poor quality, rights) · <b>removed</b> taken out by you</dd>
+      <dt>excl.</dt><dd>photos of this view left out of the games, and why: <b>multi</b> several corals in the photo · <b>no form</b> growth form not visible (Colony view) · <b>sheet</b> shown on the genus sheet only · <b>removed</b> taken out by you</dd>
       <dt>–</dt><dd>no such view for this genus (2-level genera have no Close-up)</dd>
-      <dt>+</dt><dd>candidates waiting in Candidates, by source: <b>Dauin</b> iNaturalist at Dauin · <b>PH</b> iNaturalist elsewhere in the Philippines · <b>Own</b> your photos · <b>Other</b> iNaturalist elsewhere (Coral Finder book photos never counted)</dd>
+      <dt>+</dt><dd>candidates waiting in Candidates, by source: <b>Dauin</b> iNaturalist at Dauin · <b>PH</b> iNaturalist elsewhere in the Philippines · <b>Own</b> your photos · <b>Other</b> iNaturalist elsewhere</dd>
       <dt>thin · full · at 8+</dt><dd>cells with 0–2 colonies · at the cap of ${CELL_MAX} colonies · with 8 or more</dd>
       <dt>Sources</dt><dd>all photos of the genus by origin (hover a segment)</dd></dl></details>
-    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
+    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : DATA.gen[r.n].x ? ' <small class="kcov-x">not IMR</small>' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
@@ -6907,8 +6852,7 @@ function lookBanner() {
 }
 
 // Sheets & ID Key coverage (Pierre 2026-11-01): what the Coral ID Key can show per genus, the IMR genera and the book's
-// extra genera present at Dauin. Pool = every photo of the view not hidden, not multi-coral, approved CF book photos
-// included; colour = distinct colonies with a photo that is not Poor; Forms = growth forms seen (Colony + Closer);
+// extra genera present at Dauin. Pool = every photo of the view not hidden, not multi-coral; colour = distinct colonies with a photo that is not Poor; Forms = growth forms seen (Colony + Closer);
 // Species = distinct species named on the photos.
 let KCOV = Object.assign({set: 'all', order: 'thin', col: '', dir: 'asc'}, store.get('reefid-admin-kcov', {}));
 function renderKcov() {
@@ -6922,7 +6866,7 @@ function renderKcov() {
           covViews(n).some(x => x[0] === v)
             ? (L => {
                 const good = L.filter(p => qOf(p.f) >= 2);
-                return {n: L.length, obs: new Set(good.map(p => p.o || p.f)).size, cf: L.filter(p => p.cf).length, L};
+                return {n: L.length, obs: new Set(good.map(p => p.o || p.f)).size, L};
               })(pool.filter(p => viewOf(n, p) === v))
             : null
         )
@@ -6948,10 +6892,8 @@ function renderKcov() {
       n,
       i,
       x: isX(n),
-      cand: pending(n).filter(p => !p.cf).length,
-      cby: pending(n)
-        .filter(p => !p.cf)
-        .reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {}),
+      cand: pending(n).length,
+      cby: pending(n).reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {}),
       cells,
       min: live.length ? Math.min(...live.map(c => c.obs)) : 0,
       tot: pool.length,
@@ -6981,7 +6923,7 @@ function renderKcov() {
   };
   const cell = (r, c, v) =>
     c
-      ? `<td class="cov-c cov-${covLvl(c)}${capCell(r.n, v)[0]}" title="${capCell(r.n, v)[1]}${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} good colon${c.obs === 1 ? 'y' : 'ies'}${c.cf ? ` · ${c.cf} CF book` : ''}"><b>${c.n}</b><small>${c.obs} good</small>${c.cf ? `<span class="cov-off">incl. ${c.cf} CF</span>` : ''}</td>`
+      ? `<td class="cov-c cov-${covLvl(c)}${capCell(r.n, v)[0]}" title="${capCell(r.n, v)[1]}${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} good colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b><small>${c.obs} good</small></td>`
       : '<td class="cov-c cov-na">–</td>';
   const seg = (k, L) =>
     `<span class="adm-qseg adm-lvseg" role="group">${L.map(([v, t]) => `<button type="button" data-fc="${k}" data-v="${v}" aria-pressed="${KCOV[k] === v && !(k === 'order' && KCOV.col)}">${t}</button>`).join('')}</span>`;
@@ -6997,7 +6939,7 @@ function renderKcov() {
     ])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
-    <table class="cov-t kcov-t"><thead><tr><th></th>${colTh(KCOV)}<th class="kcov-fh">Forms</th><th class="kcov-sh">Species</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
+    <table class="cov-t kcov-t"><thead><tr><th></th>${colTh(KCOV)}<th class="kcov-fh">Forms</th><th class="kcov-sh">Species</th><th title="Candidates waiting in Candidates, by source">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="kcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="kcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
@@ -8863,7 +8805,7 @@ function statsHealth() {
   if (stops) pagesFresh('analyses/learning/stops');
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
-const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
+const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world'};
 // Confusions (Pierre, 2026-11-01): which genera, photos, colonies (iNat observations) and species players mix up, from
 // the answer log. A pair's rate = mixed up / offered together (needs the choices, logged since sheet v10); its score starts
 // from a prior (declared look-alike, same family, other: core.js CONF) and follows the answers; the quiz picks its traps
