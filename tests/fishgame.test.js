@@ -284,7 +284,8 @@ function autoWorld() {
   w('suggest.json', AUTO_SUG);
   fs.mkdirSync(path.join(dir, 'tools'));
   // 308: a cover judged 4, one point more for being one (reference level); 309: judged 4, no rep (below it, in like a
-  // candidate: Q212); 310: on candidate 301's observation (rule P4: out); 311: other kinds of fish too (P3: out); 312: out
+  // candidate: Q212); 310, 314, 315: on candidate 301's observation (Q218: in once judged against it, so 310, not judged
+  // against it yet, out; 314, judged alt, in; 315, judged dup, out); 311: other kinds of fish too (P3: out); 312: out
   // of the water (out); 313: a hard one, head-on, dim and soft, judged 2 (in, as a candidate would be).
   w('tools/fish_refs.json', {
     photos: {
@@ -294,13 +295,27 @@ function autoWorld() {
         REF(310, 9301, {rep: 'inaturalist', from: 'taxon'}),
         REF(311, 9311, {from: 'taxon'}),
         REF(312, 9312, {from: 'taxon'}),
-        REF(313, 9313, {from: 'taxon'})
+        REF(313, 9313, {from: 'taxon'}),
+        REF(314, 9301, {from: 'taxon'}),
+        REF(315, 9301, {from: 'taxon'})
       ]
     }
   });
   w('tools/fish_judge.json', {
-    photos: {t02: {fi308: 'p1g0sl14', fi309: 'p1g0sl14', fi310: 'p1g0sl15', fi311: 'p1g0slm4', fi312: 'p1g0sl1a3', fi313: 'h1d0mm12'}},
-    crops: {}
+    photos: {
+      t02: {
+        fi308: 'p1g0sl14',
+        fi309: 'p1g0sl14',
+        fi310: 'p1g0sl15',
+        fi311: 'p1g0slm4',
+        fi312: 'p1g0sl1a3',
+        fi313: 'h1d0mm12',
+        fi314: 'p1g0sl14',
+        fi315: 'p1g0sl14'
+      }
+    },
+    crops: {},
+    keep: {fi314: 'alt', fi315: 'dup'}
   });
   return dir;
 }
@@ -312,7 +327,7 @@ test(
       // One download only: the reference photo first (the tier order), the rest wait for the next run.
       r1 = run(dir, path.join(dir, 'up1'), 1),
       G1 = JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'));
-    assert.deepStrictEqual([r1.done, r1.wait], [1, 10]); // 107 among them: its host is refused at download
+    assert.deepStrictEqual([r1.done, r1.wait], [1, 11]); // 107 among them: its host is refused at download
     assert.deepStrictEqual(
       Object.values(G1.photos)
         .flat()
@@ -326,14 +341,15 @@ test(
           .flat()
           .map(p => [p.f, p])
       );
-    assert.deepStrictEqual([r.done, r.wait, r.n], [9, 0, 10]);
+    assert.deepStrictEqual([r.done, r.wait, r.n], [10, 0, 11]);
     // Pierre's 5 as before, the sure best and alt of the candidates, the reference photos judged sure (below the reference
     // level too: Q212); never the unsure, other kinds of fish (P3), dup, a photo he rejected, out of the water, a reference
-    // photo on an observation in play.
+    // photo on an observation in play unless judged no duplicate of its photos (Q218).
     assert.deepStrictEqual(Object.keys(by).sort(), [
       'fi308',
       'fi309',
       'fi313',
+      'fi314',
       'fish-s001-cand-101',
       'fish-s001-cand-102',
       'fish-s001-cand-105',
@@ -380,7 +396,7 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
     // Pierre rejects one: the next run takes it out of the list.
     fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(no('seen', 'fish-s003-cand-302')));
     const r3 = run(dir, path.join(dir, 'up3'));
-    assert.deepStrictEqual([r3.done, r3.n], [0, 9]);
+    assert.deepStrictEqual([r3.done, r3.n], [0, 10]);
     fs.rmSync(dir, {recursive: true, force: true});
   }
 );
@@ -396,8 +412,8 @@ test("fish_game.py: an undone auto add stays out, and Pierre's full-photo crop b
   fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(cur));
   const got = JSON.parse(
     py(`import fish_game as G
-fish, cur, cand, sug, refs, codes, crops = G.inputs(${JSON.stringify(dir)})
-todo, keep, _ = G.plan(fish, cur, cand, sug, {'photos': {}}, refs, codes, crops)
+fish, cur, cand, sug, refs, codes, crops, rkeep = G.inputs(${JSON.stringify(dir)})
+todo, keep, _ = G.plan(fish, cur, cand, sug, {'photos': {}}, refs, codes, crops, rkeep=rkeep)
 print(json.dumps({r['f']: c for r, c, _ in todo}))`)
   );
   assert.ok(!('fish-s003-cand-302' in got), 'an undone auto add stays out');

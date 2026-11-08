@@ -7,6 +7,7 @@
  "  flags (j juvenile, c camouflage, a out of water), then the ease 1-5. The tool adds the phase flag p for the entries fish.json marks dimorph, and caps the ease (judging/FISH.md \"Caps\"; the phase flag caps nothing since 2026-11-04).",
  "crops: photo id -> a proposed crop [left, top, right, bottom] as fractions of the photo (curation.json crop's format), when the fish is small in the frame or the margins distract. A proposal for the admin only: never applied by the app or a script.",
  "add: teaching id -> photo objects (fish-photos.json's shape) the pass added for a circle-1 entry short of very easy photos (Pierre, 2026-11-04: at least 5 each): research-grade candidates of fish-cand.json (tools/fetch_fish.py, PR #463: CC0, CC BY or CC BY-NC, the Indo-West Pacific), looked at and judged like the others; only the very easy ones needed were added (to 6 where enough were found). The tool appends them once, by observation.",
+ "keep (optional): reference photo id (tools/fish_refs.json f) -> best, alt or dup, for a reference photo on an observation already in play (another photo of it is a game photo): judged against that observation's photos as a candidate is (judging/FISH.md keep); best or alt enters the game, dup stays out, and one not judged yet waits (tools/fish_game.py in_play; Pierre, 2026-11-08, Q218). None today: every reference photo kept out is the same photo as one in play.",
  "passes: who judged what, how, and when. A photo of fish-photos.json not listed here is not judged yet (no e: it starts at difficulty 0)."
 ],
 "rubric": 5,

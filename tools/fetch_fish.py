@@ -394,7 +394,7 @@ def topup(args):
     (200 a request, rule C7) and every photo of it not taken yet comes. It was counted for up to OBS_ROOM photos already,
     so this never blocks; a species it puts over its cap only waits longer for new observations (nothing is removed). One
     that holds more was fetched whole (since 2026-11-08 an observation is cut only below OBS_ROOM photos); one with a photo
-    Pierre sent elsewhere brings nothing more. The --refill runs it for every species of its circles first. Returns
+    Pierre sent elsewhere, or no longer identified as that species on iNaturalist, brings nothing more. The --refill runs it for every species of its circles first. Returns
     {species id: photos added}."""
     rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
     fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
@@ -417,10 +417,12 @@ def topup(args):
     ids = sorted(want)
     try:
         for i in range(0, len(ids), 200):
-            d = net.get(f"id={','.join(map(str, ids[i:i + 200]))}&per_page=200")
+            d = net.get(f"id={','.join(map(str, ids[i:i + 200]))}&per_page=200", FIELDS + ",taxon.ancestor_ids")
             for o in (d or {}).get("results", []):
                 s = want.get(o["id"])
-                it = usable_obs(o, used, excl) if s else None
+                # Still identified as that species (its taxon or an ancestor, as phase_obs): one re-identified since
+                # brings nothing (Codex review #715).
+                it = usable_obs(o, used, excl) if s and s.get("inat") in (o.get("tx") or []) else None
                 if not it:
                     continue
                 for p in it["P"]:

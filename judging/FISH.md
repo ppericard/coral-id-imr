@@ -126,7 +126,10 @@ of the entry), and adds FishBase's photos of each species that pass its rules (i
 FishBase's main picture with `rep`. **On R2, like a candidate** (Pierre, 2026-11-08, Q212: "we bring them in like
 candidates"): every reference photo judged sure on the candidates' rubric (one kind of fish, count `1` or `s`; in the
 water, no `a`) is in play by itself, whatever its level (`tools/fish_game.py` `ref_play`, `judged_sure`); the stopgap list
-(`fish-photos.json`) still takes only the reference-level ones.
+(`fish-photos.json`) still takes only the reference-level ones. The same photo as one in play stays out, always; **a reference photo on an observation
+already in play** (another photo of it is a game photo) is judged against that observation's photos like a candidate
+(Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): `tools/fish_judge.json`
+`keep` {photo: `best` | `alt` | `dup`}; `best` or `alt` enters, `dup` stays out, and it waits until judged.
 
 **Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
 read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it; in both cases

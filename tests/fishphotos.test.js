@@ -529,21 +529,24 @@ print(json.dumps([[o['id'], len(o['P']), o['cost']] for o in T]))`);
       r: 1
     });
   // s1 is full (cap 4): 5 holds the 4 photos of the old limit; 6 too, one of them rejected (it still gets its others);
-  // 7 five (fetched whole already); 8 four, one of which Pierre sent out of the fish (nothing more of it).
+  // 7 five (fetched whole already); 8 four, one of which Pierre sent out of the fish (nothing more of it); 9 four, since
+  // re-identified on iNaturalist as another species (nothing more of it: Codex review #715).
   const L0 = [0, 1, 2, 3]
     .map(k => rec(5, k))
     .concat(
       [0, 1, 2, 3].map(k => rec(6, k)),
       [0, 1, 2, 3, 4].map(k => rec(7, k)),
-      [0, 1, 2, 3].map(k => rec(8, k))
+      [0, 1, 2, 3].map(k => rec(8, k)),
+      [0, 1, 2, 3].map(k => rec(9, k))
     );
   fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
   fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify({v: 1, cand: {s1: L0}}));
   fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {seen: {'fish-s1-cand-60': 1}, out: {'fish-s1-cand-80': 'x'}}}));
-  // Only 5 and 6, in one request, are in the cache: asking for 7 or 8 would stop the --offline run.
+  // Only 5, 6 and 9, in one request, are in the cache: asking for 7 or 8 would stop the --offline run.
   py(
     `${OBS}
-c = {API + 'id=5,6&per_page=200&fields=' + FIELDS: {'total': 2, 'results': [ob(5, n=7), ob(6, n=5)]}}
+tx = lambda o, *t: {**o, 'tx': list(t)}
+c = {API + 'id=5,6,9&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 3, 'results': [tx(ob(5, n=7), 501, 50), tx(ob(6, n=5), 501, 50), tx(ob(9, n=6), 777, 50)]}}
 json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
     dir
   );
@@ -562,8 +565,12 @@ json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
     ['fish-s1-cand-54', 'fish-s1-cand-55', 'fish-s1-cand-56', 'fish-s1-cand-64']
   );
   assert.deepStrictEqual(L.slice(0, L0.length), L0);
-  // Once whole, 5 and 6 are not asked again (the cache is gone: a request would stop the run).
-  fs.rmSync(path.join(dir, 'cache.json'));
+  // Once whole, 5 and 6 are not asked again; 9 still is (one request).
+  fs.writeFileSync(
+    path.join(dir, 'cache.json'),
+    py(`${OBS}
+print(json.dumps({API + 'id=9&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 1, 'results': [{**ob(9, n=6), 'tx': [777]}]}}))`)
+  );
   run('--topup', '--offline');
   assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1.length, L0.length + 4);
   fs.rmSync(dir, {recursive: true, force: true});
