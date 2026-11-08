@@ -539,8 +539,8 @@ test('curated photos: a valid code and ease for each, the caps where the ease is
           `import sys, json; sys.path.insert(0, 'tools')
 import fish_game as G
 L = lambda f, d=None: G.load('.', f, d)
-fish, cur, cand, sug, refs, codes, crops = G.inputs('.')
-todo, keep, _ = G.plan(fish, cur, cand, sug, L('fish-game.json', {'photos': {}}), refs, codes, crops)
+fish, cur, cand, sug, refs, codes, crops, rkeep = G.inputs('.')
+todo, keep, _ = G.plan(fish, cur, cand, sug, L('fish-game.json', {'photos': {}}), refs, codes, crops, rkeep=rkeep)
 print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
         ],
         {cwd: path.join(__dirname, '..'), encoding: 'utf8', maxBuffer: 64 << 20}

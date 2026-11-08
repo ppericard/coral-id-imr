@@ -164,8 +164,8 @@ def ref_play(fish, refs, codes):
     judged sure on the candidates' rubric (tools/fish_judge.json codes, the rubric's caps and reference flag: tools/
     fish_judge.py cap; judged_sure), whatever their reference level (Pierre, 2026-11-08, Q212: "we bring them in like
     candidates"; before, only the reference level entered, Q199), in tools/fish_refs.json order. A reference photo has no
-    keep or unsure field (tools/fish_judge.json holds codes only); one of a photo or an observation already in play stays
-    out (in_play, rule P4)."""
+    keep or unsure field in its code; the same photo as one already in play stays out, and one on an observation already in
+    play enters only once judged against its photos (in_play, keep)."""
     import fish_judge as J
     dim = {t['id'] for t in fish.get('teach') or [] if t.get('dimorph')}
     juv = {t['id']: t.get('juv') for t in fish.get('teach') or []}
@@ -185,13 +185,16 @@ def ref_play(fish, refs, codes):
     return out
 
 
-def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None):
+def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
     """[(species id, record, its fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
     Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that fish-cand.json still
     describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved);
     "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the same photo. Never
-    the same photo twice (pid), and a reference photo only on an observation not already in play (rule P4); a candidate's
-    sure best and alt both enter, as fishSure proposes them."""
+    the same photo twice (pid); a candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
+    on an observation already in play (another photo of it) enters too once judged against that observation's photos,
+    like a candidate (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): keep
+    (rkeep: tools/fish_judge.json "keep", {photo: best | alt | dup}) best or alt; one not judged against them yet stays
+    out, and a dup stays out whatever comes first. The game draws one observation a question (model.js photoSet), so its photos share one draw."""
     F = (cur or {}).get('fish') or {}
     top = set((cur or {}).get('exclude') or {})
     gone = gone_ids(cur)
@@ -214,8 +217,13 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None):
                 put(s, p, s, 'cand')
     if fish and refs and codes:
         for sid, r in ref_play(fish, refs, codes):
-            if pid(r['f']) not in gone and pid(r['f']) not in have and r.get('o') not in obs:
-                put(sid, r, sid, 'ref')
+            if pid(r['f']) in gone or pid(r['f']) in have:
+                continue  # the same photo: out, always
+            if (rkeep or {}).get(r['f']) == 'dup':
+                continue  # judged a duplicate of its observation's photos: out, whatever the order (Codex review #715)
+            if r.get('o') in obs and (rkeep or {}).get(r['f']) not in ('best', 'alt'):
+                continue  # another photo of its observation is in play: in once judged no duplicate of it (Q218)
+            put(sid, r, sid, 'ref')
     return out
 
 
@@ -270,7 +278,7 @@ def tier(fish):
     return lambda r, route: (0 if route == 'ref' else 1 if of.get(r['sp']) in start else 2 if circle.get(of.get(r['sp'])) == 1 else 3)
 
 
-def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=None):
+def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=None, rkeep=None):
     """(todo, keep, wait): the records to download [(record, crop, iv)], the ones already downloaded with the right crop
     {f: record}, and how many more are in play than this run takes (limit: at most that many downloads, tier order).
     prev: the current fish-game.json; refs, codes, crops: tools/fish_refs.json photos and tools/fish_judge.json codes and
@@ -280,7 +288,7 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
     old = {p['f']: p for L in ((prev or {}).get('photos') or {}).values() for p in L if p.get('f')}
     species = {s['id']: s for s in (fish or {}).get('species') or []}
     todo, keep = [], {}
-    for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes):
+    for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep):
         r, c, o = record(sid, p, F, sug, orig, species, route), crop_of(F, p['f']), old.get(p['f'])
         mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included (Codex review #674)
         if not mine and route == 'cand':
@@ -366,13 +374,14 @@ def load(root, name, default=None):
 
 
 def inputs(root=ROOT):
-    """(fish, curation, candidates, their judgements, reference photos, reference codes, reference crops): what plan reads."""
+    """(fish, curation, candidates, their judgements, reference photos, reference codes, reference crops, reference keeps):
+    what plan reads."""
     fish, cur = load(root, 'fish.json'), load(root, 'curation.json', {})
     cand, sug = load(root, 'fish-cand.json', {'cand': {}}), (load(root, 'suggest.json', {}) or {}).get('fish') or {}
     refs = (load(root, os.path.join('tools', 'fish_refs.json'), {}) or {}).get('photos') or {}
     J = load(root, os.path.join('tools', 'fish_judge.json'), {}) or {}
     codes = {f: c for m in (J.get('photos') or {}).values() for f, c in m.items()}
-    return fish, cur, cand, sug, refs, codes, J.get('crops') or {}
+    return fish, cur, cand, sug, refs, codes, J.get('crops') or {}, J.get('keep') or {}
 
 
 # At most this many downloads a run (the Candidate photos workflow; FISH_MAX or --max overrides): about 8,300 photos were in
@@ -384,9 +393,9 @@ MAX = int(os.environ.get('FISH_MAX', '5000'))
 def run(out='r2-upload', root=ROOT, get=opener, pause=FB_PAUSE, workers=6, write=True, limit=None):
     """Downloads what is new into out (at most limit photos, MAX by default) and writes fish-game.json; returns
     (downloaded, failed, listed, waiting)."""
-    fish, cur, cand, sug, refs, codes, crops = inputs(root)
+    fish, cur, cand, sug, refs, codes, crops, rkeep = inputs(root)
     prev = load(root, OUT_FILE, {'photos': {}})
-    todo, keep, wait = plan(fish, cur, cand, sug, prev, refs, codes, crops, MAX if limit is None else limit)
+    todo, keep, wait = plan(fish, cur, cand, sug, prev, refs, codes, crops, MAX if limit is None else limit, rkeep)
     os.makedirs(out, exist_ok=True)
     done, failed = 0, []
     # FishBase one at a time, after the rest (it is the host that fails under load).
@@ -443,8 +452,8 @@ def main():
     ap.add_argument('--max', type=int, default=MAX, help='at most this many downloads in this run (FISH_MAX)')
     a = ap.parse_args()
     if a.plan:
-        fish, cur, cand, sug, refs, codes, crops = inputs(ROOT)
-        todo, keep, _ = plan(fish, cur, cand, sug, load(ROOT, OUT_FILE, {'photos': {}}), refs, codes, crops)
+        fish, cur, cand, sug, refs, codes, crops, rkeep = inputs(ROOT)
+        todo, keep, _ = plan(fish, cur, cand, sug, load(ROOT, OUT_FILE, {'photos': {}}), refs, codes, crops, rkeep=rkeep)
         allr = {**keep, **{r['f']: r for r, _, _ in todo}}
         d = doc(fish, allr)
         fb = sum(1 for r, _, _ in todo if r.get('via') == 'fishbase')
