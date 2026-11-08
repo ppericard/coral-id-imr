@@ -474,6 +474,12 @@
       // Its own leaderboard (Pierre, 2026-11-04: separate per subject, no merged ranking): by its %, then its Elo (sheet
       // v95, Code.gs board_ &s=fish; progress.js loadBoard).
       board: true,
+      // Its global score (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the commonness weights and the square-root
+      // display; docs/FISH_PATH.md "My progress (fish)"): core.js treeScore over its tree (app.js UNITS fish tree), shown
+      // as its headline % (model.js headPct: the header, My progress, the leaderboard, the fish % achievements) with its
+      // components (My progress's bars). The one switch: without it the headline is the families' mean again (progPct),
+      // and the rules that read it go back with it (app.js fishGate).
+      score: {entries: 0.25, a: 11 / 15, b: 0.8, half: 0.5, pow: 0.5},
       // Reference-level photos first in the draw (Pierre, 2026-11-06: a new entry starts on reference photos, never only
       // them); the judged ease's prior as measured (CALIB.ease). Q186 (Pierre, 2026-11-06 15:33: the easy photos strongly
       // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
@@ -549,11 +555,21 @@
   const LOG_SC = 22;
   const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
   const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
+  // A surprise card's answer (quiz.js winkShow; Pierre, 2026-11-08: logged like every other answer, and never counted):
+  // mode WINK_MODE, the app's log entry (m) and an answer-log row alike (index LOG_MODE in the sheet's readAnswers rows,
+  // its Answers tab rows and logRow's). No progress, ability, hold, replay, photo rating, confusion, exposure, count or
+  // analysis reads one: subjRows and subjEntries leave them out, and so do the sheet's readers (Code.gs replayed_,
+  // answers_, the Activity tab).
+  const WINK_MODE = 'wink',
+    LOG_MODE = 5;
+  const winkEntry = a => !!a && String(a.m || '') === WINK_MODE;
+  const winkRow = r => !!r && String(r[LOG_MODE] || '') === WINK_MODE;
   // The rows (or log entries, entries) of one subject, the replayed one by default: every reader of the answer log that
   // computes a subject's statistics (the analyses, the evaluation tools, the admin) keeps only that subject's rows, so a
-  // fish answer never counts in a coral result.
-  const subjRows = (rows, id = replaySubject()) => (Array.isArray(rows) ? rows : []).filter(r => r && rowSubject(r) === id);
-  const subjEntries = (log, id = replaySubject()) => (Array.isArray(log) ? log : []).filter(a => a && ansSubject(a) === id);
+  // fish answer never counts in a coral result; a surprise card's answer counts in none (winkRow, winkEntry).
+  const subjRows = (rows, id = replaySubject()) => (Array.isArray(rows) ? rows : []).filter(r => r && rowSubject(r) === id && !winkRow(r));
+  const subjEntries = (log, id = replaySubject()) =>
+    (Array.isArray(log) ? log : []).filter(a => a && ansSubject(a) === id && !winkEntry(a));
   // A subject's first-launch answer (CHOICE): reefid-sync-<subject>-start, synced with the player's progress.
   const startKey = s => subjKey(s, 'start');
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
@@ -2313,49 +2329,80 @@
     ['fb5', 'Helping hand', '5 reports sent: you are making the app better', 2, '💬', s => s.fb >= 5, 'contrib'],
     ['fb10', 'Co-author', '10 reports sent: the app owes you a lot', 3, '💬', s => s.fb >= 10, 'contrib']
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
-  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start: families met, levels,
-  // mastery, scientific names; species named and Fish basics wait for those features; harder "hunt" ones later, apart;
-  // "do not multiply achievements"). Learning milestones only (rule L8), tested on the fish snapshot (progress.js
-  // achSnap: the same fields over the fish slate, core = the IMR course's families, sets.sci = scientific genera at Open
-  // Water or above), in the shared record under ids starting with f, so a fish achievement never counts in the corals'
-  // (each subject's page and badge count its own list; SUBJECTS achs). Timing simulated with the real fish game
-  // (tools/learnsim.js --subject fish --ach): docs/LEARNING.md "Fish achievements, simulated".
+  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start; redesigned around the global
+  // score, 2026-11-08, Q259-Q263: docs/LEARNING.md "Fish achievements, around the global score"). Learning milestones only
+  // (rule L8), tested on the fish snapshot (progress.js achSnap: the same fields over the fish slate; core = the IMR
+  // course's families; circ = each circle's families, Advanced or above counted; sets.sci = scientific genera at Open
+  // Water or above, setsAdv.sci at Advanced or above; pct = the global fish score, treeScore's %), in the shared record
+  // under ids starting with f, so a fish achievement never counts in the corals' (each subject's page and badge count its
+  // own list; SUBJECTS achs). Names short, fun and varied, diver-flavoured (Pierre, 2026-11-08: "des noms sympas,
+  // rigolos, pour varier"); descriptions plain and exact. Retired (Q259, 2026-11-08): fpct25, removed from every record by
+  // the recount (progress.js ACH_V 3, achMigrate), as every % one met on the former families' mean and not on the score.
+  // Wait for the species level, documented, not built: fpct70, fpct100, species named, Fish basics (LEARNING).
+  // Timing simulated with the real fish game (tools/learnsim.js --subject fish --ach).
   const FISH_ACH = [
-    ['fmet5', 'First families', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
-    ['fmetcore', 'The IMR line-up', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
-    ['fmetall', 'Whole reef', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
-    ['fq50a', 'Open Water: 5 families', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
-    ['fq50b', 'Open Water: 20 families', '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
-    ['fq80a', 'Advanced: 5 families', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
-    ['fq80b', 'Advanced: 15 families', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
+    ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
+    ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
+    ['fq50a', 'Certified', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
+    ['fq50b', "School's in", '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
+    ['fq80a', 'Night diver', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
+    ['fq80b', 'Deep diver', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
+    ['fq95a', 'Dive guide', '5 families at Divemaster level or above (95%: their mastery exam is on)', 2, '🐠', s => s.q[2] >= 5],
+    ['flearn1', 'First briefing', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
+    ['flearn10', 'Course director', 'Mastery exam passed on 10 families', 3, '🎓', s => s.learned >= 10],
+    ['flearn30', 'Fish whisperer', 'Mastery exam passed on 30 families', 3, '🎓', s => s.learned >= 30],
+    // The circles (the IMR course's families, those that open right after them, those beyond the course).
     [
-      'fq95a',
-      'Divemaster: 5 families',
-      '5 families at Divemaster level or above (95%: their mastery exam is on)',
+      'fcoreadv',
+      'House reef',
+      'Every family of the IMR course at Advanced level or above (80%+)',
       2,
-      '🐠',
-      s => s.q[2] >= 5
+      '🗺️',
+      s => s.core.total && s.core.adv >= s.core.total
     ],
-    ['flearn1', 'First fish Instructor', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
-    ['flearn10', 'Instructor: 10 families', 'Mastery exam passed on 10 families', 3, '🎓', s => s.learned >= 10],
+    [
+      'fc2',
+      'Supporting cast',
+      'Every family that opens right after the IMR course’s at Advanced level or above',
+      2,
+      '🗺️',
+      s => !!(s.circ && s.circ[1] && s.circ[1].total && s.circ[1].adv >= s.circ[1].total)
+    ],
+    [
+      'fc3adv',
+      'Muck diver',
+      '20 families beyond the IMR course at Advanced level or above',
+      3,
+      '🗺️',
+      s => !!(s.circ && s.circ[2] && s.circ[2].adv >= 20)
+    ],
     [
       'flearncore',
-      'IMR fish master',
+      'Transect master',
       'You know every family of the IMR course for sure',
       3,
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
     ],
-    ['fpct25', 'A quarter of the reef', '25% fish progress', 2, '📈', s => s.pct >= 25],
-    ['fpct50', 'Half the reef', '50% fish progress', 3, '📈', s => s.pct >= 50],
+    // The global fish score (core.js treeScore, Q242), every 10 points (Q259); 50% is the families' anchor.
+    ['fpct10', 'Giant stride', '10% fish progress', 1, '📈', s => s.pct >= 10],
+    ['fpct20', 'Bubble trail', '20% fish progress', 1, '📈', s => s.pct >= 20],
+    ['fpct30', 'Reef crest', '30% fish progress', 2, '📈', s => s.pct >= 30],
+    ['fpct40', 'Down the wall', '40% fish progress', 2, '📈', s => s.pct >= 40],
+    ['fpct50', 'Family reunion', '50% fish progress: what knowing every family for sure is worth', 3, '📈', s => s.pct >= 50],
+    ['fpct60', 'Blue water', '60% fish progress', 3, '📈', s => s.pct >= 60],
+    // The scientific genera (an opt-in set, SUBJECTS optin sci).
     [
       'fsci5',
-      'Genus names',
+      'Latin lessons',
       '5 scientific genera at Open Water level or above: you can name them as EventMeasure does',
       2,
       '🏷️',
       s => (s.sets.sci || 0) >= 5
-    ]
+    ],
+    ['fgen20', 'Name dropper', '20 scientific genera at Advanced level or above (80%+)', 2, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 20],
+    ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id.
@@ -2398,13 +2445,28 @@
   }
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have, list = ACH) => list.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
+  // The full recount (progress.js achMigrate, achPending; Pierre, 2026-11-01 and 2026-11-08: "recalculer ... leur succès
+  // actuel" from their current progress): into B, every achievement of list that the snapshot meets, dated by the
+  // earliest of B's own (a copy already recounted, merged in) and old's (the record before the recount), else t. What the
+  // snapshot does not meet is left out (an achievement of an older record never comes back through a merge: mergeAch
+  // takes no achievement from a record of another version). Changes B; returns the ids it holds from list.
+  function achRecount(B, old, list, snap, t) {
+    const ok = x => typeof x === 'number' && x > 0;
+    return (list || [])
+      .filter(a => a.test(snap))
+      .map(a => {
+        const d = [B[a.id], old && old[a.id]].filter(ok);
+        B[a.id] = d.length ? Math.min(...d) : t;
+        return a.id;
+      });
+  }
   // Achievements taken back (Pierre, 2026-11-03): only those that rest on genera learned, and only when a recalculation
   // takes a learned mark away (model.js mxRecalc, progress.js achRecheck); anywhere else achievements are only added.
   // achRevoke removes from A ({id: time}) those of ACH_LEARN that the snapshot no longer meets, and dates in A._gone
   // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
   // (the sheet's, another device's not merged yet) from coming back through a merge (mergeAch); earned again later, the
   // achievement carries a newer time and stays. Returns the ids removed.
-  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearncore'];
+  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearn30', 'flearncore'];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
     if (!A || typeof A !== 'object') return [];
@@ -2533,6 +2595,128 @@
   // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
   function pctOf(P, list) {
     return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n], P, n), 0)) / list.length) : 0;
+  }
+  // Weights by commonness (Pierre, 2026-11-08, Q242: the fish global score's alternative A): each item weighs 1/√ of its
+  // rank by its count, the largest count first (rank 1 weighs 1, rank 4 weighs 0.5, rank 100 weighs 0.1). Tied counts
+  // share the mean of the ranks they span (fractional ranking), so the order of the list never matters, and the items
+  // nobody counted (0) share the last ranks' mean: they weigh the least, never nothing. counts: numbers (anything else
+  // counts 0). Returns the weights in the list's order.
+  function rankWeights(counts) {
+    const c = (counts || []).map(x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0)),
+      ord = c.map((x, i) => i).sort((i, j) => c[j] - c[i]),
+      w = new Array(c.length);
+    for (let a = 0; a < ord.length;) {
+      let b = a;
+      while (b + 1 < ord.length && c[ord[b + 1]] === c[ord[a]]) b++;
+      const r = (a + 1 + b + 1) / 2; // the mean of ranks a+1 .. b+1
+      for (let k = a; k <= b; k++) w[ord[k]] = 1 / Math.sqrt(r);
+      a = b + 1;
+    }
+    return w;
+  }
+  // The tree of the fish global score (treeScore, SUBJECTS fish score; Pierre, 2026-11-08, Q242; docs/FISH_PATH.md
+  // "My progress (fish)"): the families of the slate on the trunk, each weighted by the sum of its species' weights; on the
+  // branches every species of those families, weighted by how common it is near Dauin (rankWeights over fish.json
+  // present.dauinU, its distinct Research Grade observers within 40 km: observers, not observations, so a few keen
+  // photographers of one species do not weigh; Codex review #730), with its units: its genus when the game has it as a unit (the scientific
+  // genera of circle 1, app.js fishGenera), its scientific and common names none until the species level exists. The species with
+  // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
+  // The circle is the family's (treeScore by: the components per circle).
+  function fishScoreTree(X, F) {
+    const sp = new Map((F.species || []).map(s => [s.id, s])),
+      fam = new Map((F.families || []).map(f => [f.id, f])),
+      fams = [...X.c1, ...X.c2, ...X.c3].filter(id => fam.has(id)),
+      L = fams.flatMap(id => (fam.get(id).species || []).filter(x => sp.has(x)).map(x => [sp.get(x), id])),
+      w = rankWeights(L.map(([s]) => (s.present || {}).dauinU || 0)),
+      fw = {},
+      pack = new Map(),
+      r4 = x => Math.round(x * 1e4) / 1e4,
+      circ = id => X.gen[id].circle || 1;
+    L.forEach(([s, id], i) => {
+      fw[id] = (fw[id] || 0) + w[i];
+      const g = s.genus && X.gen[s.genus] ? s.genus : '',
+        named = !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
+        key = g + '|' + circ(id) + '|' + named,
+        e = pack.get(key) || [0, g, '', named ? [] : null, circ(id)];
+      e[0] += w[i];
+      pack.set(key, e);
+    });
+    return {f: fams.map(id => [id, r4(fw[id] || 0), circ(id)]), s: [...pack.values()].map(e => [r4(e[0]), ...e.slice(1)])};
+  }
+  // A subject's global score and its components, from one computation (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the
+  // weights and the √ display; docs/FISH_PATH.md "My progress (fish)"). Every unit keeps its own bar (scoreOf: the bar as
+  // the app shows it, 1 once its exam is passed, 0 never answered), which drives its levels and its exam, unchanged; this
+  // only adds them up.
+  // T, the subject's tree (app.js UNITS tree): f [[family unit, weight, circle]], the trunk; s [[weight, genus unit,
+  // species unit, [common-name units], circle]], the branches, one per species ('' and [] for units that do not exist
+  // yet). An entry of s may stand for several species of one genus with no unit of their own (their weights summed: the
+  // same score, a shorter tree for the sheet). A family's weight is the sum of its species' (rankWeights over the
+  // observers near Dauin), a genus's the sum of its species' too.
+  // K, the subject's constants (core.js SUBJECTS score): entries (the trunk's share, 0.25), a and b (a species' credit
+  // with its common names only, its scientific name only), half (a genus's share of its species' scientific credit), pow
+  // (the display: 100 raw^pow, 0.5 the square root).
+  // Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, half × its genus's bar),
+  // credit = a C + b S + (1 − a − b) C S. raw = entries × Entries + (1 − entries) × the weighted mean credit.
+  // Returns {pct (the % shown, 0-100, rounded), raw, and the components, each a weighted mean from 0 to 1: entries (the
+  // families), genera (the genera, each weighted by its species), common (C over the species), scientific (the species'
+  // own scientific names, no genus credit), S (S over the species, the genus credit included), credit; by: the same per
+  // circle, {1: {...}, 2: {...}}; units: every unit of the tree with its own bar}. A rule that reads a score reads one of
+  // these (app.js fishGate: by[1].entries). A species entry whose common names are null has none at all (Q247, below).
+  function treeScore(P, T, K) {
+    const F = (T && T.f) || [],
+      S = (T && T.s) || [],
+      k = K || {},
+      a = k.a,
+      b = k.b,
+      half = k.half,
+      we = k.entries,
+      units = {},
+      m = k => (k ? (k in units ? units[k] : (units[k] = scoreOf((P || {})[k], P, k))) : 0),
+      acc = () => ({fw: 0, f: 0, sw: 0, cw: 0, c: 0, sc: 0, S: 0, cr: 0, gw: 0, g: 0}),
+      all = acc(),
+      by = {},
+      at = c => (by[c] = by[c] || acc()),
+      genW = {};
+    F.forEach(([u, w, c]) => {
+      const x = m(u) * w;
+      [all, at(c || 1)].forEach(o => ((o.fw += w), (o.f += x)));
+    });
+    S.forEach(([w, g, sp, names, c]) => {
+      // names null: a species with no common name at all (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la
+      // branche nom commun"): out of the Common names component, and its credit is its scientific value alone (S), so it
+      // still reaches 1 once its scientific name is mastered (100% stays reachable). [] : its common names have no unit
+      // yet (0 until the species level).
+      const none = names === null,
+        N = Array.isArray(names) ? names : [],
+        C = N.length ? N.reduce((t, n) => t + m(n), 0) / N.length : 0,
+        own = m(sp),
+        G = m(g),
+        Sv = Math.max(own, half * G),
+        cr = none ? Sv : a * C + b * Sv + (1 - a - b) * C * Sv;
+      [all, at(c || 1)].forEach(
+        o => ((o.sw += w), none || ((o.cw += w), (o.c += w * C)), (o.sc += w * own), (o.S += w * Sv), (o.cr += w * cr))
+      );
+      if (g) (genW[g] = genW[g] || {w: 0, c: c || 1, m: G}).w += w;
+    });
+    Object.values(genW).forEach(o => [all, at(o.c)].forEach(x => ((x.gw += o.w), (x.g += o.w * o.m))));
+    const out = o => {
+      const d = (x, y) => (y > 0 ? x / y : 0),
+        r = {
+          entries: d(o.f, o.fw),
+          genera: d(o.g, o.gw),
+          common: d(o.c, o.cw),
+          scientific: d(o.sc, o.sw),
+          S: d(o.S, o.sw),
+          credit: d(o.cr, o.sw)
+        };
+      r.raw = we * r.entries + (1 - we) * r.credit;
+      r.pct = Math.round(100 * Math.pow(Math.max(0, Math.min(1, r.raw)), k.pow));
+      return r;
+    };
+    const R = out(all);
+    R.by = Object.fromEntries(Object.entries(by).map(([c, o]) => [c, out(o)]));
+    R.units = units; // every unit of the tree with its own bar (scoreOf), the per-unit level of each part
+    return R;
   }
 
   // The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; docs/LEARNING.md "The domain-score bar"): the bar of a
@@ -3047,6 +3231,38 @@
       ...(best[0].alt ? {alt: 1} : {}),
       ...(best[0].oft ? {oft: best[0].oft} : {})
     };
+  }
+  // What a typed text that is no unit of the rank asked names instead (Pierre, 2026-11-08, Q237: on a genus question a
+  // common name or a family name was told "not a genus in the game: check the spelling", which misleads), for a nudge
+  // that gives nothing away (the same whether it is the photo's or another one, never a scientific name: quiz.js
+  // typeBind). other: the names of the units of the other ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the
+  // scientific names at the rank asked, in the game or not (one of them, or another name of a unit that is one, is no
+  // common name: the spelling message as before); x.common: the common names at the rank asked (Anemonefishes); x.rank(g):
+  // the rank word of unit g; x.own(g): IMR's name for it (Damselfish; "Surgeonfish & Unicornfish", each part too), its own
+  // name as much as its first. Returns x.rank(g)
+  // for a unit's own name or a scientific name of it (-idae, -inae: Damselfishes, Damselfish, Pomacentridae; Scarinae
+  // for the book's Parrotfishes), 'common' for any
+  // other name it goes by (Anemonefish, Clownfish) or a common name at the rank asked, '' otherwise.
+  function typeElse(text, other, x = {}, norm = typeNorm) {
+    const sci = new Set((x.sci || []).map(norm)),
+      t = norm(text);
+    if (!t || sci.has(t)) return '';
+    const m = typeMatchIn(
+      (other || []).filter(o => !sci.has(norm(o.old))),
+      text,
+      norm
+    );
+    if (m && !m.near) {
+      const imr = String((x.own && x.own(m.g)) || ''),
+        own = !m.old || /i[dn]ae$/i.test(m.old) || [imr, ...imr.split(/\s*&\s*|\s+and\s+/)].some(n => n && norm(n) === norm(m.old));
+      return own ? (x.rank ? x.rank(m.g) : '') || '' : 'common';
+    }
+    const c = typeMatchIn(
+      (x.common || []).filter(n => !sci.has(norm(n))).map(n => ({k: norm(n), g: 'common', old: ''})),
+      text,
+      norm
+    );
+    return c && !c.near ? 'common' : '';
   }
   // The spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"): how a typed answer reads against the unit asked
   // t, m being typeMatchIn's reading of it. 'exact': one of its names, spelled right (capitals, accents and spaces aside);
@@ -3621,12 +3837,20 @@
   // its queued answers on top of the sheet's follows the same version (sync.js replayAdopt); before, the moving average
   // s.pg exactly as before (rule D4).
   const DOM_SHEET = 87;
+  // The sheet script that ranks a subject with a global score by it (Code.gs v101 board_, core.js treeScore): the app shows
+  // the score, and sends its tree, only from a reply with v >= SCORE_SHEET (model.js headScore, sync.js boardUnits; rule
+  // D4: the leaderboard and My progress on one scale; Codex review #730), before that the families' mean as before.
+  const SCORE_SHEET = 101;
   // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
   // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
   // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
   const LOG_SHEET = 60;
-  const logOk = (a, v) => ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET;
+  // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
+  // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
+  // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
+  const WINK_SHEET = 98;
+  const logOk = (a, v) => (winkEntry(a) ? Number(v) >= WINK_SHEET : ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET);
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
@@ -3822,6 +4046,48 @@
             ? B
             : A;
     return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
+  }
+  // Pierre's change of a player's first-launch answer for one subject (the admin's Players, Change; Code.gs users_
+  // userStart, sheet v99; Pierre 2026-11-08, Q228: a fallback card had moved a player to the wrong answer). data: the
+  // player's saved copy (keysIn names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms.
+  // The change is a choice event appended to the history, via 'admin', never an event taken away: a device's copy would
+  // bring it back at its next merge (startUnion), whereas the appended event, the latest, wins it. Its time is now, or
+  // just after the latest event when a device's clock ran ahead, so it is always the answer in force; its answers count
+  // the player's in that subject (its LEVEL record). Every earlier event stays, so the replay keeps each answer's prior
+  // (startPriorAt). The fallback window starts again from this event, as an answer given in the app does (model.js
+  // startSet; Pierre, 2026-11-08, Q228: "if the player then turns out much better than I thought, the level card must
+  // still be offered"): its answers (w), the opening hold seen in it (hd), its epoch (wt) and a verdict waiting for its
+  // card (v) were about the former answer and go, so no card comes from the answers given under it; the checkpoints
+  // count the answers after the change. The cards shown (fb) stay: once per answer and direction, as in the app. The
+  // copy under the key's name from before the rename (keyLegacy, which an app
+  // of before it still reads) gets the same record when the copy holds it. null when nothing is to change: an unknown
+  // subject or answer, a subject without the question, or no answer saved for it (the player is asked on their device).
+  // Returns {data, start: the new record}.
+  function startAdminSet(data, s, c, now) {
+    if (!isObj(data) || !startOpt(c) || !SUBJECTS.some(S => S.id === s && S.start)) return null;
+    const k = startKey(s),
+      old = keyLegacy(k),
+      parse = x => {
+        try {
+          return JSON.parse(x || 'null');
+        } catch (e) {
+          return null;
+        }
+      },
+      rec = startNorm(parse(typeof data[k] === 'string' ? data[k] : old && data[old]));
+    if (!rec) return null;
+    const P = parse(data[subjKey(s, 'progress')]),
+      L = isObj(P) && isObj(P[LEVEL]) ? P[LEVEL] : {},
+      num = x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0),
+      a = num(L.ok) + num(L.ko),
+      ev = startEvents(rec),
+      t = Math.max(Math.round(Number(now) || 0), ...ev.map(x => stTime(x) + 1).filter(isFinite)),
+      {w, hd, v, wt, ...rest} = rec,
+      start = startNorm({...rest, w: [], h: startEventsOf({h: [...ev, [c, a, t, 'admin']]})}),
+      json = JSON.stringify(start),
+      out = {...data, [k]: json};
+    if (old && old in data) out[old] = json;
+    return {data: out, start};
   }
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
@@ -4650,6 +4916,7 @@
     typeNorm,
     typeNamesOf,
     typeMatchIn,
+    typeElse,
     typeVerdict,
     typeDiff,
     typedShare,
@@ -4659,6 +4926,9 @@
     pgOf,
     scoreOf,
     pctOf,
+    rankWeights,
+    fishScoreTree,
+    treeScore,
     DOM,
     DOM_PRIOR,
     domP,
@@ -4695,6 +4965,7 @@
     startStateAt,
     startNorm,
     startUnion,
+    startAdminSet,
     startWt,
     START_CAP,
     replayedOf,
@@ -4712,7 +4983,9 @@
     RT_SHEET,
     START_SHEET,
     DOM_SHEET,
+    SCORE_SHEET,
     LOG_SHEET,
+    WINK_SHEET,
     logOk,
     RTIME,
     rtMedian,
@@ -4746,6 +5019,7 @@
     ACH_CONTRIB,
     achFind,
     newAch,
+    achRecount,
     ACH_LEARN,
     achRevoke,
     mergeAch,
@@ -4845,6 +5119,10 @@
     LOG_SC,
     ansSubject,
     rowSubject,
+    WINK_MODE,
+    LOG_MODE,
+    winkEntry,
+    winkRow,
     subjRows,
     subjEntries,
     subjKey,
