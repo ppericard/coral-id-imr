@@ -18,6 +18,32 @@
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
 const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
+// Before Open Water a photo under ease 4 comes rarely (Pierre, 2026-11-06 14:17: "No wall: before Open Water a photo
+// under ease 4 may come, but rarely"). The prior and the aim alone made it a share of the draws that followed the photo
+// counts: a starter family holds about two thirds of its photos under ease 4, and its ability passes 1 after two or
+// three right answers while its progress is still under Open Water, so about one photo in five shown there was under
+// ease 4 (the fish smoke's bound broke on one seed in ten). So until a unit reaches Open Water (LV_AT[0]) its photos
+// under RARE.E (or under its RARE.FEW easiest when it has fewer: the Soapfishes have 2) make at most RARE.SHARE of the
+// photos drawn, whatever their number (rareCap): each takes one factor, in the choice of the observation (by the hard
+// part of its weight, so an observation with one easy photo among many hard ones counts as mostly hard) and in the
+// choice of its photo. No wall: they still come, the least answered first as before (calBonus). A photo with no judged
+// ease (every coral photo) is never one of them, so the corals' draw is unchanged. docs/LEARNING.md "Rarely under ease
+// 4 before Open Water".
+const RARE = {E: 4, FEW: 3, SHARE: 0.1}; // SHARE: Pierre, 2026-11-08 (Q252)
+// Only the units of the subject's own rank (Pierre, 2026-11-08, Q271: the fish families, "c'est là que le débutant a
+// besoin de photos faciles"): a unit of another rank (a fish genus: app.js rankOf) starts under Open Water too, but its
+// player already knows the family, and capping it held back the ratings of its hard photos (about 30% fewer answers
+// under ease 4 over 10,000 simulated answers). Those units are drawn as before.
+const rareOn = n => (rankOf(n) || SUBJ.rank) === SUBJ.rank;
+// The factor the hard photos' weights take so they make at most `share` of the draw (1 when they already do, or when
+// nothing else can be drawn). sc: each observation's weight; hardOf(k): the share of observation k's photo weight that
+// is hard (0 to 1). Exact for a question showing one photo (the fish); for several views, the share of the photos drawn.
+function rareCap(keys, sc, hardOf, share = RARE.SHARE) {
+  let mh = 0,
+    me = 0;
+  keys.forEach(k => ((mh += sc[k] * hardOf(k)), (me += sc[k] * (1 - hardOf(k)))));
+  return me > 0 && mh > (share / (1 - share)) * me ? ((share / (1 - share)) * me) / mh : 1;
+}
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -155,6 +181,9 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     tgt = ability(n) + shift - aimOff(k, fmtOff(PFMT, f)) - (single ? PICKD.SINGLE : 0) - lean;
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
+  // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise).
+  let hardF = 1,
+    hard = () => false;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p),
@@ -170,7 +199,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? calibOf(SUBJ).ref : 1);
     else r *= Math.exp(PMEM[memBucket(k)]);
-    return r;
+    return hardF < 1 && hard(p) ? r * hardF : r;
   };
   const obs = {};
   need.forEach(v =>
@@ -204,10 +233,31 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     return m * (calQ ? 1 : cov) * (ro.includes(k) ? 0.15 : 1);
   };
   const sc = Object.fromEntries(keys.map(k => [k, score(k)]));
+  // Rarely under ease 4 before Open Water (RARE): each observation's hard part, the share of its photos' weight under
+  // the bar (its photo is drawn on those weights); the cap itself comes last, below.
+  const ph = k => Object.values(obs[k]).flat(),
+    es = keys
+      .flatMap(ph)
+      .map(p => p.e || 0)
+      .filter(Boolean)
+      .sort((a, b) => b - a),
+    rare = es.length > 0 && rareOn(n) && genScore(n) + 1e-9 < LV_AT[0],
+    hs = {};
+  if (rare) {
+    const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),
+      sum = L => L.reduce((t, p) => t + w(p), 0);
+    hard = p => p.e > 0 && p.e < bar;
+    keys.forEach(k => (hs[k] = sum(ph(k)) ? sum(ph(k).filter(hard)) / sum(ph(k)) : 0));
+  }
   // The exploration share (Pierre, 2026-11-06, Q188): a calibration question draws among the colonies this player has
   // never seen, while the unit has one the draw can show; still on the targeting and the calibration bonus, so at the
-  // difficulty aimed for and the least answered first, never a random hard one.
-  if (calQ && keys.some(k => sc[k] > 0 && !mem[k])) keys.forEach(k => mem[k] && (sc[k] = 0));
+  // difficulty aimed for and the least answered first, never a random hard one. Before Open Water with every easy
+  // colony seen, the seen easy ones stay (only the seen hard ones go): the exploration then reaches the unseen hard
+  // ones within the cap, never past it (Codex review #729).
+  if (calQ && keys.some(k => sc[k] > 0 && !mem[k])) {
+    const keep = rare && !keys.some(k => sc[k] > 0 && !mem[k] && hs[k] < 1);
+    keys.forEach(k => mem[k] && !(keep && hs[k] < 1) && (sc[k] = 0));
+  }
   const top = Math.max(0, ...Object.values(sc));
   keys
     .filter(k => sc[k] > 0)
@@ -220,6 +270,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   keys.forEach(k => {
     if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top);
   });
+  // Rarely under ease 4 before Open Water (RARE): last, so neither the variety nor the floor lifts the hard ones back.
+  if (rare) {
+    hardF = rareCap(keys, sc, k => hs[k]);
+    if (hardF < 1) keys.forEach(k => (sc[k] *= 1 - hs[k] + hardF * hs[k]));
+  }
   const o = top ? obs[wpick(keys, k => sc[k])] : keys.length ? obs[pick(keys)] : {};
   const one = v => {
     const L = o[v] || [];
@@ -405,6 +460,19 @@ function openRight(at = answersSoFar()) {
 // the list and not met (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back,
 // and a reference never waits itself); should every genus left wait (not possible with today's data), they all open.
 // met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
+// The player ever answered "I'm at IMR" to the subject's first-launch question (Pierre, 2026-11-08, Q227: "il faut garder
+// cette information de un jour il a cliqué sur je suis à IMR"), whatever the answer in force now: an imr answer given
+// (the card, the tour, the fallback card) in the record's history, kept whole and merged as a union across devices (h:
+// core.js startEvents, startUnion; reefid-sync-<subject>-start, synced), or a fallback card shown on an imr answer (fb
+// keyed by the imr answer then its direction, merged likewise), which recovers the players the fallback card moved from imr to know before it
+// was turned off for the fish. An inferred answer (startInfer: never asked) and the ease events are no answer.
+const imrSaid = () => {
+  const o = store.get(startKey(SUBJ.id), null);
+  return (
+    startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
+    Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr')
+  );
+};
 function openPick(fresh, list = fresh, met = introduced) {
   // The starter core first (Pierre, 2026-11-04: the fish beta opened on the wrong families): units whose record says
   // `first` (fish.json start: the Butterflyfishes, Angelfishes, Damselfishes, Surgeonfishes) open before any other,
@@ -413,7 +481,8 @@ function openPick(fresh, list = fresh, met = introduced) {
   if (first.length) fresh = first;
   // "I'm at IMR" (the first-launch answer imr): the units the IMR course teaches, their IMR tag (imrName: fish.json imr on
   // families and genera), open before the others (Pierre, 2026-11-06 13:38). Data, not code: the corals have none.
-  if ((store.get(startKey(SUBJ.id), null) || {}).c === 'imr') {
+  // Anyone who ever answered it (imrSaid; Pierre, 2026-11-08, Q238).
+  if (imrSaid()) {
     const tagged = fresh.filter(n => (GX(n) || {}).imrName);
     if (tagged.length) fresh = tagged;
   }
@@ -705,8 +774,10 @@ function startStep(d, k, good, first) {
 // once per answer and direction (fb '<choice>-lo'), so a player who moved from "I know corals well" to "I had the IMR
 // coral course" and still struggles is told once more, never twice about the same answer; and only when it has
 // something to offer: a lower choice or Coral basics not done yet ('lo'), a higher choice ('hi').
+// Never for a subject whose units say startFb false (app.js UNITS: the fish, Pierre 2026-11-08, until the level is
+// better calibrated there).
 const startDue = () => {
-  if (!startOn()) return null;
+  if (!startOn() || (typeof UNITS === 'object' && (UNITS[startS().id] || {}).startFb === false)) return null;
   const o = startOf(),
     d = o && o.v;
   // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct. After an
@@ -1079,8 +1150,11 @@ function memRecalcAll() {
 // Only a unit whose data is in (GX: fish.json and the judged photos, lazy-loaded by app.js fishLoad; Codex review #688):
 // a pull read on another subject (sync.js inSubject) finds FISH null and leaves the record as it is, rebuilt once the fish
 // data comes (app.js fishLoad, the subject's switch), never on the fallback difficulty, since the rebuild is for good.
+// Nothing before data.json is in (DATA, which GX reads first): a link straight to a quiz page brings this file before it
+// (app.js need at start-up), so the call at the end of this file and fishLoad's find no data, and app.js start-up runs
+// it once the data is built (2026-11-08: "reading 'gen'", and fishLoad failing brought the corals back).
 function domRecalcAll() {
-  if (SUBJ.replay || !domRules()) return false;
+  if (SUBJ.replay || !domRules() || !DATA) return false;
   const L = Object.keys(P).filter(
     n => n !== LEVEL && P[n] && typeof P[n].pg === 'number' && !domOn(P[n]) && (P[n].ok || 0) + (P[n].ko || 0) > 0 && !!GX(n)
   );

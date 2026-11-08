@@ -115,6 +115,128 @@
   "fish-s073-cand-664978739": {
    "code": "p1g1ss11",
    "keep": "dup"
+  },
+  "fish-s073-cand-549355094": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "note": "The observer tags it juvenile; it shows the single head bar of an adult, so no juvenile flag."
+  },
+  "fish-s073-cand-549355114": {
+   "code": "o1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s073-cand-547635411": {
+   "code": "o1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s073-cand-204906281": {
+   "code": "o0g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s073-cand-695219141": {
+   "code": "o1g1slm3",
+   "keep": "best"
+  },
+  "fish-s073-cand-443463428": {
+   "code": "p1g0sm1ja2",
+   "keep": "best",
+   "note": "In a clear plastic tank on a beach, out of the sea."
+  },
+  "fish-s073-cand-443463444": {
+   "code": "p1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s073-cand-443463449": {
+   "code": "p1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s073-cand-53949347": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s073-cand-590037829": {
+   "code": "o1g1ms12",
+   "keep": "best"
+  },
+  "fish-s073-cand-359385190": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s073-cand-34604508": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s073-cand-41185424": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s073-cand-41185422": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s073-cand-143521412": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s073-cand-17110166": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s073-cand-17110531": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s073-cand-239862056": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s073-cand-64959636": {
+   "code": "h1g2ssm1",
+   "keep": "best"
+  },
+  "fish-s073-cand-142887360": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s073-cand-142887368": {
+   "code": "h0g0sl13",
+   "keep": "dup"
+  },
+  "fish-s073-cand-747868112": {
+   "code": "o1g1ss11",
+   "keep": "best"
+  },
+  "fish-s073-cand-630293801": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s073-cand-661071488": {
+   "code": "p1g1sls4",
+   "keep": "best"
+  },
+  "fish-s073-cand-696789417": {
+   "code": "o1g1sms2",
+   "keep": "best"
+  },
+  "fish-s073-cand-693417966": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s073-cand-519811962": {
+   "code": "o1g1sss1",
+   "keep": "best"
+  },
+  "fish-s073-cand-519812017": {
+   "code": "o1g1sss1",
+   "keep": "dup"
+  },
+  "fish-s073-cand-585567424": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s073-cand-616625004": {
+   "code": "o1g1ss12",
+   "keep": "best"
   }
  }
 }

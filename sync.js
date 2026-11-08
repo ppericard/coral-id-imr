@@ -331,12 +331,13 @@ function mergeSubject(j, d, S, mine) {
       if (typeof rq[k] === 'boolean' && (Q[k] === undefined || (rq[k + 'T'] || 0) > (Q[k + 'T'] || 0))) {
         Q[k] = rq[k];
         Q[k + 'T'] = rq[k + 'T'] || 0;
-        // With the choice, its "Not now" count and when (UNITS opens: the offer comes back at most once).
-        ['N', 'A'].forEach(x => (rq[k + x] === undefined ? delete Q[k + x] : (Q[k + x] = rq[k + x])));
+        // With the choice, its "Not now" count and when (UNITS opens: the offer comes back at most once), and the rules it
+        // was made under (V: the back card, quiz.js bonusBackDue) and by (H: by hand before Advanced, app.js bonusSet).
+        ['N', 'A', 'V', 'H'].forEach(x => (rq[k + x] === undefined ? delete Q[k + x] : (Q[k + x] = rq[k + x])));
         saveQ();
       } else if (rr > lr && typeof rq[k] !== 'boolean' && Q[k] !== undefined) {
         // A progress reset made on another device: the offer comes again here too.
-        ['', 'T', 'N', 'A'].forEach(x => delete Q[k + x]);
+        ['', 'T', 'N', 'A', 'V', 'H'].forEach(x => delete Q[k + x]);
         saveQ();
       }
     });
@@ -1569,7 +1570,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
             : '',
         a.at ? `last ${a.saved ? 'saved' : 'played'} ${day(a.at)}` : ''
       ].filter(Boolean),
-      mine = store.get(LOG0, []).length;
+      mine = store.get(LOG0, []).filter(a => !winkEntry(a)).length; // a surprise card's answer is none (core.js winkEntry)
     box.innerHTML = `<h3>Is it you?</h3><p>An account named <b>${esc(name)}</b> already exists${what.length ? ': ' + what.join(', ') : ''}.</p>
     ${mine ? `<p class="note">If it is, ${mine > 1 ? `the ${mine} answers played on this device join it` : 'the answer played on this device joins it'}.</p>` : ''}
     <form class="sform sconfirm"><button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Yes, it's me</button><button class="next sec" type="button">No, it's someone else</button></form>`;

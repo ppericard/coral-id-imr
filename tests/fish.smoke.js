@@ -8,7 +8,7 @@
 //   "I'm at IMR": the IMR-tagged families open first;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
 //   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
-//   (quiz.js WINK.AT: 300), once due shown once, then not again for the player (reefid-sync-fish-wink, travels);
+//   (quiz.js WINK.AT: 200), once due shown once, then not again for the player (reefid-sync-fish-wink, travels);
 // - typed answers: the entry's names (IMR name, family, sub-entries) read as the entry;
 // - progress per subject kept apart: fish answers in reefid-sync-fish-progress only, the corals' untouched; switching
 //   back to corals brings the coral slate and progress back;
@@ -16,6 +16,8 @@
 //   header, ⚙, Tools) and stays on the corals even with Fish saved, its fish progress kept; the admin switches on Home
 //   (the Corals | Fish row) and in the header (the subject chip), one state. Every context below but that one holds an
 //   admin token.
+// - load order: a fish record under the former moving average, opened by a link straight to a quiz page with data.json
+//   late (and fish.json in between), rebuilt once the data is in, with no page error, Fish kept, as on a plain load;
 // iNaturalist photos are not fetched (every other host is aborted): the logic only. Needs Playwright, like
 // draw.smoke.js. Locally: node tests/fish.smoke.js
 // A page key's address (core.js routeOut), for the corals.
@@ -205,6 +207,39 @@ const server = http.createServer((req, res) => {
     );
     ok(tm('unicornfish') === 'f:Surgeonfishes' && tm('Moorish idol') === 'f:MoorishIdol', 'typed: parts and two-word names');
     ok(!tm('Acropora'), 'typed: a genus is no fish entry');
+    // A genus question's text that names no genus (Pierre, 2026-11-08, Q237; quiz.js typeKind, typeKindMsg): a family name
+    // or a common name is told so, on the game's own names, and the nudge never holds a scientific genus name.
+    ok(
+      typeKind('Damselfishes', 'genus') === 'family' && typeKind('Pomacentridae', 'genus') === 'family',
+      'typed: a family name on a genus question'
+    );
+    ok(
+      typeKind('Anemonefish', 'genus') === 'common' && typeKind('Clownfish', 'genus') === 'common',
+      'typed: a common name on a genus question'
+    );
+    ok(!typeKind('xyzfish', 'genus') && !typeKind('Anemonefish', ''), 'typed: nothing else, and nothing on a family question');
+    {
+      const sci = new Set(FISH.sci.flatMap(n => GX(n).names).map(x => x.toLowerCase())),
+        bad = [];
+      let n = 0;
+      typeNames()
+        .filter(o => rankOf(o.g) !== 'genus')
+        .forEach(o => {
+          const t = o.old || GX(o.g).name,
+            k = typeKind(t, 'genus');
+          if (!k) return;
+          n++;
+          const rest = typeKindMsg(t, k, 'genus').replace(`“${t}”`, '');
+          if (
+            rest
+              .toLowerCase()
+              .split(/[^a-z]+/)
+              .some(w => sci.has(w))
+          )
+            bad.push(rest);
+        });
+      ok(n > 50 && !bad.length, `typed: ${n} nudges, none with a scientific genus name: ${bad.slice(0, 3)}`);
+    }
     // Winks for a circle-1 player: made due at this count (the first threshold moved here, the counts left as they are),
     // shown, answered, never counted.
     const P0 = JSON.stringify(P),
@@ -225,9 +260,30 @@ const server = http.createServer((req, res) => {
         (w.photos || []).some(f => src.includes(fishPid(f).slice(1))),
         `wink: one of its chosen photos (${src})`
       );
+      const q0 = JSON.parse(localStorage.getItem('reefid-log0') || '[]').length;
       wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
+      // Its answer logged like any other (Pierre, 2026-11-08), once, marked by its mode (core.js WINK_MODE): queued for
+      // the sheet (signed out: LOG0 and the anonymous queue) with what was shown and answered; never scored.
+      const L1 = JSON.parse(localStorage.getItem('reefid-log0') || '[]'),
+        wa = L1[L1.length - 1] || {};
+      ok(L1.length === q0 + 1 && wa.m === 'wink' && wa.g === n && wa.ok === 0, 'wink: its answer logged once: ' + JSON.stringify(wa));
+      ok(
+        wa.s === 'fish' &&
+          wa.a === renamedId(SUBJ, w.choices[0][0]) &&
+          wa.ph &&
+          wa.ch.split(' ').length === 4 &&
+          !('e' in wa) &&
+          !('sc' in wa),
+        'wink: what was shown and answered, nothing scored'
+      );
+      ok(
+        JSON.parse(localStorage.getItem('reefid-anonq') || '[]').some(a => a.id === wa.id),
+        'wink: queued for the anonymous send'
+      );
+      wk.querySelector(`[data-w="${n}"]`).click();
+      ok(JSON.parse(localStorage.getItem('reefid-log0') || '[]').length === q0 + 1, 'wink: one answer, a second tap logs nothing');
       ok(n in JSON.parse(localStorage.getItem('reefid-sync-fish-wink') || '{}'), 'wink: kept as shown for the player');
       route();
       closeCards();
@@ -340,6 +396,9 @@ const server = http.createServer((req, res) => {
       [...Array(40)].every(() => GX(openPick(pool1)).imrName),
       "I'm at IMR: the IMR-tagged families first"
     );
+    // No level-change card on the fish (Pierre, 2026-11-08): a window that says "easier than said" shows nothing.
+    store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: [], w: [], v: 'hi'});
+    ok(startOf() && startOf().v === 'hi' && startDue() === null, 'fish: no level-change card');
     if (s0 === null) localStorage.removeItem(sk);
     else localStorage.setItem(sk, s0);
     // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
@@ -359,17 +418,42 @@ const server = http.createServer((req, res) => {
       'sci: every genus in its set, opened or not'
     );
     FISH.c1.forEach(n => pgAt(n, 0.2));
-    ok(!sci.units().length, 'sci: no genus in play before a family is at Open Water');
-    // The boundary (Q205, 2026-11-07): just under Open Water nothing, just over it the family's genera and the offer.
-    pgAt('f:Butterflyfishes', 0.4);
-    ok(!sci.units().length && !(bonusOfferDue() && bonusOfferDue().k === 'sci'), 'sci: nothing just under Open Water');
+    ok(!sci.units().length, 'sci: no genus in play before a family is at Advanced');
+    // The boundary (Pierre, 2026-11-08, back from Q205's Open Water): at Open Water nothing, at Advanced the family's
+    // genera and the offer.
     pgAt('f:Butterflyfishes', 0.6);
+    ok(genScore('f:Butterflyfishes') >= LV_AT[0] && genScore('f:Butterflyfishes') < LV_AT[1], 'sci: the family at Open Water');
+    ok(!sci.units().length && !(bonusOfferDue() && bonusOfferDue().k === 'sci'), 'sci: nothing at Open Water');
+    ok(!pool().some(n => GX(n).rank), 'sci: no genus in play for a player not at IMR');
+    // "I'm at IMR" (Q219, Q220): the IMR genera of a family at Open Water come without the offer, Heniochus here; never
+    // another genus of the family, whose photos stay the family's question (Q221).
+    {
+      const sk = startKey('fish'),
+        s0 = localStorage.getItem(sk);
+      store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: []});
+      const gp = pool().filter(n => GX(n).rank);
+      ok(gp.length === 1 && gp[0] === 'g:Heniochus' && Q.sci === undefined, "sci: I'm at IMR, Heniochus without the offer: " + gp);
+      ok(!bonusOfferDue(), 'sci: no offer for it');
+      pgAt('f:Surgeonfishes', 0.6);
+      ok(
+        pool().includes('g:Naso') && !pool().some(n => /^g:(Acanthurus|Ctenochaetus|Zebrasoma)$/.test(n)),
+        'sci: Naso only of the surgeonfishes'
+      );
+      ok(
+        distractors('f:Surgeonfishes', pool(), 3).every(n => !GX(n).rank),
+        'sci: a family question still among families'
+      );
+      pgAt('f:Surgeonfishes', 0.2);
+      if (s0 === null) localStorage.removeItem(sk);
+      else localStorage.setItem(sk, s0);
+    }
+    pgAt('f:Butterflyfishes', 0.72);
+    ok(genScore('f:Butterflyfishes') >= LV_AT[1], 'sci: the family at Advanced');
     ok(
       sci.units().length && sci.units().every(n => GX(n).parent === 'f:Butterflyfishes'),
-      'sci: the genera of the family at Open Water only'
+      'sci: the genera of the family at Advanced only'
     );
-    ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once a family is at Open Water');
-    pgAt('f:Butterflyfishes', 0.72);
+    ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once a family is at Advanced');
     const pc = progPct();
     bonusSet(true, 'sci');
     ok(
@@ -420,8 +504,37 @@ const server = http.createServer((req, res) => {
       "sci: a genus card's photo is its easiest (reference level first)"
     );
     ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
-    bonusSet(false, 'sci');
+    // The back card (Pierre, 2026-11-08): once, to a player who turned them on before the change (no sciV); "Close them
+    // for now" turns them off, and either answer is never asked again.
+    ok(!bonusBackDue(), 'sci: no back card for a choice made now');
+    delete Q.sciV;
+    ok(bonusBackDue() && bonusBackDue().k === 'sci', 'sci: the back card for a choice made before');
+    closeCards();
+    // Over a question on a genus about to close (Codex review #720): the question is replaced once they are closed.
+    const gq = pool().find(n => GX(n).rank && photoSet(n).shown.length);
+    if (gq) {
+      dropPlans();
+      SHOWNQ = null;
+      question('quiz', gq, distractors(gq, pool(), 3), '', photoSet(gq));
+      SHOWNQ = ['quiz', gq];
+    }
+    bonusBackShow();
+    const bk = document.querySelector('.unlock [data-sciback]');
+    ok(bk && /Close them for now/.test(bk.textContent), 'sci: the back card, Close them for now');
+    if (bk) bk.click();
+    closeCards();
+    ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
+    // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
+    ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
+    quizBoard();
+    const so = document.querySelector('#view [data-seton="sci"]');
+    ok(so && /Turn on scientific names/.test(so.textContent), 'sci: My progress offers to turn them on while off');
+    if (so) so.click();
+    ok(Q.sci === true && !document.querySelector('#view [data-seton="sci"]'), 'sci: on from My progress, the box gone');
+    bonusSet(false, 'sci');
+    route();
     // Report a problem after a fish answer (fish beta sweep, 2026-11-05: the right-answer list offered the teaching ids,
     // "t01", and the dialog spoke of genera and corals): the fish names, in the fish words.
     closeCards();
@@ -1761,7 +1874,8 @@ const server = http.createServer((req, res) => {
         }),
         'each card shows a reference-level photo, else its easiest'
       );
-      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely.
+      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely (model.js RARE:
+      // about 1 in 10 at most, whatever the pool; the bound below leaves room for 15 photos' noise).
       let gated = 0,
         under = 0;
       for (let i = 0; i < N; i++) {
@@ -2063,7 +2177,78 @@ const server = http.createServer((req, res) => {
     }
     await cf.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag];
+  // A fish record still under the former moving average (s.pg), on a link straight to a tier-2 page with data.json late:
+  // the quiz tier then runs before the data is in (app.js need at start-up), and model.js domRecalcAll read GX before
+  // DATA existed ("reading 'gen'", 2026-11-08); with fish.json in between, fishLoad's own call threw too and the app fell
+  // back to the corals. The rebuild waits for the data (app.js start-up) and gives the same bar as a plain load.
+  const early = [];
+  {
+    const OLD = {'f:Damselfishes': {ok: 6, ko: 2, h: '11011101', streak: 3, pg: 0.4}};
+    const run = async (hash, hold) => {
+      const c = await b.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+      await c.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await c.addInitScript(old => {
+        try {
+          if (!sessionStorage.getItem('fish-early')) {
+            sessionStorage.setItem('fish-early', '1');
+            localStorage.setItem('reefid-tour', '"done"');
+            localStorage.setItem('reefid-admin-vault', 'smoke');
+            localStorage.setItem('reefid-sync-subject', '"fish"');
+            localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}');
+            localStorage.setItem('reefid-sync-fish-progress', JSON.stringify(old));
+          }
+        } catch (e) {}
+      }, OLD);
+      const q = await c.newPage(),
+        pe = [];
+      q.on('pageerror', e => pe.push(e.message));
+      // Held until the page shows model.js has run (and, for fish.json first, until the fish data is built): the order of
+      // a slow line, without a fixed wait. A wait that fails is a failure, never a file released early (Codex review #732).
+      const after = (what, arg) =>
+        q
+          .waitForFunction(what, arg, {timeout: 30000, polling: 50})
+          .catch(e => early.push(`${hash}: a held file released early (${String(e.message).split('\n')[0]})`));
+      if (hold.fish)
+        await c.route(/\/fish\.json/, async r => {
+          await after(() => typeof domRecalcAll === 'function');
+          await r.continue();
+        });
+      if (hold.data)
+        await c.route(/\/data\.json/, async r => {
+          await after(fish => typeof domRecalcAll === 'function' && (!fish || !!FISH), !!hold.fish);
+          await r.continue();
+        });
+      await q.goto(base + hash);
+      const ready = await q
+        .waitForFunction(() => window.APP_READY, null, {timeout: 30000})
+        .then(() => true)
+        .catch(() => false);
+      const r = await q.evaluate(() => ({
+        subj: SUBJ.id,
+        rec: (JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}') || {})['f:Damselfishes'] || {}
+      }));
+      await c.close();
+      return {ready, pe, subj: r.subj, pg: r.rec.pg, ds: r.rec.ds};
+    };
+    const ref = await run('', {});
+    if (!ref.ready || ref.pe.length || ref.subj !== 'fish' || typeof ref.ds !== 'number' || ref.pg !== undefined)
+      early.push('the old fish record on a plain load: ' + JSON.stringify(ref));
+    for (const [hash, hold] of [
+      ['#fish/practice/quiz', {data: 1}],
+      ['#fish/progress', {data: 1}],
+      ['#fish/practice/quiz', {data: 1, fish: 1}]
+    ]) {
+      const x = await run(hash, hold);
+      if (!x.ready || x.pe.length || x.subj !== 'fish' || x.pg !== undefined || x.ds !== ref.ds)
+        early.push(
+          `the old fish record, ${hash} with ${Object.keys(hold).join(' and ')} late: ${JSON.stringify(x)}, a plain load ${ref.ds}`
+        );
+    }
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

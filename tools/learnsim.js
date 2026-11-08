@@ -156,7 +156,8 @@
 //   true reference success then (ref@exam, ref@learn) and the question it happened.
 // - Per run, in --out only (2026-11-06, photo exposure, Q187-Q190): expo, each question's [genus, colony (observation),
 //   photos shown], and pool (seed 1's runs), each game genus's photos as [file, colony]: repeats, photos never shown,
-//   answers per photo (docs/LEARNING.md "Photo exposure").
+//   answers per photo (docs/LEARNING.md "Photo exposure"); preOW (2026-11-08), each question's [under Open Water, the
+//   lowest judged ease shown] (docs/LEARNING.md "Rarely under ease 4 before Open Water").
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -551,6 +552,9 @@ function play(cfg) {
     // photos of each unit with their colony, for the repeat rate, the photos never shown and the answers per photo.
     okey = p => p.o || p.f,
     expo = [],
+    // Before Open Water (2026-11-08, model.js RARE): each question's [1 if its unit was under Open Water when drawn, else
+    // 0; the lowest judged ease of its photos, 0 for none], for the share of photos under ease 4 before Open Water.
+    preOW = [],
     POOL = Object.fromEntries(
       SL.concat(BONUS).map(g => [
         g,
@@ -700,6 +704,7 @@ function play(cfg) {
       pRec = sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)),
       first = !asked(t);
     if (shown.length) expo.push([t, okey(shown[0]), ...fs]);
+    if (shown.length) preOW.push([genScore(t) + 1e-9 < LV_AT[0] ? 1 : 0, Math.min(...shown.map(p => p.e || 0))]);
     let pick = t,
       pTrue;
     if (exem) {
@@ -1075,6 +1080,7 @@ function play(cfg) {
     metAt,
     nph: NPH,
     expo,
+    preOW,
     pool: seed === 1 ? POOL : null,
     pairs: PAIRS.length,
     breaks: out,

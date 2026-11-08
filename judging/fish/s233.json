@@ -111,6 +111,131 @@
   "fish-s233-cand-fb-Hachl_u2": {
    "code": "p1g0sl14",
    "keep": "best"
+  },
+  "fish-s233-cand-269208853": {
+   "code": "o1g1mlm2",
+   "keep": "best"
+  },
+  "fish-s233-cand-269205638": {
+   "code": "o1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s233-cand-269205510": {
+   "code": "d1g1sm11",
+   "keep": "dup"
+  },
+  "fish-s233-cand-269205440": {
+   "code": "o1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s233-cand-419703004": {
+   "code": "o1d1ml12",
+   "keep": "best"
+  },
+  "fish-s233-cand-545647994": {
+   "code": "p1g1ml14",
+   "keep": "best"
+  },
+  "fish-s233-cand-419703501": {
+   "code": "p1d1ml12",
+   "keep": "best"
+  },
+  "fish-s233-cand-545647972": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s233-cand-381952647": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s233-cand-616625232": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s233-cand-549752998": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s233-cand-549753005": {
+   "code": "o1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s233-cand-549753006": {
+   "code": "o1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s233-cand-724560620": {
+   "code": "o1d1bsx1",
+   "keep": "best"
+  },
+  "fish-s233-cand-600236350": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s233-cand-664041608": {
+   "code": "p1g2ml12",
+   "keep": "best"
+  },
+  "fish-s233-cand-742654109": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s233-cand-600001598": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s233-cand-545648034": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s233-cand-614082195": {
+   "code": "o1g3bm11",
+   "keep": "best"
+  },
+  "fish-s233-cand-545648021": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s233-cand-381952342": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s233-cand-330570378": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s233-cand-545648054": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s233-cand-618824126": {
+   "code": "p1g1slm4",
+   "keep": "best"
+  },
+  "fish-s233-cand-619057867": {
+   "code": "o1g1ml13",
+   "keep": "best"
+  },
+  "fish-s233-cand-619057869": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s233-cand-619057868": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s233-cand-433138419": {
+   "code": "o1g2bmm1",
+   "keep": "best"
+  },
+  "fish-s233-cand-626129878": {
+   "code": "o1g1msx1",
+   "keep": "best",
+   "note": "A bright orange fish in the foreground draws the eye; the wrasse is behind it."
+  },
+  "fish-s233-cand-606190238": {
+   "code": "o1g2bm11",
+   "keep": "best"
   }
  }
 }
