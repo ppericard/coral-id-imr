@@ -257,3 +257,114 @@ test('a value over the cache limit is put in parts and read back whole; a lost p
   delete s.cache['big#2'];
   assert.strictEqual(s.ctx.cacheBigGet_(c, 'big'), null);
 });
+
+// Review 2 of #801 (P1): a photo or unit named like a member of Object.prototype (constructor, __proto__, toString) is
+// refused when logged (word_), and one already in the log is an entry like any other in stats_ (maps with no
+// prototype): the stats are served, nothing is NaN, nothing is added to Object.prototype.
+const vm = require('vm');
+test('photo and unit ids like constructor or __proto__: refused when logged, harmless in the log', () => {
+  const bad = ['constructor', '__proto__', 'toString', 'hasOwnProperty'];
+  const s = loadCodeGs({fetch: site({}), cacheMax: 100 * 1024});
+  pools(s);
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a')});
+  const L = bad.flatMap((ph, j) => [
+    ans('z' + j, {t: at(20 + j), ph}),
+    ans('y' + j, {t: at(30 + j), g: ph, a: ph}),
+    ans('x' + j, {t: at(40 + j), ph: 'acropora-wide-1 ' + ph})
+  ]);
+  assert.ok(s.post({anon: 'device0009', anonAnswers: [...run('d'), ...L]}).ok);
+  const rows = s.sheets.Answers.rows.slice(1),
+    of = id => rows.find(r => r[7] === id);
+  bad.forEach((w, j) => {
+    assert.strictEqual(of('z' + j)[6], '', w + ': refused as a photo');
+    assert.strictEqual(of('y' + j)[2], '', w + ': refused as a unit');
+    assert.strictEqual(of('x' + j)[6], '', w + ': refused among other photos');
+  });
+  // Rows logged before the fix: put in the tab as they were.
+  bad.forEach((w, j) => {
+    const r = of('a' + j).slice();
+    r[6] = w;
+    r[7] = 'old' + j;
+    rows.push(r);
+    const g = of('a' + (j + 4)).slice();
+    g[2] = g[3] = w;
+    g[7] = 'oldg' + j;
+    rows.push(g);
+  });
+  s.sheets.Answers.rows.push(...rows.slice(-2 * bad.length));
+  const clean = o => JSON.stringify(o, (k, v) => (typeof v === 'number' && !isFinite(v) ? 'NaN' : v));
+  for (const k of Object.keys(s.cache)) if (k.startsWith('stats')) delete s.cache[k];
+  const st = s.post({readStats: 1, token: TOK});
+  assert.strictEqual(st.ok, true, JSON.stringify(st).slice(0, 200));
+  assert.ok(!/null|NaN/.test(clean({photos: st.photos, gd: st.gd, ras: st.ras, mem: st.mem})), clean(st.gd));
+  assert.strictEqual(rated(st, 'acropora-wide-1'), 24);
+  for (const k of Object.keys(s.cache)) if (k.startsWith('stats')) delete s.cache[k];
+  assert.strictEqual(s.get({stats: '1'}).ok, true, 'the public stats');
+  assert.strictEqual(s.post({users: 1, token: TOK}).ok, true, 'the player list');
+  assert.ok(s.get({name: 'Ana', pin: '1234', rv: '0'}).replay, 'the replay of the log');
+  assert.strictEqual(vm.runInContext('Object.keys(Object.prototype).join()', s.ctx), '', 'Object.prototype untouched');
+  assert.strictEqual(vm.runInContext('typeof ({}).constructor', s.ctx), 'function');
+  // The write check on a pool cached: no throw hides an Alerts line (the bot's Porites photos under Acropora).
+  s.post({
+    name: 'Bot',
+    pin: '1111',
+    data: {},
+    summary: {},
+    answers: [...run('p', {ph: 'porites-wide-9'}), ans('pz', {t: at(50), ph: 'constructor'})]
+  });
+  assert.deepStrictEqual(
+    s.sheets.Alerts.rows.slice(1).map(x => String(x[1])),
+    [
+      // the device's answers whose unit was refused keep their Acropora photo under no unit
+      'photos not of the unit shown: ' + s.ctx.aid_('~anon device0009') + ' (4 of 24 answers)',
+      'photos not of the unit shown: ' + s.ctx.aid_('Bot') + ' (12 of 13 answers)'
+    ]
+  );
+  // photoCheck_ itself, given such ids, answers without throwing.
+  const idx = s.ctx.photoIdx_(true);
+  bad.forEach(w => {
+    assert.strictEqual(s.ctx.photoCheck_(idx, 'coral', 'Acropora', [w]), 'unknown');
+    assert.strictEqual(s.ctx.photoCheck_(idx, 'fish', w, ['porites-wide-9']), 'other');
+    assert.strictEqual(s.ctx.photoCheck_(idx, w, 'Acropora', [w]), 'unknown');
+  });
+});
+
+// Review 2 of #801 (P3-1): a sign-in send refused (stale) or not saved moves neither the device's answers nor its
+// exclusion: no name that gets no account is left out; the retry, saved, moves both.
+test('a refused sign-in moves no exclusion; the saved retry does', () => {
+  const s = loadCodeGs(),
+    id = n => s.ctx.aid_(n);
+  s.post({anon: 'device0001', anonAnswers: run('d')});
+  s.post({statsExclude: id('~anon device0001'), on: true, token: TOK});
+  const r = s.post({name: 'Maria', pin: '9999', data: {}, summary: {}, answers: [], anon: 'device0001', at: 5});
+  assert.strictEqual(r.error, 'stale');
+  assert.ok(!s.sheets.RAs || s.sheets.RAs.rows.slice(1).every(x => !x[0]), 'no account');
+  assert.deepStrictEqual(s.post({users: 1, token: TOK}).excluded, [id('~anon device0001')]);
+  assert.ok(
+    s.sheets.Answers.rows.slice(1).every(x => x[0] === '~anon device0001'),
+    'the answers stay with the device'
+  );
+  assert.ok(!s.sheets.Alerts);
+  // The app sends the id again with its retry: saved, both move.
+  assert.ok(s.post({name: 'Maria', pin: '9999', data: {}, summary: {}, answers: [], anon: 'device0001'}).ok);
+  assert.deepStrictEqual(s.post({users: 1, token: TOK}).excluded, [id('Maria')]);
+  assert.ok(s.sheets.Answers.rows.slice(1).every(x => x[0] === 'Maria'));
+});
+
+// Review 2 of #801 (P3-2): nothing is fetched under the script lock: a replay (doGet rv, a save's, an anonymous send's)
+// computes stats_ against the cached pools only; the public stats, which hold no lock, read and cache them.
+test('a replay under the script lock fetches no photo pool when cold; the public stats warm it', () => {
+  const n = {},
+    s = loadCodeGs({fetch: site(n), cacheMax: 100 * 1024}),
+    pool = () => Object.keys(n).filter(f => /^fish|curation/.test(f));
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a', {ph: 'imrl-p8_g36'}), rv: 0});
+  s.get({name: 'Ana', pin: '1234', rv: '0'});
+  s.post({anon: 'device0003', anonAnswers: run('d'), rv: 0});
+  assert.ok(n['data.json'] >= 1, 'the replays ran (their genera read): ' + JSON.stringify(n));
+  assert.deepStrictEqual(pool(), [], 'no pool file read under the lock: ' + JSON.stringify(n));
+  assert.ok(!s.cache.pool2fish && !s.cache.pool2coral);
+  for (const k of Object.keys(s.cache)) if (k.startsWith('stats')) delete s.cache[k];
+  assert.strictEqual(s.get({stats: '1'}).ok, true);
+  assert.match(String(s.cache.pool2fish), /^#\d+$/, 'the public stats cached the pools');
+  assert.ok(n['fish-photos.json'] === 1 && n['curation.json'] >= 1);
+});

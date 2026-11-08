@@ -82,7 +82,15 @@ function clean_(p){ return {name: String(p.name || '').trim().slice(0, 40), pin:
 // Also used for the code hash, whose base64 can start with +.
 const safe_ = x => { const t = String(x == null ? '' : x); return /^[=+\-@]/.test(t) ? "'" + t : t; };
 // Answer fields keep only the characters they can have; anything else is dropped.
-const word_ = (x, re, n) => { const t = String(x == null ? '' : x).slice(0, n); return re.test(t) ? t : ''; };
+const word_ = (x, re, n) => { const t = String(x == null ? '' : x).slice(0, n); return re.test(t) && !protoWord_(t) ? t : ''; };
+// vNEXT (review of #801): a value holding a name Object.prototype has (__proto__, constructor, toString…) as one of its
+// words is refused as any malformed value (word_): as a photo, unit or mode it would reach the script's lookup maps
+// (stats_, photoCheck_) and take the inherited member for its entry.
+const PROTO_RE = new RegExp('(^|[\\s|:,])(' + Object.getOwnPropertyNames(Object.prototype).concat('__proto__').join('|') + ')(?=$|[\\s|:,])');
+const protoWord_ = t => PROTO_RE.test(t);
+// A row of the Answers tab holding such a word in its unit, answer, mode, photos or choices (logged before word_ refused
+// them): left out of what the script computes from the log (answerRows_: the photo stats, the replays, the hold).
+const protoRow_ = r => [2, 3, 5, 6, 11].some(i => r[i] != null && r[i] !== '' && protoWord_(String(r[i])));
 // Wrong codes: after 5 for one name within 10 minutes, every attempt for that name waits 10 minutes (10,000 codes can't be tried).
 const failKey_ = name => 'pinfail:' + name.toLowerCase();
 const blocked_ = name => Number(CacheService.getScriptCache().get(failKey_(name)) || 0) >= 5;
@@ -133,7 +141,7 @@ function doGet_(e){
   ROWS_ = null;
   if (e.parameter.stats && !e.parameter.av) oldApp_('photo stats');
   if (e.parameter.stats) behind_(e.parameter);  // v50: a device on a replaced app version
-  if (e.parameter.stats) { const st = stats_(); return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
+  if (e.parameter.stats) { const st = stats_(true); return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_(e.parameter.s));
   if (e.parameter.achs) return json_(achs_());
@@ -188,7 +196,7 @@ function doPost_(e){
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
-    return json_(p.readLive ? live_() : p.readStats ? stats_() : answers_({name: p.aname, pin: p.apin}));
+    return json_(p.readLive ? live_() : p.readStats ? stats_(true) : answers_({name: p.aname, pin: p.apin}));
   }
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; vNEXT statsExclude)
   const {name, pin} = clean_(p);
@@ -219,20 +227,6 @@ function doPost_(e){
     // Only the answers the sheet does not have yet count (v24): a resend after a lost reply uses up nothing.
     const f = freshAnswers_(p.answers);
     if (f.fresh.length && over_('n:' + name.toLowerCase(), 3000, f.fresh.length)) return json_({ok: false, error: 'busy'});
-    // The first send after signing in carries the device's anonymous id: its anonymous answers become this name's, for an
-    // existing account (code checked above) as for a new one (before logAnswers_, which skips the resent ids).
-    if (/^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) {
-      relabel_('Answers', 1, '~anon ' + p.anon, name);
-      pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
-      rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; every subject's)
-      // vNEXT (the integrator, 2026-11-09, review of #801): a device left out of the statistics stays out once signed in:
-      // its row follows its answers to the name's admin id (the whole account then, which the admin can count again in
-      // Players), with an Alerts line under both admin ids, never a name.
-      if (sxMove_('~anon ' + p.anon, name)) {
-        rosterChanged_();
-        try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('left out of the statistics: device ' + aid_('~anon ' + p.anon) + ' signed in as ' + aid_(name) + ', left out too')]); } catch (e) {}
-      }
-    }
     logAnswers_(name, f.fresh, f.seen, p.dev);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
     const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
@@ -257,6 +251,21 @@ function doPost_(e){
         board = Number(saved) < 0 && saved !== '' ? Number(saved) : typeof s.board === 'number' ? (s.board ? 1 : 0) : saved === 0 ? 0 : 1;
       sh.getRange(r, 1, 1, HEAD.length).setValues([[safe_(name), new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).map(safe_).join(', '), safe_(h), json.length < CHUNK ? json : '@' + DATA_TAB, pct, board]]);
     } catch (err) { return json_({ok: false, error: 'save', log: true}); }
+    // The first send after signing in carries the device's anonymous id: its anonymous answers become this name's, for an
+    // existing account (code checked above) as for a new one. vNEXT (review of #801): once the account is written, so a
+    // send refused as stale or failing to save moves nothing (the app keeps the id and sends it again with its retry).
+    if (/^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) {
+      relabel_('Answers', 1, '~anon ' + p.anon, name);
+      pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
+      rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; every subject's)
+      // vNEXT (the integrator, 2026-11-09, review of #801): a device left out of the statistics stays out once signed in:
+      // its row follows its answers to the name's admin id (the whole account then, which the admin can count again in
+      // Players), with an Alerts line under both admin ids, never a name.
+      if (sxMove_('~anon ' + p.anon, name)) {
+        rosterChanged_();
+        try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('left out of the statistics: device ' + aid_('~anon ' + p.anon) + ' signed in as ' + aid_(name) + ', left out too')]); } catch (e) {}
+      }
+    }
     // One row per RA, one column per genus, coloured by status: the class at a glance.
     const genera = Object.keys(s.genera || {});
     if (genera.length) {
@@ -404,7 +413,7 @@ function answerRows_(){
   if (ROWS_) return ROWS_;
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers');
   ROWS_LAST_ = sh ? sh.getLastRow() : 0;
-  ROWS_ALL_ = sh ? logRows_(sh, LOG.length) : [];
+  ROWS_ALL_ = sh ? logRows_(sh, LOG.length).filter(r => !protoRow_(r)) : [];  // vNEXT (review of #801)
   return ROWS_ = ROWS_ALL_.filter(replayed_);
 }
 // The rows of another subject the sheet replays (core.js replayedSubjects: fish), from the same read of the tab
@@ -759,26 +768,31 @@ const guess_ = (mode, choices) => {
   return n >= 2 && n < 4 ? 1 / n : 0.25;
 };
 function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
-  const T = {}, out = {};
+  const T = Object.create(null), out = Object.create(null);  // vNEXT: keyed by names, no inherited entry
   rows.forEach(([w, ok, m, an, ch]) => { const t = T[w] = T[w] || [0, 0, 0, 0, an], g = guess_(m, ch); t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); });
   Object.keys(T).forEach(w => { const t = T[w]; out[w] = t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z; });
   return out;
 }
-function stats_(){
+// read (vNEXT): true where no script lock is held (the public stats, readStats): the game pools are read from GitHub
+// when not cached (pools_); otherwise (a replay under the lock) only the cached pools are used, so nothing is fetched
+// under the lock (the pools are warmed by the public stats every app asks for, and by the admin's player list).
+function stats_(read){
   const cache = CacheService.getScriptCache(), hit = cache.get('stats17');
   if (hit) return JSON.parse(hit);
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}, conf: {}, mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0], gd: {}, fmt: {}};
+  // vNEXT (review of #801): every map keyed by a photo, unit or name has no prototype (Object.create(null)), so an id
+  // such as constructor or __proto__ logged before word_ refused them is an entry like any other, never an inherited one.
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: Object.create(null), ras: {}, conf: Object.create(null), mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0], gd: Object.create(null), fmt: {}};
   if (!sh || sh.getLastRow() < 2) return out;
   const rows = answerRows_().filter(r => r[0]).sort((a, b) => new Date(a[1]) - new Date(b[1]));
-  const P = {}, PG = {}, G = {}, R = {}, H = {}, sig = x => 1 / (1 + Math.exp(-x));
+  const P = Object.create(null), PG = Object.create(null), G = Object.create(null), R = Object.create(null), H = Object.create(null), sig = x => 1 / (1 + Math.exp(-x));
   const mem = MEM.PRIOR.slice(), I = [0, 0, 0, 0], N = [0, 0, 0, 0], tau = MEM.N * infoAt_(1, 4);
   // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
   const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0, String(r[11] || '')]));
   // vNEXT: the players and devices the admin left out of the statistics (sxSet_) count as untrusted: they rate nothing.
-  const salt = anonSalt_(), sx = sxSet_(), EX = {}, isEx = w => sx.size > 0 && (w in EX ? EX[w] : (EX[w] = sx.has(aid_(w, salt))));
+  const salt = anonSalt_(), sx = sxSet_(), EX = Object.create(null), isEx = w => sx.size > 0 && (w in EX ? EX[w] : (EX[w] = sx.has(aid_(w, salt))));
   Object.keys(trust).forEach(w => { if (trust[w] && isEx(w)) trust[w] = false; });
   // vNEXT: an answer whose photos are of another unit (photoCheck_ 'other') rates no photo and no photo memory.
-  const idx = (() => { try { return photoIdx_(); } catch (e) { return null; } })();  // every subject's, read when not cached (pools_)
+  const idx = (() => { try { return photoIdx_(read ? undefined : true); } catch (e) { return null; } })();  // every subject's; fetched only when read
   out.skip = {excluded: 0, photos: 0};
   rows.forEach(r => {
     const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
@@ -786,7 +800,8 @@ function stats_(){
     if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
     if (isEx(who)) out.skip.excluded++;
     if (!fs.length) return;
-    const pk = !trust[who] || photoCheck_(idx, CORE_.rowSubject(r), sg, fs) !== 'other';
+    let pk = true;
+    try { pk = !trust[who] || photoCheck_(idx, CORE_.rowSubject(r), sg, fs) !== 'other'; } catch (e) {}  // a check that fails flags nothing
     if (!pk) out.skip.photos++;
     const g = guess_(mode, r[11]), ra = R[who] = R[who] || [PLAYER0, 0];
     // vNEXT (review of #801): only an answer that rates (rt) makes a genus offset and gives its photos their genus (PG,
@@ -1665,7 +1680,10 @@ function exposure_(rows, by){
   const pools = pools_();
   CORE_.SUBJECTS.forEach(S => {
     if (!pools[S.id]) return;
-    const E = CORE_.exposureOf(CORE_.subjRows(rows, S.id).map(r => [lc_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]), pools[S.id]);
+    // vNEXT (review of #801): a row logged before word_ refused ids named like Object.prototype's members (a unit
+    // constructor) is left out, and a subject whose exposure fails anyway gets none: the list is served all the same.
+    let E = {};
+    try { E = CORE_.exposureOf(CORE_.subjRows(rows, S.id).filter(r => !protoRow_(r)).map(r => [lc_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]), pools[S.id]); } catch (e) { return; }
     Object.keys(E).forEach(k => { if (by[k]) (by[k].ex = by[k].ex || {})[S.id] = E[k]; });
   });
 }
@@ -1726,7 +1744,7 @@ function cacheBigGet_(c, k){
 // (g:Chromis) and species (by sheet id, s:Chromis ternatensis, and by id) to their family (f:Damselfishes), the unit
 // the fish pool groups its photos under (core.js unitPool); {} for a file without them (the corals' data.json).
 function unitUp_(F){
-  const up = {};
+  const up = Object.create(null);
   if (!F || !Array.isArray(F.genera)) return up;
   F.genera.forEach(g => { if (g && g.id && g.family) up[g.id] = g.family; });
   (F.species || []).forEach(x => {
@@ -1741,7 +1759,7 @@ function unitUp_(F){
 // shown): every subject's game photos (pools_, the compact list the games draw from) as {at: {photo: ['subject|unit', …]},
 // up: {subject id: its parent units, unitUp_}}; null when no pool could be read (then no answer is checked).
 function photoIdx_(only){
-  const up = {}, pools = pools_(only, up), at = {};
+  const up = Object.create(null), pools = pools_(only, up), at = Object.create(null);
   Object.keys(pools).forEach(sid => Object.keys(pools[sid]).forEach(u => pools[sid][u].forEach(c => c.forEach(f => (at[f] = at[f] || []).push(sid + '|' + u)))));
   return Object.keys(at).length ? {at, up} : null;
 }
@@ -1755,16 +1773,18 @@ function photoIdx_(only){
 // fish pool groups; review of #801).
 function photoCheck_(idx, sid, unit, fs){
   if (!idx || !fs.length) return 'ok';
-  const S = CORE_.SUBJECTS.find(x => x.id === sid), up = (idx.up || {})[sid] || {}, own = lc_(unit), keys = [];
-  [unit, CORE_.renamedId(S, unit)].forEach(u => [u, up[u]].forEach(x => { if (x && keys.indexOf(sid + '|' + x) < 0) keys.push(sid + '|' + x); }));
+  const S = CORE_.SUBJECTS.find(x => x.id === sid), up = own_(idx.up, sid) || {}, own = lc_(unit), keys = [];
+  [unit, CORE_.renamedId(S, unit)].forEach(u => [u, own_(up, u)].forEach(x => { if (typeof x === 'string' && x && keys.indexOf(sid + '|' + x) < 0) keys.push(sid + '|' + x); }));
   let other = 0;
   for (let i = 0; i < fs.length; i++) {
-    const at = idx.at[fs[i]];
-    if ((at && at.some(x => keys.indexOf(x) >= 0)) || lc_(fs[i].split('-')[0]) === own) return 'ok';
-    if (at) other++;
+    const at = own_(idx.at, fs[i]);
+    if ((Array.isArray(at) && at.some(x => keys.indexOf(x) >= 0)) || lc_(fs[i].split('-')[0]) === own) return 'ok';
+    if (Array.isArray(at)) other++;
   }
   return other ? 'other' : 'unknown';
 }
+// o's own entry k (never an inherited member: a parsed cache value has Object's prototype), else undefined.
+const own_ = (o, k) => (o && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined);
 // On write: a send whose answers show photos of another unit (photoCheck_ 'other', against the pools already cached:
 // nothing is fetched under the script lock) is logged as it is, never refused (an old app or a photo moved since must
 // lose nothing), and the first such send of each 6-hour window per sender is written to the Alerts tab under the

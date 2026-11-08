@@ -59,7 +59,9 @@ Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
   it. A delete, merge or archive moves or drops the row (rule D7): answers kept as "~deleted <id>" stay left out. A
   device left out that signs in stays out: its row follows its answers to the name's admin id, so the whole account is
   then left out (the integrator, 2026-11-09; the admin can count it again), and the Alerts tab says so by both admin ids
-  ("left out of the statistics: device <id> signed in as <id>, left out too"). This is
+  ("left out of the statistics: device <id> signed in as <id>, left out too"). The move is made only once the
+  account is saved: a sign-in refused as stale, or not saved, moves nothing, and the app sends the device id again with
+  its retry. This is
   for a player or device that is clearly not playing for real but still passes the trust rule, which is a bot that reads
   the right answers.
 - **Photos of another unit**: an answer whose photos are game photos of another unit or subject, and none of its own
@@ -70,9 +72,16 @@ Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
   units), an old fish entry id (`t01`) as the family it became. It rates no photo and no photo memory, and gives no photo
   its genus offset (`stats_`; `readStats` `skip` counts them; nor does a left-out answer). On write, the first send of
   each 6-hour window with such answers adds one line to the **Alerts** tab under the sender's admin id ("photos not of
-  the unit shown: <id> (n of m answers)"), never a name. On write only the pools already cached are used, so nothing is
-  fetched under the script lock; `stats_` reads every subject's pool when it is not cached. The pools are cached 6 hours
-  in parts (the fish pool, about 390 KB, is over the script cache's 100 KB a value).
+  the unit shown: <id> (n of m answers)"), never a name. **Nothing is fetched under the script lock**: on write, and in
+  a replay (whose photo stats are computed under the lock), only the pools already cached are used. The public stats
+  (`?stats=1`, asked by every app), `readStats` and the admin's player list hold no lock, and they read every subject's
+  pool from GitHub when it is not cached. The pools are cached 6 hours in parts (the fish pool, about 390 KB, is over
+  the script cache's 100 KB a value).
+- **Ids named like JavaScript's built-ins**: a unit, answer, mode, photo or choice holding a word that `Object.prototype`
+  has (`constructor`, `__proto__`, `toString`…) is refused when logged, like any malformed value (`word_`). Such a row
+  logged before is left out of what the script computes from the log (`answerRows_`: the photo stats, the replays, the
+  hold; the photo exposure too), and the photo stats' maps have no prototype, so it can neither break them nor poison
+  them. `readAnswers` still serves such a row as it is.
 - Not covered: a coral photo the admin moved to another genus whose file is not named after its genus (`imrl-…`, an
   IMR lecture photo): an answer given before the move, under its old genus, is taken as another unit's and stops rating
   (it is kept; rare, and only loses ratings).
