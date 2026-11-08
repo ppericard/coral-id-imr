@@ -2395,7 +2395,7 @@ test("v105 analyses head: each subject counted apart, the corals' answers never 
 
 // Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"). One report per subject, each in its
 // own tab: a fish report never replaces the corals', and each head names its own subject's stored report.
-test('vNEXT analyses: one stored report per subject, each in its own tab', () => {
+test('v113 analyses: one stored report per subject, each in its own tab', () => {
   const s = seed(),
     rep = (subject, answers) => JSON.stringify({R: {1000: {}}, M: [1000], answers, made: answers, AV: 1, ...(subject ? {subject} : {})}),
     put = (subject, answers) => s.post({analysesPut: 1, report: rep(subject, answers), token: TOK}),

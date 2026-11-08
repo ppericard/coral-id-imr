@@ -7,7 +7,7 @@
 //                                             subject (core.js SUBJECTS analyses: the corals, then the fish; Pierre,
 //                                             2026-11-08), each from its own answers (core.js subjRows): reads the log
 //                                             with readAnswers and stores the report with analysesPut (sheet v35; one
-//                                             stored report per subject from vNEXT, AN_SUBJ_SHEET), both with the admin
+//                                             stored report per subject from v113, AN_SUBJ_SHEET), both with the admin
 //                                             token in ANALYSES_ADMIN_TOKEN; does nothing for a subject until the log
 //                                             reaches a round thousand of that subject's answers (counted apart by the
 //                                             sheet's head from v105; Pierre, 2026-11-08) its stored report does not

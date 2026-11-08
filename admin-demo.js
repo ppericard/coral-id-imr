@@ -831,7 +831,7 @@
           ]);
         })
       );
-      // The fish side's Analyses report (one report per subject, sheet vNEXT): the seven made-up analysis players
+      // The fish side's Analyses report (one report per subject, sheet v113): the seven made-up analysis players
       // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
       // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
       // made from them (anaReport): the answer log keeps the few fish answers above, so the fish pages stay as they were.
@@ -1248,7 +1248,7 @@
   // on the demo's answers (no bootstrap, so it is quick), from the moment the demo is built.
   let ANA_META = null;
   const ANA = {};
-  // subject: the one asked (vNEXT, ANALYSIS.AN_SUBJ_SHEET: one report per subject); an older script knows the corals' only
+  // subject: the one asked (v113, ANALYSIS.AN_SUBJ_SHEET: one report per subject); an older script knows the corals' only
   // and answers with it whatever the subject asked (?demo&v=112).
   const anaReport = (head, subject) => {
     const per = V >= ANALYSIS.AN_SUBJ_SHEET,

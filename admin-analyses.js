@@ -7,7 +7,7 @@
 // loadUsers, allPhotos, zoom, img, kpis). Views: GROUPS in admin.js; docs/ARCHITECTURE.md "Analyses"; the methods in
 // docs/LEARNING.md "Multifactor analyses"; the chart helpers in docs/DESIGN.md "Admin charts".
 const AN_V = 35; // sync script version with analysesGet (rule D4: before it, the page just has no stored report)
-// One report per subject (Pierre, 2026-11-08: each subject's analyses; sheet vNEXT, ANALYSIS.AN_SUBJ_SHEET): ANREPS and
+// One report per subject (Pierre, 2026-11-08: each subject's analyses; sheet v113, ANALYSIS.AN_SUBJ_SHEET): ANREPS and
 // ANLOCS by subject id; ANREP and ANLOC are the subject on screen's (anOn), as every view reads them.
 let ANREP = null, // {st: 'ok' | 'none' | 'old' | 'err', rep, answers, stored}
   ANLOC = null, // a report recomputed in this tab: {rep} once done, {prog} while running
