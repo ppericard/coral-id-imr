@@ -3313,13 +3313,13 @@ td.cov-c .cov-off {
 .adm-ustart .adm-sseg.adm-qseg {
   flex-wrap: wrap;
 }
-.adm-ustart-h,
-.adm-ustart-msg {
+.adm-ustart-h {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: var(--fs-xs);
 }
 .adm-ustart-msg {
   color: var(--ink);
+  font-size: var(--fs-s);
   font-weight: 600;
 }
 .adm-ustart-msg.bad {
