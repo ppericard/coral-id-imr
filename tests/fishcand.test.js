@@ -333,6 +333,10 @@ test("fishGameIn: the photos the game plays count whatever their route; Pierre's
     fishGameIn(G, cur).map(p => p.f),
     ['fish-s1-cand-111', 'fi333', 'fish-s1-cand-444']
   );
+  assert.ok(
+    fishGameIn(G, cur).every(p => p.sid === p.sp),
+    'the admin reads the species as sid'
+  );
   assert.strictEqual(fishGameIn(G, {fish: {}, exclude: {'fi111': 1}}).length, 3, 'a top-level exclude by photo id');
   assert.strictEqual(fishGameIn(G, null).length, 4, 'no curation: the automatic ones');
   // Counted by observation beside the adds; the auto-sort\'s own room (fishRun) does not read them.

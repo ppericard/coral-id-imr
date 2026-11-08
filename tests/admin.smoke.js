@@ -438,6 +438,20 @@ const WIDTHS = [390, 1280];
             loaded: !!FISHC.plays
           };
         });
+        // A reference photo only the game holds can be sent elsewhere with Not this: it leaves play and waits in the Not this row
+        // (and as a candidate of its new species); its recorded phase and species travel with it.
+        const rf = await p.evaluate(() => {
+          const r = FISHC.plays.find(q => q.auto === 'ref' && FISHC.units.some(u => u.id === 'f:Damselfishes' && u.species.includes(q.sp)));
+          if (!r) return null;
+          const F0 = DRAFT.fish,
+            before = fuData().play[r.sp].some(q => q.f === r.f);
+          DRAFT.fish = fishNotThis(F0, r.f, 'x', r.sp);
+          const D = fuData(),
+            res = {before, after: D.play[r.sp].some(q => q.f === r.f), gone: D.gone.some(q => q.f === r.f && q.sid === r.sp)};
+          DRAFT.fish = F0;
+          return res;
+        });
+        if (!rf || !rf.before || rf.after || !rf.gone) fails.push(`${w}px Families: Not this on a game-only photo ${JSON.stringify(rf)}`);
         if (!gp.loaded || !gp.rows || gp.bad.length || !gp.auto || !gp.over8)
           fails.push(`${w}px Families: the game's photos are not counted ${JSON.stringify(gp)}`);
         // Fish Coverage (admin plan PR 8): Inbox › Coverage › Games on the fish side, per family, genus or species, To do
