@@ -147,6 +147,12 @@ function rotFit(i) {
     if (!+i.dataset.ra && i.clientWidth && i.clientHeight) i.dataset.ra = i.clientWidth / i.clientHeight;
     const bw = P.clientWidth,
       v = +i.dataset.ra && rotCover(bw, bw / +i.dataset.ra, r);
+    // Upright or half a turn: the box stays as it is (rotCover null), the photo is turned in it, the same cover cut
+    // (Codex review #793: a 180° draft showed upright on the tiles).
+    if (!(r % 180)) {
+      Object.assign(i.style, {width: '', height: '', maxWidth: '', margin: '', transform: r ? `rotate(${r}deg)` : ''});
+      return;
+    }
     if (!v) return;
     Object.assign(i.style, {
       width: v.w + 'px',

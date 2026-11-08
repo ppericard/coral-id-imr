@@ -254,6 +254,15 @@ test('the fish Candidates: a photo in play with no judgment shows its published 
   // His rotation over the published crop: the original with that crop drawn, then turned.
   T.set({DRAFT: {fish: {rot: {[p.f]: 90}}}});
   assert.strictEqual(T.fishSrc(p, 1), `src="${o.replace('/original.', '/medium.')}" style="${vb}" data-rot="90"`);
+  // Published turned (its R2 file cut and turned, cr and ro): shown as is while the draft keeps that rotation, never turned
+  // again (Codex review #793: a published 90° showed as 180°); a changed rotation is drawn on the original.
+  const q = {...p, ro: 90};
+  T.set({DRAFT: {fish: {rot: {[p.f]: 90}}}});
+  assert.strictEqual(T.fishSrc(q, 1), `src="${T.img(q, 1)}"`);
+  T.set({DRAFT: {fish: {rot: {[p.f]: 180}}}});
+  assert.strictEqual(T.fishSrc(q, 1), `src="${o.replace('/original.', '/medium.')}" style="${vb}" data-rot="180"`);
+  T.set({DRAFT: {fish: {}}});
+  assert.strictEqual(T.fishSrc(q, 1), `src="${o.replace('/original.', '/medium.')}" style="${vb}"`, 'back upright');
   // A judged record keeps the pass's crop; a Check (blind) neither.
   T.set({DRAFT: {fish: {}}});
   const c = {f: 'fish-s001-cand-9', r: 1, src: o.replace('/7/', '/9/'), j: {c: [0.1, 0.2, 0.9, 0.8]}};
@@ -316,6 +325,51 @@ test('R2 failed: the published rotation is drawn on the original with its crop (
 
 // The coral workflow (tools/fetch_approved.py) and the fish one (tools/fish_game.py) both make their files with
 // photos.write, and redo a photo by photos.stale: no other crop or turn of their own.
+test('rotFit: a tile turned a quarter gets its box swapped, a half-turn is turned in its own box (Codex review #793)', () => {
+  const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
+    ctx = vm.createContext({rotNorm, rotCover, rotScale, getComputedStyle: e => ({objectFit: e.fit})});
+  vm.runInContext(
+    'const ROTRO = null;\n' + block(A, 'function rotFit(i) {', '\n}\n', {file: 'admin.js', through: true}) + '\nthis.rotFit = rotFit;',
+    ctx
+  );
+  // A 400 x 300 tile; the image box fills it until rotFit changes it.
+  const tile = (rot, fit = 'cover') => {
+    const P = {clientWidth: 400, clientHeight: 300, style: {}};
+    return {
+      isConnected: true,
+      parentElement: P,
+      fit,
+      clientWidth: 400,
+      clientHeight: 300,
+      naturalWidth: 800,
+      naturalHeight: 600,
+      dataset: {rot: String(rot)},
+      style: {getPropertyValue: () => ''}
+    };
+  };
+  const h = tile(180);
+  ctx.rotFit(h);
+  assert.strictEqual(h.style.transform, 'rotate(180deg)', 'the half-turn drawn (it showed upright)');
+  assert.deepStrictEqual([h.style.width, h.style.height, h.style.margin], ['', '', ''], 'its box kept');
+  const q = tile(90);
+  ctx.rotFit(q);
+  assert.deepStrictEqual(
+    [q.style.width, q.style.height, q.style.margin, q.style.transform, q.parentElement.style.overflow],
+    ['300px', '400px', '-50px 50px', 'rotate(90deg)', 'hidden']
+  );
+  // Turned back to a half-turn on the same element (Undo, a new draft): the swapped box is undone.
+  q.dataset.rot = '180';
+  ctx.rotFit(q);
+  assert.deepStrictEqual([q.style.width, q.style.height, q.style.margin, q.style.transform], ['', '', '', 'rotate(180deg)']);
+  // A whole photo (contain): a quarter scaled to stay whole, a half-turn as it is.
+  const w = tile(90, 'contain');
+  ctx.rotFit(w);
+  assert.strictEqual(w.style.transform, 'rotate(90deg) scale(0.75)');
+  const w2 = tile(180, 'contain');
+  ctx.rotFit(w2);
+  assert.strictEqual(w2.style.transform, 'rotate(180deg)');
+});
+
 test('the photo workflows apply the crop and the rotation through tools/photos.py only', () => {
   const fa = fs.readFileSync(path.join(ROOT, 'tools/fetch_approved.py'), 'utf8'),
     fg = fs.readFileSync(path.join(ROOT, 'tools/fish_game.py'), 'utf8');
