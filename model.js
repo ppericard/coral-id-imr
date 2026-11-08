@@ -30,6 +30,11 @@ const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DO
 // ease (every coral photo) is never one of them, so the corals' draw is unchanged. docs/LEARNING.md "Rarely under ease
 // 4 before Open Water".
 const RARE = {E: 4, FEW: 3, SHARE: 0.1}; // SHARE: Pierre, 2026-11-08 (Q252)
+// Only the units of the subject's own rank (Pierre, 2026-11-08, Q271: the fish families, "c'est là que le débutant a
+// besoin de photos faciles"): a unit of another rank (a fish genus: app.js rankOf) starts under Open Water too, but its
+// player already knows the family, and capping it held back the ratings of its hard photos (about 30% fewer answers
+// under ease 4 over 10,000 simulated answers). Those units are drawn as before.
+const rareOn = n => (rankOf(n) || SUBJ.rank) === SUBJ.rank;
 // The factor the hard photos' weights take so they make at most `share` of the draw (1 when they already do, or when
 // nothing else can be drawn). sc: each observation's weight; hardOf(k): the share of observation k's photo weight that
 // is hard (0 to 1). Exact for a question showing one photo (the fish); for several views, the share of the photos drawn.
@@ -236,7 +241,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
       .map(p => p.e || 0)
       .filter(Boolean)
       .sort((a, b) => b - a),
-    rare = es.length > 0 && genScore(n) + 1e-9 < LV_AT[0],
+    rare = es.length > 0 && rareOn(n) && genScore(n) + 1e-9 < LV_AT[0],
     hs = {};
   if (rare) {
     const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),

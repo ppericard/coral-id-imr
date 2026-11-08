@@ -2860,14 +2860,18 @@ the Gaussian targeting tells them apart little; and a photo's chance is its weig
 so the share under ease 4 follows the pool's counts. In a pool dominated by hard photos (12 easy against 240, the unit
 test) the draw gave 68% under ease 4 before Open Water.
 
-**`model.js` `RARE`, `rareCap`** (Pierre, 2026-11-08, Q252: the share 0.1): until a unit reaches Open Water
-(`LV_AT[0]`), its photos under ease `RARE.E` (4; for a unit with fewer than `RARE.FEW` (3) photos at 4 or more, under
+**`model.js` `RARE`, `rareCap`** (Pierre, 2026-11-08, Q252: the share 0.1; Q271: families only): until a unit of the
+subject's own rank (`rareOn`: the fish families; a fish genus, `app.js` `rankOf`, is drawn as before) reaches Open
+Water (`LV_AT[0]`), its photos under ease `RARE.E` (4; for a unit with fewer than `RARE.FEW` (3) photos at 4 or more, under
 its third easiest, as the smoke's per-entry check reads it) make at most `RARE.SHARE` (0.1) of the photos drawn,
 whatever their number. Each observation's hard part is the share of its photos' draw weight that is under the bar; the
 hard photos take one factor, `share / (1 − share)` × the easy part's total / the hard part's, both in the choice of the
 observation (its weight × (1 − hard part + factor × hard part)) and in the choice of its photo, so an observation with
 one easy photo among twenty hard ones counts as mostly hard (Codex review #729: counted as easy it let 91% through).
-Exact for a question showing one photo, as the fish do. Applied last (after the variety and the floor, so neither lifts
+Exact for a question showing one photo, as the fish do. Why families only (Pierre, Q271: "le plafond pour les
+familles seulement ... c'est là que le débutant a besoin de photos faciles"): every new genus starts under Open Water
+too, and capping it as well cut the answers on photos under ease 4 by about 30% over 10,000 simulated answers (a study
+of 2026-11-08), slowing their rating, while a player meeting a genus already knows its family. Applied last (after the variety and the floor, so neither lifts
 them back). When they already weigh less (a new unit, whose lean keeps them near 2-9%), nothing changes; past Open
 Water nothing changes. No wall: they still come, about one in ten at most, and among them the least answered still come
 first (the factor is the same for all of them, so `calBonus`'s lean towards unrated photos is kept). An exploration

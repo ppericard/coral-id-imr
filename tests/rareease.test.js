@@ -3,7 +3,8 @@
 // photos, as the fish starter families are (about two thirds of their photos under ease 4, and many more observations
 // than a pool-sized unit). Before Open Water the photos under ease 4 make at most about RARE.SHARE of the draws, whatever
 // their number; they still come (no wall); past Open Water they come back; a photo with no judged ease (the corals) is
-// never held back. docs/LEARNING.md "Rarely under ease 4".
+// never held back; only the units of the subject's own rank are capped, the fish families (Q271). docs/LEARNING.md
+// "Rarely under ease 4 before Open Water".
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -15,7 +16,7 @@ const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8');
 
 // The draw of model.js (PICKD to the end of photoSet, photoDiff, wpick) with the game around it stubbed: one unit, n,
 // its photos L (one per observation, the fish's single view), the player's ability th and progress score sc on it.
-function engine(subject, L, {th = 1.2, score = 0.3, ok = 2, lv = 'new', ps = {}} = {}) {
+function engine(subject, L, {th = 1.2, score = 0.3, ok = 2, lv = 'new', ps = {}, rank = ''} = {}) {
   let s = 12345;
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647,
     M = Object.create(Math);
@@ -43,6 +44,7 @@ function engine(subject, L, {th = 1.2, score = 0.3, ok = 2, lv = 'new', ps = {}}
     gamePhotoOk: () => true,
     isCore: () => false,
     level: () => [lv],
+    rankOf: () => rank,
     shaky: () => false,
     recent: () => [],
     ability: () => th,
@@ -114,6 +116,15 @@ test('exploration questions with every easy observation seen: still within the c
     r = share(E, L);
   assert.ok(r <= E.RARE.SHARE + 0.03, `under ease 4: ${(100 * r).toFixed(1)}%`);
   assert.ok(r > 0.02, `no wall (${(100 * r).toFixed(1)}%)`);
+});
+
+test('a unit of another rank (a fish genus) under Open Water is not capped (Pierre, 2026-11-08, Q271)', () => {
+  const L = pool(),
+    G = engine('fish', L, {rank: 'genus'}),
+    F = engine('fish', L, {rank: 'family'}),
+    g = share(G, L);
+  assert.ok(g > 0.3, `a genus under Open Water: ${(100 * g).toFixed(1)}% under ease 4, drawn as before`);
+  assert.ok(share(F, L) <= F.RARE.SHARE + 0.03, 'a unit naming its own rank, the family, is capped');
 });
 
 test('past Open Water the hard photos come back at the targeting', () => {
