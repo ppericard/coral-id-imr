@@ -538,8 +538,13 @@ function achMerge(json) {
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
-  // Signed in: on the merged progress, after the visit's first sync (sync.js noticeLater), never on an old copy.
-  if (noticeLater('achRecheck', achRecheck)) return [];
+  // Signed in: on the merged progress, after the visit's first sync (sync.js noticeLater), never on an old copy; as the
+  // subject it was asked for (a pull merges each subject as if on screen: sync.js mergeSaved; Codex review #736).
+  if (!noticesReady()) {
+    const id = SUBJ.id;
+    noticeLater('achRecheck:' + id, () => inSubject(id, achRecheck));
+    return [];
+  }
   const A = store.get(ACHK, null),
     was = JSON.stringify(A),
     out = A ? achRevoke(A, achSnap(A), Date.now(), ACH_L()) : [];
@@ -1400,8 +1405,13 @@ function subjHello() {
 }
 // The notices this device marked seen before they travelled with the account (core.js TOLD, 2026-11-08), told to the
 // account once, at start-up (app.js SETUP 2), so the account's other devices stop showing them too; a save sends them
-// when any is new. Signed in only (an anonymous device keeps them here, as before).
+// when any is new. Once per device (SEEDK), the first time this version runs, and only to the account signed in then:
+// a later account on a shared device never takes the marks a previous player left (Codex review #736). Not signed in
+// then: never (an anonymous device keeps them here, as before).
+const SEEDK = 'reefid-told-seeded';
 function toldSeed() {
+  if (store.get(SEEDK, 0)) return;
+  store.set(SEEDK, 1);
   if (!SYNC) return;
   const L = [],
     r = RECALC.L.findIndex(x => x.id === store.get(RECALC.KEY, ''));

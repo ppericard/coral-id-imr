@@ -707,10 +707,12 @@ function noticesGo() {
   });
 }
 // The notices told (core.js TOLD: a list of tokens), this device's and, merged at each sync, every other device's of the
-// account. toldAdd marks some told here and sends them with the next save.
-const toldAll = () => toldUnion(store.get(TOLD.KEY, []), []);
+// account. toldAdd marks some told here and sends them with the next save. Signed in only: not signed in, the cards'
+// own device marks decide, as before.
+const toldAll = () => (SYNC ? toldUnion(store.get(TOLD.KEY, []), []) : []);
 const toldHas = t => toldAll().includes(t);
 function toldAdd(...L) {
+  if (!SYNC) return false;
   const was = toldAll(),
     now = toldUnion(was, L);
   if (now.length === was.length) return false;
@@ -1335,9 +1337,7 @@ function signIn(name, pin, j) {
     st = SUBJECTS.map(S => [startKey(S.id), store.get(startKey(S.id), null)]),
     // Each subject's surprise cards met here before signing in join the account's (core.js winkUnion, Codex review #652):
     // once per player, never shown again because the account's record lacked them.
-    wk = SUBJECTS.map(S => [subjKey(S.id, 'wink'), store.get(subjKey(S.id, 'wink'), null)]),
-    // The notices told here before signing in join the account's (core.js toldUnion).
-    tl = store.get(TOLD.KEY, null);
+    wk = SUBJECTS.map(S => [subjKey(S.id, 'wink'), store.get(subjKey(S.id, 'wink'), null)]);
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
@@ -1356,7 +1356,6 @@ function signIn(name, pin, j) {
   if (ach) achMerge(JSON.stringify(ach));
   st.forEach(([k, r]) => r && store.set(k, startUnion(store.get(k, null), r)));
   wk.forEach(([k, r]) => r && store.set(k, winkUnion(store.get(k, null), r)));
-  if (tl) store.set(TOLD.KEY, toldUnion(store.get(TOLD.KEY, null), tl));
   Object.entries(M).forEach(([k, v]) => store.set(k, v));
   if (!anon && !mine) delete SYNC.dirty;
   store.set('reefid-account', SYNC);

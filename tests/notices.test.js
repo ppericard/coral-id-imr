@@ -105,7 +105,7 @@ function app({SYNC = {name: 'Ana', pin: '1234', srv: 4, base: prog, log: []}, re
       loadData +
       groups +
       fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8') +
-      '\nbindSync = () => {};\nthis.A = {syncPull, noticeLater, noticesReady, toldAdd, toldHas, signIn, store, NOTICE};',
+      '\nbindSync = () => {};\nthis.A = {syncPull, noticeLater, noticesReady, toldAdd, toldHas, store, NOTICE};',
     ctx
   );
   // Runs the timers due within ms (in the order set), as the page's clock would.
@@ -217,8 +217,54 @@ test('not signed in: nothing waits, as before', () => {
   );
 });
 
-test("signing in: the notices told here before join the account's", () => {
+test('not signed in: nothing is told to an account', () => {
   const a = app({SYNC: null, reply: () => new Promise(() => {}), ls: {'reefid-sync-told': '["recalc:a"]'}});
-  a.signIn('Ana', '1234', {found: true, data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-told': '["rv:9"]'}});
-  assert.strictEqual(JSON.stringify(a.store.get('reefid-sync-told')), '["recalc:a","rv:9"]');
+  assert.strictEqual(a.toldHas('recalc:a'), false, "the cards' device marks decide, as before");
+  assert.strictEqual(a.toldAdd('rv:9'), false);
+});
+
+// progress.js toldSeed on stubs: the marks this device holds go to the account signed in the first time this version runs.
+function seed(SYNC, ls) {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    fn = /const SEEDK = [\s\S]*?\nfunction toldSeed\(\) \{[\s\S]*?\n\}\n/.exec(src)[0],
+    saved = {...ls},
+    added = [],
+    ctx = {
+      ...C,
+      SYNC,
+      RECALC: {KEY: 'reefid-recalc', L: [{id: 'a'}, {id: 'b'}]},
+      RVN: {KEY: 'reefid-rv-msg'},
+      MXL: {KEY: 'reefid-mx-lost'},
+      SORRYK: {KEY: 'reefid-sorry'},
+      HELLO: {KEY: 'hello-'},
+      mxTok: (n, mx) => `mx:${n}@${mx}`,
+      toldAdd: (...L) => added.push(...L),
+      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+    };
+  vm.createContext(ctx);
+  vm.runInContext(fn + '\nthis.toldSeed = toldSeed;', ctx);
+  return {seed: () => ctx.toldSeed(), added, saved};
+}
+test("the device's own marks go to the account signed in when this version first runs, never to a later one (Codex review #736)", () => {
+  const ls = {
+    'reefid-recalc': '"b"',
+    'reefid-rv-msg': JSON.stringify({told: [9]}),
+    'reefid-mx-lost': JSON.stringify({told: {Acropora: 111}}),
+    'reefid-sorry': '1',
+    'reefid-fish-hello-all': '5',
+    'reefid-fish-hello-group': '"met"',
+    'reefid-board-told': '1'
+  };
+  const a = seed({name: 'Ana'}, ls);
+  a.seed();
+  assert.deepStrictEqual(a.added, ['recalc:b', 'rv:9', 'mx:Acropora@111', 'sorry', 'hello:fish-all', 'board']);
+  a.seed();
+  assert.strictEqual(a.added.length, 6, 'once per device');
+  // Signed out when the version came: the marks stay this device's, and the next account to sign in never takes them.
+  const b = seed(null, ls);
+  b.seed();
+  b.seed.call(null);
+  const c = seed({name: 'Bea'}, b.saved);
+  c.seed();
+  assert.deepStrictEqual([b.added, c.added], [[], []]);
 });
