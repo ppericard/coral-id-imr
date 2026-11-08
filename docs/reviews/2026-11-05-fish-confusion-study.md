@@ -2,7 +2,7 @@
 
 Written 2026-11-05, evening Manila, for Pierre to read on the morning of 2026-11-06. Read-only study: no branch, no PR,
 no code changed. Code read on `origin/main` at `566e5719` (main moved to `2c6d6efe` while writing; nothing read here
-changed). Companion of the [progress and set-size study](reviews/2026-11-05-progress-setsize-study.md) (Q101-Q113),
+changed). Companion of the [progress and set-size study](2026-11-05-progress-setsize-study.md) (Q101-Q113),
 whose "proven against the field" design it extends to the fish ranks; it refines that study's question **j** (Q110,
 fish fields per rank) and its point 3 (the pair counter).
 

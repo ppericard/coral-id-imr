@@ -50,12 +50,22 @@ is the design's shorthand, and internal identifiers may keep it.
   (scientific): harder than the families, different from the common names. The genera are the PDF names' first word (no grouping
   invented: rule C2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
 - **Built** (2026-11-04 night, #526, merged with Pierre's yes on 2026-11-05): the genus step as an opt-in set of the fish,
-  "Scientific names" (offer card once an entry is at Open Water since 2026-11-07, Q205: Advanced was far too late under the cautious
-  bar of #646; ⚙ row): a family's genera join the game when the family reaches Open Water and open one at a time; a photo, then 4 genus names (other identification groups first, then the sibling genera of the
+  "Scientific names" (offer card once an entry is at Advanced: Open Water from 2026-11-07, Q205, back to Advanced on 2026-11-08,
+  Pierre, "too early, too strong"; ⚙ row, and My progress while off: the offer never locks the setting, Pierre 2026-11-08;
+  turned on by hand before any family is at Advanced, a family's genera come from its Open Water, Q240): a family's genera join the game when the family reaches Advanced and open one at a time
+  (an IMR player meets the IMR course's genera without the offer from their family's Open Water: below); a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
   one (Chromis, Dascyllus, Pomacentrus), else its most met species; not counted in the progress yet (the global score is not built).
   Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).
   Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
+- **The IMR genera for an IMR player** (Pierre, 2026-11-08: "pour des gens qui sont à IMR, dans la première phase de jeu, la phase
+  sur les familles, il faut déjà inclure, sans avoir besoin de leur demander, les genres ... qui sont dans la liste du cours d'IMR"):
+  for a player who answered "I'm at IMR", each genus an IMR sub-entry names alone (Chromis, Dascyllus, Pomacentrus, Amphiprion,
+  Heniochus, Naso) opens without the offer once its family is at Open Water, with its card (its IMR cues and slide), at the usual
+  pace (Q219); of "Surgeonfish vs Unicornfish" only Naso is a genus unit, and a Naso photo asked at family level is right as
+  Surgeonfishes (Q220); a photo of another genus of the family keeps the family as its answer (Q221). Every player with that
+  answer, existing ones included (Pierre, 2026-11-08), and anyone who ever answered it, whatever the answer now (Q227: the
+  fallback card had moved strong IMR players to "I know reef fish well"). docs/LEARNING.md "Fish: scientific genera".
 - **A right genus is partial credit** (Pierre, 2026-11-04; replaces "Right genus, still a miss on the species"): when a species'
   scientific name is asked and the player types the right genus only, it is genuine partial learning (unlike a common name typed
   instead: open question 3), so it counts as partial credit. How much, and its thresholds, by simulation.
@@ -71,6 +81,7 @@ is the design's shorthand, and internal identifiers may keep it.
 ## Common names: a short curated list per species (Pierre, 2026-11-04)
 
 - Per species, a curated list of **1 to 3 well-used common names, never more**, never a full reference list.
+- **A species no reference names has none** (Pierre, 2026-11-08, Q247: "some species have no common name ... they will not take part in the common-name branch"; nudibranchs will be the same): the build and the proposal accept it with no name, none is invented (rule C2), and it simply has no common-name unit (3 near-Dauin species on 2026-11-08: *Priacanthus starnesi*, *Hazeus profusus*, *H. maculipinna*).
 - **Common-name mastery of a species needs all its listed names**: a multiple-choice question shows one listed name at a time, rotating;
   free text accepts only the listed names.
 - **Selection** (a proposal, validated by Pierre in the admin): the names that recur across public sources (the iNaturalist default
@@ -230,7 +241,9 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   20** (new / IMR course / know well: `core.js` `CHOICE.opts` `at`), until answer 150, once 10 slate genera are met and the overall level
   is 0.5 or more. The fish values start from the corals' and are set with the learnsim fish profiles ("Checks before release").
 - Everything else of the coral question comes too: the card before the quiz for a player who skipped it, the silent inference for an
-  existing fish player past 50 fish answers, the 40 / 60 checkpoints (a "lower" verdict offers **Fish basics**), the back card after
+  existing fish player past 50 fish answers, the 40 / 60 checkpoints (a "lower" verdict offers **Fish basics**; the level-change cards
+  **off for the fish since 2026-11-08**, Pierre: "on ne fasse pas les propositions de changement de niveau sur les poissons tant
+  qu'on n'a pas mieux calibré", `UNITS` fish `startFb: false`), the back card after
   Open all, the "Had the IMR …? Open all" box on the first cards and in My progress. Its own state per subject (the coral answer stays
   the corals').
 - **"I'm at IMR" brings scientific names earlier** (Pierre, 2026-11-04): both names, scientific names early ("Which names a player
@@ -278,7 +291,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 
 Supported now:
 
-- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 340 circle-1 species in circle-1 entries, plus 11 Dauin species of circle 3 (since #496).
+- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 469 circle-1 species in circle-1 entries (2026-11-08: every species takes its family's circle, Q214; until then the 11 Dauin species of circle-1 entries were circle 3).
 - PDF Latin name (`name`), WoRMS name (`now`, 28 species) and synonyms, iNaturalist id.
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
@@ -294,7 +307,7 @@ Gaps before species questions ship:
 - **Duplicate common name**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question).
 - *Nudiantennarius subteres* (circle 3) has no common name.
 - The three `check` names (likely PDF slips) to settle.
-- The curated common names per species (1 to 3, "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
+- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
 - Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
@@ -383,6 +396,8 @@ Decided from the admin pooling study:
 - Engine support comes with the species level and the logging of fish answers (ROADMAP).
 
 ## Formats and their order
+
+The study behind these formats, and which ideas were adopted and why: [FORMATS.md](FORMATS.md).
 
 1. Photo, then 4 entry names (built).
 2. Typed entry name (built); "Again" and look-alike duels (built).

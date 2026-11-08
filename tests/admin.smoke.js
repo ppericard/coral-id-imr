@@ -407,10 +407,11 @@ const WIDTHS = [390, 1280];
           u.wide > 0
         )
           fails.push(`${w}px Families: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
-        // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers); an unknown family shows the first.
+        // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers), with the Grammistidae soapfishes
+        // since 2026-11-08 (Q248: one family, as in the book); an unknown family shows the first.
         await go(other.hash + 'photos/families/' + encodeURIComponent('f:Soapfishes'));
         u = await fu();
-        if (u.sel !== 'f:Soapfishes' || u.gens.join() !== 'g:Diploprion' || !/IMR/.test(u.name))
+        if (u.sel !== 'f:Soapfishes' || !u.gens.includes('g:Diploprion') || !u.gens.includes('g:Grammistes') || !/IMR/.test(u.name))
           fails.push(`${w}px Families: Soapfishes ${JSON.stringify(u)}`);
         await go(other.hash + 'photos/families/f%3ANone');
         u = await fu();

@@ -1,5 +1,5 @@
 // The fish surprise cards (quiz.js WINK, winkDue, winkMerge; Pierre, 2026-11-06: his second fish question was the whale
-// shark; the first only after at least 300 fish answers, the next after about 600-700; 13:31: each surprise once per
+// shark; the first only after at least 300 fish answers, the next after about 600-700 — 200 and 400 since 2026-11-08; 13:31: each surprise once per
 // player, and that's all, across devices): quiz.js's own code runs in Node on stubs (the player's answer count, the
 // device's storage, the subject's winks).
 const test = require('node:test');
@@ -51,17 +51,16 @@ function play(M, a, b) {
   return out;
 }
 
-test('surprise thresholds: one named constant, 300 then 600-700', () => {
+test('surprise thresholds: one named constant, 200 then 400 (Pierre, 2026-11-08)', () => {
   const M = page();
-  assert.strictEqual(M.WINK.AT[0], 300);
-  assert.ok(M.WINK.AT[1] >= 600 && M.WINK.AT[1] <= 700, String(M.WINK.AT[1]));
+  assert.deepStrictEqual([...M.WINK.AT], [200, 400]);
 });
 
-test('none before 300 fish answers, the whale shark just after, the thresher at 650, then never again', () => {
+test('none before 200 fish answers, the whale shark just after, the thresher at 400, then never again', () => {
   const M = page();
-  assert.deepStrictEqual(play(M, 0, 300), [], 'none before 300');
-  assert.deepStrictEqual(play(M, 300, 600), [[300, WALE]], 'the whale shark at 300, once');
-  assert.deepStrictEqual(play(M, 600, M.WINK.AT[1]), [], 'none again before the second threshold');
+  assert.deepStrictEqual(play(M, 0, 200), [], 'none before 200');
+  assert.deepStrictEqual(play(M, 200, 350), [[200, WALE]], 'the whale shark at 200, once');
+  assert.deepStrictEqual(play(M, 350, M.WINK.AT[1]), [], 'none again before the second threshold');
   assert.deepStrictEqual(play(M, M.WINK.AT[1], 5000), [[M.WINK.AT[1], THRESH]], 'the thresher once, then nothing more');
 });
 
@@ -74,31 +73,31 @@ test('a player already past both thresholds meets them apart, never back to back
 });
 
 test('a card on screen delays the surprise; it comes at the next question', () => {
-  const M = page({n: 300});
+  const M = page({n: 200});
   M.ctx.card = true;
   assert.strictEqual(M.winkDue(), null, 'never over a card');
   M.ctx.card = false;
-  M.ctx.n = 310;
+  M.ctx.n = 210;
   assert.strictEqual(M.winkDue().n, WALE);
 });
 
 test('once per player: not again after a reload, nor on another device of the account after a sync', () => {
   const phone = {},
-    a = page({n: 305, saved: phone});
+    a = page({n: 205, saved: phone});
   a.shown(a.winkDue());
   // A reload (a new page on the same device and record).
-  assert.deepStrictEqual(play(page({n: 306, saved: phone}), 306, 640), [], 'not again after a reload');
-  // Sign-in on a laptop at 400 answers: the account's saved copy carries the travelling key, merged at the sync.
+  assert.deepStrictEqual(play(page({n: 206, saved: phone}), 206, 400), [], 'not again after a reload');
+  // Sign-in on a laptop at 300 answers: the account's saved copy carries the travelling key, merged at the sync.
   const key = C.subjKey('fish', 'wink'),
-    laptop = page({n: 400});
+    laptop = page({n: 300});
   assert.strictEqual(key, 'reefid-sync-fish-wink');
   laptop.winkMerge(phone[key]);
-  assert.deepStrictEqual(play(laptop, 400, 640), [], 'the whale shark never again on the other device');
-  assert.deepStrictEqual(play(laptop, 640, 700), [[655, THRESH]], 'the thresher there (650, and 350 after the whale shark at 305)');
+  assert.deepStrictEqual(play(laptop, 300, 400), [], 'the whale shark never again on the other device');
+  assert.deepStrictEqual(play(laptop, 400, 460), [[405, THRESH]], 'the thresher there (400, and 200 after the whale shark at 205)');
   // Back on the phone after a sync: the thresher shown on the laptop never comes again either.
-  const back = page({n: 700, saved: phone});
+  const back = page({n: 460, saved: phone});
   back.winkMerge(laptop.saved[key]);
-  assert.deepStrictEqual(play(back, 700, 3000), [], 'nothing more for this player');
+  assert.deepStrictEqual(play(back, 460, 3000), [], 'nothing more for this player');
 });
 
 test('the merge keeps the union, the earlier count, and ignores junk', () => {
@@ -111,7 +110,7 @@ test('the merge keeps the union, the earlier count, and ignores junk', () => {
   assert.deepStrictEqual(JSON.parse(M.saved['reefid-sync-fish-wink']), {[WALE]: 310, [THRESH]: 700});
 });
 
-test('a reload long before 300 brings none (Pierre: the whale shark as his second question)', () => {
+test('a reload long before 200 brings none (Pierre: the whale shark as his second question)', () => {
   assert.strictEqual(page({n: 1}).winkDue(), null);
 });
 

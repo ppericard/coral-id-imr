@@ -99,6 +99,66 @@
   "fish-s036-cand-713719026": {
    "code": "p1g3ss11",
    "keep": "best"
+  },
+  "fish-s036-cand-253790595": {
+   "code": "p1g0sl1j2",
+   "keep": "best",
+   "note": "The observer tags it juvenile; its colours look like an adult's, so the flag follows the observer."
+  },
+  "fish-s036-cand-283684236": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s036-cand-617070146": {
+   "code": "p1g1mmm2",
+   "keep": "best"
+  },
+  "fish-s036-cand-649884615": {
+   "code": "o1g2mm11",
+   "keep": "best"
+  },
+  "fish-s036-cand-472237827": {
+   "code": "p1g2ms12",
+   "keep": "best"
+  },
+  "fish-s036-cand-283683774": {
+   "code": "o1d2mm12",
+   "keep": "best"
+  },
+  "fish-s036-cand-729414875": {
+   "code": "p1g3mm12",
+   "keep": "best"
+  },
+  "fish-s036-cand-617070147": {
+   "code": "p1g2smm2",
+   "keep": "best"
+  },
+  "fish-s036-cand-333786776": {
+   "code": "o1g3blm1",
+   "keep": "best"
+  },
+  "fish-s036-cand-37066879": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.1,
+    1.0,
+    1.0
+   ],
+   "note": "A sliver of a yellow fish in the top-left corner; the crop leaves it out."
+  },
+  "fish-s036-cand-267112745": {
+   "code": "o1d1slm2",
+   "keep": "best"
+  },
+  "fish-s036-cand-588712557": {
+   "code": "o1d2ml11",
+   "keep": "best"
+  },
+  "fish-s036-cand-465505381": {
+   "code": "p1d2smm2",
+   "keep": "best"
   }
  }
 }

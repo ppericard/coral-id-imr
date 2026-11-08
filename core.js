@@ -549,11 +549,21 @@
   const LOG_SC = 22;
   const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
   const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
+  // A surprise card's answer (quiz.js winkShow; Pierre, 2026-11-08: logged like every other answer, and never counted):
+  // mode WINK_MODE, the app's log entry (m) and an answer-log row alike (index LOG_MODE in the sheet's readAnswers rows,
+  // its Answers tab rows and logRow's). No progress, ability, hold, replay, photo rating, confusion, exposure, count or
+  // analysis reads one: subjRows and subjEntries leave them out, and so do the sheet's readers (Code.gs replayed_,
+  // answers_, the Activity tab).
+  const WINK_MODE = 'wink',
+    LOG_MODE = 5;
+  const winkEntry = a => !!a && String(a.m || '') === WINK_MODE;
+  const winkRow = r => !!r && String(r[LOG_MODE] || '') === WINK_MODE;
   // The rows (or log entries, entries) of one subject, the replayed one by default: every reader of the answer log that
   // computes a subject's statistics (the analyses, the evaluation tools, the admin) keeps only that subject's rows, so a
-  // fish answer never counts in a coral result.
-  const subjRows = (rows, id = replaySubject()) => (Array.isArray(rows) ? rows : []).filter(r => r && rowSubject(r) === id);
-  const subjEntries = (log, id = replaySubject()) => (Array.isArray(log) ? log : []).filter(a => a && ansSubject(a) === id);
+  // fish answer never counts in a coral result; a surprise card's answer counts in none (winkRow, winkEntry).
+  const subjRows = (rows, id = replaySubject()) => (Array.isArray(rows) ? rows : []).filter(r => r && rowSubject(r) === id && !winkRow(r));
+  const subjEntries = (log, id = replaySubject()) =>
+    (Array.isArray(log) ? log : []).filter(a => a && ansSubject(a) === id && !winkEntry(a));
   // A subject's first-launch answer (CHOICE): reefid-sync-<subject>-start, synced with the player's progress.
   const startKey = s => subjKey(s, 'start');
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
@@ -3583,7 +3593,11 @@
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
   // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
   const LOG_SHEET = 60;
-  const logOk = (a, v) => ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET;
+  // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
+  // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
+  // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
+  const WINK_SHEET = 98;
+  const logOk = (a, v) => (winkEntry(a) ? Number(v) >= WINK_SHEET : ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET);
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
@@ -4713,6 +4727,7 @@
     START_SHEET,
     DOM_SHEET,
     LOG_SHEET,
+    WINK_SHEET,
     logOk,
     RTIME,
     rtMedian,
@@ -4845,6 +4860,10 @@
     LOG_SC,
     ansSubject,
     rowSubject,
+    WINK_MODE,
+    LOG_MODE,
+    winkEntry,
+    winkRow,
     subjRows,
     subjEntries,
     subjKey,
