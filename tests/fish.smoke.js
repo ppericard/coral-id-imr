@@ -316,7 +316,12 @@ const server = http.createServer((req, res) => {
     );
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
     ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
-    ok(progPct(FISH.c1) < 100 * FISH_C3, 'circle 1 under FISH_C3');
+    // The global score from the sheet script that ranks by it (core.js SCORE_SHEET, rule D4): before, the families' mean.
+    store.set(SHEETV, SCORE_SHEET - 1);
+    ok(headScore() === null && headPct() === progPct(), 'before SCORE_SHEET: the families mean, as before');
+    store.set(SHEETV, SCORE_SHEET);
+    ok(headScore() && headPct() === headScore().pct, 'from SCORE_SHEET: the global score');
+    ok(!fishC3(), 'circle 1 under FISH_C3');
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
     ok(!openOfferDue(), 'no circle-3 card under FISH_C3');
@@ -324,7 +329,10 @@ const server = http.createServer((req, res) => {
     // Circle 3 an option (Pierre, 2026-11-07 08:50): at FISH_C3 a card asks instead of opening; "Not now" keeps it closed
     // and the card comes back once, OPEN_AGAIN answers later, then never; My progress opens it any time; open, its
     // families open one at a time. It counts in the % either way (Q204, below).
-    ok(progPct(FISH.c1) >= 100 * FISH_C3 && !FISH.c3.some(mayOpen), 'circle 3 waits for the choice at FISH_C3');
+    // The threshold reads the global score's circle-1 Entries component (core.js treeScore by[1].entries, Pierre
+    // 2026-11-08: the path follows the new scores), from the one computation the headline comes from.
+    ok(headScore().by[1].entries >= FISH_C3.entries && fishC3(), 'FISH_C3: the circle-1 Entries component');
+    ok(fishC3() && !FISH.c3.some(mayOpen), 'circle 3 waits for the choice at FISH_C3');
     ok(openOfferDue() && openOfferDue().k === 'beyond' && !Q.beyond, 'the circle-3 card is due at FISH_C3');
     // A player whose circle 3 already opened by itself (before the choice existed) keeps it, and gets no card.
     const im = introMap(),
@@ -370,9 +378,11 @@ const server = http.createServer((req, res) => {
     route();
     // Every circle in the progress: a circle-3 family learned moves the %, over all the families.
     const c3n = FISH.c3[0],
-      pct = progPct();
+      pct = progPct(),
+      hp = headScore().raw;
     pgAt(c3n, 0.9);
-    ok(progPct() > pct && progPct() === progPct(slateGenera()), 'circle 3 counts in the progress');
+    ok(progPct() > pct && progPct() === progPct(slateGenera()), 'circle 3 counts in the families mean');
+    ok(headScore().raw > hp && headScore().by[3].entries > 0, 'circle 3 counts in the global score');
     delete P[c3n];
     // "I'm at IMR" (the fish welcome answer imr): the IMR-tagged families first within circle 1 (Pierre, 2026-11-06 13:38): the
     // Soapfishes (taught by IMR with the Groupers, no IMR name of their own) wait for them.
@@ -450,7 +460,16 @@ const server = http.createServer((req, res) => {
       pool().some(n => GX(n).rank) && pool().every(n => !GX(n).rank || GX(n).parent === 'f:Butterflyfishes'),
       'sci: on, the genera in play'
     );
-    ok(progPct() === pc, 'sci: never counted in the progress');
+    ok(progPct() === pc, 'sci: never counted in the families mean');
+    // The global score (core.js treeScore, Q242) counts a genus: half its bar as its species' scientific credit.
+    const hs = headScore(),
+      gb = G.find(n => GX(n).parent === 'f:Butterflyfishes'),
+      gs0 = P[gb];
+    pgAt(gb, 0.9);
+    ok(headScore().raw > hs.raw && headScore().genera > 0 && headScore().S > 0, 'sci: a genus moves the global score');
+    if (gs0) P[gb] = gs0;
+    else delete P[gb];
+    ok(headPct() === headScore().pct, 'the headline % is the global score');
     const g0 = pool().find(n => GX(n).rank),
       e0 = 'f:Butterflyfishes';
     ok(

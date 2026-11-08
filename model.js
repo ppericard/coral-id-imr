@@ -1373,6 +1373,22 @@ const lvIcon = (k, cls = 'lvi') =>
     ? `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="${MASTERY[k][0]}">${MASTERY[k][1]}</svg>`
     : '';
 const progPct = (L = slateGenera()) => Math.round((100 * L.reduce((t, n) => t + genScore(n), 0)) / L.length);
+// The subject's global score and its components when it has one (core.js SUBJECTS score: the fish), from one computation
+// (core.js treeScore over its tree, app.js UNITS tree); null otherwise.
+// From the sheet script that ranks the leaderboard by it (core.js SCORE_SHEET, sync.js sheetV; rule D4), so the
+// leaderboard and My progress never show two scales; before, null (the families' mean, and the rules on it, as before).
+const scoreOn = () => !!SUBJ.score && typeof sheetV === 'function' && sheetV() >= SCORE_SHEET;
+const headScore = () => {
+  const U = typeof UNITS === 'object' ? UNITS[SUBJ.id] : null,
+    T = scoreOn() && U && U.tree ? U.tree() : null;
+  return T ? treeScore(P, T, SUBJ.score) : null;
+};
+// The headline % (the header pill, My progress's ring, the achievements, the update card): the subject's global score,
+// else the mean of its units' bars (progPct).
+const headPct = (L = slateGenera()) => {
+  const h = headScore();
+  return h ? h.pct : progPct(L);
+};
 function level(n) {
   const s = P[n];
   if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];
