@@ -1,1 +1,0 @@
-core.js SUBJECTS fish admin pages: Inbox › To do › Health and Analyses › Learning › Stops on the fish side (fish admin at parity with the corals, Pierre, 2026-11-08: "j'ai besoin d'avoir les outils pour pouvoir continuer d'avancer"); the script reads nothing new (its embedded copy of core.js only)
