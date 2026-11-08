@@ -3764,6 +3764,42 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   sheet computes the real values from every answer and serves them in `?stats=1` (`mem`, with `memn`, the trusted
   answers behind each bucket); the app uses them (`model.js` `PMEM`), the prior with an older sheet or offline.
 
+**Per subject** (2026-11-08, the re-check of #664's F8; the integrator's call, a leak fix). The sheet fits `mem` on the
+corals' answers only (`Code.gs` `stats_` reads the replayed subject's rows), yet until this change the app drew,
+scored and recalculated fish answers with it too: on 2026-11-08 the corals' shown-never-right offset was +0.43, so a
+fish photo shown and missed was taken as harder than a new one, where the prior says −0.5. Every use now reads
+`model.js` `pmem()`: the sheet's offsets for the subject it rates (`SUBJECTS` `replay`: the corals, the very `PMEM`
+array, so nothing changes for them), the prior (`core.js` `MEM.PRIOR`) for any other, until a per-subject `?stats=1`
+rates fish photos (ROADMAP admin plan PR 11). Checked by `tests/fishmemory.test.js` (a fish draw, expectation and
+recalculation run with a `PMEM` that throws on any read; the corals' read `PMEM` itself).
+
+- **Learning outcomes** (rule L11 level 1: one subject, the offsets of the few answers on a photo already seen;
+  `tools/learnsim.js --subject fish --stats` with the live `?stats=1` of 2026-11-08, 4 profiles × 5 seeds × 300
+  questions, before (#776, e62256e) and after on the same seeds; declared before running: primary true knowledge at
+  300, non-inferiority at −0.02; paired difference after − before, one-sided 90% bounds). Primary held: knowSlate
+  +0.0009 (bound −0.0004; 0.379 → 0.383 / 0.538 → 0.538 / 0.706 → 0.706 / 0.944 → 0.944, beginner / lecture RA /
+  strong RA / expert; sign-flip p 0.40). Guardrails held: prog − know −0.0015 (over-claim bound +0.0099, margin +0.03);
+  units met at 100 +0.05 (bound −0.02), at 300 identical (32); share under ease 4 before Open Water −0.001 (bound
+  +0.003). The effect is small because repeats are rare in the fish pools (about 2% of the first 300 questions show a
+  photo already seen). **The corals, identical**: the same run on `--subject coral`, same stats and seeds,
+  gives the same 300 answers in every run (genus, answer, photos, choices, expectation, scoring record; only the answer
+  id and the wall-clock time differ) and the same rows and summary (knowSlate 0.686 / 0.758 / 0.856 / 0.954, met 40).
+- **On the real log** (rule L12, read-only, the Answers tab read 2026-11-08 20:57 Manila: 1,536 scored fish answers of
+  9 players, 45 of them on a photo already seen, bucket from the logged `f`; the expectation recomputed with the
+  prior's offset in place of the logged one):
+
+  | Bucket | Answers | Right | Expected, coral offsets | Expected, prior | Log-loss coral → prior |
+  | --- | --- | --- | --- | --- | --- |
+  | shown, never right | 13 | 92% | 74% | 86% | 0.396 → 0.311 |
+  | right once | 31 | 97% | 88% | 86% | 0.122 → 0.146 |
+  | right twice or more | 1 | 100% | 94% | 95% | 0.062 → 0.052 |
+  | all | 45 | 96% | 84% | 86% | 0.200 → 0.192 |
+
+  Per player (6 with such answers) the mean log-loss difference is +0.002, sign-flip p 0.56: the log cannot tell the
+  two apart yet, and both under-predict remembered photos. The fix rests on its reason (no coral number on a fish
+  answer), not on the log. The fish answers logged before it keep their coral `f` in their scoring record, which the
+  sheet's fish replay (#776) reads as logged.
+
 **In the app** (`quiz.js` `answer`, `model.js` `famOf`, `pgMemW`):
 
 - **The expectation** of a question includes the offset of its photos as the player knew them before answering: the

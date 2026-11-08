@@ -10,6 +10,8 @@ const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8');
 const code = [
   cut(src, 'const PICKD = {', '// The next exam question of genus n', {file: 'model.js'}),
   cut(src, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}),
+  // The photo memory offsets of the subject in play (pmem: the sheet's PMEM for the corals, the prior for the fish).
+  cut(src, 'const PMEM0 = memOf();', '\n// Per-format offsets', {file: 'model.js'}),
   cut(src, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'})
 ].join('\n');
 
@@ -17,7 +19,7 @@ const code = [
 // its photos L (one per observation, the fish's single view), the player's ability th and progress score sc on it.
 // The stubs are the parameters of a function around the code, not the vm's globals: the same names and the same draws,
 // but a global lookup in a vm goes through its context object, which made the 3,000 draws about 40% slower.
-function engine(subject, L, {th = 1.2, score = 0.3, ok = 2, lv = 'new', ps = {}, rank = ''} = {}) {
+function engine(subject, L, {th = 1.2, score = 0.3, ok = 2, lv = 'new', ps = {}, rank = '', PMEM = [0, -0.45, -1.1, -1.7]} = {}) {
   let s = 12345;
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647,
     M = Object.create(Math);
@@ -36,7 +38,8 @@ function engine(subject, L, {th = 1.2, score = 0.3, ok = 2, lv = 'new', ps = {},
     P: {u: {ok, ko: 0, th, ps}},
     PSTAT: {},
     PGD: {},
-    PMEM: [0, -0.45, -1.1, -1.7],
+    PMEM,
+    memOf: C.memOf,
     PFMT: {},
     fmtOff: () => 0,
     GX: () => ({levels: 3, views: {wide: L}}),

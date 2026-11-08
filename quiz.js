@@ -505,8 +505,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (good) session.ok++;
   // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
   mxRecalc(() => {
-    memRecalc(s, PMEM);
-    if (!good && GX(c)) memRecalc(st(c), PMEM);
+    memRecalc(s, pmem());
+    if (!good && GX(c)) memRecalc(st(c), pmem());
   });
   const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
