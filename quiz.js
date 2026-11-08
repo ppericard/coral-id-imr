@@ -1413,6 +1413,7 @@ function quizPhoto(cur = 'quiz') {
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
+  else if (!noOpen() && promptOk() && bonusBackDue()) (promptMark(), bonusBackShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
@@ -1601,6 +1602,38 @@ function bonusOfferShow(S = bonusOfferDue() || SETS()[0]) {
     esc: 2,
     note: S.note,
     onClose: topUp // leaving the page closes it unanswered (route): the offer comes back
+  });
+}
+// The back card (Pierre, 2026-11-08): once, to a player who turned an opt-in set on under its earlier rules (app.js UNITS
+// sets rv, back: the fish scientific genera, on from Open Water before; Advanced now), never to one who never turned it
+// on or turned it off. "Close them for now": off (their progress kept, not asked; a set's auto units, an IMR player's
+// IMR genera, stay in play); "Keep them": on. Both record the choice under rv (bonusSet), synced, so it is asked once.
+// A prompt like the offer (promptOk); leaving the page closes it unanswered: it comes back.
+const bonusBackDue = () => SETS().find(S => S.back && S.rv && Q[S.k] === true && (Q[S.k + 'V'] || 0) < S.rv) || null;
+function bonusBackShow(S = bonusBackDue()) {
+  if (!S) return;
+  const B = S.back,
+    keep = S.auto ? S.auto() : [];
+  cardShow({
+    kind: 'bonus',
+    cls: 'intro',
+    kick: S.kick,
+    title: B.title,
+    body: `<p>${B.body}</p>${keep.length && B.imr ? `<p class="ulnote">${B.imr} ${keep.map(uname).join(', ')}</p>` : ''}`,
+    // Closed, a question on screen about a unit no longer in play (a genus just closed) is replaced at once, unanswered
+    // (Codex review #720). The card is gone before its button's on runs (app.js cardShow act).
+    primary: {
+      text: B.no,
+      attr: 'data-sciback',
+      on: () => {
+        bonusSet(false, S.k);
+        if (QOPEN && SHOWNQ && !pool().includes(SHOWNQ[1])) (dropPlans(), route());
+      }
+    },
+    secondary: {text: B.yes, on: () => bonusSet(true, S.k)},
+    esc: 2,
+    note: S.note,
+    onClose: topUp
   });
 }
 // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50), over the question,
