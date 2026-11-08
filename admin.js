@@ -2766,6 +2766,18 @@ function bindQ() {
       })
   );
 }
+// The keys of Quality and Growth form act only on the photo that has the keyboard focus (clicked, or reached with Tab),
+// never on one the mouse merely passes over, and only for their own keys, without Ctrl, Alt or Cmd and not held down:
+// a key typed elsewhere changes nothing (second admin review, 2026-11-01, "Smaller things"). act(tile, key) says whether
+// the key was one of its own; a tile keeps the focus when its buttons are redrawn (keepFocus).
+function tileKeys(page, act) {
+  document.onkeydown = e => {
+    if (cur !== page || e.ctrlKey || e.metaKey || e.altKey || e.repeat || !$('lightbox').hidden) return;
+    const t = e.target.closest && e.target.closest('.adm-qt');
+    if (!t || !$v.contains(t) || e.target.closest('input,select,textarea')) return;
+    if (act(t, e.key)) e.preventDefault();
+  };
+}
 // Rating updates the tile in place (it stays where it is until the next filter change), so rating many is fast.
 function rateTile(t, q) {
   const f = t.dataset.f;
@@ -2805,7 +2817,6 @@ function renderQuality() {
       <div class="adm-grid adm-qgrid" data-qdrop="${q}">${L.map(card).join('')}</div></section>`;
   };
   $v.innerHTML = `<section class="adm-quality">
-    <div class="adm-qhead"><h2>Photo quality</h2></div>
     ${FB.origins()}
     <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'qv', cur: QF.view, items: FB.viewItems()})}
       ${FB.unit({id: 'qgen', cur: QF.genus, names})}
@@ -2828,24 +2839,12 @@ function renderQuality() {
       })
   );
   bindQ();
-  // Hover (or focus) a photo and press 1, 2 or 3.
-  let over = null;
-  $v.querySelectorAll('.adm-qt').forEach(t => {
-    t.onmouseenter = t.onfocus = () => {
-      over = t;
-    };
-    t.onmouseleave = () => {
-      if (over === t) over = null;
-    };
+  // Select a photo (click it or Tab to it) and press 1, 2 or 3.
+  tileKeys('photos/review/quality', (t, k) => {
+    const q = {'1': 1, '2': 2, '3': 3}[k];
+    if (q) rateTile(t, q);
+    return !!q;
   });
-  document.onkeydown = e => {
-    if (cur !== 'photos/review/quality' || !over || e.target.closest('input,select,textarea')) return;
-    const q = {'1': 1, '2': 2, '3': 3}[e.key];
-    if (q) {
-      e.preventDefault();
-      rateTile(over, q);
-    }
-  };
   // Drag a photo onto another level.
   const clearQ = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
   pointerDrag(
@@ -3056,9 +3055,9 @@ const HELP = {
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral ID Key "Large daytime polyps" tile).</p>
     <p>The Coral ID Key growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p><b>📌</b> makes a photo a lead photo of its form's tile on the site's Coral ID Key start (up to 3 per form, number = place; a 4th drops the oldest); the tile's other places stay automatic. Br leads Branching, En Thin plates and crusts, Ma Massive, Sm Columns, Mu Solitary.</p>
-    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter.</p>
+    <p>Click, drag a photo to another row, or select it (click it or Tab to it) and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
-  quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
+  quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or select a photo (click it or Tab to it) and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. The list follows Corals | Fish: each side shows its own reports and those about no subject (sent from Home, About, the leaderboard). Feedback sent from a game carries the question's photos. Each report has one bar: its status, then the tools it can use. <b>Done</b> clears it, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). <b>Stand-by</b> sets it aside below the open ones; <b>Dismiss</b> clears it without thanks; Done and Dismissed fold at the bottom with their counts, where <b>Reopen</b> takes one back. <b>Journey</b> opens the reporter's journey (a player on the list), <b>Open genus</b> or <b>Open family</b> the page of what it is about, <b>Open page</b> the app page it was sent from; a report with no photo can <b>Attach a photo</b> of its genus or family (pick one first when it names none), with its tools, for this visit only (not saved). Each photo has the tools of its page: a coral photo those of its genus page, a fish photo × (exclude), Remove, Not this (a candidate photo) and Open in Families. A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; a fish photo has the tools of its family page (× excludes it from the fish games for good, Remove takes it out of play, Not this), each clearing the flag (Undo brings it back), and Done.</p><p>Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   fishcov: `<p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates, <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Families). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
@@ -3196,10 +3195,16 @@ const pinRefresh = t => {
   const w = t.querySelector('.adm-pinw');
   if (w) w.innerHTML = pinBtn(t.dataset.f);
 };
+// Redrawing a tile's form buttons drops the focus a clicked button had: the tile keeps it, so its keys still work.
+const keepFocus = (t, draw) => {
+  const had = t.contains(document.activeElement);
+  draw();
+  if (had && !t.contains(document.activeElement)) t.focus({preventScroll: true});
+};
 function formTile(t, v) {
   setF(t.dataset.f, v);
   const p = {f: t.dataset.f};
-  t.querySelector('.adm-fseg').outerHTML = fSeg(p, !!t.closest('.adm-blind'));
+  keepFocus(t, () => (t.querySelector('.adm-fseg').outerHTML = fSeg(p, !!t.closest('.adm-blind'))));
   pinRefresh(t);
   if (cur === 'photos/review/growth-form') t.classList.add('rated');
   bindF(t);
@@ -3215,7 +3220,7 @@ const toggleF = (f, c) => c;
 function polTile(t) {
   const blind = !!t.closest('.adm-blind');
   setP(t.dataset.f, !(blind ? fP(mineF(t.dataset.f)) === true : pOf(t.dataset.f)));
-  t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f}, blind);
+  keepFocus(t, () => (t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f}, blind)));
   pinRefresh(t);
   bindF(t);
   status();
@@ -3267,7 +3272,6 @@ function renderForm() {
       <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`;
   };
   $v.innerHTML = `<section class="adm-quality">
-    <div class="adm-qhead"><h2>Growth form</h2></div>
     <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
     ${FB.origins()}
     <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'fv', cur: FF.view, items: FB.viewItems()})}
@@ -3328,30 +3332,16 @@ function renderForm() {
       })
   );
   bindF($v);
-  let over = null;
-  $v.querySelectorAll('.adm-qt').forEach(t => {
-    t.onmouseenter = t.onfocus = () => {
-      over = t;
-    };
-    t.onmouseleave = () => {
-      if (over === t) over = null;
-    };
-  });
-  document.onkeydown = e => {
-    if (cur !== 'photos/review/growth-form' || !over || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,select,textarea'))
-      return;
-    const k = e.key.toUpperCase();
+  tileKeys('photos/review/growth-form', (t, key) => {
+    const k = key.toUpperCase();
     if (k === 'P') {
-      e.preventDefault();
-      polTile(over);
-      return;
+      polTile(t);
+      return true;
     }
-    const c = k === '0' ? 'x' : k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null;
-    if (c) {
-      e.preventDefault();
-      formTile(over, toggleF(over.dataset.f, c));
-    }
-  };
+    const c = k === '0' || k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null;
+    if (c) formTile(t, toggleF(t.dataset.f, c));
+    return !!c;
+  });
   // Drag a photo onto another row: it gets that form (not onto the To classify rows).
   const clearF = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
   pointerDrag(
@@ -3394,7 +3384,7 @@ function renderExcluded() {
   const X = DRAFT.exclude || {},
     list = Object.keys(X).map(f => (PHOTOS[f] ? {...PHOTOS[f], f} : gone(f)));
   const io = id => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/small`;
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Excluded photos</h2></div>
+  $v.innerHTML = `<section class="adm-quality">
     ${
       list.length
         ? `<div class="adm-grid adm-qgrid">${list
@@ -3817,7 +3807,7 @@ function renderEvents() {
     loadEvents().then(() => cur === 'inbox/todo/errors' && renderEvents());
     return;
   }
-  const head = `<div class="adm-shead"><h2>Errors & feedback</h2><button type="button" class="adm-link" data-evr>Refresh</button></div>`;
+  const head = `<div class="adm-shead"><button type="button" class="adm-link" data-evr>Refresh</button></div>`;
   if (EVS.err) {
     $v.innerHTML = head + `<p class="note">${esc(EVS.err)}</p>`;
     return bindEv();
@@ -6307,14 +6297,21 @@ async function start() {
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   // The draft only carries the changes made since its base: everything published since then (from another
   // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
-  const old = store.get('reefid-curation-draft', null),
+  const sealed = TOKEN ? await unsealDraft().catch(() => null) : null;
+  let old = store.get('reefid-curation-draft', null),
     base = store.get('reefid-curation-base', null);
+  if (sealed && !(old && old.genera)) {
+    old = sealed.d; // this token's draft from before its sign out (signOut)
+    base = sealed.b;
+  }
   if (old && old._tab) {
     SEEN = old._tab.rev;
     delete old._tab;
     REVS[SEEN] = clone(old);
   } // the draft another open tab started from
   DRAFT = old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
+  // A plain draft was there too (another tab or token kept working without signing out): the sealed one goes on top.
+  if (sealed && old !== sealed.d) DRAFT = sealed.b ? mergeCur(sealed.b, sealed.d, DRAFT) : mergeOld(sealed.d, DRAFT);
   DRAFT.genera = DRAFT.genera || {};
   // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
   const kept = (() => {
@@ -6331,7 +6328,7 @@ async function start() {
   }
   snap = JSON.stringify(DRAFT);
   if (TOKEN) {
-    putDraft();
+    if (putDraft() && sealed) sealed.drop();
     store.set('reefid-curation-base', SAVED);
     keepHist();
   }
@@ -6512,7 +6509,58 @@ const sess = {
   }
 };
 store.set(SESSION, null); // drop the plain copy older versions kept in localStorage
-function signOut() {
+// Sign out leaves no draft to the next person on this browser (second admin review, 2026-11-01: on a shared device the
+// next admin inherited it and could publish it). The unpublished draft and its base are sealed with this admin's token
+// (AES-GCM, the key a SHA-256 of the token) and taken off the plain draft keys, so another admin's token, a read-only
+// visit and the site's ?draft preview see none of it; unlocking again with the same token opens it and merges it back
+// (start, unsealDraft). Nothing is wiped (rule A1). At most 3 sealed drafts, the newest first; if the browser cannot
+// store it, the draft stays as before.
+const SEALED = 'reefid-admin-sealed';
+const sealKey = tok =>
+  crypto.subtle
+    .digest('SHA-256', new TextEncoder().encode('reefid-admin-draft|' + tok))
+    .then(h => crypto.subtle.importKey('raw', h, 'AES-GCM', false, ['encrypt', 'decrypt']));
+const b64big = u => {
+  let s = '';
+  for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000));
+  return btoa(s);
+};
+async function sealDraft() {
+  const d = store.get('reefid-curation-draft', null);
+  if (!d || !TOKEN) return;
+  if (DRAFT && status0().parts.length) {
+    delete d._tab;
+    const iv = crypto.getRandomValues(new Uint8Array(12)),
+      pt = new TextEncoder().encode(JSON.stringify({d, b: store.get('reefid-curation-base', null)})),
+      ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, await sealKey(TOKEN), pt),
+      L = store.get(SEALED, []);
+    if (!store.set(SEALED, [{iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now()}, ...(Array.isArray(L) ? L : [])].slice(0, 3)))
+      return;
+  }
+  store.set('reefid-curation-draft', null);
+  store.set('reefid-curation-base', null);
+}
+// The draft this token sealed at its last sign out, if any: {d, b, drop}; drop() removes it once it is in the draft.
+async function unsealDraft() {
+  const L = store.get(SEALED, null);
+  if (!TOKEN || !Array.isArray(L) || !L.length) return null;
+  const k = await sealKey(TOKEN);
+  for (let i = 0; i < L.length; i++) {
+    try {
+      const o = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(L[i].iv)}, k, unb64(L[i].ct))));
+      if (o && o.d && o.d.genera)
+        return {
+          ...o,
+          drop: () => store.set(SEALED, L.length > 1 ? L.filter((x, j) => j !== i) : null)
+        };
+    } catch (e) {} // sealed by another token
+  }
+  return null;
+}
+async function signOut() {
+  try {
+    await sealDraft();
+  } catch (e) {} // no Web Crypto: the draft stays as before
   sess.set(null);
   try {
     sessionStorage.removeItem(HKEY);
@@ -6603,7 +6651,7 @@ function renderDiff() {
     <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photos by difficulty</h2>${segBtns('min', [
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead">${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
@@ -6793,7 +6841,7 @@ function renderPstats() {
   CG.sort((a, b) => (a.k ? a.a / a.k : 2) - (b.k ? b.a / b.k : 2) || b.k - a.k || a.n.localeCompare(b.n));
   const covered = A.filter(x => x >= RATE.MIN).length;
   $v.innerHTML =
-    `<section class="adm-pov"><div class="adm-shead"><h2>Photo overview</h2></div>` +
+    `<section class="adm-pov">` +
     kpis([
       ['Photos in play', st.play],
       ['Colonies in play', colonies],
@@ -7996,7 +8044,7 @@ const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= GROUP_SHEET;
 const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
   status();
-  const head = `<div class="adm-shead"><h2>Players</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
+  const head = `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
   // The pages opened (the Devices column) come after the table, drawn again once in (read again once stale; Codex
   // review #690).
   pagesFresh('players/list');
@@ -8618,7 +8666,7 @@ function activityCard(R) {
 // say, live; Pierre, 2026-11-04, one role per admin page): one reading of the answer log, each view its own cards.
 function statsPlayers() {
   const log = cur === 'analyses/learning/answer-log',
-    head = `<div class="adm-shead"><h2>${log ? 'Answer log' : 'Activity'}</h2><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
+    head = `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -9063,7 +9111,7 @@ function healthLine0() {
 function statsHealth() {
   const H = HEALTH,
     stops = cur === 'analyses/learning/stops',
-    head = `<div class="adm-shead"><h2>${stops ? 'Stops' : 'Health'}</h2></div>`;
+    head = ''; // no page title: the header says where you are (one pattern for every admin page)
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -9228,7 +9276,7 @@ const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philipp
 function statsConf() {
   const R = ANS.rows || [],
     C = ofAns('conf', () => confusionOf(R));
-  const head = `<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [
+  const head = `<div class="adm-shead">${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
@@ -9359,7 +9407,7 @@ function statsPhotos() {
     L = allPhotos()
       .filter(p => PS[p.f] && nAns(PS[p.f]) >= SF.min)
       .map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2], a: nAns(PS[p.f])}));
-  const head = `<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
+  const head = `<div class="adm-shead">${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']

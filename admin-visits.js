@@ -280,7 +280,7 @@ function renderVisits() {
   status();
   const here = cur,
     head = (since = '') =>
-      `<div class="adm-shead"><h2>Visits</h2><button type="button" class="adm-fchip plain" data-vload title="Read the visits again">↻</button>${since ? `<small class="note">since ${since}</small>` : ''}</div>`;
+      `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-vload title="Read the visits again">↻</button>${since ? `<small class="note">since ${since}</small>` : ''}</div>`;
   if (!PGS || !ANS || !USERS || !EVS) {
     $v.innerHTML = head() + '<p class="note">Loading…</p>';
     Promise.all([PGS ? null : loadPages(), ANS ? null : loadStats(), USERS ? null : loadUsers(), EVS ? null : loadEvents()]).then(

@@ -307,6 +307,20 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px #${h}: view switch ${JSON.stringify(at)}, expected ${r.view} of ${r.n}`);
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
+      // No page title (second admin review: titles were uneven): no heading repeats the page's group, tab or view; the
+      // headings left name a section with its count, a genus or a player.
+      const titles = await p.evaluate(
+        ([h, words]) => {
+          const g = (GROUPS.find(x => x[0] === h.split('/')[0]) || [])[1],
+            re = [...words, g].filter(Boolean).map(x => new RegExp('(^|\\W)' + x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|\\W)', 'i'));
+          return [...document.querySelectorAll('#view h2')]
+            .filter(e => !e.querySelector('small'))
+            .map(e => e.textContent.trim())
+            .filter(t => re.some(x => x.test(t)));
+        },
+        [h, [r.tab, r.name]]
+      );
+      if (titles.length) fails.push(`${w}px #${h}: a page title ${JSON.stringify(titles)}`);
     }
     // The narrowest width of rule U4, 360 px, with the phone run (no job of its own): every view with no
     // page wider than the window, and Coverage's two grids with a view column sorted (its ▲ widens the header), in a
@@ -4487,6 +4501,98 @@ const WIDTHS = [390, 1280];
         if (!(await p.evaluate(() => Object.keys((output().fish || {}).auto || {}).length && (output().fish || {}).out)))
           fails.push(`${w}px Publish: the fish curation is not published`);
       } else fails.push(`${w}px Publish: button still disabled after a change`);
+      // Quality and Growth form keys (second admin review, 2026-11-01: hover + key fired by accident): a key acts only on
+      // the photo that has the focus, never on one the mouse is over, never with Ctrl/Alt/Cmd, never for a stray key.
+      const keyed = []; // [curation key, photo] the keys changed, for the sign out below
+      {
+        await go('photos/review/quality');
+        const two = await p.evaluate(() => [...document.querySelectorAll('#view .adm-qt')].slice(0, 2).map(t => t.dataset.f));
+        const sel = f => `#view .adm-qt[data-f="${f}"]`,
+          q = f => p.evaluate(f => (DRAFT.quality || {})[f] || 0, f);
+        if (two.length < 2) fails.push(`${w}px Quality keys: fewer than 2 photos`);
+        else {
+          const q0 = await q(two[0]);
+          await p.hover(sel(two[0]));
+          await p.evaluate(() => document.activeElement && document.activeElement.blur());
+          await p.keyboard.press('1');
+          if ((await q(two[0])) !== q0) fails.push(`${w}px Quality keys: a key rated the photo under the mouse, without focus`);
+          await p.focus(sel(two[0]));
+          await p.keyboard.press('Control+1');
+          await p.keyboard.press('7');
+          if ((await q(two[0])) !== q0) fails.push(`${w}px Quality keys: Ctrl+1 or a stray key changed the rating`);
+          const want = q0 === 1 ? 3 : 1;
+          await p.hover(sel(two[1]));
+          await p.keyboard.press(String(want));
+          const r = await p.evaluate(([a, b]) => [(DRAFT.quality || {})[a], (DRAFT.quality || {})[b] || 0], two);
+          keyed.push(['quality', two[0]]);
+          if (r[0] !== want || r[1] !== (await p.evaluate(f => (SAVED.quality || {})[f] || 0, two[1])))
+            fails.push(`${w}px Quality keys: the focused photo not rated, or the hovered one was ${JSON.stringify(r)}`);
+        }
+        await go('photos/review/growth-form');
+        const f = await p.evaluate(() => ((document.querySelector('#view .adm-qt') || {}).dataset || {}).f);
+        const gf = () => p.evaluate(f => (DRAFT.gf || {})[f] || '', f);
+        if (!f) fails.push(`${w}px Growth form keys: no photo`);
+        else {
+          const g0 = await gf();
+          await p.hover(`#view .adm-qt[data-f="${f}"]`);
+          await p.evaluate(() => document.activeElement && document.activeElement.blur());
+          await p.keyboard.press('M');
+          if ((await gf()) !== g0) fails.push(`${w}px Growth form keys: a key set the form of the photo under the mouse, without focus`);
+          // A click on a form button redraws the buttons: the tile keeps the focus, so the next key still acts on it.
+          await p.click(`#view .adm-qt[data-f="${f}"] .adm-fseg [data-fm="B"]`);
+          const kept = await p.evaluate(f => document.querySelector(`#view .adm-qt[data-f="${f}"]`).contains(document.activeElement), f);
+          await p.keyboard.press('E');
+          const g1 = await gf();
+          keyed.push(['gf', f]);
+          if (!kept || g1[0] !== 'E')
+            fails.push(`${w}px Growth form keys: after a click the tile lost the focus or E missed ${JSON.stringify({kept, g1})}`);
+        }
+      }
+      // Sign out on a shared device (second admin review): the unpublished draft is sealed with the token, so the plain
+      // draft keys are empty when the page unloads, another token cannot open it, and the same token gets it back.
+      {
+        const mine = () => p.evaluate(K => JSON.stringify(K.map(([k, f]) => (DRAFT[k] || {})[f])), keyed),
+          before = await mine();
+        await p.evaluate(() =>
+          addEventListener('beforeunload', () =>
+            sessionStorage.setItem(
+              'smoke-signout',
+              JSON.stringify({
+                plain: localStorage.getItem('demo:reefid-curation-draft'),
+                base: localStorage.getItem('demo:reefid-curation-base'),
+                sealed: localStorage.getItem('demo:reefid-admin-sealed')
+              })
+            )
+          )
+        );
+        await p.click('.adm-more summary');
+        await Promise.all([p.waitForEvent('load'), p.click('#signout')]);
+        await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
+        await settle();
+        const so = await p.evaluate(async () => {
+          const u = JSON.parse(sessionStorage.getItem('smoke-signout') || '{}'),
+            L = JSON.parse(u.sealed || '[]'),
+            other = await sealKey('another-token')
+              .then(k => crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(L[0].iv)}, k, unb64(L[0].ct)))
+              .then(
+                () => true,
+                () => false
+              );
+          return {
+            plain: u.plain,
+            base: u.base,
+            n: L.length,
+            other,
+            left: localStorage.getItem('demo:reefid-admin-sealed')
+          };
+        });
+        const after = await mine();
+        if (so.plain || so.base || so.n !== 1)
+          fails.push(`${w}px Sign out: the draft was left in plain or not sealed ${JSON.stringify({...so, gf: ''})}`);
+        if (so.other) fails.push(`${w}px Sign out: another token opens the sealed draft`);
+        if (after !== before || keyed.length !== 2 || so.left)
+          fails.push(`${w}px Sign out: the same token did not get the draft back ${JSON.stringify({before, after, left: so.left})}`);
+      }
     }
     if (once && run.has('photos')) await photosPart();
     await finish();
