@@ -541,7 +541,10 @@ function play(cfg) {
   // The judge's domain score D*(t): success naming a photo of t alone (one view) with no choices, over t's theoretical
   // photo distribution (distOf). Item learner: recognition alone (no guess); field and exemplar: every slate genus a
   // possible answer.
-  const dOne = (t, d) => (field ? pField(t, SL, d, true) : exem ? pEx(t, SL, d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
+  // The possible answers for a unit outside the slate (a fish scientific genus, a coral bonus genus: the per-kind measures,
+  // Codex review #783): the units of its own kind, itself included; a slate unit keeps the slate.
+  const vocabOf = t => (SL.includes(t) ? SL : [...new Set([t, ...UALL.filter(g => kindOf(g) === kindOf(t))])]);
+  const dOne = (t, d) => (field ? pField(t, vocabOf(t), d, true) : exem ? pEx(t, vocabOf(t), d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
   const dStar = t => {
     const [mu, sd] = distOf(t);
     // GH holds the physicists' Gauss-Hermite nodes (weight e^(-x^2)) with weights over sqrt(pi): a standard normal z is
