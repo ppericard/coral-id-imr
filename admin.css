@@ -2030,6 +2030,17 @@ body.adm-cmode .adm-toast {
   color: var(--good);
   border-color: var(--good);
 }
+/* The crop editor's rotation (⟲ 0° ⟳): a short row under its bar; 0° is off while the photo is not turned. */
+.adm-rotbar {
+  max-width: 260px;
+}
+.adm-rotbar button {
+  font-size: var(--fs-l);
+}
+.adm-cropbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 .adm-swrow .adm-swcrop.on {
   background: var(--accent);
   color: var(--accent-ink);

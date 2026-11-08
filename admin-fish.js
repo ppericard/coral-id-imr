@@ -174,13 +174,13 @@ const fishJudged = j =>
   !j
     ? '<p class="adm-judge">Not judged yet</p>'
     : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', fishTagText(j.jt), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
-// A fish photo with its crop: Pierre's (draft), else, outside a Check, the pass's. The photos stay remote (iNaturalist,
-// FishBase) until they enter the game (admin plan PR 7).
+// A fish photo with its crop: Pierre's (draft), else, outside a Check, the pass's; and his rotation (fish rot, drawn by
+// admin.js rotFit). The photos stay remote (iNaturalist, FishBase) until they enter the game (admin plan PR 7).
+const fishRot = f => rotNorm(((DRAFT.fish || {}).rot || {})[f]);
 const fishSrc = (p, s, blind) => {
-  const c = ((DRAFT.fish || {}).crop || {})[p.f] || (!blind && p.j && p.j.c) || null;
-  return c
-    ? `src="${esc(img(p, s))}" style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"`
-    : `src="${esc(img(p, s))}"`;
+  const c = ((DRAFT.fish || {}).crop || {})[p.f] || (!blind && p.j && p.j.c) || null,
+    ro = fishRot(p.f);
+  return `src="${esc(img(p, s))}"${c ? ` style="object-view-box:${vbox(c)}"` : ''}${ro ? ` data-rot="${ro}"` : ''}`;
 };
 // Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
 // Indo-West Pacific (the coral origins' colours, admin.js ORIGINS).
@@ -371,7 +371,7 @@ function renderFishCand() {
             `<button type="button" class="adm-fth" data-fp="${esc(q.f)}" aria-label="Enlarge a photo in play">${q.src ? `<img ${fishSrc(q, 1)} alt="" loading="lazy">` : ''}</button>`
         )
         .join('')}</div>
-      <div class="adm-acts adm-swacts">${fishRows(F, p, j, chk, FISHC.entry[sid])}<div class="adm-swrow">${fishNotThisSel(sid, from)}<button type="button" class="adm-swcrop${(F.crop || {})[p.f] ? ' on' : ''}" data-fcrop aria-pressed="${!!(F.crop || {})[p.f]}">Crop</button><button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-acts adm-swacts">${fishRows(F, p, j, chk, FISHC.entry[sid])}<div class="adm-swrow">${fishNotThisSel(sid, from)}<button type="button" class="adm-swcrop${(F.crop || {})[p.f] || fishRot(p.f) ? ' on' : ''}" data-fcrop aria-pressed="${!!((F.crop || {})[p.f] || fishRot(p.f))}">Crop</button><button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button><button type="button" data-skip>Skip</button></div></div>
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button><button type="button" class="add${s && s.keep === 'add' ? ' sug' : ''}" data-add title="${s && s.keep === 'add' ? 'Suggested · ' : ''}Add (1)">+ Add</button></div>
     </section>${fishAutoBlock(true)}`;
     if (nx && nx.p.src) new Image().src = img(nx.p);
@@ -439,11 +439,16 @@ function renderFishCand() {
       render();
     };
     // The crop editor of the corals (admin.js cropEditor), on the fish part: Pierre's crop, else the pass's (never on a
-    // Check); Full photo over a suggested crop is kept as an explicit no-crop.
+    // Check); Full photo over a suggested crop is kept as an explicit no-crop. His rotation (fish rot) with it, one Undo
+    // step for both.
     S.querySelector('[data-fcrop]').onclick = () =>
       cropEditor(pb, {
         start: (DRAFT.fish.crop || {})[f] || (!chk && j && j.c) || null,
-        save: (v, full) => fishPin(G => fishSet(G, f, 'crop', full ? (((SUG.fish || {})[f] || {}).c ? [0, 0, 1, 1] : null) : v))
+        rot: fishRot(f),
+        save: (v, full, ro) =>
+          fishPin(G =>
+            fishSet(fishSet(G, f, 'crop', full ? (((SUG.fish || {})[f] || {}).c ? [0, 0, 1, 1] : null) : v), f, 'rot', rotNorm(ro) || null)
+          )
       });
     S.querySelector('[data-fnot]').onchange = e => {
       const to = e.target.value;

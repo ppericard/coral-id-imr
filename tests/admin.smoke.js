@@ -4476,6 +4476,140 @@ const WIDTHS = [390, 1280];
         if ((await p.evaluate(() => JSON.stringify([DRAFT.genera, DRAFT.seen || {}, DRAFT.exclude || {}, DRAFT.auto || {}]))) !== coral0)
           fails.push(`${w}px Fish Candidates 5b: a coral key changed`);
       }
+      // Rotate a photo (Pierre, 2026-11-08: curation.json rot, fish.rot): in the crop editor, ⟳ ⟳ ⟲ is a quarter right,
+      // the photo and its frame turned together (the box turned, sized to fit, a drag in its own axes); Save puts it in
+      // the draft as one Undo step, drawn at once on the tile (data-rot), the Crop button on, the draft and Publish's
+      // summary counting it; Undo takes it back, Redo again; 0° resets it. Then the same on the fish Candidates
+      // (fish.rot), and both left in the draft for the Publish below.
+      {
+        await go('photos/candidates');
+        const G = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.r && !crOf(x.f) && !roOf(x.f))));
+        await goGenus(G);
+        const f = await p.evaluate(() => {
+          const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
+            x => !crOf(x.closest('[data-f]').dataset.f)
+          );
+          return b && b.closest('[data-f]').dataset.f;
+        });
+        const tile = `#view .adm-tile[data-f="${f}"]`,
+          st0 = await p.evaluate(() => ({title: document.getElementById('save').title, sum: pubSummary(), h: HIST.length}));
+        if (!f) fails.push(`${w}px Rotate: no photo with the Crop tool on ${G}`);
+        else {
+          await p.click(`${tile} [data-act="crop"]`);
+          await p.waitForSelector('#lightbox .adm-rotbar [data-r="90"]');
+          const ed0 = await p.evaluate(() => ({zero: document.querySelector('#lightbox [data-r="0"]').disabled}));
+          await p.click('#lightbox [data-r="90"]');
+          await p.click('#lightbox [data-r="90"]');
+          await p.click('#lightbox [data-r="-90"]');
+          const ed = await p.evaluate(() => {
+            const b = document.querySelector('#lightbox .adm-cropbox'),
+              r = b.getBoundingClientRect();
+            return {
+              t: b.style.transform,
+              zero: document.querySelector('#lightbox [data-r="0"]').disabled,
+              // Turned a quarter: on screen its width is its own height, and it fits the window.
+              swap: Math.abs(r.width - b.offsetHeight) < 2 && Math.abs(r.height - b.offsetWidth) < 2,
+              fits: r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1
+            };
+          });
+          if (!ed0.zero || ed.t !== 'rotate(90deg)' || ed.zero || !ed.swap || !ed.fits)
+            fails.push(`${w}px Rotate: the editor ${JSON.stringify({ed0, ed})}`);
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const r1 = await p.evaluate(
+            ([f, t]) => ({
+              rot: (DRAFT.rot || {})[f],
+              crop: (DRAFT.crop || {})[f],
+              steps: HIST.length,
+              tile: (document.querySelector(t + ' .adm-ph img') || {}).dataset?.rot,
+              on: !!document.querySelector(t + ' [data-act="crop"].on'),
+              title: document.getElementById('save').title,
+              sum: pubSummary(),
+              out: (output().rot || {})[f]
+            }),
+            [f, tile]
+          );
+          if (
+            r1.rot !== 90 ||
+            r1.crop !== undefined ||
+            r1.steps !== st0.h + 1 ||
+            r1.tile !== '90' ||
+            !r1.on ||
+            !/rotations/.test(r1.title) ||
+            /rotations/.test(st0.title) ||
+            !/^1 rotation$/m.test(r1.sum) ||
+            /rotation/.test(st0.sum) ||
+            r1.out !== 90
+          )
+            fails.push(`${w}px Rotate: saved ${JSON.stringify({st0, r1})}`);
+          const state = () =>
+            p.evaluate(
+              ([f, t]) => ({rot: (DRAFT.rot || {})[f], tile: (document.querySelector(t + ' .adm-ph img') || {}).dataset?.rot || null}),
+              [f, tile]
+            );
+          await p.click('#undo');
+          await settle();
+          const r2 = await state();
+          await p.click('#redo');
+          await settle();
+          const r3 = await state();
+          if (r2.rot !== undefined || r2.tile !== null || r3.rot !== 90 || r3.tile !== '90')
+            fails.push(`${w}px Rotate: Undo / Redo ${JSON.stringify({r2, r3})}`);
+          // 0° in the editor, opened on the photo turned: back upright, the key gone; Undo brings the turn back.
+          await p.click(`${tile} [data-act="crop"]`);
+          await p.waitForSelector('#lightbox [data-r="0"]:not([disabled])');
+          await p.click('#lightbox [data-r="0"]');
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const r4 = await state();
+          if (r4.rot !== undefined || r4.tile !== null || /rotation/.test(await p.evaluate(() => pubSummary())))
+            fails.push(`${w}px Rotate: 0° ${JSON.stringify(r4)}`);
+          await p.click('#undo');
+          await settle();
+          if ((await state()).rot !== 90) fails.push(`${w}px Rotate: Undo of 0°`);
+        }
+        // The fish Candidates: the same editor writes fish.rot, a quarter left = 270, drawn on the card.
+        await go('fish/photos/candidates');
+        if (await p.$('.adm-fsw [data-fcrop]')) {
+          const ff = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
+          await p.click('.adm-fsw [data-fcrop]');
+          await p.waitForSelector('#lightbox .adm-rotbar [data-r="-90"]');
+          await p.click('#lightbox [data-r="-90"]');
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const r5 = await p.evaluate(
+            f => ({
+              rot: ((DRAFT.fish || {}).rot || {})[f],
+              coral: (DRAFT.rot || {})[f],
+              card: (document.querySelector('.adm-fsw .adm-swph img') || {}).dataset?.rot,
+              on: !!document.querySelector('.adm-fsw [data-fcrop].on'),
+              sum: pubSummary(),
+              out: ((output().fish || {}).rot || {})[f]
+            }),
+            ff
+          );
+          if (
+            r5.rot !== 270 ||
+            r5.coral !== undefined ||
+            r5.card !== '270' ||
+            !r5.on ||
+            !/^1 fish photo rotation$/m.test(r5.sum) ||
+            r5.out !== 270
+          )
+            fails.push(`${w}px Rotate: fish ${JSON.stringify(r5)}`);
+          // Publish's confirm lists both (refused here: the Publish below sends them).
+          const m = await p.evaluate(() => {
+            const c = window.confirm;
+            let m = null;
+            window.confirm = x => ((m = x), false);
+            document.getElementById('save').click();
+            window.confirm = c;
+            return m;
+          });
+          if (!/^1 rotation$/m.test(m || '') || !/^1 fish photo rotation$/m.test(m || ''))
+            fails.push(`${w}px Rotate: Publish's summary ${JSON.stringify(m)}`);
+        } else fails.push(`${w}px Rotate: no fish candidate with the Crop tool`);
+      }
       errs.length = 0;
       if (await p.isEnabled('#save')) {
         await p.click('#save');
@@ -4486,6 +4620,8 @@ const WIDTHS = [390, 1280];
           fails.push(`${w}px Publish: the auto-sort log or the retests are not published`);
         if (!(await p.evaluate(() => Object.keys((output().fish || {}).auto || {}).length && (output().fish || {}).out)))
           fails.push(`${w}px Publish: the fish curation is not published`);
+        if (!(await p.evaluate(() => Object.keys(SAVED.rot || {}).length && Object.keys((SAVED.fish || {}).rot || {}).length)))
+          fails.push(`${w}px Publish: the rotations are not published`);
       } else fails.push(`${w}px Publish: button still disabled after a change`);
     }
     if (once && run.has('photos')) await photosPart();
