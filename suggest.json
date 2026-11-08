@@ -585,8 +585,8 @@
   "s054": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-06",
-    "n": 26
+    "at": "2026-11-08",
+    "n": 40
    }
   },
   "s049": {
@@ -3434,8 +3434,8 @@
   "s466": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-06",
-    "n": 35
+    "at": "2026-11-08",
+    "n": 47
    }
   },
   "s470": {
@@ -24880,10 +24880,30 @@
    "e": 3,
    "k": "best"
   },
+  "fish-s054-cand-1422483": {
+   "jt": "p1n0sl1",
+   "e": 3,
+   "k": "best"
+  },
   "fish-s054-cand-253568867": {
    "jt": "p1n0sl1",
    "e": 3,
    "k": "best"
+  },
+  "fish-s054-cand-253891996": {
+   "jt": "p1g1ssx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s054-cand-268208046": {
+   "jt": "o1g2mss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s054-cand-268208074": {
+   "jt": "p1g2mss",
+   "e": 2,
+   "k": "dup"
   },
   "fish-s054-cand-268763675": {
    "jt": "p1g2sms",
@@ -24940,6 +24960,16 @@
    "e": 1,
    "k": "best"
   },
+  "fish-s054-cand-467148722": {
+   "jt": "p1g2bmm",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s054-cand-467148723": {
+   "jt": "p1g2bmm",
+   "e": 1,
+   "k": "dup"
+  },
   "fish-s054-cand-467148772": {
    "jt": "p1g2sss",
    "e": 2,
@@ -24965,14 +24995,34 @@
    "e": 3,
    "k": "dup"
   },
+  "fish-s054-cand-472298898": {
+   "jt": "p1g2ml1",
+   "e": 3,
+   "k": "best"
+  },
   "fish-s054-cand-472641073": {
    "jt": "o1g0sl1a",
    "e": 2,
    "k": "best"
   },
+  "fish-s054-cand-577099691": {
+   "jt": "p1g2bm1",
+   "e": 1,
+   "k": "best"
+  },
   "fish-s054-cand-591724913": {
    "jt": "p1n0sl1",
    "e": 3,
+   "k": "best"
+  },
+  "fish-s054-cand-59433364": {
+   "jt": "o1g3ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s054-cand-599137587": {
+   "jt": "o1g1sss",
+   "e": 2,
    "k": "best"
   },
   "fish-s054-cand-599414230": {
@@ -24995,6 +25045,21 @@
    "e": 2,
    "k": "best"
   },
+  "fish-s054-cand-656519180": {
+   "jt": "p1n0ml1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s054-cand-659816067": {
+   "jt": "p1g1slsr",
+   "e": 5,
+   "k": "best"
+  },
+  "fish-s054-cand-675139399": {
+   "jt": "p1g1mss",
+   "e": 3,
+   "k": "best"
+  },
   "fish-s054-cand-675614497": {
    "jt": "p1d2sl1",
    "e": 2,
@@ -25003,6 +25068,11 @@
   "fish-s054-cand-697662850": {
    "jt": "p1g1ssx",
    "e": 1,
+   "k": "best"
+  },
+  "fish-s054-cand-737468825": {
+   "jt": "p1n0sl1",
+   "e": 3,
    "k": "best"
   },
   "fish-s054-cand-fb-Nathy_u1": {
@@ -82853,9 +82923,34 @@
    "e": 2,
    "k": "best"
   },
+  "fish-s466-cand-21996886": {
+   "jt": "o1g2sss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s466-cand-21996890": {
+   "jt": "o1g2sms",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s466-cand-228142549": {
+   "jt": "p1g2ms1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s466-cand-255919837": {
+   "jt": "o1g1sss",
+   "e": 2,
+   "k": "best"
+  },
   "fish-s466-cand-261372689": {
    "jt": "d1g2sss",
    "e": 2,
+   "k": "best"
+  },
+  "fish-s466-cand-266409077": {
+   "jt": "o1g1sms",
+   "e": 3,
    "k": "best"
   },
   "fish-s466-cand-305739688": {
@@ -82872,6 +82967,24 @@
    "jt": "o1g2sms",
    "e": 2,
    "k": "best"
+  },
+  "fish-s466-cand-391406212": {
+   "jt": "p1g0sl1j",
+   "e": 2,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Bold bars, sheltering under a jellyfish like a young trevally while iNat says adult: juvenile flag doubtful"
+  },
+  "fish-s466-cand-391411308": {
+   "jt": "o0g0ss1j",
+   "e": 1,
+   "k": "dup",
+   "u": [
+    "code"
+   ],
+   "n": "Same jellyfish scene, fish half hidden in the tentacles"
   },
   "fish-s466-cand-471525807": {
    "jt": "p1g2bm1",
@@ -82908,6 +83021,21 @@
    "e": 2,
    "k": "best"
   },
+  "fish-s466-cand-519030825": {
+   "jt": "p1d1sms",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s466-cand-558200020": {
+   "jt": "p1g2bl1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s466-cand-581646486": {
+   "jt": "o1g2sms",
+   "e": 2,
+   "k": "best"
+  },
   "fish-s466-cand-58354659": {
    "jt": "p1g2sss",
    "e": 2,
@@ -82922,6 +83050,16 @@
    "jt": "p1g2sms",
    "e": 2,
    "k": "dup"
+  },
+  "fish-s466-cand-6018807": {
+   "jt": "p1g2mss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s466-cand-642670241": {
+   "jt": "p1g2ml1",
+   "e": 2,
+   "k": "best"
   },
   "fish-s466-cand-650829029": {
    "jt": "o1g1msx",
