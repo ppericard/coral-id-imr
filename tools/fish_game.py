@@ -450,8 +450,8 @@ def main():
     ap.add_argument('--max', type=int, default=MAX, help='at most this many downloads in this run (FISH_MAX)')
     a = ap.parse_args()
     if a.plan:
-        fish, cur, cand, sug, refs, codes, crops = inputs(ROOT)
-        todo, keep, _ = plan(fish, cur, cand, sug, load(ROOT, OUT_FILE, {'photos': {}}), refs, codes, crops)
+        fish, cur, cand, sug, refs, codes, crops, rkeep = inputs(ROOT)
+        todo, keep, _ = plan(fish, cur, cand, sug, load(ROOT, OUT_FILE, {'photos': {}}), refs, codes, crops, rkeep=rkeep)
         allr = {**keep, **{r['f']: r for r, _, _ in todo}}
         d = doc(fish, allr)
         fb = sum(1 for r, _, _ in todo if r.get('via') == 'fishbase')

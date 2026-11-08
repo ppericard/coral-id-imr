@@ -546,3 +546,9 @@ test('fish-game.json: the layout tools/fish_game.py writes, only photos in play,
       assert.ok(r2.has(p.f), `${p.f}: not in the R2 list (tools/photos.py DATA)`);
     });
 });
+
+// The offline plan of the command line (Codex review #715: it unpacked one value fewer than inputs gives).
+test('fish_game.py --plan: prints the photos in play and what to download, offline, writing nothing', () => {
+  const out = execFileSync('python3', ['tools/fish_game.py', '--plan'], {cwd: ROOT, encoding: 'utf8'});
+  assert.match(out, /^in play: \d+ photos over \d+ species \(Pierre's adds \d+, candidates judged sure \d+, reference photos \d+\)/);
+});
