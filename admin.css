@@ -4673,6 +4673,15 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-vis .adm-sgrid {
   margin-top: 12px;
 }
+/* On phones the filters' buttons are narrower (as the Analyses' switches), so Who fits a 360 px screen. */
+@media (max-width: 599.98px) {
+  .adm-vfilt .adm-sseg.adm-qseg {
+    max-width: 100%;
+  }
+  .adm-vfilt .adm-sseg button {
+    padding: 0 6px;
+  }
+}
 @media (max-width: 599px) {
   .adm-vpages th:nth-child(3),
   .adm-vpages td:nth-child(3):not([colspan]) {

@@ -251,11 +251,14 @@ function vLoads() {
       return {t: r[1], dev: r[2], w: Number(d.w) || 0, st: d.st ? 1 : 0, p0: typeof d.p0 === 'string' ? d.p0 : ''};
     });
 }
+// Computed once per read of the four and subject, not at each filter click.
+let VMEMO = {};
 function vData() {
+  if (VMEMO.p === PGS && VMEMO.e === EVS && VMEMO.a === ANS && VMEMO.u === USERS && VMEMO.s === ASUBJ) return VMEMO.v;
   const named = new Map();
   ((USERS && USERS.users) || []).forEach(u => u.id && named.set(u.id, u.name));
   const answered = new Set(((ANS && (ANS.all || ANS.rows)) || []).map(r => r[0]));
-  return visitsOf(PGS.rows || [], {
+  const v = visitsOf(PGS.rows || [], {
     own: n => {
       const [sid, p] = pageSubj(n);
       return sid === ASUBJ.id ? p : null;
@@ -266,6 +269,8 @@ function vData() {
     // The genus sheets of a summary are data.json's genera (sync.js pvGenus): the replayed subject's.
     sheets: !!ASUBJ.replay
   });
+  VMEMO = {p: PGS, e: EVS, a: ANS, u: USERS, s: ASUBJ, v};
+  return v;
 }
 function renderVisits() {
   status();
