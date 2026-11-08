@@ -50,6 +50,10 @@ function makeSheet(name) {
             })
           ),
         getValue: () => range.getValues()[0][0],
+        getFormula: () => {
+          const v = cell(r, c);
+          return v && v.formula ? v.formula : '';
+        },
         setValue: v => range.setValues([[v]]),
         setValues(vals) {
           if (vals.length !== nr || vals.some(x => x.length !== nc))

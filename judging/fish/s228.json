@@ -123,6 +123,108 @@
   "fish-s228-cand-fb-Chine_u0": {
    "code": "p1n0sl13",
    "keep": "best"
+  },
+  "fish-s228-cand-253161771": {
+   "code": "d1g0sm1jc1",
+   "keep": "best"
+  },
+  "fish-s228-cand-690157696": {
+   "code": "p1g1smmj2",
+   "keep": "best"
+  },
+  "fish-s228-cand-690157721": {
+   "code": "p1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-690157722": {
+   "code": "p1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-750788837": {
+   "code": "o1g1ssmj1",
+   "keep": "best"
+  },
+  "fish-s228-cand-750788855": {
+   "code": "p1g1smmj1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-340705268": {
+   "code": "p1g1sm1jc2",
+   "keep": "best"
+  },
+  "fish-s228-cand-255288386": {
+   "code": "p1d0sl1j2",
+   "keep": "best"
+  },
+  "fish-s228-cand-255288938": {
+   "code": "o1d0sl1j2",
+   "keep": "alt"
+  },
+  "fish-s228-cand-269608614": {
+   "code": "p1g3bm11",
+   "keep": "dup"
+  },
+  "fish-s228-cand-269608691": {
+   "code": "p1g3bm11",
+   "keep": "best"
+  },
+  "fish-s228-cand-269608747": {
+   "code": "p1g3bm11",
+   "keep": "dup"
+  },
+  "fish-s228-cand-269608807": {
+   "code": "p1g3bmm1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-597648919": {
+   "code": "p1d1ml13",
+   "keep": "best"
+  },
+  "fish-s228-cand-265916974": {
+   "code": "d1g2bm11",
+   "keep": "best"
+  },
+  "fish-s228-cand-530179291": {
+   "code": "p1g2bm11",
+   "keep": "best",
+   "note": "Tiny low-resolution original (446 x 120 px)."
+  },
+  "fish-s228-cand-451154408": {
+   "code": "o1d2mlm2",
+   "keep": "best"
+  },
+  "fish-s228-cand-682666942": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s228-cand-682666980": {
+   "code": "p1g3bsm1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-682667023": {
+   "code": "p1g3bsx1",
+   "keep": "dup"
+  },
+  "fish-s228-cand-682667084": {
+   "code": "p1g3bs11",
+   "keep": "dup"
+  },
+  "fish-s228-cand-620503994": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s228-cand-698224584": {
+   "code": "d1g0smm2",
+   "keep": "best",
+   "note": "Two fish of other kinds lie beside the cigar wrasse on the sand."
+  },
+  "fish-s228-cand-757076212": {
+   "code": "o1g1ss11",
+   "keep": "best"
+  },
+  "fish-s228-cand-471514567": {
+   "code": "p1g1ss12",
+   "keep": "best"
   }
  }
 }

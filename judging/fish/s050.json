@@ -151,6 +151,22 @@
   "fish-s050-cand-624637864": {
    "code": "p1g3bms1",
    "keep": "best"
+  },
+  "fish-s050-cand-598925200": {
+   "code": "p1d3sss1",
+   "keep": "best"
+  },
+  "fish-s050-cand-164175119": {
+   "code": "o1g3slm2",
+   "keep": "best"
+  },
+  "fish-s050-cand-245942767": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s050-cand-245942758": {
+   "code": "o1g1smm3",
+   "keep": "alt"
   }
  }
 }

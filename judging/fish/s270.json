@@ -123,6 +123,103 @@
   "fish-s270-cand-743049744": {
    "code": "p1g2sm13",
    "keep": "best"
+  },
+  "fish-s270-cand-374938205": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-374938272": {
+   "code": "o1g1ms1j1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-468474866": {
+   "code": "o1g1bs1j1",
+   "keep": "best"
+  },
+  "fish-s270-cand-116744912": {
+   "code": "o1d1ssmj1",
+   "keep": "best"
+  },
+  "fish-s270-cand-254475820": {
+   "code": "o1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-456026673": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-456026705": {
+   "code": "o1g0smmj2",
+   "keep": "dup"
+  },
+  "fish-s270-cand-456026711": {
+   "code": "o1g0smmj1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-456026710": {
+   "code": "d1g0slmj1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-626136903": {
+   "code": "o1g1ssm1",
+   "keep": "best"
+  },
+  "fish-s270-cand-626136920": {
+   "code": "o1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-588337215": {
+   "code": "d1g2bs11",
+   "keep": "best"
+  },
+  "fish-s270-cand-655330550": {
+   "code": "o1g1mm13",
+   "keep": "best"
+  },
+  "fish-s270-cand-655330654": {
+   "code": "p1g1smm2",
+   "keep": "alt"
+  },
+  "fish-s270-cand-655330717": {
+   "code": "p1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s270-cand-471888620": {
+   "code": "o1g1ss11",
+   "keep": "best"
+  },
+  "fish-s270-cand-471888608": {
+   "code": "o1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s270-cand-451819969": {
+   "code": "p1g0smm2",
+   "keep": "best"
+  },
+  "fish-s270-cand-758540529": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s270-cand-732414314": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s270-cand-583071010": {
+   "code": "p1g1mm13",
+   "keep": "best"
+  },
+  "fish-s270-cand-459834384": {
+   "code": "o1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s270-cand-459834370": {
+   "code": "o1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-621862290": {
+   "code": "p1g1bsx1",
+   "keep": "best",
+   "note": "A large yellow fish fills the frame; the cleaner wrasse is a small shape below it."
   }
  }
 }

@@ -111,6 +111,102 @@
   "fish-s113-cand-526355890": {
    "code": "p1g1sm14",
    "keep": "best"
+  },
+  "fish-s113-cand-419985219": {
+   "code": "o1g1bm1j1",
+   "keep": "best"
+  },
+  "fish-s113-cand-298783427": {
+   "code": "o1g0smmj2",
+   "keep": "best"
+  },
+  "fish-s113-cand-298783411": {
+   "code": "o1g0ssmj1",
+   "keep": "dup"
+  },
+  "fish-s113-cand-251136498": {
+   "code": "o1g1ssmj1",
+   "keep": "best"
+  },
+  "fish-s113-cand-160129454": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s113-cand-419346062": {
+   "code": "o1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s113-cand-265921821": {
+   "code": "d1g1mm12",
+   "keep": "best"
+  },
+  "fish-s113-cand-419346074": {
+   "code": "o1g1ml12",
+   "keep": "best"
+  },
+  "fish-s113-cand-265917095": {
+   "code": "o1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s113-cand-265917137": {
+   "code": "o1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s113-cand-420784918": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s113-cand-265910288": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s113-cand-265910297": {
+   "code": "o1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s113-cand-419986240": {
+   "code": "p1g1mlm2",
+   "keep": "best"
+  },
+  "fish-s113-cand-265921791": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s113-cand-265911783": {
+   "code": "p1g2ms11",
+   "keep": "best"
+  },
+  "fish-s113-cand-265909297": {
+   "code": "o1g1bm11",
+   "keep": "best"
+  },
+  "fish-s113-cand-468408577": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s113-cand-468408578": {
+   "code": "p1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s113-cand-510716991": {
+   "code": "o1d1ss11",
+   "keep": "dup"
+  },
+  "fish-s113-cand-510716995": {
+   "code": "p1g1sm12",
+   "keep": "best"
+  },
+  "fish-s113-cand-474701679": {
+   "code": "p1g1ml1j2",
+   "keep": "best"
+  },
+  "fish-s113-cand-440302547": {
+   "code": "o1g0ssmj1",
+   "keep": "dup"
+  },
+  "fish-s113-cand-440302536": {
+   "code": "o1g0ssmj1",
+   "keep": "best"
   }
  }
 }

@@ -2637,7 +2637,7 @@ Pierre, 2026-11-03: fish on the same engine as corals (docs/ARCHITECTURE.md "Sub
 - **One photo per question**: fish have no zoom levels (one view), so every question is a single-photo one; the single-view offset (`PICKD.SINGLE`) applies to all of them alike, so it cancels out between entries.
 - **Common first**: `cm` = √(Research Grade observations of its species within 40 km of Dauin), the same scale as the corals' (small integers), read by `commonFactor`.
 - **Circles** (`app.js` `UNITS.fish` `slate`, `gate`: `fishGate`): every circle is on the path and counts in the progress (Pierre, 2026-11-06, Q175: the opt-in sets "SVS video extras" and "Beyond IMR" are gone, so the fish % is further from 100% and dropped once for every fish player; no rules version: no unit's record moves and fish is not replayed). Circles 2 and 3 open after the IMR course's families, at the thresholds their offers had, now automatic (Q177): circle 2 (seen now and then on SVS video) may open once every circle-1 family has been asked; circle 3 (beyond IMR, Pierre: "once the player is good on the IMR ones") once the progress on circle 1 reaches **`FISH_C3` = 0.5** (the average IMR family at Open Water): a learning milestone, never time (rule L1). Until a circle's threshold its families are out of the opening's candidates (`model.js` `mayOpen`, in `quiz.js` `introStart` and `planPhoto`); past it, they join the usual weighted opening (`openPick`). Open all opens circle 1 only (`UNITS.fish` `core`, `introLeft`). `FISH_C3` is a placeholder to watch with real players. **Checks (rules L11-L12, 2026-11-06, #669)**: the thresholds are the opt-in offers' of 2026-11-03, unchanged, and now accepted automatically. For the corals nothing runs differently (no `gate`, `core` = the slate). `tools/learnsim.js`, the four profiles × 5 seeds, before (#656's head, 2cb9a608) and after on the same seeds gives the same summary at question 300 (knowSlate 0.67 / 0.75 / 0.85 / 0.95, prog% 40 / 45 / 53 / 65, met 38.8 / 40 / 40 / 40, right% 77 / 78 / 84 / 94, beginner / lecture RA / strong RA / expert). There is no fish simulator yet: learnsim is coral-only, and fish profiles come with the species level (FISH_PATH). A replay of the real log cannot judge an opening change either, because a different draw asks other questions, and the fish answers are logged only since 2026-11-06 (v60) and not replayed. What was measured instead is the path itself, in `tests/fish.smoke.js`: circle 1 alone opens while a circle-1 family is unasked, circle 2 next, circle 3 only from 50% on circle 1, and every circle moves the %. Watch the fish log once players reach circle 1's end. **Circle 3 by choice** (Pierre, 2026-11-07 08:50; Q204): at the same threshold a card asks instead of opening circle 3 (`UNITS.fish` `opens`, `quiz.js` `openOfferShow`, the open-all offer's "step" card, "Not now" on top); until the player says yes (the card's "Open them" or My progress's button) its families stay out of the opening's candidates (`model.js` `mayOpen` → `app.js` `openShut`), then open one at a time like any family. "Not now" is asked again once, **`OPEN_AGAIN` = 200 answers** later (`core.js` `openState`: about a few sessions of play, long enough not to nag, short enough to come while the player is still on the IMR families), then never. A player whose circle 3 already opened by itself (from #669 to this change: a circle-3 family on a card) is on, never asked. The % is unchanged: circle 3 counts whether open or not (Q204), so a "no" leaves room. **Checks (rules L11-L12)**: the corals have no `opens` and the opening of fish circles 1 and 2 is untouched, so no learnsim before/after (learnsim is coral-only and nothing it runs changes); the choice is checked in `tests/subjects.test.js` (`openState`) and `tests/fish.smoke.js` (the card at the threshold, "Not now" keeps circle 3 closed, once more then never, My progress opens it).
-- **Winks** (`quiz.js` `WINK` = {AT [200, 400]}, `winkAt`, `winkDue`, `winkMerge`): a surprise card for every fish player, circle 1 included (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), late and **once per player** (Pierre, 2026-11-06, after his second fish question was the whale shark: the first only after at least 300 fish answers, the next after about 600-700; 13:31: each surprise once per player, and that's all, across devices). Earlier since 2026-11-08 (Pierre): whale shark from 200, thresher sharks from 400. The whale shark is due at the first photo-quiz question from 200 answers of the player's own fish record (`answersSoFar`, so a reload or a sign-in keeps the count; never the visit's count), the thresher sharks from 400 and at least 200 answers after the whale shark (a player already past both meets them apart, never back to back); a wink beyond `WINK.AT` (none yet) would come the same gap later. The winks shown travel with the player (`reefid-sync-fish-wink` {wink id: answer count when shown}, saved with the progress and merged by union at every sync, `sync.js` `mergeSubject` → `winkMerge` → `core.js` `winkUnion`, whatever a reset, and at an account merge, `mergeUsers`; cleared at sign-out with the other account keys, `signOutClear`), so another device of the same account never shows one again. Never over a card. Never counted: no progress, ability, answer log or photo rating. The corals have none (`UNITS.coral.winks` is empty).
+- **Winks** (`quiz.js` `WINK` = {AT [200, 400]}, `winkAt`, `winkDue`, `winkMerge`): a surprise card for every fish player, circle 1 included (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), late and **once per player** (Pierre, 2026-11-06, after his second fish question was the whale shark: the first only after at least 300 fish answers, the next after about 600-700; 13:31: each surprise once per player, and that's all, across devices). Earlier since 2026-11-08 (Pierre): whale shark from 200, thresher sharks from 400. The whale shark is due at the first photo-quiz question from 200 answers of the player's own fish record (`answersSoFar`, so a reload or a sign-in keeps the count; never the visit's count), the thresher sharks from 400 and at least 200 answers after the whale shark (a player already past both meets them apart, never back to back); a wink beyond `WINK.AT` (none yet) would come the same gap later. The winks shown travel with the player (`reefid-sync-fish-wink` {wink id: answer count when shown}, saved with the progress and merged by union at every sync, `sync.js` `mergeSubject` → `winkMerge` → `core.js` `winkUnion`, whatever a reset, and at an account merge, `mergeUsers`; cleared at sign-out with the other account keys, `signOutClear`), so another device of the same account never shows one again. Never over a card. Never counted: no progress, ability, photo rating, confusion, statistic or analysis; its answer is logged like any other (Pierre, 2026-11-08: "il faut l'enregistrer bien sûr"), Mode `wink` in the sheet's Answers tab (`core.js` `WINK_MODE`, `quiz.js` `winkAnswer`), which every reader of the log leaves out (ARCHITECTURE "Surprise cards' answers"). The corals have none (`UNITS.coral.winks` is empty).
 - **Logged, not replayed**: fish answers are logged to the sheet since v60 (#630), but the sheet computes nothing from them yet (`SUBJECTS` `replay: false`): the pooled photo difficulty and confusions start from their priors only for fish (the judged-ease prior, the IMR look-alikes) until a per-subject `?stats=1` (ROADMAP, admin plan PR 11).
 - **No timed mode, no size estimation**: video ID and EventMeasure measurement are other tools (ROADMAP).
 
@@ -2705,7 +2705,8 @@ changes, all data the engine reads generically (the corals have none of these fi
   bootstrap gate). Now every photo can be drawn from the first question: its judged ease sets its prior difficulty
   (above), the draw aims at the player's level with the success target as for any unit, and the players' ratings
   replace the prior as they come. At the start the easy photos are strongly favoured through the prior and the aim, a
-  harder one comes rarely. **One engine, a calibration per subject** (Pierre, 14:18): the constants that differ live
+  harder one comes rarely; until Open Water a cap keeps it rare whatever the pool (`RARE`, "Rarely under ease 4 before
+  Open Water", below). **One engine, a calibration per subject** (Pierre, 14:18): the constants that differ live
   in `SUBJECTS` `calib`, read through `core.js` `calibOf` (defaults `CALIB`): `ease` (the prior's logits per ease point,
   0.5 for both), `ref` (the draw weight of a never-seen reference-level photo: fish 3, corals 1) and `early` (the start's
   lean: the draw aims `early` logits lower on a unit with no answer, fading as `PDIFF.W` / (`PDIFF.W` + its answers):
@@ -2836,6 +2837,97 @@ was measured instead is the simulated learner above and the draw's easy share (`
 the ability 0.5), not the bar alone: with the bar alone and the start's ability, the narrower targeting drew the harder
 photos about 3% of the time (10% before), a state no player reaches; at that Open Water state they come about a third
 of the time.
+
+### Rarely under ease 4 before Open Water (2026-11-08)
+
+Pierre's rule of 2026-11-06 14:17 ("No wall: before Open Water a photo under ease 4 may come, but rarely") was left to
+the prior and the aim, and they do not hold it. The fish smoke failed on one seed of five (6 of 15 photos under ease 4,
+its bound a third) on a PR that changed nothing in the draw. What was measured (the real app in Chromium, a brand-new
+fish player answering right, 15 questions on the starter families, every photo shown before its family reaches Open
+Water scored on its judged ease; 20 seeds):
+
+| | under ease 4 before Open Water | seeds over the smoke's bound |
+|---|---|---|
+| `main` before the judging batches of 2026-11-08 (8ff76f9) | 64 / 300 = 21.3% | 2 of 20 |
+| `main` after them (77cecab) | 66 / 300 = 22.0% | 2 of 20 |
+| with `RARE` | 25 / 300 = 8.3% (at most 3 of 15) | 0 of 20 |
+
+So the batches did not cause it (the starter families already held about two thirds of their photos under ease 4 before
+them: Damselfishes 65% of 1,029 photos then, 67% of 1,100 now); they only moved the seeded sequence onto a failing seed. The cause is in the
+draw: a family's ability passes 1 after two or three right answers while its progress is still under Open Water, the
+start's lean fades with those answers (`calib.early`, `PDIFF.W`), so the target sits between ease 4 and ease 3, where
+the Gaussian targeting tells them apart little; and a photo's chance is its weight times the number of photos like it,
+so the share under ease 4 follows the pool's counts. In a pool dominated by hard photos (12 easy against 240, the unit
+test) the draw gave 68% under ease 4 before Open Water.
+
+**`model.js` `RARE`, `rareCap`** (Pierre, 2026-11-08, Q252: the share 0.1; Q271: families only): until a unit of the
+subject's own rank (`rareOn`: the fish families; a fish genus, `app.js` `rankOf`, is drawn as before) reaches Open
+Water (`LV_AT[0]`), its photos under ease `RARE.E` (4; for a unit with fewer than `RARE.FEW` (3) photos at 4 or more, under
+its third easiest, as the smoke's per-entry check reads it) make at most `RARE.SHARE` (0.1) of the photos drawn,
+whatever their number. Each observation's hard part is the share of its photos' draw weight that is under the bar; the
+hard photos take one factor, `share / (1 − share)` × the easy part's total / the hard part's, both in the choice of the
+observation (its weight × (1 − hard part + factor × hard part)) and in the choice of its photo, so an observation with
+one easy photo among twenty hard ones counts as mostly hard (Codex review #729: counted as easy it let 91% through).
+Exact for a question showing one photo, as the fish do. Why families only (Pierre, Q271: "le plafond pour les
+familles seulement ... c'est là que le débutant a besoin de photos faciles"): every new genus starts under Open Water
+too, and capping it as well cut the answers on photos under ease 4 by about 30% over 10,000 simulated answers (a study
+of 2026-11-08), slowing their rating, while a player meeting a genus already knows its family. Applied last (after the variety and the floor, so neither lifts
+them back). When they already weigh less (a new unit, whose lean keeps them near 2-9%), nothing changes; past Open
+Water nothing changes. No wall: they still come, about one in ten at most, and among them the least answered still come
+first (the factor is the same for all of them, so `calBonus`'s lean towards unrated photos is kept). An exploration
+question (`CAL.RATE`, among the observations never seen) stays within the cap: before Open Water, once every easy
+observation of the unit has been seen, only the seen hard ones are left out, the seen easy ones stay (Codex review #729:
+otherwise the exploration drew only hard photos, 36% under ease 4 over all questions in the unit test). A photo with no
+judged ease (every coral photo) is never one of them, so the corals' draw is unchanged. `tests/rareease.test.js` runs
+`photoSet` in Node on hard-dominated and mixed pools; `tests/fish.smoke.js` keeps its bound (a third over 15 photos: with
+the share at most a tenth, a seed fails about once in a thousand).
+
+Every circle-1 family (`photoSet` drawn 600 times per stage on a fresh fish player, 4 plausible choices; the stages a
+new family, 3 right answers with the ability 1.2, 6 answers with 1.5, all under Open Water), share under ease 4, worst
+and mean over the 28 families: before 22% / 10%, 38% / 21%, 54% / 32% (Lizardfishes, Spadefishes, Fusiliers: 79-86%
+of their pools under ease 4); with `RARE` 11% / 7%, 12% / 10%, 12% / 10%. The start barely moves: the lean already
+holds it there, except on the families with few easy photos (Moorish Idol 22% → 10%, Triggerfishes 21% → 10%). Past
+Open Water (the bar at 60%, 70%, 85% with 12, 25, 60 answers and the ability 0.5, 1.2, 2) nothing moves: worst / mean
+33% / 18%, 53% / 35%, 79% / 61% before, 34% / 18%, 55% / 35%, 82% / 60% after (seeded noise).
+
+**Learning outcomes** (rule L11 tier 1: `tools/learnsim.js --subject fish`, the four profiles × 5 seeds × 300
+questions, `main` f83f91e against this change (families only, Q271) on the same seeds; the run now logs each
+question's `preOW`, whether its unit was under Open Water and the lowest judged ease shown). Declared before the runs:
+primary, the share of photos under ease 4 among the questions on a family drawn under Open Water, questions 1-300,
+pooled, down; guardrails, true knowledge of the slate at 300 (margin 0.02) and units met at 100 and 300 (margin 2), the
+stats study's margins (one-sided 90% bound of the paired difference, per profile).
+
+| Measure | beginner | lectureRA | strongRA | expert |
+|---|---|---|---|---|
+| **Under ease 4 on a family before Open Water** (primary) | 29.0% → 9.1% | 34.4% → 10.1% | 35.5% → 7.8% | 48.9% → 9.3% |
+| True knowledge, slate, q300 (bound) | 0.362 → 0.363 (−0.001) | 0.529 → 0.523 (−0.009) | 0.690 → 0.697 (+0.002) | 0.944 → 0.943 (−0.001) |
+| Units met, q100 (bound) | 17.8 → 17.6 (−1.3) | 18.6 → 18.6 (−0.7) | 18.2 → 18.4 (−0.7) | 19.4 → 19.2 (−0.5) |
+| Units met, q300 (bound) | 29 → 29 (0) | 29 → 29 (0) | 29 → 29 (0) | 29 → 29 (0) |
+| Right %, q300 | 86.8 → 88.4 | 88.4 → 89.8 | 85.8 → 91.6 | 96.2 → 96.2 |
+| Progress shown, q300 | 15.2 → 14.0 | 19.0 → 19.4 | 21.8 → 22.8 | 28.0 → 27.0 |
+
+The primary falls in 20 of 20 pairs (stratified exact sign-flip, standardised per profile: p = 2 × 10⁻⁶ two-sided).
+Every guardrail is held in every profile (the bound inside its margin; at 300 every player had met all 29 families
+either way). Tier 1 is conclusive and the value was Pierre's (Q252), not a calibration chosen here, so no tier 2. On
+this `main` the share before Open Water had risen to 29-49% (the families of #727 and the judged candidates), so the
+change matters more than the 20-seed replay above suggests. No genus came in the first 300 questions (genera open at
+Advanced since #720), so the simulation does not exercise the families-only scope; `tests/rareease.test.js` does. A
+first tier-1 run of 2026-11-08 with the cap on every unit (genera too) and `main` 77cecab is superseded: there the
+units met at 300 fell for the expert (26.0 → 23.2), which this run, families only, does not reproduce.
+
+**Getting unrated photos rated** (Pierre's worry with Q252). Every trusted answer rates its photo on the sheet
+(`Code.gs` `stats_`: the same Elo for the corals' and the fish's photos, whatever the unit's level, a player's answer
+weighing n / (n + `PHOTO_W.N` 10) after their n answers), and the app reads the ratings for every subject (`PSTAT`,
+`photoDiff`, `calBonus`). The cap is one factor on all the hard photos of a family, so among them the never-answered
+still weigh up to 3 times more (`calBonus`), and the exploration questions (`CAL.RATE`, among the observations never
+seen) still reach them, capped before Open Water and not after; genera are not capped (Q271). In the runs above, 60-95%
+of a player's first 300 questions are under Open Water; the answers on photos under ease 4 in those 300 fall from
+93-178 to 35-101 per player (almost all on photos never answered before), while past Open Water their share is
+unchanged within noise (54-74% after, 61-76% before). With about 1,400 fish answers a week (about 6,000 a month) and
+some 7,300 photos under ease 4 in play, that is roughly 0.3 answers per hard photo per month before and 0.1 after, if
+every answer came from players under Open Water: either way the pool is far larger than the traffic, and the hard
+photos get rated where players meet them, past Open Water. A separate exploration share before Open Water (1%) would
+add at most 1% of those answers, a tenth of what the cap already lets through, so none was added.
 
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
