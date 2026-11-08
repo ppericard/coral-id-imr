@@ -8233,7 +8233,7 @@ const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
 // Out of the statistics (sheet vNEXT, ROADMAP "Security follow-ups", Pierre 2026-11-08): a player or a device not signed in
 // the admin leaves out: their answers rate no photo and leave the Analyses report; their own progress stays. The ids come
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
-const EXCL_SHEET = 113;
+const EXCL_SHEET = 114;
 const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
 const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
