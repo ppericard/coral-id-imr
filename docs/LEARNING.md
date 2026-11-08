@@ -4123,7 +4123,7 @@ code or the docs unless marked *inferred*):
 | Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
 | The app's estimates | its own | told the truth ("fully rated"), or its own Elo |
 | Learner | item (default), field, exemplar | by exposure, and one whose gain depends on the answer and its feedback (as the item learner's) |
-| Horizon | 300-600 questions | 3,000 answers (tier 1), 30,000 (tier 2; 100,000 for the global score's shape) |
+| Horizon | 300 questions (600 when the change acts later) | 3,000 answers at level 2 (10,000 when it touches genera, species or the score's shape), 30,000 at level 3 |
 | Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | 4 profiles × 20 seeds × 2 arms × 3,000 answers in under a minute |
 
 The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo choice, typed questions, `drawW`,
@@ -4132,15 +4132,17 @@ The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo
 app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
 a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
 
-**Profiles** (each subject; in the rated world each run also draws π):
+**Profiles** (the same list for both subjects where it applies; in the rated world each run also draws π). The two IMR
+levels are those used so far (learnsim's `lectureRA` and `strongRA`, the first-launch answer "IMR course", the
+re-simulation's IMR RA):
 
-| Profile | Corals | Fish |
-| --- | --- | --- |
-| Beginner | knows nothing (2%) | knows nothing; both names |
-| Casual diver | - | the common families at the start, common names only |
-| IMR RA | the IMR lecture groups half known | both names; the IMR families half known; the IMR genera from Open Water (#720) |
-| Lecture RA | 2 genera in 5 at 55% (today's `lectureRA`) | the IMR families known after the lecture; both names |
-| Strong RA, expert | as today | most families and genera known; both names |
+| Profile | Who | Corals | Fish |
+| --- | --- | --- | --- |
+| Beginner | knows nothing of the subject | every genus at 2% | every family at the floor; both names |
+| Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little; common names only |
+| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% (today's `lectureRA` picks 2 genera in 5 by data order) | the IMR families half known; both names; the IMR genera from Open Water (#720) |
+| Strong RA | an RA with practice behind the lecture | 3 genera in 5 at 85%, the others 10% | the IMR families and their genera well known; both names |
+| Expert | knows nearly everything | every genus at 93% | families and genera well known, species partly; both names |
 
 **Measures** every run reports (the guardrails among them in the table below):
 
@@ -4158,31 +4160,36 @@ a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 
 **Guardrails and margins** (Pierre's "smallest change that matters", in each measure's units; one-sided 90% bound of the
 paired difference on the side of harm; proposed, for his OK):
 
-| Guardrail | Checkpoints | Margin |
-| --- | --- | --- |
-| True knowledge (D\*, or `knowSlate` in the app world) | 300 and 600 questions; 1,000 and 3,000 answers | −0.02 |
-| E = bar − D\*, the over-claim side | the same | +0.03 |
-| The global score as shown | 1,000 and 3,000 answers (rated world) | −1 point |
-| Answers to the first unit at Open Water | the run | +20% or +10 answers, the larger |
-| Units at Open Water | 300 questions; 1,000 answers | −2 units or −5%, the larger |
-| Longest plateau of the shown score | the run | +20% |
-| Share under ease 4 before Open Water | questions 1-300; answers 1-1,000 | +0.05 |
-| Units met | 100 and 300 questions | −2 units or −5%, the larger (corals: −2 genera, as before) |
+| Guardrail | Checkpoints | Margin | Why this margin |
+| --- | --- | --- | --- |
+| True knowledge (D\*, or `knowSlate` in the app world) | 300 and 600 questions; 1,000 and 3,000 answers | −0.02 | 2 photos in 100 named less well: the statistics study's scale, and below what a player can feel |
+| E = bar − D\*, the over-claim side | the same | +0.03 | the bar must not promise more than the player can do; 3 points of a bar is about the smallest step a player reads |
+| The global score as shown | 1,000 and 3,000 answers (rated world) | −1 point | the % is shown rounded to the point: one point is the smallest change a player sees |
+| Answers to the first unit at Open Water | the run | +20% or +10 answers, the larger | the first level is the hook; a wait a fifth longer is felt, 10 answers is a short session's worth |
+| Units at Open Water | 300 questions; 1,000 answers | −2 units or −5%, the larger | two families or genera fewer is what a player sees on My progress; 5% scales it to a large set |
+| Longest plateau of the shown score | the run | +20% | Pierre's "fast at the start, slow after", without a flat stretch a fifth longer |
+| Share under ease 4 before Open Water | questions 1-300; answers 1-1,000 | +0.05 | half of the 0.1 Pierre set (Q252): a change must not undo half of it unnoticed |
+| Units met | 100 and 300 questions | −2 units or −5%, the larger (corals: −2 genera, as before) | the pace of new units, as the CI test reads it; two units is a card or two a session |
 
-How they were chosen: a point of the shown score and two units are what a player sees move; 0.02 of knowledge and 20%
-of a wait are the statistics study's scale; none comes from the seeds' spread, which sizes tier 2's seeds only. A
-change meant to move one of them declares that cost and its accepted bound before running (rule L11).
+None comes from the seeds' spread, which only sizes the seeds. A change meant to move one of them declares that cost
+and its accepted bound before running (rule L11).
 
-**Tiers and runtimes.** Tier 1: the app world on each subject touched, 5 seeds (corals about 2 minutes on 4 cores,
-fish about 5 minutes per arm), and the rated world, 20 seeds × 3,000 answers, normal photos and one heavy-tailed variant
-(about a minute). Tier 2: 30-40 seeds in the app world (fish, about an hour for both arms on 2 workers, so a manual
-GitHub Action rather than the shared machine), 40 seeds × 30,000 answers in the rated world under both distributions
-(*inferred* from a 10,000-answer run: about half an hour on 4 cores). Neither belongs in the hourly analyses Action (its 2 hours serve the real
-log).
+**Levels and runtimes** (rule L11: the PR declares the level, the integrator checks it):
 
-**First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; exploratory, the protocol not yet
+| Level | App world | Rated world | Time (checked 2026-11-08 unless marked) |
+| --- | --- | --- | --- |
+| 0 | - | - | the CI |
+| 1 | the subject touched, its profiles × 5 seeds × 300 questions | - | corals about 2 minutes on 4 cores; fish about 5 minutes per arm (*inferred*) |
+| 2 | as level 1 | 10 seeds per profile (20 if a result is near a margin) × 3,000 answers (10,000 when the change reaches genera, species or the score's shape), normal photos and one heavy-tailed variant | the rated world under a minute |
+| 3 | 30-40 seeds, sized from the spread seen | 40 seeds × 30,000 answers, both distributions | fish app world about an hour for both arms on 2 workers, so a manual GitHub Action; rated world about half an hour on 4 cores (*inferred* from a 10,000-answer run) |
+
+A large expected effect (several times its margin) is read at the level's fewest seeds; more seeds only when a result is
+near a margin. Neither world belongs in the hourly analyses Action (its 2 hours serve the real log).
+
+**First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; level 2: it changes the fish draw for every
+unit under Open Water; exploratory, the protocol not yet
 approved; the rated world by the scratch harness with the cap mimicked as `rareCap` does, 4 profiles × 20 seeds × 3,000
-answers, told the truth; the app world re-read from #729's own tier-1 runs, 5 seeds × 300 questions). Paired
+answers, told the truth; the app world re-read from #729's own 5-seed runs, 5 seeds × 300 questions). Paired
 difference, in brackets its one-sided 90% bound on the side of harm:
 
 | Measure | Rated world, normal photos | Rated world, heavy tails (15% +1.5) | App world (#729's runs) |

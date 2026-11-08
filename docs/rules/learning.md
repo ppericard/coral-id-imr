@@ -154,30 +154,32 @@ its own record (`startKey`); never a subject named in the code that asks it.
 
 **The simplest algorithm that works.** Don't add a variable, a special case or a hard-coded ramp to patch a problem:
 first rethink the rule or recalibrate the existing settings (example: the opening of units became a slope on `OPEN.K`
-instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers, the effort proportionate to the question,
-the statistics always valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods-study.md) §0,
-§3.2, §4, §6.7; a mean larger than its spread is never a verdict: it passes about 9% of cells with no effect):
-- **tier 0, always**: the unit tests and the CI smokes;
-- **tier 1, any change to the learning algorithm's behaviour**, in **two worlds**, before and after on the same seeds
-  (LEARNING.md "Validating a learning change": the worlds, the profiles, the measures, the margins, the commands):
-  - **the app world**: the real app on the real data (`tests/profiles.smoke.js` over several seeds, and
-    `node tools/learnsim.js` on every subject the change touches: its profiles × 5 seeds);
-  - **the rated world**: photos, units and players each with a continuous Elo difficulty or ability drawn from the
-    distributions LEARNING.md states (normal photos, a heavy-tailed variant beside), the engine running on them, each
-    subject's profiles × 20 seeds, played long enough to reach the levels the change touches.
+instead of new duel/opening knobs, LEARNING.md). **Checks are proportionate to the change's possible effect, and progressive; the statistics always
+valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods-study.md) §0, §3.2, §4, §6.7;
+LEARNING.md "Validating a learning change": the worlds, the profiles, the measures, the margins, the commands). The PR
+declares the change's level with one line of why; the integrator checks it and may raise it; in doubt, the higher one.
 
-  Before running, declare one primary measure, its world, its checkpoint and its direction, and any cost the change is
-  expected to bring (a guardrail it will move, with the bound accepted). Test the primary pooled over the profiles with
-  a stratified sign-flip test on the (profile, seed) pairs (exact up to 20 pairs, else 100,000 draws from a fixed seed); only if that passes, per-profile tests under Holm.
-  The measures of LEARNING.md's guardrail table are guardrails, in both worlds: held when the one-sided 90% bound of the
-  paired difference stays inside its margin, the margins set once there. A guardrail breached or unclear goes to tier 2,
-  or to Pierre when the cost was not declared. Anything else is labelled exploratory, uncorrected. Five seeds catch
-  large effects and breakage, not small improvements;
-- **tier 2, fine calibration** (choosing a value, or tier 1 inside the noise or unclear): 30-40 common seeds in the app
-  world, the number sized from tier 1's spread, and 40 in the rated world under both photo distributions; each setting
-  against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no worse"; the chosen value confirmed on
-  fresh seeds;
-- **tier 3, real data** (rule L12): inference per player (players are the statistical unit), never per answer.
+| Level | The change | The check |
+| --- | --- | --- |
+| 0 | no effect on learning: a wording, the UI, a test, code that gives the same answers | the unit tests and the CI smokes, no simulation |
+| 1 | small and local: one kind of unit, a rare situation, a constant nudged | the app world, the subject touched, its profiles × 5 seeds, 300 questions; the primary and the guardrails it can touch |
+| 2 | changes what players see or learn broadly: the draw, the bar, the opening, the levels, the score | both worlds: the app world as level 1, the rated world 10 seeds per profile, long enough to reach the levels the change touches; every guardrail |
+| 3 | choosing a value, or a level 1 or 2 result close to a margin | 30-40 seeds in the app world, 40 in the rated world under both photo distributions; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no worse"; the value chosen confirmed on fresh seeds |
+
+Every level keeps the unit tests and the CI smokes; from level 1, the real log too (rule L12). **The app world** is the
+real app on the real data (`tests/profiles.smoke.js`, `node tools/learnsim.js`); **the rated world** has photos, units
+and players each with a continuous Elo difficulty or ability drawn from the distributions LEARNING.md states (normal
+photos, a heavy-tailed variant beside), the engine running on them.
+
+**Progressive**: a large expected effect needs no high sensitivity; start with the level's fewest seeds and add seeds
+only when a result lands near a margin (unclear), by the rule declared before running (at level 2, the rated world 10,
+then 20 seeds; then level 3). Before running, declare one primary measure, its world, its checkpoint and its direction,
+and any cost the change is expected to bring (a guardrail it will move, with the bound accepted). Test the primary
+pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact up to 20 pairs, else
+100,000 draws from a fixed seed); only if that passes, per-profile tests under Holm. Guardrails (LEARNING.md's table,
+the margins set once there): held when the one-sided 90% bound of the paired difference stays inside the margin; unclear
+goes one step up; breached, or a cost not declared, goes to Pierre. Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
+9% of cells with no effect). **Real data** (rule L12): inference per player (players are the statistical unit), never per answer.
 
 **Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
 Analyses) get the method suited to the design, found before running (e.g. a factorial design with a mixed-effects
@@ -186,11 +188,11 @@ the model and its assumptions in the PR and check them. They are rare: taking th
 
 *Why:* every added part or variable makes the model harder to calibrate.
 *Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06;
-the rated world beside the app world, 2026-11-08.
+levels by possible effect, the rated world beside the app world, 2026-11-08.
 
 ### L12
 
-**Check algorithm changes against the real players, not only the simulation** (tier 3 of rule L11). Any change to the
+**Check algorithm changes against the real players, not only the simulation** (rule L11, from level 1). Any change to the
 learning algorithm (Elo, progress, draw, opening, difficulty, typed questions…) is checked twice before its PR: in
 `tools/learnsim.js` (5 seeds, the four profiles: no learning path may break) and on the real answer log (read-only
 replay of the sheet's Answers tab, or a saved extract kept outside the repo): the change must not move the app's
