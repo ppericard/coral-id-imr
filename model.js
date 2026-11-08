@@ -460,6 +460,19 @@ function openRight(at = answersSoFar()) {
 // the list and not met (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back,
 // and a reference never waits itself); should every genus left wait (not possible with today's data), they all open.
 // met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
+// The player ever answered "I'm at IMR" to the subject's first-launch question (Pierre, 2026-11-08, Q227: "il faut garder
+// cette information de un jour il a cliqué sur je suis à IMR"), whatever the answer in force now: an imr answer given
+// (the card, the tour, the fallback card) in the record's history, kept whole and merged as a union across devices (h:
+// core.js startEvents, startUnion; reefid-sync-<subject>-start, synced), or a fallback card shown on an imr answer (fb
+// keyed by the imr answer then its direction, merged likewise), which recovers the players the fallback card moved from imr to know before it
+// was turned off for the fish. An inferred answer (startInfer: never asked) and the ease events are no answer.
+const imrSaid = () => {
+  const o = store.get(startKey(SUBJ.id), null);
+  return (
+    startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
+    Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr')
+  );
+};
 function openPick(fresh, list = fresh, met = introduced) {
   // The starter core first (Pierre, 2026-11-04: the fish beta opened on the wrong families): units whose record says
   // `first` (fish.json start: the Butterflyfishes, Angelfishes, Damselfishes, Surgeonfishes) open before any other,
@@ -468,7 +481,8 @@ function openPick(fresh, list = fresh, met = introduced) {
   if (first.length) fresh = first;
   // "I'm at IMR" (the first-launch answer imr): the units the IMR course teaches, their IMR tag (imrName: fish.json imr on
   // families and genera), open before the others (Pierre, 2026-11-06 13:38). Data, not code: the corals have none.
-  if ((store.get(startKey(SUBJ.id), null) || {}).c === 'imr') {
+  // Anyone who ever answered it (imrSaid; Pierre, 2026-11-08, Q238).
+  if (imrSaid()) {
     const tagged = fresh.filter(n => (GX(n) || {}).imrName);
     if (tagged.length) fresh = tagged;
   }
@@ -760,8 +774,10 @@ function startStep(d, k, good, first) {
 // once per answer and direction (fb '<choice>-lo'), so a player who moved from "I know corals well" to "I had the IMR
 // coral course" and still struggles is told once more, never twice about the same answer; and only when it has
 // something to offer: a lower choice or Coral basics not done yet ('lo'), a higher choice ('hi').
+// Never for a subject whose units say startFb false (app.js UNITS: the fish, Pierre 2026-11-08, until the level is
+// better calibrated there).
 const startDue = () => {
-  if (!startOn()) return null;
+  if (!startOn() || (typeof UNITS === 'object' && (UNITS[startS().id] || {}).startFb === false)) return null;
   const o = startOf(),
     d = o && o.v;
   // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct. After an
@@ -1134,8 +1150,11 @@ function memRecalcAll() {
 // Only a unit whose data is in (GX: fish.json and the judged photos, lazy-loaded by app.js fishLoad; Codex review #688):
 // a pull read on another subject (sync.js inSubject) finds FISH null and leaves the record as it is, rebuilt once the fish
 // data comes (app.js fishLoad, the subject's switch), never on the fallback difficulty, since the rebuild is for good.
+// Nothing before data.json is in (DATA, which GX reads first): a link straight to a quiz page brings this file before it
+// (app.js need at start-up), so the call at the end of this file and fishLoad's find no data, and app.js start-up runs
+// it once the data is built (2026-11-08: "reading 'gen'", and fishLoad failing brought the corals back).
 function domRecalcAll() {
-  if (SUBJ.replay || !domRules()) return false;
+  if (SUBJ.replay || !domRules() || !DATA) return false;
   const L = Object.keys(P).filter(
     n => n !== LEVEL && P[n] && typeof P[n].pg === 'number' && !domOn(P[n]) && (P[n].ok || 0) + (P[n].ko || 0) > 0 && !!GX(n)
   );

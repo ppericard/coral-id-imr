@@ -1424,7 +1424,7 @@ async function signin(base) {
         // The fish achievements already held: their pop-ups (First families at about 20 answers) would hold the card a few
         // answers (quiz.js promptOk: no prompt with an achievement toast), which is not what this checks.
         store.set(ACHK, {_v: ACH_V, ...Object.fromEntries(FISH_ACH.map(a => [a.id, 1]))});
-        // The Scientific names offer answered too: since Q205 it comes at Open Water on a family, inside these 20 answers,
+        // The Scientific names offer answered too: it may come inside these 20 answers (a family at Advanced),
         // and an offer card holds the sign-in card the same way.
         Q.sci = false;
         saveQ();
