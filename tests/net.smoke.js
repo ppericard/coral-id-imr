@@ -16,6 +16,9 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json'
 };
 let SWV = 0;
+// Test 13: the deploy's build number this server stamps into index.html (<meta name="build">, tools/stamp_versions.py;
+// a local copy has none), 0 for none.
+let BUILD = 0;
 // Every request for admin.html that reached this server, with the time it came and the time it was answered: printed
 // with the pending list if the admin page of test 9 never reaches DOMContentLoaded (did the worker's fetch get here?).
 const ADMIN_HITS = [];
@@ -42,7 +45,12 @@ const server = http.createServer((req, res) => {
       return res.end();
     }
     const type = TYPES[path.extname(f)] || 'application/octet-stream',
-      body = u === '/sw.js' && SWV ? Buffer.from(b + `\n// deploy ${SWV}\n`) : b; // test 9: a new deploy changes sw.js
+      body =
+        u === '/sw.js' && SWV
+          ? Buffer.from(b + `\n// deploy ${SWV}\n`) // test 9: a new deploy changes sw.js
+          : /^\/(index\.html)?$/.test(u) && BUILD
+            ? Buffer.from(String(b).replace('<meta charset="utf-8">\n', `<meta charset="utf-8">\n<meta name="build" content="${BUILD}">\n`))
+            : b;
     // Text files gzipped when the browser accepts it, as the real host serves them (GitHub Pages): on the throttled
     // lines below, the start-up time is what a player waits, not what an uncompressed data.json would cost.
     if (/^(text\/|application\/(json|manifest)|image\/svg)/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
@@ -69,6 +77,8 @@ const server = http.createServer((req, res) => {
 // 10. Load order (index.html tiers): Home shows before My progress and the Tools files are asked for, the quiz files come
 //    before My progress, which comes before the Tools; a link straight to #quiz, #progress or #lab on a first visit works.
 // 11. A browser driven by a program sends nothing to the sheet on any host name.
+// 13. A page no service worker controls (none in the browser, or blocked) gets a new version from the deployed page's
+//    build number, at the next page change, never in the middle of a question.
 // 12. Photos are read from R2 (core.js PHOTO_BASE), the ones with an online original from R2 only (no copy in img/ since
 //    step 2 of Photos out of the repo, the admin's crop previews too); R2 out of reach, they come from their online
 //    original or the site at once (page and service worker), and the worker keeps them offline under either address;
@@ -675,6 +685,49 @@ const server = http.createServer((req, res) => {
     HELD.splice(0).forEach(x => x.destroy());
     await b9.close();
   }
+  // 13. A new version without a service worker (ROADMAP "New versions for pages no service worker controls"; a chat
+  // app's built-in browser, some private windows): service workers blocked, the page reads the deployed build number
+  // (app.js buildCheck) and takes a newer one as a takeover, reloaded at the next page change, not while a question
+  // waits for its answer.
+  {
+    BUILD = 40;
+    const {ctx, p, errs} = await ctxOf();
+    await p.goto(base + '#practice/quiz');
+    await ready(p);
+    await p
+      .waitForFunction(() => QOPEN, null, {timeout: 20000})
+      .catch(() => fails.push('No service worker: no question waiting for its answer'));
+    if (await p.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller)))
+      fails.push('No service worker: the page is controlled by one');
+    await p.evaluate(() => (window.__old = 1));
+    await p.evaluate(() => swCheck());
+    await p.waitForTimeout(500);
+    if (await p.evaluate(() => UPDATED)) fails.push('No service worker: the same build was taken for a new version');
+    BUILD = 41;
+    await p.evaluate(() => swCheck());
+    await p
+      .waitForFunction(() => UPDATED, null, {timeout: 10000})
+      .catch(() => fails.push('No service worker: a newer deployed build was not seen'));
+    // Back into view with the question still open: no reload now.
+    await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await p.waitForTimeout(500);
+    if (!(await p.evaluate(() => window.__old))) fails.push('No service worker: the page reloaded in the middle of a question');
+    await p.evaluate(() => (location.hash = 'learn/genera'));
+    await p
+      .waitForFunction(
+        () =>
+          !window.__old &&
+          window.APP_READY &&
+          location.hash === '#learn/genera' &&
+          document.querySelector('meta[name="build"]').content === '41',
+        null,
+        {timeout: 20000}
+      )
+      .catch(() => fails.push('No service worker: the page did not reload onto the new build at the next page change'));
+    if (errs.length) fails.push('No service worker: ' + errs.slice(0, 3).join(' | '));
+    BUILD = 0;
+    await ctx.close();
+  }
   // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
   // then My progress, then the Tools, one tier after the other.
   {
@@ -1255,7 +1308,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload, load order and links straight to a page, photos from R2 with the online original or the site as the fallback, the "photo missing" tile.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload (without a service worker too), load order and links straight to a page, photos from R2 with the online original or the site as the fallback, the "photo missing" tile.'
   );
 })().catch(e => {
   console.error(e);

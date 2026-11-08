@@ -3016,8 +3016,26 @@ function curRefresh() {
 let UPDATED = false,
   QOPEN = false,
   swAt = Date.now();
+// A page no service worker controls (a browser without one, such as a chat app's built-in browser or some private
+// windows, or one that blocks it) never sees a takeover: at the same moments, it reads the deployed page's build number
+// (<meta name="build">, the deploy's run number: tools/stamp_versions.py) and a newer one counts as a takeover (UPDATED,
+// the same calm reload). Newer, not different: a host's cache still serving the older page must not reload it in a loop.
+// A copy never deployed has no build: nothing to compare.
+const newBuild = (mine, page) => {
+  const m = /<meta name="build" content="(\d+)">/.exec(page || '');
+  return !!m && /^\d+$/.test(mine || '') && +m[1] > +mine;
+};
+const buildCheck = () => {
+  const b = document.querySelector('meta[name="build"]');
+  if (!b || UPDATED) return;
+  fetch(location.pathname, {cache: 'no-store'})
+    .then(r => (r.ok ? r.text() : ''))
+    .then(t => newBuild(b.content, t) && (UPDATED = true))
+    .catch(() => {});
+};
 const swCheck = () => {
   swAt = Date.now();
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) buildCheck();
   if ('serviceWorker' in navigator)
     navigator.serviceWorker
       .getRegistration()
