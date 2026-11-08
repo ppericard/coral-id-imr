@@ -1035,6 +1035,7 @@ const WIDTHS = [390, 1280];
       'analyses/difficulty/photos',
       'analyses/difficulty/formats',
       'analyses/difficulty/mix-ups',
+      'analyses/difficulty/time',
       'analyses/learning/practice',
       'analyses/learning/after-a-break',
       'analyses/learning/sessions',
