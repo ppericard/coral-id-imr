@@ -6361,10 +6361,12 @@ const CORE_ = (function () { const module = {exports: {}};
           const f = Math.max((o.off || {})[g] || 0, (y.off || {})[g] || 0);
           if (f) o.off = {...(o.off || {}), [g]: f};
         });
-        // and the typed opportunities of its rank, which faOf counts too, P's when more (Codex review #779).
+        // and the typed opportunities of its rank, which faOf counts too (the rank's typed answers less the unit's own):
+        // at least P's, net of each side's own (Codex review #779).
         const rk = rankKey(g),
-          ty = ((isObj(S[LEVEL]) && S[LEVEL].tyk) || {})[rk] || 0,
-          lv = isObj(out[LEVEL]) ? out[LEVEL] : {};
+          lv = isObj(out[LEVEL]) ? out[LEVEL] : {},
+          net = Math.max(0, (((isObj(S[LEVEL]) && S[LEVEL].tyk) || {})[rk] || 0) - (S[g].ty || 0)),
+          ty = net + ((out[g] && out[g].ty) || 0);
         if (ty > ((lv.tyk || {})[rk] || 0)) out[LEVEL] = {...dup(lv), tyk: {...(lv.tyk || {}), [rk]: ty}};
         lift(g, want);
       });

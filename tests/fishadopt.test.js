@@ -423,3 +423,37 @@ test('a refused save recovered by the floored replay: the baseline takes the rep
   await a.syncPull();
   assert.strictEqual(n(a.fish()), 9);
 });
+
+// Codex review #779: another device saves fish answers under no fish rules version (it never adopted it): this one,
+// which adopted the fish replay, takes its version back to 0 (mergeSubject) and must ask for the replay again at once,
+// as for the corals (syncPull: syncSoon when a rules version went back).
+test('a saved copy without the fish rules version: the fish replay asked for again at once', async () => {
+  const s = loadCodeGs(withFiles());
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
+  const a = app({
+    sheet: atv(s),
+    ls: {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-sync-coral-rv': String(C.RV)},
+    SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(today)), srv: 1}
+  });
+  await a.syncPush();
+  assert.strictEqual(a.rvApplied(FS), FRV);
+  // Another device's save of its fish progress under no fish rules version (it never adopted the fish replay), with the
+  // corals' version as this one's.
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {
+      'reefid-sync-coral-progress': '{}',
+      'reefid-sync-coral-rv': JSON.stringify(C.RV),
+      'reefid-sync-fish-progress': JSON.stringify(today),
+      'reefid-sync-fish-rv': '0'
+    },
+    summary: {},
+    answers: [fa('f9', 9)]
+  });
+  a.ctx.SYNC.dirty = false;
+  await a.syncPull();
+  assert.strictEqual(a.rvApplied(FS), 0, 'its version back');
+  assert.strictEqual(a.rvApplied(), C.RV, "the corals' unchanged");
+  assert.strictEqual(a.ctx.SYNC.dirty, true, 'a save scheduled: it brings the replay again');
+});

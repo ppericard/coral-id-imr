@@ -2275,6 +2275,36 @@ test('sheet replays per subject: the floor reads the saved bars with their typed
   assert.notDeepStrictEqual(rec['~level'], high['~level'], "the level is the replay's");
 });
 
+// Codex review #779: the typed opportunities a unit's false-alarm rate reads are the rank's typed answers less its own.
+test("sheet replays per subject: the floor keeps the saved bar's net typed opportunities", () => {
+  const f = withFish(),
+    s = loadCodeGs({fetch: f.fetch}),
+    // ten typed answers on the damselfishes, all right
+    F = Array.from({length: 10}, (_, i) => fa('t' + i, i, {m: 'quiz|t', a: 'f:Damselfishes', ok: 1, ch: ''})),
+    dp = C.domFromCounts({ok: 6, ko: 0, h: '111111'}, 0.5, 4, 0).dp,
+    high = {
+      'f:Damselfishes': {ok: 6, ko: 0, h: '111111', u: 6, dp, ds: 0.9},
+      'f:Wrasses': {ok: 2, ko: 0, h: '11', u: 2, dp, ds: 0.3, conf: {'f:Damselfishes': 2}, off: {'f:Damselfishes': 2}},
+      '~level': {ok: 8, ko: 0, th: 1, tyk: {f: 10}}
+    },
+    bar = (P, n) => C.scoreOf(P[n], P, n),
+    raw = fishWant(F, 'ana'),
+    r = s.post({
+      name: 'Ana',
+      pin: '1234',
+      data: {...prog(3), 'reefid-sync-fish-progress': JSON.stringify(high)},
+      summary: {},
+      answers: F,
+      rvs: {fish: 0}
+    }),
+    rec = r.replays.fish.rec;
+  assert.ok((raw['f:Damselfishes'].ty || 0) > 0, 'its own typed answers in the replay');
+  assert.ok(
+    bar(rec, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9,
+    `${bar(rec, 'f:Damselfishes')} vs ${bar(high, 'f:Damselfishes')}`
+  );
+});
+
 // Codex review #779: a progress reset after the first replay clears the progress, its floor with it.
 test('sheet replays per subject: a fish progress reset drops the floor kept with the record', () => {
   const f = withFish(),

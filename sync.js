@@ -840,11 +840,13 @@ function syncPull() {
         }
         return j;
       }
-      const rv0 = rvApplied();
+      // Every subject the sheet replays (the corals, fish: rvKey), each version applied before the merge (Codex review #779).
+      const rvNow = () => [SUBJECTS.find(x => x.replay), ...rpSubjects()].filter(Boolean).map(rvApplied),
+        rv0 = rvNow();
       groupsSeen(j, me.name); // the beta groups first (v48), as syncOnce
       if (j.found) mergeSaved(j);
       repsSeen(j); // the player's reports (v57), as syncOnce
-      if (rvApplied() < rv0) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
+      if (rvNow().some((v, i) => v < rv0[i])) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
       delete me.err;
       me.last = new Date().toISOString();
       store.set('reefid-account', me);
