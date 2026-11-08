@@ -3145,8 +3145,9 @@ The global fish score's formula (Pierre, 2026-11-04; docs/FISH_PATH.md "My progr
 C = the mean mastery of its listed common names, S = max(species mastery, ½ × genus mastery), credit = a·C + b·S +
 (1 − a − b)·C·S with b = 0.80 and a = 11/15 ≈ 0.733 (so 1 − a − b ≈ −0.533: the second name of a species adds less than the
 first); global = 25% × the entries' mean mastery + 75% × the mean credit over circle 1. The design asked for a simulation
-before it ships (rule L11): the anchors, the entries' 25% share, the genus's half credit, no long plateau. `node
-tools/fishscore.js` runs it (about 2 minutes; `tests/fishscore.test.js` checks the anchors). The species level is not built,
+before it ships (rule L11): the anchors, the entries' 25% share, the genus's half credit, no long plateau. `tools/fishscore.js` ran it
+(about 2 minutes; retired on 2026-11-08 for the rated world, `tools/learnsim.js --world rated`, "Validating a learning
+change"). The species level is not built,
 so `tools/learnsim.js`, which drives the real app, cannot play it: the tool has a deliberately simple model of the path
 instead (the tree of FISH_PATH "Levels": species names and scientific genera of an entry from Advanced, a species'
 scientific name from its genus's Advanced, and for a player learning both names from its common names half-way; one unit
@@ -3258,7 +3259,7 @@ progress (fish)"):
 - Today the species units do not exist: C = 0 and a species' own scientific bar is 0, so the species terms come from the
   genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 67%).
 
-**Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool keeps the formula of 2026-11-04,
+**Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool, since retired, kept the formula of 2026-11-04,
 unweighted and linear, on circle 1 and the old moving-average bar). The size of the job (fish.json after #727): 67 families,
 130 genus units, 664 species, 951 common names, about 1,800 units. Under today's bar a unit already known perfectly needs
 about 24 answers to reach Advanced and 43 to pass its exam (`core.js` `domStep` with the app's adaptive photos, 200 runs), a
@@ -4569,7 +4570,8 @@ code or the docs unless marked *inferred*):
 - **A horizon of the families only.** 300 questions; a fish run takes about 1 minute per worker (checked on 2026-11-08:
   30 runs of 300 questions in 867 s on 2 workers), so the tree (genera from a family's Open Water or Advanced, species,
   circle 3 at 55% of the circle-1 Entries) and the score's later shape (10,000-100,000 answers) are out of its reach.
-  `tools/fishscore.js` keeps the formula of 2026-11-04 on the old moving-average bar.
+  `tools/fishscore.js` kept the formula of 2026-11-04 on the old moving-average bar (retired since: the rated world gives
+  the score's shape on today's engine).
 - **Margins never set.** Rule L11 asks for guardrail margins "set once in LEARNING.md"; PRs have used the statistics
   study's examples (true knowledge 0.02, genera met 2, §3.2 "for example"). A pacing measure the change is meant to move
   then reads as a breach (#729: units met at 300, expert −2.8).
@@ -4635,11 +4637,36 @@ node tools/learnsim.js --world rated --subject fish --seeds 10 --questions 3000 
 node tools/learncmp.js before.json after.json --primary score@3000:up
 ```
 
-First numbers (2026-11-08, told the truth, normal photos, 5 seeds, π −1.26 to 0.25), at 1,000 answers: the beginner
-31.6% shown (17.8 families at Open Water, 77% right over answers 301-1,000), the lecture RA 36.6% (24.6 families, 77%
-right). The app world's of 2026-11-08 above (before #727, the earlier profiles): 37% and 41%, 75-81% right. So the rated
-world reads about 5 points lower, the right rate within the range; the same check on today's app world with these
-profiles is in the PR that built it (#787).
+**The anchor** (2026-11-08, fish, at 1,000 answers; the rated world told the truth, normal photos, 5 seeds, π −1.26 to
+0.25; the app world on main with the same profiles, 2 seeds, `--choice auto`; #787, #789):
+
+| Beginner / lecture RA | Rated, count learner | Rated, item learner | App world (item learner) |
+|---|---|---|---|
+| Score shown | 31.6% / 36.6% | 33.6% / 38.2% | 37.0% / 41.0% |
+| Families at Open Water | 17.8 / 24.6 | 23.0 / 28.0 | 32 / 32 (every circle-1 and circle-2 family) |
+| Families at Advanced | 2.6 / 5.4 | 4.2 / 7.2 | 14 / 16 |
+| Right %, answers 301-1,000 | 77% / 77% | 79% / 81% | 93-95% |
+
+The score agrees within 3-5 points, on the low side; the levels and the right rate lag in the rated world (its learner has
+no photo memory, the world adds the units' μ and the player's π, a guess is uniform among the choices; the causes not
+measured one by one). So the rated world compares two arms within itself, as the protocol pairs them; its levels and
+right rates are not read against the app world's.
+
+**The score's shape** (2026-11-08, the rated world, fish, told the truth, normal photos, count learner, `--beyond yes`, 2
+seeds, π −1.26 and 0.05; the shown %, families and genera at Advanced):
+
+| Answers | Lecture RA (both names) | Casual diver (common names only) |
+|---|---|---|
+| 100 | 10.5% | 9.0% |
+| 300 | 21.0% | 18.5% |
+| 1,000 | 35.5% (2 families) | 31.5% (2.5 families) |
+| 3,000 | 48.5% (31 families) | 46.5% (40.5 families) |
+| 10,000 | 63.0% (60.5 families, 53.5 genera) | 50.0% (64.5 families) |
+
+Fast at the start, slower after, as Q242 asked. The casual diver stops at 50%, the families' share once every family is
+mastered: with no species or common-name unit yet, a player who declines the scientific names has no credit left to
+earn, so the last 6,000 of its 10,000 answers are one plateau (6,277 answers). The lecture RA's genera carry it to 63%.
+This replaces `tools/fishscore.js` (the formula of 2026-11-04 on the old moving-average bar).
 
 **Profiles** (the same list for both subjects where it applies; in the rated world each run also draws π). The two IMR
 levels are those used so far (learnsim's `lectureRA` and `strongRA`, the first-launch answer "IMR course", the
