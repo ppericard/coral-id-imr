@@ -158,16 +158,25 @@ instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers, th
 the statistics always valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods-study.md) §0,
 §3.2, §4, §6.7; a mean larger than its spread is never a verdict: it passes about 9% of cells with no effect):
 - **tier 0, always**: the unit tests and the CI smokes;
-- **tier 1, any change to the learning algorithm's behaviour** (`tests/profiles.smoke.js` over several seeds, and
-  `node tools/learnsim.js`: the four profiles × 5 seeds, before and after on the same seeds, about 2 min; LEARNING.md
-  "Learning-outcome simulation"). Before running, declare one primary measure, its checkpoint and its direction. Test it
-  pooled over the four profiles with an exact stratified sign-flip test on the 20 (profile, seed) pairs; only if that
-  passes, per-profile tests under Holm. The other measures are guardrails: held when the one-sided 90% bound of the
-  paired difference stays inside a margin set once in LEARNING.md. Anything else is labelled exploratory, uncorrected.
-  Five seeds catch large effects and breakage, not small improvements;
-- **tier 2, fine calibration** (choosing a value, or tier 1 inside the noise): 30-40 common seeds, the number sized from
-  tier 1's spread; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no
-  worse"; the chosen value confirmed on fresh seeds;
+- **tier 1, any change to the learning algorithm's behaviour**, in **two worlds**, before and after on the same seeds
+  (LEARNING.md "Validating a learning change": the worlds, the profiles, the measures, the margins, the commands):
+  - **the app world**: the real app on the real data (`tests/profiles.smoke.js` over several seeds, and
+    `node tools/learnsim.js` on every subject the change touches: its profiles × 5 seeds);
+  - **the rated world**: photos, units and players each with a continuous Elo difficulty or ability drawn from the
+    distributions LEARNING.md states (normal photos, a heavy-tailed variant beside), the engine running on them, each
+    subject's profiles × 20 seeds, played long enough to reach the levels the change touches.
+
+  Before running, declare one primary measure, its world, its checkpoint and its direction, and any cost the change is
+  expected to bring (a guardrail it will move, with the bound accepted). Test the primary pooled over the profiles with
+  an exact stratified sign-flip test on the (profile, seed) pairs; only if that passes, per-profile tests under Holm.
+  The measures of LEARNING.md's guardrail table are guardrails, in both worlds: held when the one-sided 90% bound of the
+  paired difference stays inside its margin, the margins set once there. A guardrail breached or unclear goes to tier 2,
+  or to Pierre when the cost was not declared. Anything else is labelled exploratory, uncorrected. Five seeds catch
+  large effects and breakage, not small improvements;
+- **tier 2, fine calibration** (choosing a value, or tier 1 inside the noise or unclear): 30-40 common seeds in the app
+  world, the number sized from tier 1's spread, and 40 in the rated world under both photo distributions; each setting
+  against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no worse"; the chosen value confirmed on
+  fresh seeds;
 - **tier 3, real data** (rule L12): inference per player (players are the statistical unit), never per answer.
 
 **Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
@@ -176,7 +185,8 @@ model, seeds or players as random effects, interactions in the model rather than
 the model and its assumptions in the PR and check them. They are rare: taking the time is expected.
 
 *Why:* every added part or variable makes the model harder to calibrate.
-*Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06.
+*Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06;
+the rated world beside the app world, 2026-11-08.
 
 ### L12
 
