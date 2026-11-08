@@ -301,6 +301,12 @@ const noteRecent = (s, ph) => {
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
 };
 
+// The judge's photo population of unit n: every game photo the game may ask (app.js gamePhotoOk, as photoSet reads it:
+// an extra genus's only Pierre's own or Research Grade; Codex review #789).
+const judgePhotos = (ctx, G, n) => [...new Set(VIEWN.flatMap(v => G[n].views[v] || []))].filter(p => ctx.gamePhotoOk(n, p));
+// The units a typed answer on t may name instead: the others met, of t's rank (quiz.js typeMatch: a coral bonus genus and
+// a slate genus alike; Codex review #789), not of its reporting kind.
+const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (G[n].rank || '') === (G[t].rank || ''));
 // One run: profile (learnprof name) x seed, N answers, checkpoints cps; learner 'count' (by the number of answers) or
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
 // given PICKED, a card as one right answer).
@@ -327,7 +333,7 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     trueD = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0),
     pRec = (n, d, single = true) => sig(logit(know[n]) + W.pi - d - (single ? RATED.SINGLE : 0)),
     dStar = n => {
-      const L = [...new Set(VIEWN.flatMap(v => G[n].views[v] || []))]; // every game photo of the unit
+      const L = judgePhotos(ctx, G, n);
       return L.length ? L.reduce((t, p) => t + pRec(n, trueD(n, p)), 0) / L.length : null;
     },
     UA = [...slate, ...U.extra],
@@ -380,7 +386,7 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     if (c3.met === null && U.c3.some(M.introduced)) c3.met = i + 1;
     // The question: an exam question when its unit is ready for one, else the photo quiz's; typed or among choices.
     const {exam, typed, chs, k, set} = question(M, ctx, G, t, {list, cards, start}),
-      same = list.filter(n => n !== t && M.introduced(n) && kindOf(n) === kindOf(t)),
+      same = typedOthers(G, list, t, M.introduced),
       ph = set.shown || [];
     if (!ph.length) throw new Error(`no photo for ${t} at answer ${i + 1} (exam ${exam}, typed ${typed}, k ${k}): ${JSON.stringify(set).slice(0, 200)}`);
     const d = mean(ph.map(p => trueD(t, p))),
@@ -504,7 +510,7 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
   };
 }
 
-module.exports = {RATED, ITEM, world, engine, runOne, fishUnits, coralUnits, unitsOf, question, noteRecent};
+module.exports = {RATED, ITEM, world, engine, runOne, fishUnits, coralUnits, unitsOf, question, noteRecent, judgePhotos, typedOthers};
 
 // The rated world's checkpoints: the guardrails' (LEARNING.md) up to the horizon, and the horizon.
 const checkpoints = N => [...new Set([100, 300, 1000, 3000, 10000, 30000].filter(q => q <= N).concat([N]))].sort((a, b) => a - b);

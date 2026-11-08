@@ -139,3 +139,20 @@ test('the last two observations shown are recorded, as photoSet reads them', () 
   const ro = Object.values(run.P).filter(x => x && Array.isArray(x.ro));
   assert.ok(ro.length > 3 && ro.every(x => x.ro.length <= 2), String(ro.length));
 });
+
+// Codex review #789: the judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.
+test('D* over the game photos only; a typed miss on a slate genus may name a bonus genus', () => {
+  const U = RW.unitsOf('coral'),
+    {ctx, G} = RW.engine(U, RW.world(U, 1)),
+    all = [...new Set(['wide', 'medium', 'macro'].flatMap(v => G.Millepora.views[v] || []))],
+    ok = RW.judgePhotos(ctx, G, 'Millepora');
+  assert.ok(ok.length > 0 && ok.length < all.length, `${ok.length} of ${all.length}`);
+  ok.forEach(p => assert.ok(ctx.gamePhotoOk('Millepora', p)));
+  const b = U.extra[0],
+    o = RW.typedOthers(G, ['Acropora', 'Porites', b], 'Acropora', () => true);
+  assert.deepStrictEqual(o, ['Porites', b]);
+  const F = RW.unitsOf('fish'),
+    g = F.extra[0],
+    fo = RW.typedOthers(RW.engine(F, RW.world(F, 1)).G, [F.slate[0], F.slate[1], g], F.slate[0], () => true);
+  assert.deepStrictEqual(fo, [F.slate[1]]); // a family's typed miss names a family, never a genus
+});
