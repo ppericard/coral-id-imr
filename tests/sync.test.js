@@ -1732,7 +1732,11 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
   const r = s.post({name: 'Ana', pin: '1234', data: prog(9), summary: {}, answers: L, rv: 0});
   const A = s.sheets.Answers,
     col = A.rows[0].indexOf('Scoring');
-  assert.deepStrictEqual([col, A.rows[0].length], [22, 24], 'Scoring in column W (core.js LOG_SC), Rejected tries after it (v100)');
+  assert.deepStrictEqual(
+    [col, A.rows[0].length],
+    [22, 25],
+    'Scoring in column W (core.js LOG_SC), Rejected tries (v100) and Device (Q312) after it'
+  );
   assert.strictEqual(col, C.LOG_SC);
   assert.deepStrictEqual(
     A.rows.slice(1).map(x => x[col]),

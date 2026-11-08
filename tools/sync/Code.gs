@@ -47,7 +47,13 @@ const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 // rank's name on a genus question), in order, as a JSON list (at most 10, each cleaned and cut to 40 characters as
 // Typed); blank when none. Logged only: nothing the script computes reads it, and every reader takes the columns before
 // it as they were.
-const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries'];
+// Device (vNEXT, Pierre 2026-11-08, Q312): the anonymous id of the device that sent the answer (sync.js devId, the Device
+// of its Events and Pages rows; dev in the save or the anonymous send, from the apps that know vNEXT), signed in or not;
+// blank when the app sent none (an app before it, a row logged before). Logged only, served to no reader yet; blanked
+// when a deleted account's answers are kept as "~deleted <id>" (deleteAccount_, rule D7), so they never lead back to a
+// device.
+const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device'];
+const DEV_COL = LOG.indexOf('Device');
 const SC_COL = LOG.indexOf('Scoring');
 // The Activity tab (one formula over the Answers tab): answers, right and last answer per player. v98: a surprise
 // card's answer (Mode wink, core.js WINK_MODE) counts in none of them; the formula of the tab made before (ACTIVITY_V1)
@@ -194,7 +200,7 @@ function doPost_(e){
     // A name the admin removed or merged, with its old code: no new account. Answers of a merged name go to the name it
     // joined; the app then asks the player to sign out (and to sign in under the other name).
     const g = r ? null : gone_(name, h);
-    if (g) { if (g.into) logAnswers_(g.into, p.answers); return json_({ok: false, error: 'gone', into: g.into, log: !!g.into}); }
+    if (g) { if (g.into) logAnswers_(g.into, p.answers, null, p.dev); return json_({ok: false, error: 'gone', into: g.into, log: !!g.into}); }
     // v58 (Codex review #603): the generation the device saved under (acct, sync.js), checked under the lock before
     // anything is logged or written: no account of the name any more, or another generation of it (archived, the name
     // taken again since), and the save is refused as archived (the app stops and says so).
@@ -216,7 +222,7 @@ function doPost_(e){
       pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
       dropRows_(RPL.TAB, '~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now)
     }
-    logAnswers_(name, f.fresh, f.seen);
+    logAnswers_(name, f.fresh, f.seen, p.dev);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
     const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
     if (typeof p.at === 'number' && p.at !== rev) return json_({ok: false, error: 'stale', log: true, rev: rev});
@@ -275,8 +281,10 @@ function freshAnswers_(answers){
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
   return {seen: seen, fresh: (Array.isArray(answers) ? answers : []).filter(a => a && a.id && !seen.has(String(a.id)))};
 }
-function logAnswers_(name, answers, seen0){
+// dev (vNEXT): the sending device's anonymous id (dev_), in every row of the send; blank when the app sent none.
+function logAnswers_(name, answers, seen0, dev){
   if (!Array.isArray(answers) || !answers.length) return;
+  const dv = dev_(dev);
   const sh = sheet_('Answers', LOG);
   // The new columns first (v60): the header check below reads the last one, which a tab made before has not.
   if (sh.getMaxColumns && sh.getMaxColumns() < LOG.length) sh.insertColumnsAfter(sh.getMaxColumns(), LOG.length - sh.getMaxColumns());
@@ -296,7 +304,7 @@ function logAnswers_(name, answers, seen0){
   // its family (core.js renameLogEntry, the row's species shown deciding a split entry), so the log holds family ids only.
   const rows = answers.filter(a => a && a.id && ID.test(String(a.id)) && !seen.has(String(a.id))).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
-      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj)]; });
+      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv]; });
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
@@ -304,6 +312,9 @@ function logAnswers_(name, answers, seen0){
   dropHold_(name);
 }
 const num_ = x => typeof x === 'number' && isFinite(x) ? x : '';
+// vNEXT: a device id as the app makes it (sync.js devId: a string of 10 lower-case letters and digits; 8 to 16 accepted,
+// as the Events' Device, events_), else blank: never anything a cell could read as a formula.
+const dev_ = x => typeof x === 'string' && /^[a-z0-9]{8,16}$/.test(x) ? x : '';
 // v23: seconds to answer, 0-600 to the tenth (blank when the app sent none: before v23, or photos never loaded); and a
 // 0/1 flag (blank when not sent).
 const secs_ = x => typeof x === 'number' && isFinite(x) ? Math.round(Math.max(0, Math.min(600, x)) * 10) / 10 : '';
@@ -1138,6 +1149,17 @@ function relabel_(tab, col, from, into){
   if (n && tab === 'Answers') { dropHold_(from); dropHold_(into); }  // their opening hold (hold_) is computed again
   return n;
 }
+// vNEXT: blanks the Device column (DEV_COL) of every Answers row of this name: one write of that column, only when a cell
+// changes.
+function devBlank_(name){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers');
+  if (!sh || sh.getLastRow() < 2 || (sh.getMaxColumns && sh.getMaxColumns() <= DEV_COL)) return 0;
+  const n = sh.getLastRow() - 1, names = sh.getRange(2, 1, n, 1).getValues(), rg = sh.getRange(2, DEV_COL + 1, n, 1), v = rg.getValues(), k = lc_(name);
+  let c = 0;
+  v.forEach((r, i) => { if (lc_(names[i][0]) === k && r[0] !== '') { r[0] = ''; c++; } });
+  if (c) rg.setValues(v);
+  return c;
+}
 // v48: beta groups (Pierre, 2026-11-04: "fish opens to a group I pick in the admin, for now everyone; not one site-wide
 // switch"). A subject that opens to a group (core.js SUBJECTS open: 'group', subjGroup, v53; until v52 its beta label: fish) opens in the app to the admin and to the players of its group,
 // named by the subject's id. The Groups tab holds one row per membership: Group, Name, Added. The app learns its player's
@@ -1180,6 +1202,7 @@ function groupSet_(ra, names, g, on){
 function deleteAccount_(name, all){
   const del = '~deleted ' + aid_(name);
   const answers = all ? dropRows_('Answers', name) : relabel_('Answers', 1, name, del);
+  if (!all && answers) devBlank_(del);  // vNEXT: the answers kept lead back to no device (rule D7)
   const reports = all ? dropRows_('Reports', name, 2) : anonReports_(name, del);
   pagesDrop_(new Set([aid_(name)]));
   ['RAs', DATA_TAB, 'By genus', RPL.TAB].forEach(t => dropRows_(t, name));
@@ -1698,7 +1721,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
   try {
     const f = freshAnswers_(L);
     if (f.fresh.length && (over_('a:' + id, 600, f.fresh.length) || over_('anon', 6000, f.fresh.length))) return {ok: false, error: 'busy'};
-    logAnswers_('~anon ' + id, f.fresh, f.seen);
+    logAnswers_('~anon ' + id, f.fresh, f.seen, p.dev);
     // v28: a device that never signed in gets its full replay too, under its anonymous id (replay_), when its app
     // applied an older rules version.
     const out = {ok: true, log: true};

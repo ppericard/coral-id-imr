@@ -237,7 +237,7 @@ test('Code.gs v100: Rejected tries, a JSON list, cleaned and capped; blank when 
       ans('a3', {rj: 'not a list'})
     ]
   });
-  assert.strictEqual(s.sheets.Answers.rows[0].at(-1), 'Rejected tries');
+  assert.strictEqual(s.sheets.Answers.rows[0][23], 'Rejected tries');
   const R = s.sheets.Answers.rows.slice(1).map(r => r[col('Rejected tries')]),
     L = JSON.parse(R[0]);
   assert.deepStrictEqual(L.slice(0, 4), ['xyzcoral', 'brain coral', '=SUM(A1)', 'y'.repeat(40)]);
@@ -253,7 +253,7 @@ test('Code.gs: no reader counts differently with refused texts logged', () => {
   const a = sheet(false),
     b = sheet(true),
     run = (s, x) => vm.runInContext(x, s.ctx);
-  assert.ok(b.sheets.Answers.rows.slice(1).some(r => r.at(-1)));
+  assert.ok(b.sheets.Answers.rows.slice(1).some(r => r[23]));
   assert.deepStrictEqual(
     b.post({readAnswers: 1, token: TOK}).rows.map(r => r.slice(1)),
     a.post({readAnswers: 1, token: TOK}).rows.map(r => r.slice(1))

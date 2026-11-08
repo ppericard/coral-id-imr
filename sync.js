@@ -582,7 +582,8 @@ function syncOnce(tries = 0) {
             ...(typeof me.srv === 'number' ? {at: me.srv} : {}),
             // The account generation this device saved under (sheet v58): checked under the sheet's lock, so a record
             // archived between this load and this save is never overwritten (Codex review #603).
-            ...(me.acct ? {acct: me.acct} : {})
+            ...(me.acct ? {acct: me.acct} : {}),
+            ...(log.length ? devField() : {}) // the device of its answers (sheet DEV_SHEET)
           })
         },
         info,
@@ -996,7 +997,8 @@ function sendAnon() {
       rv: rvApplied(),
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
       ...(cut ? {reset: cut} : {}),
-      ...(store.get(sk, null) ? {start: store.get(sk, null)} : {})
+      ...(store.get(sk, null) ? {start: store.get(sk, null)} : {}),
+      ...devField() // the device of its answers (sheet DEV_SHEET)
     })
   })
     .then(r => r.json())
@@ -1025,8 +1027,9 @@ function sendAnon() {
 // Events (Pierre, 2026-11-02: most RAs will not report problems, so the app reports what it can by itself; sheet v19
 // events_): app errors, photos that still fail after their retries, saves that fail while online, and the answers to the
 // occasional one-tap question (pulse). Anonymous: a random device id of its own (EVID, never a name or the answers' id),
-// the app version and a short browser name; only the pages summaries (pagesSend, sheet v30) are tied to the player's
-// answers, under the admin's id of the player. Queued here (EVQ, at most 50) and sent in small batches; never from a local
+// the app version and a short browser name; the pages summaries (pagesSend, sheet v30) are tied to the player's
+// answers, under the admin's id of the player, and (Q312) every answer this device sends carries the same device id
+// (devField, the Answers tab's Device). Queued here (EVQ, at most 50) and sent in small batches; never from a local
 // copy (LOCAL) nor without the sync URL. At most EV_MAX reports a visit, the same message once.
 const EVID = 'reefid-dev-id',
   EVQ = 'reefid-evq',
@@ -1042,6 +1045,13 @@ const devId = () => {
   }
   return id;
 };
+// The device on every answer (Pierre, 2026-11-08, Q312): a save and an anonymous send carry this device's id (dev, the
+// Device of its events), which the sheet writes in each answer's Device column, signed in or not; only once the
+// script's replies say v >= DEV_SHEET (rule D4: an older script would drop it), else nothing more is sent, as before.
+// The answers a request sends are all this device's own (its queue), so one id per request.
+const DEV_SHEET = 108;
+const devOn = () => sheetV() >= DEV_SHEET;
+const devField = () => (devOn() ? {dev: devId()} : {});
 // The app's version as the sheet and the admin's Errors page see it: the deploy's build number, then app.js's content
 // hash (tools/stamp_versions.py: "<build>-<hash>", higher is newer); a copy never deployed has no build, only its ?v.
 const appVer = () => {
