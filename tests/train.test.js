@@ -63,7 +63,8 @@ print(json.dumps({'message': 'Not Found: ' + method + ' ' + path}))
 sys.exit(1)
 `;
 
-// origin with main and PRs 1-5: 1 and 2 touch b.txt and c.txt, 3 conflicts with 1, 4 still holds a sheet changes file.
+// origin with main and PRs 1-6: 1 and 2 touch b.txt and c.txt, 3 conflicts with 1, 4 still holds a sheet changes file,
+// 6 brings its own tools/sheet_version.py (which must never run).
 const fixture = () => {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'train-')),
     origin = path.join(d, 'origin.git'),
@@ -100,7 +101,8 @@ const fixture = () => {
     2: pr(2, 'c.txt', 'c\n'),
     3: pr(3, 'b.txt', 'b three\n'),
     4: pr(4, 'tools/sync/changes/claude-x.md', 'an entry\n'),
-    5: pr(5, 'd.txt', 'd\n')
+    5: pr(5, 'd.txt', 'd\n'),
+    6: pr(6, 'tools/sheet_version.py', `open(${JSON.stringify(path.join(d, 'ran'))}, 'w').write('pr code ran')\nraise SystemExit(1)\n`)
   };
   execFileSync('git', ['clone', '-q', origin, clone], {stdio: 'pipe'});
   fs.mkdirSync(bin);
@@ -114,7 +116,7 @@ const fixture = () => {
   const setState = (o = {}) =>
     fs.writeFileSync(
       state,
-      JSON.stringify({prs: Object.fromEntries([1, 2, 3, 4, 5].map(n => [n, {title: 'PR ' + n}])), train_runs: runs('success'), ...o})
+      JSON.stringify({prs: Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, {title: 'PR ' + n}])), train_runs: runs('success'), ...o})
     );
   setState();
   const train = (...a) =>
@@ -161,6 +163,17 @@ test('--dry-run checks the PRs and builds the train, pushes and merges nothing',
       f.calls().join('\n')
     );
     noWorktreeLeft(f);
+  } finally {
+    f.done();
+  }
+});
+
+test("the sheet check runs main's validator, never one a PR's head brings (Codex security review #757)", () => {
+  const f = fixture();
+  try {
+    const r = f.train('--dry-run', '6');
+    assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+    assert.ok(!fs.existsSync(path.join(f.d, 'ran')), "the PR's tools/sheet_version.py ran");
   } finally {
     f.done();
   }

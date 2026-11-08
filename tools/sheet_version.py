@@ -36,7 +36,7 @@ CHANGES = 'tools/sync/changes'
 TOKEN = 'v' + 'NEXT'  # spelled apart so this file never holds the placeholder itself
 HEAD = re.compile(r'^(?P<pre>// .*?  VERSION )(?P<n>\d+) \((?P<date>\d{4}-\d\d-\d\d): (?P<rest>v(?P<first>\d+): .*)$')
 CONST = re.compile(r'^const VERSION = (\d+);', re.M)
-GATE = re.compile(r'\bconst ([A-Z][A-Z0-9]*_SHEET) = (\d+);')  # as tests/gates.test.js finds them
+GATE = re.compile(r'\bconst ([A-Z][A-Z0-9_]*_SHEET) = (\d+);')  # START_ADMIN_SHEET too (Codex review #757)
 HISTORY = '- Version history: v2 Answers/Activity tabs; '
 BARE = re.compile(r'`[^`\n]*`|\b' + TOKEN + r'\b')  # a code span is skipped whole, so only a bare token matches
 
@@ -258,6 +258,16 @@ def assign(root='.', date=None, dry=False, base=None):
         body = edits.get(f, read(f, root))
         edits[f] = BARE.sub(lambda m: 'v%d' % n if m.group(0) == TOKEN else m.group(0), body)
         said.append('%s: %d x %s -> v%d' % (f, k, TOKEN, n))
+    if 'core.js' in edits and GS in edits:
+        # Code.gs embeds core.js (tools/sync_core.py): its copy takes the edited gates too (Codex review #757).
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from sync_core import HEAD as C_HEAD, BEGIN as C_BEGIN, END as C_END, TAIL as C_TAIL, block
+        gs = edits[GS]
+        i = gs.find(C_HEAD + C_BEGIN)
+        j = gs.find(C_END + C_TAIL, i) if i >= 0 else -1
+        if j >= 0:
+            edits[GS] = gs[:i] + block(edits['core.js']) + gs[j + len(C_END + C_TAIL):]
+            said.append('%s: its embedded core.js copied again' % GS)
     said.append('%s: removed' % path)
     if not dry:
         for f, body in edits.items():

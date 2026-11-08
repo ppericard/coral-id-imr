@@ -12,7 +12,8 @@ In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch, 
    the merge contract (Codex findings answered, threads resolved, "Choices I made" empty) is the integrator's to check
    before it names a PR here.
 2. Builds the train in a temporary worktree without the photos: origin/main, then each head merged in order. A conflict
-   stops it (leave that PR out, or bring it up to date). The sheet rules are checked on it as on main.
+   stops it (leave that PR out, or bring it up to date). The sheet rules are checked on it as on main, by main's copy
+   of tools/sheet_version.py: no code from a PR's head runs on the integrator's machine.
 3. --dry-run stops here and says what it would do.
 4. Pushes the train as a new branch train/<UTC time> and waits for the Checks and Smokes workflows on it (their
    `push: train/*` trigger). Red: nothing is merged; it names the failing jobs (never re-run them, rule W23).
@@ -24,7 +25,7 @@ In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch, 
 Environment: TRAIN_REPO (default ppericard/coral-id-imr), TRAIN_POLL (seconds between two looks at CI, default 20),
 TRAIN_WAIT (seconds before giving up on CI, default 1800).
 """
-import argparse, json, os, shutil, subprocess, sys, time
+import argparse, json, os, shutil, subprocess, sys, tempfile, time
 from datetime import datetime, timezone
 
 REPO = os.environ.get('TRAIN_REPO', 'ppericard/coral-id-imr')
@@ -108,8 +109,15 @@ def build(prs, top, base, wt):
         if r.returncode:
             subprocess.run(['git', 'merge', '--abort'], cwd=wt, capture_output=True)
             raise Stop('#%s conflicts with main and the PRs before it in the train: leave it out, or bring it up to date first' % n)
-    if os.path.exists(os.path.join(wt, 'tools', 'sheet_version.py')):
-        r = subprocess.run([sys.executable, 'tools/sheet_version.py', '--check', '--main', '--base', base], cwd=wt, capture_output=True, text=True)
+    # The sheet check runs main's reviewed copy of the validator, never the one the PRs bring (Codex security review
+    # #757: a head's code would run with the credentials that push and merge); the train is only its data. -I: no module
+    # from the train or the current folder is imported.
+    tool = subprocess.run(['git', 'show', '%s:tools/sheet_version.py' % base], cwd=top, capture_output=True, text=True)
+    if tool.returncode == 0:
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'sheet_version.py')
+            open(path, 'w', encoding='utf-8').write(tool.stdout)
+            r = subprocess.run([sys.executable, '-I', path, '--check', '--main', '--base', base], cwd=wt, capture_output=True, text=True)
         if r.returncode:
             raise Stop('the train breaks the sheet rules (rule D3):\n' + r.stdout.strip())
     return git('rev-parse', 'HEAD', cwd=wt), git('rev-parse', 'HEAD^{tree}', cwd=wt)
